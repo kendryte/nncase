@@ -32,16 +32,17 @@ DEFINE_TFLITE_LOWER(SOFTMAX)
     quantize *output_quant;
 
     auto in_shape = get_shape(input.shape());
+    auto input_type = to_data_type(input.type());
     axis_t reduce_axis;
     reduce_axis.push_back(int32_t(in_shape.size() - 1));
 
     auto max = graph_.emplace<reduce>(reduce_max, in_shape, reduce_axis, std::numeric_limits<float>::lowest(), true);
-    auto sub = graph_.emplace<binary>(binary_sub, in_shape, max->output().shape(), value_range<float>::full());
+    auto sub = graph_.emplace<binary>(binary_sub, input_type, in_shape, max->output().shape(), value_range<float>::full());
     auto beta = graph_.emplace<constant>(float(options.beta()));
-    auto mul = graph_.emplace<binary>(binary_mul, sub->output().shape(), beta->output().shape(), value_range<float>::full());
+    auto mul = graph_.emplace<binary>(binary_mul, input_type, sub->output().shape(), beta->output().shape(), value_range<float>::full());
     auto exp = graph_.emplace<unary>(unary_exp, mul->output().shape());
     auto sum = graph_.emplace<reduce>(reduce_sum, exp->output().shape(), reduce_axis, 0.f, true);
-    auto div = graph_.emplace<binary>(binary_div, exp->output().shape(), sum->output().shape(), value_range<float>::full());
+    auto div = graph_.emplace<binary>(binary_div, input_type, exp->output().shape(), sum->output().shape(), value_range<float>::full());
 
     max->name(get_tensor(op.outputs(), 0).name()->string_view());
     sub->name(get_tensor(op.outputs(), 0).name()->string_view());
@@ -51,7 +52,7 @@ DEFINE_TFLITE_LOWER(SOFTMAX)
     sum->name(get_tensor(op.outputs(), 0).name()->string_view());
     div->name(get_tensor(op.outputs(), 0).name()->string_view());
 
-    if (input.type() != tflite::TensorType_FLOAT32)
+    if (input_type != dt_float32)
     {
         quant_param_t input_dequant_paras = to_quant_param(input.quantization());
         input_dequant = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), dt_float32, input_dequant_paras);

@@ -34,6 +34,7 @@ void onnx_importer::convert_op_LpNormalization(const NodeProto &node)
     const auto &output = node.output()[0];
 
     const auto &input_shape = get_shape(input);
+    const auto input_type = get_datatype(input).value();
 
     axis_t reduce_axis { static_cast<int>(real_axis(get_attribute<int>(node, "axis").value(), input_shape.size())) };
     const auto p = get_attribute<int>(node, "p").value();
@@ -48,7 +49,7 @@ void onnx_importer::convert_op_LpNormalization(const NodeProto &node)
         abs->name(op_name + ".abs(L1Normalization)");
         auto sum = graph_.emplace<reduce>(reduce_sum, abs->output().shape(), reduce_axis, 0.f, true);
         sum->name(op_name + ".reduce_sum(L1Normalization)");
-        auto div = graph_.emplace<binary>(binary_div, input_shape, sum->output().shape(), value_range<float>::full());
+        auto div = graph_.emplace<binary>(binary_div, input_type, input_shape, sum->output().shape(), value_range<float>::full());
         div->name(op_name + ".div(L1Normalization)");
 
         sum->input().connect(abs->output());
@@ -67,11 +68,11 @@ void onnx_importer::convert_op_LpNormalization(const NodeProto &node)
         sum->name(op_name + ".reduce_sum(L2Normalization)");
         auto epsilon = graph_.emplace<constant>(1e-10f);
         epsilon->name(op_name + ".eps(L2Normalization)");
-        auto max = graph_.emplace<binary>(binary_max, sum->output().shape(), epsilon->output().shape(), value_range<float>::full());
+        auto max = graph_.emplace<binary>(binary_max, input_type, sum->output().shape(), epsilon->output().shape(), value_range<float>::full());
         max->name(op_name + ".stab(L2Normalization)");
         auto sqrt = graph_.emplace<unary>(unary_sqrt, max->output().shape());
         sqrt->name(op_name + ".sqrt(L2Normalization)");
-        auto div = graph_.emplace<binary>(binary_div, input_shape, sqrt->output().shape(), value_range<float>::full());
+        auto div = graph_.emplace<binary>(binary_div, input_type, input_shape, sqrt->output().shape(), value_range<float>::full());
         div->name(op_name + ".div(L2Normalization)");
 
         sum->input().connect(square->output());

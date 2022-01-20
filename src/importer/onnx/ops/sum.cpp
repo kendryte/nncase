@@ -41,9 +41,10 @@ void onnx_importer::convert_op_Sum(const onnx::NodeProto &node)
         auto input_b = node.input()[i + 1];
 
         auto input_a_shape = get_shape(input_a);
+        const auto input_type = get_datatype(input_a).value();
         auto input_b_shape = get_shape(input_b);
 
-        auto cur_op = graph_.emplace<binary>(binary_add, input_a_shape, input_b_shape, value_range<float>::full());
+        auto cur_op = graph_.emplace<binary>(binary_add, input_type, input_a_shape, input_b_shape, value_range<float>::full());
         cur_op->name(op_name + ".add(Sum)");
         if (last_op != nullptr)
         {
@@ -69,7 +70,7 @@ void onnx_importer::convert_op_Sum(const onnx::NodeProto &node)
         const datatype_t input_type = get_datatype(input).value();
         const auto &input_shape = get_shape(input);
         auto bc = graph_.emplace<bitcast>(input_type, input_shape, input_shape);
-        bc->name(op_name + ".broadcast(Sum)");
+        bc->name(op_name + ".bitcast(Sum)");
         input_tensors_.emplace(&bc->input(), input);
         output_tensors_.emplace(output, &bc->output());
     }

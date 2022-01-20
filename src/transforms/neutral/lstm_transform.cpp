@@ -37,8 +37,8 @@ output_connector *local_sigmoid(output_connector *x, transform_context &context,
     auto one = context.graph.emplace<constant>(dt_float32, shape_t { 1 }, one_data);
     auto neg_ = context.graph.emplace<unary>(unary_neg, x->shape());
     auto exp_ = context.graph.emplace<unary>(unary_exp, neg_->output().shape());
-    auto add_ = context.graph.emplace<binary>(binary_add, exp_->output().shape(), one->output().shape(), value_range<float>::full());
-    auto div_ = context.graph.emplace<binary>(binary_div, one->output().shape(), add_->output().shape(), value_range<float>::full());
+    auto add_ = context.graph.emplace<binary>(binary_add, x->type(), exp_->output().shape(), one->output().shape(), value_range<float>::full());
+    auto div_ = context.graph.emplace<binary>(binary_div, x->type(), one->output().shape(), add_->output().shape(), value_range<float>::full());
 
     one->name(x->owner().name() + "/sig_one" + i);
     neg_->name(x->owner().name() + "/sig_neg_" + i);
@@ -63,14 +63,14 @@ output_connector *local_tanh(output_connector *x, transform_context &context, st
 
     auto two_ = context.graph.emplace<constant>(dt_float32, shape_t { 1 }, two_data);
     auto one_ = context.graph.emplace<constant>(dt_float32, shape_t { 1 }, one_data);
-    auto mul_1 = context.graph.emplace<binary>(binary_mul, x->shape(), two_->output().shape(), value_range<float>::full());
+    auto mul_1 = context.graph.emplace<binary>(binary_mul, x->type(), x->shape(), two_->output().shape(), value_range<float>::full());
     one_->name(x->owner().name() + "/tanh_one_" + i);
     two_->name(x->owner().name() + "/tanh_two_" + i);
     mul_1->name(x->owner().name() + "/tanh_mul_" + i + "_1");
 
     auto sigm = local_sigmoid(&mul_1->output(), context, "_tanh_" + i + "_");
-    auto mul_2 = context.graph.emplace<binary>(binary_mul, sigm->shape(), two_->output().shape(), value_range<float>::full());
-    auto sub_ = context.graph.emplace<binary>(binary_sub, mul_2->output().shape(), one_->output().shape(), value_range<float>::full());
+    auto mul_2 = context.graph.emplace<binary>(binary_mul, sigm->type(), sigm->shape(), two_->output().shape(), value_range<float>::full());
+    auto sub_ = context.graph.emplace<binary>(binary_sub, mul_2->output().type(), mul_2->output().shape(), one_->output().shape(), value_range<float>::full());
     mul_2->name(x->owner().name() + "/tanh_mul_" + i + "_2");
     sub_->name(x->owner().name() + "/tanh_sub_" + i);
 
@@ -234,7 +234,7 @@ void lstm_transform::process(transform_context &context)
         cont_->name(old_lstm.name() + "/cont_" + std::to_string(i));
 
         //slice
-        auto scale_ = context.graph.emplace<binary>(binary_mul, h_->shape(), cont_->output().shape(), value_range<float>::full());
+        auto scale_ = context.graph.emplace<binary>(binary_mul, h_->type(), h_->shape(), cont_->output().shape(), value_range<float>::full());
         scale_->name(old_lstm.name() + "/scale_" + std::to_string(i));
         scale_->input_a().connect(*h_);
         scale_->input_b().connect(cont_->output());
@@ -262,7 +262,7 @@ void lstm_transform::process(transform_context &context)
         w_xc_x->name(old_lstm.name() + "/w_xc_x_" + std::to_string(i));
         w_xc_x->input().connect(bitcast_wxc_post->output());
 
-        auto gate_input = context.graph.emplace<binary>(binary_add, w_xc_x->output().shape(), bitcast_wrc_post->output().shape(), value_range<float>::full());
+        auto gate_input = context.graph.emplace<binary>(binary_add, w_xc_x->output().type(), w_xc_x->output().shape(), bitcast_wrc_post->output().shape(), value_range<float>::full());
         gate_input->name(old_lstm.name() + "/gate_input_" + std::to_string(i));
         gate_input->input_a().connect(w_xc_x->output());
         gate_input->input_b().connect(bitcast_wrc_post->output());
@@ -321,29 +321,29 @@ void lstm_transform::process(transform_context &context)
             g_t->input().connect(*in_tanh);
 
             //c_t = cont_ * (f * c_) + (i * g)
-            auto f_c_mul = context.graph.emplace<binary>(binary_mul, c_->shape(), f_t->output().shape(), value_range<float>::full());
+            auto f_c_mul = context.graph.emplace<binary>(binary_mul, c_->type(), c_->shape(), f_t->output().shape(), value_range<float>::full());
             f_c_mul->name(old_lstm.name() + "/f_c_mul_" + std::to_string(i));
             f_c_mul->input_a().connect(*c_);
             f_c_mul->input_b().connect(f_t->output());
 
-            auto c_f_c_mul = context.graph.emplace<binary>(binary_mul, cont_->output().shape(), f_c_mul->output().shape(), value_range<float>::full());
+            auto c_f_c_mul = context.graph.emplace<binary>(binary_mul, cont_->output().type(), cont_->output().shape(), f_c_mul->output().shape(), value_range<float>::full());
             c_f_c_mul->name(old_lstm.name() + "/c_f_c_mul_" + std::to_string(i));
             c_f_c_mul->input_a().connect(cont_->output());
             c_f_c_mul->input_b().connect(f_c_mul->output());
 
-            auto i_g_mul = context.graph.emplace<binary>(binary_mul, i_t->output().shape(), g_t->output().shape(), value_range<float>::full());
+            auto i_g_mul = context.graph.emplace<binary>(binary_mul, i_t->output().type(), i_t->output().shape(), g_t->output().shape(), value_range<float>::full());
             i_g_mul->name(old_lstm.name() + "/i_g_mul_" + std::to_string(i));
             i_g_mul->input_a().connect(i_t->output());
             i_g_mul->input_b().connect(g_t->output());
 
-            auto c_t = context.graph.emplace<binary>(binary_add, c_f_c_mul->output().shape(), i_g_mul->output().shape(), value_range<float>::full());
+            auto c_t = context.graph.emplace<binary>(binary_add, c_f_c_mul->output().type(), c_f_c_mul->output().shape(), i_g_mul->output().shape(), value_range<float>::full());
             c_t->name(old_lstm.name() + "/c_t_" + std::to_string(i));
             c_t->input_a().connect(c_f_c_mul->output());
             c_t->input_b().connect(i_g_mul->output());
 
             //h_t = o_t * tanh(c_t)
             auto tanh_c_t = local_tanh(&c_t->output(), context, std::to_string(i));
-            auto h_t = context.graph.emplace<binary>(binary_mul, o_t->output().shape(), tanh_c_t->shape(), value_range<float>::full());
+            auto h_t = context.graph.emplace<binary>(binary_mul, o_t->output().type(), o_t->output().shape(), tanh_c_t->shape(), value_range<float>::full());
             h_t->name(old_lstm.name() + "/h_t_" + std::to_string(i));
             h_t->input_a().connect(o_t->output());
             h_t->input_b().connect(*tanh_c_t);
@@ -385,29 +385,29 @@ void lstm_transform::process(transform_context &context)
             g_t->input().connect(*in_tanh);
 
             //c_t = cont_ * (f * c_) + (i * g)
-            auto f_c_mul = context.graph.emplace<binary>(binary_mul, c_->shape(), f_t->output().shape(), value_range<float>::full());
+            auto f_c_mul = context.graph.emplace<binary>(binary_mul, c_->type(), c_->shape(), f_t->output().shape(), value_range<float>::full());
             f_c_mul->name(old_lstm.name() + "/f_c_mul_" + std::to_string(i));
             f_c_mul->input_a().connect(*c_);
             f_c_mul->input_b().connect(f_t->output());
 
-            auto c_f_c_mul = context.graph.emplace<binary>(binary_mul, cont_->output().shape(), f_c_mul->output().shape(), value_range<float>::full());
+            auto c_f_c_mul = context.graph.emplace<binary>(binary_mul, cont_->output().type(), cont_->output().shape(), f_c_mul->output().shape(), value_range<float>::full());
             c_f_c_mul->name(old_lstm.name() + "/c_f_c_mul_" + std::to_string(i));
             c_f_c_mul->input_a().connect(cont_->output());
             c_f_c_mul->input_b().connect(f_c_mul->output());
 
-            auto i_g_mul = context.graph.emplace<binary>(binary_mul, i_t->output().shape(), g_t->output().shape(), value_range<float>::full());
+            auto i_g_mul = context.graph.emplace<binary>(binary_mul, i_t->output().type(), i_t->output().shape(), g_t->output().shape(), value_range<float>::full());
             i_g_mul->name(old_lstm.name() + "/i_g_mul_" + std::to_string(i));
             i_g_mul->input_a().connect(i_t->output());
             i_g_mul->input_b().connect(g_t->output());
 
-            auto c_t = context.graph.emplace<binary>(binary_add, c_f_c_mul->output().shape(), i_g_mul->output().shape(), value_range<float>::full());
+            auto c_t = context.graph.emplace<binary>(binary_add, c_f_c_mul->output().type(), c_f_c_mul->output().shape(), i_g_mul->output().shape(), value_range<float>::full());
             c_t->name(old_lstm.name() + "/c_t_" + std::to_string(i));
             c_t->input_a().connect(c_f_c_mul->output());
             c_t->input_b().connect(i_g_mul->output());
 
             //h_t = o_t * tanh(c_t)
             auto tanh_c_t = local_tanh(&c_t->output(), context, std::to_string(i));
-            auto h_t = context.graph.emplace<binary>(binary_mul, o_t->output().shape(), tanh_c_t->shape(), value_range<float>::full());
+            auto h_t = context.graph.emplace<binary>(binary_mul, o_t->output().type(), o_t->output().shape(), tanh_c_t->shape(), value_range<float>::full());
             h_t->name(old_lstm.name() + "/h_t_" + std::to_string(i));
             h_t->input_a().connect(o_t->output());
             h_t->input_b().connect(*tanh_c_t);

@@ -40,7 +40,8 @@ NNCASE_API result<void> copy(datatype_t type, const gsl::byte *src, gsl::byte *d
 NNCASE_API result<void> transpose(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &perm, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, kernel_context &context = default_kernel_context()) noexcept;
 
-NNCASE_API result<void> binary(binary_op_t op, const float *input_a, const float *input_b, float *output,
+template <typename T>
+NNCASE_API result<void> binary(binary_op_t op, const T *input_a, const T *input_b, T *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation, kernel_context &context = default_kernel_context()) noexcept;
 
@@ -55,6 +56,10 @@ NNCASE_API result<void> equal(const T *input_a, const T *input_b, bool *output,
 
 NNCASE_API result<void> lut1d(datatype_t type, const gsl::byte *input, const gsl::byte *table, gsl::byte *output, const runtime_shape_t &shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const scalar &min, const scalar &max) noexcept;
+
+template <typename T>
+NNCASE_API result<void> matmul(const T *input_a, const T *input_b, const T *bias, T *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_b_shape, value_range<float> fused_activation) noexcept;
 
 NNCASE_API result<void> onehot(datatype_t type, const int32_t *indices, gsl::byte *output, const runtime_shape_t &indices_shape, const runtime_shape_t &out_shape,
     const runtime_shape_t &out_strides, gsl::byte *depth, gsl::byte *off_value, gsl::byte *on_value, size_t axis, onehot_mode_t mode,
@@ -121,7 +126,7 @@ NNCASE_API result<void> roi_align(const T *input, const T *rois, int64_t *batch_
     const runtime_shape_t &out_shape, roi_align_mode_t mode, float spatial_scale, int64_t sampling_ratio) noexcept;
 
 template <typename T>
-NNCASE_API result<void> sigmoid(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides) noexcept;
+NNCASE_API result<void> sigmoid(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept;
 
 template <typename T>
 NNCASE_API result<void> ternary(const float *input_a, const T *input_b, const T *input_c, T *output,

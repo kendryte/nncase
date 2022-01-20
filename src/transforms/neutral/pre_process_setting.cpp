@@ -101,8 +101,8 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
 
             // letterbox :
             /**
-             * input_layout:  HW have different axis 
-             * input_type:  pad value different 
+             * input_layout:  HW have different axis
+             * input_type:  pad value different
              *  //input_range:{min, max} caculate pad value //uint8 pad 114, float pad min+(max-min)*(114/255)
              **/
 
@@ -175,8 +175,8 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
                 in_convert->name("normalize_in_convert");
                 in_convert->input().connect(*mid_ptr);
 
-                auto normalize_sub = graph.emplace<binary>(binary_sub, in_convert->output().shape(), mean->output().shape(), value_range<float>::full());
-                auto normalize_mul = graph.emplace<binary>(binary_div, normalize_sub->output().shape(), scale->output().shape(), value_range<float>::full());
+                auto normalize_sub = graph.emplace<binary>(binary_sub, in_convert->output().type(), in_convert->output().shape(), mean->output().shape(), value_range<float>::full());
+                auto normalize_mul = graph.emplace<binary>(binary_div, normalize_sub->output().type(), normalize_sub->output().shape(), scale->output().shape(), value_range<float>::full());
                 normalize_sub->name("input_norm_sub");
                 normalize_mul->name("input_norm_div");
                 normalize_sub->input_a().connect(in_convert->output());

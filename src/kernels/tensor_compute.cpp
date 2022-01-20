@@ -128,6 +128,16 @@ result<void> kernels::lut1d(datatype_t type, const gsl::byte *input, const gsl::
     return cpu::reference::lut1d(type, input, table, output, shape, in_strides, out_strides, min, max);
 }
 
+template result<void> kernels::matmul<float>(const float *input_a, const float *input_b, const float *bias, float *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_b_shape, value_range<float> fused_activation) noexcept;
+
+template <typename T>
+result<void> kernels::matmul(const T *input_a, const T *input_b, const T *bias, T *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_b_shape, value_range<float> fused_activation) noexcept
+{
+    return cpu::reference::matmul(input_a, input_b, bias, output, in_a_shape, in_b_shape, fused_activation);
+}
+
 result<void> kernels::onehot(datatype_t type, const int32_t *indices, gsl::byte *output, const runtime_shape_t &indices_shape, const runtime_shape_t &out_shape,
     const runtime_shape_t &out_strides, gsl::byte *depth, gsl::byte *off_value, gsl::byte *on_value, size_t axis, onehot_mode_t mode, kernel_context &context) noexcept
 {
@@ -165,7 +175,21 @@ result<void> kernels::transpose(datatype_t type, const gsl::byte *src, gsl::byte
     return cpu::reference::transpose(type, src, dest, in_shape, perm, in_strides, out_strides, context);
 }
 
-result<void> kernels::binary(binary_op_t op, const float *input_a, const float *input_b, float *output,
+template result<void> kernels::binary<float>(binary_op_t op, const float *input_a, const float *input_b, float *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation,
+    kernel_context &context) noexcept;
+template result<void> kernels::binary<int32_t>(binary_op_t op, const int32_t *input_a, const int32_t *input_b, int32_t *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation,
+    kernel_context &context) noexcept;
+template result<void> kernels::binary<int64_t>(binary_op_t op, const int64_t *input_a, const int64_t *input_b, int64_t *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation,
+    kernel_context &context) noexcept;
+
+template <typename T>
+result<void> kernels::binary(binary_op_t op, const T *input_a, const T *input_b, T *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation,
     kernel_context &context) noexcept
@@ -287,6 +311,8 @@ result<void> kernels::gather_nd(datatype_t in_type, const gsl::byte *input, gsl:
 
 template result<void> kernels::cumsum<float>(const float *input, float *output, const runtime_shape_t &in_shape,
     int32_t axis, bool exclusive, bool reverse) noexcept;
+template result<void> kernels::cumsum<int32_t>(const int32_t *input, int32_t *output, const runtime_shape_t &in_shape,
+    int32_t axis, bool exclusive, bool reverse) noexcept;
 
 template <typename T>
 result<void> kernels::cumsum(const T *input, T *output, const runtime_shape_t &in_shape,
@@ -332,12 +358,13 @@ result<void> kernels::roi_align(const T *input, const T *rois, int64_t *batch_in
 }
 
 template result<void> kernels::sigmoid<float>(const float *input, float *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &in_strides) noexcept;
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept;
 
 template <typename T>
-result<void> kernels::sigmoid(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides) noexcept
+result<void> kernels::sigmoid(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    const runtime_shape_t &out_strides) noexcept
 {
-    return cpu::reference::sigmoid(input, output, in_shape, in_strides);
+    return cpu::reference::sigmoid(input, output, in_shape, in_strides, out_strides);
 }
 
 template result<void> kernels::ternary<float>(const float *input_a, const float *input_b, const float *input_c, float *output,

@@ -1542,6 +1542,30 @@ namespace IsaGen
             public ushort TableLength { get; set; }
         }
 
+        [DisplayName("TENSOR.MATMUL")]
+        [Category("Tensor Instructions")]
+        [Description("Matmul")]
+        public class MatmulInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.MATMUL;
+
+            [DisplayName("rshape_src1")]
+            [Description("Source1 shape register")]
+            public byte RshapeSrc1 { get; set; }
+
+            [DisplayName("rshape_src2")]
+            [Description("Source2 shape register")]
+            public byte RshapeSrc2 { get; set; }
+
+            [DisplayName("fused_clamp_low")]
+            [Description("FusedClampLow")]
+            public float FusedClampLow { get; set; }
+
+            [DisplayName("fused_clamp_high")]
+            [Description("FusedClampHigh")]
+            public float FusedClampHigh { get; set; }
+        }
+
         [DisplayName("TENSOR.ONEHOT")]
         [Category("Tensor Instructions")]
         [Description("OneHot")]
@@ -1944,6 +1968,10 @@ namespace IsaGen
             [DisplayName("rstride_src")]
             [Description("Source stride register")]
             public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
         }
 
         [DisplayName("TENSOR.SLICE")]

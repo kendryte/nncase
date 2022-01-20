@@ -83,15 +83,51 @@ bool remove_concat_convert::on_try_match(node &node, transform_context &context)
 {
     if (auto cct = node_cast<concat>(node))
     {
-        if (cct->output().type() != quant_type_)
+        datatype_t concat_type = dt_float32;
+        if (auto cvt_0 = try_get_direct_parent<convert>(*cct, 0))
         {
-            for (auto &it : cct->inputs())
-                context.inputs.emplace_back(it);
-
-            context.outputs.emplace_back(&cct->output());
-            context.matched_nodes.emplace_back(cct);
-            return true;
+            concat_type = cvt_0->input().type();
+            context.inputs.emplace_back(&cvt_0->input());
         }
+        else
+        {
+            return false;
+        }
+        for (size_t i = 1; i < cct->inputs().size(); i++)
+        {
+            if (auto cvt = try_get_direct_parent<convert>(*cct, i))
+            {
+                if (cvt->input().type() == concat_type)
+                {
+                    context.inputs.emplace_back(&cvt->input());
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
+        if (auto cvt_back = try_get_direct_child<convert>(*cct))
+        {
+            if (cvt_back->output().type() == concat_type)
+            {
+                context.outputs.emplace_back(&cvt_back->output());
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return false;
+        }
+        context.matched_nodes.emplace_back(cct);
+        return true;
     }
 
     return false;
@@ -107,20 +143,14 @@ void remove_concat_convert::process(transform_context &context)
     {
         in_shape.emplace_back(context.inputs[it]->shape());
     }
-    auto new_concat = context.graph.emplace<concat>(quant_type_, in_shape, old_concat.axis());
+    auto new_concat = context.graph.emplace<concat>(context.inputs[0]->connection()->type(), in_shape, old_concat.axis());
     new_concat->name(old_concat.name());
-    for (size_t i = 0; i < context.inputs.size(); ++i)
+    for (size_t i = 0; i < context.inputs.size(); i++)
     {
         auto &output = *context.inputs[i]->connection();
-        auto in_cvt = context.graph.emplace<convert>(old_concat.output().type(), output.owner().output_at(0).shape(), quant_type_);
-        in_cvt->name(new_concat->name() + "/in_convert_" + char(i));
-        in_cvt->input().connect(output);
-        new_concat->input_at(i).connect(in_cvt->output());
+        new_concat->input_at(i).connect(output);
     }
-    auto out_cvt = context.graph.emplace<convert>(quant_type_, new_concat->output().shape(), old_concat.output().type());
-    out_cvt->name(new_concat->name() + "/out_convert");
 
-    out_cvt->input().connect(new_concat->output());
     for (auto &in : dup(inputs))
-        in->connect(out_cvt->output());
+        in->connect(new_concat->output());
 }

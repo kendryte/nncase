@@ -13,30 +13,23 @@
  * limitations under the License.
  */
 #include "../runtime_function.h"
-#include <iostream>
 #include <nncase/kernels/tensor_compute.h>
-#include <nncase/runtime/debug.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-result<void> stackvm_runtime_function::visit(const tensor_sigmoid_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(const tensor_matmul_op_t &op) noexcept
 {
     try_var(output, pop_addr());
-    try_var(input, pop_addr());
-    try_var(in_shape, module().shape_reg(op.rshape_src));
-    try_var(in_stride, module().shape_reg(op.rstride_src));
-    try_var(out_stride, module().shape_reg(op.rstride_dest));
+    try_var(bias, pop_addr());
+    try_var(input_b, pop_addr());
+    try_var(input_a, pop_addr());
 
-    switch (op.datatype)
-    {
-    case dt_float32:
-        return kernels::sigmoid(reinterpret_cast<const float *>(input), reinterpret_cast<float *>(output),
-            in_shape, in_stride, out_stride);
-        break;
-    default:
-        std::cerr << "unsupported dtype for sigmoid: " + std::string(datatype_names(op.datatype));
-        return err(std::errc::invalid_argument);
-    }
+    try_var(in_shape_a, module().shape_reg(op.rshape_src1));
+    try_var(in_shape_b, module().shape_reg(op.rshape_src2));
+
+    return kernels::matmul(reinterpret_cast<const float *>(input_a), reinterpret_cast<const float *>(input_b),
+        reinterpret_cast<const float *>(bias), reinterpret_cast<float *>(output), in_shape_a, in_shape_b,
+        { op.fused_clamp_low, op.fused_clamp_high });
 }

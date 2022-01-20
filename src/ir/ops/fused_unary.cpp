@@ -189,11 +189,11 @@ void fused_unary::compile_graph(const std::vector<fused_unary_op> &subgraph, cod
     builder.emit_ret();
 }
 
-fused_unary::fused_unary(std::vector<fused_unary_op> subgraph, shape_t in_shape)
+fused_unary::fused_unary(std::vector<fused_unary_op> subgraph, datatype_t in_type, shape_t in_shape)
     : subgraph_(std::move(subgraph))
 {
-    add_input("input", dt_float32, in_shape);
-    add_output("output", dt_float32, in_shape);
+    add_input("input", in_type, in_shape);
+    add_output("output", in_type, in_shape);
 }
 
 std::vector<fused_unary_op> ir::concat_subgraph(const std::vector<fused_unary_op> &src1, const std::vector<fused_unary_op> &src2)

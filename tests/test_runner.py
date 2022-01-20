@@ -19,7 +19,6 @@ from PIL import Image
 
 from compare_util import compare
 from dataset_utils import *
-from importer.onnx_ import model
 from models.preprocess.preprocess import preprocess
 
 
