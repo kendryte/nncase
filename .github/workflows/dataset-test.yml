@@ -68,7 +68,7 @@ jobs:
   dataset-test:
     needs: [build]
     runs-on: [self-hosted]
-    timeout-minutes: 4320m
+    timeout-minutes: 4320
 
     steps:
     - uses: actions/checkout@v2
