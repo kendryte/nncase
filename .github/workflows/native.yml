@@ -46,19 +46,15 @@ jobs:
       run: |
         pip install conan
 
-    - name: Configure Conan
+    - name: Configure Conan Default Profile
+      shell: bash
+      run: conan profile new default --detect
+
+    - name: Configure Conan Compiler
       if: runner.os == 'Linux'
       shell: bash
       run: |
-        conan profile new default --detect
         conan profile update settings.compiler.libcxx=libstdc++11 default
-
-    - name: Configure Conan
-      if: runner.os == 'Macos'
-      shell: bash
-      run: |
-        conan profile new default --detect
-        conan profile update settings.compiler.libcxx=libc++ default
 
     - name: Dotnet Build
       shell: bash
