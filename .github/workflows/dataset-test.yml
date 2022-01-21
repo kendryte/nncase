@@ -113,5 +113,3 @@ jobs:
       if: always() && runner.os == 'Linux'
       with:
         files: test_results/*.xml
-
-        jobs.<job_id>.timeout-minutes
