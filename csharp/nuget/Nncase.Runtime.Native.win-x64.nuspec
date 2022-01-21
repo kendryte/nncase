@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
+  <metadata>
+    <!-- package -->
+    <id>Nncase.Runtime.Native.win-x64</id>
+    <title>Nncase.Runtime - Native binaries for win-x64</title>
+    <version>1.0.0</version>
+    <description>This package complements the Nncsae.Runtime package and contains native binaries of Nncase.Runtime for win-x64</description>
+    <summary>Native binaries of Nncase runtime for win-x64</summary>
+    <projectUrl>https://github.com/kendryte/nncase</projectUrl>
+    <repository type="git" url="https://github.com/kendryte/nncase" />
+    <tags>nncase runtime binaries</tags>
+    <!-- legal -->
+    <license type="expression">Apache-2.0+</license>
+    <authors>Jason Millard</authors>
+    <owners>PinMAME development team and contributors</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <copyright>PinMAME development team and contributors</copyright>
+    <dependencies>
+      <group targetFramework="netstandard2.0" />
+    </dependencies>
+  </metadata>
+  <files>
+    <!-- The build bits -->
+    <file src="targets\Nncase.Runtime.Native.win-x64.targets" target="build\netstandard2.0" />
+    <!-- Include libpinmame win-x64 binaries -->
+    <file src="..\bin\Release\netstandard2.0\runtimes\win-x64\native\lib\*" target="runtimes\win-x64\native" />
+    <!-- Include the license -->
+    <file src="..\..\LICENSE" />
+    <!-- A dummy reference which prevents NuGet from adding any compilation references when this package is imported -->
+    <file src="_._" target="lib\netstandard2.0" />
+  </files>
+</package>

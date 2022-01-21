@@ -126,7 +126,9 @@ EXPORT_API(RuntimeTensor) RuntimeTensor_from_buffer(
             total_items * item_size),
         [=](gsl::byte *) {})
                       .unwrap_or_throw();
-    return RuntimeTensor { .impl = tensor.impl() };
+    auto rt = RuntimeTensor();
+    rt.impl = tensor.impl();
+    return rt;
 }
 
 EXPORT_API(void) RuntimeTensor_to_buffer(RuntimeTensor rt, uint8_t *buffer_ptr, uint8_t *datatype_ptr)

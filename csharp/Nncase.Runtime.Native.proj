@@ -41,13 +41,4 @@
     <Copy SourceFiles="@(NativePackageLib)"
           DestinationFolder="$(OutputPath)/%(NativePackageLib.RelativePath)" />
   </Target>
-
-
-  <!-- <Target Name="Pack">
-    <Message Text="Restoring packaging projects..." Importance="high" />
-    <MSBuild Projects="osx-x64.nupkgproj" Targets="Restore" />
-    <MSBuild Projects="osx-x64.nupkgproj" Targets="Pack" />
-
-    <Message Text="Done packing!" Importance="high" />
-  </Target> -->
 </Project>

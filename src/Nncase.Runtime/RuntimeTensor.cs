@@ -16,7 +16,7 @@ namespace Nncase.Runtime
         cRuntimeTensor inner;
 
         [DllImport("libnncaseruntime_csharp")]
-        static extern cRuntimeTensor _from_buffer(in byte buffer_ptr, byte datatype,
+        static extern cRuntimeTensor RuntimeTensor_from_buffer(in byte buffer_ptr, byte datatype,
                                                   in int shape_ptr, int shape_size,
                                                   ulong total_items, ulong item_size,
                                                   in int stride_ptr);
@@ -33,7 +33,7 @@ namespace Nncase.Runtime
           where T : unmanaged
         {
             var dtype = DataTypes.FromType<T>();
-            var inner = _from_buffer(MemoryMarshal.GetReference(MemoryMarshal.AsBytes(tensor.Buffer.Span)), (byte)dtype.ElemType,
+            var inner = RuntimeTensor_from_buffer(MemoryMarshal.GetReference(MemoryMarshal.AsBytes(tensor.Buffer.Span)), (byte)dtype.ElemType,
                             MemoryMarshal.GetReference(tensor.Dimensions), tensor.Dimensions.Length, (ulong)tensor.Length,
                             (ulong)DataTypes.GetLength(dtype), MemoryMarshal.GetReference(tensor.Strides));
 

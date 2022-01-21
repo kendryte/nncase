@@ -88,7 +88,9 @@ EXPORT_API(memory_range) interpreter_get_output_desc(size_t index)
   */
 EXPORT_API(RuntimeTensor) interpreter_get_input_tensor(size_t index)
 {
-    return RuntimeTensor { .impl = _interp->input_tensor(index).unwrap_or_throw().impl() };
+    auto rt = RuntimeTensor();
+    rt.impl = _interp->input_tensor(index).unwrap_or_throw().impl();
+    return rt;
 }
 
 /**
@@ -104,7 +106,9 @@ EXPORT_API(void) interpreter_set_input_tensor(size_t index, RuntimeTensor rt)
 
 EXPORT_API(RuntimeTensor) interpreter_get_output_tensor(size_t index)
 {
-    return RuntimeTensor { .impl = _interp->output_tensor(index).unwrap_or_throw().impl() };
+    auto rt = RuntimeTensor();
+    rt.impl = _interp->output_tensor(index).unwrap_or_throw().impl();
+    return rt;
 }
 
 /**
