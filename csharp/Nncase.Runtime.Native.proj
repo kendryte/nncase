@@ -7,7 +7,7 @@
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration> 
     <OutputPath>$(BaseOutputPath)\$(Configuration)\$(TargetFramework)</OutputPath> 
     <!-- get rid -->
-    <TargetOS Condition="'$(TargetOS)' == '' AND '$(OS)' == 'Windows_NT'">windows</TargetOS>
+    <TargetOS Condition="'$(TargetOS)' == '' AND '$(OS)' == 'Windows_NT'">win</TargetOS>
     <TargetOS Condition="'$(TargetOS)' == '' AND $([MSBuild]::IsOSPlatform('osx'))">osx</TargetOS>
     <TargetOS Condition="'$(TargetOS)' == '' AND '$(OS)' != 'Windows_NT'">linux</TargetOS>
     <NativeLibExtension Condition="'$(TargetOS)' == 'windows'">dll</NativeLibExtension>
