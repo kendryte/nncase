@@ -5,6 +5,7 @@ on:
     paths:
     - 'csharp/**'
   pull_request:
+    paths:
     - 'csharp/**'
 
 jobs:
