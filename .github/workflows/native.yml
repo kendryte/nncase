@@ -82,17 +82,22 @@ jobs:
     - uses: actions/upload-artifact@v2
       if: runner.os == 'Linux'
       with:
-        name: Nncase.Runtime.Native.linux-x64.nupkg
+        name: Nncase.Runtime.Native.linux-x64.1.0.0.nupkg
         path: nupkg/Nncase.Runtime.Native.linux-x64.1.0.0.nupkg
 
     - uses: actions/upload-artifact@v2
       if: runner.os == 'Macos'
       with:
-        name: Nncase.Runtime.Native.osx-x64.nupkg
+        name: Nncase.Runtime.Native.osx-x64.1.0.0.nupkg
         path: nupkg/Nncase.Runtime.Native.osx-x64.1.0.0.nupkg
 
     - uses: actions/upload-artifact@v2
       if: runner.os == 'Windows'
       with:
-        name: Nncase.Runtime.Native.win-x64.nupkg
+        name: Nncase.Runtime.Native.win-x64.1.0.0.nupkg
         path: nupkg/Nncase.Runtime.Native.win-x64.1.0.0.nupkg
+
+    # - name: Push
+    #   shell: bash
+    #   working-directory: ${{github.workspace}}/csharp
+    #   run: nuget push ${{github.workspace}}/nupkg/Nncase.Runtime.Native.*.nupkg ${{ secrets.NUGET_KEY }} -Source https://www.myget.org/F/zhen8838/api/v2/package

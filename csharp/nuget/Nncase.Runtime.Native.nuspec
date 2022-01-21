@@ -21,7 +21,7 @@
         <dependency id="Nncase.Runtime.Native.win-x64" version="1.0.0" include="native" />
         <dependency id="Nncase.Runtime.Native.osx-x64" version="1.0.0" include="native" />
         <dependency id="Nncase.Runtime.Native.linux-x64" version="1.0.0" include="native" />
-        <!-- <dependency id="Nncase.Runtime.Native.osx-arm64" version="1.0.0" include="native" /> -->
+        <dependency id="Nncase.Runtime.Native.osx-arm64" version="1.0.0" include="native" />
       </group>
     </dependencies>
   </metadata>
