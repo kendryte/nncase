@@ -99,7 +99,7 @@ namespace Nncase.Tests.RuntimeTest
         [Fact]
         public void TestPinMame()
         {
- 
+
         }
 
     }

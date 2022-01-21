@@ -15,7 +15,7 @@ namespace Nncase.Runtime
 
         cRuntimeTensor inner;
 
-        [DllImport("libnncaseruntime_csharp")]
+        [DllImport("nncaseruntime_csharp")]
         static extern cRuntimeTensor RuntimeTensor_from_buffer(in byte buffer_ptr, byte datatype,
                                                   in int shape_ptr, int shape_size,
                                                   ulong total_items, ulong item_size,
