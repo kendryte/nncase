@@ -4,9 +4,11 @@ on:
   push:
     paths:
     - 'csharp/**'
+    - '.github/workflows/native.yml'
   pull_request:
     paths:
     - 'csharp/**'
+    - '.github/workflows/native.yml'
 
 jobs:
   build:
