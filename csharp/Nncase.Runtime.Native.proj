@@ -20,16 +20,8 @@
   <!-- Target that builds all the native binaries in the Native folder -->
   <Target Name="Build" DependsOnTargets="BuildNativeUnix;BuildNativeWindows;PreparePackageAssets" />
 
-  <Target Name="BuildNativeUnix" Condition="'$(OS)' != 'Windows_NT'">
-    <Message Text="$(MSBuildProjectDirectory)/build.sh" Importance="High"/>
-    <Exec Command="&quot;$(MSBuildProjectDirectory)/build.sh&quot;" />
-  </Target>
-
-  <Target Name="BuildNativeWindows" Condition="'$(OS)' == 'Windows_NT'">
-    <!-- Run script that invokes Cmake to create VS files, and then calls msbuild to compile them -->
-    <Message Text="$(MSBuildProjectDirectory)\build.cmd" Importance="High"/>
-    <Exec Command="&quot;$(MSBuildProjectDirectory)\build.cmd&quot;" />
-  </Target>
+  <Message Text="$(MSBuildProjectDirectory)/build.sh" Importance="High"/>
+  <Exec Command="&quot;$(MSBuildProjectDirectory)/build.sh&quot;" />
 
   <Target Name="PreparePackageAssets">  
     <ItemGroup>
