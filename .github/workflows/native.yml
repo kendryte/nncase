@@ -47,7 +47,6 @@ jobs:
         pip install conan
 
     - name: Configure Conan
-      if: runner.os == 'Linux'
       shell: bash
       run: |
         conan profile new default --detect
