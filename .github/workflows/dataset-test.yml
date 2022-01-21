@@ -68,6 +68,7 @@ jobs:
   dataset-test:
     needs: [build]
     runs-on: [self-hosted]
+    timeout-minutes: 4320m
 
     steps:
     - uses: actions/checkout@v2
@@ -112,3 +113,5 @@ jobs:
       if: always() && runner.os == 'Linux'
       with:
         files: test_results/*.xml
+
+        jobs.<job_id>.timeout-minutes
