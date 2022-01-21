@@ -1,0 +1,53 @@
+<Project>
+  <!-- global property  -->
+  <PropertyGroup>
+    <!-- setup output path -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <BaseOutputPath>bin</BaseOutputPath> 
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration> 
+    <OutputPath>$(BaseOutputPath)/$(Configuration)/$(TargetFramework)</OutputPath> 
+    <!-- get rid -->
+    <TargetOS Condition="'$(TargetOS)' == '' AND '$(OS)' == 'Windows_NT'">windows</TargetOS>
+    <TargetOS Condition="'$(TargetOS)' == '' AND $([MSBuild]::IsOSPlatform('osx'))">osx</TargetOS>
+    <TargetOS Condition="'$(TargetOS)' == '' AND '$(OS)' != 'Windows_NT'">linux</TargetOS>
+    <NativeLibExtension Condition="'$(TargetOS)' == 'windows'">dll</NativeLibExtension>
+    <NativeLibExtension Condition="'$(TargetOS)' == 'linux'">so</NativeLibExtension>
+    <NativeLibExtension Condition="'$(TargetOS)' == 'osx'">so</NativeLibExtension>
+    <TargetArchitecture Condition="'$(TargetArchitecture)' == ''">x64</TargetArchitecture>
+    <PackageRid>$(TargetOS)-$(TargetArchitecture)</PackageRid>
+  </PropertyGroup>
+  
+  <!-- Target that builds all the native binaries in the Native folder -->
+  <Target Name="Build" DependsOnTargets="BuildNativeUnix;BuildNativeWindows;PreparePackageAssets" />
+
+  <Target Name="BuildNativeUnix" Condition="'$(OS)' != 'Windows_NT'">
+    <Message Text="$(MSBuildProjectDirectory)/build.sh" Importance="High"/>
+    <Exec Command="&quot;$(MSBuildProjectDirectory)/build.sh&quot;" />
+  </Target>
+
+  <Target Name="BuildNativeWindows" Condition="'$(OS)' == 'Windows_NT'">
+    <!-- Run script that invokes Cmake to create VS files, and then calls msbuild to compile them -->
+    <Message Text="$(MSBuildProjectDirectory)\build.cmd" Importance="High"/>
+    <Exec Command="&quot;$(MSBuildProjectDirectory)\build.cmd&quot;" />
+  </Target>
+
+  <Target Name="PreparePackageAssets">  
+    <ItemGroup>
+      <NativePackageLib Include="..\build\runtime_install\lib\*"
+                        RelativePath="runtimes\$(PackageRid)\native\lib"  />
+    </ItemGroup>
+
+    <Message Importance="High" Text="@(NativePackageLib) -> $(OutputPath)/%(NativePackageLib.RelativePath)" />
+    <Copy SourceFiles="@(NativePackageLib)"
+          DestinationFolder="$(OutputPath)/%(NativePackageLib.RelativePath)" />
+  </Target>
+
+
+  <!-- <Target Name="Pack">
+    <Message Text="Restoring packaging projects..." Importance="high" />
+    <MSBuild Projects="osx-x64.nupkgproj" Targets="Restore" />
+    <MSBuild Projects="osx-x64.nupkgproj" Targets="Pack" />
+
+    <Message Text="Done packing!" Importance="high" />
+  </Target> -->
+</Project>

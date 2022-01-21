@@ -35,6 +35,7 @@
     <ProjectReference Include="..\Nncase.Importer\Nncase.Importer.csproj" />
     <ProjectReference Include="..\Nncase.CodeGen\Nncase.CodeGen.csproj" />
     <ProjectReference Include="..\Nncase.IO\Nncase.IO.csproj" />
+    <ProjectReference Include="..\Nncase.Runtime\Nncase.Runtime.csproj" />
   </ItemGroup>
 
 </Project>

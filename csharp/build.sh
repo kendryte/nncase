@@ -9,6 +9,7 @@ cmake -S .. -B ../build/runtime \
         -DCMAKE_EXPORT_COMPILE_COMMANDS=true \
         -DENABLE_VULKAN_RUNTIME=false \
         -DBUILDING_RUNTIME=true \
+        -DBUILD_BENCHMARK=false \
         -G "Unix Makefiles" \
         -DCMAKE_INSTALL_PREFIX:PATH=../runtime_install
 cmake --build ../build/runtime --target install
