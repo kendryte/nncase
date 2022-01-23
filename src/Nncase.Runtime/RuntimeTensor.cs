@@ -4,24 +4,130 @@ namespace Nncase.Runtime
 {
 
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct cRuntimeTensor
-    {
-        public IntPtr impl;
-    }
-
-    public class RuntimeTensor
+    public class RuntimeTensor : IDisposable
     {
 
-        cRuntimeTensor inner;
+        public IntPtr Handle { get; private set; }
+
+        public IntPtr memPtr { get; private set; }
+
+        private bool disposedValue;
 
         [DllImport("nncaseruntime_csharp")]
-        static extern cRuntimeTensor RuntimeTensor_from_buffer(in byte buffer_ptr, byte datatype,
-                                                  in int shape_ptr, int shape_size,
-                                                  ulong total_items, ulong item_size,
-                                                  in int stride_ptr);
+        static extern unsafe IntPtr RuntimeTensor_from_buffer(
+          [In] IntPtr buffer_ptr, ElemType datatype,
+          [In] int* shape_ptr, int shape_size,
+          nuint total_items, nuint item_size,
+          [In] int* stride_ptr);
 
-        private RuntimeTensor() { }
+        [DllImport("nncaseruntime_csharp")]
+        static extern void RuntimeTensor_free(IntPtr rt);
+
+        [DllImport("nncaseruntime_csharp")]
+        static extern unsafe void RuntimeTensor_to_buffer(IntPtr rt,
+                 [In] byte* buffer_ptr, ref ElemType datatype);
+
+
+        [DllImport("nncaseruntime_csharp")]
+        static extern unsafe void RuntimeTensor_copy_to([In, Out] IntPtr from, [In, Out] IntPtr dest);
+
+
+        [DllImport("nncaseruntime_csharp")]
+        static extern unsafe int RuntimeTensor_shape(IntPtr rt, int* shape_ptr);
+
+        [DllImport("nncaseruntime_csharp")]
+        static extern unsafe int RuntimeTensor_strides(IntPtr rt, int* strides_ptr);
+
+        [DllImport("nncaseruntime_csharp")]
+        static extern unsafe ElemType RuntimeTensor_dtype(IntPtr rt);
+
+        /// <summary>
+        /// the default ctor
+        /// </summary>
+        public RuntimeTensor()
+        {
+            Handle = IntPtr.Zero;
+            memPtr = IntPtr.Zero;
+        }
+
+        /// <summary>
+        /// get the shape
+        /// </summary>
+        public unsafe int[] Shape
+        {
+            get
+            {
+                if (Handle == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException("This Tensor Have No Handle");
+                }
+                var len = RuntimeTensor_shape(Handle, (int*)0);
+                var shape = new int[len];
+                fixed (int* shape_ptr = shape)
+                {
+                    RuntimeTensor_shape(Handle, shape_ptr);
+                }
+                return shape;
+            }
+        }
+
+        /// <summary>
+        /// get strides
+        /// </summary>
+        public unsafe int[] Strides
+        {
+            get
+            {
+                if (Handle == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException("This Tensor Have No Handle");
+                }
+                var len = RuntimeTensor_strides(Handle, (int*)0);
+                var strides = new int[len];
+                fixed (int* strides_ptr = strides)
+                {
+                    RuntimeTensor_strides(Handle, strides_ptr);
+                }
+                return strides;
+            }
+        }
+
+        public DataType DType
+        {
+            get
+            {
+                return RuntimeTensor_dtype(Handle);
+            }
+        }
+
+        int compute_size(ReadOnlySpan<int> shape, ReadOnlySpan<int> strides)
+        {
+            int max_stride = 0, max_shape = 0;
+            for (int i = 0; i < shape.Length; i++)
+            {
+                if ((shape[i] == 1 ? 0 : strides[i]) > max_stride)
+                {
+                    max_stride = strides[i];
+                    max_shape = shape[i];
+                }
+            }
+            int size = max_stride * max_shape;
+            return size != 0 ? size : 1;
+        }
+
+        public int Length
+        {
+            get
+            {
+                return compute_size(Shape, Strides);
+            }
+        }
+
+        /// <summary>
+        /// <see cref="FromDense{T}(DenseTensor{T})"/>
+        /// </summary>
+        public static unsafe RuntimeTensor FromDense<T>(Tensor<T> tensor)
+                  where T : unmanaged => FromDense(tensor.ToDenseTensor());
 
         /// <summary>
         /// create the RuntimeTensor from the DenseTensor
@@ -29,15 +135,100 @@ namespace Nncase.Runtime
         /// <typeparam name="T"></typeparam>
         /// <param name="tensor"></param>
         /// <returns></returns>
-        public static RuntimeTensor FromDense<T>(DenseTensor<T> tensor)
+        public static unsafe RuntimeTensor FromDense<T>(DenseTensor<T> tensor)
           where T : unmanaged
         {
             var dtype = DataTypes.FromType<T>();
-            var inner = RuntimeTensor_from_buffer(MemoryMarshal.GetReference(MemoryMarshal.AsBytes(tensor.Buffer.Span)), (byte)dtype.ElemType,
-                            MemoryMarshal.GetReference(tensor.Dimensions), tensor.Dimensions.Length, (ulong)tensor.Length,
-                            (ulong)DataTypes.GetLength(dtype), MemoryMarshal.GetReference(tensor.Strides));
+            var total_bytes = tensor.Length * DataTypes.GetLength(dtype);
+            var memPtr = Marshal.AllocHGlobal((int)total_bytes);
 
-            return new RuntimeTensor() { inner = inner };
+            MemoryMarshal.AsBytes(tensor.Buffer.Span).CopyTo(
+              new Span<byte>((void*)memPtr, (int)total_bytes));
+
+            fixed (int* shape_ptr = tensor.Dimensions)
+            {
+                fixed (int* stride_ptr = tensor.Strides)
+                {
+                    var impl = RuntimeTensor_from_buffer(memPtr, dtype.ElemType, shape_ptr, tensor.Dimensions.Length, (nuint)tensor.Length, (nuint)DataTypes.GetLength(dtype), stride_ptr);
+                    return new RuntimeTensor()
+                    {
+                        Handle = impl,
+                        memPtr = memPtr
+                    };
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// convert the runtime tensor to dense tensor.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        /// <exception cref="InvalidCastException"></exception>
+        public unsafe DenseTensor<T> ToDense<T>()
+          where T : unmanaged
+        {
+            if (DataTypes.FromType<T>() == DType)
+            {
+                var tensor = new DenseTensor<T>(Length);
+                new Span<T>(memPtr.ToPointer(), Length).CopyTo(tensor.Buffer.Span);
+                return tensor;
+            }
+            throw new InvalidCastException($"The Tensor Type Is {DType}");
+        }
+
+        public void CopyTo(RuntimeTensor dest)
+        {
+            RuntimeTensor_copy_to(Handle, dest.Handle);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects)
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                Marshal.FreeHGlobal(memPtr);
+                memPtr = IntPtr.Zero;
+                RuntimeTensor_free(Handle);
+                Handle = IntPtr.Zero;
+                // TODO: set large fields to null
+                disposedValue = true;
+            }
+        }
+
+        // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        ~RuntimeTensor()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: false);
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+
+        /// <summary>
+        /// create the runtime tensor by handle
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <returns></returns>
+        public static RuntimeTensor Create(IntPtr handle)
+        {
+            return new RuntimeTensor()
+            {
+                Handle = handle,
+                memPtr = IntPtr.Zero
+            };
         }
     }
 }

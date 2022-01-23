@@ -59,7 +59,7 @@ jobs:
     - name: Dotnet Build
       shell: bash
       working-directory: ${{github.workspace}}/csharp
-      run: dotnet build -p:TargetArchitecture=x64
+      run: dotnet build -c Release -p:TargetArchitecture=x64
 
     - name: Pack
       if: runner.os == 'Linux'

@@ -2,7 +2,7 @@
 
 ```sh
 cd csharp
-dotnet build -p:TargetArchitecture=arm64 # your arch
+dotnet build -c Release -p:TargetArchitecture=arm64 # your arch
 ```
 
 # Pack

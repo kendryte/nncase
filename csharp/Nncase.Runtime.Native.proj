@@ -4,7 +4,6 @@
     <!-- setup output path -->
     <TargetFramework>netstandard2.0</TargetFramework>
     <BaseOutputPath>bin</BaseOutputPath> 
-    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration> 
     <OutputPath>$(BaseOutputPath)\$(Configuration)\$(TargetFramework)</OutputPath> 
     <!-- get rid -->
     <TargetOS Condition="'$(TargetOS)' == '' AND '$(OS)' == 'Windows_NT'">win</TargetOS>
@@ -12,7 +11,7 @@
     <TargetOS Condition="'$(TargetOS)' == '' AND '$(OS)' != 'Windows_NT'">linux</TargetOS>
     <NativeLibExtension Condition="'$(TargetOS)' == 'windows'">dll</NativeLibExtension>
     <NativeLibExtension Condition="'$(TargetOS)' == 'linux'">so</NativeLibExtension>
-    <NativeLibExtension Condition="'$(TargetOS)' == 'osx'">so</NativeLibExtension>
+    <NativeLibExtension Condition="'$(TargetOS)' == 'osx'">dylib</NativeLibExtension>
     <TargetArchitecture Condition="'$(TargetArchitecture)' == ''">x64</TargetArchitecture>
     <PackageRid>$(TargetOS)-$(TargetArchitecture)</PackageRid>
   </PropertyGroup>
@@ -21,8 +20,9 @@
   <Target Name="Build" DependsOnTargets="BuildNativeUnix;BuildNativeWindows;PreparePackageAssets" />
 
   <Target Name="BuildNativeUnix" Condition="'$(OS)' != 'Windows_NT'">
-    <Message Text="$(MSBuildProjectDirectory)/build.sh" Importance="High"/>
-    <Exec Command="&quot;$(MSBuildProjectDirectory)/build.sh&quot;" />
+    <Exec Command="mkdir -p ../build/$(Configuration)/runtime" />
+    <Exec Command="cmake -S .. -B ../build/$(Configuration)/runtime -DCMAKE_BUILD_TYPE=$(Configuration) -DENABLE_HALIDE=false -DENABLE_OPENMP=false -DCMAKE_EXPORT_COMPILE_COMMANDS=true -DENABLE_VULKAN_RUNTIME=false -DBUILDING_RUNTIME=true -DBUILD_BENCHMARK=false -G &quot;Ninja&quot; -DCMAKE_INSTALL_PREFIX:PATH=../runtime_install" />
+    <Exec Command="cmake --build ../build/$(Configuration)/runtime --target install" />
   </Target>
 
   <Target Name="BuildNativeWindows" Condition="'$(OS)' == 'Windows_NT'">
@@ -33,7 +33,7 @@
 
   <Target Name="PreparePackageAssets">  
     <ItemGroup>
-      <NativePackageLib Include="..\build\runtime_install\lib\*"
+      <NativePackageLib Include="..\build\$(Configuration)\runtime_install\lib\libnncaseruntime_csharp.$(NativeLibExtension)"
                         RelativePath="runtimes\$(PackageRid)\native\lib"  />
     </ItemGroup>
 
