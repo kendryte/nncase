@@ -59,6 +59,26 @@ namespace Nncase
         /// <returns>result of value comparisons</returns>
         public static bool operator !=(BFloat16 lhs, BFloat16 rhs) { return lhs.value != rhs.value; }
 
+        public static BFloat16 RoundToBFloat16(float value)
+        {
+            if (float.IsNaN(value))
+            {
+                // If the value is a NaN, squash it to a qNaN with msb of fraction set,
+                // this makes sure after truncation we don't end up with an inf.
+                //
+                // qNaN magic: All exponent bits set + most significant bit of fraction
+                // set.
+                return new BFloat16(0x7fc0);
+            }
+
+            var input = Unsafe.As<float, uint>(ref value);
+            // Least significant bit of resulting bfloat.
+            uint lsb = (input >> 16) & 1;
+            uint roundingBias = 0x7fff + lsb;
+            input += roundingBias;
+            return new BFloat16((ushort) (input >> 16));
+        }
+
         /// <summary>
         /// Returns a value indicating whether this instance and other BFloat16 represent the same value.
         /// </summary>
@@ -76,7 +96,7 @@ namespace Nncase
             Unsafe.As<float, int>(ref value) = input.value << 16;
             return value;
         }
-
+        
         /// <summary>
         /// Returns a value indicating whether this instance and a specified System.Object
         /// represent the same type and value.
