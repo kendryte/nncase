@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "nncase/ir/quantizer.h"
+#include "xtensor/xadapt.hpp"
 #include <fstream>
 #include <magic_enum.hpp>
 #include <nncase/codegen/model_builder.h>
@@ -31,7 +32,6 @@
 #include <nncase/transforms/neutral/pre_process_setting.h>
 #include <nncase/transforms/pass.h>
 #include <variant>
-#include "xtensor/xadapt.hpp"
 #include <xtensor/xarray.hpp>
 #include <xtensor/xcsv.hpp>
 
