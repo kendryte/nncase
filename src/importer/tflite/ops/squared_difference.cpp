@@ -26,9 +26,10 @@ DEFINE_TFLITE_LOWER(SQUARED_DIFFERENCE)
     auto &input_y = get_tensor(op.inputs(), 1);
 
     auto in_shape_x = get_shape(input_x.shape());
+    auto input_type = to_data_type(input_x.type());
     auto in_shape_y = get_shape(input_y.shape());
 
-    auto sub = graph_.emplace<binary>(binary_sub, in_shape_x, in_shape_y, value_range<float>::full());
+    auto sub = graph_.emplace<binary>(binary_sub, input_type, in_shape_x, in_shape_y, value_range<float>::full());
     auto mul = graph_.emplace<unary>(unary_square, sub->output().shape());
 
     sub->name(get_tensor(op.outputs(), 0).name()->string_view());

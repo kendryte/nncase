@@ -113,16 +113,34 @@ void register_neutral_evaluators()
     register_evaluator(op_binary, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<binary &>(node);
 
-        assert(rnode.input_a().type() == dt_float32);
-        assert(rnode.input_b().type() == dt_float32);
-
         auto input_a = context.memory_at(rnode.input_a());
         auto input_b = context.memory_at(rnode.input_b());
         auto output = context.memory_at(rnode.output());
-        kernels::binary(rnode.binary_op(), input_a.buffer().as_span<float>().data(), input_b.buffer().as_span<float>().data(),
-            output.buffer().as_span<float>().data(), input_a.shape(), input_a.strides(), input_b.shape(), input_b.strides(), output.strides(),
-            rnode.fused_activation())
-            .unwrap_or_throw();
+
+        auto input_type = rnode.input_a().type();
+        switch (input_type)
+        {
+        case dt_float32:
+            kernels::binary(rnode.binary_op(), input_a.buffer().as_span<float>().data(), input_b.buffer().as_span<float>().data(),
+                output.buffer().as_span<float>().data(), input_a.shape(), input_a.strides(), input_b.shape(), input_b.strides(), output.strides(),
+                rnode.fused_activation())
+                .unwrap_or_throw();
+            break;
+        case dt_int32:
+            kernels::binary(rnode.binary_op(), input_a.buffer().as_span<int32_t>().data(), input_b.buffer().as_span<int32_t>().data(),
+                output.buffer().as_span<int32_t>().data(), input_a.shape(), input_a.strides(), input_b.shape(), input_b.strides(), output.strides(),
+                rnode.fused_activation())
+                .unwrap_or_throw();
+            break;
+        case dt_int64:
+            kernels::binary(rnode.binary_op(), input_a.buffer().as_span<int64_t>().data(), input_b.buffer().as_span<int64_t>().data(),
+                output.buffer().as_span<int64_t>().data(), input_a.shape(), input_a.strides(), input_b.shape(), input_b.strides(), output.strides(),
+                rnode.fused_activation())
+                .unwrap_or_throw();
+            break;
+        default:
+            std::cerr << "unsupported dtype for binary: " + std::string(datatype_names(input_type));
+        }
     });
 
     register_evaluator(op_broadcast, [](ir::node &node, function_evaluate_context &context) {
@@ -448,7 +466,7 @@ void register_neutral_evaluators()
         {
         case dt_float32:
             kernels::sigmoid(input.buffer().as_span<float>().data(), output.buffer().as_span<float>().data(), input.shape(),
-                input.strides())
+                input.strides(), output.strides())
                 .unwrap_or_throw();
             break;
         default:
@@ -688,6 +706,11 @@ void register_neutral_evaluators()
         {
         case dt_float32:
             kernels::cumsum(input.buffer().as_span<float>().data(), output.buffer().as_span<float>().data(),
+                input.shape(), rnode.axis(), rnode.exclusive(), rnode.reverse())
+                .unwrap_or_throw();
+            break;
+        case dt_int32:
+            kernels::cumsum(input.buffer().as_span<int32_t>().data(), output.buffer().as_span<int32_t>().data(),
                 input.shape(), rnode.axis(), rnode.exclusive(), rnode.reverse())
                 .unwrap_or_throw();
             break;

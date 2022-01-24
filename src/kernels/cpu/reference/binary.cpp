@@ -25,8 +25,8 @@ using namespace nncase::kernels::cpu::reference;
 
 namespace
 {
-template <class TOp>
-result<void> binary_impl(TOp &&op, const float *input_a, const float *input_b, float *output,
+template <class TOp, class T>
+result<void> binary_impl(TOp &&op, const T *input_a, const T *input_b, T *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation, NNCASE_UNUSED kernel_context &context) noexcept
 {
@@ -36,7 +36,7 @@ result<void> binary_impl(TOp &&op, const float *input_a, const float *input_b, f
         const auto in_b_index = kernels::detail::get_reduced_offset(index, in_b_shape);
         const auto a = input_a[offset(in_a_strides, in_a_index)];
         const auto b = input_b[offset(in_b_strides, in_b_index)];
-        output[offset(out_strides, index)] = kernels::detail::apply_activation(op(a, b), fused_activation);
+        output[offset(out_strides, index)] = static_cast<T>(kernels::detail::apply_activation(static_cast<float>(op(a, b)), fused_activation));
         return ok();
     });
 }
@@ -46,21 +46,36 @@ result<void> binary_impl(TOp &&op, const float *input_a, const float *input_b, f
     case op:                   \
         return binary_impl(funct, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_strides, fused_activation, context)
 
-result<void> reference::binary(binary_op_t op, const float *input_a, const float *input_b, float *output,
+template result<void> reference::binary<float>(binary_op_t op, const float *input_a, const float *input_b, float *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation,
-    NNCASE_UNUSED kernel_context &context) noexcept
+    kernel_context &context) noexcept;
+template result<void> reference::binary<int32_t>(binary_op_t op, const int32_t *input_a, const int32_t *input_b, int32_t *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation,
+    kernel_context &context) noexcept;
+template result<void> reference::binary<int64_t>(binary_op_t op, const int64_t *input_a, const int64_t *input_b, int64_t *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation,
+    kernel_context &context) noexcept;
+
+template <typename T>
+result<void> reference::binary(binary_op_t op, const T *input_a, const T *input_b, T *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation,
+    kernel_context &context) noexcept
 {
+    (void)context;
     switch (op)
     {
-        BINARY_IMPL(binary_add, std::plus<float>());
-        BINARY_IMPL(binary_sub, std::minus<float>());
-        BINARY_IMPL(binary_mul, std::multiplies<float>());
-        BINARY_IMPL(binary_div, std::divides<float>());
-        BINARY_IMPL(binary_min, [](float a, float b) { return std::min(a, b); });
-        BINARY_IMPL(binary_max, [](float a, float b) { return std::max(a, b); });
+        BINARY_IMPL(binary_add, std::plus<T>());
+        BINARY_IMPL(binary_sub, std::minus<T>());
+        BINARY_IMPL(binary_mul, std::multiplies<T>());
+        BINARY_IMPL(binary_div, std::divides<T>());
+        BINARY_IMPL(binary_min, [](T a, T b) { return std::min(a, b); });
+        BINARY_IMPL(binary_max, [](T a, T b) { return std::max(a, b); });
         BINARY_IMPL(binary_pow, powf);
-        BINARY_IMPL(binary_logical_and, [](float a, float b) { return static_cast<float>(a && b); });
+        BINARY_IMPL(binary_logical_and, [](T a, T b) { return static_cast<T>(a && b); });
     default:
         std::cerr << "Unsupported binary op: " + binary_op_to_string(op) << std::endl;
         return err(std::errc::not_supported);

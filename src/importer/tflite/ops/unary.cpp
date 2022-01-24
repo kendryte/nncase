@@ -67,7 +67,7 @@ DEFINE_TFLITE_LOWER(RSQRT)
 
     auto one = graph_.emplace<constant>(1.f);
     auto sqrt = graph_.emplace<unary>(unary_sqrt, get_shape(input.shape()));
-    auto div = graph_.emplace<binary>(binary_div, one->output().shape(), sqrt->output().shape(), value_range<float>::full());
+    auto div = graph_.emplace<binary>(binary_div, to_data_type(input.type()), one->output().shape(), sqrt->output().shape(), value_range<float>::full());
 
     auto name = std::string(get_tensor(op.outputs(), 0).name()->string_view());
     one->name(name);
@@ -100,14 +100,15 @@ DEFINE_TFLITE_LOWER(TANH)
 {
     auto &input = get_tensor(op.inputs(), 0);
     auto in_shape = get_shape(input.shape());
+    auto input_type = to_data_type(input.type());
 
     auto two = graph_.emplace<constant>(2.f);
-    auto mul = graph_.emplace<binary>(binary_mul, in_shape, two->output().shape(), value_range<float>::full());
+    auto mul = graph_.emplace<binary>(binary_mul, input_type, in_shape, two->output().shape(), value_range<float>::full());
     auto exp = graph_.emplace<unary>(unary_exp, mul->output().shape());
     auto one = graph_.emplace<constant>(1.f);
-    auto sub = graph_.emplace<binary>(binary_sub, exp->output().shape(), one->output().shape(), value_range<float>::full());
-    auto add = graph_.emplace<binary>(binary_add, exp->output().shape(), one->output().shape(), value_range<float>::full());
-    auto div = graph_.emplace<binary>(binary_div, sub->output().shape(), add->output().shape(), value_range<float>::full());
+    auto sub = graph_.emplace<binary>(binary_sub, input_type, exp->output().shape(), one->output().shape(), value_range<float>::full());
+    auto add = graph_.emplace<binary>(binary_add, input_type, exp->output().shape(), one->output().shape(), value_range<float>::full());
+    auto div = graph_.emplace<binary>(binary_div, input_type, sub->output().shape(), add->output().shape(), value_range<float>::full());
 
     auto name = std::string(get_tensor(op.outputs(), 0).name()->string_view());
     two->name(name);
