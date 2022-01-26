@@ -275,7 +275,8 @@ public:
                     if (quant_layer_connector->owner().get_output_connectors_quant_map().size() != 0)
                         has_quant_map = true;
                 }
-
+                if (compile_options_.dump_ir)
+                    std::filesystem::create_directories(compile_options_.dump_dir / "layer_output_data");
                 if (has_quant_map)
                 {
                     for (uint32_t i = 0; i < quant_eval_quantizer->quant_buffers_insert_order().size(); i++)
@@ -293,8 +294,6 @@ public:
                                 std::ofstream f_data_before_quant;
                                 std::ofstream f_data_after_quant;
                                 auto data_dir = compile_options_.dump_dir / "layer_output_data";
-                                if (!data_dir.empty())
-                                    std::filesystem::create_directories(data_dir);
                                 std::replace(layer_name.begin(), layer_name.end(), '/', '_');
                                 f_data_before_quant.open(data_dir / (layer_name + "_before_quant.csv"));
                                 f_data_after_quant.open(data_dir / (layer_name + "_after_quant.csv"));
@@ -331,8 +330,6 @@ public:
                                 std::ofstream f_data_before_quant;
                                 std::ofstream f_data_after_quant;
                                 auto data_dir = compile_options_.dump_dir / "layer_output_data";
-                                if (!data_dir.empty())
-                                    std::filesystem::create_directories(data_dir);
                                 std::replace(layer_name.begin(), layer_name.end(), '/', '_');
                                 f_data_before_quant.open(data_dir / (layer_name + "_before_quant.csv"));
                                 f_data_after_quant.open(data_dir / (layer_name + "_after_quant.csv"));
