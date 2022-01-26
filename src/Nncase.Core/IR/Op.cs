@@ -8,7 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using static Nncase.IR.Utility;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR
 {
@@ -66,8 +66,8 @@ namespace Nncase.IR
         private ParameterInfo[]? _parameters;
 
         public IEnumerable<ParameterInfo> Parameters =>
-            _parameters ??= (from p in this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Static)
-                             where p.PropertyType == typeof(ParameterInfo)
+            _parameters ??= (from p in this.GetType().GetFields(BindingFlags.Public | BindingFlags.Static)
+                             where p.FieldType == typeof(ParameterInfo)
                              let param = (ParameterInfo)(p.GetValue(null) ?? throw new InvalidOperationException())
                              orderby param.Index
                              select param).ToArray();

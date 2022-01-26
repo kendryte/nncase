@@ -8,7 +8,6 @@ using Autofac;
 using Microsoft.Extensions.Hosting;
 using Nncase.Evaluator.Ops;
 using Nncase.IR;
-using Nncase.IR;
 using TorchSharp;
 using IContainer = Autofac.IContainer;
 
@@ -16,6 +15,11 @@ namespace Nncase.Evaluator
 {
     public static class Evaluator
     {
+        /// <summary>
+        /// give any evaluator instance type in the module Assembly, we can find all the type which instance from interface IEvaluator
+        /// </summary>
+        /// <param name="type"> any type. </param>
+        /// <returns></returns>
         public static IEnumerable<Type> GetAllEvaluator(Type type)
         {
             return type
@@ -27,7 +31,7 @@ namespace Nncase.Evaluator
                         .Any(
                             x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IEvaluator<>)));
         }
-        
+
         internal static (EvaluatorVisitor, Const) EvalImpl(Expr expr, Dictionary<Var, Const> inputs)
         {
             if (expr.CheckedType is null) expr.InferenceType();

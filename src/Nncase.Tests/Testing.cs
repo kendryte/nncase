@@ -1,5 +1,8 @@
 using System.IO;
 using System.Runtime.CompilerServices;
+using Autofac;
+using Autofac.Extras.CommonServiceLocator;
+using CommonServiceLocator;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -23,7 +26,7 @@ namespace Nncase.Tests
         {
             return Path.GetFullPath(Path.Combine(path, "..", "..", "..", "tests_output"));
         }
-        
+
         public static string GetTestingFilePath([CallerFilePath] string path = null)
         {
             return path;
@@ -85,6 +88,16 @@ namespace Nncase.Tests
                 rhs.DumpExprAsIL("Rhs", Path.Combine(GetNncsaeDumpDirPath(), member));
             }
             Assert.True(res);
+        }
+    }
+
+    public abstract class IHostFixtrue
+    {
+        public IHostFixtrue(IHost host)
+        {
+            var t = host.Services.GetRequiredService<IComponentContext>();
+            var csl = new AutofacServiceLocator(t);
+            ServiceLocator.SetLocatorProvider(() => csl);
         }
     }
 }

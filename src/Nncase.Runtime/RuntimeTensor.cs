@@ -1,5 +1,6 @@
 using System.Numerics.Tensors;
 using System.Runtime.InteropServices;
+
 namespace Nncase.Runtime
 {
 
@@ -15,7 +16,7 @@ namespace Nncase.Runtime
 
         [DllImport("nncaseruntime_csharp")]
         static extern unsafe IntPtr RuntimeTensor_from_buffer(
-          [In] IntPtr buffer_ptr, ElemType datatype,
+          [In] IntPtr buffer_ptr, PrimTypeCode datatype,
           [In] int* shape_ptr, int shape_size,
           nuint total_items, nuint item_size,
           [In] int* stride_ptr);
@@ -25,7 +26,7 @@ namespace Nncase.Runtime
 
         [DllImport("nncaseruntime_csharp")]
         static extern unsafe void RuntimeTensor_to_buffer(IntPtr rt,
-                 [In] byte* buffer_ptr, ref ElemType datatype);
+                 [In] byte* buffer_ptr, ref PrimTypeCode datatype);
 
 
         [DllImport("nncaseruntime_csharp")]
@@ -39,7 +40,7 @@ namespace Nncase.Runtime
         static extern unsafe int RuntimeTensor_strides(IntPtr rt, int* strides_ptr);
 
         [DllImport("nncaseruntime_csharp")]
-        static extern unsafe ElemType RuntimeTensor_dtype(IntPtr rt);
+        static extern unsafe PrimTypeCode RuntimeTensor_dtype(IntPtr rt);
 
         /// <summary>
         /// the default ctor
@@ -96,7 +97,7 @@ namespace Nncase.Runtime
         {
             get
             {
-                return RuntimeTensor_dtype(Handle);
+                return new PrimType(RuntimeTensor_dtype(Handle));
             }
         }
 
@@ -149,7 +150,7 @@ namespace Nncase.Runtime
             {
                 fixed (int* stride_ptr = tensor.Strides)
                 {
-                    var impl = RuntimeTensor_from_buffer(memPtr, dtype.ElemType, shape_ptr, tensor.Dimensions.Length, (nuint)tensor.Length, (nuint)DataTypes.GetLength(dtype), stride_ptr);
+                    var impl = RuntimeTensor_from_buffer(memPtr, dtype.TypeCode, shape_ptr, tensor.Dimensions.Length, (nuint)tensor.Length, (nuint)DataTypes.GetLength(dtype), stride_ptr);
                     return new RuntimeTensor()
                     {
                         Handle = impl,

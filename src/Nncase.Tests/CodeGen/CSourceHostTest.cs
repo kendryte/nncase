@@ -17,9 +17,9 @@ namespace Nncase.Tests.CodeGenTest
         static IEnumerable<object[]> Data =>
           new List<object[]>
           {
-              new object[] { new BlockCase() },
               new object[] { new ForCase() },
               new object[] { new SubCase() },
+              new object[] { new BlockCase() },
           };
 
         [Theory]
@@ -62,8 +62,8 @@ namespace Nncase.Tests.CodeGenTest
         [Fact]
         public void TestAdd()
         {
-            var x = new Var("x", TensorType.Scalar(ElemType.Float32));
-            var y = new Var("y", TensorType.Scalar(ElemType.Float32));
+            var x = new Var("x", TensorType.Scalar(DataType.Float32));
+            var y = new Var("y", TensorType.Scalar(DataType.Float32));
             var func = new Function(new Sequential() { x + y }, x, y);
             var mod = new IRModule(func);
             var rtmod = mod.ToRTModel(_target);

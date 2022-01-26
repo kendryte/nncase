@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using static Nncase.IR.Utility;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Tensors
 {
@@ -18,7 +18,7 @@ namespace Nncase.IR.Tensors
         /// <summary>
         /// Gets seq_lens.
         /// </summary>
-        public static readonly ParameterInfo SeqLens = new(typeof(ReverseSequence), 1, "seq_lens", IsIntegral() & HasRank(1));
+        public static readonly ParameterInfo SeqLens = new(typeof(ReverseSequence), 1, "seq_lens", IsIntegral() & IsRank(1));
 
         /// <summary>
         /// Gets batch_axis.

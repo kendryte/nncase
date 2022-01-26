@@ -7,7 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Nncase.IR.Utility;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Tensors
 {
@@ -24,22 +24,22 @@ namespace Nncase.IR.Tensors
         /// <summary>
         /// Gets begins.
         /// </summary>
-        public static readonly ParameterInfo Begins = new(typeof(Slice), 1, "begins", IsIntegral() & HasRank(1));
+        public static readonly ParameterInfo Begins = new(typeof(Slice), 1, "begins", IsIntegral() & IsRank(1));
 
         /// <summary>
         /// Gets ends.
         /// </summary>
-        public static readonly ParameterInfo Ends = new(typeof(Slice), 2, "ends", IsIntegral() & HasRank(1));
+        public static readonly ParameterInfo Ends = new(typeof(Slice), 2, "ends", IsIntegral() & IsRank(1));
 
         /// <summary>
         /// Gets axes.
         /// </summary>
-        public static readonly ParameterInfo Axes = new(typeof(Slice), 3, "axes", IsIntegral() & HasRank(1));
+        public static readonly ParameterInfo Axes = new(typeof(Slice), 3, "axes", IsIntegral() & IsRank(1));
 
         /// <summary>
         /// Gets strides.
         /// </summary>
-        public static readonly ParameterInfo Strides = new(typeof(Slice), 4, "strides", IsIntegral() & HasRank(1));
+        public static readonly ParameterInfo Strides = new(typeof(Slice), 4, "strides", IsIntegral() & IsRank(1));
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context,
@@ -56,7 +56,6 @@ namespace Nncase.IR.Tensors
                 var ts_begins = begins_con.ToTensor<int>();
                 var ts_ends = ends_con.ToTensor<int>();
                 var ts_strides = strides_con.ToTensor<int>();
-                // foreach (var axisV in axes_con.ToTensor<int>())
                 var axesTensor = axes_con.ToTensor<int>();
                 for (int i = 0; i < axesTensor.Length; i++)
                 {

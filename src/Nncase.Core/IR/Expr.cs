@@ -30,7 +30,6 @@ namespace Nncase.IR
         {
             // todo:more info
             TensorType type => type.DType,
-            HandleType type => type.DType,
             _ => throw new InvalidOperationException("Expr don't have a valid tensor type")
         };
 

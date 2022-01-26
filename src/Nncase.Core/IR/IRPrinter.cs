@@ -431,18 +431,19 @@ namespace Nncase.IR
             /// <inheritdoc/>
             public override string VisitType(InvalidType type) => $"invalid:{type.Reason}";
             /// <inheritdoc/>
-            public override string VisitType(TensorType type) =>
-                $"{DataTypes.GetDisplayName(type.DType)}{type.Shape}";
+            public override string VisitType(TensorType type)
+            {
+                if (type.DType is PointerType)
+                {
+                    return $"pointer:{DataTypes.GetDisplayName(type.DType)}";
+                }
+                else
+                    return $"{DataTypes.GetDisplayName(type.DType)}{type.Shape}";
+            }
 
             /// <inheritdoc/>
             public override string VisitType(TupleType type) =>
                 $"({string.Join(", ", type.Fields.Select(VisitType))})";
-
-            /// <inheritdoc/>
-            public override string VisitType(HandleType type)
-            {
-                return $"pointer:{DataTypes.GetDisplayName(type.DType)}";
-            }
 
             private string AllocateTempVar(Expr expr)
             {

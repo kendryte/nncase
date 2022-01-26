@@ -1,24 +1,26 @@
 using System;
-using System.Linq;
-using System.IO;
-using Xunit;
-using Nncase.Pattern;
-using Nncase.Transform;
-using Nncase.IR;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Microsoft.Extensions.Hosting;
+using Nncase.IR;
+using Nncase.Pattern;
 using Nncase.Pattern.Math;
+using Nncase.Transform;
+using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
-using static Nncase.Pattern.Utility;
+using static Nncase.IR.TypePatternUtility;
 using static Nncase.Pattern.F.Math;
 using static Nncase.Pattern.F.Tensors;
-using static Nncase.IR.Utility;
+using static Nncase.Pattern.Utility;
 
 namespace Nncase.Tests.ReWriteTest
 {
 
-    public class EGraphMatchTestFactory : RewriteTest
+    public class EGraphMatchTestFactory : RewriteFixtrue
     {
+        public EGraphMatchTestFactory(IHost host) : base(host) { }
 
         public static IEnumerable<object[]> Data =>
           new List<object[]>

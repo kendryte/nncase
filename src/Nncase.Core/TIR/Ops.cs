@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
-using static Nncase.IR.Utility;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.TIR
 {
@@ -16,15 +16,19 @@ namespace Nncase.TIR
     /// </summary>
     public record Load() : Op
     {
-        public static readonly ParameterInfo Handle = new(typeof(Load), 0, "handle");
+        public static readonly ParameterInfo Handle = new(typeof(Load), 0, "handle", IsHandle());
 
-        public static readonly ParameterInfo Index = new(typeof(Load), 1, "index", IsIntegral(DataType.Int32) & (IsScalar() | HasRank(1)));
+        public static readonly ParameterInfo Index = new(typeof(Load), 1, "index", IsDataType(DataType.Int32) & (IsScalar() | IsRank(1)));
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, HandleType handle, TensorType index)
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType handle, TensorType index)
         {
             int lanes = index.IsScalar ? 1 : index.Shape[0].FixedValue;
-            return new TensorType(handle.DType with { Lanes = lanes }, Shape.Scalar);
+            if (handle is TensorType { DType: PointerType { ElemType: PrimType etype } })
+            {
+                return new TensorType(etype with { Lanes = lanes }, Shape.Scalar);
+            }
+            return new InvalidType("Handle Is Not Valid!");
         }
     }
 
@@ -33,9 +37,9 @@ namespace Nncase.TIR
     /// </summary>
     public record Ramp(int Lanes) : Op
     {
-        public static readonly ParameterInfo Offset = new(typeof(Ramp), 0, "offset", IsIntegral(DataType.Int32) & IsScalar());
+        public static readonly ParameterInfo Offset = new(typeof(Ramp), 0, "offset", IsDataType(DataType.Int32) & IsScalar());
 
-        public static readonly ParameterInfo Stride = new(typeof(Ramp), 1, "stride", IsIntegral(DataType.Int32) & IsScalar());
+        public static readonly ParameterInfo Stride = new(typeof(Ramp), 1, "stride", IsDataType(DataType.Int32) & IsScalar());
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType offset, TensorType stride)
@@ -53,12 +57,12 @@ namespace Nncase.TIR
         /// <summary>
         ///The buffer variable handle.
         /// </summary>
-        public static readonly ParameterInfo Handle = new(typeof(Store), 0, "handle");
+        public static readonly ParameterInfo Handle = new(typeof(Store), 0, "handle", IsHandle());
 
         /// <summary>
         ///The index locations to be stored.
         /// </summary>
-        public static readonly ParameterInfo Index = new(typeof(Store), 1, "index", IsIntegral(DataType.Int32));
+        public static readonly ParameterInfo Index = new(typeof(Store), 1, "index", IsDataType(DataType.Int32));
 
         /// <summary>
         ///The value to be stored.
@@ -66,19 +70,19 @@ namespace Nncase.TIR
         public static readonly ParameterInfo Value = new(typeof(Store), 2, "value");
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, HandleType handle, TensorType index, TensorType value)
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType handle, TensorType index, TensorType value)
         {
             var lanes = index.IsScalar ? 1 : index.Shape[0].FixedValue;
-            if (handle.DType != value.DType)
+            if (handle.PointedDType() != value.DType)
             {
                 return new InvalidType($"You Can't Load The {value.DType} To {handle.DType}");
             }
-            if (value.DType.Lanes != lanes)
+            if (value.DType is PrimType ptype && ptype.Lanes != lanes)
             {
-                return new InvalidType($"You're Index Lanes {lanes} Is Not Equal Value Lanes {handle.DType.Lanes}");
+                return new InvalidType($"You're Index Lanes {lanes} Is Not Equal Value Lanes {ptype.Lanes}");
             }
             return TupleType.Void;
         }
-        
+
     }
 }

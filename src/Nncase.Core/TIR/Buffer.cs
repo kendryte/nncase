@@ -1,7 +1,7 @@
-using Nncase.IR;
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using Nncase.IR;
 
 namespace Nncase.TIR
 {
@@ -53,7 +53,7 @@ namespace Nncase.TIR
         /// <summary>
         /// data type in the content of the tensor
         /// </summary>
-        public DataType Dtype => ((HandleType)Handle.TypeAnnotation).DType;
+        public PrimType Dtype => (PrimType)((PointerType)(((TensorType)Handle.TypeAnnotation).DType)).ElemType;
 
         /// <summary>
         /// The shape of the buffer
@@ -155,7 +155,7 @@ namespace Nncase.TIR
             }
 
             Expr elem_offset = ElemOffset + offset;
-            var accType = new DataType(Dtype.ElemType, content_lanes);
+            var accType = new PrimType(Dtype.TypeCode, content_lanes);
             if (content_lanes > 1)
             {
                 extent = extent / (Const)content_lanes;
@@ -214,7 +214,7 @@ namespace Nncase.TIR
         {
             return T.Load(Handle, LoadOffset(indices));
         }
-        
+
         /// <summary>
         /// value store.
         /// </summary>
@@ -268,6 +268,9 @@ namespace Nncase.TIR
         }
     }
 
+    /// <summary>
+    /// the data producer.
+    /// </summary>
     public interface DataProducer
     {
         /// <summary>

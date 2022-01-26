@@ -1,5 +1,5 @@
 using System;
-using static Nncase.IR.Utility;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.NN
 {

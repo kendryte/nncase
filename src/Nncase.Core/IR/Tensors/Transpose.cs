@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using static Nncase.IR.Utility;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Tensors
 {
@@ -18,7 +18,7 @@ namespace Nncase.IR.Tensors
         /// <summary>
         /// Gets perm.
         /// </summary>
-        public static readonly ParameterInfo Perm = new(typeof(Transpose), 1, "perm", HasRank(1) & IsIntegral());
+        public static readonly ParameterInfo Perm = new(typeof(Transpose), 1, "perm", IsRank(1) & IsIntegral());
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType perm)

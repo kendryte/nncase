@@ -79,6 +79,16 @@ namespace Nncase.IR
         /// <param name="DType">Data type.</param>
         /// <returns>The invalid tensor type.</returns>
         public static TensorType Invalid(DataType DType) => new(DType, Shape.Invalid);
+
+        /// <summary>
+        /// if TensorType contain's a 
+        /// </summary>
+        public PrimType PointedDType()
+        {
+            return DType is PointerType { ElemType: PrimType etype } ?
+              etype :
+              throw new InvalidOperationException("This TensorType Does Not Contians PointerType!");
+        }
     }
 
     /// <summary>
@@ -122,6 +132,6 @@ namespace Nncase.IR
     /// </summary>
     /// <param name="DType">The type of the element which the pointer points to.</param>
     /// <param name="StorageScope">The storage scope of the pointer</param>
-    public sealed record HandleType(DataType DType, string StorageScope) : IRType
-    { }
+    // public sealed record HandleType(DataType DType, string StorageScope) : IRType
+    // { }
 }

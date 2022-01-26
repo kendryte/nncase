@@ -1,7 +1,7 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using static Nncase.IR.Utility;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Tensors
 {
@@ -25,7 +25,7 @@ namespace Nncase.IR.Tensors
         /// <summary>
         /// Gets shape.
         /// </summary>
-        public static readonly ParameterInfo Shape = new(typeof(RandomNormal), 3, "shape", IsIntegral() & HasRank(1));
+        public static readonly ParameterInfo Shape = new(typeof(RandomNormal), 3, "shape", IsIntegral() & IsRank(1));
         
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType mean, TensorType scale, TensorType seed, TensorType shape)
@@ -66,7 +66,7 @@ namespace Nncase.IR.Tensors
         /// <summary>
         /// Gets shape.
         /// </summary>
-        public static readonly ParameterInfo Shape = new(typeof(RandomNormalLike), 4, "shape", IsIntegral() & HasRank(1));
+        public static readonly ParameterInfo Shape = new(typeof(RandomNormalLike), 4, "shape", IsIntegral() & IsRank(1));
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType mean,
@@ -93,7 +93,7 @@ namespace Nncase.IR.Tensors
         /// <summary>
         /// Gets shape.
         /// </summary>
-        public static readonly ParameterInfo Shape = new(typeof(RandomUniform), 3, "shape", IsIntegral() & HasRank(1));
+        public static readonly ParameterInfo Shape = new(typeof(RandomUniform), 3, "shape", IsIntegral() & IsRank(1));
         
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType high, TensorType low, TensorType seed, TensorType shape)
@@ -134,7 +134,7 @@ namespace Nncase.IR.Tensors
         /// <summary>
         /// Gets shape.
         /// </summary>
-        public static readonly ParameterInfo Shape = new(typeof(RandomUniform), 4, "shape", IsIntegral() & HasRank(1));
+        public static readonly ParameterInfo Shape = new(typeof(RandomUniform), 4, "shape", IsIntegral() & IsRank(1));
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType high,

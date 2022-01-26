@@ -18,13 +18,10 @@ using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Tests.Evaluator
 {
-    public class EvaluatorTest
+    public class EvaluatorTest : IHostFixtrue
     {
-        public EvaluatorTest(IHost host)
+        public EvaluatorTest(IHost host) : base(host)
         {
-            var t = host.Services.GetRequiredService<IComponentContext>();
-            var csl = new AutofacServiceLocator(t);
-            ServiceLocator.SetLocatorProvider(() => csl);
         }
 
         [Fact]
@@ -158,7 +155,7 @@ namespace Nncase.Tests.Evaluator
         [Fact]
         public void TestProd()
         {
-            var input = Const.FromSpan<int>(new[] {1, 2, 3, 4});
+            var input = Const.FromSpan<int>(new[] { 1, 2, 3, 4 });
             var prod = Tensors.Prod(input);
             prod.InferenceType();
             Assert.Equal(1 * 2 * 3 * 4, prod.Eval().ToConst().ToScalar<int>());

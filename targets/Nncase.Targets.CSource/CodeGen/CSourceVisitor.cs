@@ -16,22 +16,30 @@ namespace Nncase.CodeGen;
 /// </summary>
 internal static class NameConverter
 {
-    public static string toC(this DataType dataType) => dataType.ElemType switch
+    public static string toC(this PrimType primType) =>
+        primType.TypeCode switch
+        {
+            PrimTypeCode.Bool => "bool",
+            PrimTypeCode.Int8 => "int8_t",
+            PrimTypeCode.Int16 => "int16_t",
+            PrimTypeCode.Int32 => "int32_t",
+            PrimTypeCode.Int64 => "int64_t",
+            PrimTypeCode.UInt8 => "uint8_t",
+            PrimTypeCode.UInt16 => "uint16_t",
+            PrimTypeCode.UInt32 => "uint32_t",
+            PrimTypeCode.UInt64 => "uint64_t",
+            // PrimTypeCode.Float16 => "float16_t",
+            PrimTypeCode.Float32 => "float",
+            PrimTypeCode.Float64 => "double",
+            // PrimTypeCode.BFloat16 => "bfloat16_t",
+            _ => throw new NotSupportedException($"{primType.TypeCode}")
+        };
+
+    public static string toC(this DataType dataType) => dataType switch
     {
-        ElemType.Bool => "bool",
-        ElemType.Int8 => "int8_t",
-        ElemType.Int16 => "int16_t",
-        ElemType.Int32 => "int32_t",
-        ElemType.Int64 => "int64_t",
-        ElemType.UInt8 => "uint8_t",
-        ElemType.UInt16 => "uint16_t",
-        ElemType.UInt32 => "uint32_t",
-        ElemType.UInt64 => "uint64_t",
-        // ElemType.Float16 => "float16_t",
-        ElemType.Float32 => "float",
-        ElemType.Float64 => "double",
-        // ElemType.BFloat16 => "bfloat16_t",
-        _ => throw new NotSupportedException($"{dataType}")
+        PrimType ptype => ptype.toC(),
+        PointerType { ElemType: PrimType etype } => etype.toC() + "*",
+        _ => throw new NotSupportedException(dataType.ToString())
     };
 }
 
@@ -285,21 +293,11 @@ internal class CSourceHostBuildVisior : ExprFunctor<CSymbol, string>
     /// <inheritdoc/>
     public override string VisitType(TensorType type)
     {
-        if (!type.IsScalar && type.DType.Lanes != 1)
+        if (!type.IsScalar)
         {
             throw new NotSupportedException($"{type}");
         }
         return type.DType.toC();
-    }
-
-    /// <inheritdoc/>
-    public override string VisitType(HandleType type)
-    {
-        if (type.DType.Lanes != 1)
-        {
-            throw new NotSupportedException($"{type}");
-        }
-        return $"{type.DType.toC()}*";
     }
 
     /// <inheritdoc/>

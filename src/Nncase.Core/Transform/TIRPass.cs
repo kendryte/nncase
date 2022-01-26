@@ -1,9 +1,9 @@
-using System.Linq;
-using System.IO;
-using System.Collections.Generic;
 using System;
-using Nncase.TIR;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Nncase.IR;
+using Nncase.TIR;
 
 namespace Nncase.Transform
 {
@@ -37,6 +37,15 @@ namespace Nncase.Transform
             Mutators.AddRange(matutors);
         }
 
+        /// <summary>
+        /// add mutator
+        /// </summary>
+        /// <param name="mutator"></param>
+        public void Add(ExprMutator mutator)
+        {
+            Mutators.Add(mutator);
+        }
+
         /// <inheritdoc/>
         protected override Function RunCore(Function function, RunPassOptions options)
         {
@@ -57,6 +66,7 @@ namespace Nncase.Transform
             return post;
         }
 
+        /// <inheritdoc/>
         protected override void OnPassStart(Function func, RunPassOptions options)
         {
             switch (options.DumpLevel)
@@ -69,6 +79,7 @@ namespace Nncase.Transform
             }
         }
 
+        /// <inheritdoc/>
         protected override void OnPassEnd(Function func, RunPassOptions options)
         {
             switch (options.DumpLevel)

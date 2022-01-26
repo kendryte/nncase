@@ -112,7 +112,6 @@ public static class Interop
             true => typeof(void),
             false => throw new NotSupportedException($"Can't Support the {ttype}!")
         },
-        HandleType ptype => DataTypes.ToType(ptype.DType).MakeArrayType(),
         _ => throw new NotSupportedException($"IRType is {iRType}!")
     };
 

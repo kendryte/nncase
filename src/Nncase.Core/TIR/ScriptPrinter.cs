@@ -138,7 +138,7 @@ namespace Nncase.TIR
                 Scope.Push();
                 // 1. Function signature
 
-                Scope.IndWrite($"T.PrimFunc(\"{expr.Name}\", {string.Join(", ", expr.Parameters.Select(Visit))}).Add(");
+                Scope.IndWrite($"T.PrimFunc(\"{expr.Name}\", {string.Join(", ", expr.Parameters.Select(Visit))}).Body(");
                 Scope.Append(" // " + VisitType(expr.CheckedType!));
                 // 2. Function body
                 Scope.Append(Visit(expr.Body));
@@ -196,7 +196,7 @@ namespace Nncase.TIR
                 Scope.Push();
                 // 1. For Loop signature
                 var i_name = VisitLoopVar(expr.LoopVar);
-                Scope.Append($"T.{expr.Mode}(out var {i_name}, ({Visit(expr.Dom.Min)}, {Visit(expr.Dom.Max)}), out var f{i_name}).Add(");
+                Scope.Append($"T.{expr.Mode}(out var {i_name}, ({Visit(expr.Dom.Min)}, {Visit(expr.Dom.Max)}), out var f{i_name}).Body(");
                 Scope.Append(" // " + VisitType(expr.CheckedType!));
                 // 2. For Body
                 Scope.Append(Visit(expr.Sequence));
@@ -258,10 +258,10 @@ namespace Nncase.TIR
                 // 3. write init body
                 if (expr.InitSequence.Count > 0)
                 {
-                    Scope.IndWrite("Init().(");
-                    using (Scope.IndentUp())
+                    Scope.IndWriteLine("Init(");
+                    foreach (var item in expr.InitSequence)
                     {
-                        Scope.Append(Visit(expr.InitSequence));
+                        Scope.IndWriteLine(Visit(item));
                     }
                     Scope.IndWrite(").");
                 }
@@ -270,7 +270,7 @@ namespace Nncase.TIR
                     Scope.RemoveLast();
                 }
                 // 4. wirte body
-                Scope.Append("Add(");
+                Scope.Append("Body(");
                 Scope.AppendLine(" // " + VisitType(expr.CheckedType!));
                 using (Scope.IndentUp())
                 {
@@ -345,8 +345,12 @@ namespace Nncase.TIR
             }
 
             /// <inheritdoc/>
-            public override string VisitType(TensorType type) =>
-                $"{DataTypes.GetDisplayName(type.DType)}{type.Shape}";
+            public override string VisitType(TensorType type) => type.DType switch
+            {
+                PrimType ptype => $"{DataTypes.GetDisplayName(ptype)}{type.Shape}",
+                PointerType { ElemType: PrimType etype } ptype => $"Handle:{DataTypes.GetDisplayName(etype)}",
+                _ => throw new NotSupportedException(type.DType.GetType().Name),
+            };
 
             /// <inheritdoc/>
             public override string VisitType(CallableType type) =>
@@ -355,12 +359,6 @@ namespace Nncase.TIR
             /// <inheritdoc/>
             public override string VisitType(TupleType type) =>
                 $"({string.Join(", ", type.Fields.Select(VisitType))})";
-
-            /// <inheritdoc/>
-            public override string VisitType(HandleType type)
-            {
-                return $"Handle:{DataTypes.GetDisplayName(type.DType)}";
-            }
 
             /// <inheritdoc/>
             public override string VisitType(InvalidType type) => $"Invalid:{type.Reason}";

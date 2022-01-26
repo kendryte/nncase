@@ -1,18 +1,27 @@
-using Xunit;
-using Nncase;
-using Nncase.IR;
-using System.Numerics.Tensors;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics.Tensors;
+using Microsoft.Extensions.Hosting;
+using Nncase;
 using Nncase.Evaluator;
+using Nncase.IR;
+using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
+using static Nncase.IR.TypePatternUtility;
 using static Nncase.Pattern.Utility;
-using static Nncase.IR.Utility;
 
-public class UnitTestTypeInfer
+namespace Nncase.Tests;
+
+public class UnitTestTypeInfer : IHostFixtrue
 {
+
+    public UnitTestTypeInfer(IHost host) : base(host)
+    {
+
+    }
+
     [Fact]
     public void TestInferBinary()
     {
@@ -21,7 +30,7 @@ public class UnitTestTypeInfer
         var c = a + b;
         var ctype = TypeInference.InferenceType(c);
 
-        Assert.True(HasShape(new[] { 1, 5, 3 }).MatchLeaf(c.CheckedType));
+        Assert.True(IsShape(new[] { 1, 5, 3 }).MatchLeaf(c.CheckedType));
     }
 
     [Fact]

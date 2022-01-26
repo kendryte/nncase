@@ -24,7 +24,7 @@ namespace Nncase.Tests.TIRTest
 
             var r = new Reduction(
               null, new Expr[] { 1 },
-              new[] { new IterVar(TensorType.Scalar(ElemType.Int32), (0, 1), IterMode.CommReduce, 1) },
+              new[] { new IterVar(TensorType.Scalar(DataType.Int32), (0, 1), IterMode.CommReduce, 1) },
               null, 0);
             Assert.Null(r.Combiner);
             Assert.Equal(0, r.ValueIndex);

@@ -32,7 +32,7 @@ namespace Nncase.Tests
 
         private static void ConfigureContainer(ContainerBuilder builder)
         {
-            builder.RegisterAssemblyModules(typeof(EvaluatorVisitor).Assembly);
+            builder.RegisterModule<EvaluatorModule>();
         }
         
         private void ConfigureAppConfiguration(HostBuilderContext context, IConfigurationBuilder builder)

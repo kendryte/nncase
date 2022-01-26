@@ -2,9 +2,9 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Numerics.Tensors;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics.Tensors;
 using NetFabric.Hyperlinq;
 
 namespace Nncase.IR
@@ -14,7 +14,7 @@ namespace Nncase.IR
     /// </summary>
     public sealed record Const(TensorType ValueType, IRBytes Data) : Expr
     {
-       
+
         public override int Rank => ValueType.Shape.Rank;
 
 
@@ -160,14 +160,30 @@ namespace Nncase.IR
         public T[] ToArray<T>()
             where T : unmanaged
             => ToTensor<T>().ToArray();
-        
+
+        /// <summary>
+        /// convert const to scalar
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        /// <exception cref="InvalidCastException"></exception>
+        /// <exception cref="NotSupportedException"></exception>
         public T ToScalar<T>()
           where T : unmanaged
-          => ValueType.IsScalar && ValueType.DType.Lanes == 1 ?
-            (DataTypes.FromType<T>() == ValueType.DType ?
-                 DataTypes.ToScalar<T>(ValueType.DType, Data, 0) :
-                 DataTypes.CastToScalar<T>(ValueType.DType, Data, 0)) :
-          throw new InvalidCastException($"This Const is Not Scalar!");
+        {
+            if (!ValueType.IsScalar)
+                throw new InvalidCastException($"This Const is Not Scalar!");
+            return ValueType.DType switch
+            {
+                PrimType ptype => ptype.Lanes == 1 ?
+              (DataTypes.FromType<T>() == ptype ?
+                   DataTypes.ToScalar<T>(ptype, Data, 0) :
+                   DataTypes.CastToScalar<T>(ptype, Data, 0)) : throw new InvalidCastException($"This Const Datatype Is Packed!"),
+                PointerType potype => typeof(T) == typeof(ulong) ? DataTypes.ToScalar<T>(DataType.UInt64, Data, 0) : throw new InvalidCastException($"The Const PointerType Only Can Convert To Uint64!"),
+                _ => throw new NotSupportedException(ValueType.DType.GetType().Name),
+            };
+        }
+
 
         /// <summary>
         /// cast to string.
@@ -176,8 +192,12 @@ namespace Nncase.IR
         /// <exception cref="InvalidCastException"></exception>
         public string ToStr() => ValueType.DType switch
         {
-            { ElemType: ElemType.String, Lanes: 1 } => System.Text.Encoding.Default.GetString(Data),
-            _ => throw new InvalidCastException($"This Const is Not String!")
+            PrimType ptype => ptype switch
+            {
+                { TypeCode: PrimTypeCode.String, Lanes: 1 } => System.Text.Encoding.Default.GetString(Data),
+                _ => throw new InvalidCastException($"This Const is Not String!")
+            },
+            _ => throw new InvalidCastException($"This Const is Not PrimType!")
         };
 
         /// <summary>
@@ -229,14 +249,31 @@ namespace Nncase.IR
             where T : unmanaged
             => new(new TensorType(DataTypes.FromType<T>(), new int[] { span.Length }), DataTypes.GetBytes(span));
 
+        /// <summary>
+        /// from denseTensor
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="ts"></param>
+        /// <returns></returns>
         public static Const FromTensor<T>(DenseTensor<T> ts)
           where T : unmanaged
           => FromSpan<T>(ts.Buffer.Span, new Shape(ts.Dimensions.ToArray()));
 
+        /// <summary>
+        /// from tensor
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="ts"></param>
+        /// <returns></returns>
         public static Const FromTensor<T>(Tensor<T> ts)
           where T : unmanaged
           => FromTensor<T>(ts.ToDenseTensor());
 
+        /// <summary>
+        /// from dense int tensor.
+        /// </summary>
+        /// <param name="ts"></param>
+        /// <returns></returns>
         public static Const FromTensor(DenseTensor<int> ts)
           => FromSpan<int>(ts.Buffer.Span, new Shape(ts.Dimensions.ToArray()));
 
@@ -257,6 +294,10 @@ namespace Nncase.IR
         public static Const FromShape<T>(Shape shape, T value)
          where T : unmanaged => FromTensor<T>(new DenseTensor<T>(Enumerable.Repeat<T>(value, shape.Size).ToArray(), shape));
 
+        /// <summary>
+        /// convert const to string.
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             string str = DataTypes.GetDisplayName(ValueType.DType);

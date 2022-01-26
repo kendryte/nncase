@@ -1,30 +1,31 @@
-using Xunit;
-using Nncase.Pattern;
-using Nncase.Transform;
-using Nncase.IR;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics.Tensors;
+using Microsoft.Extensions.Hosting;
 using NetFabric.Hyperlinq;
-using Nncase.Pattern.Math;
-using static Nncase.IR.F.Math;
-using static Nncase.IR.F.Tensors;
-using static Nncase.Pattern.Utility;
-using static Nncase.Pattern.F.Math;
-using static Nncase.Pattern.F.Tensors;
-using TorchSharp;
 using Nncase.Evaluator;
 using Nncase.Importer;
+using Nncase.IR;
 using Nncase.IR.F;
+using Nncase.Pattern;
+using Nncase.Pattern.Math;
+using Nncase.Transform;
+using TorchSharp;
+using Xunit;
+using static Nncase.IR.F.Math;
+using static Nncase.IR.F.Tensors;
+using static Nncase.Pattern.F.Math;
+using static Nncase.Pattern.F.Tensors;
+using static Nncase.Pattern.Utility;
 using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Tests.ReWriteTest
 {
 
-    public class DataFlowRewriteTestFactory : RewriteTest
+    public class DataFlowRewriteTestFactory : RewriteFixtrue
     {
-        public DataFlowRewriteTestFactory() : base()
+        public DataFlowRewriteTestFactory(IHost host) : base(host)
         {
             passOptions.SetDir(Path.Combine(passOptions.FullDumpDir, "DataFlowRewriteTestFactory"));
         }
@@ -88,9 +89,9 @@ namespace Nncase.Tests.ReWriteTest
 
     }
 
-    public class UnitTestDataFlowRewrite : RewriteTest
+    public class UnitTestDataFlowRewrite : RewriteFixtrue
     {
-        public UnitTestDataFlowRewrite() : base()
+        public UnitTestDataFlowRewrite(IHost host) : base(host)
         {
             passOptions.SetDir(Path.Combine(passOptions.FullDumpDir, "UnitTestDataFlowRewrite"));
         }
@@ -185,7 +186,7 @@ namespace Nncase.Tests.ReWriteTest
             var shapePass = RunShapeInferPass("", computeShape, input);
             Assert.Equal(shapeRewrite, shapePass);
         }
-        
+
         [Fact]
         public void TestFoldExpand()
         {
@@ -198,9 +199,9 @@ namespace Nncase.Tests.ReWriteTest
         }
     }
 
-    public class DataFlowRewriteAndInferIntegrateTest : RewriteTest
+    public class DataFlowRewriteAndInferIntegrateTest : RewriteFixtrue
     {
-        public DataFlowRewriteAndInferIntegrateTest() : base()
+        public DataFlowRewriteAndInferIntegrateTest(IHost host) : base(host)
         {
             passOptions.SetDir(Path.Combine(passOptions.FullDumpDir, "DataFlowRewriteAndInferIntegrateTest"));
         }
@@ -288,7 +289,7 @@ namespace Nncase.Tests.ReWriteTest
             Assert.True(post is Const);
             Assert.Equal(Shape.Scalar, post.CheckedShape);
         }
-        
+
         [Fact]
         public void SoftMaxImporterProcess()
         {
@@ -297,11 +298,11 @@ namespace Nncase.Tests.ReWriteTest
             var inShape = ShapeOp(input);
             Expr axisExprBefore = axis < 0
                 ? axis + Rank(input)
-                : Const.FromSpan<int>(new[] {axis});
+                : Const.FromSpan<int>(new[] { axis });
             axisExprBefore.InferenceType();
             var axisExpr = RunShapeInferPass("Axis", axisExprBefore, input);
             Assert.Equal(3, axisExpr.ToTensor<int>()[0]);
-            var firstSliceBefore = Slice(inShape, new[] {0}, axisExpr, 1);
+            var firstSliceBefore = Slice(inShape, new[] { 0 }, axisExpr, 1);
             firstSliceBefore.InferenceType();
             var firstSlice = RunShapeInferPass("firstSlice", firstSliceBefore, input);
             Assert.Equal(new[] { 1, 3, 224 }, ((Const)firstSlice).ToArray<int>());
@@ -321,16 +322,16 @@ namespace Nncase.Tests.ReWriteTest
                 afterShape);
             Assert.True(softMax.InferenceType());
         }
-        
+
         [Fact]
         public void TestReshapeToByChannel()
         {
-            var v = Const.FromSpan<int>(new[] {1, 2, 3});
+            var v = Const.FromSpan<int>(new[] { 1, 2, 3 });
             var shape = Concat(
-                new IR.Tuple(ShapeOp(v), new[] {1}, new[] {1}), 0);
+                new IR.Tuple(ShapeOp(v), new[] { 1 }, new[] { 1 }), 0);
             var afterShape = RunShapeInferPass("Shape", shape);
             Assert.True(afterShape.InferenceType());
-            Assert.Equal(new[] {3, 1, 1}, afterShape);
+            Assert.Equal(new[] { 3, 1, 1 }, afterShape);
             var b = Reshape(v, afterShape);
             b.InferenceType();
             Assert.Equal(new[] { 3, 1, 1 }, b.Eval().ToConst().CheckedShape.ToValueList());

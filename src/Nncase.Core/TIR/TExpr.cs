@@ -301,7 +301,7 @@ namespace Nncase.TIR
                 if (!init.Value.All(x => (
                   x is ProducerLoad) ||
                    ((x is Const con) &&
-                    (Utility.IsFloatScalar().MatchLeaf(con.CheckedType) || Utility.IsIntegralScalar().MatchLeaf(con.CheckedType)))))
+                    (TypePatternUtility.IsFloatScalar().MatchLeaf(con.CheckedType) || TypePatternUtility.IsIntegralScalar().MatchLeaf(con.CheckedType)))))
                 {
                     throw new InvalidOperationException("init can only be a IntImm, FloatImm or ProducerLoad");
                 }

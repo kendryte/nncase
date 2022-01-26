@@ -7,7 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Nncase.IR.Utility;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Tensors
 {
@@ -29,7 +29,7 @@ namespace Nncase.IR.Tensors
         /// <summary>
         /// Gets sections.
         /// </summary>
-        public static readonly ParameterInfo Sections = new(typeof(Split), 2, "sections", IsIntegral() & HasRank(1));
+        public static readonly ParameterInfo Sections = new(typeof(Split), 2, "sections", IsIntegral() & IsRank(1));
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType axis, TensorType sections)

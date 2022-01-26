@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO;
 
 namespace Nncase.Transform
 {
@@ -50,10 +50,21 @@ namespace Nncase.Transform
         /// </summary>
         public int DumpLevel { private set; get; }
 
+        /// <summary>
+        /// Dump dir
+        /// </summary>
         public string DumpDir { private set; get; }
 
+        /// <summary>
+        /// current pass name
+        /// </summary>
         public string PassName { private set; get; }
 
+        /// <summary>
+        /// set the pass name
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public RunPassOptions SetName(string name) { PassName = name; return this; }
 
         /// <summary>
@@ -68,6 +79,9 @@ namespace Nncase.Transform
         /// </summary>
         public string FullDumpDir { get => Path.Combine(DumpDir, PassName); }
 
+        /// <summary>
+        /// the invalid pass 
+        /// </summary>
         public static RunPassOptions Invalid => new RunPassOptions(null!, -1, "");
     }
 }

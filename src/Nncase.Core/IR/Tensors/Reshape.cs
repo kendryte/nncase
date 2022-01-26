@@ -7,7 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Nncase.IR.Utility;
+using static Nncase.IR.TypePatternUtility;
 using Nncase;
 
 namespace Nncase.IR.Tensors
@@ -25,7 +25,7 @@ namespace Nncase.IR.Tensors
         /// <summary>
         /// Gets shape.
         /// </summary>
-        public static readonly ParameterInfo Shape = new(typeof(Reshape), 1, "shape", HasRank(1));
+        public static readonly ParameterInfo Shape = new(typeof(Reshape), 1, "shape", IsRank(1));
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType shape)

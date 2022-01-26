@@ -14,16 +14,41 @@ using ParameterInfo = Nncase.IR.ParameterInfo;
 
 namespace Nncase
 {
+    /// <summary>
+    /// The Evaluator Impl interface
+    /// </summary>
     public interface IEvaluator
     {
+        /// <summary>
+        /// visit the op
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
         public Const Visit(EvaluatorContext ctx, Op target);
     }
-    
+
+    /// <summary>
+    /// each op evaluator method impl interface
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public interface IEvaluator<T> : IEvaluator
-        where T: Op
+        where T : Op
     {
+        /// <summary>
+        /// visit specific target
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
         public Const Visit(EvaluatorContext ctx, T target);
 
+        /// <summary>
+        /// the std call method for eval.
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
         Const IEvaluator.Visit(EvaluatorContext ctx, Op target)
         {
             return Visit(ctx, (T)target);
@@ -51,7 +76,7 @@ namespace Nncase
         K510,
         K230
     }
-    
+
     /// <summary>
     /// Target.
     /// </summary>

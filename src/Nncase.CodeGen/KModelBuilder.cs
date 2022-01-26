@@ -78,6 +78,8 @@ public class RTKModel : IRTModel
     {
         if (isSerialized)
             File.Copy(sourcePath, Path.Combine(dumpDirPath, $"{name}.{SourceExt}"));
+        else
+            throw new InvalidOperationException("Please Call Serialize First!");
     }
     /// <inheritdoc/>
     public object? Invoke(params object?[]? args)

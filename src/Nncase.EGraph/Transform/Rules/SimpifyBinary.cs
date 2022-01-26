@@ -8,7 +8,7 @@ using static Nncase.IR.F.Tensors;
 using static Nncase.Pattern.F.Tensors;
 using Nncase.Pattern.Tensors;
 using System.Numerics.Tensors;
-using static Nncase.IR.Utility;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.Transform.Rule
 {

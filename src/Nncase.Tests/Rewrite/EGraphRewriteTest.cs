@@ -1,27 +1,28 @@
-using Xunit;
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Microsoft.Extensions.Hosting;
+using Nncase.Evaluator;
 using Nncase.IR;
-using Nncase.Transform;
 using Nncase.Pattern;
+using Nncase.Transform;
+using Xunit;
 using static Nncase.IR.F.Math;
-using static Nncase.IR.F.Tensors;
 using static Nncase.IR.F.NN;
-using Rule = Nncase.Transform.Rule;
+using static Nncase.IR.F.Tensors;
 using static Nncase.Pattern.F.Math;
 using static Nncase.Pattern.F.NN;
 using static Nncase.Pattern.F.Tensors;
 using static Nncase.Pattern.Utility;
-using System.IO;
-using Nncase.Evaluator;
+using Rule = Nncase.Transform.Rule;
 
 
 namespace Nncase.Tests.ReWriteTest
 {
-    public class EGraphRewriteTestFactory : RewriteTest
+    public class EGraphRewriteTestFactory : RewriteFixtrue
     {
-        public EGraphRewriteTestFactory() : base()
+        public EGraphRewriteTestFactory(IHost host) : base(host)
         {
             passOptions.SetDir(Path.Combine(passOptions.FullDumpDir, "EGraphRewriteTestFactory"));
         }
@@ -72,10 +73,10 @@ namespace Nncase.Tests.ReWriteTest
         public static IEnumerable<object[]> DataAll => Data.Skip(1);
     }
 
-    public class EGraphRewriteTest : RewriteTest
+    public class EGraphRewriteTest : RewriteFixtrue
     {
 
-        public EGraphRewriteTest() : base()
+        public EGraphRewriteTest(IHost host) : base(host)
         {
             passOptions.SetDir(Path.Combine(passOptions.FullDumpDir, "EGraphRewriteTest"));
         }

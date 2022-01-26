@@ -9,6 +9,7 @@ namespace Nncase
     public sealed class EvaluatorContext
     {
         public Call? CurrentCall;
+
         private readonly Dictionary<Expr, Const> _exprMemo;
 
         public readonly Dictionary<Var, Const> Inputs;
@@ -31,7 +32,7 @@ namespace Nncase
         {
             return GetArgument(expr).ToTorchTensor();
         }
-        
+
         public Tensorflow.Tensor GetTFArgument(Op op, ParameterInfo parameter)
         {
             return GetArgumentConst(op, parameter).ToTFTensor();
@@ -88,6 +89,10 @@ namespace Nncase
                 throw new InvalidOperationException($"Expr {expr} is not a TensorType.");
         }
 
+        /// <summary>
+        /// get current call's tensortype
+        /// </summary>
+        /// <returns></returns>
         public TensorType CurrentCallResultTensorType() => GetTensorType(CurrentCall!);
 
     }

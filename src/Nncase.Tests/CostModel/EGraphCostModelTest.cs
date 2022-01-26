@@ -1,18 +1,21 @@
+using System;
+using Microsoft.Extensions.Hosting;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.F;
-using Xunit;
-using Nncase.Transform;
 using Nncase.Pattern;
-using static Nncase.Pattern.Utility;
 using Nncase.Tests.ReWriteTest;
-using System;
+using Nncase.Transform;
+using Xunit;
+using static Nncase.Pattern.Utility;
 
 namespace Nncase.Tests.CostModelTest
 {
 
-    public class EGraphCostModelTest : RewriteTest
+    public class EGraphCostModelTest : RewriteFixtrue
     {
+        public EGraphCostModelTest(IHost host) : base(host) { }
+        
         [Fact]
         public void TestConst()
         {

@@ -15,7 +15,7 @@ namespace Nncase
     /// <summary>
     /// Single Elem type.
     /// </summary>
-    public enum ElemType : byte
+    public enum PrimTypeCode : byte
     {
         /// <summary>
         /// Int8.
@@ -109,48 +109,140 @@ namespace Nncase
     }
 
     /// <summary>
-    /// The storge data Type, for simd/npu/gpu we need support packed ElemType
+    /// The storge data Type, for simd/npu/gpu. 
     /// <example>
     /// float32*4
     /// int8*2
     /// </example>
     /// </summary>
-    /// <param name="ElemType"></param>
-    /// <param name="Lanes"></param>
-    public sealed record DataType(ElemType ElemType, int Lanes = 1)
+    /// <param name="ElemType"> the type the pointer points to. </param>
+    public sealed record PointerType(DataType ElemType) : DataType
     {
-        public static implicit operator DataType(ElemType ElemType) => new DataType(ElemType, 1);
-        public static DataType Int8 => ElemType.Int8;
-        public static DataType Int16 => ElemType.Int16;
-        public static DataType Int32 => ElemType.Int32;
-        public static DataType Int64 => ElemType.Int64;
-        public static DataType UInt8 => ElemType.UInt8;
-        public static DataType UInt16 => ElemType.UInt16;
-        public static DataType UInt32 => ElemType.UInt32;
-        public static DataType UInt64 => ElemType.UInt64;
-        public static DataType Float16 => ElemType.Float16;
-        public static DataType Float32 => ElemType.Float32;
-        public static DataType Float64 => ElemType.Float64;
-        public static DataType BFloat16 => ElemType.BFloat16;
-        public static DataType Bool => ElemType.Bool;
-        public static DataType String => ElemType.String;
-        public static DataType Invalid => ElemType.Invalid;
+    }
+
+    /// <summary>
+    /// the abstract datatype record
+    /// </summary>
+    public abstract record DataType()
+    {
+        /// <summary>
+        /// structcut for Int8
+        /// </summary>
+        public static PrimType Int8 => PrimTypeCode.Int8;
+        /// <summary>
+        /// structcut for Int16
+        /// </summary>
+        public static PrimType Int16 => PrimTypeCode.Int16;
+
+        /// <summary>
+        /// structcut for Int32
+        /// </summary>
+        public static PrimType Int32 => PrimTypeCode.Int32;
+
+        /// <summary>
+        /// structcut for Int64
+        /// </summary>
+        public static PrimType Int64 => PrimTypeCode.Int64;
+
+        /// <summary>
+        /// structcut for UInt8
+        /// </summary>
+        public static PrimType UInt8 => PrimTypeCode.UInt8;
+
+        /// <summary>
+        /// structcut for UInt16
+        /// </summary>
+        public static PrimType UInt16 => PrimTypeCode.UInt16;
+
+        /// <summary>
+        /// structcut for UInt32
+        /// </summary>
+        public static PrimType UInt32 => PrimTypeCode.UInt32;
+
+        /// <summary>
+        /// structcut for UInt64
+        /// </summary>
+        public static PrimType UInt64 => PrimTypeCode.UInt64;
+
+        /// <summary>
+        /// structcut for Float16
+        /// </summary>
+        public static PrimType Float16 => PrimTypeCode.Float16;
+
+        /// <summary>
+        /// structcut for Float32
+        /// </summary>
+        public static PrimType Float32 => PrimTypeCode.Float32;
+
+        /// <summary>
+        /// structcut for Float64
+        /// </summary>
+        public static PrimType Float64 => PrimTypeCode.Float64;
+
+        /// <summary>
+        /// structcut for BFloat16
+        /// </summary>
+        public static PrimType BFloat16 => PrimTypeCode.BFloat16;
+
+        /// <summary>
+        /// structcut for Bool
+        /// </summary>
+        public static PrimType Bool => PrimTypeCode.Bool;
+
+        /// <summary>
+        /// structcut for String
+        /// </summary>
+        public static PrimType String => PrimTypeCode.String;
+
+        /// <summary>
+        /// structcut for Invalid
+        /// </summary>
+        public static PrimType Invalid => PrimTypeCode.Invalid;
 
         /// <summary>
         /// check current compatible with other datatype
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public Compatible CompatibleWith(DataType other) => new Compatible((this.ElemType == other.ElemType && this.Lanes % other.Lanes == 0), $"this {this} != other {other}");
+        public Compatible CompatibleWith(DataType other) => new Compatible(
+          (this is PrimType ptype) && (other is PrimType otype) && (ptype.TypeCode == otype.TypeCode && ptype.Lanes % otype.Lanes == 0),
+          $"this {this} != other {other}");
+    }
 
-        public override string? ToString()
+    /// <summary>
+    /// the datatype 
+    /// </summary>
+    /// <param name="TypeCode"></param>
+    /// <param name="Lanes"></param>
+    public record PrimType(PrimTypeCode TypeCode, int Lanes = 1) : DataType
+    {
+        /// <summary>
+        /// from the PrimTypeCode
+        /// </summary>
+        /// <param name="TypeCode"></param>
+        public static implicit operator PrimType(PrimTypeCode TypeCode) => new PrimType(TypeCode, 1);
+
+        /// <summary>
+        /// convert datatype to string
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
         {
-            return ("DataType." + ElemType) + (Lanes == 1 ? string.Empty : Lanes.ToString());
+            return ("PrimType." + TypeCode) + (Lanes == 1 ? string.Empty : Lanes.ToString());
         }
     }
 
+    /// <summary>
+    /// the Compatible information.
+    /// </summary>
+    /// <param name="IsCompatible"></param>
+    /// <param name="Reason"></param>
     public sealed record Compatible(bool IsCompatible, string Reason)
     {
+        /// <summary>
+        /// convert as bool
+        /// </summary>
+        /// <param name="compatible"></param>
         public static implicit operator bool(Compatible compatible) => compatible.IsCompatible;
     }
 
@@ -159,49 +251,49 @@ namespace Nncase
     /// </summary>
     public static class DataTypes
     {
-        private static readonly Dictionary<RuntimeTypeHandle, DataType> _typeToDataTypes = new()
+        private static readonly Dictionary<RuntimeTypeHandle, PrimType> _typeToDataTypes = new()
         {
-            { typeof(bool).TypeHandle, DataType.Bool },
-            { typeof(sbyte).TypeHandle, DataType.Int8 },
-            { typeof(byte).TypeHandle, DataType.UInt8 },
-            { typeof(int).TypeHandle, DataType.Int32 },
-            { typeof(uint).TypeHandle, DataType.UInt32 },
-            { typeof(long).TypeHandle, DataType.Int64 },
-            { typeof(ulong).TypeHandle, DataType.UInt64 },
-            { typeof(float).TypeHandle, DataType.Float32 },
-            { typeof(double).TypeHandle, DataType.Float64 },
-            { typeof(char).TypeHandle, DataType.String },
-            { typeof(BFloat16).TypeHandle, DataType.Float16 }
+            { typeof(bool).TypeHandle, PrimType.Bool },
+            { typeof(sbyte).TypeHandle, PrimType.Int8 },
+            { typeof(byte).TypeHandle, PrimType.UInt8 },
+            { typeof(int).TypeHandle, PrimType.Int32 },
+            { typeof(uint).TypeHandle, PrimType.UInt32 },
+            { typeof(long).TypeHandle, PrimType.Int64 },
+            { typeof(ulong).TypeHandle, PrimType.UInt64 },
+            { typeof(float).TypeHandle, PrimType.Float32 },
+            { typeof(double).TypeHandle, PrimType.Float64 },
+            { typeof(char).TypeHandle, PrimType.String },
+            { typeof(BFloat16).TypeHandle, PrimType.Float16 }
         };
 
-        private static readonly Dictionary<DataType, Type> _dataTypesToType = new()
+        private static readonly Dictionary<PrimType, Type> _dataTypesToType = new()
         {
-            { DataType.Bool, typeof(bool) },
-            { DataType.Int8, typeof(sbyte) },
-            { DataType.UInt8, typeof(byte) },
-            { DataType.Int32, typeof(int) },
-            { DataType.UInt32, typeof(uint) },
-            { DataType.Int64, typeof(long) },
-            { DataType.UInt64, typeof(ulong) },
-            { DataType.Float32, typeof(float) },
-            { DataType.Float64, typeof(double) },
+            { PrimType.Bool, typeof(bool) },
+            { PrimType.Int8, typeof(sbyte) },
+            { PrimType.UInt8, typeof(byte) },
+            { PrimType.Int32, typeof(int) },
+            { PrimType.UInt32, typeof(uint) },
+            { PrimType.Int64, typeof(long) },
+            { PrimType.UInt64, typeof(ulong) },
+            { PrimType.Float32, typeof(float) },
+            { PrimType.Float64, typeof(double) },
         };
 
-        private static readonly Dictionary<ElemType, int> _ElemTypeToLengths = new()
+        private static readonly Dictionary<PrimTypeCode, int> _ElemTypeToLengths = new()
         {
-            { ElemType.Bool, 1 },
-            { ElemType.UInt8, 1 },
-            { ElemType.UInt16, 2 },
-            { ElemType.UInt32, 4 },
-            { ElemType.UInt64, 8 },
-            { ElemType.Int8, 1 },
-            { ElemType.Int16, 2 },
-            { ElemType.Int32, 4 },
-            { ElemType.Int64, 8 },
-            { ElemType.Float16, 2 },
-            { ElemType.BFloat16, 2 },
-            { ElemType.Float32, 4 },
-            { ElemType.Float64, 8 }
+            { PrimTypeCode.Bool, 1 },
+            { PrimTypeCode.UInt8, 1 },
+            { PrimTypeCode.UInt16, 2 },
+            { PrimTypeCode.UInt32, 4 },
+            { PrimTypeCode.UInt64, 8 },
+            { PrimTypeCode.Int8, 1 },
+            { PrimTypeCode.Int16, 2 },
+            { PrimTypeCode.Int32, 4 },
+            { PrimTypeCode.Int64, 8 },
+            { PrimTypeCode.Float16, 2 },
+            { PrimTypeCode.BFloat16, 2 },
+            { PrimTypeCode.Float32, 4 },
+            { PrimTypeCode.Float64, 8 }
         };
 
         /// <summary>
@@ -209,7 +301,7 @@ namespace Nncase
         /// </summary>
         /// <param name="t">CLR type.</param>
         /// <returns>Data type.</returns>
-        public static DataType FromType(Type t)
+        public static PrimType FromType(Type t)
         {
             if (_typeToDataTypes.TryGetValue(t.TypeHandle, out var dataType))
             {
@@ -226,10 +318,8 @@ namespace Nncase
         /// <returns>CLR type instance.</returns>
         public static Type ToType(DataType t)
         {
-            if (_dataTypesToType.TryGetValue(t, out var type))
-            {
-                return type;
-            }
+            if (t is PrimType ptype && _dataTypesToType.TryGetValue(ptype, out var type)) return type;
+            if (t is PointerType { ElemType: PrimType etype } potype) return ToType(etype).MakeArrayType();
             throw new ArgumentOutOfRangeException("Unsupported DataType type: " + t);
         }
 
@@ -238,7 +328,7 @@ namespace Nncase
         /// </summary>
         /// <typeparam name="T">CLR type.</typeparam>
         /// <returns>Data type.</returns>
-        public static DataType FromType<T>()
+        public static PrimType FromType<T>()
             where T : unmanaged
             => FromType(typeof(T));
 
@@ -250,7 +340,12 @@ namespace Nncase
         /// </summary>
         /// <param name="dataType"></param>
         /// <returns></returns>
-        public static int GetLength(DataType dataType) => _ElemTypeToLengths[dataType.ElemType] * dataType.Lanes;
+        public static int GetLength(DataType dataType) => dataType switch
+        {
+            PrimType ptype => _ElemTypeToLengths[ptype.TypeCode] * ptype.Lanes,
+            PointerType potype => _ElemTypeToLengths[PrimTypeCode.UInt64],
+            _ => throw new NotSupportedException(dataType.GetType().Name),
+        };
 
         /// <summary>
         /// Convert unmanaged type to bytes.
@@ -279,73 +374,118 @@ namespace Nncase
         /// <returns>The display name.</returns>
         public static string GetDisplayName(DataType dataType)
         {
-            var name = typeof(ElemType).GetField(Enum.GetName(dataType.ElemType)!)!.GetCustomAttribute<DisplayAttribute>()?.GetName() ?? dataType.ToString();
-            if (dataType.Lanes > 1)
+            if (dataType is PrimType ptype)
             {
-                name += $"x{dataType.Lanes}";
+                var name = typeof(PrimTypeCode).GetField(Enum.GetName(ptype.TypeCode)!)!.GetCustomAttribute<DisplayAttribute>()?.GetName() ?? ptype.ToString()!;
+                if (ptype.Lanes > 1)
+                {
+                    name += $"x{ptype.Lanes}";
+                }
+                return name;
             }
-            return name;
+            else if (dataType is PointerType potype)
+            {
+                return "*" + potype.ElemType.ToString();
+            }
+            throw new NotImplementedException($"DataType {dataType.GetType().Name}");
         }
 
+        /// <summary>
+        /// convert a bytes to T scalar.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="srcType"></param>
+        /// <param name="bytes"></param>
+        /// <param name="start"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidCastException"></exception>
         public static T ToScalar<T>(DataType srcType, byte[] bytes, int start = 0)
           where T : unmanaged
-          => srcType switch
+          => (PrimType)srcType switch
           {
-              { ElemType: ElemType.Int64, Lanes: 1 } => (T)(object)BitConverter.ToInt64(bytes, start),
-              { ElemType: ElemType.Int32, Lanes: 1 } => (T)(object)BitConverter.ToInt32(bytes, start),
-              { ElemType: ElemType.Int16, Lanes: 1 } => (T)(object)BitConverter.ToInt16(bytes, start),
-              { ElemType: ElemType.Int8, Lanes: 1 } => (T)(object)bytes[start],
-              { ElemType: ElemType.UInt64, Lanes: 1 } => (T)(object)BitConverter.ToUInt64(bytes, start),
-              { ElemType: ElemType.UInt32, Lanes: 1 } => (T)(object)BitConverter.ToUInt32(bytes, start),
-              { ElemType: ElemType.UInt16, Lanes: 1 } => (T)(object)BitConverter.ToUInt16(bytes, start),
-              { ElemType: ElemType.UInt8, Lanes: 1 } => (T)(object)bytes[start],
-              { ElemType: ElemType.Float64, Lanes: 1 } => (T)(object)BitConverter.ToDouble(bytes, start),
-              { ElemType: ElemType.Float32, Lanes: 1 } => (T)(object)BitConverter.ToSingle(bytes, start),
-              { ElemType: ElemType.BFloat16, Lanes: 1 } => (T)(object)(new BFloat16(bytes[start])),
-              { ElemType: ElemType.Float16, Lanes: 1 } => (T)(object)(Half)(bytes[start]),
-              { ElemType: ElemType.Bool, Lanes: 1 } => (T)(object)BitConverter.ToBoolean(bytes, start),
-              { ElemType: ElemType.String, Lanes: 1 } => (T)(object)BitConverter.ToString(bytes, start),
+              { TypeCode: PrimTypeCode.Int64, Lanes: 1 } => (T)(object)BitConverter.ToInt64(bytes, start),
+              { TypeCode: PrimTypeCode.Int32, Lanes: 1 } => (T)(object)BitConverter.ToInt32(bytes, start),
+              { TypeCode: PrimTypeCode.Int16, Lanes: 1 } => (T)(object)BitConverter.ToInt16(bytes, start),
+              { TypeCode: PrimTypeCode.Int8, Lanes: 1 } => (T)(object)bytes[start],
+              { TypeCode: PrimTypeCode.UInt64, Lanes: 1 } => (T)(object)BitConverter.ToUInt64(bytes, start),
+              { TypeCode: PrimTypeCode.UInt32, Lanes: 1 } => (T)(object)BitConverter.ToUInt32(bytes, start),
+              { TypeCode: PrimTypeCode.UInt16, Lanes: 1 } => (T)(object)BitConverter.ToUInt16(bytes, start),
+              { TypeCode: PrimTypeCode.UInt8, Lanes: 1 } => (T)(object)bytes[start],
+              { TypeCode: PrimTypeCode.Float64, Lanes: 1 } => (T)(object)BitConverter.ToDouble(bytes, start),
+              { TypeCode: PrimTypeCode.Float32, Lanes: 1 } => (T)(object)BitConverter.ToSingle(bytes, start),
+              { TypeCode: PrimTypeCode.BFloat16, Lanes: 1 } => (T)(object)(new BFloat16(bytes[start])),
+              { TypeCode: PrimTypeCode.Float16, Lanes: 1 } => (T)(object)(Half)(bytes[start]),
+              { TypeCode: PrimTypeCode.Bool, Lanes: 1 } => (T)(object)BitConverter.ToBoolean(bytes, start),
+              { TypeCode: PrimTypeCode.String, Lanes: 1 } => (T)(object)BitConverter.ToString(bytes, start),
               _ => throw new InvalidCastException($"Can't Convert the {srcType.ToString()}!")
           };
 
+        /// <summary>
+        /// convert the datatype to T scalar.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="srcType"></param>
+        /// <param name="bytes"></param>
+        /// <param name="start"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidCastException"></exception>
         public static T CastToScalar<T>(DataType srcType, byte[] bytes, int start = 0)
         where T : unmanaged
-        => srcType switch
+        => (PrimType)srcType switch
         {
-            { ElemType: ElemType.Int64, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToInt64(bytes, start), typeof(T)),
-            { ElemType: ElemType.Int32, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToInt32(bytes, start), typeof(T)),
-            { ElemType: ElemType.Int16, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToInt16(bytes, start), typeof(T)),
-            { ElemType: ElemType.Int8, Lanes: 1 } => (T)Convert.ChangeType((object)bytes[start], typeof(T)),
-            { ElemType: ElemType.UInt64, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToUInt64(bytes, start), typeof(T)),
-            { ElemType: ElemType.UInt32, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToUInt32(bytes, start), typeof(T)),
-            { ElemType: ElemType.UInt16, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToUInt16(bytes, start), typeof(T)),
-            { ElemType: ElemType.UInt8, Lanes: 1 } => (T)Convert.ChangeType((object)bytes[start], typeof(T)),
-            { ElemType: ElemType.Float64, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToDouble(bytes, start), typeof(T)),
-            { ElemType: ElemType.Float32, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToSingle(bytes, start), typeof(T)),
-            { ElemType: ElemType.BFloat16, Lanes: 1 } => (T)Convert.ChangeType((object)(new BFloat16(bytes[start])), typeof(T)),
-            { ElemType: ElemType.Float16, Lanes: 1 } => (T)Convert.ChangeType((object)(Half)(bytes[start]), typeof(T)),
-            { ElemType: ElemType.Bool, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToBoolean(bytes, start), typeof(T)),
+            { TypeCode: PrimTypeCode.Int64, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToInt64(bytes, start), typeof(T)),
+            { TypeCode: PrimTypeCode.Int32, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToInt32(bytes, start), typeof(T)),
+            { TypeCode: PrimTypeCode.Int16, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToInt16(bytes, start), typeof(T)),
+            { TypeCode: PrimTypeCode.Int8, Lanes: 1 } => (T)Convert.ChangeType((object)bytes[start], typeof(T)),
+            { TypeCode: PrimTypeCode.UInt64, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToUInt64(bytes, start), typeof(T)),
+            { TypeCode: PrimTypeCode.UInt32, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToUInt32(bytes, start), typeof(T)),
+            { TypeCode: PrimTypeCode.UInt16, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToUInt16(bytes, start), typeof(T)),
+            { TypeCode: PrimTypeCode.UInt8, Lanes: 1 } => (T)Convert.ChangeType((object)bytes[start], typeof(T)),
+            { TypeCode: PrimTypeCode.Float64, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToDouble(bytes, start), typeof(T)),
+            { TypeCode: PrimTypeCode.Float32, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToSingle(bytes, start), typeof(T)),
+            { TypeCode: PrimTypeCode.BFloat16, Lanes: 1 } => (T)Convert.ChangeType((object)(new BFloat16(bytes[start])), typeof(T)),
+            { TypeCode: PrimTypeCode.Float16, Lanes: 1 } => (T)Convert.ChangeType((object)(Half)(bytes[start]), typeof(T)),
+            { TypeCode: PrimTypeCode.Bool, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToBoolean(bytes, start), typeof(T)),
             _ => throw new InvalidCastException($"Can't Cast the {srcType.ToString()}!")
         };
 
+        /// <summary>
+        /// specify half cast.
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="start"></param>
+        /// <returns></returns>
         public static Half CastToScalar(byte[] bytes, int start = 0)
         {
             return BitConverter.ToHalf(bytes, start);
         }
 
+        /// <summary>
+        /// check the datatype is lanes
+        /// </summary>
+        /// <param name="srcType"></param>
+        /// <param name="Lanes"></param>
+        /// <returns></returns>
         public static bool IsIntegral(DataType srcType, int Lanes = 1) =>
-          srcType.ElemType switch
+          srcType is PrimType ptype && ptype.TypeCode switch
           {
-              (ElemType.Bool or
-               ElemType.Int64 or ElemType.Int32 or ElemType.Int16 or ElemType.Int8 or
-               ElemType.UInt64 or ElemType.UInt32 or ElemType.UInt16 or ElemType.UInt8) => true,
+              (PrimTypeCode.Bool or
+               PrimTypeCode.Int64 or PrimTypeCode.Int32 or PrimTypeCode.Int16 or PrimTypeCode.Int8 or
+               PrimTypeCode.UInt64 or PrimTypeCode.UInt32 or PrimTypeCode.UInt16 or PrimTypeCode.UInt8) => true,
               _ => false
-          } && Lanes == srcType.Lanes;
+          } && Lanes == ptype.Lanes;
 
-        public static bool IsFloat(DataType srcType, int Lanes = 1) => srcType.ElemType switch
-        {
-            (ElemType.BFloat16 or ElemType.Float16 or ElemType.Float32 or ElemType.Float64) => true,
-            _ => false
-        } && Lanes == srcType.Lanes;
+        /// <summary>
+        /// check the data type is float
+        /// </summary>
+        /// <param name="srcType"></param>
+        /// <param name="Lanes"></param>
+        /// <returns></returns>
+        public static bool IsFloat(DataType srcType, int Lanes = 1) =>
+          srcType is PrimType ptype && ptype.TypeCode switch
+          {
+              (PrimTypeCode.BFloat16 or PrimTypeCode.Float16 or PrimTypeCode.Float32 or PrimTypeCode.Float64) => true,
+              _ => false
+          } && Lanes == ptype.Lanes;
     }
 }
