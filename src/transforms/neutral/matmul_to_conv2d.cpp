@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/ir/ops/bitcast.h>
+#include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/matmul.h>
 #include <nncase/ir/ops/pad.h>
@@ -29,13 +30,17 @@ bool matmul_to_conv2d_transform::on_try_match(node &node, transform_context &con
 {
     if (auto mm = node_cast<matmul>(node))
     {
-        context.inputs.emplace_back(&mm->input_a());
-        context.inputs.emplace_back(&mm->input_b());
-        context.inputs.emplace_back(&mm->bias());
-        context.outputs.emplace_back(&mm->output());
+        // The second matrix must be constant
+        if (try_get_direct_parent<constant>(*mm, 1))
+        {
+            context.inputs.emplace_back(&mm->input_a());
+            context.inputs.emplace_back(&mm->input_b());
+            context.inputs.emplace_back(&mm->bias());
+            context.outputs.emplace_back(&mm->output());
 
-        context.matched_nodes.emplace_back(mm);
-        return true;
+            context.matched_nodes.emplace_back(mm);
+            return true;
+        }
     }
 
     return false;

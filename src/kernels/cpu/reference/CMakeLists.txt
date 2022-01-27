@@ -9,10 +9,12 @@ set(SRCS batch_to_space.cpp
          copy.cpp
          cumsum.cpp
          dequantize.cpp
+         equal.cpp
          gather.cpp
          gather_nd.cpp
          hardmax.cpp
          lut1d.cpp
+         matmul.cpp
          nnil.cpp
          onehot.cpp
          pad.cpp

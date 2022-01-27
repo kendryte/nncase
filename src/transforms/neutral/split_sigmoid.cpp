@@ -52,10 +52,10 @@ void split_sigmoid_transform::process(transform_context &context)
     auto exp = context.graph.emplace<unary>(unary_exp, neg->output().shape());
     exp->name(s.name() + ".exp(Sigmoid)");
 
-    auto add = context.graph.emplace<binary>(binary_add, one->output().shape(), exp->output().shape(), value_range<float>::nonnegative());
+    auto add = context.graph.emplace<binary>(binary_add, output.type(), one->output().shape(), exp->output().shape(), value_range<float>::nonnegative());
     add->name(s.name() + ".add(Sigmoid)");
 
-    auto div = context.graph.emplace<binary>(binary_div, one->output().shape(), add->output().shape(), value_range<float>::nonnegative());
+    auto div = context.graph.emplace<binary>(binary_div, output.type(), one->output().shape(), add->output().shape(), value_range<float>::nonnegative());
     div->name(s.name() + ".div(Sigmoid)");
 
     exp->input().connect(neg->output());

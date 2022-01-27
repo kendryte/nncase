@@ -1,21 +1,25 @@
 import copy
+import multiprocessing
 import os
 import re
 import shutil
 import struct
+import uuid
 from abc import ABCMeta, abstractmethod
+from array import array
 from itertools import product
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union
 
-import nncase
-import struct
-from compare_util import compare
-import copy
 import cv2
+import nncase
 import numpy as np
 import yaml
-import uuid
+from PIL import Image
+
+from compare_util import compare
+from dataset_utils import *
+from models.preprocess.preprocess import preprocess
 
 
 class Edict:
@@ -68,6 +72,8 @@ class Edict:
                     for i in range(len(new_value['preprocess_opt'])):
                         self.case.preprocess_opt[i].values = copy.deepcopy(
                             new_value['preprocess_opt'][i]['values'])
+                    if isinstance(old_value, (Edict, dict)):
+                        old_value.update(new_value)
                 elif isinstance(new_value, dict):
                     old_value = getattr(self, name)
                     if old_value is None:
@@ -92,11 +98,14 @@ class Edict:
 
 def generate_random(shape: List[int], dtype: np.dtype,
                     number: int, batch_size: int,
+                    case_dir: str,
                     abs: bool = False) -> np.ndarray:
     if dtype == np.uint8:
         data = np.random.randint(0, 256, shape)
     elif dtype == np.int8:
         data = np.random.randint(-128, 128, shape)
+    elif dtype == np.int64:
+        data = np.random.randint(-128, 128, size=shape, dtype='int64')
     elif dtype == np.bool:
         data = np.random.rand(*shape) > 0.5
     else:
@@ -121,6 +130,7 @@ def _cast_bfloat16_then_float32(values: np.array):
 
 def generate_image_dataset(shape: List[int], dtype: np.dtype,
                            batch_index: int, batch_size: int,
+                           case_dir: str,
                            dir_path: str) -> np.ndarray:
     """ read image from folder, return the rgb image with padding, dtype = float32, range = [0,255]. same as k210 carmera.
     """
@@ -145,23 +155,55 @@ def generate_image_dataset(shape: List[int], dtype: np.dtype,
             padded_img = padded_img.transpose((2, 0, 1))
         padded_img = np.ascontiguousarray(padded_img)
         return padded_img
+
     img_paths = []
     if os.path.isdir(dir_path):
         img_paths.extend([os.path.join(dir_path, p) for p in os.listdir(dir_path)])
     else:
         img_paths.append(dir_path)
     imgs = []
+    transpose_flag = False
+    if shape[1] == 3:
+        transpose_flag = True
+        shape = [shape[0], shape[2], shape[3], shape[1]]
     for p in img_paths[batch_index * batch_size:
                        (batch_index + 1) * batch_size]:
         img = cv2.imread(p)
-        img = preproc(img, shape[1:3], False)  # img [h,w,c] rgb,
-        imgs.append(img)
+        img = preproc(img, shape[1:3], transpose_flag)  # img [h,w,c] rgb,
+        imgs.append(img.astype(np.float32) / 255.)
     return np.stack(imgs)
+
+
+def generate_imagenet_dataset(shape: List[int], dtype: np.dtype,
+                              batch_index: int, batch_size: int,
+                              case_dir: str,
+                              dir_path: str) -> np.ndarray:
+    """ 
+    shape: [N,H,W,C] 
+    """
+    dir_path = os.path.join(os.getenv('DATASET_DIR') if os.getenv('DATASET_DIR') else '', dir_path)
+    assert(os.path.isdir(dir_path) or os.path.exists(dir_path))
+
+    img_paths = []
+    if os.path.isdir(dir_path):
+        img_paths.extend([os.path.join(dir_path, p) for p in os.listdir(dir_path)])
+    else:
+        img_paths.append(dir_path)
+    imgs = []
+    for p in img_paths[0:batch_size]:
+        img_data = Image.open(p).convert('RGB')
+        img_data = np.asarray(img_data, dtype=dtype)
+        model = case_dir.split('/')[-2]
+        data = preprocess(model, img_data, shape)
+        data = np.expand_dims(data, axis=0)
+        imgs.append((data, p))
+    return imgs
 
 
 DataFactory = {
     'generate_random': generate_random,
-    'generate_image_dataset': generate_image_dataset
+    'generate_image_dataset': generate_image_dataset,
+    'generate_imagenet_dataset': generate_imagenet_dataset
 }
 
 
@@ -193,16 +235,17 @@ class TestRunner(metaclass=ABCMeta):
         self.dump_range_data_paths: List[Tuple[str, str]] = []
         self.output_paths: List[Tuple[str, str]] = []
         self.model_type: str = ""
+        self.model_path: str = ""
         self.pre_process: List[Dict] = []
 
         self.num_pattern = re.compile("(\d+)")
 
     def transform_input(self, values: np.array, type: str, stage: str):
         values = copy.deepcopy(values)
-        if(len(values.shape) == 4 and self.pre_process[0]['preprocess']):
+        if(len(values.shape) == 4 and (self.pre_process[0]['preprocess'] or self.cfg.case.generate_inputs.name != "generate_random")):
             if stage == "CPU":
                 # onnx \ caffe
-                if (self.model_type == "onnx" or self.model_type == "caffe"):
+                if ((self.model_type == "onnx" or self.model_type == "caffe") and self.inputs[0]['model_shape'][1] == 3):
                     values = np.transpose(values, [0, 3, 1, 2])
 
             if type == 'float32':
@@ -263,6 +306,8 @@ class TestRunner(metaclass=ABCMeta):
 
     def data_pre_process(self, data):
         data = copy.deepcopy(data)
+        if self.pre_process[3]['input_type'] == "float32":
+            data = np.asarray(data, dtype=np.float32)
         if self.pre_process[0]['preprocess'] and len(data.shape) == 4:
             if self.pre_process[-1]['input_layout'] == 'NCHW':
                 data = np.transpose(data, [0, 2, 3, 1])
@@ -274,18 +319,16 @@ class TestRunner(metaclass=ABCMeta):
             for item in self.pre_process:
                 # dequantize
                 if 'range' in item.keys() and 'input_type' in item.keys():
-                    Q_max, Q_min = 0, 0
+                    Q_max, Q_min = item['range'][1], item['range'][0]
                     if item['input_type'] == 'uint8':
-                        Q_max, Q_min = 255, 0
-                    # elif item['input_type'] == 'int8':
-                    #     Q_max, Q_min = 127, -128
+                        range_min, range_max = 0, 255
+                    elif item['input_type'] == 'int8':
+                        range_min, range_max = -128, 127
                     else:
-                        continue
-                    scale = (item['range'][1] - item['range'][0]) / (Q_max - Q_min)
-                    bias = round((item['range'][1] * Q_min - item['range'][0] *
-                                  Q_max) / (item['range'][1] - item['range'][0]))
-                    data = data * scale
-                    data = data - bias
+                        range_min, range_max = 0, 1
+                    scale = (range_max - range_min) / (Q_max - Q_min)
+                    bias = round((range_max * Q_min - range_min * Q_max) / (range_max - range_min))
+                    data = data / scale + bias
 
                 # swapRB
                 if 'swapRB' in item.keys():
@@ -308,7 +351,8 @@ class TestRunner(metaclass=ABCMeta):
                             in_h, in_w = data.shape[1], data.shape[2]
                             model_h, model_w = model_shape[1], model_shape[2]
                             ratio = min(model_h / in_h, model_w / in_w)
-                            resize_shape = data.shape[0], round(in_h * ratio), round(in_w * ratio), 3
+                            resize_shape = data.shape[0], round(
+                                in_h * ratio), round(in_w * ratio), 3
                             resize_data = cv2.resize(data[0], (resize_shape[2],
                                                                resize_shape[1]), interpolation=cv2.INTER_LINEAR)
                             dh = model_shape[1] - resize_shape[1]
@@ -358,10 +402,10 @@ class TestRunner(metaclass=ABCMeta):
                 else:
                     print("WARN: target[{0}] not found".format(t))
             return new_targets
-        self.cfg.case.eval[0].values = _validate_targets(
-            targets if targets else self.cfg.case.eval[0].values)
-        self.cfg.case.infer[0].values = _validate_targets(
-            targets if targets else self.cfg.case.infer[0].values)
+        self.cfg.case.eval[0].update({"values": _validate_targets(
+            targets if targets else self.cfg.case.eval[0].values)})
+        self.cfg.case.infer[0].update({"values": _validate_targets(
+            targets if targets else self.cfg.case.infer[0].values)})
 
     def run(self, model_path: Union[List[str], str]):
         # TODO add mulit process pool
@@ -373,6 +417,7 @@ class TestRunner(metaclass=ABCMeta):
             case_dir = os.path.dirname(model_path)
         elif isinstance(model_path, list):
             case_dir = os.path.dirname(model_path[0])
+        self.model_path = case_dir
         self.run_single(self.cfg.case, case_dir, model_path)
         if self.in_ci:
             shutil.rmtree(case_dir)
@@ -425,11 +470,13 @@ class TestRunner(metaclass=ABCMeta):
                     f.write('\n'.join(pre_list[:]) + "\n")
                     f.write("-------------------------\n")
 
-            self.cpu_infer(case_dir, model_file, dict_args['input_type'])
+            self.cpu_infer(case_dir, model_file, dict_args['input_type'],
+                           "dataset" if cfg.generate_inputs.name == 'generate_imagenet_dataset' else "random")
             import_options, compile_options = self.get_compiler_options(dict_args, model_file)
             model_content = self.read_model_file(model_file)
-            self.run_evaluator(cfg, case_dir, import_options,
-                               compile_options, model_content, dict_args)
+            if cfg.generate_inputs.name != 'generate_imagenet_dataset':
+                self.run_evaluator(cfg, case_dir, import_options,
+                                   compile_options, model_content, dict_args)
             self.run_inference(cfg, case_dir, import_options,
                                compile_options, model_content, dict_args)
 
@@ -488,8 +535,12 @@ class TestRunner(metaclass=ABCMeta):
         arg_names = []
         arg_values = []
         for d in kwcfg:
-            arg_names.append(d.name)
-            arg_values.append(d.values)
+            if type(d) is dict:
+                arg_names.append(d['name'])
+                arg_values.append(d['values'])
+            else:
+                arg_names.append(d.name)
+                arg_values.append(d.values)
         return (arg_names, arg_values)
 
     def read_model_file(self, model_file: Union[List[str], str]):
@@ -544,19 +595,41 @@ class TestRunner(metaclass=ABCMeta):
 
         evaluator = compiler.create_evaluator(3)
         eval_output_paths = []
-        for i in range(len(self.inputs)):
-            input_tensor = nncase.RuntimeTensor.from_numpy(
-                self.transform_input(self.data_pre_process(self.inputs[i]['data']), "float32", "CPU"))
-            input_tensor.copy_to(evaluator.get_input_tensor(i))
-            evaluator.run()
-
-        for i in range(evaluator.outputs_size):
-            result = evaluator.get_output_tensor(i).to_numpy()
+        if cfg.generate_inputs.name == "generate_imagenet_dataset":
+            # for i in range(len(self.inputs)):
+            topk = []
+            for in_data in self.inputs[0]['data']:
+                input_tensor = nncase.RuntimeTensor.from_numpy(in_data[0])
+                input_tensor.copy_to(evaluator.get_input_tensor(0))
+                evaluator.run()
+                result = evaluator.get_output_tensor(0).to_numpy()
+                topk.append((in_data[1], get_topK(kwargs['target'], 1, result)))
+            gnne_txt = "gnne_no_ptq" if kwargs['ptq'] is False else "gnne_ptq"
             eval_output_paths.append((
-                os.path.join(eval_dir, f'nncase_result_{i}.bin'),
-                os.path.join(eval_dir, f'nncase_result_{i}.txt')))
+                os.path.join(eval_dir, gnne_txt) + '_0.bin',
+                os.path.join(eval_dir, gnne_txt) + '_0.txt'))
             result.tofile(eval_output_paths[-1][0])
-            self.totxtfile(eval_output_paths[-1][1], result)
+            with open(eval_output_paths[-1][1], 'a') as f:
+                for i in range(len(topk)):
+                    f.write(topk[i][0].split("/")[-1] + " " + str(topk[i][1]) + '\n')
+
+        else:
+            for i in range(len(self.inputs)):
+                data = self.transform_input(self.data_pre_process(
+                    self.inputs[i]['data']), "float32", "CPU")
+                input_tensor = nncase.RuntimeTensor.from_numpy(data)
+                if preprocess['preprocess']:
+                    self.totxtfile(os.path.join(case_dir, f'eval_input.txt'), data)
+                input_tensor.copy_to(evaluator.get_input_tensor(i))
+                evaluator.run()
+
+            for i in range(evaluator.outputs_size):
+                result = evaluator.get_output_tensor(i).to_numpy()
+                eval_output_paths.append((
+                    os.path.join(eval_dir, f'nncase_result_{i}.bin'),
+                    os.path.join(eval_dir, f'nncase_result_{i}.txt')))
+                result.tofile(eval_output_paths[-1][0])
+                self.totxtfile(eval_output_paths[-1][1], result)
         return eval_output_paths
 
     def nncase_infer(self, cfg, case_dir: str,
@@ -584,9 +657,11 @@ class TestRunner(metaclass=ABCMeta):
             compile_options.input_shape = self.pre_process[3]['input_shape']
         else:
             if self.model_type == "tflite" and preprocess['input_layout'] == "NCHW":
-                compile_options.input_shape = np.array([self.pre_process[3]['model_shape'][0],self.pre_process[3]['model_shape'][3],self.pre_process[3]['model_shape'][1],self.pre_process[3]['model_shape'][2]])
+                compile_options.input_shape = np.array([self.pre_process[3]['model_shape'][0], self.pre_process[3]
+                                                       ['model_shape'][3], self.pre_process[3]['model_shape'][1], self.pre_process[3]['model_shape'][2]])
             elif self.model_type != "tflite" and preprocess['input_layout'] == "NHWC":
-                compile_options.input_shape = np.array([self.pre_process[3]['model_shape'][0],self.pre_process[3]['model_shape'][2],self.pre_process[3]['model_shape'][3],self.pre_process[3]['model_shape'][1]])
+                compile_options.input_shape = np.array([self.pre_process[3]['model_shape'][0], self.pre_process[3]
+                                                       ['model_shape'][2], self.pre_process[3]['model_shape'][3], self.pre_process[3]['model_shape'][1]])
             else:
                 compile_options.input_shape = self.pre_process[3]['model_shape']
         compile_options.input_range = preprocess['input_range']
@@ -606,8 +681,13 @@ class TestRunner(metaclass=ABCMeta):
             compiler.dump_range_options(dump_range_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
-            ptq_options.set_tensor_data(np.asarray(
-                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
+            if cfg.generate_calibs.name == "generate_imagenet_dataset":
+                ptq_options.set_tensor_data(np.asarray(
+                    [sample['data'] for sample in self.calibs]).tobytes())
+                ptq_options.calibrate_method = self.cfg.case.compile_opt.quant_method
+            else:
+                ptq_options.set_tensor_data(np.asarray(
+                    [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
             ptq_options.samples_count = cfg.generate_calibs.batch_size
             compiler.use_ptq(ptq_options)
 
@@ -615,31 +695,48 @@ class TestRunner(metaclass=ABCMeta):
         kmodel = compiler.gencode_tobytes()
         with open(os.path.join(infer_dir, 'test.kmodel'), 'wb') as f:
             f.write(kmodel)
-        sim = nncase.Simulator()
-        sim.load_model(kmodel)
+
         infer_output_paths: List[np.ndarray] = []
-        for i in range(len(self.inputs)):
-            data = self.transform_input(self.inputs[i]['data'], preprocess['input_type'], "infer")
-            dtype = preprocess['input_type']
-            if preprocess['preprocess'] and dtype != 'float32':
-                data.tofile(os.path.join(case_dir, f'input_{i}_{dtype}.bin'))
-                self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
-
-            sim.set_input_tensor(i, nncase.RuntimeTensor.from_numpy(data))
-        sim.run()
-
-        for i in range(sim.outputs_size):
-            result = sim.get_output_tensor(i).to_numpy()
-            if preprocess['preprocess'] and len(result.shape) == 4:
-                if(preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
-                    result = np.transpose(result, [0, 3, 1, 2])
-                elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
-                    result = np.transpose(result, [0, 2, 3, 1])
+        if cfg.generate_inputs.name == "generate_imagenet_dataset":
+            gnne_txt = "gnne_no_ptq" if kwargs['ptq'] is False else "gnne_ptq"
             infer_output_paths.append((
-                os.path.join(infer_dir, f'nncase_result_{i}.bin'),
-                os.path.join(infer_dir, f'nncase_result_{i}.txt')))
-            result.tofile(infer_output_paths[-1][0])
-            self.totxtfile(infer_output_paths[-1][1], result)
+                os.path.join(infer_dir, gnne_txt) + '.bin',
+                os.path.join(infer_dir, gnne_txt) + '.txt'))
+            p = multiprocessing.Pool(100)
+            result = []
+            for in_data in self.inputs[0]['data']:
+                input_data = copy.deepcopy(in_data)
+                p.apply_async(sim_run, args=(
+                    kmodel, input_data, infer_output_paths, kwargs['target'], self.model_type, self.inputs[0]['model_shape']))
+            p.close()
+            p.join()
+
+        else:
+            sim = nncase.Simulator()
+            sim.load_model(kmodel)
+            for i in range(len(self.inputs)):
+                data = self.transform_input(
+                    self.inputs[i]['data'], preprocess['input_type'], "infer")
+                dtype = preprocess['input_type']
+                if preprocess['preprocess']:
+                    data.tofile(os.path.join(case_dir, f'input_{i}_{dtype}.bin'))
+                    self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
+
+                sim.set_input_tensor(i, nncase.RuntimeTensor.from_numpy(data))
+            sim.run()
+
+            for i in range(sim.outputs_size):
+                result = sim.get_output_tensor(i).to_numpy()
+                if preprocess['preprocess'] and len(result.shape) == 4:
+                    if(preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
+                        result = np.transpose(result, [0, 3, 1, 2])
+                    elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
+                        result = np.transpose(result, [0, 2, 3, 1])
+                infer_output_paths.append((
+                    os.path.join(infer_dir, f'nncase_result_{i}.bin'),
+                    os.path.join(infer_dir, f'nncase_result_{i}.txt')))
+                result.tofile(infer_output_paths[-1][0])
+                self.totxtfile(infer_output_paths[-1][1], result)
         return infer_output_paths
 
     def on_test_start(self) -> None:
@@ -656,22 +753,28 @@ class TestRunner(metaclass=ABCMeta):
                         shape = copy.deepcopy(preprocess_opt['input_shape'])
                     else:
                         if self.model_type == "tflite" and preprocess_opt['input_layout'] == "NCHW":
-                            shape = copy.deepcopy(np.array([input['model_shape'][0],input['model_shape'][3],input['model_shape'][1],input['model_shape'][2]]))
+                            shape = copy.deepcopy(np.array(
+                                [input['model_shape'][0], input['model_shape'][3], input['model_shape'][1], input['model_shape'][2]]))
                         elif self.model_type != "tflite" and preprocess_opt['input_layout'] == "NHWC":
-                            shape = copy.deepcopy(np.array([input['model_shape'][0],input['model_shape'][2],input['model_shape'][3],input['model_shape'][1]]))
+                            shape = copy.deepcopy(np.array(
+                                [input['model_shape'][0], input['model_shape'][2], input['model_shape'][3], input['model_shape'][1]]))
                         else:
                             shape = copy.deepcopy(input['model_shape'])
                 else:
                     shape = copy.deepcopy(input['model_shape'])
                 if shape[0] != cfg.batch_size:
                     shape[0] *= cfg.batch_size
-                data = DataFactory[cfg.name](shape, input['dtype'], n, cfg.batch_size, **cfg.kwargs)
+                if self.model_type != "tflite" and cfg.name == "generate_imagenet_dataset" and shape[1] == 3:
+                    shape = shape[0], shape[2], shape[3], shape[1]
+                data = DataFactory[cfg.name](shape, input['dtype'], n,
+                                             cfg.batch_size, self.model_path, **cfg.kwargs)
 
-                path_list.append(
-                    (os.path.join(case_dir, f'{name}_{n}_{i}.bin'),
-                     os.path.join(case_dir, f'{name}_{n}_{i}.txt')))
-                data.tofile(path_list[-1][0])
-                self.totxtfile(path_list[-1][1], data)
+                if cfg.name != "generate_imagenet_dataset":
+                    path_list.append(
+                        (os.path.join(case_dir, f'{name}_{n}_{i}.bin'),
+                         os.path.join(case_dir, f'{name}_{n}_{i}.txt')))
+                    data.tofile(path_list[-1][0])
+                    self.totxtfile(path_list[-1][1], data)
                 i += 1
                 input['data'] = data
 

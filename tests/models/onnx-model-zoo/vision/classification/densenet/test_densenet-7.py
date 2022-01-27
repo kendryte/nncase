@@ -18,7 +18,8 @@ from onnx_test_runner import OnnxTestRunner
 
 
 def test_densenet_7(request):
-    runner = OnnxTestRunner(request.node.name, ['cpu', 'k510'])
+    overwrite_file = open('tests/models/onnx-model-zoo/vision/classification/test_dataset_100.yml', 'r', encoding="utf8").read()
+    runner = OnnxTestRunner(request.node.name, ['cpu', 'k510'], overwrite_configs = overwrite_file)
     model_file = 'onnx-models/vision/classification/densenet-121/model/densenet-7.onnx'
     runner.run(model_file)
 

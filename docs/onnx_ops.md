@@ -34,6 +34,7 @@
 | Elu | ✅ |
 | Exp | ✅ |
 | Expand | ✅ |
+| Equal | ✅ |
 | Flatten | ✅ |
 | Floor | ✅ |
 | Gather | ✅ |
@@ -58,6 +59,7 @@
 | Min | ✅ |
 | Mul | ✅ |
 | Neg | ✅ |
+| Not | ✅ |
 | OneHot | ✅ |
 | Pad | ✅ |
 | Pow | ✅ |

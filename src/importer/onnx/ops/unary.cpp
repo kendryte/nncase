@@ -18,6 +18,8 @@
 #include <nncase/ir/graph.h>
 #include <nncase/ir/ops/binary.h>
 #include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/dequantize.h>
+#include <nncase/ir/ops/quantize.h>
 #include <nncase/ir/ops/unary.h>
 
 using namespace nncase;
@@ -80,6 +82,43 @@ void onnx_importer::convert_op_Neg(const onnx::NodeProto &node)
     convert_unary(node, unary_neg);
 }
 
+void onnx_importer::convert_op_Not(const onnx::NodeProto &node)
+{
+    assert(node.input().size() == 1);
+    assert(node.output().size() == 1);
+    const auto &op_name { generate_name(node) };
+
+    // input
+    const auto &input = node.input()[0];
+    const auto input_type = get_datatype(input).value();
+    assert(input_type == dt_uint8);
+    auto input_shape = get_shape(input);
+
+    // output
+    const auto &output = node.output()[0];
+    const auto output_type = get_datatype(output).value();
+    assert(output_type == dt_uint8);
+
+    // dequantize
+    quant_param_t qparam { 0, 1.f };
+    auto dequant = graph_.emplace<dequantize>(input_type, input_shape, dt_float32, qparam);
+    dequant->name(op_name + "/dequant");
+
+    // unary
+    auto unary_op = unary_logical_not;
+    auto op = graph_.emplace<unary>(unary_op, dequant->output().shape());
+    op->name(op_name + '(' + unary_op_to_string(unary_op) + ')');
+    op->input().connect(dequant->output());
+
+    // quantize
+    auto quant = graph_.emplace<quantize>(dt_float32, op->output().shape(), output_type, qparam);
+    quant->name(op_name + "/quant");
+    quant->input().connect(op->output());
+
+    input_tensors_.emplace(&dequant->input(), input);
+    output_tensors_.emplace(output, &quant->output());
+}
+
 void onnx_importer::convert_op_Round(const onnx::NodeProto &node)
 {
     convert_unary(node, unary_round);
@@ -123,6 +162,7 @@ void onnx_importer::convert_op_Sinh(const onnx::NodeProto &node)
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
     const auto &in_shape = get_shape(input);
+    const auto input_type = get_datatype(input).value();
 
     auto exp1 = graph_.emplace<unary>(unary_exp, in_shape);
     exp1->name(op_name + ".exp(Sinh)");
@@ -133,13 +173,13 @@ void onnx_importer::convert_op_Sinh(const onnx::NodeProto &node)
     auto exp2 = graph_.emplace<unary>(unary_exp, neg->output().shape());
     exp2->name(op_name + ".exp(Sinh)");
 
-    auto sub = graph_.emplace<binary>(binary_sub, exp1->output().shape(), exp2->output().shape(), value_range<float>::full());
+    auto sub = graph_.emplace<binary>(binary_sub, input_type, exp1->output().shape(), exp2->output().shape(), value_range<float>::full());
     sub->name(op_name + ".sub(Sinh)");
 
     auto two = graph_.emplace<constant>(2.f);
     two->name(op_name + ".two(Sinh)");
 
-    auto div = graph_.emplace<binary>(binary_div, sub->output().shape(), two->output().shape(), value_range<float>::full());
+    auto div = graph_.emplace<binary>(binary_div, input_type, sub->output().shape(), two->output().shape(), value_range<float>::full());
     div->name(op_name + ".div(Sinh)");
 
     exp2->input().connect(neg->output());
@@ -163,6 +203,7 @@ void onnx_importer::convert_op_Cosh(const onnx::NodeProto &node)
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
     const auto &in_shape = get_shape(input);
+    const auto input_type = get_datatype(input).value();
 
     auto exp1 = graph_.emplace<unary>(unary_exp, in_shape);
     exp1->name(op_name + ".exp(Cosh)");
@@ -173,13 +214,13 @@ void onnx_importer::convert_op_Cosh(const onnx::NodeProto &node)
     auto exp2 = graph_.emplace<unary>(unary_exp, neg->output().shape());
     exp2->name(op_name + ".exp(Cosh)");
 
-    auto add = graph_.emplace<binary>(binary_add, exp1->output().shape(), exp2->output().shape(), value_range<float>::nonnegative());
+    auto add = graph_.emplace<binary>(binary_add, input_type, exp1->output().shape(), exp2->output().shape(), value_range<float>::nonnegative());
     add->name(op_name + ".add(Cosh)");
 
     auto two = graph_.emplace<constant>(2.f);
     two->name(op_name + ".two(Cosh)");
 
-    auto div = graph_.emplace<binary>(binary_div, add->output().shape(), two->output().shape(), value_range<float>::nonnegative());
+    auto div = graph_.emplace<binary>(binary_div, input_type, add->output().shape(), two->output().shape(), value_range<float>::nonnegative());
     div->name(op_name + ".div(Cosh)");
 
     exp2->input().connect(neg->output());
@@ -203,6 +244,7 @@ void onnx_importer::convert_op_Asinh(const onnx::NodeProto &node)
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
     const auto &in_shape = get_shape(input);
+    const auto input_type = get_datatype(input).value();
     struct value_range<float> one_to_infinity =
     {
         1, std::numeric_limits<float>::max()
@@ -214,13 +256,13 @@ void onnx_importer::convert_op_Asinh(const onnx::NodeProto &node)
     auto one = graph_.emplace<constant>(1.f);
     one->name(op_name + ".one(Asinh)");
 
-    auto add1 = graph_.emplace<binary>(binary_add, square->output().shape(), one->output().shape(), one_to_infinity);
+    auto add1 = graph_.emplace<binary>(binary_add, input_type, square->output().shape(), one->output().shape(), one_to_infinity);
     add1->name(op_name + ".add1(Asinh)");
 
     auto sqrt = graph_.emplace<unary>(unary_sqrt, add1->output().shape());
     sqrt->name(op_name + ".sqrt(Asinh)");
 
-    auto add2 = graph_.emplace<binary>(binary_add, in_shape, sqrt->output().shape(), one_to_infinity);
+    auto add2 = graph_.emplace<binary>(binary_add, input_type, in_shape, sqrt->output().shape(), one_to_infinity);
     add2->name(op_name + ".add2(Asinh)");
 
     auto log = graph_.emplace<unary>(unary_log, add2->output().shape());
@@ -247,6 +289,7 @@ void onnx_importer::convert_op_Acosh(const onnx::NodeProto &node)
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
     const auto &in_shape = get_shape(input);
+    const auto input_type = get_datatype(input).value();
     struct value_range<float> one_to_infinity =
     {
         1, std::numeric_limits<float>::max()
@@ -258,13 +301,13 @@ void onnx_importer::convert_op_Acosh(const onnx::NodeProto &node)
     auto one = graph_.emplace<constant>(1.f);
     one->name(op_name + ".one(Acosh)");
 
-    auto sub = graph_.emplace<binary>(binary_sub, square->output().shape(), one->output().shape(), value_range<float>::nonnegative());
+    auto sub = graph_.emplace<binary>(binary_sub, input_type, square->output().shape(), one->output().shape(), value_range<float>::nonnegative());
     sub->name(op_name + ".sub(Acosh)");
 
     auto sqrt = graph_.emplace<unary>(unary_sqrt, sub->output().shape());
     sqrt->name(op_name + ".sqrt(Acosh)");
 
-    auto add = graph_.emplace<binary>(binary_add, in_shape, sqrt->output().shape(), one_to_infinity);
+    auto add = graph_.emplace<binary>(binary_add, input_type, in_shape, sqrt->output().shape(), one_to_infinity);
     add->name(op_name + ".add(Acosh)");
 
     auto log = graph_.emplace<unary>(unary_log, add->output().shape());

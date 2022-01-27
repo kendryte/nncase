@@ -24,16 +24,17 @@ using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::reference;
 
 template result<void> reference::sigmoid<float>(const float *input, float *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &in_strides) noexcept;
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept;
 
 template <typename T>
-result<void> reference::sigmoid(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides) noexcept
+result<void> reference::sigmoid(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    const runtime_shape_t &out_strides) noexcept
 {
     return apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
         const auto in_index = kernels::detail::get_reduced_offset(index, in_shape);
-        auto off = offset(in_strides, in_index);
-        output[off] = 1 / (1 + exp(input[off] * (-1)));
-
+        auto src_idx = offset(in_strides, in_index);
+        auto dst_idx = offset(out_strides, in_index);
+        output[dst_idx] = 1 / (1 + exp(-input[src_idx]));
         return ok();
     });
 }

@@ -292,3 +292,4 @@ RC*
 wheelhouse/
 test_local*
 .env
+.editorconfig

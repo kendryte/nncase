@@ -133,7 +133,7 @@ class OnnxTestRunner(TestRunner):
             print(output_dict)
             self.outputs.append(output_dict)
 
-    def cpu_infer(self, case_dir: str, model_file: bytes, type: str):
+    def cpu_infer(self, case_dir: str, model_file: bytes, type: str, mode: str):
         # create session
         try:
             print('[onnx]: using simplified model')
@@ -153,20 +153,39 @@ class OnnxTestRunner(TestRunner):
                 onnx.save_model(onnx_model, model_file)
                 sess = ort.InferenceSession(model_file)
 
-        input_dict = {}
-        for input in self.inputs:
-            input_dict[input['name']] = self.transform_input(
-                self.data_pre_process(input['data']), "float32", "CPU")
+        if mode is "dataset":
+            for input in self.inputs:
+                input_dict = {}
+                for in_data in input['data']:
+                    topk = []
+                    input_dict[input['name']] = self.transform_input(
+                        self.data_pre_process(in_data[0]), "float32", "CPU")
+                    outputs = sess.run(None, input_dict)
+                    for output in outputs:
+                        topk.append((in_data[1], get_topK('cpu', 1, output)[0]))
+                    if os.path.exists(os.path.join(case_dir, "cpu_dataset.txt")):
+                        os.remove(os.path.join(case_dir, "cpu_dataset.txt"))
+                    self.output_paths.append((
+                        os.path.join(case_dir, 'cpu_result_0.bin'),
+                        os.path.join(case_dir, 'cpu_result_0.txt')))
+                    with open(self.output_paths[-1][1], 'a') as f:
+                        for i in range(len(topk)):
+                            f.write(topk[i][0].split('/')[-1] + " " + str(topk[i][1]) + '\n')
+        else:
+            input_dict = {}
+            for input in self.inputs:
+                input_dict[input['name']] = self.transform_input(
+                    self.data_pre_process(input['data']), "float32", "CPU")
 
-        outputs = sess.run(None, input_dict)
-        i = 0
-        for output in outputs:
-            bin_file = os.path.join(case_dir, f'cpu_result_{i}.bin')
-            text_file = os.path.join(case_dir, f'cpu_result_{i}.txt')
-            self.output_paths.append((bin_file, text_file))
-            output.tofile(bin_file)
-            self.totxtfile(text_file, output)
-            i += 1
+            outputs = sess.run(None, input_dict)
+            i = 0
+            for output in outputs:
+                bin_file = os.path.join(case_dir, f'cpu_result_{i}.bin')
+                text_file = os.path.join(case_dir, f'cpu_result_{i}.txt')
+                self.output_paths.append((bin_file, text_file))
+                output.tofile(bin_file)
+                self.totxtfile(text_file, output)
+                i += 1
 
     def import_model(self, compiler, model_content, import_options):
         compiler.import_onnx(model_content, import_options)

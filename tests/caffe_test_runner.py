@@ -37,7 +37,7 @@ class CaffeTestRunner(TestRunner):
                 output_dict['model_shape'] = list(caffe_model.blobs[n].data.shape)
                 self.outputs.append(output_dict)
 
-    def cpu_infer(self, case_dir: str, model_file_list, type: str):
+    def cpu_infer(self, case_dir: str, model_file_list, type: str, mode: str):
         caffe_model = caffe.Net(model_file_list[0], model_file_list[1], caffe.TEST)
 
         for input in self.inputs:
