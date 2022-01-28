@@ -6,34 +6,38 @@ namespace Nncase.Schedule;
 
 using AllocationMap = Dictionary<IR.Expr, BufferAllocation>;
 
-
 /// <summary>
-/// the memory type
+/// the memory type.
 /// </summary>
 public enum MemoryLocation : byte
 {
     /// <summary>
-    /// input 
+    /// input.
     /// </summary>
     Input = 0,
+
     /// <summary>
-    /// output
+    /// output.
     /// </summary>
     Output = 1,
+
     /// <summary>
-    /// constant data
+    /// constant data.
     /// </summary>
     Rdata = 2,
+
     /// <summary>
-    /// compute temp data
+    /// compute temp data.
     /// </summary>
     Data = 3,
+
     /// <summary>
-    /// shared data
+    /// shared data.
     /// </summary>
     SharedData = 4,
+
     /// <summary>
-    /// base addr
+    /// base addr.
     /// </summary>
     PrivateBase = 64,
 }
@@ -44,28 +48,32 @@ public enum MemoryLocation : byte
 public class MemoryRange
 {
     /// <summary>
-    /// memory loaction
+    /// memory loaction.
     /// </summary>
     public MemoryLocation MemoryLocate;
+
     /// <summary>
-    /// memory data type
+    /// memory data type.
     /// </summary>
     public DataType DType;
+
     /// <summary>
-    /// shared module
+    /// shared module.
     /// </summary>
     public UInt16 SharedModule;
+
     /// <summary>
-    /// memory span start
+    /// memory span start.
     /// </summary>
     public uint Start;
+
     /// <summary>
-    /// memory span length
+    /// memory span length.
     /// </summary>
     public uint Size;
 
     /// <summary>
-    /// <see cref="MemoryRange"/>
+    /// <see cref="MemoryRange"/>.
     /// </summary>
     /// <param name="memoryLocate">memory data type.</param>
     /// <param name="dType">memory loaction.</param>
@@ -83,45 +91,52 @@ public class MemoryRange
 }
 
 /// <summary>
-/// the buffer allocation
+/// the buffer allocation.
 /// </summary>
 public class BufferAllocation
 {
     /// <summary>
-    /// mem loacte
+    /// mem loacte.
     /// </summary>
     public MemoryLocation MemoryLocate;
+
     /// <summary>
-    /// data type
+    /// data type.
     /// </summary>
     public DataType DType;
+
     /// <summary>
-    /// shared modeule
+    /// shared modeule.
     /// </summary>
     public ulong SharedModule;
+
     /// <summary>
-    /// start
+    /// start.
     /// </summary>
     public ulong Start;
+
     /// <summary>
-    /// total size
+    /// total size.
     /// </summary>
     public ulong Size;
+
     /// <summary>
-    /// full shape
+    /// full shape.
     /// </summary>
     public IR.Shape Shape;
+
     /// <summary>
-    /// full stride
+    /// full stride.
     /// </summary>
     public IR.Shape Strides;
+
     /// <summary>
-    /// stride shape
+    /// stride shape.
     /// </summary>
     public IR.Shape StridesShape;
 
     /// <summary>
-    /// <see cref="BufferAllocation"/>
+    /// <see cref="BufferAllocation"/>.
     /// </summary>
     /// <param name="memory_locate">mem loacte.</param>
     /// <param name="d_type">data type.</param>
@@ -144,20 +159,20 @@ public class BufferAllocation
     }
 
     /// <summary>
-    /// get then mem span end
+    /// get then mem span end.
     /// </summary>
     /// <returns></returns>
     public ulong LinearEnd() => Start + Size;
 
     /// <summary>
-    /// calc the overlap with another buffer
+    /// calc the overlap with another buffer.
     /// </summary>
     /// <param name="rhs"></param>
     /// <returns></returns>
     public bool Overlap(BufferAllocation rhs) => Size != 0 && rhs.Size != 0 && this.MemoryLocate == rhs.MemoryLocate && (Start < rhs.LinearEnd() && LinearEnd() > rhs.Start);
 
     /// <summary>
-    /// get current buffer memory range
+    /// get current buffer memory range.
     /// </summary>
     public MemoryRange RuntimeType => new(this.MemoryLocate,
          this.DType,
@@ -167,27 +182,27 @@ public class BufferAllocation
 }
 
 /// <summary>
-/// SchedModelResult
+/// SchedModelResult.
 /// </summary>
 public class SchedModelResult
 {
     /// <summary>
-    /// sched module result
+    /// sched module result.
     /// </summary>
     public readonly List<SchedModuleResult> Modules;
 
     /// <summary>
-    /// sched function result
+    /// sched function result.
     /// </summary>
     public SchedFunctionResult? Entry;
 
     /// <summary>
-    /// the parent ir module
+    /// the parent ir module.
     /// </summary>
     public IR.IRModule ParentModule;
 
     /// <summary>
-    /// create the SchedModelResult
+    /// create the SchedModelResult.
     /// </summary>
     /// <param name="parent_module"></param>
     public SchedModelResult(IR.IRModule parent_module)
@@ -199,42 +214,42 @@ public class SchedModelResult
 }
 
 /// <summary>
-/// SchedModuleResult
+/// SchedModuleResult.
 /// </summary>
 public class SchedModuleResult
 {
     /// <summary>
-    /// current Module type
+    /// current Module type.
     /// </summary>
     public CodeGen.ModuleType ModuleType;
 
     /// <summary>
-    /// contains functions
+    /// contains functions.
     /// </summary>
     public readonly List<SchedFunctionResult> Functions;
 
     /// <summary>
-    /// schedfunction maps
+    /// schedfunction maps.
     /// </summary>
     public readonly Dictionary<IR.Expr, SchedFunctionResult> FunctionsMap;
 
     /// <summary>
-    /// the buffer allocations
+    /// the buffer allocations.
     /// </summary>
     public readonly AllocationMap Allocations;
 
     /// <summary>
-    /// mem collection
+    /// mem collection.
     /// </summary>
     public readonly Dictionary<MemoryLocation, ulong> MaxUsages;
 
     /// <summary>
-    /// shared mem
+    /// shared mem.
     /// </summary>
     public readonly Dictionary<CodeGen.ModuleType, ulong> SharedMaxUsages;
 
     /// <summary>
-    /// create SchedModuleResult
+    /// create SchedModuleResult.
     /// </summary>
     public SchedModuleResult(CodeGen.ModuleType moduleType)
     {
@@ -248,33 +263,37 @@ public class SchedModuleResult
 }
 
 /// <summary>
-/// SchedFunctionResult
+/// SchedFunctionResult.
 /// </summary>
 public class SchedFunctionResult
 {
     /// <summary>
-    /// parent module
+    /// parent module.
     /// </summary>
     public SchedModuleResult SchedModule;
+
     /// <summary>
-    /// input memory size
+    /// input memory size.
     /// </summary>
     public ulong InputPoolSize;
+
     /// <summary>
-    /// ouput memory size
+    /// ouput memory size.
     /// </summary>
     public ulong OutputPoolSize;
+
     /// <summary>
-    /// compute sequence
+    /// compute sequence.
     /// </summary>
     public List<IR.Expr> ComputeSequence;
+
     /// <summary>
-    /// the ir function
+    /// the ir function.
     /// </summary>
     public IR.Function Function;
 
     /// <summary>
-    /// create SchedFunctionResult
+    /// create SchedFunctionResult.
     /// </summary>
     /// <param name="sched_module">parent module.</param>
     /// <param name="input_pool_size">input memory size.</param>
@@ -291,22 +310,23 @@ public class SchedFunctionResult
 }
 
 /// <summary>
-/// the scheduler interface
+/// the scheduler interface.
 /// </summary>
 public interface IScheduler
 {
     /// <summary>
-    /// the current target
+    /// the current target.
     /// </summary>
     public ITarget Target { get; set; }
+
     /// <summary>
-    /// the main module
+    /// the main module.
     /// </summary>
     public IR.IRModule ParentModule { get; set; }
 
     /// <summary>
     /// multi stage schedules.
-    /// relay IR -> TIR -> lowered TIR 
+    /// relay IR -> TIR -> lowered TIR.
     /// </summary>
     /// <param name="skip_buffer_alias"></param>
     /// <returns></returns>

@@ -9,7 +9,6 @@ namespace Nncase.Pattern
 {
     public sealed record CallPattern(ExprPattern Target, VArgsPattern Parameters) : ExprPattern
     {
-
         public CallPattern(Call call) : this((ExprPattern)call.Target, new FixedVArgsPattern(call.Parameters)) { }
 
         public bool MatchLeaf(Call call)
@@ -21,7 +20,6 @@ namespace Nncase.Pattern
         {
             get => Parameters[parameter.Index];
         }
-
 
         public CallPattern(ExprPattern target, params ExprPattern[] parameters)
             : this(target, new FixedVArgsPattern(parameters))
@@ -36,7 +34,6 @@ namespace Nncase.Pattern
             Target.Clear();
             Parameters.Clear();
         }
-
     }
 
     public static partial class Utility
@@ -44,6 +41,5 @@ namespace Nncase.Pattern
         public static CallPattern IsCall(ExprPattern Target, VArgsPattern Parameters) => new CallPattern(Target, Parameters);
 
         public static CallPattern IsCall(ExprPattern Target, params ExprPattern[] Parameters) => new CallPattern(Target, Parameters);
-
     }
 }

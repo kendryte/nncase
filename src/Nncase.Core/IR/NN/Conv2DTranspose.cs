@@ -30,11 +30,11 @@ namespace Nncase.IR.NN
         /// Gets Bias.
         /// </summary>
         public static readonly ParameterInfo Bias = new(typeof(Conv2DTranspose), 2, "bias");
-        
+
         /// <summary>
         /// Gets OutputShape.
         /// </summary>
-        public static readonly ParameterInfo OutShape = new(typeof(Conv2DTranspose), 3, "outShape");
+        public static readonly ParameterInfo OutputShape = new(typeof(Conv2DTranspose), 3, "outputShape");
 
         /// <summary>
         /// Gets Stride.
@@ -50,17 +50,17 @@ namespace Nncase.IR.NN
         /// Gets Dilation.
         /// </summary>
         public static readonly ParameterInfo Dilation = new(typeof(Conv2DTranspose), 6, "dilation");
-        
+
         /// <summary>
         /// Gets Groups.
         /// </summary>
         public static readonly ParameterInfo Groups = new(typeof(Conv2DTranspose), 7, "groups");
-        
+
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType weights, TensorType bias,
             TensorType outShape, TensorType stride, TensorType padding, TensorType dilation, TensorType groups)
         {
-            if (context.GetArgument(this, OutShape) is Const outShapeValue)
+            if (context.GetArgument(this, OutputShape) is Const outShapeValue)
             {
                 return new TensorType(input.DType, new Shape(outShapeValue.ToTensor<int>()));
             }

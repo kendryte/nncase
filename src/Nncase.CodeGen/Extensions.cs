@@ -1,17 +1,21 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using Nncase.IR;
+
 namespace Nncase.CodeGen;
 
 /// <summary>
-/// static class for codegen collection
+/// static class for codegen collection.
 /// </summary>
 public static class CodeGenExtension
 {
     /// <summary>
-    /// schedule and build the IRModule to RTModel
+    /// schedule and build the IRModule to RTModel.
     /// </summary>
-    /// <param name="mod"> input module </param>
-    /// <param name="target"> target information </param>
-    /// <returns> the runtime model instance </returns>
+    /// <param name="mod"> input module. </param>
+    /// <param name="target"> target information. </param>
+    /// <returns> the runtime model instance. </returns>
     public static IRTModel ToRTModel(this IRModule mod, ITarget target)
     {
         var sch = target.CreateScheduler(mod);
@@ -21,19 +25,19 @@ public static class CodeGenExtension
 }
 
 /// <summary>
-/// BinaryWriterExtension
+/// BinaryWriterExtension.
 /// </summary>
 public static class BinaryWriterExtension
 {
     /// <summary>
     /// write the byte 0 into the stream.
     /// </summary>
-    /// <param name="writer"></param>
-    /// <param name="alignment"></param>
-    /// <returns></returns>
+    /// <param name="writer">The binary writer.</param>
+    /// <param name="alignment">The desired alignment.</param>
+    /// <returns>Padded bytes.</returns>
     public static long AlignPosition(this BinaryWriter writer, long alignment)
     {
-        var pos = writer.BaseStream.Position;
+        var pos = writer.GetPosition();
         var rem = pos % alignment;
         if (rem != 0)
         {
@@ -42,40 +46,42 @@ public static class BinaryWriterExtension
             {
                 writer.Write((byte)0);
             }
+
             return off;
         }
+
         return 0;
     }
 
     /// <summary>
-    /// get current position
+    /// Get current position.
     /// </summary>
-    /// <param name="writer"></param>
-    /// <returns></returns>
-    public static long Position(this BinaryWriter writer)
+    /// <param name="writer">The binary writer.</param>
+    /// <returns>The current position.</returns>
+    public static long GetPosition(this BinaryWriter writer)
     {
+        writer.Flush();
         return writer.BaseStream.Position;
     }
 
     /// <summary>
-    /// move the wirter to target position
+    /// Set current position.
     /// </summary>
-    /// <param name="writer"></param>
-    /// <param name="pos"></param>
-    /// <returns></returns>
-    public static long Position(this BinaryWriter writer, long pos)
+    /// <param name="writer">The binary writer.</param>
+    /// <param name="pos">The desired position.</param>
+    /// <returns>The current position.</returns>
+    public static long SetPosition(this BinaryWriter writer, long pos)
     {
         return writer.Seek((int)pos, SeekOrigin.Begin);
     }
 
     /// <summary>
-    /// skip the length
+    /// Skip bytes of length.
     /// </summary>
-    /// <param name="writer"></param>
-    /// <param name="len"></param>
+    /// <param name="writer">The binary writer.</param>
+    /// <param name="len">Bytes to skip.</param>
     public static void Skip(this BinaryWriter writer, ulong len)
     {
         writer.Seek((int)len, SeekOrigin.Current);
     }
-
 }

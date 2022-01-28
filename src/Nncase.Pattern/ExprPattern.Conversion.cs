@@ -39,8 +39,7 @@ namespace Nncase.Pattern
         public static implicit operator ExprPattern(bool value) => (ConstPattern)value;
 
         public static implicit operator ExprPattern(int[] span) => Const.FromSpan<int>(span);
-        
-        public static implicit operator ExprPattern(float[] span) => Const.FromSpan<float>(span);
 
+        public static implicit operator ExprPattern(float[] span) => Const.FromSpan<float>(span);
     }
 }

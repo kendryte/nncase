@@ -27,7 +27,7 @@ namespace Nncase.Evaluator
                         .Any(
                             x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IEvaluator<>)));
         }
-        
+
         internal static (EvaluatorVisitor, Const) EvalImpl(Expr expr, Dictionary<Var, Const> inputs)
         {
             if (expr.CheckedType is null) expr.InferenceType();

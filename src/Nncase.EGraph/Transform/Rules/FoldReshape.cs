@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Linq;
 using System.Collections.Immutable;
 using System.Collections.Generic;
@@ -50,11 +53,13 @@ namespace Nncase.Transform.Rule
             {
                 if (!ttype.Shape.IsFixed)
                     return null;
+
                 // ttype.Shape
                 var targetShape = new Shape(shape.ToArray());
                 if (ttype.Shape == targetShape)
                     return input;
             }
+
             return null;
         }
     }

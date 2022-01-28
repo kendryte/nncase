@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using Nncase.IR;
 using System.Collections.Generic;
 using Nncase.Pattern;
@@ -5,14 +8,12 @@ using static Nncase.Pattern.Utility;
 using static Nncase.Transform.RulesFactory;
 using Nncase.Evaluator;
 
-
 namespace Nncase.Transform.Rule
 {
     public static partial class SimplifyFactory
     {
         private static WildCardPattern x = "x", y = "y", z = "z", w = "w", u = "u", v = "v";
         private static ConstPattern c0 = IsConst(), c1 = IsConst(), c2 = IsConst(), c3 = IsConst(), c4 = IsConst(), c5 = IsConst();
-
 
         private static readonly List<PatternRule> _simplifyAdd = new()
         {
@@ -32,13 +33,12 @@ namespace Nncase.Transform.Rule
         private static readonly List<PatternRule> _simplifyMul = new()
         {
             Rewrite(x * 1, x),
-            Rewrite(1 * x, x)
+            Rewrite(1 * x, x),
         };
 
         public static List<PatternRule> SimplifyMul()
         {
             return _simplifyMul;
         }
-
     }
 }

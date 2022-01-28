@@ -17,10 +17,9 @@ namespace Nncase.Transform
     public class EGraphPass : FunctionPass
     {
         /// <summary>
-        /// Save rules
+        /// Save rules.
         /// </summary>
         public readonly List<PatternRule> Rules = new();
-
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EGraphPass"/> class.
@@ -32,7 +31,7 @@ namespace Nncase.Transform
         }
 
         /// <summary>
-        /// add rules
+        /// add rules.
         /// </summary>
         /// <param name="rules"></param>
         public void Add(params PatternRule[] rules)

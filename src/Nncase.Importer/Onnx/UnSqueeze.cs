@@ -23,7 +23,7 @@ namespace Nncase.Importer
             var axes = Const.FromSpan<long>(GetIntsAttribute(op, "axes"));
             return UnSqueeze(input, axes);
         }
-        
+
         private Expr UnsqueezeV13(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);

@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Numerics.Tensors;
 using System.Linq;
 using static Nncase.Pattern.Utility;
@@ -8,7 +11,6 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Rule
 {
-
     public class FoldSliceSlice : PatternRule
     {
         SliceWrapper slice1, slice2;
@@ -21,7 +23,6 @@ namespace Nncase.Transform.Rule
 
         private bool IsNoSlice(SliceWrapper slice, int dim)
         {
-
             var inshape = slice.Input().CheckedShape;
 
             var begin = slice.Begins<Const>().ToTensor<int>();
@@ -65,6 +66,7 @@ namespace Nncase.Transform.Rule
                 new_end[dim] = IsNoSlice(slice1, dim) ? old_end2[dim] : old_end1[dim];
                 new_strides[dim] = IsNoSlice(slice1, dim) ? old_strides2[dim] : old_strides1[dim];
             }
+
             return Slice(slice1.Input(), Const.FromTensor<int>(new_begin), Const.FromTensor<int>(new_end),
                                         slice1.Axes(), Const.FromTensor<int>(new_strides));
         }

@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -7,7 +10,7 @@ using Nncase.IR;
 namespace Nncase.Transform
 {
     /// <summary>
-    /// DataFlowReWriteVisitor. 
+    /// DataFlowReWriteVisitor.
     /// </summary>
     internal sealed class DataFlowReWriteVisitor : ExprVisitor<Expr, IRType>
     {
@@ -41,6 +44,7 @@ namespace Nncase.Transform
                 Pattern.Clear();
                 return res ?? expr;
             }
+
             return expr;
         }
 
@@ -57,10 +61,11 @@ namespace Nncase.Transform
             {
                 return MatchCurExpr(expr);
             }
+
             return expr with
             {
                 Target = ExpressionMemo[expr.Target],
-                Parameters = (from p in expr.Parameters select ExpressionMemo[p]).ToImmutableArray()
+                Parameters = (from p in expr.Parameters select ExpressionMemo[p]).ToImmutableArray(),
             };
         }
 
@@ -71,10 +76,11 @@ namespace Nncase.Transform
             {
                 return MatchCurExpr(expr);
             }
+
             return expr with
             {
                 Body = ExpressionMemo[expr.Body],
-                Parameters = (from p in expr.Parameters select ExpressionMemo[p]).ToImmutableArray()
+                Parameters = (from p in expr.Parameters select ExpressionMemo[p]).ToImmutableArray(),
             };
         }
 
@@ -85,9 +91,10 @@ namespace Nncase.Transform
             {
                 return MatchCurExpr(expr);
             }
+
             return expr with
             {
-                Fields = (from f in expr.Fields select ExpressionMemo[f]).ToImmutableArray()
+                Fields = (from f in expr.Fields select ExpressionMemo[f]).ToImmutableArray(),
             };
         }
     }

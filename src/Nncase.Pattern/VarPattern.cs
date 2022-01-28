@@ -12,7 +12,6 @@ namespace Nncase.Pattern
 {
     public sealed record VarPattern(string Name, Func<Var, bool> Cond) : ExprPattern
     {
-
         public VarPattern(string Name, TypePattern Type) : this(Name, v => Type.MatchLeaf(v.TypeAnnotation)) { }
 
         public VarPattern(Var var) : this($"var", v => v == var) { }
@@ -29,6 +28,7 @@ namespace Nncase.Pattern
             return Cond(var) && MatchCheckedType(var);
         }
     }
+
     public static partial class Utility
     {
         public static VarPattern IsVar(TypePattern Type) => new VarPattern(Type);

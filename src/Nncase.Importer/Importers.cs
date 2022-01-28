@@ -38,6 +38,7 @@ namespace Nncase
             var importer = new OnnxImporter(model);
             return importer.Import();
         }
+
         /// <summary>
         /// Import tflite model.
         /// </summary>

@@ -33,7 +33,7 @@ namespace Nncase
         /// Converts to ushort.
         /// </summary>
         /// <param name="bf">instance of BFloat16.</param>
-        /// <returns>value member</returns>
+        /// <returns>value member.</returns>
         public static implicit operator ushort(BFloat16 bf) { return bf.value; }
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace Nncase
         /// </summary>
         /// <param name="lhs">lhs.</param>
         /// <param name="rhs">rhls.</param>
-        /// <returns>result of value comparisons</returns>
+        /// <returns>result of value comparisons.</returns>
         public static bool operator ==(BFloat16 lhs, BFloat16 rhs) { return lhs.value == rhs.value; }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace Nncase
         /// </summary>
         /// <param name="lhs">lhs.</param>
         /// <param name="rhs">rhls.</param>
-        /// <returns>result of value comparisons</returns>
+        /// <returns>result of value comparisons.</returns>
         public static bool operator !=(BFloat16 lhs, BFloat16 rhs) { return lhs.value != rhs.value; }
 
         public static BFloat16 RoundToBFloat16(float value)
@@ -72,11 +72,12 @@ namespace Nncase
             }
 
             var input = Unsafe.As<float, uint>(ref value);
+
             // Least significant bit of resulting bfloat.
             uint lsb = (input >> 16) & 1;
             uint roundingBias = 0x7fff + lsb;
             input += roundingBias;
-            return new BFloat16((ushort) (input >> 16));
+            return new BFloat16((ushort)(input >> 16));
         }
 
         /// <summary>
@@ -96,7 +97,7 @@ namespace Nncase
             Unsafe.As<float, int>(ref value) = input.value << 16;
             return value;
         }
-        
+
         /// <summary>
         /// Returns a value indicating whether this instance and a specified System.Object
         /// represent the same type and value.
@@ -111,6 +112,7 @@ namespace Nncase
                 BFloat16 bfl16 = (BFloat16)obj;
                 result = (bfl16 == this);
             }
+
             return result;
         }
 

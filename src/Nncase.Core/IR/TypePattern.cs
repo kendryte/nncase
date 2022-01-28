@@ -1,8 +1,10 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-
 
 namespace Nncase.IR
 {
@@ -18,20 +20,22 @@ namespace Nncase.IR
         public bool MatchLeaf(IRType? ValueType) => ValueType is not null ? Cond(ValueType) : false;
 
         /// <summary>
-        /// Check the irtype, if not equal, throw exception 
+        /// Check the irtype, if not equal, throw exception.
         /// </summary>
         /// <param name="ValueType"></param>
         /// <exception cref="InvalidOperationException"></exception>
-        public void Check(IRType? ValueType)
+        public T Check<T>(T? ValueType) where T : IRType
         {
-            if (!MatchLeaf(ValueType))
+            if (ValueType == null || !MatchLeaf(ValueType))
                 throw new InvalidOperationException($"Requrie <{Reason}>, But {ValueType}!");
+            return ValueType;
         }
 
         public static TypePattern operator &(TypePattern lhs, TypePattern rhs) => new TypePattern(x => lhs.Cond(x) && rhs.Cond(x), $"<{lhs.Reason}> And <{rhs.Reason}>");
 
         public static TypePattern operator |(TypePattern lhs, TypePattern rhs) => new TypePattern(x => lhs.Cond(x) || rhs.Cond(x), $"<{lhs.Reason}> Or <{rhs.Reason}>");
     }
+
     public static partial class Utility
     {
         public static TypePattern IsAnyType() => new TypePattern(AnyType.Default);
@@ -45,7 +49,7 @@ namespace Nncase.IR
         public static TypePattern HasDType(Func<DataType, bool> DTypeCond, string reason) => new TypePattern(x => x switch
          {
              TensorType ttype => DTypeCond(ttype.DType),
-             _ => false
+             _ => false,
          }, reason);
 
         public static TypePattern HasDType(DataType DType) => HasDType((DataType x) => x == DType, $"DType = {DType.ToString()}");
@@ -54,7 +58,7 @@ namespace Nncase.IR
              {
 
                  TensorType ttype => ttype.IsTensor && shapeCond(ttype.Shape),
-                 _ => false
+                 _ => false,
              }, reason);
 
         public static TypePattern HasShape(Shape target_shape) => HasShape(
@@ -73,12 +77,12 @@ namespace Nncase.IR
           x => x switch
           {
               TensorType ttype => ttype.IsTensor,
-              _ => false
+              _ => false,
           }, "IsTensor"
         );
 
         /// <summary>
-        /// The void unit 
+        /// The void unit.
         /// </summary>
         /// <returns></returns>
         public static TypePattern IsUnit() => new TypePattern(
@@ -86,7 +90,7 @@ namespace Nncase.IR
         );
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <returns></returns>
         public static TypePattern IsHandle() => new TypePattern(
@@ -97,7 +101,7 @@ namespace Nncase.IR
           x => x switch
           {
               TensorType ttype => ttype.IsScalar,
-              _ => false
+              _ => false,
           },
           "IsScalar"
         );
@@ -106,7 +110,7 @@ namespace Nncase.IR
           x => x switch
           {
               TensorType ttype => ttype.DType == dataType,
-              _ => false
+              _ => false,
           }, $"IsIntegral {dataType}"
         );
 
@@ -114,7 +118,7 @@ namespace Nncase.IR
           x => x switch
           {
               TensorType ttype => DataTypes.IsIntegral(ttype.DType),
-              _ => false
+              _ => false,
           }, "IsIntegral"
         );
 
@@ -122,7 +126,7 @@ namespace Nncase.IR
           x => x switch
           {
               TensorType ttype => ttype.DType == dataType,
-              _ => false
+              _ => false,
           }, $"IsFloat {dataType}"
         );
 
@@ -130,7 +134,7 @@ namespace Nncase.IR
           x => x switch
           {
               TensorType ttype => DataTypes.IsFloat(ttype.DType),
-              _ => false
+              _ => false,
           }, "IsFloat"
         );
 
@@ -138,7 +142,7 @@ namespace Nncase.IR
             x => x switch
             {
                 TensorType ttype => ttype.DType == DataType.Bool,
-                _ => false
+                _ => false,
             }, "IsBool"
         );
 

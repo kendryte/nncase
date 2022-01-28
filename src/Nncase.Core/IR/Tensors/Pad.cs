@@ -12,18 +12,18 @@ namespace Nncase.IR.Tensors
     public sealed record Pad(PadMode PadMode) : Op
     {
         /// <summary>
-        /// input
+        /// input.
         /// </summary>
         public static ParameterInfo Input = new(typeof(Pad), 0, "input");
 
         /// <summary>
-        /// pads , shape is [channels, 2], eg. [[1,1], 
+        /// pads , shape is [channels, 2], eg. [[1,1],
         ///                                     [2,2]]  mean pad shape [1,2,3,4] =>  [1,2,5,8].
         /// </summary>
         public static ParameterInfo Pads = new(typeof(Pad), 1, "pads", HasRank(2) & IsIntegral());
 
         /// <summary>
-        /// float pad value
+        /// float pad value.
         /// </summary>
         public static ParameterInfo Value = new(typeof(Pad), 2, "value", IsScalar());
 

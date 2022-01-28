@@ -87,15 +87,17 @@ namespace Nncase.CostModel
             return expr.Target switch
             {
                 Binary bn => VisitBinary(bn),
+
                 // Concat con => VisitConcat(con),
                 Conv2D conv => VisitConv2D(conv),
+
                 // Slice sl => VisitSlice(sl),
                 Transpose tr => VisitTranspose(tr),
                 Unary un => VisitUnary(un),
                 Reshape re => new Cost(1, 0),
                 Clamp cl => new Cost(1, 0),
                 ShapeOp => throw new InvalidDataException("ShapeOp should be eliminate before CostModelVisitor"),
-                _ => throw new NotImplementedException()
+                _ => throw new NotImplementedException(),
             };
         }
 
@@ -109,6 +111,5 @@ namespace Nncase.CostModel
         public override Cost VisitLeaf(IR.Tuple expr) => new Cost();
 
         public override Cost VisitLeaf(Var expr) => new Cost();
-
     }
 }

@@ -140,8 +140,10 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.ARG_MIN,
                 // tflite.BuiltinOperator.ASSIGN_VARIABLE,
                 tflite.BuiltinOperator.AVERAGE_POOL_2D => VisitReduceWindow2D(op, ReduceOp.Mean, 0f),
+
                 // tflite.BuiltinOperator.BATCH_MATMUL,
                 tflite.BuiltinOperator.BATCH_TO_SPACE_ND => VisitBatchToSpaceND(op),
+
                 // tflite.BuiltinOperator.BIDIRECTIONAL_SEQUENCE_LSTM,
                 // tflite.BuiltinOperator.BIDIRECTIONAL_SEQUENCE_RNN,
                 // tflite.BuiltinOperator.BROADCAST_TO,
@@ -152,8 +154,10 @@ namespace Nncase.Importer.TFLite
 
                 // tflite.BuiltinOperator.COMPLEX_ABS,
                 tflite.BuiltinOperator.CONCATENATION => VisitConcat(op),
+
                 // tflite.BuiltinOperator.CONCAT_EMBEDDINGS,
                 tflite.BuiltinOperator.CONV_2D => VisitConv2D(op),
+
                 // tflite.BuiltinOperator.CONV_3D,
                 // tflite.BuiltinOperator.CONV_3D_TRANSPOSE,
                 tflite.BuiltinOperator.COS => VisitUnary(op, UnaryOp.Cos),
@@ -163,6 +167,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.DELEGATE,
                 // tflite.BuiltinOperator.DENSIFY,
                 tflite.BuiltinOperator.DEPTHWISE_CONV_2D => VisitDepthwiseConv2D(op),
+
                 // tflite.BuiltinOperator.DEPTH_TO_SPACE,
                 tflite.BuiltinOperator.DEQUANTIZE => VisitDeQuantize(op),
                 tflite.BuiltinOperator.DIV => VisitBinary(op, BinaryOp.Div, op.BuiltinOptionsAsDivOptions().FusedActivationFunction),
@@ -174,6 +179,7 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.EXP => VisitUnary(op, UnaryOp.Exp),
 
                 tflite.BuiltinOperator.EXPAND_DIMS => VisitExpandDims(op),
+
                 // tflite.BuiltinOperator.FAKE_QUANT,
                 // tflite.BuiltinOperator.FILL,
                 tflite.BuiltinOperator.FLOOR => VisitUnary(op, UnaryOp.Ceil),
@@ -184,6 +190,7 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.FULLY_CONNECTED => VisitMatMul(op),
                 tflite.BuiltinOperator.GATHER => VisitGather(op),
                 tflite.BuiltinOperator.GATHER_ND => VisitGatherND(op),
+
                 // tflite.BuiltinOperator.GREATER,
                 // tflite.BuiltinOperator.GREATER_EQUAL,
                 // tflite.BuiltinOperator.HARD_SWISH,
@@ -195,8 +202,10 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.IF,
                 // tflite.BuiltinOperator.IMAG,
                 tflite.BuiltinOperator.L2_NORMALIZATION => VisitL2Normalization(op),
+
                 // tflite.BuiltinOperator.L2_POOL_2D,
                 tflite.BuiltinOperator.LEAKY_RELU => VisitLeakyRelu(op),
+
                 // tflite.BuiltinOperator.LESS,
                 // tflite.BuiltinOperator.LESS_EQUAL,
                 // tflite.BuiltinOperator.LOCAL_RESPONSE_NORMALIZATION,
@@ -208,6 +217,7 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.LOGISTIC => VisitLogistic(op),
 
                 tflite.BuiltinOperator.LOG_SOFTMAX => VisitLogSoftMax(op),
+
                 // tflite.BuiltinOperator.LSH_PROJECTION,
                 // tflite.BuiltinOperator.LSTM,
                 // tflite.BuiltinOperator.MATRIX_DIAG,
@@ -229,11 +239,13 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.PACK => VisitPack(op),
                 tflite.BuiltinOperator.PAD => VisitPad(op),
                 tflite.BuiltinOperator.PADV2 => VisitPadV2(op),
+
                 // tflite.BuiltinOperator.PLACEHOLDER_FOR_GREATER_OP_CODES,
                 tflite.BuiltinOperator.POW => VisitBinary(op, BinaryOp.Pow),
 
                 tflite.BuiltinOperator.PRELU => VisitPRelu(op),
                 tflite.BuiltinOperator.QUANTIZE => VisitQuantize(op),
+
                 // tflite.BuiltinOperator.RANGE,
                 // tflite.BuiltinOperator.RANK,
                 // tflite.BuiltinOperator.READ_VARIABLE,
@@ -242,13 +254,16 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.REDUCE_ANY,
                 tflite.BuiltinOperator.REDUCE_MAX => VisitReduce(op, ReduceOp.Max, float.MinValue),
                 tflite.BuiltinOperator.REDUCE_MIN => VisitReduce(op, ReduceOp.Min, float.MaxValue),
+
                 // tflite.BuiltinOperator.REDUCE_PROD,
                 tflite.BuiltinOperator.RELU => VisitRelu(op),
                 tflite.BuiltinOperator.RELU6 => VisitRelu6(op),
+
                 // tflite.BuiltinOperator.RELU_N1_TO_1,
                 tflite.BuiltinOperator.RESHAPE => VisitReshape(op),
                 tflite.BuiltinOperator.RESIZE_BILINEAR => VisitResizeImage(op, ImageResizeMode.Bilinear),
                 tflite.BuiltinOperator.RESIZE_NEAREST_NEIGHBOR => VisitResizeImage(op, ImageResizeMode.NearestNeighbor),
+
                 // tflite.BuiltinOperator.REVERSE_SEQUENCE,
                 // tflite.BuiltinOperator.REVERSE_V2,
                 // tflite.BuiltinOperator.RFFT2D,
@@ -267,6 +282,7 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.SLICE => VisitSlice(op),
                 tflite.BuiltinOperator.SOFTMAX => VisitSoftMax(op),
                 tflite.BuiltinOperator.SPACE_TO_BATCH_ND => VisitSpaceToBatchND(op),
+
                 // tflite.BuiltinOperator.SPACE_TO_DEPTH,
                 // tflite.BuiltinOperator.SPARSE_TO_DENSE,
                 // tflite.BuiltinOperator.SPLIT,
@@ -280,6 +296,7 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.SUB => VisitBinary(op, BinaryOp.Sub, op.BuiltinOptionsAsSubOptions().FusedActivationFunction),
 
                 tflite.BuiltinOperator.SUM => VisitReduce(op, ReduceOp.Sum, 0f),
+
                 // tflite.BuiltinOperator.SVDF,
                 tflite.BuiltinOperator.TANH => VisitUnary(op, UnaryOp.Tanh),
 
@@ -287,6 +304,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.TOPK_V2,
                 tflite.BuiltinOperator.TRANSPOSE => VisitTranspose(op),
                 tflite.BuiltinOperator.TRANSPOSE_CONV => VisitConv2DTranspose(op),
+
                 // tflite.BuiltinOperator.UNIDIRECTIONAL_SEQUENCE_LSTM,
                 // tflite.BuiltinOperator.UNIDIRECTIONAL_SEQUENCE_RNN,
                 // tflite.BuiltinOperator.UNIQUE,
@@ -343,10 +361,10 @@ namespace Nncase.Importer.TFLite
                 }
             }
         }
-        
+
         private (Expr Expr0, Expr Expr1) GetInputExprs(in tflite.Operator op, int index0, int index1) =>
             (GetInputExprs(op, index0), GetInputExprs(op, index1));
-        
+
         private tflite.Tensor GetTfliteTensor(int id)
         {
             var output = _subGraph.Tensors(id) ??
@@ -358,7 +376,7 @@ namespace Nncase.Importer.TFLite
         {
             return GetTfliteTensor(op.Inputs(index));
         }
-        
+
         private tflite.Tensor GetOutputTensor(in tflite.Operator op, int index)
         {
             return GetTfliteTensor(op.Outputs(index));
@@ -369,7 +387,7 @@ namespace Nncase.Importer.TFLite
             var tensorCopy = tensor;
             return Enumerable.Range(0, tensor.ShapeLength).Select(i => tensorCopy.Shape(i)).ToArray();
         }
-        
+
         private static IEnumerable<int> GetShapeDataFromConst(Expr shape)
         {
             return ((Const)shape).ToTensor<int>().ToArray();

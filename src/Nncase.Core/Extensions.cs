@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Numerics.Tensors;
 using System.Collections.Generic;
@@ -5,7 +8,6 @@ using System.Linq;
 
 namespace Nncase.IR
 {
-
     public static class TensorExtension
     {
         private static (int, int) ToIntIndex(Index Start, Index End, int dim)
@@ -40,6 +42,7 @@ namespace Nncase.IR
                 {
                     idx += ts.Strides[j] * indexs[j];
                 }
+
                 new_ts.SetValue(i, ts.GetValue(idx));
                 indexs[dim]++;
                 while (dim != -1 && indexs[dim] == ranges[idx].Item2)
@@ -49,6 +52,7 @@ namespace Nncase.IR
                     dim -= 1;
                 }
             }
+
             return new_ts;
         }
 
@@ -59,6 +63,7 @@ namespace Nncase.IR
             {
                 ranges.Add(..);
             }
+
             while (ranges.Count > ts.Dimensions.Length)
             {
                 ranges.RemoveAt(ranges.Count - 1);
@@ -70,6 +75,7 @@ namespace Nncase.IR
                 var (s, e) = ToIntIndex(ranges[i].Start, ranges[i].End, ts.Dimensions[i]);
                 normRanges[i] = (s, e);
             }
+
             return Get<T>(ts, normRanges);
         }
     }
@@ -80,22 +86,22 @@ namespace Nncase.IR
         /// that expr is what you want, although it will check
         public static T ToScalar<T>(this Expr expr)
             where T : unmanaged => expr switch
-        {
-            // todo:print more expr info
-            Const c => c.CheckedShape.IsScalar
-                ? c.ToScalar<T>()
-                : throw new InvalidOperationException("Expr is not a scalar"),
-            _ => throw new InvalidOperationException("Expr is not a Const"),
-        };
-        
+            {
+                // todo:print more expr info
+                Const c => c.CheckedShape.IsScalar
+                    ? c.ToScalar<T>()
+                    : throw new InvalidOperationException("Expr is not a scalar"),
+                _ => throw new InvalidOperationException("Expr is not a Const"),
+            };
+
         public static DenseTensor<T> ToTensor<T>(this Expr expr)
             where T : unmanaged => expr switch
-        {
-            // todo:print more expr info
-            Const c => (!c.CheckedShape.IsScalar) && c.CheckedShape.IsFixed 
-                ? c.ToTensor<T>()
-                : throw new InvalidOperationException("Expr is not a fixed shape tensor"),
-            _ => throw new InvalidOperationException("Expr is not a Const"),
-        };
+            {
+                // todo:print more expr info
+                Const c => (!c.CheckedShape.IsScalar) && c.CheckedShape.IsFixed
+                    ? c.ToTensor<T>()
+                    : throw new InvalidOperationException("Expr is not a fixed shape tensor"),
+                _ => throw new InvalidOperationException("Expr is not a Const"),
+            };
     }
 }

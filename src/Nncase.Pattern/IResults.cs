@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using Nncase.IR;
 
@@ -6,14 +9,14 @@ namespace Nncase.Pattern
     public interface IMatchResult
     {
         /// <summary>
-        /// get the pattern matched expr
+        /// get the pattern matched expr.
         /// </summary>
         /// <param name="pattern"></param>
         /// <returns></returns>
         public Expr this[ExprPattern pattern] { get; }
 
         /// <summary>
-        /// get the type cast expr
+        /// get the type cast expr.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="expr"></param>

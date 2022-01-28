@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using Nncase;
 using Nncase.IR;
@@ -20,7 +23,8 @@ namespace Nncase.CostModel
                     break;
                 if (i == p)
                     continue;
-                // find axis which transpose start. 
+
+                // find axis which transpose start.
                 // the inner axis have more weights.
                 foreach (var j in Enumerable.Range(i + 1, (int)perm.Length))
                 {
@@ -29,9 +33,9 @@ namespace Nncase.CostModel
                         arithm = type.Shape.Skip(i).Aggregate(new Dimension(1), (x, y) => x * y).FixedValue * ((int)perm.Length - i);
                         break;
                     }
-
                 }
             }
+
             return new(arithm == -1 ? 1 : arithm, DataTypes.GetLength(type.DType));
         }
     }

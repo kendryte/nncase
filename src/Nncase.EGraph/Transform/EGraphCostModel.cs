@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,14 +33,11 @@ namespace Nncase.CostModel
         public Cost this[Expr expr] => _context[_eGraph.HashCons[_exprMap[expr]].Find()].Item1;
 
         public EClass this[ENode eNode] => _eGraph.HashCons[eNode];
-
     }
 }
 
 namespace Nncase.Transform
 {
-
-
     public sealed partial class EGraph
     {
         public EGraphCosts Costs()

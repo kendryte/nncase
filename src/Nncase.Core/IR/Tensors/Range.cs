@@ -15,17 +15,16 @@ namespace Nncase.IR.Tensors
         /// Gets begin.
         /// </summary>
         public static readonly ParameterInfo Begin = new(typeof(Range), 0, "begin", IsIntegralScalar());
-        
+
         /// <summary>
         /// Gets end.
         /// </summary>
         public static readonly ParameterInfo End = new(typeof(Range), 1, "end", IsIntegralScalar());
-        
+
         /// <summary>
         /// Gets step.
         /// </summary>
         public static readonly ParameterInfo Step = new(typeof(Range), 2, "step", IsIntegralScalar());
-
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType begin, TensorType end, TensorType step)
@@ -35,7 +34,7 @@ namespace Nncase.IR.Tensors
                 && context.GetArgument(this, Step) is Const stepValue)
             {
                 return new TensorType(
-                    DataType.Int32, 
+                    DataType.Int32,
                     new Shape((beginValue.ToScalar<int>() + endValue.ToScalar<int>()) / stepValue.ToScalar<int>())
                     );
             }

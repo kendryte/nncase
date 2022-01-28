@@ -10,9 +10,8 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR
 {
-
     /// <summary>
-    /// the interface that we can use parameterinfo the parameter
+    /// the interface that we can use parameterinfo the parameter.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public interface IParameterList<T>

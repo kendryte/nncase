@@ -26,6 +26,7 @@ namespace Nncase.IR
                 VarMaps.Add(name, count);
                 return name;
             }
+
             while (VarMaps.ContainsKey(name + ++count)) { };
             name = name + count;
             VarMaps[name] = 0;
@@ -44,16 +45,16 @@ namespace Nncase.IR
             }
         }
     }
+
     /// <summary>
     /// Variable expression.
     /// </summary>
     public record Var(string Name, IRType TypeAnnotation) : Expr
     {
-
         private static int _globalVarIndex = 0;
 
         /// <summary>
-        /// get the global var index
+        /// get the global var index.
         /// </summary>
         private int GlobalVarIndex => _globalVarIndex;
 
@@ -67,7 +68,7 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// <see cref="Var"/>
+        /// <see cref="Var"/>.
         /// </summary>
         /// <param name="Name"></param>
         public Var(string Name)
@@ -84,24 +85,24 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// get any var
+        /// get any var.
         /// </summary>
         /// <param name="Name"></param>
         public static implicit operator Var(string Name) => new Var(Name, AnyType.Default);
 
         /// <summary>
-        /// get scalar var
+        /// get scalar var.
         /// </summary>
         /// <param name="Name"></param>
         public static Var Scalar(string Name, DataType Dtype) => new Var(Name, new TensorType(Dtype, Shape.Scalar));
 
         /// <summary>
-        /// get handle var
+        /// get handle var.
         /// </summary>
         /// <param name="Name"></param>
         /// <param name="Dtype"></param>
         /// <param name="Scope"></param>
-        /// <returns> var </returns>
+        /// <returns> var. </returns>
         public static Var Handle(string Name, DataType Dtype, string Scope = "") => new Var(Name, new HandleType(Dtype, Scope));
 
         /// <summary>

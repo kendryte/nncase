@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Text;
 using System.IO;
@@ -8,10 +11,8 @@ using Nncase.Pattern;
 using System.Linq;
 using Nncase.CostModel;
 
-
 namespace Nncase.Transform
 {
-
     public static class EGraphExtractor
     {
         public static Expr Extract(this EGraph eGraph, EClass entry, RunPassOptions options)
@@ -23,6 +24,7 @@ namespace Nncase.Transform
             {
                 EGraphPrinter.DumpEgraphAsDot(eGraph, new EGraphCosts(eGraph, costs), entry.Find(), Path.Combine(options.FullDumpDir, "Costs", $"V{eGraph.Version}"));
             }
+
             return converter.Visit(entry.Find());
         }
     }
@@ -34,7 +36,6 @@ namespace Nncase.Transform
 
         private readonly Dictionary<EClass, Expr> _eclassMemo = new
         ();
-
 
         public ExprConverter(Dictionary<EClass, (Cost, ENode)> context)
         {
@@ -49,6 +50,7 @@ namespace Nncase.Transform
                 result = VisitLeaf(eClass);
                 _eclassMemo.Add(eClass, result);
             }
+
             return result;
         }
 
@@ -65,9 +67,11 @@ namespace Nncase.Transform
                 {
                     Visit(eClass);
                 }
+
                 result = VisitLeaf(eNode);
                 _enodeMemo.Add(eNode, result);
             }
+
             return result;
         }
 
@@ -79,7 +83,7 @@ namespace Nncase.Transform
             Call call => new Call(_eclassMemo[eNode.Children[0]], eNode.Children.Skip(1).Select(p => _eclassMemo[p]).ToArray()),
             IR.Tuple tuple => new IR.Tuple(eNode.Children.Select(p => _eclassMemo[p]).ToArray()),
             Op op => op,
-            _ => DefaultVisit(eNode.Expr)
+            _ => DefaultVisit(eNode.Expr),
         };
 
         public Expr DefaultVisit(Expr expr)
@@ -87,5 +91,4 @@ namespace Nncase.Transform
             throw new NotImplementedException($"Unhandled visit routine for {expr.GetType()}.");
         }
     }
-
 }

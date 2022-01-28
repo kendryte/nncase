@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using Nncase;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
@@ -12,6 +15,7 @@ namespace Nncase.CostModel
             var input = _context.GetArgumentType(conv2D, Conv2D.Input).Shape;
             var weights = _context.GetArgumentType(conv2D, Conv2D.Weights).Shape;
             var output = _context.CurrentCallResultTensorType().Shape;
+
             // weights: [output, input, H, W]
             var arithm = (weights.Prod() * input[0] * output[2] * output[3]).FixedValue;
             return new Cost(arithm);

@@ -17,7 +17,6 @@ namespace Nncase.TIR
     /// </summary>
     public static class ScriptPrinter
     {
-
         static void DumpAsScript(TextWriter textWriter, Expr expr)
         {
             var visitor = new ScriptDumpVisitor(textWriter);
@@ -25,7 +24,7 @@ namespace Nncase.TIR
         }
 
         /// <summary>
-        /// get this expr's il string
+        /// get this expr's il string.
         /// </summary>
         /// <param name="expr"></param>
         /// <returns></returns>
@@ -38,7 +37,7 @@ namespace Nncase.TIR
         }
 
         /// <summary>
-        /// dump Expr IL into `dumpDirPath/name.script`
+        /// dump Expr IL into `dumpDirPath/name.script`.
         /// </summary>
         /// <param name="expr"></param>
         /// <param name="name"></param>
@@ -52,24 +51,24 @@ namespace Nncase.TIR
         }
 
         /// <summary>
-        /// NOTE: 
-        /// 1. each visit method create a new scope 
+        /// NOTE:
+        /// 1. each visit method create a new scope
         /// 2. each block expr's start with newline and indent
-        /// 
+        ///
         /// <example>
         /// `indent` if (x){
         /// `indent` <- the current block start from here.
         /// `indent` }<- end without new line.
         /// </example>
-        /// 
+        ///
         /// 3. each block expr's end without newline
         /// <example>
         /// `indent` if (x){
         /// `indent` `indent` x++;
         /// `indent` }<- end without new line.
         /// </example>
-        /// 
-        /// 4. in block expr, each line expr like const/var write without indent!
+        ///
+        /// 4. in block expr, each line expr like const/var write without indent!.
         /// </summary>
         private class ScriptDumpVisitor : ExprFunctor<StringBuilder, string>
         {
@@ -106,11 +105,14 @@ namespace Nncase.TIR
                     default:
                         Scope.Append($"{target}({string.Join<StringBuilder>(", ", args)})");
                         break;
-                };
+                }
+
+                ;
                 doc = Scope.Pop();
                 Docs.Add(expr, doc);
                 return doc;
             }
+
             /// <inheritdoc/>
             public override StringBuilder Visit(Const expr)
             {
@@ -123,6 +125,7 @@ namespace Nncase.TIR
                 {
                     throw new NotSupportedException("The Tir NotSupport the Tensor Const!");
                 }
+
                 Docs.Add(expr, doc);
                 return doc;
             }
@@ -132,15 +135,18 @@ namespace Nncase.TIR
             {
                 if (Docs.TryGetValue(expr, out var doc)) { return doc; }
                 Scope.Push();
+
                 // 1. Function signature
 
                 Scope.IndWrite($"T.PrimFunc(\"{expr.Name}\", {string.Join(", ", expr.Parameters.Select(Visit))}).Add(");
                 Scope.Append(" // " + VisitType(expr.CheckedType!));
+
                 // 2. Function body
                 Scope.Append(Visit(expr.Body));
                 Scope.IndWrite(");");
                 doc = Scope.Pop();
                 Docs.Add(expr, doc);
+
                 // 3. only write all doc into root scope
                 Scope.IndWrite(doc);
                 return doc;
@@ -188,12 +194,15 @@ namespace Nncase.TIR
             public override StringBuilder Visit(For expr)
             {
                 if (Docs.TryGetValue(expr, out var doc)) { return doc; }
+
                 // the for loop will not used by other expression, so we need save the whole `For` il
                 Scope.Push();
+
                 // 1. For Loop signature
                 var i_name = VisitLoopVar(expr.LoopVar);
                 Scope.Append($"T.{expr.Mode}(out var {i_name}, ({Visit(expr.Dom.Min)}, {Visit(expr.Dom.Max)}), out var f{i_name}).Add(");
                 Scope.Append(" // " + VisitType(expr.CheckedType!));
+
                 // 2. For Body
                 Scope.Append(Visit(expr.Body));
                 Scope.IndWrite(")");
@@ -201,12 +210,14 @@ namespace Nncase.TIR
                 Docs.Add(expr, doc);
                 return doc;
             }
+
             /// <inheritdoc/>
             public override StringBuilder Visit(Sequential expr)
             {
                 if (Docs.TryGetValue(expr, out var doc)) { return doc; }
                 Scope.Push();
                 Scope.AppendLine("");
+
                 // 1. Foreach Body
                 using (Scope.IndentUp())
                 {
@@ -215,6 +226,7 @@ namespace Nncase.TIR
                         Scope.IndWriteLine(Visit(item));
                     }
                 }
+
                 doc = Scope.Pop();
                 Docs.Add(expr, doc);
                 return doc;
@@ -225,32 +237,36 @@ namespace Nncase.TIR
             {
                 if (Docs.TryGetValue(expr, out var doc)) { return doc; }
                 Scope.Push();
+
                 // 1. write head
                 Scope.AppendLine($"T.Block(\"{expr.Name}\").");
+
                 // 2. write iter var bind
                 foreach (var iterVar in expr.IterVars)
                 {
                     string mode_doc = string.Empty;
                     switch (iterVar.Mode)
                     {
-                        case IterMode.DataPar:
+                        case IterationMode.DataParallel:
                             mode_doc = "S";
                             break;
-                        case IterMode.CommReduce:
+                        case IterationMode.CommReduce:
                             mode_doc = "R";
                             break;
-                        case IterMode.Ordered:
+                        case IterationMode.Ordered:
                             mode_doc = "scan";
                             break;
-                        case IterMode.Opaque:
+                        case IterationMode.Opaque:
                             mode_doc = "opaque";
                             break;
                         default:
                             throw new NotSupportedException($"{iterVar.Mode}");
                     }
+
                     // Scope.IndWriteLine($"Remap(out var {VisitSymbolVar(iterVar, loop.LoopVar)}, f{VisitLoopVar(loop.LoopVar)}, \'{mode_doc}\').");
                     Scope.IndWriteLine($"Bind(out var {Visit(iterVar)}, ({Visit(iterVar.Dom.Min)}, {Visit(iterVar.Dom.Max)}), IterMode.{iterVar.Mode}, {Visit(iterVar.Value)}).");
                 }
+
                 // 3. write init body
                 if (expr.InitBody.Count > 0)
                 {
@@ -259,12 +275,14 @@ namespace Nncase.TIR
                     {
                         Scope.Append(Visit(expr.InitBody));
                     }
+
                     Scope.IndWrite(").");
                 }
                 else
                 {
                     Scope.RemoveLast();
                 }
+
                 // 4. wirte body
                 Scope.Append("Add(");
                 Scope.AppendLine(" // " + VisitType(expr.CheckedType!));
@@ -275,6 +293,7 @@ namespace Nncase.TIR
                         Scope.IndWriteLine(Visit(item));
                     }
                 }
+
                 Scope.IndWrite(")");
                 doc = Scope.Pop();
                 Docs.Add(expr, doc);
@@ -322,6 +341,7 @@ namespace Nncase.TIR
                         Scope.IndWriteLine(Visit(item));
                     }
                 }
+
                 Scope.IndWrite(")");
                 if (((Sequential)expr.Else).Count > 0)
                 {
@@ -333,8 +353,10 @@ namespace Nncase.TIR
                             Scope.IndWriteLine(Visit(item));
                         }
                     }
+
                     Scope.IndWrite(")");
                 }
+
                 doc = Scope.Pop();
                 Docs.Add(expr, doc);
                 return doc;

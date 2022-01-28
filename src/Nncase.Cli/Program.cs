@@ -6,8 +6,6 @@ using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
 using System.CommandLine.Parsing;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
@@ -15,8 +13,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Nncase.Evaluator;
-using Nncase.Evaluator.Ops;
 
 namespace Nncase.Cli
 {
@@ -26,7 +22,7 @@ namespace Nncase.Cli
         {
             return await BuildCommandLine()
                 .UseHost(
-                    _ => Host.CreateDefaultBuilder(),
+                    _ => Host.CreateDefaultBuilder(args),
                     host =>
                     {
                         host.ConfigureAppConfiguration(ConfigureAppConfiguration)
@@ -40,42 +36,12 @@ namespace Nncase.Cli
                 .Build().InvokeAsync(args);
         }
 
-        private static Assembly[] GetAssemblies(string path)
-        {
-            var dllPattern = "Nncase*.dll";
-            return new DirectoryInfo(path)
-                .GetFiles(dllPattern)
-                .Select(f => Assembly.LoadFrom(f.FullName))
-                .ToArray();
-        }
-        
-        private static Assembly[] LoadDLL()
-        {
-            var path = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            var assemblies = GetAssemblies(path);
-            var targetPath = System.Environment.GetEnvironmentVariable("NNCASE_TARGET_PATH");
-            if (targetPath is null)
-            {
-                // todo:log
-                Console.WriteLine("NNCASE_TARGET_PATH is not setted");
-                return assemblies;
-            }
-            else
-            {
-                var targetAssemblies = targetPath.Split(":")
-                    .Aggregate(
-                        new Assembly[] { },
-                        (sum, targetPath) => sum.Concat(GetAssemblies(targetPath)).ToArray());
-                return assemblies.Concat(targetAssemblies).ToArray();
-            }
-        }
-        
         private static void ConfigureContainer(ContainerBuilder builder)
         {
-            var assemblies = LoadDLL();
+            var assemblies = LoadApplicationParts();
             builder.RegisterAssemblyModules(assemblies);
         }
-        
+
         private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
         {
             services.AddLogging();

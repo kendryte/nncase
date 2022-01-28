@@ -30,9 +30,5 @@ namespace Nncase.IR.Math
         /// Gets max.
         /// </summary>
         public static readonly ParameterInfo Max = new(typeof(Clamp), 2, "max", IsScalar());
-
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType min, TensorType max) =>input;
-
     }
 }

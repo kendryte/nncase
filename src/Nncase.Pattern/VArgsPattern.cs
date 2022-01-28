@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -6,29 +9,27 @@ using System.Linq;
 using Nncase.IR;
 namespace Nncase.Pattern
 {
-
     public abstract record VArgsPattern() : IEnumerable<ExprPattern>
     {
-
         public virtual int Count => this switch
         {
             FixedVArgsPattern fixPat => fixPat.Parameters.Count,
             RepeatVArgsPattern repeatPat => repeatPat.Parameters.Count,
-            _ => throw new NotImplementedException($"Can't Handle the Type {this.GetType().Name}!")
+            _ => throw new NotImplementedException($"Can't Handle the Type {this.GetType().Name}!"),
         };
 
         public virtual ExprPattern this[int index] => this switch
         {
             FixedVArgsPattern fixPat => fixPat[index],
             RepeatVArgsPattern repeatPat => repeatPat[index],
-            _ => throw new NotImplementedException($"Can't Handle the Type {this.GetType().Name}!")
+            _ => throw new NotImplementedException($"Can't Handle the Type {this.GetType().Name}!"),
         };
 
         public virtual bool MatchLeaf<T>(IEnumerable<T> other) => this switch
         {
             FixedVArgsPattern fixPat => fixPat.MatchLeaf(other),
             RepeatVArgsPattern repeatPat => repeatPat.MatchLeaf(other),
-            _ => throw new NotImplementedException($"Can't Handle the Type {this.GetType().Name}!")
+            _ => throw new NotImplementedException($"Can't Handle the Type {this.GetType().Name}!"),
         };
 
         public virtual void MatchEnd(bool Match)
@@ -47,7 +48,7 @@ namespace Nncase.Pattern
         {
             FixedVArgsPattern fixedPat => fixedPat.Copy(),
             RepeatVArgsPattern repeatPat => repeatPat.Copy(),
-            _ => this with { }
+            _ => this with { },
         };
 
         public virtual void Clear()
@@ -59,6 +60,7 @@ namespace Nncase.Pattern
                     {
                         p.Clear();
                     }
+
                     break;
                 case (RepeatVArgsPattern repeatPat):
                     repeatPat.MatchEnd(false);
@@ -72,7 +74,7 @@ namespace Nncase.Pattern
         {
             FixedVArgsPattern fixedPat => fixedPat.Parameters.GetEnumerator(),
             RepeatVArgsPattern repeatPat => repeatPat.Parameters.GetEnumerator(),
-            _ => throw new InvalidCastException($"Can't Get {this.GetType().Name} As Enumerator!")
+            _ => throw new InvalidCastException($"Can't Get {this.GetType().Name} As Enumerator!"),
         };
 
         IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
@@ -110,6 +112,7 @@ namespace Nncase.Pattern
                 SetUp(other.Count(), Parameters);
                 return true;
             }
+
             return false;
         }
 
@@ -125,10 +128,10 @@ namespace Nncase.Pattern
           => new FixedVArgsPattern(Parameters);
 
         /// <summary>
-        /// Create repeated Vargs by template pattern, eg. give the const pattern as Template, will match {Const(),...Const()}
+        /// Create repeated Vargs by template pattern, eg. give the const pattern as Template, will match {Const(),...Const()}.
         /// </summary>
-        /// <param name="creator">dynamic creator for generator ExprPattern as template</param>
-        /// <returns>VArgsPattern</returns>
+        /// <param name="creator">dynamic creator for generator ExprPattern as template.</param>
+        /// <returns>VArgsPattern.</returns>
         public static VArgsPattern IsVArgsRepeat(Func<ExprPattern> creator) => IsVArgsRepeat((n, paramPatterns) =>
         {
             for (int i = 0; i < n; i++)
@@ -141,7 +144,7 @@ namespace Nncase.Pattern
         /// Create repeated Vargs match pattern, it will manual clear the inner container.
         /// </summary>
         /// <param name="SetUp">the int mean matched params nums, list[pattern] is inner params contianer. </param>
-        /// <returns>VArgsPattern</returns>
+        /// <returns>VArgsPattern.</returns>
         public static VArgsPattern IsVArgsRepeat(Action<int, List<ExprPattern>> SetUp)
           => new RepeatVArgsPattern(SetUp, (matched, paramPatterns) =>
           {
@@ -150,11 +153,11 @@ namespace Nncase.Pattern
           });
 
         /// <summary>
-        /// Create repeated Vargs match pattern
+        /// Create repeated Vargs match pattern.
         /// </summary>
         /// <param name="SetUp">the int mean matched params nums, list[pattern] is inner params contianer.</param>
         /// <param name="TearDown">the bool mean current matched state, if match failure your can clear the inner params contianer.</param>
-        /// <returns>VArgsPattern</returns>
+        /// <returns>VArgsPattern.</returns>
         public static VArgsPattern IsVArgsRepeat(Action<int, List<ExprPattern>> SetUp, Action<bool, List<ExprPattern>> TearDown)
           => new RepeatVArgsPattern(SetUp, TearDown);
     }

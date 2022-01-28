@@ -18,7 +18,7 @@ namespace Nncase.Tests
     {
         public string LogDir { get; set; }
     }
-    
+
     public class Startup
     {
         public IConfigurationRoot Configuration { get; set; }
@@ -34,7 +34,7 @@ namespace Nncase.Tests
         {
             builder.RegisterAssemblyModules(typeof(EvaluatorVisitor).Assembly);
         }
-        
+
         private void ConfigureAppConfiguration(HostBuilderContext context, IConfigurationBuilder builder)
         {
             builder.SetBasePath(Path.GetDirectoryName(Testing.GetTestingFilePath()))

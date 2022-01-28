@@ -35,8 +35,10 @@ namespace Nncase.IR.Tensors
                         return new InvalidType("The Shape[dim] is not 1!");
                     }
                 }
-                return input with { Shape = new Shape(outshape.Where(x => x != int.MaxValue )) };
+
+                return input with { Shape = new Shape(outshape.Where(x => x != int.MaxValue)) };
             }
+
             return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Count() - 1)) };
         }
     }

@@ -31,12 +31,14 @@ namespace Nncase.IR.Tensors
                     {
                         for (int i = dimV; i < 0; i++)
                         {
-                            outShape.Insert(0, 1);                            
+                            outShape.Insert(0, 1);
                         }
                     }
                 }
+
                 return input with { Shape = new Shape(outShape) };
             }
+
             return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Rank + 1)) };
         }
     }

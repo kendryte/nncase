@@ -23,7 +23,7 @@ namespace Nncase.IR
         public Shape CheckedShape => (CheckedType ?? ((Const)this).ValueType) switch
         {
             TensorType type => type.Shape,
-            _ => throw new InvalidOperationException("Only The Expr Have CheckedType Can Get It's Shape")
+            _ => throw new InvalidOperationException("Only The Expr Have CheckedType Can Get It's Shape"),
         };
 
         public DataType CheckedDataType => CheckedType switch
@@ -31,7 +31,7 @@ namespace Nncase.IR
             // todo:more info
             TensorType type => type.DType,
             HandleType type => type.DType,
-            _ => throw new InvalidOperationException("Expr don't have a valid tensor type")
+            _ => throw new InvalidOperationException("Expr don't have a valid tensor type"),
         };
 
         public virtual int Rank => CheckedShape.Rank;

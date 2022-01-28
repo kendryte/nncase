@@ -12,7 +12,7 @@ using static Nncase.IR.Utility;
 namespace Nncase.TIR
 {
     /// <summary>
-    /// <see cref="T.Load(Var, Expr)"/>
+    /// <see cref="T.Load(Var, Expr)"/>.
     /// </summary>
     public record Load() : Op
     {
@@ -29,7 +29,7 @@ namespace Nncase.TIR
     }
 
     /// <summary>
-    /// <see cref="T.Ramp(Expr, Expr, int)"/>
+    /// <see cref="T.Ramp(Expr, Expr, int)"/>.
     /// </summary>
     public record Ramp(int Lanes) : Op
     {
@@ -46,22 +46,22 @@ namespace Nncase.TIR
     }
 
     /// <summary>
-    /// Store, return unit
+    /// Store, return unit.
     /// </summary>
     public sealed record Store() : Op
     {
         /// <summary>
-        ///The buffer variable handle.
+        /// The buffer variable handle.
         /// </summary>
         public static readonly ParameterInfo Handle = new(typeof(Store), 0, "handle");
 
         /// <summary>
-        ///The index locations to be stored.
+        /// The index locations to be stored.
         /// </summary>
         public static readonly ParameterInfo Index = new(typeof(Store), 1, "index", IsIntegral(DataType.Int32));
 
         /// <summary>
-        ///The value to be stored.
+        /// The value to be stored.
         /// </summary>
         public static readonly ParameterInfo Value = new(typeof(Store), 2, "value");
 
@@ -73,12 +73,13 @@ namespace Nncase.TIR
             {
                 return new InvalidType($"You Can't Load The {value.DType} To {handle.DType}");
             }
+
             if (value.DType.Lanes != lanes)
             {
                 return new InvalidType($"You're Index Lanes {lanes} Is Not Equal Value Lanes {handle.DType.Lanes}");
             }
+
             return TupleType.Void;
         }
-        
     }
 }

@@ -14,14 +14,13 @@ using Nncase.Pattern;
 
 namespace Nncase.Transform
 {
-
     /// <summary>
-    /// rewrite method
+    /// rewrite method.
     /// </summary>
     public static class DataFlowRewrite
     {
         /// <summary>
-        /// callback for rewrite start
+        /// callback for rewrite start.
         /// </summary>
         /// <param name="expr"></param>
         /// <param name="options"></param>
@@ -38,12 +37,11 @@ namespace Nncase.Transform
                     break;
                 default:
                     break;
-
             }
         }
 
         /// <summary>
-        /// call back for rewrite end
+        /// call back for rewrite end.
         /// </summary>
         /// <param name="expr"></param>
         /// <param name="options"></param>
@@ -60,7 +58,6 @@ namespace Nncase.Transform
                     break;
                 default:
                     break;
-
             }
         }
 
@@ -88,9 +85,11 @@ namespace Nncase.Transform
                             break;
                         }
                     }
+
                     if (visitor.isMatched)
                         break;
                 }
+
                 OnRewriteEnd(post, options, count++);
                 if (!visitor.isMatched)
                     break;
@@ -100,5 +99,4 @@ namespace Nncase.Transform
 
         public static Expr Rewrite(Expr pre, IEnumerable<PatternRule> Rules, RunPassOptions options) => RewriteImpl(pre, Rules, options);
     }
-
 }

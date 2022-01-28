@@ -322,46 +322,51 @@ namespace Nncase.IR.F
         public static Call Compare(CompareOp compareOp, Expr lhs, Expr rhs) => new Call(new Compare(compareOp), lhs, rhs);
 
         /// <summary>
-        /// Call equal
+        /// Call equal.
         /// </summary>
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
-        /// <returns>result</returns>
-        public static Call Equal(Expr lhs, Expr rhs) => Compare(CompareOp.EQ, lhs, rhs);
+        /// <returns>result.</returns>
+        public static Call Equal(Expr lhs, Expr rhs) => Compare(CompareOp.Equal, lhs, rhs);
+
         /// <summary>
-        /// call not equal
+        /// call not equal.
         /// </summary>
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
-        public static Call NotEqual(Expr lhs, Expr rhs) => Compare(CompareOp.NE, lhs, rhs);
+        public static Call NotEqual(Expr lhs, Expr rhs) => Compare(CompareOp.NotEqual, lhs, rhs);
+
         /// <summary>
-        /// call less than
+        /// call less than.
         /// </summary>
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
-        public static Call LessThan(Expr lhs, Expr rhs) => Compare(CompareOp.LT, lhs, rhs);
+        public static Call LessThan(Expr lhs, Expr rhs) => Compare(CompareOp.LowerThan, lhs, rhs);
+
         /// <summary>
-        /// call less equal
+        /// call less equal.
         /// </summary>
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
-        public static Call LessEqual(Expr lhs, Expr rhs) => Compare(CompareOp.LE, lhs, rhs);
+        public static Call LessEqual(Expr lhs, Expr rhs) => Compare(CompareOp.LowerOrEqual, lhs, rhs);
+
         /// <summary>
-        /// call greater equal
+        /// call greater equal.
         /// </summary>
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
-        public static Call GreaterEqual(Expr lhs, Expr rhs) => Compare(CompareOp.GT, lhs, rhs);
+        public static Call GreaterEqual(Expr lhs, Expr rhs) => Compare(CompareOp.GreaterThan, lhs, rhs);
+
         /// <summary>
-        /// call greater than
+        /// call greater than.
         /// </summary>
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
-        public static Call GreaterThan(Expr lhs, Expr rhs) => Compare(CompareOp.GE, lhs, rhs);
+        public static Call GreaterThan(Expr lhs, Expr rhs) => Compare(CompareOp.GreaterOrEqual, lhs, rhs);
     }
 }

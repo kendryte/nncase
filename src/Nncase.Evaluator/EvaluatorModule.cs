@@ -2,7 +2,7 @@ using Autofac;
 
 namespace Nncase.Evaluator
 {
-    public class EvaluatorModule : Module
+    public class MathModule : Module
     {
         protected override void Load(ContainerBuilder builder)
         {

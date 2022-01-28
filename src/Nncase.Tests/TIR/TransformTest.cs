@@ -45,7 +45,7 @@ namespace Nncase.Tests.TIRTest
         [Theory]
         [MemberData(nameof(DataAll))]
         public void RunAll(ITransfromCase Case) => RunCore(Case);
-        
+
         public static IEnumerable<object[]> DataOne => Data.Take(1);
         public static IEnumerable<object[]> DataAll => Data.Skip(1);
     }

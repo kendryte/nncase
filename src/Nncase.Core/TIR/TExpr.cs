@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,12 +12,10 @@ using Nncase.IR;
 
 namespace Nncase.TIR
 {
-
     /// <summary>
-    /// The Nop Expresstion, When We build the Ir, It's like the return the Void Value. We will skip it when print Ir/lower.  
+    /// The Nop Expresstion, When We build the Ir, It's like the return the Void Value. We will skip it when print Ir/lower.
     /// </summary>
     public sealed record Nop : Expr { }
-
 
     /// <summary>
     /// The container of Exprs.
@@ -22,13 +23,12 @@ namespace Nncase.TIR
     /// </summary>
     public sealed record Sequential(IRArrayList<Expr> Fields) : Expr, IList<Expr>
     {
-
         public Sequential() : this(new IRArrayList<Expr>()) { }
 
         public Expr this[int index] { get => ((IList<Expr>)Fields)[index]; set => ((IList<Expr>)Fields)[index] = value; }
 
         /// <summary>
-        /// Flatten nested sequential
+        /// Flatten nested sequential.
         /// </summary>
         /// <param name="exprs"></param>
         /// <returns>flattend exprs.</returns>
@@ -47,10 +47,12 @@ namespace Nncase.TIR
                         break;
                 }
             }
+
             foreach (var item in exprs)
             {
                 doflatten(item);
             }
+
             return new Sequential(new IRArrayList<Expr>(seqs));
         }
 
@@ -106,9 +108,8 @@ namespace Nncase.TIR
         }
     }
 
-
     /// <summary>
-    /// select the value and return it, the true and false must have same type!
+    /// select the value and return it, the true and false must have same type!.
     /// </summary>
     /// <param name="Condition"></param>
     /// <param name="TrueValue"></param>
@@ -140,7 +141,7 @@ namespace Nncase.TIR
     }
 
     /// <summary>
-    /// Let binding. Bind var to value then evaluate body. return unit
+    /// Let binding. Bind var to value then evaluate body. return unit.
     /// </summary>
     /// <param name="Var"> The variable. </param>
     /// <param name="Value"> The value to be binded. </param>
@@ -154,7 +155,7 @@ namespace Nncase.TIR
     }
 
     /// <summary>
-    /// A While loop
+    /// A While loop.
     /// <code>
     ///   while (condition) { body }
     /// </code>
@@ -165,13 +166,13 @@ namespace Nncase.TIR
     { }
 
     /// <summary>
-    /// The Expr With Body
+    /// The Expr With Body.
     /// </summary>
     /// <param name="Body" The body of the for loop. </param>
     public abstract record BodyExpr(Sequential Body) : Expr
     {
         /// <summary>
-        /// Add the expr items to body
+        /// Add the expr items to body.
         /// </summary>
         /// <param name="exprs"></param>
         public Expr Add(params Expr[] exprs)
@@ -180,6 +181,7 @@ namespace Nncase.TIR
             {
                 Body.Add(e);
             }
+
             return this;
         }
     }
@@ -197,12 +199,12 @@ namespace Nncase.TIR
     /// <param name="LoopVar">The loop variable.</param>
     /// <param name="Dom">The dom of for range.</param>
     /// <param name="Mode">The kind of the for loop.</param>
-    public sealed record For(Var LoopVar, Range Dom, ForMode Mode, Sequential Body) : BodyExpr(Body)
+    public sealed record For(Var LoopVar, Range Dom, LoopMode Mode, Sequential Body) : BodyExpr(Body)
     {
-        public For(Var LoopVar, Range Dom, ForMode Mode) : this(LoopVar, Dom, Mode, new()) { }
+        public For(Var LoopVar, Range Dom, LoopMode Mode) : this(LoopVar, Dom, Mode, new()) { }
 
         /// <summary>
-        /// implcit cast to Var, so we can get the Loop it selp and it's loop var
+        /// implcit cast to Var, so we can get the Loop it selp and it's loop var.
         /// </summary>
         /// <param name="loop"></param>
         public static implicit operator Var(For loop) => loop.LoopVar;
@@ -221,18 +223,18 @@ namespace Nncase.TIR
 
     /// <summary>
     /// A commutative reducer node to represent a commutative
-    ///  binary operator with identity element
+    ///  binary operator with identity element.
     /// </summary>
-    /// <param name="Lhs">The left argument of reducer </param>
-    /// <param name="Rhs">The right argument of reducer </param>
-    /// <param name="Result">The result of reducer </param>
+    /// <param name="Lhs">The left argument of reducer. </param>
+    /// <param name="Rhs">The right argument of reducer. </param>
+    /// <param name="Result">The result of reducer. </param>
     /// <param name="IdentityElement">The identity element of reducer, which leaves other
     ///  elements unchanged when combined with it, with respect to
     ///  the binary operation of this reducer uses. </param>
     public sealed record CommReducer(IRArray<Var> Lhs, IRArray<Var> Rhs, IRArray<Expr> Result, IRArray<Expr> IdentityElement)
     {
         /// <summary>
-        /// Function call operator to combine a and b
+        /// Function call operator to combine a and b.
         /// </summary>
         /// <param name="a"></param>
         /// <param name="b"></param>
@@ -245,19 +247,18 @@ namespace Nncase.TIR
         }
     }
 
-
     /// <summary>
-    /// Reduction operator 
+    /// Reduction operator.
     /// </summary>
     public sealed record Reduction : Expr
     {
         /// <summary>
-        /// The source operand. 
+        /// The source operand.
         /// </summary>
         public CommReducer? Combiner;
 
         /// <summary>
-        /// The reduction axis. 
+        /// The reduction axis.
         /// </summary>
         public IRArray<Expr> Source;
 
@@ -267,22 +268,22 @@ namespace Nncase.TIR
         public Expr Condition;
 
         /// <summary>
-        /// The init operand. 
+        /// The init operand.
         /// </summary>
         public IRArray<Expr>? Init;
 
         /// <summary>
-        /// the index of this reduce node
+        /// the index of this reduce node.
         /// </summary>
         public IRArray<IterVar> Axis;
 
         /// <summary>
-        /// The commutative combiner. 
+        /// The commutative combiner.
         /// </summary>
         public int ValueIndex;
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="combiner"></param>
         /// <param name="source"></param>
@@ -294,7 +295,7 @@ namespace Nncase.TIR
         public Reduction(CommReducer? combiner, IRArray<Expr> source, IRArray<IterVar> axis,
                Expr? condition = null, int value_index = 0, IRArray<Expr>? init = null)
         {
-            if (!axis.All(x => x.Mode == IterMode.CommReduce))
+            if (!axis.All(x => x.Mode == IterationMode.CommReduce))
                 throw new InvalidOperationException("Can only take axis created by reduce_axis");
             if (condition is null)
                 condition = (Const)1;
@@ -310,6 +311,7 @@ namespace Nncase.TIR
                     throw new InvalidOperationException("init can only be a IntImm, FloatImm or ProducerLoad");
                 }
             }
+
             Combiner = combiner;
             Source = source;
             Axis = axis;
@@ -335,14 +337,14 @@ namespace Nncase.TIR
         /// Create a BufferRegion which is full region of the given buffer.
         /// </summary>
         /// <param name="Buf">The buffer to generate full BufferRegion.</param>
-        /// <returns>The BufferRegion which covers all region of the given buffer</returns>
+        /// <returns>The BufferRegion which covers all region of the given buffer.</returns>
         public static BufferRegion Full(Buffer Buf) => new BufferRegion(Buf, new(Buf.Shape.Select(extent => new Range(0, extent))));
 
         /// <summary>
         /// Create a BufferRegion which is a single point of the given buffer.
         /// </summary>
         /// <param name="Buf">The buffer to generate single point BufferRegion.</param>
-        /// <param name="Indices">The access point indices of the buffer</param>
+        /// <param name="Indices">The access point indices of the buffer.</param>
         /// <returns>The BufferRegion which is the single point of the given buffer.</returns>
         public static BufferRegion FromPoint(Buffer Buf, IRArray<Expr> Indices) => new BufferRegion(Buf, new(Indices.Select(index => new Range(index, 1))));
     }
@@ -355,7 +357,7 @@ namespace Nncase.TIR
     /// MatchBufferRegion provides a mechanism to represent data layout and compactness constraints in
     /// low-level hardware primitives in the IR and defer the check after the sequence of
     /// transformations.
-    /// </summary> 
+    /// </summary>
     /// <param name="Buffer">The target buffer.</param>
     /// <param name="Source">The source buffer region.</param>
     public sealed record MatchBufferRegion(Buffer Buffer, BufferRegion Source)
@@ -383,9 +385,9 @@ namespace Nncase.TIR
     /// </code>
     /// </summary>
     /// <param name="Name"> The name_hint of the block.</param>
-    /// <param name="Body"> block body </param>
+    /// <param name="Body"> block body. </param>
     /// <param name="InitBody">the Block init statement.</param>
-    /// <param name="IterVars">The List Exprs contain the IterVars</param>
+    /// <param name="IterVars">The List Exprs contain the IterVars.</param>
     /// <param name="Reads">The read buffer regions of the block.</param>
     /// <param name="Writes">The write buffer regions of the block.</param>
     /// <param name="AllocBuffers">The buffer allocated in the block.</param>
@@ -396,16 +398,14 @@ namespace Nncase.TIR
                                 IRArrayList<BufferRegion> Writes,
                                 IRArrayList<Buffer> AllocBuffers, Expr Predicate) : BodyExpr(Body)
     {
-
         /// <summary>
-        /// <see cref="Block"/>
+        /// <see cref="Block"/>.
         /// </summary>
         /// <param name="Name">block name.</param>
         public Block(string Name) : this(Name, new(), new(), new(), new(), new(), new(), true) { }
 
-
         /// <summary>
-        /// bind the itervar with for loop 
+        /// bind the itervar with for loop.
         /// </summary>
         /// <param name="vi"></param>
         /// <param name="fi"></param>
@@ -416,8 +416,8 @@ namespace Nncase.TIR
         {
             var toMode = (char x) => x switch
             {
-                'S' => IterMode.DataPar,
-                'R' => IterMode.CommReduce,
+                'S' => IterationMode.DataParallel,
+                'R' => IterationMode.CommReduce,
                 _ => throw new NotSupportedException("Only Support \"S\" (for Spatial) or \"R\" ( Reduce)"),
             };
             return Bind(out vi, fi.Dom, toMode(iter_type), fi.LoopVar);
@@ -430,14 +430,14 @@ namespace Nncase.TIR
         }
 
         /// <summary>
-        /// create the iterVar and bind the value
+        /// create the iterVar and bind the value.
         /// </summary>
         /// <param name="vi"></param>
         /// <param name="dom"></param>
         /// <param name="mode"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public Block Bind(out IterVar vi, Range dom, IterMode mode, Expr value)
+        public Block Bind(out IterVar vi, Range dom, IterationMode mode, Expr value)
         {
             vi = new IterVar(TensorType.Scalar(DataType.Int32), dom, mode, value);
             IterVars.Add(vi);
@@ -445,7 +445,7 @@ namespace Nncase.TIR
         }
 
         /// <summary>
-        /// set the init feilds
+        /// set the init feilds.
         /// </summary>
         /// <param name="exprs"></param>
         /// <returns></returns>
@@ -455,9 +455,9 @@ namespace Nncase.TIR
             {
                 InitBody.Add(item);
             }
+
             return this;
         }
-
     }
 
     /// <summary>
@@ -468,7 +468,6 @@ namespace Nncase.TIR
     /// <param name="Value">The indices location to be stored.</param>
     public sealed record BufferStore(Buffer Buffer, IRArray<Expr> Indices, Expr Value) : Expr
     {
-
     }
 
     /// <summary>
@@ -481,7 +480,7 @@ namespace Nncase.TIR
     }
 
     /// <summary>
-    /// if(xxx) then { zzz } else { yyy }
+    /// if(xxx) then { zzz } else { yyy }.
     /// </summary>
     /// <param name="Condition"></param>
     /// <param name="Then"> Sequential. </param>

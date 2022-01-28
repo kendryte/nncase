@@ -31,6 +31,7 @@ namespace Nncase.IR.Tensors
                     else
                         return new InvalidType("The Tuple Elements Type Must All Equals TensorType");
                 }
+
                 if (!ttypes.Skip(1).All(ttype => ttype.Shape == ttypes[0].Shape))
                     return new InvalidType("The Tuple Elements Shape Must All Equal!");
 
@@ -40,7 +41,8 @@ namespace Nncase.IR.Tensors
                     {
                         return new InvalidType("Axis must be zero when stack scalar");
                     }
-                    return ttypes[0] with {Shape = new Shape(inputs.Count)};
+
+                    return ttypes[0] with { Shape = new Shape(inputs.Count) };
                 }
                 else
                 {
@@ -49,6 +51,7 @@ namespace Nncase.IR.Tensors
                     return ttypes[0] with { Shape = new Shape(outshape) };
                 }
             }
+
             return new InvalidType("The Stack Axis Must Be Const!");
         }
     }

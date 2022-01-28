@@ -20,7 +20,7 @@ namespace Nncase.IR.Tensors
         /// Gets axis.
         /// </summary>
         public static readonly ParameterInfo Axis = new(typeof(Flatten), 1, "axis");
-        
+
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType axis)
         {
@@ -31,7 +31,7 @@ namespace Nncase.IR.Tensors
                     var axisValue = axisV.ToScalar<int>();
                     var first = input.Shape.Take(axisValue).Aggregate(1, (x, y) => x * y.FixedValue);
                     var second = input.Shape.Take(axisValue..input.Shape.Count).Aggregate(1, (x, y) => x * y.FixedValue);
-                    return input with {Shape = new[] {first, second}};
+                    return input with { Shape = new[] { first, second } };
                 }
                 else
                 {

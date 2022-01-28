@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -293,7 +296,7 @@ namespace Nncase.Pattern.NN
         public Expr Bias() => GetCast<Expr>(BiasPat());
         public T Bias<T>()
             where T : Expr => GetCast<T>(BiasPat());
-        public ExprPattern OutShapePat() => Pattern[Conv2DTranspose.OutShape];
+        public ExprPattern OutShapePat() => Pattern[Conv2DTranspose.OutputShape];
         public T OutShapePat<T>()
             where T : ExprPattern => (T)OutShapePat();
         public Expr OutShape() => GetCast<Expr>(OutShapePat());
@@ -438,13 +441,13 @@ namespace Nncase.Pattern.NN
 
     public sealed record LogSoftMaxWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern InputPat() => Pattern[LogSoftMax.Input];
+        public ExprPattern InputPat() => Pattern[LogSoftmax.Input];
         public T InputPat<T>()
             where T : ExprPattern => (T)InputPat();
         public Expr Input() => GetCast<Expr>(InputPat());
         public T Input<T>()
             where T : Expr => GetCast<T>(InputPat());
-        public ExprPattern AxisPat() => Pattern[LogSoftMax.Axis];
+        public ExprPattern AxisPat() => Pattern[LogSoftmax.Axis];
         public T AxisPat<T>()
             where T : ExprPattern => (T)AxisPat();
         public Expr Axis() => GetCast<Expr>(AxisPat());
@@ -455,13 +458,13 @@ namespace Nncase.Pattern.NN
 
     public sealed record SoftMaxWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern InputPat() => Pattern[SoftMax.Input];
+        public ExprPattern InputPat() => Pattern[Softmax.Input];
         public T InputPat<T>()
             where T : ExprPattern => (T)InputPat();
         public Expr Input() => GetCast<Expr>(InputPat());
         public T Input<T>()
             where T : Expr => GetCast<T>(InputPat());
-        public ExprPattern AxisPat() => Pattern[SoftMax.Axis];
+        public ExprPattern AxisPat() => Pattern[Softmax.Axis];
         public T AxisPat<T>()
             where T : ExprPattern => (T)AxisPat();
         public Expr Axis() => GetCast<Expr>(AxisPat());
@@ -472,7 +475,7 @@ namespace Nncase.Pattern.NN
 
     public sealed record SoftPlusWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern InputPat() => Pattern[SoftPlus.Input];
+        public ExprPattern InputPat() => Pattern[Softplus.Input];
         public T InputPat<T>()
             where T : ExprPattern => (T)InputPat();
         public Expr Input() => GetCast<Expr>(InputPat());
@@ -483,7 +486,7 @@ namespace Nncase.Pattern.NN
 
     public sealed record SoftSignWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern InputPat() => Pattern[SoftSign.Input];
+        public ExprPattern InputPat() => Pattern[Softsign.Input];
         public T InputPat<T>()
             where T : ExprPattern => (T)InputPat();
         public Expr Input() => GetCast<Expr>(InputPat());
@@ -665,13 +668,13 @@ namespace Nncase.Pattern.Tensors
 
     public sealed record HardMaxWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern InputPat() => Pattern[HardMax.Input];
+        public ExprPattern InputPat() => Pattern[Hardmax.Input];
         public T InputPat<T>()
             where T : ExprPattern => (T)InputPat();
         public Expr Input() => GetCast<Expr>(InputPat());
         public T Input<T>()
             where T : Expr => GetCast<T>(InputPat());
-        public ExprPattern AxisPat() => Pattern[HardMax.Axis];
+        public ExprPattern AxisPat() => Pattern[Hardmax.Axis];
         public T AxisPat<T>()
             where T : ExprPattern => (T)AxisPat();
         public Expr Axis() => GetCast<Expr>(AxisPat());
@@ -682,13 +685,13 @@ namespace Nncase.Pattern.Tensors
 
     public sealed record MatMulWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern InputPat() => Pattern[MatMul.Input];
+        public ExprPattern InputPat() => Pattern[MatMul.Lhs];
         public T InputPat<T>()
             where T : ExprPattern => (T)InputPat();
         public Expr Input() => GetCast<Expr>(InputPat());
         public T Input<T>()
             where T : Expr => GetCast<T>(InputPat());
-        public ExprPattern OtherPat() => Pattern[MatMul.Other];
+        public ExprPattern OtherPat() => Pattern[MatMul.Rhs];
         public T OtherPat<T>()
             where T : ExprPattern => (T)OtherPat();
         public Expr Other() => GetCast<Expr>(OtherPat());

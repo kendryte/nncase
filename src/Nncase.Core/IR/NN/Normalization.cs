@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using static Nncase.IR.Utility;
 
@@ -13,7 +16,7 @@ namespace Nncase.IR.NN
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input) => input;
     }
-    
+
     public sealed record BatchNormalization() : Op
     {
         /// <summary>
@@ -30,7 +33,7 @@ namespace Nncase.IR.NN
         /// Gets bias.
         /// </summary>
         public static readonly ParameterInfo Bias = new(typeof(BatchNormalization), 2, "bias", IsFloatScalar());
-        
+
         /// <summary>
         /// Gets input_mean.
         /// </summary>
@@ -50,12 +53,12 @@ namespace Nncase.IR.NN
         /// Gets momentum.
         /// </summary>
         public static readonly ParameterInfo Momentum = new(typeof(BatchNormalization), 6, "momentum", IsFloatScalar());
-        
+
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType scale, TensorType bias, 
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType scale, TensorType bias,
             TensorType input_mean, TensorType input_var, TensorType epsilon, TensorType momentum) => input;
     }
-    
+
     public sealed record InstanceNormalization() : Op
     {
         /// <summary>
@@ -71,7 +74,7 @@ namespace Nncase.IR.NN
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType epsilon) => input;
     }
-    
+
     public sealed record LpNormalization() : Op
     {
         /// <summary>
@@ -83,7 +86,7 @@ namespace Nncase.IR.NN
         /// Gets Axis.
         /// </summary>
         public static readonly ParameterInfo Axis = new(typeof(LpNormalization), 1, "axis", IsIntegralScalar());
-        
+
         /// <summary>
         /// Gets P.
         /// </summary>
@@ -92,7 +95,7 @@ namespace Nncase.IR.NN
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType axis, TensorType p) => input;
     }
-    
+
     public sealed record LRN() : Op
     {
         /// <summary>
@@ -104,7 +107,7 @@ namespace Nncase.IR.NN
         /// Gets axis.
         /// </summary>
         public static readonly ParameterInfo Alpha = new(typeof(LRN), 1, "alpha", IsFloatScalar());
-        
+
         /// <summary>
         /// Gets beta.
         /// </summary>
@@ -114,14 +117,14 @@ namespace Nncase.IR.NN
         /// Gets bias.
         /// </summary>
         public static readonly ParameterInfo Bias = new(typeof(LRN), 3, "bias", IsFloatScalar());
-        
+
         /// <summary>
         /// Gets size.
         /// </summary>
         public static readonly ParameterInfo Size = new(typeof(LRN), 4, "size", IsIntegralScalar());
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, 
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input,
             TensorType alpha, TensorType beta, TensorType bias, TensorType size) => input;
     }
 }

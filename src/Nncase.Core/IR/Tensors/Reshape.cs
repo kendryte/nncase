@@ -34,6 +34,7 @@ namespace Nncase.IR.Tensors
             {
                 return input with { Shape = new IR.Shape(shape_con.ToTensor<int>()) };
             }
+
             return input with { Shape = IR.Shape.Unranked };
         }
     }

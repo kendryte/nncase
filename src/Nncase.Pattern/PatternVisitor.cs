@@ -231,7 +231,7 @@ namespace Nncase.Pattern
         }
 
         /// <summary>
-        /// clear the Memo!
+        /// clear the Memo!.
         /// </summary>
         public virtual void Clear()
         {

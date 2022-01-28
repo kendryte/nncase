@@ -34,7 +34,7 @@ namespace Nncase.Tests.TIRTest
             var inferResult = entry.InferenceType();
             entry.DumpAsScript("pre", dumpDirPath);
             Assert.True(inferResult);
-            
+
             var sch = new Scheduler(entry);
             Case.Schedule(sch);
             sch.Entry.InferenceType();

@@ -39,7 +39,7 @@ namespace Nncase.IR
         {
             return paramsInfo.Select(info => GetArgument(op, info)).ToArray();
         }
-        
+
         public IRType GetArgumentType(Op op, ParameterInfo parameter) =>
             _exprMemo[GetArgument(op, parameter)];
 
@@ -133,10 +133,12 @@ namespace Nncase.IR
                 {
                     SetCheckedType(parent, new InvalidType($"The {exprMsg} Is Invalid!"));
                 }
+
                 if (expr.CheckedType is AnyType any)
                 {
                     SetCheckedType(parent, any);
                 }
+
                 if (!pattern.MatchLeaf(expr.CheckedType))
                 {
                     SetCheckedType(parent, new InvalidType($"The {exprMsg} Require {pattern.Reason}"));
@@ -164,6 +166,7 @@ namespace Nncase.IR
             {
                 VerifySubField(expr, expr.Fields[i]);
             }
+
             if (expr.CheckedType is not null) { return expr.CheckedType; }
             type = TupleType.Void;
             SetCheckedType(expr, type);
@@ -192,6 +195,7 @@ namespace Nncase.IR
             {
                 VerifySubField(expr, expr.IterVars[i], Utility.IsIntegralScalar());
             }
+
             VerifySubField(expr, expr.InitBody, Utility.IsUnit());
             VerifySubField(expr, expr.Body, Utility.IsUnit());
             VerifySubField(expr, expr.Predicate, Utility.IsIntegralScalar());
@@ -227,6 +231,7 @@ namespace Nncase.IR
             {
                 type = TupleType.Void;
             }
+
             SetCheckedType(expr, type);
             return type;
         }
@@ -244,7 +249,7 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// set expr's current type
+        /// set expr's current type.
         /// </summary>
         /// <param name="expr"></param>
         /// <param name="type"></param>

@@ -17,18 +17,19 @@ namespace Nncase.Importer
                 ? SplitV11(op)
                 : SplitV13(op);
         }
-    
+
         private Expr SplitV11(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);
             var axis = GetIntAttribute(op, "axis", 0);
+
             // inShape[axis] / outputSize
             var split = GetOptionIntsAttribute(op, "split")
                 .Map(x => (Expr)Const.FromSpan<long>(x))
                 .Or(ComputeSplit(input, op.Output.Count));
             return F.Tensors.Split(input, axis, split);
         }
-    
+
         private Expr SplitV13(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);

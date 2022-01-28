@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +24,6 @@ namespace Nncase.Transform
     /// <inheritdoc/>
     internal sealed class ExprGeneratorVisitor : PatternVisitor<Expr, IRType>
     {
-
         private readonly IMatchResult _result;
 
         public ExprGeneratorVisitor(IMatchResult result) { _result = result; }
@@ -48,7 +50,7 @@ namespace Nncase.Transform
         public override Expr VisitLeaf(OpPattern pattern) => pattern switch
         {
             BinaryPattern binary => new Binary(binary.BinaryOp!.Value),
-            _ => throw new NotSupportedException($"Not Support Convert {pattern.GetType().Name}!")
+            _ => throw new NotSupportedException($"Not Support Convert {pattern.GetType().Name}!"),
         };
 
         /// <inheritdoc/>
@@ -71,22 +73,22 @@ namespace Nncase.Transform
     }
 
     /// <summary>
-    /// a template rule 
+    /// a template rule.
     /// </summary>
     public class TemplateRule : PatternRule
     {
         /// <summary>
-        /// after expr
+        /// after expr.
         /// </summary>
         public ExprPattern Rhs;
 
         /// <summary>
-        /// predicate will be eval to bool
+        /// predicate will be eval to bool.
         /// </summary>
         public ExprPattern? Predicate;
 
         /// <summary>
-        /// <see cref="RulesFactory.Rewrite(ExprPattern, ExprPattern, ExprPattern?)"/>
+        /// <see cref="RulesFactory.Rewrite(ExprPattern, ExprPattern, ExprPattern?)"/>.
         /// </summary>
         public TemplateRule(ExprPattern lhs, ExprPattern rhs, ExprPattern? predicate = null)
         {
@@ -103,22 +105,23 @@ namespace Nncase.Transform
             {
                 return converter.Visit(Rhs);
             }
+
             return null;
         }
     }
 
     /// <summary>
-    /// Rules Factory 
+    /// Rules Factory.
     /// </summary>
     public static class RulesFactory
     {
         /// <summary>
-        /// create the rewrite patternrule calss
+        /// create the rewrite patternrule calss.
         /// </summary>
-        /// <param name="lhs">lhs pattern</param>
-        /// <param name="rhs">rhs pattern expression</param>
-        /// <param name="predicate"> predicate pattern expression </param>
-        /// <returns> PatternRule </returns>
+        /// <param name="lhs">lhs pattern.</param>
+        /// <param name="rhs">rhs pattern expression.</param>
+        /// <param name="predicate"> predicate pattern expression. </param>
+        /// <returns> PatternRule. </returns>
         public static PatternRule Rewrite(ExprPattern lhs, ExprPattern rhs, ExprPattern? predicate = null)
           => new TemplateRule(lhs, rhs, predicate);
     }

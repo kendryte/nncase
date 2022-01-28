@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,13 +13,17 @@ using Nncase.TIR;
 
 namespace Nncase.CodeGen;
 
-
 /// <summary>
-/// the kmodule Serialized result
+/// the kmodule Serialized result.
 /// </summary>
 public class KModuleSerializeResult : ISerializeResult
 {
-    public uint Alignment;
+    public uint Alignment { get; set; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="KModuleSerializeResult"/> class.
+    /// </summary>
+    /// <param name="alignment"></param>
     public KModuleSerializeResult(uint alignment)
     {
         Alignment = alignment;
@@ -24,7 +31,7 @@ public class KModuleSerializeResult : ISerializeResult
 }
 
 /// <summary>
-/// the kmodel Serialized result
+/// the kmodel Serialized result.
 /// </summary>
 public class KModelSerializeResult : ISerializeResult
 {
@@ -36,18 +43,17 @@ public class KModelSerializeResult : ISerializeResult
 }
 
 /// <summary>
-/// the kmodel format runtime model
+/// the kmodel format runtime model.
 /// </summary>
 public class RTKModel : IRTModel
 {
-
     List<IRTModule> modules;
     string sourcePath;
     bool isSerialized;
     KModelSerializeResult serializeResult;
 
     /// <summary>
-    /// create the kmodel
+    /// create the kmodel.
     /// </summary>
     /// <param name="result"></param>
     /// <param name="target"></param>
@@ -61,24 +67,32 @@ public class RTKModel : IRTModel
         isSerialized = false;
         serializeResult = new(0);
     }
+
     /// <inheritdoc/>
     public ITarget Target { get; set; }
+
     /// <inheritdoc/>
     public Schedule.SchedModelResult modelResult { get; set; }
+
     /// <inheritdoc/>
     public string Source { get; set; }
+
     /// <inheritdoc/>
     public string SourceExt { get => "kmodel"; set { } }
+
     /// <inheritdoc/>
     public IRTFunction? Entry { get; set; }
+
     /// <inheritdoc/>
     public IReadOnlyList<IRTModule> Modules => modules;
+
     /// <inheritdoc/>
     public void Dump(string name, string dumpDirPath)
     {
         if (isSerialized)
             File.Copy(sourcePath, Path.Combine(dumpDirPath, $"{name}.{SourceExt}"));
     }
+
     /// <inheritdoc/>
     public object? Invoke(params object?[]? args)
     {
@@ -98,12 +112,12 @@ public class RTKModel : IRTModel
         // step 2. start write.
         var header = new ModelHeader()
         {
-            Identifier = ModelInfo.IDENTIFIER,
-            Version = ModelInfo.VERSION,
+            Identifier = ModelInfo.Identifier,
+            Version = ModelInfo.Version,
             HeaderSize = (uint)Marshal.SizeOf(typeof(ModelHeader)),
             Flags = 0,
             Alignment = 8,
-            Modules = (uint)modelResult.Modules.Count
+            Modules = (uint)modelResult.Modules.Count,
         };
 
         var header_pos = writer.BaseStream.Position;
@@ -116,6 +130,7 @@ public class RTKModel : IRTModel
             writer.Write(rtmodule.Source);
             header.Alignment = Math.Max(header.Alignment, res.Alignment);
         }
+
         // Entry point
         for (int i = 0; i < modelResult.Modules.Count; i++)
         {
@@ -131,6 +146,7 @@ public class RTKModel : IRTModel
         }
 
         var end_pos = writer.BaseStream.Position;
+
         // write header
         writer.Seek((int)header_pos, SeekOrigin.Begin);
         writer.Write(CodeGenUtil.StructToBytes(header));

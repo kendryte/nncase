@@ -45,7 +45,7 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// get this expr's il string
+        /// get this expr's il string.
         /// </summary>
         /// <param name="expr"></param>
         /// <returns></returns>
@@ -58,7 +58,7 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// dump Expr IL into `dumpDirPath/name.il`
+        /// dump Expr IL into `dumpDirPath/name.il`.
         /// </summary>
         /// <param name="expr"></param>
         /// <param name="name"></param>
@@ -92,17 +92,17 @@ namespace Nncase.IR
             TextWriter rootWriter;
 
             /// <summary>
-            /// current VarNamelist
+            /// current VarNamelist.
             /// </summary>
             List<string> VarNameList => VarNameStack.Peek();
 
             /// <summary>
-            /// stack container
+            /// stack container.
             /// </summary>
             readonly Stack<(StringBuilder, TextWriter)> ScopeStack = new();
 
             /// <summary>
-            /// indent level
+            /// indent level.
             /// </summary>
             public int indentLevel = 0;
 
@@ -117,12 +117,12 @@ namespace Nncase.IR
             readonly Dictionary<string, int> GlobalNameUseMap = new();
 
             /// <summary>
-            /// the scopes var name stack
+            /// the scopes var name stack.
             /// </summary>
             readonly Stack<List<string>> VarNameStack = new();
 
             /// <summary>
-            /// ctor
+            /// ctor.
             /// </summary>
             /// <param name="textWriter"></param>
             public ScopeWriter(TextWriter textWriter)
@@ -146,7 +146,7 @@ namespace Nncase.IR
             }
 
             /// <summary>
-            /// get current frame string
+            /// get current frame string.
             /// </summary>
             /// <returns></returns>
             /// <exception cref="InvalidOperationException"></exception>
@@ -164,12 +164,13 @@ namespace Nncase.IR
                 }
 
                 foreach (var name in VarNameStack.Pop()) { GlobalNameUseMap[name]--; }
+
                 // VarNameList
                 return builder;
             }
 
             /// <summary>
-            /// insert indent and write
+            /// insert indent and write.
             /// </summary>
             /// <param name="value"></param>
             public void IndWrite(string? value) => Indent().Write(value);
@@ -192,7 +193,7 @@ namespace Nncase.IR
             public void Append(StringBuilder value) => Writer.Write(value);
 
             /// <summary>
-            /// Append the current line tail, without the indent, but add new line
+            /// Append the current line tail, without the indent, but add new line.
             /// </summary>
             /// <param name="value"></param>
             public void AppendLine(string value) => Writer.WriteLine(value);
@@ -208,7 +209,7 @@ namespace Nncase.IR
             }
 
             /// <summary>
-            /// insert the indent
+            /// insert the indent.
             /// </summary>
             /// <returns></returns>
             private TextWriter Indent()
@@ -216,6 +217,7 @@ namespace Nncase.IR
                 for (int i = 0; i < indentLevel; i++) { Writer.Write("  "); }
                 return Writer;
             }
+
             /// <summary>
             /// add the indent level, return the indent mananger for auto indent down.
             /// </summary>
@@ -227,20 +229,22 @@ namespace Nncase.IR
             }
 
             /// <summary>
-            /// mananger the wirte indent
+            /// mananger the wirte indent.
             /// </summary>
             public class IndentMananger : IDisposable
             {
                 /// <summary>
-                /// the parent scope wirter
+                /// the parent scope wirter.
                 /// </summary>
                 readonly ScopeWriter Parent;
+
                 /// <summary>
-                /// the indent add/sub diff value
+                /// the indent add/sub diff value.
                 /// </summary>
                 readonly int indentDiff;
+
                 /// <summary>
-                /// <see cref="IndentMananger"/>
+                /// <see cref="IndentMananger"/>.
                 /// </summary>
                 /// <param name="parent"></param>
                 /// <param name="level_diff"></param>
@@ -277,6 +281,7 @@ namespace Nncase.IR
                         count = 0;
                         GlobalNameUseMap.Add(name, count);
                     }
+
                     return count;
                 }
 
@@ -304,6 +309,7 @@ namespace Nncase.IR
             {
                 Scope = new(textWriter);
             }
+
             /// <inheritdoc/>
             public override string Visit(Call expr)
             {
@@ -315,6 +321,7 @@ namespace Nncase.IR
                 AppendCheckedType(expr.CheckedType);
                 return name;
             }
+
             /// <inheritdoc/>
             public override string Visit(Const expr)
             {
@@ -328,6 +335,7 @@ namespace Nncase.IR
                 {
                     name = $"const({(expr.CheckedType is null ? string.Empty : VisitType(expr.CheckedType))})";
                 }
+
                 _names.Add(expr, name);
                 return name;
             }
@@ -340,16 +348,20 @@ namespace Nncase.IR
                 name = $"%{expr.Name}";
                 _names.Add(expr, name);
                 Scope.Push();
+
                 // 1. Function signature
                 Scope.IndWrite($"{name} = fn({string.Join(", ", expr.Parameters.Select(Visit))})");
                 AppendCheckedType(expr.CheckedType, " {\n");
+
                 // 2. Function body
                 using (Scope.IndentUp()) { var body = Visit(expr.Body); }
+
                 // 3. Function closing
                 Scope.IndWriteLine("}");
                 Scope.IndWrite(Scope.Pop());
                 return name;
             }
+
             /// <inheritdoc/>
             public override string Visit(Op expr)
             {
@@ -360,6 +372,7 @@ namespace Nncase.IR
                     _ => expr.GetType().Name,
                 };
             }
+
             /// <inheritdoc/>
             public override string Visit(Tuple expr)
             {
@@ -371,6 +384,7 @@ namespace Nncase.IR
                 Scope.IndWriteLine();
                 return name;
             }
+
             /// <inheritdoc/>
             public override string Visit(Var expr)
             {
@@ -380,20 +394,25 @@ namespace Nncase.IR
                 if (expr.CheckedType is IRType type) { name += $": {VisitType(type)}"; }
                 return name;
             }
+
             /// <inheritdoc/>
             public override string Visit(For expr)
             {
                 if (_names.TryGetValue(expr, out var name)) { return name; }
+
                 // the for loop will not used by other expression, so we need save the whole `For` il
                 Scope.Push();
+
                 // 1. For Loop signature
                 Scope.Append($"For {expr.Mode}({Visit(expr.LoopVar)} in Range({Visit(expr.Dom.Min)}, {Visit(expr.Dom.Max)})");
                 AppendCheckedType(expr.CheckedType, " {\n");
+
                 // 2. For Body
                 using (Scope.IndentUp())
                 {
                     Visit(expr.Body!);
                 }
+
                 // 3. For closing
                 Scope.IndWriteLine("}");
 
@@ -401,19 +420,23 @@ namespace Nncase.IR
                 Scope.IndWrite(Scope.Pop());
                 return "";
             }
+
             /// <inheritdoc/>
             public override string Visit(Sequential expr)
             {
                 if (_names.TryGetValue(expr, out var name)) { return name; }
                 Scope.Push();
+
                 // 1. Sequential signature
                 Scope.Append($"Sequential");
                 AppendCheckedType(expr.CheckedType, " {\n");
+
                 // 2. For Body
                 using (Scope.IndentUp())
                 {
                     foreach (var item in expr.Fields) { Visit(item); }
                 }
+
                 // 3. For closing
                 Scope.IndWriteLine("}");
 
@@ -428,8 +451,10 @@ namespace Nncase.IR
             /// <inheritdoc/>
             public override string VisitType(CallableType type) =>
                 $"({string.Join(", ", type.Parameters.Select(VisitType))}) -> {VisitType(type.ReturnType)}";
+
             /// <inheritdoc/>
             public override string VisitType(InvalidType type) => $"invalid:{type.Reason}";
+
             /// <inheritdoc/>
             public override string VisitType(TensorType type) =>
                 $"{DataTypes.GetDisplayName(type.DType)}{type.Shape}";
@@ -450,6 +475,7 @@ namespace Nncase.IR
                 _names.Add(expr, name);
                 return name;
             }
+
             private void AppendCheckedType(IRType? type, string end = "\n")
             {
                 if (type is not null)

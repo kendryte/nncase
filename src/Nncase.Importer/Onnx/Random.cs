@@ -19,7 +19,7 @@ namespace Nncase.Importer
             var shape = Const.FromSpan<long>(GetIntsAttribute(op, "shape"));
             return F.Tensors.RandomNormal(GetDataType(dtype), mean, scale, seed, shape);
         }
-        
+
         private Expr VisitRandomNormalLike(NodeProto op)
         {
             var input = GetInputExpr(op, 0);
@@ -32,7 +32,7 @@ namespace Nncase.Importer
             var seed = GetFloatAttribute(op, "seed", float.NaN);
             return F.Tensors.RandomNormalLike(dtype, input, mean, scale, seed);
         }
-        
+
         private Expr VisitRandomUniform(in NodeProto op)
         {
             var dtype = GetIntAttribute(op, "dtype");
@@ -42,7 +42,7 @@ namespace Nncase.Importer
             var shape = Const.FromSpan<long>(GetIntsAttribute(op, "shape"));
             return F.Tensors.RandomUniform(GetDataType(dtype), high, low, seed, shape);
         }
-        
+
         private Expr VisitRandomUniformLike(NodeProto op)
         {
             var input = GetInputExpr(op, 0);

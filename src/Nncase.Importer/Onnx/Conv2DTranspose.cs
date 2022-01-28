@@ -22,11 +22,14 @@ namespace Nncase.Importer
             var dilation = GetDilationsAttribute(op);
             var group = GetIntAttribute(op, "group", 1);
             var autoPad = GetStringAttribute(op, "auto_pad", "NOTSET");
+
             //If "output_shape" is explicitly provided, "output_padding" does not contribute additional size to "output_shape"
             var outputPadding = GetIntsAttribute(op, "output_paddings", new[] { 0, 0 });
+
             // If output_shape is specified, pads values are ignored.
-            
+
             var outputShape = GetOptionIntsAttribute(op, "output_shape");
+
             // 1.ignored pads
             // 2.output_padding not effect
             if (outputShape)
@@ -35,7 +38,6 @@ namespace Nncase.Importer
             }
             else
             {
-                
             }
 
             var outShape = 1;

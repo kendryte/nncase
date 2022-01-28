@@ -117,15 +117,15 @@ namespace Nncase.IR
         public static Call operator >>(Expr lhs, int rhs) => LeftShift(lhs, rhs);
 
         /// <summary>
-        /// GreaterEqual
+        /// GreaterEqual.
         /// </summary>
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
         public static Call operator >=(Expr lhs, Expr rhs) => GreaterEqual(lhs, rhs);
-        
+
         /// <summary>
-        /// GreaterThan
+        /// GreaterThan.
         /// </summary>
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
@@ -133,15 +133,15 @@ namespace Nncase.IR
         public static Call operator >(Expr lhs, Expr rhs) => GreaterThan(lhs, rhs);
 
         /// <summary>
-        /// LessEqual
+        /// LessEqual.
         /// </summary>
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
         public static Call operator <=(Expr lhs, Expr rhs) => LessEqual(lhs, rhs);
-        
+
         /// <summary>
-        /// LessThan
+        /// LessThan.
         /// </summary>
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>

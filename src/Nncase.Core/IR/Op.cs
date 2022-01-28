@@ -18,27 +18,30 @@ namespace Nncase.IR
     public sealed class ParameterInfo
     {
         /// <summary>
-        /// the parameter info ownertype
+        /// the parameter info ownertype.
         /// </summary>
         public Type OwnerType { get; }
+
         /// <summary>
-        /// parameter index num
+        /// parameter index num.
         /// </summary>
         public int Index { get; }
+
         /// <summary>
-        /// name
+        /// name.
         /// </summary>
         public string Name { get; }
+
         /// <summary>
-        /// this paramter's type condition
+        /// this paramter's type condition.
         /// </summary>
         public TypePattern Pattern { get; } = IsIRType();
 
         /// <summary>
-        /// Check current type by pattern
+        /// Check current type by pattern.
         /// </summary>
         /// <param name="type"></param>
-        /// <returns> check success </returns>
+        /// <returns> check success. </returns>
         public bool CheckType(IRType type) => Pattern.MatchLeaf(type);
 
         public ParameterInfo(Type ownerType, int index, string name)
@@ -71,7 +74,6 @@ namespace Nncase.IR
                              let param = (ParameterInfo)(p.GetValue(null) ?? throw new InvalidOperationException())
                              orderby param.Index
                              select param).ToArray();
-
 
         public virtual bool Equals(Op? other)
         {
@@ -110,6 +112,7 @@ namespace Nncase.IR
                     return new InvalidType($"The {paraminfo.OwnerType.Name} {paraminfo.Name} Requrie <{paraminfo.Pattern.Reason}>, But {paramActualType}!");
                 targetParams.Add(paramActualType);
             }
+
             return (IRType)(typeinferFunc.Invoke(this, targetParams.ToArray()))!;
         }
     }

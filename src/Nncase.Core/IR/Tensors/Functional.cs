@@ -22,20 +22,20 @@ namespace Nncase.IR.F
         public static Expr NHWCToNCHW(Expr input) => Transpose(input, new[] { 0, 3, 1, 2 });
 
         public static Expr NCHWToNHWC(Expr input) => Transpose(input, new[] { 0, 2, 3, 1 });
-        
+
         public static Call Broadcast(Expr input, Expr shape) => new Call(new Broadcast(), input, shape);
 
         public static Call Cast(Expr input, DataType newType) => new Call(new Cast(newType), input);
 
         public static Call Concat(Tuple input, Expr axis) => new Call(new Concat(), input, axis);
-        
+
         public static Call CumSum(Expr input, Expr axis, Expr exclusive, Expr reverse) => new Call(new CumSum(), input, axis, exclusive, reverse);
-        
+
         public static Call Expand(Expr input, Expr shape) => new Call(new Expand(), input, shape);
-        
+
         public static Call Flatten(Expr input, Expr axis) => new Call(new Flatten(), input, axis);
-        
-        public static Call HardMax(Expr input, Expr axis) => new Call(new HardMax(), input, axis);
+
+        public static Call HardMax(Expr input, Expr axis) => new Call(new Hardmax(), input, axis);
 
         public static Call Gather(Expr input, Expr axis, Expr index) => new Call(new Gather(), input, axis, index);
 
@@ -46,28 +46,28 @@ namespace Nncase.IR.F
         public static Call OneHot(OneHotMode oneHotMode, Expr indices, Expr depth, Expr onValue, Expr offValue, Expr axis) => new Call(new OneHot(oneHotMode), indices, depth, onValue, offValue, axis);
 
         /// <summary>
-        /// Pads is Const tensor, shape = [channels, 2(before, after)]
+        /// Pads is Const tensor, shape = [channels, 2(before, after)].
         /// </summary>
         public static Call Pad(Expr input, Expr pads, PadMode mode, Expr value) => new Call(new Pad(mode), input, pads, value);
 
         public static Call Prod(Expr input) => new Call(new Prod(), input);
-        
+
         public static Call RandomNormal(DataType type, Expr mean, Expr scale, Expr seed, Expr shape) =>
             new Call(new RandomNormal(type), mean, scale, seed, shape);
-        
+
         public static Call RandomNormalLike(DataType type, Expr input, Expr mean, Expr scale, Expr seed) =>
             new Call(new RandomNormal(type), input, mean, scale, seed);
-        
+
         public static Call RandomUniform(DataType type, Expr high, Expr low, Expr seed, Expr shape) =>
             new Call(new RandomUniform(type), high, low, seed, shape);
-        
+
         public static Call RandomUniformLike(DataType type, Expr input, Expr high, Expr low, Expr seed) =>
             new Call(new RandomUniformLike(type), input, high, low, seed);
-        
+
         public static Call Range(Expr begin, Expr end, Expr step) => new Call(new Range(), begin, end, step);
-        
+
         public static Call Reduce(ReduceOp reduceOp, Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(reduceOp), input, axis, initValue, keepDims);
-        
+
         public static Call ReduceArg(ReduceArgOp reduceArgOp, Expr input, Expr axis, Expr keepDims, Expr selectLastIndex) => new Call(new ReduceArg(reduceArgOp), input, axis, keepDims, selectLastIndex);
 
         public static Call ReduceMean(Expr input, Expr axis, Expr initValue, Expr keepDims) => Reduce(ReduceOp.Mean, input, axis, initValue, keepDims);
@@ -87,10 +87,10 @@ namespace Nncase.IR.F
 
         public static Call ReverseSequence(Expr input, Expr seqLens, Expr batchAxis, Expr timeAxis) =>
             new Call(new ReverseSequence(), input, seqLens, batchAxis, timeAxis);
-        
+
         public static Call ShapeOp(Expr input) => new Call(new ShapeOp(), input);
 
-        ///https://github.com/onnx/onnx/blob/master/docs/Operators.md#slice
+        /// https://github.com/onnx/onnx/blob/master/docs/Operators.md#slice
         public static Call Slice(Expr input, Expr begins, Expr ends, Expr axes, Expr strides) =>
           new Call(new Slice(), input, begins, ends, axes, strides);
 
@@ -102,9 +102,9 @@ namespace Nncase.IR.F
         }
 
         public static Expr SliceIndex(Expr input, int index) => Slice(input, new[] { index }, new[] { index + 1 }, 1);
-        
+
         public static Expr Size(Expr input) => new Call(new Size(), input);
-        
+
         public static Call Stack(Expr inputs, Expr axis) => new Call(new Stack(), inputs, axis);
 
         /// squeeze input by give dims
@@ -118,7 +118,7 @@ namespace Nncase.IR.F
 
         // return a scalar
         public static Expr Rank(Expr input) => Slice(ShapeOp(ShapeOp(input)), new[] { 0 }, new[] { 1 }, 1);
-        
+
         // same like tensorflow
         public static Call SpaceToBatch(Expr input, Expr blockShape, Expr paddings) => new Call(new SpaceToBatch(), input, blockShape, paddings);
 

@@ -14,9 +14,8 @@ namespace Nncase.IR
     /// </summary>
     public sealed record Const(TensorType ValueType, IRBytes Data) : Expr
     {
-       
+        /// <inheritdoc/>
         public override int Rank => ValueType.Shape.Rank;
-
 
         /// <summary>
         /// Create constant from a <see cref="byte"/>.
@@ -97,13 +96,13 @@ namespace Nncase.IR
         public static implicit operator Const(bool value) => FromScalar(value);
 
         /// <summary>
-        /// Create constant from <see cref="string"/>
+        /// Create constant from <see cref="string"/>.
         /// </summary>
         /// <param name="value"></param>
         public static implicit operator Const(string value) => FromSpan<char>(value);
 
         /// <summary>
-        /// <see cref="ToTensor{T}"/>
+        /// <see cref="ToTensor{T}"/>.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="srcType"></param>
@@ -119,14 +118,15 @@ namespace Nncase.IR
             {
                 dest[i] = DataTypes.CastToScalar<T>(srcType, src, src_stride * i);
             }
+
             return new DenseTensor<T>(dest, ValueType.IsScalar ? new[] { 1 } : ValueType.Shape);
         }
 
         /// <summary>
-        /// cast to target type dense tensor
+        /// cast to target type dense tensor.
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <returns> tensor </returns>
+        /// <returns> tensor. </returns>
         public DenseTensor<float> HalfToFloat()
         {
             var src = (byte[])Data;
@@ -137,6 +137,7 @@ namespace Nncase.IR
             {
                 dest[i] = (float)DataTypes.CastToScalar(src, src_stride * i);
             }
+
             return new DenseTensor<float>(dest, ValueType.IsScalar ? new[] { 1 } : ValueType.Shape);
         }
 
@@ -152,15 +153,15 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// convert target type scalar
+        /// convert target type scalar.
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <returns> scalar </returns>
+        /// <returns> scalar. </returns>
         /// <exception cref="InvalidCastException"></exception>
         public T[] ToArray<T>()
             where T : unmanaged
             => ToTensor<T>().ToArray();
-        
+
         public T ToScalar<T>()
           where T : unmanaged
           => ValueType.IsScalar && ValueType.DType.Lanes == 1 ?
@@ -172,12 +173,12 @@ namespace Nncase.IR
         /// <summary>
         /// cast to string.
         /// </summary>
-        /// <returns> string </returns>
+        /// <returns> string. </returns>
         /// <exception cref="InvalidCastException"></exception>
         public string ToStr() => ValueType.DType switch
         {
             { ElemType: ElemType.String, Lanes: 1 } => System.Text.Encoding.Default.GetString(Data),
-            _ => throw new InvalidCastException($"This Const is Not String!")
+            _ => throw new InvalidCastException($"This Const is Not String!"),
         };
 
         /// <summary>
@@ -185,14 +186,14 @@ namespace Nncase.IR
         /// </summary>
         /// <typeparam name="T">CLR type.</typeparam>
         /// <param name="value">Value.</param>
-        /// <param name="lanes"> lanes </param>
+        /// <param name="lanes"> lanes. </param>
         /// <returns>Created constant expression.</returns>
         public static Const FromScalar<T>(T value, int lanes = 1)
             where T : unmanaged
             => new(TensorType.Scalar(DataTypes.FromType<T>() with { Lanes = lanes }), RepeatBytes(DataTypes.GetBytes(value), lanes));
 
         /// <summary>
-        /// repeat bytes
+        /// repeat bytes.
         /// </summary>
         /// <param name="bytes"></param>
         /// <param name="lanes"></param>
@@ -205,6 +206,7 @@ namespace Nncase.IR
             {
                 bytes.CopyTo(ret, i * bytes.Length);
             }
+
             return ret;
         }
 
@@ -220,7 +222,7 @@ namespace Nncase.IR
             => new(new TensorType(DataTypes.FromType<T>(), shape), DataTypes.GetBytes(span));
 
         /// <summary>
-        /// Create constant from a span, Set the shape as [n]
+        /// Create constant from a span, Set the shape as [n].
         /// </summary>
         /// <typeparam name="T">CLR type.</typeparam>
         /// <param name="span">Span.</param>
@@ -241,14 +243,14 @@ namespace Nncase.IR
           => FromSpan<int>(ts.Buffer.Span, new Shape(ts.Dimensions.ToArray()));
 
         /// <summary>
-        /// convert shape to const expr
+        /// convert shape to const expr.
         /// </summary>
         /// <param name="shape"></param>
         /// <returns></returns>
         public static Const FromShape(Shape shape) => FromSpan<int>(shape.Select(x => x.FixedValue).ToArray(), new[] { shape.Rank });
 
         /// <summary>
-        /// get the const expr with specific shape 
+        /// get the const expr with specific shape.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="shape"></param>
@@ -257,6 +259,7 @@ namespace Nncase.IR
         public static Const FromShape<T>(Shape shape, T value)
          where T : unmanaged => FromTensor<T>(new DenseTensor<T>(Enumerable.Repeat<T>(value, shape.Size).ToArray(), shape));
 
+        /// <inheritdoc/>
         public override string ToString()
         {
             string str = DataTypes.GetDisplayName(ValueType.DType);
@@ -275,6 +278,7 @@ namespace Nncase.IR
             {
                 str += $" {ValueType.Shape}";
             }
+
             return str;
         }
     }

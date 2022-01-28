@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Numerics.Tensors;
 using System.Linq;
 using System.Collections.Immutable;
@@ -50,10 +53,11 @@ namespace Nncase.Transform.Rule
                         pads[i, 1] = 0;
                     }
                 }
+
                 return Conv2D(Pad(pad.Input(), Const.FromTensor(pads), pad.PadMode, pad.Value()), conv2d.Weights(), conv2d.Bias(), Const.FromTensor(newpads), conv2d.Stride(), conv2d.Dilation(), conv2d.PadMode, conv2d.Groups());
             }
+
             return null;
         }
-
     }
 }

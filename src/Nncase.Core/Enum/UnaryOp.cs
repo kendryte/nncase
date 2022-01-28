@@ -7,121 +7,120 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nncase
+namespace Nncase;
+
+/// <summary>
+/// Unary operator kind.
+/// </summary>
+public enum UnaryOp
 {
     /// <summary>
-    /// Unary operator kind.
+    /// Abs.
     /// </summary>
-    public enum UnaryOp
-    {
-        /// <summary>
-        /// Abs.
-        /// </summary>
-        Abs,
+    Abs,
 
-        /// <summary>
-        /// Acos.
-        /// </summary>
-        Acos,
-        
-        /// <summary>
-        /// Acosh.
-        /// </summary>
-        Acosh,
-        
-        /// <summary>
-        /// Asin.
-        /// </summary>
-        Asin,
-        
-        /// <summary>
-        /// Asin.
-        /// </summary>
-        Asinh,
+    /// <summary>
+    /// Acos.
+    /// </summary>
+    Acos,
 
-        /// <summary>
-        /// Ceil.
-        /// </summary>
-        Ceil,
+    /// <summary>
+    /// Acosh.
+    /// </summary>
+    Acosh,
 
-        /// <summary>
-        /// Cosine.
-        /// </summary>
-        Cos,
+    /// <summary>
+    /// Asin.
+    /// </summary>
+    Asin,
 
-        /// <summary>
-        /// Cosh.
-        /// </summary>
-        Cosh,
-        
-        /// <summary>
-        /// Exp.
-        /// </summary>
-        Exp,
+    /// <summary>
+    /// Asin.
+    /// </summary>
+    Asinh,
 
-        /// <summary>
-        /// Floor.
-        /// </summary>
-        Floor,
+    /// <summary>
+    /// Ceil.
+    /// </summary>
+    Ceil,
 
-        /// <summary>
-        /// Log.
-        /// </summary>
-        Log,
+    /// <summary>
+    /// Cosine.
+    /// </summary>
+    Cos,
 
-        /// <summary>
-        /// Neg.
-        /// </summary>
-        Neg,
+    /// <summary>
+    /// Cosh.
+    /// </summary>
+    Cosh,
 
-        /// <summary>
-        /// Round.
-        /// </summary>
-        Round,
+    /// <summary>
+    /// Exp.
+    /// </summary>
+    Exp,
 
-        /// <summary>
-        /// Rsqrt.
-        /// </summary>
-        Rsqrt,
+    /// <summary>
+    /// Floor.
+    /// </summary>
+    Floor,
 
-        /// <summary>
-        /// Sine.
-        /// </summary>
-        Sin,
-        
-        /// <summary>
-        /// Sinh.
-        /// </summary>
-        Sinh,
+    /// <summary>
+    /// Log.
+    /// </summary>
+    Log,
 
-        /// <summary>
-        /// Sign.
-        /// </summary>
-        Sign,
-        
-        /// <summary>
-        /// Sqrt.
-        /// </summary>
-        Sqrt,
+    /// <summary>
+    /// Neg.
+    /// </summary>
+    Neg,
 
-        /// <summary>
-        /// Square.
-        /// </summary>
-        Square,
+    /// <summary>
+    /// Round.
+    /// </summary>
+    Round,
 
-        /// <summary>
-        /// Tanh.
-        /// </summary>
-        Tanh,
+    /// <summary>
+    /// Rsqrt.
+    /// </summary>
+    Rsqrt,
 
-        /// <summary>
-        /// Bitwise not.
-        /// </summary>
-        BitwiseNot,
+    /// <summary>
+    /// Sine.
+    /// </summary>
+    Sin,
 
-        /// <summary>
-        /// Logical not.
-        /// </summary>
-        LogicalNot,
-    }
+    /// <summary>
+    /// Sinh.
+    /// </summary>
+    Sinh,
+
+    /// <summary>
+    /// Sign.
+    /// </summary>
+    Sign,
+
+    /// <summary>
+    /// Sqrt.
+    /// </summary>
+    Sqrt,
+
+    /// <summary>
+    /// Square.
+    /// </summary>
+    Square,
+
+    /// <summary>
+    /// Tanh.
+    /// </summary>
+    Tanh,
+
+    /// <summary>
+    /// Bitwise not.
+    /// </summary>
+    BitwiseNot,
+
+    /// <summary>
+    /// Logical not.
+    /// </summary>
+    LogicalNot,
 }

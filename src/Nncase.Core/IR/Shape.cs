@@ -152,7 +152,7 @@ namespace Nncase.IR
         public int Rank => _dimensions.Length;
 
         /// <summary>
-        /// Get Total Elements
+        /// Get Total Elements.
         /// </summary>
         public int Size => Enumerable.Range(0, Rank).Aggregate(1, (size, i) => size * _dimensions[i].FixedValue);
 
@@ -164,15 +164,16 @@ namespace Nncase.IR
                 : ((IReadOnlyList<Dimension>)_dimensions)[Rank + index];
 
         /// <summary>
-        /// Get Pord
+        /// Get Pord.
         /// </summary>
         /// <returns></returns>
         public Dimension Prod()
         {
             return _dimensions.Aggregate(new Dimension(1), (x, y) => x * y);
         }
+
         /// <summary>
-        /// return new shape after insert dim
+        /// return new shape after insert dim.
         /// </summary>
         /// <param name="index"></param>
         /// <param name="dim"></param>
@@ -185,7 +186,7 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// return new shape after insert dim
+        /// return new shape after insert dim.
         /// </summary>
         /// <param name="index"></param>
         /// <param name="dims"></param>
@@ -197,6 +198,7 @@ namespace Nncase.IR
             {
                 l.Insert(index++, d);
             }
+
             return new Shape(l);
         }
 
@@ -204,18 +206,18 @@ namespace Nncase.IR
         {
             return _dimensions.Select(dim => dim.FixedValue).ToList();
         }
-        
+
         public int[] ToValueArray()
         {
             return _dimensions.Select(dim => dim.FixedValue).ToArray();
         }
-        
+
         /// <inheritdoc/>
         public override string ToString() => Kind switch
         {
             ShapeKind.Invalid => "Invalid",
             ShapeKind.Unranked => "Unranked",
-            _ => $"[{string.Join(',', _dimensions)}]"
+            _ => $"[{string.Join(',', _dimensions)}]",
         };
 
         private static ShapeKind KindOf(IEnumerable<Dimension> dimensions)

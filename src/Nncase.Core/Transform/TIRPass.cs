@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Linq;
 using System.IO;
 using System.Collections.Generic;
@@ -7,17 +10,15 @@ using Nncase.IR;
 
 namespace Nncase.Transform
 {
-
     /// <summary>
     /// EGraph pass.
     /// </summary>
     public class TIRPass : FunctionPass
     {
         /// <summary>
-        /// Save rules
+        /// Save rules.
         /// </summary>
         public readonly List<ExprMutator> Mutators = new();
-
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TIRPass"/> class.
@@ -29,7 +30,7 @@ namespace Nncase.Transform
         }
 
         /// <summary>
-        /// add rules
+        /// add rules.
         /// </summary>
         /// <param name="matutors"></param>
         public void Add(params ExprMutator[] matutors)
@@ -54,6 +55,7 @@ namespace Nncase.Transform
                 OnPassEnd(post, new_options);
                 pre = post;
             }
+
             return post;
         }
 
@@ -81,5 +83,4 @@ namespace Nncase.Transform
             }
         }
     }
-
 }

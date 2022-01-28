@@ -16,7 +16,7 @@ namespace Nncase.Importer
             var alpha = GetFloatAttribute(op, "alpha", 1.0f);
             return Elu(input, alpha);
         }
-        
+
         private Expr VisitCelu(NodeProto op)
         {
             var input = GetInputExpr(op, 0);
@@ -29,19 +29,19 @@ namespace Nncase.Importer
             var input = GetInputExpr(op, 0);
             return Relu(input);
         }
-        
+
         private Expr VisitLeakyRelu(NodeProto op)
         {
             var input = GetInputExpr(op, 0);
             return LeakyRelu(input);
         }
-        
+
         private Expr VisitPRelu(NodeProto op)
         {
             var (input, slope) = GetInputExprs(op, 0, 1);
             return Max(input, input * slope);
         }
-        
+
         private Expr VisitSelu(NodeProto op)
         {
             var x = GetInputExpr(op, 0);
@@ -55,7 +55,7 @@ namespace Nncase.Importer
             var input = GetInputExpr(op, 0);
             return Sigmoid(input);
         }
-        
+
         private Expr VisitHardSigmoid(NodeProto op)
         {
             var x = GetInputExpr(op, 0);

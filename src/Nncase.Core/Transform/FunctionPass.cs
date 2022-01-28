@@ -37,7 +37,6 @@ namespace Nncase.Transform
         public Function Run(Function function, RunPassOptions options)
             => RunCore(function, options);
 
-
         /// <summary>
         /// Run pass implementation for derived class.
         /// </summary>
@@ -46,20 +45,20 @@ namespace Nncase.Transform
         protected abstract Function RunCore(Function function, RunPassOptions options);
 
         /// <summary>
-        /// the callback function you can custom process func with run pass options
+        /// the callback function you can custom process func with run pass options.
         /// </summary>
-        /// <param name="func"> func without run pass</param>
+        /// <param name="func"> func without run pass.</param>
         /// <param name="options"></param>
         protected virtual void OnPassStart(Function func, RunPassOptions options)
         {
         }
 
         /// <summary>
-        /// the callback function you can custom process func with run pass options
+        /// the callback function you can custom process func with run pass options.
         /// </summary>
         /// <param name="func"> func with rewrited. </param>
         /// <param name="options"></param>
         protected virtual void OnPassEnd(Function func, RunPassOptions options)
-        {}
+        { }
     }
 }

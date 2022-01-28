@@ -25,7 +25,6 @@ namespace Nncase.IR.Tensors
         /// </summary>
         public static readonly ParameterInfo Axis = new(typeof(Concat), 1, "axis");
 
-
         // axis: if one of inputs shape[axis] is unknown
         // then dims axis is known
         // else get sum of dims
@@ -61,16 +60,19 @@ namespace Nncase.IR.Tensors
                     else
                         return new InvalidType($"The ConCat Item[{i}] Must Be TensorType But Get {input.GetType().Name}");
                 }
+
                 allScalar = (allScalar ?? type.IsScalar) & type.IsScalar;
                 allDType ??= type.DType;
                 if (allDType != type.DType)
                     return new InvalidType($"The ConCat Item[{i}] Must Be {allDType} But Get {type.DType}");
             }
+
             var input0 = (TensorType)inputs[0];
             if (allScalar == true && allDType is not null)
             {
                 return new TensorType(allDType, new[] { inputs.Count });
             }
+
             InvalidType? invalidType = null;
             var axisValue = ((Const)context.GetArgument(this, Axis)).ToScalar<int>();
             var shapeValue = Enumerable.Range(0, input0.Shape.Rank).Select(i =>
@@ -79,6 +81,7 @@ namespace Nncase.IR.Tensors
                 {
                     return AxisDim(inputs, axisValue);
                 }
+
                 // if all input shape[dim] is not same, return invalid
                 else
                 {

@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Linq;
 using Nncase.IR;
@@ -37,7 +40,7 @@ namespace Nncase.Transform.Rule
                 (BinaryOp.Mul, Expr lhs, Const rhs) => CheckValue(rhs, 1) ? lhs : null,
 
                 (BinaryOp.Div, Expr lhs, Const rhs) => CheckValue(rhs, 1) ? lhs : null,
-                (_, _, _) => null
+                (_, _, _) => null,
             };
             if (newexpr is not null)
             {
@@ -47,6 +50,7 @@ namespace Nncase.Transform.Rule
                     return Broadcast(newexpr, out_shape);
                 }
             }
+
             return newexpr;
         }
     }

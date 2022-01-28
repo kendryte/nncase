@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -51,8 +54,10 @@ namespace Nncase.Transform
                         node.Style.FillStyle = DotNodeFillStyle.Radial;
                     });
                 }
+
                 count++;
             }
+
             return dotGraph;
         }
 
@@ -63,7 +68,5 @@ namespace Nncase.Transform
             printer.AttachEGraphMatches(matches);
             return printer.SaveToFile(file);
         }
-
     }
-
 }

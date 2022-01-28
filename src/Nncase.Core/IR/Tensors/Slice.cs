@@ -44,7 +44,7 @@ namespace Nncase.IR.Tensors
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context,
           TensorType input, TensorType begins, TensorType ends,
-           TensorType axes, TensorType strides)
+          TensorType axes, TensorType strides)
         {
             if (context.GetArgument(this, Begins) is Const begins_con &&
                 context.GetArgument(this, Ends) is Const ends_con &&
@@ -56,6 +56,7 @@ namespace Nncase.IR.Tensors
                 var ts_begins = begins_con.ToTensor<int>();
                 var ts_ends = ends_con.ToTensor<int>();
                 var ts_strides = strides_con.ToTensor<int>();
+
                 // foreach (var axisV in axes_con.ToTensor<int>())
                 var axesTensor = axes_con.ToTensor<int>();
                 for (int i = 0; i < axesTensor.Length; i++)
@@ -78,6 +79,7 @@ namespace Nncase.IR.Tensors
                     else
                         outShape.Add(Dimension.Unknown);
                 }
+
                 if (input.Shape.Rank == 1 && outShape.Count == 1 && outShape[0] == 1)
                 {
                     return TensorType.Scalar(input.DType);
@@ -87,6 +89,7 @@ namespace Nncase.IR.Tensors
                     return input with { Shape = new Shape(outShape) };
                 }
             }
+
             return new InvalidType("Can't Infer Shape With Dynamic Input!");
         }
     }

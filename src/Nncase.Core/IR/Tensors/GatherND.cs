@@ -30,7 +30,7 @@ namespace Nncase.IR.Tensors
         /// Gets index.
         /// </summary>
         public static readonly ParameterInfo Index = new(typeof(GatherND), 2, "index");
-        
+
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType batch_dims, TensorType index)
         {

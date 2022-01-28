@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,7 +12,6 @@ using Nncase.IR;
 using Nncase.TIR;
 
 namespace Nncase.CodeGen;
-
 
 public struct SymbolRef
 {
@@ -24,7 +26,6 @@ public struct Symbol
     public string Name;
     public long Streampos;
 }
-
 
 public class SectionWriter : BinaryWriter
 {
@@ -46,5 +47,4 @@ public class SectionWriter : BinaryWriter
     {
         symbols_.Add(new() { Name = name, Streampos = BaseStream.Position });
     }
-
 }

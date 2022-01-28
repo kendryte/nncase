@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -68,90 +71,105 @@ namespace Nncase.Pattern.F
         /// <param name = "expr">Source expression.</param>
         /// <returns>Result expression.</returns>
         public static UnaryWrapper Abs(ExprPattern expr) => Unary(UnaryOp.Abs, expr);
+
         /// <summary>
         /// CallPattern ceil.
         /// </summary>
         /// <param name = "expr">Source expression.</param>
         /// <returns>Result expression.</returns>
         public static UnaryWrapper Ceil(ExprPattern expr) => Unary(UnaryOp.Ceil, expr);
+
         /// <summary>
         /// CallPattern cos.
         /// </summary>
         /// <param name = "expr">Source expression.</param>
         /// <returns>Result expression.</returns>
         public static UnaryWrapper Cos(ExprPattern expr) => Unary(UnaryOp.Cos, expr);
+
         /// <summary>
         /// CallPattern exp.
         /// </summary>
         /// <param name = "expr">Source expression.</param>
         /// <returns>Result expression.</returns>
         public static UnaryWrapper Exp(ExprPattern expr) => Unary(UnaryOp.Exp, expr);
+
         /// <summary>
         /// CallPattern floor.
         /// </summary>
         /// <param name = "expr">Source expression.</param>
         /// <returns>Result expression.</returns>
         public static UnaryWrapper Floor(ExprPattern expr) => Unary(UnaryOp.Floor, expr);
+
         /// <summary>
         /// CallPattern log.
         /// </summary>
         /// <param name = "expr">Source expression.</param>
         /// <returns>Result expression.</returns>
         public static UnaryWrapper Log(ExprPattern expr) => Unary(UnaryOp.Log, expr);
+
         /// <summary>
         /// CallPattern neg.
         /// </summary>
         /// <param name = "expr">Source expression.</param>
         /// <returns>Result expression.</returns>
         public static UnaryWrapper Neg(ExprPattern expr) => Unary(UnaryOp.Neg, expr);
+
         /// <summary>
         /// CallPattern round.
         /// </summary>
         /// <param name = "expr">Source expression.</param>
         /// <returns>Result expression.</returns>
         public static UnaryWrapper Round(ExprPattern expr) => Unary(UnaryOp.Round, expr);
+
         /// <summary>
         /// CallPattern rsqrt.
         /// </summary>
         /// <param name = "expr">Source expression.</param>
         /// <returns>Result expression.</returns>
         public static UnaryWrapper Rsqrt(ExprPattern expr) => Unary(UnaryOp.Rsqrt, expr);
+
         /// <summary>
         /// CallPattern sin.
         /// </summary>
         /// <param name = "expr">Source expression.</param>
         /// <returns>Result expression.</returns>
         public static UnaryWrapper Sin(ExprPattern expr) => Unary(UnaryOp.Sin, expr);
+
         /// <summary>
         /// CallPattern sqrt.
         /// </summary>
         /// <param name = "expr">Source expression.</param>
         /// <returns>Result expression.</returns>
         public static UnaryWrapper Sqrt(ExprPattern expr) => Unary(UnaryOp.Sqrt, expr);
+
         /// <summary>
         /// CallPattern square.
         /// </summary>
         /// <param name = "expr">Source expression.</param>
         /// <returns>Result expression.</returns>
         public static UnaryWrapper Square(ExprPattern expr) => Unary(UnaryOp.Square, expr);
+
         /// <summary>
         /// CallPattern tanh.
         /// </summary>
         /// <param name = "expr">Source expression.</param>
         /// <returns>Result expression.</returns>
         public static UnaryWrapper Tanh(ExprPattern expr) => Unary(UnaryOp.Tanh, expr);
+
         /// <summary>
         /// CallPattern bitwise not.
         /// </summary>
         /// <param name = "expr">Source expression.</param>
         /// <returns>Result expression.</returns>
         public static UnaryWrapper BitwiseNot(ExprPattern expr) => Unary(UnaryOp.BitwiseNot, expr);
+
         /// <summary>
         /// CallPattern logical not.
         /// </summary>
         /// <param name = "expr">Source expression.</param>
         /// <returns>Result expression.</returns>
         public static UnaryWrapper LogicalNot(ExprPattern expr) => Unary(UnaryOp.LogicalNot, expr);
+
         /// <summary>
         /// CallPattern add.
         /// </summary>
@@ -159,6 +177,7 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static BinaryWrapper Add(ExprPattern lhs, ExprPattern rhs) => Binary(BinaryOp.Add, lhs, rhs);
+
         /// <summary>
         /// CallPattern sub.
         /// </summary>
@@ -166,6 +185,7 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static BinaryWrapper Sub(ExprPattern lhs, ExprPattern rhs) => Binary(BinaryOp.Sub, lhs, rhs);
+
         /// <summary>
         /// CallPattern mul.
         /// </summary>
@@ -173,6 +193,7 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static BinaryWrapper Mul(ExprPattern lhs, ExprPattern rhs) => Binary(BinaryOp.Mul, lhs, rhs);
+
         /// <summary>
         /// CallPattern div.
         /// </summary>
@@ -180,6 +201,7 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static BinaryWrapper Div(ExprPattern lhs, ExprPattern rhs) => Binary(BinaryOp.Div, lhs, rhs);
+
         /// <summary>
         /// CallPattern mod.
         /// </summary>
@@ -187,6 +209,7 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static BinaryWrapper Mod(ExprPattern lhs, ExprPattern rhs) => Binary(BinaryOp.Mod, lhs, rhs);
+
         /// <summary>
         /// CallPattern min.
         /// </summary>
@@ -194,6 +217,7 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static BinaryWrapper Min(ExprPattern lhs, ExprPattern rhs) => Binary(BinaryOp.Min, lhs, rhs);
+
         /// <summary>
         /// CallPattern max.
         /// </summary>
@@ -201,6 +225,7 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static BinaryWrapper Max(ExprPattern lhs, ExprPattern rhs) => Binary(BinaryOp.Max, lhs, rhs);
+
         /// <summary>
         /// CallPattern pow.
         /// </summary>
@@ -208,6 +233,7 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static BinaryWrapper Pow(ExprPattern lhs, ExprPattern rhs) => Binary(BinaryOp.Pow, lhs, rhs);
+
         /// <summary>
         /// CallPattern bitwise and.
         /// </summary>
@@ -215,6 +241,7 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static BinaryWrapper BitwiseAnd(ExprPattern lhs, ExprPattern rhs) => Binary(BinaryOp.BitwiseAnd, lhs, rhs);
+
         /// <summary>
         /// CallPattern bitwise or.
         /// </summary>
@@ -222,6 +249,7 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static BinaryWrapper BitwiseOr(ExprPattern lhs, ExprPattern rhs) => Binary(BinaryOp.BitwiseOr, lhs, rhs);
+
         /// <summary>
         /// CallPattern bitwise xor.
         /// </summary>
@@ -229,6 +257,7 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static BinaryWrapper BitwiseXor(ExprPattern lhs, ExprPattern rhs) => Binary(BinaryOp.BitwiseXor, lhs, rhs);
+
         /// <summary>
         /// CallPattern logical and.
         /// </summary>
@@ -236,6 +265,7 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static BinaryWrapper LogicalAnd(ExprPattern lhs, ExprPattern rhs) => Binary(BinaryOp.LogicalAnd, lhs, rhs);
+
         /// <summary>
         /// CallPattern logical or.
         /// </summary>
@@ -243,6 +273,7 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static BinaryWrapper LogicalOr(ExprPattern lhs, ExprPattern rhs) => Binary(BinaryOp.LogicalOr, lhs, rhs);
+
         /// <summary>
         /// CallPattern logical xor.
         /// </summary>
@@ -250,6 +281,7 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static BinaryWrapper LogicalXor(ExprPattern lhs, ExprPattern rhs) => Binary(BinaryOp.LogicalXor, lhs, rhs);
+
         /// <summary>
         /// CallPattern left shift.
         /// </summary>
@@ -257,6 +289,7 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static BinaryWrapper LeftShift(ExprPattern lhs, ExprPattern rhs) => Binary(BinaryOp.LeftShift, lhs, rhs);
+
         /// <summary>
         /// CallPattern right shift.
         /// </summary>
@@ -264,6 +297,7 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static BinaryWrapper RightShift(ExprPattern lhs, ExprPattern rhs) => Binary(BinaryOp.RightShift, lhs, rhs);
+
         /// <summary>
         /// CallPattern floor div.
         /// </summary>
@@ -271,6 +305,7 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static UnaryWrapper FloorDiv(ExprPattern lhs, ExprPattern rhs) => Floor(lhs / rhs);
+
         /// <summary>
         /// CallPattern floor mod.
         /// </summary>
@@ -278,6 +313,7 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static BinaryWrapper FloorMod(ExprPattern lhs, ExprPattern rhs) => Sub(lhs, (FloorDiv(lhs, rhs) * rhs));
+
         /// <summary>
         /// CallPattern compare.
         /// </summary>
@@ -286,48 +322,54 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static CompareWrapper Compare(CompareOp compareOp, ExprPattern lhs, ExprPattern rhs) => new CompareWrapper(new CallPattern(new ComparePattern(compareOp), lhs, rhs));
+
         /// <summary>
-        /// CallPattern equal
+        /// CallPattern equal.
         /// </summary>
         /// <param name = "lhs"></param>
         /// <param name = "rhs"></param>
-        /// <returns>result</returns>
-        public static CompareWrapper Equal(ExprPattern lhs, ExprPattern rhs) => Compare(CompareOp.EQ, lhs, rhs);
+        /// <returns>result.</returns>
+        public static CompareWrapper Equal(ExprPattern lhs, ExprPattern rhs) => Compare(CompareOp.Equal, lhs, rhs);
+
         /// <summary>
-        /// call not equal
-        /// </summary>
-        /// <param name = "lhs"></param>
-        /// <param name = "rhs"></param>
-        /// <returns></returns>
-        public static CompareWrapper NotEqual(ExprPattern lhs, ExprPattern rhs) => Compare(CompareOp.NE, lhs, rhs);
-        /// <summary>
-        /// call less than
+        /// call not equal.
         /// </summary>
         /// <param name = "lhs"></param>
         /// <param name = "rhs"></param>
         /// <returns></returns>
-        public static CompareWrapper LessThan(ExprPattern lhs, ExprPattern rhs) => Compare(CompareOp.LT, lhs, rhs);
+        public static CompareWrapper NotEqual(ExprPattern lhs, ExprPattern rhs) => Compare(CompareOp.NotEqual, lhs, rhs);
+
         /// <summary>
-        /// call less equal
+        /// call less than.
         /// </summary>
         /// <param name = "lhs"></param>
         /// <param name = "rhs"></param>
         /// <returns></returns>
-        public static CompareWrapper LessEqual(ExprPattern lhs, ExprPattern rhs) => Compare(CompareOp.LE, lhs, rhs);
+        public static CompareWrapper LessThan(ExprPattern lhs, ExprPattern rhs) => Compare(CompareOp.LowerThan, lhs, rhs);
+
         /// <summary>
-        /// call greater equal
+        /// call less equal.
         /// </summary>
         /// <param name = "lhs"></param>
         /// <param name = "rhs"></param>
         /// <returns></returns>
-        public static CompareWrapper GreaterEqual(ExprPattern lhs, ExprPattern rhs) => Compare(CompareOp.GT, lhs, rhs);
+        public static CompareWrapper LessEqual(ExprPattern lhs, ExprPattern rhs) => Compare(CompareOp.LowerOrEqual, lhs, rhs);
+
         /// <summary>
-        /// call greater than
+        /// call greater equal.
         /// </summary>
         /// <param name = "lhs"></param>
         /// <param name = "rhs"></param>
         /// <returns></returns>
-        public static CompareWrapper GreaterThan(ExprPattern lhs, ExprPattern rhs) => Compare(CompareOp.GE, lhs, rhs);
+        public static CompareWrapper GreaterEqual(ExprPattern lhs, ExprPattern rhs) => Compare(CompareOp.GreaterThan, lhs, rhs);
+
+        /// <summary>
+        /// call greater than.
+        /// </summary>
+        /// <param name = "lhs"></param>
+        /// <param name = "rhs"></param>
+        /// <returns></returns>
+        public static CompareWrapper GreaterThan(ExprPattern lhs, ExprPattern rhs) => Compare(CompareOp.GreaterOrEqual, lhs, rhs);
     }
 
     public static partial class NN
@@ -358,8 +400,8 @@ namespace Nncase.Pattern.F
     public static partial class Tensors
     {
         public static TransposeWrapper Transpose(ExprPattern input, ExprPattern perm) => new TransposeWrapper(new CallPattern(new TransposePattern(), input, perm));
-        public static ExprPattern NHWCToNCHW(ExprPattern input) => Transpose(input, new[]{0, 3, 1, 2});
-        public static ExprPattern NCHWToNHWC(ExprPattern input) => Transpose(input, new[]{0, 2, 3, 1});
+        public static ExprPattern NHWCToNCHW(ExprPattern input) => Transpose(input, new[] { 0, 3, 1, 2 });
+        public static ExprPattern NCHWToNHWC(ExprPattern input) => Transpose(input, new[] { 0, 2, 3, 1 });
         public static BroadcastWrapper Broadcast(ExprPattern input, ExprPattern shape) => new BroadcastWrapper(new CallPattern(new BroadcastPattern(), input, shape));
         public static CastWrapper Cast(ExprPattern input, DataType newType) => new CastWrapper(new CallPattern(new CastPattern(newType), input));
         public static ConcatWrapper Concat(TuplePattern input, ExprPattern axis) => new ConcatWrapper(new CallPattern(new ConcatPattern(), input, axis));
@@ -369,8 +411,9 @@ namespace Nncase.Pattern.F
         public static GatherNDWrapper GatherND(ExprPattern input, ExprPattern batch_dims, ExprPattern index) => new GatherNDWrapper(new CallPattern(new GatherNDPattern(), input, batch_dims, index));
         public static MatMulWrapper MatMul(ExprPattern input, ExprPattern other) => new MatMulWrapper(new CallPattern(new MatMulPattern(), input, other));
         public static OneHotWrapper OneHot(OneHotMode oneHotMode, ExprPattern indices, ExprPattern depth, ExprPattern onValue, ExprPattern offValue, ExprPattern axis) => new OneHotWrapper(new CallPattern(new OneHotPattern(oneHotMode), indices, depth, onValue, offValue, axis));
+
         /// <summary>
-        /// Pads is Const tensor, shape = [channels, 2(before, after)]
+        /// Pads is Const tensor, shape = [channels, 2(before, after)].
         /// </summary>
         public static PadWrapper Pad(ExprPattern input, ExprPattern pads, PadMode mode, ExprPattern value) => new PadWrapper(new CallPattern(new PadPattern(mode), input, pads, value));
         public static RandomNormalWrapper RandomNormal(DataType type, ExprPattern mean, ExprPattern scale, ExprPattern seed, ExprPattern shape) => new RandomNormalWrapper(new CallPattern(new RandomNormalPattern(type), mean, scale, seed, shape));
@@ -387,25 +430,29 @@ namespace Nncase.Pattern.F
         public static ReduceWindow2DWrapper ReduceWindow2D(ReduceOp reduceOp, ExprPattern input, ExprPattern initValue, ExprPattern filter, ExprPattern stride, ExprPattern padding, ExprPattern ceilMode, ExprPattern countIncludePad) => new ReduceWindow2DWrapper(new CallPattern(new ReduceWindow2DPattern(reduceOp), input, initValue, filter, stride, padding, ceilMode, countIncludePad));
         public static ReshapeWrapper Reshape(ExprPattern input, ExprPattern shape) => new ReshapeWrapper(new CallPattern(new ReshapePattern(), input, shape));
         public static ShapeOpWrapper ShapeOp(ExprPattern input) => new ShapeOpWrapper(new CallPattern(new ShapeOpPattern(), input));
-        ///https://github.com/onnx/onnx/blob/master/docs/Operators.md#slice
+
+        /// https://github.com/onnx/onnx/blob/master/docs/Operators.md#slice
         public static SliceWrapper Slice(ExprPattern input, ExprPattern begins, ExprPattern ends, ExprPattern axes, ExprPattern strides) => new SliceWrapper(new CallPattern(new SlicePattern(), input, begins, ends, axes, strides));
         public static SliceWrapper Slice(ExprPattern input, ExprPattern begins, ExprPattern ends, int rank)
         {
             var axes = Const.FromSpan<int>(Enumerable.Range(0, rank).ToArray());
-            var strides = axes with {Data = new IRBytes(DataTypes.GetBytes<int>(Enumerable.Repeat(1, rank).ToArray()))};
+            var strides = axes with { Data = new IRBytes(DataTypes.GetBytes<int>(Enumerable.Repeat(1, rank).ToArray())) };
             return new SliceWrapper(new CallPattern(new SlicePattern(), input, begins, ends, axes, strides));
         }
 
         public static ExprPattern Size(ExprPattern input) => ReduceSum(ShapeOp(input), 0, 0, false);
         public static StackWrapper Stack(ExprPattern inputs, ExprPattern axis) => new StackWrapper(new CallPattern(new StackPattern(), inputs, axis));
+
         /// squeeze input by give dims
         public static SqueezeWrapper Squeeze(ExprPattern input, ExprPattern dims) => new SqueezeWrapper(new CallPattern(new SqueezePattern(), input, dims));
         public static UnSqueezeWrapper UnSqueeze(ExprPattern input, ExprPattern dims) => new UnSqueezeWrapper(new CallPattern(new UnSqueezePattern(), input, dims));
         public static QuantizeWrapper Quantize(ExprPattern input, ExprPattern zeroPoint, ExprPattern scale, DataType targetType) => new QuantizeWrapper(new CallPattern(new QuantizePattern(targetType), input, zeroPoint, scale));
         public static DeQuantizeWrapper DeQuantize(ExprPattern input, ExprPattern zeroPoint, ExprPattern scale, DataType targetType) => new DeQuantizeWrapper(new CallPattern(new DeQuantizePattern(targetType), input, zeroPoint, scale));
+
         // same like tensorflow
         public static SpaceToBatchWrapper SpaceToBatch(ExprPattern input, ExprPattern blockShape, ExprPattern paddings) => new SpaceToBatchWrapper(new CallPattern(new SpaceToBatchPattern(), input, blockShape, paddings));
         public static BatchToSpaceWrapper BatchToSpace(ExprPattern input, ExprPattern blockShape, ExprPattern crops) => new BatchToSpaceWrapper(new CallPattern(new BatchToSpacePattern(), input, blockShape, crops));
+
         // sections (int or list[int])
         public static SplitWrapper Split(ExprPattern input, ExprPattern axis, ExprPattern sections) => new SplitWrapper(new CallPattern(new SplitPattern(), input, axis, sections));
     }

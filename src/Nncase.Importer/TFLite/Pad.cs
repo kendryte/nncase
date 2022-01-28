@@ -34,16 +34,16 @@ namespace Nncase.Importer.TFLite
             var pad_value = GetInputExprs(op, 2);
             return F.Tensors.Pad(input, paddings, PadMode.Constant, pad_value);
         }
-        
+
         private Expr VisitMirrorPad(in tflite.Operator op)
         {
             var (input, paddings) = GetInputExprs(op, 0, 1);
-            
+
             var padMode = op.BuiltinOptionsAsMirrorPadOptions().Mode switch
             {
                 tflite.MirrorPadMode.REFLECT => PadMode.Reflect,
                 tflite.MirrorPadMode.SYMMETRIC => PadMode.Symmetric,
-                _ => throw new NotSupportedException("Unsupported Mirror Pad Mode")
+                _ => throw new NotSupportedException("Unsupported Mirror Pad Mode"),
             };
 
             return F.Tensors.Pad(input, paddings, padMode, 0.0);

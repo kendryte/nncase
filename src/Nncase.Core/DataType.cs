@@ -109,7 +109,7 @@ namespace Nncase
     }
 
     /// <summary>
-    /// The storge data Type, for simd/npu/gpu we need support packed ElemType
+    /// The storge data Type, for simd/npu/gpu we need support packed ElemType.
     /// <example>
     /// float32*4
     /// int8*2
@@ -137,7 +137,7 @@ namespace Nncase
         public static DataType Invalid => ElemType.Invalid;
 
         /// <summary>
-        /// check current compatible with other datatype
+        /// check current compatible with other datatype.
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
@@ -171,7 +171,7 @@ namespace Nncase
             { typeof(float).TypeHandle, DataType.Float32 },
             { typeof(double).TypeHandle, DataType.Float64 },
             { typeof(char).TypeHandle, DataType.String },
-            { typeof(BFloat16).TypeHandle, DataType.Float16 }
+            { typeof(BFloat16).TypeHandle, DataType.Float16 },
         };
 
         private static readonly Dictionary<DataType, Type> _dataTypesToType = new()
@@ -201,7 +201,7 @@ namespace Nncase
             { ElemType.Float16, 2 },
             { ElemType.BFloat16, 2 },
             { ElemType.Float32, 4 },
-            { ElemType.Float64, 8 }
+            { ElemType.Float64, 8 },
         };
 
         /// <summary>
@@ -222,7 +222,7 @@ namespace Nncase
         /// <summary>
         /// Get data type convert to CLR type.
         /// </summary>
-        /// <param name="t"> Nncase datatype</param>
+        /// <param name="t"> Nncase datatype.</param>
         /// <returns>CLR type instance.</returns>
         public static Type ToType(DataType t)
         {
@@ -230,6 +230,7 @@ namespace Nncase
             {
                 return type;
             }
+
             throw new ArgumentOutOfRangeException("Unsupported DataType type: " + t);
         }
 
@@ -284,6 +285,7 @@ namespace Nncase
             {
                 name += $"x{dataType.Lanes}";
             }
+
             return name;
         }
 
@@ -305,7 +307,7 @@ namespace Nncase
               { ElemType: ElemType.Float16, Lanes: 1 } => (T)(object)(Half)(bytes[start]),
               { ElemType: ElemType.Bool, Lanes: 1 } => (T)(object)BitConverter.ToBoolean(bytes, start),
               { ElemType: ElemType.String, Lanes: 1 } => (T)(object)BitConverter.ToString(bytes, start),
-              _ => throw new InvalidCastException($"Can't Convert the {srcType.ToString()}!")
+              _ => throw new InvalidCastException($"Can't Convert the {srcType.ToString()}!"),
           };
 
         public static T CastToScalar<T>(DataType srcType, byte[] bytes, int start = 0)
@@ -325,7 +327,7 @@ namespace Nncase
             { ElemType: ElemType.BFloat16, Lanes: 1 } => (T)Convert.ChangeType((object)(new BFloat16(bytes[start])), typeof(T)),
             { ElemType: ElemType.Float16, Lanes: 1 } => (T)Convert.ChangeType((object)(Half)(bytes[start]), typeof(T)),
             { ElemType: ElemType.Bool, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToBoolean(bytes, start), typeof(T)),
-            _ => throw new InvalidCastException($"Can't Cast the {srcType.ToString()}!")
+            _ => throw new InvalidCastException($"Can't Cast the {srcType.ToString()}!"),
         };
 
         public static Half CastToScalar(byte[] bytes, int start = 0)
@@ -339,13 +341,17 @@ namespace Nncase
               (ElemType.Bool or
                ElemType.Int64 or ElemType.Int32 or ElemType.Int16 or ElemType.Int8 or
                ElemType.UInt64 or ElemType.UInt32 or ElemType.UInt16 or ElemType.UInt8) => true,
-              _ => false
-          } && Lanes == srcType.Lanes;
+              _ => false,
+          }
+
+&& Lanes == srcType.Lanes;
 
         public static bool IsFloat(DataType srcType, int Lanes = 1) => srcType.ElemType switch
         {
             (ElemType.BFloat16 or ElemType.Float16 or ElemType.Float32 or ElemType.Float64) => true,
-            _ => false
-        } && Lanes == srcType.Lanes;
+            _ => false,
+        }
+
+&& Lanes == srcType.Lanes;
     }
 }

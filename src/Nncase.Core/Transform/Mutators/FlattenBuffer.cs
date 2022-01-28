@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Linq;
 using System.IO;
 using System.Collections.Generic;
@@ -17,6 +20,7 @@ namespace Nncase.Transform.Mutator
         {
             if (expr.IterVars.Count != 0)
                 throw new InvalidOperationException("Non-opaque blocks are not allowed in FlattenBuffer. Please call pass ConvertBlocksToOpaque before.");
+
             // 1. Visit the body
             var nbody = Visit(expr.Body);
             IRArrayList<BufferRegion> nreads = new(expr.Reads.Select(MutateLeaf));
@@ -26,6 +30,7 @@ namespace Nncase.Transform.Mutator
             {
                 nbody = new TIR.IfThenElse(npredicate, nbody);
             }
+
             // Step 3. Handle allocations in reverse order
             // TODO add the alloc buffers.
             // for (size_t i = new_block->alloc_buffers.size(); i > 0; --i) {

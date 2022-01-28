@@ -35,6 +35,7 @@ namespace Nncase.IR.Tensors
                     if (!padded_shape[i].IsUnknown)
                         padded_shape[i] += new Dimension(ts_paddings[i, 0] + ts_paddings[i, 1]);
                 }
+
                 var outshape = new List<Dimension> { padded_shape[0] };
                 foreach (var i in Enumerable.Range(1, m))
                 {
@@ -45,16 +46,20 @@ namespace Nncase.IR.Tensors
                                             new InvalidType($"The Padded Shape Must Divides BlockShape!")
                                           )));
                 }
+
                 foreach (var i in Enumerable.Range(m + 1, outshape.Count - (m + 1)))
                 {
                     outshape.Add(padded_shape[i]);
                 }
+
                 foreach (var block in ts_block_shape)
                 {
                     outshape[0] = outshape[0].IsUnknown ? Dimension.Unknown : outshape[0].FixedValue * block;
                 }
+
                 return input with { Shape = new Shape(outshape) };
             }
+
             return new InvalidType("Can't Infer Shape With Dynamic Input!");
         }
     }

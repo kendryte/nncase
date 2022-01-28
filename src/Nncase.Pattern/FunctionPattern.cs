@@ -30,7 +30,7 @@ namespace Nncase.Pattern
         {
             Id = _globalPatIndex++,
             Body = Body.Copy(),
-            Parameters = Parameters.Copy()
+            Parameters = Parameters.Copy(),
         };
 
         public override void Clear()
@@ -39,6 +39,7 @@ namespace Nncase.Pattern
             Parameters.Clear();
         }
     }
+
     public static partial class Utility
     {
         public static FunctionPattern IsFunction(ExprPattern Body, VArgsPattern Parameters) => new FunctionPattern(Body, Parameters);

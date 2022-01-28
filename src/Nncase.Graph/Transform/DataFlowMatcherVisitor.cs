@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +9,6 @@ using Nncase.Pattern;
 
 namespace Nncase.Transform
 {
-
     using Tuple = IR.Tuple;
 
     using ContextEnv = Dictionary<ExprPattern, Expr>;
@@ -19,6 +21,7 @@ namespace Nncase.Transform
         {
             return (T)Context[expr];
         }
+
         public Expr GetRoot() => Root;
         public T GetRoot<T>() where T : Expr
         {
@@ -29,11 +32,11 @@ namespace Nncase.Transform
     public static class DataFlowMatcher
     {
         /// <summary>
-        /// Match the Expr with Pattern
+        /// Match the Expr with Pattern.
         /// </summary>
         /// <param name="expr"></param>
         /// <param name="pattern"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public static List<IMatchResult> Match(Expr expr, ExprPattern pattern)
         {
             if (expr.CheckedType is null) { expr.InferenceType(); }
@@ -45,23 +48,20 @@ namespace Nncase.Transform
         }
     }
 
-
     internal sealed class DataFlowMatcherVisitor
     {
-
         private readonly Dictionary<ExprPattern, bool> _patMemo = new();
 
         private readonly Dictionary<VArgsPattern, bool> _vargspatMemo = new();
 
-
         public readonly ContextEnv Env = new();
 
         /// <summary>
-        /// visit expr
+        /// visit expr.
         /// </summary>
         /// <param name="pattern"></param>
         /// <param name="expr"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public bool Visit(ExprPattern pattern, Expr expr)
         {
             return (pattern, expr) switch
@@ -74,7 +74,7 @@ namespace Nncase.Transform
                 (OpPattern opPat, Op op) => Visit(opPat, op),
                 (WildCardPattern wildCard, _) => Visit(wildCard, expr),
                 (OrPattern orPat, _) => Visit(orPat, expr),
-                (_, _) => DefaultVisit(pattern, expr)
+                (_, _) => DefaultVisit(pattern, expr),
             };
         }
 
@@ -91,6 +91,7 @@ namespace Nncase.Transform
                 result = DefaultVisitLeaf(pattern, expr);
                 _patMemo.Add(pattern, result);
             }
+
             return result;
         }
 
@@ -105,13 +106,12 @@ namespace Nncase.Transform
             return false;
         }
 
-
         /// <summary>
-        /// visit var pattern
+        /// visit var pattern.
         /// </summary>
         /// <param name="pattern"></param>
         /// <param name="expr"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public bool Visit(VarPattern pattern, Expr expr)
         {
             if (!_patMemo.TryGetValue(pattern, out var result))
@@ -119,16 +119,16 @@ namespace Nncase.Transform
                 result = VisitLeaf(pattern, expr);
                 _patMemo.Add(pattern, result);
             }
+
             return result;
         }
 
-
         /// <summary>
-        /// visit call pattern
+        /// visit call pattern.
         /// </summary>
         /// <param name="pattern"></param>
         /// <param name="expr"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public bool Visit(CallPattern pattern, Call expr)
         {
             if (!_patMemo.TryGetValue(pattern, out var result))
@@ -138,15 +138,16 @@ namespace Nncase.Transform
                 result = VisitLeaf(pattern, expr);
                 _patMemo.Add(pattern, result);
             }
+
             return result;
         }
 
         /// <summary>
-        /// visit function pattern
+        /// visit function pattern.
         /// </summary>
         /// <param name="pattern"></param>
         /// <param name="expr"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public bool Visit(ConstPattern pattern, Const expr)
         {
             if (!_patMemo.TryGetValue(pattern, out var result))
@@ -154,16 +155,16 @@ namespace Nncase.Transform
                 result = VisitLeaf(pattern, expr);
                 _patMemo.Add(pattern, result);
             }
+
             return result;
         }
 
-
         /// <summary>
-        /// visit function pattern
+        /// visit function pattern.
         /// </summary>
         /// <param name="pattern"></param>
         /// <param name="expr"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public bool Visit(FunctionPattern pattern, Function expr)
         {
             if (!_patMemo.TryGetValue(pattern, out var result))
@@ -173,15 +174,16 @@ namespace Nncase.Transform
                 result = VisitLeaf(pattern, expr);
                 _patMemo.Add(pattern, result);
             }
+
             return result;
         }
 
         /// <summary>
-        /// visit op pattern
+        /// visit op pattern.
         /// </summary>
         /// <param name="pattern"></param>
         /// <param name="expr"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public bool Visit(OpPattern pattern, Op expr)
         {
             if (!_patMemo.TryGetValue(pattern, out var result))
@@ -189,15 +191,16 @@ namespace Nncase.Transform
                 result = VisitLeaf(pattern, expr);
                 _patMemo.Add(pattern, result);
             }
+
             return result;
         }
 
         /// <summary>
-        /// visit tuple pattern
+        /// visit tuple pattern.
         /// </summary>
         /// <param name="pattern"></param>
         /// <param name="expr"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public bool Visit(TuplePattern pattern, Tuple expr)
         {
             if (!_patMemo.TryGetValue(pattern, out var result))
@@ -211,11 +214,11 @@ namespace Nncase.Transform
         }
 
         /// <summary>
-        /// visit vargs pattern
+        /// visit vargs pattern.
         /// </summary>
         /// <param name="patterns"></param>
         /// <param name="exprs"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public bool Visit(VArgsPattern patterns, IRArray<Expr> exprs)
         {
             if (!_vargspatMemo.TryGetValue(patterns, out var result))
@@ -223,15 +226,16 @@ namespace Nncase.Transform
                 result = VisitLeaf(patterns, exprs);
                 _vargspatMemo.Add(patterns, result);
             }
+
             return result;
         }
 
         /// <summary>
-        ///  visit wildcard pattern
+        ///  visit wildcard pattern.
         /// </summary>
         /// <param name="pattern"></param>
         /// <param name="expr"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public bool Visit(WildCardPattern pattern, Expr expr)
         {
             if (!_patMemo.TryGetValue(pattern, out var result))
@@ -239,15 +243,16 @@ namespace Nncase.Transform
                 result = VisitLeaf(pattern, expr);
                 _patMemo.Add(pattern, result);
             }
+
             return result;
         }
 
         /// <summary>
-        ///  visit or pattern
+        ///  visit or pattern.
         /// </summary>
         /// <param name="pattern"></param>
         /// <param name="expr"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public bool Visit(OrPattern pattern, Expr expr)
         {
             if (!_patMemo.TryGetValue(pattern, out var result))
@@ -257,15 +262,16 @@ namespace Nncase.Transform
                 result = VisitLeaf(pattern, expr);
                 _patMemo.Add(pattern, result);
             }
+
             return result;
         }
 
         /// <summary>
-        /// visit var pattern
+        /// visit var pattern.
         /// </summary>
         /// <param name="pattern"></param>
         /// <param name="expr"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public bool VisitLeaf(VarPattern pattern, Expr expr)
         {
             if (pattern.MatchLeaf(expr))
@@ -273,16 +279,16 @@ namespace Nncase.Transform
                 Env.Add(pattern, expr);
                 return true;
             }
+
             return false;
         }
 
-
         /// <summary>
-        /// visit call pattern
+        /// visit call pattern.
         /// </summary>
         /// <param name="pattern"></param>
         /// <param name="expr"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public bool VisitLeaf(CallPattern pattern, Call expr)
         {
             if (_patMemo[pattern.Target] &&
@@ -292,15 +298,16 @@ namespace Nncase.Transform
                 Env.Add(pattern, expr);
                 return true;
             }
+
             return false;
         }
 
         /// <summary>
-        /// visit const pattern
+        /// visit const pattern.
         /// </summary>
         /// <param name="pattern"></param>
         /// <param name="expr"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public bool VisitLeaf(ConstPattern pattern, Const expr)
         {
             if (pattern.MatchLeaf(expr))
@@ -308,15 +315,16 @@ namespace Nncase.Transform
                 Env.Add(pattern, expr);
                 return true;
             }
+
             return false;
         }
 
         /// <summary>
-        /// visit Function pattern
+        /// visit Function pattern.
         /// </summary>
         /// <param name="pattern"></param>
         /// <param name="expr"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public bool VisitLeaf(FunctionPattern pattern, Function expr)
         {
             if (_patMemo[pattern.Body] &&
@@ -326,15 +334,16 @@ namespace Nncase.Transform
                 Env.Add(pattern, expr);
                 return true;
             }
+
             return false;
         }
 
         /// <summary>
-        /// visit op pattern
+        /// visit op pattern.
         /// </summary>
         /// <param name="pattern"></param>
         /// <param name="expr"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public bool VisitLeaf(OpPattern pattern, Op expr)
         {
             if (pattern.MatchLeaf(expr))
@@ -342,15 +351,16 @@ namespace Nncase.Transform
                 Env.Add(pattern, expr);
                 return true;
             }
+
             return false;
         }
 
         /// <summary>
-        /// visit tuple pattern
+        /// visit tuple pattern.
         /// </summary>
         /// <param name="pattern"></param>
         /// <param name="expr"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public bool VisitLeaf(TuplePattern pattern, Tuple expr)
         {
             if (pattern.MatchLeaf(expr) &&
@@ -359,15 +369,16 @@ namespace Nncase.Transform
                 Env.Add(pattern, expr);
                 return true;
             }
+
             return false;
         }
 
         /// <summary>
-        /// visit Vargs Pattern
+        /// visit Vargs Pattern.
         /// </summary>
         /// <param name="patterns"></param>
         /// <param name="exprs"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public bool VisitLeaf(VArgsPattern patterns, IRArray<Expr> exprs)
         {
             if (!patterns.MatchLeaf(exprs))
@@ -375,6 +386,7 @@ namespace Nncase.Transform
                 patterns.MatchEnd(false);
                 return false;
             }
+
             bool result = true;
             foreach (var (i, expr) in (from i in Enumerable.Range(0, exprs.Count)
                                        select (i, exprs[i])))
@@ -383,16 +395,17 @@ namespace Nncase.Transform
                 if (!result)
                     break;
             }
+
             patterns.MatchEnd(result);
             return result;
         }
 
         /// <summary>
-        ///  visit wildcard pattern
+        ///  visit wildcard pattern.
         /// </summary>
         /// <param name="pattern"></param>
         /// <param name="expr"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public bool VisitLeaf(WildCardPattern pattern, Expr expr)
         {
             Env.Add(pattern, expr);
@@ -400,11 +413,11 @@ namespace Nncase.Transform
         }
 
         /// <summary>
-        ///  visit or pattern
+        ///  visit or pattern.
         /// </summary>
         /// <param name="pattern"></param>
         /// <param name="expr"></param>
-        /// <returns> bool </returns>
+        /// <returns> bool. </returns>
         public bool VisitLeaf(OrPattern pattern, Expr expr)
         {
             if (_patMemo[pattern.Lhs])
@@ -415,6 +428,7 @@ namespace Nncase.Transform
             {
                 Env.Add(pattern, Env[pattern.Rhs]);
             }
+
             return _patMemo[pattern.Lhs] | _patMemo[pattern.Rhs];
         }
     }

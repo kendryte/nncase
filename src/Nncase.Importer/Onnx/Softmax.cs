@@ -27,9 +27,9 @@ namespace Nncase.Importer
             var inShape = ShapeOp(input);
             Expr axisExpr = axis < 0
                 ? axis + Rank(input)
-                : Const.FromSpan<int>(new[] {axis});
-            var first = Prod(Slice(inShape, new[] {0}, axisExpr, 1));
-            var second = Prod(Slice(inShape, axisExpr, Rank(input) , 1));
+                : Const.FromSpan<int>(new[] { axis });
+            var first = Prod(Slice(inShape, new[] { 0 }, axisExpr, 1));
+            var second = Prod(Slice(inShape, axisExpr, Rank(input), 1));
             var beforeShape = Concat(new IR.Tuple(first, second), 0);
             var afterShape = ShapeOp(input);
             return Reshape(
@@ -45,7 +45,7 @@ namespace Nncase.Importer
             var axis = GetIntAttribute(op, "axis", -1);
             return f(input, axis);
         }
-        
+
         private Expr SoftmaxV1(in NodeProto op)
         {
             return SoftmaxV1Process(op, SoftMax);
@@ -72,7 +72,7 @@ namespace Nncase.Importer
         {
             return SoftmaxV13Process(op, LogSoftMax);
         }
-        
+
         private Expr VisitSoftplus(in NodeProto op)
         {
             var input = GetSingleInputExpr(op);

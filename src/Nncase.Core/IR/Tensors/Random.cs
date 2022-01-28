@@ -21,12 +21,12 @@ namespace Nncase.IR.Tensors
         /// Gets seed.
         /// </summary>
         public static readonly ParameterInfo Seed = new(typeof(RandomNormal), 2, "seed", IsFloatScalar());
-        
+
         /// <summary>
         /// Gets shape.
         /// </summary>
         public static readonly ParameterInfo Shape = new(typeof(RandomNormal), 3, "shape", IsIntegral() & HasRank(1));
-        
+
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType mean, TensorType scale, TensorType seed, TensorType shape)
         {
@@ -40,7 +40,7 @@ namespace Nncase.IR.Tensors
             }
         }
     }
-    
+
     public sealed record RandomNormalLike(DataType Type) : Op
     {
         /// <summary>
@@ -62,7 +62,7 @@ namespace Nncase.IR.Tensors
         /// Gets seed.
         /// </summary>
         public static readonly ParameterInfo Seed = new(typeof(RandomNormalLike), 3, "seed", IsFloatScalar());
-        
+
         /// <summary>
         /// Gets shape.
         /// </summary>
@@ -70,7 +70,7 @@ namespace Nncase.IR.Tensors
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType mean,
-            TensorType scale, TensorType seed, TensorType shape) => input with {DType = Type};
+            TensorType scale, TensorType seed, TensorType shape) => input with { DType = Type };
     }
 
     public sealed record RandomUniform(DataType Type) : Op
@@ -89,12 +89,12 @@ namespace Nncase.IR.Tensors
         /// Gets seed.
         /// </summary>
         public static readonly ParameterInfo Seed = new(typeof(RandomUniform), 2, "seed", IsFloatScalar());
-        
+
         /// <summary>
         /// Gets shape.
         /// </summary>
         public static readonly ParameterInfo Shape = new(typeof(RandomUniform), 3, "shape", IsIntegral() & HasRank(1));
-        
+
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType high, TensorType low, TensorType seed, TensorType shape)
         {
@@ -115,7 +115,7 @@ namespace Nncase.IR.Tensors
         /// Gets input.
         /// </summary>
         public static readonly ParameterInfo Input = new(typeof(Slice), 0, "input");
-        
+
         /// <summary>
         /// Gets high.
         /// </summary>
@@ -130,7 +130,7 @@ namespace Nncase.IR.Tensors
         /// Gets seed.
         /// </summary>
         public static readonly ParameterInfo Seed = new(typeof(RandomUniform), 3, "seed", IsFloatScalar());
-        
+
         /// <summary>
         /// Gets shape.
         /// </summary>
@@ -140,5 +140,4 @@ namespace Nncase.IR.Tensors
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType high,
             TensorType low, TensorType seed, TensorType shape) => input with { DType = Type };
     }
-
 }

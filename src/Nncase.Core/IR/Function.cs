@@ -26,10 +26,10 @@ namespace Nncase.IR
             : this($"func_{_globalFuncIndex++}", body, parameters)
         {
         }
+
         public Function(Expr body, params Expr[] parameters)
             : this($"func_{_globalFuncIndex++}", body, new(parameters))
         {
         }
     }
-
 }

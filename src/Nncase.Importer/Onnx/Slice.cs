@@ -28,7 +28,7 @@ namespace Nncase.Importer
             var ends = GetConstIntsAttribute(op, "ends");
             return F.Tensors.Slice(input, starts, ends, axesExpr, ExpandOneToRank(input, 1));
         }
-        
+
         private Expr SliceV10(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);

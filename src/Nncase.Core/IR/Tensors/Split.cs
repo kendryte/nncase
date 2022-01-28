@@ -61,9 +61,9 @@ namespace Nncase.IR.Tensors
                     return new TupleType(from section in sections_v
                                          let x = (outshape[axis_v] = section)
                                          select input with { Shape = new Shape(outshape) });
-
                 }
             }
+
             return new InvalidType("The Sections And Axis Must Be Const!");
         }
     }

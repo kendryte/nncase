@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Linq;
 using Nncase.IR;
@@ -29,7 +32,7 @@ namespace Nncase.Transform.Rule
     }
 
     /// <summary>
-    /// x * 2 => x leftshift 1
+    /// x * 2 => x leftshift 1.
     /// </summary>
     public class Xmul2 : PatternRule
     {
@@ -43,7 +46,7 @@ namespace Nncase.Transform.Rule
     }
 
     /// <summary>
-    /// x * 1 => x
+    /// x * 1 => x.
     /// </summary>
     public class Xmul1 : PatternRule
     {
@@ -53,7 +56,7 @@ namespace Nncase.Transform.Rule
     }
 
     /// <summary>
-    /// x / x => 1
+    /// x / x => 1.
     /// </summary>
     public class XDivX : PatternRule
     {
@@ -63,7 +66,7 @@ namespace Nncase.Transform.Rule
     }
 
     /// <summary>
-    /// (x * y) / z  = x * (y / z)
+    /// (x * y) / z  = x * (y / z).
     /// </summary>
     public class ReassociateDiv : PatternRule
     {
@@ -73,7 +76,7 @@ namespace Nncase.Transform.Rule
     }
 
     /// <summary>
-    /// (x * y) => y * x
+    /// (x * y) => y * x.
     /// </summary>
     public class ReassociateXY : PatternRule
     {
@@ -81,5 +84,4 @@ namespace Nncase.Transform.Rule
         public ReassociateXY() => Pattern = x * y;
         public override Expr GetRePlace(IMatchResult result) => result[y] * result[x];
     }
-
 }

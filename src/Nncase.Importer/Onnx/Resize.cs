@@ -43,14 +43,14 @@ namespace Nncase.Importer
     //     {
     //         return ParseResizeMode(GetStringAttribute(op, "mode", "nearest"));
     //     }
-    //     
+    //
     //     private Expr ResizeV10(in NodeProto op)
     //     {
     //         var (input, scales) = GetInputExprs(op, 0, 1);
     //         var mode = GetResizeMode(op);
     //         return F.Tensors.ResizeImage(mode, input,, false, false);
     //     }
-    //     
+    //
     //     private Expr ResizeV11(in NodeProto op)
     //     {
     //         var input = GetInputExpr(op, 0);
@@ -64,12 +64,12 @@ namespace Nncase.Importer
     //         var extrapolationValue = GetFloatAttribute(op, "extrapolation_value", -0.0f);
     //         var nearestMode = GetStringAttribute(op, "nearest_mode", "round_prefer_floor");
     //     }
-    //     
+    //
     //     private Expr ResizeV13(in NodeProto op)
     //     {
     //         var input = GetInputExpr(op, 0);
     //         var (roi, scales) = GetOptionInputExprs(op, 1, 2);
-    //         var sizes = GetOptionInputExpr(op, 3);       
+    //         var sizes = GetOptionInputExpr(op, 3);
     //         var mode = GetResizeMode(op);
     //     }
     // }

@@ -23,12 +23,12 @@ namespace Nncase.IR.Tensors
         /// <summary>
         /// Gets batch_axis.
         /// </summary>
-        public static readonly ParameterInfo BatchAxis = new(typeof(ReverseSequence), 2, "batch_axis",  IsIntegralScalar());
+        public static readonly ParameterInfo BatchAxis = new(typeof(ReverseSequence), 2, "batch_axis", IsIntegralScalar());
 
         /// <summary>
         /// Gets time_axis.
         /// </summary>
-        public static readonly ParameterInfo TimeAxis = new(typeof(ReverseSequence), 3, "time_axis",  IsIntegralScalar());
+        public static readonly ParameterInfo TimeAxis = new(typeof(ReverseSequence), 3, "time_axis", IsIntegralScalar());
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType seq_lens,

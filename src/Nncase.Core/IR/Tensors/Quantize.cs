@@ -5,7 +5,6 @@ using Nncase.IR;
 
 namespace Nncase.IR.Tensors
 {
-
     public sealed record Quantize(DataType TargetType) : Op
     {
         public static ParameterInfo Input = new(typeof(Quantize), 0, "input");
@@ -16,7 +15,7 @@ namespace Nncase.IR.Tensors
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType zero_point, TensorType scale)
-        {            
+        {
             return new TensorType(TargetType, input.Shape);
         }
     }

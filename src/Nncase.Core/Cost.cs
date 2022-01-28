@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using Nncase.IR;
 
@@ -24,11 +27,8 @@ namespace Nncase
 
         public static bool operator <(Cost lhs, Cost rhs) => lhs.Compute() < rhs.Compute();
 
-
         private static ulong SafeAdd(ulong lhs, ulong rhs) =>
           (ulong.MaxValue - lhs) > rhs ? lhs + rhs : ulong.MaxValue;
-
-
 
         public static Cost operator +(Cost lhs, Cost rhs) =>
           new Cost(Cost.SafeAdd(lhs.Arith, rhs.Arith),

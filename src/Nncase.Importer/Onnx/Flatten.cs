@@ -15,6 +15,7 @@ namespace Nncase.Importer
             var input = GetInputExpr(op, 0);
             var axis = GetIntAttribute(op, "axis", 1);
             return F.Tensors.Flatten(input, axis);
+
             // var inputShape = F.Tensors.ShapeOp(input);
             // var beforeFlatten = F.Tensors.Slice(inputShape, 0, axis, 1);
             // var afterFlatten = F.Tensors.Slice(inputShape, axis, F.Tensors.ShapeOp(inputShape), 1);

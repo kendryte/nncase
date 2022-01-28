@@ -29,9 +29,9 @@ namespace Nncase.Evaluator.Ops
         private IEvaluator GetEvaluator(Expr target)
         {
             var t = GetEvaluatorType(target);
-            return ((IEvaluator) ServiceLocator.Current.GetRequiredService(t));
+            return ((IEvaluator)ServiceLocator.Current.GetRequiredService(t));
         }
-        
+
         public override Const VisitLeaf(Call expr)
         {
             _context.CurrentCall = expr;

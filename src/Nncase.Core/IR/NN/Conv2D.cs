@@ -50,14 +50,5 @@ namespace Nncase.IR.NN
         /// Gets Groups.
         /// </summary>
         public static readonly ParameterInfo Groups = new(typeof(Conv2D), 6, "groups", IsScalar() & IsIntegral());
-
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context,
-          TensorType input, TensorType weights, TensorType bias,
-          TensorType stride, TensorType padding, TensorType dilation, TensorType groups)
-        {
-            var args = context.GetArguments(this, Stride, Padding, Dilation, Groups);
-            return TypeInference.Conv2DType(input, weights, args[0], args[1], args[2], args[3]);
-        }
     }
 }
