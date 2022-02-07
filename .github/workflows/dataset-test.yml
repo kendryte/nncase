@@ -106,9 +106,3 @@ jobs:
         
         pytest -n 8 tests/models/tflite-model-zoo --doctest-modules --junitxml=test_results/models-dataset.xml
         cat tests_output/dataset_test_result.txt
-
-    - name: Publish Test Results
-      uses: EnricoMi/publish-unit-test-result-action@v1
-      if: always() && runner.os == 'Linux'
-      with:
-        files: test_results/*.xml
