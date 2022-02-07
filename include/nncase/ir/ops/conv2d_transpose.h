@@ -32,8 +32,8 @@ public:
 
     int32_t filter_h() const noexcept { return (int32_t)weights().shape()[2]; }
     int32_t filter_w() const noexcept { return (int32_t)weights().shape()[3]; }
-    int32_t input_channels() const noexcept { return (int32_t)weights().shape()[1] * groups(); }
-    int32_t output_channels() const noexcept { return (int32_t)weights().shape()[0]; }
+    int32_t input_channels() const noexcept { return (int32_t)weights().shape()[1]; }
+    int32_t output_channels() const noexcept { return (int32_t)weights().shape()[0] * groups(); }
     int32_t groups() const noexcept { return groups_; }
     padding padding_h() const noexcept { return padding_h_; }
     padding padding_w() const noexcept { return padding_w_; }

@@ -267,8 +267,8 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
     }
     else
     {
-        shape_t shape = { tp_shape[0] };
-        std::vector<float> zeros(tp_shape[0], 0.f);
+        shape_t shape = { tp_shape[0] * group };
+        std::vector<float> zeros(tp_shape[0] * group, 0.f);
         auto bias = graph_.emplace<constant>(dt_float32, shape, zeros);
         conv_transpose->bias().connect(bias->output());
     }
