@@ -703,7 +703,7 @@ class TestRunner(metaclass=ABCMeta):
                 os.path.join(infer_dir, gnne_txt) + '.bin',
                 os.path.join(infer_dir, gnne_txt) + '.txt'))
             pool_num = 100
-            ci_flag = os.getenv('CI', False)
+            ci_flag = os.getenv('LOCAL_CI', False)
             if ci_flag:
                 pool_num = 10
             p = multiprocessing.Pool(pool_num)
