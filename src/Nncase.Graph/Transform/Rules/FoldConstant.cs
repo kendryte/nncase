@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Evaluator;
+using Nncase.IR;
+using Nncase.IR.Tensors;
 using Nncase.Pattern;
 using static Nncase.Pattern.F.Math;
-using static Nncase.Pattern.F.Tensors;
 using static Nncase.Pattern.F.NN;
+using static Nncase.Pattern.F.Tensors;
 using static Nncase.Pattern.Utility;
-using Nncase.IR;
-using Nncase.Evaluator;
-using Nncase.IR.Tensors;
 
 namespace Nncase.Transform.Rule
 {
@@ -25,7 +25,7 @@ namespace Nncase.Transform.Rule
         {
             var expr = result[Pattern];
             var tensor = expr.Eval();
-            return tensor.ToConst(expr.CheckedShape);
+            return tensor.ToConst((TensorType)expr.CheckedType!);
         }
     }
 

@@ -13,34 +13,22 @@ namespace Nncase.Evaluator
     public static class TorchExtentsion
     {
         /// <summary>
-        /// convert the torch Tensor to const.
-        /// </summary>
-        /// <param name="tensor"></param>
-        /// <returns></returns>
-        public static Const ToConst(this torch.Tensor tensor)
-        {
-            if (!tensor.is_contiguous())
-                tensor = tensor.contiguous();
-            return tensor.ToConst(new Shape(tensor.shape));
-        }
-
-        /// <summary>
         /// convert torch tensor to const by gived shape.
         /// </summary>
         /// <param name="tensor"></param>
-        /// <param name="shape"></param>
+        /// <param name="ttype">target tensor type.</param>
         /// <returns></returns>
         /// <exception cref="InvalidCastException"></exception>
-        public static Const ToConst(this torch.Tensor tensor, Shape shape)
+        public static Const ToConst(this torch.Tensor tensor, TensorType? ttype = null)
         {
-            if (shape.Prod().FixedValue != tensor.numel())
+            ttype ??= new TensorType(tensor.dtype.ToDataType(), new Shape(tensor.shape));
+            if (ttype.Shape.Prod().FixedValue != tensor.numel())
             {
-                throw new InvalidCastException($"The Target Shape Prod {shape.Prod().FixedValue} != {tensor.numel()}!");
+                throw new InvalidCastException($"The Target Shape Prod != {tensor.numel()}!");
             }
             if (!tensor.is_contiguous())
                 tensor = tensor.contiguous();
-            return new Const(new TensorType(ToDataType(tensor.dtype), shape),
-                tensor.bytes.ToArray());
+            return new Const(ttype, tensor.bytes.ToArray());
         }
 
         /// <summary>
@@ -58,7 +46,6 @@ namespace Nncase.Evaluator
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         public static torch.Tensor ToTorchTensor(this Const expr)
         {
-            // torch.as_tensor()
             var dtype = expr.ValueType.DType;
             var shape = expr.ValueType.IsScalar
                 ? new long[] { }

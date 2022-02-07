@@ -91,7 +91,7 @@ namespace Nncase.IR
         internal IRType InferInvokeResultTypeNoThrow(ITypeInferenceContext context)
         {
             var thistype = this.GetType();
-            var properties = thistype.GetFields(BindingFlags.Public | BindingFlags.Static);
+            var properties = thistype.GetFields(BindingFlags.Public | BindingFlags.Static).Where(p => p.FieldType == typeof(ParameterInfo));
 
             var typeinferFunc = thistype.GetMethod("InferInvokeResultType") ??
                throw new InvalidProgramException("The Ops Must Have `InferInvokeResultType` method!");

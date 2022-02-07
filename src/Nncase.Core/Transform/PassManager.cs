@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,7 +14,7 @@ namespace Nncase.Transform
     /// <summary>
     /// Pass manager.
     /// </summary>
-    public class PassManager
+    public class PassManager : IEnumerable<FunctionPass>
     {
         private readonly IRModule _module;
         private readonly RunPassOptions _options;
@@ -38,6 +39,12 @@ namespace Nncase.Transform
         {
             _passes.Add(pass);
         }
+        
+        /// <inheritdoc/>
+        public IEnumerator<FunctionPass> GetEnumerator()
+        {
+            return ((IEnumerable<FunctionPass>)_passes).GetEnumerator();
+        }
 
         /// <summary>
         /// Run passes and update the module funciton.
@@ -51,6 +58,12 @@ namespace Nncase.Transform
                     _module.Update(i, pass.Run(_module.Functions[i], _options));
                 }
             }
+        }
+
+        /// <inheritdoc/>
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return ((IEnumerable)_passes).GetEnumerator();
         }
     }
 }

@@ -185,12 +185,11 @@ namespace Nncase.Tests.CodeGenTest
 
         public override FunctionPass GetPass()
         {
-            var pass = new TIRPass("TIRPass");
-            pass.Add(
+            var pass = new TIRPass("TIRPass"){
                 new Transform.Mutator.LowerBlockInit(),
                 new Transform.Mutator.ConvertBlocksToOpaque(),
                 new Transform.Mutator.FlattenBuffer()
-            );
+            };
             return pass;
         }
     }

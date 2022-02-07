@@ -77,7 +77,7 @@ namespace Nncase.Transform
         /// <summary>
         /// return "{DumpDir}/{PassName}"
         /// </summary>
-        public string FullDumpDir { get => Path.Combine(DumpDir, PassName); }
+        public string PassDumpDir { get => Path.Combine(DumpDir, PassName); }
 
         /// <summary>
         /// the invalid pass 

@@ -40,7 +40,7 @@ namespace Nncase.Transform
             switch (options.DumpLevel)
             {
                 case >= 2:
-                    IRPrinter.DumpFunctionAsIL(func, "Start", Path.Combine(options.FullDumpDir, Name));
+                    IRPrinter.DumpFunctionAsIL(func, "Start", Path.Combine(options.PassDumpDir, Name));
                     break;
                 case >= 1:
                     Console.WriteLine($"On {Name} Pass Start:");
@@ -61,7 +61,7 @@ namespace Nncase.Transform
             switch (options.DumpLevel)
             {
                 case >= 2:
-                    IRPrinter.DumpFunctionAsIL(func, "End", Path.Combine(options.FullDumpDir, Name));
+                    IRPrinter.DumpFunctionAsIL(func, "End", Path.Combine(options.PassDumpDir, Name));
                     break;
                 case >= 1:
                     Console.WriteLine($"On {Name} Pass End:");
@@ -97,7 +97,7 @@ namespace Nncase.Transform
             Function post;
             int count = 0;
             RunPassOptions new_options = new(options);
-            new_options.SetDir(options.FullDumpDir);
+            new_options.SetDir(options.PassDumpDir);
             while (true)
             {
                 post = (Function)DataFlowRewrite.Rewrite(pre, Rules, new_options.SetName($"{Name}/Run_{count}"));

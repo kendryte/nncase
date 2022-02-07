@@ -433,12 +433,7 @@ namespace Nncase.IR
             /// <inheritdoc/>
             public override string VisitType(TensorType type)
             {
-                if (type.DType is PointerType)
-                {
-                    return $"pointer:{DataTypes.GetDisplayName(type.DType)}";
-                }
-                else
-                    return $"{DataTypes.GetDisplayName(type.DType)}{type.Shape}";
+                return $"{DataTypes.GetDisplayName(type.DType)}{type.Shape}";
             }
 
             /// <inheritdoc/>

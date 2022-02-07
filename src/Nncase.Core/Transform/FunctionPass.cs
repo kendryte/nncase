@@ -30,7 +30,7 @@ namespace Nncase.Transform
         public string Name { get; }
 
         /// <summary>
-        /// Run pass.
+        /// Run current pass for specific function.
         /// </summary>
         /// <param name="function">Target function.</param>
         /// <param name="options">Options.</param>

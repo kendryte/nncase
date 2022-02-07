@@ -123,10 +123,9 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// cast to target type dense tensor
+        /// specific cast to float
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns> tensor </returns>
+        /// <returns></returns>
         public DenseTensor<float> HalfToFloat()
         {
             var src = (byte[])Data;
@@ -140,6 +139,11 @@ namespace Nncase.IR
             return new DenseTensor<float>(dest, ValueType.IsScalar ? new[] { 1 } : ValueType.Shape);
         }
 
+        /// <summary>
+        /// cast to target type dense tensor
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns> tensor </returns>
         public DenseTensor<T> ToTensor<T>()
            where T : unmanaged
         {
@@ -179,7 +183,7 @@ namespace Nncase.IR
               (DataTypes.FromType<T>() == ptype ?
                    DataTypes.ToScalar<T>(ptype, Data, 0) :
                    DataTypes.CastToScalar<T>(ptype, Data, 0)) : throw new InvalidCastException($"This Const Datatype Is Packed!"),
-                PointerType potype => typeof(T) == typeof(ulong) ? DataTypes.ToScalar<T>(DataType.UInt64, Data, 0) : throw new InvalidCastException($"The Const PointerType Only Can Convert To Uint64!"),
+                PointerType potype => typeof(T) == typeof(long) ? DataTypes.ToScalar<T>(DataType.Int64, Data, 0) : throw new InvalidCastException($"The Const PointerType Only Can Convert To Int64!"),
                 _ => throw new NotSupportedException(ValueType.DType.GetType().Name),
             };
         }
@@ -210,6 +214,14 @@ namespace Nncase.IR
         public static Const FromScalar<T>(T value, int lanes = 1)
             where T : unmanaged
             => new(TensorType.Scalar(DataTypes.FromType<T>() with { Lanes = lanes }), RepeatBytes(DataTypes.GetBytes(value), lanes));
+
+        /// <summary>
+        /// Create Constant Pointer
+        /// </summary>
+        /// <param name="addr"> the addr value.</param>
+        /// <param name="code">pointed element type code.</param>
+        /// <returns></returns>
+        public static Const FromPointer(long addr, PrimTypeCode code = PrimTypeCode.Float32) => new(TensorType.Pointer(code), DataTypes.GetBytes(addr));
 
         /// <summary>
         /// repeat bytes
@@ -305,11 +317,15 @@ namespace Nncase.IR
             {
                 if (DataTypes.IsIntegral(ValueType.DType))
                 {
-                    str = ToScalar<int>().ToString();
+                    str = ToScalar<long>().ToString();
                 }
                 else if (DataTypes.IsFloat(ValueType.DType))
                 {
                     str = ToScalar<float>().ToString();
+                }
+                else if (DataTypes.IsPointer(ValueType.DType))
+                {
+                    str = ToScalar<long>().ToString();
                 }
             }
             else

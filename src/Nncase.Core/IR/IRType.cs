@@ -81,6 +81,13 @@ namespace Nncase.IR
         public static TensorType Invalid(DataType DType) => new(DType, Shape.Invalid);
 
         /// <summary>
+        /// Initialize an pointer tensor type.
+        /// </summary>
+        /// <param name="ElemType"> the Pointed Element Type</param>
+        /// <returns>the pointer tensor type.</returns>
+        public static TensorType Pointer(PrimType ElemType) => new(new PointerType(ElemType), Shape.Scalar);
+
+        /// <summary>
         /// if TensorType contain's a 
         /// </summary>
         public PrimType PointedDType()

@@ -118,6 +118,14 @@ namespace Nncase
     /// <param name="ElemType"> the type the pointer points to. </param>
     public sealed record PointerType(DataType ElemType) : DataType
     {
+        /// <summary>
+        /// get the pointer type string.
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            return $"(*{ElemType.ToString()})";
+        }
     }
 
     /// <summary>
@@ -228,7 +236,25 @@ namespace Nncase
         /// <returns></returns>
         public override string ToString()
         {
-            return ("PrimType." + TypeCode) + (Lanes == 1 ? string.Empty : Lanes.ToString());
+            return (TypeCode switch
+            {
+                PrimTypeCode.Int8 => "i8",
+                PrimTypeCode.Int16 => "i16",
+                PrimTypeCode.Int32 => "i32",
+                PrimTypeCode.Int64 => "i64",
+                PrimTypeCode.UInt8 => "u8",
+                PrimTypeCode.UInt16 => "u16",
+                PrimTypeCode.UInt32 => "u32",
+                PrimTypeCode.UInt64 => "u64",
+                PrimTypeCode.Float16 => "f16",
+                PrimTypeCode.Float32 => "f32",
+                PrimTypeCode.Float64 => "f64",
+                PrimTypeCode.BFloat16 => "bf16",
+                PrimTypeCode.Bool => "bool",
+                PrimTypeCode.String => "str",
+                PrimTypeCode.Invalid => "Invalid",
+                _ => throw new NotImplementedException()
+            }) + (Lanes == 1 ? string.Empty : Lanes.ToString());
         }
     }
 
@@ -374,20 +400,7 @@ namespace Nncase
         /// <returns>The display name.</returns>
         public static string GetDisplayName(DataType dataType)
         {
-            if (dataType is PrimType ptype)
-            {
-                var name = typeof(PrimTypeCode).GetField(Enum.GetName(ptype.TypeCode)!)!.GetCustomAttribute<DisplayAttribute>()?.GetName() ?? ptype.ToString()!;
-                if (ptype.Lanes > 1)
-                {
-                    name += $"x{ptype.Lanes}";
-                }
-                return name;
-            }
-            else if (dataType is PointerType potype)
-            {
-                return "*" + potype.ElemType.ToString();
-            }
-            throw new NotImplementedException($"DataType {dataType.GetType().Name}");
+            return dataType.ToString();
         }
 
         /// <summary>
@@ -487,5 +500,13 @@ namespace Nncase
               (PrimTypeCode.BFloat16 or PrimTypeCode.Float16 or PrimTypeCode.Float32 or PrimTypeCode.Float64) => true,
               _ => false
           } && Lanes == ptype.Lanes;
+
+        /// <summary>
+        /// check the data type is pointer
+        /// </summary>
+        /// <param name="srcType"></param>
+        /// <returns></returns>
+        public static bool IsPointer(DataType srcType) =>
+          srcType is PointerType ptype;
     }
 }

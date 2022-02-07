@@ -27,7 +27,7 @@ namespace Nncase.Evaluator.Ops
                         GetItem(strides, axesIndex++)) :
                     torch.TensorIndex.Slice()
             ).ToArray();
-            return input[indices].ToConst(context.CurrentCallResultTensorType().Shape);
+            return input[indices].ToConst(context.CurrentCallResultTensorType());
         }
 
         internal static long GetItem(torch.Tensor tensor, int index)

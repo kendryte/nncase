@@ -140,6 +140,7 @@ public class RTKModel : IRTModel
         writer.Flush();
         writer.Close();
         serializeResult.ModelSize = ((int)(end_pos - begin_pos));
+        isSerialized = true;
         return serializeResult;
     }
 }

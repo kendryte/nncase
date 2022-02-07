@@ -1,13 +1,13 @@
-using Xunit;
 using System;
-using System.Linq;
-using System.IO;
 using System.Collections.Generic;
-using static Nncase.IR.F.Tensors;
-using static Nncase.IR.F.Math;
-using Nncase.TIR;
+using System.IO;
+using System.Linq;
 using Nncase.IR;
+using Nncase.TIR;
 using Nncase.Transform;
+using Xunit;
+using static Nncase.IR.F.Math;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Tests.TIRTest
 {
@@ -45,7 +45,7 @@ namespace Nncase.Tests.TIRTest
         [Theory]
         [MemberData(nameof(DataAll))]
         public void RunAll(ITransfromCase Case) => RunCore(Case);
-        
+
         public static IEnumerable<object[]> DataOne => Data.Take(1);
         public static IEnumerable<object[]> DataAll => Data.Skip(1);
     }
@@ -65,11 +65,9 @@ namespace Nncase.Tests.TIRTest
     {
         public FlattenBufferCase()
         {
-            Pass.Add(
-                new Transform.Mutator.LowerBlockInit(),
-                new Transform.Mutator.ConvertBlocksToOpaque(),
-                new Transform.Mutator.FlattenBuffer()
-              );
+            Pass.Add(new Transform.Mutator.LowerBlockInit());
+            Pass.Add(new Transform.Mutator.ConvertBlocksToOpaque());
+            Pass.Add(new Transform.Mutator.FlattenBuffer());
         }
     }
 
