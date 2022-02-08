@@ -11,11 +11,12 @@ using static Nncase.Pattern.F.Tensors;
 using static Nncase.Pattern.F.Math;
 using static Nncase.IR.Utility;
 using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Math;
 using Nncase.Pattern;
-using Nncase.IR.Tensors;
 using Nncase.IR.Math;
 using Nncase.IR;
+using Nncase.IR.NN;
 
 namespace Nncase.Transform.Rule
 {

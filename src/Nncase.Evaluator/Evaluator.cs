@@ -65,6 +65,7 @@ namespace Nncase.Evaluator
                                 throw new NotImplementedException("Can't Support Return Tuple[Tuple[x,y,...]]!");
                             result.Add(visitor.ExpressionMemo[item]);
                         }
+
                         break;
                     default:
                         result.Add(visitor.ExpressionMemo[func.Body]);
@@ -82,12 +83,14 @@ namespace Nncase.Evaluator
                                 throw new NotImplementedException("Can't Support Return Tuple[Tuple[x,y,...]]!");
                             result.Add(visitor.ExpressionMemo[item]);
                         }
+
                         break;
                     default:
                         result.Add(visitor.ExpressionMemo[expr]);
                         break;
                 }
             }
+
             return result;
         }
     }

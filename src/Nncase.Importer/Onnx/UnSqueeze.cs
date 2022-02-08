@@ -21,14 +21,14 @@ namespace Nncase.Importer
         {
             var input = GetInputExpr(op, 0);
             var axes = Const.FromSpan<long>(GetIntsAttribute(op, "axes"));
-            return UnSqueeze(input, axes);
+            return Unsqueeze(input, axes);
         }
 
         private Expr UnsqueezeV13(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);
             var axes = GetOptionInputExpr(op, 1, ComputeDefaultAxes(input));
-            return UnSqueeze(input, axes);
+            return Unsqueeze(input, axes);
         }
     }
 }

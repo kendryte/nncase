@@ -13,7 +13,7 @@ public class NNModule : Module
     /// <inheritdoc/>
     protected override void Load(ContainerBuilder builder)
     {
-        // Activations
+        // Activation
         builder.RegisterType<CeluEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<EluEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<HardSwishEvaluator>().AsImplementedInterfaces();
@@ -21,21 +21,28 @@ public class NNModule : Module
         builder.RegisterType<ReluEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<SeluEvaluator>().AsImplementedInterfaces();
 
+        // Convolution
         builder.RegisterType<Conv2DEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<Conv2DTransposeEvaluator>().AsImplementedInterfaces();
 
+        // Normalization
         builder.RegisterType<BatchNormalizationEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<InstanceNormalizationEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<LRNEvaluator>().AsImplementedInterfaces();
 
+        // ReduceWindow
         builder.RegisterType<ReduceWindow2DEvaluator>().AsImplementedInterfaces();
 
+        // Soft*
         builder.RegisterType<LogSoftmaxEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<SoftmaxEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<SoftplusEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<SoftsignEvaluator>().AsImplementedInterfaces();
 
+        builder.RegisterType<BatchToSpaceEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<HardmaxEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<OneHotEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<PadEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<SpaceToBatchEvaluator>().AsImplementedInterfaces();
     }
 }

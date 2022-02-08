@@ -8,6 +8,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CommonServiceLocator;
+using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using static Nncase.IR.Utility;
@@ -54,18 +56,6 @@ public static class TypeInference
             InvalidType i => throw new TypeInferenceInterruptException(i),
             T other => other,
         };
-    }
-
-    /// <summary>
-    /// Inference type of the expression tree.
-    /// </summary>
-    /// <param name="expr">Expression.</param>
-    /// <returns>Is fully inferenced.</returns>
-    public static bool InferenceType(this Expr expr)
-    {
-        var inferVisitor = new TypeInferenceVisitor();
-        inferVisitor.Visit(expr);
-        return inferVisitor.IsFullyInferenced;
     }
 
     /// <summary>

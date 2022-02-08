@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static Nncase.IR.Utility;
 
-namespace Nncase.IR.Tensors
+namespace Nncase.IR.Imaging
 {
     /// <summary>
     /// ResizeImage expression.
@@ -35,14 +35,5 @@ namespace Nncase.IR.Tensors
         /// Gets HalfPixelCenters.
         /// </summary>
         public static readonly ParameterInfo HalfPixelCenters = new(typeof(ResizeImage), 3, "half_pixel_centers", IsScalar() & IsIntegral());
-
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context,
-           TensorType input, TensorType new_size,
-           TensorType align_corners, TensorType half_pixel_centers)
-        {
-            var newSize = context.GetArgument(this, NewSize);
-            return TypeInference.ResizeType(input, newSize);
-        }
     }
 }

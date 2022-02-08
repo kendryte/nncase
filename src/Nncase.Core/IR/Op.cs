@@ -84,36 +84,5 @@ namespace Nncase.IR
         {
             return _hashcode ??= EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
         }
-
-        /// <summary>
-        /// Inference type (nothrow).
-        /// </summary>
-        /// <param name="context">Context.</param>
-        /// <returns>Inferred type.</returns>
-        internal IRType InferInvokeResultTypeNoThrow(ITypeInferenceContext context)
-        {
-            var thistype = this.GetType();
-            var properties = thistype.GetFields(BindingFlags.Public | BindingFlags.Static);
-
-            var typeinferFunc = thistype.GetMethod("InferInvokeResultType") ??
-               throw new InvalidProgramException("The Ops Must Have `InferInvokeResultType` method!");
-            var inferFuncParams = typeinferFunc.GetParameters();
-            var inferTypedict = inferFuncParams.Skip(1).ToDictionary(p => p.Name ?? "_", p => p.ParameterType);
-            var targetParams = new List<object> { context };
-            foreach (var info in properties)
-            {
-                var paraminfo = (ParameterInfo)(info.GetValue(null)
-                    ?? throw new InvalidProgramException($"Can't Get The ParameterInfo {info.Name}"));
-                var targetType = inferTypedict[paraminfo.Name];
-                var paramActualType = context.GetArgumentType(this, paraminfo);
-                if (!targetType.IsAssignableFrom(paramActualType?.GetType()))
-                    return new InvalidType($"The {paraminfo.OwnerType.Name} {paraminfo.Name} Requrie {targetType.Name}, But {paramActualType?.GetType()}!");
-                if (!paraminfo.CheckType(paramActualType))
-                    return new InvalidType($"The {paraminfo.OwnerType.Name} {paraminfo.Name} Requrie <{paraminfo.Pattern.Reason}>, But {paramActualType}!");
-                targetParams.Add(paramActualType);
-            }
-
-            return (IRType)(typeinferFunc.Invoke(this, targetParams.ToArray()))!;
-        }
     }
 }

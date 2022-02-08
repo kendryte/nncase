@@ -104,7 +104,7 @@ namespace Nncase.Transform
                 post = (Function)DataFlowRewrite.Rewrite(pre, Rules, new_options.SetName($"{Name}/Run_{count}"));
                 if (post == pre)
                 {
-                    if (!TypeInference.InferenceType(post))
+                    if (!CompilerServices.InferenceType(post))
                         throw new InvalidOperationException("Can't InferShape For This Model!");
                     else
                         break;

@@ -4,6 +4,7 @@
 using System;
 using Nncase.IR;
 using Onnx;
+using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Importer
@@ -38,7 +39,7 @@ namespace Nncase.Importer
                 Concat(
                     new IR.Tuple(
                         new[] { 2 },
-                        ShapeOp(pads) / 2),
+                        ShapeOf(pads) / 2),
                     0));
         }
 

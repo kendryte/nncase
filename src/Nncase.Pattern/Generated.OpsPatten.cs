@@ -8,8 +8,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using Nncase.IR.Imaging;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.Random;
 using Nncase.IR.Tensors;
 
 namespace Nncase.Pattern.Math
@@ -422,20 +424,20 @@ namespace Nncase.Pattern.Tensors
         }
     }
 
-    public sealed record DeQuantizePattern(Func<DeQuantize, bool> Cond) : OpPattern
+    public sealed record DeQuantizePattern(Func<Dequantize, bool> Cond) : OpPattern
     {
-        public DeQuantizePattern(DeQuantize dequantize) : this(x => x == dequantize)
+        public DeQuantizePattern(Dequantize dequantize) : this(x => x == dequantize)
         {
             this.TargetType = dequantize.TargetType;
         }
 
-        public bool MatchLeaf(DeQuantize dequantize) => Cond(dequantize) && MatchCheckedType(dequantize);
-        public DeQuantizePattern() : this((DeQuantize x) => true)
+        public bool MatchLeaf(Dequantize dequantize) => Cond(dequantize) && MatchCheckedType(dequantize);
+        public DeQuantizePattern() : this((Dequantize x) => true)
         {
         }
 
         public DataType? TargetType = null;
-        public DeQuantizePattern(DataType TargetType) : this((DeQuantize x) => TargetType == x.TargetType)
+        public DeQuantizePattern(DataType TargetType) : this((Dequantize x) => TargetType == x.TargetType)
         {
             this.TargetType = TargetType;
         }
@@ -546,66 +548,66 @@ namespace Nncase.Pattern.Tensors
         }
     }
 
-    public sealed record RandomNormalPattern(Func<RandomNormal, bool> Cond) : OpPattern
+    public sealed record RandomNormalPattern(Func<Normal, bool> Cond) : OpPattern
     {
-        public RandomNormalPattern(RandomNormal randomnormal) : this(x => x == randomnormal)
+        public RandomNormalPattern(Normal randomnormal) : this(x => x == randomnormal)
         {
         }
 
-        public bool MatchLeaf(RandomNormal randomnormal) => Cond(randomnormal) && MatchCheckedType(randomnormal);
-        public RandomNormalPattern() : this((RandomNormal x) => true)
+        public bool MatchLeaf(Normal randomnormal) => Cond(randomnormal) && MatchCheckedType(randomnormal);
+        public RandomNormalPattern() : this((Normal x) => true)
         {
         }
 
-        public RandomNormalPattern(DataType Type) : this((RandomNormal x) => Type == x.Type)
+        public RandomNormalPattern(DataType Type) : this((Normal x) => Type == x.Type)
         {
         }
     }
 
-    public sealed record RandomNormalLikePattern(Func<RandomNormalLike, bool> Cond) : OpPattern
+    public sealed record RandomNormalLikePattern(Func<NormalLike, bool> Cond) : OpPattern
     {
-        public RandomNormalLikePattern(RandomNormalLike randomnormallike) : this(x => x == randomnormallike)
+        public RandomNormalLikePattern(NormalLike randomnormallike) : this(x => x == randomnormallike)
         {
         }
 
-        public bool MatchLeaf(RandomNormalLike randomnormallike) => Cond(randomnormallike) && MatchCheckedType(randomnormallike);
-        public RandomNormalLikePattern() : this((RandomNormalLike x) => true)
+        public bool MatchLeaf(NormalLike randomnormallike) => Cond(randomnormallike) && MatchCheckedType(randomnormallike);
+        public RandomNormalLikePattern() : this((NormalLike x) => true)
         {
         }
 
-        public RandomNormalLikePattern(DataType Type) : this((RandomNormalLike x) => Type == x.Type)
+        public RandomNormalLikePattern(DataType Type) : this((NormalLike x) => Type == x.Type)
         {
         }
     }
 
-    public sealed record RandomUniformPattern(Func<RandomUniform, bool> Cond) : OpPattern
+    public sealed record RandomUniformPattern(Func<Uniform, bool> Cond) : OpPattern
     {
-        public RandomUniformPattern(RandomUniform randomuniform) : this(x => x == randomuniform)
+        public RandomUniformPattern(Uniform randomuniform) : this(x => x == randomuniform)
         {
         }
 
-        public bool MatchLeaf(RandomUniform randomuniform) => Cond(randomuniform) && MatchCheckedType(randomuniform);
-        public RandomUniformPattern() : this((RandomUniform x) => true)
+        public bool MatchLeaf(Uniform randomuniform) => Cond(randomuniform) && MatchCheckedType(randomuniform);
+        public RandomUniformPattern() : this((Uniform x) => true)
         {
         }
 
-        public RandomUniformPattern(DataType Type) : this((RandomUniform x) => Type == x.Type)
+        public RandomUniformPattern(DataType Type) : this((Uniform x) => Type == x.Type)
         {
         }
     }
 
-    public sealed record RandomUniformLikePattern(Func<RandomUniformLike, bool> Cond) : OpPattern
+    public sealed record RandomUniformLikePattern(Func<UniformLike, bool> Cond) : OpPattern
     {
-        public RandomUniformLikePattern(RandomUniformLike randomuniformlike) : this(x => x == randomuniformlike)
+        public RandomUniformLikePattern(UniformLike randomuniformlike) : this(x => x == randomuniformlike)
         {
         }
 
-        public bool MatchLeaf(RandomUniformLike randomuniformlike) => Cond(randomuniformlike) && MatchCheckedType(randomuniformlike);
-        public RandomUniformLikePattern() : this((RandomUniformLike x) => true)
+        public bool MatchLeaf(UniformLike randomuniformlike) => Cond(randomuniformlike) && MatchCheckedType(randomuniformlike);
+        public RandomUniformLikePattern() : this((UniformLike x) => true)
         {
         }
 
-        public RandomUniformLikePattern(DataType Type) : this((RandomUniformLike x) => Type == x.Type)
+        public RandomUniformLikePattern(DataType Type) : this((UniformLike x) => Type == x.Type)
         {
         }
     }
@@ -698,14 +700,14 @@ namespace Nncase.Pattern.Tensors
         }
     }
 
-    public sealed record ShapeOpPattern(Func<ShapeOp, bool> Cond) : OpPattern
+    public sealed record ShapeOpPattern(Func<ShapeOf, bool> Cond) : OpPattern
     {
-        public ShapeOpPattern(ShapeOp shapeop) : this(x => x == shapeop)
+        public ShapeOpPattern(ShapeOf shapeop) : this(x => x == shapeop)
         {
         }
 
-        public bool MatchLeaf(ShapeOp shapeop) => Cond(shapeop) && MatchCheckedType(shapeop);
-        public ShapeOpPattern() : this((ShapeOp x) => true)
+        public bool MatchLeaf(ShapeOf shapeop) => Cond(shapeop) && MatchCheckedType(shapeop);
+        public ShapeOpPattern() : this((ShapeOf x) => true)
         {
         }
     }
@@ -782,14 +784,14 @@ namespace Nncase.Pattern.Tensors
         }
     }
 
-    public sealed record UnSqueezePattern(Func<UnSqueeze, bool> Cond) : OpPattern
+    public sealed record UnSqueezePattern(Func<Unsqueeze, bool> Cond) : OpPattern
     {
-        public UnSqueezePattern(UnSqueeze unsqueeze) : this(x => x == unsqueeze)
+        public UnSqueezePattern(Unsqueeze unsqueeze) : this(x => x == unsqueeze)
         {
         }
 
-        public bool MatchLeaf(UnSqueeze unsqueeze) => Cond(unsqueeze) && MatchCheckedType(unsqueeze);
-        public UnSqueezePattern() : this((UnSqueeze x) => true)
+        public bool MatchLeaf(Unsqueeze unsqueeze) => Cond(unsqueeze) && MatchCheckedType(unsqueeze);
+        public UnSqueezePattern() : this((Unsqueeze x) => true)
         {
         }
     }

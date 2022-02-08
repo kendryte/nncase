@@ -81,7 +81,7 @@ namespace Nncase.Transform
                         post = visitor.Visit(last);
                         if (visitor.isMatched)
                         {
-                            TypeInference.InferenceType(post);
+                            CompilerServices.InferenceType(post);
                             break;
                         }
                     }

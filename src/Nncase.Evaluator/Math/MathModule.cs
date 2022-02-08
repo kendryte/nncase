@@ -8,7 +8,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Math module.
 /// </summary>
-public class NNModule : Module
+public class MathModule : Module
 {
     /// <inheritdoc/>
     protected override void Load(ContainerBuilder builder)
@@ -17,7 +17,9 @@ public class NNModule : Module
         builder.RegisterType<ClampEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<CompareEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<CumSumEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<DequantizeEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<MatMulEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<QuantizeEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<ReduceEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<ReduceArgEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<UnaryEvaluator>().AsImplementedInterfaces();

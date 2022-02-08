@@ -7,7 +7,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
-using Nncase.IR.Tensors;
 using Nncase.Pattern;
 using Nncase.Pattern.Tensors;
 using Nncase.Pattern.Math;
@@ -16,10 +15,12 @@ using static Nncase.Pattern.F.Tensors;
 using static Nncase.Pattern.Utility;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.NN;
 using static Nncase.IR.Utility;
 using Nncase.Evaluator;
 using TorchSharp;
 using Nncase.IR;
+using Nncase.IR.NN;
 
 namespace Nncase.Transform.Rule
 {

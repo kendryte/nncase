@@ -12,6 +12,8 @@ using Nncase.IR.Tensors;
 using Nncase.Pattern.NN;
 using Nncase.Pattern.Math;
 using Nncase.Pattern.Tensors;
+using Nncase.IR.Random;
+using Nncase.IR.Imaging;
 
 namespace Nncase.Pattern
 {
@@ -48,7 +50,7 @@ namespace Nncase.Pattern
             (CastPattern castpattern, Cast cast) => castpattern.MatchLeaf(cast),
             (ConcatPattern concatpattern, Concat concat) => concatpattern.MatchLeaf(concat),
             (CumSumPattern cumsumpattern, CumSum cumsum) => cumsumpattern.MatchLeaf(cumsum),
-            (DeQuantizePattern dequantizepattern, DeQuantize dequantize) => dequantizepattern.MatchLeaf(dequantize),
+            (DeQuantizePattern dequantizepattern, Dequantize dequantize) => dequantizepattern.MatchLeaf(dequantize),
             (GatherPattern gatherpattern, Gather gather) => gatherpattern.MatchLeaf(gather),
             (GatherNDPattern gatherndpattern, GatherND gathernd) => gatherndpattern.MatchLeaf(gathernd),
             (HardMaxPattern hardmaxpattern, Hardmax hardmax) => hardmaxpattern.MatchLeaf(hardmax),
@@ -56,23 +58,23 @@ namespace Nncase.Pattern
             (OneHotPattern onehotpattern, OneHot onehot) => onehotpattern.MatchLeaf(onehot),
             (PadPattern padpattern, Pad pad) => padpattern.MatchLeaf(pad),
             (QuantizePattern quantizepattern, Quantize quantize) => quantizepattern.MatchLeaf(quantize),
-            (RandomNormalPattern randomnormalpattern, RandomNormal randomnormal) => randomnormalpattern.MatchLeaf(randomnormal),
-            (RandomNormalLikePattern randomnormallikepattern, RandomNormalLike randomnormallike) => randomnormallikepattern.MatchLeaf(randomnormallike),
-            (RandomUniformPattern randomuniformpattern, RandomUniform randomuniform) => randomuniformpattern.MatchLeaf(randomuniform),
-            (RandomUniformLikePattern randomuniformlikepattern, RandomUniformLike randomuniformlike) => randomuniformlikepattern.MatchLeaf(randomuniformlike),
+            (RandomNormalPattern randomnormalpattern, Normal randomnormal) => randomnormalpattern.MatchLeaf(randomnormal),
+            (RandomNormalLikePattern randomnormallikepattern, NormalLike randomnormallike) => randomnormallikepattern.MatchLeaf(randomnormallike),
+            (RandomUniformPattern randomuniformpattern, Uniform randomuniform) => randomuniformpattern.MatchLeaf(randomuniform),
+            (RandomUniformLikePattern randomuniformlikepattern, UniformLike randomuniformlike) => randomuniformlikepattern.MatchLeaf(randomuniformlike),
             (ReducePattern reducepattern, Reduce reduce) => reducepattern.MatchLeaf(reduce),
             (ReduceArgPattern reduceargpattern, ReduceArg reducearg) => reduceargpattern.MatchLeaf(reducearg),
             (ReduceWindow2DPattern reducewindow2dpattern, ReduceWindow2D reducewindow2d) => reducewindow2dpattern.MatchLeaf(reducewindow2d),
             (ReshapePattern reshapepattern, Reshape reshape) => reshapepattern.MatchLeaf(reshape),
             (ResizeImagePattern resizeimagepattern, ResizeImage resizeimage) => resizeimagepattern.MatchLeaf(resizeimage),
-            (ShapeOpPattern shapeoppattern, ShapeOp shapeop) => shapeoppattern.MatchLeaf(shapeop),
+            (ShapeOpPattern shapeoppattern, ShapeOf shapeop) => shapeoppattern.MatchLeaf(shapeop),
             (SlicePattern slicepattern, Slice slice) => slicepattern.MatchLeaf(slice),
             (SpaceToBatchPattern spacetobatchpattern, SpaceToBatch spacetobatch) => spacetobatchpattern.MatchLeaf(spacetobatch),
             (SplitPattern splitpattern, Split split) => splitpattern.MatchLeaf(split),
             (SqueezePattern squeezepattern, Squeeze squeeze) => squeezepattern.MatchLeaf(squeeze),
             (StackPattern stackpattern, Stack stack) => stackpattern.MatchLeaf(stack),
             (TransposePattern transposepattern, Transpose transpose) => transposepattern.MatchLeaf(transpose),
-            (UnSqueezePattern unsqueezepattern, UnSqueeze unsqueeze) => unsqueezepattern.MatchLeaf(unsqueeze),
+            (UnSqueezePattern unsqueezepattern, Unsqueeze unsqueeze) => unsqueezepattern.MatchLeaf(unsqueeze),
             (_, _) => false,
         }
 
@@ -108,7 +110,7 @@ namespace Nncase.Pattern
             Cast cast => new CastPattern(cast),
             Concat concat => new ConcatPattern(concat),
             CumSum cumsum => new CumSumPattern(cumsum),
-            DeQuantize dequantize => new DeQuantizePattern(dequantize),
+            Dequantize dequantize => new DeQuantizePattern(dequantize),
             Gather gather => new GatherPattern(gather),
             GatherND gathernd => new GatherNDPattern(gathernd),
             Hardmax hardmax => new HardMaxPattern(hardmax),
@@ -116,23 +118,23 @@ namespace Nncase.Pattern
             OneHot onehot => new OneHotPattern(onehot),
             Pad pad => new PadPattern(pad),
             Quantize quantize => new QuantizePattern(quantize),
-            RandomNormal randomnormal => new RandomNormalPattern(randomnormal),
-            RandomNormalLike randomnormallike => new RandomNormalLikePattern(randomnormallike),
-            RandomUniform randomuniform => new RandomUniformPattern(randomuniform),
-            RandomUniformLike randomuniformlike => new RandomUniformLikePattern(randomuniformlike),
+            Normal randomnormal => new RandomNormalPattern(randomnormal),
+            NormalLike randomnormallike => new RandomNormalLikePattern(randomnormallike),
+            Uniform randomuniform => new RandomUniformPattern(randomuniform),
+            UniformLike randomuniformlike => new RandomUniformLikePattern(randomuniformlike),
             Reduce reduce => new ReducePattern(reduce),
             ReduceArg reducearg => new ReduceArgPattern(reducearg),
             ReduceWindow2D reducewindow2d => new ReduceWindow2DPattern(reducewindow2d),
             Reshape reshape => new ReshapePattern(reshape),
             ResizeImage resizeimage => new ResizeImagePattern(resizeimage),
-            ShapeOp shapeop => new ShapeOpPattern(shapeop),
+            ShapeOf shapeop => new ShapeOpPattern(shapeop),
             Slice slice => new SlicePattern(slice),
             SpaceToBatch spacetobatch => new SpaceToBatchPattern(spacetobatch),
             Split split => new SplitPattern(split),
             Squeeze squeeze => new SqueezePattern(squeeze),
             Stack stack => new StackPattern(stack),
             Transpose transpose => new TransposePattern(transpose),
-            UnSqueeze unsqueeze => new UnSqueezePattern(unsqueeze),
+            Unsqueeze unsqueeze => new UnSqueezePattern(unsqueeze),
             _ => throw new NotImplementedException($"Can't Convert OP {op.GetType().Name} To ExprPattern"),
         }
 

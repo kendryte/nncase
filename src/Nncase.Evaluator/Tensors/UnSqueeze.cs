@@ -1,29 +1,64 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using static Tensorflow.Binding;
-using Nncase.IR;
 
-using torchF = TorchSharp.torch.nn.functional;
-namespace Nncase.Evaluator.Ops
+namespace Nncase.Evaluator.Tensors;
+
+/// <summary>
+/// Evaluator for <see cref="Unsqueeze"/>.
+/// </summary>
+public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsqueeze>
 {
-    public class UnSqueezeEvaluator : IEvaluator<UnSqueeze>
+    /// <inheritdoc/>
+    public Const Visit(EvaluatorContext context, Unsqueeze unSqueeze)
     {
-        public Const Visit(EvaluatorContext context, UnSqueeze unSqueeze)
+        var input = context.GetTFArgument(unSqueeze, Unsqueeze.Input);
+        var dims = context.GetArgumentConst(unSqueeze, Unsqueeze.Dim)
+            .ToArray<int>()
+            .Select(
+                x => Util.PositiveIndex(x, input.shape.rank
+                ))
+            .ToArray();
+        foreach (var dim in dims)
         {
-            var input = context.GetTFArgument(unSqueeze, UnSqueeze.Input);
-            var dims = context.GetArgumentConst(unSqueeze, UnSqueeze.Dim)
-                .ToArray<int>()
-                .Select(
-                    x => Util.PositiveIndex(x, input.shape.rank
-                    ))
-                .ToArray();
-            foreach (var dim in dims)
+            input = tf.expand_dims(input, Util.PositiveIndex(dim, input.shape.rank));
+        }
+
+        return input.ToConst();
+    }
+
+    /// <inheritdoc/>
+    public IRType Visit(ITypeInferenceContext context, Unsqueeze target)
+    {
+        var input = context.CheckArgumentType<TensorType>(target, Split.Input);
+        return Visit(context, target, input);
+    }
+
+    private IRType Visit(ITypeInferenceContext context, Unsqueeze target, TensorType input)
+    {
+        if (context.GetArgument(target, Unsqueeze.Dim) is Const tdims)
+        {
+            var dimsValue = tdims.ToTensor<int>();
+            var outShape = input.Shape.ToList();
+            foreach (var dimVal in dimsValue)
             {
-                input = tf.expand_dims(input, Util.PositiveIndex(dim, input.shape.rank));
+                var dimV = Util.PositiveIndex(dimVal, input);
+                if (dimV < 0)
+                {
+                    for (int i = dimV; i < 0; i++)
+                    {
+                        outShape.Insert(0, 1);
+                    }
+                }
             }
 
-            return input.ToConst();
+            return input with { Shape = new Shape(outShape) };
         }
+
+        return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Rank + 1)) };
     }
 }

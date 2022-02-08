@@ -9,37 +9,20 @@ using System.Text;
 using System.Threading.Tasks;
 using static Nncase.IR.Utility;
 
-namespace Nncase.IR.Tensors
+namespace Nncase.IR.Tensors;
+
+/// <summary>
+/// Squeeze expression.
+/// </summary>
+public sealed record Squeeze() : Op
 {
-    public sealed record Squeeze() : Op
-    {
-        public static ParameterInfo Input = new(typeof(Squeeze), 0, "input");
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(Squeeze), 0, "input");
 
-        public static ParameterInfo Dim = new(typeof(Squeeze), 1, "dim", HasRank(1) & IsIntegral());
-
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType dim)
-        {
-            if (context.GetArgument(this, Dim) is Const dim_con)
-            {
-                var dims = dim_con.ToArray<int>();
-                var outshape = input.Shape.ToList();
-                foreach (var dimValue in dims)
-                {
-                    if (outshape[dimValue].IsFixed && outshape[dimValue] == 1)
-                    {
-                        outshape[dimValue] = int.MaxValue;
-                    }
-                    else
-                    {
-                        return new InvalidType("The Shape[dim] is not 1!");
-                    }
-                }
-
-                return input with { Shape = new Shape(outshape.Where(x => x != int.MaxValue)) };
-            }
-
-            return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Count() - 1)) };
-        }
-    }
+    /// <summary>
+    /// Gets dimension.
+    /// </summary>
+    public static readonly ParameterInfo Dim = new(typeof(Squeeze), 1, "dim", HasRank(1) & IsIntegral());
 }

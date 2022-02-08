@@ -48,7 +48,7 @@ namespace Nncase.Transform
                     var replaceExpr = rule.GetRePlace(result);
                     if (replaceExpr is null)
                         continue;
-                    if (!TypeInference.InferenceType(replaceExpr))
+                    if (!CompilerServices.InferenceType(replaceExpr))
                         throw new InvalidOperationException("Can't Inference The Replace Expr Type!");
                     eGraph.Add(replaceExpr, out var neweClass);
                     var oldeClass = eGraph.HashCons[((EMatchResult)result).Root].Find();

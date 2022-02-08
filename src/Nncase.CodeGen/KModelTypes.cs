@@ -25,6 +25,7 @@ public struct ModelHeader
     public uint EntryModule;
     public uint EntryFunction;
 }
+
 ;
 
 [StructLayout(LayoutKind.Sequential)]
@@ -39,6 +40,7 @@ public struct FunctionHeader
     public uint Entrypoint;
     public uint TextSize;
 }
+
 ;
 
 [StructLayout(LayoutKind.Sequential)]
@@ -54,6 +56,7 @@ public struct ModuleHeader
     public uint Functions;
     public uint Reserved0;
 }
+
 ;
 
 [StructLayout(LayoutKind.Sequential)]
@@ -63,6 +66,7 @@ public struct MemPoolDesc
     public byte[] Reserved0 = new byte[3];
     public uint Size;
 }
+
 ;
 
 [StructLayout(LayoutKind.Sequential)]
@@ -71,6 +75,7 @@ public struct SharedMempoolDesc
     public uint Module;
     public uint Size;
 }
+
 ;
 
 [StructLayout(LayoutKind.Sequential)]
@@ -82,6 +87,7 @@ public struct SectionHeader
     public uint BodySize;
     public uint Reserved0;
 }
+
 ;
 
 [StructLayout(LayoutKind.Sequential)]

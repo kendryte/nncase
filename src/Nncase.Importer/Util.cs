@@ -15,7 +15,7 @@ namespace Nncase
     {
         public static Expr ShapeIndex(in Expr input, int index)
         {
-            return F.Tensors.Slice(F.Tensors.ShapeOp(input), new[] { index }, new[] { index + 1 }, 1);
+            return F.Tensors.Slice(F.Tensors.ShapeOf(input), new[] { index }, new[] { index + 1 }, 1);
         }
 
         public static (Expr, Expr) GetHW(in Expr input)

@@ -1,20 +1,49 @@
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.IR;
 using Nncase.IR.Tensors;
 using static Tensorflow.Binding;
-using Nncase.IR;
-
 using torchF = TorchSharp.torch.nn.functional;
-namespace Nncase.Evaluator.Ops
+
+namespace Nncase.Evaluator.Tensors;
+
+/// <summary>
+/// Evaluator for <see cref="Gather"/>.
+/// </summary>
+public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>
 {
-    public class GatherEvaluator : IEvaluator<Gather>
+    /// <inheritdoc/>
+    public Const Visit(EvaluatorContext context, Gather gather)
     {
-        public Const Visit(EvaluatorContext context, Gather gather)
+        var input = context.GetTFArgument(gather, Gather.Input);
+        var axis = context.GetArgumentConst(gather, Gather.Axis).ToScalar<int>();
+        var index = context.GetTFArgument(gather, Gather.Index);
+        return tf.gather(input, index, axis: axis).ToConst();
+    }
+
+    /// <inheritdoc/>
+    public IRType Visit(ITypeInferenceContext context, Gather target)
+    {
+        var input = context.CheckArgumentType<TensorType>(target, Gather.Input);
+        var axis = context.CheckArgumentType<TensorType>(target, Gather.Axis);
+        var index = context.CheckArgumentType<TensorType>(target, Gather.Index);
+        return Visit(context, target, input, axis, index);
+    }
+
+    private IRType Visit(ITypeInferenceContext context, Gather target, TensorType input, TensorType axis, TensorType index)
+    {
+        if (context.GetArgument(target, Flatten.Axis) is Const axisValue)
         {
-            var input = context.GetTFArgument(gather, Gather.Input);
-            var axis = context.GetArgumentConst(gather, Gather.Axis).ToScalar<int>();
-            var index = context.GetTFArgument(gather, Gather.Index);
-            return tf.gather(input, index, axis: axis).ToConst();
+            var axisV = axisValue.ToScalar<int>();
+            axisV = axisV < 0 ? axisV + input.Shape.Rank : axisV;
+
+            // input_shape[:axis] + index_shape + input_shape[axis + 1:]
+            var newShape = input.Shape.InsertAndClone(axisV, index.Shape);
+            return new TensorType(input.DType, newShape);
+        }
+        else
+        {
+            return new InvalidType("Gather axis must be constant");
         }
     }
 }

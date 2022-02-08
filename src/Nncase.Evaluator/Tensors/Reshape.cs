@@ -1,21 +1,43 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Linq;
 using NetFabric.Hyperlinq;
-using Nncase.IR.Math;
+using Nncase.IR;
 using Nncase.IR.Tensors;
 using TorchSharp;
-using Nncase.IR;
+using Range = Nncase.IR.Tensors.Range;
 
-using torchF = TorchSharp.torch.nn.functional;
-namespace Nncase.Evaluator.Ops
+namespace Nncase.Evaluator.Tensors;
+
+/// <summary>
+/// Evaluator for <see cref="Range"/>.
+/// </summary>
+public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>
 {
-    public class ReshapeEvaluator : IEvaluator<Reshape>
+    /// <inheritdoc/>
+    public Const Visit(EvaluatorContext context, Reshape reshape)
     {
-        public Const Visit(EvaluatorContext context, Reshape reshape)
+        var input = context.GetTorchArgument(reshape, Reshape.Input);
+        var shape = context.GetArgumentConst(reshape, Reshape.Shape).ToArray<long>();
+        return input.reshape(shape).ToConst();
+    }
+
+    /// <inheritdoc/>
+    public IRType Visit(ITypeInferenceContext context, Reshape target)
+    {
+        var input = context.CheckArgumentType<TensorType>(target, Reshape.Input);
+        return Visit(context, target, input);
+    }
+
+    private IRType Visit(ITypeInferenceContext context, Reshape target, TensorType input)
+    {
+        if (context.GetArgument(target, Reshape.Shape) is Const shape_con)
         {
-            var input = context.GetTorchArgument(reshape, Reshape.Input);
-            var shape = context.GetArgumentConst(reshape, Reshape.Shape).ToArray<long>();
-            return input.reshape(shape).ToConst();
+            return input with { Shape = new Shape(shape_con.ToTensor<int>()) };
         }
+
+        return input with { Shape = Shape.Unranked };
     }
 }

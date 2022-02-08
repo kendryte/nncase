@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Nncase.Hosting;
 
 namespace Nncase.Cli
 {
@@ -38,7 +39,11 @@ namespace Nncase.Cli
 
         private static void ConfigureContainer(ContainerBuilder builder)
         {
-            var assemblies = LoadApplicationParts();
+            var assemblies = ApplicationParts.LoadApplicationParts(c =>
+            {
+                c.AddCore()
+                .AddEvaluator();
+            });
             builder.RegisterAssemblyModules(assemblies);
         }
 

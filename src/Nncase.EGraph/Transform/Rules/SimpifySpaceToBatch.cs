@@ -8,6 +8,7 @@ using Nncase.Pattern;
 using Nncase.Pattern.Math;
 using static Nncase.Pattern.Utility;
 using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.NN;
 using static Nncase.Pattern.F.Tensors;
 using Nncase.Pattern.Tensors;
 using System.Numerics.Tensors;

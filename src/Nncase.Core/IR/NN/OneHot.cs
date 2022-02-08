@@ -39,18 +39,4 @@ public sealed record OneHot(OneHotMode OneHotMode) : Op
     /// Gets axis.
     /// </summary>
     public static readonly ParameterInfo Axis = new(typeof(OneHot), 4, "axis");
-
-    /// <inheritdoc/>
-    public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType indices, TensorType depth, TensorType on_value, TensorType off_value, TensorType axis)
-    {
-        // indices_shape[:axis] + [depth] + indices_shape[axis:]
-        if (context.GetArgument(this, Axis) is Const axisValue
-            && context.GetArgument(this, Depth) is Const depthValue)
-        {
-            var newShape = indices.Shape.InsertAndClone(axisValue.ToScalar<int>(), depthValue.ToScalar<int>());
-            return new TensorType(on_value.DType, newShape);
-        }
-
-        return new InvalidType("OneHot axis or depth is not const");
-    }
 }

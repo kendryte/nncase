@@ -24,7 +24,7 @@ namespace Nncase.Importer
                 : Const.FromSpan<long>(GetIntsAttribute(op, "kernel_shape"));
             var pads = GetPadsAttribute(op);
             var strides = GetStrideAttribute(op);
-            return F.Tensors.ReduceWindow2D(reduceOp, input, initValue,
+            return F.NN.ReduceWindow2D(reduceOp, input, initValue,
                 kernelShape,
                 strides,
                 pads,

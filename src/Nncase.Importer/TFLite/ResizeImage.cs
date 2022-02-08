@@ -18,7 +18,7 @@ namespace Nncase.Importer.TFLite
             var (input, newSize) = GetInputExprs(op, 0, 1);
             var (alignCorners, halfPixelCenters) = GetResizeOptions(op);
             return F.Tensors.NCHWToNHWC(
-                F.Tensors.ResizeImage(
+                F.Imaging.ResizeImage(
                     resizeMode, F.Tensors.NHWCToNCHW(input), newSize, alignCorners, halfPixelCenters));
         }
 

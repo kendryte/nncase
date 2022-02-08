@@ -35,7 +35,7 @@ namespace Nncase.Tests.Evaluator
             var a = (Const)7f;
             var tA = tensor(7f);
             var expr = -a;
-            TypeInference.InferenceType(expr);
+            CompilerServices.InferenceType(expr);
             Assert.Equal(
                 -tA,
                 expr.Eval());
@@ -50,7 +50,7 @@ namespace Nncase.Tests.Evaluator
             var a = (Const)1f;
             var b = (Const)2f;
             var expr = a * b + a;
-            TypeInference.InferenceType(expr);
+            CompilerServices.InferenceType(expr);
             Assert.Equal(
                 tA * tB + tA,
                 expr.Eval());
@@ -63,7 +63,7 @@ namespace Nncase.Tests.Evaluator
             var b = Const.FromSpan<int>(new int[12], new Shape(new[] { 1, 3, 4 }));
             var inputList = new Tuple(a, b);
             var expr = Tensors.Concat(inputList, 0);
-            TypeInference.InferenceType(expr);
+            CompilerServices.InferenceType(expr);
 
             var tA = a.ToTorchTensor();
             var tB = b.ToTorchTensor();
@@ -98,8 +98,8 @@ namespace Nncase.Tests.Evaluator
             var input = tinput.ToConst();
             var pads = Const.FromSpan<int>(new[] { 1, 1, 2, 2 }, new Shape(new[] { 2, 2 }));
             var value = Const.FromScalar<float>(1.0f);
-            var expr = Tensors.Pad(input, pads, Nncase.PadMode.Constant, value);
-            TypeInference.InferenceType(expr);
+            var expr = NN.Pad(input, pads, Nncase.PadMode.Constant, value);
+            CompilerServices.InferenceType(expr);
             var result = expr.Eval();
             Assert.Equal(torchF.pad(tinput, new long[] { 2, 2, 1, 1 }, PaddingModes.Constant, 1.0f), result);
         }
@@ -111,8 +111,8 @@ namespace Nncase.Tests.Evaluator
             var input = tinput.ToConst();
             var pads = Const.FromSpan<int>(new[] { 1, 2, 2, 4, 5, 6 }, new Shape(new[] { 3, 2 }));
             var value = Const.FromScalar<float>(2.0f);
-            var expr = Tensors.Pad(input, pads, Nncase.PadMode.Constant, value);
-            TypeInference.InferenceType(expr);
+            var expr = NN.Pad(input, pads, Nncase.PadMode.Constant, value);
+            CompilerServices.InferenceType(expr);
             var result = expr.Eval();
             Assert.Equal(torchF.pad(tinput, new long[] { 5, 6, 2, 4, 1, 2 }, PaddingModes.Constant, 2.0f), result);
         }
@@ -128,7 +128,7 @@ namespace Nncase.Tests.Evaluator
             var expr = Tensors.Stack(new Tuple(
               Tensors.Concat(new Tuple(padh_before, padh_after), 0),
               Tensors.Concat(new Tuple(padw_before, padw_after), 0)), 0);
-            TypeInference.InferenceType(expr);
+            CompilerServices.InferenceType(expr);
             var result = expr.Eval();
             Assert.Equal(torch.tensor(new[] { 1, 2, 3, 4 }, new long[] { 2, 2 }), result);
         }
@@ -170,7 +170,7 @@ namespace Nncase.Tests.Evaluator
         public void TestSize()
         {
             var input = torch.rand(1, 3, 224, 224).ToConst();
-            var size = Tensors.Size(input);
+            var size = Tensors.SizeOf(input);
             size.InferenceType();
             Assert.Equal(1 * 3 * 224 * 224, size.Eval().ToConst().ToScalar<int>());
         }

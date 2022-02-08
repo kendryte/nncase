@@ -39,6 +39,7 @@ namespace Nncase.Evaluator.Ops
             {
                 throw new NotImplementedException();
             }
+
             var target = (Op)expr.Target;
             return GetEvaluator(target).Visit(_context, target);
         }
@@ -70,6 +71,7 @@ namespace Nncase.Evaluator.Ops
             {
                 throw new InvalidProgramException($"Must Set Input For Var {expr.Name}!");
             }
+
             if (result is null)
                 throw new InvalidProgramException($"Must Set Input For Var {expr.Name}!");
             if (result.ValueType != expr.CheckedType)
@@ -77,6 +79,7 @@ namespace Nncase.Evaluator.Ops
                 throw new InvalidProgramException(
                   $"The Var {expr.Name} Require {expr.CheckedType} But Give {result.CheckedType}");
             }
+
             return result;
         }
     }

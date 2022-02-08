@@ -19,7 +19,7 @@ namespace Nncase.Importer
         // todo:default is error
         private Expr SqueezeAxes(Expr input)
         {
-            return ReduceArg(ReduceArgOp.ArgMin, ShapeOp(input), 0, true, false);
+            return ReduceArg(ReduceArgOp.ArgMin, ShapeOf(input), 0, true, false);
         }
     }
 }

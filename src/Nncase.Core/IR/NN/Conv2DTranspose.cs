@@ -55,19 +55,5 @@ namespace Nncase.IR.NN
         /// Gets Groups.
         /// </summary>
         public static readonly ParameterInfo Groups = new(typeof(Conv2DTranspose), 7, "groups");
-
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType weights, TensorType bias,
-            TensorType outShape, TensorType stride, TensorType padding, TensorType dilation, TensorType groups)
-        {
-            if (context.GetArgument(this, OutputShape) is Const outShapeValue)
-            {
-                return new TensorType(input.DType, new Shape(outShapeValue.ToTensor<int>()));
-            }
-            else
-            {
-                return new InvalidType("Conv2dTranspose can't infer shape with dynamic outputShape");
-            }
-        }
     }
 }

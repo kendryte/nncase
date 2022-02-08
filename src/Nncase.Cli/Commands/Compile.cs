@@ -56,7 +56,7 @@ namespace Nncase.Cli.Commands
             Console.WriteLine($"Target: {options.Target}");
             var module = ImportModel(content, options);
             DumpModule(module, options, "ir_import");
-            if (!TypeInference.InferenceType(module.Entry))
+            if (!CompilerServices.InferenceType(module.Entry))
             {
                 InferShape(module, options);
             }

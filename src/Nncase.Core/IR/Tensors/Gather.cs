@@ -9,44 +9,25 @@ using System.Text;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 
-namespace Nncase.IR.Tensors
+namespace Nncase.IR.Tensors;
+
+/// <summary>
+/// Gather expression.
+/// </summary>
+public sealed record Gather() : Op
 {
     /// <summary>
-    /// Gather expression.
+    /// Gets input.
     /// </summary>
-    public sealed record Gather() : Op
-    {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Gather), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Gather), 0, "input");
 
-        /// <summary>
-        /// Gets axis.
-        /// </summary>
-        public static readonly ParameterInfo Axis = new(typeof(Gather), 1, "axis");
+    /// <summary>
+    /// Gets axis.
+    /// </summary>
+    public static readonly ParameterInfo Axis = new(typeof(Gather), 1, "axis");
 
-        /// <summary>
-        /// Gets index.
-        /// </summary>
-        public static readonly ParameterInfo Index = new(typeof(Gather), 2, "index");
-
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType axis, TensorType index)
-        {
-            if (context.GetArgument(this, Axis) is Const axisValue)
-            {
-                var axisV = axisValue.ToScalar<int>();
-                axisV = axisV < 0 ? axisV + input.Shape.Rank : axisV;
-
-                // input_shape[:axis] + index_shape + input_shape[axis + 1:]
-                var newShape = input.Shape.InsertAndClone(axisV, index.Shape);
-                return new TensorType(input.DType, newShape);
-            }
-            else
-            {
-                return new InvalidType("Gather axis must be constant");
-            }
-        }
-    }
+    /// <summary>
+    /// Gets index.
+    /// </summary>
+    public static readonly ParameterInfo Index = new(typeof(Gather), 2, "index");
 }

@@ -27,7 +27,7 @@ namespace Nncase.Tests
             // var a = (Const)1;
             // var n = (Const)5;
             // var pow = Math.Pow(a, n);
-            // TypeInference.InferenceType(pow);
+            // CompilerServices.InferenceType(pow);
             // var exprVisitor = new ExprCostModelVisitor();
             // Assert.Equal(new Cost(5, 0), exprVisitor.Visit(pow));
         }

@@ -24,6 +24,8 @@ namespace Nncase.IR.F
 
         public static Call Elu(Expr input, Expr alpha) => new Call(new Elu(), input, alpha);
 
+        public static Call Hardmax(Expr input, Expr axis) => new Call(new Hardmax(), input, axis);
+
         public static Call LeakyRelu(Expr input) => new Call(new LeakyRelu(), input);
 
         public static Call L2Normalization(Expr input) => new Call(new L2Normalization(), input);
@@ -31,6 +33,8 @@ namespace Nncase.IR.F
         public static Call BatchNormalization(Expr input, Expr scale, Expr bias,
             Expr input_mean, Expr input_var, Expr epsilon, Expr momentum) => new Call(
             new BatchNormalization(), input, scale, bias, input_mean, input_var, epsilon, momentum);
+
+        public static Call BatchToSpace(Expr input, Expr blockShape, Expr crops) => new Call(new BatchToSpace(), input, blockShape, crops);
 
         public static Call InstanceNormalization(Expr input, Expr eps) => new Call(new InstanceNormalization(), input, eps);
 
@@ -42,6 +46,16 @@ namespace Nncase.IR.F
 
         public static Call HardSwish(Expr input) => new Call(new HardSwish(), input);
 
+        public static Call OneHot(OneHotMode oneHotMode, Expr indices, Expr depth, Expr onValue, Expr offValue, Expr axis) => new Call(new OneHot(oneHotMode), indices, depth, onValue, offValue, axis);
+
+        /// <summary>
+        /// Pads is Const tensor, shape = [channels, 2(before, after)].
+        /// </summary>
+        public static Call Pad(Expr input, Expr pads, PadMode mode, Expr value) => new Call(new Pad(mode), input, pads, value);
+
+        public static Call ReduceWindow2D(ReduceOp reduceOp, Expr input, Expr initValue, Expr filter, Expr stride, Expr padding, Expr ceilMode, Expr countIncludePad) =>
+            new Call(new ReduceWindow2D(reduceOp), input, initValue, filter, stride, padding, ceilMode, countIncludePad);
+
         public static Call Relu(Expr input) => new Call(new Relu(), input);
 
         public static Call Relu6(Expr input) => new Call(new Relu6(), input);
@@ -52,12 +66,15 @@ namespace Nncase.IR.F
 
         public static Call Sigmoid(Expr expr) => new Call(new Sigmoid(), expr);
 
-        public static Call SoftMax(Expr expr, Expr axis) => new Call(new Softmax(), expr, axis);
+        public static Call Softmax(Expr expr, Expr axis) => new Call(new Softmax(), expr, axis);
 
-        public static Call SoftPlus(Expr expr) => new Call(new Softplus(), expr);
+        public static Call Softplus(Expr expr) => new Call(new Softplus(), expr);
 
-        public static Call SoftSign(Expr expr) => new Call(new Softsign(), expr);
+        public static Call Softsign(Expr expr) => new Call(new Softsign(), expr);
 
-        public static Call LogSoftMax(Expr expr, Expr axis) => new Call(new LogSoftmax(), expr, axis);
+        // same like tensorflow
+        public static Call SpaceToBatch(Expr input, Expr blockShape, Expr paddings) => new Call(new SpaceToBatch(), input, blockShape, paddings);
+
+        public static Call LogSoftmax(Expr expr, Expr axis) => new Call(new LogSoftmax(), expr, axis);
     }
 }

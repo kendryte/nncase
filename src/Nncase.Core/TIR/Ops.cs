@@ -9,77 +9,57 @@ using System.Threading.Tasks;
 using Nncase.IR;
 using static Nncase.IR.Utility;
 
-namespace Nncase.TIR
+namespace Nncase.TIR;
+
+/// <summary>
+/// <see cref="T.Load(Var, Expr)"/>.
+/// </summary>
+public record Load() : Op
 {
     /// <summary>
-    /// <see cref="T.Load(Var, Expr)"/>.
+    /// Gets handle.
     /// </summary>
-    public record Load() : Op
-    {
-        public static readonly ParameterInfo Handle = new(typeof(Load), 0, "handle");
-
-        public static readonly ParameterInfo Index = new(typeof(Load), 1, "index", IsIntegral(DataType.Int32) & (IsScalar() | HasRank(1)));
-
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, HandleType handle, TensorType index)
-        {
-            int lanes = index.IsScalar ? 1 : index.Shape[0].FixedValue;
-            return new TensorType(handle.DType with { Lanes = lanes }, Shape.Scalar);
-        }
-    }
+    public static readonly ParameterInfo Handle = new(typeof(Load), 0, "handle");
 
     /// <summary>
-    /// <see cref="T.Ramp(Expr, Expr, int)"/>.
+    /// Gets index.
     /// </summary>
-    public record Ramp(int Lanes) : Op
-    {
-        public static readonly ParameterInfo Offset = new(typeof(Ramp), 0, "offset", IsIntegral(DataType.Int32) & IsScalar());
+    public static readonly ParameterInfo Index = new(typeof(Load), 1, "index", IsIntegral(DataType.Int32) & (IsScalar() | HasRank(1)));
+}
 
-        public static readonly ParameterInfo Stride = new(typeof(Ramp), 1, "stride", IsIntegral(DataType.Int32) & IsScalar());
-
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType offset, TensorType stride)
-        {
-            // TODO maybe need simpify when the Lanes==1.
-            return new TensorType(DataType.Int32, new Shape(Lanes));
-        }
-    }
+/// <summary>
+/// <see cref="T.Ramp(Expr, Expr, int)"/>.
+/// </summary>
+public record Ramp(int Lanes) : Op
+{
+    /// <summary>
+    /// Gets offset.
+    /// </summary>
+    public static readonly ParameterInfo Offset = new(typeof(Ramp), 0, "offset", IsIntegral(DataType.Int32) & IsScalar());
 
     /// <summary>
-    /// Store, return unit.
+    /// Gets stride.
     /// </summary>
-    public sealed record Store() : Op
-    {
-        /// <summary>
-        /// The buffer variable handle.
-        /// </summary>
-        public static readonly ParameterInfo Handle = new(typeof(Store), 0, "handle");
+    public static readonly ParameterInfo Stride = new(typeof(Ramp), 1, "stride", IsIntegral(DataType.Int32) & IsScalar());
+}
 
-        /// <summary>
-        /// The index locations to be stored.
-        /// </summary>
-        public static readonly ParameterInfo Index = new(typeof(Store), 1, "index", IsIntegral(DataType.Int32));
+/// <summary>
+/// Store, return unit.
+/// </summary>
+public sealed record Store() : Op
+{
+    /// <summary>
+    /// The buffer variable handle.
+    /// </summary>
+    public static readonly ParameterInfo Handle = new(typeof(Store), 0, "handle");
 
-        /// <summary>
-        /// The value to be stored.
-        /// </summary>
-        public static readonly ParameterInfo Value = new(typeof(Store), 2, "value");
+    /// <summary>
+    /// The index locations to be stored.
+    /// </summary>
+    public static readonly ParameterInfo Index = new(typeof(Store), 1, "index", IsIntegral(DataType.Int32));
 
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, HandleType handle, TensorType index, TensorType value)
-        {
-            var lanes = index.IsScalar ? 1 : index.Shape[0].FixedValue;
-            if (handle.DType != value.DType)
-            {
-                return new InvalidType($"You Can't Load The {value.DType} To {handle.DType}");
-            }
-
-            if (value.DType.Lanes != lanes)
-            {
-                return new InvalidType($"You're Index Lanes {lanes} Is Not Equal Value Lanes {handle.DType.Lanes}");
-            }
-
-            return TupleType.Void;
-        }
-    }
+    /// <summary>
+    /// The value to be stored.
+    /// </summary>
+    public static readonly ParameterInfo Value = new(typeof(Store), 2, "value");
 }

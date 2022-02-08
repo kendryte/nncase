@@ -8,22 +8,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nncase.IR.Tensors
+namespace Nncase.IR.Tensors;
+
+/// <summary>
+/// Cast expression.
+/// </summary>
+public sealed record Cast(DataType NewType) : Op
 {
     /// <summary>
-    /// Cast expression.
+    /// Gets input.
     /// </summary>
-    public sealed record Cast(DataType NewType) : Op
-    {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Cast), 0, "input");
-
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input)
-        {
-            return new TensorType(NewType, input.Shape);
-        }
-    }
+    public static readonly ParameterInfo Input = new(typeof(Cast), 0, "input");
 }

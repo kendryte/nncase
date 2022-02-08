@@ -15,6 +15,8 @@ using static Nncase.Pattern.F.Tensors;
 using static Nncase.Pattern.Utility;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.NN;
+using static Nncase.IR.F.Imaging;
 
 namespace Nncase.Transform.Rule
 {
