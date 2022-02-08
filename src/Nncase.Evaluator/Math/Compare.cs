@@ -14,7 +14,7 @@ namespace Nncase.Evaluator.Math;
 public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>
 {
     /// <inheritdoc />
-    public Const Visit(EvaluatorContext context, Compare target)
+    public Const Visit(IEvaluateContext context, Compare target)
     {
         throw new NotImplementedException();
     }

@@ -18,10 +18,10 @@ public interface IEvaluator
     /// <summary>
     /// Evaluate op.
     /// </summary>
-    /// <param name="ctx">Context.</param>
+    /// <param name="context">Context.</param>
     /// <param name="target">Target operator.</param>
     /// <returns>Result.</returns>
-    Const Visit(EvaluatorContext ctx, Op target);
+    Const Visit(IEvaluateContext context, Op target);
 }
 
 /// <summary>
@@ -33,13 +33,13 @@ public interface IEvaluator<T> : IEvaluator
     /// <summary>
     /// Evaluate op.
     /// </summary>
-    /// <param name="ctx">Context.</param>
+    /// <param name="context">Context.</param>
     /// <param name="target">Target operator.</param>
     /// <returns>Result.</returns>
-    Const Visit(EvaluatorContext ctx, T target);
+    Const Visit(IEvaluateContext context, T target);
 
-    Const IEvaluator.Visit(EvaluatorContext ctx, Op target)
+    Const IEvaluator.Visit(IEvaluateContext context, Op target)
     {
-        return Visit(ctx, (T)target);
+        return Visit(context, (T)target);
     }
 }

@@ -18,7 +18,7 @@ namespace Nncase.Evaluator.Imaging;
 public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<ResizeImage>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, ResizeImage target)
+    public Const Visit(IEvaluateContext context, ResizeImage target)
     {
         throw new NotImplementedException();
     }

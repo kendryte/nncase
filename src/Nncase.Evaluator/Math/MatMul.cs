@@ -14,10 +14,10 @@ namespace Nncase.Evaluator.Math;
 public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, MatMul matMul)
+    public Const Visit(IEvaluateContext context, MatMul matMul)
     {
-        var input = context.GetTorchArgument(matMul, MatMul.Lhs);
-        var other = context.GetTorchArgument(matMul, MatMul.Rhs);
+        var input = context.GetTorchArgumentValue(matMul, MatMul.Lhs);
+        var other = context.GetTorchArgumentValue(matMul, MatMul.Rhs);
         return input.matmul(other).ToConst();
     }
 

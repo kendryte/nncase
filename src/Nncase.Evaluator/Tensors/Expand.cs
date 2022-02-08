@@ -18,15 +18,15 @@ namespace Nncase.Evaluator.Tensors;
 public class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Expand expand)
+    public Const Visit(IEvaluateContext context, Expand expand)
     {
-        var input = context.GetTorchArgument(expand, Expand.Input);
+        var input = context.GetTorchArgumentValue(expand, Expand.Input);
         if (input.shape.Length == 0)
         {
             input = input.reshape(1L);
         }
 
-        var shape = context.GetArgumentConst(expand, Expand.Shape).ToArray<long>();
+        var shape = context.GetArgumentValue(expand, Expand.Shape).ToArray<long>();
 
         // When the value of onnx is 1, the value of torch is -1
         var torchShape = shape.Select(x => x == 1 ? -1 : x).ToArray();

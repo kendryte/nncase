@@ -10,7 +10,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nncase.Evaluator;
-using Nncase.Evaluator.Ops;
 using Nncase.Hosting;
 using Nncase.IR;
 using Nncase.Transform;

@@ -38,7 +38,7 @@ namespace Nncase.Tests.Evaluator
             CompilerServices.InferenceType(expr);
             Assert.Equal(
                 -tA,
-                expr.Eval());
+                expr.Evaluate().ToTorchTensor());
         }
 
         [Fact]
@@ -53,7 +53,7 @@ namespace Nncase.Tests.Evaluator
             CompilerServices.InferenceType(expr);
             Assert.Equal(
                 tA * tB + tA,
-                expr.Eval());
+                expr.Evaluate().ToTorchTensor());
         }
 
         [Fact]
@@ -70,7 +70,7 @@ namespace Nncase.Tests.Evaluator
 
             Assert.Equal(
                 torch.cat(new[] { tA, tB }, 0),
-                expr.Eval());
+                expr.Evaluate().ToTorchTensor());
         }
 
         [Fact]
@@ -87,7 +87,7 @@ namespace Nncase.Tests.Evaluator
             Assert.True(expr.InferenceType());
             Assert.Equal(
                 tResult,
-                expr.Eval()
+                expr.Evaluate().ToTorchTensor()
                 );
         }
 
@@ -100,7 +100,7 @@ namespace Nncase.Tests.Evaluator
             var value = Const.FromScalar<float>(1.0f);
             var expr = NN.Pad(input, pads, Nncase.PadMode.Constant, value);
             CompilerServices.InferenceType(expr);
-            var result = expr.Eval();
+            var result = expr.Evaluate().ToTorchTensor();
             Assert.Equal(torchF.pad(tinput, new long[] { 2, 2, 1, 1 }, PaddingModes.Constant, 1.0f), result);
         }
 
@@ -113,7 +113,7 @@ namespace Nncase.Tests.Evaluator
             var value = Const.FromScalar<float>(2.0f);
             var expr = NN.Pad(input, pads, Nncase.PadMode.Constant, value);
             CompilerServices.InferenceType(expr);
-            var result = expr.Eval();
+            var result = expr.Evaluate().ToTorchTensor();
             Assert.Equal(torchF.pad(tinput, new long[] { 5, 6, 2, 4, 1, 2 }, PaddingModes.Constant, 2.0f), result);
         }
 
@@ -129,7 +129,7 @@ namespace Nncase.Tests.Evaluator
               Tensors.Concat(new Tuple(padh_before, padh_after), 0),
               Tensors.Concat(new Tuple(padw_before, padw_after), 0)), 0);
             CompilerServices.InferenceType(expr);
-            var result = expr.Eval();
+            var result = expr.Evaluate().ToTorchTensor();
             Assert.Equal(torch.tensor(new[] { 1, 2, 3, 4 }, new long[] { 2, 2 }), result);
         }
 
@@ -145,7 +145,7 @@ namespace Nncase.Tests.Evaluator
                 stride: new[] { 1, 1 }, padding: Const.FromSpan<int>(new int[] { 1, 1, 1, 1 }, new[] { 2, 2 }),
                 dilation: new[] { 1, 1 }, Nncase.PadMode.Constant, 1);
             Assert.True(expr.InferenceType());
-            Assert.Equal(output, expr.Eval());
+            Assert.Equal(output, expr.Evaluate().ToTorchTensor());
         }
 
         [Fact]
@@ -154,7 +154,7 @@ namespace Nncase.Tests.Evaluator
             var input = torch.rand(1, 28, 28, 3).ToConst();
             var conv1 = Tensors.NCHWToNHWC(ReWriteTest.DummyOp.Conv2D(Tensors.NHWCToNCHW(input), 3, out_channels: 8, 3, 2));
             Assert.True(conv1.InferenceType());
-            Assert.Equal(new long[] { 1, 14, 14, 8 }, conv1.Eval().shape);
+            Assert.Equal(new long[] { 1, 14, 14, 8 }, conv1.Evaluate().ToTorchTensor().shape);
         }
 
         [Fact]
@@ -163,7 +163,7 @@ namespace Nncase.Tests.Evaluator
             var input = Const.FromSpan<int>(new[] { 1, 2, 3, 4 });
             var prod = Tensors.Prod(input);
             prod.InferenceType();
-            Assert.Equal(1 * 2 * 3 * 4, prod.Eval().ToConst().ToScalar<int>());
+            Assert.Equal(1 * 2 * 3 * 4, prod.Evaluate().ToScalar<int>());
         }
 
         [Fact]
@@ -172,7 +172,7 @@ namespace Nncase.Tests.Evaluator
             var input = torch.rand(1, 3, 224, 224).ToConst();
             var size = Tensors.SizeOf(input);
             size.InferenceType();
-            Assert.Equal(1 * 3 * 224 * 224, size.Eval().ToConst().ToScalar<int>());
+            Assert.Equal(1 * 3 * 224 * 224, size.Evaluate().ToScalar<int>());
         }
     }
 }

@@ -15,11 +15,11 @@ namespace Nncase.Evaluator.Tensors;
 public class GatherNDEvaluator : IEvaluator<GatherND>, ITypeInferencer<GatherND>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, GatherND gatherND)
+    public Const Visit(IEvaluateContext context, GatherND gatherND)
     {
-        var input = context.GetTFArgument(gatherND, GatherND.Input);
-        var indices = context.GetTFArgument(gatherND, GatherND.Index);
-        var batchDims = context.GetTFArgument(gatherND, GatherND.BatchDims);
+        var input = context.GetTFArgumentValue(gatherND, GatherND.Input);
+        var indices = context.GetTFArgumentValue(gatherND, GatherND.Index);
+        var batchDims = context.GetTFArgumentValue(gatherND, GatherND.BatchDims);
         return GatherNDImpl(input, indices, batchDims).ToConst();
     }
 

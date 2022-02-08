@@ -138,7 +138,7 @@ namespace Nncase.Tests.ReWriteTest
             var pre = lhs.ToConst() + rhs.ToConst();
             Assert.True(CompilerServices.InferenceType(pre));
             var post = ApplyFoldConstCallRewrite(pre);
-            Assert.Equal(lhs + rhs, post.Eval());
+            Assert.Equal(lhs + rhs, post.Evaluate().ToTorchTensor());
         }
 
         [Fact]
@@ -151,7 +151,7 @@ namespace Nncase.Tests.ReWriteTest
             Assert.True(CompilerServices.InferenceType(pre));
             var post = ApplyFoldConstCallRewrite(pre);
             Assert.IsType<Const>(post);
-            Assert.Equal(torch.cat(new[] { lhs, rhs }, 1), post.Eval());
+            Assert.Equal(torch.cat(new[] { lhs, rhs }, 1), post.Evaluate().ToTorchTensor());
         }
 
         [Fact]
@@ -345,12 +345,12 @@ namespace Nncase.Tests.ReWriteTest
             Assert.Equal(new[] { 3, 1, 1 }, afterShape);
             var b = Reshape(v, afterShape);
             b.InferenceType();
-            Assert.Equal(new[] { 3, 1, 1 }, b.Eval().ToConst().CheckedShape.ToValueList());
+            Assert.Equal(new[] { 3, 1, 1 }, b.Evaluate().CheckedShape.ToValueList());
 
             var a = OnnxImporter.ReshapeToByChannel(v);
             var after = RunShapeInferPass("ReshapeToByChannel", a);
             Assert.True(after.InferenceType());
-            Assert.Equal(new[] { 3L, 1, 1 }, after.Eval().shape);
+            Assert.Equal(new[] { 3L, 1, 1 }, after.Evaluate().ToTorchTensor().shape);
         }
     }
 }

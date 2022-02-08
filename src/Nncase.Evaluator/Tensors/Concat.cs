@@ -18,11 +18,11 @@ namespace Nncase.Evaluator.Tensors;
 public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Concat cat)
+    public Const Visit(IEvaluateContext context, Concat cat)
     {
         var inputs = context.GetArgumentExpr(cat, Concat.Input);
-        var axis = context.GetArgumentConst(cat, Concat.Axis).ToScalar<int>();
-        var inputTensors = ((IR.Tuple)inputs).Select(x => ExpandDim(context.GetTorchArgument(x))).ToArray();
+        var axis = context.GetArgumentValue(cat, Concat.Axis).ToScalar<int>();
+        var inputTensors = ((IR.Tuple)inputs).Select(x => ExpandDim(context.GetTorchValue(x))).ToArray();
         return torch.cat(inputTensors, axis).ToConst();
     }
 

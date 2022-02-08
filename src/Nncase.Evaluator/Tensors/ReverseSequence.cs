@@ -15,12 +15,12 @@ namespace Nncase.Evaluator.Tensors;
 public class ReverseSequenceEvaluator : IEvaluator<ReverseSequence>, ITypeInferencer<ReverseSequence>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, ReverseSequence random)
+    public Const Visit(IEvaluateContext context, ReverseSequence random)
     {
-        var input = context.GetTFArgument(random, ReverseSequence.Input);
-        var seqLens = context.GetTFArgument(random, ReverseSequence.SeqLens);
-        var batchAxis = context.GetArgumentConstScalar<int>(random, ReverseSequence.BatchAxis);
-        var timeAxis = context.GetArgumentConstScalar<int>(random, ReverseSequence.TimeAxis);
+        var input = context.GetTFArgumentValue(random, ReverseSequence.Input);
+        var seqLens = context.GetTFArgumentValue(random, ReverseSequence.SeqLens);
+        var batchAxis = context.GetArgumentValueAsScalar<int>(random, ReverseSequence.BatchAxis);
+        var timeAxis = context.GetArgumentValueAsScalar<int>(random, ReverseSequence.TimeAxis);
         return tf.Context.ExecuteOp(
             "ReverseSequence",
             null!,

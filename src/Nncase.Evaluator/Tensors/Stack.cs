@@ -19,11 +19,11 @@ namespace Nncase.Evaluator.Tensors;
 public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Stack stack)
+    public Const Visit(IEvaluateContext context, Stack stack)
     {
         var inputs = context.GetArgumentExpr(stack, Stack.Inputs);
-        var axis = context.GetTorchArgument(stack, Stack.Axis);
-        var inputTensors = ((IR.Tuple)inputs).Select(x => context.GetTorchArgument(x)).ToArray();
+        var axis = context.GetTorchArgumentValue(stack, Stack.Axis);
+        var inputTensors = ((IR.Tuple)inputs).Select(x => context.GetTorchValue(x)).ToArray();
         return torch.stack(inputTensors, axis.ToScalar().ToInt64()).ToConst();
     }
 

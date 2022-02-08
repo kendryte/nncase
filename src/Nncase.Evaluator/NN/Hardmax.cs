@@ -16,7 +16,7 @@ namespace Nncase.Evaluator.NN;
 public class HardmaxEvaluator : IEvaluator<Hardmax>, ITypeInferencer<Hardmax>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Hardmax target)
+    public Const Visit(IEvaluateContext context, Hardmax target)
     {
         // TODO: implement hardmax evaluator
         throw new NotImplementedException();

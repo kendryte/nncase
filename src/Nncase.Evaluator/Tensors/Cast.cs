@@ -13,9 +13,9 @@ namespace Nncase.Evaluator.Tensors;
 public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Cast cast)
+    public Const Visit(IEvaluateContext context, Cast cast)
     {
-        var input = context.GetTorchArgument(cast, Cast.Input);
+        var input = context.GetTorchArgumentValue(cast, Cast.Input);
         return input.to_type(cast.NewType.ToTorchType()).ToConst();
     }
 

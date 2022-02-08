@@ -27,8 +27,7 @@ namespace Nncase.Transform.Rule
         public override Expr? GetRePlace(IMatchResult result)
         {
             var expr = result[Pattern];
-            var tensor = expr.Eval();
-            return tensor.ToConst(expr.CheckedShape);
+            return expr.Evaluate();
         }
     }
 
@@ -39,7 +38,7 @@ namespace Nncase.Transform.Rule
             Pattern = IsFunction(IsWildCard(), IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())));
         }
 
-        public override Expr? GetRePlace(IMatchResult result) => result[Pattern].Eval().ToConst();
+        public override Expr? GetRePlace(IMatchResult result) => result[Pattern].Evaluate();
     }
 
     public class FoldShapeOp : PatternRule

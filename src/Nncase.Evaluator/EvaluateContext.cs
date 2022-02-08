@@ -12,11 +12,17 @@ namespace Nncase.Evaluator;
 /// <summary>
 /// Evaluator context.
 /// </summary>
-public sealed class EvaluatorContext
+internal sealed class EvaluateContext : IEvaluateContext
 {
     private readonly Dictionary<Expr, Const> _exprMemo;
-    public readonly Dictionary<Var, Const> Inputs;
+    private readonly IReadOnlyDictionary<Var, Const> _varsValues;
     private Call? _currentCall;
+
+    public EvaluateContext(Dictionary<Expr, Const> exprMemo, IReadOnlyDictionary<Var, Const> varsValues)
+    {
+        _exprMemo = exprMemo;
+        _varsValues = varsValues;
+    }
 
     public Call CurrentCall
     {
@@ -24,28 +30,7 @@ public sealed class EvaluatorContext
         set => _currentCall = value;
     }
 
-    public EvaluatorContext(Dictionary<Expr, Const> exprMemo, Dictionary<Var, Const> inputs)
-    {
-        _exprMemo = exprMemo;
-        Inputs = inputs;
-    }
-
-    public torch.Tensor GetTorchArgument(Op op, ParameterInfo parameter)
-    {
-        return GetArgumentConst(op, parameter).ToTorchTensor();
-    }
-
-    public torch.Tensor GetTorchArgument(Expr expr)
-    {
-        return GetArgument(expr).ToTorchTensor();
-    }
-
-    public Tensorflow.Tensor GetTFArgument(Op op, ParameterInfo parameter)
-    {
-        return GetArgumentConst(op, parameter).ToTFTensor();
-    }
-
-    public Const GetArgument(Expr expr)
+    public Const GetValue(Expr expr)
     {
         return _exprMemo[expr];
     }
@@ -62,19 +47,19 @@ public sealed class EvaluatorContext
         }
     }
 
-    public T GetArgumentConstScalar<T>(Op op, ParameterInfo parameter)
+    public T GetArgumentValueAsScalar<T>(Op op, ParameterInfo parameter)
         where T : unmanaged
     {
-        return GetArgumentConst(op, parameter).ToScalar<T>();
+        return GetArgumentValue(op, parameter).ToScalar<T>();
     }
 
-    public T[] GetArgumentConstArray<T>(Op op, ParameterInfo parameter)
+    public T[] GetArgumentValueAsArray<T>(Op op, ParameterInfo parameter)
         where T : unmanaged
     {
-        return GetArgumentConst(op, parameter).ToArray<T>();
+        return GetArgumentValue(op, parameter).ToArray<T>();
     }
 
-    public Const GetArgumentConst(Op op, ParameterInfo parameter)
+    public Const GetArgumentValue(Op op, ParameterInfo parameter)
     {
         var expr = GetArgumentExpr(op, parameter);
         if (expr is Const constValue)
@@ -84,7 +69,7 @@ public sealed class EvaluatorContext
         else
         {
             // maybe a valid type but not const
-            return GetArgument(expr);
+            return GetValue(expr);
         }
     }
 
@@ -97,4 +82,25 @@ public sealed class EvaluatorContext
     }
 
     public TensorType CurrentCallResultTensorType() => GetTensorType(CurrentCall);
+}
+
+/// <summary>
+/// Evaluate context extensions.
+/// </summary>
+public static class EvaluateContextExtensions
+{
+    public static torch.Tensor GetTorchArgumentValue(this IEvaluateContext context, Op op, ParameterInfo parameter)
+    {
+        return context.GetArgumentValue(op, parameter).ToTorchTensor();
+    }
+
+    public static torch.Tensor GetTorchValue(this IEvaluateContext context, Expr expr)
+    {
+        return context.GetValue(expr).ToTorchTensor();
+    }
+
+    public static Tensorflow.Tensor GetTFArgumentValue(this IEvaluateContext context, Op op, ParameterInfo parameter)
+    {
+        return context.GetArgumentValue(op, parameter).ToTFTensor();
+    }
 }

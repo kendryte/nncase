@@ -17,10 +17,10 @@ namespace Nncase.Evaluator.Tensors;
 public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Reshape reshape)
+    public Const Visit(IEvaluateContext context, Reshape reshape)
     {
-        var input = context.GetTorchArgument(reshape, Reshape.Input);
-        var shape = context.GetArgumentConst(reshape, Reshape.Shape).ToArray<long>();
+        var input = context.GetTorchArgumentValue(reshape, Reshape.Input);
+        var shape = context.GetArgumentValue(reshape, Reshape.Shape).ToArray<long>();
         return input.reshape(shape).ToConst();
     }
 

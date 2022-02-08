@@ -19,15 +19,15 @@ namespace Nncase.Evaluator.NN;
 public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, OneHot oneHot)
+    public Const Visit(IEvaluateContext context, OneHot oneHot)
     {
-        var depth = context.GetArgumentConstScalar<int>(oneHot, OneHot.Depth);
-        var rawIndices = context.GetTFArgument(oneHot, OneHot.Indices);
+        var depth = context.GetArgumentValueAsScalar<int>(oneHot, OneHot.Depth);
+        var rawIndices = context.GetTFArgumentValue(oneHot, OneHot.Indices);
         var afterIndices = rawIndices.ToConst().ToArray<int>().Select(x => x < 0 ? x + depth : x).ToArray();
         var indices = new NDArray(afterIndices, rawIndices.shape);
-        var onValue = context.GetTFArgument(oneHot, OneHot.OnValue);
-        var offValue = context.GetTFArgument(oneHot, OneHot.OffValue);
-        var axis = context.GetArgumentConstScalar<int>(oneHot, OneHot.Axis);
+        var onValue = context.GetTFArgumentValue(oneHot, OneHot.OnValue);
+        var offValue = context.GetTFArgumentValue(oneHot, OneHot.OffValue);
+        var axis = context.GetArgumentValueAsScalar<int>(oneHot, OneHot.Axis);
         return TF_OneHot(
             indices,
             ops.convert_to_tensor(depth),

@@ -18,11 +18,11 @@ namespace Nncase.Evaluator.Math;
 public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Clamp clamp)
+    public Const Visit(IEvaluateContext context, Clamp clamp)
     {
-        var input = context.GetTorchArgument(clamp, Clamp.Input);
-        var min = context.GetArgumentConst(clamp, Clamp.Min).ToArray<float>();
-        var max = context.GetArgumentConst(clamp, Clamp.Max).ToArray<float>();
+        var input = context.GetTorchArgumentValue(clamp, Clamp.Input);
+        var min = context.GetArgumentValue(clamp, Clamp.Min).ToArray<float>();
+        var max = context.GetArgumentValue(clamp, Clamp.Max).ToArray<float>();
         return torch.clamp(input, min, max).ToConst();
     }
 

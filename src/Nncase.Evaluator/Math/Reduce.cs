@@ -18,11 +18,11 @@ namespace Nncase.Evaluator.Math;
 public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Reduce reduce)
+    public Const Visit(IEvaluateContext context, Reduce reduce)
     {
-        var input = context.GetTFArgument(reduce, Reduce.Input);
-        var axis = context.GetArgumentConstArray<long>(reduce, Reduce.Axis);
-        var keepDims = context.GetArgumentConstScalar<bool>(reduce, Reduce.KeepDims);
+        var input = context.GetTFArgumentValue(reduce, Reduce.Input);
+        var axis = context.GetArgumentValueAsArray<long>(reduce, Reduce.Axis);
+        var keepDims = context.GetArgumentValueAsScalar<bool>(reduce, Reduce.KeepDims);
 
         return (reduce.ReduceOp switch
         {

@@ -14,12 +14,12 @@ namespace Nncase.Evaluator.Random;
 public class UniformEvaluator : IEvaluator<Uniform>, ITypeInferencer<Uniform>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Uniform random)
+    public Const Visit(IEvaluateContext context, Uniform random)
     {
-        var shape = context.GetArgumentConst(random, Normal.Shape).ToArray<int>();
-        var mean = context.GetArgumentConstScalar<float>(random, Normal.Mean);
-        var scale = context.GetArgumentConstScalar<float>(random, Normal.Scale);
-        var seed = context.GetArgumentConstScalar<int>(random, Normal.Seed);
+        var shape = context.GetArgumentValue(random, Normal.Shape).ToArray<int>();
+        var mean = context.GetArgumentValueAsScalar<float>(random, Normal.Mean);
+        var scale = context.GetArgumentValueAsScalar<float>(random, Normal.Scale);
+        var seed = context.GetArgumentValueAsScalar<int>(random, Normal.Seed);
         return tf.random.normal(shape, mean, stddev: scale, seed: seed).ToConst();
     }
 

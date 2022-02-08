@@ -101,7 +101,7 @@ namespace Nncase.Transform
         public override Expr? GetRePlace(IMatchResult result)
         {
             var converter = new ExprGeneratorVisitor(result);
-            if (Predicate is null || (Predicate is not null && converter.Visit(Predicate).Eval().equal(torch.tensor(true)).ToBoolean()))
+            if (Predicate is null || (Predicate is not null && converter.Visit(Predicate).Evaluate().ToTorchTensor().equal(torch.tensor(true)).ToBoolean()))
             {
                 return converter.Visit(Rhs);
             }

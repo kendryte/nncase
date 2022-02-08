@@ -19,11 +19,11 @@ namespace Nncase.Evaluator.NN;
 public class BatchNormalizationEvaluator : IEvaluator<BatchNormalization>, ITypeInferencer<BatchNormalization>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, BatchNormalization batchNorm)
+    public Const Visit(IEvaluateContext context, BatchNormalization batchNorm)
     {
-        var input = context.GetTorchArgument(batchNorm, BatchNormalization.Input);
-        var eps = context.GetArgumentConst(batchNorm, BatchNormalization.Epsilon);
-        var mom = context.GetArgumentConst(batchNorm, BatchNormalization.Momentum);
+        var input = context.GetTorchArgumentValue(batchNorm, BatchNormalization.Input);
+        var eps = context.GetArgumentValue(batchNorm, BatchNormalization.Epsilon);
+        var mom = context.GetArgumentValue(batchNorm, BatchNormalization.Momentum);
         var m = torch.nn.BatchNorm2d(input.shape[^3], eps.ToScalar<float>(), mom.ToScalar<float>());
         return m.forward(input).ToConst();
     }
@@ -47,10 +47,10 @@ public class BatchNormalizationEvaluator : IEvaluator<BatchNormalization>, IType
 public class InstanceNormalizationEvaluator : IEvaluator<InstanceNormalization>, ITypeInferencer<InstanceNormalization>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, InstanceNormalization i)
+    public Const Visit(IEvaluateContext context, InstanceNormalization i)
     {
-        var input = context.GetTorchArgument(i, InstanceNormalization.Input);
-        var eps = context.GetArgumentConst(i, InstanceNormalization.Epsilon).ToScalar<float>();
+        var input = context.GetTorchArgumentValue(i, InstanceNormalization.Input);
+        var eps = context.GetArgumentValue(i, InstanceNormalization.Epsilon).ToScalar<float>();
         var f = torch.nn.InstanceNorm2d(input.shape[1], eps);
         return f.forward(input).ToConst();
     }
@@ -74,13 +74,13 @@ public class InstanceNormalizationEvaluator : IEvaluator<InstanceNormalization>,
 public class LRNEvaluator : IEvaluator<LRN>, ITypeInferencer<LRN>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, LRN l)
+    public Const Visit(IEvaluateContext context, LRN l)
     {
-        var input = context.GetTorchArgument(l, LRN.Input);
-        var size = context.GetArgumentConstScalar<long>(l, LRN.Size);
-        var alpha = context.GetArgumentConstScalar<float>(l, LRN.Alpha);
-        var beta = context.GetArgumentConstScalar<float>(l, LRN.Beta);
-        var k = context.GetArgumentConstScalar<float>(l, LRN.Bias);
+        var input = context.GetTorchArgumentValue(l, LRN.Input);
+        var size = context.GetArgumentValueAsScalar<long>(l, LRN.Size);
+        var alpha = context.GetArgumentValueAsScalar<float>(l, LRN.Alpha);
+        var beta = context.GetArgumentValueAsScalar<float>(l, LRN.Beta);
+        var k = context.GetArgumentValueAsScalar<float>(l, LRN.Bias);
         return torch.nn.LocalResponseNorm(size, alpha, beta, k).forward(input).ToConst();
     }
 

@@ -14,10 +14,10 @@ namespace Nncase.Evaluator.Tensors;
 public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsqueeze>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Unsqueeze unSqueeze)
+    public Const Visit(IEvaluateContext context, Unsqueeze unSqueeze)
     {
-        var input = context.GetTFArgument(unSqueeze, Unsqueeze.Input);
-        var dims = context.GetArgumentConst(unSqueeze, Unsqueeze.Dim)
+        var input = context.GetTFArgumentValue(unSqueeze, Unsqueeze.Input);
+        var dims = context.GetArgumentValue(unSqueeze, Unsqueeze.Dim)
             .ToArray<int>()
             .Select(
                 x => Util.PositiveIndex(x, input.shape.rank

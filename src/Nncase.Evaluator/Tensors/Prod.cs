@@ -13,9 +13,9 @@ namespace Nncase.Evaluator.Tensors;
 public class ProdEvaluator : IEvaluator<Prod>, ITypeInferencer<Prod>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Prod prod)
+    public Const Visit(IEvaluateContext context, Prod prod)
     {
-        var input = context.GetTorchArgument(prod, Prod.Input);
+        var input = context.GetTorchArgumentValue(prod, Prod.Input);
         var size = input.shape.Aggregate(1L, (sum, v) => sum * v);
         var v = input.reshape(size).cumprod(0)[size - 1];
         return v.ToConst();
@@ -24,7 +24,7 @@ public class ProdEvaluator : IEvaluator<Prod>, ITypeInferencer<Prod>
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Prod target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Cast.Input);
+        var input = context.CheckArgumentType<TensorType>(target, Prod.Input);
         return Visit(context, target, input);
     }
 

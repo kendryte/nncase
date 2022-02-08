@@ -52,7 +52,7 @@ public class UnitTestTypeInfer
         var axis = Const.FromSpan<int>(new[] { 0 });
         var s = Slice(input, begin, end, axis, stride);
         Assert.True(CompilerServices.InferenceType(s));
-        var post = s.Eval().ToConst();
+        var post = s.Evaluate();
         Assert.True(post.InferenceType());
         Assert.Equal(s.CheckedShape, post.CheckedShape);
     }
@@ -66,7 +66,7 @@ public class UnitTestTypeInfer
         var axes = new[] { 0 };
         var slice = Slice(new Shape(1, 7, 7, 768), begin, end, axes, stride);
         CompilerServices.InferenceType(slice);
-        var post = slice.Eval().ToConst();
+        var post = slice.Evaluate();
         Assert.True(post.InferenceType());
         Assert.Equal(new Shape(2), post.CheckedShape);
     }

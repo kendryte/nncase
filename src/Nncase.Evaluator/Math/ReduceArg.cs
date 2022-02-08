@@ -17,12 +17,12 @@ namespace Nncase.Evaluator.Math;
 public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceArg>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, ReduceArg reduceArg)
+    public Const Visit(IEvaluateContext context, ReduceArg reduceArg)
     {
-        var input = context.GetTorchArgument(reduceArg, ReduceArg.Input);
-        var axis = context.GetArgumentConst(reduceArg, ReduceArg.Axis).ToScalar<int>();
-        var keepDims = context.GetArgumentConst(reduceArg, ReduceArg.KeepDims).ToScalar<bool>();
-        var selectLastIndex = context.GetArgumentConst(reduceArg, ReduceArg.SelectLastIndex).ToScalar<bool>();
+        var input = context.GetTorchArgumentValue(reduceArg, ReduceArg.Input);
+        var axis = context.GetArgumentValue(reduceArg, ReduceArg.Axis).ToScalar<int>();
+        var keepDims = context.GetArgumentValue(reduceArg, ReduceArg.KeepDims).ToScalar<bool>();
+        var selectLastIndex = context.GetArgumentValue(reduceArg, ReduceArg.SelectLastIndex).ToScalar<bool>();
         if (selectLastIndex)
         {
             throw new NotImplementedException();

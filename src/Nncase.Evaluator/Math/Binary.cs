@@ -14,10 +14,10 @@ namespace Nncase.Evaluator.Math;
 public class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binary>
 {
     /// <inheritdoc />
-    public Const Visit(EvaluatorContext context, Binary binary)
+    public Const Visit(IEvaluateContext context, Binary binary)
     {
-        var a = context.GetTorchArgument(binary, Binary.Lhs);
-        var b = context.GetTorchArgument(binary, Binary.Rhs);
+        var a = context.GetTorchArgumentValue(binary, Binary.Lhs);
+        var b = context.GetTorchArgumentValue(binary, Binary.Rhs);
         return (binary.BinaryOp switch
         {
             BinaryOp.Add => a + b,

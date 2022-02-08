@@ -14,9 +14,12 @@ namespace Nncase.Evaluator.Tensors;
 public class BroadcastEvaluator : IEvaluator<Broadcast>, ITypeInferencer<Broadcast>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Broadcast cast)
+    public Const Visit(IEvaluateContext context, Broadcast b)
     {
-        throw new NotImplementedException();
+        var input = context.GetTorchArgumentValue(b, Broadcast.Input);
+        var shape = context.GetArgumentValue(b, Broadcast.Shape);
+        var s = shape.ToArray<long>();
+        return input.broadcast_to(s).ToConst();
     }
 
     /// <inheritdoc/>

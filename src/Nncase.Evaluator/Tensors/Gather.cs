@@ -13,11 +13,11 @@ namespace Nncase.Evaluator.Tensors;
 public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Gather gather)
+    public Const Visit(IEvaluateContext context, Gather gather)
     {
-        var input = context.GetTFArgument(gather, Gather.Input);
-        var axis = context.GetArgumentConst(gather, Gather.Axis).ToScalar<int>();
-        var index = context.GetTFArgument(gather, Gather.Index);
+        var input = context.GetTFArgumentValue(gather, Gather.Input);
+        var axis = context.GetArgumentValue(gather, Gather.Axis).ToScalar<int>();
+        var index = context.GetTFArgumentValue(gather, Gather.Index);
         return tf.gather(input, index, axis: axis).ToConst();
     }
 

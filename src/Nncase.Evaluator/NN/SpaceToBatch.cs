@@ -18,7 +18,7 @@ namespace Nncase.Evaluator.NN;
 public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<SpaceToBatch>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, SpaceToBatch conv)
+    public Const Visit(IEvaluateContext context, SpaceToBatch conv)
     {
         throw new NotImplementedException();
     }

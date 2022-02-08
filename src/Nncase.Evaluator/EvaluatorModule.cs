@@ -14,5 +14,6 @@ public class EvaluatorModule : Module
     protected override void Load(ContainerBuilder builder)
     {
         builder.RegisterType<TypeInferenceProvider>().AsImplementedInterfaces();
+        builder.RegisterType<EvaluateProvider>().AsImplementedInterfaces();
     }
 }

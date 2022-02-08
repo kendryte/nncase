@@ -18,14 +18,14 @@ namespace Nncase.Evaluator.Tensors;
 public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Slice sl)
+    public Const Visit(IEvaluateContext context, Slice sl)
     {
-        var input = context.GetTorchArgument(sl, Slice.Input);
-        var begins = context.GetTorchArgument(sl, Slice.Begins);
-        var ends = context.GetTorchArgument(sl, Slice.Ends);
-        var axes = context.GetArgumentConstArray<int>(sl, Slice.Axes)
+        var input = context.GetTorchArgumentValue(sl, Slice.Input);
+        var begins = context.GetTorchArgumentValue(sl, Slice.Begins);
+        var ends = context.GetTorchArgumentValue(sl, Slice.Ends);
+        var axes = context.GetArgumentValueAsArray<int>(sl, Slice.Axes)
             .Select(x => x < 0 ? x + input.shape.Rank : x);
-        var strides = context.GetTorchArgument(sl, Slice.Strides);
+        var strides = context.GetTorchArgumentValue(sl, Slice.Strides);
         var axesIndex = 0;
         var indices = Enumerable.Range(0, input.shape.Length).Select(i =>
             axes.Contains(i) ?
@@ -92,14 +92,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>
                 }
             }
 
-            if (input.Shape.Rank == 1 && outShape.Count == 1 && outShape[0] == 1)
-            {
-                return TensorType.Scalar(input.DType);
-            }
-            else
-            {
-                return input with { Shape = new Shape(outShape) };
-            }
+            return input with { Shape = new Shape(outShape) };
         }
 
         return new InvalidType("Can't Infer Shape With Dynamic Input!");

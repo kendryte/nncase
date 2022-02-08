@@ -15,10 +15,10 @@ namespace Nncase.Evaluator.Tensors;
 public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Squeeze squeeze)
+    public Const Visit(IEvaluateContext context, Squeeze squeeze)
     {
-        var input = context.GetTFArgument(squeeze, Squeeze.Input);
-        var dims = context.GetArgumentConst(squeeze, Squeeze.Dim).ToArray<int>();
+        var input = context.GetTFArgumentValue(squeeze, Squeeze.Input);
+        var dims = context.GetArgumentValue(squeeze, Squeeze.Dim).ToArray<int>();
         return tf.squeeze(input, dims).ToConst();
     }
 

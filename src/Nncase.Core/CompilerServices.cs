@@ -32,15 +32,47 @@ public interface ICompilerServicesProvider
     /// <param name="context">Inference context.</param>
     /// <returns>Inference result.</returns>
     IRType InferenceOp(Op op, ITypeInferenceContext context);
+
+    /// <summary>
+    /// Evaluate the expression tree.
+    /// </summary>
+    /// <param name="expr">Expression.</param>
+    /// <param name="varsValues">Optional vars' values.</param>
+    /// <returns>Evaluate result.</returns>
+    Const Evaluate(Expr expr, IReadOnlyDictionary<Var, Const>? varsValues = null);
+
+    /// <summary>
+    /// Evaluate operator.
+    /// </summary>
+    /// <param name="op">Target operator.</param>
+    /// <param name="context">Evaluate context.</param>
+    /// <returns>Evaluate result.</returns>
+    Const EvaluateOp(Op op, IEvaluateContext context);
 }
 
 internal class CompilerServicesProvider : ICompilerServicesProvider
 {
+    private readonly IEvaluateProvider _evaluateProvider;
     private readonly ITypeInferenceProvider _typeInferenceProvider;
 
-    public CompilerServicesProvider(ITypeInferenceProvider typeInferenceProvider)
+    public CompilerServicesProvider(
+        IEvaluateProvider evaluateProvider,
+        ITypeInferenceProvider typeInferenceProvider)
     {
+        _evaluateProvider = evaluateProvider;
         _typeInferenceProvider = typeInferenceProvider;
+    }
+
+    /// <inheritdoc/>
+    public Const Evaluate(Expr expr, IReadOnlyDictionary<Var, Const>? varsValues = null)
+    {
+        return _evaluateProvider.Evaluate(expr);
+    }
+
+    /// <inheritdoc/>
+    public Const EvaluateOp(Op op, IEvaluateContext context)
+    {
+        return _evaluateProvider.EvaluateOp(op, context);
     }
 
     /// <inheritdoc/>
@@ -93,5 +125,27 @@ public static class CompilerServices
     public static IRType InferenceOp(Op op, ITypeInferenceContext context)
     {
         return Provider.InferenceOp(op, context);
+    }
+
+    /// <summary>
+    /// Evaluate the expression tree.
+    /// </summary>
+    /// <param name="expr">Expression.</param>
+    /// <param name="varsValues">Optional vars' values.</param>
+    /// <returns>Evaluate result.</returns>
+    public static Const Evaluate(this Expr expr, IReadOnlyDictionary<Var, Const>? varsValues = null)
+    {
+        return Provider.Evaluate(expr);
+    }
+
+    /// <summary>
+    /// Evaluate operator.
+    /// </summary>
+    /// <param name="op">Target operator.</param>
+    /// <param name="context">Evaluate context.</param>
+    /// <returns>Evaluate result.</returns>
+    public static Const EvaluateOp(Op op, IEvaluateContext context)
+    {
+        return Provider.EvaluateOp(op, context);
     }
 }

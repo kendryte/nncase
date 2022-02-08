@@ -18,7 +18,7 @@ namespace Nncase.Evaluator.Tensors;
 public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Split target)
+    public Const Visit(IEvaluateContext context, Split target)
     {
         throw new NotImplementedException();
     }

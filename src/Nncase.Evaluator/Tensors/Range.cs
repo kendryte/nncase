@@ -14,11 +14,11 @@ namespace Nncase.Evaluator.Tensors;
 public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Range range)
+    public Const Visit(IEvaluateContext context, Range range)
     {
-        var begin = context.GetArgumentConstScalar<int>(range, Range.Begin);
-        var end = context.GetArgumentConstScalar<int>(range, Range.End);
-        var step = context.GetArgumentConstScalar<int>(range, Range.Step);
+        var begin = context.GetArgumentValueAsScalar<int>(range, Range.Begin);
+        var end = context.GetArgumentValueAsScalar<int>(range, Range.End);
+        var step = context.GetArgumentValueAsScalar<int>(range, Range.Step);
         return torch.arange(begin, end, step).ToConst();
     }
 

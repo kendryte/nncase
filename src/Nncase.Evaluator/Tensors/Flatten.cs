@@ -18,10 +18,10 @@ namespace Nncase.Evaluator.Tensors;
 public class FlattenEvaluator : IEvaluator<Flatten>, ITypeInferencer<Flatten>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Flatten flatten)
+    public Const Visit(IEvaluateContext context, Flatten flatten)
     {
-        var input = context.GetTorchArgument(flatten, Flatten.Input);
-        var dim = context.GetArgumentConst(flatten, Flatten.Axis).ToScalar<int>();
+        var input = context.GetTorchArgumentValue(flatten, Flatten.Input);
+        var dim = context.GetArgumentValue(flatten, Flatten.Axis).ToScalar<int>();
         var v = torch.nn.Flatten(0, dim);
         return v.forward(input).ToConst();
     }

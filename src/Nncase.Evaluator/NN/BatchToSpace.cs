@@ -18,7 +18,7 @@ namespace Nncase.Evaluator.NN;
 public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<BatchToSpace>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, BatchToSpace target)
+    public Const Visit(IEvaluateContext context, BatchToSpace target)
     {
         throw new NotImplementedException();
     }

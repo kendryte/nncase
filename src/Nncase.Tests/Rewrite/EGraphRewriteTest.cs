@@ -60,7 +60,7 @@ namespace Nncase.Tests.ReWriteTest
             var post = eGraph.Extract(root, passOptions);
             Assert.True(post.InferenceType());
             post.DumpExprAsIL("post", passOptions.FullDumpDir);
-            Assert.Equal((pre.Eval()), (post.Eval()));
+            Assert.Equal((pre.Evaluate()), (post.Evaluate()));
         }
 
         [Theory]
@@ -158,7 +158,7 @@ namespace Nncase.Tests.ReWriteTest
 
             var post = eGraph.Extract(root, passOptions);
             Assert.True(post.InferenceType());
-            Assert.Equal((pre.Eval()), (post.Eval()));
+            Assert.Equal((pre.Evaluate()), (post.Evaluate()));
             post.DumpExprAsIL("post", passOptions.FullDumpDir);
         }
     }

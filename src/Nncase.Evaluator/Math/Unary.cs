@@ -14,9 +14,9 @@ namespace Nncase.Evaluator.Math;
 public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Unary unary)
+    public Const Visit(IEvaluateContext context, Unary unary)
     {
-        var i = context.GetTorchArgument(unary, Unary.Input);
+        var i = context.GetTorchArgumentValue(unary, Unary.Input);
         var result = unary.UnaryOp switch
         {
             UnaryOp.Abs => torch.abs(i),

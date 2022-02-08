@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Math;
 public class QuantizeEvaluator : IEvaluator<Quantize>, ITypeInferencer<Quantize>
 {
     /// <inheritdoc/>
-    public Const Visit(EvaluatorContext context, Quantize target)
+    public Const Visit(IEvaluateContext context, Quantize target)
     {
         throw new NotImplementedException();
     }
