@@ -104,11 +104,6 @@ if (BUILDING_RUNTIME)
         add_subdirectory(python/nncaseruntime/native)
     endif()
 
-    # Csharp binding
-    if(BUILD_CSHARP_BINDING)
-        add_subdirectory(csharp)
-    endif()
-        
     install(DIRECTORY ${NNCASE_INCLUDE_DIR}/nncase
         DESTINATION include
         COMPONENT nncase-headers
@@ -199,7 +194,12 @@ else()
     if(BUILD_PYTHON_BINDING)
         add_subdirectory(python/nncase/native)
     endif()
-    
+
+    # Csharp binding
+    if(BUILD_CSHARP_BINDING)
+        add_subdirectory(csharp)
+    endif()  
+
     # Thrid party
     add_subdirectory(third_party/onnx)
     

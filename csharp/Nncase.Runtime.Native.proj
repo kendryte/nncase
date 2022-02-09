@@ -20,9 +20,9 @@
   <Target Name="Build" DependsOnTargets="BuildNativeUnix;BuildNativeWindows;PreparePackageAssets" />
 
   <Target Name="BuildNativeUnix" Condition="'$(OS)' != 'Windows_NT'">
-    <Exec Command="mkdir -p ../build/$(Configuration)/runtime" />
-    <Exec Command="cmake -S .. -B ../build/$(Configuration)/runtime -DCMAKE_BUILD_TYPE=$(Configuration) -DENABLE_HALIDE=false -DENABLE_OPENMP=false -DCMAKE_EXPORT_COMPILE_COMMANDS=true -DENABLE_VULKAN_RUNTIME=false -DBUILDING_RUNTIME=true -DBUILD_BENCHMARK=false -G &quot;Ninja&quot; -DCMAKE_INSTALL_PREFIX:PATH=../runtime_install" />
-    <Exec Command="cmake --build ../build/$(Configuration)/runtime --target install" />
+    <Exec Command="mkdir -p ../build/$(Configuration)/simulator" />
+    <Exec Command="cmake -S .. -B ../build/$(Configuration)/simulator -DCMAKE_BUILD_TYPE=$(Configuration) -DENABLE_HALIDE=false -DENABLE_OPENMP=false -DCMAKE_EXPORT_COMPILE_COMMANDS=true -DENABLE_VULKAN_RUNTIME=false -DBUILD_BENCHMARK=false -G &quot;Ninja&quot; -DCMAKE_INSTALL_PREFIX:PATH=../simulator_install" />
+    <Exec Command="cmake --build ../build/$(Configuration)/simulator --target install" />
   </Target>
 
   <Target Name="BuildNativeWindows" Condition="'$(OS)' == 'Windows_NT'">
@@ -33,8 +33,9 @@
 
   <Target Name="PreparePackageAssets">  
     <ItemGroup>
-      <NativePackageLib Include="..\build\$(Configuration)\runtime_install\lib\libnncaseruntime_csharp.$(NativeLibExtension)"
+      <NativePackageLib Include="..\build\$(Configuration)\simulator_install\lib\libnncase_csharp.$(NativeLibExtension)"
                         RelativePath="runtimes\$(PackageRid)\native\lib"  />
+      <NativePackageLib Include="..\build\$(Configuration)\simulator_install\lib\libnncase.$(NativeLibExtension)" />
     </ItemGroup>
 
     <Message Importance="High" Text="@(NativePackageLib) -> $(OutputPath)\%(NativePackageLib.RelativePath)" />

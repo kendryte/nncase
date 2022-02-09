@@ -2,10 +2,10 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
   <metadata>
     <!-- package -->
-    <id>Nncase.Runtime.Native.linux-x64</id>
-    <title>Nncase.Runtime - Native binaries for linux-x64</title>
+    <id>Nncase.Simulator.Native.linux-x64</id>
+    <title>Nncase.Simulator - Native binaries for linux-x64</title>
     <version>1.0.0</version>
-    <description>This package complements the Nncsae.Runtime package and contains native binaries of Nncase.Runtime for linux-x64</description>
+    <description>This package complements the Nncsae.Runtime package and contains native binaries of Nncase.Simulator for linux-x64</description>
     <summary>Native binaries of Nncase runtime for linux-x64</summary>
     <projectUrl>https://github.com/kendryte/nncase</projectUrl>
     <repository type="git" url="https://github.com/kendryte/nncase" />
@@ -22,7 +22,7 @@
   </metadata>
   <files>
     <!-- The build bits -->
-    <file src="targets\Nncase.Runtime.Native.linux-x64.targets" target="build\netstandard2.0" />
+    <file src="targets\Nncase.Simulator.Native.linux-x64.targets" target="build\netstandard2.0" />
     <!-- Include libpinmame linux-x64 binaries -->
     <file src="..\bin\Release\netstandard2.0\runtimes\linux-x64\native\lib\*" target="runtimes\linux-x64\native" />
     <!-- Include the license -->

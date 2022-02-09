@@ -2,10 +2,10 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
   <metadata>
     <!-- package -->
-    <id>Nncase.Runtime.Native</id>
-    <title>Nncase.Runtime - Native binaries</title>
+    <id>Nncase.Simulator.Native</id>
+    <title>Nncase.Simulator - Native binaries</title>
     <version>1.0.0</version>
-    <description>This package complements the Nncase.Runtime package and contains native binaries of libpinmame</description>
+    <description>This package complements the Nncase.Simulator package and contains native binaries of libpinmame</description>
     <summary>Native binaries of Nncase Runtime</summary>
     <projectUrl>https://github.com/kendryte/nncase</projectUrl>
     <repository type="git" url="https://github.com/kendryte/nncase" />
@@ -18,10 +18,10 @@
     <copyright>Nncase development team and contributors</copyright>
     <dependencies>
       <group targetFramework="netstandard2.0">
-        <dependency id="Nncase.Runtime.Native.win-x64" version="1.0.0" include="native" />
-        <dependency id="Nncase.Runtime.Native.osx-x64" version="1.0.0" include="native" />
-        <dependency id="Nncase.Runtime.Native.linux-x64" version="1.0.0" include="native" />
-        <dependency id="Nncase.Runtime.Native.osx-arm64" version="1.0.0" include="native" />
+        <dependency id="Nncase.Simulator.Native.win-x64" version="1.0.0" include="native" />
+        <dependency id="Nncase.Simulator.Native.osx-x64" version="1.0.0" include="native" />
+        <dependency id="Nncase.Simulator.Native.linux-x64" version="1.0.0" include="native" />
+        <dependency id="Nncase.Simulator.Native.osx-arm64" version="1.0.0" include="native" />
       </group>
     </dependencies>
   </metadata>

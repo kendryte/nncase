@@ -1,46 +1,45 @@
 using System.Numerics.Tensors;
 using System.Runtime.InteropServices;
 using Nncase.Schedule;
-namespace Nncase.Runtime
+namespace Nncase.Simulator
 {
 
     /// <summary>
     /// the kmodel Interpreter. require the nncase runtime lib.
     /// </summary>
-    public class Interpreter
+    public class Interpreter : IDisposable
     {
-
-        [DllImport("nncaseruntime_csharp")]
+        [DllImport("libnncase_csharp")]
         static extern bool interpreter_init();
 
-        [DllImport("nncaseruntime_csharp")]
-        static extern unsafe void interpreter_load_model([In] byte[] buffer_ptr, int size);
+        [DllImport("libnncase_csharp")]
+        static extern unsafe void interpreter_load_model(byte* buffer_ptr, int size);
 
-        [DllImport("nncaseruntime_csharp")]
+        [DllImport("libnncase_csharp")]
         static extern nuint interpreter_inputs_size();
 
-        [DllImport("nncaseruntime_csharp")]
+        [DllImport("libnncase_csharp")]
         static extern nuint interpreter_outputs_size();
 
-        [DllImport("nncaseruntime_csharp")]
+        [DllImport("libnncase_csharp")]
         static extern MemoryRange interpreter_get_input_desc(nuint index);
 
-        [DllImport("nncaseruntime_csharp")]
+        [DllImport("libnncase_csharp")]
         static extern MemoryRange interpreter_get_output_desc(nuint index);
 
-        [DllImport("nncaseruntime_csharp")]
+        [DllImport("libnncase_csharp")]
         static extern IntPtr interpreter_get_input_tensor(nuint index);
 
-        [DllImport("nncaseruntime_csharp")]
+        [DllImport("libnncase_csharp")]
         static extern void interpreter_set_input_tensor(nuint index, IntPtr rt);
 
-        [DllImport("nncaseruntime_csharp")]
+        [DllImport("libnncase_csharp")]
         static extern IntPtr interpreter_get_output_tensor(nuint index);
 
-        [DllImport("nncaseruntime_csharp")]
+        [DllImport("libnncase_csharp")]
         static extern void interpreter_set_output_tensor(nuint index, IntPtr rt);
 
-        [DllImport("nncaseruntime_csharp")]
+        [DllImport("libnncase_csharp")]
         static extern void interpreter_run();
 
         /// <summary>
@@ -66,9 +65,12 @@ namespace Nncase.Runtime
         /// load kmodel from content
         /// </summary>
         /// <param name="model_content"></param>
-        public void LoadModel(byte[] model_content)
+        public unsafe void LoadModel(byte[] model_content)
         {
-            interpreter_load_model(model_content, model_content.Length);
+            fixed (byte* ptr = model_content)
+            {
+                interpreter_load_model(ptr, model_content.Length);
+            }
         }
 
         /// <summary>
@@ -135,5 +137,17 @@ namespace Nncase.Runtime
         {
             return RuntimeTensor.Create(interpreter_get_output_tensor((nuint)index));
         }
+
+        /// <summary>
+        /// run the model
+        /// </summary>
+        public void Run()
+        {
+            interpreter_run();
+        }
+
+        /// <inheritdoc/>
+        public void Dispose()
+        { }
     }
 }

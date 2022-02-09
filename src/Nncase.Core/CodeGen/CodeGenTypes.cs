@@ -19,7 +19,7 @@ namespace Nncase.CodeGen
     /// </summary>
     public static class ModelInfo
     {
-        public static uint IDENTIFIER => BitConverter.ToUInt32(Encoding.UTF8.GetBytes("KDML"), 0);
+        public static uint IDENTIFIER => BitConverter.ToUInt32(Encoding.UTF8.GetBytes("LDMK"), 0);
         public const uint VERSION = 5;
         public const uint SECTION_MERGED_INTO_RDATA = 1;
         public const uint MAX_SECTION_NAME_LENGTH = 16;
@@ -81,17 +81,22 @@ namespace Nncase.CodeGen
         /// <summary>
         /// the Module type
         /// </summary>
-        public ModuleType ModuleType { get; set; }
+        public ModuleType ModuleType { get; }
 
         /// <summary>
         /// get source code
         /// </summary>
-        public string Source { get; set; }
+        public byte[] Source { get; }
 
         /// <summary>
         /// get source file ext
         /// </summary>
-        public string SourceExt { get; set; }
+        public string SourceExt { get; }
+
+        /// <summary>
+        /// is runtime module has been Serialized?
+        /// </summary>
+        public bool IsSerialized { get; }
 
         /// <summary>
         /// dump the source into file `DumpDirPath/name.xx`
@@ -134,12 +139,22 @@ namespace Nncase.CodeGen
         /// <summary>
         /// get source code
         /// </summary>
-        public string Source { get; set; }
+        public byte[] Source { get; }
 
         /// <summary>
         /// get source file ext
         /// </summary>
-        public string SourceExt { get; set; }
+        public string SourceExt { get; }
+
+        /// <summary>
+        /// the source file path
+        /// </summary>
+        public string SourcePath { get; }
+
+        /// <summary>
+        /// this rt model is Serialized?
+        /// </summary>
+        public bool isSerialized { get; }
 
         /// <summary>
         /// dump the source into file `DumpDirPath/name.xx`

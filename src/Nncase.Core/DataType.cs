@@ -374,6 +374,13 @@ namespace Nncase
         };
 
         /// <summary>
+        /// get primtype code length
+        /// </summary>
+        /// <param name="dataType"></param>
+        /// <returns></returns>
+        public static int GetLength(PrimTypeCode dataType) => _ElemTypeToLengths[dataType];
+
+        /// <summary>
         /// Convert unmanaged type to bytes.
         /// </summary>
         /// <typeparam name="T">Unmanaged type.</typeparam>

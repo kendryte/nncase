@@ -1,7 +1,7 @@
 using System.Numerics.Tensors;
 using System.Runtime.InteropServices;
 
-namespace Nncase.Runtime
+namespace Nncase.Simulator
 {
 
 
@@ -14,32 +14,32 @@ namespace Nncase.Runtime
 
         private bool disposedValue;
 
-        [DllImport("nncaseruntime_csharp")]
+        [DllImport("libnncase_csharp")]
         static extern unsafe IntPtr RuntimeTensor_from_buffer(
           [In] IntPtr buffer_ptr, PrimTypeCode datatype,
           [In] int* shape_ptr, int shape_size,
           nuint total_items, nuint item_size,
           [In] int* stride_ptr);
 
-        [DllImport("nncaseruntime_csharp")]
+        [DllImport("libnncase_csharp")]
         static extern void RuntimeTensor_free(IntPtr rt);
 
-        [DllImport("nncaseruntime_csharp")]
+        [DllImport("libnncase_csharp")]
         static extern unsafe void RuntimeTensor_to_buffer(IntPtr rt,
                  [In] byte* buffer_ptr, ref PrimTypeCode datatype);
 
 
-        [DllImport("nncaseruntime_csharp")]
+        [DllImport("libnncase_csharp")]
         static extern unsafe void RuntimeTensor_copy_to([In, Out] IntPtr from, [In, Out] IntPtr dest);
 
 
-        [DllImport("nncaseruntime_csharp")]
+        [DllImport("libnncase_csharp")]
         static extern unsafe int RuntimeTensor_shape(IntPtr rt, int* shape_ptr);
 
-        [DllImport("nncaseruntime_csharp")]
+        [DllImport("libnncase_csharp")]
         static extern unsafe int RuntimeTensor_strides(IntPtr rt, int* strides_ptr);
 
-        [DllImport("nncaseruntime_csharp")]
+        [DllImport("libnncase_csharp")]
         static extern unsafe PrimTypeCode RuntimeTensor_dtype(IntPtr rt);
 
         /// <summary>
@@ -125,10 +125,10 @@ namespace Nncase.Runtime
         }
 
         /// <summary>
-        /// <see cref="FromDense{T}(DenseTensor{T})"/>
+        /// <see cref="Create{T}(DenseTensor{T})"/>
         /// </summary>
-        public static unsafe RuntimeTensor FromDense<T>(Tensor<T> tensor)
-                  where T : unmanaged => FromDense(tensor.ToDenseTensor());
+        public static unsafe RuntimeTensor Create<T>(Tensor<T> tensor)
+                  where T : unmanaged => Create(tensor.ToDenseTensor());
 
         /// <summary>
         /// create the RuntimeTensor from the DenseTensor
@@ -136,7 +136,7 @@ namespace Nncase.Runtime
         /// <typeparam name="T"></typeparam>
         /// <param name="tensor"></param>
         /// <returns></returns>
-        public static unsafe RuntimeTensor FromDense<T>(DenseTensor<T> tensor)
+        public static unsafe RuntimeTensor Create<T>(DenseTensor<T> tensor)
           where T : unmanaged
         {
             var dtype = DataTypes.FromType<T>();
@@ -159,7 +159,6 @@ namespace Nncase.Runtime
                 }
             }
         }
-
 
         /// <summary>
         /// convert the runtime tensor to dense tensor.

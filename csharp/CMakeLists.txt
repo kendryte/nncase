@@ -2,8 +2,9 @@ cmake_minimum_required (VERSION 3.18)
 
 set(SRCS interpreter.cpp)
 
-add_library(nncaseruntime_csharp SHARED ${SRCS})
-target_link_libraries(nncaseruntime_csharp PRIVATE nncaseruntime)
-target_include_directories(nncaseruntime_csharp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-# set_target_properties(nncaseruntime_csharp PROPERTIES OUTPUT_NAME _nncaseruntime_csharp)
-install(TARGETS nncaseruntime_csharp DESTINATION lib)
+add_library(nncase_csharp SHARED ${SRCS})
+target_link_libraries(nncase_csharp PRIVATE nncase)
+target_include_directories(nncase_csharp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+install(TARGETS nncase_csharp
+        COMPONENT nncase-runtime
+        DESTINATION lib)

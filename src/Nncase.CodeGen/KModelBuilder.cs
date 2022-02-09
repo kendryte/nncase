@@ -41,9 +41,34 @@ public class KModelSerializeResult : ISerializeResult
 public class RTKModel : IRTModel
 {
 
+    /// <inheritdoc/>
+    public ITarget Target { get; set; }
+    /// <inheritdoc/>
+    public Schedule.SchedModelResult modelResult { get; set; }
+    /// <inheritdoc/>
+    public string SourcePath { get; private set; }
+    /// <inheritdoc/>
+    public byte[] Source
+    {
+        get
+        {
+            if (isSerialized)
+                return File.ReadAllBytes(SourcePath);
+            throw new InvalidOperationException("Must Serialized Runtime Model Can Get The Source!");
+        }
+    }
+    /// <inheritdoc/>
+    public string SourceExt { get => "kmodel"; }
+    /// <inheritdoc/>
+    public IRTFunction? Entry { get; set; }
+    /// <inheritdoc/>
+    public IReadOnlyList<IRTModule> Modules => modules;
+    /// <inheritdoc/>
+    public bool isSerialized { get; private set; }
+
+
     List<IRTModule> modules;
-    string sourcePath;
-    bool isSerialized;
+
     KModelSerializeResult serializeResult;
 
     /// <summary>
@@ -55,31 +80,24 @@ public class RTKModel : IRTModel
     {
         Target = target;
         modelResult = result;
-        Source = string.Empty;
         modules = new();
-        sourcePath = CodeGenUtil.GetTempFileName(SourceExt);
+        SourcePath = CodeGenUtil.GetTempFileName(SourceExt);
         isSerialized = false;
         serializeResult = new(0);
     }
-    /// <inheritdoc/>
-    public ITarget Target { get; set; }
-    /// <inheritdoc/>
-    public Schedule.SchedModelResult modelResult { get; set; }
-    /// <inheritdoc/>
-    public string Source { get; set; }
-    /// <inheritdoc/>
-    public string SourceExt { get => "kmodel"; set { } }
-    /// <inheritdoc/>
-    public IRTFunction? Entry { get; set; }
-    /// <inheritdoc/>
-    public IReadOnlyList<IRTModule> Modules => modules;
+
     /// <inheritdoc/>
     public void Dump(string name, string dumpDirPath)
     {
+        var dump_path = Path.Combine(dumpDirPath, $"{name}.{SourceExt}");
         if (isSerialized)
-            File.Copy(sourcePath, Path.Combine(dumpDirPath, $"{name}.{SourceExt}"));
-        else
-            throw new InvalidOperationException("Please Call Serialize First!");
+        {
+            if (File.Exists(dump_path))
+                File.Delete(dump_path);
+            File.Copy(SourcePath, dump_path);
+            return;
+        }
+        throw new InvalidOperationException("Please Call Serialize First!");
     }
     /// <inheritdoc/>
     public object? Invoke(params object?[]? args)
@@ -93,7 +111,7 @@ public class RTKModel : IRTModel
         if (isSerialized) return serializeResult;
 
         // step 1. create the kmodel file
-        using var ostream = File.Open(sourcePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+        using var ostream = File.Open(SourcePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
         using var writer = new BinaryWriter(ostream);
         var begin_pos = writer.BaseStream.Position;
 

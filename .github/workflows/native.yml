@@ -65,39 +65,39 @@ jobs:
       if: runner.os == 'Linux'
       shell: bash
       working-directory: ${{github.workspace}}/csharp
-      run: nuget pack nuget/Nncase.Runtime.Native.linux-x64.nuspec -OutputDirectory ../nupkg
+      run: nuget pack nuget/Nncase.Simulator.Native.linux-x64.nuspec -OutputDirectory ../nupkg
 
     - name: Pack
       if: runner.os == 'Macos'
       shell: bash
       working-directory: ${{github.workspace}}/csharp
-      run: nuget pack nuget/Nncase.Runtime.Native.osx-x64.nuspec -OutputDirectory ../nupkg
+      run: nuget pack nuget/Nncase.Simulator.Native.osx-x64.nuspec -OutputDirectory ../nupkg
 
     - name: Pack
       if: runner.os == 'Windows'
       shell: bash
       working-directory: ${{github.workspace}}/csharp
-      run: nuget pack nuget/Nncase.Runtime.Native.win-x64.nuspec -OutputDirectory ../nupkg
+      run: nuget pack nuget/Nncase.Simulator.Native.win-x64.nuspec -OutputDirectory ../nupkg
 
     - uses: actions/upload-artifact@v2
       if: runner.os == 'Linux'
       with:
-        name: Nncase.Runtime.Native.linux-x64.1.0.0.nupkg
-        path: nupkg/Nncase.Runtime.Native.linux-x64.1.0.0.nupkg
+        name: Nncase.Simulator.Native.linux-x64.1.0.0.nupkg
+        path: nupkg/Nncase.Simulator.Native.linux-x64.1.0.0.nupkg
 
     - uses: actions/upload-artifact@v2
       if: runner.os == 'Macos'
       with:
-        name: Nncase.Runtime.Native.osx-x64.1.0.0.nupkg
-        path: nupkg/Nncase.Runtime.Native.osx-x64.1.0.0.nupkg
+        name: Nncase.Simulator.Native.osx-x64.1.0.0.nupkg
+        path: nupkg/Nncase.Simulator.Native.osx-x64.1.0.0.nupkg
 
     - uses: actions/upload-artifact@v2
       if: runner.os == 'Windows'
       with:
-        name: Nncase.Runtime.Native.win-x64.1.0.0.nupkg
-        path: nupkg/Nncase.Runtime.Native.win-x64.1.0.0.nupkg
+        name: Nncase.Simulator.Native.win-x64.1.0.0.nupkg
+        path: nupkg/Nncase.Simulator.Native.win-x64.1.0.0.nupkg
 
     # - name: Push
     #   shell: bash
     #   working-directory: ${{github.workspace}}/csharp
-    #   run: nuget push ${{github.workspace}}/nupkg/Nncase.Runtime.Native.*.nupkg ${{ secrets.NUGET_KEY }} -Source https://www.myget.org/F/zhen8838/api/v2/package
+    #   run: nuget push ${{github.workspace}}/nupkg/Nncase.Simulator.Native.*.nupkg ${{ secrets.NUGET_KEY }} -Source https://www.myget.org/F/zhen8838/api/v2/package
