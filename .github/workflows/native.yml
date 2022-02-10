@@ -51,15 +51,22 @@ jobs:
       run: conan profile new default --detect
 
     - name: Configure Conan Compiler
-      env:
-          CC: gcc-10
-          CXX: g++-10
       if: runner.os == 'Linux'
       shell: bash
       run: |
         conan profile update settings.compiler.libcxx=libstdc++11 default
 
     - name: Dotnet Build
+      env:
+        CC: gcc-10
+        CXX: g++-10
+      if: runner.os == 'Linux'
+      shell: bash
+      working-directory: ${{github.workspace}}/csharp
+      run: dotnet build -c Release -p:TargetArchitecture=x64
+
+    - name: Dotnet Build
+      if: runner.os != 'Linux'
       shell: bash
       working-directory: ${{github.workspace}}/csharp
       run: dotnet build -c Release -p:TargetArchitecture=x64
