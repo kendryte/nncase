@@ -108,7 +108,7 @@ EXPORT_API(void)
 RuntimeTensor_to_buffer(runtime_tensor *rt, uint8_t *buffer_ptr,
                         uint8_t *datatype_ptr) {
     if (!rt->is_contiguous()) {
-        throw std::errc::not_supported;
+        std::cout << "not_supported uncontiguous tensor!" << std::endl;
     }
     *datatype_ptr = rt->datatype();
 
