@@ -15,7 +15,7 @@ namespace Nncase.Tests.RuntimeTest
         public void TestCreate()
         {
             var tensor = new DenseTensor<float>(new[] { 1, 2, 3, 4 });
-            var rt = RuntimeTensor.FromDense(tensor);
+            var rt = RuntimeTensor.Create(tensor);
             Assert.Equal(new[] { 1, 2, 3, 4 }, rt.Shape);
             Assert.Equal(new[] { 24, 12, 4, 1 }, rt.Strides);
         }

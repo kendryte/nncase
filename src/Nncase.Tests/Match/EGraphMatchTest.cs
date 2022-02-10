@@ -42,15 +42,15 @@ namespace Nncase.Tests.ReWriteTest
             Assert.True(Pre.InferenceType());
             var eGraph = new EGraph();
             eGraph.Add(Pre, out var root);
-            EGraphPrinter.DumpEgraphAsDot(eGraph, Path.Combine(passOptions.FullDumpDir, $"pre"));
-            Pre.DumpExprAsIL("pre", passOptions.FullDumpDir);
+            EGraphPrinter.DumpEgraphAsDot(eGraph, Path.Combine(passOptions.PassDumpDir, $"pre"));
+            Pre.DumpExprAsIL("pre", passOptions.PassDumpDir);
             foreach (var (pat, target) in Rule.Patterns.Zip(targets))
             {
                 var results = EGraphMatcher.Match(eGraph, pat);
                 Assert.Equal(target, results.Count);
                 if (passOptions.DumpLevel > 1)
                     EGraphPrinter.DumpEgraphAsDot(eGraph, results,
-                     Path.Combine(passOptions.FullDumpDir, $"V{eGraph.Version}"));
+                     Path.Combine(passOptions.PassDumpDir, $"V{eGraph.Version}"));
             }
         }
 

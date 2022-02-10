@@ -24,7 +24,7 @@ namespace Nncase.Tests.ReWriteTest
     {
         public EGraphRewriteTestFactory(IHost host) : base(host)
         {
-            passOptions.SetDir(Path.Combine(passOptions.FullDumpDir, "EGraphRewriteTestFactory"));
+            passOptions.SetDir(Path.Combine(passOptions.PassDumpDir, "EGraphRewriteTestFactory"));
         }
 
         private static IEnumerable<object[]> Data =>
@@ -51,16 +51,16 @@ namespace Nncase.Tests.ReWriteTest
             passOptions.SetName($"{Case.Name}");
             Expr pre = Case.PreExpr;
             var infered = pre.InferenceType();
-            pre.DumpExprAsIL("pre", passOptions.FullDumpDir);
+            pre.DumpExprAsIL("pre", passOptions.PassDumpDir);
             Assert.True(infered);
             var eGraph = new EGraph();
             eGraph.Add(pre, out var root);
-            EGraphPrinter.DumpEgraphAsDot(eGraph, Path.Combine(passOptions.FullDumpDir, $"pre"));
+            EGraphPrinter.DumpEgraphAsDot(eGraph, Path.Combine(passOptions.PassDumpDir, $"pre"));
 
             EGraphReWriter.ReWrite(eGraph, Case.Rules, passOptions);
             var post = eGraph.Extract(root, passOptions);
             Assert.True(post.InferenceType());
-            post.DumpExprAsIL("post", passOptions.FullDumpDir);
+            post.DumpExprAsIL("post", passOptions.PassDumpDir);
             Assert.Equal((pre.Eval()), (post.Eval()));
         }
 
@@ -78,7 +78,7 @@ namespace Nncase.Tests.ReWriteTest
 
         public EGraphRewriteTest(IHost host) : base(host)
         {
-            passOptions.SetDir(Path.Combine(passOptions.FullDumpDir, "EGraphRewriteTest"));
+            passOptions.SetDir(Path.Combine(passOptions.PassDumpDir, "EGraphRewriteTest"));
         }
 
         [Fact]
@@ -130,13 +130,13 @@ namespace Nncase.Tests.ReWriteTest
             Var x = "x";
             g.Add(x * 2, out var e1);
             g.Add((x * 2) / 2, out var root);
-            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "befroe"));
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "befroe"));
             g.Add(x << 1, out var e2);
-            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "added"));
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "added"));
             g.Merge(e2, e1);
-            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "merge"));
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "merge"));
             g.ReBuild();
-            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "rebuild"));
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "rebuild"));
         }
 
 
@@ -153,14 +153,14 @@ namespace Nncase.Tests.ReWriteTest
             Assert.True(pre.InferenceType());
             var eGraph = new EGraph();
             eGraph.Add(pre, out var root);
-            pre.DumpExprAsIL("pre", passOptions.FullDumpDir);
+            pre.DumpExprAsIL("pre", passOptions.PassDumpDir);
 
             EGraphReWriter.ReWrite(eGraph, new Rule.TransposeBinaryMotion(), passOptions);
 
             var post = eGraph.Extract(root, passOptions);
             Assert.True(post.InferenceType());
             Assert.Equal((pre.Eval()), (post.Eval()));
-            post.DumpExprAsIL("post", passOptions.FullDumpDir);
+            post.DumpExprAsIL("post", passOptions.PassDumpDir);
         }
     }
 

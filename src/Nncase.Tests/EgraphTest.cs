@@ -213,11 +213,11 @@ namespace Nncase.Tests
             g.Add(x * 2, out var e1);
             g.Add(x << 1, out var e2);
             g.Add(((x * 2) + 1) + 3, out var root);
-            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "before"));
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "before"));
             g.Merge(e1, e2);
-            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "merge"));
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "merge"));
             g.ReBuild();
-            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "rebuild"));
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "rebuild"));
             foreach (var (enode, eclass) in g.HashCons)
             {
                 Assert.Equal(eclass.Find(), eclass.Find());
@@ -240,15 +240,15 @@ namespace Nncase.Tests
             g.Add(expr3, out var e3);
             g.Add(expr4, out var e4);
             g.Add(y, out var root);
-            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "before"));
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "before"));
             g.Merge(e2, e1);
-            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "merge_lhs"));
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "merge_lhs"));
             g.ReBuild();
-            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "rebuild_lhs"));
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "rebuild_lhs"));
             g.Merge(e4, e3);
-            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "merge_rhs"));
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "merge_rhs"));
             g.ReBuild();
-            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "rebuild_rhs"));
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "rebuild_rhs"));
             foreach (var (enode, eclass) in g.HashCons)
             {
                 foreach (var child in enode.Children)

@@ -32,5 +32,6 @@ private:
     std::string dataset_;
     std::string dataset_format_ = "image";
     std::string input_layout_ = "NCHW";
+    bool wait_key_ = false;
 };
 }

@@ -66,8 +66,8 @@ namespace Nncase.TIR
         public string Name;
 
         /// <summary>
-        /// The strides of each dimension
-        ///  This can be an empty array, indicating array is contiguous
+        /// The strides of each dimension (it's elemwise, not bytes.)
+        /// This can be an empty array, indicating array is contiguous
         /// </summary>
         public IR.Tuple Strides;
 

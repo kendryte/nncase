@@ -27,7 +27,7 @@ namespace Nncase.Tests.ReWriteTest
     {
         public DataFlowRewriteTestFactory(IHost host) : base(host)
         {
-            passOptions.SetDir(Path.Combine(passOptions.FullDumpDir, "DataFlowRewriteTestFactory"));
+            passOptions.SetDir(Path.Combine(passOptions.PassDumpDir, "DataFlowRewriteTestFactory"));
         }
 
         private static IEnumerable<object[]> Data =>
@@ -45,11 +45,11 @@ namespace Nncase.Tests.ReWriteTest
             passOptions.SetName($"{Case.Name}");
             Expr pre = Case.PreExpr;
             var infered = pre.InferenceType();
-            pre.DumpExprAsIL("pre", passOptions.FullDumpDir);
+            pre.DumpExprAsIL("pre", passOptions.PassDumpDir);
             Assert.True(infered);
             var post = DataFlowRewrite.Rewrite(pre, Case.Rules, passOptions);
             Assert.True(post.InferenceType());
-            post.DumpExprAsIL("post", passOptions.FullDumpDir);
+            post.DumpExprAsIL("post", passOptions.PassDumpDir);
             Assert.Equal(Case.PostExpr, post);
         }
 
@@ -93,7 +93,7 @@ namespace Nncase.Tests.ReWriteTest
     {
         public UnitTestDataFlowRewrite(IHost host) : base(host)
         {
-            passOptions.SetDir(Path.Combine(passOptions.FullDumpDir, "UnitTestDataFlowRewrite"));
+            passOptions.SetDir(Path.Combine(passOptions.PassDumpDir, "UnitTestDataFlowRewrite"));
         }
 
         [Fact]
@@ -203,7 +203,7 @@ namespace Nncase.Tests.ReWriteTest
     {
         public DataFlowRewriteAndInferIntegrateTest(IHost host) : base(host)
         {
-            passOptions.SetDir(Path.Combine(passOptions.FullDumpDir, "DataFlowRewriteAndInferIntegrateTest"));
+            passOptions.SetDir(Path.Combine(passOptions.PassDumpDir, "DataFlowRewriteAndInferIntegrateTest"));
         }
 
 

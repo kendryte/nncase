@@ -154,14 +154,15 @@ namespace Nncase.CodeGen
         /// <summary>
         /// this rt model is Serialized?
         /// </summary>
-        public bool isSerialized { get; }
+        public bool IsSerialized { get; }
 
         /// <summary>
         /// dump the source into file `DumpDirPath/name.xx`
         /// </summary>
         /// <param name="name">file name. </param>
         /// <param name="dumpDirPath"> dump dir path. </param>
-        public void Dump(string name, string dumpDirPath);
+        /// <returns> dumped path. </returns>
+        public string Dump(string name, string dumpDirPath);
 
         /// <summary>
         /// Serialize the runtime model

@@ -259,7 +259,6 @@ result<void> runtime_function::output_tensor(size_t index, runtime_tensor tensor
 result<void> runtime_function::invoke() noexcept
 {
     // 1. Ensure bindings
-    std::cout << ("1. Ensure bindings") << std::endl;
     for (size_t i = 0; i < input_tensors_.size(); i++)
     {
         auto &info = input_tensors_[i];
@@ -275,7 +274,6 @@ result<void> runtime_function::invoke() noexcept
     }
 
     // 2. Copy inputs
-    std::cout << ("2. Copy inputs") << std::endl;
     for (auto &in : input_tensors_)
     {
         if (in.staging_tensor.empty())
@@ -291,11 +289,9 @@ result<void> runtime_function::invoke() noexcept
     }
 
     // 3. Run
-    std::cout << ("3. Run") << std::endl;
     try_(invoke_core());
 
     // 4. Copy outputs
-    std::cout << ("4. Copy outputs") << std::endl;
     for (auto &out : output_tensors_)
     {
         if (out.staging_tensor.empty())

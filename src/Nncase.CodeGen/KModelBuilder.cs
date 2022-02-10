@@ -28,7 +28,15 @@ public class KModuleSerializeResult : ISerializeResult
 /// </summary>
 public class KModelSerializeResult : ISerializeResult
 {
+    /// <summary>
+    /// the model size.
+    /// </summary>
     public int ModelSize;
+    
+    /// <summary>
+    /// ctor.
+    /// </summary>
+    /// <param name="size"></param>
     public KModelSerializeResult(int size)
     {
         ModelSize = size;
@@ -52,7 +60,7 @@ public class RTKModel : IRTModel
     {
         get
         {
-            if (isSerialized)
+            if (IsSerialized)
                 return File.ReadAllBytes(SourcePath);
             throw new InvalidOperationException("Must Serialized Runtime Model Can Get The Source!");
         }
@@ -64,7 +72,7 @@ public class RTKModel : IRTModel
     /// <inheritdoc/>
     public IReadOnlyList<IRTModule> Modules => modules;
     /// <inheritdoc/>
-    public bool isSerialized { get; private set; }
+    public bool IsSerialized { get; private set; }
 
 
     List<IRTModule> modules;
@@ -82,20 +90,20 @@ public class RTKModel : IRTModel
         modelResult = result;
         modules = new();
         SourcePath = CodeGenUtil.GetTempFileName(SourceExt);
-        isSerialized = false;
+        IsSerialized = false;
         serializeResult = new(0);
     }
 
     /// <inheritdoc/>
-    public void Dump(string name, string dumpDirPath)
+    public string Dump(string name, string dumpDirPath)
     {
         var dump_path = Path.Combine(dumpDirPath, $"{name}.{SourceExt}");
-        if (isSerialized)
+        if (IsSerialized)
         {
             if (File.Exists(dump_path))
                 File.Delete(dump_path);
             File.Copy(SourcePath, dump_path);
-            return;
+            return dump_path;
         }
         throw new InvalidOperationException("Please Call Serialize First!");
     }
@@ -108,7 +116,7 @@ public class RTKModel : IRTModel
     /// <inheritdoc/>
     public ISerializeResult Serialize()
     {
-        if (isSerialized) return serializeResult;
+        if (IsSerialized) return serializeResult;
 
         // step 1. create the kmodel file
         using var ostream = File.Open(SourcePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
@@ -158,7 +166,7 @@ public class RTKModel : IRTModel
         writer.Flush();
         writer.Close();
         serializeResult.ModelSize = ((int)(end_pos - begin_pos));
-        isSerialized = true;
+        IsSerialized = true;
         return serializeResult;
     }
 }
