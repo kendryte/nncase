@@ -40,7 +40,7 @@
     <ItemGroup>
       <NativePackageLib Include="..\build\$(Configuration)\simulator_install\lib\$(NativeLibPreFix)nncase_csharp.$(NativeLibExtension)" />
       <NativePackageLib Condition="'$(TargetOS)' != 'win'" Include="..\build\$(Configuration)\simulator_install\lib\$(NativeLibPreFix)nncase.$(NativeLibExtension)" />
-      <NativePackageLib Condition="'$(TargetOS)' != 'win'" Include="..\build\$(Configuration)\simulator_install\lib\$(NativeLibPreFix)nncase.lib" />
+      <NativePackageLib Condition="'$(TargetOS)' == 'win'" Include="..\build\$(Configuration)\simulator_install\lib\$(NativeLibPreFix)nncase.lib" />
       <NativePackageLib Include="..\build\$(Configuration)\simulator_install\bin\ncc$(NativeExecExtension)" />
     </ItemGroup>
 
