@@ -176,7 +176,7 @@ namespace Nncase.TIR
         public static BodyExprBuilder<For> Serial(out Var loopVar, Range Dom, out For loop)
         {
             loopVar = new Var(TensorType.Scalar(DataType.Int32));
-            loop = new For(loopVar, Dom, ForMode.Serial);
+            loop = new For(loopVar, Dom, LoopMode.Serial);
             return new BodyExprBuilder<For>(loop);
         }
 

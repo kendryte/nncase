@@ -51,7 +51,7 @@ public sealed record Store() : Op
     /// <summary>
     /// The buffer variable handle.
     /// </summary>
-    public static readonly ParameterInfo Handle = new(typeof(Store), 0, "handle");
+    public static readonly ParameterInfo Handle = new(typeof(Store), 0, "handle", IsHandle());
 
     /// <summary>
     /// The index locations to be stored.

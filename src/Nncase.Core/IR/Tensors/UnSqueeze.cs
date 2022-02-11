@@ -24,5 +24,5 @@ public sealed record Unsqueeze() : Op
     /// <summary>
     /// Gets dimension.
     /// </summary>
-    public static ParameterInfo Dim = new(typeof(UnSqueeze), 1, "dim", IsRank(1) & IsIntegral());
+    public static ParameterInfo Dim = new(typeof(Unsqueeze), 1, "dim", IsRank(1) & IsIntegral());
 }

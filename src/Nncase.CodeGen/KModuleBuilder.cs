@@ -528,7 +528,7 @@ public abstract class BaseRTKModule : IRTModule
         }
 
         writer.AlignPosition(8);
-        var end_pos = writer.GetPosition();
+        var end_pos = writer.Position();
 
         // defin module_header
         var header = new ModuleHeader { };
@@ -579,7 +579,7 @@ public abstract class BaseRTKModule : IRTModule
             }
         }
         // Skip function header
-        var header_pos = writer.GetPosition();
+        var header_pos = writer.Position();
         writer.Skip((ulong)Marshal.SizeOf<FunctionHeader>());
 
         // inputs
@@ -593,7 +593,7 @@ public abstract class BaseRTKModule : IRTModule
             writeShape(shape);
 
         writer.AlignPosition(8);
-        var end_pos = writer.GetPosition();
+        var end_pos = writer.Position();
 
         // header
         var header = new FunctionHeader

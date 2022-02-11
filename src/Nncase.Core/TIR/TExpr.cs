@@ -195,7 +195,7 @@ namespace Nncase.TIR
     /// <param name="LoopVar">The loop variable.</param>
     /// <param name="Dom">The dom of for range.</param>
     /// <param name="Mode">The kind of the for loop.</param>
-    public sealed record For(Var LoopVar, Range Dom, ForMode Mode, Sequential Sequence) : BodyExpr(Sequence)
+    public sealed record For(Var LoopVar, Range Dom, LoopMode Mode, Sequential Sequence) : BodyExpr(Sequence)
     {
         public For(Var LoopVar, Range Dom, LoopMode Mode) : this(LoopVar, Dom, Mode, new()) { }
 

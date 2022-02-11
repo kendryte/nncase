@@ -134,8 +134,8 @@ public class RTKModel : IRTModel
         // step 2. start write.
         var header = new ModelHeader()
         {
-            Identifier = ModelInfo.Identifier,
-            Version = ModelInfo.Version,
+            Identifier = ModelInfo.IDENTIFIER,
+            Version = ModelInfo.VERSION,
             HeaderSize = (uint)Marshal.SizeOf(typeof(ModelHeader)),
             Flags = 0,
             Alignment = 8,

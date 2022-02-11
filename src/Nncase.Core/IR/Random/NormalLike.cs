@@ -2,7 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.IR.Tensors;
-using static Nncase.IR.Utility;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Random;
 
@@ -34,5 +34,5 @@ public sealed record NormalLike(DataType Type) : Op
     /// <summary>
     /// Gets shape.
     /// </summary>
-    public static readonly ParameterInfo Shape = new(typeof(NormalLike), 4, "shape", IsIntegral() & HasRank(1));
+    public static readonly ParameterInfo Shape = new(typeof(NormalLike), 4, "shape", IsIntegral() & IsRank(1));
 }
