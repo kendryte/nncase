@@ -10,8 +10,16 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="Celu"/>.
 /// </summary>
-public class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>
+public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>
 {
+
+    /// <inheritdoc/>
+    public Const Visit(IEvaluateContext context, Celu celu, int alpha)
+    {
+        var input = context.GetTorchArgumentValue(celu, Celu.Input);
+        return input.celu().ToConst();
+    }
+
     /// <inheritdoc/>
     public Const Visit(IEvaluateContext context, Celu celu)
     {
