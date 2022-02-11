@@ -8,22 +8,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nncase.IR.Tensors
+namespace Nncase.IR.Tensors;
+
+/// <summary>
+/// Prod expression.
+/// </summary>
+public sealed record Prod() : Op
 {
     /// <summary>
-    /// Prod expression.
+    /// Gets input.
     /// </summary>
-    public sealed record Prod() : Op
-    {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Prod), 0, "input");
-
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input)
-        {
-            return new TensorType(input.DType, Shape.Scalar);
-        }
-    }
+    public static readonly ParameterInfo Input = new(typeof(Prod), 0, "input");
 }

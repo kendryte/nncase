@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -12,6 +15,8 @@ using static Nncase.Pattern.F.Tensors;
 using static Nncase.Pattern.Utility;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.NN;
+using static Nncase.IR.F.Imaging;
 
 namespace Nncase.Transform.Rule
 {
@@ -48,6 +53,7 @@ namespace Nncase.Transform.Rule
             trans = Transpose(IsWildCard(), IsConstIntTensor());
             Pattern = quant = IsQuantize(trans);
         }
+
         public override Expr? GetRePlace(IMatchResult result)
         {
             trans.Bind(result);
@@ -66,6 +72,7 @@ namespace Nncase.Transform.Rule
             slice = IsSlice(IsWildCard());
             Pattern = quant = IsQuantize(slice);
         }
+
         public override Expr? GetRePlace(IMatchResult result)
         {
             slice.Bind(result);

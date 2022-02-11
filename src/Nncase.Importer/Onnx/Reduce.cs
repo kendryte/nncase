@@ -27,7 +27,7 @@ namespace Nncase.Importer
         {
             return ReduceCore(op, ReduceOp.Sum, 0f, f);
         }
-        
+
         private Expr VisitReduceL1(in NodeProto op)
         {
             return ReduceSumZero(op, F.Math.Abs);
@@ -45,14 +45,14 @@ namespace Nncase.Importer
             return F.Math.Log(
                 ReduceSumZero(op, expr => expr));
         }
-        
+
         // ReduceLogSumExp(x) = Log(Sum(Exp(x)))
         private Expr VisitReduceLogSumExp(in NodeProto op)
         {
             return F.Math.Log(
                 ReduceSumZero(op, F.Math.Exp));
         }
-        
+
         // ReduceSumSquare(x) = Sum(Square(x))
         private Expr VisitReduceSumSquare(in NodeProto op)
         {

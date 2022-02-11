@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Numerics.Tensors;
 using System.Linq;
 using static Nncase.Pattern.Utility;
@@ -9,7 +12,6 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Rule
 {
-
     public class FoldTranspose : PatternRule
     {
         TransposeWrapper tp1, tp2;
@@ -33,12 +35,13 @@ namespace Nncase.Transform.Rule
                 {
                     perm[i] = perm1[perm2[i]];
                 }
+
                 return Transpose(tp1.Input(), Const.FromTensor<int>(perm));
             }
+
             return null;
         }
     }
-
 
     public class FoldNopTranspose : PatternRule
     {
@@ -47,6 +50,7 @@ namespace Nncase.Transform.Rule
         {
             Pattern = tp = Transpose(IsWildCard(), IsConstIntTensor());
         }
+
         public override Expr? GetRePlace(IMatchResult result)
         {
             tp.Bind(result);
@@ -55,6 +59,7 @@ namespace Nncase.Transform.Rule
             {
                 return tp.Input();
             }
+
             return null;
         }
     }
@@ -66,6 +71,7 @@ namespace Nncase.Transform.Rule
         {
             Pattern = tp = Transpose(IsWildCard(), IsConstIntTensor());
         }
+
         public override Expr? GetRePlace(IMatchResult result)
         {
             tp.Bind(result);
@@ -82,6 +88,7 @@ namespace Nncase.Transform.Rule
                     last_sig_dim = i_dim;
                 }
             }
+
             var outshape = result[Pattern].CheckedShape;
             return Reshape(tp.Input(), Const.FromShape(outshape));
         }

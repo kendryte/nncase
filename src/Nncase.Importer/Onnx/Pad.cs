@@ -4,6 +4,7 @@
 using System;
 using Nncase.IR;
 using Onnx;
+using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Importer
@@ -19,9 +20,9 @@ namespace Nncase.Importer
 
         private Expr TransposePadding(Expr padding)
         {
-            return Transpose(padding, new[] {1, 0});
+            return Transpose(padding, new[] { 1, 0 });
         }
-        
+
         private Expr PadV2(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);
@@ -37,25 +38,26 @@ namespace Nncase.Importer
             return Reshape(pads,
                 Concat(
                     new IR.Tuple(
-                        new[] {2},
-                        ShapeOp(pads) / 2),
+                        new[] { 2 },
+                        ShapeOf(pads) / 2),
                     0));
         }
-        
+
         private Expr PadV11(in NodeProto op)
         {
             // todo:pads shape
             var (input, pads) = GetInputExprs(op, 0, 1);
             var reshapePads = ReshapePadding(pads);
             var padMode = GetPadMode(op);
-            // GetInputExpr will get a Tensor with shape [1], but padValue is a scalar 
+
+            // GetInputExpr will get a Tensor with shape [1], but padValue is a scalar
             var padValue = GetOptionInputExpr(op, 2)
                 .Match(
                     x => SliceIndex(x, 0),
                     () => 0);
             return Pad(input, TransposePadding(reshapePads), padMode, padValue);
         }
-        
+
         private PadMode GetPadMode(in NodeProto op)
         {
             var mode = GetStringAttribute(op, "mode", "constant");

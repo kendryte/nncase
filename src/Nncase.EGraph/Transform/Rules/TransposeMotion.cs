@@ -1,31 +1,33 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Math;
-using Nncase.IR.Tensors;
+using Nncase.IR.NN;
 using Nncase.Pattern;
-using Nncase.Pattern.Tensors;
 using Nncase.Pattern.Math;
-using static Nncase.Pattern.F.Math;
-using static Nncase.Pattern.F.Tensors;
-using static Nncase.Pattern.Utility;
+using Nncase.Pattern.Tensors;
+using TorchSharp;
+using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
-using Nncase.Evaluator;
-using TorchSharp;
-using Nncase.IR;
+using static Nncase.Pattern.F.Math;
+using static Nncase.Pattern.F.Tensors;
+using static Nncase.Pattern.Utility;
 
 namespace Nncase.Transform.Rule
 {
-
     /// <summary>
     /// Motion Transpose with Binary
-    /// binary(transpose(a,p),transpose(b,p)) => transpose(binary(a,b),p)
+    /// binary(transpose(a,p),transpose(b,p)) => transpose(binary(a,b),p).
     /// </summary>
-    /// 
+    ///
     public class TransposeBinaryMotion : PatternRule
     {
         private ConstPattern conpat;
@@ -34,7 +36,7 @@ namespace Nncase.Transform.Rule
         private BinaryWrapper binary;
 
         /// <summary>
-        /// <see cref="TransposeBinaryMotion"/>
+        /// <see cref="TransposeBinaryMotion"/>.
         /// </summary>
         public TransposeBinaryMotion()
         {
@@ -56,7 +58,7 @@ namespace Nncase.Transform.Rule
     }
 
     /// <summary>
-    /// binary(transpose(a, p), const) =>  transpose(binary(a, const), p)
+    /// binary(transpose(a, p), const) =>  transpose(binary(a, const), p).
     /// </summary>
     public class TransposeConstBinaryMotionLeft : PatternRule
     {
@@ -66,7 +68,7 @@ namespace Nncase.Transform.Rule
         BinaryWrapper binary;
 
         /// <summary>
-        /// <see cref="TransposeConstBinaryMotionLeft"/>
+        /// <see cref="TransposeConstBinaryMotionLeft"/>.
         /// </summary>
         public TransposeConstBinaryMotionLeft()
         {
@@ -83,11 +85,11 @@ namespace Nncase.Transform.Rule
         }
 
         /// <summary>
-        /// Get the permed const with new shape
+        /// Get the permed const with new shape.
         /// </summary>
         /// <param name="oldCon"></param>
         /// <param name="oldPerm"></param>
-        /// <returns> new const expr</returns>
+        /// <returns> new const expr.</returns>
         public static Const GetNewConst(Const oldCon, Const oldPerm)
         {
             var perm = oldPerm.ToTensor<int>();
@@ -96,8 +98,9 @@ namespace Nncase.Transform.Rule
             return torch.permute(ts, new_perm.ToArray()).ToConst();
         }
     }
+
     /// <summary>
-    /// binary(const, transpose(a, p)) =>  transpose(binary(const, a), p)
+    /// binary(const, transpose(a, p)) =>  transpose(binary(const, a), p).
     /// </summary>
     public class TransposeConstBinaryMotionRight : PatternRule
     {
@@ -105,8 +108,9 @@ namespace Nncase.Transform.Rule
         ConstPattern con = IsConst();
 
         BinaryWrapper binary;
+
         /// <summary>
-        /// <see cref="TransposeConstBinaryMotionRight"/>
+        /// <see cref="TransposeConstBinaryMotionRight"/>.
         /// </summary>
         public TransposeConstBinaryMotionRight()
         {
@@ -125,7 +129,6 @@ namespace Nncase.Transform.Rule
 
     public class TransposeConcatMotion : PatternRule
     {
-
         private class Comparer
         {
             private Expr? last_const_ = null;
@@ -136,6 +139,7 @@ namespace Nncase.Transform.Rule
                 return last_const_ == con;
             }
         }
+
         private Func<Const, bool> permCond = new(new Comparer().Cond);
         List<WildCardPattern> wcinputs = new();
         ConstPattern wcprem, wcaxis;
@@ -167,7 +171,6 @@ namespace Nncase.Transform.Rule
             var newTran = Transpose(newCon, oldPerm);
             return newTran;
         }
-
     }
 
     public class TransPosePadMotion : PatternRule
@@ -196,6 +199,7 @@ namespace Nncase.Transform.Rule
                 newpadspan[i * 2] = padst[permt[i], 0];
                 newpadspan[(i * 2) + 1] = padst[permt[i], 1];
             }
+
             Const newPads = new Const(result[wcpads].ValueType, newpadspan.Cast<byte>().ToArray());
             return Pad(Transpose(input, perm), (newPads), ((Pad)result[wcpad].Target).PadMode, padv);
         }
@@ -203,7 +207,6 @@ namespace Nncase.Transform.Rule
 
     public class TransposeReduceMotion : PatternRule
     {
-
         WildCardPattern wcinput = "input", wcinit = "init";
         ConstPattern wckeepdims = IsConst(IsScalar() | IsIntegral());
         WildCardPattern wcaxis = "axis", wcperm = "axis";
@@ -224,13 +227,13 @@ namespace Nncase.Transform.Rule
             {
                 return Squeeze(Transpose(Reduce(reduce.ReduceOp, input, new_axis, init, true), perm), axis);
             }
+
             return Transpose(Reduce(reduce.ReduceOp, input, new_axis, init, keepdims), perm);
         }
     }
 
     public class TransposeUnaryMotion : PatternRule
     {
-
         WildCardPattern wcinput = "input", wcperm = "perm";
 
         CallPattern wcunary;
@@ -269,7 +272,5 @@ namespace Nncase.Transform.Rule
             var input = result[wcinput];
             return Transpose(Clamp(input, min, max), perm);
         }
-
     }
-
 }

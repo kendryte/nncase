@@ -1,8 +1,10 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using Nncase.IR;
 
 namespace Nncase.TIR.Builtin
 {
-
     [System.AttributeUsage(System.AttributeTargets.All, Inherited = false, AllowMultiple = true)]
     public sealed class CallEffectAttribute : System.Attribute
     {
@@ -21,7 +23,6 @@ namespace Nncase.TIR.Builtin
     /// </summary>
     public sealed record Reinterpret() : Op
     {
-
     }
 
     /// <summary>
@@ -50,12 +51,12 @@ namespace Nncase.TIR.Builtin
     public sealed record bitwise_not() : Op { }
 
     /// <summary>
-    ///  Left shift
+    ///  Left shift.
     /// </summary>
     public sealed record shift_left() : Op { }
 
     /// <summary>
-    ///  Right shift
+    ///  Right shift.
     /// </summary>
     public sealed record shift_right() : Op { }
 
@@ -65,7 +66,7 @@ namespace Nncase.TIR.Builtin
     ///  Construct a big uint that may not be representable by int64
     ///
     ///  Expr large_uint_imm(uint32_t v0, uin32_t v1) {
-    ///    return (v1 << 32) | v0;
+    ///    return (v1. << 32) | v0;
     ///  }
     /// </summary>
     public sealed record large_uint_imm() : Op { }
@@ -74,7 +75,7 @@ namespace Nncase.TIR.Builtin
     ///  Execute a multiplication between two Q-numbers x and y
     /// followed by a right shift s
     /// The default rounding rule is to the nearest value, rounding half up
-    /// (i.e., round(x.1) = x and round (x.5) = x+1)
+    /// (i.e., round(x.1) = x and round (x.5) = x+1).
     /// </summary>
     public sealed record q_multiply_shift() : Op { }
 
@@ -83,7 +84,7 @@ namespace Nncase.TIR.Builtin
     ///
     ///  Handle address_of(Load ///op) {
     ///     return &op->buffer_var[index];
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record address_of() : Op { }
 
@@ -92,7 +93,7 @@ namespace Nncase.TIR.Builtin
     ///
     ///  Type if_then_else(cond, a, b) {
     ///    return cond ? a : b;
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record if_then_else() : Op { }
 
@@ -101,17 +102,17 @@ namespace Nncase.TIR.Builtin
     ///
     ///  bool isnullptr(void/// handle) {
     ///     return handle == nullptr
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record isnullptr() : Op { }
 
     /// <summary>
-    ///  Check if value is nan
+    ///  Check if value is nan.
     /// </summary>
     public sealed record isnan() : Op { }
 
     /// <summary>
-    ///  Popcount
+    ///  Popcount.
     /// </summary>
     public sealed record popcount() : Op { }
 
@@ -120,7 +121,7 @@ namespace Nncase.TIR.Builtin
     ///
     ///  Type fma(a, b, c) {
     ///    return a // b + c;
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record fma() : Op { }
 
@@ -190,7 +191,7 @@ namespace Nncase.TIR.Builtin
     // TODO(tvm-team) revisit the builtins below
     // some of them can simply become ops with special codegen attr.
     /// <summary>
-    ///  Prefetch a cacheline
+    ///  Prefetch a cacheline.
     /// </summary>
     public sealed record prefetch() : Op { }
 
@@ -210,8 +211,8 @@ namespace Nncase.TIR.Builtin
     /// </code>
     /// </example>
     /// </summary>
-    /// <param name="DType"> the read data type</param>
-    /// <param name="AccessMode"> access mode </param>
+    /// <param name="DType"> the read data type.</param>
+    /// <param name="AccessMode"> access mode. </param>
     public sealed record AccessPtr(DataType DType, AccessMode AccessMode) : Op
     {
         public static readonly ParameterInfo Data = new(typeof(AccessPtr), 0, "data");
@@ -236,7 +237,7 @@ namespace Nncase.TIR.Builtin
     ///  It is used to represent tuple structure in value field of AttrStmt,
     ///  for the sake of giving hint to optimization.
     ///
-    ///  Handle tuple(value0, value1, ..., value_n);
+    ///  Handle tuple(value0, value1, ..., value_n).
     /// </summary>
     public sealed record tuple() : Op { }
 
@@ -246,7 +247,7 @@ namespace Nncase.TIR.Builtin
     ///  Type struct_get(StructType/// arr, int index, int field_id) {
     ///     return arr[index]->field;
     ///  }
-    /// \sa TVMStructFieldKind
+    /// \sa TVMStructFieldKind.
     /// </summary>
     public sealed record struct_get() : Op { }
 
@@ -256,7 +257,7 @@ namespace Nncase.TIR.Builtin
     ///  Handle struct_set(StructType/// arr, int index, int field_id, value) {
     ///     arr[index]->field = value;
     ///  }
-    /// \sa TVMStructFieldKind
+    /// \sa TVMStructFieldKind.
     /// </summary>
     public sealed record struct_set() : Op { }
 
@@ -264,7 +265,7 @@ namespace Nncase.TIR.Builtin
     ///  See pseudo code
     /// Type lookup_param(String param_name) {
     ///     return __param__param_name;
-    /// }
+    /// }.
     /// </summary>
     public sealed record lookup_param() : Op { }
 
@@ -273,7 +274,7 @@ namespace Nncase.TIR.Builtin
     ///
     ///  void throw_last_error() {
     ///    throw TVMGetLastError();
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record throw_last_error() : Op { }
 
@@ -284,7 +285,7 @@ namespace Nncase.TIR.Builtin
     ///
     ///  Handle stack_alloca(string dtype, int num) {
     ///     return new on stack dtype[num];
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record stack_alloca() : Op { }
 
@@ -296,7 +297,7 @@ namespace Nncase.TIR.Builtin
     ///     for i in range(len(args)):
     ///        ret[i] = args[i]
     ///     return &ret[0];
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record stack_make_shape() : Op { }
 
@@ -317,7 +318,7 @@ namespace Nncase.TIR.Builtin
     ///     ret->dtype = dtype.type();
     ///     ret->byte_offset = elem_offset /// sizeof(dtype);
     ///     return ret;
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record stack_make_array() : Op { }
 
@@ -332,7 +333,7 @@ namespace Nncase.TIR.Builtin
     ///     (///f)(args, type_code_of(args), len(args), &ret_value, &ret_code);
     ///     // return type can be int, float, handle.
     ///     return cast(return_type, ret_value.v_return_type);
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record call_packed() : Op { }
 
@@ -344,7 +345,7 @@ namespace Nncase.TIR.Builtin
     ///     TVMValue ret_value;
     ///     (///fname)(args, type_code_of(args), len(args), &ret_value, &ret_code);
     ///     return cast(return_type, ret_value.v_return_type);
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record call_cpacked() : Op { }
 
@@ -357,7 +358,7 @@ namespace Nncase.TIR.Builtin
     ///     (///f)(args, type_code_of(args), len(args));
     ///     // return type can be int, float, handle.
     ///     return cast(return_type, ret_value.v_return_type);
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record call_trace_packed() : Op { }
 
@@ -370,7 +371,7 @@ namespace Nncase.TIR.Builtin
     ///
     ///  Handle thread_context(Expr call) {
     ///     return call;
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record thread_context() : Op { }
 
@@ -390,7 +391,7 @@ namespace Nncase.TIR.Builtin
     ///                   TVMRetValue(value_stack + end, tcode_stack + end));
     ///     // return type can be int, float, handle.
     ///     return cast(return_type, load_return_from(tcode_stack + end))
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record call_packed_lowered() : Op { }
 
@@ -405,7 +406,7 @@ namespace Nncase.TIR.Builtin
     ///                              int end) {
     ///     fname(TVMArgs(value_stack[begin:end], tcode_stack[begin:end]),
     ///                   TVMRetValue(value_stack + end, tcode_stack + end));
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record call_cpacked_lowered() : Op { }
 
@@ -426,7 +427,7 @@ namespace Nncase.TIR.Builtin
     ///                   TVMRetValue(value_stack + end, tcode_stack + end));
     ///     // return type can be int, float, handle.
     ///     return cast(return_type, load_return_from(tcode_stack + end))
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record call_trace_packed_lowered() : Op { }
 
@@ -436,7 +437,7 @@ namespace Nncase.TIR.Builtin
     ///  int storage_sync(std::string storage_scope) {
     ///     __sync(storage_scope);
     ///     return 0;
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record storage_sync() : Op { }
 
@@ -491,7 +492,7 @@ namespace Nncase.TIR.Builtin
     ///     // reduce_temp is used to save intermediate result.
     ///     reduce_temp0, ... = reduce(combiner, source0, ..., cond
     ///       over [thread_idx1, thread_idx2] passed by any caller)
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record thread_allreduce() : Op { }
 
@@ -507,7 +508,7 @@ namespace Nncase.TIR.Builtin
     ///    // Determine fragment layout(column-major or row major) by layout.
     ///    // fragments must be in 'wmma.matrix_a' or 'wmma.matrix_b' scope.
     ///    nvcuda::wmma::load_matrix_sync(fragment[index], buffer_ptr, stride);
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record load_matrix_sync() : Op { }
 
@@ -520,7 +521,7 @@ namespace Nncase.TIR.Builtin
     ///                    Var fragment_c, Expr index_c) {
     ///    nvcuda::wmma::mma_sync(fragment_d[index_d], fragment_a[index_a],
     ///                           fragment_b[index_b], fragment_c[index_c]);
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record mma_sync() : Op { }
 
@@ -533,7 +534,7 @@ namespace Nncase.TIR.Builtin
     ///                     Var fragment_c, Expr index_c) {
     ///    nvcuda::wmma::bmma_sync(fragment_d[index_d], fragment_a[index_a],
     ///                           fragment_b[index_b], fragment_c[index_c]);
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record bmma_sync() : Op { }
 
@@ -545,7 +546,7 @@ namespace Nncase.TIR.Builtin
     ///    // m, n, k are the shape of wmma fragment
     ///    // fragments must be in 'wmma.accumulator' scope.
     ///    nvcuda::wmma::fill_fragment(fragment[index], value);
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record fill_fragment() : Op { }
 
@@ -558,18 +559,18 @@ namespace Nncase.TIR.Builtin
     ///    // m, n, k are the shape of wmma fragment
     ///    // fragments must be in 'wmma.accumulator' scope.
     ///    nvcuda::wmma::store_matrix_sync(fragment[index], buffer_ptr, stride, layout);
-    ///  }
+    ///  }.
     /// </summary>
     public sealed record store_matrix_sync() : Op { }
 
     // TODO(tvm-team) replace the usage of the vector operations by Shuffle.
     /// <summary>
-    ///  Get the high level half of the vector
+    ///  Get the high level half of the vector.
     /// </summary>
     public sealed record vectorhigh() : Op { }
 
     /// <summary>
-    ///  Get the low-level half of the vector
+    ///  Get the low-level half of the vector.
     /// </summary>
     public sealed record vectorlow() : Op { }
 
@@ -579,25 +580,25 @@ namespace Nncase.TIR.Builtin
     public sealed record vectorcombine() : Op { }
 
     /// <summary>
-    ///  atomic add instruction, corresponding e.g. to atomicAdd in CUDA
+    ///  atomic add instruction, corresponding e.g. to atomicAdd in CUDA.
     /// </summary>
     public sealed record atomic_add() : Op { }
     /// <summary>
-    ///  Create a texture 2d memory allocation
+    ///  Create a texture 2d memory allocation.
     /// </summary>
     public sealed record texture2d_alloca() : Op { }
 
     /// <summary>
-    ///  Store to texture 2d memory
+    ///  Store to texture 2d memory.
     /// </summary>
     public sealed record texture2d_store() : Op { }
 
     /// <summary>
-    ///  Load from texture 2d memory
+    ///  Load from texture 2d memory.
     /// </summary>
     public sealed record texture2d_load() : Op { }
 
-    /// <summary>  The kind of structure field info used in intrinsic /// </summary>
+    /// <summary>  The kind of structure field info used in intrinsic ///. </summary>
     enum TVMStructFieldKind : int
     {
         // array head address
@@ -613,9 +614,11 @@ namespace Nncase.TIR.Builtin
         kArrDeviceId,
         kArrDeviceType,
         kArrKindBound_,
+
         // TVMValue field
         kTVMValueContent,
-        kTVMValueKindBound_
-    };
+        kTVMValueKindBound_,
+    }
 
+;
 }

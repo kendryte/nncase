@@ -9,143 +9,139 @@ using System.Text;
 using System.Threading.Tasks;
 using static Nncase.IR.TypePatternUtility;
 
-namespace Nncase.IR.NN
+namespace Nncase.IR.NN;
+
+/// <summary>
+/// Sigmoid expression.
+/// </summary>
+public sealed record Sigmoid() : Op
 {
     /// <summary>
-    /// Sigmoid expression.
+    /// Gets input.
     /// </summary>
-    public sealed record Sigmoid() : Op
-    {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Sigmoid), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Sigmoid), 0, "input");
+}
 
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input) => input;
-    }
+/// <summary>
+/// Relu expression.
+/// </summary>
+public sealed record Relu() : Op
+{
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(Relu), 0, "input");
+}
 
-    public sealed record Relu() : Op
-    {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Relu), 0, "input");
+/// <summary>
+/// Relu6 expression.
+/// </summary>
+public sealed record Relu6() : Op
+{
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(Relu6), 0, "input");
+}
 
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input) => input;
-    }
+/// <summary>
+/// PRelu expression.
+/// </summary>
+public sealed record PRelu() : Op
+{
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(PRelu), 0, "input");
+}
 
-    public sealed record Relu6() : Op
-    {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Relu6), 0, "input");
+/// <summary>
+/// LeakyRelu expression.
+/// </summary>
+public sealed record LeakyRelu() : Op
+{
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(LeakyRelu), 0, "input");
+}
 
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input) => input;
-    }
+/// <summary>
+/// Celu expression.
+/// </summary>
+public sealed record Celu() : Op
+{
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(Celu), 0, "input");
 
-    public sealed record PRelu() : Op
-    {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(PRelu), 0, "input");
+    /// <summary>
+    /// Gets Alpha.
+    /// </summary>
+    public static readonly ParameterInfo Alpha = new(typeof(Celu), 1, "alpha", IsFloatScalar());
+}
 
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input) => input;
-    }
+/// <summary>
+/// Selu expression.
+/// </summary>
+public sealed record Selu() : Op
+{
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(Selu), 0, "input");
 
-    public sealed record LeakyRelu() : Op
-    {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(LeakyRelu), 0, "input");
+    /// <summary>
+    /// Gets Alpha.
+    /// </summary>
+    public static readonly ParameterInfo Alpha = new(typeof(Selu), 1, "alpha", IsFloatScalar());
+}
 
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input) => input;
-    }
-    
-    public sealed record Celu() : Op
-    {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Celu), 0, "input");
+/// <summary>
+/// Elu expression.
+/// </summary>
+public sealed record Elu() : Op
+{
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(Elu), 0, "input");
 
-        /// <summary>
-        /// Gets Alpha.
-        /// </summary>
-        public static readonly ParameterInfo Alpha = new(typeof(Celu), 1, "alpha", IsFloatScalar());
+    /// <summary>
+    /// Gets Alpha.
+    /// </summary>
+    public static readonly ParameterInfo Alpha = new(typeof(Elu), 1, "alpha", IsFloatScalar());
+}
 
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType alpha) => input;
-    }
-    
-    public sealed record Selu() : Op
-    {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Selu), 0, "input");
+/// <summary>
+/// HardSwish expression.
+/// </summary>
+public sealed record HardSwish() : Op
+{
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(HardSwish), 0, "input");
+}
 
-        /// <summary>
-        /// Gets Alpha.
-        /// </summary>
-        public static readonly ParameterInfo Alpha = new(typeof(Selu), 1, "alpha", IsFloatScalar());
+/// <summary>
+/// HardSigmoid expression.
+/// </summary>
+public sealed record HardSigmoid() : Op
+{
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(HardSigmoid), 0, "input");
 
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType alpha) => input;
-    }
-    
-    public sealed record Elu() : Op
-    {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Elu), 0, "input");
+    /// <summary>
+    /// Gets alpha.
+    /// </summary>
+    public static readonly ParameterInfo Alpha = new(typeof(HardSigmoid), 1, "alpha", IsFloatScalar());
 
-        /// <summary>
-        /// Gets Alpha.
-        /// </summary>
-        public static readonly ParameterInfo Alpha = new(typeof(Elu), 1, "alpha", IsFloatScalar());
-
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType alpha) => input;
-    }
-    
-    public sealed record HardSwish() : Op
-    {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(HardSwish), 0, "input");
-        
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input) => input;
-    }
-    
-    public sealed record HardSigmoid() : Op
-    {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(HardSigmoid), 0, "input");
-
-        /// <summary>
-        /// Gets alpha.
-        /// </summary>
-        public static readonly ParameterInfo Alpha = new(typeof(HardSigmoid), 1, "alpha", IsFloatScalar());
-        
-        /// <summary>
-        /// Gets beta.
-        /// </summary>
-        public static readonly ParameterInfo Beta = new(typeof(HardSigmoid), 2, "beta", IsFloatScalar());
-        
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType alpha, TensorType beta) => input;
-    }
+    /// <summary>
+    /// Gets beta.
+    /// </summary>
+    public static readonly ParameterInfo Beta = new(typeof(HardSigmoid), 2, "beta", IsFloatScalar());
 }

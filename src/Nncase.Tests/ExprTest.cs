@@ -60,7 +60,7 @@ namespace Nncase.Tests
         {
             var a = (Const)(1.1f) + (Const)(1.3f);
             var b = (Const)(1.1f) + (Const)(1.3f);
-            TypeInference.InferenceType(a);
+            CompilerServices.InferenceType(a);
             Assert.True(a == b);
             Assert.Equal(a, b);
             Assert.Equal(a.GetHashCode(), b.GetHashCode());
@@ -71,7 +71,7 @@ namespace Nncase.Tests
         {
             var a = (Const)(1.1f) + (Const)(1.3f);
             var b = (Const)(1.1f) + (Const)(1.2f);
-            TypeInference.InferenceType(a);
+            CompilerServices.InferenceType(a);
             Assert.NotEqual(a, b);
         }
 

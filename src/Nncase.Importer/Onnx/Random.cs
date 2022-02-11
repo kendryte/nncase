@@ -17,9 +17,9 @@ namespace Nncase.Importer
             var scale = GetFloatAttribute(op, "scale", 1.0f);
             var seed = GetFloatAttribute(op, "seed", float.NaN);
             var shape = Const.FromSpan<long>(GetIntsAttribute(op, "shape"));
-            return F.Tensors.RandomNormal(GetDataType(dtype), mean, scale, seed, shape);
+            return F.Random.Normal(GetDataType(dtype), mean, scale, seed, shape);
         }
-        
+
         private Expr VisitRandomNormalLike(NodeProto op)
         {
             var input = GetInputExpr(op, 0);
@@ -30,9 +30,9 @@ namespace Nncase.Importer
             var mean = GetFloatAttribute(op, "mean", 0.0f);
             var scale = GetFloatAttribute(op, "scale", 1.0f);
             var seed = GetFloatAttribute(op, "seed", float.NaN);
-            return F.Tensors.RandomNormalLike(dtype, input, mean, scale, seed);
+            return F.Random.NormalLike(dtype, input, mean, scale, seed);
         }
-        
+
         private Expr VisitRandomUniform(in NodeProto op)
         {
             var dtype = GetIntAttribute(op, "dtype");
@@ -40,9 +40,9 @@ namespace Nncase.Importer
             var low = GetFloatAttribute(op, "low", 0.0f);
             var seed = GetFloatAttribute(op, "seed", float.NaN);
             var shape = Const.FromSpan<long>(GetIntsAttribute(op, "shape"));
-            return F.Tensors.RandomUniform(GetDataType(dtype), high, low, seed, shape);
+            return F.Random.Uniform(GetDataType(dtype), high, low, seed, shape);
         }
-        
+
         private Expr VisitRandomUniformLike(NodeProto op)
         {
             var input = GetInputExpr(op, 0);
@@ -53,7 +53,7 @@ namespace Nncase.Importer
             var high = GetFloatAttribute(op, "high", 1.0f);
             var low = GetFloatAttribute(op, "low", 0.0f);
             var seed = GetFloatAttribute(op, "seed", float.NaN);
-            return F.Tensors.RandomUniformLike(dtype, input, high, low, seed);
+            return F.Random.UniformLike(dtype, input, high, low, seed);
         }
     }
 }

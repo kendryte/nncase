@@ -16,7 +16,6 @@ namespace Nncase.TIR
     /// </summary>
     public static class T
     {
-
         /// <summary>
         ///  Construct a vector with lanes elements
         ///   where its i-th element equals offset + i * stride.
@@ -37,7 +36,7 @@ namespace Nncase.TIR
 
         /// <summary>
         /// Load the **One** value from buffer_var.
-        /// Equivalent to ((ElemType*)buffer_var)[index]
+        /// Equivalent to ((ElemType*)buffer_var)[index].
         /// <remarks>
         /// If the buffer has packed type like float32*4, but we load the index with lanes 1, so will return only one float32.
         /// </remarks>
@@ -79,10 +78,9 @@ namespace Nncase.TIR
         /// <returns></returns>
         public static Call Store(Var handle, Expr index, Expr value) => new Call(new Store(), handle, index, value);
 
-
         /// <summary>
         /// If the op is BufferLoad, it will return BufferStore
-        /// If the op is Load, it will return Store
+        /// If the op is Load, it will return Store.
         /// </summary>
         /// <param name="op">the op call.</param>
         /// <param name="value">update value.</param>
@@ -96,9 +94,8 @@ namespace Nncase.TIR
                 _ => throw new InvalidOperationException("Only Can build Store Op from Load!"),
             },
             TIR.BufferLoad bufload => new BufferStore(bufload.Buffer, bufload.Indices, value),
-            _ => throw new InvalidOperationException("Only Can build Store Op from Load!")
+            _ => throw new InvalidOperationException("Only Can build Store Op from Load!"),
         };
-
 
         /// <summary>
         /// make a const by value and lanes.
@@ -184,7 +181,7 @@ namespace Nncase.TIR
         }
 
         /// <summary>
-        /// <see cref="Serial(out Var, Range, out For)"/>
+        /// <see cref="Serial(out Var, Range, out For)"/>.
         /// </summary>
         /// <param name="loopVar"></param>
         /// <param name="Dom"></param>
@@ -222,7 +219,8 @@ namespace Nncase.TIR
             }
 
             /// <summary>
-            /// 
+            /// Wrapper Body method
+            /// <see cref="For.Add(Expr[])"/>.
             /// </summary>
             /// <param name="exprs"></param>
             /// <returns></returns>
@@ -238,7 +236,7 @@ namespace Nncase.TIR
         ///   for i, j in T.grid(16, 16):
         ///     with T.block():
         ///       vi, vj = T.axis.remap("SS", [i, j])
-        ///       B[vi, vj] = A[vi, vj]
+        ///       B[vi, vj] = A[vi, vj].
         /// </summary>
         /// <param name="i">outer index var.</param>
         /// <param name="j">inner index var.</param>
@@ -252,7 +250,7 @@ namespace Nncase.TIR
         }
 
         /// <summary>
-        /// get grid with loops
+        /// get grid with loops.
         /// </summary>
         /// <param name="i"></param>
         /// <param name="j"></param>
@@ -267,16 +265,16 @@ namespace Nncase.TIR
         }
 
         /// <summary>
-        /// a named variable represents a tensor index size
+        /// a named variable represents a tensor index size.
         /// </summary>
-        /// <param name="name"></param>        
+        /// <param name="name"></param>
         public static Var SizeVar(string name)
         {
             return Var.SizeVar(name);
         }
 
         /// <summary>
-        /// create a block
+        /// create a block.
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
@@ -290,9 +288,9 @@ namespace Nncase.TIR
         /// Declare a new symbolic buffer.
         /// Normally buffer is created automatically during lower and build.
         /// This is only needed if user want to specify their own buffer layout.
-        /// 
+        ///
         /// See the note below for detailed discussion on usage of buffer.
-        ///  <see cref="Buffer"/>
+        ///  <see cref="Buffer"/>.
         /// </summary>
         /// <param name="shape">The shape of the buffer.</param>
         /// <param name="dtype">The data type of the buffer.</param>
@@ -322,7 +320,7 @@ namespace Nncase.TIR
         ///   without considering whether dimension size equals to one.
         ///   TVM maps buffer[i][j][k] -> buffer[i][0][k] if dimension j's shape equals 1.
         /// </param>
-        /// <returns>Buffer</returns>
+        /// <returns>Buffer.</returns>
         public static Buffer DeclBuffer(IR.Tuple shape, DataType? dtype = null, string name = "buffer", Var? data_handle = null, IR.Tuple? strides = null, Expr? elem_offset = null, string scope = "", int data_alignment = -1, int offset_factor = 0, BufferMode buffer_mode = BufferMode.Default)
         {
             dtype ??= DataType.Float32;
@@ -331,6 +329,7 @@ namespace Nncase.TIR
             {
                 elem_offset = Var.Scalar($"{name}_elem_offset", shape[0].CheckedDataType);
             }
+
             if (data_handle is null)
             {
                 data_handle = Var.Handle(name, dtype, scope);
@@ -341,6 +340,7 @@ namespace Nncase.TIR
             {
                 data_alignment = 128; // TODO add useage.
             }
+
             if (offset_factor == 0)
             {
                 offset_factor = 1;
@@ -383,12 +383,13 @@ namespace Nncase.TIR
                 {
                     body.Add(item);
                 }
+
                 return func;
             }
         }
 
         /// <summary>
-        /// The script for build funciont with Sequential body
+        /// The script for build funciont with Sequential body.
         /// <code>
         ///  var func = T.PrimFunc("func", A.Handle, n, m).Add(
         ///  T.Serial(out var i, n, out var fi).Add(
@@ -411,7 +412,7 @@ namespace Nncase.TIR
         }
 
         /// <summary>
-        /// create the handle var
+        /// create the handle var.
         /// </summary>
         /// <param name="name"></param>
         /// <param name="dtype"></param>
@@ -439,6 +440,7 @@ namespace Nncase.TIR
                 {
                     ThenBranch.Add(item);
                 }
+
                 return this;
             }
 
@@ -448,6 +450,7 @@ namespace Nncase.TIR
                 {
                     ElseBranch.Add(item);
                 }
+
                 return this;
             }
 
@@ -463,7 +466,7 @@ namespace Nncase.TIR
         }
 
         /// <summary>
-        /// rethen the IfThenElseBuilder. 
+        /// rethen the IfThenElseBuilder.
         /// </summary>
         /// <param name="condition"></param>
         /// <returns></returns>

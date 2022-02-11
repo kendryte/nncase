@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Text;
 using System.IO;
@@ -6,16 +9,14 @@ using Nncase.Transform.Rule;
 using Nncase.IR;
 using Nncase.Pattern;
 
-
 namespace Nncase.Transform
 {
-
     public static class EGraphReWriter
     {
         public static EGraph ReWrite(EGraph eGraph, PatternRule Rules, RunPassOptions options) => ReWrite(eGraph, new List<PatternRule>() { Rules }, options);
 
         /// <summary>
-        /// run egraph rewrite
+        /// run egraph rewrite.
         /// </summary>
         /// <param name="eGraph"></param>
         /// <param name="Rules"></param>
@@ -36,16 +37,18 @@ namespace Nncase.Transform
                     {
                         matches.Add((rule, result));
                     }
+
                     if (options.DumpLevel > 1 && results.Count != 0)
                         EGraphPrinter.DumpEgraphAsDot(eGraph, results,
                          Path.Combine(options.DumpDir, options.PassName, "Matches", $"V{eGraph.Version}_{count++}_{rule.GetType().Name}"));
                 }
+
                 foreach (var (rule, result) in matches)
                 {
                     var replaceExpr = rule.GetRePlace(result);
                     if (replaceExpr is null)
                         continue;
-                    if (!TypeInference.InferenceType(replaceExpr))
+                    if (!CompilerServices.InferenceType(replaceExpr))
                         throw new InvalidOperationException("Can't Inference The Replace Expr Type!");
                     eGraph.Add(replaceExpr, out var neweClass);
                     var oldeClass = eGraph.HashCons[((EMatchResult)result).Root].Find();
@@ -53,6 +56,7 @@ namespace Nncase.Transform
                         Console.WriteLine($"Version {eGraph.Version} : Merge {{{oldeClass}}} to {{{neweClass}}}");
                     eGraph.Merge(neweClass, oldeClass);
                 }
+
                 matches.Clear();
                 if (last_version == eGraph.Version)
                     break;
@@ -76,5 +80,4 @@ namespace Nncase.Transform
             return eGraph;
         }
     }
-
 }

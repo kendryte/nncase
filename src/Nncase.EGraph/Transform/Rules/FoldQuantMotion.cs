@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Linq;
 using System.Collections.Immutable;
 using System.Collections.Generic;
@@ -32,12 +35,11 @@ namespace Nncase.Transform.Rule
             bool check = (input.CheckedType, output.CheckedType) switch
             {
                 (TensorType intype, TensorType outtype) => intype.DType == outtype.DType,
-                (_, _) => false
+                (_, _) => false,
             };
             if (check)
                 return input;
             return null;
         }
     }
-
 }

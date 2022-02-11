@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -7,9 +10,9 @@ namespace Nncase.CodeGen;
 public static partial class CodeGenUtil
 {
     /// <summary>
-    /// get temp file with extenstion
+    /// get temp file with extenstion.
     /// </summary>
-    /// <param name="ext"> eg. "c"</param>
+    /// <param name="ext"> eg. "c".</param>
     /// <returns></returns>
     public static string GetTempFileName(string? ext = null)
     {
@@ -33,5 +36,4 @@ public static partial class CodeGenUtil
         Marshal.FreeHGlobal(ptr);
         return arr;
     }
-
 }

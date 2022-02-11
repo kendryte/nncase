@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using Nncase.IR;
 using Nncase.TIR;
 using System;
@@ -6,7 +9,6 @@ using System.Linq;
 
 namespace Nncase.TIR
 {
-
     class Substitutor : ExprMutator
     {
         Func<Expr, Expr?> Maper;
@@ -24,18 +26,18 @@ namespace Nncase.TIR
             return expr;
         }
     }
+
     /// <summary>
-    /// Substitute vars and collect the reuse mapping of opaque blocks
+    /// Substitute vars and collect the reuse mapping of opaque blocks.
     /// </summary>
     class SubstituteVarAndCollectOpaqueBlock : ExprMutator
     {
-
         Func<Var, Expr?> VarMaper;
 
         readonly Dictionary<Block, Block> OpaqueBlocks;
 
         /// <summary>
-        /// <see cref="SubstituteVarAndCollectOpaqueBlock"/>
+        /// <see cref="SubstituteVarAndCollectOpaqueBlock"/>.
         /// </summary>
         /// <param name="varMaper"></param>
         /// <param name="opaque_blocks"></param>
@@ -54,6 +56,7 @@ namespace Nncase.TIR
                 IsMutated = true;
                 return nexpr;
             }
+
             return expr;
         }
 
@@ -65,9 +68,12 @@ namespace Nncase.TIR
             {
                 OpaqueBlocks.Add(expr, nblock);
             }
+
             return nblock;
         }
-    };
+    }
+
+;
 
     class TIRCollector : ExprVisitor<bool, bool>
     {
@@ -76,6 +82,7 @@ namespace Nncase.TIR
         {
             CollectFunc = func;
         }
+
         /// <inheritdoc/>
         public override bool DefaultVisitLeaf(Expr expr)
         {
@@ -111,6 +118,7 @@ namespace Nncase.TIR
                         throw new InvalidOperationException($"Find The Duplicate Block {blockName}!");
                 }
             }
+
             var collector = new TIRCollector(collectBlock);
             collector.Visit(Entry);
             if (TargetBlock is null) throw new InvalidOperationException($"Can't Find The Block Name {blockName}!");
@@ -118,7 +126,7 @@ namespace Nncase.TIR
         }
 
         /// <summary>
-        /// recursive find block direct parent loop!
+        /// recursive find block direct parent loop!.
         /// </summary>
         /// <param name="block"></param>
         /// <returns> the loops. </returns>
@@ -132,8 +140,11 @@ namespace Nncase.TIR
                 {
                     targetLoops.Insert(0, parent);
                     child = parent;
-                };
+                }
+
+                ;
             }
+
             var collector = new TIRCollector(collectLoops);
             collector.Visit(Entry);
             return targetLoops.ToArray();
@@ -155,6 +166,7 @@ namespace Nncase.TIR
                 substitute = substitute * factors[i] + loopVar;
                 newloopVars[i] = loopVar;
             }
+
             Dictionary<Block, Block> opaque_block_reuse = new(); // TODO the opaque_block_reuse for what?
             Sequential nbody = loop.Sequence;
             // Step 3. create new for loop.
@@ -162,10 +174,11 @@ namespace Nncase.TIR
             nbody = (Sequential)new SubstituteVarAndCollectOpaqueBlock(v => v == loop.LoopVar ? substitute : v, opaque_block_reuse).Visit(nbody);
             for (int i = factors.Length - 1; i >= 0; i--)
             {
-                var @for = new For(newloopVars[i], (0, factors[i]), ForMode.Serial, nbody);
+                var @for = new For(newloopVars[i], (0, factors[i]), LoopMode.Serial, nbody);
                 nbody = new Sequential() { @for };
                 nFor[i] = @for;
             }
+
             // Setp 4. update the function
             Entry = (Function)new Substitutor(expr => object.ReferenceEquals(expr, loop) ? nFor[0] : null).Visit(Entry);
             return nFor;

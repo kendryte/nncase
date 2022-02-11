@@ -8,43 +8,36 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nncase.IR.Math
+namespace Nncase.IR.Math;
+
+/// <summary>
+/// Binary expression.
+/// </summary>
+public sealed record Binary(BinaryOp BinaryOp) : Op
 {
     /// <summary>
-    /// Binary expression.
+    /// Gets lhs.
     /// </summary>
-    public sealed record Binary(BinaryOp BinaryOp) : Op
+    public static readonly ParameterInfo Lhs = new(typeof(Binary), 0, "lhs");
+
+    /// <summary>
+    /// Gets rhs.
+    /// </summary>
+    public static readonly ParameterInfo Rhs = new(typeof(Binary), 1, "rhs");
+
+    /// <summary>
+    /// convert Binary Op to literal.
+    /// <example>
+    ///   BinaryOp.Add => "+"
+    /// </example>
+    /// </summary>
+    /// <returns></returns>
+    public string ToLiteral() => BinaryOp switch
     {
-        /// <summary>
-        /// Gets lhs.
-        /// </summary>
-        public static readonly ParameterInfo Lhs = new(typeof(Binary), 0, "lhs");
-
-        /// <summary>
-        /// Gets rhs.
-        /// </summary>
-        public static readonly ParameterInfo Rhs = new(typeof(Binary), 1, "rhs");
-
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType lhs, TensorType rhs)
-        {
-            return TypeInference.BroadcastType(lhs, rhs);
-        }
-
-        /// <summary>
-        /// convert Binary Op to literal.
-        /// <example>
-        ///   BinaryOp.Add => "+"
-        /// </example>
-        /// </summary>
-        /// <returns></returns>
-        public string ToLiteral() => BinaryOp switch
-        {
-            BinaryOp.Add => "+",
-            BinaryOp.Sub => "-",
-            BinaryOp.Mul => "*",
-            BinaryOp.Div => "/",
-            _ => throw new NotSupportedException($"{BinaryOp}")
-        };
-    }
+        BinaryOp.Add => "+",
+        BinaryOp.Sub => "-",
+        BinaryOp.Mul => "*",
+        BinaryOp.Div => "/",
+        _ => throw new NotSupportedException($"{BinaryOp}"),
+    };
 }

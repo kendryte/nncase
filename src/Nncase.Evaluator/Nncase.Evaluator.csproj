@@ -1,16 +1,29 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Nullable>enable</Nullable>
+    <CodeAnalysisRuleSet>$(SolutionDir)/tools/StyleCopAnalyzers.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
 
-    <PropertyGroup>
-      <TargetFramework>net6.0</TargetFramework>
-      <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Autofac" Version="6.3.0" />
+    <PackageReference Include="TorchSharp" Version="0.95.4" />
+    <PackageReference Include="libtorch-cpu" Version="1.10.0.1" />
+    <PackageReference Include="SciSharp.TensorFlow.Redist" Version="2.7.0" />
+    <PackageReference Include="TensorFlow.NET" Version="0.60.5" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.354">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Autofac" Version="6.3.0" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
+  </ItemGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
-    </ItemGroup>
-    
+  <ItemGroup>
+    <AdditionalFiles Include="$(SolutionDir)/tools/stylecop.json" />
+  </ItemGroup>
+
 </Project>

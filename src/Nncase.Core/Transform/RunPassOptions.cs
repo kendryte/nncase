@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,11 +16,11 @@ namespace Nncase.Transform
     public class RunPassOptions
     {
         /// <summary>
-        /// constructor
+        /// constructor.
         /// </summary>
-        /// <param name="target"> target device </param>
-        /// <param name="dumpLevel"> int level </param>
-        /// <param name="dumpDir"> dir </param>
+        /// <param name="target"> target device. </param>
+        /// <param name="dumpLevel"> int level. </param>
+        /// <param name="dumpDir"> dir. </param>
         public RunPassOptions(ITarget target, int dumpLevel, string dumpDir)
         {
             Target = target;
@@ -25,8 +28,9 @@ namespace Nncase.Transform
             DumpDir = dumpDir;
             PassName = "";
         }
+
         /// <summary>
-        /// copy construct
+        /// copy construct.
         /// </summary>
         /// <param name="other"></param>
         public RunPassOptions(RunPassOptions other)
@@ -37,7 +41,6 @@ namespace Nncase.Transform
             PassName = other.PassName;
         }
 
-
         /// <summary>
         /// Gets target.
         /// </summary>
@@ -46,7 +49,7 @@ namespace Nncase.Transform
         /// <summary>
         /// Dump level 0 = do nothing
         /// Dump level 1 = print to std output
-        /// Dump level 2 = print dump to file
+        /// Dump level 2 = print dump to file.
         /// </summary>
         public int DumpLevel { private set; get; }
 
@@ -68,14 +71,14 @@ namespace Nncase.Transform
         public RunPassOptions SetName(string name) { PassName = name; return this; }
 
         /// <summary>
-        /// set the dumpDir
+        /// set the dumpDir.
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
         public RunPassOptions SetDir(string path) { DumpDir = path; return this; }
 
         /// <summary>
-        /// return "{DumpDir}/{PassName}"
+        /// return "{DumpDir}/{PassName}".
         /// </summary>
         public string PassDumpDir { get => Path.Combine(DumpDir, PassName); }
 

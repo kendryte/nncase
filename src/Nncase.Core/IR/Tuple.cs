@@ -40,25 +40,25 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// cast the value tuple to ir array
+        /// cast the value tuple to ir array.
         /// </summary>
         public static implicit operator Tuple(ValueTuple<Expr> tuple) =>
             new Tuple(ImmutableArray.Create(new Expr[] { tuple.Item1 }));
 
         /// <summary>
-        /// cast the value tuple to ir array
+        /// cast the value tuple to ir array.
         /// </summary>
         public static implicit operator Tuple(ValueTuple<Expr, Expr> tuple) =>
             new Tuple(ImmutableArray.Create(new Expr[] { tuple.Item1, tuple.Item2 }));
 
         /// <summary>
-        /// cast the value tuple to ir array
+        /// cast the value tuple to ir array.
         /// </summary>
         public static implicit operator Tuple(ValueTuple<Expr, Expr, Expr> tuple) =>
             new Tuple(ImmutableArray.Create(new Expr[] { tuple.Item1, tuple.Item2, tuple.Item3 }));
 
         /// <summary>
-        /// cast the value tuple to ir array
+        /// cast the value tuple to ir array.
         /// </summary>
         public static implicit operator Tuple(ValueTuple<Expr, Expr, Expr, Expr> tuple) =>
             new Tuple(ImmutableArray.Create(new Expr[] { tuple.Item1, tuple.Item2, tuple.Item3, tuple.Item4 }));

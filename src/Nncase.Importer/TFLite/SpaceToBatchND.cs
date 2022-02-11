@@ -13,14 +13,14 @@ namespace Nncase.Importer.TFLite
         {
             var (input, blockShape) = GetInputExprs(op, 0, 1);
             var paddings = GetInputExprs(op, 2);
-            return F.Tensors.SpaceToBatch(input, blockShape, paddings);
+            return F.NN.SpaceToBatch(input, blockShape, paddings);
         }
 
         private Expr VisitBatchToSpaceND(in tflite.Operator op)
         {
             var (input, blockShape) = GetInputExprs(op, 0, 1);
             var crops = GetInputExprs(op, 2);
-            return F.Tensors.BatchToSpace(input, blockShape, crops);
+            return F.NN.BatchToSpace(input, blockShape, crops);
         }
     }
 }

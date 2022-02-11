@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,8 +27,7 @@ namespace Nncase.Transform.Rule
         public override Expr? GetRePlace(IMatchResult result)
         {
             var expr = result[Pattern];
-            var tensor = expr.Eval();
-            return tensor.ToConst((TensorType)expr.CheckedType!);
+            return expr.Evaluate();
         }
     }
 
@@ -35,7 +37,8 @@ namespace Nncase.Transform.Rule
         {
             Pattern = IsFunction(IsWildCard(), IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())));
         }
-        public override Expr? GetRePlace(IMatchResult result) => result[Pattern].Eval().ToConst();
+
+        public override Expr? GetRePlace(IMatchResult result) => result[Pattern].Evaluate();
     }
 
     public class FoldShapeOp : PatternRule

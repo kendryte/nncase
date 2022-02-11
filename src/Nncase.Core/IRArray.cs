@@ -11,12 +11,12 @@ namespace Nncase.IR
     public struct IRArrayList<T> : IStructuralEquatable, IEquatable<IRArrayList<T>>, IReadOnlyList<T>, IEnumerable<T>, IList<T>
     {
         /// <summary>
-        /// create empty
+        /// create empty.
         /// </summary>
         public IRArrayList() { _list = new(); }
 
         /// <summary>
-        /// create by IEnumerable
+        /// create by IEnumerable.
         /// </summary>
         /// <param name="array"></param>
         public IRArrayList(IEnumerable<T> array)
@@ -115,7 +115,6 @@ namespace Nncase.IR
         {
             return ((IEnumerable)_list).GetEnumerator();
         }
-
     }
 
     public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOnlyList<T>, IEnumerable<T>, IList<T>

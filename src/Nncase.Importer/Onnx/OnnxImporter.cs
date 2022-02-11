@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -40,12 +43,14 @@ namespace Nncase.Importer
             _opSetMap = new Dictionary<string, long>();
             var m = new MessageParser<ModelProto>(
                 () => new ModelProto());
+
             // todo:how to check valid?
             _model = m.ParseFrom(onnxModel);
             foreach (var opSet in _model.OpsetImport)
             {
                 _opSetMap.Add(opSet.Domain, opSet.Version);
             }
+
             _graph = _model.Graph;
         }
 
@@ -54,6 +59,7 @@ namespace Nncase.Importer
             var shape = GetShape(tensor);
             var type = GetDataType(tensor);
             var dt = (TensorProto.Types.DataType)tensor.DataType;
+
             // should not use tensor.DataLocation to distinguish whether it is RawData
             if (tensor.RawData.ToByteArray().Length() != 0)
             {
@@ -68,26 +74,29 @@ namespace Nncase.Importer
                     //TensorProto.Types.DataType.Float16 => Const.FromSpan(),
                     TensorProto.Types.DataType.Float => Const.FromSpan<float>(tensor.FloatData.ToArray(), shape),
                     TensorProto.Types.DataType.Double => Const.FromSpan<double>(tensor.DoubleData.ToArray(), shape),
+
                     //TensorProto.Types.DataType.Int16 => Const.FromSpan(),
                     TensorProto.Types.DataType.Int32 => Const.FromSpan<int>(tensor.Int32Data.ToArray(), shape),
                     TensorProto.Types.DataType.Int64 => Const.FromSpan<long>(tensor.Int64Data.ToArray(), shape),
+
                     //TensorProto.Types.DataType.Int8 => Const.FromSpan(),
                     //TensorProto.Types.DataType.String => Const.FromSpan(),
                     //TensorProto.Types.DataType.Uint32 => Const.FromSpan(),
                     //TensorProto.Types.DataType.Uint64 => Const.FromSpan<ulong>(tensor.Uint64Data.ToArray(), shape),
                     //TensorProto.Types.DataType.Uint8 => Const.FromSpan(),
-                    _ => throw new NotSupportedException($"Not supported onnx constant data type{dt}")
+                    _ => throw new NotSupportedException($"Not supported onnx constant data type{dt}"),
                 };
             }
         }
+
         public IRModule Import()
         {
             _constTensors = _graph.Initializer
                 .ToDictionary(tensor => tensor.Name, tensor => tensor);
-            
+
             _outputTensors = _graph.Input
                 .Where(n => !_constTensors.ContainsKey(n.Name))
-                .ToDictionary(n => n.Name, n => (Expr) new Var(n.Name, GetIRType(n)));
+                .ToDictionary(n => n.Name, n => (Expr)new Var(n.Name, GetIRType(n)));
 
             var createdInputs = _outputTensors.Values.ToArray();
             _graph.Node.ToList().ForEach(Visit);
@@ -121,13 +130,13 @@ namespace Nncase.Importer
         public TensorType GetIRType(ValueInfoProto v)
         {
             return new TensorType(GetDataType(v), GetShape(v));
-        }        
-        
+        }
+
         public TensorType GetIRType(TensorProto v)
         {
             return new TensorType(GetDataType(v), GetShape(v));
         }
-        
+
         private Expr GetInputExpr(NodeProto n, int index)
         {
             // todo:is null?
@@ -136,6 +145,7 @@ namespace Nncase.Importer
             {
                 return expr;
             }
+
             return _graph.Initializer
                     .Find(x => x.Name == id)
                     .Match(
@@ -147,7 +157,7 @@ namespace Nncase.Importer
         {
             return GetInputExpr(n, 0);
         }
-        
+
         private (Expr, Expr) GetInputExprs(NodeProto n, int index0, int index1)
         {
             return (GetInputExpr(n, index0), GetInputExpr(n, index1));
@@ -159,6 +169,7 @@ namespace Nncase.Importer
             {
                 return Option<Expr>.None;
             }
+
             return Option<Expr>.Some(GetInputExpr(n, index));
         }
 
@@ -166,7 +177,7 @@ namespace Nncase.Importer
         {
             return GetOptionInputExpr(n, index).Or(defaultExpr);
         }
-        
+
         private (Option<Expr>, Option<Expr>) GetOptionInputExprs(NodeProto n, int index0, int index1)
         {
             return (GetOptionInputExpr(n, index0), GetOptionInputExpr(n, 1));
@@ -177,12 +188,12 @@ namespace Nncase.Importer
         {
             return _opSetMap[domain];
         }
-        
+
         private long GetOpSet(NodeProto node)
         {
             return _opSetMap[node.Domain];
         }
-        
+
         private void Visit(NodeProto op)
         {
             var output = op.OpType switch
@@ -211,6 +222,7 @@ namespace Nncase.Importer
                 "Cosh" => VisitUnary(op, UnaryOp.Cosh),
                 "CumSum" => VisitCumSum(op),
                 "DepthToSpace" => VisitDepthToSpace(op),
+
                 // "DequantizeLinear" => VisitDequantizeLinear(op),
                 "Div" => VisitBinary(op, BinaryOp.Div),
                 "Dropout" => VisitDropout(op),
@@ -244,6 +256,7 @@ namespace Nncase.Importer
                 "Pad" => VisitPad(op),
                 "Pow" => VisitBinary(op, BinaryOp.Pow),
                 "PRelu" => VisitPRelu(op),
+
                 // "QuantizeLinear" => VisitQuantizeLinear(op),
                 "RandomNormal" => VisitRandomNormal(op),
                 "RandomNormalLike" => VisitRandomNormalLike(op),
@@ -261,6 +274,7 @@ namespace Nncase.Importer
                 "ReduceSumSquare" => VisitReduceSumSquare(op),
                 "Relu" => VisitRelu(op),
                 "Reshape" => VisitReshape(op),
+
                 // "Resize" => VisitResize(op),
                 "ReverseSequence" => VisitReverseSequence(op),
                 "Round" => VisitUnary(op, UnaryOp.Round),
@@ -283,9 +297,10 @@ namespace Nncase.Importer
                 "Sum" => VisitSum(op),
                 "Tanh" => VisitUnary(op, UnaryOp.Tanh),
                 "Transpose" => VisitTranspose(op),
+
                 // "Upsample" => VisitUpsample(op),
                 "Unsqueeze" => VisitUnsqueeze(op),
-                _ => throw new NotSupportedException($"Not Supported onnx op {op.OpType}")
+                _ => throw new NotSupportedException($"Not Supported onnx op {op.OpType}"),
             };
 
             if (output is Expr expr)

@@ -28,7 +28,7 @@ namespace Nncase.Pattern
         }
 
         /// <summary>
-        /// dump pattern to string
+        /// dump pattern to string.
         /// </summary>
         /// <param name="pattern"></param>
         /// <returns></returns>
@@ -41,7 +41,7 @@ namespace Nncase.Pattern
         }
 
         /// <summary>
-        /// dump the pattern to file
+        /// dump the pattern to file.
         /// </summary>
         /// <param name="pattern"></param>
         /// <param name="name"></param>
@@ -53,7 +53,6 @@ namespace Nncase.Pattern
             using var writer = new StreamWriter(dumpFile);
             DumpAsIL(writer, pattern);
         }
-
 
         private class ILDumpVisitor : PatternFunctor<string, string>
         {
@@ -74,6 +73,7 @@ namespace Nncase.Pattern
                 {
                     return name;
                 }
+
                 var target = Visit(pattern.Target);
                 var args = pattern.Parameters.Select(Visit).ToArray();
                 name = AllocateTempVar(pattern);
@@ -117,6 +117,7 @@ namespace Nncase.Pattern
 
                 // 1. Function signature
                 Ident().Write($"{name} = fn({string.Join(", ", pattern.Parameters.Select(Visit))})");
+
                 // AppendType(pattern.CheckedTypePat);
                 _textWriter.WriteLine(" {");
 

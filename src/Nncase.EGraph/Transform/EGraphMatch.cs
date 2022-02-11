@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Collections.Generic;
 using Nncase.Pattern;
 using Nncase.IR;
@@ -9,7 +12,6 @@ namespace Nncase.Transform
     using Tuple = IR.Tuple;
 
     using EContextEnv = Dictionary<ExprPattern, ENode>;
-
 
     public static class EGraphMatcher
     {
@@ -28,6 +30,7 @@ namespace Nncase.Transform
                     }
                 }
             }
+
             return matchResults;
         }
 
@@ -40,7 +43,6 @@ namespace Nncase.Transform
             return Match(g, pattern);
         }
     }
-
 
     public record EMatchResult(ENode Root, EContextEnv Context) : IMatchResult
     {
@@ -73,13 +75,13 @@ namespace Nncase.Transform
             throw new NotImplementedException($"Unhandled Match ExprPattern {pattern.GetType()} and Enode {enode.Expr.GetType()} .");
         }
 
-
         public (bool, EContextEnv) MatchENode(VArgsPattern Patterns, IEnumerable<EClass> Children, EContextEnv env)
         {
             if (!Patterns.MatchLeaf(Children))
             {
                 return (false, env);
             }
+
             var new_env = env;
             int i = 0;
             foreach (var child in Children)
@@ -91,8 +93,10 @@ namespace Nncase.Transform
                     Patterns.MatchEnd(false);
                     return (false, env);
                 }
+
                 i++;
             }
+
             Patterns.MatchEnd(true);
             return (true, new_env);
         }
@@ -103,6 +107,7 @@ namespace Nncase.Transform
             {
                 return (true, env);
             }
+
             return (false, env);
         }
 
@@ -118,8 +123,10 @@ namespace Nncase.Transform
                 {
                     return (false, env);
                 }
+
                 return MatchENode(pattern.Parameters, enode.Children.Skip(1), env);
             }
+
             return (false, env);
         }
 
@@ -132,8 +139,10 @@ namespace Nncase.Transform
                 {
                     return (false, env);
                 }
+
                 return MatchENode(pattern.Parameters, enode.Children.Skip(1), new_env);
             }
+
             return (false, env);
         }
 
@@ -143,6 +152,7 @@ namespace Nncase.Transform
             {
                 return MatchENode(pattern.Fields, enode.Children, env);
             }
+
             return (false, env);
         }
 
@@ -162,6 +172,7 @@ namespace Nncase.Transform
                 new_env.Add(pattern, enode);
                 return (true, new_env);
             }
+
             return (env[pattern] == enode, env);
         }
 
@@ -181,7 +192,7 @@ namespace Nncase.Transform
                 (TuplePattern tuplePat, Tuple) => MatchENode(tuplePat, enode, env),
                 (OpPattern opPat, Op) => MatchENode(opPat, enode, env),
                 (WildCardPattern wildcardPat, _) => MatchENode(wildcardPat, enode, env),
-                (_, _) => (false, env)
+                (_, _) => (false, env),
             };
             return UpdateEnv(match, new_env, pattern, enode);
         }
@@ -196,8 +207,8 @@ namespace Nncase.Transform
                     return (i, new_env);
                 }
             }
+
             return (-1, env);
         }
     }
-
 }

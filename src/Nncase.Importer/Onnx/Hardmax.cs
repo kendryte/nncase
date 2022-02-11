@@ -14,7 +14,7 @@ namespace Nncase.Importer
         {
             var input = GetInputExpr(op, 0);
             var axis = GetIntAttribute(op, "axis", -1);
-            return F.Tensors.HardMax(input, axis);
+            return F.NN.Hardmax(input, axis);
         }
     }
 }

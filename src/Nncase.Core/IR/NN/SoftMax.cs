@@ -1,59 +1,61 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using static Nncase.IR.TypePatternUtility;
 
-namespace Nncase.IR.NN
+namespace Nncase.IR.NN;
+
+/// <summary>
+/// LogSoftmax expression.
+/// </summary>
+public sealed record LogSoftmax() : Op
 {
-    public sealed record LogSoftMax() : Op
-    {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(LogSoftMax), 0, "input");
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(LogSoftmax), 0, "input");
 
-        /// <summary>
-        /// Gets axis.
-        /// </summary>
-        public static readonly ParameterInfo Axis = new(typeof(LogSoftMax), 1, "axis", IsIntegralScalar());
+    /// <summary>
+    /// Gets axis.
+    /// </summary>
+    public static readonly ParameterInfo Axis = new(typeof(LogSoftmax), 1, "axis", IsIntegralScalar());
+}
 
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType axis) => input;
-    }
-    
-    public sealed record SoftMax() : Op
-    {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(SoftMax), 0, "input");
+/// <summary>
+/// Softmax expression.
+/// </summary>
+public sealed record Softmax() : Op
+{
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(Softmax), 0, "input");
 
-        /// <summary>
-        /// Gets axis.
-        /// </summary>
-        public static readonly ParameterInfo Axis = new(typeof(SoftMax), 1, "axis", IsIntegralScalar());
+    /// <summary>
+    /// Gets axis.
+    /// </summary>
+    public static readonly ParameterInfo Axis = new(typeof(Softmax), 1, "axis", IsIntegralScalar());
+}
 
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType axis) => input;
-    }
-    
-    public sealed record SoftPlus() : Op
-    {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(SoftPlus), 0, "input");
+/// <summary>
+/// Softplus expression.
+/// </summary>
+public sealed record Softplus() : Op
+{
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(Softplus), 0, "input");
+}
 
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input) => input;
-    }
-
-    public sealed record SoftSign() : Op
-    {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(SoftSign), 0, "input");
-
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input) => input;
-    }
+/// <summary>
+/// Softsign expression.
+/// </summary>
+public sealed record Softsign() : Op
+{
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(Softsign), 0, "input");
 }

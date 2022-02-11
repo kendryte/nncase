@@ -25,28 +25,28 @@ namespace Nncase.Importer.TFLite
                 _ => throw new NotSupportedException("Unsupported Constant Pad Value"),
             };
 
-            return F.Tensors.Pad(input, paddings, PadMode.Constant, pad_value);
+            return F.NN.Pad(input, paddings, PadMode.Constant, pad_value);
         }
 
         private Expr VisitPadV2(in tflite.Operator op)
         {
             var (input, paddings) = GetInputExprs(op, 0, 1);
             var pad_value = GetInputExprs(op, 2);
-            return F.Tensors.Pad(input, paddings, PadMode.Constant, pad_value);
+            return F.NN.Pad(input, paddings, PadMode.Constant, pad_value);
         }
-        
+
         private Expr VisitMirrorPad(in tflite.Operator op)
         {
             var (input, paddings) = GetInputExprs(op, 0, 1);
-            
+
             var padMode = op.BuiltinOptionsAsMirrorPadOptions().Mode switch
             {
                 tflite.MirrorPadMode.REFLECT => PadMode.Reflect,
                 tflite.MirrorPadMode.SYMMETRIC => PadMode.Symmetric,
-                _ => throw new NotSupportedException("Unsupported Mirror Pad Mode")
+                _ => throw new NotSupportedException("Unsupported Mirror Pad Mode"),
             };
 
-            return F.Tensors.Pad(input, paddings, padMode, 0.0);
+            return F.NN.Pad(input, paddings, padMode, 0.0);
         }
     }
 }

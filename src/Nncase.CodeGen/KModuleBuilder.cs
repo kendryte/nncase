@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,12 +11,12 @@ using Nncase.IO;
 namespace Nncase.CodeGen;
 
 /// <summary>
-/// the section decompiler
+/// the section decompiler.
 /// </summary>
 public interface ISectionDecompiler
 {
     /// <summary>
-    /// need impl by sub class
+    /// need impl by sub class.
     /// </summary>
     /// <param name="input"></param>
     /// <param name="symbols"></param>
@@ -22,45 +25,48 @@ public interface ISectionDecompiler
 }
 
 /// <summary>
-/// save the funtion index
+/// save the funtion index.
 /// </summary>
 public struct FunctionCallId
 {
     /// <summary>
-    /// module index
+    /// module index.
     /// </summary>
     public int ModuleId;
+
     /// <summary>
-    /// function index
+    /// function index.
     /// </summary>
     public int FunctionId;
 }
 
 /// <summary>
-/// the kmodel's module base class define
+/// the kmodel's module base class define.
 /// </summary>
 public abstract class BaseRTKModule : IRTModule
 {
-
     /// <summary>
-    /// each kmodule have one or more scetion
+    /// each kmodule have one or more scetion.
     /// </summary>
     protected class Section
     {
         /// <summary>
-        /// writer
+        /// writer.
         /// </summary>
         public readonly SectionWriter Writer;
+
         /// <summary>
-        /// the contents
+        /// the contents.
         /// </summary>
         public readonly MemoryStream Output;
+
         /// <summary>
-        /// the byte of contents
+        /// the byte of contents.
         /// </summary>
         public byte[] Body;
+
         /// <summary>
-        /// builder
+        /// builder.
         /// </summary>
         public Section()
         {
@@ -68,19 +74,22 @@ public abstract class BaseRTKModule : IRTModule
             Writer = new(Output);
             Body = new byte[0];
         }
-    };
+    }
+
+;
 
     /// <summary>
-    /// merge info
+    /// merge info.
     /// </summary>
     protected struct RdataMergeInfo
     {
         /// <summary>
-        /// start index
+        /// start index.
         /// </summary>
         public ulong Start;
+
         /// <summary>
-        /// length
+        /// length.
         /// </summary>
         public ulong Size;
     }
@@ -89,7 +98,7 @@ public abstract class BaseRTKModule : IRTModule
     public bool IsSerialized { get; private set; }
 
     /// <summary>
-    /// builder
+    /// builder.
     /// </summary>
     /// <param name="ModuleResult"></param>
     /// <param name="modelResult"></param>
@@ -105,11 +114,11 @@ public abstract class BaseRTKModule : IRTModule
     }
 
     /// <summary>
-    /// get the Alignment
+    /// get the Alignment.
     /// </summary>
     public abstract uint Alignment { get; }
 
-    // todo public void config_dump(const std::filesystem::path &dump_dir, bool dump_asm); 
+    // todo public void config_dump(const std::filesystem::path &dump_dir, bool dump_asm);
 
     /// <summary>
     /// allocation buffer for node, just get it from sched result.
@@ -122,7 +131,7 @@ public abstract class BaseRTKModule : IRTModule
     }
 
     /// <summary>
-    /// get max mem usage
+    /// get max mem usage.
     /// </summary>
     /// <param name="location"></param>
     /// <returns></returns>
@@ -132,11 +141,12 @@ public abstract class BaseRTKModule : IRTModule
         {
             return value;
         }
+
         return 0;
     }
 
     /// <summary>
-    /// give the section name get the writer
+    /// give the section name get the writer.
     /// </summary>
     /// <param name="section_name"></param>
     /// <returns></returns>
@@ -147,15 +157,17 @@ public abstract class BaseRTKModule : IRTModule
             section = new();
             _sectionWriters.Add(section_name, section);
         }
+
         return section.Writer;
     }
 
     /// <inheritdoc/>
     public abstract ModuleType ModuleType { get; }
     /// <summary>
-    /// the module verison
+    /// the module verison.
     /// </summary>
     public abstract uint ModuleVersion { get; }
+
     /// <inheritdoc/>
     public byte[] Source
     {
@@ -168,16 +180,19 @@ public abstract class BaseRTKModule : IRTModule
     }
     /// <inheritdoc/>
     public string SourceExt { get => "kmodule"; set { } }
+
     /// <inheritdoc/>
     public abstract IReadOnlyList<IRTFunction> Functions { get; }
+
     /// <summary>
-    /// get the Decompiler
+    /// get the Decompiler.
     /// </summary>
     /// <param name="section_name"></param>
     /// <returns></returns>
     public abstract ISectionDecompiler GetDecompiler(string section_name);
+
     /// <summary>
-    /// get section by name
+    /// get section by name.
     /// </summary>
     /// <param name="section_name"></param>
     /// <returns></returns>
@@ -187,11 +202,12 @@ public abstract class BaseRTKModule : IRTModule
         {
             return null;
         }
+
         return section;
     }
 
     /// <summary>
-    /// merget rdata section
+    /// merget rdata section.
     /// </summary>
     /// <param name="from"></param>
     protected void MergeToRdataSection(string from)
@@ -216,11 +232,12 @@ public abstract class BaseRTKModule : IRTModule
                     return new FunctionCallId() { ModuleId = i, FunctionId = idx };
             }
         }
+
         throw new InvalidProgramException("Can't find expr in modules");
     }
 
     /// <summary>
-    /// seth the entry function start pos 
+    /// seth the entry function start pos.
     /// </summary>
     /// <param name="pos"></param>
     protected void SetCurrentEntryPoint(long pos)
@@ -229,7 +246,7 @@ public abstract class BaseRTKModule : IRTModule
     }
 
     /// <summary>
-    /// set the current function end pos
+    /// set the current function end pos.
     /// </summary>
     /// <param name="pos"></param>
     protected void SetCurrentFunctionTextEnd(long pos)
@@ -238,34 +255,37 @@ public abstract class BaseRTKModule : IRTModule
     }
 
     /// <summary>
-    /// the callback BeginEmitModule
+    /// the callback BeginEmitModule.
     /// </summary>
     protected abstract void BeginEmitModule();
+
     /// <summary>
-    /// the callback BeginEmit func
+    /// the callback BeginEmit func.
     /// </summary>
     /// <param name="function"></param>
     protected abstract void BeginEmitFunction(Schedule.SchedFunctionResult function);
+
     /// <summary>
-    /// the call back end emit func
+    /// the call back end emit func.
     /// </summary>
     /// <param name="function"></param>
     protected abstract void EndEmitFunction(Schedule.SchedFunctionResult function);
+
     /// <summary>
-    /// the emit 
+    /// the emit.
     /// </summary>
     /// <param name="node"></param>
     protected abstract void Emit(IR.Function node);
+
     /// <summary>
-    /// the call back end emit module 
+    /// the call back end emit module.
     /// </summary>
     protected abstract void EndEmitModule();
 
     /// <summary>
-    /// get the code section writer
+    /// get the code section writer.
     /// </summary>
     protected abstract SectionWriter TextWriter { get; }
-
 
     /// <summary>
     /// the dict contains the expr type which can not emit to binary.
@@ -280,6 +300,7 @@ public abstract class BaseRTKModule : IRTModule
             if (!s_nonRuntimeOps.Contains(item.GetType().TypeHandle))
                 runtime_ops.Add(item);
         }
+
         return runtime_ops;
     }
 
@@ -297,7 +318,9 @@ public abstract class BaseRTKModule : IRTModule
             if (!_entryPoints.ContainsKey(_currentFunction))
                 throw new InvalidProgramException($"Entry point is not set");
         }
+
         EndEmitModule();
+
         // if (dump_asm_)
         // {
         //     for (auto &section : section_writer_)
@@ -337,9 +360,11 @@ public abstract class BaseRTKModule : IRTModule
                     }
                 }
             }
+
             Writer(".rdata").Write(constants);
         }
     }
+
     private void GenerateMergeInfo()
     {
         if (_rdataSectionMerges.Any())
@@ -356,7 +381,7 @@ public abstract class BaseRTKModule : IRTModule
                     _rdataSectionMerges[merge_p.Key] = new RdataMergeInfo
                     {
                         Start = (ulong)start,
-                        Size = (ulong)size
+                        Size = (ulong)size,
                     };
                 }
             }
@@ -367,6 +392,7 @@ public abstract class BaseRTKModule : IRTModule
             if (!_rdataSectionMerges.ContainsKey(section.Key))
                 section.Value.Body = section.Value.Output.ToArray();
         }
+
         // if (dump_asm_)
         // {
         //     std::ofstream file(dump_dir_ / "section-merge.txt");
@@ -403,6 +429,7 @@ public abstract class BaseRTKModule : IRTModule
         //         file << off.first << " = " << off.second.first << "@" << off.second.second << std::endl;
         // }
     }
+
     private void WriteSymbolRefs()
     {
         if (_sectionWriters.TryGetValue(".rdata", out var rdata_writer))
@@ -428,11 +455,13 @@ public abstract class BaseRTKModule : IRTModule
             }
         }
     }
+
     private void Link()
     {
         GenerateMergeInfo();
         GenerateSymbolOffsets();
         WriteSymbolRefs();
+
         // if (dump_asm_)
         // {
         //     for (auto &section : section_writer_)
@@ -442,6 +471,7 @@ public abstract class BaseRTKModule : IRTModule
         //     }
         // }
     }
+
     private void WriteBinary(BinaryWriter writer)
     {
         // Step 1. skip the module header
@@ -498,7 +528,7 @@ public abstract class BaseRTKModule : IRTModule
         }
 
         writer.AlignPosition(8);
-        var end_pos = writer.Position();
+        var end_pos = writer.GetPosition();
 
         // defin module_header
         var header = new ModuleHeader { };
@@ -549,7 +579,7 @@ public abstract class BaseRTKModule : IRTModule
             }
         }
         // Skip function header
-        var header_pos = writer.Position();
+        var header_pos = writer.GetPosition();
         writer.Skip((ulong)Marshal.SizeOf<FunctionHeader>());
 
         // inputs
@@ -563,7 +593,7 @@ public abstract class BaseRTKModule : IRTModule
             writeShape(shape);
 
         writer.AlignPosition(8);
-        var end_pos = writer.Position();
+        var end_pos = writer.GetPosition();
 
         // header
         var header = new FunctionHeader
@@ -588,6 +618,7 @@ public abstract class BaseRTKModule : IRTModule
         if (!IsSerialized) Serialize();
         File.Copy(_sourcePath, Path.Join(dumpDirPath, name + '.' + SourceExt));
     }
+
     /// <inheritdoc/>
     public ISerializeResult Serialize()
     {
@@ -601,6 +632,7 @@ public abstract class BaseRTKModule : IRTModule
             WriteBinary(bw);
             IsSerialized = true;
         }
+
         return new KModuleSerializeResult(Alignment);
     }
 

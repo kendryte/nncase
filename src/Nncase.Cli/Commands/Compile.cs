@@ -2,7 +2,6 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
@@ -11,38 +10,11 @@ using Autofac.Extras.CommonServiceLocator;
 using CommonServiceLocator;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Nncase.Evaluator;
-using Nncase.Evaluator.Ops;
 using Nncase.IR;
-using Nncase.IR.Tensors;
 using Nncase.Transform;
 
 namespace Nncase.Cli.Commands
 {
-    /// <summary>
-    /// Options of compile command.
-    /// </summary>
-    public class CompileOptions
-    {
-        /// <summary>
-        /// Gets or sets input file.
-        /// </summary>
-        public string InputFile { get; set; }
-
-        /// <summary>
-        /// The import model format
-        /// </summary>
-        public string InputFormat { get; set; }
-        /// <summary>
-        /// Gets or sets target.
-        /// </summary>
-        public string Target { get; set; }
-
-        public int DumpLevel { get; set; }
-
-        public string DumpDir { get; set; }
-    }
-
     /// <summary>
     /// Compile command.
     /// </summary>
@@ -69,25 +41,26 @@ namespace Nncase.Cli.Commands
             var csl = new AutofacServiceLocator(t);
             ServiceLocator.SetLocatorProvider(() => csl);
         }
-        
-        public void Run(CompileOptions options, IHost host)
+
+        private void Run(CompileOptions options, IHost host)
         {
             InitLocatorProvider(host);
             var module = ImportModule(File.OpenRead(options.InputFile), options);
-            var a = (Const) 1;
-            var b = (Const) 1;
+            var a = (Const)1;
+            var b = (Const)1;
             var c = a + b;
         }
 
-        public IRModule ImportModule(Stream content, CompileOptions options)
+        private IRModule ImportModule(Stream content, CompileOptions options)
         {
             Console.WriteLine($"Target: {options.Target}");
             var module = ImportModel(content, options);
             DumpModule(module, options, "ir_import");
-            if (!TypeInference.InferenceType(module.Entry))
+            if (!CompilerServices.InferenceType(module.Entry))
             {
                 InferShape(module, options);
             }
+
             DumpModule(module, options, "ir_infertype");
             Console.WriteLine("ImportModule successful!");
             return module;
@@ -107,7 +80,7 @@ namespace Nncase.Cli.Commands
           {
               "tflite" => Importers.ImportTFLite(content),
               "onnx" => Importers.ImportOnnx(content),
-              _ => throw new NotImplementedException($"Not Implement {options.InputFormat} Impoter!")
+              _ => throw new NotImplementedException($"Not Implement {options.InputFormat} Impoter!"),
           };
 
         private void DumpModule(IRModule module, CompileOptions options, string prefix)

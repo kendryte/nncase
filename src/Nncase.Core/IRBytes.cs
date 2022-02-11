@@ -21,7 +21,7 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// get raw byte data for readonly interface
+        /// get raw byte data for readonly interface.
         /// </summary>
         /// <returns></returns>
         public ReadOnlySpan<byte> Array => _array;

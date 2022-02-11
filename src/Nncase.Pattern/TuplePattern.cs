@@ -27,9 +27,8 @@ namespace Nncase.Pattern
         {
             Fields.Clear();
         }
-
-
     }
+
     public static partial class Utility
     {
         public static TuplePattern IsTuple(params ExprPattern[] Fields) => new TuplePattern(new FixedVArgsPattern(Fields));

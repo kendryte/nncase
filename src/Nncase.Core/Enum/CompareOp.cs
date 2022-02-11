@@ -7,36 +7,40 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nncase
+namespace Nncase;
+
+/// <summary>
+/// Comparision operator.
+/// </summary>
+public enum CompareOp
 {
     /// <summary>
-    /// compare op enum
+    /// a == b.
     /// </summary>
-    public enum CompareOp
-    {
-        /// <summary>
-        /// a == b
-        /// </summary>
-        EQ,
-        /// <summary>
-        /// a != b
-        /// </summary>
-        NE,
-        /// <summary>
-        /// a < b
-        /// </summary>
-        LT,
-        /// <summary>
-        /// a <= b
-        /// </summary>
-        LE,
-        /// <summary>
-        /// a > b
-        /// </summary>
-        GT,
-        /// <summary>
-        /// a >= b
-        /// </summary>
-        GE
-    }
+    Equal,
+
+    /// <summary>
+    /// a != b.
+    /// </summary>
+    NotEqual,
+
+    /// <summary>
+    /// a &lt; b.
+    /// </summary>
+    LowerThan,
+
+    /// <summary>
+    /// a &lt;= b.
+    /// </summary>
+    LowerOrEqual,
+
+    /// <summary>
+    /// a > b.
+    /// </summary>
+    GreaterThan,
+
+    /// <summary>
+    /// a >= b.
+    /// </summary>
+    GreaterOrEqual,
 }

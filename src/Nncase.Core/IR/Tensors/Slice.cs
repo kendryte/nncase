@@ -9,84 +9,35 @@ using System.Text;
 using System.Threading.Tasks;
 using static Nncase.IR.TypePatternUtility;
 
-namespace Nncase.IR.Tensors
+namespace Nncase.IR.Tensors;
+
+/// <summary>
+/// Slice expression.
+/// </summary>
+public sealed record Slice() : Op
 {
     /// <summary>
-    /// Slice expression.
+    /// Gets input.
     /// </summary>
-    public sealed record Slice() : Op
-    {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Slice), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Slice), 0, "input");
 
-        /// <summary>
-        /// Gets begins.
-        /// </summary>
-        public static readonly ParameterInfo Begins = new(typeof(Slice), 1, "begins", IsIntegral() & IsRank(1));
+    /// <summary>
+    /// Gets begins.
+    /// </summary>
+    public static readonly ParameterInfo Begins = new(typeof(Slice), 1, "begins", IsIntegral() & IsRank(1));
 
-        /// <summary>
-        /// Gets ends.
-        /// </summary>
-        public static readonly ParameterInfo Ends = new(typeof(Slice), 2, "ends", IsIntegral() & IsRank(1));
+    /// <summary>
+    /// Gets ends.
+    /// </summary>
+    public static readonly ParameterInfo Ends = new(typeof(Slice), 2, "ends", IsIntegral() & IsRank(1));
 
-        /// <summary>
-        /// Gets axes.
-        /// </summary>
-        public static readonly ParameterInfo Axes = new(typeof(Slice), 3, "axes", IsIntegral() & IsRank(1));
+    /// <summary>
+    /// Gets axes.
+    /// </summary>
+    public static readonly ParameterInfo Axes = new(typeof(Slice), 3, "axes", IsIntegral() & IsRank(1));
 
-        /// <summary>
-        /// Gets strides.
-        /// </summary>
-        public static readonly ParameterInfo Strides = new(typeof(Slice), 4, "strides", IsIntegral() & IsRank(1));
-
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context,
-          TensorType input, TensorType begins, TensorType ends,
-           TensorType axes, TensorType strides)
-        {
-            if (context.GetArgument(this, Begins) is Const begins_con &&
-                context.GetArgument(this, Ends) is Const ends_con &&
-                context.GetArgument(this, Axes) is Const axes_con &&
-                context.GetArgument(this, Strides) is Const strides_con
-                )
-            {
-                var outShape = new List<Dimension>();
-                var ts_begins = begins_con.ToTensor<int>();
-                var ts_ends = ends_con.ToTensor<int>();
-                var ts_strides = strides_con.ToTensor<int>();
-                var axesTensor = axes_con.ToTensor<int>();
-                for (int i = 0; i < axesTensor.Length; i++)
-                {
-                    var axisV = axesTensor[i];
-                    var axis = axisV < 0
-                        ? axisV + input.Shape.Rank
-                        : axisV;
-                    var begin = ts_begins[i];
-                    var end = ts_ends[i];
-                    var stride = ts_strides[i];
-                    if (input.Shape[axis].IsFixed)
-                    {
-                        var old = input.Shape[axis].FixedValue;
-                        begin = begin >= 0 ? begin : old + begin;
-                        end = end >= 0 ? end : old + begin;
-                        stride = stride >= 0 ? stride : -stride;
-                        outShape.Add((end - begin) / stride);
-                    }
-                    else
-                        outShape.Add(Dimension.Unknown);
-                }
-                if (input.Shape.Rank == 1 && outShape.Count == 1 && outShape[0] == 1)
-                {
-                    return TensorType.Scalar(input.DType);
-                }
-                else
-                {
-                    return input with { Shape = new Shape(outShape) };
-                }
-            }
-            return new InvalidType("Can't Infer Shape With Dynamic Input!");
-        }
-    }
+    /// <summary>
+    /// Gets strides.
+    /// </summary>
+    public static readonly ParameterInfo Strides = new(typeof(Slice), 4, "strides", IsIntegral() & IsRank(1));
 }

@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using Nncase.IR;
 using System.Collections.Generic;
 using Nncase.Pattern;
@@ -6,9 +9,8 @@ using System;
 
 namespace Nncase.Transform
 {
-
     /// <summary>
-    /// dataflow pass
+    /// dataflow pass.
     /// </summary>
     public class DataFlowPass : FunctionPass
     {
@@ -19,21 +21,21 @@ namespace Nncase.Transform
         }
 
         /// <summary>
-        /// add the pattern rules
+        /// add the pattern rules.
         /// </summary>
         /// <param name="rules"></param>
         public void Add(params PatternRule[] rules) => Rules.AddRange(rules);
 
         /// <summary>
-        /// <see cref="Add(PatternRule[])"/>
+        /// <see cref="Add(PatternRule[])"/>.
         /// </summary>
         /// <param name="rules"></param>
         public void Add(IEnumerable<PatternRule> rules) => Rules.AddRange(rules);
 
         /// <summary>
-        /// the callback function you can custom process func with run pass options
+        /// the callback function you can custom process func with run pass options.
         /// </summary>
-        /// <param name="func"> func without run pass</param>
+        /// <param name="func"> func without run pass.</param>
         /// <param name="options"></param>
         protected override void OnPassStart(Function func, RunPassOptions options)
         {
@@ -52,7 +54,7 @@ namespace Nncase.Transform
         }
 
         /// <summary>
-        /// the callback function you can custom process func with run pass options
+        /// the callback function you can custom process func with run pass options.
         /// </summary>
         /// <param name="func"> func with rewrited. </param>
         /// <param name="options"></param>
@@ -84,7 +86,6 @@ namespace Nncase.Transform
 
     public sealed class ShapeInferPass : DataFlowPass
     {
-
         public ShapeInferPass(string name = "ShapeInfer") : base(name)
         {
             Rules.Add(new Transform.Rule.FoldConstCall());
@@ -103,15 +104,16 @@ namespace Nncase.Transform
                 post = (Function)DataFlowRewrite.Rewrite(pre, Rules, new_options.SetName($"{Name}/Run_{count}"));
                 if (post == pre)
                 {
-                    if (!TypeInference.InferenceType(post))
+                    if (!CompilerServices.InferenceType(post))
                         throw new InvalidOperationException("Can't InferShape For This Model!");
                     else
                         break;
                 }
+
                 pre = post;
             }
+
             return post;
         }
-
     }
 }

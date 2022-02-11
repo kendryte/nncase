@@ -41,7 +41,7 @@ namespace Nncase.Tests.TIRTest
                           DataType.Float32,
                           strides: (n + 1, 1));
             var aptr = Ab.AccessPtr(AccessMode.ReadWrite);
-            Assert.Equal(aptr.Parameters[2].Eval(dict), (Ab.Strides[0] * m).Eval(dict));
+            Assert.Equal(aptr.Parameters[2].Evaluate(dict), (Ab.Strides[0] * m).Evaluate(dict));
             Assert.IsType<AccessPtr>(aptr.Target);
         }
 

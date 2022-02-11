@@ -28,7 +28,7 @@ public class UnitTestTypeInfer : IHostFixtrue
         Var a = new Var(new TensorType(DataType.Float32, new[] { 1, 5, 1 }));
         Const b = (Const)(new DenseTensor<float>(Enumerable.Repeat(1.0f, 15).ToArray(), new[] { 1, 5, 3 }));
         var c = a + b;
-        var ctype = TypeInference.InferenceType(c);
+        var ctype = CompilerServices.InferenceType(c);
 
         Assert.True(IsShape(new[] { 1, 5, 3 }).MatchLeaf(c.CheckedType));
     }
@@ -38,7 +38,7 @@ public class UnitTestTypeInfer : IHostFixtrue
     {
         Var a = new Var(AnyType.Default);
         var c = Square(a);
-        Assert.False(TypeInference.InferenceType(c));
+        Assert.False(CompilerServices.InferenceType(c));
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public class UnitTestTypeInfer : IHostFixtrue
         var a = new Var(new TensorType(DataType.Float32, new Shape(1, 3, 224, 224)));
         var pads = Const.FromSpan<int>(new[] { 0, 0, 1, 1, 2, 2, 3, 3 }, new Shape(4, 2));
         var pad = Pad(a, pads, PadMode.Constant, 1);
-        Assert.True(TypeInference.InferenceType(pad));
+        Assert.True(CompilerServices.InferenceType(pad));
         Assert.Equal(pad.CheckedShape, new Shape(1, 5, 228, 230));
     }
 
@@ -60,8 +60,8 @@ public class UnitTestTypeInfer : IHostFixtrue
         var stride = Const.FromSpan<int>(new[] { 1 });
         var axis = Const.FromSpan<int>(new[] { 0 });
         var s = Slice(input, begin, end, axis, stride);
-        Assert.True(TypeInference.InferenceType(s));
-        var post = s.Eval().ToConst();
+        Assert.True(CompilerServices.InferenceType(s));
+        var post = s.Evaluate();
         Assert.True(post.InferenceType());
         Assert.Equal(s.CheckedShape, post.CheckedShape);
     }
@@ -74,8 +74,8 @@ public class UnitTestTypeInfer : IHostFixtrue
         var stride = new[] { 1 };
         var axes = new[] { 0 };
         var slice = Slice(new Shape(1, 7, 7, 768), begin, end, axes, stride);
-        TypeInference.InferenceType(slice);
-        var post = slice.Eval().ToConst();
+        CompilerServices.InferenceType(slice);
+        var post = slice.Evaluate();
         Assert.True(post.InferenceType());
         Assert.Equal(new Shape(2), post.CheckedShape);
     }
@@ -87,14 +87,14 @@ public class UnitTestTypeInfer : IHostFixtrue
         var b = (Const)1;
         var c = (Const)1;
         var s = Stack(new Tuple(a, b, c), 0);
-        TypeInference.InferenceType(s);
+        CompilerServices.InferenceType(s);
         Assert.Equal(new Shape(3), s.CheckedShape);
 
         var x = Const.FromSpan<int>(new[] { 1, 2 });
         var y = Const.FromSpan<int>(new[] { 1, 2 });
         var z = Const.FromSpan<int>(new[] { 1, 2 });
         var ss = Stack(new Tuple(x, y, z), 1);
-        TypeInference.InferenceType(ss);
+        CompilerServices.InferenceType(ss);
         Assert.Equal(new Shape(2, 3), ss.CheckedShape);
     }
 
@@ -105,7 +105,7 @@ public class UnitTestTypeInfer : IHostFixtrue
 
     void AssertInferShape(Expr expr, Shape shape)
     {
-        Assert.True(TypeInference.InferenceType(expr));
+        Assert.True(CompilerServices.InferenceType(expr));
         Assert.Equal(expr.CheckedShape, shape);
     }
 

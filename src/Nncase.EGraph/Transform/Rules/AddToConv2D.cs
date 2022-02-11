@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Numerics.Tensors;
 using System.Linq;
 using System.Collections.Immutable;
@@ -39,6 +42,7 @@ namespace Nncase.Transform.Rule
                     weights[2 * channels * i + i] = 1.0f;
                     weights[2 * channels * i + i + channels] = 1.0f;
                 }
+
                 var c = Concat(new IR.Tuple(ad.Lhs(), ad.Rhs()), 1);
                 var con_weights = Const.FromTensor<float>(weights.Reshape(new[] { channels, 2 * channels, 1, 1 }));
 
@@ -50,6 +54,7 @@ namespace Nncase.Transform.Rule
                   PadMode.Constant,
                   1);
             }
+
             return null;
         }
     }

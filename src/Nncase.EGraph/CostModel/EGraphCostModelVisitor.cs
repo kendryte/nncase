@@ -11,7 +11,6 @@ using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Nncase.Transform;
 
-
 namespace Nncase.CostModel
 {
     public class EGraphVisitor<ENodeResultType, EClassResultType, EGraphResultType>
@@ -45,7 +44,6 @@ namespace Nncase.CostModel
 
     public sealed record EClassCost(bool Locked, Cost Total)
     {
-
     }
 
     public sealed class EGraphCostModelContext : ExprCostModelContext
@@ -78,7 +76,6 @@ namespace Nncase.CostModel
             return _eClassCosts[_exprMaps[expr].Children[i]].Total;
         }
 
-
         private EClass GetParentEClass(Expr expr) => _eHashCon[_exprMaps[expr]].Find();
 
         public override TensorType CurrentCallResultTensorType() =>
@@ -94,6 +91,7 @@ namespace Nncase.CostModel
                     return c;
                 }
             }
+
             throw new InvalidOperationException("This EClass Does Not Have Const Enode!");
         }
 
@@ -104,9 +102,10 @@ namespace Nncase.CostModel
                 return _eClassType[_exprMaps[CurrentCall].Children[parameter.Index + 1]] switch
                 {
                     TensorType ttype => ttype,
-                    _ => throw new InvalidOperationException($"Expr is not a TensorType.")
+                    _ => throw new InvalidOperationException($"Expr is not a TensorType."),
                 };
             }
+
             throw new InvalidOperationException($"The {op.GetType().Name} has now parameter {parameter.Name}!");
         }
 
@@ -115,7 +114,7 @@ namespace Nncase.CostModel
         private TensorType CheckTensorType(IRType type) => type switch
         {
             TensorType ttype => ttype,
-            _ => throw new InvalidOperationException($"Expr is not a TensorType.")
+            _ => throw new InvalidOperationException($"Expr is not a TensorType."),
         };
     }
 
@@ -146,6 +145,7 @@ namespace Nncase.CostModel
                 Changed = true;
                 EClassMemo[eClass] = old_cost with { Total = new_cost.Total };
             }
+
             return new_cost;
         }
 
@@ -162,6 +162,7 @@ namespace Nncase.CostModel
                     minNode = eNode;
                 }
             }
+
             /* if is leaf eclass, wo can lock it */
             var eClassCost = new EClassCost((ENodes.Count == 1 && minNode.Children.Count == 0),
                                             ENodeMemo[minNode].Total);
@@ -175,11 +176,13 @@ namespace Nncase.CostModel
             {
                 result = VisitLeaf(eNode);
             }
+
             var total = result.Partial;
             foreach (var child in eNode.Children)
             {
                 total += EClassMemo[child].Total;
             }
+
             ENodeMemo[eNode] = result with { Total = total };
             return result;
         }
@@ -205,11 +208,13 @@ namespace Nncase.CostModel
                     _context._exprMaps.Add(eNode.Expr, eNode);
                     types.Add(eNode.Expr.CheckedType!);
                 }
+
                 var vaild_types = types.Distinct().ToArray();
                 if (vaild_types.Length != 1)
                 {
                     throw new InvalidProgramException("The Same EClass Must Have Same IRType!");
                 }
+
                 _context._eClassType[eClass] = vaild_types[0];
                 EClassMemo[eClass] = new EClassCost(false, Cost.Inf);
             }
@@ -227,8 +232,8 @@ namespace Nncase.CostModel
                     Visit(eClass);
                 }
             }
+
             return _context.CostEnv;
         }
     }
-
 }

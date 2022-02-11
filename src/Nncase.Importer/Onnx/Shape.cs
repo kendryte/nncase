@@ -28,16 +28,16 @@ namespace Nncase.Importer
         private Expr ShapeV13(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);
-            return F.Tensors.ShapeOp(input);
+            return F.Tensors.ShapeOf(input);
         }
 
         private Expr ShapeV15(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);
             var start = GetIntAttribute(op, "start", 0);
-            var inShape = F.Tensors.ShapeOp(input);
+            var inShape = F.Tensors.ShapeOf(input);
             var end = GetOptionIntAttribute(op, "end");
-            Expr endValue = end ? end.Value() : F.Tensors.ShapeOp(inShape);
+            Expr endValue = end ? end.Value() : F.Tensors.ShapeOf(inShape);
             return F.Tensors.Slice(
                 inShape,
                 start,

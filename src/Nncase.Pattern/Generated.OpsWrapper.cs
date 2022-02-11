@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -5,8 +8,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using Nncase.IR.Imaging;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.Random;
 using Nncase.IR.Tensors;
 
 namespace Nncase.Pattern.Math
@@ -293,7 +298,7 @@ namespace Nncase.Pattern.NN
         public Expr Bias() => GetCast<Expr>(BiasPat());
         public T Bias<T>()
             where T : Expr => GetCast<T>(BiasPat());
-        public ExprPattern OutShapePat() => Pattern[Conv2DTranspose.OutShape];
+        public ExprPattern OutShapePat() => Pattern[Conv2DTranspose.OutputShape];
         public T OutShapePat<T>()
             where T : ExprPattern => (T)OutShapePat();
         public Expr OutShape() => GetCast<Expr>(OutShapePat());
@@ -438,13 +443,13 @@ namespace Nncase.Pattern.NN
 
     public sealed record LogSoftMaxWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern InputPat() => Pattern[LogSoftMax.Input];
+        public ExprPattern InputPat() => Pattern[LogSoftmax.Input];
         public T InputPat<T>()
             where T : ExprPattern => (T)InputPat();
         public Expr Input() => GetCast<Expr>(InputPat());
         public T Input<T>()
             where T : Expr => GetCast<T>(InputPat());
-        public ExprPattern AxisPat() => Pattern[LogSoftMax.Axis];
+        public ExprPattern AxisPat() => Pattern[LogSoftmax.Axis];
         public T AxisPat<T>()
             where T : ExprPattern => (T)AxisPat();
         public Expr Axis() => GetCast<Expr>(AxisPat());
@@ -455,13 +460,13 @@ namespace Nncase.Pattern.NN
 
     public sealed record SoftMaxWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern InputPat() => Pattern[SoftMax.Input];
+        public ExprPattern InputPat() => Pattern[Softmax.Input];
         public T InputPat<T>()
             where T : ExprPattern => (T)InputPat();
         public Expr Input() => GetCast<Expr>(InputPat());
         public T Input<T>()
             where T : Expr => GetCast<T>(InputPat());
-        public ExprPattern AxisPat() => Pattern[SoftMax.Axis];
+        public ExprPattern AxisPat() => Pattern[Softmax.Axis];
         public T AxisPat<T>()
             where T : ExprPattern => (T)AxisPat();
         public Expr Axis() => GetCast<Expr>(AxisPat());
@@ -472,7 +477,7 @@ namespace Nncase.Pattern.NN
 
     public sealed record SoftPlusWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern InputPat() => Pattern[SoftPlus.Input];
+        public ExprPattern InputPat() => Pattern[Softplus.Input];
         public T InputPat<T>()
             where T : ExprPattern => (T)InputPat();
         public Expr Input() => GetCast<Expr>(InputPat());
@@ -483,7 +488,7 @@ namespace Nncase.Pattern.NN
 
     public sealed record SoftSignWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern InputPat() => Pattern[SoftSign.Input];
+        public ExprPattern InputPat() => Pattern[Softsign.Input];
         public T InputPat<T>()
             where T : ExprPattern => (T)InputPat();
         public Expr Input() => GetCast<Expr>(InputPat());
@@ -595,25 +600,25 @@ namespace Nncase.Pattern.Tensors
 
     public sealed record DeQuantizeWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern InputPat() => Pattern[DeQuantize.Input];
+        public ExprPattern InputPat() => Pattern[Dequantize.Input];
         public T InputPat<T>()
             where T : ExprPattern => (T)InputPat();
         public Expr Input() => GetCast<Expr>(InputPat());
         public T Input<T>()
             where T : Expr => GetCast<T>(InputPat());
-        public ExprPattern ZeroPointPat() => Pattern[DeQuantize.ZeroPoint];
+        public ExprPattern ZeroPointPat() => Pattern[Dequantize.ZeroPoint];
         public T ZeroPointPat<T>()
             where T : ExprPattern => (T)ZeroPointPat();
         public Expr ZeroPoint() => GetCast<Expr>(ZeroPointPat());
         public T ZeroPoint<T>()
             where T : Expr => GetCast<T>(ZeroPointPat());
-        public ExprPattern ScalePat() => Pattern[DeQuantize.Scale];
+        public ExprPattern ScalePat() => Pattern[Dequantize.Scale];
         public T ScalePat<T>()
             where T : ExprPattern => (T)ScalePat();
         public Expr Scale() => GetCast<Expr>(ScalePat());
         public T Scale<T>()
             where T : Expr => GetCast<T>(ScalePat());
-        public DataType TargetType => ((DeQuantize)GetCast<Call>(this).Target).TargetType;
+        public DataType TargetType => ((Dequantize)GetCast<Call>(this).Target).TargetType;
         public static implicit operator CallPattern(DeQuantizeWrapper warper) => warper.Pattern;
     }
 
@@ -665,13 +670,13 @@ namespace Nncase.Pattern.Tensors
 
     public sealed record HardMaxWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern InputPat() => Pattern[HardMax.Input];
+        public ExprPattern InputPat() => Pattern[Hardmax.Input];
         public T InputPat<T>()
             where T : ExprPattern => (T)InputPat();
         public Expr Input() => GetCast<Expr>(InputPat());
         public T Input<T>()
             where T : Expr => GetCast<T>(InputPat());
-        public ExprPattern AxisPat() => Pattern[HardMax.Axis];
+        public ExprPattern AxisPat() => Pattern[Hardmax.Axis];
         public T AxisPat<T>()
             where T : ExprPattern => (T)AxisPat();
         public Expr Axis() => GetCast<Expr>(AxisPat());
@@ -682,13 +687,13 @@ namespace Nncase.Pattern.Tensors
 
     public sealed record MatMulWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern InputPat() => Pattern[MatMul.Input];
+        public ExprPattern InputPat() => Pattern[MatMul.Lhs];
         public T InputPat<T>()
             where T : ExprPattern => (T)InputPat();
         public Expr Input() => GetCast<Expr>(InputPat());
         public T Input<T>()
             where T : Expr => GetCast<T>(InputPat());
-        public ExprPattern OtherPat() => Pattern[MatMul.Other];
+        public ExprPattern OtherPat() => Pattern[MatMul.Rhs];
         public T OtherPat<T>()
             where T : ExprPattern => (T)OtherPat();
         public Expr Other() => GetCast<Expr>(OtherPat());
@@ -783,133 +788,133 @@ namespace Nncase.Pattern.Tensors
 
     public sealed record RandomNormalWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern MeanPat() => Pattern[RandomNormal.Mean];
+        public ExprPattern MeanPat() => Pattern[Normal.Mean];
         public T MeanPat<T>()
             where T : ExprPattern => (T)MeanPat();
         public Expr Mean() => GetCast<Expr>(MeanPat());
         public T Mean<T>()
             where T : Expr => GetCast<T>(MeanPat());
-        public ExprPattern ScalePat() => Pattern[RandomNormal.Scale];
+        public ExprPattern ScalePat() => Pattern[Normal.Scale];
         public T ScalePat<T>()
             where T : ExprPattern => (T)ScalePat();
         public Expr Scale() => GetCast<Expr>(ScalePat());
         public T Scale<T>()
             where T : Expr => GetCast<T>(ScalePat());
-        public ExprPattern SeedPat() => Pattern[RandomNormal.Seed];
+        public ExprPattern SeedPat() => Pattern[Normal.Seed];
         public T SeedPat<T>()
             where T : ExprPattern => (T)SeedPat();
         public Expr Seed() => GetCast<Expr>(SeedPat());
         public T Seed<T>()
             where T : Expr => GetCast<T>(SeedPat());
-        public ExprPattern ShapePat() => Pattern[RandomNormal.Shape];
+        public ExprPattern ShapePat() => Pattern[Normal.Shape];
         public T ShapePat<T>()
             where T : ExprPattern => (T)ShapePat();
         public Expr Shape() => GetCast<Expr>(ShapePat());
         public T Shape<T>()
             where T : Expr => GetCast<T>(ShapePat());
-        public DataType Type => ((RandomNormal)GetCast<Call>(this).Target).Type;
+        public DataType Type => ((Normal)GetCast<Call>(this).Target).Type;
         public static implicit operator CallPattern(RandomNormalWrapper warper) => warper.Pattern;
     }
 
     public sealed record RandomNormalLikeWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern InputPat() => Pattern[RandomNormalLike.Input];
+        public ExprPattern InputPat() => Pattern[NormalLike.Input];
         public T InputPat<T>()
             where T : ExprPattern => (T)InputPat();
         public Expr Input() => GetCast<Expr>(InputPat());
         public T Input<T>()
             where T : Expr => GetCast<T>(InputPat());
-        public ExprPattern MeanPat() => Pattern[RandomNormalLike.Mean];
+        public ExprPattern MeanPat() => Pattern[NormalLike.Mean];
         public T MeanPat<T>()
             where T : ExprPattern => (T)MeanPat();
         public Expr Mean() => GetCast<Expr>(MeanPat());
         public T Mean<T>()
             where T : Expr => GetCast<T>(MeanPat());
-        public ExprPattern ScalePat() => Pattern[RandomNormalLike.Scale];
+        public ExprPattern ScalePat() => Pattern[NormalLike.Scale];
         public T ScalePat<T>()
             where T : ExprPattern => (T)ScalePat();
         public Expr Scale() => GetCast<Expr>(ScalePat());
         public T Scale<T>()
             where T : Expr => GetCast<T>(ScalePat());
-        public ExprPattern SeedPat() => Pattern[RandomNormalLike.Seed];
+        public ExprPattern SeedPat() => Pattern[NormalLike.Seed];
         public T SeedPat<T>()
             where T : ExprPattern => (T)SeedPat();
         public Expr Seed() => GetCast<Expr>(SeedPat());
         public T Seed<T>()
             where T : Expr => GetCast<T>(SeedPat());
-        public ExprPattern ShapePat() => Pattern[RandomNormalLike.Shape];
+        public ExprPattern ShapePat() => Pattern[NormalLike.Shape];
         public T ShapePat<T>()
             where T : ExprPattern => (T)ShapePat();
         public Expr Shape() => GetCast<Expr>(ShapePat());
         public T Shape<T>()
             where T : Expr => GetCast<T>(ShapePat());
-        public DataType Type => ((RandomNormalLike)GetCast<Call>(this).Target).Type;
+        public DataType Type => ((NormalLike)GetCast<Call>(this).Target).Type;
         public static implicit operator CallPattern(RandomNormalLikeWrapper warper) => warper.Pattern;
     }
 
     public sealed record RandomUniformWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern HighPat() => Pattern[RandomUniform.High];
+        public ExprPattern HighPat() => Pattern[Uniform.High];
         public T HighPat<T>()
             where T : ExprPattern => (T)HighPat();
         public Expr High() => GetCast<Expr>(HighPat());
         public T High<T>()
             where T : Expr => GetCast<T>(HighPat());
-        public ExprPattern LowPat() => Pattern[RandomUniform.Low];
+        public ExprPattern LowPat() => Pattern[Uniform.Low];
         public T LowPat<T>()
             where T : ExprPattern => (T)LowPat();
         public Expr Low() => GetCast<Expr>(LowPat());
         public T Low<T>()
             where T : Expr => GetCast<T>(LowPat());
-        public ExprPattern SeedPat() => Pattern[RandomUniform.Seed];
+        public ExprPattern SeedPat() => Pattern[Uniform.Seed];
         public T SeedPat<T>()
             where T : ExprPattern => (T)SeedPat();
         public Expr Seed() => GetCast<Expr>(SeedPat());
         public T Seed<T>()
             where T : Expr => GetCast<T>(SeedPat());
-        public ExprPattern ShapePat() => Pattern[RandomUniform.Shape];
+        public ExprPattern ShapePat() => Pattern[Uniform.Shape];
         public T ShapePat<T>()
             where T : ExprPattern => (T)ShapePat();
         public Expr Shape() => GetCast<Expr>(ShapePat());
         public T Shape<T>()
             where T : Expr => GetCast<T>(ShapePat());
-        public DataType Type => ((RandomUniform)GetCast<Call>(this).Target).Type;
+        public DataType Type => ((Uniform)GetCast<Call>(this).Target).Type;
         public static implicit operator CallPattern(RandomUniformWrapper warper) => warper.Pattern;
     }
 
     public sealed record RandomUniformLikeWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern InputPat() => Pattern[RandomUniformLike.Input];
+        public ExprPattern InputPat() => Pattern[UniformLike.Input];
         public T InputPat<T>()
             where T : ExprPattern => (T)InputPat();
         public Expr Input() => GetCast<Expr>(InputPat());
         public T Input<T>()
             where T : Expr => GetCast<T>(InputPat());
-        public ExprPattern HighPat() => Pattern[RandomUniformLike.High];
+        public ExprPattern HighPat() => Pattern[UniformLike.High];
         public T HighPat<T>()
             where T : ExprPattern => (T)HighPat();
         public Expr High() => GetCast<Expr>(HighPat());
         public T High<T>()
             where T : Expr => GetCast<T>(HighPat());
-        public ExprPattern LowPat() => Pattern[RandomUniformLike.Low];
+        public ExprPattern LowPat() => Pattern[UniformLike.Low];
         public T LowPat<T>()
             where T : ExprPattern => (T)LowPat();
         public Expr Low() => GetCast<Expr>(LowPat());
         public T Low<T>()
             where T : Expr => GetCast<T>(LowPat());
-        public ExprPattern SeedPat() => Pattern[RandomUniformLike.Seed];
+        public ExprPattern SeedPat() => Pattern[UniformLike.Seed];
         public T SeedPat<T>()
             where T : ExprPattern => (T)SeedPat();
         public Expr Seed() => GetCast<Expr>(SeedPat());
         public T Seed<T>()
             where T : Expr => GetCast<T>(SeedPat());
-        public ExprPattern ShapePat() => Pattern[RandomUniformLike.Shape];
+        public ExprPattern ShapePat() => Pattern[UniformLike.Shape];
         public T ShapePat<T>()
             where T : ExprPattern => (T)ShapePat();
         public Expr Shape() => GetCast<Expr>(ShapePat());
         public T Shape<T>()
             where T : Expr => GetCast<T>(ShapePat());
-        public DataType Type => ((RandomUniformLike)GetCast<Call>(this).Target).Type;
+        public DataType Type => ((UniformLike)GetCast<Call>(this).Target).Type;
         public static implicit operator CallPattern(RandomUniformLikeWrapper warper) => warper.Pattern;
     }
 
@@ -1070,7 +1075,7 @@ namespace Nncase.Pattern.Tensors
 
     public sealed record ShapeOpWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern InputPat() => Pattern[ShapeOp.Input];
+        public ExprPattern InputPat() => Pattern[ShapeOf.Input];
         public T InputPat<T>()
             where T : ExprPattern => (T)InputPat();
         public Expr Input() => GetCast<Expr>(InputPat());
@@ -1213,13 +1218,13 @@ namespace Nncase.Pattern.Tensors
 
     public sealed record UnSqueezeWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern InputPat() => Pattern[UnSqueeze.Input];
+        public ExprPattern InputPat() => Pattern[Unsqueeze.Input];
         public T InputPat<T>()
             where T : ExprPattern => (T)InputPat();
         public Expr Input() => GetCast<Expr>(InputPat());
         public T Input<T>()
             where T : Expr => GetCast<T>(InputPat());
-        public ExprPattern DimPat() => Pattern[UnSqueeze.Dim];
+        public ExprPattern DimPat() => Pattern[Unsqueeze.Dim];
         public T DimPat<T>()
             where T : ExprPattern => (T)DimPat();
         public Expr Dim() => GetCast<Expr>(DimPat());

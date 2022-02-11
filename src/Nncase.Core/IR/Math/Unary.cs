@@ -8,22 +8,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nncase.IR.Math
+namespace Nncase.IR.Math;
+
+/// <summary>
+/// Unary expression.
+/// </summary>
+public sealed record Unary(UnaryOp UnaryOp) : Op
 {
     /// <summary>
-    /// Unary expression.
+    /// Gets input.
     /// </summary>
-    public sealed record Unary(UnaryOp UnaryOp) : Op
-    {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Unary), 0, "input");
-
-        /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input)
-        {
-            return input;
-        }
-    }
+    public static readonly ParameterInfo Input = new(typeof(Unary), 0, "input");
 }

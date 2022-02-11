@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,11 +9,10 @@ using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.Pattern
 {
-
     public sealed record ConstPattern(Func<Const, bool> Cond) : ExprPattern
     {
         /// <summary>
-        /// <see cref="Target"/>
+        /// <see cref="Target"/>.
         /// </summary>
         private readonly Const? _target = null;
 
@@ -50,7 +52,6 @@ namespace Nncase.Pattern
 
         public static implicit operator ConstPattern(bool value) => new ConstPattern((Const)value);
 
-
         public bool MatchLeaf(Const expr)
         {
             return Cond(expr) && MatchCheckedType(expr);
@@ -59,9 +60,7 @@ namespace Nncase.Pattern
 
     public static partial class Utility
     {
-
         public static ConstPattern IsConst() => new ConstPattern(x => x is Const);
-
 
         public static ConstPattern IsConst(Func<Const, bool> Cond) => new ConstPattern(Cond);
 
@@ -75,6 +74,7 @@ namespace Nncase.Pattern
                   else
                       return x.ToTensor<float>().All(cond);
               }
+
               return false;
           });
 
@@ -88,6 +88,7 @@ namespace Nncase.Pattern
                   else
                       return x.ToTensor<int>().All(cond);
               }
+
               return false;
           });
 
@@ -100,5 +101,4 @@ namespace Nncase.Pattern
         where T : unmanaged
         => new ConstPattern(x => x == Const.FromScalar<T>(Value));
     }
-
 }

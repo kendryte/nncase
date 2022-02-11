@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.IO;
 using System.Linq;
@@ -42,7 +45,7 @@ namespace Nncase.Importer
         {
             return GetAttr(n, attr, type, func);
         }
-        
+
         T GetAttrUnSafe<T>(NodeProto n, string attr, AttributeType type,
             Func<AttributeProto, T> func)
         {
@@ -51,17 +54,17 @@ namespace Nncase.Importer
                     x => x,
                     () => throw new InvalidDataException($"Cannot find node attr {attr} in node {n}"));
         }
-        
+
         long GetIntAttribute(NodeProto n, string attr)
         {
             return GetAttrUnSafe(n, attr, AttributeType.Int, x => x.I);
         }
-        
+
         long GetIntAttribute(NodeProto n, string attr, long defaultValue)
         {
             return GetAttrSafe(n, attr, AttributeType.Int, x => x.I, defaultValue);
         }
-        
+
         float GetFloatAttribute(NodeProto n, string attr, float defaultValue)
         {
             return GetAttrSafe(n, attr, AttributeType.Float, x => x.F, defaultValue);
@@ -76,7 +79,7 @@ namespace Nncase.Importer
         {
             return F.Tensors.Range(0, F.Tensors.Rank(input), 1);
         }
-        
+
         Expr GetAxesAttribute(NodeProto n, Expr input)
         {
             return GetOptionIntsAttribute(n, "axes")
@@ -93,12 +96,12 @@ namespace Nncase.Importer
         {
             return Const.FromSpan<long>(GetIntsAttribute(n, attr));
         }
-        
+
         Option<long[]> GetOptionIntsAttribute(NodeProto n, string attr)
         {
             return GetAttrOption(n, attr, AttributeType.Ints, x => x.Ints.ToArray());
         }
-        
+
         Option<long> GetOptionIntAttribute(NodeProto n, string attr)
         {
             return GetAttrOption(n, attr, AttributeType.Int, x => x.I);
@@ -112,15 +115,15 @@ namespace Nncase.Importer
 
         long[] GetIntsAttribute(NodeProto n, string attr, int defaultValue, int count)
         {
-            return GetAttrSafe(n, attr, AttributeType.Ints, x => x.Ints.ToArray(), 
+            return GetAttrSafe(n, attr, AttributeType.Ints, x => x.Ints.ToArray(),
                 Enumerable.Repeat<long>(defaultValue, count).ToArray());
         }
-        
+
         string GetStringAttribute(NodeProto n, string attr, string defaultValue)
         {
             return GetAttrSafe(n, attr, AttributeType.String, x => x.S.ToStringUtf8(), defaultValue);
         }
-        
+
         string GetStringAttribute(NodeProto n, string attr)
         {
             return GetAttrUnSafe(n, attr, AttributeType.String, x => x.S.ToStringUtf8());

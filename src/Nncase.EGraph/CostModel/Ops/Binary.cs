@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using Nncase;
 using Nncase.IR.Math;
 using Nncase.IR;
@@ -20,6 +23,7 @@ namespace Nncase.CostModel
             var rhs = _context.GetArgumentType(binary, Binary.Rhs) as TensorType;
             var arithm = Math.Min(lhs.Shape.Prod().FixedValue,
                                   rhs.Shape.Prod().FixedValue);
+
             // var rhsValue = _context.GetArgumentConst(binary, Binary.Rhs);
             return new Cost(
                 binary.BinaryOp switch

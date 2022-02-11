@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR
 {
-
     /// <summary>
     /// Expression matutor.
     /// </summary>
@@ -30,7 +29,7 @@ namespace Nncase.IR
             return expr with
             {
                 Target = Visit(expr.Target),
-                Parameters = MutateArray(expr.Parameters, Visit)
+                Parameters = MutateArray(expr.Parameters, Visit),
             };
         }
 
@@ -95,7 +94,7 @@ namespace Nncase.IR
             return expr with
             {
                 Dom = MutateLeaf(expr.Dom),
-                Value = Visit(expr.Value)
+                Value = Visit(expr.Value),
             };
         }
 
@@ -136,10 +135,11 @@ namespace Nncase.IR
                 InitSequence = (TIR.Sequential)Visit(expr.InitSequence),
                 Predicate = Visit(expr.Predicate),
                 IterVars = MutateArray(expr.IterVars, x => (TIR.IterVar)Visit(x)),
+
                 // the block internal.
                 Sequence = (TIR.Sequential)Visit(expr.Sequence),
                 Reads = MutateArray(expr.Reads, MutateLeaf),
-                Writes = MutateArray(expr.Writes, MutateLeaf)
+                Writes = MutateArray(expr.Writes, MutateLeaf),
             };
         }
 
@@ -164,106 +164,103 @@ namespace Nncase.IR
             if (!IsMutated) return expr;
             return expr with
             {
-                Indices = MutateArray(expr.Indices, Visit)
+                Indices = MutateArray(expr.Indices, Visit),
             };
         }
 
         /// <summary>
-        /// defulat mutate leaf is not mutate
+        /// defulat mutate leaf is not mutate.
         /// </summary>
         /// <param name="expr"></param>
         /// <returns></returns>
         public virtual Expr DefaultMutateLeaf(Expr expr) => expr;
 
         /// <summary>
-        /// mutate the call
+        /// mutate the call.
         /// </summary>
         /// <param name="expr"></param>
         /// <returns></returns>
         public virtual Expr MutateLeaf(Call expr) => DefaultMutateLeaf(expr);
 
-
         /// <summary>
-        /// mutate the const
+        /// mutate the const.
         /// </summary>
         /// <param name="expr"></param>
         /// <returns></returns>
         public virtual Expr MutateLeaf(Const expr) => DefaultMutateLeaf(expr);
 
         /// <summary>
-        /// mutate the function
+        /// mutate the function.
         /// </summary>
         /// <param name="expr"></param>
         /// <returns></returns>
         public virtual Expr MutateLeaf(Function expr) => DefaultMutateLeaf(expr);
 
         /// <summary>
-        /// mutate the op
+        /// mutate the op.
         /// </summary>
         /// <param name="expr"></param>
         /// <returns></returns>
         public virtual Expr MutateLeaf(Op expr) => DefaultMutateLeaf(expr);
 
         /// <summary>
-        /// mutate the tuple
+        /// mutate the tuple.
         /// </summary>
         /// <param name="expr"></param>
         /// <returns></returns>
         public virtual Expr MutateLeaf(Tuple expr) => DefaultMutateLeaf(expr);
 
         /// <summary>
-        /// mutate the var
+        /// mutate the var.
         /// </summary>
         /// <param name="expr"></param>
         /// <returns></returns>
         public virtual Expr MutateLeaf(Var expr) => DefaultMutateLeaf(expr);
 
         /// <summary>
-        /// mutate the itervar
+        /// mutate the itervar.
         /// </summary>
         /// <param name="expr"></param>
         /// <returns></returns>
         public virtual Expr MutateLeaf(TIR.IterVar expr) => DefaultMutateLeaf(expr);
 
         /// <summary>
-        /// mutate the sequential
+        /// mutate the sequential.
         /// </summary>
         /// <param name="expr"></param>
         /// <returns></returns>
         public virtual Expr MutateLeaf(TIR.Sequential expr) => DefaultMutateLeaf(expr);
 
         /// <summary>
-        /// mutate the for
+        /// mutate the for.
         /// </summary>
         /// <param name="expr"></param>
         /// <returns></returns>
         public virtual Expr MutateLeaf(TIR.For expr) => DefaultMutateLeaf(expr);
 
         /// <summary>
-        /// mutate the block
+        /// mutate the block.
         /// </summary>
         /// <param name="expr"></param>
         /// <returns></returns>
         public virtual Expr MutateLeaf(TIR.Block expr) => DefaultMutateLeaf(expr);
 
-
         /// <summary>
-        /// mutate the bufferstore
+        /// mutate the bufferstore.
         /// </summary>
         /// <param name="expr"></param>
         /// <returns></returns>
         public virtual Expr MutateLeaf(TIR.BufferStore expr) => DefaultMutateLeaf(expr);
 
         /// <summary>
-        /// mutate the buffer load
+        /// mutate the buffer load.
         /// </summary>
         /// <param name="expr"></param>
         /// <returns></returns>
         public virtual Expr MutateLeaf(TIR.BufferLoad expr) => DefaultMutateLeaf(expr);
 
-
         /// <summary>
-        /// mutate irarray list
+        /// mutate irarray list.
         /// </summary>
         /// <typeparam name="TInput"></typeparam>
         /// <typeparam name="TResult"></typeparam>
@@ -276,7 +273,7 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// Mutate IRArray
+        /// Mutate IRArray.
         /// </summary>
         /// <typeparam name="TInput"></typeparam>
         /// <typeparam name="TResult"></typeparam>
@@ -299,12 +296,12 @@ namespace Nncase.IR
             return range with
             {
                 Min = Visit(range.Min),
-                Max = Visit(range.Max)
+                Max = Visit(range.Max),
             };
         }
 
         /// <summary>
-        /// mutate the buffer region
+        /// mutate the buffer region.
         /// </summary>
         /// <param name="region"></param>
         /// <returns></returns>

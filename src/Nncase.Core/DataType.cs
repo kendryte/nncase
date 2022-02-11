@@ -208,7 +208,7 @@ namespace Nncase
         public static PrimType Invalid => PrimTypeCode.Invalid;
 
         /// <summary>
-        /// check current compatible with other datatype
+        /// check current compatible with other datatype.
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
@@ -340,7 +340,7 @@ namespace Nncase
         /// <summary>
         /// Get data type convert to CLR type.
         /// </summary>
-        /// <param name="t"> Nncase datatype</param>
+        /// <param name="t"> Nncase datatype.</param>
         /// <returns>CLR type instance.</returns>
         public static Type ToType(DataType t)
         {

@@ -20,7 +20,7 @@ namespace Nncase.Tests.CostModelTest
         public void TestConst()
         {
             var expr = (Const)1 + ((Const)2 * ((Const)3 / (Const)5));
-            TypeInference.InferenceType(expr);
+            CompilerServices.InferenceType(expr);
             var egraph = new EGraph(expr);
             var graphCosts = egraph.Costs();
             Assert.Equal(new Cost(0, 0), graphCosts[expr.Target]);
@@ -33,7 +33,7 @@ namespace Nncase.Tests.CostModelTest
         {
             var lhs = ((Const)2 * ((Const)3 / (Const)5));
             var expr = lhs * (Const)1;
-            TypeInference.InferenceType(expr);
+            CompilerServices.InferenceType(expr);
             var egraph = new EGraph();
             egraph.Add(expr, out var root);
             EGraphReWriter.ReWrite(egraph, new Transform.Rule.Xmul1(), passOptions.SetName("EGraphCostModelTest/TestConstXmul1"));

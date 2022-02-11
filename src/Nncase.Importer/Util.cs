@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using Nncase.IR;
@@ -12,7 +15,7 @@ namespace Nncase
     {
         public static Expr ShapeIndex(in Expr input, int index)
         {
-            return F.Tensors.Slice(F.Tensors.ShapeOp(input), new[] { index }, new[] { index + 1 }, 1);
+            return F.Tensors.Slice(F.Tensors.ShapeOf(input), new[] { index }, new[] { index + 1 }, 1);
         }
 
         public static (Expr, Expr) GetHW(in Expr input)
@@ -28,14 +31,14 @@ namespace Nncase
               F.Tensors.Concat(new Tuple(padH), 0),
               F.Tensors.Concat(new Tuple(padW), 0)), 0);
         }
-        
+
         private static Expr GetWindowedOutputSize(Expr size, Expr filter, Expr stride, Expr dilation, bool same, bool ceilMode)
         {
             var effectiveFilterSize = ((filter - 1) * dilation) + 1;
             var falseBranch = !ceilMode
                 ? ((size - effectiveFilterSize + stride) / stride)
                 : F.Tensors.Cast(F.Math.Ceil(
-                        F.Tensors.Cast((size - effectiveFilterSize + stride), DataType.Float32) / 
+                        F.Tensors.Cast((size - effectiveFilterSize + stride), DataType.Float32) /
                         F.Tensors.Cast(stride, DataType.Float32)),
                     DataType.Int32);
             var trueBranch = (size + stride - 1) / stride;
@@ -52,6 +55,7 @@ namespace Nncase
             {
                 return new[] { F.Math.Max(before, after), F.Math.Min(before, after) };
             }
+
             return new[] { before, after };
         }
 

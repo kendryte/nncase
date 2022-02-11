@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +10,7 @@ using Nncase.IR.Math;
 namespace Nncase.Pattern
 {
     /// <summary>
-    /// Base Record For Pattern
+    /// Base Record For Pattern.
     /// </summary>
     /// <param name="Id"></param>
     public abstract partial record ExprPattern(int Id)
@@ -15,7 +18,7 @@ namespace Nncase.Pattern
         protected static int _globalPatIndex = 0;
 
         /// <summary>
-        /// hashcode cache, for speedup get hashcode
+        /// hashcode cache, for speedup get hashcode.
         /// </summary>
         protected int? _hashcode;
 
@@ -25,7 +28,7 @@ namespace Nncase.Pattern
         public ExprPattern() : this(_globalPatIndex++) { }
 
         /// <summary>
-        /// Convert Expr to Pattern
+        /// Convert Expr to Pattern.
         /// </summary>
         /// <param name="expr"></param>
         public static implicit operator ExprPattern(Expr expr) => expr switch
@@ -36,33 +39,32 @@ namespace Nncase.Pattern
             (Call call) => new CallPattern(call),
             (IR.Tuple tuple) => new TuplePattern(tuple),
             (Op op) => OpPattern.CastToPattern(op),
-            _ => throw new NotImplementedException($"Can't Convert The Expr {expr.GetType().Name} To ExprPattern")
+            _ => throw new NotImplementedException($"Can't Convert The Expr {expr.GetType().Name} To ExprPattern"),
         };
 
         /// <summary>
-        /// Pattern for CheckedType, defulat match IR Type
+        /// Pattern for CheckedType, defulat match IR Type.
         /// </summary>
         public TypePattern CheckedTypePat { get; set; } = IR.TypePatternUtility.IsIRType();
 
         /// <summary>
-        /// Match The Expr Type
+        /// Match The Expr Type.
         /// </summary>
         /// <param name="expr"></param>
-        /// <returns> is Matched </returns>
+        /// <returns> is Matched. </returns>
         public bool MatchCheckedType(Expr expr) => (expr.CheckedType, this.CheckedTypePat) switch
         {
             (null, null) => true,
             (null, TypePattern pat) => false,
             (IRType type, null) => true,
-            (IRType type, TypePattern pat) => pat.MatchLeaf(type)
+            (IRType type, TypePattern pat) => pat.MatchLeaf(type),
         };
 
-
         /// <summary>
-        /// Match The Expr
+        /// Match The Expr.
         /// </summary>
         /// <param name="expr"></param>
-        /// <returns> is matched </returns>
+        /// <returns> is matched. </returns>
         public virtual bool MatchLeaf(Expr expr) => (this, expr) switch
         {
             (VarPattern varPat, Var var) => varPat.MatchLeaf(var),
@@ -72,30 +74,29 @@ namespace Nncase.Pattern
             (TuplePattern tuplePat, IR.Tuple tuple) => tuplePat.MatchLeaf(tuple),
             (OpPattern opPat, Op op) => opPat.MatchLeaf(op),
             (WildCardPattern wildcardPat, _) => wildcardPat.MatchLeaf(expr),
-            (_, _) => false
+            (_, _) => false,
         };
-
 
         public ExprPattern SetTypePattern(TypePattern pattern)
         {
             CheckedTypePat = pattern;
             return this;
         }
+
         /// <summary>
-        /// Add type Pattern
+        /// Add type Pattern.
         /// </summary>
         /// <returns> this </returns>
         public ExprPattern IsIRType() => SetTypePattern(IR.TypePatternUtility.IsIRType());
 
-
         /// <summary>
-        /// Add type Pattern
+        /// Add type Pattern.
         /// </summary>
         /// <returns> this </returns>
         public ExprPattern IsTensor() => SetTypePattern(IR.TypePatternUtility.IsTensor());
 
         /// <summary>
-        /// Add type Pattern
+        /// Add type Pattern.
         /// </summary>
         /// <returns> this </returns>
         public ExprPattern IsScalar() => SetTypePattern(IR.TypePatternUtility.IsScalar());
@@ -104,14 +105,14 @@ namespace Nncase.Pattern
         /// Copy The **New** ExprPattern. NOTE the new pattern have different Id with old one, The there not equal.
         /// <remark> this copy not recursive </remark>
         /// </summary>
-        /// <returns> ExprPattern </returns>
+        /// <returns> ExprPattern. </returns>
         public virtual ExprPattern Copy() => this switch
         {
             (FunctionPattern Funcpat) => Funcpat.Copy(),
             (TuplePattern tuplePat) => tuplePat.Copy(),
             (CallPattern callPat) => callPat.Copy(),
             (OrPattern orPat) => orPat.Copy(),
-            _ => this with { Id = _globalPatIndex++ }
+            _ => this with { Id = _globalPatIndex++ },
         };
 
         public virtual void Clear()
@@ -150,7 +151,7 @@ namespace Nncase.Pattern
     public static partial class Utility
     {
         /// <summary>
-        /// Get the current expr checked Shape
+        /// Get the current expr checked Shape.
         /// </summary>
         /// <param name="expr"></param>
         /// <returns></returns>
@@ -158,8 +159,7 @@ namespace Nncase.Pattern
         public static List<Dimension> GetShape(Expr expr) => expr.CheckedType switch
         {
             TensorType type => new List<Dimension>(type.Shape),
-            _ => throw new InvalidOperationException($"The Expr {expr.GetType().Name} Has No Shape!")
+            _ => throw new InvalidOperationException($"The Expr {expr.GetType().Name} Has No Shape!"),
         };
     }
-
 }

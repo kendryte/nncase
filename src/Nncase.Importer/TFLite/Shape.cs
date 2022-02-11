@@ -12,7 +12,7 @@ namespace Nncase.Importer.TFLite
         private Expr VisitShape(in tflite.Operator op)
         {
             var input = GetInputExprs(op, 0);
-            return F.Tensors.ShapeOp(input);
+            return F.Tensors.ShapeOf(input);
         }
     }
 }

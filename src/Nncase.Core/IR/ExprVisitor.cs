@@ -9,11 +9,10 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR
 {
-
     /// <summary>
     /// the ref comparer for the record, becase the record default compare by value
-    /// when we visit expr Dag, it's will skip same value but different expr. 
-    /// so the ref comparer is important for visitor. 
+    /// when we visit expr Dag, it's will skip same value but different expr.
+    /// so the ref comparer is important for visitor.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public class RecordRefComparer<T> : IEqualityComparer<T>
@@ -102,6 +101,7 @@ namespace Nncase.IR
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
+
             return result;
         }
 
@@ -118,6 +118,7 @@ namespace Nncase.IR
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
+
             return result;
         }
 
@@ -129,6 +130,7 @@ namespace Nncase.IR
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
+
             return result;
         }
 
@@ -143,6 +145,7 @@ namespace Nncase.IR
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
+
             return result;
         }
 
@@ -155,9 +158,11 @@ namespace Nncase.IR
                 {
                     Visit(item);
                 }
+
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
+
             return result;
         }
 
@@ -173,6 +178,7 @@ namespace Nncase.IR
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
+
             return result;
         }
 
@@ -188,6 +194,7 @@ namespace Nncase.IR
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
+
             return result;
         }
 
@@ -200,6 +207,7 @@ namespace Nncase.IR
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
+
             return result;
         }
 
@@ -214,6 +222,7 @@ namespace Nncase.IR
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
+
             return result;
         }
 
@@ -228,6 +237,7 @@ namespace Nncase.IR
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
+
             return result;
         }
 
@@ -346,7 +356,6 @@ namespace Nncase.IR
         /// <param name="expr">IfThenElse expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult VisitLeaf(TIR.IfThenElse expr) => DefaultVisitLeaf(expr);
-
 
         /// <summary>
         /// Default leaf visit routine.
@@ -475,7 +484,7 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// clear the Memo!
+        /// clear the Memo!.
         /// </summary>
         public virtual void Clear()
         {

@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Linq;
 using System.IO;
 using System.Collections.Generic;
@@ -14,7 +17,7 @@ namespace Nncase.Transform.Mutator
     {
         /// <inheritdoc/>
         public override Expr MutateLeaf(IterVar expr)
-        { 
+        {
             return expr.Value;
         }
 
@@ -27,10 +30,11 @@ namespace Nncase.Transform.Mutator
                 InitSequence = (TIR.Sequential)Visit(expr.InitSequence),
                 Predicate = Visit(expr.Predicate),
                 IterVars = new(),
+
                 // the block internal.
                 Sequence = (TIR.Sequential)Visit(expr.Sequence),
                 Reads = MutateArray(expr.Reads, MutateLeaf),
-                Writes = MutateArray(expr.Writes, MutateLeaf)
+                Writes = MutateArray(expr.Writes, MutateLeaf),
             };
         }
     }

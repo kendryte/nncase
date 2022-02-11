@@ -26,13 +26,14 @@ namespace Nncase.Importer.TFLite
                         d -= 1;
                 });
             }
+
             return tmp;
         }
 
         private Expr VisitExpandDims(in tflite.Operator op)
         {
             var (input, dim) = GetInputExprs(op, 0, 1);
-            return F.Tensors.UnSqueeze(input, dim);
+            return F.Tensors.Unsqueeze(input, dim);
         }
     }
 }

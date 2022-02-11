@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -5,9 +8,8 @@ using Nncase.IR;
 
 namespace Nncase.TIR
 {
-
     /// <summary>
-    /// The low level memory buffer,
+    /// The low level memory buffer.
     /// <example>
     ///     Here's an example of how broadcast buffer can be used to define a symbolic broadcast operation,
     ///   <code>
@@ -28,13 +30,13 @@ namespace Nncase.TIR
     ///        fadd(a, b, c)
     ///        tvm.testing.assert_allclose(c.numpy(), a.numpy() + b.numpy())
     ///   </code>
-    /// </example> 
+    /// </example>
     /// <remarks>
     ///     Buffer data structure reflects the DLTensor structure in dlpack.
     ///     While DLTensor data structure is very general, it is usually helpful
     ///     to create function that only handles specific case of data structure
     ///     and make compiled function benefit from it.
-    ///     
+    ///
     ///     If user pass strides and elem_offset is passed as None
     ///     when constructing the function, then the function will be specialized
     ///     for the DLTensor that is compact and aligned.
@@ -45,23 +47,23 @@ namespace Nncase.TIR
     public sealed record Buffer
     {
         /// <summary>
-        /// The pointer to the head of the data
+        /// The pointer to the head of the data.
         /// <seealso cref="DataAlignment"/>
         /// </summary>
         public Var Handle;
 
         /// <summary>
-        /// data type in the content of the tensor
+        /// data type in the content of the tensor.
         /// </summary>
         public PrimType Dtype => (PrimType)((PointerType)(((TensorType)Handle.TypeAnnotation).DType)).ElemType;
 
         /// <summary>
-        /// The shape of the buffer
+        /// The shape of the buffer.
         /// </summary>
         public IR.Tuple Shape;
 
         /// <summary>
-        /// optional name of the buffer 
+        /// optional name of the buffer.
         /// </summary>
         public string Name;
 
@@ -72,7 +74,7 @@ namespace Nncase.TIR
         public IR.Tuple Strides;
 
         /// <summary>
-        /// The offset in terms of number of dtype elements (including lanes)
+        /// The offset in terms of number of dtype elements (including lanes).
         /// </summary>
         public Expr ElemOffset;
 
@@ -88,12 +90,12 @@ namespace Nncase.TIR
         public int OffsetFactor;
 
         /// <summary>
-        /// buffer type
+        /// buffer type.
         /// </summary>
         public BufferMode BufferMode;
 
         /// <summary>
-        /// <see cref="T.DeclBuffer(IR.Tuple, DataType?, string, Var?, IR.Tuple?, Expr?, string, int, int, BufferMode)"/>
+        /// <see cref="T.DeclBuffer(IR.Tuple, DataType?, string, Var?, IR.Tuple?, Expr?, string, int, int, BufferMode)"/>.
         /// </summary>
         public Buffer(IR.Tuple shape, string name, Var data, IR.Tuple strides, Expr elem_offset, string scope, int data_alignment, int offset_factor, BufferMode buffer_mode)
         {
@@ -127,7 +129,7 @@ namespace Nncase.TIR
         /// <param name="access_mode">
         /// The access pattern MASK. Indicate whether the
         /// access will read or write to the data content.
-        ///</param>
+        /// </param>
         /// <param name="content_lanes">
         /// The number of lanes for the data type. This value
         /// is greater than one for vector types.
@@ -136,7 +138,7 @@ namespace Nncase.TIR
         /// The offset of pointer. We can use it to offset by
         /// the number of elements from the address of ptr.
         /// </param>
-        /// <returns> AccessPtr </returns>
+        /// <returns> AccessPtr. </returns>
         public Call AccessPtr(AccessMode access_mode, int content_lanes = 1, Expr? offset = null)
         {
             Expr extent;
@@ -166,9 +168,9 @@ namespace Nncase.TIR
         }
 
         /// <summary>
-        /// Iter Var subscript create BufferLoad
+        /// Iter Var subscript create BufferLoad.
         /// </summary>
-        /// <param name="indices"> index </param>
+        /// <param name="indices"> index. </param>
         /// <returns> the Bufferload Expression. </returns>
         /// <exception cref="InvalidOperationException"></exception>
         public Expr this[params IterVar[] indices]
@@ -184,7 +186,7 @@ namespace Nncase.TIR
         }
 
         /// <summary>
-        /// if use expr index, will create Load 
+        /// if use expr index, will create Load.
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
@@ -197,6 +199,7 @@ namespace Nncase.TIR
                 {
                     index = T.Ramp(index * Dtype.Lanes, 1, Dtype.Lanes);
                 }
+
                 return T.Load(Handle, index);
             }
             set
@@ -226,9 +229,8 @@ namespace Nncase.TIR
             return T.Store(Handle, LoadOffset(indices), value);
         }
 
-
         /// <summary>
-        /// IndicesOffset only calc the element based offset. 
+        /// IndicesOffset only calc the element based offset.
         /// NOTE it's ignore the data's lanes.
         /// </summary>
         /// <param name="indices"> expr indices. </param>
@@ -240,10 +242,12 @@ namespace Nncase.TIR
             {
                 throw new InvalidOperationException("The indices Length Not Equal Stride Or Shape!");
             }
+
             for (int i = 0; i < indices.Count; i++)
             {
                 offset = offset + indices[i] * Strides[i];
             }
+
             return offset;
         }
 
@@ -258,12 +262,14 @@ namespace Nncase.TIR
             var offset = IndicesOffset(indices);
             if (Dtype.Lanes != 1)
             {   // 🌰 the tensor A is [3,4] f32x3, we load A[1,1]
-                // the A[1,1] element offset is 5 
+                // the A[1,1] element offset is 5
                 // the A[1,1] memory offset is 5x3
                 offset = offset * (Const)Dtype.Lanes;
+
                 // then we need continuous loading 3 x float32
                 return T.Ramp(offset, 1, Dtype.Lanes);
             }
+
             return offset;
         }
     }
@@ -274,9 +280,9 @@ namespace Nncase.TIR
     public interface DataProducer
     {
         /// <summary>
-        /// get shape 
+        /// get shape.
         /// </summary>
-        /// <returns> shapes </returns>
+        /// <returns> shapes. </returns>
         public IRArray<Expr> GetShape();
 
         /// <summary>
@@ -288,8 +294,7 @@ namespace Nncase.TIR
         /// <summary>
         /// Get the name hint of the data producer.
         /// </summary>
-        /// <returns> name string </returns>
+        /// <returns> name string. </returns>
         public string GetNameHint();
     }
-
 }

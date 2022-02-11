@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,17 +11,15 @@ using Nncase.TIR;
 
 namespace Nncase.Transform
 {
-
     /// <summary>
     /// EGraph pass.
     /// </summary>
     public class TIRPass : FunctionPass, IEnumerable<ExprMutator>
     {
         /// <summary>
-        /// Save rules
+        /// Save rules.
         /// </summary>
         public readonly List<ExprMutator> Mutators = new();
-
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TIRPass"/> class.
@@ -47,6 +48,7 @@ namespace Nncase.Transform
                 if (!inferRes) throw new InvalidOperationException("After Run Pass, The Type Inference Failed!");
                 pre = post;
             }
+
             return post;
         }
 
@@ -98,5 +100,4 @@ namespace Nncase.Transform
             Mutators.Add(mutator);
         }
     }
-
 }

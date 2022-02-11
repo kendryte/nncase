@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using static Nncase.Pattern.Utility;
 using Nncase.Pattern.Tensors;
@@ -14,13 +17,12 @@ namespace Nncase.Pattern
 {
     public static partial class Utility
     {
-
         /// <summary>
-        /// Get Alternative pattern
+        /// Get Alternative pattern.
         /// </summary>
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
-        /// <returns>OrPattern</returns>
+        /// <returns>OrPattern.</returns>
         public static OrPattern IsAlt(ExprPattern lhs, ExprPattern rhs) => new OrPattern(lhs, rhs);
 
         public static BinaryWrapper IsBinary(Func<BinaryOp, bool> OpTypeCond, ExprPattern lhs, ExprPattern rhs) =>
@@ -36,7 +38,6 @@ namespace Nncase.Pattern
 
         public static UnaryWrapper IsUnary(UnaryOp opType, ExprPattern input) => IsUnary(unaryOp => opType == unaryOp, input);
         public static UnaryWrapper IsUnary(ExprPattern input) => IsUnary(unaryOp => true, input);
-
 
         public static ReduceWrapper IsReduce(Func<Reduce, bool> Cond, ExprPattern Input, ExprPattern Axis, ExprPattern InitValue, ExprPattern KeepDims) => new ReduceWrapper(new CallPattern(new ReducePattern(Cond), Input, Axis, InitValue, KeepDims));
 
@@ -69,7 +70,6 @@ namespace Nncase.Pattern
         public static SliceWrapper IsSlice(ExprPattern input) => Slice(input, IsConstIntTensor(), IsConstIntTensor(), IsConstIntTensor(), IsConstIntTensor());
 
         public static SliceWrapper IsSlice(ExprPattern input, ExprPattern begins, ExprPattern ends) => Slice(input, begins, ends, IsConstIntTensor(), IsConstIntTensor());
-
 
         public static Conv2DWrapper IsConv2D(ExprPattern input, ExprPattern weights, ExprPattern bias, PadMode padMode) => new Conv2DWrapper(new CallPattern(new Conv2DPattern(x => x.PadMode == padMode), input, weights, bias, IsConst(), IsConst(), IsConst()));
 

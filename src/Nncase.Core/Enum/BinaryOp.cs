@@ -7,94 +7,90 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nncase
+namespace Nncase;
+
+/// <summary>
+/// Binary opeartor kind.
+/// </summary>
+public enum BinaryOp
 {
     /// <summary>
-    /// Binary opeartor kind.
+    /// Add.
     /// </summary>
-    public enum BinaryOp
-    {
-        /// <summary>
-        /// Add.
-        /// </summary>
-        Add,
+    Add,
 
-        /// <summary>
-        /// Sub.
-        /// </summary>
-        Sub,
+    /// <summary>
+    /// Sub.
+    /// </summary>
+    Sub,
 
-        /// <summary>
-        /// Multiply.
-        /// </summary>
-        Mul,
-        
+    /// <summary>
+    /// Multiply.
+    /// </summary>
+    Mul,
 
-        /// <summary>
-        /// Divide.
-        /// </summary>
-        Div,
+    /// <summary>
+    /// Divide.
+    /// </summary>
+    Div,
 
-        /// <summary>
-        /// Modulus.
-        /// </summary>
-        Mod,
+    /// <summary>
+    /// Modulus.
+    /// </summary>
+    Mod,
 
-        /// <summary>
-        /// Minimum.
-        /// </summary>
-        Min,
+    /// <summary>
+    /// Minimum.
+    /// </summary>
+    Min,
 
-        /// <summary>
-        /// Maximum.
-        /// </summary>
-        Max,
+    /// <summary>
+    /// Maximum.
+    /// </summary>
+    Max,
 
-        /// <summary>
-        /// Power.
-        /// </summary>
-        Pow,
+    /// <summary>
+    /// Power.
+    /// </summary>
+    Pow,
 
-        /// <summary>
-        /// Bitwise and.
-        /// </summary>
-        BitwiseAnd,
+    /// <summary>
+    /// Bitwise and.
+    /// </summary>
+    BitwiseAnd,
 
-        /// <summary>
-        /// Bitwise or.
-        /// </summary>
-        BitwiseOr,
+    /// <summary>
+    /// Bitwise or.
+    /// </summary>
+    BitwiseOr,
 
-        /// <summary>
-        /// Bitwise xor.
-        /// </summary>
-        BitwiseXor,
+    /// <summary>
+    /// Bitwise xor.
+    /// </summary>
+    BitwiseXor,
 
-        /// <summary>
-        /// Logical and.
-        /// </summary>
-        LogicalAnd,
+    /// <summary>
+    /// Logical and.
+    /// </summary>
+    LogicalAnd,
 
-        /// <summary>
-        /// Logical or.
-        /// </summary>
-        LogicalOr,
+    /// <summary>
+    /// Logical or.
+    /// </summary>
+    LogicalOr,
 
-        /// <summary>
-        /// Logical xor.
-        /// </summary>
-        LogicalXor,
+    /// <summary>
+    /// Logical xor.
+    /// </summary>
+    LogicalXor,
 
-        /// <summary>
-        /// Left Shift
-        /// </summary>
-        LeftShift,
+    /// <summary>
+    /// Left Shift.
+    /// </summary>
+    LeftShift,
 
-        /// <summary>
-        /// Right Shift
-        /// </summary>
-        RightShift,
-    }
-
-
+    /// <summary>
+    /// Right Shift.
+    /// </summary>
+    RightShift,
 }

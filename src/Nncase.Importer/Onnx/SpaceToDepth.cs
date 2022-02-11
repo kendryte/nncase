@@ -13,7 +13,7 @@ namespace Nncase.Importer
         {
             var input = GetInputExpr(op, 0);
             var blockSize = (int)GetIntAttribute(op, "blocksize");
-            
+
             var shape0 = Util.ShapeIndex(input, 0);
             var shape1 = Util.ShapeIndex(input, 1);
             var shape2 = Util.ShapeIndex(input, 2);
@@ -21,10 +21,10 @@ namespace Nncase.Importer
             var beforeNewShape =
                 F.Tensors.Concat(
                     new Tuple(shape0, shape1, shape2 / blockSize, blockSize, shape3 / blockSize, blockSize), 0);
-            var afterNewShape = 
+            var afterNewShape =
             F.Tensors.Concat(
             new Tuple(shape0, shape1 * blockSize * blockSize, shape2 / blockSize, shape3 / blockSize), 0);
-            var perm = new[] {0, 3, 5, 1, 2, 4};
+            var perm = new[] { 0, 3, 5, 1, 2, 4 };
             return F.Tensors.Reshape(
                 F.Tensors.Transpose(
                     F.Tensors.Reshape(input, beforeNewShape),

@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.IO;
 using System.Linq;
 using LanguageExt;
@@ -23,7 +26,7 @@ namespace Nncase.Importer
                 throw new InvalidDataException($"{name} DataType Info not found");
             }
         }
-        
+
         private DataType GetDataType(ValueInfoProto v)
         {
             return GetDataType(v.Type.TensorType.ElemType);
@@ -36,12 +39,12 @@ namespace Nncase.Importer
 
         private DataType GetDataType(long onnxTypeIndex)
         {
-            return GetDataType((int) onnxTypeIndex);
+            return GetDataType((int)onnxTypeIndex);
         }
-        
+
         private DataType GetDataType(int onnxTypeIndex)
         {
-            var dType = (TensorProto.Types.DataType) onnxTypeIndex;
+            var dType = (TensorProto.Types.DataType)onnxTypeIndex;
             if (_typeMap.ContainsKey(dType))
             {
                 return _typeMap[dType];

@@ -17,9 +17,9 @@ namespace Nncase.Importer
         {
             return F.Tensors.Reshape(
                 v, F.Tensors.Concat(
-                    new IR.Tuple(F.Tensors.ShapeOp(v), new[] { 1 }, new[] { 1 }), 0));
+                    new IR.Tuple(F.Tensors.ShapeOf(v), new[] { 1 }, new[] { 1 }), 0));
         }
-        
+
         private Expr VisitBatchNormalization(in NodeProto op)
         {
             var x = GetInputExpr(op, 0);
@@ -55,6 +55,6 @@ namespace Nncase.Importer
             var bias = GetFloatAttribute(op, "bias", 1.0f);
             var size = GetIntAttribute(op, "size");
             return F.NN.LRN(input, alpha, beta, bias, size);
-        } 
+        }
     }
 }

@@ -19,12 +19,13 @@ namespace Nncase.Importer
 
             var dilation = GetDilationsAttribute(op);
             var group = GetIntAttribute(op, "group", 1);
+
             // if not present, should be inferred from input W
             var strides = GetStrideAttribute(op);
             var pads = AutoPad(op, autoPad, input, weights, strides.ToArray<long>(), dilation.ToArray<long>());
             return F.NN.Conv2D(input, weights, bias, strides, pads, dilation, PadMode.Constant, group);
         }
-        
+
         // only used for 2D
         private Expr GetPadsAttribute(NodeProto op)
         {
@@ -38,7 +39,8 @@ namespace Nncase.Importer
                 padsValue[2 * i] = paddings[count - 1 - i];
                 padsValue[2 * i + 1] = paddings[paddings.Length - 1 - i];
             }
-            var paddingsValue = new long[] {paddings[1], paddings[3], paddings[0], paddings[2]};
+
+            var paddingsValue = new long[] { paddings[1], paddings[3], paddings[0], paddings[2] };
             return Const.FromSpan<long>(padsValue, new Shape(count, 2));
         }
 
@@ -51,26 +53,27 @@ namespace Nncase.Importer
         {
             return Const.FromSpan<long>(GetIntsAttribute(op, "dilations", new[] { 1, 1 }));
         }
-        
+
         private Expr GetBias(NodeProto op, Expr weights, bool isConvTranspose = false)
         {
-            var biasSizeIndex = isConvTranspose ? 1 : 0; 
+            var biasSizeIndex = isConvTranspose ? 1 : 0;
             return op.Input.Count > 2
                 ? GetInputExpr(op, 2)
                 : F.Tensors.Expand(0f, Util.ShapeIndex(weights, biasSizeIndex));
         }
-        
+
         private Expr AutoPad(NodeProto op, string autoPad, Expr input, Expr weights,
             long[] strides, long[] dilation) => autoPad switch
-        {
-            "NOTSET" => GetPadsAttribute(op),
-            "SAME_UPPER" => Util.GetPaddings(input, weights, strides, dilation, true),
-            "SAME_LOWER" => Util.GetPaddings(input, weights, strides, dilation, true, true),
-            "VALID" => GetPadsAttribute(op),
-            // when VALID, I'm not sure this is correct
-            // in onnx doc, not spec when VALID value
-            // https://github.com/onnx/onnx/blob/master/docs/Operators.md#Conv
-            _ => throw new InvalidDataException($"invalid AutoPad Value: {autoPad}"),
-        };
+            {
+                "NOTSET" => GetPadsAttribute(op),
+                "SAME_UPPER" => Util.GetPaddings(input, weights, strides, dilation, true),
+                "SAME_LOWER" => Util.GetPaddings(input, weights, strides, dilation, true, true),
+                "VALID" => GetPadsAttribute(op),
+
+                // when VALID, I'm not sure this is correct
+                // in onnx doc, not spec when VALID value
+                // https://github.com/onnx/onnx/blob/master/docs/Operators.md#Conv
+                _ => throw new InvalidDataException($"invalid AutoPad Value: {autoPad}"),
+            };
     }
 }

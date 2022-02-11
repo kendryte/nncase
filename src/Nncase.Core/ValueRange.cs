@@ -69,7 +69,7 @@ namespace Nncase
 
                     if (typeof(T) == typeof(float))
                     {
-                        return (T)(object) float.PositiveInfinity;
+                        return (T)(object)float.PositiveInfinity;
                     }
 
                     throw new NotSupportedException();

@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Numerics.Tensors;
 using System.Linq;
 using System.Collections.Immutable;
@@ -14,7 +17,6 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Rule
 {
-
     public class MatMulToConv2D : PatternRule
     {
         MatMulWrapper matmul;
@@ -22,6 +24,7 @@ namespace Nncase.Transform.Rule
         {
             Pattern = matmul = MatMul(IsWildCard(), IsWildCard());
         }
+
         public override Expr? GetRePlace(IMatchResult result)
         {
             matmul.Bind(result);
@@ -44,8 +47,5 @@ namespace Nncase.Transform.Rule
               PadMode.Constant,
               1);
         }
-
-
     }
-
 }

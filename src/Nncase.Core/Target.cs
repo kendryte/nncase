@@ -9,52 +9,9 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Nncase.IR;
 using Nncase.Schedule;
-using TorchSharp;
-using ParameterInfo = Nncase.IR.ParameterInfo;
 
 namespace Nncase
 {
-    /// <summary>
-    /// The Evaluator Impl interface
-    /// </summary>
-    public interface IEvaluator
-    {
-        /// <summary>
-        /// visit the op
-        /// </summary>
-        /// <param name="ctx"></param>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        public Const Visit(EvaluatorContext ctx, Op target);
-    }
-
-    /// <summary>
-    /// each op evaluator method impl interface
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public interface IEvaluator<T> : IEvaluator
-        where T : Op
-    {
-        /// <summary>
-        /// visit specific target
-        /// </summary>
-        /// <param name="ctx"></param>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        public Const Visit(EvaluatorContext ctx, T target);
-
-        /// <summary>
-        /// the std call method for eval.
-        /// </summary>
-        /// <param name="ctx"></param>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        Const IEvaluator.Visit(EvaluatorContext ctx, Op target)
-        {
-            return Visit(ctx, (T)target);
-        }
-    }
-
     public class TargetFactory
     {
         public TargetFactory(ITarget[] targets)
@@ -74,7 +31,7 @@ namespace Nncase
         CSource,
         K210,
         K510,
-        K230
+        K230,
     }
 
     /// <summary>
@@ -82,72 +39,69 @@ namespace Nncase
     /// </summary>
     public interface ITarget
     {
-
         /// <summary>
         /// get the target kind.
         /// <remarks>
-        /// we use the kind find the 
+        /// we use the kind find the
         /// </remarks>
         /// </summary>
         public string Kind { get; set; }
 
         /// <summary>
-        /// Collection of Options
+        /// Collection of Options.
         /// </summary>
         public Dictionary<string, object> Options { get; set; }
 
         /// <summary>
-        /// Collection of attributes
+        /// Collection of attributes.
         /// </summary>
         public Dictionary<string, object> Attrs { get; set; }
 
         /// <summary>
-        /// config the options
+        /// config the options.
         /// </summary>
         public abstract void ConfigOptions();
 
         /// <summary>
-        /// config the attrs
+        /// config the attrs.
         /// </summary>
         public abstract void ConfigAttrs();
 
         /// <summary>
-        /// get the current target schedule
+        /// get the current target schedule.
         /// </summary>
         /// <param name="main_module"></param>
         /// <returns></returns>
         public abstract IScheduler CreateScheduler(IR.IRModule main_module);
 
         /// <summary>
-        /// create the target runtime model. 
+        /// create the target runtime model.
         /// <example>
         /// we will have different runtime model like CSource/KModel or other format.
         /// </example>
         /// </summary>
-        /// <returns> the <see cref="CodeGen.IRTModel"/> </returns>
+        /// <returns> the <see cref="CodeGen.IRTModel"/>. </returns>
         public CodeGen.IRTModel CreateRTModel(Schedule.SchedModelResult result);
 
         /// <summary>
         /// create the target runtime module, we will call this method when build rtmodel.
-        /// if you have the cross-architecture model, you can overvide this module, 
-        /// eg. the k510/stackvm/k210 subclass from kmodelTarget,
+        /// if you have the cross-architecture model, you can overvide this module,
+        /// eg. the k510/stackvm/k210 subclass from kmodelTarget.
         /// </summary>
         /// <returns> the module builder. </returns>
         public abstract CodeGen.IRTModule CreateRTModule(
           CodeGen.ModuleType moduleType,
-           Schedule.SchedModuleResult ModuleResult,
-            Schedule.SchedModelResult modelResult);
-
+          Schedule.SchedModuleResult ModuleResult,
+          Schedule.SchedModelResult modelResult);
     }
 
     /// <summary>
-    /// the Load the Plugin targets. 
+    /// the Load the Plugin targets.
     /// </summary>
     public static class PluginLoader
     {
-
         /// <summary>
-        /// get current file path
+        /// get current file path.
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
@@ -182,6 +136,7 @@ namespace Nncase
                     }
                 }
             }
+
             throw new InvalidProgramException($"Can't Find The Derived Target Class From {dll_path}!");
         }
 
@@ -204,17 +159,19 @@ namespace Nncase
                     return GetTargetFromAssembly(target_type, dll_path);
                 }
             }
+
             return null;
         }
 
         /// <summary>
-        /// load the target from the dll
+        /// load the target from the dll.
         /// </summary>
         /// <param name="target_type"></param>
         /// <returns></returns>
         public static ITarget CreateTarget(string target_type)
         {
             var dll_name = $"Nncase.Targets.{target_type}.dll";
+
             // Setp 1. find the targets/Nncase.Target.xxx Bin directory
             var target = FindFromProject(target_type, dll_name);
             if (target is not null) return target;

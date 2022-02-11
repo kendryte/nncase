@@ -24,14 +24,14 @@ namespace Nncase.Importer
         {
             var input = GetSingleInputExpr(op);
             var axis = (int)GetIntAttribute(op, "axis", 1);
-            var inShape = ShapeOp(input);
+            var inShape = ShapeOf(input);
             Expr axisExpr = axis < 0
                 ? axis + Rank(input)
-                : Const.FromSpan<int>(new[] {axis});
-            var first = Prod(Slice(inShape, new[] {0}, axisExpr, 1));
-            var second = Prod(Slice(inShape, axisExpr, Rank(input) , 1));
+                : Const.FromSpan<int>(new[] { axis });
+            var first = Prod(Slice(inShape, new[] { 0 }, axisExpr, 1));
+            var second = Prod(Slice(inShape, axisExpr, Rank(input), 1));
             var beforeShape = Concat(new IR.Tuple(first, second), 0);
-            var afterShape = ShapeOp(input);
+            var afterShape = ShapeOf(input);
             return Reshape(
                 f(
                     Reshape(input, beforeShape),
@@ -45,15 +45,15 @@ namespace Nncase.Importer
             var axis = GetIntAttribute(op, "axis", -1);
             return f(input, axis);
         }
-        
+
         private Expr SoftmaxV1(in NodeProto op)
         {
-            return SoftmaxV1Process(op, SoftMax);
+            return SoftmaxV1Process(op, Softmax);
         }
 
         private Expr SoftmaxV13(in NodeProto op)
         {
-            return SoftmaxV13Process(op, SoftMax);
+            return SoftmaxV13Process(op, Softmax);
         }
 
         private Expr VisitLogSoftmax(in NodeProto op)
@@ -65,24 +65,24 @@ namespace Nncase.Importer
 
         private Expr LogSoftmaxV1(in NodeProto op)
         {
-            return SoftmaxV1Process(op, LogSoftMax);
+            return SoftmaxV1Process(op, LogSoftmax);
         }
 
         private Expr LogSoftmaxV13(in NodeProto op)
         {
-            return SoftmaxV13Process(op, LogSoftMax);
+            return SoftmaxV13Process(op, LogSoftmax);
         }
-        
+
         private Expr VisitSoftplus(in NodeProto op)
         {
             var input = GetSingleInputExpr(op);
-            return SoftPlus(input);
+            return Softplus(input);
         }
 
         private Expr VisitSoftsign(in NodeProto op)
         {
             var input = GetSingleInputExpr(op);
-            return SoftSign(input);
+            return Softsign(input);
         }
     }
 }

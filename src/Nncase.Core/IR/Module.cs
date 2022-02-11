@@ -25,7 +25,7 @@ namespace Nncase.IR
         /// <summary>
         /// Initializes a new instance of the <see cref="IRModule"/> class.
         /// </summary>
-        /// <param name="main"> main func</param>
+        /// <param name="main"> main func.</param>
         public IRModule(Function main)
         {
             _functions = new();
@@ -34,7 +34,7 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// the default IrModule ctor
+        /// the default IrModule ctor.
         /// </summary>
         public IRModule()
         {
@@ -78,7 +78,7 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// update the entry function defination
+        /// update the entry function defination.
         /// </summary>
         /// <param name="i">function index.</param>
         /// <param name="function">the entry function defination.</param>

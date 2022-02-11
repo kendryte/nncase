@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Numerics.Tensors;
 using System.Linq;
 using System.Collections.Immutable;
@@ -8,12 +11,12 @@ using static Nncase.Pattern.F.Tensors;
 using static Nncase.Pattern.F.Math;
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Math;
 using Nncase.Pattern;
-using Nncase.IR.Tensors;
 using Nncase.IR.Math;
 using Nncase.IR;
-
+using Nncase.IR.NN;
 
 namespace Nncase.Transform.Rule
 {
@@ -65,13 +68,14 @@ namespace Nncase.Transform.Rule
                     newt[i, 0] = t1[i, 0] + t2[i, 0];
                     newt[i, 1] = t1[i, 1] + t2[i, 1];
                 }
+
                 var newpad = Const.FromTensor<int>(newt);
                 return Pad(result[wcin], newpad, mode1, value1);
             }
+
             return null;
         }
     }
-
 
     public class FoldPadStrideSlice : PatternRule
     {
@@ -104,11 +108,13 @@ namespace Nncase.Transform.Rule
                             end[i] += before;
                             pads[i, 0] = 0;
                         }
+
                         if (pads[i, 1] < 0)
                         {
                             pads[i, 1] = 0;
                         }
                     }
+
                     Const newbegin = Const.FromTensor(begin), newend = Const.FromTensor(end);
                     var newpad = Pad(result[wcin],
                               Const.FromTensor(pads),
@@ -117,6 +123,7 @@ namespace Nncase.Transform.Rule
                     return Slice(newpad, newbegin, newend, result[wcaxes], result[wcstride]);
                 }
             }
+
             return null;
         }
     }
@@ -143,8 +150,10 @@ namespace Nncase.Transform.Rule
                     paddings[i, 0] = -begin[i];
                     paddings[i, 1] = end[i] - intype.Shape[i].FixedValue;
                 }
+
                 return Pad(result[wcin], Const.FromTensor(paddings), PadMode.Constant, (Const)(0));
             }
+
             return null;
         }
     }
@@ -176,6 +185,7 @@ namespace Nncase.Transform.Rule
 
                 return Slice(result[wcin], Const.FromSpan<int>(begin), Const.FromSpan<int>(end), intype.Shape.Rank);
             }
+
             return null;
         }
     }

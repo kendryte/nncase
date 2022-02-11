@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,10 +25,8 @@ using Nncase.IR.NN;
 
 namespace Nncase.Transform
 {
-
     public partial class EGraphPrinter
     {
-
         private readonly Dictionary<EClass, DotCluster> ClusterMaps = new Dictionary<EClass, DotCluster>();
 
         private readonly IReadOnlyDictionary<EClass, List<ENode>> EClasses;
@@ -59,7 +60,6 @@ namespace Nncase.Transform
 
         public DotGraph ConvertEGraphAsDot()
         {
-
             foreach (var (eClass, eNodes) in EClasses.Where(pair => !OpMaps.ContainsKey(pair.Key)))
             {
                 // make eClass as cluster
@@ -84,7 +84,7 @@ namespace Nncase.Transform
                     string exprId = enode.Expr.GetHashCode().ToString();
 
                     var args = new List<DotRecordTextField> {
-                      new DotRecordTextField(visitor.Visit(enode.Expr), "Type") };
+                      new DotRecordTextField(visitor.Visit(enode.Expr), "Type"), };
 
                     foreach (var (child, i) in enode.Children.Select((c, i) => (c, i)))
                     {
@@ -96,7 +96,7 @@ namespace Nncase.Transform
 
                     var exprNode = eclassCluster.Nodes.Add(exprId);
 
-                    // display the output type 
+                    // display the output type
                     if (enode.Expr is Call or Function or Var)
                     {
                         exprNode.ToRecordNode(rb =>
@@ -113,6 +113,7 @@ namespace Nncase.Transform
                     {
                         if (OpMaps.ContainsKey(enode.Children[i]))
                             continue;
+
                         // var pnode =  from pnode in select
                         dotGraph.Edges.Add($"{enode.Children[i].Find().Id}" + "dummy", exprNode, edge =>
                          {
@@ -122,21 +123,23 @@ namespace Nncase.Transform
                     }
                 }
             }
+
             return dotGraph;
         }
 
         public DotGraph SaveToFile(string file)
         {
-
             if (!file.EndsWith(".dot"))
             {
                 file += ".dot";
             }
+
             var dirName = Path.GetDirectoryName(file);
             if (dirName is not null && dirName != "")
             {
                 Directory.CreateDirectory(dirName);
             }
+
             dotGraph.Build();
             dotGraph.SaveToFile(file);
             return dotGraph;

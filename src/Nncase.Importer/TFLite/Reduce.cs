@@ -11,7 +11,7 @@ namespace Nncase.Importer.TFLite
         private Expr VisitReduce(in tflite.Operator op, ReduceOp reduceOp, float initValue)
         {
             var (input, axis) = GetInputExprs(op, 0, 1);
-            return F.Tensors.Reduce(reduceOp, input, axis, initValue,  op.BuiltinOptionsAsReducerOptions().KeepDims);
+            return F.Tensors.Reduce(reduceOp, input, axis, initValue, op.BuiltinOptionsAsReducerOptions().KeepDims);
         }
     }
 }
