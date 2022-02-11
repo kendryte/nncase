@@ -12,6 +12,7 @@
     <NativeLibExtension Condition="'$(TargetOS)' == 'win'">dll</NativeLibExtension>
     <NativeLibExtension Condition="'$(TargetOS)' == 'linux'">so</NativeLibExtension>
     <NativeLibExtension Condition="'$(TargetOS)' == 'osx'">dylib</NativeLibExtension>
+    <NativeExecExtension Condition="'$(TargetOS)' == 'win'">.exe</NativeExecExtension>
     <TargetArchitecture Condition="'$(TargetArchitecture)' == ''">x64</TargetArchitecture>
     <PackageRid>$(TargetOS)-$(TargetArchitecture)</PackageRid>
   </PropertyGroup>
@@ -35,7 +36,7 @@
     <ItemGroup>
       <NativePackageLib Include="..\build\$(Configuration)\simulator_install\lib\libnncase_csharp.$(NativeLibExtension)" />
       <NativePackageLib Include="..\build\$(Configuration)\simulator_install\lib\libnncase.$(NativeLibExtension)" />
-      <NativePackageLib Include="..\build\$(Configuration)\simulator_install\bin\ncc" />
+      <NativePackageLib Include="..\build\$(Configuration)\simulator_install\bin\ncc$(NativeExecExtension)" />
     </ItemGroup>
 
     <Message Importance="High" Text="@(NativePackageLib) -> $(OutputPath)\runtimes\$(PackageRid)\native\lib" />
