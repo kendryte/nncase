@@ -9,6 +9,7 @@
     <TargetOS Condition="'$(TargetOS)' == '' AND '$(OS)' == 'Windows_NT'">win</TargetOS>
     <TargetOS Condition="'$(TargetOS)' == '' AND $([MSBuild]::IsOSPlatform('osx'))">osx</TargetOS>
     <TargetOS Condition="'$(TargetOS)' == '' AND '$(OS)' != 'Windows_NT'">linux</TargetOS>
+    <NativeLibPreFix Condition="'$(TargetOS)' != 'win'">lib</NativeLibPreFix>
     <NativeLibExtension Condition="'$(TargetOS)' == 'win'">dll</NativeLibExtension>
     <NativeLibExtension Condition="'$(TargetOS)' == 'linux'">so</NativeLibExtension>
     <NativeLibExtension Condition="'$(TargetOS)' == 'osx'">dylib</NativeLibExtension>
@@ -34,8 +35,8 @@
 
   <Target Name="PreparePackageAssets">  
     <ItemGroup>
-      <NativePackageLib Include="..\build\$(Configuration)\simulator_install\lib\libnncase_csharp.$(NativeLibExtension)" />
-      <NativePackageLib Include="..\build\$(Configuration)\simulator_install\lib\libnncase.$(NativeLibExtension)" />
+      <NativePackageLib Include="..\build\$(Configuration)\simulator_install\lib\$(NativeLibPreFix)nncase_csharp.$(NativeLibExtension)" />
+      <NativePackageLib Include="..\build\$(Configuration)\simulator_install\lib\$(NativeLibPreFix)nncase.$(NativeLibExtension)" />
       <NativePackageLib Include="..\build\$(Configuration)\simulator_install\bin\ncc$(NativeExecExtension)" />
     </ItemGroup>
 
