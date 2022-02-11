@@ -18,7 +18,7 @@ namespace Nncase.Evaluator.Tensors;
 public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Split target)
+    public IValue Visit(IEvaluateContext context, Split target)
     {
         throw new NotImplementedException();
     }
@@ -32,11 +32,11 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>
 
     private IRType Visit(ITypeInferenceContext context, Split target, TensorType input)
     {
-        if (context.GetArgument(target, Split.Axis) is Const axis_con &&
-            context.GetArgument(target, Split.Sections) is Const sections_con)
+        if (context.GetArgument(target, Split.Axis) is TensorConst axis_con &&
+            context.GetArgument(target, Split.Sections) is TensorConst sections_con)
         {
-            var axis_v = axis_con.ToScalar<int>();
-            var sections_v = sections_con.ToTensor<int>();
+            var axis_v = axis_con.Value.ToScalar<int>();
+            var sections_v = sections_con.Value.Cast<int>();
             var inshape = input.Shape.ToArray();
             if (inshape[axis_v] == Dimension.Unknown)
             {

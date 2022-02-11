@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using CommonServiceLocator;
 using Microsoft.Extensions.DependencyInjection;
 using Nncase.IR;
@@ -10,18 +11,18 @@ using TorchSharp;
 
 namespace Nncase.Evaluator;
 
-internal sealed class EvaluateVisitor : ExprVisitor<Const, IRType>
+internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
 {
     private readonly EvaluateContext _context;
-    private readonly IReadOnlyDictionary<Var, Const> _varsValues;
+    private readonly IReadOnlyDictionary<Var, IValue> _varsValues;
 
-    public EvaluateVisitor(IReadOnlyDictionary<Var, Const> varsValues)
+    public EvaluateVisitor(IReadOnlyDictionary<Var, IValue> varsValues)
     {
         _context = new EvaluateContext(ExpressionMemo, varsValues);
         _varsValues = varsValues;
     }
 
-    public override Const VisitLeaf(Call expr)
+    public override IValue VisitLeaf(Call expr)
     {
         _context.CurrentCall = expr;
         if (expr.Target is Function)
@@ -33,28 +34,30 @@ internal sealed class EvaluateVisitor : ExprVisitor<Const, IRType>
         return CompilerServices.EvaluateOp(target, _context);
     }
 
-    public override Const VisitLeaf(Const expr)
+    public override IValue VisitLeaf(Const expr)
     {
-        return expr;
+        return Value.FromConst(expr);
     }
 
-    public override Const VisitLeaf(Op expr)
+    public override IValue VisitLeaf(Op expr)
     {
-        // todo:maybe a problem
-        return Const.FromScalar(0);
+        // Value of Op is not needed in evaluate context.
+        return null!;
     }
 
-    public override Const VisitLeaf(Function expr)
+    public override IValue VisitLeaf(Function expr)
     {
-        return Const.FromScalar(0);
+        // Value of Function is not needed in evaluate context.
+        return null!;
     }
 
-    public override Const VisitLeaf(IR.Tuple expr)
+    public override IValue VisitLeaf(IR.Tuple expr)
     {
-        return Const.FromScalar(0);
+        var fields = expr.Fields.Select(x => Visit(x));
+        return new TupleValue(fields.ToArray());
     }
 
-    public override Const VisitLeaf(Var expr)
+    public override IValue VisitLeaf(Var expr)
     {
         if (!_varsValues.TryGetValue(expr, out var result))
         {
@@ -66,10 +69,10 @@ internal sealed class EvaluateVisitor : ExprVisitor<Const, IRType>
             throw new InvalidProgramException($"Must Set Input For Var {expr.Name}!");
         }
 
-        if (result.ValueType != expr.CheckedType)
+        if (result.Type != expr.CheckedType)
         {
             throw new InvalidProgramException(
-              $"The Var {expr.Name} Require {expr.CheckedType} But Give {result.CheckedType}");
+              $"The Var {expr.Name} Require {expr.CheckedType} But Give {result.Type}");
         }
 
         return result;

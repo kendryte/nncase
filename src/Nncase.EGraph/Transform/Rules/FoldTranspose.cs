@@ -26,17 +26,17 @@ namespace Nncase.Transform.Rule
         {
             tp1.Bind(result);
             tp2.Bind(result);
-            var perm1 = tp1.Perm<Const>().ToTensor<int>();
-            var perm2 = tp2.Perm<Const>().ToTensor<int>();
+            var perm1 = tp1.Perm<TensorConst>().Value.Cast<int>();
+            var perm2 = tp2.Perm<TensorConst>().Value.Cast<int>();
             if (perm1.Rank == perm2.Rank)
             {
-                var perm = new DenseTensor<int>(perm1.Dimensions);
+                var perm = new Tensor<int>(perm1.Dimensions);
                 for (int i = 0; i < perm1.Length; i++)
                 {
                     perm[i] = perm1[perm2[i]];
                 }
 
-                return Transpose(tp1.Input(), Const.FromTensor<int>(perm));
+                return Transpose(tp1.Input(), Const.FromTensor(perm));
             }
 
             return null;
@@ -54,7 +54,7 @@ namespace Nncase.Transform.Rule
         public override Expr? GetRePlace(IMatchResult result)
         {
             tp.Bind(result);
-            var perm = tp.Perm<Const>().ToTensor<int>();
+            var perm = tp.Perm<TensorConst>().Value.Cast<int>();
             if (Enumerable.Range(0, (int)perm.Length).All(dim => perm[dim] == dim))
             {
                 return tp.Input();
@@ -75,7 +75,7 @@ namespace Nncase.Transform.Rule
         public override Expr? GetRePlace(IMatchResult result)
         {
             tp.Bind(result);
-            var perm = tp.Perm<Const>().ToTensor<int>();
+            var perm = tp.Perm<TensorConst>().Value.Cast<int>();
             var in_shape = tp.Input().CheckedShape;
             int last_sig_dim = 0;
             for (int i = 0; i < perm.Length; i++)
@@ -84,7 +84,10 @@ namespace Nncase.Transform.Rule
                 if (in_shape[i].FixedValue != 1)
                 {
                     if (i_dim < last_sig_dim)
+                    {
                         return null;
+                    }
+
                     last_sig_dim = i_dim;
                 }
             }

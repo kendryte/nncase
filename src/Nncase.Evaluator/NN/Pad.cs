@@ -19,11 +19,11 @@ namespace Nncase.Evaluator.NN;
 public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Pad pad)
+    public IValue Visit(IEvaluateContext context, Pad pad)
     {
         var input = context.GetTFArgumentValue(pad, Pad.Input);
         var pads = context.GetTFArgumentValue(pad, Pad.Pads);
-        var constant_values = context.GetArgumentValue(pad, Pad.Value).ToScalar<int>();
+        var constant_values = context.GetArgumentValueAsScalar<int>(pad, Pad.Value);
         var mode = pad.PadMode switch
         {
             PadMode.Constant => "CONSTANT",
@@ -35,7 +35,7 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>
         return tf.Context.ExecuteOp(
             "Pad",
             null!,
-            new ExecuteOpArgs(input, pads, mode, constant_values))[0].ToConst();
+            new ExecuteOpArgs(input, pads, mode, constant_values))[0].ToValue();
 
         // return tf.pad(input, pads, mode: mode, constant_values:constant_values).ToConst();
     }

@@ -18,7 +18,7 @@ namespace Nncase.Evaluator.Math;
 public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Reduce reduce)
+    public IValue Visit(IEvaluateContext context, Reduce reduce)
     {
         var input = context.GetTFArgumentValue(reduce, Reduce.Input);
         var axis = context.GetArgumentValueAsArray<long>(reduce, Reduce.Axis);
@@ -32,7 +32,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>
             ReduceOp.Prod => tf.reduce_prod(input, axis, keepDims),
             ReduceOp.Sum => tf.reduce_sum(input, axis, keepdims: keepDims),
             _ => throw new ArgumentOutOfRangeException(),
-        }).ToConst();
+        }).ToValue();
     }
 
     /// <inheritdoc/>

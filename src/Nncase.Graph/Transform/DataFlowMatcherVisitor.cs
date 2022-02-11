@@ -43,7 +43,10 @@ namespace Nncase.Transform
             var results = new List<IMatchResult>();
             var matcher = new DataFlowMatcherVisitor();
             if (matcher.Visit(pattern, expr))
+            {
                 results.Add(new DFMatchResult(expr, matcher.Env));
+            }
+
             return results;
         }
     }
@@ -393,7 +396,9 @@ namespace Nncase.Transform
             {
                 result &= Visit(patterns[i], expr);
                 if (!result)
+                {
                     break;
+                }
             }
 
             patterns.MatchEnd(result);

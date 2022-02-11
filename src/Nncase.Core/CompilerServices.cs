@@ -39,7 +39,7 @@ public interface ICompilerServicesProvider
     /// <param name="expr">Expression.</param>
     /// <param name="varsValues">Optional vars' values.</param>
     /// <returns>Evaluate result.</returns>
-    Const Evaluate(Expr expr, IReadOnlyDictionary<Var, Const>? varsValues = null);
+    IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, Const>? varsValues = null);
 
     /// <summary>
     /// Evaluate operator.
@@ -47,7 +47,7 @@ public interface ICompilerServicesProvider
     /// <param name="op">Target operator.</param>
     /// <param name="context">Evaluate context.</param>
     /// <returns>Evaluate result.</returns>
-    Const EvaluateOp(Op op, IEvaluateContext context);
+    IValue EvaluateOp(Op op, IEvaluateContext context);
 }
 
 internal class CompilerServicesProvider : ICompilerServicesProvider
@@ -64,13 +64,13 @@ internal class CompilerServicesProvider : ICompilerServicesProvider
     }
 
     /// <inheritdoc/>
-    public Const Evaluate(Expr expr, IReadOnlyDictionary<Var, Const>? varsValues = null)
+    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, Const>? varsValues = null)
     {
         return _evaluateProvider.Evaluate(expr);
     }
 
     /// <inheritdoc/>
-    public Const EvaluateOp(Op op, IEvaluateContext context)
+    public IValue EvaluateOp(Op op, IEvaluateContext context)
     {
         return _evaluateProvider.EvaluateOp(op, context);
     }
@@ -133,7 +133,7 @@ public static class CompilerServices
     /// <param name="expr">Expression.</param>
     /// <param name="varsValues">Optional vars' values.</param>
     /// <returns>Evaluate result.</returns>
-    public static Const Evaluate(this Expr expr, IReadOnlyDictionary<Var, Const>? varsValues = null)
+    public static IValue Evaluate(this Expr expr, IReadOnlyDictionary<Var, Const>? varsValues = null)
     {
         return Provider.Evaluate(expr);
     }
@@ -144,7 +144,7 @@ public static class CompilerServices
     /// <param name="op">Target operator.</param>
     /// <param name="context">Evaluate context.</param>
     /// <returns>Evaluate result.</returns>
-    public static Const EvaluateOp(Op op, IEvaluateContext context)
+    public static IValue EvaluateOp(Op op, IEvaluateContext context)
     {
         return Provider.EvaluateOp(op, context);
     }

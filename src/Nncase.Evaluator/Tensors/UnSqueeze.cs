@@ -14,21 +14,19 @@ namespace Nncase.Evaluator.Tensors;
 public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsqueeze>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Unsqueeze unSqueeze)
+    public IValue Visit(IEvaluateContext context, Unsqueeze unSqueeze)
     {
         var input = context.GetTFArgumentValue(unSqueeze, Unsqueeze.Input);
-        var dims = context.GetArgumentValue(unSqueeze, Unsqueeze.Dim)
-            .ToArray<int>()
+        var dims = context.GetArgumentValueAsTensor<int>(unSqueeze, Unsqueeze.Dim)
             .Select(
-                x => Util.PositiveIndex(x, input.shape.rank
-                ))
+                x => Util.PositiveIndex(x, input.shape.rank))
             .ToArray();
         foreach (var dim in dims)
         {
             input = tf.expand_dims(input, Util.PositiveIndex(dim, input.shape.rank));
         }
 
-        return input.ToConst();
+        return input.ToValue();
     }
 
     /// <inheritdoc/>
@@ -40,9 +38,9 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
 
     private IRType Visit(ITypeInferenceContext context, Unsqueeze target, TensorType input)
     {
-        if (context.GetArgument(target, Unsqueeze.Dim) is Const tdims)
+        if (context.GetArgument(target, Unsqueeze.Dim) is TensorConst tdims)
         {
-            var dimsValue = tdims.ToTensor<int>();
+            var dimsValue = tdims.Value.Cast<int>();
             var outShape = input.Shape.ToList();
             foreach (var dimVal in dimsValue)
             {

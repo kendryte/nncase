@@ -13,15 +13,15 @@ namespace Nncase.Evaluator.Math;
 public class CumSumEvaluator : IEvaluator<CumSum>, ITypeInferencer<CumSum>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, CumSum cumSum)
+    public IValue Visit(IEvaluateContext context, CumSum cumSum)
     {
         var input = context.GetTFArgumentValue(cumSum, CumSum.Input);
 
         // in onnx, CumSum.Axis is a input tensor with one value
-        var axis = context.GetArgumentValue(cumSum, CumSum.Axis).ToTensor<int>()[0];
+        var axis = context.GetArgumentValueAsTensor<int>(cumSum, CumSum.Axis)[0];
         var exclusive = context.GetArgumentValueAsScalar<bool>(cumSum, CumSum.Exclusive);
         var reverse = context.GetArgumentValueAsScalar<bool>(cumSum, CumSum.Reverse);
-        return tf.cumsum(input, axis, exclusive, reverse).ToConst();
+        return tf.cumsum(input, axis, exclusive, reverse).ToValue();
     }
 
     /// <inheritdoc/>

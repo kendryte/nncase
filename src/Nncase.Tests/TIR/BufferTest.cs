@@ -5,7 +5,6 @@ using Nncase.IR;
 using Nncase.Evaluator;
 using System.Collections.Generic;
 using TorchSharp;
-using Nncase.IR;
 
 namespace Nncase.Tests.TIRTest
 {

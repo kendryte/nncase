@@ -25,18 +25,18 @@ namespace Nncase.Transform.Rule
         {
             var inshape = slice.Input().CheckedShape;
 
-            var begin = slice.Begins<Const>().ToTensor<int>();
-            var end = slice.Ends<Const>().ToTensor<int>();
-            var axes = slice.Axes<Const>().ToTensor<int>();
-            var strides = slice.Strides<Const>().ToTensor<int>();
+            var begin = slice.Begins<TensorConst>().Value.Cast<int>();
+            var end = slice.Ends<TensorConst>().Value.Cast<int>();
+            var axes = slice.Axes<TensorConst>().Value.Cast<int>();
+            var strides = slice.Strides<TensorConst>().Value.Cast<int>();
             return Enumerable.Range(0, (int)begin.Length).All(i => begin[i] == 0 && end[i] == inshape[i].FixedValue && strides[i] == 1);
         }
 
         private bool CanMerge(SliceWrapper slice1, SliceWrapper slice2)
         {
             var inshape = slice1.Input().CheckedShape;
-            var axes1 = slice1.Axes<Const>().ToTensor<int>();
-            var axes2 = slice2.Axes<Const>().ToTensor<int>();
+            var axes1 = slice1.Axes<TensorConst>().Value.Cast<int>();
+            var axes2 = slice2.Axes<TensorConst>().Value.Cast<int>();
             return Enumerable.Range(0, inshape.Rank).All(
               dim => (IsNoSlice(slice1, dim) || IsNoSlice(slice2, dim)) && (axes1[dim] == axes2[dim])
             );
@@ -47,19 +47,21 @@ namespace Nncase.Transform.Rule
             slice1.Bind(result);
             slice2.Bind(result);
             if (!CanMerge(slice1, slice2))
+            {
                 return null;
+            }
 
-            var old_begin1 = slice1.Begins<Const>().ToTensor<int>();
-            var old_end1 = slice1.Ends<Const>().ToTensor<int>();
-            var old_strides1 = slice1.Strides<Const>().ToTensor<int>();
+            var old_begin1 = slice1.Begins<TensorConst>().Value.Cast<int>();
+            var old_end1 = slice1.Ends<TensorConst>().Value.Cast<int>();
+            var old_strides1 = slice1.Strides<TensorConst>().Value.Cast<int>();
 
-            var old_begin2 = slice2.Begins<Const>().ToTensor<int>();
-            var old_end2 = slice2.Ends<Const>().ToTensor<int>();
-            var old_strides2 = slice2.Strides<Const>().ToTensor<int>();
+            var old_begin2 = slice2.Begins<TensorConst>().Value.Cast<int>();
+            var old_end2 = slice2.Ends<TensorConst>().Value.Cast<int>();
+            var old_strides2 = slice2.Strides<TensorConst>().Value.Cast<int>();
 
-            var new_begin = new DenseTensor<int>(old_begin1.Dimensions);
-            var new_end = new DenseTensor<int>(old_begin1.Dimensions);
-            var new_strides = new DenseTensor<int>(old_begin1.Dimensions);
+            var new_begin = new Tensor<int>(old_begin1.Dimensions);
+            var new_end = new Tensor<int>(old_begin1.Dimensions);
+            var new_strides = new Tensor<int>(old_begin1.Dimensions);
             for (int dim = 0; dim < slice1.Input().Rank; dim++)
             {
                 new_begin[dim] = IsNoSlice(slice1, dim) ? old_begin2[dim] : old_begin1[dim];
@@ -67,8 +69,8 @@ namespace Nncase.Transform.Rule
                 new_strides[dim] = IsNoSlice(slice1, dim) ? old_strides2[dim] : old_strides1[dim];
             }
 
-            return Slice(slice1.Input(), Const.FromTensor<int>(new_begin), Const.FromTensor<int>(new_end),
-                                        slice1.Axes(), Const.FromTensor<int>(new_strides));
+            return Slice(slice1.Input(), Const.FromTensor(new_begin), Const.FromTensor(new_end),
+                                        slice1.Axes(), Const.FromTensor(new_strides));
         }
     }
 }

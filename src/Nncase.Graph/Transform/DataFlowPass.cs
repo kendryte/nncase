@@ -105,9 +105,13 @@ namespace Nncase.Transform
                 if (post == pre)
                 {
                     if (!CompilerServices.InferenceType(post))
+                    {
                         throw new InvalidOperationException("Can't InferShape For This Model!");
+                    }
                     else
+                    {
                         break;
+                    }
                 }
 
                 pre = post;

@@ -19,7 +19,7 @@ namespace Nncase.Importer
             var tensorValue = GetAttr(op, "value", AttributeType.Tensor, x => x.T);
             if (tensorValue)
             {
-                return GetConst(tensorValue.ValueUnsafe());
+                return GetTensor(tensorValue.ValueUnsafe());
             }
 
             var floatValue = GetAttr(op, "value_float", AttributeType.Float, x => x.F);

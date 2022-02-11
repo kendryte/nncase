@@ -76,7 +76,7 @@ internal sealed class EvaluateProvider : IEvaluateProvider
         _serviceProvider = serviceProvider;
     }
 
-    public Const Evaluate(Expr expr, IReadOnlyDictionary<Var, Const>? varsValues = null)
+    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null)
     {
         if (expr.CheckedType is null)
         {
@@ -88,11 +88,11 @@ internal sealed class EvaluateProvider : IEvaluateProvider
             throw new InvalidOperationException("Expr in Evaluator need a valid type");
         }
 
-        var evaluatorVisitor = new EvaluateVisitor(varsValues ?? new Dictionary<Var, Const>());
+        var evaluatorVisitor = new EvaluateVisitor(varsValues ?? new Dictionary<Var, IValue>());
         return evaluatorVisitor.Visit(expr);
     }
 
-    public Const EvaluateOp(Op op, IEvaluateContext context)
+    public IValue EvaluateOp(Op op, IEvaluateContext context)
     {
         // TODO: Add inferencers cache.
         var evaluatorType = typeof(IEvaluator<>).MakeGenericType(op.GetType());

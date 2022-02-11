@@ -18,17 +18,17 @@ namespace Nncase.Evaluator.NN;
 public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Conv2D conv)
+    public IValue Visit(IEvaluateContext context, Conv2D conv)
     {
         var input = context.GetTorchArgumentValue(conv, Conv2D.Input);
         var weights = context.GetTorchArgumentValue(conv, Conv2D.Weights);
         var bias = context.GetTorchArgumentValue(conv, Conv2D.Bias);
-        var stride = context.GetArgumentValue(conv, Conv2D.Stride).ToTensor<long>();
+        var stride = context.GetArgumentValueAsTensor<long>(conv, Conv2D.Stride);
 
         // [w:[left right] h:[top bottom]]
-        var pad = context.GetArgumentValue(conv, Conv2D.Padding).ToTensor<long>();
-        var dilation = context.GetArgumentValue(conv, Conv2D.Dilation).ToTensor<long>();
-        var groups = context.GetArgumentValue(conv, Conv2D.Groups).ToScalar<long>();
+        var pad = context.GetArgumentValueAsTensor<long>(conv, Conv2D.Padding);
+        var dilation = context.GetArgumentValueAsTensor<long>(conv, Conv2D.Dilation);
+        var groups = context.GetArgumentValueAsScalar<long>(conv, Conv2D.Groups);
         if (conv.PadMode != PadMode.Constant)
         {
             throw new NotImplementedException($"Conv2D with {conv.PadMode}!");
@@ -44,7 +44,7 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>
             bias,
             strides: new long[] { stride[0], stride[1] },
             dilation: new long[] { dilation[0], dilation[1] },
-            groups: groups).ToConst();
+            groups: groups).ToValue();
     }
 
     /// <inheritdoc/>

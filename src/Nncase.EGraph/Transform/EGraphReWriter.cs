@@ -47,21 +47,35 @@ namespace Nncase.Transform
                 {
                     var replaceExpr = rule.GetRePlace(result);
                     if (replaceExpr is null)
+                    {
                         continue;
+                    }
+
                     if (!CompilerServices.InferenceType(replaceExpr))
+                    {
                         throw new InvalidOperationException("Can't Inference The Replace Expr Type!");
+                    }
+
                     eGraph.Add(replaceExpr, out var neweClass);
                     var oldeClass = eGraph.HashCons[((EMatchResult)result).Root].Find();
                     if (options.DumpLevel == 3)
+                    {
                         Console.WriteLine($"Version {eGraph.Version} : Merge {{{oldeClass}}} to {{{neweClass}}}");
+                    }
+
                     eGraph.Merge(neweClass, oldeClass);
                 }
 
                 matches.Clear();
                 if (last_version == eGraph.Version)
+                {
                     break;
+                }
                 else
+                {
                     last_version = eGraph.Version;
+                }
+
                 eGraph.ReBuild();
                 if (options.DumpLevel > 1)
                     EGraphPrinter.DumpEgraphAsDot(eGraph,

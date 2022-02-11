@@ -164,7 +164,9 @@ namespace Nncase.Transform
         private (bool, EContextEnv) UpdateEnv(bool Match, EContextEnv env, ExprPattern pattern, ENode enode)
         {
             if (Match == false)
+            {
                 return (Match, env);
+            }
 
             if (!env.ContainsKey(pattern))
             {

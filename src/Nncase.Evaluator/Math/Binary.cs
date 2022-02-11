@@ -14,7 +14,7 @@ namespace Nncase.Evaluator.Math;
 public class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binary>
 {
     /// <inheritdoc />
-    public Const Visit(IEvaluateContext context, Binary binary)
+    public IValue Visit(IEvaluateContext context, Binary binary)
     {
         var a = context.GetTorchArgumentValue(binary, Binary.Lhs);
         var b = context.GetTorchArgumentValue(binary, Binary.Rhs);
@@ -35,7 +35,7 @@ public class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binary>
             BinaryOp.LogicalOr => torch.logical_or(a, b),
             BinaryOp.LogicalXor => torch.logical_xor(a, b),
             _ => throw new ArgumentOutOfRangeException(nameof(binary.BinaryOp)),
-        }).to_type(context.CurrentCall.CheckedDataType.ToTorchType()).ToConst();
+        }).to_type(context.CurrentCall.CheckedDataType.ToTorchType()).ToValue();
     }
 
     /// <inheritdoc/>

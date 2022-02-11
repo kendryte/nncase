@@ -18,12 +18,12 @@ namespace Nncase.Evaluator.Tensors;
 public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Concat cat)
+    public IValue Visit(IEvaluateContext context, Concat cat)
     {
         var inputs = context.GetArgumentExpr(cat, Concat.Input);
-        var axis = context.GetArgumentValue(cat, Concat.Axis).ToScalar<int>();
+        var axis = context.GetArgumentValueAsScalar<int>(cat, Concat.Axis);
         var inputTensors = ((IR.Tuple)inputs).Select(x => ExpandDim(context.GetTorchValue(x))).ToArray();
-        return torch.cat(inputTensors, axis).ToConst();
+        return torch.cat(inputTensors, axis).ToValue();
     }
 
     /// <inheritdoc/>
@@ -78,7 +78,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>
         }
 
         InvalidType? invalidType = null;
-        var axisValue = ((Const)context.GetArgument(target, Concat.Axis)).ToScalar<int>();
+        var axisValue = ((TensorConst)context.GetArgument(target, Concat.Axis)).Value.ToScalar<int>();
         var shapeValue = Enumerable.Range(0, input0.Shape.Rank).Select(i =>
         {
             if (i == axisValue)

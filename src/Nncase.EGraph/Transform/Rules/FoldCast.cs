@@ -33,7 +33,10 @@ namespace Nncase.Transform.Rule
             var cast1 = (Cast)result[wccast1].Target;
             var cast2 = (Cast)result[wccast2].Target;
             if (cast1.NewType == cast2.NewType)
+            {
                 return result[wcin];
+            }
+
             return null;
         }
     }

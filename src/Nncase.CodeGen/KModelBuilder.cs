@@ -90,7 +90,9 @@ public class RTKModel : IRTModel
     public void Dump(string name, string dumpDirPath)
     {
         if (isSerialized)
+        {
             File.Copy(sourcePath, Path.Combine(dumpDirPath, $"{name}.{SourceExt}"));
+        }
     }
 
     /// <inheritdoc/>
@@ -102,7 +104,10 @@ public class RTKModel : IRTModel
     /// <inheritdoc/>
     public ISerializeResult Serialize()
     {
-        if (isSerialized) return serializeResult;
+        if (isSerialized)
+        {
+            return serializeResult;
+        }
 
         // step 1. create the kmodel file
         using var ostream = File.Open(sourcePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);

@@ -87,12 +87,16 @@ namespace Nncase.Transform
                     }
 
                     if (visitor.isMatched)
+                    {
                         break;
+                    }
                 }
 
                 OnRewriteEnd(post, options, count++);
                 if (!visitor.isMatched)
+                {
                     break;
+                }
             } while (true);
             return post;
         }

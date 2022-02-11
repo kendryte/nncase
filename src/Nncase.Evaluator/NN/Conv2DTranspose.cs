@@ -18,17 +18,17 @@ namespace Nncase.Evaluator.NN;
 public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInferencer<Conv2DTranspose>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Conv2DTranspose conv)
+    public IValue Visit(IEvaluateContext context, Conv2DTranspose conv)
     {
         var input = context.GetTorchArgumentValue(conv, Conv2DTranspose.Input);
         var weights = context.GetTorchArgumentValue(conv, Conv2DTranspose.Weights);
         var bias = context.GetTorchArgumentValue(conv, Conv2DTranspose.Bias);
-        var stride = context.GetArgumentValue(conv, Conv2DTranspose.Stride).ToArray<long>();
+        var stride = context.GetArgumentValueAsTensor<long>(conv, Conv2DTranspose.Stride).ToArray();
 
         // [w:[left right] h:[top bottom]]
-        var pad = context.GetArgumentValue(conv, Conv2DTranspose.Padding).ToTensor<long>();
-        var dilation = context.GetArgumentValue(conv, Conv2DTranspose.Dilation).ToArray<long>();
-        var groups = context.GetArgumentValue(conv, Conv2DTranspose.Groups).ToScalar<long>();
+        var pad = context.GetArgumentValueAsTensor<long>(conv, Conv2DTranspose.Padding);
+        var dilation = context.GetArgumentValueAsTensor<long>(conv, Conv2DTranspose.Dilation).ToArray();
+        var groups = context.GetArgumentValueAsScalar<long>(conv, Conv2DTranspose.Groups);
         if (conv.PadMode != PadMode.Constant)
         {
             throw new NotImplementedException($"Conv2DTranspose with {conv.PadMode}!");
@@ -41,16 +41,16 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
             bias,
             stride,
             dilation: dilation,
-            groups: groups).ToConst();
+            groups: groups).ToValue();
     }
 
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Conv2DTranspose target)
     {
-        if (context.GetArgument(target, Conv2DTranspose.OutputShape) is Const outShapeValue)
+        if (context.GetArgument(target, Conv2DTranspose.OutputShape) is TensorConst outShapeValue)
         {
             var input = context.CheckArgumentType<TensorType>(target, Conv2D.Input);
-            return new TensorType(input.DType, new Shape(outShapeValue.ToTensor<int>()));
+            return new TensorType(input.DType, new Shape(outShapeValue.Value.Cast<int>()));
         }
         else
         {

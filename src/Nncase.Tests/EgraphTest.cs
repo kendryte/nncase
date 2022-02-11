@@ -35,7 +35,7 @@ namespace Nncase.Tests
             Const a = 2;
             Const b = 2;
             var d = new Dictionary<Expr, int>();
-            Console.WriteLine(a.Data == b.Data);
+            Console.WriteLine(a == b);
             d.Add(a, 1);
             Console.WriteLine(d.TryGetValue(b, out var res));
         }

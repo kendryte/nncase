@@ -15,14 +15,19 @@ namespace Nncase.CostModel
         private Cost VisitTranspose(Transpose transpose)
         {
             var type = _context.CurrentCallResultTensorType();
-            var perm = _context.GetArgumentConst(transpose, Transpose.Perm).ToTensor<int>();
+            var perm = _context.GetArgumentValue(transpose, Transpose.Perm).AsTensor().Cast<int>();
             int arithm = -1;
             foreach (var (i, p) in Enumerable.Range(0, (int)perm.Length).Zip(perm))
             {
                 if (arithm != -1)
+                {
                     break;
+                }
+
                 if (i == p)
+                {
                     continue;
+                }
 
                 // find axis which transpose start.
                 // the inner axis have more weights.

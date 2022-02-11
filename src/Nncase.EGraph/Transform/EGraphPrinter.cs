@@ -90,7 +90,10 @@ namespace Nncase.Transform
                     {
                         var label = $"{child.Find().Id}";
                         if (OpMaps.ContainsKey(child))
+                        {
                             label = OpMaps[child];
+                        }
+
                         args.Add(new DotRecordTextField(label, $"P{i}"));
                     }
 
@@ -112,7 +115,9 @@ namespace Nncase.Transform
                     for (int i = 0; i < enode.Children.Count; i++)
                     {
                         if (OpMaps.ContainsKey(enode.Children[i]))
+                        {
                             continue;
+                        }
 
                         // var pnode =  from pnode in select
                         dotGraph.Edges.Add($"{enode.Children[i].Find().Id}" + "dummy", exprNode, edge =>

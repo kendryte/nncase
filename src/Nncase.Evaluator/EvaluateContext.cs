@@ -14,11 +14,11 @@ namespace Nncase.Evaluator;
 /// </summary>
 internal sealed class EvaluateContext : IEvaluateContext
 {
-    private readonly Dictionary<Expr, Const> _exprMemo;
-    private readonly IReadOnlyDictionary<Var, Const> _varsValues;
+    private readonly Dictionary<Expr, IValue> _exprMemo;
+    private readonly IReadOnlyDictionary<Var, IValue> _varsValues;
     private Call? _currentCall;
 
-    public EvaluateContext(Dictionary<Expr, Const> exprMemo, IReadOnlyDictionary<Var, Const> varsValues)
+    public EvaluateContext(Dictionary<Expr, IValue> exprMemo, IReadOnlyDictionary<Var, IValue> varsValues)
     {
         _exprMemo = exprMemo;
         _varsValues = varsValues;
@@ -28,11 +28,6 @@ internal sealed class EvaluateContext : IEvaluateContext
     {
         get => _currentCall ?? throw new InvalidOperationException("Current call is not set in evaluator.");
         set => _currentCall = value;
-    }
-
-    public Const GetValue(Expr expr)
-    {
-        return _exprMemo[expr];
     }
 
     public Expr GetArgumentExpr(Op op, ParameterInfo parameter)
@@ -47,41 +42,10 @@ internal sealed class EvaluateContext : IEvaluateContext
         }
     }
 
-    public T GetArgumentValueAsScalar<T>(Op op, ParameterInfo parameter)
-        where T : unmanaged
+    public IValue GetValue(Expr expr)
     {
-        return GetArgumentValue(op, parameter).ToScalar<T>();
+        return _exprMemo[expr];
     }
-
-    public T[] GetArgumentValueAsArray<T>(Op op, ParameterInfo parameter)
-        where T : unmanaged
-    {
-        return GetArgumentValue(op, parameter).ToArray<T>();
-    }
-
-    public Const GetArgumentValue(Op op, ParameterInfo parameter)
-    {
-        var expr = GetArgumentExpr(op, parameter);
-        if (expr is Const constValue)
-        {
-            return constValue;
-        }
-        else
-        {
-            // maybe a valid type but not const
-            return GetValue(expr);
-        }
-    }
-
-    public TensorType GetTensorType(Expr expr)
-    {
-        var resultType = expr.CheckedType ?? throw new InvalidOperationException($"Expr {expr} don't have CheckedType.");
-        return resultType is TensorType resultTensorType ?
-            resultTensorType :
-            throw new InvalidOperationException($"Expr {expr} is not a TensorType.");
-    }
-
-    public TensorType CurrentCallResultTensorType() => GetTensorType(CurrentCall);
 }
 
 /// <summary>
@@ -91,16 +55,16 @@ public static class EvaluateContextExtensions
 {
     public static torch.Tensor GetTorchArgumentValue(this IEvaluateContext context, Op op, ParameterInfo parameter)
     {
-        return context.GetArgumentValue(op, parameter).ToTorchTensor();
+        return context.GetArgumentValue(op, parameter).AsTensor().ToTorchTensor();
     }
 
     public static torch.Tensor GetTorchValue(this IEvaluateContext context, Expr expr)
     {
-        return context.GetValue(expr).ToTorchTensor();
+        return context.GetValue(expr).AsTensor().ToTorchTensor();
     }
 
     public static Tensorflow.Tensor GetTFArgumentValue(this IEvaluateContext context, Op op, ParameterInfo parameter)
     {
-        return context.GetArgumentValue(op, parameter).ToTFTensor();
+        return context.GetArgumentValue(op, parameter).AsTensor().ToTFTensor();
     }
 }

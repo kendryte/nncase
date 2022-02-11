@@ -15,7 +15,7 @@ namespace Nncase.Evaluator.Tensors;
 public class ReverseSequenceEvaluator : IEvaluator<ReverseSequence>, ITypeInferencer<ReverseSequence>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, ReverseSequence random)
+    public IValue Visit(IEvaluateContext context, ReverseSequence random)
     {
         var input = context.GetTFArgumentValue(random, ReverseSequence.Input);
         var seqLens = context.GetTFArgumentValue(random, ReverseSequence.SeqLens);
@@ -29,7 +29,7 @@ public class ReverseSequenceEvaluator : IEvaluator<ReverseSequence>, ITypeInfere
                 {
                     seq_dim = timeAxis,
                     batch_dim = batchAxis,
-                }))[0].ToConst();
+                }))[0].ToValue();
     }
 
     /// <inheritdoc/>

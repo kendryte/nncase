@@ -14,21 +14,21 @@ namespace Nncase.Evaluator.Random;
 public class UniformEvaluator : IEvaluator<Uniform>, ITypeInferencer<Uniform>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Uniform random)
+    public IValue Visit(IEvaluateContext context, Uniform random)
     {
-        var shape = context.GetArgumentValue(random, Normal.Shape).ToArray<int>();
+        var shape = context.GetArgumentValueAsTensor<int>(random, Normal.Shape);
         var mean = context.GetArgumentValueAsScalar<float>(random, Normal.Mean);
         var scale = context.GetArgumentValueAsScalar<float>(random, Normal.Scale);
         var seed = context.GetArgumentValueAsScalar<int>(random, Normal.Seed);
-        return tf.random.normal(shape, mean, stddev: scale, seed: seed).ToConst();
+        return tf.random.normal(shape.ToArray(), mean, stddev: scale, seed: seed).ToValue();
     }
 
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Uniform target)
     {
-        if (context.GetArgument(target, Uniform.Shape) is Const shapeValue)
+        if (context.GetArgument(target, Uniform.Shape) is TensorConst shapeValue)
         {
-            return new TensorType(target.Type, new Shape(shapeValue.ToArray<int>()));
+            return new TensorType(target.Type, new Shape(shapeValue.Value.Cast<int>()));
         }
         else
         {

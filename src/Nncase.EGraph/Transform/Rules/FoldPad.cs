@@ -23,7 +23,8 @@ namespace Nncase.Transform.Rule
     public class FoldNopPad : PatternRule
     {
         WildCardPattern wcin = "input";
-        ConstPattern wcpad = IsConst(IsTensor() & IsIntegral());
+        TensorConstPattern wcpad = IsTensorConst(IsIntegral());
+
         public FoldNopPad()
         {
             Pattern = IsPad(wcin, wcpad, IsWildCard());
@@ -31,9 +32,12 @@ namespace Nncase.Transform.Rule
 
         public override Expr? GetRePlace(IMatchResult result)
         {
-            var pad = result[wcpad].ToTensor<int>();
+            var pad = result[wcpad].Value.Cast<int>();
             if (pad.All(x => x == 0))
+            {
                 return result[wcin];
+            }
+
             return null;
         }
     }
@@ -41,14 +45,15 @@ namespace Nncase.Transform.Rule
     public class FoldPadPad : PatternRule
     {
         WildCardPattern wcin = "input";
-        ConstPattern wcpad1, wcpad2;
-        ConstPattern wcvalue1, wcvalue2;
+        TensorConstPattern wcpad1, wcpad2;
+        TensorConstPattern wcvalue1, wcvalue2;
         CallPattern pad1, pad2;
+
         public FoldPadPad()
         {
-            wcpad1 = IsConst(IsTensor() & IsIntegral());
+            wcpad1 = IsTensorConst(IsIntegral());
             wcpad2 = wcpad1 with { };
-            wcvalue1 = IsConst(IsScalar());
+            wcvalue1 = IsTensorConst(IsScalar());
             wcvalue2 = wcvalue1 with { };
             pad1 = IsPad(wcin, wcpad1, wcvalue1);
             pad2 = IsPad(pad1, wcpad2, wcvalue2);
@@ -59,17 +64,17 @@ namespace Nncase.Transform.Rule
             var (value1, value2) = result[wcvalue1, wcvalue2];
             var mode1 = ((Pad)result[pad1].Target).PadMode;
             var mode2 = ((Pad)result[pad2].Target).PadMode;
-            if ((mode1 == mode2) && (mode1 != PadMode.Constant || value1.Data == value2.Data))
+            if ((mode1 == mode2) && (mode1 != PadMode.Constant || value1.Value.Equals(value2.Value)))
             {
-                var (t1, t2) = (value1.ToTensor<int>(), value2.ToTensor<int>());
-                var newt = new DenseTensor<int>(t1.Dimensions);
+                var (t1, t2) = (value1.Value.Cast<int>(), value2.Value.Cast<int>());
+                var newt = new Tensor<int>(t1.Dimensions);
                 for (int i = 0; i < t1.Dimensions[0]; i++)
                 {
                     newt[i, 0] = t1[i, 0] + t2[i, 0];
                     newt[i, 1] = t1[i, 1] + t2[i, 1];
                 }
 
-                var newpad = Const.FromTensor<int>(newt);
+                var newpad = Const.FromTensor(newt);
                 return Pad(result[wcin], newpad, mode1, value1);
             }
 
@@ -81,7 +86,7 @@ namespace Nncase.Transform.Rule
     {
         WildCardPattern wcin = "input", wcvalue = "value";
         CallPattern wcpad;
-        ConstPattern wcpads = IsConstIntTensor(), wcbegin = IsConstIntTensor(),
+        TensorConstPattern wcpads = IsConstIntTensor(), wcbegin = IsConstIntTensor(),
          wcend = IsConstIntTensor(), wcaxes = IsConstIntTensor(), wcstride = IsConstIntTensor();
         public FoldPadStrideSlice()
         {
@@ -91,11 +96,11 @@ namespace Nncase.Transform.Rule
 
         public override Expr? GetRePlace(IMatchResult result)
         {
-            var pads = result[wcpads].ToTensor<int>();
+            var pads = result[wcpads].Value.Cast<int>();
             if (pads.Any(x => x < 0))
             {
-                var begin = result[wcbegin].ToTensor<int>();
-                var end = result[wcend].ToTensor<int>();
+                var begin = result[wcbegin].Value.Cast<int>();
+                var end = result[wcend].Value.Cast<int>();
                 if (begin.All(x => x >= 0) &&
                     end.All(x => x >= 0))
                 {
@@ -131,7 +136,7 @@ namespace Nncase.Transform.Rule
     public class StrideSliceToPad : PatternRule
     {
         WildCardPattern wcin = "input";
-        ConstPattern wcbegin = IsConstIntTensor(),
+        TensorConstPattern wcbegin = IsConstIntTensor(),
          wcend = IsConstIntTensor(), wcaxes = IsConstIntTensor(), wcstride = IsConst((int x) => x == 1);
         public StrideSliceToPad()
         {
@@ -140,11 +145,11 @@ namespace Nncase.Transform.Rule
 
         public override Expr? GetRePlace(IMatchResult result)
         {
-            var begin = result[wcbegin].ToTensor<int>();
-            var end = result[wcend].ToTensor<int>();
+            var begin = result[wcbegin].Value.Cast<int>();
+            var end = result[wcend].Value.Cast<int>();
             if (result[wcin].CheckedType is TensorType intype)
             {
-                var paddings = new DenseTensor<int>(new[] { intype.Shape.Rank, 2 });
+                var paddings = new Tensor<int>(new[] { intype.Shape.Rank, 2 });
                 for (int i = 0; i < intype.Shape.Rank; i++)
                 {
                     paddings[i, 0] = -begin[i];
@@ -161,7 +166,7 @@ namespace Nncase.Transform.Rule
     public class PadToSlice : PatternRule
     {
         WildCardPattern wcin = "input";
-        ConstPattern wcpads = IsConst((int x) => x <= 0);
+        TensorConstPattern wcpads = IsConst((int x) => x <= 0);
         WildCardPattern wcvalue = "value";
         public PadToSlice()
         {
@@ -176,7 +181,7 @@ namespace Nncase.Transform.Rule
                 var shape = intype.Shape;
                 var begin = new int[shape.Rank];
                 var end = new int[shape.Rank];
-                var padst = result[wcpads].ToTensor<int>();
+                var padst = result[wcpads].Value.Cast<int>();
                 for (int i = 0; i < shape.Rank; i++)
                 {
                     begin[i] = -padst[i, 0];

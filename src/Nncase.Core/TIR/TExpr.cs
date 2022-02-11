@@ -296,13 +296,22 @@ namespace Nncase.TIR
                Expr? condition = null, int value_index = 0, IRArray<Expr>? init = null)
         {
             if (!axis.All(x => x.Mode == IterationMode.CommReduce))
+            {
                 throw new InvalidOperationException("Can only take axis created by reduce_axis");
+            }
+
             if (condition is null)
+            {
                 condition = (Const)1;
+            }
 
             if (init is not null)
             {
-                if (source.Count != init?.Count) throw new InvalidOperationException("");
+                if (source.Count != init?.Count)
+                {
+                    throw new InvalidOperationException("");
+                }
+
                 if (!init.Value.All(x => (
                   x is ProducerLoad) ||
                    ((x is Const con) &&

@@ -70,8 +70,8 @@ public static class Tensors
 
     public static Call Slice(Expr input, Expr begins, Expr ends, int rank)
     {
-        var axes = Const.FromSpan<int>(Enumerable.Range(0, rank).ToArray());
-        var strides = axes with { Data = new IRBytes(DataTypes.GetBytes<int>(Enumerable.Repeat(1, rank).ToArray())) };
+        var axes = Tensor.FromRange(0, rank);
+        var strides = Tensor.FromScalar(1, rank);
         return new Call(new Slice(), input, begins, ends, axes, strides);
     }
 

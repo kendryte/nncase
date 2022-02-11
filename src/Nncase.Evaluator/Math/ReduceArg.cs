@@ -17,12 +17,12 @@ namespace Nncase.Evaluator.Math;
 public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceArg>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, ReduceArg reduceArg)
+    public IValue Visit(IEvaluateContext context, ReduceArg reduceArg)
     {
         var input = context.GetTorchArgumentValue(reduceArg, ReduceArg.Input);
-        var axis = context.GetArgumentValue(reduceArg, ReduceArg.Axis).ToScalar<int>();
-        var keepDims = context.GetArgumentValue(reduceArg, ReduceArg.KeepDims).ToScalar<bool>();
-        var selectLastIndex = context.GetArgumentValue(reduceArg, ReduceArg.SelectLastIndex).ToScalar<bool>();
+        var axis = context.GetArgumentValueAsScalar<int>(reduceArg, ReduceArg.Axis);
+        var keepDims = context.GetArgumentValueAsScalar<bool>(reduceArg, ReduceArg.KeepDims);
+        var selectLastIndex = context.GetArgumentValueAsScalar<bool>(reduceArg, ReduceArg.SelectLastIndex);
         if (selectLastIndex)
         {
             throw new NotImplementedException();
@@ -34,7 +34,7 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
                 ReduceArgOp.ArgMax => input.argmax(axis, keepDims),
                 ReduceArgOp.ArgMin => input.argmin(axis, keepDims),
                 _ => throw new ArgumentOutOfRangeException(nameof(reduceArg.ReduceArgOp)),
-            }).ToConst();
+            }).ToValue();
         }
     }
 
@@ -47,13 +47,13 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
 
     private IRType Visit(ITypeInferenceContext context, ReduceArg target, TensorType input)
     {
-        if (context.GetArgument(target, ReduceArg.Axis) is Const axisValue &&
-            context.GetArgument(target, ReduceArg.KeepDims) is Const keepDimsValue)
+        if (context.GetArgument(target, ReduceArg.Axis) is TensorConst axisValue &&
+            context.GetArgument(target, ReduceArg.KeepDims) is TensorConst keepDimsValue)
         {
             var shape = input.Shape.ToList();
-            var axisIndex = axisValue.ToScalar<int>();
+            var axisIndex = axisValue.Value.ToScalar<int>();
             axisIndex = axisIndex >= 0 ? axisIndex : input.Shape.Rank + axisIndex;
-            if (keepDimsValue.ToScalar<bool>())
+            if (keepDimsValue.Value.ToScalar<bool>())
             {
                 shape[axisIndex] = 1;
             }

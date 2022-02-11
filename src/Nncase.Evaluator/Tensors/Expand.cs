@@ -18,7 +18,7 @@ namespace Nncase.Evaluator.Tensors;
 public class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Expand expand)
+    public IValue Visit(IEvaluateContext context, Expand expand)
     {
         var input = context.GetTorchArgumentValue(expand, Expand.Input);
         if (input.shape.Length == 0)
@@ -26,7 +26,7 @@ public class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>
             input = input.reshape(1L);
         }
 
-        var shape = context.GetArgumentValue(expand, Expand.Shape).ToArray<long>();
+        var shape = context.GetArgumentValueAsTensor<long>(expand, Expand.Shape);
 
         // When the value of onnx is 1, the value of torch is -1
         var torchShape = shape.Select(x => x == 1 ? -1 : x).ToArray();
@@ -36,7 +36,7 @@ public class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>
             torchShape = Enumerable.Repeat(-1L, input.shape.Length - torchShape.Length).Concat(torchShape).ToArray();
         }
 
-        return input.expand(torchShape).ToConst();
+        return input.expand(torchShape).ToValue();
     }
 
     /// <inheritdoc/>
@@ -48,9 +48,9 @@ public class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>
 
     private IRType Visit(ITypeInferenceContext context, Expand target, TensorType input)
     {
-        if (context.GetArgument(target, Expand.Shape) is Const constShape)
+        if (context.GetArgument(target, Expand.Shape) is TensorConst constShape)
         {
-            return new TensorType(input.DType, constShape.ToArray<int>());
+            return new TensorType(input.DType, new Shape(constShape.Value.Cast<int>()));
         }
         else
         {

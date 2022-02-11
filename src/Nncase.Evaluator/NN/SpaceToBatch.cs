@@ -18,7 +18,7 @@ namespace Nncase.Evaluator.NN;
 public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<SpaceToBatch>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, SpaceToBatch conv)
+    public IValue Visit(IEvaluateContext context, SpaceToBatch conv)
     {
         throw new NotImplementedException();
     }
@@ -34,11 +34,11 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
 
     private IRType Visit(ITypeInferenceContext context, SpaceToBatch target, TensorType input, TensorType blockShape, TensorType paddings)
     {
-        if (context.GetArgument(target, SpaceToBatch.BlockShape) is Const block_shape_con &&
-             context.GetArgument(target, SpaceToBatch.Paddings) is Const paddings_con)
+        if (context.GetArgument(target, SpaceToBatch.BlockShape) is TensorConst block_shape_con &&
+             context.GetArgument(target, SpaceToBatch.Paddings) is TensorConst paddings_con)
         {
-            var ts_block_shape = block_shape_con.ToTensor<int>();
-            var ts_paddings = paddings_con.ToTensor<int>();
+            var ts_block_shape = block_shape_con.Value.Cast<int>();
+            var ts_paddings = paddings_con.Value.Cast<int>();
             int m = (int)ts_block_shape.Length;
             var padded_shape = input.Shape.ToList();
             for (int i = 1; i < 1 + m; i++)

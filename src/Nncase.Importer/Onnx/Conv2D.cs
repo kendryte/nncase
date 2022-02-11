@@ -37,21 +37,21 @@ namespace Nncase.Importer
             for (int i = 0; i < count; ++i)
             {
                 padsValue[2 * i] = paddings[count - 1 - i];
-                padsValue[2 * i + 1] = paddings[paddings.Length - 1 - i];
+                padsValue[(2 * i) + 1] = paddings[paddings.Length - 1 - i];
             }
 
             var paddingsValue = new long[] { paddings[1], paddings[3], paddings[0], paddings[2] };
             return Const.FromSpan<long>(padsValue, new Shape(count, 2));
         }
 
-        private Const GetStrideAttribute(NodeProto op)
+        private Tensor GetStrideAttribute(NodeProto op)
         {
-            return Const.FromSpan<long>(GetIntsAttribute(op, "strides", 1, 2));
+            return Tensor.FromSpan<long>(GetIntsAttribute(op, "strides", 1, 2));
         }
 
-        private Const GetDilationsAttribute(NodeProto op)
+        private Tensor GetDilationsAttribute(NodeProto op)
         {
-            return Const.FromSpan<long>(GetIntsAttribute(op, "dilations", new[] { 1, 1 }));
+            return Tensor.FromSpan<long>(GetIntsAttribute(op, "dilations", new[] { 1, 1 }));
         }
 
         private Expr GetBias(NodeProto op, Expr weights, bool isConvTranspose = false)

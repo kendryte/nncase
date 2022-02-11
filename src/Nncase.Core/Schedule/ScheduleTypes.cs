@@ -60,7 +60,7 @@ public class MemoryRange
     /// <summary>
     /// shared module.
     /// </summary>
-    public UInt16 SharedModule;
+    public ushort SharedModule;
 
     /// <summary>
     /// memory span start.
@@ -80,7 +80,7 @@ public class MemoryRange
     /// <param name="sharedModule">shared module.</param>
     /// <param name="start">memory span start.</param>
     /// <param name="size">memory span length.</param>
-    public MemoryRange(MemoryLocation memoryLocate, DataType dType, UInt16 sharedModule, uint start, uint size)
+    public MemoryRange(MemoryLocation memoryLocate, DataType dType, ushort sharedModule, uint start, uint size)
     {
         MemoryLocate = memoryLocate;
         DType = dType;
@@ -176,7 +176,7 @@ public class BufferAllocation
     /// </summary>
     public MemoryRange RuntimeType => new(this.MemoryLocate,
          this.DType,
-         (UInt16)SharedModule,
+         (ushort)SharedModule,
          (uint)this.Start,
          (uint)this.Size);
 }

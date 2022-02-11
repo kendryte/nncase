@@ -15,11 +15,11 @@ namespace Nncase.Evaluator.Tensors;
 public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Squeeze squeeze)
+    public IValue Visit(IEvaluateContext context, Squeeze squeeze)
     {
         var input = context.GetTFArgumentValue(squeeze, Squeeze.Input);
-        var dims = context.GetArgumentValue(squeeze, Squeeze.Dim).ToArray<int>();
-        return tf.squeeze(input, dims).ToConst();
+        var dims = context.GetArgumentValueAsTensor<int>(squeeze, Squeeze.Dim).ToArray();
+        return tf.squeeze(input, dims).ToValue();
     }
 
     /// <inheritdoc/>
@@ -31,9 +31,9 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>
 
     private IRType Visit(ITypeInferenceContext context, Squeeze target, TensorType input)
     {
-        if (context.GetArgument(target, Squeeze.Dim) is Const dim_con)
+        if (context.GetArgument(target, Squeeze.Dim) is TensorConst dim_con)
         {
-            var dims = dim_con.ToArray<int>();
+            var dims = dim_con.Value.Cast<int>();
             var outshape = input.Shape.ToList();
             foreach (var dimValue in dims)
             {

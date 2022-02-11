@@ -148,20 +148,19 @@ public static class TypeInference
         var outShape = input.Shape.ToList();
         outShape[1] = weights.Shape[0];
         if (
-            stride is Const strideValue &&
-            padding is Const paddingValue &&
-            dilation is Const dilation_con &&
-            groups is Const groups_con &&
+            stride is TensorConst strideValue &&
+            padding is TensorConst paddingValue &&
+            dilation is TensorConst dilation_con &&
+            groups is TensorConst groups_con &&
             input.Shape[2].IsFixed &&
             input.Shape[3].IsFixed &&
             weights.Shape[2].IsFixed &&
-            weights.Shape[3].IsFixed
-        )
+            weights.Shape[3].IsFixed)
         {
-            var ts_stride = strideValue.ToTensor<int>();
-            var ts_padding = paddingValue.ToTensor<int>();
-            var ts_dilation = dilation_con.ToTensor<int>();
-            var groups_v = groups_con.ToScalar<int>();
+            var ts_stride = strideValue.Value.Cast<int>();
+            var ts_padding = paddingValue.Value.Cast<int>();
+            var ts_dilation = dilation_con.Value.Cast<int>();
+            var groups_v = groups_con.Value.ToScalar<int>();
 
             outShape[2] = GetWindowedOutputSize(input.Shape[2].FixedValue + ts_padding[0, 0] + ts_padding[0, 1],
                 weights.Shape[2].FixedValue, ts_stride[0], ts_dilation[0], false);
@@ -181,9 +180,9 @@ public static class TypeInference
     /// </summary>
     public static IRType PadType(TensorType input, Expr pads)
     {
-        if (pads is Const paddings)
+        if (pads is TensorConst paddings)
         {
-            var tpads = paddings.ToTensor<int>();
+            var tpads = paddings.Value.Cast<int>();
             var newShape = input.Shape.ToList();
             int channel = tpads.Dimensions[0];
             for (int i = 0; i < channel; i++)
@@ -206,16 +205,16 @@ public static class TypeInference
     {
         var outShape = input.Shape.ToList();
         if (
-            filter is Const filterValue &&
-            stride is Const strideValue &&
-            padding is Const paddingValue &&
-            ceilMode is Const ceilModeValue
+            filter is TensorConst filterValue &&
+            stride is TensorConst strideValue &&
+            padding is TensorConst paddingValue &&
+            ceilMode is TensorConst ceilModeValue
         )
         {
-            var ts_filter = filterValue.ToTensor<int>();
-            var ts_stride = strideValue.ToTensor<int>();
-            var ceilModeV = ceilModeValue.ToScalar<bool>();
-            var ts_padding = paddingValue.ToTensor<int>();
+            var ts_filter = filterValue.Value.Cast<int>();
+            var ts_stride = strideValue.Value.Cast<int>();
+            var ceilModeV = ceilModeValue.Value.ToScalar<bool>();
+            var ts_padding = paddingValue.Value.Cast<int>();
             var padh = ts_padding[0, 0] + ts_padding[0, 1];
             var padw = ts_padding[1, 0] + ts_padding[1, 1];
             outShape[2] = input.Shape[2].IsUnknown ? Dimension.Unknown : GetWindowedOutputSize(input.Shape[2].FixedValue + padh, ts_filter[0], ts_stride[0], 1, false, ceilModeV);
@@ -232,20 +231,24 @@ public static class TypeInference
     /// </summary>
     public static IRType ReduceType(TensorType input, Expr keepDims, Expr axis)
     {
-        if (keepDims is Const keepDimsValue &&
-            axis is Const axisValue)
+        if (keepDims is TensorConst keepDimsValue &&
+            axis is TensorConst axisValue)
         {
-            var axes = axisValue.ToArray<int>();
+            var axes = axisValue.Value.Cast<int>();
             var outShape = input.Shape.ToValueArray();
             foreach (var a in axes)
             {
                 var ax = Util.PositiveIndex(a, input);
-                if (keepDimsValue.ToScalar<int>() == 1)
+                if (keepDimsValue.Value.ToScalar<int>() == 1)
+                {
                     outShape[ax] = 1;
+                }
                 else
+                {
 
                     // todo: test
                     outShape[ax] = 0;
+                }
             }
 
             return input with { Shape = new Shape(outShape.Where(x => x != -1)) };
@@ -259,14 +262,14 @@ public static class TypeInference
     /// </summary>
     public static IRType TransposeType(TensorType input, Expr perm)
     {
-        if (perm is Const permValue)
+        if (perm is TensorConst permValue)
         {
             if (input.Shape.IsUnranked)
             {
                 return new InvalidType("Transpose input should not be Unranked");
             }
 
-            var permt = permValue.ToTensor<int>();
+            var permt = permValue.Value.Cast<int>();
             var inShape = input.Shape;
             var outShape = inShape.ToArray();
             foreach (var i in Enumerable.Range(0, inShape.Rank))
@@ -286,9 +289,9 @@ public static class TypeInference
     public static IRType ResizeType(TensorType input, Expr newSize)
     {
         var out_shape = input.Shape.ToArray();
-        if (newSize is Const new_size_con)
+        if (newSize is TensorConst new_size_con)
         {
-            var ts_new_size = new_size_con.ToTensor<int>();
+            var ts_new_size = new_size_con.Value.Cast<int>();
             switch (out_shape.Length)
             {
                 case 2 or 3:

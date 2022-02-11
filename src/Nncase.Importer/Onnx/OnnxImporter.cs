@@ -54,16 +54,16 @@ namespace Nncase.Importer
             _graph = _model.Graph;
         }
 
-        private Const GetConst(TensorProto tensor)
+        private Tensor GetTensor(TensorProto tensor)
         {
-            var shape = GetShape(tensor);
+            var shape = GetShape(tensor).ToValueArray();
             var type = GetDataType(tensor);
             var dt = (TensorProto.Types.DataType)tensor.DataType;
 
             // should not use tensor.DataLocation to distinguish whether it is RawData
             if (tensor.RawData.ToByteArray().Length() != 0)
             {
-                return new Const(new TensorType(type, shape), tensor.RawData.ToByteArray());
+                return Tensor.FromBytes(type, tensor.RawData.ToByteArray(), shape);
             }
             else
             {
@@ -72,12 +72,12 @@ namespace Nncase.Importer
                     // todo:not directly supported type should convert
                     //TensorProto.Types.DataType.Bool => Const.FromSpan(),
                     //TensorProto.Types.DataType.Float16 => Const.FromSpan(),
-                    TensorProto.Types.DataType.Float => Const.FromSpan<float>(tensor.FloatData.ToArray(), shape),
-                    TensorProto.Types.DataType.Double => Const.FromSpan<double>(tensor.DoubleData.ToArray(), shape),
+                    TensorProto.Types.DataType.Float => Tensor.FromSpan<float>(tensor.FloatData.ToArray(), shape),
+                    TensorProto.Types.DataType.Double => Tensor.FromSpan<double>(tensor.DoubleData.ToArray(), shape),
 
                     //TensorProto.Types.DataType.Int16 => Const.FromSpan(),
-                    TensorProto.Types.DataType.Int32 => Const.FromSpan<int>(tensor.Int32Data.ToArray(), shape),
-                    TensorProto.Types.DataType.Int64 => Const.FromSpan<long>(tensor.Int64Data.ToArray(), shape),
+                    TensorProto.Types.DataType.Int32 => Tensor.FromSpan<int>(tensor.Int32Data.ToArray(), shape),
+                    TensorProto.Types.DataType.Int64 => Tensor.FromSpan<long>(tensor.Int64Data.ToArray(), shape),
 
                     //TensorProto.Types.DataType.Int8 => Const.FromSpan(),
                     //TensorProto.Types.DataType.String => Const.FromSpan(),
@@ -149,7 +149,7 @@ namespace Nncase.Importer
             return _graph.Initializer
                     .Find(x => x.Name == id)
                     .Match(
-                        GetConst,
+                        GetTensor,
                         () => throw new InvalidDataException($"Cannot load tensor data (tensor:{id})."));
         }
 

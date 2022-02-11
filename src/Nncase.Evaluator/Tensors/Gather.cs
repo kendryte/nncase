@@ -13,12 +13,12 @@ namespace Nncase.Evaluator.Tensors;
 public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Gather gather)
+    public IValue Visit(IEvaluateContext context, Gather gather)
     {
         var input = context.GetTFArgumentValue(gather, Gather.Input);
-        var axis = context.GetArgumentValue(gather, Gather.Axis).ToScalar<int>();
+        var axis = context.GetArgumentValueAsScalar<int>(gather, Gather.Axis);
         var index = context.GetTFArgumentValue(gather, Gather.Index);
-        return tf.gather(input, index, axis: axis).ToConst();
+        return tf.gather(input, index, axis: axis).ToValue();
     }
 
     /// <inheritdoc/>
@@ -32,9 +32,9 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>
 
     private IRType Visit(ITypeInferenceContext context, Gather target, TensorType input, TensorType axis, TensorType index)
     {
-        if (context.GetArgument(target, Flatten.Axis) is Const axisValue)
+        if (context.GetArgument(target, Flatten.Axis) is TensorConst axisValue)
         {
-            var axisV = axisValue.ToScalar<int>();
+            var axisV = axisValue.Value.ToScalar<int>();
             axisV = axisV < 0 ? axisV + input.Shape.Rank : axisV;
 
             // input_shape[:axis] + index_shape + input_shape[axis + 1:]

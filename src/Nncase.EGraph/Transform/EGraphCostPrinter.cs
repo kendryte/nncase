@@ -28,7 +28,10 @@ namespace Nncase.Transform
             foreach (var (eclass, (cost, enode)) in Costs.Context)
             {
                 if (OpMaps.ContainsKey(eclass))
+                {
                     continue;
+                }
+
                 foreach (var dotnode in ClusterMaps[eclass].Nodes.Where((nd => ((DotNode)nd).Id == enode.Expr.GetHashCode().ToString())))
                 {
                     nodeMap.Add(enode, (DotNode)dotnode);
@@ -46,7 +49,10 @@ namespace Nncase.Transform
                 foreach (var (child, i) in curEnode.Children.Select((c, i) => (c, i)))
                 {
                     if (OpMaps.ContainsKey(child))
+                    {
                         continue;
+                    }
+
                     var paramEnode = Costs[child].Item2;
                     var paramNode = nodeMap[paramEnode];
                     dfs(Costs[paramEnode].Find());

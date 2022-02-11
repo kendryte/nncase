@@ -23,7 +23,9 @@ namespace Nncase.Importer.TFLite
                 dims.ForEach(d =>
                 {
                     if (d >= dim)
+                    {
                         d -= 1;
+                    }
                 });
             }
 

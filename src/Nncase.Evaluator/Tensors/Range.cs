@@ -14,24 +14,24 @@ namespace Nncase.Evaluator.Tensors;
 public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Range range)
+    public IValue Visit(IEvaluateContext context, Range range)
     {
         var begin = context.GetArgumentValueAsScalar<int>(range, Range.Begin);
         var end = context.GetArgumentValueAsScalar<int>(range, Range.End);
         var step = context.GetArgumentValueAsScalar<int>(range, Range.Step);
-        return torch.arange(begin, end, step).ToConst();
+        return torch.arange(begin, end, step).ToValue();
     }
 
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Range target)
     {
-        if (context.GetArgument(target, Range.Begin) is Const beginValue
-            && context.GetArgument(target, Range.End) is Const endValue
-            && context.GetArgument(target, Range.Step) is Const stepValue)
+        if (context.GetArgument(target, Range.Begin) is TensorConst beginValue
+            && context.GetArgument(target, Range.End) is TensorConst endValue
+            && context.GetArgument(target, Range.Step) is TensorConst stepValue)
         {
             return new TensorType(
                 DataType.Int32,
-                new Shape((beginValue.ToScalar<int>() + endValue.ToScalar<int>()) / stepValue.ToScalar<int>()));
+                new Shape((beginValue.Value.ToScalar<int>() + endValue.Value.ToScalar<int>()) / stepValue.Value.ToScalar<int>()));
         }
 
         return new InvalidType("Range begin, end, step should be constant");

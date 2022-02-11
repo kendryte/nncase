@@ -47,7 +47,7 @@ namespace Nncase.Importer
             var x = GetInputExpr(op, 0);
             var alpha = GetFloatAttribute(op, "alpha", 1.67326319217681884765625F);
             var gamma = GetFloatAttribute(op, "gamma", 1.05070102214813232421875F);
-            return gamma * (alpha * Min(Exp(x) - 1F, 0F) + Max(x, 0F));
+            return gamma * ((alpha * Min(Exp(x) - 1F, 0F)) + Max(x, 0F));
         }
 
         private Expr VisitSigmoid(NodeProto op)
@@ -61,7 +61,7 @@ namespace Nncase.Importer
             var x = GetInputExpr(op, 0);
             var alpha = GetFloatAttribute(op, "alpha", 0.2f);
             var beta = GetFloatAttribute(op, "alpha", 0.5f);
-            return Max(0F, Min(1F, alpha * x + beta));
+            return Max(0F, Min(1F, (alpha * x) + beta));
         }
 
         private Expr VisitHardSwish(NodeProto op)

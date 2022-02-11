@@ -27,11 +27,11 @@ namespace Nncase.Transform.Rule
         public override Expr? GetRePlace(IMatchResult result)
         {
             s2b.Bind(result);
-            var block_shape = s2b.BlockShape<Const>().ToTensor<int>();
+            var block_shape = s2b.BlockShape<TensorConst>().Value.Cast<int>();
             if (block_shape[0] == 1 && block_shape[1] == 1)
             {
-                var pads = s2b.Paddings<Const>().ToTensor<int>();
-                var newpads = new DenseTensor<int>(new[] { 0, 0, 0, 0, 0, 0 }, new[] { 3, 2 });
+                var pads = s2b.Paddings<TensorConst>().Value.Cast<int>();
+                var newpads = Tensor.FromScalar(0, new[] { 3, 2 });
                 newpads[2, 0] = pads[0];
                 newpads[2, 1] = pads[1];
                 return Pad(s2b.Input(), newpads, PadMode.Constant, 0);

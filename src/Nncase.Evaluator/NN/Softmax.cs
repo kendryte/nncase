@@ -15,11 +15,11 @@ namespace Nncase.Evaluator.NN;
 public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSoftmax>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, LogSoftmax logSoftMax)
+    public IValue Visit(IEvaluateContext context, LogSoftmax logSoftMax)
     {
         var input = context.GetTorchArgumentValue(logSoftMax, LogSoftmax.Input);
-        var dim = context.GetArgumentValue(logSoftMax, LogSoftmax.Axis).ToScalar<int>();
-        return torchF.log_softmax(input, dim).ToConst();
+        var dim = context.GetArgumentValueAsScalar<int>(logSoftMax, LogSoftmax.Axis);
+        return torchF.log_softmax(input, dim).ToValue();
     }
 
     /// <inheritdoc/>
@@ -41,11 +41,11 @@ public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSo
 public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Softmax softMax)
+    public IValue Visit(IEvaluateContext context, Softmax softMax)
     {
         var input = context.GetTorchArgumentValue(softMax, Softmax.Input);
-        var dim = context.GetArgumentValue(softMax, Softmax.Axis).ToScalar<int>();
-        return torchF.softmax(input, dim).ToConst();
+        var dim = context.GetArgumentValueAsScalar<int>(softMax, Softmax.Axis);
+        return torchF.softmax(input, dim).ToValue();
     }
 
     /// <inheritdoc/>
@@ -67,10 +67,10 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>
 public class SoftplusEvaluator : IEvaluator<Softplus>, ITypeInferencer<Softplus>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Softplus softPlus)
+    public IValue Visit(IEvaluateContext context, Softplus softPlus)
     {
         var input = context.GetTorchArgumentValue(softPlus, Softplus.Input);
-        return input.softplus().ToConst();
+        return input.softplus().ToValue();
     }
 
     /// <inheritdoc/>
@@ -92,12 +92,12 @@ public class SoftplusEvaluator : IEvaluator<Softplus>, ITypeInferencer<Softplus>
 public class SoftsignEvaluator : IEvaluator<Softsign>, ITypeInferencer<Softsign>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Softsign softSign)
+    public IValue Visit(IEvaluateContext context, Softsign softSign)
     {
         var input = context.GetTFArgumentValue(softSign, Softsign.Input);
 
         // Tensorflow.Net no this interface
-        return tf.Context.ExecuteOp("Softsign", null, new ExecuteOpArgs(input))[0].ToConst();
+        return tf.Context.ExecuteOp("Softsign", null!, new ExecuteOpArgs(input))[0].ToValue();
     }
 
     /// <inheritdoc/>

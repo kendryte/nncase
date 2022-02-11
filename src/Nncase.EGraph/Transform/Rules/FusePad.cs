@@ -30,15 +30,15 @@ namespace Nncase.Transform.Rule
         {
             pad.Bind(result);
             conv2d.Bind(result);
-            var pads = pad.Pads<Const>().ToTensor<int>();
-            var padv = pad.Value<Const>().ToScalar<float>();
+            var pads = pad.Pads<TensorConst>().Value.Cast<int>();
+            var padv = pad.Value<TensorConst>().Value.ToScalar<float>();
             if (pads.Dimensions[0] == 4
             && pads[2, 0] >= 0 && pads[2, 1] >= 0
             && pads[3, 0] >= 0 && pads[3, 1] >= 0
             && ((pads[2, 0] + pads[2, 1]) > 0 || (pads[3, 0] + pads[3, 1]) > 0)
             && padv == .0f)
             {
-                var newpads = new DenseTensor<int>(new[] { 2, 2 });
+                var newpads = new Tensor<int>(new[] { 2, 2 });
                 for (int i = 2; i < 4; i++)
                 {
                     if (pads[i, 0] > 0)

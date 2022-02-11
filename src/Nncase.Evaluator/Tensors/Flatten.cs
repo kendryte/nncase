@@ -18,12 +18,12 @@ namespace Nncase.Evaluator.Tensors;
 public class FlattenEvaluator : IEvaluator<Flatten>, ITypeInferencer<Flatten>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Flatten flatten)
+    public IValue Visit(IEvaluateContext context, Flatten flatten)
     {
         var input = context.GetTorchArgumentValue(flatten, Flatten.Input);
-        var dim = context.GetArgumentValue(flatten, Flatten.Axis).ToScalar<int>();
+        var dim = context.GetArgumentValueAsScalar<int>(flatten, Flatten.Axis);
         var v = torch.nn.Flatten(0, dim);
-        return v.forward(input).ToConst();
+        return v.forward(input).ToValue();
     }
 
     /// <inheritdoc/>
@@ -35,11 +35,11 @@ public class FlattenEvaluator : IEvaluator<Flatten>, ITypeInferencer<Flatten>
 
     private IRType Visit(ITypeInferenceContext context, Flatten target, TensorType input)
     {
-        if (context.GetArgument(target, Flatten.Axis) is Const axisV)
+        if (context.GetArgument(target, Flatten.Axis) is TensorConst axisV)
         {
             if (input.Shape.IsFixed)
             {
-                var axisValue = axisV.ToScalar<int>();
+                var axisValue = axisV.Value.ToScalar<int>();
                 var first = input.Shape.Take(axisValue).Aggregate(1, (x, y) => x * y.FixedValue);
                 var second = input.Shape.Take(axisValue..input.Shape.Count).Aggregate(1, (x, y) => x * y.FixedValue);
                 return input with { Shape = new[] { first, second } };

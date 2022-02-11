@@ -58,7 +58,7 @@ namespace Nncase.IR.F
         /// <typeparam name="T">Data type.</typeparam>
         /// <returns>Result expression.</returns>
         public static Call Clamp<T>(Expr input, ValueRange<T> range)
-            where T : unmanaged
+            where T : unmanaged, IEquatable<T>
         {
             return new Call(new Clamp(), input, Const.FromScalar(range.Min), Const.FromScalar(range.Max));
         }
