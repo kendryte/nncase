@@ -1173,6 +1173,10 @@ namespace IsaGen
             [Description("Source2 stride register")]
             public byte RstrideSrc2 { get; set; }
 
+            [DisplayName("rshape_dest")]
+            [Description("Dest shape register")]
+            public byte RshapeDest { get; set; }
+
             [DisplayName("rstride_dest")]
             [Description("Dest stride register")]
             public byte RstrideDest { get; set; }

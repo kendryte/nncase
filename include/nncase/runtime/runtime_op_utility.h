@@ -276,6 +276,25 @@ inline int get_last_not_contiguous_index(const runtime_shape_t &strides, const r
 template <size_t A, size_t B>
 constexpr auto is_not_equal = std::integral_constant<bool, std::not_equal_to<size_t> {}(A, B)> {};
 
+inline bool is_optimized_binary_op(binary_op_t op)
+{
+    return op == binary_add || op == binary_sub || op == binary_mul || op == binary_div || op == binary_min || op == binary_max;
+}
+
+template <class TShape>
+bool is_optimized_input_shape(TShape in_shape, TShape out_shape)
+{
+    assert(in_shape.size() <= out_shape.size());
+
+    // we only support scalar/vector broadcast now
+    if (in_shape.size() == 1 || in_shape == out_shape)
+    {
+        return true;
+    }
+
+    return false;
+}
+
 struct DefaultCallable
 {
 };

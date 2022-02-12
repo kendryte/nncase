@@ -122,19 +122,19 @@ void register_neutral_evaluators()
         {
         case dt_float32:
             kernels::binary(rnode.binary_op(), input_a.buffer().as_span<float>().data(), input_b.buffer().as_span<float>().data(),
-                output.buffer().as_span<float>().data(), input_a.shape(), input_a.strides(), input_b.shape(), input_b.strides(), output.strides(),
+                output.buffer().as_span<float>().data(), input_a.shape(), input_a.strides(), input_b.shape(), input_b.strides(), output.shape(), output.strides(),
                 rnode.fused_activation())
                 .unwrap_or_throw();
             break;
         case dt_int32:
             kernels::binary(rnode.binary_op(), input_a.buffer().as_span<int32_t>().data(), input_b.buffer().as_span<int32_t>().data(),
-                output.buffer().as_span<int32_t>().data(), input_a.shape(), input_a.strides(), input_b.shape(), input_b.strides(), output.strides(),
+                output.buffer().as_span<int32_t>().data(), input_a.shape(), input_a.strides(), input_b.shape(), input_b.strides(), output.shape(), output.strides(),
                 rnode.fused_activation())
                 .unwrap_or_throw();
             break;
         case dt_int64:
             kernels::binary(rnode.binary_op(), input_a.buffer().as_span<int64_t>().data(), input_b.buffer().as_span<int64_t>().data(),
-                output.buffer().as_span<int64_t>().data(), input_a.shape(), input_a.strides(), input_b.shape(), input_b.strides(), output.strides(),
+                output.buffer().as_span<int64_t>().data(), input_a.shape(), input_a.strides(), input_b.shape(), input_b.strides(), output.shape(), output.strides(),
                 rnode.fused_activation())
                 .unwrap_or_throw();
             break;

@@ -41,7 +41,7 @@ NNCASE_API result<void> transpose(datatype_t type, const gsl::byte *input, gsl::
 template <typename T>
 NNCASE_API result<void> binary(binary_op_t op, const T *input_a, const T *input_b, T *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
-    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation, kernel_context &context) noexcept;
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides, value_range<float> fused_activation, kernel_context &context) noexcept;
 
 NNCASE_API result<void> dequantize(datatype_t in_type, datatype_t out_type, const gsl::byte *input, gsl::byte *output,
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, float scale, float bias,
