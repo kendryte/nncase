@@ -20,7 +20,7 @@ namespace Nncase
 
         public ulong Compute()
         {
-            return Arith * 2 + Memory;
+            return (Arith * 2) + Memory;
         }
 
         public static bool operator >(Cost lhs, Cost rhs) => lhs.Compute() > rhs.Compute();

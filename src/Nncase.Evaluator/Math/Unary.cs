@@ -14,7 +14,7 @@ namespace Nncase.Evaluator.Math;
 public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Unary unary)
+    public IValue Visit(IEvaluateContext context, Unary unary)
     {
         var i = context.GetTorchArgumentValue(unary, Unary.Input);
         var result = unary.UnaryOp switch
@@ -43,7 +43,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>
             UnaryOp.LogicalNot => torch.logical_not(i),
             _ => throw new ArgumentOutOfRangeException(nameof(unary.UnaryOp)),
         };
-        return result.ToConst();
+        return result.ToValue();
     }
 
     /// <inheritdoc/>

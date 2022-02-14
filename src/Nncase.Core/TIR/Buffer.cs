@@ -149,7 +149,7 @@ namespace Nncase.TIR
             }
             else if (Strides.Count == Shape.Count)
             {
-                extent = Strides[0] * Shape[0] - offset;
+                extent = (Strides[0] * Shape[0]) - offset;
             }
             else
             {
@@ -245,7 +245,7 @@ namespace Nncase.TIR
 
             for (int i = 0; i < indices.Count; i++)
             {
-                offset = offset + indices[i] * Strides[i];
+                offset = offset + (indices[i] * Strides[i]);
             }
 
             return offset;

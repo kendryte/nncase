@@ -81,14 +81,14 @@ namespace Nncase.CostModel
         public override TensorType CurrentCallResultTensorType() =>
           CheckTensorType(_eClassType[GetParentEClass(CurrentCall)]);
 
-        public override Const GetArgumentConst(Op op, ParameterInfo parameter)
+        public override IValue GetArgumentValue(Op op, ParameterInfo parameter)
         {
             var curEclass = _exprMaps[CurrentCall].Children[parameter.Index + 1];
             foreach (var node in _eClasses[curEclass])
             {
                 if (node.Expr is Const c)
                 {
-                    return c;
+                    return Value.FromConst(c);
                 }
             }
 
@@ -137,7 +137,10 @@ namespace Nncase.CostModel
         {
             var old_cost = EClassMemo[eClass];
             if (old_cost.Locked)
+            {
                 return old_cost;
+            }
+
             _context._eClasses[eClass].ForEach(node => Visit(node));
             var new_cost = VisitLeaf(eClass);
             if (old_cost.Total != new_cost.Total)

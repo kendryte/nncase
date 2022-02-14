@@ -43,7 +43,10 @@ namespace Nncase.Transform
             {
                 var neweClass = child.Find();
                 if (neweClass != TargeteClass)
+                {
                     todos.Add(neweClass);
+                }
+
                 return neweClass;
             }
 
@@ -81,7 +84,7 @@ namespace Nncase.Transform
 
         public override string ToString()
         {
-            var str = String.Join(", ", Children.Select(x => x.Id));
+            var str = string.Join(", ", Children.Select(x => x.Id));
             return $"{Expr.GetType().Name} ({str})";
         }
     }
@@ -160,9 +163,13 @@ namespace Nncase.Transform
 
                 // if (parentEclass != eclass) { _mergedlist.Add(enode); }
                 if (!eclasses.ContainsKey(parentEclass))
+                {
                     eclasses.Add(parentEclass, new List<ENode> { enode });
+                }
                 else
+                {
                     eclasses[parentEclass].Add(enode);
+                }
             }
 
             // foreach (var enode in _mergedlist) { _hascons[enode] = _hascons[enode].Find(); }
@@ -272,7 +279,9 @@ namespace Nncase.Transform
             foreach (var (pnode, pclass) in oldUsed)
             {   // update the parent node.
                 if (_hascons.ContainsKey(pnode))
+                {
                     _hascons.Remove(pnode);
+                }
 
                 // TODO we update the enode, should put this new node to it's child eclass's oldUsed.
                 // Then when that eclass be repaired, it will update this new enode.
@@ -327,7 +336,9 @@ namespace Nncase.Transform
                 foreach (var (_, used_eclass) in eclass.Used)
                 {
                     if (!visited[eclass])
+                    {
                         dfs(used_eclass, visited, paths);
+                    }
                 }
 
                 paths.Add(eclass); // put the root node into last

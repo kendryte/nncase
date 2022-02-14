@@ -18,7 +18,7 @@ namespace Nncase.Evaluator.NN;
 public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<BatchToSpace>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, BatchToSpace target)
+    public IValue Visit(IEvaluateContext context, BatchToSpace target)
     {
         throw new NotImplementedException();
     }
@@ -36,14 +36,14 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
     {
         var newShape = input.Shape.ToList();
         newShape[0] = input.Shape[0] / blockShape.Shape.Prod();
-        if (context.GetArgument(target, BatchToSpace.Crops) is Const cropsValue)
+        if (context.GetArgument(target, BatchToSpace.Crops) is TensorConst cropsValue)
         {
             if (crops.Shape.Rank != 2)
             {
                 return new InvalidType("BatchToSpace crops rank must be 2");
             }
 
-            var cropsV = cropsValue.ToTensor<int>();
+            var cropsV = cropsValue.Value.Cast<int>();
             var afterCropShape = Enumerable.Range(0, crops.Shape.Rank).Select(
                 i => (input.Shape[i + 1] * blockShape.Shape[0]) - cropsV[i, 0] - cropsV[i, 1]);
             return new TensorType(input.DType, input.Shape.InsertAndClone(1, afterCropShape));

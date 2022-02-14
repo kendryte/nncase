@@ -14,7 +14,7 @@ namespace Nncase.Evaluator.Random;
 public class NormalLikeEvaluator : IEvaluator<NormalLike>, ITypeInferencer<NormalLike>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, NormalLike random)
+    public IValue Visit(IEvaluateContext context, NormalLike random)
     {
         throw new NotImplementedException();
     }

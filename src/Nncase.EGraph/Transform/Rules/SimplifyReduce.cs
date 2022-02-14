@@ -26,8 +26,8 @@ namespace Nncase.Transform.Rule
         {
             reduce.Bind(result);
 
-            var axis = reduce.Axis<Const>().ToTensor<int>();
-            var keep_dims = reduce.KeepDims<Const>().ToScalar<bool>();
+            var axis = reduce.Axis<TensorConst>().Value.Cast<int>();
+            var keep_dims = reduce.KeepDims<TensorConst>().Value.ToScalar<bool>();
             if (axis.Length == 1 && !keep_dims)
             {
                 var inshape = reduce.Input().CheckedShape;

@@ -108,7 +108,7 @@ namespace Nncase.Importer.TFLite
             }
             else
             {
-                return new TensorType(dataType, new Shape(shape.ToArray()));
+                return new TensorType(dataType, new Shape(shape));
             }
         }
 
@@ -351,7 +351,7 @@ namespace Nncase.Importer.TFLite
                 var data = buffer.GetDataBytes();
                 if (!data.IsEmpty)
                 {
-                    var con = new Const(GetIRType(tensor.GetShapeBytes(), tensor.Type), data.ToArray());
+                    var con = Tensor.FromBytes(GetDataType(tensor.Type), data.ToArray(), tensor.GetShapeBytes());
                     _outputTensors.Add(id, con);
                     return con;
                 }
@@ -386,11 +386,6 @@ namespace Nncase.Importer.TFLite
         {
             var tensorCopy = tensor;
             return Enumerable.Range(0, tensor.ShapeLength).Select(i => tensorCopy.Shape(i)).ToArray();
-        }
-
-        private static IEnumerable<int> GetShapeDataFromConst(Expr shape)
-        {
-            return ((Const)shape).ToTensor<int>().ToArray();
         }
     }
 }

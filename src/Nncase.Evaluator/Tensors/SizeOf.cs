@@ -12,11 +12,11 @@ namespace Nncase.Evaluator.Tensors;
 public class SizeOfEvaluator : IEvaluator<SizeOf>, ITypeInferencer<SizeOf>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, SizeOf size)
+    public IValue Visit(IEvaluateContext context, SizeOf size)
     {
         var input = context.GetTorchArgumentValue(size, SizeOf.Input);
-        var v = (Const)(int)input.numel();
-        return v;
+        var v = (Tensor)(int)input.numel();
+        return Value.FromTensor(v);
     }
 
     /// <inheritdoc/>

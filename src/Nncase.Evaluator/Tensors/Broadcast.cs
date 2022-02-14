@@ -14,12 +14,11 @@ namespace Nncase.Evaluator.Tensors;
 public class BroadcastEvaluator : IEvaluator<Broadcast>, ITypeInferencer<Broadcast>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Broadcast b)
+    public IValue Visit(IEvaluateContext context, Broadcast b)
     {
         var input = context.GetTorchArgumentValue(b, Broadcast.Input);
-        var shape = context.GetArgumentValue(b, Broadcast.Shape);
-        var s = shape.ToArray<long>();
-        return input.broadcast_to(s).ToConst();
+        var shape = context.GetArgumentValueAsTensor<long>(b, Broadcast.Shape);
+        return input.broadcast_to(shape.ToArray()).ToValue();
     }
 
     /// <inheritdoc/>
@@ -32,9 +31,9 @@ public class BroadcastEvaluator : IEvaluator<Broadcast>, ITypeInferencer<Broadca
     private IRType Visit(ITypeInferenceContext context, Broadcast target, TensorType input)
     {
         var shapeValue = context.GetArgument(target, Broadcast.Shape);
-        if (shapeValue is Const constShapeValue && input.Shape.IsFixed)
+        if (shapeValue is TensorConst constShapeValue && input.Shape.IsFixed)
         {
-            return TypeInference.BroadcastType(input, new TensorType(input.DType, constShapeValue.ToArray<int>()));
+            return TypeInference.BroadcastType(input, new TensorType(input.DType, constShapeValue.Value.ToArray<int>()));
         }
         else
         {

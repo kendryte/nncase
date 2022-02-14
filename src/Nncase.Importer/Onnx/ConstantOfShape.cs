@@ -20,11 +20,11 @@ namespace Nncase.Importer
             if (tensorValue)
             {
                 var tensor = tensorValue.ValueUnsafe();
-                var tensorConst = GetConst(tensor);
+                var tensorConst = GetTensor(tensor);
                 var type = GetDataType(tensor);
                 if (type == DataType.Float32)
                 {
-                    return Const.FromShape(shape, tensorConst.ToScalar<float>());
+                    return Tensor.FromScalar(tensorConst.ToScalar<float>(), shape);
                 }
                 else
                 {
@@ -33,7 +33,7 @@ namespace Nncase.Importer
             }
             else
             {
-                return Const.FromShape(shape, 0f);
+                return Tensor.FromScalar(0.0f, shape);
             }
         }
     }

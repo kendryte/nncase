@@ -229,7 +229,9 @@ public abstract class BaseRTKModule : IRTModule
             if (mod_sched.FunctionsMap.TryGetValue(expr, out var func_it))
             {
                 if (mod_sched.Functions.IndexOf(func_it) is var idx)
+                {
                     return new FunctionCallId() { ModuleId = i, FunctionId = idx };
+                }
             }
         }
 
@@ -298,7 +300,9 @@ public abstract class BaseRTKModule : IRTModule
         foreach (var item in _currentFunction.ComputeSequence)
         {
             if (!s_nonRuntimeOps.Contains(item.GetType().TypeHandle))
+            {
                 runtime_ops.Add(item);
+            }
         }
 
         return runtime_ops;
@@ -316,7 +320,9 @@ public abstract class BaseRTKModule : IRTModule
             EndEmitFunction(_currentFunction);
 
             if (!_entryPoints.ContainsKey(_currentFunction))
+            {
                 throw new InvalidProgramException($"Entry point is not set");
+            }
         }
 
         EndEmitModule();
@@ -353,10 +359,11 @@ public abstract class BaseRTKModule : IRTModule
             {
                 foreach (var item in func_sched.ComputeSequence)
                 {
-                    if (item is IR.Const con)
+                    // TODO: TupleConst
+                    if (item is IR.TensorConst con)
                     {
                         var alloc = Allocation(con);
-                        con.Data.Array.CopyTo(constants.AsSpan((int)alloc.Start));
+                        con.Value.BytesBuffer.CopyTo(constants.AsSpan((int)alloc.Start));
                     }
                 }
             }
@@ -390,7 +397,9 @@ public abstract class BaseRTKModule : IRTModule
         foreach (var section in _sectionWriters)
         {
             if (!_rdataSectionMerges.ContainsKey(section.Key))
+            {
                 section.Value.Body = section.Value.Output.ToArray();
+            }
         }
 
         // if (dump_asm_)
@@ -584,13 +593,11 @@ public abstract class BaseRTKModule : IRTModule
 
         // inputs
         foreach (var input in function_sched.Inputs) { writer.Write(CodeGenUtil.StructToBytes<Schedule.MemoryRange>(input)); }
-        foreach (var shape in function_sched.InputShapes)
-            writeShape(shape);
+        foreach (var shape in function_sched.InputShapes) { writeShape(shape); }
 
         // outputs
         foreach (var output in function_sched.Outputs) { writer.Write(CodeGenUtil.StructToBytes<Schedule.MemoryRange>(output)); }
-        foreach (var shape in function_sched.OutputShapes)
-            writeShape(shape);
+        foreach (var shape in function_sched.OutputShapes) { writeShape(shape); }
 
         writer.AlignPosition(8);
         var end_pos = writer.Position();

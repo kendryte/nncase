@@ -12,6 +12,7 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
+using System;
 
 namespace Nncase.Pattern.F
 {
@@ -60,7 +61,7 @@ namespace Nncase.Pattern.F
         /// <typeparam name = "T">Data type.</typeparam>
         /// <returns>Result expression.</returns>
         public static ClampWrapper Clamp<T>(ExprPattern input, ValueRange<T> range)
-            where T : unmanaged
+            where T : unmanaged, IEquatable<T>
         {
             return new ClampWrapper(new CallPattern(new ClampPattern(), input, Const.FromScalar(range.Min), Const.FromScalar(range.Max)));
         }
@@ -435,8 +436,8 @@ namespace Nncase.Pattern.F
         public static SliceWrapper Slice(ExprPattern input, ExprPattern begins, ExprPattern ends, ExprPattern axes, ExprPattern strides) => new SliceWrapper(new CallPattern(new SlicePattern(), input, begins, ends, axes, strides));
         public static SliceWrapper Slice(ExprPattern input, ExprPattern begins, ExprPattern ends, int rank)
         {
-            var axes = Const.FromSpan<int>(Enumerable.Range(0, rank).ToArray());
-            var strides = axes with { Data = new IRBytes(DataTypes.GetBytes<int>(Enumerable.Repeat(1, rank).ToArray())) };
+            var axes = Tensor.FromRange(0, rank);
+            var strides = Tensor.FromScalar(1, rank);
             return new SliceWrapper(new CallPattern(new SlicePattern(), input, begins, ends, axes, strides));
         }
 

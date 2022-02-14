@@ -113,15 +113,23 @@ namespace Nncase.TIR
                 if (expr is Block b && b.Name == blockName)
                 {
                     if (TargetBlock is null)
+                    {
                         TargetBlock = b;
+                    }
                     else
+                    {
                         throw new InvalidOperationException($"Find The Duplicate Block {blockName}!");
+                    }
                 }
             }
 
             var collector = new TIRCollector(collectBlock);
             collector.Visit(Entry);
-            if (TargetBlock is null) throw new InvalidOperationException($"Can't Find The Block Name {blockName}!");
+            if (TargetBlock is null)
+            {
+                throw new InvalidOperationException($"Can't Find The Block Name {blockName}!");
+            }
+
             return TargetBlock;
         }
 
@@ -163,7 +171,7 @@ namespace Nncase.TIR
             foreach (var i in Enumerable.Range(0, factors.Length))
             {
                 var loopVar = new Var(TensorType.Scalar(DataType.Int32));
-                substitute = substitute * factors[i] + loopVar;
+                substitute = (substitute * factors[i]) + loopVar;
                 newloopVars[i] = loopVar;
             }
 

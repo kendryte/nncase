@@ -26,7 +26,7 @@ public class UnitTestTypeInfer : IHostFixtrue
     public void TestInferBinary()
     {
         Var a = new Var(new TensorType(DataType.Float32, new[] { 1, 5, 1 }));
-        Const b = (Const)(new DenseTensor<float>(Enumerable.Repeat(1.0f, 15).ToArray(), new[] { 1, 5, 3 }));
+        var b = Tensor.FromScalar(1.0f, new[] { 1, 5, 3 });
         var c = a + b;
         var ctype = CompilerServices.InferenceType(c);
 
@@ -62,8 +62,7 @@ public class UnitTestTypeInfer : IHostFixtrue
         var s = Slice(input, begin, end, axis, stride);
         Assert.True(CompilerServices.InferenceType(s));
         var post = s.Evaluate();
-        Assert.True(post.InferenceType());
-        Assert.Equal(s.CheckedShape, post.CheckedShape);
+        Assert.Equal(s.CheckedShape, ((TensorType)post.Type).Shape);
     }
 
     [Fact]
@@ -76,8 +75,7 @@ public class UnitTestTypeInfer : IHostFixtrue
         var slice = Slice(new Shape(1, 7, 7, 768), begin, end, axes, stride);
         CompilerServices.InferenceType(slice);
         var post = slice.Evaluate();
-        Assert.True(post.InferenceType());
-        Assert.Equal(new Shape(2), post.CheckedShape);
+        Assert.Equal(new Shape(2), ((TensorType)post.Type).Shape);
     }
 
     [Fact]

@@ -19,7 +19,9 @@ namespace Nncase.Transform.Mutator
         public override Expr MutateLeaf(Block expr)
         {
             if (expr.IterVars.Count != 0)
+            {
                 throw new InvalidOperationException("Non-opaque blocks are not allowed in FlattenBuffer. Please call pass ConvertBlocksToOpaque before.");
+            }
 
             // 1. Visit the body
             var nbody = Visit(expr.Sequence);

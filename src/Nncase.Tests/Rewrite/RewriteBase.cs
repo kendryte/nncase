@@ -25,8 +25,8 @@ namespace Nncase.Tests.ReWriteTest
     {
         public static Call Conv2D(Expr input, int in_channels, int out_channels, int kernel = 3, int stride = 1)
         {
-            var weights = torch.rand(new long[] { (long)out_channels, (long)in_channels, (long)kernel, (long)kernel }).ToConst();
-            var bias = torch.rand(new long[] { (long)out_channels }).ToConst();
+            var weights = torch.rand(new long[] { (long)out_channels, (long)in_channels, (long)kernel, (long)kernel }).ToTensor();
+            var bias = torch.rand(new long[] { (long)out_channels }).ToTensor();
             return IR.F.NN.Conv2D(input, weights, bias, new[] { stride, stride }, Const.FromSpan<int>(new[] { 1, 1, 1, 1 }, new[] { 2, 2 }), new[] { 1, 1 }, PadMode.Constant, 1);
         }
     }
@@ -96,8 +96,8 @@ namespace Nncase.Tests.ReWriteTest
         {
             get
             {
-                var c = torch.rand(1, 2, 3, 4).ToConst();
-                var input = torch.rand(1, 3, 1, 2).ToConst();
+                var c = torch.rand(1, 2, 3, 4).ToTensor();
+                var input = torch.rand(1, 3, 1, 2).ToTensor();
                 var b = NHWCToNCHW(input) + c;
                 return b;
             }
@@ -115,7 +115,7 @@ namespace Nncase.Tests.ReWriteTest
         {
             get
             {
-                var input = torch.rand(1, 3, 1, 2).ToConst();
+                var input = torch.rand(1, 3, 1, 2).ToTensor();
                 var b = Reshape(input, (Const)new[] { 1, 1, 1, 6 });
                 var c = Reshape(input, (Const)new[] { 1, 1, 3, 2 });
                 return c;
@@ -132,7 +132,7 @@ namespace Nncase.Tests.ReWriteTest
         {
             get
             {
-                var input = torch.rand(1, 3, 1, 2).ToConst();
+                var input = torch.rand(1, 3, 1, 2).ToTensor();
                 var b = Reshape(input, (Const)new[] { 1, 3, 1, 2 });
                 return b;
             }
@@ -149,8 +149,8 @@ namespace Nncase.Tests.ReWriteTest
         {
             get
             {
-                var input = torch.rand(1, 3, 1, 2).ToConst();
-                var b = Clamp(input, Single.MinValue, Single.MaxValue);
+                var input = torch.rand(1, 3, 1, 2).ToTensor();
+                var b = Clamp(input, float.MinValue, float.MaxValue);
                 return b;
             }
         }
@@ -166,9 +166,9 @@ namespace Nncase.Tests.ReWriteTest
         {
             get
             {
-                var input = torch.rand(1, 3, 1, 2).ToConst();
+                var input = torch.rand(1, 3, 1, 2).ToTensor();
                 var b = NHWCToNCHW(input); // [1,2,3,1]
-                var d = NCHWToNHWC(b) * torch.rand(1, 3, 4, 2).ToConst();
+                var d = NCHWToNHWC(b) * torch.rand(1, 3, 4, 2).ToTensor();
                 var e = d + 100.0f;
                 return e;
             }
@@ -188,9 +188,9 @@ namespace Nncase.Tests.ReWriteTest
         {
             get
             {
-                var input = torch.rand(1, 3, 1, 2).ToConst();
+                var input = torch.rand(1, 3, 1, 2).ToTensor();
                 var b = Transpose(input, new[] { 0, 1, 2, 3 }); // [1,2,3,1]
-                var d = NCHWToNHWC(b) * torch.rand(1, 1, 2, 1).ToConst();
+                var d = NCHWToNHWC(b) * torch.rand(1, 1, 2, 1).ToTensor();
                 var e = d + 100.0f;
                 return e;
             }
@@ -206,10 +206,10 @@ namespace Nncase.Tests.ReWriteTest
         {
             get
             {
-                var input = torch.rand(1, 3, 1, 2).ToConst();
+                var input = torch.rand(1, 3, 1, 2).ToTensor();
                 var b = NHWCToNCHW(input);
-                var rhs = b + torch.rand(1, 2, 3, 4).ToConst();
-                var lhs = NCHWToNHWC(b) - torch.rand(1, 3, 1, 2).ToConst();
+                var rhs = b + torch.rand(1, 2, 3, 4).ToTensor();
+                var lhs = NCHWToNHWC(b) - torch.rand(1, 3, 1, 2).ToTensor();
                 var e = lhs + NCHWToNHWC(rhs);
                 return e;
             }
@@ -261,10 +261,10 @@ namespace Nncase.Tests.ReWriteTest
         {
             get
             {
-                var input = torch.rand(1, 28, 28, 3).ToConst();
+                var input = torch.rand(1, 28, 28, 3).ToTensor();
                 var conv1 = NCHWToNHWC(DummyOp.Conv2D(NHWCToNCHW(input), 3, out_channels: 8, 3, 2));
                 var lhs = NCHWToNHWC(DummyOp.Conv2D(NHWCToNCHW(conv1), 8, out_channels: 8, 3, 1));
-                var rhs = conv1 + torch.rand(new long[] { 1, 14, 14, 8 }).ToConst();
+                var rhs = conv1 + torch.rand(new long[] { 1, 14, 14, 8 }).ToTensor();
                 return lhs + rhs;
             }
         }

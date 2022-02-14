@@ -19,12 +19,12 @@ namespace Nncase.Evaluator.Tensors;
 public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Stack stack)
+    public IValue Visit(IEvaluateContext context, Stack stack)
     {
         var inputs = context.GetArgumentExpr(stack, Stack.Inputs);
         var axis = context.GetTorchArgumentValue(stack, Stack.Axis);
         var inputTensors = ((IR.Tuple)inputs).Select(x => context.GetTorchValue(x)).ToArray();
-        return torch.stack(inputTensors, axis.ToScalar().ToInt64()).ToConst();
+        return torch.stack(inputTensors, axis.ToScalar().ToInt64()).ToValue();
     }
 
     /// <inheritdoc/>
@@ -36,9 +36,9 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>
 
     private IRType Visit(ITypeInferenceContext context, Stack target, TupleType inputs)
     {
-        if (context.GetArgument(target, Stack.Axis) is Const axis_con)
+        if (context.GetArgument(target, Stack.Axis) is TensorConst axis_con)
         {
-            var axis_v = axis_con.ToScalar<int>();
+            var axis_v = axis_con.Value.ToScalar<int>();
             var ttypes = new TensorType[inputs.Count];
             foreach (var (i, input) in Enumerable.Range(0, inputs.Count).Zip(inputs))
             {

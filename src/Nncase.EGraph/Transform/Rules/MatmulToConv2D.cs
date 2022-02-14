@@ -40,8 +40,8 @@ namespace Nncase.Transform.Rule
             return Conv2D(
               if_reshape,
               w_reshape,
-              Const.FromShape(new[] { input_shape[1].FixedValue }, 0.0f),
-              new DenseTensor<int>(new[] { 0, 0, 0, 0 }, new[] { 2, 2 }),
+              Tensor.FromScalar(0.0f, input_shape[1].FixedValue),
+              Tensor.FromScalar(0, new[] { 2, 2 }),
               new int[] { 1, 1 },
               new int[] { 1, 1 },
               PadMode.Constant,

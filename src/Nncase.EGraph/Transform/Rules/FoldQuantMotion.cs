@@ -38,7 +38,10 @@ namespace Nncase.Transform.Rule
                 (_, _) => false,
             };
             if (check)
+            {
                 return input;
+            }
+
             return null;
         }
     }

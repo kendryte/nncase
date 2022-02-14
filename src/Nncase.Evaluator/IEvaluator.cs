@@ -21,7 +21,7 @@ public interface IEvaluator
     /// <param name="context">Context.</param>
     /// <param name="target">Target operator.</param>
     /// <returns>Result.</returns>
-    Const Visit(IEvaluateContext context, Op target);
+    IValue Visit(IEvaluateContext context, Op target);
 }
 
 /// <summary>
@@ -36,9 +36,9 @@ public interface IEvaluator<T> : IEvaluator
     /// <param name="context">Context.</param>
     /// <param name="target">Target operator.</param>
     /// <returns>Result.</returns>
-    Const Visit(IEvaluateContext context, T target);
+    IValue Visit(IEvaluateContext context, T target);
 
-    Const IEvaluator.Visit(IEvaluateContext context, Op target)
+    IValue IEvaluator.Visit(IEvaluateContext context, Op target)
     {
         return Visit(context, (T)target);
     }

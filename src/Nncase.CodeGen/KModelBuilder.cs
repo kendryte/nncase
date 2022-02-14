@@ -39,7 +39,7 @@ public class KModelSerializeResult : ISerializeResult
     /// the model size.
     /// </summary>
     public int ModelSize;
-    
+
     /// <summary>
     /// ctor.
     /// </summary>

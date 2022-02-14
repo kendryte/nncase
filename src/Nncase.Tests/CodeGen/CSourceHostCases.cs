@@ -118,8 +118,8 @@ namespace Nncase.Tests.CodeGenTest
         public override void CompareEqual(IRTModel rtmod)
         {
             int n = 10, m = 20;
-            var A1 = new DenseTensor<int>(new[] { n, m }).ToArray();
-            var A2 = new DenseTensor<int>(new[] { n, m }).ToArray();
+            var A1 = new Tensor<int>(new[] { n, m }).ToArray();
+            var A2 = new Tensor<int>(new[] { n, m }).ToArray();
             RefFunc(A1, n, m);
             rtmod.Invoke(A2, n, m);
             Assert.True(Enumerable.Range(0, n * m).All(i => A1[i] == A2[i]));

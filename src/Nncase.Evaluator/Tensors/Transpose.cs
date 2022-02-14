@@ -18,11 +18,11 @@ namespace Nncase.Evaluator.Tensors;
 public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpose>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Transpose tr)
+    public IValue Visit(IEvaluateContext context, Transpose tr)
     {
         var input = context.GetTorchArgumentValue(tr, Transpose.Input);
-        var perm = context.GetArgumentValue(tr, Transpose.Perm);
-        return input.permute(perm.ToTensor<long>().ToArray()).ToConst();
+        var perm = context.GetArgumentValueAsTensor<long>(tr, Transpose.Perm);
+        return input.permute(perm.ToArray()).ToValue();
     }
 
     /// <inheritdoc/>

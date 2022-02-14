@@ -62,7 +62,7 @@ public struct MemoryRange
     /// <summary>
     /// shared module.
     /// </summary>
-    public UInt16 SharedModule;
+    public ushort SharedModule;
 
     /// <summary>
     /// memory span start.

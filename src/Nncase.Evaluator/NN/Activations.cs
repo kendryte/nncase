@@ -29,11 +29,11 @@ public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>
 public class EluEvaluator : IEvaluator<Elu>, ITypeInferencer<Elu>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Elu elu)
+    public IValue Visit(IEvaluateContext context, Elu elu)
     {
         var input = context.GetTorchArgumentValue(elu, Elu.Input);
-        var alpha = context.GetArgumentValue(elu, Elu.Alpha).ToScalar<double>();
-        return torchF.elu(input, alpha).ToConst();
+        var alpha = context.GetArgumentValueAsScalar<double>(elu, Elu.Alpha);
+        return torchF.elu(input, alpha).ToValue();
     }
 
     /// <inheritdoc/>
@@ -55,10 +55,10 @@ public class EluEvaluator : IEvaluator<Elu>, ITypeInferencer<Elu>
 public class HardSwishEvaluator : IEvaluator<HardSwish>, ITypeInferencer<HardSwish>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, HardSwish hardSwish)
+    public IValue Visit(IEvaluateContext context, HardSwish hardSwish)
     {
         var input = context.GetTorchArgumentValue(hardSwish, HardSwish.Input);
-        return input.hardswish().ToConst();
+        return input.hardswish().ToValue();
     }
 
     /// <inheritdoc/>
@@ -80,10 +80,10 @@ public class HardSwishEvaluator : IEvaluator<HardSwish>, ITypeInferencer<HardSwi
 public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRelu>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, LeakyRelu leakyRelu)
+    public IValue Visit(IEvaluateContext context, LeakyRelu leakyRelu)
     {
         var input = context.GetTorchArgumentValue(leakyRelu, LeakyRelu.Input);
-        return input.leaky_relu(0.01).ToConst();
+        return input.leaky_relu(0.01).ToValue();
     }
 
     /// <inheritdoc/>
@@ -105,10 +105,10 @@ public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRe
 public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Relu relu)
+    public IValue Visit(IEvaluateContext context, Relu relu)
     {
         var input = context.GetTorchArgumentValue(relu, Relu.Input);
-        return input.relu().ToConst();
+        return input.relu().ToValue();
     }
 
     /// <inheritdoc/>
@@ -130,10 +130,10 @@ public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>
 public class SeluEvaluator : IEvaluator<Selu>, ITypeInferencer<Selu>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Selu selu)
+    public IValue Visit(IEvaluateContext context, Selu selu)
     {
         var input = context.GetTorchArgumentValue(selu, Selu.Input);
-        return input.selu().ToConst();
+        return input.selu().ToValue();
     }
 
     /// <inheritdoc/>
@@ -155,10 +155,10 @@ public class SeluEvaluator : IEvaluator<Selu>, ITypeInferencer<Selu>
 public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Sigmoid sigmoid)
+    public IValue Visit(IEvaluateContext context, Sigmoid sigmoid)
     {
         var input = context.GetTorchArgumentValue(sigmoid, Sigmoid.Input);
-        return input.sigmoid().ToConst();
+        return input.sigmoid().ToValue();
     }
 
     /// <inheritdoc/>

@@ -18,7 +18,7 @@ namespace Nncase.Evaluator.Tensors;
 public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Slice sl)
+    public IValue Visit(IEvaluateContext context, Slice sl)
     {
         var input = context.GetTorchArgumentValue(sl, Slice.Input);
         var begins = context.GetTorchArgumentValue(sl, Slice.Begins);
@@ -35,7 +35,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>
                     GetItem(strides, axesIndex++)) :
                 torch.TensorIndex.Slice()
         ).ToArray();
-        return input[indices].ToConst();
+        return input[indices].ToValue();
     }
 
     /// <inheritdoc/>
@@ -57,18 +57,18 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>
 
     private IRType Visit(ITypeInferenceContext context, Slice target, TensorType input)
     {
-        if (context.GetArgument(target, Slice.Begins) is Const begins_con &&
-            context.GetArgument(target, Slice.Ends) is Const ends_con &&
-            context.GetArgument(target, Slice.Axes) is Const axes_con &&
-            context.GetArgument(target, Slice.Strides) is Const strides_con)
+        if (context.GetArgument(target, Slice.Begins) is TensorConst begins_con &&
+            context.GetArgument(target, Slice.Ends) is TensorConst ends_con &&
+            context.GetArgument(target, Slice.Axes) is TensorConst axes_con &&
+            context.GetArgument(target, Slice.Strides) is TensorConst strides_con)
         {
             var outShape = new List<Dimension>();
-            var ts_begins = begins_con.ToTensor<int>();
-            var ts_ends = ends_con.ToTensor<int>();
-            var ts_strides = strides_con.ToTensor<int>();
+            var ts_begins = begins_con.Value.Cast<int>();
+            var ts_ends = ends_con.Value.Cast<int>();
+            var ts_strides = strides_con.Value.Cast<int>();
 
             // foreach (var axisV in axes_con.ToTensor<int>())
-            var axesTensor = axes_con.ToTensor<int>();
+            var axesTensor = axes_con.Value.Cast<int>();
             for (int i = 0; i < axesTensor.Length; i++)
             {
                 var axisV = axesTensor[i];

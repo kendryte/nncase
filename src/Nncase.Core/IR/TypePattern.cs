@@ -28,7 +28,10 @@ namespace Nncase.IR
         public T Check<T>(T? ValueType) where T : IRType
         {
             if (ValueType == null || !MatchLeaf(ValueType))
+            {
                 throw new InvalidOperationException($"Requrie <{Reason}>, But {ValueType}!");
+            }
+
             return ValueType;
         }
 
@@ -235,7 +238,7 @@ namespace Nncase.IR
         /// <returns></returns>
         public static int GetWindowedOutputSize(int size, int filter, int stride, int dilation, bool same, bool ceilMode = false)
         {
-            var effective_filter_size = (filter - 1) * dilation + 1;
+            var effective_filter_size = ((filter - 1) * dilation) + 1;
             if (same)
             {
                 return (size + stride - 1) / stride;

@@ -13,12 +13,12 @@ namespace Nncase.Evaluator.Tensors;
 public class ProdEvaluator : IEvaluator<Prod>, ITypeInferencer<Prod>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Prod prod)
+    public IValue Visit(IEvaluateContext context, Prod prod)
     {
         var input = context.GetTorchArgumentValue(prod, Prod.Input);
         var size = input.shape.Aggregate(1L, (sum, v) => sum * v);
         var v = input.reshape(size).cumprod(0)[size - 1];
-        return v.ToConst();
+        return v.ToValue();
     }
 
     /// <inheritdoc/>

@@ -84,6 +84,29 @@ namespace Nncase.IR
         /// init from the dimensions
         /// </summary>
         /// <param name="dimensions"></param>
+        /// Initializes a new instance of the <see cref="Shape"/> class.
+        /// </summary>
+        /// <param name="dimensions">Dimensions.</param>
+        public Shape(int[] dimensions)
+            : this((IEnumerable<int>)dimensions)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Shape"/> class.
+        /// </summary>
+        /// <param name="dimensions">Dimensions.</param>
+        public Shape(ReadOnlySpan<int> dimensions)
+        {
+            Kind = ShapeKind.Fixed;
+            _dimensions = ImmutableArray.Create(dimensions.AsValueEnumerable().Select(x => new Dimension(x)).ToArray());
+            _hashcode = HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions));
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Shape"/> class.
+        /// </summary>
+        /// <param name="dimensions">Dimensions.</param>
         public Shape(params Dimension[] dimensions)
             : this(dimensions.AsValueEnumerable())
         { }
@@ -285,8 +308,7 @@ namespace Nncase.IR
 
         /// <inheritdoc/>
         public static implicit operator Shape(Dimension[] dimensions) => new Shape(dimensions);
-        
-        /// <inheritdoc/>
-        public static implicit operator Shape(int[] dimensions) => new Shape(dimensions);
+
+        public static implicit operator Shape(int[] dimensions) => new Shape(dimensions.AsSpan());
     }
 }

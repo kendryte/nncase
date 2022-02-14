@@ -19,12 +19,12 @@ namespace Nncase.Evaluator.NN;
 public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, OneHot oneHot)
+    public IValue Visit(IEvaluateContext context, OneHot oneHot)
     {
         var depth = context.GetArgumentValueAsScalar<int>(oneHot, OneHot.Depth);
-        var rawIndices = context.GetTFArgumentValue(oneHot, OneHot.Indices);
-        var afterIndices = rawIndices.ToConst().ToArray<int>().Select(x => x < 0 ? x + depth : x).ToArray();
-        var indices = new NDArray(afterIndices, rawIndices.shape);
+        var rawIndices = context.GetArgumentValueAsTensor<int>(oneHot, OneHot.Indices);
+        var afterIndices = rawIndices.Select(x => x < 0 ? x + depth : x).ToArray();
+        var indices = new NDArray(afterIndices, rawIndices.Dimensions.ToArray());
         var onValue = context.GetTFArgumentValue(oneHot, OneHot.OnValue);
         var offValue = context.GetTFArgumentValue(oneHot, OneHot.OffValue);
         var axis = context.GetArgumentValueAsScalar<int>(oneHot, OneHot.Axis);
@@ -34,7 +34,7 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>
             onValue,
             offValue,
             TF_DataType.TF_FLOAT,
-            axis).ToConst();
+            axis);
     }
 
     /// <inheritdoc/>
@@ -45,11 +45,11 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>
         return Visit(context, target, indices, onValue);
     }
 
-    private static Tensor TF_OneHot(
-        Tensor indices,
-        Tensor depth,
-        Tensor on_value,
-        Tensor off_value,
+    private static IValue TF_OneHot(
+        Tensorflow.Tensor indices,
+        Tensorflow.Tensor depth,
+        Tensorflow.Tensor on_value,
+        Tensorflow.Tensor off_value,
         TF_DataType dtype = TF_DataType.DtInvalid,
         int axis = -1,
         string name = "")
@@ -75,16 +75,16 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>
                 off_value = ops.convert_to_tensor(off_value, dtype, name = nameof(off_value));
                 tfDataType2 = dtype;
                 return gen_array_ops.one_hot(indices, depth, on_value, off_value, axis: axis, name: name);
-            });
+            }).ToValue();
     }
 
     private IRType Visit(ITypeInferenceContext context, OneHot target, TensorType indices, TensorType onValue)
     {
         // indices_shape[:axis] + [depth] + indices_shape[axis:]
-        if (context.GetArgument(target, OneHot.Axis) is Const axisValue
-            && context.GetArgument(target, OneHot.Depth) is Const depthValue)
+        if (context.GetArgument(target, OneHot.Axis) is TensorConst axisValue
+            && context.GetArgument(target, OneHot.Depth) is TensorConst depthValue)
         {
-            var newShape = indices.Shape.InsertAndClone(axisValue.ToScalar<int>(), depthValue.ToScalar<int>());
+            var newShape = indices.Shape.InsertAndClone(axisValue.Value.ToScalar<int>(), depthValue.Value.ToScalar<int>());
             return new TensorType(onValue.DType, newShape);
         }
 

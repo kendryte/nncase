@@ -18,7 +18,7 @@ public interface IEvaluateProvider
     /// <param name="expr">Expression.</param>
     /// <param name="varsValues">Optional vars' values.</param>
     /// <returns>Evaluate result.</returns>
-    Const Evaluate(Expr expr, IReadOnlyDictionary<Var, Const>? varsValues = null);
+    IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null);
 
     /// <summary>
     /// Evaluate operator.
@@ -26,5 +26,5 @@ public interface IEvaluateProvider
     /// <param name="op">Target operator.</param>
     /// <param name="context">Evaluate context.</param>
     /// <returns>Evaluate result.</returns>
-    Const EvaluateOp(Op op, IEvaluateContext context);
+    IValue EvaluateOp(Op op, IEvaluateContext context);
 }

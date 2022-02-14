@@ -15,12 +15,12 @@ namespace Nncase.Evaluator.Tensors;
 public class GatherNDEvaluator : IEvaluator<GatherND>, ITypeInferencer<GatherND>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, GatherND gatherND)
+    public IValue Visit(IEvaluateContext context, GatherND gatherND)
     {
         var input = context.GetTFArgumentValue(gatherND, GatherND.Input);
         var indices = context.GetTFArgumentValue(gatherND, GatherND.Index);
         var batchDims = context.GetTFArgumentValue(gatherND, GatherND.BatchDims);
-        return GatherNDImpl(input, indices, batchDims).ToConst();
+        return GatherNDImpl(input, indices, batchDims).ToValue();
     }
 
     /// <inheritdoc/>
@@ -34,7 +34,7 @@ public class GatherNDEvaluator : IEvaluator<GatherND>, ITypeInferencer<GatherND>
 
     private IRType Visit(ITypeInferenceContext context, GatherND target, TensorType input, TensorType batchDims, TensorType index)
     {
-        if (context.GetArgument(target, GatherND.BatchDims) is Const batchDimsValue)
+        if (context.GetArgument(target, GatherND.BatchDims) is TensorConst batchDimsValue)
         {
             var lastIndexDims = index.Shape.Last();
             if (!lastIndexDims.IsFixed)
@@ -44,7 +44,7 @@ public class GatherNDEvaluator : IEvaluator<GatherND>, ITypeInferencer<GatherND>
 
             // result shape = index_shape[:-1] + input_shape[index_shape[-1] + batch_dims:]
             var dimensions = index.Shape.ToArray()[..(index.Shape.Rank - 1)];
-            var d = lastIndexDims.FixedValue + batchDimsValue.ToScalar<int>();
+            var d = lastIndexDims.FixedValue + batchDimsValue.Value.ToScalar<int>();
             var shapeValue = dimensions.Concat(input.Shape.ToArray()[d..]);
             return new TensorType(input.DType, new IR.Shape(shapeValue));
         }
@@ -54,7 +54,7 @@ public class GatherNDEvaluator : IEvaluator<GatherND>, ITypeInferencer<GatherND>
         }
     }
 
-    private Tensor GatherNDImpl(Tensor input, Tensor indices, Tensor batchDims)
+    private Tensorflow.Tensor GatherNDImpl(Tensorflow.Tensor input, Tensorflow.Tensor indices, Tensorflow.Tensor batchDims)
     {
         return tf.Context.ExecuteOp(
             "GatherNd",

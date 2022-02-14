@@ -37,7 +37,7 @@ namespace Nncase.Transform.Rule
     public class FoldNopReshape : PatternRule
     {
         WildCardPattern wcin = "input";
-        ConstPattern wcshape = IsConst(IsTensor() & IsIntegral());
+        TensorConstPattern wcshape = IsTensorConst(IsIntegral());
 
         public FoldNopReshape()
         {
@@ -47,17 +47,21 @@ namespace Nncase.Transform.Rule
         public override Expr? GetRePlace(IMatchResult result)
         {
             var input = result[wcin];
-            var shape = result[wcshape].ToTensor<int>();
+            var shape = result[wcshape].Value.Cast<int>();
             var type = input.CheckedType;
             if (type is TensorType ttype)
             {
                 if (!ttype.Shape.IsFixed)
+                {
                     return null;
+                }
 
                 // ttype.Shape
-                var targetShape = new Shape(shape.ToArray());
+                var targetShape = new Shape(shape);
                 if (ttype.Shape == targetShape)
+                {
                     return input;
+                }
             }
 
             return null;

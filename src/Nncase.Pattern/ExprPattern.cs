@@ -34,7 +34,7 @@ namespace Nncase.Pattern
         public static implicit operator ExprPattern(Expr expr) => expr switch
         {
             (Var var) => new VarPattern(var),
-            (Const con) => new ConstPattern(con),
+            (TensorConst con) => new TensorConstPattern(con),
             (Function function) => new FunctionPattern(function),
             (Call call) => new CallPattern(call),
             (IR.Tuple tuple) => new TuplePattern(tuple),
@@ -68,6 +68,7 @@ namespace Nncase.Pattern
         public virtual bool MatchLeaf(Expr expr) => (this, expr) switch
         {
             (VarPattern varPat, Var var) => varPat.MatchLeaf(var),
+            (TensorConstPattern conPat, TensorConst con) => conPat.MatchLeaf(con),
             (ConstPattern conPat, Const con) => conPat.MatchLeaf(con),
             (FunctionPattern functionPat, Function function) => functionPat.MatchLeaf(function),
             (CallPattern callPat, Call call) => callPat.MatchLeaf(call),

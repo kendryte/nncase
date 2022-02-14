@@ -18,11 +18,11 @@ namespace Nncase.Evaluator.Tensors;
 public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, ShapeOf shape)
+    public IValue Visit(IEvaluateContext context, ShapeOf shape)
     {
         var input = context.GetTorchArgumentValue(shape, ShapeOf.Input);
         var dtype = context.CurrentCall.CheckedDataType.ToTorchType();
-        return ((torch.Tensor)input.shape).to_type(dtype).ToConst();
+        return ((torch.Tensor)input.shape).to_type(dtype).ToValue();
     }
 
     /// <inheritdoc/>

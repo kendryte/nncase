@@ -33,7 +33,7 @@ public interface IEvaluateContext
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <returns>The value.</returns>
-    Const GetValue(Expr expr);
+    IValue GetValue(Expr expr);
 
     /// <summary>
     /// Get argument value.
@@ -41,12 +41,12 @@ public interface IEvaluateContext
     /// <param name="op">Operator.</param>
     /// <param name="parameter">Parameter.</param>
     /// <returns>The argument value.</returns>
-    public Const GetArgumentValue(Op op, ParameterInfo parameter)
+    public IValue GetArgumentValue(Op op, ParameterInfo parameter)
     {
         var expr = GetArgumentExpr(op, parameter);
         if (expr is Const constValue)
         {
-            return constValue;
+            return Value.FromConst(constValue);
         }
         else
         {
@@ -62,10 +62,23 @@ public interface IEvaluateContext
     /// <param name="op">Operator.</param>
     /// <param name="parameter">Parameter.</param>
     /// <returns>The argument value.</returns>
-    public T GetArgumentValueAsScalar<T>(Op op, ParameterInfo parameter)
-        where T : unmanaged
+    public Tensor<T> GetArgumentValueAsTensor<T>(Op op, ParameterInfo parameter)
+        where T : unmanaged, IEquatable<T>
     {
-        return GetArgumentValue(op, parameter).ToScalar<T>();
+        return GetArgumentValue(op, parameter).AsTensor().Cast<T>();
+    }
+
+    /// <summary>
+    /// Get argument value as scalar.
+    /// </summary>
+    /// <typeparam name="T">Scalar type.</typeparam>
+    /// <param name="op">Operator.</param>
+    /// <param name="parameter">Parameter.</param>
+    /// <returns>The argument value.</returns>
+    public T GetArgumentValueAsScalar<T>(Op op, ParameterInfo parameter)
+        where T : unmanaged, IEquatable<T>
+    {
+        return GetArgumentValue(op, parameter).AsTensor().ToScalar<T>();
     }
 
     /// <summary>
@@ -76,8 +89,8 @@ public interface IEvaluateContext
     /// <param name="parameter">Parameter.</param>
     /// <returns>The argument value.</returns>
     public T[] GetArgumentValueAsArray<T>(Op op, ParameterInfo parameter)
-        where T : unmanaged
+        where T : unmanaged, IEquatable<T>
     {
-        return GetArgumentValue(op, parameter).ToArray<T>();
+        return GetArgumentValue(op, parameter).AsTensor().ToArray<T>();
     }
 }

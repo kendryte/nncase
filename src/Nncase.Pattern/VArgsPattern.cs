@@ -149,7 +149,9 @@ namespace Nncase.Pattern
           => new RepeatVArgsPattern(SetUp, (matched, paramPatterns) =>
           {
               if (!matched)
+              {
                   paramPatterns.Clear();
+              }
           });
 
         /// <summary>

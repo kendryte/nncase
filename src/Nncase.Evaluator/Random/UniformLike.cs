@@ -14,7 +14,7 @@ namespace Nncase.Evaluator.Random;
 public class UniformLikeEvaluator : IEvaluator<UniformLike>, ITypeInferencer<UniformLike>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, UniformLike random)
+    public IValue Visit(IEvaluateContext context, UniformLike random)
     {
         throw new NotImplementedException();
     }

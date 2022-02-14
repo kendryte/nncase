@@ -21,8 +21,8 @@ namespace Nncase.Transform.Rule
     public class FoldNopClamp : PatternRule
     {
         WildCardPattern wcin = "input";
-        ConstPattern wcmin = IsConst(IsScalar());
-        ConstPattern wcmax = IsConst(IsScalar());
+        TensorConstPattern wcmin = IsTensorConst(IsScalar());
+        TensorConstPattern wcmax = IsTensorConst(IsScalar());
 
         public FoldNopClamp()
         {
@@ -33,8 +33,8 @@ namespace Nncase.Transform.Rule
         {
             var input = result[wcin];
             var (min, max) = result[wcmin, wcmax];
-            if (min.ToScalar<float>() == Single.MinValue &&
-                max.ToScalar<float>() == Single.MaxValue)
+            if (min.Value.ToScalar<float>() == float.MinValue &&
+                max.Value.ToScalar<float>() == float.MaxValue)
             {
                 return input;
             }

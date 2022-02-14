@@ -18,21 +18,35 @@ namespace Nncase.Evaluator;
 /// </summary>
 public static class TensorflowExtension
 {
-    public static Const ToConst(this Tensor tensor)
+    /// <summary>
+    /// Convert <see cref="Tensorflow.Tensor"/> to <see cref="Tensor"/>.
+    /// </summary>
+    /// <param name="tensor">Tensorflow tensor.</param>
+    /// <returns>Converted tensor.</returns>
+    public static Tensor ToTensor(this Tensorflow.Tensor tensor)
     {
-        return new Const(
-            new TensorType(ToDataType(tensor.dtype), tensor.shape.as_int_list()),
-
-            // todo:this is copy
-            tensor.BufferToArray());
+        // TODO: Copy-free
+        return Tensor.FromBytes(ToDataType(tensor.dtype), tensor.BufferToArray(), tensor.shape.as_int_list());
     }
 
-    public static NDArray ToTFTensor(this Const tensor)
+    /// <summary>
+    /// Convert <see cref="Tensorflow.Tensor"/> to <see cref="TensorValue"/>.
+    /// </summary>
+    /// <param name="tensor">Tensorflow tensor.</param>
+    /// <returns>Converted value.</returns>
+    public static TensorValue ToValue(this Tensorflow.Tensor tensor)
     {
-        var span = new Span<byte>(tensor.Data.Data());
-        var dt = tensor.CheckedDataType.ToTFType();
-        var shape = new Shape(tensor.CheckedShape.ToValueArray());
-        return new NDArray(tensor.Data.Data(), shape, dt);
+        return tensor.ToTensor();
+    }
+
+    /// <summary>
+    /// Convert <see cref="Tensor"/> to <see cref="Tensorflow.Tensor"/>.
+    /// </summary>
+    /// <param name="tensor">Tensor.</param>
+    /// <returns>Converted torch tensor.</returns>
+    public static NDArray ToTFTensor(this Tensor tensor)
+    {
+        return new NDArray(tensor.BytesBuffer.ToArray(), tensor.Dimensions.ToArray(), tensor.ElementType.ToTFType());
     }
 
     private static readonly Dictionary<DataType, TF_DataType> _dataTypesToTorchType = new()

@@ -93,17 +93,40 @@ namespace Nncase.IR
         /// <param name="value">Value.</param>
         public static implicit operator Expr(bool value) => (Const)value;
 
+        /// <summary>
+        /// Create <see cref="Expr"/> from a <see cref="Shape"/>.
+        /// </summary>
+        /// <param name="shape">Shape.</param>
         public static implicit operator Expr(Shape shape) => Const.FromShape(shape);
 
-        public static implicit operator Expr(int[] span) => Const.FromSpan<int>(span);
-        public static implicit operator Expr(float[] span) => Const.FromSpan<float>(span);
+        /// <summary>
+        /// Create <see cref="Expr"/> from an array of<see cref="int"/>.
+        /// </summary>
+        /// <param name="array">Array.</param>
+        public static implicit operator Expr(int[] array) => Const.FromSpan<int>(array);
 
+        /// <summary>
+        /// Create <see cref="Expr"/> from an array of<see cref="float"/>.
+        /// </summary>
+        /// <param name="array">Array.</param>
+        public static implicit operator Expr(float[] array) => Const.FromSpan<float>(array);
+
+        /// <summary>
+        /// Create <see cref="Expr"/> from a span of<see cref="int"/>.
+        /// </summary>
+        /// <param name="span">Span.</param>
         public static implicit operator Expr(ReadOnlySpan<int> span) => Const.FromSpan<int>(span);
 
+        /// <summary>
+        /// Create <see cref="Expr"/> from a span of<see cref="float"/>.
+        /// </summary>
+        /// <param name="span">Span.</param>
         public static implicit operator Expr(ReadOnlySpan<float> span) => Const.FromSpan<float>(span);
 
-        public static implicit operator Expr(DenseTensor<int> tensor) => Const.FromTensor<int>(tensor);
-
-        public static implicit operator Expr(DenseTensor<float> tensor) => Const.FromTensor<float>(tensor);
+        /// <summary>
+        /// Create <see cref="Expr"/> from a <see cref="Tensor"/>.
+        /// </summary>
+        /// <param name="tensor">Tensor.</param>
+        public static implicit operator Expr(Tensor tensor) => Const.FromTensor(tensor);
     }
 }

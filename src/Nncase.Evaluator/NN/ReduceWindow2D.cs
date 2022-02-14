@@ -16,7 +16,7 @@ namespace Nncase.Evaluator.NN;
 public class ReduceWindow2DEvaluator : IEvaluator<ReduceWindow2D>, ITypeInferencer<ReduceWindow2D>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, ReduceWindow2D r)
+    public IValue Visit(IEvaluateContext context, ReduceWindow2D r)
     {
         var input = context.GetTorchArgumentValue(r, ReduceWindow2D.Input);
         var kernelSize = context.GetArgumentValueAsArray<long>(r, ReduceWindow2D.Filter);
@@ -32,7 +32,7 @@ public class ReduceWindow2DEvaluator : IEvaluator<ReduceWindow2D>, ITypeInferenc
             ReduceOp.Mean => torchF.avg_pool2d(afterPad, kernelSize, stride, zeroPadding, ceilMode, countIncludePad),
             ReduceOp.Max => torchF.max_pool2d(afterPad, kernelSize, stride, zeroPadding, new[] { 1L, 1 }, ceilMode),
             _ => throw new ArgumentOutOfRangeException(nameof(r.ReduceOp)),
-        }).ToConst();
+        }).ToValue();
     }
 
     /// <inheritdoc/>

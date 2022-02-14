@@ -17,11 +17,11 @@ namespace Nncase.Evaluator.Tensors;
 public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Reshape reshape)
+    public IValue Visit(IEvaluateContext context, Reshape reshape)
     {
         var input = context.GetTorchArgumentValue(reshape, Reshape.Input);
-        var shape = context.GetArgumentValue(reshape, Reshape.Shape).ToArray<long>();
-        return input.reshape(shape).ToConst();
+        var shape = context.GetArgumentValueAsTensor<long>(reshape, Reshape.Shape).ToArray<long>();
+        return input.reshape(shape).ToValue();
     }
 
     /// <inheritdoc/>
@@ -33,9 +33,9 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>
 
     private IRType Visit(ITypeInferenceContext context, Reshape target, TensorType input)
     {
-        if (context.GetArgument(target, Reshape.Shape) is Const shape_con)
+        if (context.GetArgument(target, Reshape.Shape) is TensorConst shape_con)
         {
-            return input with { Shape = new Shape(shape_con.ToTensor<int>()) };
+            return input with { Shape = new Shape(shape_con.Value.Cast<int>()) };
         }
 
         return input with { Shape = Shape.Unranked };

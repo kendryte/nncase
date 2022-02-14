@@ -174,7 +174,11 @@ namespace Nncase
 
             // Setp 1. find the targets/Nncase.Target.xxx Bin directory
             var target = FindFromProject(target_type, dll_name);
-            if (target is not null) return target;
+            if (target is not null)
+            {
+                return target;
+            }
+
             throw new InvalidProgramException($"Can't Find The Target {target_type}!");
         }
     }

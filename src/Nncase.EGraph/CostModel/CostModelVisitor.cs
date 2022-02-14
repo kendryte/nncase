@@ -37,11 +37,11 @@ namespace Nncase.CostModel
             }
         }
 
-        public virtual Const GetArgumentConst(Op op, ParameterInfo parameter)
+        public virtual IValue GetArgumentValue(Op op, ParameterInfo parameter)
         {
             if (GetArgument(op, parameter) is Const constValue)
             {
-                return constValue;
+                return Value.FromConst(constValue);
             }
             else
             {

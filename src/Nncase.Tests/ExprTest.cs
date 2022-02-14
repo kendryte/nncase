@@ -151,9 +151,9 @@ namespace Nncase.Tests
         [Fact]
         public void TestDenseTenorEqual()
         {
-            var t = new DenseTensor<int>(new[] { 1, 2, 3, 4 });
-            var con = Const.FromTensor<int>(t);
-            var con1 = Const.FromTensor<int>(t);
+            var t = new Tensor<int>(new[] { 1, 2, 3, 4 });
+            var con = Const.FromTensor(t);
+            var con1 = Const.FromTensor(t);
             Assert.Equal(con, con1);
         }
 
@@ -161,25 +161,25 @@ namespace Nncase.Tests
         public void TestConstToDenseTenor()
         {
             var con = Const.FromSpan<int>(new[] { 1, 2, 3, 4, 5 }, new[] { 5 });
-            var t = con.ToTensor<int>();
+            var t = con.Value.Cast<int>();
             Assert.Equal(1, t[0]);
             Assert.Equal(2, t[1]);
             Assert.Equal(3, t[2]);
             Assert.Equal(4, t[3]);
             Assert.Equal(5, t[4]);
-            var t2 = con.ToTensor<long>();
+            var t2 = con.Value.Cast<long>();
             Assert.Equal(1, t2[0]);
             Assert.Equal(2, t2[1]);
             Assert.Equal(3, t2[2]);
             Assert.Equal(4, t2[3]);
             Assert.Equal(5, t2[4]);
-            var t3 = con.ToTensor<byte>();
+            var t3 = con.Value.Cast<byte>();
             Assert.Equal(1, t2[0]);
             Assert.Equal(2, t2[1]);
             Assert.Equal(3, t2[2]);
             Assert.Equal(4, t2[3]);
             Assert.Equal(5, t2[4]);
-            var t4 = con.ToTensor<float>();
+            var t4 = con.Value.Cast<float>();
             Assert.Equal(1.0f, t2[0]);
             Assert.Equal(2.0f, t2[1]);
             Assert.Equal(3.0f, t2[2]);

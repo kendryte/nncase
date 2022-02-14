@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Math;
 public class DequantizeEvaluator : IEvaluator<Dequantize>, ITypeInferencer<Dequantize>
 {
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Dequantize target)
+    public IValue Visit(IEvaluateContext context, Dequantize target)
     {
         throw new NotImplementedException();
     }

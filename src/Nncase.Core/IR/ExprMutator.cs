@@ -25,7 +25,11 @@ namespace Nncase.IR
         {
             var nexpr = MutateLeaf(expr);
             if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
-            if (!IsMutated) return expr;
+            if (!IsMutated)
+            {
+                return expr;
+            }
+
             return expr with
             {
                 Target = Visit(expr.Target),
@@ -38,7 +42,11 @@ namespace Nncase.IR
         {
             var nexpr = MutateLeaf(expr);
             if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
-            if (!IsMutated) return expr;
+            if (!IsMutated)
+            {
+                return expr;
+            }
+
             return expr;
         }
 
@@ -47,7 +55,11 @@ namespace Nncase.IR
         {
             var nexpr = MutateLeaf(expr);
             if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
-            if (!IsMutated) return expr;
+            if (!IsMutated)
+            {
+                return expr;
+            }
+
             return expr with
             {
                 Body = Visit(expr.Body),
@@ -60,7 +72,11 @@ namespace Nncase.IR
         {
             var nexpr = MutateLeaf(expr);
             if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
-            if (!IsMutated) return expr;
+            if (!IsMutated)
+            {
+                return expr;
+            }
+
             return expr;
         }
 
@@ -69,7 +85,11 @@ namespace Nncase.IR
         {
             var nexpr = MutateLeaf(expr);
             if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
-            if (!IsMutated) return expr;
+            if (!IsMutated)
+            {
+                return expr;
+            }
+
             return expr with
             {
                 Fields = new(expr.Fields.Select(Visit)),
@@ -81,7 +101,11 @@ namespace Nncase.IR
         {
             var nexpr = MutateLeaf(expr);
             if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
-            if (!IsMutated) return expr;
+            if (!IsMutated)
+            {
+                return expr;
+            }
+
             return expr;
         }
 
@@ -90,7 +114,11 @@ namespace Nncase.IR
         {
             var nexpr = MutateLeaf(expr);
             if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
-            if (!IsMutated) return expr;
+            if (!IsMutated)
+            {
+                return expr;
+            }
+
             return expr with
             {
                 Dom = MutateLeaf(expr.Dom),
@@ -103,7 +131,11 @@ namespace Nncase.IR
         {
             var nexpr = MutateLeaf(expr);
             if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
-            if (!IsMutated) return expr;
+            if (!IsMutated)
+            {
+                return expr;
+            }
+
             return expr with
             {
                 Fields = MutateArray(expr.Fields, Visit),
@@ -115,7 +147,11 @@ namespace Nncase.IR
         {
             var nexpr = MutateLeaf(expr);
             if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
-            if (!IsMutated) return expr;
+            if (!IsMutated)
+            {
+                return expr;
+            }
+
             return expr with
             {
                 LoopVar = (Var)Visit(expr.LoopVar),
@@ -128,7 +164,11 @@ namespace Nncase.IR
         {
             var nexpr = MutateLeaf(expr);
             if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
-            if (!IsMutated) return expr;
+            if (!IsMutated)
+            {
+                return expr;
+            }
+
             return expr with
             {
                 // the block realize 
@@ -148,7 +188,11 @@ namespace Nncase.IR
         {
             var nexpr = MutateLeaf(expr);
             if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
-            if (!IsMutated) return expr;
+            if (!IsMutated)
+            {
+                return expr;
+            }
+
             return expr with
             {
                 Value = Visit(expr.Value),
@@ -161,7 +205,11 @@ namespace Nncase.IR
         {
             var nexpr = MutateLeaf(expr);
             if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
-            if (!IsMutated) return expr;
+            if (!IsMutated)
+            {
+                return expr;
+            }
+
             return expr with
             {
                 Indices = MutateArray(expr.Indices, Visit),
@@ -292,7 +340,11 @@ namespace Nncase.IR
         /// <returns></returns>
         public virtual TIR.Range MutateLeaf(TIR.Range range)
         {
-            if (!IsMutated) return range;
+            if (!IsMutated)
+            {
+                return range;
+            }
+
             return range with
             {
                 Min = Visit(range.Min),
@@ -307,7 +359,11 @@ namespace Nncase.IR
         /// <returns></returns>
         public virtual TIR.BufferRegion MutateLeaf(TIR.BufferRegion region)
         {
-            if (!IsMutated) return region;
+            if (!IsMutated)
+            {
+                return region;
+            }
+
             return region with
             {
                 Region = MutateArray(region.Region, MutateLeaf),

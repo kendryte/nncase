@@ -35,9 +35,9 @@ namespace Nncase.Transform.Rule
             pad.Bind(result);
             quant.Bind(result);
 
-            var old_padv = pad.Value<Const>().ToScalar<float>();
-            var zero_point = quant.ZeroPoint<Const>().ToScalar<int>();
-            var scale = quant.Scale<Const>().ToScalar<float>();
+            var old_padv = pad.Value<TensorConst>().Value.ToScalar<float>();
+            var zero_point = quant.ZeroPoint<TensorConst>().Value.ToScalar<int>();
+            var scale = quant.Scale<TensorConst>().Value.ToScalar<float>();
             var new_padv = Math.Clamp((int)Math.Round((old_padv - zero_point) * scale), 0, 255);
             return Pad(Quantize(pad.Input(), quant.ZeroPoint(), quant.Scale(), quant.TargetType), pad.Pads(), pad.PadMode, new_padv);
         }
