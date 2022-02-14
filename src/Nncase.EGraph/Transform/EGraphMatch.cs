@@ -111,6 +111,8 @@ namespace Nncase.Transform
             return (false, env);
         }
 
+        public (bool, EContextEnv) MatchENode(TensorConstPattern pattern, ENode enode, EContextEnv env) => (pattern.MatchLeaf((TensorConst)enode.Expr), env);
+
         public (bool, EContextEnv) MatchENode(ConstPattern pattern, ENode enode, EContextEnv env) => (pattern.MatchLeaf((Const)enode.Expr), env);
 
         public (bool, EContextEnv) MatchENode(FunctionPattern pattern, ENode enode, EContextEnv env)
@@ -188,6 +190,7 @@ namespace Nncase.Transform
             var (match, new_env) = (pattern, enode.Expr) switch
             {
                 (VarPattern varPat, Var) => MatchENode(varPat, enode, env),
+                (TensorConstPattern conPat, TensorConst) => MatchENode(conPat, enode, env),
                 (ConstPattern conPat, Const) => MatchENode(conPat, enode, env),
                 (FunctionPattern functionPat, Function) => MatchENode(functionPat, enode, env),
                 (CallPattern callPat, Call) => MatchENode(callPat, enode, env),
