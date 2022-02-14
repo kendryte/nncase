@@ -6,6 +6,29 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Nncase.SourceGenerator;
 
+internal class EvalCandidate
+{
+    public ClassDeclarationSyntax classDecl;
+    public MethodDeclarationSyntax methodDecl;
+    public string OpTypeName;
+    public string OpParamIdentifier;
+
+    public EvalCandidate(ClassDeclarationSyntax class_decl, MethodDeclarationSyntax method_decl)
+    {
+        classDecl = class_decl;
+        methodDecl = method_decl;
+        OpTypeName = "";
+        OpParamIdentifier = "";
+    }
+
+    public EvalCandidate(ClassDeclarationSyntax class_decl, MethodDeclarationSyntax method_decl, string op_name, string op_param_name)
+    {
+        classDecl = class_decl;
+        methodDecl = method_decl;
+        OpTypeName = op_name;
+        OpParamIdentifier = op_param_name;
+    }
+}
 
 /// <summary>
 /// get the all class synatx like
@@ -15,39 +38,15 @@ namespace Nncase.SourceGenerator;
 /// }
 /// </code>
 /// </summary>
-public class IEvaluatorImplReceiver : ISyntaxReceiver
+internal class IEvaluatorImplReceiver : ISyntaxReceiver
 {
-    public class EvalCandidate
-    {
-        public ClassDeclarationSyntax classDecl;
-        public MethodDeclarationSyntax methodDecl;
-        public string OpTypeName;
-        public string OpParamIdentifier;
-
-        public EvalCandidate(ClassDeclarationSyntax class_decl, MethodDeclarationSyntax method_decl)
-        {
-            classDecl = class_decl;
-            methodDecl = method_decl;
-            OpTypeName = "";
-            OpParamIdentifier = "";
-        }
-
-        public EvalCandidate(ClassDeclarationSyntax class_decl, MethodDeclarationSyntax method_decl, string op_name, string op_param_name)
-        {
-            classDecl = class_decl;
-            methodDecl = method_decl;
-            OpTypeName = op_name;
-            OpParamIdentifier = op_param_name;
-        }
-    }
 
     public readonly Dictionary<string, List<EvalCandidate>> Candidates = new();
 
     public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
     {
-        if (syntaxNode is not ClassDeclarationSyntax cls)
-            return;
-        CheckFromIEvaluator(new(cls, null));
+        if (syntaxNode is ClassDeclarationSyntax { BaseList: var base_list } cls && base_list is not null)
+            CheckFromIEvaluator(new(cls, null));
     }
 
     void CheckFromIEvaluator(EvalCandidate candidate)
@@ -71,7 +70,8 @@ public class IEvaluatorImplReceiver : ISyntaxReceiver
                 foreach (var member in cls.Members)
                 {
                     candidate.OpTypeName = op_name;
-                    CheckVisitMethod(candidate, member);
+                    if (CheckVisitMethod(candidate, member))
+                        return;
                 }
             }
         }
@@ -83,7 +83,7 @@ public class IEvaluatorImplReceiver : ISyntaxReceiver
     /// <param name="candidate">the class op name.</param>
     /// <param name="member"></param>
     /// <returns></returns>
-    void CheckVisitMethod(EvalCandidate candidate, MemberDeclarationSyntax member)
+    bool CheckVisitMethod(EvalCandidate candidate, MemberDeclarationSyntax member)
     {
         // match the method like public Const Visit(IEvaluateContext context, Celu celu, xxxx)
         if (member is MethodDeclarationSyntax
@@ -100,21 +100,24 @@ public class IEvaluatorImplReceiver : ISyntaxReceiver
             && param[0] is ParameterSyntax { Type: IdentifierNameSyntax { Identifier: { ValueText: "IEvaluateContext" } } }
             && param[1] is ParameterSyntax { Identifier: { ValueText: var op_param_name }, Type: IdentifierNameSyntax { Identifier: { ValueText: var op_name } } }
             && op_name == candidate.OpTypeName
-            && modifiers[0] == SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+            && modifiers[0].IsKind(SyntaxKind.PublicKeyword))
         {
             candidate.methodDecl = method;
             candidate.OpParamIdentifier = op_param_name;
-            var @namespace = (
-              from namespace_decl in method.SyntaxTree.GetRoot().Ancestors().OfType<NamespaceDeclarationSyntax>()
-              select namespace_decl).ToArray()[0];
-            var namespace_name = GetFullName(@namespace.Name);
+            var namespaces = (from namespace_decl in method.Ancestors().OfType<BaseNamespaceDeclarationSyntax>()
+                              select namespace_decl).ToArray();
+            if (namespaces.Length != 1)
+                return false;
+            var namespace_name = GetFullName(namespaces[0].Name);
             if (!Candidates.TryGetValue(namespace_name, out var member_list))
             {
                 member_list = new() { };
                 Candidates.Add(namespace_name, member_list);
             }
             member_list.Add(candidate);
+            return true;
         }
+        return false;
     }
 
     /// <summary>
@@ -123,7 +126,7 @@ public class IEvaluatorImplReceiver : ISyntaxReceiver
     /// <param name="name"></param>
     /// <returns></returns>
     /// <exception cref="NotSupportedException"></exception>
-    string GetFullName(NameSyntax name) => name switch
+    public static string GetFullName(NameSyntax name) => name switch
     {
         QualifiedNameSyntax qualifiedName => GetFullName(qualifiedName.Left) + "." + GetFullName(qualifiedName.Right),
         IdentifierNameSyntax identifierName => identifierName.Identifier.ValueText,

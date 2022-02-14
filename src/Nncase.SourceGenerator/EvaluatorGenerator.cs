@@ -18,7 +18,7 @@ internal class EvaluatorGenerator : ISourceGenerator
 
     public void Execute(GeneratorExecutionContext context)
     {
-        if (context.SyntaxContextReceiver is not IEvaluatorImplReceiver evalReceiver)
+        if (context.SyntaxReceiver is not IEvaluatorImplReceiver evalReceiver)
             return;
 
         var namespaces = new List<NamespaceDeclarationSyntax>();
@@ -66,7 +66,7 @@ internal class EvaluatorGenerator : ISourceGenerator
     /// <param name="cand"></param>
     /// <returns></returns>
     /// <exception cref="NotSupportedException"></exception>
-    public List<StatementSyntax> BuildStatements(IEvaluatorImplReceiver.EvalCandidate cand)
+    public List<StatementSyntax> BuildStatements(EvalCandidate cand)
     {
         var statements = new List<StatementSyntax>();
         TextInfo myTI = new CultureInfo("en-US", false).TextInfo;
@@ -75,27 +75,21 @@ internal class EvaluatorGenerator : ISourceGenerator
             var paramName = param.Identifier.ValueText;
             string callMethod = param.Type switch
             {
-                IdentifierNameSyntax identifier => identifier switch
+                PredefinedTypeSyntax predefinedType=> $"GetArgumentValueAsScalar<{predefinedType.Keyword.ValueText}>",
+                QualifiedNameSyntax qualified => IEvaluatorImplReceiver.GetFullName(qualified) switch
                 {
-                    var id when id.IsUnmanaged => $"GetArgumentValueAsScalar<{id.Identifier.ValueText}>",
-                    _ => throw new NotSupportedException(identifier.ToString())
-                },
-                QualifiedNameSyntax qualified => qualified switch
-                {
-                    var q when q.Left is IdentifierNameSyntax { Identifier: { ValueText: "torch" } } &&
-                    q.Right is IdentifierNameSyntax { Identifier: { ValueText: "Tensor" } } => $"GetTorchArgumentValue",
-                    var q when q.Left is IdentifierNameSyntax { Identifier: { ValueText: "Tensorflow" } } &&
-                    q.Right is IdentifierNameSyntax { Identifier: { ValueText: "Tensor" } } => $"GetTFArgumentValue",
-                    _ => throw new NotSupportedException(qualified.ToString())
+                    var x when x.EndsWith("torch.Tensor") => "GetTorchArgumentValue",
+                    var x when x.EndsWith("Tensorflow.Tensor") => "GetTFArgumentValue",
+                    var x => throw new NotSupportedException(x)
                 },
                 _ => throw new NotSupportedException()
             };
             statements.Add(
-              ParseStatement($"var {paramName} = context.{callMethod}({cand.OpTypeName}, {cand.OpTypeName}.{myTI.ToTitleCase(paramName)});")
+              ParseStatement($"var {paramName} = context.{callMethod}({cand.OpParamIdentifier}, {cand.OpTypeName}.{myTI.ToTitleCase(paramName)});")
             );
         }
         statements.Add(
-          ParseStatement($"return Visit({string.Join(",", cand.methodDecl.ParameterList.Parameters.Select(p => p.Identifier.ValueText))})")
+          ParseStatement($"return Visit({string.Join(",", cand.methodDecl.ParameterList.Parameters.Select(p => p.Identifier.ValueText))});")
         );
         return statements;
     }
@@ -114,7 +108,7 @@ internal class EvaluatorGenerator : ISourceGenerator
     /// <param name="cand"></param>
     /// <param name="statements"></param>
     /// <returns></returns>
-    MethodDeclarationSyntax BuildMethod(IEvaluatorImplReceiver.EvalCandidate cand, List<StatementSyntax> statements)
+    MethodDeclarationSyntax BuildMethod(EvalCandidate cand, List<StatementSyntax> statements)
     {
         var method = MethodDeclaration(ParseTypeName("Const"), "Visit")
         .AddModifiers(Token(SyntaxKind.PublicKeyword))
