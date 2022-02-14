@@ -5,7 +5,6 @@
     <Nullable>enable</Nullable>
     <CodeAnalysisRuleSet>$(SolutionDir)/tools/StyleCopAnalyzers.ruleset</CodeAnalysisRuleSet>
 	<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-	<CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

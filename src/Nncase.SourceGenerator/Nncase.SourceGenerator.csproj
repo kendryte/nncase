@@ -5,8 +5,6 @@
 	<ImplicitUsings>enable</ImplicitUsings>
 	<LangVersion>latest</LangVersion>
 	<IsRoslynComponent>true</IsRoslynComponent>
-	<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
