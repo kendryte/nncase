@@ -17,6 +17,7 @@
 #include <cassert>
 #include <nncase/ir/graph.h>
 #include <nncase/ir/op_utils.h>
+#include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/conv2d_transpose.h>
@@ -136,13 +137,16 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
     auto weight_type = get_datatype(weight).value();
     auto output_shape = get_shape(output);
 
-    auto tp = graph_.emplace<transpose>(weight_type, weight_shape, axis_t { 1, 0, 2, 3 });
-    tp->name(op_name + "(Transpose)");
-    auto tp_shape = tp->output().shape();
-
     // group
     const auto &group_attr = get_attribute<int>(node, "group");
     size_t group = group_attr ? group_attr.value() : 1;
+
+    auto tp = graph_.emplace<transpose>(weight_type, weight_shape, axis_t { 1, 0, 2, 3 });
+    tp->name(op_name + "(Transpose)");
+    auto tp_shape = tp->output().shape();
+    auto bc = graph_.emplace<bitcast>(weight_type, tp_shape, shape_t { tp_shape[0] * group, tp_shape[1] / group, tp_shape[2], tp_shape[3] });
+    bc->name(op_name + "(Bitcast)");
+    auto bc_shape = bc->output().shape();
 
     // stride
     std::array<size_t, 2> strides = { 1, 1 };
@@ -254,21 +258,22 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
     }
 
     // ConvTranspose
-    auto conv_transpose = graph_.emplace<conv2d_transpose>(input_shape, tp_shape, output_shape, group, paddings[0], paddings[1],
+    auto conv_transpose = graph_.emplace<conv2d_transpose>(input_shape, bc_shape, output_shape, group, paddings[0], paddings[1],
         output_paddings[0], output_paddings[1], strides[0], strides[1], dilations[0], dilations[1], value_range<float>::full());
     conv_transpose->name(op_name + "(ConvTranspose)");
-    conv_transpose->weights().connect(tp->output());
 
     input_tensors_.emplace(&conv_transpose->input(), input);
     input_tensors_.emplace(&tp->input(), weight);
+    bc->input().connect(tp->output());
+    conv_transpose->weights().connect(bc->output());
     if (node.input().size() > 2)
     {
         input_tensors_.emplace(&conv_transpose->bias(), node.input()[2]);
     }
     else
     {
-        shape_t shape = { tp_shape[0] };
-        std::vector<float> zeros(tp_shape[0], 0.f);
+        shape_t shape = { bc_shape[0] };
+        std::vector<float> zeros(bc_shape[0], 0.f);
         auto bias = graph_.emplace<constant>(dt_float32, shape, zeros);
         conv_transpose->bias().connect(bias->output());
     }
