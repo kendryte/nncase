@@ -165,7 +165,7 @@ def generate_image_dataset(shape: List[int], dtype: np.dtype,
         img_paths.append(dir_path)
     imgs = []
     transpose_flag = False
-    if shape[1] == 3:
+    if shape[1] in [1, 3]:
         transpose_flag = True
         shape = [shape[0], shape[2], shape[3], shape[1]]
     for p in img_paths[batch_index * batch_size:
@@ -247,7 +247,7 @@ class TestRunner(metaclass=ABCMeta):
         if(len(values.shape) == 4 and (self.pre_process[0]['preprocess'] or self.cfg.case.generate_inputs.name != "generate_random")):
             if stage == "CPU":
                 # onnx \ caffe
-                if ((self.model_type == "onnx" or self.model_type == "caffe") and self.inputs[0]['model_shape'][1] == 3):
+                if ((self.model_type == "onnx" or self.model_type == "caffe") and self.inputs[0]['model_shape'][1] in [1, 3]):
                     values = np.transpose(values, [0, 3, 1, 2])
 
             if type == 'float32':
@@ -704,7 +704,11 @@ class TestRunner(metaclass=ABCMeta):
             infer_output_paths.append((
                 os.path.join(infer_dir, gnne_txt) + '.bin',
                 os.path.join(infer_dir, gnne_txt) + '.txt'))
-            p = multiprocessing.Pool(100)
+            pool_num = 100
+            ci_flag = os.getenv('LOCAL_CI', False)
+            if ci_flag:
+                pool_num = 10
+            p = multiprocessing.Pool(pool_num)
             result = []
             for in_data in self.inputs[0]['data']:
                 input_data = copy.deepcopy(in_data)
@@ -766,7 +770,7 @@ class TestRunner(metaclass=ABCMeta):
                     shape = copy.deepcopy(input['model_shape'])
                 if shape[0] != cfg.batch_size:
                     shape[0] *= cfg.batch_size
-                if self.model_type != "tflite" and cfg.name == "generate_imagenet_dataset" and shape[1] == 3:
+                if self.model_type != "tflite" and cfg.name == "generate_imagenet_dataset" and shape[1] in [1, 3]:
                     shape = shape[0], shape[2], shape[3], shape[1]
                 data = DataFactory[cfg.name](shape, input['dtype'], n,
                                              cfg.batch_size, self.model_path, **cfg.kwargs)
