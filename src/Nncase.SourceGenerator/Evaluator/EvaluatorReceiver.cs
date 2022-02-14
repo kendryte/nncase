@@ -48,7 +48,9 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
 
     public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
     {
-        if (syntaxNode is ClassDeclarationSyntax { BaseList: var base_list } cls && base_list is not null)
+        if (syntaxNode is ClassDeclarationSyntax { BaseList: var base_list, Modifiers: var modifiers } cls
+            && base_list is not null
+            && modifiers.Any(tok => tok.IsKind(SyntaxKind.PartialKeyword)))
         {
             GenerateCandidate eval_cand = new(cls, null);
 
