@@ -61,17 +61,17 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
     {
         if (!_varsValues.TryGetValue(expr, out var result))
         {
-            throw new InvalidProgramException($"Must Set Input For Var {expr.Name}!");
+            throw new ArgumentException($"Must Set Input For Var {expr.Name}!");
         }
 
         if (result is null)
         {
-            throw new InvalidProgramException($"Must Set Input For Var {expr.Name}!");
+            throw new ArgumentException($"Must Set Input For Var {expr.Name}!");
         }
 
         if (result.Type != expr.CheckedType)
         {
-            throw new InvalidProgramException(
+            throw new ArgumentException(
               $"The Var {expr.Name} Require {expr.CheckedType} But Give {result.Type}");
         }
 

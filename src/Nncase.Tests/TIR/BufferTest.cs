@@ -31,9 +31,9 @@ namespace Nncase.Tests.TIRTest
         {
             var m = T.SizeVar("m");
             var n = T.SizeVar("n");
-            var dict = new Dictionary<Var, Const>() {
-              { n,  1 },
-              { m,  3 },
+            var dict = new Dictionary<Var, IValue>() {
+              { n, Value.FromTensor(1) },
+              { m, Value.FromTensor(3) },
             };
             var Ab = T.DeclBuffer((m, n),
                           DataType.Float32,

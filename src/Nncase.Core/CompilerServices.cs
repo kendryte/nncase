@@ -39,7 +39,7 @@ public interface ICompilerServicesProvider
     /// <param name="expr">Expression.</param>
     /// <param name="varsValues">Optional vars' values.</param>
     /// <returns>Evaluate result.</returns>
-    IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, Const>? varsValues = null);
+    IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null);
 
     /// <summary>
     /// Evaluate operator.
@@ -64,9 +64,9 @@ internal class CompilerServicesProvider : ICompilerServicesProvider
     }
 
     /// <inheritdoc/>
-    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, Const>? varsValues = null)
+    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null)
     {
-        return _evaluateProvider.Evaluate(expr);
+        return _evaluateProvider.Evaluate(expr, varsValues);
     }
 
     /// <inheritdoc/>
@@ -133,9 +133,9 @@ public static class CompilerServices
     /// <param name="expr">Expression.</param>
     /// <param name="varsValues">Optional vars' values.</param>
     /// <returns>Evaluate result.</returns>
-    public static IValue Evaluate(this Expr expr, IReadOnlyDictionary<Var, Const>? varsValues = null)
+    public static IValue Evaluate(this Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null)
     {
-        return Provider.Evaluate(expr);
+        return Provider.Evaluate(expr, varsValues);
     }
 
     /// <summary>

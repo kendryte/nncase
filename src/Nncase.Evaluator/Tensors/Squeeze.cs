@@ -25,7 +25,7 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Squeeze target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Split.Input);
+        var input = context.CheckArgumentType<TensorType>(target, Squeeze.Input);
         return Visit(context, target, input);
     }
 
