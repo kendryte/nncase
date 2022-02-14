@@ -12,20 +12,19 @@ namespace Nncase.Evaluator.NN;
 /// </summary>
 public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>
 {
-
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Celu celu, int alpha)
+    public Const Visit(IEvaluateContext context, Celu celu, TorchSharp.torch.Tensor input, int alpha)
     {
-        var input = context.GetTorchArgumentValue(celu, Celu.Input);
         return input.celu().ToConst();
     }
 
     /// <inheritdoc/>
-    public Const Visit(IEvaluateContext context, Celu celu)
-    {
-        var input = context.GetTorchArgumentValue(celu, Celu.Input);
-        return input.celu().ToConst();
-    }
+    // public Const Visit(IEvaluateContext context, Celu celu)
+    // {
+    //     var input = context.GetTorchArgumentValue(celu, Celu.Input);
+    //     var alpha = context.GetArgumentValueAsScalar<int>(celu, Celu.Alpha);
+    //     return Visit(context, celu, input, alpha);
+    // }
 
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Celu target)
