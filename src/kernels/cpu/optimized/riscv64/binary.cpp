@@ -154,9 +154,7 @@ struct binary_op_div_rvv
     }
     vint32m8_t operator()(const int32_t &a, const vint32m8_t &b, size_t vl) const
     {
-        // TODO
-        std::abort();
-        return vdiv_vx_i32m8(b, a, vl);
+        return vdiv_vv_i32m8(vmv_v_x_i32m8(a, vl), b, vl);
     }
 
     // int64_t
@@ -170,9 +168,7 @@ struct binary_op_div_rvv
     }
     vint64m8_t operator()(const int64_t &a, const vint64m8_t &b, size_t vl) const
     {
-        // TODO
-        std::abort();
-        return vdiv_vx_i64m8(b, a, vl);
+        return vdiv_vv_i64m8(vmv_v_x_i64m8(a, vl), b, vl);
     }
 };
 
@@ -341,12 +337,9 @@ result<void> optimized_binary_impl(const int32_t *input_a, const int32_t *input_
             int n = count;
             while (n > 0)
             {
-                // rvv div does not have div(scalar, vector) APIs, use div(vector, vector) to implement it.
                 vl = vsetvl_e32m8(n);
-                std::vector<int32_t> vec(vl, input_a[0]);
-                auto v_a = vle32_v_i32m8(vec.data(), vl);
                 auto v_b = vle32_v_i32m8(input_b, vl);
-                auto v_out = op(v_a, v_b, vl);
+                auto v_out = op(input_a[0], v_b, vl);
                 vse32_v_i32m8(out, v_out, vl);
 
                 input_b += vl;
@@ -470,12 +463,9 @@ result<void> optimized_binary_impl(const int64_t *input_a, const int64_t *input_
             int n = count;
             while (n > 0)
             {
-                // rvv div does not have div(scalar, vector) APIs, use div(vector, vector) to implement it.
                 vl = vsetvl_e64m8(n);
-                std::vector<int64_t> vec(vl, input_a[0]);
-                auto v_a = vle64_v_i64m8(vec.data(), vl);
                 auto v_b = vle64_v_i64m8(input_b, vl);
-                auto v_out = op(v_a, v_b, vl);
+                auto v_out = op(input_a[0], v_b, vl);
                 vse64_v_i64m8(out, v_out, vl);
 
                 input_b += vl;

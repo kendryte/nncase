@@ -31,7 +31,6 @@ result<void> binary_impl(TOp &&op, const T *input_a, const T *input_b, T *output
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
     value_range<float> fused_activation, NNCASE_UNUSED kernel_context &context) noexcept
 {
-    // std::cout << "binary_impl for reference is called" << std::endl;
     return apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
         const auto in_a_index = kernels::detail::get_reduced_offset(index, in_a_shape);
         const auto in_b_index = kernels::detail::get_reduced_offset(index, in_b_shape);
