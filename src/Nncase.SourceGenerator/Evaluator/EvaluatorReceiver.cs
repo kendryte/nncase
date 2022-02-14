@@ -102,7 +102,7 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
         var (return_type_name, context_type_name) = target_interface.GetKindInfo();
 
         /// remove the default interface impl method
-        bool RemoveOverride(MemberDeclarationSyntax member)
+        bool HasOverride(MemberDeclarationSyntax member)
         {
             if (member is MethodDeclarationSyntax
                 {
@@ -117,11 +117,14 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
                   && param[1] is ParameterSyntax { Type: IdentifierNameSyntax { Identifier: { ValueText: var cur_op_type } } }
                   && cur_op_type == candidate.OpTypeName
             )
-                return false;
-            return true;
+                return true;
+            return false;
         }
 
-        foreach (var member in candidate.classDecl.Members.Where(RemoveOverride))
+        if (candidate.classDecl.Members.Any(HasOverride))
+            return false;
+
+        foreach (var member in candidate.classDecl.Members)
         {
             // match the method like public Const Visit(IEvaluateContext context, Celu celu, xxxx)
             if (member is MethodDeclarationSyntax
