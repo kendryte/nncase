@@ -42,7 +42,7 @@ public class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Expand target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Cast.Input);
+        var input = context.CheckArgumentType<TensorType>(target, Expand.Input);
         return Visit(context, target, input);
     }
 
