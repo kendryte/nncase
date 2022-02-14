@@ -15,6 +15,11 @@ namespace Nncase.IR;
 public sealed record TensorConst(Tensor Value) : Const(new TensorType(Value.ElementType, Value.Shape))
 {
     /// <summary>
+    /// Gets value type.
+    /// </summary>
+    public new TensorType ValueType => (TensorType)base.ValueType;
+
+    /// <summary>
     /// Create TensorConstant from a <see cref="byte"/>.
     /// </summary>
     /// <param name="value">Value.</param>
@@ -97,14 +102,6 @@ public sealed record TensorConst(Tensor Value) : Const(new TensorType(Value.Elem
     /// </summary>
     /// <param name="value">Value.</param>
     public static implicit operator TensorConst(string value) => FromSpan<char>(value);
-
-    /// <inheritdoc/>
-    public sealed override int Rank => ValueType.Shape.Rank;
-
-    /// <summary>
-    /// Gets value type.
-    /// </summary>
-    public new TensorType ValueType => (TensorType)base.ValueType;
 
     /// <inheritdoc/>
     public override string ToString()

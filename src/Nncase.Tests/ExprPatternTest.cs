@@ -50,16 +50,16 @@ namespace Nncase.Tests
         }
 
         [Fact]
-        public void TestConstantPattern()
+        public void TestTensorConstantPattern()
         {
             var con = (Const)(1.1f);
             Assert.True(con.InferenceType());
             ExprPattern cp1 = con;
-            Assert.IsType<ConstPattern>(cp1);
+            Assert.IsType<TensorConstPattern>(cp1);
 
             ExprPattern cp2 = IsConst((float x) => x > 1.2f);
             ExprPattern cp3 = IsConst((int x) => x > 1);
-            var cp4 = (ConstPattern)1.1f;
+            var cp4 = (TensorConstPattern)1.1f;
 
             Assert.True(cp1.MatchLeaf(con));
             Assert.False(cp2.MatchLeaf(con));
@@ -68,16 +68,16 @@ namespace Nncase.Tests
         }
 
         [Fact]
-        public void TestConstantPatternEqual()
+        public void TestTensorConstantPatternEqual()
         {
-            ConstPattern cp1 = (ConstPattern)1;
-            ConstPattern cp2 = (ConstPattern)1;
-            Dictionary<ConstPattern, int> d = new();
+            TensorConstPattern cp1 = (TensorConstPattern)1;
+            TensorConstPattern cp2 = (TensorConstPattern)1;
+            Dictionary<TensorConstPattern, int> d = new();
             d.Add(cp1, 1);
             Assert.NotEqual(cp1, cp2);
             Assert.DoesNotContain(cp2, d.Keys);
-            ConstPattern cp3 = IsConst();
-            ConstPattern cp4 = IsConst();
+            TensorConstPattern cp3 = IsTensorConst();
+            TensorConstPattern cp4 = IsTensorConst();
             d.Add(cp3, 1);
             Assert.NotEqual(cp3, cp4);
             Assert.DoesNotContain(cp4, d.Keys);

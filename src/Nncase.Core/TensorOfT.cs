@@ -219,6 +219,11 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// <inheritdoc/>
     public override string GetArrayString(bool includeWhitespace = true)
     {
+        if (Dimensions.IsEmpty)
+        {
+            return Buffer[0].ToString()!;
+        }
+
         var builder = new StringBuilder();
 
         var indices = new int[Rank];
@@ -354,23 +359,12 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
             return false;
         }
 
-        if (Dimensions != other.Dimensions)
+        if (!Dimensions.SequenceEqual(other.Dimensions))
         {
             return false;
         }
 
-        var bufferA = Buffer;
-        var bufferB = other.Buffer;
-
-        for (int i = 0; i < bufferA.Length; i++)
-        {
-            if (!EqualityComparer<T>.Default.Equals(bufferA[i], bufferB[i]))
-            {
-                return false;
-            }
-        }
-
-        return false;
+        return Buffer.SequenceEqual(other.Buffer);
     }
 
     /// <inheritdoc/>

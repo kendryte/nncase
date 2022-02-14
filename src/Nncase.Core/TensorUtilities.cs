@@ -19,7 +19,7 @@ public static class TensorUtilities
 
     public static long GetProduct(ReadOnlySpan<int> dimensions, int startIndex = 0)
     {
-        if (dimensions.Length == 0)
+        if (dimensions.Length == 1)
         {
             return 0;
         }

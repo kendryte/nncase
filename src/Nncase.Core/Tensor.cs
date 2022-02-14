@@ -49,7 +49,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     {
         ElementType = elementType;
         Shape = new Shape(dimensions);
-        Length = dimensions.IsEmpty ? 1 : (int)TensorUtilities.GetProduct(dimensions);
+        Length = (int)TensorUtilities.GetProduct(dimensions);
         _dimensions = dimensions.ToArray();
         _strides = TensorUtilities.GetStrides(dimensions);
     }

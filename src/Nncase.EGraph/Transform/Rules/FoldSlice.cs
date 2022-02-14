@@ -62,7 +62,8 @@ namespace Nncase.Transform.Rule
             var new_begin = new Tensor<int>(old_begin1.Dimensions);
             var new_end = new Tensor<int>(old_begin1.Dimensions);
             var new_strides = new Tensor<int>(old_begin1.Dimensions);
-            for (int dim = 0; dim < slice1.Input().Rank; dim++)
+            var rank = slice1.Input().CheckedShape.Rank;
+            for (int dim = 0; dim < rank; dim++)
             {
                 new_begin[dim] = IsNoSlice(slice1, dim) ? old_begin2[dim] : old_begin1[dim];
                 new_end[dim] = IsNoSlice(slice1, dim) ? old_end2[dim] : old_end1[dim];
