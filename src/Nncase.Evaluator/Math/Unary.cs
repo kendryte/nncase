@@ -5,7 +5,7 @@ using System;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
-using TorchSharp;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Math;
 
@@ -17,31 +17,31 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Unary unary)
     {
-        var i = context.GetTorchArgumentValue(unary, Unary.Input);
+        var i = context.GetOrtArgumentValue(unary, Unary.Input);
         var result = unary.UnaryOp switch
         {
-            UnaryOp.Abs => torch.abs(i),
-            UnaryOp.Acos => torch.acos(i),
-            UnaryOp.Acosh => torch.acosh(i),
-            UnaryOp.Asin => torch.asin(i),
-            UnaryOp.Asinh => torch.asinh(i),
-            UnaryOp.Ceil => torch.ceil(i),
-            UnaryOp.Cos => torch.cos(i),
-            UnaryOp.Cosh => torch.cosh(i),
-            UnaryOp.Exp => torch.exp(i),
-            UnaryOp.Floor => torch.floor(i),
-            UnaryOp.Log => torch.log(i),
-            UnaryOp.Neg => torch.neg(i),
-            UnaryOp.Round => torch.round(i),
-            UnaryOp.Rsqrt => torch.rsqrt(i),
-            UnaryOp.Sin => torch.sin(i),
-            UnaryOp.Sinh => torch.sinh(i),
-            UnaryOp.Sign => torch.sign(i),
-            UnaryOp.Sqrt => torch.sqrt(i),
-            UnaryOp.Square => torch.square(i),
-            UnaryOp.Tanh => torch.tanh(i),
-            UnaryOp.BitwiseNot => torch.bitwise_not(i),
-            UnaryOp.LogicalNot => torch.logical_not(i),
+            UnaryOp.Abs => OrtKI.Abs(i),
+            UnaryOp.Acos => OrtKI.Acos(i),
+            UnaryOp.Acosh => OrtKI.Acosh(i),
+            UnaryOp.Asin => OrtKI.Asin(i),
+            UnaryOp.Asinh => OrtKI.Asinh(i),
+            UnaryOp.Ceil => OrtKI.Ceil(i),
+            UnaryOp.Cos => OrtKI.Cos(i),
+            UnaryOp.Cosh => OrtKI.Cosh(i),
+            UnaryOp.Exp => OrtKI.Exp(i),
+            UnaryOp.Floor => OrtKI.Floor(i),
+            UnaryOp.Log => OrtKI.Log(i),
+            UnaryOp.Neg => OrtKI.Neg(i),
+            UnaryOp.Round => OrtKI.Round(i),
+            UnaryOp.Rsqrt => OrtKI.Rsqrt(i),
+            UnaryOp.Sin => OrtKI.Sin(i),
+            UnaryOp.Sinh => OrtKI.Sinh(i),
+            UnaryOp.Sign => OrtKI.Sign(i),
+            UnaryOp.Sqrt => OrtKI.Sqrt(i),
+            UnaryOp.Square => OrtKI.Square(i),
+            UnaryOp.Tanh => OrtKI.Tanh(i),
+            UnaryOp.BitwiseNot => OrtKI.BitwiseNot(i),
+            UnaryOp.LogicalNot => OrtKI.LogicalNot(i),
             _ => throw new ArgumentOutOfRangeException(nameof(unary.UnaryOp)),
         };
         return result.ToValue();

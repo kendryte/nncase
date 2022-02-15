@@ -5,7 +5,7 @@ using System;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
-using TorchSharp;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Math;
 
@@ -17,8 +17,8 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     /// <inheritdoc />
     public IValue Visit(IEvaluateContext context, Binary binary)
     {
-        var a = context.GetTorchArgumentValue(binary, Binary.Lhs);
-        var b = context.GetTorchArgumentValue(binary, Binary.Rhs);
+        var a = context.GetOrtArgumentValue(binary, Binary.Lhs);
+        var b = context.GetOrtArgumentValue(binary, Binary.Rhs);
         return (binary.BinaryOp switch
         {
             BinaryOp.Add => a + b,
@@ -26,17 +26,17 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             BinaryOp.Mul => a * b,
             BinaryOp.Div => a / b,
             BinaryOp.Mod => a % b,
-            BinaryOp.Min => torch.minimum(a, b),
-            BinaryOp.Max => torch.maximum(a, b),
-            BinaryOp.Pow => torch.pow(a, b),
-            BinaryOp.BitwiseAnd => torch.bitwise_and(a, b),
-            BinaryOp.BitwiseOr => torch.bitwise_or(a, b),
-            BinaryOp.BitwiseXor => torch.bitwise_xor(a, b),
-            BinaryOp.LogicalAnd => torch.logical_and(a, b),
-            BinaryOp.LogicalOr => torch.logical_or(a, b),
-            BinaryOp.LogicalXor => torch.logical_xor(a, b),
+            BinaryOp.Min => OrtKI.Minimum(a, b),
+            BinaryOp.Max => OrtKI.Maximum(a, b),
+            BinaryOp.Pow => OrtKI.Pow(a, b),
+            BinaryOp.BitwiseAnd => OrtKI.BitwiseAnd(a, b),
+            BinaryOp.BitwiseOr => OrtKI.BitwiseOr(a, b),
+            BinaryOp.BitwiseXor => OrtKI.BitwiseXor(a, b),
+            BinaryOp.LogicalAnd => OrtKI.LogicalAnd(a, b),
+            BinaryOp.LogicalOr => OrtKI.LogicalOr(a, b),
+            BinaryOp.LogicalXor => OrtKI.LogicalXor(a, b),
             _ => throw new ArgumentOutOfRangeException(nameof(binary.BinaryOp)),
-        }).to_type(context.CurrentCall.CheckedDataType.ToTorchType()).ToValue();
+        }).ToType(context.CurrentCall.CheckedDataType.ToOrtType()).ToValue();
     }
 
     /// <inheritdoc/>

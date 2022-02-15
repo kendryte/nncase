@@ -11,6 +11,8 @@ using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.F;
 using TorchSharp;
+using Nncase.IR;
+using OrtKISharp;
 using Xunit;
 using static TorchSharp.torch;
 using torchF = TorchSharp.torch.nn.functional;
@@ -36,6 +38,21 @@ namespace Nncase.Tests.EvaluatorTest
                 expr.Evaluate().AsTensor().ToTorchTensor());
         }
 
+        [Fact]
+        public void TestOrtKI()
+        {
+            var a = Const.FromSpan<int>(new[] {1, 2, 3});
+            var b = Const.FromSpan<int>(new[] {1, 2, 3});
+            // var b = (Const) 2;
+            a.InferenceType();
+            b.InferenceType();
+            var na = a.Value.ToOrtTensor();
+            var nb = b.Value.ToOrtTensor();
+            Assert.Equal(new[] {1, 2, 3}, na.ToDense<int>().ToArray());
+            var c = na + nb;
+            Assert.Equal(new[] {2, 4, 6}, c.ToTensor().ToArray<int>());
+        }
+        
         [Fact]
         public void TestBinary()
         {

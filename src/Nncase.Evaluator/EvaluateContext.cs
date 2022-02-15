@@ -65,4 +65,14 @@ public static class EvaluateContextExtensions
     {
         return context.GetArgumentValue(op, parameter).AsTensor().ToTFTensor();
     }
+
+    public static OrtKISharp.Tensor GetOrtArgumentValue(this IEvaluateContext context, Op op, ParameterInfo parameter)
+    {
+        return context.GetArgumentValue(op, parameter).AsTensor().ToOrtTensor();
+    }
+    
+    public static OrtKISharp.Tensor GetOrtValue(this IEvaluateContext context, Expr expr)
+    {
+        return context.GetValue(expr).AsTensor().ToOrtTensor();
+    }
 }
