@@ -1,10 +1,9 @@
 using System;
 using System.Numerics.Tensors;
 using System.Runtime.InteropServices;
-using Nncase.Simulator;
 using Nncase.Schedule;
+using Nncase.Simulator;
 using Xunit;
-
 
 namespace Nncase.Tests.SimulatorTest
 {
