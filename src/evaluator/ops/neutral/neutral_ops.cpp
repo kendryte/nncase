@@ -566,23 +566,7 @@ void register_neutral_evaluators()
             unary([](auto a) { return -a; });
             break;
         case unary_round:
-            unary([](auto a) {
-#if 0
-                return round(a);
-#else
-                        // bankers rounding method for tensorflow/tflite
-                        auto floor_val = std::floor(a);
-                        auto diff = a - floor_val;
-                        if ((diff < 0.5f) || ((diff == 0.5f) && (static_cast<int>(floor_val) % 2 == 0)))
-                        {
-                            return floor_val;
-                        }
-                        else
-                        {
-                            return floor_val = floor_val + 1.0f;
-                        }
-#endif
-            });
+            unary([](auto a) { return rintf(a); });
             break;
         case unary_rsqrt:
             unary([](auto a) { return 1.f / sqrtf(a); });
