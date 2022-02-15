@@ -238,7 +238,7 @@ public class CSourceCompiler
             {
                 proc.StartInfo.FileName = Exe;
                 proc.StartInfo.Arguments = $"{sourcePath} -fPIC -shared -arch {Arch} -o {outPath}";
-                proc.StartInfo.RedirectStandardError = true
+                proc.StartInfo.RedirectStandardError = true;
                 proc.ErrorDataReceived += (sender, e) => errWriter.WriteLine(e.Data);
                 proc.Start();
                 proc.BeginErrorReadLine();
