@@ -14,7 +14,7 @@ namespace Nncase.Hosting;
 /// </summary>
 public class ApplicationParts
 {
-    private const string _appPartsDllPattern = "Nncase*.dll";
+    private const string _appPartsDllPattern = "Nncase.Modules.*.dll";
     private const string _targetPathEnvName = "NNCASE_TARGET_PATH";
 
     /// <summary>

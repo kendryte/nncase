@@ -35,16 +35,15 @@ namespace Nncase.Cli.Commands
             Handler = CommandHandler.Create<CompileOptions, IHost>(Run);
         }
 
-        internal void InitLocatorProvider(IHost host)
+        internal void ConfigureServices(IHost host)
         {
-            var t = host.Services.GetRequiredService<IComponentContext>();
-            var csl = new AutofacServiceLocator(t);
-            ServiceLocator.SetLocatorProvider(() => csl);
+            var provider = host.Services.GetRequiredService<ICompilerServicesProvider>();
+            CompilerServices.Configure(provider);
         }
 
         private void Run(CompileOptions options, IHost host)
         {
-            InitLocatorProvider(host);
+            ConfigureServices(host);
             var module = ImportModule(File.OpenRead(options.InputFile), options);
             var a = (Const)1;
             var b = (Const)1;
