@@ -96,17 +96,16 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         pattern ??= TypePatternUtility.IsIRType();
         if (parent.CheckedType is null)
         {
-            if (expr.CheckedType is InvalidType)
+            if (expr.CheckedType is InvalidType invalidType)
             {
-                SetCheckedType(parent, new InvalidType($"The {exprMsg} Is Invalid!"));
+                SetCheckedType(parent, new InvalidType($"Invalid {exprMsg} <== {invalidType.Reason}"));
+                return;
             }
-
-            if (expr.CheckedType is AnyType any)
+            else if (expr.CheckedType is AnyType any)
             {
                 SetCheckedType(parent, any);
             }
-
-            if (!pattern.MatchLeaf(expr.CheckedType))
+            else if (!pattern.MatchLeaf(expr.CheckedType))
             {
                 SetCheckedType(parent, new InvalidType($"The {exprMsg} Require {pattern.Reason}"));
             }
@@ -177,7 +176,15 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         VerifySubField(expr, expr.Buffer.Handle, TypePatternUtility.IsHandle());
         foreach (var i in Enumerable.Range(0, expr.Indices.Count)) { VerifySubField(expr, expr.Indices[i], TypePatternUtility.IsIntegralScalar()); }
         if (expr.CheckedType is not null) { return expr.CheckedType; }
-        var type = TensorType.Scalar(((PointerType)expr.Buffer.Handle.CheckedDataType).ElemType);
+        IRType type;
+        if (expr.Buffer.Handle.CheckedType is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType pointedType } })
+        {
+            type = TensorType.Scalar(pointedType);
+        }
+        else
+        {
+            type = new InvalidType($"Can't Load From {expr.Buffer.Handle.CheckedType}");
+        }
         SetCheckedType(expr, type);
         return type;
     }
@@ -190,13 +197,15 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
 
         if (expr.CheckedType is not null) { return expr.CheckedType; }
         IRType type;
-        if (expr.Value.CheckedDataType != expr.Buffer.Handle.CheckedDataType)
+        if (expr.Value.CheckedType is TensorType { IsScalar: true, DType: PrimType valueType } &&
+            expr.Buffer.Handle.CheckedType is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType pointedType } }
+            && valueType == pointedType)
         {
-            type = new InvalidType("The Value Type Is Not Equal Buffer Handle Type");
+            type = TupleType.Void;
         }
         else
         {
-            type = TupleType.Void;
+            type = new InvalidType($"Can't Store {expr.Value.CheckedType} To {expr.Buffer.Handle.CheckedType}");
         }
 
         SetCheckedType(expr, type);

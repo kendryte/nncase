@@ -26,6 +26,9 @@ public abstract partial record Expr
         _ => throw new InvalidOperationException("Only The Expr Have CheckedType Can Get It's Shape"),
     };
 
+    /// <summary>
+    /// if this expr is tensortype, can return the checkedDatatype
+    /// </summary>
     public DataType CheckedDataType => CheckedType switch
     {
         // todo:more info

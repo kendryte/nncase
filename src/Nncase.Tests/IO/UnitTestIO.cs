@@ -5,7 +5,7 @@ using Nncase.IO;
 
 namespace Nncase.Tests.IOTest
 {
-    public class BitWriteReadTest
+    public class UnitTestIO
     {
         [Fact]
         public void TestWriter()

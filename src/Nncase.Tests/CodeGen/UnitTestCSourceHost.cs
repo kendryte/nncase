@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Nncase.CodeGen;
 using Nncase.IR;
 using Nncase.TIR;
@@ -10,9 +11,10 @@ using Xunit;
 
 namespace Nncase.Tests.CodeGenTest
 {
-    public class CSourceHostTest
+    public class UnitTestCSourceHost
     {
         ITarget _target = PluginLoader.CreateTarget("CSource");
+        string DumpDirPath = Testing.GetDumpDirPath(typeof(UnitTestCSourceHost));
 
         static IEnumerable<object[]> Data =>
           new List<object[]>
@@ -28,7 +30,9 @@ namespace Nncase.Tests.CodeGenTest
 
         protected void RunCore(ICodeGenCase Case)
         {
-            var dumpDirPath = Testing.GetDumpDirPath($"CodeGenTest/CSourceHostTest/{Case.GetType().Name}");
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                return;
+            var dumpDirPath = Path.Combine(DumpDirPath, Case.GetType().Name);
             var opt = new RunPassOptions(null, 2, dumpDirPath);
             // 1. get function
 
@@ -62,6 +66,8 @@ namespace Nncase.Tests.CodeGenTest
         [Fact]
         public void TestAdd()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                return;
             var x = new Var("x", TensorType.Scalar(DataType.Float32));
             var y = new Var("y", TensorType.Scalar(DataType.Float32));
             var func = new Function(new Sequential() { x + y }, x, y);

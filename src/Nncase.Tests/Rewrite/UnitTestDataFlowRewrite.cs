@@ -86,17 +86,6 @@ namespace Nncase.Tests.ReWriteTest
         }
     }
 
-    public class UnitTestExpressionsRewrite
-    {
-
-        [Fact]
-        public void TestGetExpressions()
-        {
-            // Expression dd = (ConstPattern x, ExprPattern y) => x + y;
-        }
-
-    }
-
     public class UnitTestDataFlowRewrite : RewriteFixtrue
     {
         public UnitTestDataFlowRewrite(IHost host) : base(host)

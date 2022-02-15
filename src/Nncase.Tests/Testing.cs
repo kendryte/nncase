@@ -54,6 +54,22 @@ namespace Nncase.Tests
             return path;
         }
 
+        /// <summary>
+        /// give the unittest class name, then return the dumpdir path
+        /// <see cref="GetDumpDirPath(string)"/>
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static string GetDumpDirPath(System.Type type)
+        {
+            var namespace_name= type.Namespace.Split(".")[^1];
+            if(!namespace_name.EndsWith("Test") || !type.Name.StartsWith("UnitTest"))
+            {
+                throw new System.ArgumentOutOfRangeException("We Need NameSpace is `xxxTest`, Class is `UnitTestxxx`");
+            }
+            return GetDumpDirPath(Path.Combine(namespace_name, type.Name));
+        }
+
         private static readonly DataFlowPass _simplifyPass = new("SimplifyAll");
 
         internal static Expr Simplify(Expr expr, string member)

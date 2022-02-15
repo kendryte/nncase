@@ -12,9 +12,9 @@ using static Nncase.Pattern.Utility;
 namespace Nncase.Tests.CostModelTest
 {
 
-    public class EGraphCostModelTest : RewriteFixtrue
+    public class UnitTestEGraphCostModel : RewriteFixtrue
     {
-        public EGraphCostModelTest(IHost host) : base(host) { }
+        public UnitTestEGraphCostModel(IHost host) : base(host) { }
         
         [Fact]
         public void TestConst()

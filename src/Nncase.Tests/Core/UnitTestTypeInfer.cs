@@ -12,7 +12,7 @@ using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.Pattern.Utility;
 
-namespace Nncase.Tests;
+namespace Nncase.Tests.CoreTest;
 
 public class UnitTestTypeInfer : IHostFixtrue
 {

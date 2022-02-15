@@ -73,10 +73,10 @@ namespace Nncase.Tests.ReWriteTest
         public static IEnumerable<object[]> DataAll => Data.Skip(1);
     }
 
-    public class EGraphRewriteTest : RewriteFixtrue
+    public class UnitTestEGraphRewrite : RewriteFixtrue
     {
 
-        public EGraphRewriteTest(IHost host) : base(host)
+        public UnitTestEGraphRewrite(IHost host) : base(host)
         {
             passOptions.SetDir(Path.Combine(passOptions.PassDumpDir, "EGraphRewriteTest"));
         }

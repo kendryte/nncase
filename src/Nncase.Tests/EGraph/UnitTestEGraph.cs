@@ -9,7 +9,7 @@ using Nncase.IR.Math;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
-namespace Nncase.Tests
+namespace Nncase.Tests.EGraphTest
 {
     public class UnitTestEGraph
     {
