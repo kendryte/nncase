@@ -18,69 +18,63 @@ namespace Nncase.Evaluator;
 /// </summary>
 public static class TorchExtentsion
 {
-
-    /// convert torch tensor to const by gived shape.
+    /// <summary>
+    /// convert torch tensor to Tensor by gived shape.
     /// </summary>
     /// <param name="tensor"></param>
     /// <param name="ttype">target tensor type.</param>
     /// <returns></returns>
     /// <exception cref="InvalidCastException"></exception>
-    public static Const ToConst(this torch.Tensor tensor, TensorType? ttype = null)
+    public static Tensor ToTensor(this torch.Tensor tensor, TensorType? ttype = null)
     {
         ttype ??= new TensorType(tensor.dtype.ToDataType(), new Shape(tensor.shape));
         if (ttype.Shape.Prod().FixedValue != tensor.numel())
         {
             throw new InvalidCastException($"The Target Shape Prod != {tensor.numel()}!");
         }
-
         if (!tensor.is_contiguous())
             tensor = tensor.contiguous();
-        return new TensorConst(Tensor.FromBytes(ttype, tensor.bytes.ToArray()));
+        return Tensor.FromBytes(ToDataType(tensor.dtype), tensor.bytes, new Shape(tensor.shape));
     }
 
     /// <summary>
-    /// wrapper for python use.
+    /// Convert <see cref="torch.Tensor"/> to <see cref="TensorValue"/>.
     /// </summary>
-    /// <param name="tensor"></param>
-    /// <returns></returns>
-    public static byte[] ToSpan(this torch.Tensor tensor) => tensor.bytes.ToArray();
+    /// <param name="tensor">Torch tensor.</param>
+    /// <returns>Converted value.</returns>
+    public static TensorValue ToValue(this torch.Tensor tensor)
+    {
+        return tensor.ToTensor();
+    }
 
     /// <summary>
-    /// convert const to torch tensor
+    /// Convert <see cref="Tensor"/> to <see cref="torch.Tensor"/>.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
-    /// <exception cref="ArgumentOutOfRangeException"></exception>
-    public static torch.Tensor ToTorchTensor(this Const expr)
+    /// <param name="tensor">Tensor.</param>
+    /// <returns>Converted torch tensor.</returns>
+    public static torch.Tensor ToTorchTensor(this Tensor tensor)
     {
-        if (expr.ValueType is not TensorType tensorType)
-            throw new ArgumentOutOfRangeException("Only TensorConst Can Convert To TorchTensor!");
-        var dtype = tensorType.DType;
-        var shape = tensorType.IsScalar
-            ? new long[] { }
-            : tensorType.Shape.ToList().Select(x => (long)x.FixedValue).ToArray();
-        return dtype switch
+        var shape = tensor.Dimensions.AsValueEnumerable().Select(x => (long)x).ToArray();
+        if (tensor.ElementType is PrimType dtype)
         {
-            PrimType ptype => ptype switch
+            return dtype switch
             {
-                { TypeCode: PrimTypeCode.Int8, Lanes: 1 } => torch.tensor(expr.ToTensor<sbyte>(), shape, ToTorchType(dtype)),
-                { TypeCode: PrimTypeCode.Int16, Lanes: 1 } => torch.tensor(expr.ToTensor<short>(), shape, ToTorchType(dtype)),
-                { TypeCode: PrimTypeCode.Int32, Lanes: 1 } => torch.tensor(expr.ToTensor<int>(), shape, ToTorchType(dtype)),
-                { TypeCode: PrimTypeCode.Int64, Lanes: 1 } => torch.tensor(expr.ToTensor<long>(), shape, ToTorchType(dtype)),
-                { TypeCode: PrimTypeCode.UInt8, Lanes: 1 } => torch.tensor(expr.ToTensor<byte>(), shape, ToTorchType(dtype)),
-                // DataType.UInt16 => torch.tensor(expr.ToTensor<ushort>(), shape, ToTorchType(dtype)),
-                // DataType.UInt32 => torch.tensor(expr.ToTensor<uint>(), shape, ToTorchType(dtype)),
-                // DataType.UInt64 => torch.tensor(expr.ToTensor<ulong>(), shape, ToTorchType(dtype)),
-                // DataType.Float16 => torch.tensor(expr.ToTensor<Float16>(), shape, ToTorchType(dtype)),
-                { TypeCode: PrimTypeCode.Float32, Lanes: 1 } => torch.tensor(expr.ToTensor<float>(), shape, ToTorchType(dtype)),
-                { TypeCode: PrimTypeCode.Float64, Lanes: 1 } => torch.tensor(expr.ToTensor<double>(), shape, ToTorchType(dtype)),
-                // {PrimTypeCode:PrimTypeCode.BFloat16,Lanes:1} => torch.tensor(expr.ToTensor<BFloat16>(), shape, ToTorchType(dtype)),
-                { TypeCode: PrimTypeCode.Bool, Lanes: 1 } => torch.tensor(expr.ToTensor<bool>(), shape, ToTorchType(dtype)),
-                // DataType.String => torch.tensor(expr.ToTensor<>(), shape, ToTorchType(dtype)),
-                _ => throw new ArgumentOutOfRangeException("Unsupported conversion for datatype to torch.ScalarType")
-            },
-            _ => throw new ArgumentOutOfRangeException($"Unsupported conversion for {dtype.GetType().Name}")
-        };
+                { TypeCode: PrimTypeCode.Int8, Lanes: 1 } => torch.tensor(tensor.Cast<sbyte>(), shape, ToTorchType(dtype)),
+                { TypeCode: PrimTypeCode.Int16, Lanes: 1 } => torch.tensor(tensor.Cast<short>(), shape, ToTorchType(dtype)),
+                { TypeCode: PrimTypeCode.Int32, Lanes: 1 } => torch.tensor(tensor.Cast<int>(), shape, ToTorchType(dtype)),
+                { TypeCode: PrimTypeCode.Int64, Lanes: 1 } => torch.tensor(tensor.Cast<long>(), shape, ToTorchType(dtype)),
+                { TypeCode: PrimTypeCode.UInt8, Lanes: 1 } => torch.tensor(tensor.Cast<byte>(), shape, ToTorchType(dtype)),
+                { TypeCode: PrimTypeCode.Float32, Lanes: 1 } => torch.tensor(tensor.Cast<float>(), shape, ToTorchType(dtype)),
+                { TypeCode: PrimTypeCode.Float64, Lanes: 1 } => torch.tensor(tensor.Cast<double>(), shape, ToTorchType(dtype)),
+                { TypeCode: PrimTypeCode.Bool, Lanes: 1 } => torch.tensor(tensor.Cast<bool>(), shape, ToTorchType(dtype)),
+                _ => throw new ArgumentOutOfRangeException("Unsupported conversion for datatype to torch.ScalarType"),
+            };
+        }
+        else if (tensor.ElementType is PointerType { ElemType: PrimType { } })
+        {
+            return torch.tensor(tensor.Cast<long>(), shape, torch.ScalarType.Int64);
+        }
+        throw new NotSupportedException($"Can't Convert TensorType {tensor.ElementType.ToString()} to TorchTensor");
     }
 
     private static readonly Dictionary<DataType, torch.ScalarType> _dataTypesToTorchType = new()

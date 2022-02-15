@@ -253,7 +253,7 @@ namespace Nncase
                 PrimTypeCode.Bool => "bool",
                 PrimTypeCode.String => "str",
                 PrimTypeCode.Invalid => "Invalid",
-                _ => throw new NotImplementedException()
+                _ => throw new ArgumentOutOfRangeException()
             }) + (Lanes == 1 ? string.Empty : Lanes.ToString());
         }
     }
@@ -366,7 +366,7 @@ namespace Nncase
         /// </summary>
         /// <param name="dataType"></param>
         /// <returns></returns>
-        public static int GetLength(DataType dataType) => dataType switch
+        public static int GetLength(this DataType dataType) => dataType switch
         {
             PrimType ptype => _ElemTypeToLengths[ptype.TypeCode] * ptype.Lanes,
             PointerType potype => _ElemTypeToLengths[PrimTypeCode.UInt64],
@@ -378,7 +378,7 @@ namespace Nncase
         /// </summary>
         /// <param name="dataType"></param>
         /// <returns></returns>
-        public static int GetLength(PrimTypeCode dataType) => _ElemTypeToLengths[dataType];
+        public static int GetLength(this PrimTypeCode dataType) => _ElemTypeToLengths[dataType];
 
         /// <summary>
         /// Convert unmanaged type to bytes.
@@ -399,86 +399,6 @@ namespace Nncase
         public static byte[] GetBytes<T>(ReadOnlySpan<T> span)
             where T : unmanaged
             => MemoryMarshal.AsBytes(span).ToArray();
-
-        /// <summary>
-        /// Get display name for a datatype.
-        /// </summary>
-        /// <param name="dataType">Datatype.</param>
-        /// <returns>The display name.</returns>
-        public static string GetDisplayName(DataType dataType)
-        {
-            return dataType.ToString();
-        }
-
-        /// <summary>
-        /// convert a bytes to T scalar.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="srcType"></param>
-        /// <param name="bytes"></param>
-        /// <param name="start"></param>
-        /// <returns></returns>
-        /// <exception cref="InvalidCastException"></exception>
-        public static T ToScalar<T>(DataType srcType, byte[] bytes, int start = 0)
-          where T : unmanaged
-          => (PrimType)srcType switch
-          {
-              { TypeCode: PrimTypeCode.Int64, Lanes: 1 } => (T)(object)BitConverter.ToInt64(bytes, start),
-              { TypeCode: PrimTypeCode.Int32, Lanes: 1 } => (T)(object)BitConverter.ToInt32(bytes, start),
-              { TypeCode: PrimTypeCode.Int16, Lanes: 1 } => (T)(object)BitConverter.ToInt16(bytes, start),
-              { TypeCode: PrimTypeCode.Int8, Lanes: 1 } => (T)(object)bytes[start],
-              { TypeCode: PrimTypeCode.UInt64, Lanes: 1 } => (T)(object)BitConverter.ToUInt64(bytes, start),
-              { TypeCode: PrimTypeCode.UInt32, Lanes: 1 } => (T)(object)BitConverter.ToUInt32(bytes, start),
-              { TypeCode: PrimTypeCode.UInt16, Lanes: 1 } => (T)(object)BitConverter.ToUInt16(bytes, start),
-              { TypeCode: PrimTypeCode.UInt8, Lanes: 1 } => (T)(object)bytes[start],
-              { TypeCode: PrimTypeCode.Float64, Lanes: 1 } => (T)(object)BitConverter.ToDouble(bytes, start),
-              { TypeCode: PrimTypeCode.Float32, Lanes: 1 } => (T)(object)BitConverter.ToSingle(bytes, start),
-              { TypeCode: PrimTypeCode.BFloat16, Lanes: 1 } => (T)(object)(new BFloat16(bytes[start])),
-              { TypeCode: PrimTypeCode.Float16, Lanes: 1 } => (T)(object)(Half)(bytes[start]),
-              { TypeCode: PrimTypeCode.Bool, Lanes: 1 } => (T)(object)BitConverter.ToBoolean(bytes, start),
-              { TypeCode: PrimTypeCode.String, Lanes: 1 } => (T)(object)BitConverter.ToString(bytes, start),
-              _ => throw new InvalidCastException($"Can't Convert the {srcType.ToString()}!")
-          };
-
-        /// <summary>
-        /// convert the datatype to T scalar.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="srcType"></param>
-        /// <param name="bytes"></param>
-        /// <param name="start"></param>
-        /// <returns></returns>
-        /// <exception cref="InvalidCastException"></exception>
-        public static T CastToScalar<T>(DataType srcType, byte[] bytes, int start = 0)
-        where T : unmanaged
-        => (PrimType)srcType switch
-        {
-            { TypeCode: PrimTypeCode.Int64, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToInt64(bytes, start), typeof(T)),
-            { TypeCode: PrimTypeCode.Int32, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToInt32(bytes, start), typeof(T)),
-            { TypeCode: PrimTypeCode.Int16, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToInt16(bytes, start), typeof(T)),
-            { TypeCode: PrimTypeCode.Int8, Lanes: 1 } => (T)Convert.ChangeType((object)bytes[start], typeof(T)),
-            { TypeCode: PrimTypeCode.UInt64, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToUInt64(bytes, start), typeof(T)),
-            { TypeCode: PrimTypeCode.UInt32, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToUInt32(bytes, start), typeof(T)),
-            { TypeCode: PrimTypeCode.UInt16, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToUInt16(bytes, start), typeof(T)),
-            { TypeCode: PrimTypeCode.UInt8, Lanes: 1 } => (T)Convert.ChangeType((object)bytes[start], typeof(T)),
-            { TypeCode: PrimTypeCode.Float64, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToDouble(bytes, start), typeof(T)),
-            { TypeCode: PrimTypeCode.Float32, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToSingle(bytes, start), typeof(T)),
-            { TypeCode: PrimTypeCode.BFloat16, Lanes: 1 } => (T)Convert.ChangeType((object)(new BFloat16(bytes[start])), typeof(T)),
-            { TypeCode: PrimTypeCode.Float16, Lanes: 1 } => (T)Convert.ChangeType((object)(Half)(bytes[start]), typeof(T)),
-            { TypeCode: PrimTypeCode.Bool, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToBoolean(bytes, start), typeof(T)),
-            _ => throw new InvalidCastException($"Can't Cast the {srcType.ToString()}!")
-        };
-
-        /// <summary>
-        /// specify half cast.
-        /// </summary>
-        /// <param name="bytes"></param>
-        /// <param name="start"></param>
-        /// <returns></returns>
-        public static Half CastToScalar(byte[] bytes, int start = 0)
-        {
-            return BitConverter.ToHalf(bytes, start);
-        }
 
         /// <summary>
         /// check the datatype is lanes

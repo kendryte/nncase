@@ -104,25 +104,16 @@ public sealed record TensorConst(Tensor Value) : Const(new TensorType(Value.Elem
     public static implicit operator TensorConst(string value) => FromSpan<char>(value);
 
     /// <inheritdoc/>
-    public override string ToString()
+    public override string ToString() => ValueType switch
     {
-        string str = DataTypes.GetDisplayName(ValueType.DType);
-        if (ValueType.IsScalar)
-        {
-            if (DataTypes.IsIntegral(ValueType.DType))
-            {
-                str = Value.ToScalar<int>().ToString();
-            }
-            else if (DataTypes.IsFloat(ValueType.DType))
-            {
-                str = Value.ToScalar<float>().ToString();
-            }
-        }
-        else
-        {
-            str += $" {ValueType.Shape}";
-        }
-
-        return str;
-    }
+        var x when x.IsScalar =>
+          x.DType switch
+          {
+              var dtype when DataTypes.IsIntegral(dtype) => Value.ToScalar<long>().ToString(),
+              var dtype when DataTypes.IsFloat(dtype) => Value.ToScalar<float>().ToString(),
+              var dtype when DataTypes.IsPointer(dtype) => Value.ToScalar<long>().ToString(),
+              _ => $"{x.DType} {x.Shape}"
+          },
+        _ => $"{ValueType.DType} {ValueType.Shape}"
+    };
 }

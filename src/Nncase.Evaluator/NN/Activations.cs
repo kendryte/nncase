@@ -12,9 +12,9 @@ namespace Nncase.Evaluator.NN;
 /// </summary>
 public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>
 {
-    private Const Visit(TorchSharp.torch.Tensor input, int alpha)
+    private IValue Visit(TorchSharp.torch.Tensor input, int alpha)
     {
-        return input.celu().ToConst();
+        return input.celu().ToValue();
     }
 
     private IRType Visit(TensorType input)

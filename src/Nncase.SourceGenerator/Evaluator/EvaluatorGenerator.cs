@@ -21,7 +21,7 @@ public static class InterfaceKindExtension
 
     public static string GetReturnType(this InterfaceKind target_interface) => target_interface switch
     {
-        InterfaceKind.IEvaluator => "Const",
+        InterfaceKind.IEvaluator => "IValue",
         InterfaceKind.ITypeInferencer => "IRType",
         _ => throw new NotImplementedException(),
     };

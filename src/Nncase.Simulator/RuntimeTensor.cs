@@ -125,19 +125,13 @@ namespace Nncase.Simulator
         }
 
         /// <summary>
-        /// <see cref="Create{T}(DenseTensor{T})"/>
-        /// </summary>
-        public static unsafe RuntimeTensor Create<T>(Tensor<T> tensor)
-                  where T : unmanaged => Create(tensor.ToDenseTensor());
-
-        /// <summary>
         /// create the RuntimeTensor from the DenseTensor
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="tensor"></param>
         /// <returns></returns>
         public static unsafe RuntimeTensor Create<T>(DenseTensor<T> tensor)
-          where T : unmanaged
+          where T : unmanaged, System.IEquatable<T>
         {
             var dtype = DataTypes.FromType<T>();
             var total_bytes = tensor.Length * DataTypes.GetLength(dtype);

@@ -370,8 +370,8 @@ namespace Nncase.TIR
             /// <inheritdoc/>
             public override string VisitType(TensorType type) => type.DType switch
             {
-                PrimType ptype => $"{DataTypes.GetDisplayName(ptype)}{type.Shape}",
-                PointerType { ElemType: PrimType etype } ptype => $"Handle:{DataTypes.GetDisplayName(etype)}",
+                PrimType ptype => $"{ptype}{type.Shape}",
+                PointerType { ElemType: PrimType etype } ptype => $"Handle:{etype}",
                 _ => throw new NotSupportedException(type.DType.GetType().Name),
             };
 

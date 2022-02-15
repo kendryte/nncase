@@ -21,7 +21,7 @@ public class InferEngine
     }
 
     public void InputTensor<T>(int index, Tensor<T> tensor)
-      where T : unmanaged
+      where T : unmanaged, System.IEquatable<T>
     {
         if (index != 0)
             throw new NotSupportedException("Only Support 1 Input!");

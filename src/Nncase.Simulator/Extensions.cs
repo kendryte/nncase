@@ -6,7 +6,7 @@ namespace Nncase.Simulator;
 public static class SimulatorExtension
 {
     public static string ToFile<T>(this Tensor<T> tensor, string path)
-      where T : unmanaged
+      where T : unmanaged, System.IEquatable<T>
     {
         if (File.Exists(path))
             File.Delete(path);
@@ -15,8 +15,7 @@ public static class SimulatorExtension
 
         using var stream = File.Create(path);
         using var writer = new BinaryWriter(stream);
-        var dtensor = tensor.ToDenseTensor();
-        writer.Write(MemoryMarshal.AsBytes(dtensor.Buffer.Span));
+        writer.Write(tensor.BytesBuffer);
         return path;
     }
 }

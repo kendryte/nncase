@@ -43,7 +43,7 @@ public partial class Tensor
     /// <returns>string.</returns>
     public string ToStr() => ElementType switch
     {
-        { ElemType: ElemType.String, Lanes: 1 } => Encoding.Default.GetString(BytesBuffer),
+        PrimType { TypeCode: PrimTypeCode.String, Lanes: 1 } => Encoding.Default.GetString(BytesBuffer),
         _ => throw new InvalidCastException($"This tensor is not a string!"),
     };
 }

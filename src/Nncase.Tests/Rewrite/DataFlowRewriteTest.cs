@@ -215,7 +215,7 @@ namespace Nncase.Tests.ReWriteTest
         }
 
 
-        public T Dim1ExprToScalar<T>(Expr expr) where T : unmanaged, IEquatable<T> => (expr as TensorConst).Value.Cast<T>()[0];
+        public T Dim1ExprToScalar<T>(Expr expr) where T : unmanaged, System.IEquatable<T> => (expr as TensorConst).Value.Cast<T>()[0];
 
         [Fact]
         public void TestPaddingCompute()
