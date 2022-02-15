@@ -50,18 +50,27 @@ public interface ICompilerServicesProvider
     IValue EvaluateOp(Op op, IEvaluateContext context);
 }
 
-internal class CompilerServicesProvider : ICompilerServicesProvider
+internal interface ICompilerServicesProviderInternal
+{
+    IDataTypeServiceProvider DataTypeService { get; }
+}
+
+internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerServicesProviderInternal
 {
     private readonly IEvaluateProvider _evaluateProvider;
     private readonly ITypeInferenceProvider _typeInferenceProvider;
 
     public CompilerServicesProvider(
         IEvaluateProvider evaluateProvider,
-        ITypeInferenceProvider typeInferenceProvider)
+        ITypeInferenceProvider typeInferenceProvider,
+        IDataTypeServiceProvider dataTypeServiceProvider)
     {
         _evaluateProvider = evaluateProvider;
         _typeInferenceProvider = typeInferenceProvider;
+        DataTypeService = dataTypeServiceProvider;
     }
+
+    public IDataTypeServiceProvider DataTypeService { get; }
 
     /// <inheritdoc/>
     public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null)
@@ -94,6 +103,8 @@ internal class CompilerServicesProvider : ICompilerServicesProvider
 public static class CompilerServices
 {
     private static ICompilerServicesProvider? _provider;
+
+    internal static IDataTypeServiceProvider DataTypeService => ((ICompilerServicesProviderInternal)Provider).DataTypeService;
 
     private static ICompilerServicesProvider Provider => _provider ?? throw new InvalidOperationException("Compiler services provider must be set.");
 

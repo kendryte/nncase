@@ -51,7 +51,7 @@ public static class TensorflowExtension
 
     private static readonly Dictionary<DataType, TF_DataType> _dataTypesToTorchType = new()
     {
-        { DataType.Bool, TF_DataType.TF_BOOL },
+        { DataType.Boolean, TF_DataType.TF_BOOL },
         { DataType.Int8, TF_DataType.TF_INT8 },
         { DataType.Int16, TF_DataType.TF_INT16 },
         { DataType.Int32, TF_DataType.TF_INT32 },
@@ -64,7 +64,7 @@ public static class TensorflowExtension
 
     private static readonly Dictionary<TF_DataType, DataType> _TorchTypeTodataTypes = new()
     {
-        { TF_DataType.TF_BOOL, DataType.Bool },
+        { TF_DataType.TF_BOOL, DataType.Boolean },
         { TF_DataType.TF_INT8, DataType.Int8 },
         { TF_DataType.TF_INT16, DataType.Int16 },
         { TF_DataType.TF_INT32, DataType.Int32 },

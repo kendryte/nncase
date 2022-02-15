@@ -18,7 +18,7 @@ namespace Nncase.Importer
     {
         private static readonly Dictionary<TensorProto.Types.DataType, DataType> _typeMap = new()
         {
-            { TensorProto.Types.DataType.Bool, DataType.Bool },
+            { TensorProto.Types.DataType.Bool, DataType.Boolean },
             { TensorProto.Types.DataType.Float16, DataType.Float16 },
             { TensorProto.Types.DataType.Float, DataType.Float32 },
             { TensorProto.Types.DataType.Double, DataType.Float64 },
@@ -26,7 +26,7 @@ namespace Nncase.Importer
             { TensorProto.Types.DataType.Int32, DataType.Int32 },
             { TensorProto.Types.DataType.Int64, DataType.Int64 },
             { TensorProto.Types.DataType.Int8, DataType.Int8 },
-            { TensorProto.Types.DataType.String, DataType.String },
+            { TensorProto.Types.DataType.String, DataType.Utf8Char },
             { TensorProto.Types.DataType.Uint32, DataType.UInt32 },
             { TensorProto.Types.DataType.Uint64, DataType.UInt64 },
             { TensorProto.Types.DataType.Uint8, DataType.UInt8 },
