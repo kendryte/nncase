@@ -174,7 +174,7 @@ namespace Nncase.IR
                 Visit(expr.LoopVar);
                 Visit(expr.Dom.Min);
                 Visit(expr.Dom.Max);
-                Visit(expr.Body);
+                Visit(expr.Sequence);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
@@ -187,10 +187,10 @@ namespace Nncase.IR
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
-                Visit(expr.InitBody);
+                Visit(expr.InitSequence);
                 Visit(expr.Predicate);
                 foreach (var iterVar in expr.IterVars) { Visit(iterVar); }
-                Visit(expr.Body);
+                Visit(expr.Sequence);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
@@ -438,18 +438,6 @@ namespace Nncase.IR
             return result;
         }
 
-        /// <inheritdoc/>
-        public sealed override TTypeResult VisitType(HandleType type)
-        {
-            if (!_typeMemo.TryGetValue(type, out var result))
-            {
-                result = VisitTypeLeaf(type);
-                _typeMemo.Add(type, result);
-            }
-
-            return result;
-        }
-
         /// <summary>
         /// Visit any type leaf.
         /// </summary>
@@ -484,13 +472,6 @@ namespace Nncase.IR
         /// <param name="type">Callable type.</param>
         /// <returns>Result.</returns>
         public virtual TTypeResult VisitTypeLeaf(CallableType type) => DefaultVisitTypeLeaf(type);
-
-        /// <summary>
-        /// Visit pointer type leaf.
-        /// </summary>
-        /// <param name="type">pointer type.</param>
-        /// <returns>Result.</returns>
-        public virtual TTypeResult VisitTypeLeaf(HandleType type) => DefaultVisitTypeLeaf(type);
 
         /// <summary>
         /// Default visit leaf routine.

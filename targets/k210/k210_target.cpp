@@ -18,6 +18,7 @@
 #include <nncase/ir/ops/k210/opcode.h>
 #include <nncase/runtime/k210/runtime_types.h>
 #include <nncase/schedule/k210/kpu_buffer_allocator.h>
+#include <nncase/transforms/k210/conv2d_transpose_transform.h>
 #include <nncase/transforms/k210/fake_kpu_conv2d.h>
 #include <nncase/transforms/k210/fold_kpu_upload.h>
 #include <nncase/transforms/k210/fuse_kpu_conv2d_pool.h>
@@ -32,6 +33,7 @@
 #include <nncase/transforms/neutral/fold_quantize.h>
 #include <nncase/transforms/neutral/fold_transpose.h>
 #include <nncase/transforms/neutral/fuse_pad.h>
+#include <nncase/transforms/neutral/split_sigmoid.h>
 #include <nncase/transforms/neutral/transpose_motion.h>
 #include <nncase/transforms/pass.h>
 
@@ -89,16 +91,29 @@ void k210_target::register_evaluator_ops()
 
 void k210_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] bool use_ptq)
 {
-    transform_pass p("strided_slice_lowering");
-    p.emplace<strided_slice_conv2d_pool>();
-    pass_mgr.add_pass(std::move(p));
+    {
+        transform_pass p("sigmoid_lowering");
+        p.emplace<split_sigmoid_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+
+    {
+        transform_pass p("strided_slice_lowering");
+        p.emplace<strided_slice_conv2d_pool>();
+        pass_mgr.add_pass(std::move(p));
+    }
+
+    {
+        transform_pass p("conv2d_transpose_lowering");
+        p.emplace<conv2d_transpose_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
 }
 
 void k210_target::register_quantize_annotation_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr)
 {
     {
-        transform_pass p("annotate_kpu");
-        p.emplace<add_to_conv2d_transform>();
+        transform_pass p("annotate_kpu1");
         p.emplace<eliminate_dilated_conv2d_transform>();
         p.emplace<fake_kpu_conv2d_transform>();
         p.emplace<strided_slice_motion_transform>();
@@ -108,6 +123,17 @@ void k210_target::register_quantize_annotation_passes(const module_type_t &type,
     }
 
     neutral_target::register_quantize_annotation_passes(type, pass_mgr);
+
+    {
+        transform_pass p("annotate_kpu2");
+        p.emplace<add_to_conv2d_transform>();
+        p.emplace<eliminate_dilated_conv2d_transform>();
+        p.emplace<fake_kpu_conv2d_transform>();
+        p.emplace<strided_slice_motion_transform>();
+        p.emplace<fuse_fake_kpu_conv2d_strided_slice_transform>();
+        add_default_transforms(p);
+        pass_mgr.add_pass(std::move(p));
+    }
 
     {
         transform_pass p("fused_unary_motion");
@@ -123,11 +149,11 @@ void k210_target::register_quantize_annotation_passes(const module_type_t &type,
     }
 }
 
-void k210_target::register_quantize_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type, [[maybe_unused]] datatype_t w_quant_type)
+void k210_target::register_quantize_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type, [[maybe_unused]] std::string_view w_quant_type, [[maybe_unused]] bool use_mse_quant_w)
 {
     {
         transform_pass p("lowering_kpu_conv2d");
-        p.emplace<kpu_conv2d_transform>();
+        p.emplace<kpu_conv2d_transform>(use_mse_quant_w);
         p.emplace<fold_quantize_transform>();
         pass_mgr.add_pass(std::move(p));
     }
@@ -144,7 +170,7 @@ void k210_target::register_quantize_passes(const module_type_t &type, ir::transf
         pass_mgr.add_pass(std::move(p));
     }
     {
-        neutral_target::register_quantize_passes(type, pass_mgr, quant_type, w_quant_type);
+        neutral_target::register_quantize_passes(type, pass_mgr, quant_type, w_quant_type, use_mse_quant_w);
 
         transform_pass p("fold_kpu_data_exchg2");
         //p.emplace<fuse_kpu_download_transform>();

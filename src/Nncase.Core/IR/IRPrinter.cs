@@ -410,7 +410,7 @@ namespace Nncase.IR
                 // 2. For Body
                 using (Scope.IndentUp())
                 {
-                    Visit(expr.Body!);
+                    Visit(expr.Sequence!);
                 }
 
                 // 3. For closing
@@ -456,18 +456,14 @@ namespace Nncase.IR
             public override string VisitType(InvalidType type) => $"invalid:{type.Reason}";
 
             /// <inheritdoc/>
-            public override string VisitType(TensorType type) =>
-                $"{DataTypes.GetDisplayName(type.DType)}{type.Shape}";
+            public override string VisitType(TensorType type)
+            {
+                return $"{type.DType}{type.Shape}";
+            }
 
             /// <inheritdoc/>
             public override string VisitType(TupleType type) =>
                 $"({string.Join(", ", type.Fields.Select(VisitType))})";
-
-            /// <inheritdoc/>
-            public override string VisitType(HandleType type)
-            {
-                return $"pointer:{DataTypes.GetDisplayName(type.DType)}";
-            }
 
             private string AllocateTempVar(Expr expr)
             {

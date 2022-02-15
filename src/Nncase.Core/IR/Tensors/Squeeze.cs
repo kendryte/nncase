@@ -7,7 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Nncase.IR.Utility;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Tensors;
 
@@ -24,5 +24,5 @@ public sealed record Squeeze() : Op
     /// <summary>
     /// Gets dimension.
     /// </summary>
-    public static readonly ParameterInfo Dim = new(typeof(Squeeze), 1, "dim", HasRank(1) & IsIntegral());
+    public static ParameterInfo Dim = new(typeof(Squeeze), 1, "dim", IsRank(1) & IsIntegral());
 }

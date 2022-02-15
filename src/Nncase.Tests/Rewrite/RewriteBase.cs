@@ -1,21 +1,22 @@
-using Xunit;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.CompilerServices;
+using Microsoft.Extensions.Hosting;
+using Nncase.Evaluator;
 using Nncase.IR;
-using Nncase.Transform;
 using Nncase.Pattern;
+using Nncase.Transform;
+using TorchSharp;
+using Xunit;
 using static Nncase.IR.F.Math;
-using static Nncase.IR.F.Tensors;
 using static Nncase.IR.F.NN;
-using Rule = Nncase.Transform.Rule;
+using static Nncase.IR.F.Tensors;
 using static Nncase.Pattern.F.Math;
 using static Nncase.Pattern.F.NN;
 using static Nncase.Pattern.F.Tensors;
 using static Nncase.Pattern.Utility;
-using System.IO;
-using System.Runtime.CompilerServices;
-using TorchSharp;
-using Nncase.Evaluator;
+using Rule = Nncase.Transform.Rule;
 
 
 namespace Nncase.Tests.ReWriteTest
@@ -30,7 +31,7 @@ namespace Nncase.Tests.ReWriteTest
         }
     }
 
-    public class RewriteTest
+    public class RewriteFixtrue : IHostFixtrue
     {
         public RunPassOptions passOptions;
 
@@ -39,7 +40,7 @@ namespace Nncase.Tests.ReWriteTest
             return path;
         }
 
-        public RewriteTest()
+        public RewriteFixtrue(IHost host) : base(host)
         {
             var TestName = this.GetType().Name;
             string dumpDir = Path.Combine(GetThisFilePath(), "..", "..", "..", "..", "tests_output");
@@ -53,7 +54,7 @@ namespace Nncase.Tests.ReWriteTest
             expr.InferenceType();
             var f = new Function(expr, parameters);
             var result = CompilerServices.InferenceType(f);
-            f.DumpExprAsIL("before", Path.Combine(passOptions.FullDumpDir, $"ShapeInfer_{name}"));
+            f.DumpExprAsIL("before", Path.Combine(passOptions.PassDumpDir, $"ShapeInfer_{name}"));
             return new ShapeInferPass($"ShapeInfer_{name}").Run(f, passOptions).Body;
         }
 

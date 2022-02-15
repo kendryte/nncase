@@ -1,31 +1,29 @@
-using System;
-using Xunit;
-using Nncase.Pattern;
-using Nncase.Transform;
-using Nncase.IR;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Numerics.Tensors;
+using Microsoft.Extensions.Hosting;
 using NetFabric.Hyperlinq;
-using Nncase.Pattern.Math;
-using static Nncase.IR.F.Math;
-using static Nncase.IR.F.Tensors;
-using static Nncase.IR.F.NN;
-using static Nncase.Pattern.Utility;
-using static Nncase.Pattern.F.Math;
-using static Nncase.Pattern.F.Tensors;
-using static Nncase.IR.Utility;
-using TorchSharp;
 using Nncase.Evaluator;
 using Nncase.Importer;
 using Nncase.Importer.TFLite;
+using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.NN;
+using Nncase.Pattern;
+using Nncase.Pattern.Math;
 using Nncase.Tests.ReWriteTest;
-
+using Nncase.Transform;
 using Nncase.Transform.Rule;
+using TorchSharp;
+using Xunit;
+using static Nncase.IR.F.Math;
+using static Nncase.IR.F.NN;
+using static Nncase.IR.F.Tensors;
+using static Nncase.IR.TypePatternUtility;
+using static Nncase.Pattern.F.Math;
+using static Nncase.Pattern.F.Tensors;
+using static Nncase.Pattern.Utility;
 using Binary = Nncase.IR.Math.Binary;
 using Broadcast = Nncase.IR.Tensors.Broadcast;
 using Tuple = Nncase.IR.Tuple;
@@ -33,11 +31,11 @@ using Tuple = Nncase.IR.Tuple;
 namespace Nncase.Tests.ReWriteTest
 {
 
-    public class DataFlowRewriteTestFactory : RewriteTest
+    public class DataFlowRewriteTestFactory : RewriteFixtrue
     {
-        public DataFlowRewriteTestFactory() : base()
+        public DataFlowRewriteTestFactory(IHost host) : base(host)
         {
-            passOptions.SetDir(Path.Combine(passOptions.FullDumpDir, "DataFlowRewriteTestFactory"));
+            passOptions.SetDir(Path.Combine(passOptions.PassDumpDir, "DataFlowRewriteTestFactory"));
         }
 
         private static IEnumerable<object[]> Data =>
@@ -55,11 +53,11 @@ namespace Nncase.Tests.ReWriteTest
             passOptions.SetName($"{Case.Name}");
             Expr pre = Case.PreExpr;
             var infered = pre.InferenceType();
-            pre.DumpExprAsIL("pre", passOptions.FullDumpDir);
+            pre.DumpExprAsIL("pre", passOptions.PassDumpDir);
             Assert.True(infered);
             var post = DataFlowRewrite.Rewrite(pre, Case.Rules, passOptions);
             Assert.True(post.InferenceType());
-            post.DumpExprAsIL("post", passOptions.FullDumpDir);
+            post.DumpExprAsIL("post", passOptions.PassDumpDir);
             Assert.Equal(Case.PostExpr, post);
         }
 
@@ -99,11 +97,11 @@ namespace Nncase.Tests.ReWriteTest
 
     }
 
-    public class UnitTestDataFlowRewrite : RewriteTest
+    public class UnitTestDataFlowRewrite : RewriteFixtrue
     {
-        public UnitTestDataFlowRewrite() : base()
+        public UnitTestDataFlowRewrite(IHost host) : base(host)
         {
-            passOptions.SetDir(Path.Combine(passOptions.FullDumpDir, "UnitTestDataFlowRewrite"));
+            passOptions.SetDir(Path.Combine(passOptions.PassDumpDir, "UnitTestDataFlowRewrite"));
         }
 
         [Fact]
@@ -209,15 +207,15 @@ namespace Nncase.Tests.ReWriteTest
         }
     }
 
-    public class DataFlowRewriteAndInferIntegrateTest : RewriteTest
+    public class DataFlowRewriteAndInferIntegrateTest : RewriteFixtrue
     {
-        public DataFlowRewriteAndInferIntegrateTest() : base()
+        public DataFlowRewriteAndInferIntegrateTest(IHost host) : base(host)
         {
-            passOptions.SetDir(Path.Combine(passOptions.FullDumpDir, "DataFlowRewriteAndInferIntegrateTest"));
+            passOptions.SetDir(Path.Combine(passOptions.PassDumpDir, "DataFlowRewriteAndInferIntegrateTest"));
         }
 
 
-        public T Dim1ExprToScalar<T>(Expr expr) where T : unmanaged, IEquatable<T> => (expr as TensorConst).Value.Cast<T>()[0];
+        public T Dim1ExprToScalar<T>(Expr expr) where T : unmanaged, System.IEquatable<T> => (expr as TensorConst).Value.Cast<T>()[0];
 
         [Fact]
         public void TestPaddingCompute()

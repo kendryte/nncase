@@ -1,12 +1,12 @@
-using Xunit;
-using Nncase.IR;
-using Nncase.CodeGen;
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics.Tensors;
+using Nncase.CodeGen;
+using Nncase.IR;
 using Nncase.TIR;
 using Nncase.Transform;
+using Xunit;
 
 namespace Nncase.Tests.CodeGenTest
 {
@@ -44,9 +44,11 @@ namespace Nncase.Tests.CodeGenTest
     {
         public override Function GetEntry()
         {
-            var x = new Var("x", TensorType.Scalar(ElemType.Float32));
-            var y = new Var("y", TensorType.Scalar(ElemType.Float32));
-            var func = new Function(x - y, x, y);
+            var x = new Var("x", TensorType.Scalar(DataType.Float32));
+            var y = new Var("y", TensorType.Scalar(DataType.Float32));
+            var func = T.PrimFunc("sub", x, y).Body(
+              x - y
+            );
             return func;
         }
 
@@ -63,7 +65,7 @@ namespace Nncase.Tests.CodeGenTest
             for (int i = 0; i < n; i++)
             {
                 A[i] = A[i] + 1;
-                for (int j = 0; j < 10; j++)
+                for (int j = 0; j < n; j++)
                 {
                     A[i] = A[i] + j;
                 }
@@ -88,14 +90,14 @@ namespace Nncase.Tests.CodeGenTest
         {
             var n = T.SizeVar("n");
             var A = TIR.T.DeclBuffer(new(n), DataType.Int32, "A");
-            var out_for =
-             T.Serial(out var i, n, out _).Add(
-              T.Store(A[i], A[i] + 1),
-              T.Serial(out var j, n, out _).Add(
-                T.Store(A[i], A[i] + j)
+            return T.PrimFunc("for_loop", A.Handle, n).Body(
+              T.Serial(out var i, n).Body(
+                T.Store(A[i], A[i] + 1),
+                T.Serial(out var j, n).Body(
+                  T.Store(A[i], A[i] + j)
+                )
               )
             );
-            return T.PrimFunc("main", A.Handle, n).Add(out_for);
         }
     }
 
@@ -128,8 +130,8 @@ namespace Nncase.Tests.CodeGenTest
             var n = T.SizeVar("n");
             var m = T.SizeVar("m");
             var A = TIR.T.DeclBuffer((n, m), DataType.Int32, "A");
-            var func = T.PrimFunc("main", A.Handle, n, m).Add(
-              T.Grid(out var i, out var j, (n, m)).Add(
+            var func = T.PrimFunc("main", A.Handle, n, m).Body(
+              T.Grid(out var i, out var j, (n, m)).Body(
                 T.Store(A[i * n + j], i + j)
               )
             );
@@ -145,12 +147,12 @@ namespace Nncase.Tests.CodeGenTest
             var n = T.SizeVar("n");
             var m = T.SizeVar("m");
             var A = T.DeclBuffer((n, m), name: "A");
-            var func = T.PrimFunc("func", A.Handle, n, m).Add(
-            T.Grid(out var i, out var j, (n, m), out var lp).Add(
+            var func = T.PrimFunc("func", A.Handle, n, m).Body(
+            T.Grid(out var i, out var j, (n, m), out var lp).Body(
               T.Block("init").Remap(out var vi, out var vj, (lp.i, lp.j), "SS").
               Init(
                 T.Store(A[vi, vj], 1.0f)
-              ).Add(
+              ).Body(
                 T.Store(A[vi, vj], IR.F.Tensors.Cast(vi + vj, DataType.Float32))
               )
             ),
@@ -183,12 +185,11 @@ namespace Nncase.Tests.CodeGenTest
 
         public override FunctionPass GetPass()
         {
-            var pass = new TIRPass("TIRPass");
-            pass.Add(
+            var pass = new TIRPass("TIRPass"){
                 new Transform.Mutator.LowerBlockInit(),
                 new Transform.Mutator.ConvertBlocksToOpaque(),
                 new Transform.Mutator.FlattenBuffer()
-            );
+            };
             return pass;
         }
     }

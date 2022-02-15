@@ -3,6 +3,7 @@
 set(SRCS piecewise_regression.cpp
          fake_kpu_conv2d.cpp
          strided_slice_motion.cpp
+         conv2d_transpose_transform.cpp
          kpu_conv2d.cpp
          fuse_kpu_download.cpp
          fold_kpu_upload.cpp

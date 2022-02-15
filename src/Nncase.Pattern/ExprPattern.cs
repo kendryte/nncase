@@ -45,7 +45,7 @@ namespace Nncase.Pattern
         /// <summary>
         /// Pattern for CheckedType, defulat match IR Type.
         /// </summary>
-        public TypePattern CheckedTypePat { get; set; } = IR.Utility.IsIRType();
+        public TypePattern CheckedTypePat { get; set; } = IR.TypePatternUtility.IsIRType();
 
         /// <summary>
         /// Match The Expr Type.
@@ -87,20 +87,20 @@ namespace Nncase.Pattern
         /// <summary>
         /// Add type Pattern.
         /// </summary>
-        /// <returns> this. </returns>
-        public ExprPattern IsIRType() => SetTypePattern(IR.Utility.IsIRType());
+        /// <returns> this </returns>
+        public ExprPattern IsIRType() => SetTypePattern(IR.TypePatternUtility.IsIRType());
 
         /// <summary>
         /// Add type Pattern.
         /// </summary>
-        /// <returns> this. </returns>
-        public ExprPattern IsTensor() => SetTypePattern(IR.Utility.IsTensor());
+        /// <returns> this </returns>
+        public ExprPattern IsTensor() => SetTypePattern(IR.TypePatternUtility.IsTensor());
 
         /// <summary>
         /// Add type Pattern.
         /// </summary>
-        /// <returns> this. </returns>
-        public ExprPattern IsScalar() => SetTypePattern(IR.Utility.IsScalar());
+        /// <returns> this </returns>
+        public ExprPattern IsScalar() => SetTypePattern(IR.TypePatternUtility.IsScalar());
 
         /// <summary>
         /// Copy The **New** ExprPattern. NOTE the new pattern have different Id with old one, The there not equal.

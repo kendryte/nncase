@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Nncase.IR;
-using static Nncase.IR.Utility;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.Pattern;
 

@@ -32,6 +32,8 @@ project(nncase
 option(ENABLE_OPENMP "OpenMP support" ON)
 option(ENABLE_HALIDE "halide kernels support" ON)
 option(BUILD_PYTHON_BINDING "Build python binding" ON)
+option(BUILD_CSHARP_BINDING "Build csharp binding" ON)
+option(BUILD_BENCHMARK "Build benchmark programs" ON)
 option(BUILD_TESTING "Build test programs" OFF)
 
 if (BUILDING_RUNTIME)
@@ -57,7 +59,7 @@ else() # in user space
     message(STATUS "Auto Cmake Conan Installation")
     include(${CMAKE_SOURCE_DIR}/cmake/conan.cmake)
     conan_cmake_run(CONANFILE conanfile.py
-                    BASIC_SETUP TARGETS
+                    BASIC_SETUP
                     OPTIONS ${CONAN_OPTS}
                     SETTINGS ${CONAN_SETTINGS}
                     BUILD missing)
@@ -74,13 +76,15 @@ if (BUILDING_RUNTIME)
     
     if (MSVC)
         add_definitions(/D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)
-        add_compile_options(/wd4267 /wd4251 /FC /utf-8 /W3 /WX)
+        add_compile_options(/wd4267 /wd4251 /wd4244 /FC /utf-8 /W3 /WX /wd4297)
     else()
         add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-type-limits)
         if (APPLE)
             add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized)
+        elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+            add_compile_options(-Wno-uninitialized -Wno-unused-private-field)
         else ()
-            add_compile_options(-Wno-maybe-uninitialized)
+            add_compile_options(-Wno-maybe-uninitialized -Wno-unused-private-field)
         endif()
     endif()
     
@@ -90,13 +94,16 @@ if (BUILDING_RUNTIME)
     add_subdirectory(include/nncase)
     add_subdirectory(src/kernels)
     add_subdirectory(src/runtime)
-    add_subdirectory(benchmark)
+    add_subdirectory(src/functional)
+    if(BUILD_BENCHMARK)
+        add_subdirectory(benchmark)
+    endif()
     
     # Python binding
     if(BUILD_PYTHON_BINDING)
         add_subdirectory(python/nncaseruntime/native)
     endif()
-        
+
     install(DIRECTORY ${NNCASE_INCLUDE_DIR}/nncase
         DESTINATION include
         COMPONENT nncase-headers
@@ -145,12 +152,15 @@ else()
     
     if (MSVC)
         add_definitions(/D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS /D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)
-        add_compile_options(/wd4267 /wd4251 /FC /utf-8 /W3 /WX)
+        add_compile_options(/wd4267 /wd4251 /wd4244 /FC /utf-8 /W3 /WX)
+        set(PYBIND11_CPP_STANDARD "/std:c++latest")
     else()
         add_compile_options(-fvisibility=hidden)
         add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-type-limits -Wno-unused-local-typedefs -Wno-sign-compare)
         if (APPLE)
             add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized -Wno-deprecated)
+        elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+            add_compile_options(-Wno-uninitialized)
         else ()
             add_compile_options(-Wno-maybe-uninitialized -Wno-deprecated-copy)
             add_link_options(-Wl,--exclude-libs,ALL)
@@ -165,25 +175,31 @@ else()
     add_subdirectory(src/data)
     add_subdirectory(src/ir)
     add_subdirectory(src/importer)
-    #add_subdirectory(src/schedule)
-    #add_subdirectory(src/evaluator)
+    add_subdirectory(src/schedule)
+    add_subdirectory(src/evaluator)
+    add_subdirectory(src/functional)
     add_subdirectory(src/transforms)
-    #add_subdirectory(src/codegen)
-    #add_subdirectory(src/kernels)
-    #add_subdirectory(src/runtime)
+    add_subdirectory(src/codegen)
+    add_subdirectory(src/kernels)
+    add_subdirectory(src/runtime)
     add_subdirectory(src/targets)
-    #add_subdirectory(src/plugin)
+    add_subdirectory(src/plugin)
     add_subdirectory(src/cli)
 
     if(BUILD_TESTING)
-    #    add_subdirectory(tests/kernels)
+        add_subdirectory(tests/kernels)
     endif()
     
     # Python binding
     if(BUILD_PYTHON_BINDING)
-    #    add_subdirectory(python/nncase/native)
+        add_subdirectory(python/nncase/native)
     endif()
-    
+
+    # Csharp binding
+    if(BUILD_CSHARP_BINDING)
+        add_subdirectory(csharp)
+    endif()  
+
     # Thrid party
     add_subdirectory(third_party/onnx)
     
@@ -220,11 +236,11 @@ else()
         )
     
     # Targets
-    #add_subdirectory(targets/cpu)
-    #add_subdirectory(targets/k210)
-    #add_subdirectory(targets/vulkan)
+    add_subdirectory(targets/cpu)
+    add_subdirectory(targets/k210)
+    add_subdirectory(targets/vulkan)
 endif()
 
 # Modules
-#add_subdirectory(modules/k210)
-#add_subdirectory(modules/vulkan)
+add_subdirectory(modules/k210)
+add_subdirectory(modules/vulkan)

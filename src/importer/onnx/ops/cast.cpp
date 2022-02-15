@@ -17,7 +17,6 @@
 #include <nncase/importer/util.h>
 #include <nncase/ir/graph.h>
 #include <nncase/ir/ops/convert.h>
-#include <nncase/ir/ops/slice.h>
 
 using namespace nncase;
 using namespace nncase::importer;
@@ -32,18 +31,16 @@ void onnx_importer::convert_op_Cast(const NodeProto &node)
     const auto in_type = get_datatype(input).value();
     const auto in_shape = get_shape(input);
     datatype_t out_type = dt_float32;
-    if (auto out_type_info = get_datatype(output); out_type_info)
-    {
-        out_type = out_type_info.value();
-    }
-    else
-    {
-        out_type = get_datatype(static_cast<TensorProto_DataType>(get_attribute<int>(node, "to").value())).value();
-    }
 
-    auto ct = graph_.emplace<convert>(in_type, in_shape, out_type);
-    ct->name("convert");
+    // op version 1 is not supported by onnx runtime, now we only support op version 6/9/13
+    auto to_attr = get_attribute<int>(node, "to");
+    assert(to_attr);
 
-    link_input_tensor(&ct->input(), input);
-    output_tensors_.emplace(node.output()[0], &ct->output());
+    out_type = get_datatype(static_cast<TensorProto_DataType>(to_attr.value())).value();
+
+    auto cvt = graph_.emplace<convert>(in_type, in_shape, out_type);
+    cvt->name("convert");
+
+    link_input_tensor(&cvt->input(), input);
+    output_tensors_.emplace(output, &cvt->output());
 }

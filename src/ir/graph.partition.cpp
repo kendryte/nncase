@@ -179,6 +179,8 @@ private:
         {
             changed = false;
             changed |= merge_child_region();
+            changed |= merge_parent_region();
+            changed |= merge_same_input_region();
         } while (changed);
     }
 
@@ -204,6 +206,94 @@ private:
                     if ((ita->module_type == itb->module_type || itb->is_all_noaction)
                         && std::all_of(itb->region_inputs.begin(), itb->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); }))
                         to_be_merge.emplace_back(itb);
+                }
+
+                if (!to_be_merge.empty())
+                {
+                    for (auto region : to_be_merge)
+                    {
+                        ita->merge(*region);
+                        regions_.erase(region);
+                    }
+
+                    changed = ever_changed = true;
+                    break;
+                }
+            }
+        } while (changed);
+        return ever_changed;
+    }
+
+    bool merge_parent_region()
+    {
+        bool ever_changed = false;
+        bool changed;
+        do
+        {
+            changed = false;
+            for (auto ita = regions_.begin(); ita != regions_.end(); ++ita)
+            {
+                std::vector<std::list<region>::iterator> to_be_merge;
+                for (auto itb = regions_.begin(); itb != regions_.end(); ++itb)
+                {
+                    // don't merge stackvm region
+                    if (ita == itb
+                        || (ita->module_type == runtime::stackvm::stackvm_module_type
+                            && itb->module_type == runtime::stackvm::stackvm_module_type))
+                        continue;
+
+                    // itb's outputs all connect to ita's input
+                    if (itb->is_all_noaction
+                        && std::all_of(itb->outputs.begin(), itb->outputs.end(), [&](output_connector *out) { return std::all_of(out->connections().begin(), out->connections().end(), [&](input_connector *in) { return ita->region_inputs.contains(in); }); }))
+                        to_be_merge.emplace_back(itb);
+                }
+
+                if (!to_be_merge.empty())
+                {
+                    for (auto region : to_be_merge)
+                    {
+                        ita->merge(*region);
+                        regions_.erase(region);
+                    }
+
+                    changed = ever_changed = true;
+                    break;
+                }
+            }
+        } while (changed);
+        return ever_changed;
+    }
+
+    bool merge_same_input_region()
+    {
+        bool ever_changed = false;
+        bool changed;
+        do
+        {
+            changed = false;
+            for (auto ita = regions_.begin(); ita != regions_.end(); ++ita)
+            {
+                std::vector<std::list<region>::iterator> to_be_merge;
+                for (auto itb = regions_.begin(); itb != regions_.end(); ++itb)
+                {
+                    // don't merge stackvm region
+                    if (ita == itb
+                        || (ita->module_type == runtime::stackvm::stackvm_module_type
+                            && itb->module_type == runtime::stackvm::stackvm_module_type))
+                        continue;
+
+                    // itb has the same input with ita
+                    if (ita->module_type == itb->module_type)
+                    {
+                        std::unordered_set<output_connector *> outputs_a, outputs_b;
+                        for (auto in : ita->region_inputs)
+                            outputs_a.emplace(in->connection());
+                        for (auto in : itb->region_inputs)
+                            outputs_b.emplace(in->connection());
+                        if (std::all_of(outputs_a.begin(), outputs_a.end(), [&](output_connector *out) { return outputs_b.contains(out); })
+                            && std::all_of(outputs_b.begin(), outputs_b.end(), [&](output_connector *out) { return outputs_a.contains(out); }))
+                            to_be_merge.emplace_back(itb);
+                    }
                 }
 
                 if (!to_be_merge.empty())

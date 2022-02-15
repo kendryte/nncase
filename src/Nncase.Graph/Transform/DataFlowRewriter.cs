@@ -30,7 +30,7 @@ namespace Nncase.Transform
             switch (options.DumpLevel)
             {
                 case >= 2:
-                    IRPrinter.DumpExprAsIL(expr, $"{count}_Start", Path.Combine(options.FullDumpDir, "Rewrite"));
+                    IRPrinter.DumpExprAsIL(expr, $"{count}_Start", Path.Combine(options.PassDumpDir, "Rewrite"));
                     break;
                 case >= 1:
                     expr.DumpExprAsIL();
@@ -51,7 +51,7 @@ namespace Nncase.Transform
             switch (options.DumpLevel)
             {
                 case >= 2:
-                    IRPrinter.DumpExprAsIL(expr, $"{count}_End", Path.Combine(options.FullDumpDir, "Rewrite"));
+                    IRPrinter.DumpExprAsIL(expr, $"{count}_End", Path.Combine(options.PassDumpDir, "Rewrite"));
                     break;
                 case >= 1:
                     expr.DumpExprAsIL();

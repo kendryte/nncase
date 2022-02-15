@@ -1,21 +1,26 @@
-using Xunit;
-using Nncase;
-using Nncase.IR;
-using System.Numerics.Tensors;
-using System.Collections.Generic;
-using System.Linq;
-using System.Collections.Immutable;
-using System.Collections;
-using System.Linq.Expressions;
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Numerics.Tensors;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Nncase.IR;
+using Xunit;
 
 namespace Nncase.Tests
 {
 
     public class TestExpr
     {
+        public TestingConfiguration Config;
+        public TestExpr(IOptions<TestingConfiguration> configuration)
+        {
+            Config = configuration.Value;
+        }
+
         [Fact]
         public void TestConstEqual()
         {

@@ -1,4 +1,0 @@
-DEFINE_OPCODE(math, unary,        Unary,          0x1001)
-DEFINE_OPCODE(math, binary,       Binary,         0x1002)
-DEFINE_OPCODE(math, compare,      Compare,        0x1003)
-DEFINE_OPCODE(math, clamp,        Clamp,          0x1004)

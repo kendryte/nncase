@@ -9,7 +9,7 @@ using System;
 using static Nncase.Pattern.Utility;
 using static Nncase.Pattern.F.Tensors;
 using static Nncase.Pattern.F.Math;
-using static Nncase.IR.Utility;
+using static Nncase.IR.TypePatternUtility;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Math;

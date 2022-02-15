@@ -13,16 +13,19 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <hlir/placeholders.h>
+#include <nncase/ir/placeholders.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
+using namespace nncase::ir;
 using namespace caffe;
 
 DEFINE_CAFFE_LOWER(Split)
 {
-    auto &input = *output_tensors_.at(op.bottom(0));
+    // check if there are bn/scale/relu above
+    std::string input_name = get_real_input_names(op)[0];
+
+    auto &input = *output_tensors_.at(input_name);
 
     for (int i = 0; i < op.top_size(); i++)
         output_tensors_.emplace(op.top(i), &input);

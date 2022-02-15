@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
-using System.Runtime.CompilerServices;
 
 namespace Nncase.TIR
 {
@@ -119,16 +119,65 @@ namespace Nncase.TIR
         //     return new Call(new LanesOp(), input);
         // }
 
+
+        public interface ISequentialBuilder<T>
+        {
+            /// <summary>
+            /// Add the expr items to body
+            /// </summary>
+            /// <param name="exprs"></param>
+            /// <returns></returns>
+            public T Body(params Expr[] exprs);
+        }
+
+        /// <summary>
+        /// the body expr builer
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public class BodyExprBuilder<T> : ISequentialBuilder<T>
+          where T : BodyExpr
+        {
+            /// <summary>
+            /// expr 
+            /// </summary>
+            public T Expr;
+
+            /// <summary>
+            /// ctor
+            /// </summary>
+            /// <param name="expr"></param>
+            public BodyExprBuilder(T expr)
+            {
+                Expr = expr;
+            }
+
+            /// <summary>
+            /// Add the expr items to body
+            /// </summary>
+            /// <param name="exprs"></param>
+            /// <returns></returns>
+            public T Body(params Expr[] exprs)
+            {
+                foreach (var item in exprs)
+                {
+                    Expr.Sequence.Add(item);
+                }
+                return Expr;
+            }
+        }
+
         /// <summary>
         /// get the Serial For
         /// </summary>
-        /// <param name="loop">out index var.</param>
+        /// <param name="loopVar">out index var.</param>
         /// <param name="Dom">ranges.</param>
+        /// <param name="loop">loop instance.</param>
         /// <returns> the for loop </returns>
-        public static For Serial(out Var loopVar, Range Dom, out For loop)
+        public static BodyExprBuilder<For> Serial(out Var loopVar, Range Dom, out For loop)
         {
             loopVar = new Var(TensorType.Scalar(DataType.Int32));
-            return loop = new For(loopVar, Dom, LoopMode.Serial);
+            loop = new For(loopVar, Dom, LoopMode.Serial);
+            return new BodyExprBuilder<For>(loop);
         }
 
         /// <summary>
@@ -137,7 +186,7 @@ namespace Nncase.TIR
         /// <param name="loopVar"></param>
         /// <param name="Dom"></param>
         /// <returns></returns>
-        public static For Serial(out Var loopVar, Range Dom)
+        public static BodyExprBuilder<For> Serial(out Var loopVar, Range Dom)
         {
             return Serial(out loopVar, Dom, out _);
         }
@@ -145,12 +194,28 @@ namespace Nncase.TIR
         /// <summary>
         /// GridWrapper for collect the for item.
         /// </summary>
-        public class GridWrapper
+        public class NestBodyExprBuilder<T> : ISequentialBuilder<T>
+         where T : BodyExpr
         {
-            public For[] ForList;
-            public GridWrapper(params For[] for_list)
+            /// <summary>
+            /// contain the exprs
+            /// </summary>
+            public T[] Exprs;
+
+            /// <summary>
+            /// ctor
+            /// <remarks>
+            /// NOTE We will auto add exprs to nest list!
+            /// </remarks>
+            /// </summary>
+            /// <param name="exprs"></param>
+            public NestBodyExprBuilder(params T[] exprs)
             {
-                ForList = for_list;
+                foreach (var i in Enumerable.Range(0, exprs.Count() - 1).Reverse())
+                {
+                    exprs[i].Sequence.Add(exprs[i + 1]);
+                }
+                Exprs = exprs;
             }
 
             /// <summary>
@@ -158,11 +223,12 @@ namespace Nncase.TIR
             /// <see cref="For.Add(Expr[])"/>.
             /// </summary>
             /// <param name="exprs"></param>
-            /// <returns> the outter for loop instance. </returns>
-            public For Add(params Expr[] exprs)
+            /// <returns></returns>
+            /// <exception cref="NotImplementedException"></exception>
+            public T Body(params Expr[] exprs)
             {
-                ForList.Last().Add(exprs);
-                return ForList.First();
+                foreach (var item in exprs) { Exprs.Last().Sequence.Add(item); }
+                return Exprs.First();
             }
         }
 
@@ -176,12 +242,11 @@ namespace Nncase.TIR
         /// <param name="j">inner index var.</param>
         /// <param name="ends">end exprs.</param>
         /// <returns>the inner for loop.</returns>
-        public static GridWrapper Grid(out Var i, out Var j, (Expr i, Expr j) ends)
+        public static NestBodyExprBuilder<For> Grid(out Var i, out Var j, (Expr i, Expr j) ends)
         {
-            var for_i = T.Serial(out i, ends.i);
-            var for_j = T.Serial(out j, ends.j);
-            for_i.Add(for_j);
-            return new GridWrapper(for_i, for_j);
+            var builder_i = T.Serial(out i, ends.i, out var for_i);
+            var builder_j = T.Serial(out j, ends.j, out var for_j);
+            return new NestBodyExprBuilder<For>(for_i, for_j);
         }
 
         /// <summary>
@@ -192,12 +257,11 @@ namespace Nncase.TIR
         /// <param name="ends"></param>
         /// <param name="loops"></param>
         /// <returns></returns>
-        public static GridWrapper Grid(out Var i, out Var j, (Expr i, Expr j) ends, out (For i, For j) loops)
+        public static NestBodyExprBuilder<For> Grid(out Var i, out Var j, (Expr i, Expr j) ends, out (For i, For j) loops)
         {
             T.Serial(out i, ends.i, out loops.i);
             T.Serial(out j, ends.j, out loops.j);
-            loops.i.Add(loops.j);
-            return new GridWrapper(loops.i, loops.j);
+            return new NestBodyExprBuilder<For>(loops.i, loops.j);
         }
 
         /// <summary>
@@ -292,15 +356,27 @@ namespace Nncase.TIR
             return new Buffer(shape, name, data_handle, strides, elem_offset, scope, data_alignment, offset_factor, buffer_mode);
         }
 
+        /// <summary>
+        /// script function builder
+        /// </summary>
         public class FunctionBuilder
         {
             readonly Function func;
+            /// <summary>
+            /// cotr
+            /// </summary>
+            /// <param name="func"></param>
             public FunctionBuilder(Function func)
             {
                 this.func = func;
             }
 
-            public Function Add(params Expr[] exprs)
+            /// <summary>
+            /// add the body items
+            /// </summary>
+            /// <param name="exprs">the expr instance.</param>
+            /// <returns> the func instance.</returns>
+            public Function Body(params Expr[] exprs)
             {
                 var body = (Sequential)func.Body;
                 foreach (var item in exprs)

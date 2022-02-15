@@ -2,6 +2,8 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+
 namespace Nncase.Schedule;
 
 using AllocationMap = Dictionary<IR.Expr, BufferAllocation>;
@@ -45,7 +47,8 @@ public enum MemoryLocation : byte
 /// <summary>
 /// memory range define.
 /// </summary>
-public class MemoryRange
+[StructLayout(LayoutKind.Sequential)]
+public struct MemoryRange
 {
     /// <summary>
     /// memory loaction.
@@ -55,8 +58,7 @@ public class MemoryRange
     /// <summary>
     /// memory data type.
     /// </summary>
-    public DataType DType;
-
+    public PrimTypeCode DType;
     /// <summary>
     /// shared module.
     /// </summary>
@@ -80,7 +82,7 @@ public class MemoryRange
     /// <param name="sharedModule">shared module.</param>
     /// <param name="start">memory span start.</param>
     /// <param name="size">memory span length.</param>
-    public MemoryRange(MemoryLocation memoryLocate, DataType dType, ushort sharedModule, uint start, uint size)
+    public MemoryRange(MemoryLocation memoryLocate, PrimTypeCode dType, UInt16 sharedModule, uint start, uint size)
     {
         MemoryLocate = memoryLocate;
         DType = dType;
@@ -175,8 +177,8 @@ public class BufferAllocation
     /// get current buffer memory range.
     /// </summary>
     public MemoryRange RuntimeType => new(this.MemoryLocate,
-         this.DType,
-         (ushort)SharedModule,
+         ((PrimType)this.DType).TypeCode,
+         (UInt16)SharedModule,
          (uint)this.Start,
          (uint)this.Size);
 }
@@ -293,7 +295,32 @@ public class SchedFunctionResult
     public IR.Function Function;
 
     /// <summary>
-    /// create SchedFunctionResult.
+    /// the inputs memory info
+    /// <remarks>
+    /// you can manual set the value
+    /// if inputs is empty, when serialize will auto add the value.
+    /// <see cref="Nncase.CodeGen.IRTModule.Serialize"/>
+    /// </remarks>
+    /// </summary>
+    public readonly List<Schedule.MemoryRange> Inputs = new();
+
+    /// <summary>
+    /// the inputs shape.
+    /// </summary>
+    public readonly List<IR.Shape> InputShapes = new();
+
+    /// <summary>
+    /// the outputs memory info
+    /// </summary>
+    public readonly List<Schedule.MemoryRange> Outputs = new();
+
+    /// <summary>
+    /// the outputs shape.
+    /// </summary>
+    public readonly List<IR.Shape> OutputShapes = new();
+
+    /// <summary>
+    /// create SchedFunctionResult
     /// </summary>
     /// <param name="sched_module">parent module.</param>
     /// <param name="input_pool_size">input memory size.</param>
@@ -306,6 +333,15 @@ public class SchedFunctionResult
         OutputPoolSize = output_pool_size;
         ComputeSequence = new();
         Function = function;
+    }
+
+    /// <summary>
+    /// <see cref="SchedFunctionResult"/>
+    /// </summary>
+    /// <param name="sched_module"></param>
+    /// <param name="function"></param>
+    public SchedFunctionResult(SchedModuleResult sched_module, IR.Function function) : this(sched_module, 0, 0, function)
+    {
     }
 }
 

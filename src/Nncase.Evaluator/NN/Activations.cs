@@ -10,20 +10,11 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="Celu"/>.
 /// </summary>
-public class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>
+public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>
 {
-    /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, Celu celu)
+    private IValue Visit(TorchSharp.torch.Tensor input, int alpha)
     {
-        var input = context.GetTorchArgumentValue(celu, Celu.Input);
         return input.celu().ToValue();
-    }
-
-    /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, Celu target)
-    {
-        var input = context.CheckArgumentType<TensorType>(target, Celu.Input);
-        return Visit(input);
     }
 
     private IRType Visit(TensorType input)

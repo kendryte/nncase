@@ -35,7 +35,25 @@ protected:
     void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
 };
 
+class NNCASE_API make_slice_no_action_pass : public graph_pass
+{
+public:
+    using graph_pass::graph_pass;
+
+protected:
+    void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
+};
+
 class NNCASE_API add_copy_to_concat_pass : public graph_pass
+{
+public:
+    using graph_pass::graph_pass;
+
+protected:
+    void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
+};
+
+class NNCASE_API add_copy_to_slice_pass : public graph_pass
 {
 public:
     using graph_pass::graph_pass;
@@ -71,6 +89,24 @@ protected:
     bool on_try_match(ir::node &node, transform_context &context) override;
 };
 
+class NNCASE_API remove_simple_copy_from_slice_transform : public transform
+{
+public:
+    void process(transform_context &context) override;
+
+protected:
+    bool on_try_match(ir::node &node, transform_context &context) override;
+};
+
+class NNCASE_API remove_non_simple_copy_from_slice_transform : public transform
+{
+public:
+    void process(transform_context &context) override;
+
+protected:
+    bool on_try_match(ir::node &node, transform_context &context) override;
+};
+
 class NNCASE_API alias_bitcast_buffer_pass : public graph_pass
 {
 public:
@@ -81,6 +117,15 @@ protected:
 };
 
 class NNCASE_API alias_concat_buffer_pass : public graph_pass
+{
+public:
+    using graph_pass::graph_pass;
+
+protected:
+    void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
+};
+
+class NNCASE_API alias_slice_buffer_pass : public graph_pass
 {
 public:
     using graph_pass::graph_pass;

@@ -1,0 +1,51 @@
+<Project>
+  <!-- global property  -->
+  <PropertyGroup>
+    <!-- setup output path -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <BaseOutputPath>bin</BaseOutputPath> 
+    <OutputPath>$(BaseOutputPath)\$(Configuration)\$(TargetFramework)</OutputPath> 
+    <!-- get rid -->
+    <TargetOS Condition="'$(TargetOS)' == '' AND '$(OS)' == 'Windows_NT'">win</TargetOS>
+    <TargetOS Condition="'$(TargetOS)' == '' AND $([MSBuild]::IsOSPlatform('osx'))">osx</TargetOS>
+    <TargetOS Condition="'$(TargetOS)' == '' AND '$(OS)' != 'Windows_NT'">linux</TargetOS>
+    <NativeLibPreFix Condition="'$(TargetOS)' != 'win'">lib</NativeLibPreFix>
+
+    <NativeLibExtension Condition="'$(TargetOS)' == 'win'">dll</NativeLibExtension>
+    <NativeLibExtension Condition="'$(TargetOS)' == 'linux'">so</NativeLibExtension>
+    <NativeLibExtension Condition="'$(TargetOS)' == 'osx'">dylib</NativeLibExtension>
+
+    <NativeExecExtension Condition="'$(TargetOS)' == 'win'">.exe</NativeExecExtension>
+
+    <TargetArchitecture Condition="'$(TargetArchitecture)' == ''">x64</TargetArchitecture>
+    <PackageRid>$(TargetOS)-$(TargetArchitecture)</PackageRid>
+  </PropertyGroup>
+  
+  <!-- Target that builds all the native binaries in the Native folder -->
+  <Target Name="Build" DependsOnTargets="BuildNativeUnix;BuildNativeWindows;PreparePackageAssets" />
+
+  <Target Name="BuildNativeUnix" Condition="'$(OS)' != 'Windows_NT'">
+    <Exec Command="mkdir -p ../build/$(Configuration)/simulator" />
+    <Exec Command="cmake -S .. -B ../build/$(Configuration)/simulator -DCMAKE_BUILD_TYPE=$(Configuration) -DENABLE_HALIDE=false -DENABLE_OPENMP=false -DCMAKE_EXPORT_COMPILE_COMMANDS=true -DENABLE_VULKAN_RUNTIME=false -DBUILD_BENCHMARK=false -G &quot;Ninja&quot; -DCMAKE_INSTALL_PREFIX:PATH=../simulator_install" />
+    <Exec Command="cmake --build ../build/$(Configuration)/simulator --target install" />
+  </Target>
+
+  <Target Name="BuildNativeWindows" Condition="'$(OS)' == 'Windows_NT'">
+	<Exec Command="mkdir ..\build\$(Configuration)\simulator" />
+    <Exec Command="cmake -S .. -B ../build/$(Configuration)/simulator -DCMAKE_BUILD_TYPE=$(Configuration) -DENABLE_HALIDE=false -DENABLE_OPENMP=false -DCMAKE_EXPORT_COMPILE_COMMANDS=true -DENABLE_VULKAN_RUNTIME=false -DBUILD_BENCHMARK=false -G &quot;Ninja&quot; -DCMAKE_INSTALL_PREFIX:PATH=../simulator_install" />
+    <Exec Command="cmake --build ../build/$(Configuration)/simulator --target install" />
+  </Target>
+
+  <Target Name="PreparePackageAssets">  
+    <ItemGroup>
+      <NativePackageLib Include="..\build\$(Configuration)\simulator_install\lib\$(NativeLibPreFix)nncase_csharp.$(NativeLibExtension)" />
+      <NativePackageLib Condition="'$(TargetOS)' != 'win'" Include="..\build\$(Configuration)\simulator_install\lib\$(NativeLibPreFix)nncase.$(NativeLibExtension)" />
+      <NativePackageLib Condition="'$(TargetOS)' == 'win'" Include="..\build\$(Configuration)\simulator_install\lib\$(NativeLibPreFix)nncase.lib" />
+      <NativePackageLib Include="..\build\$(Configuration)\simulator_install\bin\ncc$(NativeExecExtension)" />
+    </ItemGroup>
+
+    <Message Importance="High" Text="@(NativePackageLib) -> $(OutputPath)\runtimes\$(PackageRid)\native\lib" />
+    <Copy SourceFiles="@(NativePackageLib)"
+          DestinationFolder="$(OutputPath)\runtimes\$(PackageRid)\native\lib" />
+  </Target>
+</Project>

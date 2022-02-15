@@ -13,65 +13,106 @@
  * limitations under the License.
  */
 #pragma once
+#include "transform.h"
 #include <filesystem>
-#include <nncase/ir/function.h>
-//#include <nncase/ir/quantizer.h>
 #include <optional>
 #include <vector>
 
-namespace nncase {
+namespace nncase
+{
 class target;
-
-namespace schedule {
-class function_schedule_context;
 }
-} // namespace nncase
 
-namespace nncase::ir::transforms {
-struct run_pass_options {
-    nncase::target *target;
-    // ir::quantizer *quantizer;
+namespace nncase::ir::transforms
+{
+struct run_pass_options
+{
+    ir::quantizer *quantizer;
     schedule::function_schedule_context *schedule_context;
     std::optional<std::filesystem::path> dump_dir;
 };
 
-/** @brief Function level pass */
-class NNCASE_API function_pass {
-  public:
-    function_pass(std::string name = "") : name_(name_) {}
-    virtual ~function_pass() = default;
-    function_pass(const function_pass &) = delete;
-    function_pass(function_pass &&) = default;
-    function_pass &operator=(const function_pass &) = delete;
+class NNCASE_API pass
+{
+public:
+    pass(std::string dump_name = "")
+        : dump_name_(dump_name) { }
+    virtual ~pass() = default;
+    pass(pass &) = delete;
+    pass(pass &&) = default;
 
-    /** @brief Get the name of the pass */
-    const std::string &name() const noexcept { return name_; }
+    pass &operator=(pass &) = delete;
 
-    /** @brief Run the pass on the function */
-    void run(const function &func, const run_pass_options &options);
+    void run(graph &graph, nncase::target &target, const run_pass_options &options);
 
-  protected:
-    virtual void run_core(const function &func,
-                          const run_pass_options &options) = 0;
+    const std::string &name() const noexcept { return dump_name_; }
 
-  private:
-    std::string name_;
+protected:
+    virtual void run_core(graph &graph, nncase::target &target, const run_pass_options &options) = 0;
+
+private:
+    std::string dump_name_;
 };
 
-class NNCASE_API pass_manager {
-  public:
-    pass_manager(const function &func, run_pass_options options)
-        : func_(func), options_(std::move(options)) {}
-    pass_manager(const pass_manager &) = delete;
-    pass_manager &operator=(const pass_manager &) = delete;
+class NNCASE_API transform_pass : public pass
+{
+public:
+    using pass::pass;
 
-    function_pass &emplace(std::unique_ptr<function_pass> pass);
+    transform_pass(transform_pass &) = delete;
+    transform_pass(transform_pass &&) = default;
+
+    transform_pass &operator=(transform_pass &) = delete;
+
+    template <class T, class... TArgs>
+    transform *emplace(TArgs &&...args)
+    {
+        return static_cast<T *>(transforms_.emplace_back(new T(std::forward<TArgs>(args)...)).get());
+    }
+
+protected:
+    void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
+
+private:
+    std::vector<std::unique_ptr<transform>> transforms_;
+};
+
+class NNCASE_API graph_pass : public pass
+{
+public:
+    using pass::pass;
+
+    graph_pass(graph_pass &) = delete;
+    graph_pass(graph_pass &&) = default;
+
+    graph_pass &operator=(graph_pass &) = delete;
+};
+
+class NNCASE_API pass_manager
+{
+public:
+    pass_manager(graph &graph, nncase::target &target)
+        : graph_(graph), target_(target), quantizer_(nullptr), schedule_context_(nullptr) { }
+    pass_manager(pass_manager &) = delete;
+
+    template <class TPass = transform_pass, class... TArgs>
+    void add_pass(TArgs &&...pass)
+    {
+        passes_.emplace_back(std::make_unique<TPass>(std::forward<TArgs>(pass)...));
+    }
 
     void run();
 
-  private:
-    std::vector<std::unique_ptr<function_pass>> passes_;
-    function func_;
-    run_pass_options options_;
+    void dump_dir(const std::filesystem::path &dir);
+    void quantizer(ir::quantizer *q);
+    void schedule_context(schedule::function_schedule_context *c);
+
+private:
+    std::vector<std::unique_ptr<pass>> passes_;
+    graph &graph_;
+    nncase::target &target_;
+    ir::quantizer *quantizer_;
+    schedule::function_schedule_context *schedule_context_;
+    std::optional<std::filesystem::path> dump_dir_;
 };
-} // namespace nncase::ir::transforms
+}

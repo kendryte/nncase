@@ -1,13 +1,13 @@
-using Xunit;
 using System;
-using System.Linq;
-using System.IO;
 using System.Collections.Generic;
-using static Nncase.IR.F.Tensors;
-using static Nncase.IR.F.Math;
-using Nncase.TIR;
+using System.IO;
+using System.Linq;
 using Nncase.IR;
+using Nncase.TIR;
 using Nncase.Transform;
+using Xunit;
+using static Nncase.IR.F.Math;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Tests.TIRTest
 {
@@ -65,11 +65,9 @@ namespace Nncase.Tests.TIRTest
     {
         public FlattenBufferCase()
         {
-            Pass.Add(
-                new Transform.Mutator.LowerBlockInit(),
-                new Transform.Mutator.ConvertBlocksToOpaque(),
-                new Transform.Mutator.FlattenBuffer()
-              );
+            Pass.Add(new Transform.Mutator.LowerBlockInit());
+            Pass.Add(new Transform.Mutator.ConvertBlocksToOpaque());
+            Pass.Add(new Transform.Mutator.FlattenBuffer());
         }
     }
 
@@ -86,14 +84,14 @@ namespace Nncase.Tests.TIRTest
             var n = T.SizeVar("n");
             var m = T.SizeVar("m");
             var A = T.DeclBuffer((n, m), name: "A");
-            var func = T.PrimFunc("func", A.Handle, n, m).Add(
-              T.Serial(out var i, n, out var fi).Add(
-                T.Serial(out var j, m, out var fj).Add(
+            var func = T.PrimFunc("func", A.Handle, n, m).Body(
+              T.Serial(out var i, n, out var fi).Body(
+                T.Serial(out var j, m, out var fj).Body(
                   T.Block("init").
                   Remap(out var vi, out var vj, (fi, fj), "SS").
                   Init(
                     T.Store(A[vi, vj], 1.0f)
-                  ).Add(
+                  ).Body(
                     T.Store(A[vi, vj], Cast(vi + vj, DataType.Float32))
                   )
                 )

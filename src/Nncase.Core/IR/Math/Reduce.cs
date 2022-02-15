@@ -1,7 +1,7 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using static Nncase.IR.Utility;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Math;
 
@@ -18,7 +18,7 @@ public sealed record Reduce(ReduceOp ReduceOp) : Op
     /// <summary>
     /// Gets axis.
     /// </summary>
-    public static readonly ParameterInfo Axis = new(typeof(Reduce), 1, "axis", IsIntegral() & HasRank(1));
+    public static readonly ParameterInfo Axis = new(typeof(Reduce), 1, "axis", IsIntegral() & IsRank(1));
 
     /// <summary>
     /// Gets initial value.

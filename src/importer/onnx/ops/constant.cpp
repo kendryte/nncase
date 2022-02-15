@@ -38,6 +38,7 @@ constant *onnx_importer::emplace_constant<TensorProto>(const std::optional<Tenso
     switch (tensor_element_type)
     {
     case TensorProto_DataType_UINT8:
+    case TensorProto_DataType_BOOL:
     {
         const auto &data = to<xt::xarray<uint8_t>>(v);
         std::vector<uint8_t> vec { data.begin(), data.end() };

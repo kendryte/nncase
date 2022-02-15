@@ -12,7 +12,7 @@ using CommonServiceLocator;
 using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
-using static Nncase.IR.Utility;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.Evaluator;
 

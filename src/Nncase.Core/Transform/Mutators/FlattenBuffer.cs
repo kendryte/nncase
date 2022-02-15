@@ -24,7 +24,7 @@ namespace Nncase.Transform.Mutator
             }
 
             // 1. Visit the body
-            var nbody = Visit(expr.Body);
+            var nbody = Visit(expr.Sequence);
             IRArrayList<BufferRegion> nreads = new(expr.Reads.Select(MutateLeaf));
             IRArrayList<BufferRegion> nwrites = new(expr.Writes.Select(MutateLeaf));
             var npredicate = Visit(expr.Predicate);

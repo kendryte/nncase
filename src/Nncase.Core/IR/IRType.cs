@@ -79,6 +79,23 @@ namespace Nncase.IR
         /// <param name="DType">Data type.</param>
         /// <returns>The invalid tensor type.</returns>
         public static TensorType Invalid(DataType DType) => new(DType, Shape.Invalid);
+
+        /// <summary>
+        /// Initialize an pointer tensor type.
+        /// </summary>
+        /// <param name="ElemType"> the Pointed Element Type</param>
+        /// <returns>the pointer tensor type.</returns>
+        public static TensorType Pointer(PrimType ElemType) => new(new PointerType(ElemType), Shape.Scalar);
+
+        /// <summary>
+        /// if TensorType contain's a 
+        /// </summary>
+        public PrimType PointedDType()
+        {
+            return DType is PointerType { ElemType: PrimType etype } ?
+              etype :
+              throw new InvalidOperationException("This TensorType Does Not Contians PointerType!");
+        }
     }
 
     /// <summary>
@@ -112,15 +129,4 @@ namespace Nncase.IR
     /// Callable type.
     /// </summary>
     public sealed record CallableType(IRType ReturnType, IRArray<IRType> Parameters) : IRType;
-
-    /// <summary>
-    /// Low-level raw pointer type.
-    /// PointerType represents type hints in the TIR to be
-    /// passed to the final code generator.
-    /// PointerType should not occur in the high-level analysis.
-    /// </summary>
-    /// <param name="DType">The type of the element which the pointer points to.</param>
-    /// <param name="StorageScope">The storage scope of the pointer.</param>
-    public sealed record HandleType(DataType DType, string StorageScope) : IRType
-    { }
 }

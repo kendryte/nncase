@@ -22,14 +22,14 @@ using namespace nncase::cli;
 
 inference_command::inference_command(lyra::cli &cli)
 {
-    cli.add_argument(lyra::command("infer", [this](const lyra::group &) { this->run(); })
+    cli.add_argument(lyra::command("infer", [this](const lyra::group &)
+        { this->run(); })
                          .add_argument(lyra::arg(model_filename_, "model filename").required().help("kmodel filename"))
                          .add_argument(lyra::arg(output_path_, "output path").required().help("output path"))
                          .add_argument(lyra::opt(dataset_, "dataset path").name("--dataset").required().help("dataset path"))
-                         .add_argument(lyra::opt(dataset_format_, "dataset format").name("--dataset-format").optional().help("dataset format, e.g. image, raw, default is " + dataset_format_))
+                         .add_argument(lyra::opt(dataset_format_, "dataset format").name("--dataset-format").optional().help("dataset format, e.g. image|raw, default is " + dataset_format_))
                          .add_argument(lyra::opt(input_layout_, "input layout").name("--input-layout").optional().help("input layout, e.g NCHW|NHWC, default is " + input_layout_))
-                         .add_argument(lyra::opt(input_mean_, "input mean").name("--input-mean").optional().help("input mean, default is " + std::to_string(input_mean_)))
-                         .add_argument(lyra::opt(input_std_, "input std").name("--input-std").optional().help("input std, default is " + std::to_string(input_std_))));
+                         .add_argument(lyra::opt(wait_key_).name("--wait-key").optional().help("dump assembly, default is " + std::to_string(wait_key_))));
 }
 
 void inference_command::run()
@@ -38,10 +38,14 @@ void inference_command::run()
     options.dataset = dataset_;
     options.dataset_format = dataset_format_;
     options.output_path = output_path_;
-    options.input_mean = input_mean_;
-    options.input_std = input_std_;
     options.input_layout = input_layout_;
-
+    if (wait_key_)
+    {
+        std::cout << '\n'
+                  << "Press a key to continue...";
+        auto key = std::string();
+        std::cin >> key;
+    }
     auto sim = simulator::create(read_file(model_filename_), options);
     sim->run();
 }

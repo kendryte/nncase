@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
-using static Nncase.IR.Utility;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.TIR;
 
@@ -24,7 +24,7 @@ public record Load() : Op
     /// <summary>
     /// Gets index.
     /// </summary>
-    public static readonly ParameterInfo Index = new(typeof(Load), 1, "index", IsIntegral(DataType.Int32) & (IsScalar() | HasRank(1)));
+    public static readonly ParameterInfo Index = new(typeof(Load), 1, "index", IsDataType(DataType.Int32) & (IsScalar() | IsRank(1)));
 }
 
 /// <summary>
@@ -35,12 +35,12 @@ public record Ramp(int Lanes) : Op
     /// <summary>
     /// Gets offset.
     /// </summary>
-    public static readonly ParameterInfo Offset = new(typeof(Ramp), 0, "offset", IsIntegral(DataType.Int32) & IsScalar());
+    public static readonly ParameterInfo Offset = new(typeof(Ramp), 0, "offset", IsDataType(DataType.Int32) & IsScalar());
 
     /// <summary>
     /// Gets stride.
     /// </summary>
-    public static readonly ParameterInfo Stride = new(typeof(Ramp), 1, "stride", IsIntegral(DataType.Int32) & IsScalar());
+    public static readonly ParameterInfo Stride = new(typeof(Ramp), 1, "stride", IsDataType(DataType.Int32) & IsScalar());
 }
 
 /// <summary>
@@ -51,12 +51,12 @@ public sealed record Store() : Op
     /// <summary>
     /// The buffer variable handle.
     /// </summary>
-    public static readonly ParameterInfo Handle = new(typeof(Store), 0, "handle");
+    public static readonly ParameterInfo Handle = new(typeof(Store), 0, "handle", IsHandle());
 
     /// <summary>
     /// The index locations to be stored.
     /// </summary>
-    public static readonly ParameterInfo Index = new(typeof(Store), 1, "index", IsIntegral(DataType.Int32));
+    public static readonly ParameterInfo Index = new(typeof(Store), 1, "index", IsDataType(DataType.Int32));
 
     /// <summary>
     /// The value to be stored.

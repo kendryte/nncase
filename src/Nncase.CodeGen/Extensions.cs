@@ -37,7 +37,7 @@ public static class BinaryWriterExtension
     /// <returns>Padded bytes.</returns>
     public static long AlignPosition(this BinaryWriter writer, long alignment)
     {
-        var pos = writer.GetPosition();
+        var pos = writer.Position();
         var rem = pos % alignment;
         if (rem != 0)
         {
@@ -58,7 +58,7 @@ public static class BinaryWriterExtension
     /// </summary>
     /// <param name="writer">The binary writer.</param>
     /// <returns>The current position.</returns>
-    public static long GetPosition(this BinaryWriter writer)
+    public static long Position(this BinaryWriter writer)
     {
         writer.Flush();
         return writer.BaseStream.Position;
@@ -70,7 +70,7 @@ public static class BinaryWriterExtension
     /// <param name="writer">The binary writer.</param>
     /// <param name="pos">The desired position.</param>
     /// <returns>The current position.</returns>
-    public static long SetPosition(this BinaryWriter writer, long pos)
+    public static long Position(this BinaryWriter writer, long pos)
     {
         return writer.Seek((int)pos, SeekOrigin.Begin);
     }

@@ -10,7 +10,7 @@ using static Nncase.IR.F.Tensors;
 using static Nncase.Pattern.Utility;
 using static Nncase.Pattern.F.Math;
 using static Nncase.Pattern.F.Tensors;
-using static Nncase.IR.Utility;
+using static Nncase.IR.TypePatternUtility;
 using System.Linq.Expressions;
 
 namespace Nncase.Tests
@@ -226,7 +226,7 @@ namespace Nncase.Tests
         public void TestTypePattern()
         {
             var ttype = new TensorType(DataType.Float32, new[] { 10, 10 });
-            var ty_pat = HasType(ttype);
+            var ty_pat = IsType(ttype);
             Assert.IsType<TypePattern>(ty_pat);
             Assert.True(ty_pat.MatchLeaf(ttype));
         }
@@ -236,7 +236,7 @@ namespace Nncase.Tests
         {
             var ttype1 = new TensorType(DataType.Float32, new[] { 10, 10 });
             var ttype2 = new TensorType(DataType.Int16, new[] { 10 });
-            var ty_pat = HasDType(DataType.Float32);
+            var ty_pat = IsDataType(DataType.Float32);
             Assert.IsType<TypePattern>(ty_pat);
             Assert.True(ty_pat.MatchLeaf(ttype1));
             Assert.False(ty_pat.MatchLeaf(ttype2));
@@ -246,7 +246,7 @@ namespace Nncase.Tests
         public void TestShapePattern()
         {
             var shape = new int[] { 10, 10 };
-            var sp = HasShape(shape);
+            var sp = IsShape(shape);
             var ttype1 = new TensorType(DataType.Float32, new[] { 10, 10 });
             var ttype2 = new TensorType(DataType.Int16, new[] { 10 });
             Assert.True(sp.MatchLeaf(ttype1));

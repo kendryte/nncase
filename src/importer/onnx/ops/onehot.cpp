@@ -37,7 +37,11 @@ void onnx_importer::convert_op_OneHot(const NodeProto &node)
     auto indices_shape = get_shape(indices);
     auto out_shape = get_shape(output);
 
-    auto axis = get_positive_axis(node, out_shape.size());
+    auto axis = get_attribute<int32_t>(node, "axis").value_or(-1);
+    if (axis < 0)
+    {
+        axis += static_cast<int32_t>(out_shape.size());
+    }
 
     auto oh = graph_.emplace<onehot>(type, indices_shape, out_shape, axis, onehot_mode_t::onehot_process_neg);
     const auto &op_name { generate_name(node) };

@@ -10,7 +10,6 @@ using NetFabric.Hyperlinq;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.F;
-using Nncase.IR.Tensors;
 using TorchSharp;
 using Xunit;
 using static TorchSharp.torch;
@@ -19,13 +18,10 @@ using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Tests.Evaluator
 {
-    public class EvaluatorTest
+    public class EvaluatorTest : IHostFixtrue
     {
-        public EvaluatorTest(IHost host)
+        public EvaluatorTest(IHost host) : base(host)
         {
-            var t = host.Services.GetRequiredService<IComponentContext>();
-            var csl = new AutofacServiceLocator(t);
-            ServiceLocator.SetLocatorProvider(() => csl);
         }
 
         [Fact]

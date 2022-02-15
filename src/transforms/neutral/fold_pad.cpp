@@ -169,6 +169,10 @@ bool strided_slice_to_pad_transform::on_try_match(node &node, transform_context 
 {
     if (auto sl = node_cast<slice>(node))
     {
+        if (!(node.attributes() & node_attr_none))
+        {
+            return false;
+        }
         if (sl->strides() == axis_t { 1, 1, 1, 1 })
         {
             context.inputs.emplace_back(&sl->input());

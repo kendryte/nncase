@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics.Tensors;
 using NetFabric.Hyperlinq;
 
 namespace Nncase.IR;
@@ -137,10 +138,18 @@ public abstract record Const(IRType ValueType) : Expr
       => new(tensor);
 
     /// <summary>
-    /// Convert shape to const expr.
+    /// Create Constant Pointer
     /// </summary>
-    /// <param name="shape">Shape.</param>
-    /// <returns>Created constant expression.</returns>
+    /// <param name="addr"> the addr value.</param>
+    /// <param name="code">pointed element type code.</param>
+    /// <returns></returns>
+    public static TensorConst FromPointer(long addr, PrimTypeCode code = PrimTypeCode.Float32) => new(Tensor.FromBytes(TensorType.Pointer(code), DataTypes.GetBytes(addr)));
+
+    /// <summary>
+    /// convert shape to const expr.
+    /// </summary>
+    /// <param name="shape"></param>
+    /// <returns></returns>
     public static Const FromShape(Shape shape) => FromSpan<int>(shape.ToValueArray());
 
     /// <summary>
@@ -160,4 +169,6 @@ public abstract record Const(IRType ValueType) : Expr
             return new TupleConst(tpv.Select(x => FromValue(x)).ToArray());
         }
     }
+
 }
+

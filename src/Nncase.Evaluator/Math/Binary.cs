@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Binary"/>.
 /// </summary>
-public class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binary>
+public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binary>
 {
     /// <inheritdoc />
     public IValue Visit(IEvaluateContext context, Binary binary)

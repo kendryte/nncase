@@ -1,0 +1,113 @@
+name: Native
+
+on:
+  push:
+    paths:
+    - 'csharp/**'
+    - '.github/workflows/native.yml'
+  pull_request:
+    paths:
+    - 'csharp/**'
+    - '.github/workflows/native.yml'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04,windows-2019,macos-10.15]
+
+    steps:
+    - uses: nuget/setup-nuget@v1
+    - uses: actions/checkout@v2
+    - uses: seanmiddleditch/gha-setup-ninja@master
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Install System Requirements
+      if: runner.os == 'Macos'
+      shell: bash
+      run: |
+        brew install sunnycase/core/libomp@11.1.0
+
+    - name: Add msbuild to PATH
+      if: runner.os == 'Windows'
+      uses: ilammy/msvc-dev-cmd@v1.9.0
+          
+    - name: Setup Python
+      uses: actions/setup-python@v2.2.1
+      with:
+        python-version: 3.7
+
+    - name: Install Conan
+      shell: bash
+      run: |
+        pip install conan
+
+    - name: Configure Conan Default Profile
+      shell: bash
+      run: conan profile new default --detect
+
+    - name: Configure Conan Compiler
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        conan profile update settings.compiler.libcxx=libstdc++11 default
+
+    - name: Dotnet Build
+      env:
+        CC: gcc-10
+        CXX: g++-10
+      if: runner.os == 'Linux'
+      shell: bash
+      working-directory: ${{github.workspace}}/csharp
+      run: dotnet build -c Release -p:TargetArchitecture=x64
+
+    - name: Dotnet Build
+      if: runner.os != 'Linux'
+      shell: bash
+      working-directory: ${{github.workspace}}/csharp
+      run: dotnet build -c Release -p:TargetArchitecture=x64
+
+    - name: Pack
+      if: runner.os == 'Linux'
+      shell: bash
+      working-directory: ${{github.workspace}}/csharp
+      run: nuget pack nuget/Nncase.Simulator.Native.linux-x64.nuspec -OutputDirectory ../nupkg
+
+    - name: Pack
+      if: runner.os == 'Macos'
+      shell: bash
+      working-directory: ${{github.workspace}}/csharp
+      run: nuget pack nuget/Nncase.Simulator.Native.osx-x64.nuspec -OutputDirectory ../nupkg
+
+    - name: Pack
+      if: runner.os == 'Windows'
+      shell: bash
+      working-directory: ${{github.workspace}}/csharp
+      run: nuget pack nuget/Nncase.Simulator.Native.win-x64.nuspec -OutputDirectory ../nupkg
+
+    - uses: actions/upload-artifact@v2
+      if: runner.os == 'Linux'
+      with:
+        name: Nncase.Simulator.Native.linux-x64.1.0.0.nupkg
+        path: nupkg/Nncase.Simulator.Native.linux-x64.1.0.0.nupkg
+
+    - uses: actions/upload-artifact@v2
+      if: runner.os == 'Macos'
+      with:
+        name: Nncase.Simulator.Native.osx-x64.1.0.0.nupkg
+        path: nupkg/Nncase.Simulator.Native.osx-x64.1.0.0.nupkg
+
+    - uses: actions/upload-artifact@v2
+      if: runner.os == 'Windows'
+      with:
+        name: Nncase.Simulator.Native.win-x64.1.0.0.nupkg
+        path: nupkg/Nncase.Simulator.Native.win-x64.1.0.0.nupkg
+
+    # - name: Push
+    #   shell: bash
+    #   working-directory: ${{github.workspace}}/csharp
+    #   run: nuget push ${{github.workspace}}/nupkg/Nncase.Simulator.Native.*.nupkg ${{ secrets.NUGET_KEY }} -Source https://www.myget.org/F/zhen8838/api/v2/package

@@ -93,7 +93,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     /// <param name="exprMsg"></param>
     void VerifySubField(Expr parent, Expr expr, TypePattern? pattern = null, [CallerArgumentExpression("expr")] string? exprMsg = null)
     {
-        pattern ??= Utility.IsIRType();
+        pattern ??= TypePatternUtility.IsIRType();
         if (parent.CheckedType is null)
         {
             if (expr.CheckedType is InvalidType)
@@ -144,10 +144,10 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     public override IRType VisitLeaf(For expr)
     {
         IRType type;
-        VerifySubField(expr, expr.Dom.Min, Utility.IsIntegralScalar());
-        VerifySubField(expr, expr.Dom.Max, Utility.IsIntegralScalar());
-        VerifySubField(expr, expr.LoopVar, Utility.IsIntegralScalar());
-        VerifySubField(expr, expr.Body, Utility.IsUnit());
+        VerifySubField(expr, expr.Dom.Min, TypePatternUtility.IsIntegralScalar());
+        VerifySubField(expr, expr.Dom.Max, TypePatternUtility.IsIntegralScalar());
+        VerifySubField(expr, expr.LoopVar, TypePatternUtility.IsIntegralScalar());
+        VerifySubField(expr, expr.Sequence, TypePatternUtility.IsUnit());
         if (expr.CheckedType is not null) { return expr.CheckedType; }
         type = TupleType.Void;
         SetCheckedType(expr, type);
@@ -160,12 +160,12 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         IRType type;
         foreach (var i in Enumerable.Range(0, expr.IterVars.Count))
         {
-            VerifySubField(expr, expr.IterVars[i], Utility.IsIntegralScalar());
+            VerifySubField(expr, expr.IterVars[i], TypePatternUtility.IsIntegralScalar());
         }
 
-        VerifySubField(expr, expr.InitBody, Utility.IsUnit());
-        VerifySubField(expr, expr.Body, Utility.IsUnit());
-        VerifySubField(expr, expr.Predicate, Utility.IsIntegralScalar());
+        VerifySubField(expr, expr.InitSequence, TypePatternUtility.IsUnit());
+        VerifySubField(expr, expr.Sequence, TypePatternUtility.IsUnit());
+        VerifySubField(expr, expr.Predicate, TypePatternUtility.IsIntegralScalar());
         if (expr.CheckedType is not null) { return expr.CheckedType; }
         type = TupleType.Void;
         SetCheckedType(expr, type);
@@ -174,19 +174,19 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
 
     public override IRType VisitLeaf(BufferLoad expr)
     {
-        VerifySubField(expr, expr.Buffer.Handle, Utility.IsHandle());
-        foreach (var i in Enumerable.Range(0, expr.Indices.Count)) { VerifySubField(expr, expr.Indices[i], Utility.IsIntegralScalar()); }
+        VerifySubField(expr, expr.Buffer.Handle, TypePatternUtility.IsHandle());
+        foreach (var i in Enumerable.Range(0, expr.Indices.Count)) { VerifySubField(expr, expr.Indices[i], TypePatternUtility.IsIntegralScalar()); }
         if (expr.CheckedType is not null) { return expr.CheckedType; }
-        var type = TensorType.Scalar(((HandleType)expr.Buffer.Handle.CheckedType!).DType);
+        var type = TensorType.Scalar(((PointerType)expr.Buffer.Handle.CheckedDataType).ElemType);
         SetCheckedType(expr, type);
         return type;
     }
 
     public override IRType VisitLeaf(BufferStore expr)
     {
-        VerifySubField(expr, expr.Buffer.Handle, Utility.IsHandle());
-        foreach (var i in Enumerable.Range(0, expr.Indices.Count)) { VerifySubField(expr, expr.Indices[i], Utility.IsIntegralScalar()); }
-        VerifySubField(expr, expr.Value, Utility.IsScalar());
+        VerifySubField(expr, expr.Buffer.Handle, TypePatternUtility.IsHandle());
+        foreach (var i in Enumerable.Range(0, expr.Indices.Count)) { VerifySubField(expr, expr.Indices[i], TypePatternUtility.IsIntegralScalar()); }
+        VerifySubField(expr, expr.Value, TypePatternUtility.IsScalar());
 
         if (expr.CheckedType is not null) { return expr.CheckedType; }
         IRType type;
@@ -206,9 +206,9 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     /// <inheritdoc/>
     public override IRType VisitLeaf(IfThenElse expr)
     {
-        VerifySubField(expr, expr.Condition, Utility.IsIntegralScalar());
-        VerifySubField(expr, expr.Then, Utility.IsUnit());
-        VerifySubField(expr, expr.Else, Utility.IsUnit());
+        VerifySubField(expr, expr.Condition, TypePatternUtility.IsIntegralScalar());
+        VerifySubField(expr, expr.Then, TypePatternUtility.IsUnit());
+        VerifySubField(expr, expr.Else, TypePatternUtility.IsUnit());
         if (expr.CheckedType is not null) { return expr.CheckedType; }
         IRType type = TupleType.Void;
         SetCheckedType(expr, type);

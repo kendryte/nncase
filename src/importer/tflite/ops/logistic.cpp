@@ -21,3 +21,31 @@
 using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
+
+DEFINE_TFLITE_LOWER(LOGISTIC)
+{
+    auto &input = get_tensor(op.inputs(), 0);
+
+    auto in_shape = get_shape(input.shape());
+
+    auto neg = graph_.emplace<unary>(unary_neg, in_shape);
+    auto exp = graph_.emplace<unary>(unary_exp, neg->output().shape());
+    auto one = graph_.emplace<constant>(1.f);
+    auto plus = graph_.emplace<binary>(binary_add, one->output().shape(), exp->output().shape(), value_range<float>::full());
+    auto div = graph_.emplace<binary>(binary_div, one->output().shape(), plus->output().shape(), value_range<float>::full());
+
+    neg->name(get_tensor(op.outputs(), 0).name()->string_view());
+    exp->name(get_tensor(op.outputs(), 0).name()->string_view());
+    one->name(get_tensor(op.outputs(), 0).name()->string_view());
+    plus->name(get_tensor(op.outputs(), 0).name()->string_view());
+    div->name(get_tensor(op.outputs(), 0).name()->string_view());
+
+    exp->input().connect(neg->output());
+    plus->input_a().connect(one->output());
+    plus->input_b().connect(exp->output());
+    div->input_a().connect(one->output());
+    div->input_b().connect(plus->output());
+
+    link_input_tensor(&neg->input(), op.inputs()->Get(0));
+    link_output_tensor(op.outputs()->Get(0), &div->output());
+}

@@ -42,14 +42,15 @@ public class CSourceRTModel : IRTModule, IRTModel
     /// <inheritdoc/>
     public IReadOnlyList<IRTModule> Modules => throw new NotImplementedException();
 
-    /// <summary>
-    /// internal souce code
-    /// </summary>
-    string _sourcePath;
+    /// <inheritdoc/>
+    public string SourcePath { get; private set; }
 
     IRModule _MainModule;
     IRTFunction? _entry = null;
-    public bool IsCompiled = false;
+
+    /// <inheritdoc/>
+    public bool IsSerialized { get; private set; }
+
     readonly List<IRTFunction> _functions = new();
 
     /// <summary>
@@ -57,13 +58,13 @@ public class CSourceRTModel : IRTModule, IRTModel
     /// </summary>
     public CSourceRTModel(Schedule.SchedModelResult result, ITarget target)
     {
-        _sourcePath = CodeGenUtil.GetTempFileName("c");
+        SourcePath = CodeGenUtil.GetTempFileName("c");
         _MainModule = result.ParentModule;
         Target = target;
     }
 
     /// <inheritdoc/>
-    public string Source { get => File.ReadAllText(_sourcePath, Encoding.UTF8); set { } }
+    public byte[] Source { get => File.ReadAllBytes(SourcePath); set { } }
 
     /// <inheritdoc/>
     public string SourceExt { get => "c"; set { } }
@@ -85,9 +86,9 @@ public class CSourceRTModel : IRTModule, IRTModel
     /// <exception cref="InvalidProgramException"></exception>
     void BuildCode()
     {
-        if (File.Exists(_sourcePath))
-            File.Delete(_sourcePath);
-        using (var writer = new StreamWriter(_sourcePath, false, Encoding.UTF8))
+        if (File.Exists(SourcePath))
+            File.Delete(SourcePath);
+        using (var writer = new StreamWriter(SourcePath, false, Encoding.UTF8))
         {
             var visior = new CSourceHostBuildVisior(writer);
             if (_MainModule.Entry is null) { throw new InvalidProgramException("The Model Entry Is Null!"); }
@@ -98,10 +99,10 @@ public class CSourceRTModel : IRTModule, IRTModel
 
     public void CompileCode()
     {
-        if (!File.Exists(_sourcePath))
+        if (!File.Exists(SourcePath))
             throw new InvalidProgramException("The Source Code Path Is Invalid!");
         var compiler = new CSourceCompiler();
-        _dllPath = compiler.Compile(_sourcePath);
+        _dllPath = compiler.Compile(SourcePath);
     }
 
     /// <summary>
@@ -126,7 +127,7 @@ public class CSourceRTModel : IRTModule, IRTModel
     /// <inheritdoc/>
     public ISerializeResult Serialize()
     {
-        if (IsCompiled) { return new CSourceSerializeResult(); }
+        if (IsSerialized) { return new CSourceSerializeResult(); }
         BuildCode();
         CompileCode();
         ExportCode();
@@ -151,6 +152,11 @@ public class CSourceRTModel : IRTModule, IRTModel
         using var file = File.Open($"{DumpDirPath}/{name}.{SourceExt}", FileMode.OpenOrCreate, FileAccess.Write);
         using var writer = new StreamWriter(file);
         writer.Write(Source);
+    }
+
+    string IRTModel.Dump(string name, string dumpDirPath)
+    {
+        throw new NotImplementedException();
     }
 }
 

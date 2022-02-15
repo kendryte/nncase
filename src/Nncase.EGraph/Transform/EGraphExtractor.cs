@@ -22,7 +22,7 @@ namespace Nncase.Transform
             var converter = new ExprConverter(costs);
             if (options.DumpLevel > 1)
             {
-                EGraphPrinter.DumpEgraphAsDot(eGraph, new EGraphCosts(eGraph, costs), entry.Find(), Path.Combine(options.FullDumpDir, "Costs", $"V{eGraph.Version}"));
+                EGraphPrinter.DumpEgraphAsDot(eGraph, new EGraphCosts(eGraph, costs), entry.Find(), Path.Combine(options.PassDumpDir, "Costs", $"V{eGraph.Version}"));
             }
 
             return converter.Visit(entry.Find());

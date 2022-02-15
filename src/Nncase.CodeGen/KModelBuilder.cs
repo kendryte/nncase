@@ -35,7 +35,15 @@ public class KModuleSerializeResult : ISerializeResult
 /// </summary>
 public class KModelSerializeResult : ISerializeResult
 {
+    /// <summary>
+    /// the model size.
+    /// </summary>
     public int ModelSize;
+
+    /// <summary>
+    /// ctor.
+    /// </summary>
+    /// <param name="size"></param>
     public KModelSerializeResult(int size)
     {
         ModelSize = size;
@@ -47,9 +55,35 @@ public class KModelSerializeResult : ISerializeResult
 /// </summary>
 public class RTKModel : IRTModel
 {
+
+    /// <inheritdoc/>
+    public ITarget Target { get; set; }
+    /// <inheritdoc/>
+    public Schedule.SchedModelResult modelResult { get; set; }
+    /// <inheritdoc/>
+    public string SourcePath { get; private set; }
+    /// <inheritdoc/>
+    public byte[] Source
+    {
+        get
+        {
+            if (IsSerialized)
+                return File.ReadAllBytes(SourcePath);
+            throw new InvalidOperationException("Must Serialized Runtime Model Can Get The Source!");
+        }
+    }
+    /// <inheritdoc/>
+    public string SourceExt { get => "kmodel"; }
+    /// <inheritdoc/>
+    public IRTFunction? Entry { get; set; }
+    /// <inheritdoc/>
+    public IReadOnlyList<IRTModule> Modules => modules;
+    /// <inheritdoc/>
+    public bool IsSerialized { get; private set; }
+
+
     List<IRTModule> modules;
-    string sourcePath;
-    bool isSerialized;
+
     KModelSerializeResult serializeResult;
 
     /// <summary>
@@ -61,38 +95,24 @@ public class RTKModel : IRTModel
     {
         Target = target;
         modelResult = result;
-        Source = string.Empty;
         modules = new();
-        sourcePath = CodeGenUtil.GetTempFileName(SourceExt);
-        isSerialized = false;
+        SourcePath = CodeGenUtil.GetTempFileName(SourceExt);
+        IsSerialized = false;
         serializeResult = new(0);
     }
 
     /// <inheritdoc/>
-    public ITarget Target { get; set; }
-
-    /// <inheritdoc/>
-    public Schedule.SchedModelResult modelResult { get; set; }
-
-    /// <inheritdoc/>
-    public string Source { get; set; }
-
-    /// <inheritdoc/>
-    public string SourceExt { get => "kmodel"; set { } }
-
-    /// <inheritdoc/>
-    public IRTFunction? Entry { get; set; }
-
-    /// <inheritdoc/>
-    public IReadOnlyList<IRTModule> Modules => modules;
-
-    /// <inheritdoc/>
-    public void Dump(string name, string dumpDirPath)
+    public string Dump(string name, string dumpDirPath)
     {
-        if (isSerialized)
+        var dump_path = Path.Combine(dumpDirPath, $"{name}.{SourceExt}");
+        if (IsSerialized)
         {
-            File.Copy(sourcePath, Path.Combine(dumpDirPath, $"{name}.{SourceExt}"));
+            if (File.Exists(dump_path))
+                File.Delete(dump_path);
+            File.Copy(SourcePath, dump_path);
+            return dump_path;
         }
+        throw new InvalidOperationException("Please Call Serialize First!");
     }
 
     /// <inheritdoc/>
@@ -104,21 +124,18 @@ public class RTKModel : IRTModel
     /// <inheritdoc/>
     public ISerializeResult Serialize()
     {
-        if (isSerialized)
-        {
-            return serializeResult;
-        }
+        if (IsSerialized) return serializeResult;
 
         // step 1. create the kmodel file
-        using var ostream = File.Open(sourcePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+        using var ostream = File.Open(SourcePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
         using var writer = new BinaryWriter(ostream);
         var begin_pos = writer.BaseStream.Position;
 
         // step 2. start write.
         var header = new ModelHeader()
         {
-            Identifier = ModelInfo.Identifier,
-            Version = ModelInfo.Version,
+            Identifier = ModelInfo.IDENTIFIER,
+            Version = ModelInfo.VERSION,
             HeaderSize = (uint)Marshal.SizeOf(typeof(ModelHeader)),
             Flags = 0,
             Alignment = 8,
@@ -159,6 +176,7 @@ public class RTKModel : IRTModel
         writer.Flush();
         writer.Close();
         serializeResult.ModelSize = ((int)(end_pos - begin_pos));
+        IsSerialized = true;
         return serializeResult;
     }
 }

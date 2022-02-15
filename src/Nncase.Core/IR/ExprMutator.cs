@@ -156,7 +156,7 @@ namespace Nncase.IR
             {
                 LoopVar = (Var)Visit(expr.LoopVar),
                 Dom = MutateLeaf(expr.Dom),
-                Body = (TIR.Sequential)Visit(expr.Body),
+                Sequence = (TIR.Sequential)Visit(expr.Sequence),
             };
         }
 
@@ -171,13 +171,13 @@ namespace Nncase.IR
 
             return expr with
             {
-                // the block realize
-                InitBody = (TIR.Sequential)Visit(expr.InitBody),
+                // the block realize 
+                InitSequence = (TIR.Sequential)Visit(expr.InitSequence),
                 Predicate = Visit(expr.Predicate),
                 IterVars = MutateArray(expr.IterVars, x => (TIR.IterVar)Visit(x)),
 
                 // the block internal.
-                Body = (TIR.Sequential)Visit(expr.Body),
+                Sequence = (TIR.Sequential)Visit(expr.Sequence),
                 Reads = MutateArray(expr.Reads, MutateLeaf),
                 Writes = MutateArray(expr.Writes, MutateLeaf),
             };

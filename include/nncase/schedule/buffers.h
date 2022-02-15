@@ -53,7 +53,7 @@ class NNCASE_API logical_buffer
 {
 public:
     logical_buffer(size_t id, ir::output_connector &owner, memory_location_t location)
-        : id_(id), owner_(owner), memory_location_(location), physical_(nullptr) { }
+        : id_(id), owner_(owner), memory_location_(location), strides_parent_(nullptr), physical_(nullptr) { }
 
     size_t id() const noexcept { return id_; }
     ir::output_connector &owner() const noexcept { return owner_; }
@@ -63,8 +63,14 @@ public:
     const std::optional<sub_buffer_desc> &parent() const noexcept { return parent_; }
     std::optional<sub_buffer_desc> &parent() noexcept { return parent_; }
 
-    const ir::shape_t &strides_shape() const noexcept { return strides_shape_; }
-    ir::shape_t &strides_shape() noexcept { return strides_shape_; }
+    const std::optional<size_t> &absolute_offset() const noexcept { return absolute_offset_; }
+    std::optional<size_t> &absolute_offset() noexcept { return absolute_offset_; }
+
+    const std::optional<ir::shape_t> &strides_shape() const noexcept { return strides_shape_; }
+    std::optional<ir::shape_t> &strides_shape() noexcept { return strides_shape_; }
+
+    logical_buffer *strides_parent() const noexcept { return strides_parent_; }
+    logical_buffer *&strides_parent() noexcept { return strides_parent_; }
 
     const buffer_lifetime &lifetime() const noexcept { return lifetime_; }
     buffer_lifetime &lifetime() noexcept { return lifetime_; }
@@ -87,7 +93,9 @@ private:
     memory_location_t memory_location_;
     module_type_t shared_module_;
     std::optional<sub_buffer_desc> parent_;
-    ir::shape_t strides_shape_;
+    std::optional<size_t> absolute_offset_;
+    std::optional<ir::shape_t> strides_shape_;
+    logical_buffer *strides_parent_;
     buffer_lifetime lifetime_ {};
     physical_buffer *physical_;
     bool no_action_concat_with_strides_ = false;

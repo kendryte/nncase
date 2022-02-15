@@ -1,9 +1,8 @@
 ﻿---
-BasedOnStyle: LLVM
-ConstructorInitializerAllOnOneLineOrOnePerLine: true
+BasedOnStyle: WebKit
+BreakBeforeBraces: Allman
+ConstructorInitializerAllOnOneLineOrOnePerLine: 'true'
 UseTab: Never
 PointerAlignment: Right
-AllowShortLambdasOnASingleLine: All
-IndentWidth: 4
 
 ...

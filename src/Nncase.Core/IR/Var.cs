@@ -94,6 +94,7 @@ namespace Nncase.IR
         /// get scalar var.
         /// </summary>
         /// <param name="Name"></param>
+        /// <param name="Dtype"></param>
         public static Var Scalar(string Name, DataType Dtype) => new Var(Name, new TensorType(Dtype, Shape.Scalar));
 
         /// <summary>
@@ -102,14 +103,14 @@ namespace Nncase.IR
         /// <param name="Name"></param>
         /// <param name="Dtype"></param>
         /// <param name="Scope"></param>
-        /// <returns> var. </returns>
-        public static Var Handle(string Name, DataType Dtype, string Scope = "") => new Var(Name, new HandleType(Dtype, Scope));
+        /// <returns> var </returns>
+        public static Var Handle(string Name, DataType Dtype, string Scope = "") => new Var(Name, TensorType.Scalar(new PointerType(Dtype)));
 
         /// <summary>
         /// get the size var. it can be used in tensor shape. like n>=0, m>=0.
         /// </summary>
         /// <param name="Name"></param>
         /// <returns></returns>
-        public static Var SizeVar(string Name) => Scalar(Name, ElemType.Int32);
+        public static Var SizeVar(string Name) => Scalar(Name, DataType.Int32);
     }
 }

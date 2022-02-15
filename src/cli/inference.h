@@ -32,7 +32,6 @@ private:
     std::string dataset_;
     std::string dataset_format_ = "image";
     std::string input_layout_ = "NCHW";
-    float input_mean_ = 0.f;
-    float input_std_ = 1.f;
+    bool wait_key_ = false;
 };
 }

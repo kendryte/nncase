@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase;
-using static Nncase.IR.Utility;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Tensors;
 
@@ -25,5 +25,5 @@ public sealed record Reshape() : Op
     /// <summary>
     /// Gets shape.
     /// </summary>
-    public static readonly ParameterInfo Shape = new(typeof(Reshape), 1, "shape", HasRank(1));
+    public static readonly ParameterInfo Shape = new(typeof(Reshape), 1, "shape", IsRank(1));
 }

@@ -94,6 +94,9 @@ public abstract class BaseRTKModule : IRTModule
         public ulong Size;
     }
 
+    /// <inheritdoc/>
+    public bool IsSerialized { get; private set; }
+
     /// <summary>
     /// builder.
     /// </summary>
@@ -159,16 +162,22 @@ public abstract class BaseRTKModule : IRTModule
     }
 
     /// <inheritdoc/>
-    public abstract ModuleType ModuleType { get; set; }
-
+    public abstract ModuleType ModuleType { get; }
     /// <summary>
     /// the module verison.
     /// </summary>
     public abstract uint ModuleVersion { get; }
 
     /// <inheritdoc/>
-    public string Source { get; set; } = string.Empty;
-
+    public byte[] Source
+    {
+        get
+        {
+            if (IsSerialized)
+                return File.ReadAllBytes(_sourcePath);
+            throw new InvalidOperationException("Must Serialized Runtime Module Can Get The Source!");
+        }
+    }
     /// <inheritdoc/>
     public string SourceExt { get => "kmodule"; set { } }
 
@@ -482,7 +491,7 @@ public abstract class BaseRTKModule : IRTModule
         foreach (var mem in _moduleResult.MaxUsages)
         {
             var desc = new MemPoolDesc { Location = mem.Key, Size = (uint)mem.Value };
-            writer.Write(CodeGenUtil.StructToBytes(desc));
+            writer.Write(CodeGenUtil.StructToBytes<MemPoolDesc>(desc));
         }
 
         // functions
@@ -512,7 +521,7 @@ public abstract class BaseRTKModule : IRTModule
 
             // Skip section sec_header
             var sec_header_pos = writer.BaseStream.Position;
-            writer.Seek(Marshal.SizeOf(sec_header), SeekOrigin.Current);
+            writer.Seek(Marshal.SizeOf<SectionHeader>(), SeekOrigin.Current);
 
             if (finded is false)
             {
@@ -523,12 +532,12 @@ public abstract class BaseRTKModule : IRTModule
             // write section sec_header
             var sec_end_pos = writer.BaseStream.Position;
             writer.Seek((int)sec_header_pos, SeekOrigin.Begin);
-            writer.Write(CodeGenUtil.StructToBytes(sec_header));
+            writer.Write(CodeGenUtil.StructToBytes<SectionHeader>(sec_header));
             writer.Seek((int)sec_end_pos, SeekOrigin.Begin);
         }
 
         writer.AlignPosition(8);
-        var end_pos = writer.GetPosition();
+        var end_pos = writer.Position();
 
         // defin module_header
         var header = new ModuleHeader { };
@@ -541,9 +550,9 @@ public abstract class BaseRTKModule : IRTModule
         header.Functions = (uint)_moduleResult.Functions.Count;
         header.Sections = (uint)_sectionWriters.Count;
         header.Reserved0 = 0;
-        writer.SetPosition(header_pos);
-        writer.Write(CodeGenUtil.StructToBytes(header));
-        writer.SetPosition(end_pos);
+        writer.Position(header_pos);
+        writer.Write(CodeGenUtil.StructToBytes<ModuleHeader>(header));
+        writer.Position(end_pos);
     }
 
     private void WriteFunctionBinary(BinaryWriter writer, Schedule.SchedFunctionResult function_sched)
@@ -556,49 +565,42 @@ public abstract class BaseRTKModule : IRTModule
                 writer.Write((uint)dim.FixedValue);
             }
         }
-
-        List<Schedule.MemoryRange> inputs = new();
-        List<IR.Shape> input_shapes = new();
-        List<Schedule.MemoryRange> outputs = new();
-        List<IR.Shape> output_shapes = new();
-
-        foreach (var node in function_sched.ComputeSequence)
+        if (!function_sched.Inputs.Any() &&
+            !function_sched.InputShapes.Any() &&
+            !function_sched.Outputs.Any() &&
+            !function_sched.OutputShapes.Any())
         {
-            if (function_sched.Function.Parameters.Contains(node,
-                            new IR.RecordRefComparer<IR.Expr>()))
+            foreach (var node in function_sched.ComputeSequence)
             {
-                var alloc = Allocation(node);
-                inputs.Add(alloc.RuntimeType);
-                input_shapes.Add(alloc.Shape);
-            }
-            else if (object.ReferenceEquals(function_sched.Function.Body, node))
-            {
-                var alloc = Allocation(node);
-                outputs.Add(alloc.RuntimeType);
-                output_shapes.Add(alloc.Shape);
+                if (function_sched.Function.Parameters.Contains(node,
+                                new IR.RecordRefComparer<IR.Expr>()))
+                {
+                    var alloc = Allocation(node);
+                    function_sched.Inputs.Add(alloc.RuntimeType);
+                    function_sched.InputShapes.Add(alloc.Shape);
+                }
+                else if (object.ReferenceEquals(function_sched.Function.Body, node))
+                {
+                    var alloc = Allocation(node);
+                    function_sched.Outputs.Add(alloc.RuntimeType);
+                    function_sched.OutputShapes.Add(alloc.Shape);
+                }
             }
         }
-
         // Skip function header
-        var header_pos = writer.GetPosition();
+        var header_pos = writer.Position();
         writer.Skip((ulong)Marshal.SizeOf<FunctionHeader>());
 
         // inputs
-        writer.Write(CodeGenUtil.StructToBytes(inputs));
-        foreach (var shape in input_shapes)
-        {
-            writeShape(shape);
-        }
+        foreach (var input in function_sched.Inputs) { writer.Write(CodeGenUtil.StructToBytes<Schedule.MemoryRange>(input)); }
+        foreach (var shape in function_sched.InputShapes) { writeShape(shape); }
 
         // outputs
-        writer.Write(CodeGenUtil.StructToBytes(outputs));
-        foreach (var shape in output_shapes)
-        {
-            writeShape(shape);
-        }
+        foreach (var output in function_sched.Outputs) { writer.Write(CodeGenUtil.StructToBytes<Schedule.MemoryRange>(output)); }
+        foreach (var shape in function_sched.OutputShapes) { writeShape(shape); }
 
         writer.AlignPosition(8);
-        var end_pos = writer.GetPosition();
+        var end_pos = writer.Position();
 
         // header
         var header = new FunctionHeader
@@ -607,31 +609,27 @@ public abstract class BaseRTKModule : IRTModule
             Size = (uint)(end_pos - header_pos),
             InputPoolSize = (uint)function_sched.InputPoolSize,
             OutputPoolSize = (uint)function_sched.OutputPoolSize,
-            Inputs = (uint)inputs.Count,
-            Outputs = (uint)outputs.Count,
+            Inputs = (uint)function_sched.Inputs.Count,
+            Outputs = (uint)function_sched.Outputs.Count,
             Entrypoint = (uint)_entryPoints[function_sched],
             TextSize = (uint)(_functionTextEnd[function_sched] - _entryPoints[function_sched]),
         };
-        writer.SetPosition(header_pos);
-        writer.Write(CodeGenUtil.StructToBytes(header));
-        writer.SetPosition(end_pos);
+        writer.Position(header_pos);
+        writer.Write(CodeGenUtil.StructToBytes<FunctionHeader>(header));
+        writer.Position(end_pos);
     }
 
     /// <inheritdoc/>
     public void Dump(string name, string dumpDirPath)
     {
-        if (!_isSerialized)
-        {
-            Serialize();
-        }
-
+        if (!IsSerialized) Serialize();
         File.Copy(_sourcePath, Path.Join(dumpDirPath, name + '.' + SourceExt));
     }
 
     /// <inheritdoc/>
     public ISerializeResult Serialize()
     {
-        if (!_isSerialized)
+        if (!IsSerialized)
         {
             _sourcePath = CodeGenUtil.GetTempFileName(SourceExt);
             using var f = new FileStream(_sourcePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
@@ -639,13 +637,12 @@ public abstract class BaseRTKModule : IRTModule
             Compile();
             Link();
             WriteBinary(bw);
-            _isSerialized = true;
+            IsSerialized = true;
         }
 
         return new KModuleSerializeResult(Alignment);
     }
 
-    private bool _isSerialized = false;
     private string _sourcePath = string.Empty;
     private readonly Schedule.SchedModelResult _modelResult;
     private readonly Schedule.SchedModuleResult _moduleResult;

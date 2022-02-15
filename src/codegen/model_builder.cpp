@@ -66,7 +66,7 @@ build_model_result model_builder::build(std::ostream &output)
         auto &mod_sched = sched_.modules[i];
         for (size_t j = 0; j < mod_sched.functions.size(); j++)
         {
-            if (sched_.entry_function == &mod_sched.functions[i])
+            if (sched_.entry_function == &mod_sched.functions[j])
             {
                 header.entry_module = (uint32_t)i;
                 header.entry_function = (uint32_t)j;

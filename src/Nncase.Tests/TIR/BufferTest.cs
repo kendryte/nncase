@@ -1,13 +1,15 @@
-using Xunit;
+using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
+using Nncase.Evaluator;
+using Nncase.IR;
 using Nncase.TIR;
 using Nncase.TIR.Builtin;
-using Nncase.IR;
-using Nncase.Evaluator;
-using System.Collections.Generic;
 using TorchSharp;
+using Xunit;
 
 namespace Nncase.Tests.TIRTest
 {
+
     public class TBufferTest
     {
         [Fact]

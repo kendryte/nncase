@@ -26,9 +26,9 @@ public static partial class CodeGenUtil
     /// </summary>
     /// <param name="obj">the struct object instance.</param>
     /// <returns></returns>
-    public static byte[] StructToBytes(object obj)
+    public static byte[] StructToBytes<T>(T obj)
     {
-        int len = Marshal.SizeOf(obj);
+        int len = Marshal.SizeOf<T>();
         byte[] arr = new byte[len];
         IntPtr ptr = Marshal.AllocHGlobal(len);
         Marshal.StructureToPtr(obj, ptr, true);

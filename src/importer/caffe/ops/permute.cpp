@@ -13,23 +13,27 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <hlir/ops/transpose.h>
+#include <nncase/ir/ops/transpose.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
+using namespace nncase::ir;
 using namespace caffe;
 
 DEFINE_CAFFE_LOWER(Permute)
 {
-    auto &input = *output_tensors_.at(op.bottom(0));
+    // check if there are bn/scale/relu above
+    std::string input_name = get_real_input_names(op)[0];
+
+    auto &input = *output_tensors_.at(input_name);
     auto &param = op.permute_param();
     axis_t perm;
     for (int i = 0; i < param.order_size(); i++)
         perm.push_back(param.order(i));
 
     auto tp = graph_.emplace<transpose>(dt_float32, input.shape(), perm);
+    tp->name(op.name() + "/transpose");
 
-    input_tensors_.emplace(&tp->input(), op.bottom(0));
+    input_tensors_.emplace(&tp->input(), input_name);
     output_tensors_.emplace(op.top(0), &tp->output());
 }

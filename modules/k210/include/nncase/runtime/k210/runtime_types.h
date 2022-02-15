@@ -20,6 +20,7 @@ BEGIN_NS_NNCASE_RT_MODULE(k210)
 
 NNCASE_INLINE_VAR constexpr memory_location_t mem_kpu = mem_private_base + 0;
 NNCASE_INLINE_VAR constexpr size_t KPU_RAM_SIZE = 2 * 1024 * 1024; // 2MB
+NNCASE_INLINE_VAR constexpr size_t KPU_BN_OUT_BITS = 36;
 
 typedef struct
 {
@@ -189,7 +190,7 @@ typedef struct
         uint64_t reg;
         struct
         {
-            uint64_t shift_number : 8;
+            uint64_t shift_number : 8; // [0,43]
             uint64_t y_mul : 16;
             uint64_t x_start : 36;
         } data;

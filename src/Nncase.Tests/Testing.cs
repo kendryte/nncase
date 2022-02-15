@@ -1,9 +1,16 @@
-using Xunit;
-using System.Runtime.CompilerServices;
 using System.IO;
-using Nncase.Transform;
-using Nncase.IR;
+using System.Runtime.CompilerServices;
+using Autofac;
+using Autofac.Extras.CommonServiceLocator;
+using CommonServiceLocator;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Nncase.Evaluator;
+using Nncase.IR;
+using Nncase.Transform;
+using Xunit;
 
 namespace Nncase.Tests
 {
@@ -84,4 +91,13 @@ namespace Nncase.Tests
         }
     }
 
+    public abstract class IHostFixtrue
+    {
+        public IHostFixtrue(IHost host)
+        {
+            var t = host.Services.GetRequiredService<IComponentContext>();
+            var csl = new AutofacServiceLocator(t);
+            ServiceLocator.SetLocatorProvider(() => csl);
+        }
+    }
 }
