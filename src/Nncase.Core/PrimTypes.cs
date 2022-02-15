@@ -45,10 +45,10 @@ public sealed record Utf8CharType : PrimType
     public override string ShortName => "u8char";
 
     /// <inheritdoc/>
-    public override Type CLRType => typeof(byte);
+    public override Type CLRType => typeof(Utf8Char);
 
     /// <inheritdoc/>
-    public override int SizeInBytes => sizeof(byte);
+    public unsafe override int SizeInBytes => sizeof(Utf8Char);
 }
 
 /// <summary>
