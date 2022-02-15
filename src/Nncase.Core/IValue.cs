@@ -81,7 +81,7 @@ public static class Value
 /// <summary>
 /// Tensor value.
 /// </summary>
-public sealed class TensorValue : IValue
+public sealed class TensorValue : IValue, IEquatable<TensorValue?>
 {
     private readonly Tensor _value;
 
@@ -107,12 +107,12 @@ public sealed class TensorValue : IValue
     /// <inheritdoc/>
     public IEnumerator<IValue> GetEnumerator()
     {
-        yield return this;
+        yield break;
     }
 
     IEnumerator IEnumerable.GetEnumerator()
     {
-        yield return this;
+        yield break;
     }
 
     /// <inheritdoc/>
@@ -126,12 +126,31 @@ public sealed class TensorValue : IValue
     {
         return new[] { _value };
     }
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as TensorValue);
+    }
+
+    /// <inheritdoc/>
+    public bool Equals(TensorValue? other)
+    {
+        return other != null &&
+               EqualityComparer<Tensor>.Default.Equals(_value, other._value);
+    }
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(_value);
+    }
 }
 
 /// <summary>
 /// Tuple value.
 /// </summary>
-public sealed class TupleValue : IValue
+public sealed class TupleValue : IValue, IEquatable<TupleValue?>
 {
     private readonly IValue[] _values;
 
@@ -175,5 +194,24 @@ public sealed class TupleValue : IValue
     public Tensor[] AsTensors()
     {
         return _values.Cast<TensorValue>().Select(x => x.AsTensor()).ToArray();
+    }
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as TupleValue);
+    }
+
+    /// <inheritdoc/>
+    public bool Equals(TupleValue? other)
+    {
+        return other != null &&
+               EqualityComparer<IValue[]>.Default.Equals(_values, other._values);
+    }
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(_values);
     }
 }
