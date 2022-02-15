@@ -19,11 +19,11 @@ public class UnitTestTBuffer
         var n = T.SizeVar("n");
         var l = T.SizeVar("l");
 
-        var Ab = T.DeclBuffer((m, n), DataType.Float32);
-        var Bb = T.DeclBuffer((n, l), DataType.Float32);
+        var Ab = T.DeclBuffer((m, n), DataTypes.Float32);
+        var Bb = T.DeclBuffer((n, l), DataTypes.Float32);
 
         Assert.IsType<Buffer>(Ab);
-        Assert.Equal(Ab.Dtype, DataType.Float32);
+        Assert.Equal(Ab.Dtype, DataTypes.Float32);
         Assert.Equal(Ab.Shape[0], m);
         Assert.Equal(Ab.Shape[1], n);
     }
@@ -38,7 +38,7 @@ public class UnitTestTBuffer
               { m, Value.FromTensor(3) },
             };
         var Ab = T.DeclBuffer((m, n),
-                      DataType.Float32,
+                      DataTypes.Float32,
                       strides: (n + 1, 1));
         var aptr = Ab.AccessPtr(AccessMode.ReadWrite);
         Assert.Equal(aptr.Parameters[2].Evaluate(dict), (Ab.Strides[0] * m).Evaluate(dict));
@@ -55,7 +55,7 @@ public class UnitTestTBuffer
               { m,  torch.tensor(3) },
             };
         var Ab = T.DeclBuffer((m, n),
-                      DataType.Float32,
+                      DataTypes.Float32,
                       strides: (n + 1, 1));
         var aptr = Ab.AccessPtr(AccessMode.ReadWrite, offset: 100);
         Assert.Equal(AccessMode.ReadWrite, ((AccessPtr)aptr.Target).AccessMode);
@@ -72,10 +72,10 @@ public class UnitTestTBuffer
     // {
     //     var m = T.SizeVar("m");
     //     var n = T.SizeVar("n");
-    //     var Ab = T.DeclBuffer((m, n), DataType.Float32);
+    //     var Ab = T.DeclBuffer((m, n), DataTypes.Float32);
     //     var aptr = Ab.AccessPtr(AccessMode.ReadWrite, offset: 100);
     //     Testing.AssertExprEqual(aptr.Parameters[2], m * n - 100);
-    //     var Bb = T.DeclBuffer((m, n), DataType.Float32, strides: (n + 1, 1));
+    //     var Bb = T.DeclBuffer((m, n), DataTypes.Float32, strides: (n + 1, 1));
     //     var bptr = Bb.AccessPtr(AccessMode.ReadWrite, offset: 100);
     //     Testing.AssertExprEqual(bptr.Parameters[2], Bb.Strides[0] * m - 100);
     // }
@@ -85,7 +85,7 @@ public class UnitTestTBuffer
     // {
     //     var m = T.SizeVar("m");
     //     var n = T.SizeVar("n");
-    //     var Ab = T.DeclBuffer((m, n), DataType.Float32, elem_offset: 100);
+    //     var Ab = T.DeclBuffer((m, n), DataTypes.Float32, elem_offset: 100);
     //     var load = Ab.VLoad((2, 3));
     //     Testing.AssertExprEqual(load[Load.Index], 100 + ((2 * n) + 3));
     // }

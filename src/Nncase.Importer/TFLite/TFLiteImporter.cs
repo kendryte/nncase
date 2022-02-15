@@ -23,18 +23,18 @@ namespace Nncase.Importer.TFLite
     {
         private static readonly Dictionary<tflite.TensorType, DataType> _typeMap = new()
         {
-            { tflite.TensorType.BOOL, DataType.Boolean },
-            { tflite.TensorType.FLOAT16, DataType.Float16 },
-            { tflite.TensorType.FLOAT32, DataType.Float32 },
-            { tflite.TensorType.FLOAT64, DataType.Float64 },
-            { tflite.TensorType.INT16, DataType.Int16 },
-            { tflite.TensorType.INT32, DataType.Int32 },
-            { tflite.TensorType.INT64, DataType.Int64 },
-            { tflite.TensorType.INT8, DataType.Int8 },
-            { tflite.TensorType.STRING, DataType.Utf8Char },
-            { tflite.TensorType.UINT32, DataType.UInt32 },
-            { tflite.TensorType.UINT64, DataType.UInt64 },
-            { tflite.TensorType.UINT8, DataType.UInt8 },
+            { tflite.TensorType.BOOL, DataTypes.Boolean },
+            { tflite.TensorType.FLOAT16, DataTypes.Float16 },
+            { tflite.TensorType.FLOAT32, DataTypes.Float32 },
+            { tflite.TensorType.FLOAT64, DataTypes.Float64 },
+            { tflite.TensorType.INT16, DataTypes.Int16 },
+            { tflite.TensorType.INT32, DataTypes.Int32 },
+            { tflite.TensorType.INT64, DataTypes.Int64 },
+            { tflite.TensorType.INT8, DataTypes.Int8 },
+            { tflite.TensorType.STRING, DataTypes.Utf8Char },
+            { tflite.TensorType.UINT32, DataTypes.UInt32 },
+            { tflite.TensorType.UINT64, DataTypes.UInt64 },
+            { tflite.TensorType.UINT8, DataTypes.UInt8 },
         };
 
         private readonly tflite.Model _model;

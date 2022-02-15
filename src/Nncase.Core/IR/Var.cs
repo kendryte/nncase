@@ -111,6 +111,6 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="Name"></param>
         /// <returns></returns>
-        public static Var SizeVar(string Name) => Scalar(Name, DataType.Int32);
+        public static Var SizeVar(string Name) => Scalar(Name, DataTypes.Int32);
     }
 }

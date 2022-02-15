@@ -9,27 +9,101 @@ using System.Threading.Tasks;
 
 namespace Nncase.Converters;
 
-internal class BooleanConverters :
-    ISpanConverter<bool, bool>,
-    ISpanConverter<bool, sbyte>,
-    ISpanConverter<bool, byte>,
-    ISpanConverter<bool, short>,
-    ISpanConverter<bool, ushort>,
-    ISpanConverter<bool, int>,
-    ISpanConverter<bool, uint>,
-    ISpanConverter<bool, long>,
-    ISpanConverter<bool, ulong>,
-    ISpanConverter<bool, Half>,
-    ISpanConverter<bool, float>,
-    ISpanConverter<bool, double>,
-    ISpanConverter<bool, BFloat16>
+internal class Int16Converters :
+    ISpanConverter<short, bool>,
+    ISpanConverter<short, sbyte>,
+    ISpanConverter<short, byte>,
+    ISpanConverter<short, short>,
+    ISpanConverter<short, ushort>,
+    ISpanConverter<short, int>,
+    ISpanConverter<short, uint>,
+    ISpanConverter<short, long>,
+    ISpanConverter<short, ulong>,
+    ISpanConverter<short, Half>,
+    ISpanConverter<short, float>,
+    ISpanConverter<short, double>,
+    ISpanConverter<short, BFloat16>
 {
-    public void ConvertTo(ReadOnlySpan<bool> source, Span<bool> dest, CastMode castMode)
+    public void ConvertTo(ReadOnlySpan<short> source, Span<bool> dest, CastMode castMode)
+    {
+        if (castMode == CastMode.Exact)
+        {
+            throw new InvalidCastException();
+        }
+
+        if (dest.Length < source.Length)
+        {
+            throw new ArgumentException("Dest buffer is not sufficient.");
+        }
+
+        for (int i = 0; i < source.Length; i++)
+        {
+            dest[i] = source[i] != 0;
+        }
+    }
+
+    public void ConvertTo(ReadOnlySpan<short> source, Span<sbyte> dest, CastMode castMode)
+    {
+        if (castMode == CastMode.Exact)
+        {
+            throw new InvalidCastException();
+        }
+
+        if (dest.Length < source.Length)
+        {
+            throw new ArgumentException("Dest buffer is not sufficient.");
+        }
+
+        if (castMode == CastMode.CheckOverflow)
+        {
+            for (int i = 0; i < source.Length; i++)
+            {
+                dest[i] = checked((sbyte)source[i]);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < source.Length; i++)
+            {
+                dest[i] = (sbyte)source[i];
+            }
+        }
+    }
+
+    public void ConvertTo(ReadOnlySpan<short> source, Span<byte> dest, CastMode castMode)
+    {
+        if (castMode == CastMode.Exact)
+        {
+            throw new InvalidCastException();
+        }
+
+        if (dest.Length < source.Length)
+        {
+            throw new ArgumentException("Dest buffer is not sufficient.");
+        }
+
+        if (castMode == CastMode.CheckOverflow)
+        {
+            for (int i = 0; i < source.Length; i++)
+            {
+                dest[i] = checked((byte)source[i]);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < source.Length; i++)
+            {
+                dest[i] = (byte)source[i];
+            }
+        }
+    }
+
+    public void ConvertTo(ReadOnlySpan<short> source, Span<short> dest, CastMode castMode)
     {
         source.CopyTo(dest);
     }
 
-    public void ConvertTo(ReadOnlySpan<bool> source, Span<sbyte> dest, CastMode castMode)
+    public void ConvertTo(ReadOnlySpan<short> source, Span<ushort> dest, CastMode castMode)
     {
         if (castMode == CastMode.Exact)
         {
@@ -41,13 +115,23 @@ internal class BooleanConverters :
             throw new ArgumentException("Dest buffer is not sufficient.");
         }
 
-        for (int i = 0; i < source.Length; i++)
+        if (castMode == CastMode.CheckOverflow)
         {
-            dest[i] = source[i] ? (sbyte)1 : (sbyte)0;
+            for (int i = 0; i < source.Length; i++)
+            {
+                dest[i] = checked((ushort)source[i]);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < source.Length; i++)
+            {
+                dest[i] = (ushort)source[i];
+            }
         }
     }
 
-    public void ConvertTo(ReadOnlySpan<bool> source, Span<byte> dest, CastMode castMode)
+    public void ConvertTo(ReadOnlySpan<short> source, Span<int> dest, CastMode castMode)
     {
         if (castMode == CastMode.Exact)
         {
@@ -61,11 +145,11 @@ internal class BooleanConverters :
 
         for (int i = 0; i < source.Length; i++)
         {
-            dest[i] = source[i] ? (byte)1 : (byte)0;
+            dest[i] = source[i];
         }
     }
 
-    public void ConvertTo(ReadOnlySpan<bool> source, Span<short> dest, CastMode castMode)
+    public void ConvertTo(ReadOnlySpan<short> source, Span<uint> dest, CastMode castMode)
     {
         if (castMode == CastMode.Exact)
         {
@@ -77,13 +161,23 @@ internal class BooleanConverters :
             throw new ArgumentException("Dest buffer is not sufficient.");
         }
 
-        for (int i = 0; i < source.Length; i++)
+        if (castMode == CastMode.CheckOverflow)
         {
-            dest[i] = source[i] ? (short)1 : (short)0;
+            for (int i = 0; i < source.Length; i++)
+            {
+                dest[i] = checked((uint)source[i]);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < source.Length; i++)
+            {
+                dest[i] = (uint)source[i];
+            }
         }
     }
 
-    public void ConvertTo(ReadOnlySpan<bool> source, Span<ushort> dest, CastMode castMode)
+    public void ConvertTo(ReadOnlySpan<short> source, Span<long> dest, CastMode castMode)
     {
         if (castMode == CastMode.Exact)
         {
@@ -97,11 +191,11 @@ internal class BooleanConverters :
 
         for (int i = 0; i < source.Length; i++)
         {
-            dest[i] = source[i] ? (ushort)1 : (ushort)0;
+            dest[i] = source[i];
         }
     }
 
-    public void ConvertTo(ReadOnlySpan<bool> source, Span<int> dest, CastMode castMode)
+    public void ConvertTo(ReadOnlySpan<short> source, Span<ulong> dest, CastMode castMode)
     {
         if (castMode == CastMode.Exact)
         {
@@ -113,13 +207,23 @@ internal class BooleanConverters :
             throw new ArgumentException("Dest buffer is not sufficient.");
         }
 
-        for (int i = 0; i < source.Length; i++)
+        if (castMode == CastMode.CheckOverflow)
         {
-            dest[i] = source[i] ? 1 : 0;
+            for (int i = 0; i < source.Length; i++)
+            {
+                dest[i] = checked((ulong)source[i]);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < source.Length; i++)
+            {
+                dest[i] = (ulong)source[i];
+            }
         }
     }
 
-    public void ConvertTo(ReadOnlySpan<bool> source, Span<uint> dest, CastMode castMode)
+    public void ConvertTo(ReadOnlySpan<short> source, Span<Half> dest, CastMode castMode)
     {
         if (castMode == CastMode.Exact)
         {
@@ -133,11 +237,11 @@ internal class BooleanConverters :
 
         for (int i = 0; i < source.Length; i++)
         {
-            dest[i] = source[i] ? 1U : 0;
+            dest[i] = (Half)(float)source[i];
         }
     }
 
-    public void ConvertTo(ReadOnlySpan<bool> source, Span<long> dest, CastMode castMode)
+    public void ConvertTo(ReadOnlySpan<short> source, Span<float> dest, CastMode castMode)
     {
         if (castMode == CastMode.Exact)
         {
@@ -151,11 +255,11 @@ internal class BooleanConverters :
 
         for (int i = 0; i < source.Length; i++)
         {
-            dest[i] = source[i] ? 1L : 0;
+            dest[i] = source[i];
         }
     }
 
-    public void ConvertTo(ReadOnlySpan<bool> source, Span<ulong> dest, CastMode castMode)
+    public void ConvertTo(ReadOnlySpan<short> source, Span<double> dest, CastMode castMode)
     {
         if (castMode == CastMode.Exact)
         {
@@ -169,11 +273,11 @@ internal class BooleanConverters :
 
         for (int i = 0; i < source.Length; i++)
         {
-            dest[i] = source[i] ? 1UL : 0;
+            dest[i] = source[i];
         }
     }
 
-    public void ConvertTo(ReadOnlySpan<bool> source, Span<Half> dest, CastMode castMode)
+    public void ConvertTo(ReadOnlySpan<short> source, Span<BFloat16> dest, CastMode castMode)
     {
         if (castMode == CastMode.Exact)
         {
@@ -187,64 +291,7 @@ internal class BooleanConverters :
 
         for (int i = 0; i < source.Length; i++)
         {
-            dest[i] = source[i] ? (Half)1f : (Half)0f;
-        }
-    }
-
-    public void ConvertTo(ReadOnlySpan<bool> source, Span<float> dest, CastMode castMode)
-    {
-        if (castMode == CastMode.Exact)
-        {
-            throw new InvalidCastException();
-        }
-
-        if (dest.Length < source.Length)
-        {
-            throw new ArgumentException("Dest buffer is not sufficient.");
-        }
-
-        for (int i = 0; i < source.Length; i++)
-        {
-            dest[i] = source[i] ? 1f : 0f;
-        }
-    }
-
-    public void ConvertTo(ReadOnlySpan<bool> source, Span<double> dest, CastMode castMode)
-    {
-        if (castMode == CastMode.Exact)
-        {
-            throw new InvalidCastException();
-        }
-
-        if (dest.Length < source.Length)
-        {
-            throw new ArgumentException("Dest buffer is not sufficient.");
-        }
-
-        for (int i = 0; i < source.Length; i++)
-        {
-            dest[i] = source[i] ? 1.0 : 0.0;
-        }
-    }
-
-    public void ConvertTo(ReadOnlySpan<bool> source, Span<BFloat16> dest, CastMode castMode)
-    {
-        if (castMode == CastMode.Exact)
-        {
-            throw new InvalidCastException();
-        }
-
-        if (dest.Length < source.Length)
-        {
-            throw new ArgumentException("Dest buffer is not sufficient.");
-        }
-
-        BFloat16 one = (BFloat16)1f;
-        BFloat16 zero = (BFloat16)0f;
-
-        for (int i = 0; i < source.Length; i++)
-        {
-            dest[i] = source[i] ? one : zero;
+            dest[i] = (BFloat16)(float)source[i];
         }
     }
 }

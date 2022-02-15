@@ -30,10 +30,6 @@ public class StoreEvaluator : ITypeInferencer<Store>
             return new InvalidType($"You Can't Load The {value.DType} To {elemType}");
         }
 
-        if (value.DType is PrimType primType && primType.Lanes != lanes)
-        {
-            return new InvalidType($"You're Index Lanes {lanes} Is Not Equal Value Lanes {primType.Lanes}");
-        }
         return TupleType.Void;
     }
 }

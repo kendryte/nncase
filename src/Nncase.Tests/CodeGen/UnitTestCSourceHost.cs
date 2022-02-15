@@ -68,8 +68,8 @@ namespace Nncase.Tests.CodeGenTest
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return;
-            var x = new Var("x", TensorType.Scalar(DataType.Float32));
-            var y = new Var("y", TensorType.Scalar(DataType.Float32));
+            var x = new Var("x", TensorType.Scalar(DataTypes.Float32));
+            var y = new Var("y", TensorType.Scalar(DataTypes.Float32));
             var func = new Function(new Sequential() { x + y }, x, y);
             var mod = new IRModule(func);
             var rtmod = mod.ToRTModel(_target);

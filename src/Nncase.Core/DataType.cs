@@ -23,6 +23,12 @@ namespace Nncase;
 public sealed record PointerType(DataType ElemType) : DataType
 {
     /// <inheritdoc/>
+    public override Type CLRType { get; } = typeof(Pointer<>).MakeGenericType(ElemType.CLRType);
+
+    /// <inheritdoc/>
+    public override int SizeInBytes => sizeof(ulong);
+
+    /// <inheritdoc/>
     public override string ToString()
     {
         return $"{ElemType}*";
@@ -35,12 +41,32 @@ public sealed record PointerType(DataType ElemType) : DataType
 public abstract record DataType()
 {
     /// <summary>
+    /// Gets CLR type.
+    /// </summary>
+    public abstract Type CLRType { get; }
+
+    /// <summary>
+    /// Gets size in bytes.
+    /// </summary>
+    public abstract int SizeInBytes { get; }
+
+    /// <summary>
     /// Get data type from CLR type.
     /// </summary>
     /// <param name="t">CLR type.</param>
     /// <returns>Data type.</returns>
-    public static PrimType FromType(Type t)
+    public static DataType FromType(Type t)
     {
+        if (t.IsGenericType)
+        {
+            if (t.GetGenericTypeDefinition() == typeof(Pointer<>))
+            {
+                return new PointerType(FromType(t.GenericTypeArguments[0]));
+            }
+
+            throw new ArgumentException("Unsupported CLR type.");
+        }
+
         return CompilerServices.DataTypeService.GetPrimTypeFromType(t);
     }
 
@@ -49,7 +75,7 @@ public abstract record DataType()
     /// </summary>
     /// <typeparam name="T">CLR type.</typeparam>
     /// <returns>Data type.</returns>
-    public static PrimType FromType<T>()
+    public static DataType FromType<T>()
         where T : unmanaged, IEquatable<T>
         => FromType(typeof(T));
 }
@@ -95,16 +121,6 @@ public abstract record PrimType : DataType
     /// Gets short name.
     /// </summary>
     public abstract string ShortName { get; }
-
-    /// <summary>
-    /// Gets CLR type.
-    /// </summary>
-    public abstract Type CLRType { get; }
-
-    /// <summary>
-    /// Gets size in bytes.
-    /// </summary>
-    public abstract int SizeInBytes { get; }
 
     /// <inheritdoc/>
     public override string ToString()

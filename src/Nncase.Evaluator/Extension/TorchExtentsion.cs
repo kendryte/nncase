@@ -75,52 +75,43 @@ public static class TorchExtentsion
         // torch.as_tensor()
         var dtype = tensor.ElementType;
         var shape = tensor.Dimensions.AsValueEnumerable().Select(x => (long)x).ToArray();
-        return dtype switch
-        {
-            { ElemType: ElemType.Int8, Lanes: 1 } => torch.tensor(tensor.Cast<sbyte>(), shape, ToTorchType(dtype)),
-            { ElemType: ElemType.Int16, Lanes: 1 } => torch.tensor(tensor.Cast<short>(), shape, ToTorchType(dtype)),
-            { ElemType: ElemType.Int32, Lanes: 1 } => torch.tensor(tensor.Cast<int>(), shape, ToTorchType(dtype)),
-            { ElemType: ElemType.Int64, Lanes: 1 } => torch.tensor(tensor.Cast<long>(), shape, ToTorchType(dtype)),
-            { ElemType: ElemType.UInt8, Lanes: 1 } => torch.tensor(tensor.Cast<byte>(), shape, ToTorchType(dtype)),
-
-            // DataType.UInt16 => torch.tensor(expr.ToTensor<ushort>(), shape, ToTorchType(dtype)),
-            // DataType.UInt32 => torch.tensor(expr.ToTensor<uint>(), shape, ToTorchType(dtype)),
-            // DataType.UInt64 => torch.tensor(expr.ToTensor<ulong>(), shape, ToTorchType(dtype)),
-            // DataType.Float16 => torch.tensor(expr.ToTensor<Float16>(), shape, ToTorchType(dtype)),
-            { ElemType: ElemType.Float32, Lanes: 1 } => torch.tensor(tensor.Cast<float>(), shape, ToTorchType(dtype)),
-            { ElemType: ElemType.Float64, Lanes: 1 } => torch.tensor(tensor.Cast<double>(), shape, ToTorchType(dtype)),
-
-            // {ElemType:ElemType.BFloat16,Lanes:1} => torch.tensor(expr.ToTensor<BFloat16>(), shape, ToTorchType(dtype)),
-            { ElemType: ElemType.Bool, Lanes: 1 } => torch.tensor(tensor.Cast<bool>(), shape, ToTorchType(dtype)),
-
-            // DataType.String => torch.tensor(expr.ToTensor<>(), shape, ToTorchType(dtype)),
-            _ => throw new ArgumentOutOfRangeException("Unsupported conversion for datatype to torch.ScalarType"),
-        };
+        return _converters[dtype](tensor, shape);
     }
+
+    private static readonly Dictionary<DataType, Func<Tensor, long[], torch.Tensor>> _converters = new()
+    {
+        { DataTypes.Int8, (tensor, shape) => torch.tensor(tensor.Cast<sbyte>(), shape, torch.ScalarType.Int8) },
+        { DataTypes.Int16, (tensor, shape) => torch.tensor(tensor.Cast<short>(), shape, torch.ScalarType.Int16) },
+        { DataTypes.Int32, (tensor, shape) => torch.tensor(tensor.Cast<int>(), shape, torch.ScalarType.Int32) },
+        { DataTypes.Int64, (tensor, shape) => torch.tensor(tensor.Cast<long>(), shape, torch.ScalarType.Int64) },
+        { DataTypes.UInt8, (tensor, shape) => torch.tensor(tensor.Cast<byte>(), shape, torch.ScalarType.Byte) },
+        { DataTypes.Float32, (tensor, shape) => torch.tensor(tensor.Cast<float>(), shape, torch.ScalarType.Float32) },
+        { DataTypes.Float64, (tensor, shape) => torch.tensor(tensor.Cast<float>(), shape, torch.ScalarType.Float64) },
+    };
 
     private static readonly Dictionary<DataType, torch.ScalarType> _dataTypesToTorchType = new()
     {
-        { DataType.Boolean, torch.ScalarType.Bool },
-        { DataType.Int8, torch.ScalarType.Int8 },
-        { DataType.Int16, torch.ScalarType.Int16 },
-        { DataType.Int32, torch.ScalarType.Int32 },
-        { DataType.Int64, torch.ScalarType.Int64 },
-        { DataType.UInt8, torch.ScalarType.Byte },
-        { DataType.Float16, torch.ScalarType.Float16 },
-        { DataType.Float32, torch.ScalarType.Float32 },
-        { DataType.Float64, torch.ScalarType.Float64 },
+        { DataTypes.Boolean, torch.ScalarType.Bool },
+        { DataTypes.Int8, torch.ScalarType.Int8 },
+        { DataTypes.Int16, torch.ScalarType.Int16 },
+        { DataTypes.Int32, torch.ScalarType.Int32 },
+        { DataTypes.Int64, torch.ScalarType.Int64 },
+        { DataTypes.UInt8, torch.ScalarType.Byte },
+        { DataTypes.Float16, torch.ScalarType.Float16 },
+        { DataTypes.Float32, torch.ScalarType.Float32 },
+        { DataTypes.Float64, torch.ScalarType.Float64 },
     };
     private static readonly Dictionary<torch.ScalarType, DataType> _TorchTypeTodataTypes = new()
     {
-        { torch.ScalarType.Bool, DataType.Boolean },
-        { torch.ScalarType.Int8, DataType.Int8 },
-        { torch.ScalarType.Int16, DataType.Int16 },
-        { torch.ScalarType.Int32, DataType.Int32 },
-        { torch.ScalarType.Int64, DataType.Int64 },
-        { torch.ScalarType.Byte, DataType.UInt8 },
-        { torch.ScalarType.Float16, DataType.Float16 },
-        { torch.ScalarType.Float32, DataType.Float32 },
-        { torch.ScalarType.Float64, DataType.Float64 },
+        { torch.ScalarType.Bool, DataTypes.Boolean },
+        { torch.ScalarType.Int8, DataTypes.Int8 },
+        { torch.ScalarType.Int16, DataTypes.Int16 },
+        { torch.ScalarType.Int32, DataTypes.Int32 },
+        { torch.ScalarType.Int64, DataTypes.Int64 },
+        { torch.ScalarType.Byte, DataTypes.UInt8 },
+        { torch.ScalarType.Float16, DataTypes.Float16 },
+        { torch.ScalarType.Float32, DataTypes.Float32 },
+        { torch.ScalarType.Float64, DataTypes.Float64 },
     };
 
     public static torch.ScalarType ToTorchType(this DataType dt) => _dataTypesToTorchType[dt];

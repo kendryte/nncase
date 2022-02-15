@@ -175,7 +175,7 @@ namespace Nncase.TIR
         /// <returns> the for loop </returns>
         public static BodyExprBuilder<For> Serial(out Var loopVar, Range Dom, out For loop)
         {
-            loopVar = new Var(TensorType.Scalar(DataType.Int32));
+            loopVar = new Var(TensorType.Scalar(DataTypes.Int32));
             loop = new For(loopVar, Dom, LoopMode.Serial);
             return new BodyExprBuilder<For>(loop);
         }
@@ -323,7 +323,7 @@ namespace Nncase.TIR
         /// <returns>Buffer.</returns>
         public static Buffer DeclBuffer(IR.Tuple shape, DataType? dtype = null, string name = "buffer", Var? data_handle = null, IR.Tuple? strides = null, Expr? elem_offset = null, string scope = "", int data_alignment = -1, int offset_factor = 0, BufferMode buffer_mode = BufferMode.Default)
         {
-            dtype ??= DataType.Float32;
+            dtype ??= DataTypes.Float32;
 
             if (offset_factor != 0 && elem_offset is null)
             {

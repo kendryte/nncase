@@ -16,8 +16,8 @@ public class UnitTestModule
     [Fact]
     public void TestName()
     {
-        var lhs = new Var("lhs", DataType.Float32);
-        var rhs = new Var("rhs", DataType.Float32);
+        var lhs = new Var("lhs", DataTypes.Float32);
+        var rhs = new Var("rhs", DataTypes.Float32);
         var output = lhs + rhs;
         var func = new Function(output, lhs, rhs);
         func.InferenceType();

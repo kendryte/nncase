@@ -92,7 +92,7 @@ public class ConvertBlocksToOpaqueCase : ITransfromCase
               Init(
                 T.Store(A[vi, vj], 1.0f)
               ).Body(
-                T.Store(A[vi, vj], Cast(vi + vj, DataType.Float32))
+                T.Store(A[vi, vj], Cast(vi + vj, DataTypes.Float32))
               )
             )
           ),

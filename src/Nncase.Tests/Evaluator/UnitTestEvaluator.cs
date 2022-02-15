@@ -115,10 +115,10 @@ namespace Nncase.Tests.EvaluatorTest
         [Fact]
         public void TestStackAndCast()
         {
-            var padh_before = Tensors.Cast(Const.FromSpan<float>(new[] { 1.0f }), Nncase.DataType.Int32);
-            var padh_after = Tensors.Cast(Const.FromSpan<float>(new[] { 2.0f }), Nncase.DataType.Int32);
-            var padw_before = Tensors.Cast(Const.FromSpan<float>(new[] { 3.0f }), Nncase.DataType.Int32);
-            var padw_after = Tensors.Cast(Const.FromSpan<float>(new[] { 4.0f }), Nncase.DataType.Int32);
+            var padh_before = Tensors.Cast(Const.FromSpan<float>(new[] { 1.0f }), Nncase.DataTypes.Int32);
+            var padh_after = Tensors.Cast(Const.FromSpan<float>(new[] { 2.0f }), Nncase.DataTypes.Int32);
+            var padw_before = Tensors.Cast(Const.FromSpan<float>(new[] { 3.0f }), Nncase.DataTypes.Int32);
+            var padw_after = Tensors.Cast(Const.FromSpan<float>(new[] { 4.0f }), Nncase.DataTypes.Int32);
 
             var expr = Tensors.Stack(new Tuple(
               Tensors.Concat(new Tuple(padh_before, padh_after), 0),

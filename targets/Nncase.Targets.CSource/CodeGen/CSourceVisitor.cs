@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using Nncase.IR;
+using Nncase.Runtime;
 using Nncase.TIR;
 
 namespace Nncase.CodeGen;
@@ -16,24 +17,23 @@ namespace Nncase.CodeGen;
 /// </summary>
 internal static class NameConverter
 {
+    private static readonly Dictionary<PrimType, string> _primTypeToC = new()
+    {
+        { DataTypes.Boolean, "bool" },
+        { DataTypes.Int8, "int8_t" },
+        { DataTypes.Int16, "int16_t" },
+        { DataTypes.Int32, "int32_t" },
+        { DataTypes.Int64, "int64_t" },
+        { DataTypes.UInt8, "uint8_t" },
+        { DataTypes.UInt16, "uint16_t" },
+        { DataTypes.UInt32, "uint32_t" },
+        { DataTypes.UInt64, "uint64_t" },
+        { DataTypes.Float32, "float" },
+        { DataTypes.Float64, "double" },
+    };
+
     public static string toC(this PrimType primType) =>
-        primType.TypeCode switch
-        {
-            PrimTypeCode.Bool => "bool",
-            PrimTypeCode.Int8 => "int8_t",
-            PrimTypeCode.Int16 => "int16_t",
-            PrimTypeCode.Int32 => "int32_t",
-            PrimTypeCode.Int64 => "int64_t",
-            PrimTypeCode.UInt8 => "uint8_t",
-            PrimTypeCode.UInt16 => "uint16_t",
-            PrimTypeCode.UInt32 => "uint32_t",
-            PrimTypeCode.UInt64 => "uint64_t",
-            // PrimTypeCode.Float16 => "float16_t",
-            PrimTypeCode.Float32 => "float",
-            PrimTypeCode.Float64 => "double",
-            // PrimTypeCode.BFloat16 => "bfloat16_t",
-            _ => throw new NotSupportedException($"{primType.TypeCode}")
-        };
+        _primTypeToC[primType];
 
     public static string toC(this DataType dataType) => dataType switch
     {

@@ -2,7 +2,9 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Runtime.InteropServices;
+using Nncase.Runtime;
 
 namespace Nncase.Schedule;
 
@@ -59,6 +61,7 @@ public struct MemoryRange
     /// memory data type.
     /// </summary>
     public PrimTypeCode DType;
+
     /// <summary>
     /// shared module.
     /// </summary>
@@ -177,7 +180,7 @@ public class BufferAllocation
     /// get current buffer memory range.
     /// </summary>
     public MemoryRange RuntimeType => new(this.MemoryLocate,
-         ((PrimType)this.DType).TypeCode,
+         PrimTypeCodes.ToTypeCode(DType),
          (UInt16)SharedModule,
          (uint)this.Start,
          (uint)this.Size);

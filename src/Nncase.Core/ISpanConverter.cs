@@ -12,9 +12,16 @@ namespace Nncase;
 /// <summary>
 /// Span converter.
 /// </summary>
+public interface ISpanConverter
+{
+}
+
+/// <summary>
+/// Span converter.
+/// </summary>
 /// <typeparam name="TFrom">From type.</typeparam>
 /// <typeparam name="TTo">To type.</typeparam>
-public interface ISpanConverter<TFrom, TTo>
+public interface ISpanConverter<TFrom, TTo> : ISpanConverter
     where TFrom : unmanaged, IEquatable<TFrom>
     where TTo : unmanaged, IEquatable<TTo>
 {
@@ -23,5 +30,6 @@ public interface ISpanConverter<TFrom, TTo>
     /// </summary>
     /// <param name="source">Source span.</param>
     /// <param name="dest">Dest span.</param>
-    void ConvertTo(ReadOnlySpan<TFrom> source, Span<TTo> dest);
+    /// <param name="castMode">Cast mode.</param>
+    void ConvertTo(ReadOnlySpan<TFrom> source, Span<TTo> dest, CastMode castMode);
 }

@@ -225,7 +225,7 @@ public class UnitTestExprPattern
     [Fact]
     public void TestTypePattern()
     {
-        var ttype = new TensorType(DataType.Float32, new[] { 10, 10 });
+        var ttype = new TensorType(DataTypes.Float32, new[] { 10, 10 });
         var ty_pat = IsType(ttype);
         Assert.IsType<TypePattern>(ty_pat);
         Assert.True(ty_pat.MatchLeaf(ttype));
@@ -234,9 +234,9 @@ public class UnitTestExprPattern
     [Fact]
     public void TestDataTypePattern()
     {
-        var ttype1 = new TensorType(DataType.Float32, new[] { 10, 10 });
-        var ttype2 = new TensorType(DataType.Int16, new[] { 10 });
-        var ty_pat = IsDataType(DataType.Float32);
+        var ttype1 = new TensorType(DataTypes.Float32, new[] { 10, 10 });
+        var ttype2 = new TensorType(DataTypes.Int16, new[] { 10 });
+        var ty_pat = IsDataType(DataTypes.Float32);
         Assert.IsType<TypePattern>(ty_pat);
         Assert.True(ty_pat.MatchLeaf(ttype1));
         Assert.False(ty_pat.MatchLeaf(ttype2));
@@ -247,8 +247,8 @@ public class UnitTestExprPattern
     {
         var shape = new int[] { 10, 10 };
         var sp = IsShape(shape);
-        var ttype1 = new TensorType(DataType.Float32, new[] { 10, 10 });
-        var ttype2 = new TensorType(DataType.Int16, new[] { 10 });
+        var ttype1 = new TensorType(DataTypes.Float32, new[] { 10, 10 });
+        var ttype2 = new TensorType(DataTypes.Int16, new[] { 10 });
         Assert.True(sp.MatchLeaf(ttype1));
         Assert.False(sp.MatchLeaf(ttype2));
     }

@@ -6,7 +6,7 @@ using Autofac;
 namespace Nncase;
 
 /// <summary>
-/// Evaluator module.
+/// Core module.
 /// </summary>
 public class CoreModule : Module
 {

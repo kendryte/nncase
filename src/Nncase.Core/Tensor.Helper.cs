@@ -41,9 +41,13 @@ public partial class Tensor
     /// Cast to string.
     /// </summary>
     /// <returns>string.</returns>
-    public string ToStr() => ElementType switch
+    public string ToStr()
     {
-        PrimType { TypeCode: PrimTypeCode.String, Lanes: 1 } => Encoding.Default.GetString(BytesBuffer),
-        _ => throw new InvalidCastException($"This tensor is not a string!"),
-    };
+        if (ElementType == DataTypes.Utf8Char)
+        {
+            return Encoding.Default.GetString(BytesBuffer);
+        }
+
+        throw new InvalidCastException($"This tensor is not a string!");
+    }
 }

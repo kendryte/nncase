@@ -15,6 +15,27 @@ using Nncase.IR;
 namespace Nncase;
 
 /// <summary>
+/// Cast mode.
+/// </summary>
+public enum CastMode
+{
+    /// <summary>
+    /// Cast as possible.
+    /// </summary>
+    Default,
+
+    /// <summary>
+    /// Cast exactly.
+    /// </summary>
+    Exact,
+
+    /// <summary>
+    /// Check overflow.
+    /// </summary>
+    CheckOverflow,
+}
+
+/// <summary>
 /// Tensor.
 /// </summary>
 [DebuggerDisplay("{GetArrayString(false)}")]
@@ -261,7 +282,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <returns>Created tensor.</returns>
     public static Tensor FromBytes(DataType type, ReadOnlySpan<byte> span, ReadOnlySpan<int> dimensions)
     {
-        var tensor = (Tensor)_tensorCreatorFunc.MakeGenericMethod(DataTypes.ToType(type)).Invoke(null, new object[] { dimensions.ToArray() })!;
+        var tensor = (Tensor)_tensorCreatorFunc.MakeGenericMethod(type.CLRType).Invoke(null, new object[] { dimensions.ToArray() })!;
         span.CopyTo(tensor.BytesBuffer);
         return tensor;
     }
@@ -281,8 +302,9 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// Cast to typed tensor.
     /// </summary>
     /// <typeparam name="T">Element type.</typeparam>
+    /// <param name="castMode">Cast mode.</param>
     /// <returns>Typed tensor.</returns>
-    public abstract Tensor<T> Cast<T>()
+    public abstract Tensor<T> Cast<T>(CastMode castMode = CastMode.Default)
         where T : unmanaged, IEquatable<T>;
 
     /// <inheritdoc/>

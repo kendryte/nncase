@@ -22,6 +22,6 @@ public class SizeOfEvaluator : IEvaluator<SizeOf>, ITypeInferencer<SizeOf>
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, SizeOf target)
     {
-        return new TensorType(DataType.Int32, Shape.Scalar);
+        return new TensorType(DataTypes.Int32, Shape.Scalar);
     }
 }

@@ -22,7 +22,7 @@ namespace Nncase.Importer
                 var tensor = tensorValue.ValueUnsafe();
                 var tensorConst = GetTensor(tensor);
                 var type = GetDataType(tensor);
-                if (type == DataType.Float32)
+                if (type == DataTypes.Float32)
                 {
                     return Tensor.FromScalar(tensorConst.ToScalar<float>(), shape);
                 }
