@@ -147,17 +147,15 @@ public class CSourceRTModel : IRTModule, IRTModel
         return Entry.Handle.DynamicInvoke(args);
     }
 
-    public void Dump(string name, string DumpDirPath)
+    public string Dump(string name, string DumpDirPath)
     {
-        using var file = File.Open($"{DumpDirPath}/{name}.{SourceExt}", FileMode.OpenOrCreate, FileAccess.Write);
+        var dump_path = $"{DumpDirPath}/{name}.{SourceExt}";
+        using var file = File.Open(dump_path, FileMode.OpenOrCreate, FileAccess.Write);
         using var writer = new StreamWriter(file);
         writer.Write(Source);
+        return dump_path;
     }
 
-    string IRTModel.Dump(string name, string dumpDirPath)
-    {
-        throw new NotImplementedException();
-    }
 }
 
 /// <summary>

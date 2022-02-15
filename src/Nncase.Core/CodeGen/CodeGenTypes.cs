@@ -102,7 +102,7 @@ public interface IRTModule
     /// </summary>
     /// <param name="name">file name. </param>
     /// <param name="dumpDirPath"> dump dir path. </param>
-    public void Dump(string name, string dumpDirPath);
+    public string Dump(string name, string dumpDirPath);
 
     /// <summary>
     /// Serialize the code

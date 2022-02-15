@@ -76,7 +76,7 @@ public abstract class BaseRTKModule : IRTModule
         }
     }
 
-;
+
 
     /// <summary>
     /// merge info.
@@ -620,10 +620,12 @@ public abstract class BaseRTKModule : IRTModule
     }
 
     /// <inheritdoc/>
-    public void Dump(string name, string dumpDirPath)
+    public string Dump(string name, string dumpDirPath)
     {
         if (!IsSerialized) Serialize();
-        File.Copy(_sourcePath, Path.Join(dumpDirPath, name + '.' + SourceExt));
+        var dump_path = Path.Join(dumpDirPath, name + '.' + SourceExt);
+        File.Copy(_sourcePath, dump_path);
+        return dump_path;
     }
 
     /// <inheritdoc/>
