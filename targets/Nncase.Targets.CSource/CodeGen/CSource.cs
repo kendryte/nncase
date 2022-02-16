@@ -117,7 +117,6 @@ public class CSourceRTModel : IRTModule, IRTModel
         foreach (var f in _MainModule.Functions)
         {
             var funcType = f.ToDelegateType(Path.GetFileName(_dllPath));
-            NativeLibrary.GetExport(dllPtr, f.Name);
             var funPtr = NativeLibrary.GetExport(dllPtr, f.Name);
             _functions.Add(new CSourceRTFunction(f.Name, funPtr.BindDelegate(funcType)));
             if (f == _MainModule.Entry) { _entry = _functions.Last(); }

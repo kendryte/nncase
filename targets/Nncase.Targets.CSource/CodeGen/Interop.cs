@@ -102,11 +102,8 @@ public static class Interop
     /// <exception cref="NotSupportedException"></exception>
     public static Type ToType(this IRType iRType) => iRType switch
     {
-        TensorType ttype => ttype.IsScalar switch
-        {
-            true => ttype.DType.CLRType,
-            false => throw new NotSupportedException("TensorType is Tensor!")
-        },
+        TensorType { IsScalar: true, DType: PrimType { } primType } => primType.CLRType,
+        TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType primType } } => primType.CLRType.MakeArrayType(),
         TupleType ttype => (ttype == TupleType.Void) switch
         {
             true => typeof(void),

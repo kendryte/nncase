@@ -37,6 +37,7 @@
     <ProjectReference Include="..\Nncase.CodeGen\Nncase.CodeGen.csproj" />
     <ProjectReference Include="..\Nncase.IO\Nncase.IO.csproj" />
     <ProjectReference Include="..\Nncase.Simulator\Nncase.Simulator.csproj" />
+    <ProjectReference Include="..\..\targets\Nncase.Targets.CSource\Nncase.Targets.CSource.csproj" />
   </ItemGroup>
 
 </Project>
