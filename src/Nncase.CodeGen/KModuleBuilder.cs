@@ -481,7 +481,7 @@ public abstract class BaseRTKModule : IRTModule
         // }
     }
 
-    private void WriteBinary(BinaryWriter writer)
+    private unsafe void WriteBinary(BinaryWriter writer)
     {
         // Step 1. skip the module header
         var header_pos = writer.BaseStream.Position;
@@ -504,7 +504,8 @@ public abstract class BaseRTKModule : IRTModule
         foreach (var section in _sectionWriters)
         {
             var sec_header = new SectionHeader();
-            section.Key.ToArray().CopyTo(sec_header.Name.AsSpan());
+
+            for (int i = 0; i < section.Key.Length; i++) { sec_header.Name[i] = section.Key[i]; }
 
             if (_rdataSectionMerges.TryGetValue(section.Key, out var merge_it) is var finded && finded == false)
             {

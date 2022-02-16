@@ -5,6 +5,7 @@
     <IsPackable>false</IsPackable>
     <NoWarn>1591</NoWarn>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <CodeAnalysisRuleSet>$(SolutionDir)/tools/StyleCopAnalyzers.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>

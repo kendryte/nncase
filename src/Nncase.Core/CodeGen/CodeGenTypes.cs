@@ -16,21 +16,24 @@ namespace Nncase.CodeGen;
 public static class ModelInfo
 {
     public static uint IDENTIFIER => BitConverter.ToUInt32(Encoding.UTF8.GetBytes("LDMK"), 0);
-    public const uint VERSION = 5;
-    public const uint SECTION_MERGED_INTO_RDATA = 1;
-    public const uint MAX_SECTION_NAME_LENGTH = 16;
-    public const uint MAX_MODULE_TYPE_LENGTH = 16;
+    public const int VERSION = 5;
+    public const int SECTION_MERGED_INTO_RDATA = 1;
+    public const int MAX_SECTION_NAME_LENGTH = 16;
+    public const int MAX_MODULE_TYPE_LENGTH = 16;
 }
 
 /// <summary>
 /// the module type
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-public struct ModuleType
+unsafe public struct ModuleType
 {
 
+    /// <summary>
+    /// the module types
+    /// </summary>
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = (int)ModelInfo.MAX_MODULE_TYPE_LENGTH)]
-    char[] Types = new char[ModelInfo.MAX_MODULE_TYPE_LENGTH];
+    public fixed char Types[ModelInfo.MAX_MODULE_TYPE_LENGTH];
 
     /// <summary>
     /// create the modult type by name

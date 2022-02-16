@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>Nncase</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <CodeAnalysisRuleSet>$(SolutionDir)/tools/StyleCopAnalyzers.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>

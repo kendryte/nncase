@@ -26,7 +26,7 @@ public struct ModelHeader
     public uint EntryFunction;
 }
 
-;
+
 
 [StructLayout(LayoutKind.Sequential)]
 public struct FunctionHeader
@@ -41,7 +41,6 @@ public struct FunctionHeader
     public uint TextSize;
 }
 
-;
 
 [StructLayout(LayoutKind.Sequential)]
 public struct ModuleHeader
@@ -57,7 +56,6 @@ public struct ModuleHeader
     public uint Reserved0;
 }
 
-;
 
 [StructLayout(LayoutKind.Sequential)]
 public struct MemPoolDesc
@@ -67,7 +65,6 @@ public struct MemPoolDesc
     public uint Size;
 }
 
-;
 
 [StructLayout(LayoutKind.Sequential)]
 public struct SharedMempoolDesc
@@ -76,20 +73,24 @@ public struct SharedMempoolDesc
     public uint Size;
 }
 
-;
 
+/// <summary>
+/// the section header
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
-public struct SectionHeader
+public unsafe struct SectionHeader
 {
+    /// <summary>
+    /// the name
+    /// </summary>
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = (int)ModelInfo.MAX_SECTION_NAME_LENGTH)]
-    public char[] Name = new char[ModelInfo.MAX_SECTION_NAME_LENGTH];
+    public fixed char Name[ModelInfo.MAX_SECTION_NAME_LENGTH];
     public uint Flags;
     public uint BodyStart;
     public uint BodySize;
     public uint Reserved0;
 }
 
-;
 
 [StructLayout(LayoutKind.Sequential)]
 public struct shape_header
