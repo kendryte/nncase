@@ -30,8 +30,6 @@ namespace Nncase.Tests.CodeGenTest
 
         protected void RunCore(ICodeGenCase Case)
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                return;
             var dumpDirPath = Path.Combine(DumpDirPath, Case.GetType().Name);
             var opt = new RunPassOptions(null, 2, dumpDirPath);
             // 1. get function
@@ -66,8 +64,6 @@ namespace Nncase.Tests.CodeGenTest
         [Fact]
         public void TestAdd()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                return;
             var x = new Var("x", TensorType.Scalar(DataType.Float32));
             var y = new Var("y", TensorType.Scalar(DataType.Float32));
             var func = new Function(new Sequential() { x + y }, x, y);

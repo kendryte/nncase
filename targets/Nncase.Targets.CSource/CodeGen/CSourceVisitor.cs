@@ -109,6 +109,12 @@ internal class CSourceHostBuildVisior : ExprFunctor<CSymbol, string>
     {
         Scope = new IRPrinter.ScopeWriter(textWriter);
         // insert some declare
+        Scope.IndWriteLine(@"
+#ifdef _WIN32
+#define EXPORT_API __declspec(dllexport) 
+#else
+#define EXPORT_API
+#endif");
         Scope.IndWriteLine("#include <stdint.h>");
     }
 
@@ -166,7 +172,7 @@ internal class CSourceHostBuildVisior : ExprFunctor<CSymbol, string>
         var retType = VisitType(((CallableType)expr.CheckedType!).ReturnType);
         Scope.Push();
         // 1. Function signature
-        Scope.IndWrite($"{retType} {expr.Name}({string.Join(", ", expr.Parameters.Select(Visit))}) {{");
+        Scope.IndWrite($"EXPORT_API {retType} {expr.Name}({string.Join(", ", expr.Parameters.Select(Visit))}) {{");
         // 2. Function body
         using (Scope.IndentUp())
         {

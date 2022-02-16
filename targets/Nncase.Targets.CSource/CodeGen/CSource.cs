@@ -119,6 +119,8 @@ public class CSourceRTModel : IRTModule, IRTModel
             var funcType = f.ToDelegateType(Path.GetFileName(_dllPath));
             NativeLibrary.GetExport(dllPtr, f.Name);
             var funPtr = NativeLibrary.GetExport(dllPtr, f.Name);
+            // "C:\\Users\\zqh\\AppData\\Local\\Temp\\6c22c021-3141-4e6c-ae19-0da05a475de7.c"
+            // "C:\\Users\\zqh\\AppData\\Local\\Temp\\b1e49d52-3d5c-4c54-bdb2-a7cb990090d1.dll"
             _functions.Add(new CSourceRTFunction(f.Name, funPtr.BindDelegate(funcType)));
             if (f == _MainModule.Entry) { _entry = _functions.Last(); }
         }
@@ -186,7 +188,8 @@ public class CSourceCompiler
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            throw new NotSupportedException($"{OSPlatform.Windows}");
+            _exe = "cl";
+            _ext = "dll";
         }
     }
 
@@ -198,6 +201,23 @@ public class CSourceCompiler
             Architecture.Arm64 => "arm64",
             _ => throw new NotSupportedException(RuntimeInformation.OSArchitecture.ToString()),
         };
+    }
+
+    string ArgumentsSpecific(string sourcePath, string outPath)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            return $"{sourcePath} -fPIC -shared -arch {Arch} -o {outPath}";
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return $"/D_USRDLL /D_WINDLL {sourcePath} /MT /link /DLL /OUT:{outPath}";
+        }
+        throw new System.ArgumentOutOfRangeException("Only Support Linux/Osx/Windows");
     }
 
     protected string Exe
@@ -235,10 +255,10 @@ public class CSourceCompiler
             using (var proc = new Process())
             {
                 proc.StartInfo.FileName = Exe;
-                proc.StartInfo.Arguments = $"{sourcePath} -fPIC -shared -arch {Arch} -o {outPath}";
+                proc.StartInfo.Arguments = ArgumentsSpecific(sourcePath,outPath);
                 proc.StartInfo.RedirectStandardError = true;
                 proc.ErrorDataReceived += (sender, e) => errWriter.WriteLine(e.Data);
-                proc.Start();
+                proc.Start(); 
                 proc.BeginErrorReadLine();
                 proc.WaitForExit();
                 if (proc.ExitCode != 0)

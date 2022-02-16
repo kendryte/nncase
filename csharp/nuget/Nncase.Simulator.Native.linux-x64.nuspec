@@ -12,10 +12,10 @@
     <tags>nncase runtime binaries</tags>
     <!-- legal -->
     <license type="expression">Apache-2.0+</license>
-    <authors>Jason Millard</authors>
-    <owners>PinMAME development team and contributors</owners>
-    <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <copyright>PinMAME development team and contributors</copyright>
+	<authors>Kendryte</authors>
+	<owners>Nncase development team and contributors</owners>
+	<requireLicenseAcceptance>false</requireLicenseAcceptance>
+	<copyright>Nncase development team and contributors</copyright>
     <dependencies>
       <group targetFramework="netstandard2.0" />
     </dependencies>
