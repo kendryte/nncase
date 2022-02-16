@@ -10,6 +10,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="Celu"/>.
 /// </summary>
+[EvaluatorGenerator, TypeInferGenerator]
 public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>
 {
     private IValue Visit(TorchSharp.torch.Tensor input, int alpha)

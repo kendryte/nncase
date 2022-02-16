@@ -1,17 +1,18 @@
 using System;
-using Xunit;
-using Nncase.Pattern;
-using Nncase.Transform;
-using Nncase.IR;
 using System.Collections.Generic;
+using System.Linq.Expressions;
+using Nncase.IR;
+using Nncase.IR.Math;
+using Nncase.Pattern;
 using Nncase.Pattern.Math;
+using Nncase.Transform;
+using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
-using static Nncase.Pattern.Utility;
+using static Nncase.IR.TypePatternUtility;
 using static Nncase.Pattern.F.Math;
 using static Nncase.Pattern.F.Tensors;
-using static Nncase.IR.TypePatternUtility;
-using System.Linq.Expressions;
+using static Nncase.Pattern.Utility;
 
 namespace Nncase.Tests.CoreTest;
 
