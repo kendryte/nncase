@@ -58,10 +58,10 @@ public struct ModuleHeader
 
 
 [StructLayout(LayoutKind.Sequential)]
-public struct MemPoolDesc
+public unsafe struct MemPoolDesc
 {
     public Schedule.MemoryLocation Location;
-    public byte[] Reserved0 = new byte[3];
+    public fixed byte Reserved0[3];
     public uint Size;
 }
 
