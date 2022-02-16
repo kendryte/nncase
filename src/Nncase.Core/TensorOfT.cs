@@ -34,7 +34,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// </summary>
     /// <param name="length">Size of the 1-dimensional tensor.</param>
     public Tensor(int length)
-        : base(DataTypes.FromType<T>(), length)
+        : base(DataType.FromType<T>(), length)
     {
         var memoryOwner = new NativeMemoryManager<T>(Length);
         _memoryOwner = memoryOwner;
@@ -46,7 +46,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// </summary>
     /// <param name="dimensions">An span of integers that represent the size of each dimension of the DenseTensor to create.</param>
     public Tensor(ReadOnlySpan<int> dimensions)
-        : base(DataTypes.FromType<T>(), dimensions)
+        : base(DataType.FromType<T>(), dimensions)
     {
         var memoryOwner = new NativeMemoryManager<T>(Length);
         _memoryOwner = memoryOwner;
@@ -60,7 +60,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// <param name="pointer">Memory pointer.</param>
     /// <param name="dimensions">An span of integers that represent the size of each dimension of the DenseTensor to create.</param>
     public Tensor(object memoryOwner, IntPtr pointer, ReadOnlySpan<int> dimensions)
-        : base(DataTypes.FromType<T>(), dimensions)
+        : base(DataType.FromType<T>(), dimensions)
     {
         _memoryOwner = memoryOwner;
         _pointer = pointer;
@@ -315,7 +315,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     }
 
     /// <inheritdoc/>
-    public override Tensor<TTo> Cast<TTo>()
+    public override Tensor<TTo> Cast<TTo>(CastMode castMode)
     {
         if (typeof(T) == typeof(TTo))
         {
@@ -323,14 +323,14 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
         }
         else
         {
-            var tensor = new Tensor<TTo>(Dimensions);
-            var bufferSrc = Buffer;
-            var bufferDst = tensor.Buffer;
-            for (int i = 0; i < bufferSrc.Length; i++)
+            if (castMode == CastMode.Exact)
             {
-                bufferDst[i] = (TTo)Convert.ChangeType(bufferSrc[i], typeof(TTo));
+                throw new InvalidCastException();
             }
 
+            var converter = (ISpanConverter<T, TTo>)CompilerServices.DataTypeService.GetConverter(typeof(T), typeof(TTo));
+            var tensor = new Tensor<TTo>(Dimensions);
+            converter.ConvertTo(Buffer, tensor.Buffer, castMode);
             return tensor;
         }
     }

@@ -79,11 +79,11 @@ namespace Nncase.IR
         /// <param name="reason"></param>
         /// <returns></returns>
         public static TypePattern IsShape(Func<Shape, bool> shapeCond, string reason) => new TypePattern(x => x switch
-             {
+        {
 
-                 TensorType ttype => ttype.IsTensor && shapeCond(ttype.Shape),
-                 _ => false,
-             }, reason);
+            TensorType ttype => ttype.IsTensor && shapeCond(ttype.Shape),
+            _ => false,
+        }, reason);
 
         /// <summary>
         /// is target shape
@@ -191,7 +191,7 @@ namespace Nncase.IR
         public static TypePattern IsBool() => new TypePattern(
             x => x switch
             {
-                TensorType ttype => ttype.DType == DataType.Bool,
+                TensorType ttype => ttype.DType == DataTypes.Boolean,
                 _ => false,
             }, "IsBool"
         );

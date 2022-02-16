@@ -104,7 +104,7 @@ public static class Interop
     {
         TensorType ttype => ttype.IsScalar switch
         {
-            true => DataTypes.ToType(ttype.DType),
+            true => ttype.DType.CLRType,
             false => throw new NotSupportedException("TensorType is Tensor!")
         },
         TupleType ttype => (ttype == TupleType.Void) switch

@@ -107,7 +107,7 @@ namespace Nncase.Tests.ReWriteTest
         [Fact]
         public void TestRemoveShapeOp()
         {
-            var lhs = new Var("x", new TensorType(DataType.Float32, new[] { 1, 1, 3 }));
+            var lhs = new Var("x", new TensorType(DataTypes.Float32, new[] { 1, 1, 3 }));
             var rhs = torch.rand(1, 6, 3, torch.ScalarType.Float32).ToTensor();
             var pre = ShapeOf(lhs + rhs);
             Assert.True(CompilerServices.InferenceType(pre));
@@ -154,10 +154,10 @@ namespace Nncase.Tests.ReWriteTest
             var res = 1 * 2 + 3;
             Assert.Equal(((TensorConst)post).Value.ToScalar<int>(), res);
 
-            var cast_to_i64 = Cast(expr, DataType.Int64);
+            var cast_to_i64 = Cast(expr, DataTypes.Int64);
             Assert.True(CompilerServices.InferenceType(cast_to_i64));
 
-            var cast_to_i32 = Cast(cast_to_i64, DataType.Int32);
+            var cast_to_i32 = Cast(cast_to_i64, DataTypes.Int32);
             Assert.True(CompilerServices.InferenceType(cast_to_i32));
 
             var cat = Stack(new Tuple(cast_to_i32, cast_to_i32), 0);
@@ -175,7 +175,7 @@ namespace Nncase.Tests.ReWriteTest
         public void TestRewriteSameAsShapeInferPass()
         {
             passOptions.SetName("SameAsShapeInferPass");
-            var input = new Var("input", new TensorType(DataType.Int32, new Shape(new[] { 1, 3, 240, 320 })));
+            var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(new[] { 1, 3, 240, 320 })));
             Assert.True(CompilerServices.InferenceType(input));
             var computeShape = ShapeOf(input);
             var shapeRewrite = DataFlowRewrite.Rewrite(computeShape,
@@ -187,7 +187,7 @@ namespace Nncase.Tests.ReWriteTest
         [Fact]
         public void TestFoldExpand()
         {
-            var weights = new Var("weights", new TensorType(DataType.Float32, new Shape(1, 3, 224, 224)));
+            var weights = new Var("weights", new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
             var t = Util.ShapeIndex(weights, 0);
             t.InferenceType();
             var expand = Expand(0f, Util.ShapeIndex(weights, 0));
@@ -210,7 +210,7 @@ namespace Nncase.Tests.ReWriteTest
         public void TestPaddingCompute()
         {
             passOptions.SetName("TestPaddingCompute");
-            var input = new Var("input", new TensorType(DataType.Int32, new Shape(1, 3, 240, 320)));
+            var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 240, 320)));
             var weights = Const.FromSpan<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
             var (inH, inW) = Util.GetHW(input);
             var (fH, fW) = Util.GetHW(weights);
@@ -234,7 +234,7 @@ namespace Nncase.Tests.ReWriteTest
         public void TestYolo20MinStructure()
         {
             passOptions.SetName("TestYolo20MinStructure");
-            var input = new Var("input", new TensorType(DataType.Int32, new Shape(new[] { 1, 240, 320, 3 })));
+            var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(new[] { 1, 240, 320, 3 })));
             var weights = Const.FromSpan<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
             var bias = Const.FromSpan<int>(Enumerable.Range(0, 16).ToArray());
             var (inH, inW) = Util.GetHW(input);
@@ -278,7 +278,7 @@ namespace Nncase.Tests.ReWriteTest
         public void SliceForShapeIndex()
         {
             passOptions.SetName("SliceForShapeIndex");
-            var input = new Var(new TensorType(DataType.Float32, new Shape(1, 7, 7, 75)));
+            var input = new Var(new TensorType(DataTypes.Float32, new Shape(1, 7, 7, 75)));
             var slice = Util.ShapeIndex(input, 1);
             CompilerServices.InferenceType(slice);
             var post = RunShapeInferPass("slice", slice);
@@ -290,7 +290,7 @@ namespace Nncase.Tests.ReWriteTest
         [Fact]
         public void SoftMaxImporterProcess()
         {
-            var input = new Var(new TensorType(DataType.Float32, new Shape(1, 3, 224, 224)));
+            var input = new Var(new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
             var axis = -1;
             var inShape = ShapeOf(input);
             Expr axisExprBefore = axis < 0

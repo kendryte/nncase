@@ -34,8 +34,8 @@ public class UnitTestExpression
         Assert.Equal(va, vb);
         Assert.Equal(va.GetHashCode(), vb.GetHashCode());
 
-        var sa = new TensorType(DataType.Int32, new Shape(new[] { 2 }));
-        var sb = new TensorType(DataType.Int32, new Shape(new[] { 2 }));
+        var sa = new TensorType(DataTypes.Int32, new Shape(new[] { 2 }));
+        var sb = new TensorType(DataTypes.Int32, new Shape(new[] { 2 }));
         Assert.True(sa.Shape == sb.Shape);
         Assert.True(sa == sb);
         Assert.Equal(sa, sb);

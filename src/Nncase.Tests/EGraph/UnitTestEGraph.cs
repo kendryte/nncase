@@ -189,8 +189,8 @@ namespace Nncase.Tests.EGraphTest
         public void TestEgraphMatch()
         {
             //Given
-            Var x = new Var("x", new TensorType(DataType.Float32, Shape.Scalar));
-            Var y = new Var("y", new TensorType(DataType.Float32, Shape.Scalar));
+            Var x = new Var("x", new TensorType(DataTypes.Float32, Shape.Scalar));
+            Var y = new Var("y", new TensorType(DataTypes.Float32, Shape.Scalar));
             Expr pattern = x + y;
             //When
             Expr e1 = (Expr)1.0f * 2 / 2;

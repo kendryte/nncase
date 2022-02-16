@@ -41,7 +41,7 @@ namespace Nncase.CostModel
                 }
             }
 
-            return new(arithm == -1 ? 1 : arithm, DataTypes.GetLength(type.DType));
+            return new(arithm == -1 ? 1 : arithm, type.DType.SizeInBytes);
         }
     }
 }

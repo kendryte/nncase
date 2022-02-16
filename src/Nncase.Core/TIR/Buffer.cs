@@ -141,6 +141,11 @@ namespace Nncase.TIR
         /// <returns> AccessPtr. </returns>
         public Call AccessPtr(AccessMode access_mode, int content_lanes = 1, Expr? offset = null)
         {
+            if (content_lanes != 1)
+            {
+                throw new NotImplementedException();
+            }
+
             Expr extent;
             offset ??= (Const)0;
             if (Shape.Count == 0)
@@ -157,7 +162,7 @@ namespace Nncase.TIR
             }
 
             Expr elem_offset = ElemOffset + offset;
-            var accType = new PrimType(Dtype.TypeCode, content_lanes);
+            var accType = Dtype;
             if (content_lanes > 1)
             {
                 extent = extent / (Const)content_lanes;
@@ -195,11 +200,6 @@ namespace Nncase.TIR
         {
             get
             {
-                if (Dtype.Lanes > 1)
-                {
-                    index = T.Ramp(index * Dtype.Lanes, 1, Dtype.Lanes);
-                }
-
                 return T.Load(Handle, index);
             }
             set
@@ -260,16 +260,6 @@ namespace Nncase.TIR
         Expr LoadOffset(IRArray<Expr> indices)
         {
             var offset = IndicesOffset(indices);
-            if (Dtype.Lanes != 1)
-            {   // 🌰 the tensor A is [3,4] f32x3, we load A[1,1]
-                // the A[1,1] element offset is 5
-                // the A[1,1] memory offset is 5x3
-                offset = offset * (Const)Dtype.Lanes;
-
-                // then we need continuous loading 3 x float32
-                return T.Ramp(offset, 1, Dtype.Lanes);
-            }
-
             return offset;
         }
     }

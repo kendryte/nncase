@@ -19,20 +19,20 @@ public class UnitTestConstructor
     [Fact]
     public void TestExprConstructor()
     {
-        var x = Var.Scalar("x", DataType.Float32);
+        var x = Var.Scalar("x", DataTypes.Float32);
         Assert.IsType<Var>(x);
 
         var r = new Reduction(
           null, new Expr[] { 1 },
-          new[] { new IterVar(TensorType.Scalar(DataType.Int32), (0, 1), IterationMode.CommReduce, 1) },
+          new[] { new IterVar(TensorType.Scalar(DataTypes.Int32), (0, 1), IterationMode.CommReduce, 1) },
           null, 0);
         Assert.Null(r.Combiner);
         Assert.Equal(0, r.ValueIndex);
 
-        var lhs = Var.Scalar("x", DataType.Float32) > (Const)1;
-        var rhs = Equal(Var.Scalar("x", DataType.Float32), (Const)1);
+        var lhs = Var.Scalar("x", DataTypes.Float32) > (Const)1;
+        var rhs = Equal(Var.Scalar("x", DataTypes.Float32), (Const)1);
         var s = new Select(lhs, rhs, (Const)1);
-        var buffer_var = Var.Handle("x", DataType.Float32);
+        var buffer_var = Var.Handle("x", DataTypes.Float32);
         var ld = TIR.T.Load(buffer_var, 1);
         Assert.Equal(ld[Load.Handle], buffer_var);
 
@@ -68,7 +68,7 @@ public class UnitTestConstructor
               Init(
                 T.Store(A[vi, vj], 1.0f)
               ).Body(
-                T.Store(A[vi, vj], Cast(vi + vj, DataType.Float32))
+                T.Store(A[vi, vj], Cast(vi + vj, DataTypes.Float32))
               )
             )
           ),

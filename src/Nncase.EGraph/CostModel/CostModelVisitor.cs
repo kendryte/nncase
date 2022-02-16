@@ -102,7 +102,7 @@ namespace Nncase.CostModel
         }
 
         public override Cost VisitLeaf(Const expr) =>
-         new Cost(0, (ulong)DataTypes.GetLength(_context.GetTensorType(expr).DType));
+         new Cost(0, (ulong)_context.GetTensorType(expr).DType.SizeInBytes);
 
         public override Cost VisitLeaf(Op expr) => new Cost();
 

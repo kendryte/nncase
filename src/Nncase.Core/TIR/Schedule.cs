@@ -170,7 +170,7 @@ namespace Nncase.TIR
             var newloopVars = new Var[factors.Length];
             foreach (var i in Enumerable.Range(0, factors.Length))
             {
-                var loopVar = new Var(TensorType.Scalar(DataType.Int32));
+                var loopVar = new Var(TensorType.Scalar(DataTypes.Int32));
                 substitute = (substitute * factors[i]) + loopVar;
                 newloopVars[i] = loopVar;
             }

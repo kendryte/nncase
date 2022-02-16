@@ -30,7 +30,7 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>
             && context.GetArgument(target, Range.Step) is TensorConst stepValue)
         {
             return new TensorType(
-                DataType.Int32,
+                DataTypes.Int32,
                 new Shape((beginValue.Value.ToScalar<int>() + endValue.Value.ToScalar<int>()) / stepValue.Value.ToScalar<int>()));
         }
 

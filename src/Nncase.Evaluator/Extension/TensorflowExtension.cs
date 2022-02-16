@@ -51,28 +51,28 @@ public static class TensorflowExtension
 
     private static readonly Dictionary<DataType, TF_DataType> _dataTypesToTorchType = new()
     {
-        { DataType.Bool, TF_DataType.TF_BOOL },
-        { DataType.Int8, TF_DataType.TF_INT8 },
-        { DataType.Int16, TF_DataType.TF_INT16 },
-        { DataType.Int32, TF_DataType.TF_INT32 },
-        { DataType.Int64, TF_DataType.TF_INT64 },
-        { DataType.UInt8, TF_DataType.TF_UINT8 },
-        { DataType.Float16, TF_DataType.TF_HALF },
-        { DataType.Float32, TF_DataType.TF_FLOAT },
-        { DataType.Float64, TF_DataType.TF_DOUBLE },
+        { DataTypes.Boolean, TF_DataType.TF_BOOL },
+        { DataTypes.Int8, TF_DataType.TF_INT8 },
+        { DataTypes.Int16, TF_DataType.TF_INT16 },
+        { DataTypes.Int32, TF_DataType.TF_INT32 },
+        { DataTypes.Int64, TF_DataType.TF_INT64 },
+        { DataTypes.UInt8, TF_DataType.TF_UINT8 },
+        { DataTypes.Float16, TF_DataType.TF_HALF },
+        { DataTypes.Float32, TF_DataType.TF_FLOAT },
+        { DataTypes.Float64, TF_DataType.TF_DOUBLE },
     };
 
     private static readonly Dictionary<TF_DataType, DataType> _TorchTypeTodataTypes = new()
     {
-        { TF_DataType.TF_BOOL, DataType.Bool },
-        { TF_DataType.TF_INT8, DataType.Int8 },
-        { TF_DataType.TF_INT16, DataType.Int16 },
-        { TF_DataType.TF_INT32, DataType.Int32 },
-        { TF_DataType.TF_INT64, DataType.Int64 },
-        { TF_DataType.TF_UINT8, DataType.UInt8 },
-        { TF_DataType.TF_HALF, DataType.Float16 },
-        { TF_DataType.TF_FLOAT, DataType.Float32 },
-        { TF_DataType.TF_DOUBLE, DataType.Float64 },
+        { TF_DataType.TF_BOOL, DataTypes.Boolean },
+        { TF_DataType.TF_INT8, DataTypes.Int8 },
+        { TF_DataType.TF_INT16, DataTypes.Int16 },
+        { TF_DataType.TF_INT32, DataTypes.Int32 },
+        { TF_DataType.TF_INT64, DataTypes.Int64 },
+        { TF_DataType.TF_UINT8, DataTypes.UInt8 },
+        { TF_DataType.TF_HALF, DataTypes.Float16 },
+        { TF_DataType.TF_FLOAT, DataTypes.Float32 },
+        { TF_DataType.TF_DOUBLE, DataTypes.Float64 },
     };
 
     public static TF_DataType ToTFType(this DataType dt) => _dataTypesToTorchType[dt];

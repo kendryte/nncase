@@ -22,6 +22,6 @@ public class RampEvaluator : ITypeInferencer<Ramp>
     private IRType Visit(Ramp target, TensorType offset, TensorType stride)
     {
         // TODO maybe need simpify when the Lanes==1.
-        return new TensorType(DataType.Int32, new Shape(target.Lanes));
+        return new TensorType(DataTypes.Int32, new Shape(target.Lanes));
     }
 }

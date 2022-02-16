@@ -444,7 +444,7 @@ namespace Nncase.TIR
         /// <returns></returns>
         public Block Bind(out IterVar vi, Range dom, IterationMode mode, Expr value)
         {
-            vi = new IterVar(TensorType.Scalar(DataType.Int32), dom, mode, value);
+            vi = new IterVar(TensorType.Scalar(DataTypes.Int32), dom, mode, value);
             IterVars.Add(vi);
             return this;
         }

@@ -38,9 +38,9 @@ namespace Nncase
             var falseBranch = !ceilMode
                 ? ((size - effectiveFilterSize + stride) / stride)
                 : F.Tensors.Cast(F.Math.Ceil(
-                        F.Tensors.Cast((size - effectiveFilterSize + stride), DataType.Float32) /
-                        F.Tensors.Cast(stride, DataType.Float32)),
-                    DataType.Int32);
+                        F.Tensors.Cast((size - effectiveFilterSize + stride), DataTypes.Float32) /
+                        F.Tensors.Cast(stride, DataTypes.Float32)),
+                    DataTypes.Int32);
             var trueBranch = (size + stride - 1) / stride;
             return same ? trueBranch : falseBranch;
         }
@@ -49,8 +49,8 @@ namespace Nncase
         {
             var effectiveFilterSize = ((filter - 1) * dilation) + 1;
             var padding = F.Math.Max(0, ((outputSize - 1) * stride) + effectiveFilterSize - inputSize);
-            var before = F.Tensors.Cast(padding / 2, DataType.Int32);
-            var after = F.Tensors.Cast(padding - (padding / 2), DataType.Int32);
+            var before = F.Tensors.Cast(padding / 2, DataTypes.Int32);
+            var after = F.Tensors.Cast(padding - (padding / 2), DataTypes.Int32);
             if (lower)
             {
                 return new[] { F.Math.Max(before, after), F.Math.Min(before, after) };

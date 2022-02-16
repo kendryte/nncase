@@ -1,13 +1,11 @@
 using System.Numerics.Tensors;
 using System.Runtime.InteropServices;
+using Nncase.Runtime;
 
 namespace Nncase.Simulator
 {
-
-
     public class RuntimeTensor : IDisposable
     {
-
         public IntPtr Handle { get; private set; }
 
         public IntPtr memPtr { get; private set; }
@@ -97,7 +95,7 @@ namespace Nncase.Simulator
         {
             get
             {
-                return new PrimType(RuntimeTensor_dtype(Handle));
+                return PrimTypeCodes.ToDataType(RuntimeTensor_dtype(Handle));
             }
         }
 
@@ -133,8 +131,8 @@ namespace Nncase.Simulator
         public static unsafe RuntimeTensor Create<T>(DenseTensor<T> tensor)
           where T : unmanaged, System.IEquatable<T>
         {
-            var dtype = DataTypes.FromType<T>();
-            var total_bytes = tensor.Length * DataTypes.GetLength(dtype);
+            var dtype = DataType.FromType<T>();
+            var total_bytes = tensor.Length * dtype.SizeInBytes;
             var memPtr = Marshal.AllocHGlobal((int)total_bytes);
 
             MemoryMarshal.AsBytes(tensor.Buffer.Span).CopyTo(
@@ -144,7 +142,7 @@ namespace Nncase.Simulator
             {
                 fixed (int* stride_ptr = tensor.Strides)
                 {
-                    var impl = RuntimeTensor_from_buffer(memPtr, dtype.TypeCode, shape_ptr, tensor.Dimensions.Length, (nuint)tensor.Length, (nuint)DataTypes.GetLength(dtype), stride_ptr);
+                    var impl = RuntimeTensor_from_buffer(memPtr, PrimTypeCodes.ToTypeCode(dtype), shape_ptr, tensor.Dimensions.Length, (nuint)tensor.Length, (nuint)dtype.SizeInBytes, stride_ptr);
                     return new RuntimeTensor()
                     {
                         Handle = impl,
@@ -161,9 +159,9 @@ namespace Nncase.Simulator
         /// <returns></returns>
         /// <exception cref="InvalidCastException"></exception>
         public unsafe DenseTensor<T> ToDense<T>()
-          where T : unmanaged
+          where T : unmanaged, IEquatable<T>
         {
-            if (DataTypes.FromType<T>() == DType)
+            if (DataType.FromType<T>() == DType)
             {
                 var tensor = new DenseTensor<T>(Length);
                 new Span<T>(memPtr.ToPointer(), Length).CopyTo(tensor.Buffer.Span);

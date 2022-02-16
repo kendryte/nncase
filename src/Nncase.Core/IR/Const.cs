@@ -138,14 +138,6 @@ public abstract record Const(IRType ValueType) : Expr
       => new(tensor);
 
     /// <summary>
-    /// Create Constant Pointer
-    /// </summary>
-    /// <param name="addr"> the addr value.</param>
-    /// <param name="code">pointed element type code.</param>
-    /// <returns></returns>
-    public static TensorConst FromPointer(long addr, PrimTypeCode code = PrimTypeCode.Float32) => new(Tensor.FromBytes(TensorType.Pointer(code), DataTypes.GetBytes(addr)));
-
-    /// <summary>
     /// convert shape to const expr.
     /// </summary>
     /// <param name="shape"></param>

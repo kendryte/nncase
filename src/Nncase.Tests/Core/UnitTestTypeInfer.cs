@@ -25,7 +25,7 @@ public class UnitTestTypeInfer : IHostFixtrue
     [Fact]
     public void TestInferBinary()
     {
-        Var a = new Var(new TensorType(DataType.Float32, new[] { 1, 5, 1 }));
+        Var a = new Var(new TensorType(DataTypes.Float32, new[] { 1, 5, 1 }));
         var b = Tensor.FromScalar(1.0f, new[] { 1, 5, 3 });
         var c = a + b;
         var ctype = CompilerServices.InferenceType(c);
@@ -44,7 +44,7 @@ public class UnitTestTypeInfer : IHostFixtrue
     [Fact]
     public void TestInferPad()
     {
-        var a = new Var(new TensorType(DataType.Float32, new Shape(1, 3, 224, 224)));
+        var a = new Var(new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
         var pads = Const.FromSpan<int>(new[] { 0, 0, 1, 1, 2, 2, 3, 3 }, new Shape(4, 2));
         var pad = Pad(a, pads, PadMode.Constant, 1);
         Assert.True(CompilerServices.InferenceType(pad));
@@ -110,7 +110,7 @@ public class UnitTestTypeInfer : IHostFixtrue
     [Fact]
     public void TestReduceArgTypeInfer()
     {
-        var input = new Var("v", new TensorType(DataType.Float32, new Shape(4, 5, 6, 7)));
+        var input = new Var("v", new TensorType(DataTypes.Float32, new Shape(4, 5, 6, 7)));
         AssertInferShape(
             ReduceArg(ReduceArgOp.ArgMax, input, 0, false, false),
             5, 6, 7);

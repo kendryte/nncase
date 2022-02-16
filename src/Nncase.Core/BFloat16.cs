@@ -8,121 +8,125 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nncase
+namespace Nncase;
+
+/// <summary>
+/// BFloat16.
+/// </summary>
+public struct BFloat16 : IEquatable<BFloat16>
 {
     /// <summary>
-    /// BFloat16.
+    /// bfloat16 representation bits.
     /// </summary>
-    public struct BFloat16 : IEquatable<BFloat16>
+    public ushort _value;
+
+    /// <summary>
+    /// Implicit convert <see cref="BFloat16"/> to <see cref="float"/>.
+    /// </summary>
+    /// <param name="input">BFloat16 value.</param>
+    public static implicit operator float(BFloat16 input)
     {
-        /// <summary>
-        /// bfloat16 representation bits.
-        /// </summary>
-        public ushort value;
+        float value;
+        Unsafe.SkipInit(out value);
+        Unsafe.As<float, int>(ref value) = input._value << 16;
+        return value;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="BFloat16"/> struct.
-        /// </summary>
-        /// <param name="v">raw value.</param>
-        public BFloat16(ushort v)
+    /// <summary>
+    /// Explicit convert <see cref="float"/> to <see cref="BFloat16"/>.
+    /// </summary>
+    /// <param name="input">BFloat16 value.</param>
+    public static explicit operator BFloat16(float input) => RoundToBFloat16(input);
+
+    /// <summary>
+    /// Compares values of two BFloat16 for binary equality.
+    /// </summary>
+    /// <param name="lhs">lhs.</param>
+    /// <param name="rhs">rhls.</param>
+    /// <returns>result of value comparisons.</returns>
+    public static bool operator ==(BFloat16 lhs, BFloat16 rhs) => lhs._value == rhs._value;
+
+    /// <summary>
+    /// Compares values of two BFloat16 for binary inequality.
+    /// </summary>
+    /// <param name="lhs">lhs.</param>
+    /// <param name="rhs">rhls.</param>
+    /// <returns>result of value comparisons.</returns>
+    public static bool operator !=(BFloat16 lhs, BFloat16 rhs) => lhs._value != rhs._value;
+
+    /// <summary>
+    /// Reinterpret cast <see cref="ushort"/> to <see cref="BFloat16"/>.
+    /// </summary>
+    /// <param name="value">UInt16 value.</param>
+    /// <returns>Casted bfloat16.</returns>
+    public static BFloat16 FromRaw(ushort value)
+    {
+        BFloat16 result;
+        Unsafe.SkipInit(out result);
+        result._value = value;
+        return result;
+    }
+
+    /// <summary>
+    /// Convert <see cref="float"/> to <see cref="BFloat16"/> using rounding.
+    /// </summary>
+    /// <param name="value">Float value.</param>
+    /// <returns>Converted bfloat16.</returns>
+    public static BFloat16 RoundToBFloat16(float value)
+    {
+        if (float.IsNaN(value))
         {
-            value = v;
+            // If the value is a NaN, squash it to a qNaN with msb of fraction set,
+            // this makes sure after truncation we don't end up with an inf.
+            //
+            // qNaN magic: All exponent bits set + most significant bit of fraction
+            // set.
+            return FromRaw(0x7fc0);
         }
 
-        /// <summary>
-        /// Converts to ushort.
-        /// </summary>
-        /// <param name="bf">instance of BFloat16.</param>
-        /// <returns>value member.</returns>
-        public static implicit operator ushort(BFloat16 bf) { return bf.value; }
+        var input = Unsafe.As<float, uint>(ref value);
 
-        /// <summary>
-        /// Converts a 16-bit unsigned integer to a BFloat16.
-        /// </summary>
-        /// <param name="value">A 16-bit unsigned integer.</param>
-        /// <returns>A BFloat16 that represents the converted 16-bit unsigned integer.</returns>
-        public static implicit operator BFloat16(ushort value) { return new BFloat16(value); }
+        // Least significant bit of resulting bfloat.
+        uint lsb = (input >> 16) & 1;
+        uint roundingBias = 0x7fff + lsb;
+        input += roundingBias;
+        return FromRaw((ushort)(input >> 16));
+    }
 
-        /// <summary>
-        /// Compares values of two BFloat16 for binary equality.
-        /// </summary>
-        /// <param name="lhs">lhs.</param>
-        /// <param name="rhs">rhls.</param>
-        /// <returns>result of value comparisons.</returns>
-        public static bool operator ==(BFloat16 lhs, BFloat16 rhs) { return lhs.value == rhs.value; }
+    /// <summary>
+    /// Returns a value indicating whether this instance and other BFloat16 represent the same value.
+    /// </summary>
+    /// <param name="other">A BFloat16 object to compare to this instance.</param>
+    /// <returns>true if other.value is equal to this instance; otherwise, false.</returns>
+    public bool Equals(BFloat16 other)
+    {
+        return other == this;
+    }
 
-        /// <summary>
-        /// Compares values of two BFloat16 for binary inequality.
-        /// </summary>
-        /// <param name="lhs">lhs.</param>
-        /// <param name="rhs">rhls.</param>
-        /// <returns>result of value comparisons.</returns>
-        public static bool operator !=(BFloat16 lhs, BFloat16 rhs) { return lhs.value != rhs.value; }
-
-        public static BFloat16 RoundToBFloat16(float value)
+    /// <summary>
+    /// Returns a value indicating whether this instance and a specified System.Object
+    /// represent the same type and value.
+    /// </summary>
+    /// <param name="obj">An System.Object.</param>
+    /// <returns>true if obj is BFloat16 its value is equal to this instance; otherwise, false.</returns>
+    public override bool Equals(object? obj)
+    {
+        bool result = false;
+        if (obj is BFloat16)
         {
-            if (float.IsNaN(value))
-            {
-                // If the value is a NaN, squash it to a qNaN with msb of fraction set,
-                // this makes sure after truncation we don't end up with an inf.
-                //
-                // qNaN magic: All exponent bits set + most significant bit of fraction
-                // set.
-                return new BFloat16(0x7fc0);
-            }
-
-            var input = Unsafe.As<float, uint>(ref value);
-
-            // Least significant bit of resulting bfloat.
-            uint lsb = (input >> 16) & 1;
-            uint roundingBias = 0x7fff + lsb;
-            input += roundingBias;
-            return new BFloat16((ushort)(input >> 16));
+            BFloat16 bfl16 = (BFloat16)obj;
+            result = bfl16 == this;
         }
 
-        /// <summary>
-        /// Returns a value indicating whether this instance and other BFloat16 represent the same value.
-        /// </summary>
-        /// <param name="other">A BFloat16 object to compare to this instance.</param>
-        /// <returns>true if other.value is equal to this instance; otherwise, false.</returns>
-        public bool Equals(BFloat16 other)
-        {
-            return (other == this);
-        }
+        return result;
+    }
 
-        public static implicit operator float(BFloat16 input)
-        {
-            float value;
-            Unsafe.SkipInit(out value);
-            Unsafe.As<float, int>(ref value) = input.value << 16;
-            return value;
-        }
-
-        /// <summary>
-        /// Returns a value indicating whether this instance and a specified System.Object
-        /// represent the same type and value.
-        /// </summary>
-        /// <param name="obj">An System.Object.</param>
-        /// <returns>true if obj is BFloat16 its value is equal to this instance; otherwise, false.</returns>
-        public override bool Equals(object? obj)
-        {
-            bool result = false;
-            if (obj is BFloat16)
-            {
-                BFloat16 bfl16 = (BFloat16)obj;
-                result = (bfl16 == this);
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Returns the hash code for this instance.
-        /// </summary>
-        /// <returns>A 32-bit signed integer hash code.</returns>
-        public override int GetHashCode()
-        {
-            return value.GetHashCode();
-        }
+    /// <summary>
+    /// Returns the hash code for this instance.
+    /// </summary>
+    /// <returns>A 32-bit signed integer hash code.</returns>
+    public override int GetHashCode()
+    {
+        return _value.GetHashCode();
     }
 }
