@@ -207,7 +207,7 @@ public class CSourceCompiler
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            
+            return $"{sourcePath} -fPIC -shared -march {Arch} -o {outPath}";
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
