@@ -15,7 +15,7 @@ namespace Nncase.Pattern.F;
 
 /// <summary>
 /// Math patterns.
-/// </summary>
+/// </summary
 public static partial class Math
 {
     /// <summary>
@@ -24,7 +24,7 @@ public static partial class Math
     /// <param name = "unaryOp">Unary operator.</param>
     /// <param name = "expr">Source expression.</param>
     /// <returns>Result expression.</returns>
-    public static CallPattern Unary(UnaryOp unaryOp, Pattern input)
+    public static CallPattern Unary(UnaryOp unaryOp, ExprPattern input)
     {
         return new(new OpPattern<Unary>(x => (x.UnaryOp == unaryOp)), input);
     }

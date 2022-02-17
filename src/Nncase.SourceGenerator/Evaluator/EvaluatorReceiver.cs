@@ -98,24 +98,6 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
         }
     }
 
-
-    bool CheckAttrList(SyntaxList<AttributeListSyntax> AttrLists, InterfaceKind target_interface)
-    {
-        foreach (var attributeList in AttrLists)
-        {
-            foreach (var attr in attributeList.Attributes)
-            {
-                if (attr is AttributeSyntax { Name: SimpleNameSyntax { Identifier: { ValueText: var cur_attr_name } } }
-                && cur_attr_name == target_interface.GetAttrName())
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-
     /// <summary>
     /// check the base class list have the valid interface type.
     /// </summary>
@@ -157,7 +139,7 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
                 AttributeLists: var attrTypes,
                 BaseList: { Types: var baseTypes },
             }
-            && CheckAttrList(attrTypes, target_interface)
+            && RecriverUtil.CheckAttributes(attrTypes, target_interface.GetAttrName())
             && CheckBaseList(baseTypes, target_interface, out var op_type_name)
         )
         {

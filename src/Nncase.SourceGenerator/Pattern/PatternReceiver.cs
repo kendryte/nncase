@@ -12,24 +12,13 @@ namespace Nncase.SourceGenerator.Pattern;
 /// </summary>
 internal class GenerateCandidate
 {
-    public List<UsingDirectiveSyntax> UsingDecls;
-    public ClassDeclarationSyntax classDecl;
-    public MethodDeclarationSyntax methodDecl;
-    public string OpTypeName;
+    public readonly List<UsingDirectiveSyntax> UsingDecls = new();
+    public string NameSpace;
+    public string OpType;
+    public readonly List<string> OpAttrParams = new();
+    public readonly List<string> OpExprParams = new();
 
-    public GenerateCandidate(ClassDeclarationSyntax class_decl, MethodDeclarationSyntax method_decl)
-    {
-        classDecl = class_decl;
-        methodDecl = method_decl;
-        OpTypeName = "";
-    }
 
-    public GenerateCandidate(ClassDeclarationSyntax class_decl, MethodDeclarationSyntax method_decl, string op_name, string op_param_name)
-    {
-        classDecl = class_decl;
-        methodDecl = method_decl;
-        OpTypeName = op_name;
-    }
 }
 
 /// <summary>
@@ -43,16 +32,49 @@ internal class PatternReceiver : ISyntaxContextReceiver
     /// <summary>
     /// for eval
     /// </summary>
-    public readonly Dictionary<string, List<GenerateCandidate>> EvalCandidates = new();
+    public readonly Dictionary<string, List<GenerateCandidate>> Candidates = new();
 
     /// <inheritdoc/>
     public void OnVisitSyntaxNode(GeneratorSyntaxContext context)
     {
-        _irNamespaceSymbol ??= context.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR");
-
-        if (_irNamespaceSymbol is not null)
+        var compilation = context.SemanticModel.Compilation;
+        var node = context.Node;
+        var candidates = new List<GenerateCandidate>();
+        if (IsMatch(node, out var candidate))
         {
-            Console.WriteLine("got some return");
+            candidates.Add(candidate);
         }
+    }
+
+
+
+    private bool IsMatch(SyntaxNode node, out GenerateCandidate candidate)
+    {
+        candidate = new();
+        if (node is RecordDeclarationSyntax
+            {
+                AttributeLists: var attrLists,
+                BaseList: { Types: var baseTypes },
+                Identifier: { ValueText: var opType },
+                ParameterList: { Parameters: var attrParamSyntaxs }
+            } myrecord
+            && RecriverUtil.CheckAttributes(attrLists, "PatternGenerator")
+            && RecriverUtil.CheckBaseList(baseTypes, "Op"))
+        {
+            //myrecord.Ancestors().OfType<using>
+            //attrParamSyntaxs.Select(p => p is
+            //{
+            //    Type: SimpleNameSyntax
+            //    {
+            //        Identifier: { ValueText: { var  } }
+            //    }
+            //});
+            var xxx = (from p in attrParamSyntaxs
+                       let type = p.Type
+                       select p.Identifier.ValueText);
+
+            return true;
+        }
+        return false;
     }
 }
