@@ -21,7 +21,7 @@ namespace Nncase.Pattern
         /// </summary>
         /// <param name="textWriter"></param>
         /// <param name="pattern"></param>
-        public static void DumpAsIL(TextWriter textWriter, Pattern pattern)
+        public static void DumpAsIL(TextWriter textWriter, IPattern pattern)
         {
             var visitor = new ILDumpVisitor(textWriter);
             visitor.Visit(pattern);
@@ -32,7 +32,7 @@ namespace Nncase.Pattern
         /// </summary>
         /// <param name="pattern"></param>
         /// <returns></returns>
-        public static string DumpAsIL(this Pattern pattern)
+        public static string DumpAsIL(this IPattern pattern)
         {
             var builder = new StringBuilder();
             var writer = new StringWriter(builder);
@@ -46,7 +46,7 @@ namespace Nncase.Pattern
         /// <param name="pattern"></param>
         /// <param name="name"></param>
         /// <param name="dumpPath"></param>
-        public static void DumpAsIL(this Pattern pattern, string name, string dumpPath)
+        public static void DumpAsIL(this IPattern pattern, string name, string dumpPath)
         {
             Directory.CreateDirectory(dumpPath);
             using var dumpFile = File.Open($"{dumpPath}/{name}.il", FileMode.OpenOrCreate);
@@ -57,7 +57,7 @@ namespace Nncase.Pattern
         private class ILDumpVisitor : PatternFunctor<string, string>
         {
             private readonly TextWriter _textWriter;
-            private readonly Dictionary<Pattern, string> _names = new();
+            private readonly Dictionary<IPattern, string> _names = new();
             private int _localId = 0;
             private int _identLevel = 0;
 

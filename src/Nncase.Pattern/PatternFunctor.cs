@@ -22,7 +22,7 @@ namespace Nncase.Pattern
         /// </summary>
         /// <param name="pattern">Expression.</param>
         /// <returns>Result.</returns>
-        public virtual TPatternResult Visit(ExprPattern pattern)
+        public virtual TPatternResult Visit(IPattern pattern)
         {
             return pattern switch
             {

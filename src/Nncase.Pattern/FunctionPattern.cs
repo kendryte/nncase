@@ -7,41 +7,37 @@ using System.Collections.Immutable;
 using System.Linq;
 using Nncase.IR;
 
-namespace Nncase.Pattern
+namespace Nncase.Pattern;
+
+/// <summary>
+/// Pattern for <see cref="Function"/>.
+/// </summary>
+/// <param name="Body">Body pattern.</param>
+/// <param name="Parameters">Parameters pattern.</param>
+public sealed record FunctionPattern(Pattern Body, VArgsPattern Parameters)
+    : Pattern<Function>(x => Body.MatchLeaf(x.Body) && Parameters.MatchLeaf(x.Parameters))
 {
-    public sealed record FunctionPattern(ExprPattern Body, VArgsPattern Parameters) : ExprPattern
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FunctionPattern"/> class.
+    /// </summary>
+    /// <param name="function"><see cref="Function"/> expression.</param>
+    public FunctionPattern(Function function)
+        : this(function.Body, new FixedVArgsPattern(function.Parameters))
     {
-        public FunctionPattern(Function func) : this(
-            (ExprPattern)func.Body,
-            new FixedVArgsPattern((from p in func.Parameters select ((ExprPattern)p)).ToArray()))
-        { }
-
-        public FunctionPattern(ExprPattern body, params ExprPattern[] parameters) : this(body, new FixedVArgsPattern(parameters))
-        {
-        }
-
-        public FunctionPattern(ExprPattern body, IRArray<ExprPattern> parameters) : this(body, new FixedVArgsPattern(parameters))
-        {
-        }
-
-        public bool MatchLeaf(Function func) => MatchCheckedType(func);
-
-        public override ExprPattern Copy() => this with
-        {
-            Id = _globalPatIndex++,
-            Body = Body.Copy(),
-            Parameters = Parameters.Copy(),
-        };
-
-        public override void Clear()
-        {
-            Body.Clear();
-            Parameters.Clear();
-        }
     }
 
-    public static partial class Utility
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FunctionPattern"/> class.
+    /// </summary>
+    /// <param name="body">Body pattern.</param>
+    /// <param name="parameters">Parameter patterns.</param>
+    public FunctionPattern(Pattern body, params ExprPattern[] parameters)
+        : this(body, new FixedVArgsPattern(parameters))
     {
-        public static FunctionPattern IsFunction(ExprPattern Body, VArgsPattern Parameters) => new FunctionPattern(Body, Parameters);
     }
+}
+
+public static partial class Utility
+{
+    public static FunctionPattern IsFunction(ExprPattern Body, VArgsPattern Parameters) => new FunctionPattern(Body, Parameters);
 }

@@ -8,96 +8,95 @@ using System.Text;
 using System.Threading.Tasks;
 using static Nncase.Pattern.F.Math;
 
-namespace Nncase.Pattern
+namespace Nncase.Pattern;
+
+/// <summary>
+/// Math operators for <see cref="ExprPattern"/>.
+/// </summary>
+public partial record Pattern
 {
     /// <summary>
-    /// Math operators for <see cref="ExprPattern"/>.
+    /// Unary neg.
     /// </summary>
-    public partial record ExprPattern
-    {
-        /// <summary>
-        /// Unary neg.
-        /// </summary>
-        /// <param name="lhs">Source operand.</param>
-        /// <returns>Result.</returns>
-        public static CallPattern operator -(ExprPattern lhs) => Neg(lhs);
+    /// <param name="lhs">Source operand.</param>
+    /// <returns>Result.</returns>
+    public static CallPattern operator -(Pattern lhs) => Neg(lhs);
 
-        /// <summary>
-        /// Unary bitwise not.
-        /// </summary>
-        /// <param name="lhs">Source operand.</param>
-        /// <returns>Result.</returns>
-        public static CallPattern operator ~(ExprPattern lhs) => BitwiseNot(lhs);
+    /// <summary>
+    /// Unary bitwise not.
+    /// </summary>
+    /// <param name="lhs">Source operand.</param>
+    /// <returns>Result.</returns>
+    public static CallPattern operator ~(Pattern lhs) => BitwiseNot(lhs);
 
-        /// <summary>
-        /// Unary logical not.
-        /// </summary>
-        /// <param name="lhs">Source operand.</param>
-        /// <returns>Result.</returns>
-        public static CallPattern operator !(ExprPattern lhs) => LogicalNot(lhs);
+    /// <summary>
+    /// Unary logical not.
+    /// </summary>
+    /// <param name="lhs">Source operand.</param>
+    /// <returns>Result.</returns>
+    public static CallPattern operator !(Pattern lhs) => LogicalNot(lhs);
 
-        /// <summary>
-        /// Binary add.
-        /// </summary>
-        /// <param name="lhs">Left operand.</param>
-        /// <param name="rhs">Right operand.</param>
-        /// <returns>Result.</returns>
-        public static CallPattern operator +(ExprPattern lhs, ExprPattern rhs) => Add(lhs, rhs);
+    /// <summary>
+    /// Binary add.
+    /// </summary>
+    /// <param name="lhs">Left operand.</param>
+    /// <param name="rhs">Right operand.</param>
+    /// <returns>Result.</returns>
+    public static CallPattern operator +(Pattern lhs, Pattern rhs) => Add(lhs, rhs);
 
-        /// <summary>
-        /// Binary sub.
-        /// </summary>
-        /// <param name="lhs">Left operand.</param>
-        /// <param name="rhs">Right operand.</param>
-        /// <returns>Result.</returns>
-        public static CallPattern operator -(ExprPattern lhs, ExprPattern rhs) => Sub(lhs, rhs);
+    /// <summary>
+    /// Binary sub.
+    /// </summary>
+    /// <param name="lhs">Left operand.</param>
+    /// <param name="rhs">Right operand.</param>
+    /// <returns>Result.</returns>
+    public static CallPattern operator -(Pattern lhs, Pattern rhs) => Sub(lhs, rhs);
 
-        /// <summary>
-        /// Binary mul.
-        /// </summary>
-        /// <param name="lhs">Left operand.</param>
-        /// <param name="rhs">Right operand.</param>
-        /// <returns>Result.</returns>
-        public static CallPattern operator *(ExprPattern lhs, ExprPattern rhs) => Mul(lhs, rhs);
+    /// <summary>
+    /// Binary mul.
+    /// </summary>
+    /// <param name="lhs">Left operand.</param>
+    /// <param name="rhs">Right operand.</param>
+    /// <returns>Result.</returns>
+    public static CallPattern operator *(Pattern lhs, Pattern rhs) => Mul(lhs, rhs);
 
-        /// <summary>
-        /// Binary div.
-        /// </summary>
-        /// <param name="lhs">Left operand.</param>
-        /// <param name="rhs">Right operand.</param>
-        /// <returns>Result.</returns>
-        public static CallPattern operator /(ExprPattern lhs, ExprPattern rhs) => Div(lhs, rhs);
+    /// <summary>
+    /// Binary div.
+    /// </summary>
+    /// <param name="lhs">Left operand.</param>
+    /// <param name="rhs">Right operand.</param>
+    /// <returns>Result.</returns>
+    public static CallPattern operator /(Pattern lhs, Pattern rhs) => Div(lhs, rhs);
 
-        /// <summary>
-        /// Binary mod.
-        /// </summary>
-        /// <param name="lhs">Left operand.</param>
-        /// <param name="rhs">Right operand.</param>
-        /// <returns>Result.</returns>
-        public static CallPattern operator %(ExprPattern lhs, ExprPattern rhs) => Mod(lhs, rhs);
+    /// <summary>
+    /// Binary mod.
+    /// </summary>
+    /// <param name="lhs">Left operand.</param>
+    /// <param name="rhs">Right operand.</param>
+    /// <returns>Result.</returns>
+    public static CallPattern operator %(Pattern lhs, Pattern rhs) => Mod(lhs, rhs);
 
-        /// <summary>
-        /// Binary bitwise and.
-        /// </summary>
-        /// <param name="lhs">Left operand.</param>
-        /// <param name="rhs">Right operand.</param>
-        /// <returns>Result.</returns>
-        public static CallPattern operator &(ExprPattern lhs, ExprPattern rhs) => BitwiseAnd(lhs, rhs);
+    /// <summary>
+    /// Binary bitwise and.
+    /// </summary>
+    /// <param name="lhs">Left operand.</param>
+    /// <param name="rhs">Right operand.</param>
+    /// <returns>Result.</returns>
+    public static CallPattern operator &(Pattern lhs, Pattern rhs) => BitwiseAnd(lhs, rhs);
 
-        /// <summary>
-        /// Binary bitwise or.
-        /// </summary>
-        /// <param name="lhs">Left operand.</param>
-        /// <param name="rhs">Right operand.</param>
-        /// <returns>Result.</returns>
-        public static CallPattern operator |(ExprPattern lhs, ExprPattern rhs) => BitwiseOr(lhs, rhs);
+    /// <summary>
+    /// Binary bitwise or.
+    /// </summary>
+    /// <param name="lhs">Left operand.</param>
+    /// <param name="rhs">Right operand.</param>
+    /// <returns>Result.</returns>
+    public static CallPattern operator |(Pattern lhs, Pattern rhs) => BitwiseOr(lhs, rhs);
 
-        /// <summary>
-        /// Binary bitwise xor.
-        /// </summary>
-        /// <param name="lhs">Left operand.</param>
-        /// <param name="rhs">Right operand.</param>
-        /// <returns>Result.</returns>
-        public static CallPattern operator ^(ExprPattern lhs, ExprPattern rhs) => BitwiseXor(lhs, rhs);
-    }
+    /// <summary>
+    /// Binary bitwise xor.
+    /// </summary>
+    /// <param name="lhs">Left operand.</param>
+    /// <param name="rhs">Right operand.</param>
+    /// <returns>Result.</returns>
+    public static CallPattern operator ^(Pattern lhs, Pattern rhs) => BitwiseXor(lhs, rhs);
 }

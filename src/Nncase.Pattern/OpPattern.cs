@@ -5,22 +5,25 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Nncase.IR;
-using Nncase.IR.NN;
-using Nncase.IR.Math;
-using Nncase.IR.Tensors;
-using Nncase.Pattern.NN;
-using Nncase.Pattern.Math;
-using Nncase.Pattern.Tensors;
 using System.Text;
+using Nncase.IR;
 
-namespace Nncase.Pattern
+namespace Nncase.Pattern;
+
+/// <summary>
+/// Pattern for <see cref="Op"/>.
+/// </summary>
+/// <typeparam name="TOp">Op type.</typeparam>
+/// <param name="Condition">Condition.</param>
+public record OpPattern<TOp>(Func<TOp, bool> Condition) : Pattern<TOp>(Condition)
+    where TOp : Op
 {
-    public abstract partial record OpPattern : ExprPattern
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OpPattern{TOp}"/> class.
+    /// </summary>
+    /// <param name="op">Op expression.</param>
+    public OpPattern(TOp op)
+        : this(x => x.Equals(op))
     {
-        public override int GetHashCode() => _hashcode ??=
-          HashCode.Combine(
-         EqualityComparer<Type>.Default.GetHashCode(EqualityContract),
-         EqualityComparer<int>.Default.GetHashCode(Id));
     }
 }

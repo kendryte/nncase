@@ -15,13 +15,24 @@ namespace Nncase.Pattern;
 /// </summary>
 public interface IPattern
 {
-    bool MatchLeaf(Expr expr);
+    /// <summary>
+    /// Match leaf.
+    /// </summary>
+    /// <param name="input">Input.</param>
+    /// <returns>Is match.</returns>
+    bool MatchLeaf(object input);
 }
 
 /// <summary>
 /// Pattern.
 /// </summary>
-/// <typeparam name="TResult">Match result type.</typeparam>
-public interface IPattern<TResult> : IPattern
+/// <typeparam name="TInput">Input type.</typeparam>
+public interface IPattern<in TInput> : IPattern
 {
+    /// <summary>
+    /// Match leaf.
+    /// </summary>
+    /// <param name="input">Input.</param>
+    /// <returns>Is match.</returns>
+    bool MatchLeaf(TInput input);
 }

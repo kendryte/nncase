@@ -9,6 +9,10 @@ using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.Pattern;
 
+/// <summary>
+/// Pattern for <see cref="Expr"/>.
+/// </summary>
+/// <param name="Condition">Expression condition.</param>
 public sealed record ConstPattern(Func<Const, bool> Cond) : ExprPattern
 {
     /// <summary>

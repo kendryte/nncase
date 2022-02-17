@@ -20,27 +20,12 @@ public abstract partial record Pattern : IPattern
     /// </summary>
     protected int? HashCode { get; set; }
 
-    /// <summary>
-    /// Gets pattern for CheckedType, defulat match IR Type.
-    /// </summary>
-    public TypePattern CheckedTypePattern { get; init; } = TypePatternUtility.IsIRType();
-
     /// <inheritdoc/>
     public override int GetHashCode() => HashCode ??=
       System.HashCode.Combine(EqualityComparer<Type>.Default.GetHashCode(EqualityContract));
 
-    /// <summary>
-    /// Copy The **New** ExprPattern. NOTE the new pattern have different Id with old one, The there not equal.
-    /// <remark> this copy not recursive </remark>
-    /// </summary>
-    /// <returns>Pattern.</returns>
-    public abstract Pattern Copy();
-
-    public virtual void Clear()
-    {
-    }
-
-    public abstract bool MatchLeaf(Expr expr);
+    /// <inheritdoc/>
+    public abstract bool MatchLeaf(object input);
 
     /// <summary>
     /// Print members.
@@ -52,6 +37,28 @@ public abstract partial record Pattern : IPattern
         builder.Append(this.DumpAsIL());
         return true;
     }
+}
+
+/// <summary>
+/// Pattern.
+/// </summary>
+/// <typeparam name="TExpr">Expression type.</typeparam>
+public record Pattern<TExpr>(Func<TExpr, bool> Condition) : Pattern, IPattern<TExpr>
+    where TExpr : Expr
+{
+    /// <summary>
+    /// Gets pattern for CheckedType, defulat match IR Type.
+    /// </summary>
+    public TypePattern TypePattern { get; init; } = TypePatternUtility.IsIRType();
+
+    /// <inheritdoc/>
+    public bool MatchLeaf(TExpr expr)
+    {
+        return MatchCheckedType(expr) && Condition(expr);
+    }
+
+    /// <inheritdoc/>
+    public sealed override bool MatchLeaf(object input) => input is TExpr expr && MatchLeaf(expr);
 
     /// <summary>
     /// Match The Expr Type.
@@ -60,7 +67,7 @@ public abstract partial record Pattern : IPattern
     /// <returns>Is Matched.</returns>
     private bool MatchCheckedType(Expr expr) => expr.CheckedType switch
     {
-        IRType type => CheckedTypePattern.MatchLeaf(type),
+        IRType type => TypePattern.MatchLeaf(type),
         _ => false,
     };
 }

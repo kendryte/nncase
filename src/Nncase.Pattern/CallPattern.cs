@@ -5,41 +5,49 @@ using System;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 
-namespace Nncase.Pattern
+namespace Nncase.Pattern;
+
+/// <summary>
+/// Pattern for <see cref="Call"/>.
+/// </summary>
+/// <param name="Target">Target pattern.</param>
+/// <param name="Parameters">Parameters pattern.</param>
+public sealed record CallPattern(Pattern Target, VArgsPattern Parameters)
+    : Pattern<Call>(x => Target.MatchLeaf(x.Target) && Parameters.MatchLeaf(x.Parameters))
 {
-    public sealed record CallPattern(ExprPattern Target, VArgsPattern Parameters) : ExprPattern
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CallPattern"/> class.
+    /// </summary>
+    /// <param name="call"><see cref="Call"/> expression.</param>
+    public CallPattern(Call call)
+        : this(call.Target, new FixedVArgsPattern(call.Parameters))
     {
-        public CallPattern(Call call) : this((ExprPattern)call.Target, new FixedVArgsPattern(call.Parameters)) { }
-
-        public bool MatchLeaf(Call call)
-        {
-            return MatchCheckedType(call);
-        }
-
-        public ExprPattern this[ParameterInfo parameter]
-        {
-            get => Parameters[parameter.Index];
-        }
-
-        public CallPattern(ExprPattern target, params ExprPattern[] parameters)
-            : this(target, new FixedVArgsPattern(parameters))
-        {
-        }
-
-        public override ExprPattern Copy() =>
-          this with { Id = _globalPatIndex++, Target = Target.Copy(), Parameters = Parameters.Copy() };
-
-        public override void Clear()
-        {
-            Target.Clear();
-            Parameters.Clear();
-        }
     }
 
-    public static partial class Utility
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CallPattern"/> class.
+    /// </summary>
+    /// <param name="target">Target pattern.</param>
+    /// <param name="parameters">Parameter patterns.</param>
+    public CallPattern(Pattern target, params ExprPattern[] parameters)
+        : this(target, new FixedVArgsPattern(parameters))
     {
-        public static CallPattern IsCall(ExprPattern Target, VArgsPattern Parameters) => new CallPattern(Target, Parameters);
-
-        public static CallPattern IsCall(ExprPattern Target, params ExprPattern[] Parameters) => new CallPattern(Target, Parameters);
     }
+
+    /// <summary>
+    /// Get parameter pattern.
+    /// </summary>
+    /// <param name="parameter">Parameter info.</param>
+    /// <returns>Parameter pattern.</returns>
+    public ExprPattern this[ParameterInfo parameter]
+    {
+        get => Parameters[parameter.Index];
+    }
+}
+
+public static partial class Utility
+{
+    public static CallPattern IsCall(ExprPattern Target, VArgsPattern Parameters) => new CallPattern(Target, Parameters);
+
+    public static CallPattern IsCall(ExprPattern Target, params ExprPattern[] Parameters) => new CallPattern(Target, Parameters);
 }

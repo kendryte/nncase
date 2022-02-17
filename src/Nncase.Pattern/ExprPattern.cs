@@ -10,9 +10,11 @@ using Nncase.IR.Math;
 namespace Nncase.Pattern;
 
 /// <summary>
-/// Expression pattern.
+/// Pattern for <see cref="Expr"/>.
 /// </summary>
-public sealed record ExprPattern : Pattern
+/// <param name="Condition">Expression condition.</param>
+public sealed record ExprPattern(Func<Expr, bool> Condition)
+    : Pattern<Expr>(Condition)
 {
 }
 
