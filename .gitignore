@@ -290,5 +290,5 @@ wheelhouse/
 .cache
 .env
 Directory.Build.targets
-NuGet.Config
 *local*
+nupkg

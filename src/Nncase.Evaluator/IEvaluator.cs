@@ -11,6 +11,14 @@ using Nncase.IR;
 namespace Nncase.Evaluator;
 
 /// <summary>
+/// this attribute mark the source generator auto generate IEvaluator's interface impl
+/// </summary>
+internal class EvaluatorGeneratorAttribute : Attribute
+{
+
+}
+
+/// <summary>
 /// Evaluator interface.
 /// </summary>
 public interface IEvaluator

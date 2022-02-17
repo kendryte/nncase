@@ -27,12 +27,6 @@ public sealed record PointerType(DataType ElemType) : DataType
 
     /// <inheritdoc/>
     public override int SizeInBytes => sizeof(ulong);
-
-    /// <inheritdoc/>
-    public override string ToString()
-    {
-        return $"{ElemType}*";
-    }
 }
 
 /// <summary>
@@ -121,10 +115,4 @@ public abstract record PrimType : DataType
     /// Gets short name.
     /// </summary>
     public abstract string ShortName { get; }
-
-    /// <inheritdoc/>
-    public override string ToString()
-    {
-        return ShortName;
-    }
 }

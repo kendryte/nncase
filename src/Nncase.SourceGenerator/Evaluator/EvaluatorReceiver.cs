@@ -6,6 +6,43 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Nncase.SourceGenerator;
 
+
+public enum InterfaceKind
+{
+    IEvaluator,
+    ITypeInferencer,
+}
+
+/// <summary>
+/// some method get from the interface kink info.
+/// </summary>
+public static class InterfaceKindExtensions
+{
+    public static (string return_type_name, string context_type_name) GetKindInfo(this InterfaceKind target_interface) => (target_interface.GetReturnType(), target_interface.GetContextType());
+
+    public static string GetReturnType(this InterfaceKind target_interface) => target_interface switch
+    {
+        InterfaceKind.IEvaluator => "IValue",
+        InterfaceKind.ITypeInferencer => "IRType",
+        _ => throw new NotImplementedException(),
+    };
+
+    public static string GetContextType(this InterfaceKind target_interface) => target_interface switch
+    {
+        InterfaceKind.IEvaluator => "IEvaluateContext",
+        InterfaceKind.ITypeInferencer => "ITypeInferenceContext",
+        _ => throw new NotImplementedException(),
+    };
+
+    public static string GetAttrName(this InterfaceKind target_interface) => target_interface switch
+    {
+        InterfaceKind.IEvaluator => "EvaluatorGenerator",
+        InterfaceKind.ITypeInferencer => "TypeInferGenerator",
+        _ => throw new NotImplementedException(),
+    };
+
+}
+
 /// <summary>
 /// the candidate will be generated for new instance
 /// </summary>
@@ -46,6 +83,7 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
     /// </summary>
     public readonly Dictionary<string, List<GenerateCandidate>> TypeInferCandidates = new();
 
+
     public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
     {
         if (syntaxNode is ClassDeclarationSyntax { BaseList: var base_list, Modifiers: var modifiers } cls
@@ -53,22 +91,41 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
             && modifiers.Any(tok => tok.IsKind(SyntaxKind.PartialKeyword)))
         {
             GenerateCandidate eval_cand = new(cls, null);
-
-            if (CheckFromInterface(eval_cand, InterfaceKind.IEvaluator) && CheckVisitMethod(eval_cand, EvalCandidates, InterfaceKind.IEvaluator))
-            {
-            }
+            CheckFromInterface(eval_cand, EvalCandidates, InterfaceKind.IEvaluator);
 
             GenerateCandidate typeinfer_cand = new(cls, null);
-            if (CheckFromInterface(typeinfer_cand, InterfaceKind.ITypeInferencer) && CheckVisitMethod(typeinfer_cand, TypeInferCandidates, InterfaceKind.ITypeInferencer))
-            {
-            }
+            CheckFromInterface(typeinfer_cand, TypeInferCandidates, InterfaceKind.ITypeInferencer);
         }
     }
 
-    bool CheckFromInterface(GenerateCandidate candidate, InterfaceKind target_interface)
+
+    bool CheckAttrList(SyntaxList<AttributeListSyntax> AttrLists, InterfaceKind target_interface)
     {
-        ClassDeclarationSyntax cls = candidate.classDecl;
-        foreach (var baseType in cls.BaseList.Types)
+        foreach (var attributeList in AttrLists)
+        {
+            foreach (var attr in attributeList.Attributes)
+            {
+                if (attr is AttributeSyntax { Name: SimpleNameSyntax { Identifier: { ValueText: var cur_attr_name } } }
+                && cur_attr_name == target_interface.GetAttrName())
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
+    /// <summary>
+    /// check the base class list have the valid interface type.
+    /// </summary>
+    /// <param name="baseTypes"></param>
+    /// <param name="target_interface"></param>
+    /// <param name="op_type_name"></param>
+    /// <returns></returns>
+    bool CheckBaseList(SeparatedSyntaxList<BaseTypeSyntax> baseTypes, InterfaceKind target_interface, out string op_type_name)
+    {
+        foreach (var baseType in baseTypes)
         {
             // check the class is from IEvaluator<Op>, and get the Op 
             if (baseType is SimpleBaseTypeSyntax
@@ -81,15 +138,35 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
                 }
                 && cur_interface == target_interface.ToString()
                 && genericArgs.Count == 1
-                && genericArgs[0] is IdentifierNameSyntax { Identifier: { ValueText: var op_type_name } }
+                && genericArgs[0] is IdentifierNameSyntax { Identifier: { ValueText: var cur_op_type_name } }
             )
             {
-                candidate.OpTypeName = op_type_name;
+                op_type_name = cur_op_type_name;
                 return true;
             }
         }
-        return false;
+        throw new ArgumentOutOfRangeException($"If Your Use {target_interface.GetAttrName()} Attribute, Must From {target_interface} Interface!");
     }
+
+
+    void CheckFromInterface(GenerateCandidate candidate, Dictionary<string, List<GenerateCandidate>> Candidates, InterfaceKind target_interface)
+    {
+        ClassDeclarationSyntax cls = candidate.classDecl;
+        if (candidate.classDecl is ClassDeclarationSyntax
+            {
+                AttributeLists: var attrTypes,
+                BaseList: { Types: var baseTypes },
+            }
+            && CheckAttrList(attrTypes, target_interface)
+            && CheckBaseList(baseTypes, target_interface, out var op_type_name)
+        )
+        {
+            candidate.OpTypeName = op_type_name;
+            CheckVisitMethod(candidate, Candidates, target_interface);
+        }
+    }
+
+
 
     /// <summary>
     /// check whether the method needs to be modified
@@ -97,7 +174,7 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
     /// <param name="candidate">the class op name.</param>
     /// <param name="Candidates">the dict.</param>
     /// <returns></returns>
-    bool CheckVisitMethod(GenerateCandidate candidate, Dictionary<string, List<GenerateCandidate>> Candidates, InterfaceKind target_interface)
+    void CheckVisitMethod(GenerateCandidate candidate, Dictionary<string, List<GenerateCandidate>> Candidates, InterfaceKind target_interface)
     {
         var (return_type_name, context_type_name) = target_interface.GetKindInfo();
 
@@ -122,7 +199,7 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
         }
 
         if (candidate.classDecl.Members.Any(HasOverride))
-            return false;
+            throw new ArgumentOutOfRangeException($"If Your Use {target_interface.GetAttrName()} Attribute, Must Not Have The Visit Method!");
 
         foreach (var member in candidate.classDecl.Members)
         {
@@ -140,7 +217,7 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
                 var namespaces = (from namespace_decl in method.Ancestors().OfType<BaseNamespaceDeclarationSyntax>()
                                   select namespace_decl).ToArray();
                 if (namespaces.Length != 1)
-                    return false;
+                  throw new ArgumentOutOfRangeException($"You Must Use One Line NameSpace Define!");
                 var namespace_name = GetFullName(namespaces[0].Name);
                 if (!Candidates.TryGetValue(namespace_name, out var member_list))
                 {
@@ -148,10 +225,9 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
                     Candidates.Add(namespace_name, member_list);
                 }
                 member_list.Add(candidate);
-                return true;
+                return;
             }
         }
-        return false;
     }
 
     /// <summary>

@@ -26,21 +26,26 @@
 
   <Target Name="BuildNativeUnix" Condition="'$(OS)' != 'Windows_NT'">
     <Exec Command="mkdir -p ../build/$(Configuration)/simulator" />
-    <Exec Command="cmake -S .. -B ../build/$(Configuration)/simulator -DCMAKE_BUILD_TYPE=$(Configuration) -DENABLE_HALIDE=false -DENABLE_OPENMP=false -DCMAKE_EXPORT_COMPILE_COMMANDS=true -DENABLE_VULKAN_RUNTIME=false -DBUILD_BENCHMARK=false -G &quot;Ninja&quot; -DCMAKE_INSTALL_PREFIX:PATH=../simulator_install" />
+    <Exec Command="cmake -S .. -B ../build/$(Configuration)/simulator -DBUILD_PYTHON_BINDING=false -DCMAKE_BUILD_TYPE=$(Configuration) -DENABLE_HALIDE=false -DENABLE_OPENMP=false -DCMAKE_EXPORT_COMPILE_COMMANDS=true -DENABLE_VULKAN_RUNTIME=false -DBUILD_BENCHMARK=false -G &quot;Ninja&quot; -DCMAKE_INSTALL_PREFIX:PATH=../simulator_install" />
     <Exec Command="cmake --build ../build/$(Configuration)/simulator --target install" />
   </Target>
 
   <Target Name="BuildNativeWindows" Condition="'$(OS)' == 'Windows_NT'">
 	<Exec Command="mkdir ..\build\$(Configuration)\simulator" />
-    <Exec Command="cmake -S .. -B ../build/$(Configuration)/simulator -DCMAKE_BUILD_TYPE=$(Configuration) -DENABLE_HALIDE=false -DENABLE_OPENMP=false -DCMAKE_EXPORT_COMPILE_COMMANDS=true -DENABLE_VULKAN_RUNTIME=false -DBUILD_BENCHMARK=false -G &quot;Ninja&quot; -DCMAKE_INSTALL_PREFIX:PATH=../simulator_install" />
-    <Exec Command="cmake --build ../build/$(Configuration)/simulator --target install" />
+	<Exec Command="cmake -S .. -B ../build/$(Configuration)/simulator -DBUILD_PYTHON_BINDING=false -DCMAKE_BUILD_TYPE=$(Configuration) -DENABLE_HALIDE=false -DENABLE_OPENMP=false -DCMAKE_EXPORT_COMPILE_COMMANDS=true -DENABLE_VULKAN_RUNTIME=false -DBUILD_BENCHMARK=false -G &quot;Ninja&quot; -DCMAKE_INSTALL_PREFIX:PATH=../simulator_install" />
+	<Exec Command="cmake --build ../build/$(Configuration)/simulator --target install" />
+	<!--Because of the windows nncase.dll install into the bin, so we need copy it into lib.-->
+	<Copy SourceFiles="../build/$(Configuration)/simulator_install/bin/nncase.dll"
+	   DestinationFolder="../build/$(Configuration)/simulator_install/lib" />
+	<!--Because of the windows shard lib name without lib prefix so we need add it-->
+	<Move SourceFiles="../build/$(Configuration)/simulator_install/lib/nncase_csharp.dll"
+	   DestinationFiles="../build/$(Configuration)/simulator_install/lib/libnncase_csharp.dll" /> 
   </Target>
 
   <Target Name="PreparePackageAssets">  
     <ItemGroup>
-      <NativePackageLib Include="..\build\$(Configuration)\simulator_install\lib\$(NativeLibPreFix)nncase_csharp.$(NativeLibExtension)" />
-      <NativePackageLib Condition="'$(TargetOS)' != 'win'" Include="..\build\$(Configuration)\simulator_install\lib\$(NativeLibPreFix)nncase.$(NativeLibExtension)" />
-      <NativePackageLib Condition="'$(TargetOS)' == 'win'" Include="..\build\$(Configuration)\simulator_install\lib\$(NativeLibPreFix)nncase.lib" />
+      <NativePackageLib Include="..\build\$(Configuration)\simulator_install\lib\libnncase_csharp.$(NativeLibExtension)" />
+      <NativePackageLib Include="..\build\$(Configuration)\simulator_install\lib\$(NativeLibPreFix)nncase.$(NativeLibExtension)" />
       <NativePackageLib Include="..\build\$(Configuration)\simulator_install\bin\ncc$(NativeExecExtension)" />
     </ItemGroup>
 

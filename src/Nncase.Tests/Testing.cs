@@ -62,8 +62,8 @@ namespace Nncase.Tests
         /// <returns></returns>
         public static string GetDumpDirPath(System.Type type)
         {
-            var namespace_name= type.Namespace.Split(".")[^1];
-            if(!namespace_name.EndsWith("Test") || !type.Name.StartsWith("UnitTest"))
+            var namespace_name = type.Namespace.Split(".")[^1];
+            if (!namespace_name.EndsWith("Test") || !type.Name.StartsWith("UnitTest"))
             {
                 throw new System.ArgumentOutOfRangeException("We Need NameSpace is `xxxTest`, Class is `UnitTestxxx`");
             }
@@ -97,11 +97,15 @@ namespace Nncase.Tests
 
         public static void AssertExprEqual(Expr lhs, Expr rhs, [CallerMemberName] string member = null)
         {
-            var res = Equals(Simplify(lhs, member), Simplify(rhs, member));
+            var simpled_lhs = Simplify(lhs, member);
+            var simpled_rhs = Simplify(rhs, member);
+            var res = Equals(simpled_lhs, simpled_rhs);
             if (!res)
             {
                 lhs.DumpExprAsIL("Lhs", Path.Combine(GetNncsaeDumpDirPath(), member));
                 rhs.DumpExprAsIL("Rhs", Path.Combine(GetNncsaeDumpDirPath(), member));
+                simpled_lhs.DumpExprAsIL("Simpled_Lhs", Path.Combine(GetNncsaeDumpDirPath(), member));
+                simpled_rhs.DumpExprAsIL("Simpled_Rhs", Path.Combine(GetNncsaeDumpDirPath(), member));
             }
             Assert.True(res);
         }

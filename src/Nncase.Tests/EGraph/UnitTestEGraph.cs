@@ -23,7 +23,7 @@ namespace Nncase.Tests.EGraphTest
         public UnitTestEGraph()
         {
             var TestName = this.GetType().Name;
-            string dumpDir = Path.Combine(GetThisFilePath(), "..", "..", "..", "tests_output");
+            string dumpDir = Testing.GetDumpDirPath(typeof(UnitTestEGraph));
             dumpDir = Path.GetFullPath(dumpDir);
             Directory.CreateDirectory(dumpDir);
             passOptions = new RunPassOptions(null, 3, dumpDir);

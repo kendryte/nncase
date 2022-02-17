@@ -117,7 +117,6 @@ public class CSourceRTModel : IRTModule, IRTModel
         foreach (var f in _MainModule.Functions)
         {
             var funcType = f.ToDelegateType(Path.GetFileName(_dllPath));
-            NativeLibrary.GetExport(dllPtr, f.Name);
             var funPtr = NativeLibrary.GetExport(dllPtr, f.Name);
             _functions.Add(new CSourceRTFunction(f.Name, funPtr.BindDelegate(funcType)));
             if (f == _MainModule.Entry) { _entry = _functions.Last(); }
@@ -147,17 +146,15 @@ public class CSourceRTModel : IRTModule, IRTModel
         return Entry.Handle.DynamicInvoke(args);
     }
 
-    public void Dump(string name, string DumpDirPath)
+    public string Dump(string name, string DumpDirPath)
     {
-        using var file = File.Open($"{DumpDirPath}/{name}.{SourceExt}", FileMode.OpenOrCreate, FileAccess.Write);
+        var dump_path = $"{DumpDirPath}/{name}.{SourceExt}";
+        using var file = File.Open(dump_path, FileMode.OpenOrCreate, FileAccess.Write);
         using var writer = new StreamWriter(file);
         writer.Write(Source);
+        return dump_path;
     }
 
-    string IRTModel.Dump(string name, string dumpDirPath)
-    {
-        throw new NotImplementedException();
-    }
 }
 
 /// <summary>
@@ -188,7 +185,8 @@ public class CSourceCompiler
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            throw new NotSupportedException($"{OSPlatform.Windows}");
+            _exe = "cl";
+            _ext = "dll";
         }
     }
 
@@ -196,10 +194,27 @@ public class CSourceCompiler
     {
         _arch = RuntimeInformation.OSArchitecture switch
         {
-            Architecture.X64 => "x86_64",
+            Architecture.X64 => RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "x86-64" : "x86_64",
             Architecture.Arm64 => "arm64",
             _ => throw new NotSupportedException(RuntimeInformation.OSArchitecture.ToString()),
         };
+    }
+
+    string ArgumentsSpecific(string sourcePath, string outPath)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            return $"{sourcePath} -fPIC -shared -march={Arch} -o {outPath}";
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            return $"{sourcePath} -fPIC -shared -arch {Arch} -o {outPath}";
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return $"/D_USRDLL /D_WINDLL {sourcePath} /MT /link /DLL /OUT:{outPath}";
+        }
+        throw new System.ArgumentOutOfRangeException("Only Support Linux/Osx/Windows");
     }
 
     protected string Exe
@@ -237,7 +252,7 @@ public class CSourceCompiler
             using (var proc = new Process())
             {
                 proc.StartInfo.FileName = Exe;
-                proc.StartInfo.Arguments = $"{sourcePath} -fPIC -shared -arch {Arch} -o {outPath}";
+                proc.StartInfo.Arguments = ArgumentsSpecific(sourcePath, outPath);
                 proc.StartInfo.RedirectStandardError = true;
                 proc.ErrorDataReceived += (sender, e) => errWriter.WriteLine(e.Data);
                 proc.Start();

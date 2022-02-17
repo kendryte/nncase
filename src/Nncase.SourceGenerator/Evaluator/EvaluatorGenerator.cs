@@ -9,30 +9,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Nncase.SourceGenerator;
 
-public enum InterfaceKind
-{
-    IEvaluator,
-    ITypeInferencer,
-}
 
-public static class InterfaceKindExtension
-{
-    public static (string return_type_name, string context_type_name) GetKindInfo(this InterfaceKind target_interface) => (target_interface.GetReturnType(), target_interface.GetContextType());
-
-    public static string GetReturnType(this InterfaceKind target_interface) => target_interface switch
-    {
-        InterfaceKind.IEvaluator => "IValue",
-        InterfaceKind.ITypeInferencer => "IRType",
-        _ => throw new NotImplementedException(),
-    };
-
-    public static string GetContextType(this InterfaceKind target_interface) => target_interface switch
-    {
-        InterfaceKind.IEvaluator => "IEvaluateContext",
-        InterfaceKind.ITypeInferencer => "ITypeInferenceContext",
-        _ => throw new NotImplementedException(),
-    };
-}
 
 [Generator]
 internal class EvaluatorGenerator : ISourceGenerator

@@ -206,7 +206,7 @@ namespace Nncase.IR
         /// bool scalar
         /// </summary>
         /// <returns></returns>
-        public static TypePattern IsBoolScalar() => IsScalar() & IsIntegral();
+        public static TypePattern IsBoolScalar() => IsScalar() & IsBool();
 
         /// <summary>
         /// float scalar
