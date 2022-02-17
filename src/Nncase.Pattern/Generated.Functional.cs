@@ -24,8 +24,8 @@ public static partial class Math
     /// <param name = "unaryOp">Unary operator.</param>
     /// <param name = "expr">Source expression.</param>
     /// <returns>Result expression.</returns>
-    public static CallPattern Unary(UnaryOp unaryOp, ExprPattern expr)
+    public static CallPattern Unary(UnaryOp unaryOp, Pattern input)
     {
-        return new(new OpPattern<Unary>(x => x.UnaryOp == unaryOp), expr);
+        return new(new OpPattern<Unary>(x => (x.UnaryOp == unaryOp)), input);
     }
 }

@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Nncase.SourceGenerator;
+namespace Nncase.SourceGenerator.Evaluator;
 
 
 public enum InterfaceKind
