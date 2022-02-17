@@ -30,12 +30,12 @@ public class EGraphMatchTestFactory : ReWriteTest.RewriteFixtrue
 
     [Theory]
     [MemberData(nameof(DataOne))]
-    public void RunOne(string Name, Expr Pre, PatternRule Rule, int[] targets) => RunCore(Name, Pre, Rule, targets);
+    public void RunOne(string Name, Expr Pre, IRewriteRule Rule, int[] targets) => RunCore(Name, Pre, Rule, targets);
 
     public static IEnumerable<object[]> DataOne => Data.Take(1);
     public static IEnumerable<object[]> DataAll => Data.Skip(1);
 
-    protected void RunCore(string Name, Expr Pre, PatternRule Rule, int[] targets)
+    protected void RunCore(string Name, Expr Pre, IRewriteRule Rule, int[] targets)
     {
         passOptions.SetName($"EGraphMatchTest/{Name}");
         Assert.True(Pre.InferenceType());
@@ -55,7 +55,7 @@ public class EGraphMatchTestFactory : ReWriteTest.RewriteFixtrue
 
     [Theory]
     [MemberData(nameof(DataAll))]
-    public void RunAll(string Name, Expr Pre, PatternRule Rule, int[] targets) => RunCore(Name, Pre, Rule, targets);
+    public void RunAll(string Name, Expr Pre, IRewriteRule Rule, int[] targets) => RunCore(Name, Pre, Rule, targets);
 }
 
 public class UnitTestEGraphMatch

@@ -13,7 +13,7 @@ using System.Collections.Generic;
 
 namespace Nncase.Transform.Rule
 {
-    public class SimplifyReduce : PatternRule
+    public class SimplifyReduce : IRewriteRule
     {
         private ReduceWrapper reduce;
 
@@ -22,7 +22,7 @@ namespace Nncase.Transform.Rule
             Pattern = reduce = IsReduce((ReduceOp op) => true, IsWildCard(), IsConst(), IsConst(), IsConst());
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             reduce.Bind(result);
 

@@ -18,7 +18,7 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Rule
 {
-    public class FoldNopClamp : PatternRule
+    public class FoldNopClamp : IRewriteRule
     {
         WildCardPattern wcin = "input";
         TensorConstPattern wcmin = IsTensorConst(IsScalar());
@@ -29,7 +29,7 @@ namespace Nncase.Transform.Rule
             Pattern = Clamp(wcin, wcmin, wcmax);
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             var input = result[wcin];
             var (min, max) = result[wcmin, wcmax];

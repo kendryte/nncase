@@ -13,7 +13,7 @@ namespace Nncase.Transform
 {
     public static class EGraphReWriter
     {
-        public static EGraph ReWrite(EGraph eGraph, PatternRule Rules, RunPassOptions options) => ReWrite(eGraph, new List<PatternRule>() { Rules }, options);
+        public static EGraph ReWrite(EGraph eGraph, IRewriteRule Rules, RunPassOptions options) => ReWrite(eGraph, new List<IRewriteRule>() { Rules }, options);
 
         /// <summary>
         /// run egraph rewrite.
@@ -22,9 +22,9 @@ namespace Nncase.Transform
         /// <param name="Rules"></param>
         /// <param name="options"></param>
         /// <returns></returns>
-        public static EGraph ReWrite(EGraph eGraph, IEnumerable<PatternRule> Rules, RunPassOptions options)
+        public static EGraph ReWrite(EGraph eGraph, IEnumerable<IRewriteRule> Rules, RunPassOptions options)
         {
-            var matches = new List<(PatternRule, IMatchResult)> { };
+            var matches = new List<(IRewriteRule, IMatchResult)> { };
             var last_version = eGraph.Version;
             int count = 0;
             do
@@ -45,7 +45,7 @@ namespace Nncase.Transform
 
                 foreach (var (rule, result) in matches)
                 {
-                    var replaceExpr = rule.GetRePlace(result);
+                    var replaceExpr = rule.GetReplace(result);
                     if (replaceExpr is null)
                     {
                         continue;

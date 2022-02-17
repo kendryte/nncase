@@ -14,7 +14,7 @@ namespace Nncase.Transform
     /// </summary>
     public class DataFlowPass : FunctionPass
     {
-        public readonly List<PatternRule> Rules = new();
+        public readonly List<IRewriteRule> Rules = new();
 
         public DataFlowPass(string name) : base(name)
         {
@@ -24,13 +24,13 @@ namespace Nncase.Transform
         /// add the pattern rules.
         /// </summary>
         /// <param name="rules"></param>
-        public void Add(params PatternRule[] rules) => Rules.AddRange(rules);
+        public void Add(params IRewriteRule[] rules) => Rules.AddRange(rules);
 
         /// <summary>
-        /// <see cref="Add(PatternRule[])"/>.
+        /// <see cref="Add(IRewriteRule[])"/>.
         /// </summary>
         /// <param name="rules"></param>
-        public void Add(IEnumerable<PatternRule> rules) => Rules.AddRange(rules);
+        public void Add(IEnumerable<IRewriteRule> rules) => Rules.AddRange(rules);
 
         /// <summary>
         /// the callback function you can custom process func with run pass options.

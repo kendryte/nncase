@@ -16,7 +16,7 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Rule
 {
-    public class FoldPadConv2d : PatternRule
+    public class FoldPadConv2d : IRewriteRule
     {
         Conv2DWrapper conv2d;
         PadWrapper pad;
@@ -26,7 +26,7 @@ namespace Nncase.Transform.Rule
             Pattern = conv2d = IsConv2D(pad, PadMode.Constant);
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             pad.Bind(result);
             conv2d.Bind(result);

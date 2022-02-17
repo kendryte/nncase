@@ -17,7 +17,7 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Rule
 {
-    public class FoldInQuant : PatternRule
+    public class FoldInQuant : IRewriteRule
     {
         WildCardPattern wcin = "input";
 
@@ -28,7 +28,7 @@ namespace Nncase.Transform.Rule
             Pattern = dequant;
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             var input = result[wcin];
             var output = result.GetRoot();

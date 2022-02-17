@@ -15,7 +15,7 @@ using System.Numerics.Tensors;
 
 namespace Nncase.Transform.Rule
 {
-    public class SpaceToBatchToPad : PatternRule
+    public class SpaceToBatchToPad : IRewriteRule
     {
         private SpaceToBatchWrapper s2b;
 
@@ -24,7 +24,7 @@ namespace Nncase.Transform.Rule
             Pattern = s2b = SpaceToBatch(IsWildCard(), IsConst(), IsConst());
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             s2b.Bind(result);
             var block_shape = s2b.BlockShape<TensorConst>().Value.Cast<int>();

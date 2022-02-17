@@ -15,7 +15,7 @@ using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.Transform.Rule
 {
-    public sealed class ReassociateMul : PatternRule
+    public sealed class ReassociateMul : IRewriteRule
     {
         private WildCardPattern wx = "x", wy = "y", wz = "z";
 
@@ -24,7 +24,7 @@ namespace Nncase.Transform.Rule
             Pattern = (wx * wy) * wz;
         }
 
-        public override Expr GetRePlace(IMatchResult result)
+        public override Expr GetReplace(IMatchResult result)
         {
             var (x, y, z) = result[wx, wy, wz];
             return x * (y * z);
@@ -34,11 +34,11 @@ namespace Nncase.Transform.Rule
     /// <summary>
     /// x * 2 => x leftshift 1.
     /// </summary>
-    public class Xmul2 : PatternRule
+    public class Xmul2 : IRewriteRule
     {
         BinaryWrapper binary;
         public Xmul2() => Pattern = binary = IsBinary(BinaryOp.Mul, IsWildCard().SetTypePattern(IsIntegral() & IsScalar()), 2);
-        public override Expr GetRePlace(IMatchResult result)
+        public override Expr GetReplace(IMatchResult result)
         {
             binary.Bind(result);
             return binary.Lhs() << 1;
@@ -48,40 +48,40 @@ namespace Nncase.Transform.Rule
     /// <summary>
     /// x * 1 => x.
     /// </summary>
-    public class Xmul1 : PatternRule
+    public class Xmul1 : IRewriteRule
     {
         CallPattern binary;
         public Xmul1() => Pattern = binary = IsWildCard() * 1;
-        public override Expr GetRePlace(IMatchResult result) => result[binary.Parameters[0]];
+        public override Expr GetReplace(IMatchResult result) => result[binary.Parameters[0]];
     }
 
     /// <summary>
     /// x / x => 1.
     /// </summary>
-    public class XDivX : PatternRule
+    public class XDivX : IRewriteRule
     {
         WildCardPattern x = IsWildCard();
         public XDivX() => Pattern = x / x;
-        public override Expr GetRePlace(IMatchResult result) => 1;
+        public override Expr GetReplace(IMatchResult result) => 1;
     }
 
     /// <summary>
     /// (x * y) / z  = x * (y / z).
     /// </summary>
-    public class ReassociateDiv : PatternRule
+    public class ReassociateDiv : IRewriteRule
     {
         WildCardPattern x = "x", y = "y", z = "z";
         public ReassociateDiv() => Pattern = (x * y) / z;
-        public override Expr GetRePlace(IMatchResult result) => result[x] * (result[y] / result[z]);
+        public override Expr GetReplace(IMatchResult result) => result[x] * (result[y] / result[z]);
     }
 
     /// <summary>
     /// (x * y) => y * x.
     /// </summary>
-    public class ReassociateXY : PatternRule
+    public class ReassociateXY : IRewriteRule
     {
         WildCardPattern x = "x", y = "y";
         public ReassociateXY() => Pattern = x * y;
-        public override Expr GetRePlace(IMatchResult result) => result[y] * result[x];
+        public override Expr GetReplace(IMatchResult result) => result[y] * result[x];
     }
 }

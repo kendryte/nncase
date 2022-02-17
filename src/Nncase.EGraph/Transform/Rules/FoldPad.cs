@@ -20,7 +20,7 @@ using Nncase.IR.NN;
 
 namespace Nncase.Transform.Rule
 {
-    public class FoldNopPad : PatternRule
+    public class FoldNopPad : IRewriteRule
     {
         WildCardPattern wcin = "input";
         TensorConstPattern wcpad = IsTensorConst(IsIntegral());
@@ -30,7 +30,7 @@ namespace Nncase.Transform.Rule
             Pattern = IsPad(wcin, wcpad, IsWildCard());
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             var pad = result[wcpad].Value.Cast<int>();
             if (pad.All(x => x == 0))
@@ -42,7 +42,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class FoldPadPad : PatternRule
+    public class FoldPadPad : IRewriteRule
     {
         WildCardPattern wcin = "input";
         TensorConstPattern wcpad1, wcpad2;
@@ -59,7 +59,7 @@ namespace Nncase.Transform.Rule
             pad2 = IsPad(pad1, wcpad2, wcvalue2);
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             var (value1, value2) = result[wcvalue1, wcvalue2];
             var mode1 = ((Pad)result[pad1].Target).PadMode;
@@ -82,7 +82,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class FoldPadStrideSlice : PatternRule
+    public class FoldPadStrideSlice : IRewriteRule
     {
         WildCardPattern wcin = "input", wcvalue = "value";
         CallPattern wcpad;
@@ -94,7 +94,7 @@ namespace Nncase.Transform.Rule
             Pattern = Slice(wcpad, wcbegin, wcend, wcaxes, wcstride);
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             var pads = result[wcpads].Value.Cast<int>();
             if (pads.Any(x => x < 0))
@@ -133,7 +133,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class StrideSliceToPad : PatternRule
+    public class StrideSliceToPad : IRewriteRule
     {
         WildCardPattern wcin = "input";
         TensorConstPattern wcbegin = IsConstIntTensor(),
@@ -143,7 +143,7 @@ namespace Nncase.Transform.Rule
             Pattern = Slice(wcin, wcbegin, wcend, wcaxes, wcstride);
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             var begin = result[wcbegin].Value.Cast<int>();
             var end = result[wcend].Value.Cast<int>();
@@ -163,7 +163,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class PadToSlice : PatternRule
+    public class PadToSlice : IRewriteRule
     {
         WildCardPattern wcin = "input";
         TensorConstPattern wcpads = IsConst((int x) => x <= 0);
@@ -173,7 +173,7 @@ namespace Nncase.Transform.Rule
             IsPad(wcin, wcpads, wcvalue);
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             var input = result[wcin];
             if (input.CheckedType is TensorType intype)

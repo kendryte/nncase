@@ -19,7 +19,7 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Rule
 {
-    public sealed class AddToConv2D : PatternRule
+    public sealed class AddToConv2D : IRewriteRule
     {
         private BinaryWrapper ad;
 
@@ -28,7 +28,7 @@ namespace Nncase.Transform.Rule
             Pattern = ad = Add(IsWildCard(), IsWildCard());
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             ad.Bind(result);
             var a_sp = ad.Lhs().CheckedShape;

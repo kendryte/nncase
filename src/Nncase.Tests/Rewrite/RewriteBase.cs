@@ -82,7 +82,7 @@ namespace Nncase.Tests.ReWriteTest
         /// <summary>
         /// get rules
         /// </summary>
-        public virtual IEnumerable<PatternRule> Rules { get; }
+        public virtual IEnumerable<IRewriteRule> Rules { get; }
 
         /// <summary>
         /// the eval inputs dict
@@ -103,7 +103,7 @@ namespace Nncase.Tests.ReWriteTest
             }
         }
 
-        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
+        public override IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
           new Transform.Rule.TransposeConstBinaryMotionLeft(),
           new Transform.Rule.TransposeConstBinaryMotionRight(),
         };
@@ -122,7 +122,7 @@ namespace Nncase.Tests.ReWriteTest
             }
         }
 
-        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
+        public override IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
           new Transform.Rule.FoldReshape(),
         };
     }
@@ -138,7 +138,7 @@ namespace Nncase.Tests.ReWriteTest
             }
         }
 
-        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
+        public override IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
           new Transform.Rule.FoldNopReshape(),
         };
     }
@@ -155,7 +155,7 @@ namespace Nncase.Tests.ReWriteTest
             }
         }
 
-        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
+        public override IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
           new Transform.Rule.FoldNopClamp(),
         };
     }
@@ -174,7 +174,7 @@ namespace Nncase.Tests.ReWriteTest
             }
         }
 
-        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
+        public override IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
           new Transform.Rule.FoldTranspose(),
         };
     }
@@ -195,7 +195,7 @@ namespace Nncase.Tests.ReWriteTest
                 return e;
             }
         }
-        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
+        public override IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
           new Transform.Rule.FoldTranspose(),
         };
     }
@@ -214,7 +214,7 @@ namespace Nncase.Tests.ReWriteTest
                 return e;
             }
         }
-        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
+        public override IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
           new Transform.Rule.FoldTranspose(),
           new Transform.Rule.FoldNopTranspose(),
         };
@@ -222,7 +222,7 @@ namespace Nncase.Tests.ReWriteTest
 
     public class FoldNopTransposeCase3 : FoldNopTransposeCase2
     {
-        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
+        public override IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
           new Transform.Rule.FoldTranspose(),
           new Transform.Rule.FoldNopTranspose(),
           new Transform.Rule.TransposeBinaryMotion(),
@@ -241,7 +241,7 @@ namespace Nncase.Tests.ReWriteTest
                 return (x * 2) / 2;
             }
         }
-        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
+        public override IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
           new Transform.Rule.Xmul2(),
           new Transform.Rule.Xmul1(),
           new Transform.Rule.ReassociateDiv(),

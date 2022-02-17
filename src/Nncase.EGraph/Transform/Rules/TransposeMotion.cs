@@ -28,7 +28,7 @@ namespace Nncase.Transform.Rule
     /// binary(transpose(a,p),transpose(b,p)) => transpose(binary(a,b),p).
     /// </summary>
     ///
-    public class TransposeBinaryMotion : PatternRule
+    public class TransposeBinaryMotion : IRewriteRule
     {
         private ConstPattern conpat;
         private TransposeWrapper transRhs;
@@ -48,7 +48,7 @@ namespace Nncase.Transform.Rule
         }
 
         /// <inheritdoc/>
-        public override Expr GetRePlace(IMatchResult result)
+        public override Expr GetReplace(IMatchResult result)
         {
             transRhs.Bind(result);
             transLhs.Bind(result);
@@ -60,7 +60,7 @@ namespace Nncase.Transform.Rule
     /// <summary>
     /// binary(transpose(a, p), const) =>  transpose(binary(a, const), p).
     /// </summary>
-    public class TransposeConstBinaryMotionLeft : PatternRule
+    public class TransposeConstBinaryMotionLeft : IRewriteRule
     {
         TransposeWrapper transpose = Transpose(IsWildCard(), IsTensorConst());
         TensorConstPattern con = IsTensorConst();
@@ -76,7 +76,7 @@ namespace Nncase.Transform.Rule
         }
 
         /// <inheritdoc/>
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             binary.Bind(result);
             transpose.Bind(result);
@@ -102,7 +102,7 @@ namespace Nncase.Transform.Rule
     /// <summary>
     /// binary(const, transpose(a, p)) =>  transpose(binary(const, a), p).
     /// </summary>
-    public class TransposeConstBinaryMotionRight : PatternRule
+    public class TransposeConstBinaryMotionRight : IRewriteRule
     {
         TransposeWrapper transpose = Transpose(IsWildCard(), IsTensorConst());
         TensorConstPattern con = IsTensorConst();
@@ -118,7 +118,7 @@ namespace Nncase.Transform.Rule
         }
 
         /// <inheritdoc/>
-        public override Expr GetRePlace(IMatchResult result)
+        public override Expr GetReplace(IMatchResult result)
         {
             binary.Bind(result);
             transpose.Bind(result);
@@ -127,7 +127,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class TransposeConcatMotion : PatternRule
+    public class TransposeConcatMotion : IRewriteRule
     {
         private class Comparer
         {
@@ -162,7 +162,7 @@ namespace Nncase.Transform.Rule
             )), wcaxis);
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             var newShapes = (from input in wcinputs select GetShape(result[input])).ToArray();
             var oldPerm = result.GetExpr<TensorConst>(wcprem);
@@ -176,7 +176,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class TransPosePadMotion : PatternRule
+    public class TransPosePadMotion : IRewriteRule
     {
         WildCardPattern wcin = "input";
 
@@ -190,7 +190,7 @@ namespace Nncase.Transform.Rule
             Pattern = Transpose(wcpad, wcperm);
         }
 
-        public override Expr GetRePlace(IMatchResult result)
+        public override Expr GetReplace(IMatchResult result)
         {
             var input = result[wcin];
             var (mode, padv, perm) = result[wcmode, wcpadv, wcperm];
@@ -208,7 +208,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class TransposeReduceMotion : PatternRule
+    public class TransposeReduceMotion : IRewriteRule
     {
         WildCardPattern wcinput = "input", wcinit = "init";
         TensorConstPattern wckeepdims = IsTensorConst(IsScalar() | IsIntegral());
@@ -219,7 +219,7 @@ namespace Nncase.Transform.Rule
             Pattern = IsReduce(Transpose(wcinput, wcperm), wcaxis, wcinit, wckeepdims);
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             var (input, axis, init) = result[wcinput, wcaxis, wcinit];
             var perm = result[wcperm];
@@ -235,7 +235,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class TransposeUnaryMotion : PatternRule
+    public class TransposeUnaryMotion : IRewriteRule
     {
         WildCardPattern wcinput = "input", wcperm = "perm";
 
@@ -246,7 +246,7 @@ namespace Nncase.Transform.Rule
             Pattern = Transpose(wcunary, wcperm);
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             var (input, perm) = result[wcinput, wcperm];
             var unarycall = result[wcunary];
@@ -256,7 +256,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class TransposeClampMotion : PatternRule
+    public class TransposeClampMotion : IRewriteRule
     {
         TensorConstPattern wcmin, wcmax, wcperm;
         WildCardPattern wcinput;
@@ -269,7 +269,7 @@ namespace Nncase.Transform.Rule
             Pattern = Clamp(Transpose(wcinput, wcperm), wcmin, wcmax);
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             var (min, max, perm) = result[wcmin, wcmax, wcperm];
             var input = result[wcinput];

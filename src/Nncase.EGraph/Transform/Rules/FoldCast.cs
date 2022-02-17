@@ -17,7 +17,7 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Rule
 {
-    public class FoldNopCast : PatternRule
+    public class FoldNopCast : IRewriteRule
     {
         WildCardPattern wcin = "input";
         CallPattern wccast1, wccast2;
@@ -28,7 +28,7 @@ namespace Nncase.Transform.Rule
             Pattern = wccast2;
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             var cast1 = (Cast)result[wccast1].Target;
             var cast2 = (Cast)result[wccast2].Target;

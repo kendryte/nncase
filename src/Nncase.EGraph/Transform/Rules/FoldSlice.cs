@@ -11,7 +11,7 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Rule
 {
-    public class FoldSliceSlice : PatternRule
+    public class FoldSliceSlice : IRewriteRule
     {
         SliceWrapper slice1, slice2;
         public FoldSliceSlice()
@@ -42,7 +42,7 @@ namespace Nncase.Transform.Rule
             );
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             slice1.Bind(result);
             slice2.Bind(result);

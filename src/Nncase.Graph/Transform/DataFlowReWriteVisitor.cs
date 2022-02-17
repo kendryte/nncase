@@ -1,11 +1,11 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using Nncase.Pattern;
+using System.Linq;
 using Nncase.IR;
+using Nncase.Pattern;
 
 namespace Nncase.Transform
 {
@@ -16,7 +16,7 @@ namespace Nncase.Transform
     {
         public ExprPattern Pattern { set; get; } = new InvalidPattern();
 
-        public PatternRule Rule { set; get; } = new InvalidRule();
+        public IRewriteRule Rule { set; get; } = new InvalidRule();
 
         /// <summary>
         /// a flag for fast exit, we can use it to know this rewrite results.
@@ -40,7 +40,7 @@ namespace Nncase.Transform
             if (matchs.Count == 1)
             {
                 isMatched = true;
-                var res = Rule.GetRePlace(matchs[0]);
+                var res = Rule.GetReplace(matchs[0]);
                 Pattern.Clear();
                 return res ?? expr;
             }

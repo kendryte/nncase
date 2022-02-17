@@ -19,7 +19,7 @@ namespace Nncase.Transform
         /// <summary>
         /// Save rules.
         /// </summary>
-        public readonly List<PatternRule> Rules = new();
+        public readonly List<IRewriteRule> Rules = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EGraphPass"/> class.
@@ -34,7 +34,7 @@ namespace Nncase.Transform
         /// add rules.
         /// </summary>
         /// <param name="rules"></param>
-        public void Add(params PatternRule[] rules)
+        public void Add(params IRewriteRule[] rules)
         {
             foreach (var rule in rules)
             {

@@ -11,7 +11,7 @@ using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Transform.Rule
 {
-    public sealed class RemoveNoSenceBinary : PatternRule
+    public sealed class RemoveNoSenceBinary : IRewriteRule
     {
         private BinaryWrapper binary;
 
@@ -25,7 +25,7 @@ namespace Nncase.Transform.Rule
             con.Value.ToScalar<float>() == value :
             con.Value.Cast<float>().All(v => v == value);
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             binary.Bind(result);
             var binaryOp = binary.BinaryOp;

@@ -17,7 +17,7 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Rule
 {
-    public class MatMulToConv2D : PatternRule
+    public class MatMulToConv2D : IRewriteRule
     {
         MatMulWrapper matmul;
         public MatMulToConv2D()
@@ -25,7 +25,7 @@ namespace Nncase.Transform.Rule
             Pattern = matmul = MatMul(IsWildCard(), IsWildCard());
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             matmul.Bind(result);
             var input_shape = matmul.Input().CheckedShape;

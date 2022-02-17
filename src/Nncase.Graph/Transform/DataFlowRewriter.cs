@@ -61,7 +61,7 @@ namespace Nncase.Transform
             }
         }
 
-        private static Expr RewriteImpl(Expr pre, IEnumerable<PatternRule> Rules, RunPassOptions options)
+        private static Expr RewriteImpl(Expr pre, IEnumerable<IRewriteRule> Rules, RunPassOptions options)
         {
             var visitor = new DataFlowReWriteVisitor();
             var post = pre;
@@ -101,6 +101,6 @@ namespace Nncase.Transform
             return post;
         }
 
-        public static Expr Rewrite(Expr pre, IEnumerable<PatternRule> Rules, RunPassOptions options) => RewriteImpl(pre, Rules, options);
+        public static Expr Rewrite(Expr pre, IEnumerable<IRewriteRule> Rules, RunPassOptions options) => RewriteImpl(pre, Rules, options);
     }
 }

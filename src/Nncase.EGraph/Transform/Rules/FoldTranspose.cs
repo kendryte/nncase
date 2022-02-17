@@ -12,7 +12,7 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Rule
 {
-    public class FoldTranspose : PatternRule
+    public class FoldTranspose : IRewriteRule
     {
         TransposeWrapper tp1, tp2;
         public FoldTranspose()
@@ -22,7 +22,7 @@ namespace Nncase.Transform.Rule
             Pattern = tp2;
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             tp1.Bind(result);
             tp2.Bind(result);
@@ -43,7 +43,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class FoldNopTranspose : PatternRule
+    public class FoldNopTranspose : IRewriteRule
     {
         TransposeWrapper tp;
         public FoldNopTranspose()
@@ -51,7 +51,7 @@ namespace Nncase.Transform.Rule
             Pattern = tp = Transpose(IsWildCard(), IsConstIntTensor());
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             tp.Bind(result);
             var perm = tp.Perm<TensorConst>().Value.Cast<int>();
@@ -64,7 +64,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class TransposeToReshape : PatternRule
+    public class TransposeToReshape : IRewriteRule
     {
         TransposeWrapper tp;
         public TransposeToReshape()
@@ -72,7 +72,7 @@ namespace Nncase.Transform.Rule
             Pattern = tp = Transpose(IsWildCard(), IsConstIntTensor());
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             tp.Bind(result);
             var perm = tp.Perm<TensorConst>().Value.Cast<int>();

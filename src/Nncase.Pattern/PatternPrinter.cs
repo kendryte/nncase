@@ -21,7 +21,7 @@ namespace Nncase.Pattern
         /// </summary>
         /// <param name="textWriter"></param>
         /// <param name="pattern"></param>
-        public static void DumpAsIL(TextWriter textWriter, ExprPattern pattern)
+        public static void DumpAsIL(TextWriter textWriter, Pattern pattern)
         {
             var visitor = new ILDumpVisitor(textWriter);
             visitor.Visit(pattern);
@@ -32,7 +32,7 @@ namespace Nncase.Pattern
         /// </summary>
         /// <param name="pattern"></param>
         /// <returns></returns>
-        public static string DumpAsIL(this ExprPattern pattern)
+        public static string DumpAsIL(this Pattern pattern)
         {
             var builder = new StringBuilder();
             var writer = new StringWriter(builder);
@@ -46,7 +46,7 @@ namespace Nncase.Pattern
         /// <param name="pattern"></param>
         /// <param name="name"></param>
         /// <param name="dumpPath"></param>
-        public static void DumpAsIL(this ExprPattern pattern, string name, string dumpPath)
+        public static void DumpAsIL(this Pattern pattern, string name, string dumpPath)
         {
             Directory.CreateDirectory(dumpPath);
             using var dumpFile = File.Open($"{dumpPath}/{name}.il", FileMode.OpenOrCreate);
@@ -57,7 +57,7 @@ namespace Nncase.Pattern
         private class ILDumpVisitor : PatternFunctor<string, string>
         {
             private readonly TextWriter _textWriter;
-            private readonly Dictionary<ExprPattern, string> _names = new();
+            private readonly Dictionary<Pattern, string> _names = new();
             private int _localId = 0;
             private int _identLevel = 0;
 
@@ -78,7 +78,7 @@ namespace Nncase.Pattern
                 var args = pattern.Parameters.Select(Visit).ToArray();
                 name = AllocateTempVar(pattern);
                 Ident().Write($"{name} = {target}({string.Join(", ", args)})");
-                AppendType(pattern.CheckedTypePat);
+                AppendType(pattern.CheckedTypePattern);
                 _textWriter.WriteLine();
                 return name;
             }
@@ -97,7 +97,7 @@ namespace Nncase.Pattern
                 }
                 else
                 {
-                    name = $"const({VisitType(pattern.CheckedTypePat)})";
+                    name = $"const({VisitType(pattern.CheckedTypePattern)})";
                 }
 
                 _names.Add(pattern, name);
@@ -167,7 +167,7 @@ namespace Nncase.Pattern
 
                 name = $"%{pattern.Name}";
                 _names.Add(pattern, name);
-                name += $": {VisitType(pattern.CheckedTypePat)}";
+                name += $": {VisitType(pattern.CheckedTypePattern)}";
                 return name;
             }
 
@@ -181,7 +181,7 @@ namespace Nncase.Pattern
 
                 name = $"%{pattern.Name}";
                 _names.Add(pattern, name);
-                name += $": {VisitType(pattern.CheckedTypePat)}";
+                name += $": {VisitType(pattern.CheckedTypePattern)}";
                 return name;
             }
 

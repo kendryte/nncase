@@ -15,7 +15,7 @@ namespace Nncase.Transform.Rule
         private static WildCardPattern x = "x", y = "y", z = "z", w = "w", u = "u", v = "v";
         private static ConstPattern c0 = IsConst(), c1 = IsConst(), c2 = IsConst(), c3 = IsConst(), c4 = IsConst(), c5 = IsConst();
 
-        private static readonly List<PatternRule> _simplifyAdd = new()
+        private static readonly List<IRewriteRule> _simplifyAdd = new()
         {
             Rewrite(x + 0, x),
             Rewrite(0 + x, x),
@@ -25,18 +25,18 @@ namespace Nncase.Transform.Rule
             Rewrite(c1 + (c0 + x), x + (c0 + c1)),
         };
 
-        public static List<PatternRule> SimplifyAdd()
+        public static List<IRewriteRule> SimplifyAdd()
         {
             return _simplifyAdd;
         }
 
-        private static readonly List<PatternRule> _simplifyMul = new()
+        private static readonly List<IRewriteRule> _simplifyMul = new()
         {
             Rewrite(x * 1, x),
             Rewrite(1 * x, x),
         };
 
-        public static List<PatternRule> SimplifyMul()
+        public static List<IRewriteRule> SimplifyMul()
         {
             return _simplifyMul;
         }

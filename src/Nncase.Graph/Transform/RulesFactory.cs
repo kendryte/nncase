@@ -75,7 +75,7 @@ namespace Nncase.Transform
     /// <summary>
     /// a template rule.
     /// </summary>
-    public class TemplateRule : PatternRule
+    public class TemplateRule : IRewriteRule
     {
         /// <summary>
         /// after expr.
@@ -98,7 +98,7 @@ namespace Nncase.Transform
         }
 
         /// <inheritdoc/>
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             var converter = new ExprGeneratorVisitor(result);
             if (Predicate is null || (Predicate is not null && converter.Visit(Predicate).Evaluate().AsTensor().ToScalar<bool>()))
@@ -122,7 +122,7 @@ namespace Nncase.Transform
         /// <param name="rhs">rhs pattern expression.</param>
         /// <param name="predicate"> predicate pattern expression. </param>
         /// <returns> PatternRule. </returns>
-        public static PatternRule Rewrite(ExprPattern lhs, ExprPattern rhs, ExprPattern? predicate = null)
+        public static IRewriteRule Rewrite(ExprPattern lhs, ExprPattern rhs, ExprPattern? predicate = null)
           => new TemplateRule(lhs, rhs, predicate);
     }
 }

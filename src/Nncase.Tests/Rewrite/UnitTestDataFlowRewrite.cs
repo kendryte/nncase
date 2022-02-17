@@ -72,14 +72,14 @@ namespace Nncase.Tests.ReWriteTest
 
 
 
-    internal class SwapXY : PatternRule
+    internal class SwapXY : IRewriteRule
     {
         BinaryWrapper binary;
         public SwapXY()
         {
             Pattern = binary = Add(IsWildCard(), IsConst());
         }
-        public override Expr GetRePlace(IMatchResult result)
+        public override Expr GetReplace(IMatchResult result)
         {
             binary.Bind(result);
             return binary.Rhs() + binary.Lhs();
@@ -179,7 +179,7 @@ namespace Nncase.Tests.ReWriteTest
             Assert.True(CompilerServices.InferenceType(input));
             var computeShape = ShapeOf(input);
             var shapeRewrite = DataFlowRewrite.Rewrite(computeShape,
-                new PatternRule[] { new Transform.Rule.FoldShapeOp() }, RunPassOptions.Invalid);
+                new IRewriteRule[] { new Transform.Rule.FoldShapeOp() }, RunPassOptions.Invalid);
             var shapePass = RunShapeInferPass("", computeShape, input);
             Assert.Equal(shapeRewrite, shapePass);
         }

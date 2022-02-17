@@ -17,31 +17,31 @@ using static Nncase.Pattern.Utility;
 
 namespace Nncase.Transform.Rule
 {
-    public class FoldConstCall : PatternRule
+    public class FoldConstCall : IRewriteRule
     {
         public FoldConstCall()
         {
             Pattern = IsCall(IsWildCard(), IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())));
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             var expr = result[Pattern];
             return Const.FromValue(expr.Evaluate());
         }
     }
 
-    public class FoldConstFunction : PatternRule
+    public class FoldConstFunction : IRewriteRule
     {
         public FoldConstFunction()
         {
             Pattern = IsFunction(IsWildCard(), IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())));
         }
 
-        public override Expr? GetRePlace(IMatchResult result) => Const.FromValue(result[Pattern].Evaluate());
+        public override Expr? GetReplace(IMatchResult result) => Const.FromValue(result[Pattern].Evaluate());
     }
 
-    public class FoldShapeOp : PatternRule
+    public class FoldShapeOp : IRewriteRule
     {
         WildCardPattern wc = "input";
 
@@ -50,7 +50,7 @@ namespace Nncase.Transform.Rule
             Pattern = ShapeOp(wc);
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             return Const.FromShape(result[wc].CheckedShape);
         }

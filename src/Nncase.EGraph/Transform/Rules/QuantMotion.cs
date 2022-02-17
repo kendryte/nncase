@@ -20,7 +20,7 @@ using static Nncase.IR.F.Imaging;
 
 namespace Nncase.Transform.Rule
 {
-    public class QuantPadMotion : PatternRule
+    public class QuantPadMotion : IRewriteRule
     {
         QuantizeWrapper quant;
         PadWrapper pad;
@@ -30,7 +30,7 @@ namespace Nncase.Transform.Rule
             Pattern = quant = IsQuantize(pad);
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             pad.Bind(result);
             quant.Bind(result);
@@ -43,7 +43,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class QuantTransposeMotion : PatternRule
+    public class QuantTransposeMotion : IRewriteRule
     {
         private TransposeWrapper trans;
         private QuantizeWrapper quant;
@@ -54,7 +54,7 @@ namespace Nncase.Transform.Rule
             Pattern = quant = IsQuantize(trans);
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             trans.Bind(result);
             quant.Bind(result);
@@ -62,7 +62,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class QuantSliceMotion : PatternRule
+    public class QuantSliceMotion : IRewriteRule
     {
         private SliceWrapper slice;
         private QuantizeWrapper quant;
@@ -73,7 +73,7 @@ namespace Nncase.Transform.Rule
             Pattern = quant = IsQuantize(slice);
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             slice.Bind(result);
             quant.Bind(result);
@@ -82,7 +82,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class QuantResizeMotion : PatternRule
+    public class QuantResizeMotion : IRewriteRule
     {
         private ResizeImageWrapper resize;
         private QuantizeWrapper quant;
@@ -93,7 +93,7 @@ namespace Nncase.Transform.Rule
             Pattern = quant = IsQuantize(resize);
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             resize.Bind(result);
             quant.Bind(result);
@@ -101,7 +101,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class QuantReshapeMotion : PatternRule
+    public class QuantReshapeMotion : IRewriteRule
     {
         private ReshapeWrapper reshape;
         private QuantizeWrapper quant;
@@ -112,7 +112,7 @@ namespace Nncase.Transform.Rule
             Pattern = quant = IsQuantize(reshape);
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             reshape.Bind(result);
             quant.Bind(result);
@@ -120,7 +120,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class QuantBatchToSpaceMotion : PatternRule
+    public class QuantBatchToSpaceMotion : IRewriteRule
     {
         private QuantizeWrapper quant;
         private BatchToSpaceWrapper b2s;
@@ -131,7 +131,7 @@ namespace Nncase.Transform.Rule
             Pattern = b2s = BatchToSpace(quant, IsWildCard(), IsWildCard());
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             quant.Bind(result);
             b2s.Bind(result);

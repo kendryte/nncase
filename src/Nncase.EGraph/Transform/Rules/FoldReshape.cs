@@ -18,7 +18,7 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Rule
 {
-    public class FoldReshape : PatternRule
+    public class FoldReshape : IRewriteRule
     {
         WildCardPattern wcin = "input";
         WildCardPattern shape1 = "sp1", shape2 = "sp2";
@@ -28,13 +28,13 @@ namespace Nncase.Transform.Rule
             Pattern = Reshape(Reshape(wcin, shape1), shape2);
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             return Reshape(result[wcin], result[shape2]);
         }
     }
 
-    public class FoldNopReshape : PatternRule
+    public class FoldNopReshape : IRewriteRule
     {
         WildCardPattern wcin = "input";
         TensorConstPattern wcshape = IsTensorConst(IsIntegral());
@@ -44,7 +44,7 @@ namespace Nncase.Transform.Rule
             Pattern = Reshape(wcin, wcshape);
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetReplace(IMatchResult result)
         {
             var input = result[wcin];
             var shape = result[wcshape].Value.Cast<int>();
