@@ -164,7 +164,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
 
         VerifySubField(expr, expr.InitSequence, TypePatternUtility.IsUnit());
         VerifySubField(expr, expr.Sequence, TypePatternUtility.IsUnit());
-        VerifySubField(expr, expr.Predicate, TypePatternUtility.IsIntegralScalar());
+        VerifySubField(expr, expr.Predicate, TypePatternUtility.IsBoolScalar());
         if (expr.CheckedType is not null) { return expr.CheckedType; }
         type = TupleType.Void;
         SetCheckedType(expr, type);
@@ -215,7 +215,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     /// <inheritdoc/>
     public override IRType VisitLeaf(IfThenElse expr)
     {
-        VerifySubField(expr, expr.Condition, TypePatternUtility.IsIntegralScalar());
+        VerifySubField(expr, expr.Condition, TypePatternUtility.IsBoolScalar());
         VerifySubField(expr, expr.Then, TypePatternUtility.IsUnit());
         VerifySubField(expr, expr.Else, TypePatternUtility.IsUnit());
         if (expr.CheckedType is not null) { return expr.CheckedType; }

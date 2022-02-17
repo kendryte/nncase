@@ -121,6 +121,10 @@ public static class PrimTypeCodes
         { DataTypes.Int16, PrimTypeCode.Int16 },
         { DataTypes.Int32, PrimTypeCode.Int32 },
         { DataTypes.Int64, PrimTypeCode.Int64 },
+        { DataTypes.BFloat16, PrimTypeCode.BFloat16 },
+        { DataTypes.Float16, PrimTypeCode.Float16 },
+        { DataTypes.Float32, PrimTypeCode.Float32 },
+        { DataTypes.Float64, PrimTypeCode.Float64 },
     };
 
     private static readonly Dictionary<PrimTypeCode, DataType> _dataTypes = new()

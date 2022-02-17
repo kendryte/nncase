@@ -19,9 +19,9 @@ namespace Nncase.Tests.CodeGenTest
         static IEnumerable<object[]> Data =>
           new List<object[]>
           {
+              new object[] { new BlockCase() },
               new object[] { new ForCase() },
               new object[] { new SubCase() },
-              new object[] { new BlockCase() },
           };
 
         [Theory]

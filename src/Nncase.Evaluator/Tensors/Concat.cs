@@ -67,7 +67,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>
             allDType ??= type.DType;
             if (allDType != type.DType)
             {
-                return new InvalidType($"The ConCat Item[{i}] Must Be {allDType} But Get {type.DType}");
+                return new InvalidType($"The ConCat Item[{i}] Must Be {allDType} But Get {type.DType.GetDisplayName()}");
             }
         }
 

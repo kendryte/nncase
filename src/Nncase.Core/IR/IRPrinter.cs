@@ -458,7 +458,7 @@ namespace Nncase.IR
             /// <inheritdoc/>
             public override string VisitType(TensorType type)
             {
-                return $"{type.DType}{type.Shape}";
+                return $"{type.DType.GetDisplayName()}{type.Shape}";
             }
 
             /// <inheritdoc/>

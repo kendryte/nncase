@@ -155,7 +155,13 @@ internal class CSourceHostBuildVisior : ExprFunctor<CSymbol, string>
         if (Symbols.TryGetValue(expr, out var symbol)) { return symbol; }
         if (expr.CheckedType is TensorType ttype && ttype.IsScalar)
         {
-            symbol = new(VisitType(ttype), new($"{expr}"));
+            var literal = $"{expr}" switch
+            {
+                "True" => "1",
+                "False" => "0",
+                var x => x
+            };
+            symbol = new(VisitType(ttype), new(literal));
         }
         else
         {

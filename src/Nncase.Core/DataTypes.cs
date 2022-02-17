@@ -107,4 +107,17 @@ public static class DataTypes
     /// <returns>Checked result.</returns>
     public static bool IsPointer(this DataType srcType) =>
       srcType is PointerType;
+
+    /// <summary>
+    /// display the datatype
+    /// </summary>
+    /// <param name="dataType"></param>
+    /// <returns> datatype name.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
+    public static string GetDisplayName(this DataType dataType) => dataType switch
+    {
+        PointerType pointerType => $"({GetDisplayName(pointerType.ElemType)}*)",
+        PrimType primType => primType.ShortName,
+        _ => throw new ArgumentOutOfRangeException(),
+    };
 }
