@@ -54,8 +54,8 @@ namespace Nncase.Tests.EvaluatorTest
         [Fact]
         public void TestConcat()
         {
-            var a = Const.FromSpan<int>(Enumerable.Range(0, 12).ToArray(), new Shape(new[] { 1, 3, 4 }));
-            var b = Const.FromSpan<int>(new int[12], new Shape(new[] { 1, 3, 4 }));
+            var a = Const.FromTensor(Tensor.FromSpan<int>(Enumerable.Range(0, 12).ToArray(), new Shape(new[] { 1, 3, 4 })));
+            var b = Const.FromTensor(Tensor.FromSpan<int>(new int[12], new Shape(new[] { 1, 3, 4 })));
             var inputList = new Tuple(a, b);
             var expr = Tensors.Concat(inputList, 0);
             CompilerServices.InferenceType(expr);
@@ -71,12 +71,12 @@ namespace Nncase.Tests.EvaluatorTest
         [Fact]
         public void TestSlice()
         {
-            var input = Const.FromSpan<int>(Enumerable.Range(0, 120).ToArray(), new Shape(new[] { 2, 3, 4, 5 }));
-            var begin = Const.FromSpan<int>(new[] { 0, 0, 0, 0 }, new Shape(new[] { 4 }));
-            var end = Const.FromSpan<int>(new[] { 1, 1, 1, 5 }, new Shape(new[] { 4 }));
-            var axes = Const.FromSpan<int>(new[] { 0, 1, 2, 3 }, new Shape(new[] { 4 }));
-            var strides = Const.FromSpan<int>(new[] { 1, 1, 1, 1 }, new Shape(new[] { 4 }));
-            var result = Const.FromSpan<int>(Enumerable.Range(0, 5).ToArray(), new Shape(new[] { 1, 1, 1, 5 }));
+            var input = Tensor.FromSpan<int>(Enumerable.Range(0, 120).ToArray(), new Shape(new[] { 2, 3, 4, 5 }));
+            var begin = Tensor.FromSpan<int>(new[] { 0, 0, 0, 0 }, new Shape(new[] { 4 }));
+            var end = Tensor.FromSpan<int>(new[] { 1, 1, 1, 5 }, new Shape(new[] { 4 }));
+            var axes = Tensor.FromSpan<int>(new[] { 0, 1, 2, 3 }, new Shape(new[] { 4 }));
+            var strides = Tensor.FromSpan<int>(new[] { 1, 1, 1, 1 }, new Shape(new[] { 4 }));
+            var result = Const.FromTensor(Tensor.FromSpan<int>(Enumerable.Range(0, 5).ToArray(), new Shape(new[] { 1, 1, 1, 5 })));
             var tResult = result.Value.ToTorchTensor();
             var expr = Tensors.Slice(input, begin, end, axes, strides);
             Assert.True(expr.InferenceType());
@@ -91,8 +91,8 @@ namespace Nncase.Tests.EvaluatorTest
         {
             var tinput = torch.randn(1, 1, 2, 3);
             var input = tinput.ToTensor();
-            var pads = Const.FromSpan<int>(new[] { 0, 0, 0, 0, 1, 1, 2, 2 }, new Shape(new[] { 4, 2 }));
-            var value = Const.FromScalar<float>(1.0f);
+            var pads = Tensor.FromSpan<int>(new[] { 0, 0, 0, 0, 1, 1, 2, 2 }, new Shape(new[] { 4, 2 }));
+            var value = Tensor.FromScalar<float>(1.0f);
             var expr = NN.Pad(input, pads, Nncase.PadMode.Constant, value);
             CompilerServices.InferenceType(expr);
             var result = expr.Evaluate().AsTensor().ToTorchTensor();
@@ -104,8 +104,8 @@ namespace Nncase.Tests.EvaluatorTest
         {
             var tinput = torch.randn(1, 1, 2, 3);
             var input = tinput.ToTensor();
-            var pads = Const.FromSpan<int>(new[] { 0, 0, 1, 2, 2, 4, 5, 6 }, new Shape(new[] { 4, 2 }));
-            var value = Const.FromScalar<float>(2.0f);
+            var pads = Tensor.FromSpan<int>(new[] { 0, 0, 1, 2, 2, 4, 5, 6 }, new Shape(new[] { 4, 2 }));
+            var value = Tensor.FromScalar<float>(2.0f);
             var expr = NN.Pad(input, pads, Nncase.PadMode.Constant, value);
             CompilerServices.InferenceType(expr);
             var result = expr.Evaluate().AsTensor().ToTorchTensor();
@@ -115,10 +115,10 @@ namespace Nncase.Tests.EvaluatorTest
         [Fact]
         public void TestStackAndCast()
         {
-            var padh_before = Tensors.Cast(Const.FromSpan<float>(new[] { 1.0f }), Nncase.DataTypes.Int32);
-            var padh_after = Tensors.Cast(Const.FromSpan<float>(new[] { 2.0f }), Nncase.DataTypes.Int32);
-            var padw_before = Tensors.Cast(Const.FromSpan<float>(new[] { 3.0f }), Nncase.DataTypes.Int32);
-            var padw_after = Tensors.Cast(Const.FromSpan<float>(new[] { 4.0f }), Nncase.DataTypes.Int32);
+            var padh_before = Tensors.Cast(Tensor.FromSpan<float>(new[] { 1.0f }), Nncase.DataTypes.Int32);
+            var padh_after = Tensors.Cast(Tensor.FromSpan<float>(new[] { 2.0f }), Nncase.DataTypes.Int32);
+            var padw_before = Tensors.Cast(Tensor.FromSpan<float>(new[] { 3.0f }), Nncase.DataTypes.Int32);
+            var padw_after = Tensors.Cast(Tensor.FromSpan<float>(new[] { 4.0f }), Nncase.DataTypes.Int32);
 
             var expr = Tensors.Stack(new Tuple(
               Tensors.Concat(new Tuple(padh_before, padh_after), 0),
@@ -137,7 +137,7 @@ namespace Nncase.Tests.EvaluatorTest
             var output = torchF.conv2d(inputs, weights, bias, padding: new long[] { 1, 1 });
 
             var expr = NN.Conv2D(inputs.ToTensor(), weights.ToTensor(), bias.ToTensor(),
-                stride: new[] { 1, 1 }, padding: Const.FromSpan<int>(new int[] { 1, 1, 1, 1 }, new[] { 2, 2 }),
+                stride: new[] { 1, 1 }, padding: Tensor.FromSpan<int>(new int[] { 1, 1, 1, 1 }, new[] { 2, 2 }),
                 dilation: new[] { 1, 1 }, Nncase.PadMode.Constant, 1);
             Assert.True(expr.InferenceType());
             Assert.Equal(output, expr.Evaluate().AsTensor().ToTorchTensor());
@@ -155,7 +155,7 @@ namespace Nncase.Tests.EvaluatorTest
         [Fact]
         public void TestProd()
         {
-            var input = Const.FromSpan<int>(new[] { 1, 2, 3, 4 });
+            var input = Tensor.FromSpan<int>(new[] { 1, 2, 3, 4 });
             var prod = Tensors.Prod(input);
             prod.InferenceType();
             Assert.Equal(1 * 2 * 3 * 4, prod.Evaluate().AsTensor().ToScalar<int>());

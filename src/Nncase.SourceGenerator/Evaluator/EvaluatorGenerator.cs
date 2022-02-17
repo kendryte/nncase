@@ -83,7 +83,7 @@ internal class EvaluatorGenerator : ISourceGenerator
     /// <summary>
     /// build the whole call method like:
     /// <code>
-    /// public Const Visit(IEvaluateContext context, Celu celu)
+    /// public IValue Visit(IEvaluateContext context, Celu celu)
     /// {
     ///     var input = context.GetTorchArgumentValue(celu, Celu.Input);
     ///     var alpha = context.GetArgumentValueAsScalar<int>(celu, Celu.Alpha);

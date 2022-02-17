@@ -41,7 +41,7 @@ namespace Nncase.Importer
             }
 
             var paddingsValue = new long[] { paddings[1], paddings[3], paddings[0], paddings[2] };
-            return Const.FromSpan<long>(padsValue, new Shape(count, 2));
+            return Tensor.FromSpan<long>(padsValue, new Shape(count, 2));
         }
 
         private Tensor GetStrideAttribute(NodeProto op)

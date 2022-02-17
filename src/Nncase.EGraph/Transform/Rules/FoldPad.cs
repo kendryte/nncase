@@ -188,7 +188,7 @@ namespace Nncase.Transform.Rule
                     end[i] = padst[i, 1] + shape[i].FixedValue;
                 }
 
-                return Slice(result[wcin], Const.FromSpan<int>(begin), Const.FromSpan<int>(end), intype.Shape.Rank);
+                return Slice(result[wcin], Tensor.FromSpan<int>(begin), Tensor.FromSpan<int>(end), intype.Shape.Rank);
             }
 
             return null;

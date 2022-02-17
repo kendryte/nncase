@@ -45,7 +45,7 @@ public class UnitTestTypeInfer : IHostFixtrue
     public void TestInferPad()
     {
         var a = new Var(new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
-        var pads = Const.FromSpan<int>(new[] { 0, 0, 1, 1, 2, 2, 3, 3 }, new Shape(4, 2));
+        var pads = Tensor.FromSpan<int>(new[] { 0, 0, 1, 1, 2, 2, 3, 3 }, new Shape(4, 2));
         var pad = Pad(a, pads, PadMode.Constant, 1);
         Assert.True(CompilerServices.InferenceType(pad));
         Assert.Equal(pad.CheckedShape, new Shape(1, 5, 228, 230));
@@ -54,11 +54,11 @@ public class UnitTestTypeInfer : IHostFixtrue
     [Fact]
     public void TestSlice()
     {
-        var input = Const.FromSpan<int>(new[] { 1, 7, 7, 75 });
-        var begin = Const.FromSpan<int>(new[] { 0 });
-        var end = Const.FromSpan<int>(new[] { 1 });
-        var stride = Const.FromSpan<int>(new[] { 1 });
-        var axis = Const.FromSpan<int>(new[] { 0 });
+        var input = Tensor.FromSpan<int>(new[] { 1, 7, 7, 75 });
+        var begin = Tensor.FromSpan<int>(new[] { 0 });
+        var end = Tensor.FromSpan<int>(new[] { 1 });
+        var stride = Tensor.FromSpan<int>(new[] { 1 });
+        var axis = Tensor.FromSpan<int>(new[] { 0 });
         var s = Slice(input, begin, end, axis, stride);
         Assert.True(CompilerServices.InferenceType(s));
         var post = s.Evaluate();
@@ -88,9 +88,9 @@ public class UnitTestTypeInfer : IHostFixtrue
         CompilerServices.InferenceType(s);
         Assert.Equal(new Shape(3), s.CheckedShape);
 
-        var x = Const.FromSpan<int>(new[] { 1, 2 });
-        var y = Const.FromSpan<int>(new[] { 1, 2 });
-        var z = Const.FromSpan<int>(new[] { 1, 2 });
+        var x = Tensor.FromSpan<int>(new[] { 1, 2 });
+        var y = Tensor.FromSpan<int>(new[] { 1, 2 });
+        var z = Tensor.FromSpan<int>(new[] { 1, 2 });
         var ss = Stack(new Tuple(x, y, z), 1);
         CompilerServices.InferenceType(ss);
         Assert.Equal(new Shape(2, 3), ss.CheckedShape);

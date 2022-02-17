@@ -103,25 +103,25 @@ namespace Nncase.IR
         /// Create <see cref="Expr"/> from an array of<see cref="int"/>.
         /// </summary>
         /// <param name="array">Array.</param>
-        public static implicit operator Expr(int[] array) => Const.FromSpan<int>(array);
+        public static implicit operator Expr(int[] array) => Tensor.FromSpan<int>(array);
 
         /// <summary>
         /// Create <see cref="Expr"/> from an array of<see cref="float"/>.
         /// </summary>
         /// <param name="array">Array.</param>
-        public static implicit operator Expr(float[] array) => Const.FromSpan<float>(array);
+        public static implicit operator Expr(float[] array) => Tensor.FromSpan<float>(array);
 
         /// <summary>
         /// Create <see cref="Expr"/> from a span of<see cref="int"/>.
         /// </summary>
         /// <param name="span">Span.</param>
-        public static implicit operator Expr(ReadOnlySpan<int> span) => Const.FromSpan<int>(span);
+        public static implicit operator Expr(ReadOnlySpan<int> span) => Tensor.FromSpan<int>(span);
 
         /// <summary>
         /// Create <see cref="Expr"/> from a span of<see cref="float"/>.
         /// </summary>
         /// <param name="span">Span.</param>
-        public static implicit operator Expr(ReadOnlySpan<float> span) => Const.FromSpan<float>(span);
+        public static implicit operator Expr(ReadOnlySpan<float> span) => Tensor.FromSpan<float>(span);
 
         /// <summary>
         /// Create <see cref="Expr"/> from a <see cref="Tensor"/>.

@@ -70,20 +70,20 @@ namespace Nncase.Importer
                 return dt switch
                 {
                     // todo:not directly supported type should convert
-                    //TensorProto.Types.DataType.Bool => Const.FromSpan(),
-                    //TensorProto.Types.DataType.Float16 => Const.FromSpan(),
+                    //TensorProto.Types.DataType.Bool => Tensor.FromSpan(),
+                    //TensorProto.Types.DataType.Float16 => Tensor.FromSpan(),
                     TensorProto.Types.DataType.Float => Tensor.FromSpan<float>(tensor.FloatData.ToArray(), shape),
                     TensorProto.Types.DataType.Double => Tensor.FromSpan<double>(tensor.DoubleData.ToArray(), shape),
 
-                    //TensorProto.Types.DataType.Int16 => Const.FromSpan(),
+                    //TensorProto.Types.DataType.Int16 => Tensor.FromSpan(),
                     TensorProto.Types.DataType.Int32 => Tensor.FromSpan<int>(tensor.Int32Data.ToArray(), shape),
                     TensorProto.Types.DataType.Int64 => Tensor.FromSpan<long>(tensor.Int64Data.ToArray(), shape),
 
-                    //TensorProto.Types.DataType.Int8 => Const.FromSpan(),
-                    //TensorProto.Types.DataType.String => Const.FromSpan(),
-                    //TensorProto.Types.DataType.Uint32 => Const.FromSpan(),
-                    //TensorProto.Types.DataType.Uint64 => Const.FromSpan<ulong>(tensor.Uint64Data.ToArray(), shape),
-                    //TensorProto.Types.DataType.Uint8 => Const.FromSpan(),
+                    //TensorProto.Types.DataType.Int8 => Tensor.FromSpan(),
+                    //TensorProto.Types.DataType.String => Tensor.FromSpan(),
+                    //TensorProto.Types.DataType.Uint32 => Tensor.FromSpan(),
+                    //TensorProto.Types.DataType.Uint64 => Tensor.FromSpan<ulong>(tensor.Uint64Data.ToArray(), shape),
+                    //TensorProto.Types.DataType.Uint8 => Tensor.FromSpan(),
                     _ => throw new NotSupportedException($"Not supported onnx constant data type{dt}"),
                 };
             }

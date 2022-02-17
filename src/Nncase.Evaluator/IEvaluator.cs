@@ -13,7 +13,7 @@ namespace Nncase.Evaluator;
 /// <summary>
 /// this attribute mark the source generator auto generate IEvaluator's interface impl
 /// </summary>
-internal class EvaluatorGeneratorAttribute : Attribute
+public class EvaluatorGeneratorAttribute : Attribute
 {
 
 }

@@ -21,8 +21,8 @@ namespace Nncase.Importer.TFLite
             var strideW = option.StrideW;
             var padH = Util.GetWindowedPadding(inH, filterH, strideH, 1, option.Padding == tflite.Padding.SAME);
             var padW = Util.GetWindowedPadding(inW, filterW, strideW, 1, option.Padding == tflite.Padding.SAME);
-            var filter = Const.FromSpan<int>(new[] { filterH, filterW }, new[] { 2 });
-            var stride = Const.FromSpan<int>(new[] { strideH, strideW }, new[] { 2 });
+            var filter = Tensor.FromSpan<int>(new[] { filterH, filterW }, new[] { 2 });
+            var stride = Tensor.FromSpan<int>(new[] { strideH, strideW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
             return F.Tensors.NCHWToNHWC(
                 F.NN.ReduceWindow2D(

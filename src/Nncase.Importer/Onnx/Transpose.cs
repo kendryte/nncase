@@ -16,7 +16,7 @@ namespace Nncase.Importer
         private Expr VisitTranspose(NodeProto op)
         {
             var input = GetSingleInputExpr(op);
-            var perm = Const.FromSpan<long>(GetIntsAttribute(op, "perm"));
+            var perm = Tensor.FromSpan<long>(GetIntsAttribute(op, "perm"));
             return F.Tensors.Transpose(input, perm);
         }
     }

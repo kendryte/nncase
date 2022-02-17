@@ -25,21 +25,21 @@ namespace Nncase.Importer
             var floatValue = GetAttr(op, "value_float", AttributeType.Float, x => x.F);
             if (floatValue)
             {
-                return Const.FromScalar(floatValue.Value());
+                return Tensor.FromScalar(floatValue.Value());
             }
 
             var floatsValue = GetAttr(op, "value_floats", AttributeType.Floats, x => x.Floats);
             if (floatsValue)
             {
                 var floats = floatsValue.ValueUnsafe();
-                return Const.FromSpan<float>(floats.ToArray(), new Shape(floats.Count));
+                return Tensor.FromSpan<float>(floats.ToArray(), new Shape(floats.Count));
             }
 
             var intValue = GetAttr(op, "value_int", AttributeType.Int, x => x.I);
 
             if (intValue)
             {
-                return Const.FromScalar(intValue.Value());
+                return Tensor.FromScalar(intValue.Value());
             }
 
             var intsValue = GetAttr(op, "value_ints", AttributeType.Ints, x => x.Ints);
@@ -47,7 +47,7 @@ namespace Nncase.Importer
             if (intsValue)
             {
                 var ints = intsValue.ValueUnsafe();
-                return Const.FromSpan<long>(ints.ToArray(), new Shape(ints.Count));
+                return Tensor.FromSpan<long>(ints.ToArray(), new Shape(ints.Count));
             }
 
             throw new NotSupportedException("Constant field format is not supported.");

@@ -203,7 +203,7 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
 
         foreach (var member in candidate.classDecl.Members)
         {
-            // match the method like public Const Visit(IEvaluateContext context, Celu celu, xxxx)
+            // match the method like public IValue Visit(IEvaluateContext context, Celu celu, xxxx)
             if (member is MethodDeclarationSyntax
                 {
                     ReturnType: IdentifierNameSyntax { Identifier: { ValueText: var cur_return_type_name } },

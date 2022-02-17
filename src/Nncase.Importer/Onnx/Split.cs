@@ -25,7 +25,7 @@ namespace Nncase.Importer
 
             // inShape[axis] / outputSize
             var split = GetOptionIntsAttribute(op, "split")
-                .Map(x => (Expr)Const.FromSpan<long>(x))
+                .Map(x => (Expr)Tensor.FromSpan<long>(x))
                 .Or(ComputeSplit(input, op.Output.Count));
             return F.Tensors.Split(input, axis, split);
         }
