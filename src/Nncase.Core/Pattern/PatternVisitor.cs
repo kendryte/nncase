@@ -56,6 +56,30 @@ public abstract class PatternVisitor<TExprPatternResult, TTypeResult> : PatternF
     }
 
     /// <inheritdoc/>
+    public sealed override TExprPatternResult Visit(TensorConstPattern pattern)
+    {
+        if (!_patternMemo.TryGetValue(pattern, out var result))
+        {
+            result = VisitLeaf(pattern);
+            _patternMemo.Add(pattern, result);
+        }
+
+        return result;
+    }
+
+    /// <inheritdoc/>
+    public sealed override TExprPatternResult Visit(TupleConstPattern pattern)
+    {
+        if (!_patternMemo.TryGetValue(pattern, out var result))
+        {
+            result = VisitLeaf(pattern);
+            _patternMemo.Add(pattern, result);
+        }
+
+        return result;
+    }
+
+    /// <inheritdoc/>
     public sealed override TExprPatternResult Visit(FunctionPattern pattern)
     {
         if (!_patternMemo.TryGetValue(pattern, out var result))
@@ -74,7 +98,7 @@ public abstract class PatternVisitor<TExprPatternResult, TTypeResult> : PatternF
     }
 
     /// <inheritdoc/>
-    public sealed override TExprPatternResult Visit(OpPattern pattern)
+    public sealed override TExprPatternResult Visit(IOpPattern pattern)
     {
         if (!_patternMemo.TryGetValue(pattern, out var result))
         {
@@ -103,7 +127,7 @@ public abstract class PatternVisitor<TExprPatternResult, TTypeResult> : PatternF
     }
 
     /// <inheritdoc/>
-    public sealed override TExprPatternResult Visit(WildcardPattern pattern)
+    public sealed override TExprPatternResult Visit(ExprPattern pattern)
     {
         if (!_patternMemo.TryGetValue(pattern, out var result))
         {
@@ -131,27 +155,29 @@ public abstract class PatternVisitor<TExprPatternResult, TTypeResult> : PatternF
     /// </summary>
     /// <param name="pattern">Expression.</param>
     /// <returns>Result.</returns>
-    public virtual TExprPatternResult VisitLeaf(ExprPattern pattern)
+    public virtual TExprPatternResult VisitLeaf(IPattern pattern)
     {
         return pattern switch
         {
             VarPattern var => VisitLeaf(var),
             ConstPattern con => VisitLeaf(con),
+            TensorConstPattern con => VisitLeaf(con),
+            TupleConstPattern con => VisitLeaf(con),
             FunctionPattern func => VisitLeaf(func),
             CallPattern call => VisitLeaf(call),
             TuplePattern tuple => VisitLeaf(tuple),
-            OpPattern op => VisitLeaf(op),
-            WildcardPattern wildcard => VisitLeaf(wildcard),
+            IOpPattern op => VisitLeaf(op),
+            ExprPattern wildcard => VisitLeaf(wildcard),
             _ => DefaultVisitLeaf(pattern),
         };
     }
 
     /// <summary>
-    /// Visit leaf wildcard pattern.
+    /// Visit expression pattern.
     /// </summary>
     /// <param name="pattern">Variable pattern.</param>
     /// <returns>Result.</returns>
-    public virtual TExprPatternResult VisitLeaf(WildcardPattern pattern) => DefaultVisitLeaf(pattern);
+    public virtual TExprPatternResult VisitLeaf(ExprPattern pattern) => DefaultVisitLeaf(pattern);
 
     /// <summary>
     /// Visit leaf variable pattern.
@@ -166,6 +192,20 @@ public abstract class PatternVisitor<TExprPatternResult, TTypeResult> : PatternF
     /// <param name="pattern">Constant pattern.</param>
     /// <returns>Result.</returns>
     public virtual TExprPatternResult VisitLeaf(ConstPattern pattern) => DefaultVisitLeaf(pattern);
+
+    /// <summary>
+    /// Visit leaf tensor constant pattern.
+    /// </summary>
+    /// <param name="pattern">Constant pattern.</param>
+    /// <returns>Result.</returns>
+    public virtual TExprPatternResult VisitLeaf(TensorConstPattern pattern) => DefaultVisitLeaf(pattern);
+
+    /// <summary>
+    /// Visit leaf tuple constant pattern.
+    /// </summary>
+    /// <param name="pattern">Constant pattern.</param>
+    /// <returns>Result.</returns>
+    public virtual TExprPatternResult VisitLeaf(TupleConstPattern pattern) => DefaultVisitLeaf(pattern);
 
     /// <summary>
     /// Visit leaf function pattern.
@@ -193,14 +233,14 @@ public abstract class PatternVisitor<TExprPatternResult, TTypeResult> : PatternF
     /// </summary>
     /// <param name="pattern">Operator pattern.</param>
     /// <returns>Result.</returns>
-    public virtual TExprPatternResult VisitLeaf(OpPattern pattern) => DefaultVisitLeaf(pattern);
+    public virtual TExprPatternResult VisitLeaf(IOpPattern pattern) => DefaultVisitLeaf(pattern);
 
     /// <summary>
     /// Default leaf visit routine.
     /// </summary>
     /// <param name="pattern">Expression.</param>
     /// <returns>Result.</returns>
-    public virtual TExprPatternResult DefaultVisitLeaf(ExprPattern pattern)
+    public virtual TExprPatternResult DefaultVisitLeaf(IPattern pattern)
     {
         throw new NotImplementedException($"Unhandled visit leaf routine for {pattern.GetType()}.");
     }
@@ -217,7 +257,11 @@ public abstract class PatternVisitor<TExprPatternResult, TTypeResult> : PatternF
         return result;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Visit leaf type pattern.
+    /// </summary>
+    /// <param name="pattern">Variable pattern.</param>
+    /// <returns>Result.</returns>
     public virtual TTypeResult VisitTypeLeaf(TypePattern pattern) => DefaultVisitTypeLeaf(pattern);
 
     /// <summary>

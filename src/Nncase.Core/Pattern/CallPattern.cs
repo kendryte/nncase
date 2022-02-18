@@ -29,7 +29,7 @@ public sealed record CallPattern(Pattern Target, VArgsPattern Parameters)
     /// </summary>
     /// <param name="target">Target pattern.</param>
     /// <param name="parameters">Parameter patterns.</param>
-    public CallPattern(Pattern target, params ExprPattern[] parameters)
+    public CallPattern(Pattern target, params Pattern[] parameters)
         : this(target, new VArgsPattern(parameters))
     {
     }
