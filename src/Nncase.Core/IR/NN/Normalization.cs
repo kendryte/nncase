@@ -1,11 +1,13 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using Nncase.Pattern;
 using System;
 using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.NN;
 
+[PatternFunctionalGenerator]
 public sealed record L2Normalization() : Op
 {
     /// <summary>
@@ -14,6 +16,7 @@ public sealed record L2Normalization() : Op
     public static readonly ParameterInfo Input = new(typeof(L2Normalization), 0, "input");
 }
 
+[PatternFunctionalGenerator]
 public sealed record BatchNormalization() : Op
 {
     /// <summary>
@@ -52,6 +55,7 @@ public sealed record BatchNormalization() : Op
     public static readonly ParameterInfo Momentum = new(typeof(BatchNormalization), 6, "momentum", IsFloatScalar());
 }
 
+[PatternFunctionalGenerator]
 public sealed record InstanceNormalization() : Op
 {
     /// <summary>
@@ -65,6 +69,7 @@ public sealed record InstanceNormalization() : Op
     public static readonly ParameterInfo Epsilon = new(typeof(InstanceNormalization), 1, "epsilon", IsFloatScalar());
 }
 
+[PatternFunctionalGenerator]
 public sealed record LpNormalization() : Op
 {
     /// <summary>
@@ -83,6 +88,7 @@ public sealed record LpNormalization() : Op
     public static readonly ParameterInfo P = new(typeof(L2Normalization), 2, "p", IsFloatScalar());
 }
 
+[PatternFunctionalGenerator]
 public sealed record LRN() : Op
 {
     /// <summary>

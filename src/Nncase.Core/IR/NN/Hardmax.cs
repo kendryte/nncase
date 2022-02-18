@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using Nncase.Pattern;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -14,6 +15,7 @@ namespace Nncase.IR.NN;
 /// <summary>
 /// Hardmax expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record Hardmax() : Op
 {
     /// <summary>

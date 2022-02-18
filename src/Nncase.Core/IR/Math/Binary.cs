@@ -14,7 +14,7 @@ namespace Nncase.IR.Math;
 /// <summary>
 /// Binary expression.
 /// </summary>
-[PatternGenerator]
+[PatternFunctionalGenerator]
 public sealed record Binary(BinaryOp BinaryOp) : Op
 {
     /// <summary>

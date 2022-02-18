@@ -31,34 +31,16 @@ public static class RecriverUtil
     }
 
     /// <summary>
-    /// check the base list.
+    /// get full name from the name syntax
     /// </summary>
-    /// <param name="baseTypes"></param>
-    /// <param name="target_base_type"></param>
+    /// <param name="name"></param>
     /// <returns></returns>
-    /// <exception cref="ArgumentOutOfRangeException"></exception>
-    public static bool CheckBaseList(this BaseListSyntax baseListSyntax, string target_base_type)
+    /// <exception cref="NotSupportedException"></exception>
+    public static string GetFullName(this NameSyntax name) => name switch
     {
-        return false;
-        // return baseListSyntax.DescendantNodes().OfType<IdentifierNameSyntax>().Any(id => id.Identifier);
-        // foreach (var baseType in baseTypes)
-        // {
-        //     // check the class is from IEvaluator<Op>, and get the Op 
-        //     if (baseType is SimpleBaseTypeSyntax
-        //         {
-        //             Type: IdentifierNameSyntax
-        //             {
-        //                 Identifier: { ValueText: var cur_base_type }
-        //             }
-        //         }
-        //         && cur_base_type == target_base_type
-        //     )
-        //     {
-        //         return true;
-        //     }
-        // }
-        // throw new ArgumentOutOfRangeException($"This Class Without Target BaseType {target_base_type}");
-    }
+        QualifiedNameSyntax qualifiedName => GetFullName(qualifiedName.Left) + "." + GetFullName(qualifiedName.Right),
+        IdentifierNameSyntax identifierName => identifierName.Identifier.ValueText,
+        _ => throw new NotSupportedException(name.GetType().Name)
+    };
 
-    // public static bool CheckBaseType()
 }

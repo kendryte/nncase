@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 namespace Nncase.SourceGenerator.Pattern;
 
 
@@ -24,21 +24,22 @@ internal class PatternReceiver : ISyntaxContextReceiver
         var compilation = ctx.SemanticModel.Compilation;
         if (ctx.Node is RecordDeclarationSyntax recordDeclaration)
         {
-            var syb = ctx.SemanticModel.GetDeclaredSymbol(recordDeclaration);
-            if (syb.BaseType is { Name: "Op" }
-              && syb.GetAttributes().Any(attr => attr.AttributeClass.Name == "PatternGeneratorAttribute")
+            var op = ctx.SemanticModel.GetDeclaredSymbol(recordDeclaration);
+            if (op.BaseType is { Name: "Op" }
+              && op.GetAttributes().Any(attr => attr.AttributeClass.Name == "PatternFunctionalGeneratorAttribute")
                )
             {
                 var attrParams = (from p in recordDeclaration.ParameterList.Parameters
                                   select ctx.SemanticModel.GetDeclaredSymbol(p)).ToArray();
-                var exprParams = syb.GetMembers()
+                var exprParams = op.GetMembers()
                     .OfType<IFieldSymbol>()
                     .Where(f => f.Type.Name == "ParameterInfo")
                     .ToArray();
                 var unitRoot = ctx.Node.SyntaxTree.GetCompilationUnitRoot();
-                var usings = unitRoot.Usings.Select(u => ctx.SemanticModel.GetSymbolInfo(u)).ToList();
-                Candidates.Add(new(syb, attrParams, exprParams, unitRoot.Usings.ToArray()));
-                Console.WriteLine($"PatternGenerator Receive {syb.Name} Op");
+                var usings = unitRoot.Usings.ToList();
+                usings.Add(UsingDirective(ParseName(op.ContainingNamespace.ToDisplayString())));
+                Candidates.Add(new(op, attrParams, exprParams, usings.ToArray()));
+                Console.WriteLine($"PatternGenerator Receive {op.Name} Op");
             }
         }
     }

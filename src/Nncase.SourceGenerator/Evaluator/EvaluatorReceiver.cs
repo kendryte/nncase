@@ -200,7 +200,7 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
                                   select namespace_decl).ToArray();
                 if (namespaces.Length != 1)
                   throw new ArgumentOutOfRangeException($"You Must Use One Line NameSpace Define!");
-                var namespace_name = GetFullName(namespaces[0].Name);
+                var namespace_name = namespaces[0].Name.GetFullName();
                 if (!Candidates.TryGetValue(namespace_name, out var member_list))
                 {
                     member_list = new() { };
@@ -211,17 +211,4 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
             }
         }
     }
-
-    /// <summary>
-    /// get full name from the name syntax
-    /// </summary>
-    /// <param name="name"></param>
-    /// <returns></returns>
-    /// <exception cref="NotSupportedException"></exception>
-    public static string GetFullName(NameSyntax name) => name switch
-    {
-        QualifiedNameSyntax qualifiedName => GetFullName(qualifiedName.Left) + "." + GetFullName(qualifiedName.Right),
-        IdentifierNameSyntax identifierName => identifierName.Identifier.ValueText,
-        _ => throw new NotSupportedException(name.GetType().Name)
-    };
 }

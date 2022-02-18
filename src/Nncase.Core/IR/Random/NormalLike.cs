@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.IR.Tensors;
+using Nncase.Pattern;
 using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Random;
@@ -9,6 +10,7 @@ namespace Nncase.IR.Random;
 /// <summary>
 /// Normal like expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record NormalLike(DataType Type) : Op
 {
     /// <summary>

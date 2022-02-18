@@ -1,6 +1,7 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using Nncase.Pattern;
 using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.NN;
@@ -8,6 +9,7 @@ namespace Nncase.IR.NN;
 /// <summary>
 /// ReduceWindow2D.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record ReduceWindow2D(ReduceOp ReduceOp) : Op
 {
     /// <summary>

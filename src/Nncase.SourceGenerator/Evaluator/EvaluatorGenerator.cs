@@ -58,7 +58,7 @@ internal class EvaluatorGenerator : ISourceGenerator
                     InterfaceKind.ITypeInferencer => throw new NotSupportedException("The Type Infer Can't Convert Predefined Type"),
                     _ => throw new NotSupportedException($"The PredefinedType {predefinedType.Keyword.ValueText}")
                 },
-                QualifiedNameSyntax qualified => EvaluatorImplReceiver.GetFullName(qualified) switch
+                QualifiedNameSyntax qualified => qualified.GetFullName() switch
                 {
                     var x when target_interface == InterfaceKind.IEvaluator && x.EndsWith("torch.Tensor") => "GetTorchArgumentValue",
                     var x when target_interface == InterfaceKind.IEvaluator && x.EndsWith("Tensorflow.Tensor") => "GetTFArgumentValue",

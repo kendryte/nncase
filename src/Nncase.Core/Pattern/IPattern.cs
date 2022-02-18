@@ -13,7 +13,7 @@ namespace Nncase.Pattern;
 /// <summary>
 /// mark the record class auto generate the pattern define.
 /// </summary>
-public class PatternGeneratorAttribute : Attribute { }
+public class PatternFunctionalGeneratorAttribute : Attribute { }
 
 /// <summary>
 /// Pattern.

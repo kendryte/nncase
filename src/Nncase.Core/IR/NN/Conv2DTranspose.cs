@@ -8,12 +8,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR.Tensors;
+using Nncase.Pattern;
 
 namespace Nncase.IR.NN
 {
     /// <summary>
     /// Conv2DTranspose.
     /// </summary>
+    [PatternFunctionalGenerator]
     public sealed record Conv2DTranspose(PadMode PadMode) : Op
     {
         /// <summary>
