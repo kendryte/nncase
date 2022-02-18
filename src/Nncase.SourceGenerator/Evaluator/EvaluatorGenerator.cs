@@ -22,12 +22,17 @@ internal class EvaluatorGenerator : ISourceGenerator
     {
         if (context.SyntaxReceiver is not EvaluatorImplReceiver evalReceiver)
             return;
+        if (evalReceiver.EvalCandidates.Any())
+        {
+            var eval_compilationunit = BuildFile(context, evalReceiver.EvalCandidates, InterfaceKind.IEvaluator);
+            context.AddSource("Ops.Evaluator", SyntaxTree(eval_compilationunit, encoding: Encoding.UTF8).GetText());
+        }
 
-        var eval_compilationunit = BuildFile(context, evalReceiver.EvalCandidates, InterfaceKind.IEvaluator);
-        context.AddSource("Ops.Evaluator", SyntaxTree(eval_compilationunit, encoding: Encoding.UTF8).GetText());
-
-        var typeinfer_compilationunit = BuildFile(context, evalReceiver.TypeInferCandidates, InterfaceKind.ITypeInferencer);
-        context.AddSource("Ops.TypeInferencer", SyntaxTree(typeinfer_compilationunit, encoding: Encoding.UTF8).GetText());
+        if (evalReceiver.TypeInferCandidates.Any())
+        {
+            var typeinfer_compilationunit = BuildFile(context, evalReceiver.TypeInferCandidates, InterfaceKind.ITypeInferencer);
+            context.AddSource("Ops.TypeInferencer", SyntaxTree(typeinfer_compilationunit, encoding: Encoding.UTF8).GetText());
+        }
     }
 
     /// <summary>

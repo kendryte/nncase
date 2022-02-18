@@ -39,6 +39,7 @@ public static class RecriverUtil
     /// <exception cref="ArgumentOutOfRangeException"></exception>
     public static bool CheckBaseList(this BaseListSyntax baseListSyntax, string target_base_type)
     {
+        return false;
         // return baseListSyntax.DescendantNodes().OfType<IdentifierNameSyntax>().Any(id => id.Identifier);
         // foreach (var baseType in baseTypes)
         // {
