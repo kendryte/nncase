@@ -22,7 +22,7 @@ public sealed record FunctionPattern(Pattern Body, VArgsPattern Parameters)
     /// </summary>
     /// <param name="function"><see cref="Function"/> expression.</param>
     public FunctionPattern(Function function)
-        : this(function.Body, new FixedVArgsPattern(function.Parameters))
+        : this(function.Body, new VArgsPattern(function.Parameters))
     {
     }
 
@@ -32,7 +32,7 @@ public sealed record FunctionPattern(Pattern Body, VArgsPattern Parameters)
     /// <param name="body">Body pattern.</param>
     /// <param name="parameters">Parameter patterns.</param>
     public FunctionPattern(Pattern body, params ExprPattern[] parameters)
-        : this(body, new FixedVArgsPattern(parameters))
+        : this(body, new VArgsPattern(parameters))
     {
     }
 }

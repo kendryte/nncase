@@ -79,7 +79,7 @@ namespace Nncase.TIR
         {
             private readonly IRPrinter.ScopeWriter Scope;
 
-            readonly Dictionary<Expr, StringBuilder> Docs = new(new ReferenceEqualityComparer<Expr>());
+            readonly Dictionary<Expr, StringBuilder> Docs = new(ReferenceEqualityComparer.Instance);
 
             public ScriptDumpVisitor(TextWriter textWriter)
             {

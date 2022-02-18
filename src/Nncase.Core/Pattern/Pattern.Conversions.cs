@@ -40,9 +40,10 @@ public abstract partial record Pattern
 
     public static implicit operator Pattern(Tensor value) => (TensorConstPattern)value;
 
-    public static implicit operator Pattern(int[] span) => Const.FromSpan<int>(span);
+    public static implicit operator Pattern(int[] span) => Const.FromTensor(Tensor.FromSpan<int>(span));
 
-    public static implicit operator Pattern(float[] span) => Const.FromSpan<float>(span);
+    public static implicit operator Pattern(float[] span) =>
+        Const.FromTensor(Tensor.FromSpan<float>(span));
 
     /// <summary>
     /// Convert <see cref="Expr"/> to <see cref="Pattern"/>.
@@ -56,7 +57,7 @@ public abstract partial record Pattern
         (Function function) => new FunctionPattern(function),
         (Call call) => new CallPattern(call),
         (IR.Tuple tuple) => new TuplePattern(tuple),
-        (Op op) => OpPattern.CastToPattern(op),
+        //(Op op) => OpPattern.CastToPattern(op),
         _ => throw new NotImplementedException($"Can't Convert The Expr {expr.GetType().Name} To Pattern"),
     };
 }

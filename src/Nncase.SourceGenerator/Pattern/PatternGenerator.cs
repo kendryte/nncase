@@ -51,18 +51,17 @@ public class PatternGenerator : ISourceGenerator
             foreach (var cand in candidates)
             {
                 // 1. method params
-                var method_params = (from p in cand.AttrParams
-                                     select Parameter(Identifier(p.Name)).WithType(ParseTypeName(p.Type.Name)))
-                             .Concat(
-                              from f in cand.ExprParams
-                              select Parameter(Identifier(f.Name.ToLower())).WithType(ParseTypeName("Pattern")));
+                var method_params = (from f in cand.ExprParams
+                                     select Parameter(Identifier(f.Name.ToLower())).WithType(ParseTypeName("Pattern")))
+                             .Concat(from p in cand.AttrParams
+                                     select Parameter(Identifier(p.Name)).WithType(ParseTypeName(p.Type.Name)));
                 var statements = new List<StatementSyntax>();
                 {
                     // 2.1 build condition
                     var condition = string.Join("&&", (from p in cand.AttrParams select $"(x.{p.Name} == {p.Name})").DefaultIfEmpty("true"));
                     var inputs = string.Join("", from f in cand.ExprParams select ", " + f.Name.ToLower());
                     // 2.1 build method return
-                    statements.Add(ParseStatement($"return new(new OpPattern<{cand.Op.Name}>(x => {condition}){inputs});"));
+                    statements.Add(ParseStatement($"return new(new OpPattern<{cand.Op.ToDisplayString()}>(x => {condition}){inputs});"));
                 }
                 // 2. build method body
                 var method = MethodDeclaration(ParseTypeName("CallPattern"), cand.Op.Name)
@@ -92,16 +91,16 @@ public class PatternGenerator : ISourceGenerator
             namespaces.Add(namespcae);
         }
         //6. build file
-        var usings = (from cand in receiver.Candidates
-                      from @using in cand.UsingSyntaxs
-                      select @using)
-                      .Distinct(new UsingComparer())
-                      .Select(u => UsingDirective(ParseName(u.Name.GetFullName())).
-                                    WithStaticKeyword(u.StaticKeyword));
+        //var usings = (from cand in receiver.Candidates
+        //              from @using in cand.UsingSyntaxs
+        //              select @using)
+        //              .Distinct(new UsingComparer())
+        //              .Select(u => UsingDirective(ParseName(u.Name.GetFullName())).
+        //                            WithStaticKeyword(u.StaticKeyword));
 
         var compilationUnit = CompilationUnit().
                 AddMembers(namespaces.ToArray()).
-                AddUsings(usings.ToArray()).
+                //AddUsings(usings.ToArray()).
                 NormalizeWhitespace();
         context.AddSource("Ops.Pattern", SyntaxTree(compilationUnit, encoding: Encoding.UTF8).GetText());
     }
