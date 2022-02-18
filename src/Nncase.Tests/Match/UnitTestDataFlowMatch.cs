@@ -46,10 +46,10 @@ public class UnitTestDataFlowMatch
     public void TestMatchDataFlowCall()
     {
         Var x = "x", y = "y";
-        var addpat = IsBinary(BinaryOp.Add, IsWildCard(), IsWildCard());
+        var addpat = IsBinary(BinaryOp.Add, IsWildcard(), IsWildcard());
         Assert.Single(Match(x + y, addpat));
 
-        var callpat = IsWildCard();
+        var callpat = IsWildcard();
         Assert.Single(Match(Square(x), callpat));
         Assert.Single(Match(x + y, callpat));
     }
@@ -58,7 +58,7 @@ public class UnitTestDataFlowMatch
     public void TestNoMatchDataFlowFunc()
     {
         Var x = "x", y = "y";
-        var pat = IsBinary(BinaryOp.Add, IsWildCard(), IsWildCard());
+        var pat = IsBinary(BinaryOp.Add, IsWildcard(), IsWildcard());
         Assert.Empty(Match(x - y, pat));
     }
 
@@ -66,7 +66,7 @@ public class UnitTestDataFlowMatch
     public void TestMatchDataFlowConst()
     {
         Var x = "x", y = "y";
-        var pat = IsBinary(BinaryOp.Sub, IsWildCard(), IsConst());
+        var pat = IsBinary(BinaryOp.Sub, IsWildcard(), IsConst());
         Assert.Single(Match((x + y) - 100, pat));
     }
 
@@ -76,7 +76,7 @@ public class UnitTestDataFlowMatch
         Var x = "x", y = "y";
         var z = x + y;
         var tuple = new IR.Tuple(x, y, z);
-        var tuplepat = IsTuple(IsVar(), IsWildCard(), IsBinary(BinaryOp.Add, IsWildCard(), IsWildCard()));
+        var tuplepat = IsTuple(IsVar(), IsWildcard(), IsBinary(BinaryOp.Add, IsWildcard(), IsWildcard()));
 
         Assert.Single(Match(tuple, tuplepat));
 

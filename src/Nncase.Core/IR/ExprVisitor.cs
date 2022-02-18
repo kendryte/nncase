@@ -10,34 +10,13 @@ using System.Threading.Tasks;
 namespace Nncase.IR
 {
     /// <summary>
-    /// the ref comparer for the record, becase the record default compare by value
-    /// when we visit expr Dag, it's will skip same value but different expr.
-    /// so the ref comparer is important for visitor.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public class RecordRefComparer<T> : IEqualityComparer<T>
-    {
-        /// <inheritdoc/>
-        bool IEqualityComparer<T>.Equals(T? x, T? y)
-        {
-            return object.ReferenceEquals(x, y);
-        }
-
-        /// <inheritdoc/>
-        int IEqualityComparer<T>.GetHashCode(T obj)
-        {
-            return System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
-        }
-    }
-
-    /// <summary>
     /// Expression visitor.
     /// </summary>
     /// <typeparam name="TExprResult">Expression visit result type.</typeparam>
     /// <typeparam name="TTypeResult">Type visit result type.</typeparam>
     public abstract class ExprVisitor<TExprResult, TTypeResult> : ExprFunctor<TExprResult, TTypeResult>
     {
-        private readonly Dictionary<Expr, TExprResult> _exprMemo = new Dictionary<Expr, TExprResult>(new RecordRefComparer<Expr>());
+        private readonly Dictionary<Expr, TExprResult> _exprMemo = new Dictionary<Expr, TExprResult>(ReferenceEqualityComparer.Instance);
         private readonly Dictionary<IRType, TTypeResult> _typeMemo = new Dictionary<IRType, TTypeResult>();
 
         /// <summary>

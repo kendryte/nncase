@@ -19,7 +19,7 @@ namespace Nncase.Transform.Rule
 
         public SimplifyReduce()
         {
-            Pattern = reduce = IsReduce((ReduceOp op) => true, IsWildCard(), IsConst(), IsConst(), IsConst());
+            Pattern = reduce = IsReduce((ReduceOp op) => true, IsWildcard(), IsConst(), IsConst(), IsConst());
         }
 
         public override Expr? GetReplace(IMatchResult result)

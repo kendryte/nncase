@@ -25,7 +25,7 @@ public interface IPattern
     /// </summary>
     /// <param name="input">Input.</param>
     /// <returns>Is match.</returns>
-    bool MatchLeaf(object input);
+    bool Match(object input);
 }
 
 /// <summary>
@@ -39,5 +39,5 @@ public interface IPattern<in TInput> : IPattern
     /// </summary>
     /// <param name="input">Input.</param>
     /// <returns>Is match.</returns>
-    bool MatchLeaf(TInput input);
+    bool Match(TInput input);
 }

@@ -16,7 +16,7 @@ namespace Nncase.Transform.Rule
         SliceWrapper slice1, slice2;
         public FoldSliceSlice()
         {
-            slice1 = IsSlice(IsWildCard());
+            slice1 = IsSlice(IsWildcard());
             slice2 = IsSlice(slice1);
             Pattern = slice2;
         }

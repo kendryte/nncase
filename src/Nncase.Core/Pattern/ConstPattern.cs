@@ -10,30 +10,25 @@ using static Nncase.IR.TypePatternUtility;
 namespace Nncase.Pattern;
 
 /// <summary>
-/// Pattern for <see cref="Expr"/>.
+/// Pattern for <see cref="Const"/>.
 /// </summary>
 /// <param name="Condition">Expression condition.</param>
-public sealed record ConstPattern(Func<Const, bool> Cond) : ExprPattern
+public sealed record ConstPattern(Func<Const, bool> Condition) : Pattern<Const>(Condition)
 {
     /// <summary>
-    /// <see cref="Target"/>.
+    /// Initializes a new instance of the <see cref="ConstPattern"/> class.
     /// </summary>
-    private readonly Const? _target = null;
+    /// <param name="const"><see cref="Const"/> expression.</param>
+    public ConstPattern(Const @const)
+        : this(x => x.Equals(@const))
+    {
+        Value = @const;
+    }
 
     /// <summary>
-    /// save the target const for match, we can print it for debug.
+    /// Gets value.
     /// </summary>
-    public Const? Target { get => _target; }
-
-    public ConstPattern(Const expr) : this(x => x == expr)
-    {
-        _target = expr;
-    }
-
-    public bool MatchLeaf(Const expr)
-    {
-        return Cond(expr) && MatchCheckedType(expr);
-    }
+    public Const? Value { get; }
 }
 
 public static partial class Utility

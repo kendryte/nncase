@@ -64,7 +64,7 @@ public class UnitTestEGraphMatch
     [Fact]
     public void TestWildCardRecursion()
     {
-        WildCardPattern wcx = "x", wcy = "y";
+        WildcardPattern wcx = "x", wcy = "y";
         var pat = wcx + (wcy + IsConst(1));
         Var x = "x", y = "y";
         Expr expr = x + (y + 1);
@@ -78,7 +78,7 @@ public class UnitTestEGraphMatch
     [Fact]
     public void TestWildCardRecursion2()
     {
-        WildCardPattern wcx = "x", wcy = "y";
+        WildcardPattern wcx = "x", wcy = "y";
         var pat = wcx + (wcy + IsConst(1));
         Var x = "x", y = "y";
         Expr expr = x + (y + 1);
@@ -89,7 +89,7 @@ public class UnitTestEGraphMatch
     [Fact]
     public void TestMatchOpAdd()
     {
-        var wc1 = IsWildCard();
+        var wc1 = IsWildcard();
         var pat = wc1 + 1;
 
         var a = new Var("a");
@@ -111,7 +111,7 @@ public class UnitTestEGraphMatch
         var y = x + 10;
         var y1 = y - 10;
 
-        var px = IsWildCard();
+        var px = IsWildcard();
         var py = IsBinary(op => op is (BinaryOp.Add or BinaryOp.Sub), px, 10);
 
         var matchs = EGraphMatcher.Match(y, py);
@@ -130,8 +130,8 @@ public class UnitTestEGraphMatch
         Var x = "x";
         Var y = "y";
 
-        WildCardPattern wc1 = "x";
-        WildCardPattern wc2 = "y";
+        WildcardPattern wc1 = "x";
+        WildcardPattern wc2 = "y";
 
         Expr func = new Function(x + y - 1200, x, y);
         ExprPattern pat_1 = new FunctionPattern(x + y - 1200, wc1, wc2);
@@ -149,7 +149,7 @@ public class UnitTestEGraphMatch
     public void TestMatchVArgs()
     {
 
-        WildCardPattern wc = "x";
+        WildcardPattern wc = "x";
         List<ExprPattern> wcs = new();
 
         var nest_tuple = new IR.Tuple(4, 5, 6);
@@ -161,7 +161,7 @@ public class UnitTestEGraphMatch
         {
             for (int i = 0; i < n; i++)
             {
-                var wc = IsWildCard();
+                var wc = IsWildcard();
                 param.Add(wc);
                 wcs.Add(wc);
             }
@@ -238,13 +238,13 @@ public class UnitTestEGraphMatch
           Transpose(y, perm),
           Transpose(z, perm)), 0);
 
-        WildCardPattern wc = "wc", wcperm = "perm", wcaxis = "axis";
-        List<WildCardPattern> wcin = new();
+        WildcardPattern wc = "wc", wcperm = "perm", wcaxis = "axis";
+        List<WildcardPattern> wcin = new();
         var wcvargs = IsVArgsRepeat((n, param) =>
         {
             for (int i = 0; i < n; i++)
             {
-                var input = IsWildCard();
+                var input = IsWildcard();
                 param.Add(Transpose(input, wcperm));
                 wcin.Add(input);
             }
@@ -280,7 +280,7 @@ public class UnitTestEGraphMatch
     {
         var x = (Const)1;
         Expr expr = (x * x) + 12 - x;
-        var xpat = IsWildCard();
+        var xpat = IsWildcard();
         var result = EGraphMatcher.Match(expr, IsBinary(xpat, xpat));
         Assert.Single(result);
 

@@ -12,7 +12,7 @@ namespace Nncase.Transform.Rule
 {
     public static partial class SimplifyFactory
     {
-        private static WildCardPattern x = "x", y = "y", z = "z", w = "w", u = "u", v = "v";
+        private static WildcardPattern x = "x", y = "y", z = "z", w = "w", u = "u", v = "v";
         private static ConstPattern c0 = IsConst(), c1 = IsConst(), c2 = IsConst(), c3 = IsConst(), c4 = IsConst(), c5 = IsConst();
 
         private static readonly List<IRewriteRule> _simplifyAdd = new()

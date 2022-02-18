@@ -17,7 +17,7 @@ namespace Nncase.Transform.Rule
 {
     public sealed class ReassociateMul : IRewriteRule
     {
-        private WildCardPattern wx = "x", wy = "y", wz = "z";
+        private WildcardPattern wx = "x", wy = "y", wz = "z";
 
         public ReassociateMul()
         {
@@ -37,7 +37,7 @@ namespace Nncase.Transform.Rule
     public class Xmul2 : IRewriteRule
     {
         BinaryWrapper binary;
-        public Xmul2() => Pattern = binary = IsBinary(BinaryOp.Mul, IsWildCard().SetTypePattern(IsIntegral() & IsScalar()), 2);
+        public Xmul2() => Pattern = binary = IsBinary(BinaryOp.Mul, IsWildcard().SetTypePattern(IsIntegral() & IsScalar()), 2);
         public override Expr GetReplace(IMatchResult result)
         {
             binary.Bind(result);
@@ -51,7 +51,7 @@ namespace Nncase.Transform.Rule
     public class Xmul1 : IRewriteRule
     {
         CallPattern binary;
-        public Xmul1() => Pattern = binary = IsWildCard() * 1;
+        public Xmul1() => Pattern = binary = IsWildcard() * 1;
         public override Expr GetReplace(IMatchResult result) => result[binary.Parameters[0]];
     }
 
@@ -60,7 +60,7 @@ namespace Nncase.Transform.Rule
     /// </summary>
     public class XDivX : IRewriteRule
     {
-        WildCardPattern x = IsWildCard();
+        WildcardPattern x = IsWildcard();
         public XDivX() => Pattern = x / x;
         public override Expr GetReplace(IMatchResult result) => 1;
     }
@@ -70,7 +70,7 @@ namespace Nncase.Transform.Rule
     /// </summary>
     public class ReassociateDiv : IRewriteRule
     {
-        WildCardPattern x = "x", y = "y", z = "z";
+        WildcardPattern x = "x", y = "y", z = "z";
         public ReassociateDiv() => Pattern = (x * y) / z;
         public override Expr GetReplace(IMatchResult result) => result[x] * (result[y] / result[z]);
     }
@@ -80,7 +80,7 @@ namespace Nncase.Transform.Rule
     /// </summary>
     public class ReassociateXY : IRewriteRule
     {
-        WildCardPattern x = "x", y = "y";
+        WildcardPattern x = "x", y = "y";
         public ReassociateXY() => Pattern = x * y;
         public override Expr GetReplace(IMatchResult result) => result[y] * result[x];
     }

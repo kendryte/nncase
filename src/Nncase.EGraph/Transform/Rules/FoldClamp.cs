@@ -20,7 +20,7 @@ namespace Nncase.Transform.Rule
 {
     public class FoldNopClamp : IRewriteRule
     {
-        WildCardPattern wcin = "input";
+        WildcardPattern wcin = "input";
         TensorConstPattern wcmin = IsTensorConst(IsScalar());
         TensorConstPattern wcmax = IsTensorConst(IsScalar());
 

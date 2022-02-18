@@ -73,7 +73,7 @@ internal sealed class DataFlowMatcherVisitor
             (CallPattern callPat, Call call) => Visit(callPat, call),
             (TuplePattern tuplePat, Tuple tuple) => Visit(tuplePat, tuple),
             (OpPattern opPat, Op op) => Visit(opPat, op),
-            (WildCardPattern wildCard, _) => Visit(wildCard, expr),
+            (WildcardPattern wildCard, _) => Visit(wildCard, expr),
             (OrPattern orPat, _) => Visit(orPat, expr),
             (_, _) => DefaultVisit(pattern, expr),
         };
@@ -237,7 +237,7 @@ internal sealed class DataFlowMatcherVisitor
     /// <param name="pattern"></param>
     /// <param name="expr"></param>
     /// <returns> bool. </returns>
-    public bool Visit(WildCardPattern pattern, Expr expr)
+    public bool Visit(WildcardPattern pattern, Expr expr)
     {
         if (!_patMemo.TryGetValue(pattern, out var result))
         {
@@ -294,7 +294,7 @@ internal sealed class DataFlowMatcherVisitor
     {
         if (_patMemo[pattern.Target] &&
            _vargspatMemo[pattern.Parameters] &&
-           pattern.MatchLeaf(expr))
+           pattern.Match(expr))
         {
             Env.Add(pattern, expr);
             return true;
@@ -311,7 +311,7 @@ internal sealed class DataFlowMatcherVisitor
     /// <returns> bool. </returns>
     public bool VisitLeaf(ConstPattern pattern, Const expr)
     {
-        if (pattern.MatchLeaf(expr))
+        if (pattern.Match(expr))
         {
             Env.Add(pattern, expr);
             return true;
@@ -330,7 +330,7 @@ internal sealed class DataFlowMatcherVisitor
     {
         if (_patMemo[pattern.Body] &&
           _vargspatMemo[pattern.Parameters] &&
-          pattern.MatchLeaf(expr))
+          pattern.Match(expr))
         {
             Env.Add(pattern, expr);
             return true;
@@ -364,7 +364,7 @@ internal sealed class DataFlowMatcherVisitor
     /// <returns> bool. </returns>
     public bool VisitLeaf(TuplePattern pattern, Tuple expr)
     {
-        if (pattern.MatchLeaf(expr) &&
+        if (pattern.Match(expr) &&
          _vargspatMemo[pattern.Fields])
         {
             Env.Add(pattern, expr);
@@ -382,7 +382,7 @@ internal sealed class DataFlowMatcherVisitor
     /// <returns> bool. </returns>
     public bool VisitLeaf(VArgsPattern patterns, IRArray<Expr> exprs)
     {
-        if (!patterns.MatchLeaf(exprs))
+        if (!patterns.Match(exprs))
         {
             patterns.MatchEnd(false);
             return false;
@@ -409,7 +409,7 @@ internal sealed class DataFlowMatcherVisitor
     /// <param name="pattern"></param>
     /// <param name="expr"></param>
     /// <returns> bool. </returns>
-    public bool VisitLeaf(WildCardPattern pattern, Expr expr)
+    public bool VisitLeaf(WildcardPattern pattern, Expr expr)
     {
         Env.Add(pattern, expr);
         return true;

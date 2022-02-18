@@ -22,7 +22,7 @@ namespace Nncase.Transform.Rule
         PadWrapper pad;
         public FoldPadConv2d()
         {
-            pad = IsPad(IsWildCard(), IsConst(), PadMode.Constant, IsConst());
+            pad = IsPad(IsWildcard(), IsConst(), PadMode.Constant, IsConst());
             Pattern = conv2d = IsConv2D(pad, PadMode.Constant);
         }
 

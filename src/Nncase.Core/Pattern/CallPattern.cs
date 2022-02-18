@@ -13,14 +13,14 @@ namespace Nncase.Pattern;
 /// <param name="Target">Target pattern.</param>
 /// <param name="Parameters">Parameters pattern.</param>
 public sealed record CallPattern(Pattern Target, VArgsPattern Parameters)
-    : Pattern<Call>(x => Target.MatchLeaf(x.Target) && Parameters.MatchLeaf(x.Parameters))
+    : Pattern<Call>(x => Target.Match(x.Target) && Parameters.Match(x.Parameters))
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="CallPattern"/> class.
     /// </summary>
     /// <param name="call"><see cref="Call"/> expression.</param>
     public CallPattern(Call call)
-        : this(call.Target, new FixedVArgsPattern(call.Parameters))
+        : this(call.Target, new VArgsPattern(call.Parameters))
     {
     }
 
@@ -30,7 +30,7 @@ public sealed record CallPattern(Pattern Target, VArgsPattern Parameters)
     /// <param name="target">Target pattern.</param>
     /// <param name="parameters">Parameter patterns.</param>
     public CallPattern(Pattern target, params ExprPattern[] parameters)
-        : this(target, new FixedVArgsPattern(parameters))
+        : this(target, new VArgsPattern(parameters))
     {
     }
 
@@ -39,7 +39,7 @@ public sealed record CallPattern(Pattern Target, VArgsPattern Parameters)
     /// </summary>
     /// <param name="parameter">Parameter info.</param>
     /// <returns>Parameter pattern.</returns>
-    public ExprPattern this[ParameterInfo parameter]
+    public Pattern this[ParameterInfo parameter]
     {
         get => Parameters[parameter.Index];
     }

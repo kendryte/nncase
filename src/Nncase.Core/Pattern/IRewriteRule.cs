@@ -14,7 +14,7 @@ public interface IRewriteRule
     /// <summary>
     /// Gets pattern.
     /// </summary>
-    ExprPattern Pattern { get; }
+    IPattern Pattern { get; }
 
     /// <summary>
     /// Get replace expression.

@@ -10,9 +10,6 @@ using static Nncase.Pattern.F.Math;
 
 namespace Nncase.Pattern;
 
-/// <summary>
-/// Math operators for <see cref="ExprPattern"/>.
-/// </summary>
 public partial record Pattern
 {
     /// <summary>

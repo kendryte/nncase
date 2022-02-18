@@ -22,7 +22,7 @@ namespace Nncase.Transform.Rule
         MatMulWrapper matmul;
         public MatMulToConv2D()
         {
-            Pattern = matmul = MatMul(IsWildCard(), IsWildCard());
+            Pattern = matmul = MatMul(IsWildcard(), IsWildcard());
         }
 
         public override Expr? GetReplace(IMatchResult result)

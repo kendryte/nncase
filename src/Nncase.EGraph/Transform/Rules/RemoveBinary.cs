@@ -17,7 +17,7 @@ namespace Nncase.Transform.Rule
 
         public RemoveNoSenceBinary()
         {
-            Pattern = binary = IsBinary(x => x is (BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div), IsWildCard(), IsWildCard());
+            Pattern = binary = IsBinary(x => x is (BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div), IsWildcard(), IsWildcard());
         }
 
         private bool CheckValue(TensorConst con, float value) =>
