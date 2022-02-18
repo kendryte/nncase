@@ -37,16 +37,18 @@ internal class PatternReceiver : ISyntaxContextReceiver
     /// <inheritdoc/>
     public void OnVisitSyntaxNode(GeneratorSyntaxContext context)
     {
-        var compilation = context.SemanticModel.Compilation;
-        var node = context.Node;
+        // var compilation = context.SemanticModel.Compilation;
+        // var recordDecls = context.Node.DescendantNodes().OfType<RecordDeclarationSyntax>();
+        // foreach (var recordDecl in recordDecls)
+        // {
+        //     var recordSyb = context.SemanticModel.GetSymbolInfo(recordDecl);
+        // }
         var candidates = new List<GenerateCandidate>();
-        if (IsMatch(node, out var candidate))
+        if (IsMatch(context.Node, out var candidate))
         {
             candidates.Add(candidate);
         }
     }
-
-
 
     private bool IsMatch(SyntaxNode node, out GenerateCandidate candidate)
     {
@@ -54,12 +56,12 @@ internal class PatternReceiver : ISyntaxContextReceiver
         if (node is RecordDeclarationSyntax
             {
                 AttributeLists: var attrLists,
-                BaseList: { Types: var baseTypes },
+                BaseList: var baseList,
                 Identifier: { ValueText: var opType },
                 ParameterList: { Parameters: var attrParamSyntaxs }
             } myrecord
             && RecriverUtil.CheckAttributes(attrLists, "PatternGenerator")
-            && RecriverUtil.CheckBaseList(baseTypes, "Op"))
+            && RecriverUtil.CheckBaseList(baseList, "Op"))
         {
             //myrecord.Ancestors().OfType<using>
             //attrParamSyntaxs.Select(p => p is

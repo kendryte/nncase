@@ -1,8 +1,8 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Nncase.SourceGenerator;
 
@@ -37,24 +37,27 @@ public static class RecriverUtil
     /// <param name="target_base_type"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentOutOfRangeException"></exception>
-    public static bool CheckBaseList(SeparatedSyntaxList<BaseTypeSyntax> baseTypes, string target_base_type)
+    public static bool CheckBaseList(this BaseListSyntax baseListSyntax, string target_base_type)
     {
-        foreach (var baseType in baseTypes)
-        {
-            // check the class is from IEvaluator<Op>, and get the Op 
-            if (baseType is SimpleBaseTypeSyntax
-                {
-                    Type: IdentifierNameSyntax
-                    {
-                        Identifier: { ValueText: var cur_base_type }
-                    }
-                }
-                && cur_base_type == target_base_type
-            )
-            {
-                return true;
-            }
-        }
-        throw new ArgumentOutOfRangeException($"This Class Without Target BaseType {target_base_type}");
+        // return baseListSyntax.DescendantNodes().OfType<IdentifierNameSyntax>().Any(id => id.Identifier);
+        // foreach (var baseType in baseTypes)
+        // {
+        //     // check the class is from IEvaluator<Op>, and get the Op 
+        //     if (baseType is SimpleBaseTypeSyntax
+        //         {
+        //             Type: IdentifierNameSyntax
+        //             {
+        //                 Identifier: { ValueText: var cur_base_type }
+        //             }
+        //         }
+        //         && cur_base_type == target_base_type
+        //     )
+        //     {
+        //         return true;
+        //     }
+        // }
+        // throw new ArgumentOutOfRangeException($"This Class Without Target BaseType {target_base_type}");
     }
+
+    // public static bool CheckBaseType()
 }
