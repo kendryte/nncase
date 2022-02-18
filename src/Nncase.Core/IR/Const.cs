@@ -18,116 +18,85 @@ public abstract record Const(IRType ValueType) : Expr
     /// Create constant from a <see cref="byte"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Const(byte value) => FromScalar(value);
+    public static implicit operator Const(byte value) => FromTensor(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create constant from a <see cref="ushort"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Const(ushort value) => FromScalar(value);
+    public static implicit operator Const(ushort value) => FromTensor(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create constant from a <see cref="uint"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Const(uint value) => FromScalar(value);
+    public static implicit operator Const(uint value) => FromTensor(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create constant from a <see cref="ulong"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Const(ulong value) => FromScalar(value);
+    public static implicit operator Const(ulong value) => FromTensor(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create constant from a <see cref="sbyte"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Const(sbyte value) => FromScalar(value);
+    public static implicit operator Const(sbyte value) => FromTensor(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create constant from a <see cref="short"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Const(short value) => FromScalar(value);
+    public static implicit operator Const(short value) => FromTensor(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create constant from a <see cref="int"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Const(int value) => FromScalar(value);
+    public static implicit operator Const(int value) => FromTensor(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create constant from a <see cref="long"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Const(long value) => FromScalar(value);
+    public static implicit operator Const(long value) => FromTensor(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create constant from a <see cref="Half"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Const(Half value) => FromScalar(value);
+    public static implicit operator Const(Half value) => FromTensor(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create constant from a <see cref="float"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Const(float value) => FromScalar(value);
+    public static implicit operator Const(float value) => FromTensor(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create constant from a <see cref="double"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Const(double value) => FromScalar(value);
+    public static implicit operator Const(double value) => FromTensor(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create constant from a <see cref="BFloat16"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Const(BFloat16 value) => FromScalar(value);
+    public static implicit operator Const(BFloat16 value) => FromTensor(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create constant from a <see cref="bool"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Const(bool value) => FromScalar(value);
+    public static implicit operator Const(bool value) => FromTensor(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create constant from <see cref="string"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Const(string value) => FromSpan<char>(value);
-
-    /// <summary>
-    /// Create constant from a scalar.
-    /// </summary>
-    /// <typeparam name="T">CLR type.</typeparam>
-    /// <param name="value">Value.</param>
-    /// <returns>Created constant expression.</returns>
-    public static TensorConst FromScalar<T>(T value)
-        where T : unmanaged, IEquatable<T>
-        => new(Tensor.FromScalar(value));
-
-    /// <summary>
-    /// Create constant from a span.
-    /// </summary>
-    /// <typeparam name="T">CLR type.</typeparam>
-    /// <param name="span">Span.</param>
-    /// <param name="dimensions">Dimensions.</param>
-    /// <returns>Created constant expression.</returns>
-    public static TensorConst FromSpan<T>(ReadOnlySpan<T> span, ReadOnlySpan<int> dimensions)
-        where T : unmanaged, IEquatable<T>
-        => new(Tensor.FromSpan(span, dimensions));
-
-    /// <summary>
-    /// Create constant from a span, Set the shape as [n].
-    /// </summary>
-    /// <typeparam name="T">CLR type.</typeparam>
-    /// <param name="span">Span.</param>
-    /// <returns>Created constant expression.</returns>
-    public static TensorConst FromSpan<T>(ReadOnlySpan<T> span)
-        where T : unmanaged, IEquatable<T>
-        => new(Tensor.FromSpan(span));
+    public static implicit operator Const(string value) => FromTensor(Tensor.FromSpan<char>(value));
 
     /// <summary>
     /// Create constant from a tensor.
@@ -142,7 +111,7 @@ public abstract record Const(IRType ValueType) : Expr
     /// </summary>
     /// <param name="shape"></param>
     /// <returns></returns>
-    public static Const FromShape(Shape shape) => FromSpan<int>(shape.ToValueArray());
+    public static Const FromShape(Shape shape) => FromTensor(Tensor.FromSpan<int>(shape.ToValueArray()));
 
     /// <summary>
     /// Convert value to const expr.

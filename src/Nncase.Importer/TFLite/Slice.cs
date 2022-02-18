@@ -34,7 +34,7 @@ namespace Nncase.Importer.TFLite
             }
 
             var tensor = GetInputTensor(op, 0);
-            var axes = Const.FromSpan<int>(Enumerable.Range(0, tensor.ShapeLength).ToArray());
+            var axes = Tensor.FromSpan<int>(Enumerable.Range(0, tensor.ShapeLength).ToArray());
             return F.Tensors.Slice(input, begin, end, axes, strides);
         }
     }

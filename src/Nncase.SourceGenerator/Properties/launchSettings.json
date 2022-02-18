@@ -1,8 +1,12 @@
 {
   "profiles": {
-    "配置文件 1": {
+    "Evalutor": {
       "commandName": "DebugRoslynComponent",
       "targetProject": "..\\Nncase.Evaluator\\Nncase.Evaluator.csproj"
+    },
+    "Core": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\Nncase.Core\\Nncase.Core.csproj"
     }
   }
 }

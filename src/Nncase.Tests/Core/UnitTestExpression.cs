@@ -160,7 +160,7 @@ public class UnitTestExpression
     [Fact]
     public void TestConstToDenseTenor()
     {
-        var con = Const.FromSpan<int>(new[] { 1, 2, 3, 4, 5 }, new[] { 5 });
+        var con = Const.FromTensor(Tensor.FromSpan<int>(new[] { 1, 2, 3, 4, 5 }, new[] { 5 }));
         var t = con.Value.Cast<int>();
         Assert.Equal(1, t[0]);
         Assert.Equal(2, t[1]);

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using Nncase.Pattern;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -14,6 +15,7 @@ namespace Nncase.IR.NN;
 /// <summary>
 /// Sigmoid expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record Sigmoid() : Op
 {
     /// <summary>
@@ -25,6 +27,7 @@ public sealed record Sigmoid() : Op
 /// <summary>
 /// Relu expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record Relu() : Op
 {
     /// <summary>
@@ -36,6 +39,7 @@ public sealed record Relu() : Op
 /// <summary>
 /// Relu6 expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record Relu6() : Op
 {
     /// <summary>
@@ -47,6 +51,7 @@ public sealed record Relu6() : Op
 /// <summary>
 /// PRelu expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record PRelu() : Op
 {
     /// <summary>
@@ -58,6 +63,7 @@ public sealed record PRelu() : Op
 /// <summary>
 /// LeakyRelu expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record LeakyRelu() : Op
 {
     /// <summary>
@@ -69,6 +75,7 @@ public sealed record LeakyRelu() : Op
 /// <summary>
 /// Celu expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record Celu() : Op
 {
     /// <summary>
@@ -85,6 +92,7 @@ public sealed record Celu() : Op
 /// <summary>
 /// Selu expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record Selu() : Op
 {
     /// <summary>
@@ -101,6 +109,7 @@ public sealed record Selu() : Op
 /// <summary>
 /// Elu expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record Elu() : Op
 {
     /// <summary>
@@ -117,6 +126,7 @@ public sealed record Elu() : Op
 /// <summary>
 /// HardSwish expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record HardSwish() : Op
 {
     /// <summary>
@@ -128,6 +138,7 @@ public sealed record HardSwish() : Op
 /// <summary>
 /// HardSigmoid expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record HardSigmoid() : Op
 {
     /// <summary>

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using Nncase.Pattern;
 using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Tensors;
@@ -8,6 +9,7 @@ namespace Nncase.IR.Tensors;
 /// <summary>
 /// ReverseSequence expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record ReverseSequence() : Op
 {
     /// <summary>

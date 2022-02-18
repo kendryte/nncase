@@ -13,7 +13,7 @@ namespace Nncase.Evaluator;
 /// <summary>
 /// this attribute mark the source generator auto generate ITypeInferencer's interface impl
 /// </summary>
-internal class TypeInferGeneratorAttribute : Attribute
+public class TypeInferGeneratorAttribute : Attribute
 {
 
 }

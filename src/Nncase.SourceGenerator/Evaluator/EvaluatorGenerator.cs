@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-namespace Nncase.SourceGenerator;
+namespace Nncase.SourceGenerator.Evaluator;
 
 
 
@@ -22,12 +22,17 @@ internal class EvaluatorGenerator : ISourceGenerator
     {
         if (context.SyntaxReceiver is not EvaluatorImplReceiver evalReceiver)
             return;
+        if (evalReceiver.EvalCandidates.Any())
+        {
+            var eval_compilationunit = BuildFile(context, evalReceiver.EvalCandidates, InterfaceKind.IEvaluator);
+            context.AddSource("Ops.Evaluator", SyntaxTree(eval_compilationunit, encoding: Encoding.UTF8).GetText());
+        }
 
-        var eval_compilationunit = BuildFile(context, evalReceiver.EvalCandidates, InterfaceKind.IEvaluator);
-        context.AddSource("Ops.Evaluator", SyntaxTree(eval_compilationunit, encoding: Encoding.UTF8).GetText());
-
-        var typeinfer_compilationunit = BuildFile(context, evalReceiver.TypeInferCandidates, InterfaceKind.ITypeInferencer);
-        context.AddSource("Ops.TypeInferencer", SyntaxTree(typeinfer_compilationunit, encoding: Encoding.UTF8).GetText());
+        if (evalReceiver.TypeInferCandidates.Any())
+        {
+            var typeinfer_compilationunit = BuildFile(context, evalReceiver.TypeInferCandidates, InterfaceKind.ITypeInferencer);
+            context.AddSource("Ops.TypeInferencer", SyntaxTree(typeinfer_compilationunit, encoding: Encoding.UTF8).GetText());
+        }
     }
 
     /// <summary>
@@ -53,7 +58,7 @@ internal class EvaluatorGenerator : ISourceGenerator
                     InterfaceKind.ITypeInferencer => throw new NotSupportedException("The Type Infer Can't Convert Predefined Type"),
                     _ => throw new NotSupportedException($"The PredefinedType {predefinedType.Keyword.ValueText}")
                 },
-                QualifiedNameSyntax qualified => EvaluatorImplReceiver.GetFullName(qualified) switch
+                QualifiedNameSyntax qualified => qualified.GetFullName() switch
                 {
                     var x when target_interface == InterfaceKind.IEvaluator && x.EndsWith("torch.Tensor") => "GetTorchArgumentValue",
                     var x when target_interface == InterfaceKind.IEvaluator && x.EndsWith("Tensorflow.Tensor") => "GetTFArgumentValue",
@@ -83,7 +88,7 @@ internal class EvaluatorGenerator : ISourceGenerator
     /// <summary>
     /// build the whole call method like:
     /// <code>
-    /// public Const Visit(IEvaluateContext context, Celu celu)
+    /// public IValue Visit(IEvaluateContext context, Celu celu)
     /// {
     ///     var input = context.GetTorchArgumentValue(celu, Celu.Input);
     ///     var alpha = context.GetArgumentValueAsScalar<int>(celu, Celu.Alpha);

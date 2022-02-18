@@ -28,7 +28,7 @@ namespace Nncase.Importer
             var input = GetInputExpr(op, 0);
             var padMode = GetPadMode(op);
             var pads = GetIntsAttribute(op, "pads");
-            var paddings = Const.FromSpan<long>(pads, new Shape(2, pads.Length / 2));
+            var paddings = Tensor.FromSpan<long>(pads, new Shape(2, pads.Length / 2));
             var value = GetFloatAttribute(op, "value", 0f);
             return Pad(input, TransposePadding(paddings), padMode, value);
         }

@@ -11,6 +11,11 @@ using Nncase.IR;
 namespace Nncase.Pattern;
 
 /// <summary>
+/// mark the record class auto generate the pattern define.
+/// </summary>
+public class PatternFunctionalGeneratorAttribute : Attribute { }
+
+/// <summary>
 /// Pattern.
 /// </summary>
 public interface IPattern

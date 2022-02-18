@@ -60,7 +60,7 @@ namespace Nncase.IR.F
         public static Call Clamp<T>(Expr input, ValueRange<T> range)
             where T : unmanaged, IEquatable<T>
         {
-            return new Call(new Clamp(), input, Const.FromScalar(range.Min), Const.FromScalar(range.Max));
+            return new Call(new Clamp(), input, Tensor.FromScalar(range.Min), Tensor.FromScalar(range.Max));
         }
 
         /// <summary>

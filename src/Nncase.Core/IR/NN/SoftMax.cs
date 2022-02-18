@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using Nncase.Pattern;
 using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.NN;
@@ -9,6 +10,7 @@ namespace Nncase.IR.NN;
 /// <summary>
 /// LogSoftmax expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record LogSoftmax() : Op
 {
     /// <summary>
@@ -25,6 +27,7 @@ public sealed record LogSoftmax() : Op
 /// <summary>
 /// Softmax expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record Softmax() : Op
 {
     /// <summary>
@@ -41,6 +44,7 @@ public sealed record Softmax() : Op
 /// <summary>
 /// Softplus expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record Softplus() : Op
 {
     /// <summary>
@@ -52,6 +56,7 @@ public sealed record Softplus() : Op
 /// <summary>
 /// Softsign expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record Softsign() : Op
 {
     /// <summary>

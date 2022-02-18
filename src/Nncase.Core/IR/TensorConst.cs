@@ -23,85 +23,85 @@ public sealed record TensorConst(Tensor Value) : Const(new TensorType(Value.Elem
     /// Create TensorConstant from a <see cref="byte"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator TensorConst(byte value) => FromScalar(value);
+    public static implicit operator TensorConst(byte value) => new(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create TensorConstant from a <see cref="ushort"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator TensorConst(ushort value) => FromScalar(value);
+    public static implicit operator TensorConst(ushort value) => new(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create TensorConstant from a <see cref="uint"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator TensorConst(uint value) => FromScalar(value);
+    public static implicit operator TensorConst(uint value) => new(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create TensorConstant from a <see cref="ulong"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator TensorConst(ulong value) => FromScalar(value);
+    public static implicit operator TensorConst(ulong value) => new(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create TensorConstant from a <see cref="sbyte"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator TensorConst(sbyte value) => FromScalar(value);
+    public static implicit operator TensorConst(sbyte value) => new(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create TensorConstant from a <see cref="short"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator TensorConst(short value) => FromScalar(value);
+    public static implicit operator TensorConst(short value) => new(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create TensorConstant from a <see cref="int"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator TensorConst(int value) => FromScalar(value);
+    public static implicit operator TensorConst(int value) => new(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create TensorConstant from a <see cref="long"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator TensorConst(long value) => FromScalar(value);
+    public static implicit operator TensorConst(long value) => new(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create TensorConstant from a <see cref="Half"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator TensorConst(Half value) => FromScalar(value);
+    public static implicit operator TensorConst(Half value) => new(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create TensorConstant from a <see cref="float"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator TensorConst(float value) => FromScalar(value);
+    public static implicit operator TensorConst(float value) => new(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create TensorConstant from a <see cref="double"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator TensorConst(double value) => FromScalar(value);
+    public static implicit operator TensorConst(double value) => new(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create TensorConstant from a <see cref="BFloat16"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator TensorConst(BFloat16 value) => FromScalar(value);
+    public static implicit operator TensorConst(BFloat16 value) => new(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create TensorConstant from a <see cref="bool"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator TensorConst(bool value) => FromScalar(value);
+    public static implicit operator TensorConst(bool value) => new(Tensor.FromScalar(value));
 
     /// <summary>
     /// Create TensorConstant from <see cref="string"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator TensorConst(string value) => FromSpan<char>(value);
+    public static implicit operator TensorConst(string value) => new(Tensor.FromSpan<char>(value));
 
     /// <inheritdoc/>
     public override string ToString() => ValueType switch

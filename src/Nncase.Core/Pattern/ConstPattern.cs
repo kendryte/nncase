@@ -81,5 +81,5 @@ public static partial class Utility
 
     public static TensorConstPattern IsConst<T>(T Value)
     where T : unmanaged, IEquatable<T>
-    => new TensorConstPattern(x => x == Const.FromScalar(Value));
+    => new TensorConstPattern(x => x == Tensor.FromScalar(Value));
 }

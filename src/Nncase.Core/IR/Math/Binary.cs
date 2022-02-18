@@ -7,12 +7,14 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Pattern;
 
 namespace Nncase.IR.Math;
 
 /// <summary>
 /// Binary expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record Binary(BinaryOp BinaryOp) : Op
 {
     /// <summary>

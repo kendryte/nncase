@@ -34,7 +34,7 @@ namespace Nncase.Transform.Rule
             var w_shape = new Shape(new[] { other_shape[1].FixedValue, other_shape[0].FixedValue, 1, 1 });
 
             var if_reshape = Reshape(matmul.Input(), if_shape);
-            var w_tp = Transpose(matmul.Other(), Const.FromSpan<int>(new[] { 1, 0 }));
+            var w_tp = Transpose(matmul.Other(), Tensor.FromSpan<int>(new[] { 1, 0 }));
             var w_reshape = Reshape(w_tp, w_shape);
 
             return Conv2D(

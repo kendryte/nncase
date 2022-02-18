@@ -1,6 +1,7 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using Nncase.Pattern;
 using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.NN;
@@ -9,6 +10,7 @@ namespace Nncase.IR.NN;
 /// Pad tensor, a little difference with pytorch pad.
 /// </summary>
 /// <param name="PadMode">Pad mode.</param>
+[PatternFunctionalGenerator]
 public sealed record Pad(PadMode PadMode) : Op
 {
     /// <summary>

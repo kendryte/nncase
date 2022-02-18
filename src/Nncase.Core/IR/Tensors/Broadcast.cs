@@ -8,12 +8,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
+using Nncase.Pattern;
 
 namespace Nncase.IR.Tensors;
 
 /// <summary>
 /// Broadcast expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record Broadcast() : Op
 {
     /// <summary>

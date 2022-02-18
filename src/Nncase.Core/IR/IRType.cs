@@ -86,16 +86,6 @@ namespace Nncase.IR
         /// <param name="ElemType"> the Pointed Element Type</param>
         /// <returns>the pointer tensor type.</returns>
         public static TensorType Pointer(PrimType ElemType) => new(new PointerType(ElemType), Shape.Scalar);
-
-        /// <summary>
-        /// if TensorType contain's a 
-        /// </summary>
-        public PrimType PointedDType()
-        {
-            return DType is PointerType { ElemType: PrimType etype } ?
-              etype :
-              throw new InvalidOperationException("This TensorType Does Not Contians PointerType!");
-        }
     }
 
     /// <summary>

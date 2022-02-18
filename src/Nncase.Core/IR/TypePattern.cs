@@ -131,7 +131,7 @@ namespace Nncase.IR
         /// </summary>
         /// <returns></returns>
         public static TypePattern IsHandle() => new TypePattern(
-          x => (x is TensorType t && t.IsScalar && t.DType is PointerType), "IsHandle"
+          x => (x is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType { } } }), "IsHandle"
         );
 
         /// <summary>

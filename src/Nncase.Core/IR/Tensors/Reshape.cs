@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase;
+using Nncase.Pattern;
 using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Tensors;
@@ -15,6 +16,7 @@ namespace Nncase.IR.Tensors;
 /// <summary>
 /// Reshape expression.
 /// </summary>
+[PatternFunctionalGenerator]
 public sealed record Reshape() : Op
 {
     /// <summary>

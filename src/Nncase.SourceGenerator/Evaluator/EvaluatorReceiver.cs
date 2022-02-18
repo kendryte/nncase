@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Nncase.SourceGenerator;
+namespace Nncase.SourceGenerator.Evaluator;
 
 
 public enum InterfaceKind
@@ -98,24 +98,6 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
         }
     }
 
-
-    bool CheckAttrList(SyntaxList<AttributeListSyntax> AttrLists, InterfaceKind target_interface)
-    {
-        foreach (var attributeList in AttrLists)
-        {
-            foreach (var attr in attributeList.Attributes)
-            {
-                if (attr is AttributeSyntax { Name: SimpleNameSyntax { Identifier: { ValueText: var cur_attr_name } } }
-                && cur_attr_name == target_interface.GetAttrName())
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-
     /// <summary>
     /// check the base class list have the valid interface type.
     /// </summary>
@@ -157,7 +139,7 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
                 AttributeLists: var attrTypes,
                 BaseList: { Types: var baseTypes },
             }
-            && CheckAttrList(attrTypes, target_interface)
+            && RecriverUtil.CheckAttributes(attrTypes, target_interface.GetAttrName())
             && CheckBaseList(baseTypes, target_interface, out var op_type_name)
         )
         {
@@ -203,7 +185,7 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
 
         foreach (var member in candidate.classDecl.Members)
         {
-            // match the method like public Const Visit(IEvaluateContext context, Celu celu, xxxx)
+            // match the method like public IValue Visit(IEvaluateContext context, Celu celu, xxxx)
             if (member is MethodDeclarationSyntax
                 {
                     ReturnType: IdentifierNameSyntax { Identifier: { ValueText: var cur_return_type_name } },
@@ -218,7 +200,7 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
                                   select namespace_decl).ToArray();
                 if (namespaces.Length != 1)
                   throw new ArgumentOutOfRangeException($"You Must Use One Line NameSpace Define!");
-                var namespace_name = GetFullName(namespaces[0].Name);
+                var namespace_name = namespaces[0].Name.GetFullName();
                 if (!Candidates.TryGetValue(namespace_name, out var member_list))
                 {
                     member_list = new() { };
@@ -229,17 +211,4 @@ internal class EvaluatorImplReceiver : ISyntaxReceiver
             }
         }
     }
-
-    /// <summary>
-    /// get full name from the name syntax
-    /// </summary>
-    /// <param name="name"></param>
-    /// <returns></returns>
-    /// <exception cref="NotSupportedException"></exception>
-    public static string GetFullName(NameSyntax name) => name switch
-    {
-        QualifiedNameSyntax qualifiedName => GetFullName(qualifiedName.Left) + "." + GetFullName(qualifiedName.Right),
-        IdentifierNameSyntax identifierName => identifierName.Identifier.ValueText,
-        _ => throw new NotSupportedException(name.GetType().Name)
-    };
 }

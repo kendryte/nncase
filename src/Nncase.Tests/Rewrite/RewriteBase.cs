@@ -27,7 +27,7 @@ namespace Nncase.Tests.ReWriteTest
         {
             var weights = torch.rand(new long[] { (long)out_channels, (long)in_channels, (long)kernel, (long)kernel }).ToTensor();
             var bias = torch.rand(new long[] { (long)out_channels }).ToTensor();
-            return IR.F.NN.Conv2D(input, weights, bias, new[] { stride, stride }, Const.FromSpan<int>(new[] { 1, 1, 1, 1 }, new[] { 2, 2 }), new[] { 1, 1 }, PadMode.Constant, 1);
+            return IR.F.NN.Conv2D(input, weights, bias, new[] { stride, stride }, Tensor.FromSpan<int>(new[] { 1, 1, 1, 1 }, new[] { 2, 2 }), new[] { 1, 1 }, PadMode.Constant, 1);
         }
     }
 
