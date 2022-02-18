@@ -25,7 +25,7 @@ public abstract partial record Pattern : IPattern
       System.HashCode.Combine(EqualityComparer<Type>.Default.GetHashCode(EqualityContract));
 
     /// <inheritdoc/>
-    public abstract bool MatchLeaf(object input);
+    public abstract bool Match(object input);
 
     /// <summary>
     /// Print members.
@@ -52,13 +52,13 @@ public record Pattern<TExpr>(Func<TExpr, bool> Condition) : Pattern, IPattern<TE
     public TypePattern TypePattern { get; init; } = TypePatternUtility.IsIRType();
 
     /// <inheritdoc/>
-    public bool MatchLeaf(TExpr expr)
+    public bool Match(TExpr expr)
     {
         return MatchCheckedType(expr) && Condition(expr);
     }
 
     /// <inheritdoc/>
-    public sealed override bool MatchLeaf(object input) => input is TExpr expr && MatchLeaf(expr);
+    public sealed override bool Match(object input) => input is TExpr expr && Match(expr);
 
     /// <summary>
     /// Match The Expr Type.

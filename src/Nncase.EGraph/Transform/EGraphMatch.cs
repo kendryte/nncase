@@ -77,7 +77,7 @@ namespace Nncase.Transform
 
         public (bool, EContextEnv) MatchENode(VArgsPattern Patterns, IEnumerable<EClass> Children, EContextEnv env)
         {
-            if (!Patterns.MatchLeaf(Children))
+            if (!Patterns.Match(Children))
             {
                 return (false, env);
             }
@@ -111,14 +111,14 @@ namespace Nncase.Transform
             return (false, env);
         }
 
-        public (bool, EContextEnv) MatchENode(TensorConstPattern pattern, ENode enode, EContextEnv env) => (pattern.MatchLeaf((TensorConst)enode.Expr), env);
+        public (bool, EContextEnv) MatchENode(TensorConstPattern pattern, ENode enode, EContextEnv env) => (pattern.Match((TensorConst)enode.Expr), env);
 
-        public (bool, EContextEnv) MatchENode(ConstPattern pattern, ENode enode, EContextEnv env) => (pattern.MatchLeaf((Const)enode.Expr), env);
+        public (bool, EContextEnv) MatchENode(ConstPattern pattern, ENode enode, EContextEnv env) => (pattern.Match((Const)enode.Expr), env);
 
         public (bool, EContextEnv) MatchENode(FunctionPattern pattern, ENode enode, EContextEnv env)
         {
             var func = (Function)enode.Expr;
-            if (pattern.MatchLeaf(func))
+            if (pattern.Match(func))
             {
                 var (matchIdx, new_env) = MatchEclass(pattern.Body, eClasses[enode.Children[0]], env);
                 if (matchIdx == -1)
@@ -134,7 +134,7 @@ namespace Nncase.Transform
 
         public (bool, EContextEnv) MatchENode(CallPattern pattern, ENode enode, EContextEnv env)
         {
-            if (pattern.MatchLeaf((Call)enode.Expr))
+            if (pattern.Match((Call)enode.Expr))
             {
                 var (matchIdx, new_env) = MatchEclass(pattern.Target, eClasses[enode.Children[0]], env);
                 if (matchIdx == -1)
@@ -150,7 +150,7 @@ namespace Nncase.Transform
 
         public (bool, EContextEnv) MatchENode(TuplePattern pattern, ENode enode, EContextEnv env)
         {
-            if (pattern.MatchLeaf((Tuple)enode.Expr))
+            if (pattern.Match((Tuple)enode.Expr))
             {
                 return MatchENode(pattern.Fields, enode.Children, env);
             }
@@ -180,7 +180,7 @@ namespace Nncase.Transform
             return (env[pattern] == enode, env);
         }
 
-        public (bool, EContextEnv) MatchENode(WildCardPattern pattern, ENode enode, EContextEnv env)
+        public (bool, EContextEnv) MatchENode(WildcardPattern pattern, ENode enode, EContextEnv env)
         {
             return (true, env);
         }
@@ -196,7 +196,7 @@ namespace Nncase.Transform
                 (CallPattern callPat, Call) => MatchENode(callPat, enode, env),
                 (TuplePattern tuplePat, Tuple) => MatchENode(tuplePat, enode, env),
                 (OpPattern opPat, Op) => MatchENode(opPat, enode, env),
-                (WildCardPattern wildcardPat, _) => MatchENode(wildcardPat, enode, env),
+                (WildcardPattern wildcardPat, _) => MatchENode(wildcardPat, enode, env),
                 (_, _) => (false, env),
             };
             return UpdateEnv(match, new_env, pattern, enode);

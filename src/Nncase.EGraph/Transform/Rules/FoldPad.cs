@@ -22,12 +22,12 @@ namespace Nncase.Transform.Rule
 {
     public class FoldNopPad : IRewriteRule
     {
-        WildCardPattern wcin = "input";
+        WildcardPattern wcin = "input";
         TensorConstPattern wcpad = IsTensorConst(IsIntegral());
 
         public FoldNopPad()
         {
-            Pattern = IsPad(wcin, wcpad, IsWildCard());
+            Pattern = IsPad(wcin, wcpad, IsWildcard());
         }
 
         public override Expr? GetReplace(IMatchResult result)
@@ -44,7 +44,7 @@ namespace Nncase.Transform.Rule
 
     public class FoldPadPad : IRewriteRule
     {
-        WildCardPattern wcin = "input";
+        WildcardPattern wcin = "input";
         TensorConstPattern wcpad1, wcpad2;
         TensorConstPattern wcvalue1, wcvalue2;
         CallPattern pad1, pad2;
@@ -84,7 +84,7 @@ namespace Nncase.Transform.Rule
 
     public class FoldPadStrideSlice : IRewriteRule
     {
-        WildCardPattern wcin = "input", wcvalue = "value";
+        WildcardPattern wcin = "input", wcvalue = "value";
         CallPattern wcpad;
         TensorConstPattern wcpads = IsConstIntTensor(), wcbegin = IsConstIntTensor(),
          wcend = IsConstIntTensor(), wcaxes = IsConstIntTensor(), wcstride = IsConstIntTensor();
@@ -135,7 +135,7 @@ namespace Nncase.Transform.Rule
 
     public class StrideSliceToPad : IRewriteRule
     {
-        WildCardPattern wcin = "input";
+        WildcardPattern wcin = "input";
         TensorConstPattern wcbegin = IsConstIntTensor(),
          wcend = IsConstIntTensor(), wcaxes = IsConstIntTensor(), wcstride = IsConst((int x) => x == 1);
         public StrideSliceToPad()
@@ -165,9 +165,9 @@ namespace Nncase.Transform.Rule
 
     public class PadToSlice : IRewriteRule
     {
-        WildCardPattern wcin = "input";
+        WildcardPattern wcin = "input";
         TensorConstPattern wcpads = IsConst((int x) => x <= 0);
-        WildCardPattern wcvalue = "value";
+        WildcardPattern wcvalue = "value";
         public PadToSlice()
         {
             IsPad(wcin, wcpads, wcvalue);

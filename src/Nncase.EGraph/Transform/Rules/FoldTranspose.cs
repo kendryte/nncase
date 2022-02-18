@@ -17,7 +17,7 @@ namespace Nncase.Transform.Rule
         TransposeWrapper tp1, tp2;
         public FoldTranspose()
         {
-            tp1 = Transpose(IsWildCard(), IsConstIntTensor());
+            tp1 = Transpose(IsWildcard(), IsConstIntTensor());
             tp2 = Transpose(tp1, IsConstIntTensor());
             Pattern = tp2;
         }
@@ -48,7 +48,7 @@ namespace Nncase.Transform.Rule
         TransposeWrapper tp;
         public FoldNopTranspose()
         {
-            Pattern = tp = Transpose(IsWildCard(), IsConstIntTensor());
+            Pattern = tp = Transpose(IsWildcard(), IsConstIntTensor());
         }
 
         public override Expr? GetReplace(IMatchResult result)
@@ -69,7 +69,7 @@ namespace Nncase.Transform.Rule
         TransposeWrapper tp;
         public TransposeToReshape()
         {
-            Pattern = tp = Transpose(IsWildCard(), IsConstIntTensor());
+            Pattern = tp = Transpose(IsWildcard(), IsConstIntTensor());
         }
 
         public override Expr? GetReplace(IMatchResult result)

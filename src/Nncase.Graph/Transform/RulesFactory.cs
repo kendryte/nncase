@@ -66,7 +66,7 @@ namespace Nncase.Transform
         }
 
         /// <inheritdoc/>
-        public override Expr VisitLeaf(WildCardPattern pattern)
+        public override Expr VisitLeaf(WildcardPattern pattern)
         {
             return _result[pattern];
         }

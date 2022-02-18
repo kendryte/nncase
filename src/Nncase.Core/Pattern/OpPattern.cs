@@ -11,11 +11,22 @@ using Nncase.IR;
 namespace Nncase.Pattern;
 
 /// <summary>
+/// Op pattern interface.
+/// </summary>
+public interface IOpPattern : IPattern
+{
+    /// <summary>
+    /// Gets op type.
+    /// </summary>
+    Type OpType { get; }
+}
+
+/// <summary>
 /// Pattern for <see cref="Op"/>.
 /// </summary>
 /// <typeparam name="TOp">Op type.</typeparam>
 /// <param name="Condition">Condition.</param>
-public record OpPattern<TOp>(Func<TOp, bool> Condition) : Pattern<TOp>(Condition)
+public record OpPattern<TOp>(Func<TOp, bool> Condition) : Pattern<TOp>(Condition), IOpPattern
     where TOp : Op
 {
     /// <summary>
@@ -26,4 +37,7 @@ public record OpPattern<TOp>(Func<TOp, bool> Condition) : Pattern<TOp>(Condition
         : this(x => x.Equals(op))
     {
     }
+
+    /// <inheritdoc/>
+    public Type OpType => typeof(Op);
 }

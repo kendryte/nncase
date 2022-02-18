@@ -20,8 +20,8 @@ namespace Nncase.Transform.Rule
 {
     public class FoldReshape : IRewriteRule
     {
-        WildCardPattern wcin = "input";
-        WildCardPattern shape1 = "sp1", shape2 = "sp2";
+        WildcardPattern wcin = "input";
+        WildcardPattern shape1 = "sp1", shape2 = "sp2";
 
         public FoldReshape()
         {
@@ -36,7 +36,7 @@ namespace Nncase.Transform.Rule
 
     public class FoldNopReshape : IRewriteRule
     {
-        WildCardPattern wcin = "input";
+        WildcardPattern wcin = "input";
         TensorConstPattern wcshape = IsTensorConst(IsIntegral());
 
         public FoldNopReshape()

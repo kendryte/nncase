@@ -99,7 +99,7 @@ internal class CSourceHostBuildVisior : ExprFunctor<CSymbol, string>
     /// <summary>
     /// symbols name memo
     /// </summary>
-    readonly Dictionary<Expr, CSymbol> Symbols = new(new RecordRefComparer<Expr>());
+    readonly Dictionary<Expr, CSymbol> Symbols = new(new ReferenceEqualityComparer<Expr>());
 
     /// <summary>
     /// <see cref="CSourceHostBuildVisior"/>

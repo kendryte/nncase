@@ -574,7 +574,7 @@ public abstract class BaseRTKModule : IRTModule
             foreach (var node in function_sched.ComputeSequence)
             {
                 if (function_sched.Function.Parameters.Contains(node,
-                                new IR.RecordRefComparer<IR.Expr>()))
+                                ReferenceEqualityComparer.Instance))
                 {
                     var alloc = Allocation(node);
                     function_sched.Inputs.Add(alloc.RuntimeType);

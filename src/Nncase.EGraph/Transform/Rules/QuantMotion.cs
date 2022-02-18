@@ -26,7 +26,7 @@ namespace Nncase.Transform.Rule
         PadWrapper pad;
         public QuantPadMotion()
         {
-            pad = Pad(IsWildCard(), IsConst(), PadMode.Constant, IsConst());
+            pad = Pad(IsWildcard(), IsConst(), PadMode.Constant, IsConst());
             Pattern = quant = IsQuantize(pad);
         }
 
@@ -50,7 +50,7 @@ namespace Nncase.Transform.Rule
 
         public QuantTransposeMotion()
         {
-            trans = Transpose(IsWildCard(), IsConstIntTensor());
+            trans = Transpose(IsWildcard(), IsConstIntTensor());
             Pattern = quant = IsQuantize(trans);
         }
 
@@ -69,7 +69,7 @@ namespace Nncase.Transform.Rule
 
         public QuantSliceMotion()
         {
-            slice = IsSlice(IsWildCard());
+            slice = IsSlice(IsWildcard());
             Pattern = quant = IsQuantize(slice);
         }
 
@@ -89,7 +89,7 @@ namespace Nncase.Transform.Rule
 
         public QuantResizeMotion()
         {
-            resize = IsResize(IsWildCard(), IsWildCard());
+            resize = IsResize(IsWildcard(), IsWildcard());
             Pattern = quant = IsQuantize(resize);
         }
 
@@ -108,7 +108,7 @@ namespace Nncase.Transform.Rule
 
         public QuantReshapeMotion()
         {
-            reshape = Reshape(IsWildCard(), IsWildCard());
+            reshape = Reshape(IsWildcard(), IsWildcard());
             Pattern = quant = IsQuantize(reshape);
         }
 
@@ -127,8 +127,8 @@ namespace Nncase.Transform.Rule
 
         public QuantBatchToSpaceMotion()
         {
-            quant = IsQuantize(IsWildCard());
-            Pattern = b2s = BatchToSpace(quant, IsWildCard(), IsWildCard());
+            quant = IsQuantize(IsWildcard());
+            Pattern = b2s = BatchToSpace(quant, IsWildcard(), IsWildcard());
         }
 
         public override Expr? GetReplace(IMatchResult result)

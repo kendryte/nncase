@@ -24,7 +24,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
-    <ProjectReference Include="..\Nncase.Pattern\Nncase.Pattern.csproj" />
     <ProjectReference Include="..\Nncase.Evaluator\Nncase.Evaluator.csproj" />
   </ItemGroup>
 

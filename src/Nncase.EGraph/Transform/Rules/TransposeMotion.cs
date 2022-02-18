@@ -41,8 +41,8 @@ namespace Nncase.Transform.Rule
         public TransposeBinaryMotion()
         {
             conpat = IsConst();
-            transLhs = Transpose(IsWildCard(), conpat);
-            transRhs = Transpose(IsWildCard(), conpat);
+            transLhs = Transpose(IsWildcard(), conpat);
+            transRhs = Transpose(IsWildcard(), conpat);
             binary = IsBinary(transLhs, transRhs);
             Pattern = binary;
         }
@@ -62,7 +62,7 @@ namespace Nncase.Transform.Rule
     /// </summary>
     public class TransposeConstBinaryMotionLeft : IRewriteRule
     {
-        TransposeWrapper transpose = Transpose(IsWildCard(), IsTensorConst());
+        TransposeWrapper transpose = Transpose(IsWildcard(), IsTensorConst());
         TensorConstPattern con = IsTensorConst();
 
         BinaryWrapper binary;
@@ -104,7 +104,7 @@ namespace Nncase.Transform.Rule
     /// </summary>
     public class TransposeConstBinaryMotionRight : IRewriteRule
     {
-        TransposeWrapper transpose = Transpose(IsWildCard(), IsTensorConst());
+        TransposeWrapper transpose = Transpose(IsWildcard(), IsTensorConst());
         TensorConstPattern con = IsTensorConst();
 
         BinaryWrapper binary;
@@ -144,7 +144,7 @@ namespace Nncase.Transform.Rule
         }
 
         private Func<Const, bool> permCond = new(new Comparer().Cond);
-        List<WildCardPattern> wcinputs = new();
+        List<WildcardPattern> wcinputs = new();
         TensorConstPattern wcprem, wcaxis;
 
         public TransposeConcatMotion()
@@ -155,7 +155,7 @@ namespace Nncase.Transform.Rule
               {
                   for (int i = 0; i < n; i++)
                   {
-                      var wcin = IsWildCard();
+                      var wcin = IsWildcard();
                       param.Add(Transpose(wcin, wcprem));
                   }
               }
@@ -178,7 +178,7 @@ namespace Nncase.Transform.Rule
 
     public class TransPosePadMotion : IRewriteRule
     {
-        WildCardPattern wcin = "input";
+        WildcardPattern wcin = "input";
 
         TensorConstPattern wcmode = IsTensorConst(IsScalar()), wcpadv = IsTensorConst(IsScalar()), wcperm = IsTensorConst(IsScalar()), wcpads = IsTensorConst(IsTensor() & IsIntegral());
 
@@ -210,9 +210,9 @@ namespace Nncase.Transform.Rule
 
     public class TransposeReduceMotion : IRewriteRule
     {
-        WildCardPattern wcinput = "input", wcinit = "init";
+        WildcardPattern wcinput = "input", wcinit = "init";
         TensorConstPattern wckeepdims = IsTensorConst(IsScalar() | IsIntegral());
-        WildCardPattern wcaxis = "axis", wcperm = "axis";
+        WildcardPattern wcaxis = "axis", wcperm = "axis";
 
         public TransposeReduceMotion()
         {
@@ -237,7 +237,7 @@ namespace Nncase.Transform.Rule
 
     public class TransposeUnaryMotion : IRewriteRule
     {
-        WildCardPattern wcinput = "input", wcperm = "perm";
+        WildcardPattern wcinput = "input", wcperm = "perm";
 
         CallPattern wcunary;
         public TransposeUnaryMotion()
@@ -259,13 +259,13 @@ namespace Nncase.Transform.Rule
     public class TransposeClampMotion : IRewriteRule
     {
         TensorConstPattern wcmin, wcmax, wcperm;
-        WildCardPattern wcinput;
+        WildcardPattern wcinput;
         TransposeClampMotion()
         {
             wcmin = IsTensorConst(IsScalar());
             wcmax = IsTensorConst(IsScalar());
             wcperm = IsTensorConst(IsTensor() & IsIntegral());
-            wcinput = IsWildCard();
+            wcinput = IsWildcard();
             Pattern = Clamp(Transpose(wcinput, wcperm), wcmin, wcmax);
         }
 

@@ -92,7 +92,7 @@ namespace Nncase.Tests.ReWriteTest
             var egraph = new EGraph(y);
             EGraphPrinter.DumpEgraphAsDot(egraph, $"{Name}_ADD");
 
-            WildCardPattern wcx = "a";
+            WildcardPattern wcx = "a";
             var pattern = wcx + IsConst(0);
 
             // rule  (? + 0) => (?)

@@ -15,7 +15,7 @@ namespace Nncase.Pattern;
 /// <param name="Body">Body pattern.</param>
 /// <param name="Parameters">Parameters pattern.</param>
 public sealed record FunctionPattern(Pattern Body, VArgsPattern Parameters)
-    : Pattern<Function>(x => Body.MatchLeaf(x.Body) && Parameters.MatchLeaf(x.Parameters))
+    : Pattern<Function>(x => Body.Match(x.Body) && Parameters.Match(x.Parameters))
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="FunctionPattern"/> class.

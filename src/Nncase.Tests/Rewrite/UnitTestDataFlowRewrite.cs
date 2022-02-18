@@ -77,7 +77,7 @@ namespace Nncase.Tests.ReWriteTest
         BinaryWrapper binary;
         public SwapXY()
         {
-            Pattern = binary = Add(IsWildCard(), IsConst());
+            Pattern = binary = Add(IsWildcard(), IsConst());
         }
         public override Expr GetReplace(IMatchResult result)
         {

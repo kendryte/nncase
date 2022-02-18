@@ -18,11 +18,11 @@ public sealed record OrPattern<TInput>(IPattern<TInput> ConditionA, IPattern<TIn
     : Pattern, IPattern<TInput>
 {
     /// <inheritdoc/>
-    public bool MatchLeaf(TInput input)
+    public bool Match(TInput input)
     {
-        return ConditionA.MatchLeaf(input) || ConditionB.MatchLeaf(input);
+        return ConditionA.Match(input) || ConditionB.Match(input);
     }
 
     /// <inheritdoc/>
-    public sealed override bool MatchLeaf(object input) => input is TInput expr && MatchLeaf(expr);
+    public sealed override bool Match(object input) => input is TInput expr && Match(expr);
 }

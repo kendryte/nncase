@@ -19,7 +19,7 @@ namespace Nncase.Transform.Rule
 {
     public class FoldInQuant : IRewriteRule
     {
-        WildCardPattern wcin = "input";
+        WildcardPattern wcin = "input";
 
         public FoldInQuant()
         {

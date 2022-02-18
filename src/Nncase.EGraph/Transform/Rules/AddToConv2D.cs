@@ -25,7 +25,7 @@ namespace Nncase.Transform.Rule
 
         public AddToConv2D()
         {
-            Pattern = ad = Add(IsWildCard(), IsWildCard());
+            Pattern = ad = Add(IsWildcard(), IsWildcard());
         }
 
         public override Expr? GetReplace(IMatchResult result)

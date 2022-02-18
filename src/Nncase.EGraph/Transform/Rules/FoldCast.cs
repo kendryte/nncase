@@ -19,7 +19,7 @@ namespace Nncase.Transform.Rule
 {
     public class FoldNopCast : IRewriteRule
     {
-        WildCardPattern wcin = "input";
+        WildcardPattern wcin = "input";
         CallPattern wccast1, wccast2;
         FoldNopCast()
         {

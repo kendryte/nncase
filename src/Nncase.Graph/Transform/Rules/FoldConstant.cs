@@ -21,7 +21,7 @@ namespace Nncase.Transform.Rule
     {
         public FoldConstCall()
         {
-            Pattern = IsCall(IsWildCard(), IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())));
+            Pattern = IsCall(IsWildcard(), IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())));
         }
 
         public override Expr? GetReplace(IMatchResult result)
@@ -35,7 +35,7 @@ namespace Nncase.Transform.Rule
     {
         public FoldConstFunction()
         {
-            Pattern = IsFunction(IsWildCard(), IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())));
+            Pattern = IsFunction(IsWildcard(), IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())));
         }
 
         public override Expr? GetReplace(IMatchResult result) => Const.FromValue(result[Pattern].Evaluate());
@@ -43,7 +43,7 @@ namespace Nncase.Transform.Rule
 
     public class FoldShapeOp : IRewriteRule
     {
-        WildCardPattern wc = "input";
+        WildcardPattern wc = "input";
 
         public FoldShapeOp()
         {

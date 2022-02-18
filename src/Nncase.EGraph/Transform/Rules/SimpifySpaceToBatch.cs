@@ -21,7 +21,7 @@ namespace Nncase.Transform.Rule
 
         public SpaceToBatchToPad()
         {
-            Pattern = s2b = SpaceToBatch(IsWildCard(), IsConst(), IsConst());
+            Pattern = s2b = SpaceToBatch(IsWildcard(), IsConst(), IsConst());
         }
 
         public override Expr? GetReplace(IMatchResult result)
