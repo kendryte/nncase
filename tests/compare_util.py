@@ -38,7 +38,7 @@ def segment_close(gt: np.ndarray, pred: np.ndarray):
 
 def top1(gt_path, result_path):
     label_file = os.path.join(os.getcwd(), "tests", "val.txt")
-    case_name = gt_path.split('/')[-2]
+    case_name = gt_path.split('/')[-2].split("-")[0]
 
     label_dict = {}
     gt_data_dict = {}
@@ -56,17 +56,18 @@ def top1(gt_path, result_path):
     with open(label_file, 'r') as label_f, open(gt_path, 'r') as gt_f, open(result_path, 'r') as result_f:
         # get label result
         for line in label_f.readlines():
-            label_dict[line.strip('\n').split(' ')[0]] = int(line.strip('\n').split(' ')[1])
+            label_dict[line.strip('\n').split(' ')[0]] = int(
+                line.strip('\n').split(' ')[1]) + num_classes_flag
 
         # get cpu result or no_ptq result
         for line in gt_f.readlines():
             gt_data_dict[line.strip('\n').split(' ')[0]] = int(
-                line.strip('\n').split(' ')[1]) + num_classes_flag
+                line.strip('\n').split(' ')[1])
 
         # get infer result
         for line in result_f.readlines():
             result_data_dict[line.strip('\n').split(' ')[0]] = int(
-                line.strip('\n').split(' ')[1]) + num_classes_flag
+                line.strip('\n').split(' ')[1])
 
     gt_result = 0
     for key, value in gt_data_dict.items():
@@ -81,12 +82,12 @@ def top1(gt_path, result_path):
     percent_result = infer_result / len(result_data_dict)
 
     path = result_path.split("/")[3:5]
-    with open(os.path.join("tests_output", "dataset_test_result.txt"), 'a+') as f:
+    with open(os.path.join("dataset_tests_output", case_name, "dataset_test_result.txt"), 'a+') as f:
 
         if path in [["cpu", "ptq"], ["k510", "noptq"], ["k510", "ptq"]]:
             f.write("{}:{}\t".format("{}_{}".format(*path), percent_result))
         else:
-            f.write("\n\n{}\n".format(gt_path.split("/")[1][5:]))
+            f.write("\n{}\n".format(case_name))
             f.write("framework:{}\t".format(label_precent_result))
             f.write("{}:{}\t".format("{}_{}".format(*path), percent_result))
     return label_precent_result - percent_result
