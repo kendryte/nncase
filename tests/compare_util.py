@@ -38,7 +38,7 @@ def segment_close(gt: np.ndarray, pred: np.ndarray):
 
 def top1(gt_path, result_path):
     label_file = os.path.join(os.getcwd(), "tests", "val.txt")
-    case_name = gt_path.split('/')[-2].split("-")[0]
+    case_name = gt_path.split('/')[-2]
 
     label_dict = {}
     gt_data_dict = {}
@@ -87,7 +87,7 @@ def top1(gt_path, result_path):
         if path in [["cpu", "ptq"], ["k510", "noptq"], ["k510", "ptq"]]:
             f.write("{}:{}\t".format("{}_{}".format(*path), percent_result))
         else:
-            f.write("\n{}\n".format(case_name))
+            f.write("\n{}\n".format(case_name.split("-")[0]))
             f.write("framework:{}\t".format(label_precent_result))
             f.write("{}:{}\t".format("{}_{}".format(*path), percent_result))
     return label_precent_result - percent_result
