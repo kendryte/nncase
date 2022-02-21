@@ -94,19 +94,18 @@ namespace Nncase.Importer
             _constTensors = _graph.Initializer
                 .ToDictionary(tensor => tensor.Name, tensor => tensor);
 
-            _outputTensors = _graph.Input
+            var inputTensors = _graph.Input
                 .Where(n => !_constTensors.ContainsKey(n.Name))
-                .ToDictionary(n => n.Name, n => (Expr)new Var(n.Name, GetIRType(n)));
+                .ToDictionary(n => n.Name, n => new Var(n.Name, GetIRType(n)));
 
-            var createdInputs = _outputTensors.Values.ToArray();
             _graph.Node.ToList().ForEach(Visit);
 
             var outputs = _graph.Output.Select(o => _outputTensors[o.Name]).ToArray();
 
-            return MakeMainModule(outputs, createdInputs);
+            return MakeMainModule(outputs, inputTensors.Values.ToArray());
         }
 
-        private IRModule MakeMainModule(Expr[] body, IRArray<Expr> parameter)
+        private IRModule MakeMainModule(Expr[] body, IRArray<Var> parameter)
         {
             var outputTuple = new IR.Tuple(ImmutableArray.Create(body));
             var mainFunc = new Function("main", outputTuple, parameter);

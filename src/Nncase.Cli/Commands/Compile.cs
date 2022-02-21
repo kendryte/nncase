@@ -69,9 +69,9 @@ namespace Nncase.Cli.Commands
         {
             Console.WriteLine("Infer Shape...");
             var pmgr = new PassManager(module, new RunPassOptions(null, options.DumpLevel, options.DumpDir));
-            var constFold = new ShapeInferPass();
-            pmgr.Add(constFold);
-            pmgr.Run();
+            //var constFold = new ShapeInferPass();
+            //pmgr.Add(constFold);
+            //pmgr.Run();
         }
 
         private IRModule ImportModel(Stream content, CompileOptions options) =>

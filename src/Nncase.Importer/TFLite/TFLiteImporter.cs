@@ -64,7 +64,7 @@ namespace Nncase.Importer.TFLite
         {
             // 1. Create inputs
             var inputsCount = _subGraph.InputsLength;
-            var created_inputs = new Expr[inputsCount];
+            var created_inputs = new Var[inputsCount];
             for (int i = 0; i < inputsCount; i++)
             {
                 var inputId = _subGraph.Inputs(i);

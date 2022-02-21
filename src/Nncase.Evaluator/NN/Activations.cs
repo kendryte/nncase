@@ -18,33 +18,24 @@ public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>
         return input.celu().ToValue();
     }
 
-    private InvalidType Visit(TensorType input)
+    private TensorType Visit(TensorType input)
     {
-        return new("fuck");
+        return input;
     }
 }
 
 /// <summary>
 /// Evaluator for <see cref="Elu"/>.
 /// </summary>
-public class EluEvaluator : IEvaluator<Elu>, ITypeInferencer<Elu>
+[EvaluatorGenerator, TypeInferGenerator]
+public partial class EluEvaluator : IEvaluator<Elu>, ITypeInferencer<Elu>
 {
-    /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, Elu elu)
+    IValue Visit(TorchSharp.torch.Tensor input, double alpha)
     {
-        var input = context.GetTorchArgumentValue(elu, Elu.Input);
-        var alpha = context.GetArgumentValueAsScalar<double>(elu, Elu.Alpha);
         return torchF.elu(input, alpha).ToValue();
     }
 
-    /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, Elu target)
-    {
-        var input = context.CheckArgumentType<TensorType>(target, Elu.Input);
-        return Visit(input);
-    }
-
-    private IRType Visit(TensorType input)
+    IRType Visit(TensorType input)
     {
         return input;
     }
