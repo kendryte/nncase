@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using Nncase.IR;
 
-namespace Nncase.Pattern;
+namespace Nncase.PatternMatch;
 
 /// <summary>
 /// Op pattern interface.
@@ -26,7 +26,7 @@ public interface IOpPattern : IPattern
 /// </summary>
 /// <typeparam name="TOp">Op type.</typeparam>
 /// <param name="Condition">Condition.</param>
-public record OpPattern<TOp>(Func<TOp, bool> Condition) : Pattern<TOp>(Condition), IOpPattern
+public record OpPattern<TOp>(Func<TOp, bool> Condition) : Pattern<TOp>, IOpPattern
     where TOp : Op
 {
     /// <summary>
@@ -40,4 +40,7 @@ public record OpPattern<TOp>(Func<TOp, bool> Condition) : Pattern<TOp>(Condition
 
     /// <inheritdoc/>
     public Type OpType => typeof(Op);
+
+    /// <inheritdoc/>
+    protected override bool MatchLeafCore(TOp expr) => Condition(expr);
 }

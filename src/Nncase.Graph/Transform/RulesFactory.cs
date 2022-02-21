@@ -10,9 +10,9 @@ using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
-using Nncase.Pattern;
+using Nncase.PatternMatch;
 using TorchSharp;
-using static Nncase.Pattern.Utility;
+using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Transform;
 
@@ -36,17 +36,28 @@ internal sealed class ExprGeneratorVisitor : PatternVisitor<Expr, IRType>
     }
 
     /// <inheritdoc/>
-    public override Expr VisitLeaf(FunctionPattern pattern)
+    public override Expr VisitLeaf(TensorConstPattern pattern)
     {
-        return new Function(PatternMemo[pattern.Body], pattern.Parameters.Select(p => PatternMemo[p]).ToArray());
+        return _result.Get(pattern);
     }
 
     /// <inheritdoc/>
-    public override Expr VisitLeaf(OpPattern pattern) => pattern switch
+    public override Expr VisitLeaf(TupleConstPattern pattern)
     {
-        BinaryPattern binary => new Binary(binary.BinaryOp!.Value),
-        _ => throw new NotSupportedException($"Not Support Convert {pattern.GetType().Name}!"),
-    };
+        return _result.Get(pattern);
+    }
+
+    /// <inheritdoc/>
+    public override Expr VisitLeaf(FunctionPattern pattern)
+    {
+        return new Function(PatternMemo[pattern.Body], pattern.Parameters.Select(p => (Var)PatternMemo[p]).ToArray());
+    }
+
+    /// <inheritdoc/>
+    public override Expr VisitLeaf(IOpPattern pattern)
+    {
+        return (Expr)_result[pattern];
+    }
 
     /// <inheritdoc/>
     public override Expr VisitLeaf(TuplePattern pattern)
@@ -57,13 +68,13 @@ internal sealed class ExprGeneratorVisitor : PatternVisitor<Expr, IRType>
     /// <inheritdoc/>
     public override Expr VisitLeaf(VarPattern pattern)
     {
-        return _result[pattern];
+        return _result.Get(pattern);
     }
 
     /// <inheritdoc/>
-    public override Expr VisitLeaf(WildcardPattern pattern)
+    public override Expr VisitLeaf(ExprPattern pattern)
     {
-        return _result[pattern];
+        return _result.Get(pattern);
     }
 }
 
@@ -75,30 +86,33 @@ public class TemplateRule : IRewriteRule
     /// <summary>
     /// after expr.
     /// </summary>
-    public ExprPattern Rhs;
+    private readonly Pattern _rhs;
 
     /// <summary>
     /// predicate will be eval to bool.
     /// </summary>
-    public ExprPattern? Predicate;
+    private readonly Pattern? _predicate;
 
     /// <summary>
-    /// <see cref="RulesFactory.Rewrite(ExprPattern, ExprPattern, ExprPattern?)"/>.
+    /// <see cref="RulesFactory.Rewrite(Pattern, Pattern, Pattern?)"/>.
     /// </summary>
-    public TemplateRule(ExprPattern lhs, ExprPattern rhs, ExprPattern? predicate = null)
+    public TemplateRule(Pattern lhs, Pattern rhs, Pattern? predicate = null)
     {
         Pattern = lhs;
-        Rhs = rhs;
-        Predicate = predicate;
+        _rhs = rhs;
+        _predicate = predicate;
     }
 
     /// <inheritdoc/>
-    public override Expr? GetReplace(IMatchResult result)
+    public IPattern Pattern { get; }
+
+    /// <inheritdoc/>
+    public Expr? GetReplace(IMatchResult result)
     {
         var converter = new ExprGeneratorVisitor(result);
-        if (Predicate is null || (Predicate is not null && converter.Visit(Predicate).Evaluate().AsTensor().ToScalar<bool>()))
+        if (_predicate is null || (_predicate is not null && converter.Visit(_predicate).Evaluate().AsTensor().ToScalar<bool>()))
         {
-            return converter.Visit(Rhs);
+            return converter.Visit(_rhs);
         }
 
         return null;
@@ -117,6 +131,6 @@ public static class RulesFactory
     /// <param name="rhs">rhs pattern expression.</param>
     /// <param name="predicate"> predicate pattern expression. </param>
     /// <returns> PatternRule. </returns>
-    public static IRewriteRule Rewrite(ExprPattern lhs, ExprPattern rhs, ExprPattern? predicate = null)
+    public static IRewriteRule Rewrite(Pattern lhs, Pattern rhs, Pattern? predicate = null)
       => new TemplateRule(lhs, rhs, predicate);
 }

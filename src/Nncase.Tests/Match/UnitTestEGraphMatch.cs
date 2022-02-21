@@ -4,16 +4,16 @@ using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Hosting;
 using Nncase.IR;
-using Nncase.Pattern;
-using Nncase.Pattern.Math;
+using Nncase.PatternMatch;
+using Nncase.PatternMatch.Math;
 using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
-using static Nncase.Pattern.F.Math;
-using static Nncase.Pattern.F.Tensors;
-using static Nncase.Pattern.Utility;
+using static Nncase.PatternMatch.F.Math;
+using static Nncase.PatternMatch.F.Tensors;
+using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.MatchTest;
 

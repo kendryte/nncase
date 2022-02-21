@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nncase.Pattern.F
+namespace Nncase.PatternMatch.F
 {
     /// <summary>
     /// Math functional helper.

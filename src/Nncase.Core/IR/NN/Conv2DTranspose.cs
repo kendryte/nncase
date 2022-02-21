@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR.Tensors;
-using Nncase.Pattern;
+using Nncase.PatternMatch;
 
 namespace Nncase.IR.NN
 {

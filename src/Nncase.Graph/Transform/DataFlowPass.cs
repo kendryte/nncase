@@ -1,123 +1,101 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using Nncase.IR;
-using System.Collections.Generic;
-using Nncase.Pattern;
-using System.IO;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using Nncase.IR;
+using Nncase.PatternMatch;
 
-namespace Nncase.Transform
+namespace Nncase.Transform;
+
+/// <summary>
+/// Dataflow pass.
+/// </summary>
+public class DataflowPass : FunctionPass
 {
+    private readonly List<IRewriteRule> _rules = new();
+
     /// <summary>
-    /// dataflow pass.
+    /// Initializes a new instance of the <see cref="DataflowPass"/> class.
     /// </summary>
-    public class DataFlowPass : FunctionPass
+    /// <param name="name">Name.</param>
+    public DataflowPass(string name)
+        : base(name)
     {
-        public readonly List<IRewriteRule> Rules = new();
+    }
 
-        public DataFlowPass(string name) : base(name)
+    /// <summary>
+    /// Gets rules.
+    /// </summary>
+    public IReadOnlyList<IRewriteRule> Rules => _rules;
+
+    /// <summary>
+    /// add the pattern rule.
+    /// </summary>
+    /// <param name="rule">Rule.</param>
+    public void Add(IRewriteRule rule) => _rules.Add(rule);
+
+    /// <summary>
+    /// add the pattern rules.
+    /// </summary>
+    /// <param name="rules">Rules.</param>
+    public void Add(params IRewriteRule[] rules) => _rules.AddRange(rules);
+
+    /// <summary>
+    /// <see cref="Add(IRewriteRule[])"/>.
+    /// </summary>
+    /// <param name="rules">Rules.</param>
+    public void Add(IEnumerable<IRewriteRule> rules) => _rules.AddRange(rules);
+
+    /// <summary>
+    /// the callback function you can custom process func with run pass options.
+    /// </summary>
+    /// <param name="func"> func without run pass.</param>
+    /// <param name="options">Options.</param>
+    protected override void OnPassStart(Function func, RunPassOptions options)
+    {
+        switch (options.DumpLevel)
         {
-        }
-
-        /// <summary>
-        /// add the pattern rules.
-        /// </summary>
-        /// <param name="rules"></param>
-        public void Add(params IRewriteRule[] rules) => Rules.AddRange(rules);
-
-        /// <summary>
-        /// <see cref="Add(IRewriteRule[])"/>.
-        /// </summary>
-        /// <param name="rules"></param>
-        public void Add(IEnumerable<IRewriteRule> rules) => Rules.AddRange(rules);
-
-        /// <summary>
-        /// the callback function you can custom process func with run pass options.
-        /// </summary>
-        /// <param name="func"> func without run pass.</param>
-        /// <param name="options"></param>
-        protected override void OnPassStart(Function func, RunPassOptions options)
-        {
-            switch (options.DumpLevel)
-            {
-                case >= 2:
-                    IRPrinter.DumpFunctionAsIL(func, "Start", Path.Combine(options.PassDumpDir, Name));
-                    break;
-                case >= 1:
-                    Console.WriteLine($"On {Name} Pass Start:");
-                    func.DumpExprAsIL();
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// the callback function you can custom process func with run pass options.
-        /// </summary>
-        /// <param name="func"> func with rewrited. </param>
-        /// <param name="options"></param>
-        protected override void OnPassEnd(Function func, RunPassOptions options)
-        {
-            switch (options.DumpLevel)
-            {
-                case >= 2:
-                    IRPrinter.DumpFunctionAsIL(func, "End", Path.Combine(options.PassDumpDir, Name));
-                    break;
-                case >= 1:
-                    Console.WriteLine($"On {Name} Pass End:");
-                    func.DumpExprAsIL();
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        /// <inheritdoc/>
-        protected override Function RunCore(Function pre, RunPassOptions options)
-        {
-            OnPassStart(pre, options);
-            Function post = (Function)DataFlowRewrite.Rewrite(pre, Rules, options);
-            OnPassEnd(post, options);
-            return post;
+            case >= 2:
+                IRPrinter.DumpFunctionAsIL(func, "Start", Path.Combine(options.PassDumpDir, Name));
+                break;
+            case >= 1:
+                Console.WriteLine($"On {Name} Pass Start:");
+                func.DumpExprAsIL();
+                break;
+            default:
+                break;
         }
     }
 
-    public sealed class ShapeInferPass : DataFlowPass
+    /// <summary>
+    /// the callback function you can custom process func with run pass options.
+    /// </summary>
+    /// <param name="func"> func with rewrited. </param>
+    /// <param name="options">Options.</param>
+    protected override void OnPassEnd(Function func, RunPassOptions options)
     {
-        public ShapeInferPass(string name = "ShapeInfer") : base(name)
+        switch (options.DumpLevel)
         {
-            Rules.Add(new Transform.Rule.FoldConstCall());
-            Rules.Add(new Transform.Rule.FoldShapeOp());
+            case >= 2:
+                IRPrinter.DumpFunctionAsIL(func, "End", Path.Combine(options.PassDumpDir, Name));
+                break;
+            case >= 1:
+                Console.WriteLine($"On {Name} Pass End:");
+                func.DumpExprAsIL();
+                break;
+            default:
+                break;
         }
+    }
 
-        /// <inheritdoc/>
-        protected override Function RunCore(Function pre, RunPassOptions options)
-        {
-            Function post;
-            int count = 0;
-            RunPassOptions new_options = new(options);
-            new_options.SetDir(options.PassDumpDir);
-            while (true)
-            {
-                post = (Function)DataFlowRewrite.Rewrite(pre, Rules, new_options.SetName($"{Name}/Run_{count}"));
-                if (post == pre)
-                {
-                    if (!CompilerServices.InferenceType(post))
-                    {
-                        throw new InvalidOperationException("Can't InferShape For This Model!");
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-
-                pre = post;
-            }
-
-            return post;
-        }
+    /// <inheritdoc/>
+    protected override Function RunCore(Function pre, RunPassOptions options)
+    {
+        OnPassStart(pre, options);
+        Function post = (Function)CompilerServices.Rewrite(pre, Rules, options);
+        OnPassEnd(post, options);
+        return post;
     }
 }

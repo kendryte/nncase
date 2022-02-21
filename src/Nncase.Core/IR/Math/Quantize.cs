@@ -1,6 +1,6 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-using Nncase.Pattern;
+using Nncase.PatternMatch;
 using System;
 
 namespace Nncase.IR.Math;

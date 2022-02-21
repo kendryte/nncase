@@ -7,7 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Nncase.Pattern;
+using Nncase.PatternMatch;
 
 namespace Nncase.IR.Math;
 

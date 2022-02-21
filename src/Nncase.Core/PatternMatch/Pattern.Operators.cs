@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Nncase.Pattern.F.Math;
+using static Nncase.PatternMatch.F.Math;
 
-namespace Nncase.Pattern;
+namespace Nncase.PatternMatch;
 
 public partial record Pattern
 {

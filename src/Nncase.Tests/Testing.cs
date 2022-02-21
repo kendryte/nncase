@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.Transform;
+using Nncase.Transform.Rules;
 using Xunit;
 
 namespace Nncase.Tests
@@ -70,14 +71,14 @@ namespace Nncase.Tests
             return GetDumpDirPath(Path.Combine(namespace_name, type.Name));
         }
 
-        private static readonly DataFlowPass _simplifyPass = new("SimplifyAll");
+        private static readonly DataflowPass _simplifyPass = new("SimplifyAll");
 
         internal static Expr Simplify(Expr expr, string member)
         {
             if (_simplifyPass.Rules.Count == 0)
             {
-                _simplifyPass.Add(Transform.Rule.SimplifyFactory.SimplifyAdd());
-                _simplifyPass.Add(Transform.Rule.SimplifyFactory.SimplifyMul());
+                _simplifyPass.Add(SimplifyFactory.SimplifyAdd());
+                _simplifyPass.Add(SimplifyFactory.SimplifyMul());
                 _simplifyPass.Add(new Transform.Rule.FoldConstCall());
             }
             var f = new Function(expr, new Expr[] { });

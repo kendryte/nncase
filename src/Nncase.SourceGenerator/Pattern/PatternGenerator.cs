@@ -86,7 +86,7 @@ public class PatternGenerator : ISourceGenerator
             //5. build namespace
             var arr = old_namespace.ToDisplayString().Split('.');
             arr[arr.Length - 1] = "F";
-            var @namespcae = NamespaceDeclaration(ParseName(string.Join(".", arr).Replace("IR", "Pattern")))
+            var @namespcae = NamespaceDeclaration(ParseName(string.Join(".", arr).Replace("IR", "PatternMatch")))
                 .AddMembers(classes.ToArray());
             namespaces.Add(namespcae);
         }

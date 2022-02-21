@@ -8,7 +8,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Nncase.IR;
 
-namespace Nncase.Pattern;
+namespace Nncase.PatternMatch;
 
 /// <summary>
 /// Pattern for varadic expressions.
@@ -49,7 +49,7 @@ public sealed record VArgsPattern(Func<IReadOnlyList<Expr>, IRArray<Pattern>> Fi
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     /// <inheritdoc/>
-    public bool Match(IReadOnlyList<Expr> input)
+    public bool MatchLeaf(IReadOnlyList<Expr> input)
     {
         _fields = FieldsGenerator(input);
 
@@ -58,19 +58,11 @@ public sealed record VArgsPattern(Func<IReadOnlyList<Expr>, IRArray<Pattern>> Fi
             return false;
         }
 
-        for (int i = 0; i < input.Count; i++)
-        {
-            if (!_fields[i].Match(input[i]))
-            {
-                return false;
-            }
-        }
-
         return true;
     }
 
     /// <inheritdoc/>
-    public override bool Match(object input) => input is IReadOnlyList<Expr> exprs && Match(exprs);
+    public override bool MatchLeaf(object input) => input is IReadOnlyList<Expr> exprs && MatchLeaf(exprs);
 }
 
 public partial class Utility

@@ -5,16 +5,16 @@ using System.Linq;
 using Microsoft.Extensions.Hosting;
 using Nncase.Evaluator;
 using Nncase.IR;
-using Nncase.Pattern;
+using Nncase.PatternMatch;
 using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
-using static Nncase.Pattern.F.Math;
-using static Nncase.Pattern.F.NN;
-using static Nncase.Pattern.F.Tensors;
-using static Nncase.Pattern.Utility;
+using static Nncase.PatternMatch.F.Math;
+using static Nncase.PatternMatch.F.NN;
+using static Nncase.PatternMatch.F.Tensors;
+using static Nncase.PatternMatch.Utility;
 using Rule = Nncase.Transform.Rule;
 
 

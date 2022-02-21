@@ -6,53 +6,44 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Tensors;
-using Nncase.Pattern;
-using static Nncase.Pattern.F.Math;
-using static Nncase.Pattern.F.NN;
-using static Nncase.Pattern.F.Tensors;
-using static Nncase.Pattern.Utility;
+using Nncase.PatternMatch;
+using static Nncase.PatternMatch.F.Tensors;
+using static Nncase.PatternMatch.Utility;
+using static Nncase.IR.TypePatternUtility;
 
-namespace Nncase.Transform.Rule
+namespace Nncase.Transform.Rules;
+
+/// <summary>
+/// Fold call of constants.
+/// </summary>
+public class FoldConstCall : RewriteRule<CallPattern>
 {
-    public class FoldConstCall : IRewriteRule
-    {
-        public FoldConstCall()
-        {
-            Pattern = IsCall(IsWildcard(), IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())));
-        }
+    /// <inheritdoc/>
+    public override CallPattern Pattern { get; } = IsCall(IsWildcard(), IsVArgsRepeat(() => IsConst()));
 
-        public override Expr? GetReplace(IMatchResult result)
-        {
-            var expr = result[Pattern];
-            return Const.FromValue(expr.Evaluate());
-        }
+    /// <inheritdoc/>
+    public override Expr? GetReplace(IMatchResult result)
+    {
+        var expr = result.Get(Pattern);
+        return Const.FromValue(expr.Evaluate());
     }
+}
 
-    public class FoldConstFunction : IRewriteRule
+/// <summary>
+/// Fold shape of.
+/// </summary>
+public class FoldShapeOf : RewriteRule<CallPattern>
+{
+    /// <inheritdoc/>
+    public override CallPattern Pattern { get; } = ShapeOf(IsWildcard()) with { TypePattern = IsTensor() };
+
+    /// <inheritdoc/>
+    public override Expr? GetReplace(IMatchResult result)
     {
-        public FoldConstFunction()
-        {
-            Pattern = IsFunction(IsWildcard(), IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())));
-        }
-
-        public override Expr? GetReplace(IMatchResult result) => Const.FromValue(result[Pattern].Evaluate());
-    }
-
-    public class FoldShapeOp : IRewriteRule
-    {
-        WildcardPattern wc = "input";
-
-        public FoldShapeOp()
-        {
-            Pattern = ShapeOp(wc);
-        }
-
-        public override Expr? GetReplace(IMatchResult result)
-        {
-            return Const.FromShape(result[wc].CheckedShape);
-        }
+        return Const.FromShape(result.Get(Pattern).CheckedShape);
     }
 }

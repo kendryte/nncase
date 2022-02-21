@@ -10,97 +10,80 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
-using Nncase.Pattern;
+using Nncase.PatternMatch;
 
-namespace Nncase.Transform
+namespace Nncase.Transform;
+
+/// <summary>
+/// rewrite method.
+/// </summary>
+internal class DataflowRewriter
 {
-    /// <summary>
-    /// rewrite method.
-    /// </summary>
-    public static class DataFlowRewrite
+    public Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
     {
-        /// <summary>
-        /// callback for rewrite start.
-        /// </summary>
-        /// <param name="expr"></param>
-        /// <param name="options"></param>
-        /// <param name="count"></param>
-        private static void OnRewriteStart(Expr expr, RunPassOptions options, int count)
+        var post = expr;
+        var last = post;
+        int count = 0;
+        do
         {
-            switch (options.DumpLevel)
+            bool isMutated = false;
+            OnRewriteStart(last, options, count);
+            foreach (var rule in rules)
             {
-                case >= 2:
-                    IRPrinter.DumpExprAsIL(expr, $"{count}_Start", Path.Combine(options.PassDumpDir, "Rewrite"));
-                    break;
-                case >= 1:
-                    expr.DumpExprAsIL();
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// call back for rewrite end.
-        /// </summary>
-        /// <param name="expr"></param>
-        /// <param name="options"></param>
-        /// <param name="count"></param>
-        private static void OnRewriteEnd(Expr expr, RunPassOptions options, int count)
-        {
-            switch (options.DumpLevel)
-            {
-                case >= 2:
-                    IRPrinter.DumpExprAsIL(expr, $"{count}_End", Path.Combine(options.PassDumpDir, "Rewrite"));
-                    break;
-                case >= 1:
-                    expr.DumpExprAsIL();
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        private static Expr RewriteImpl(Expr pre, IEnumerable<IRewriteRule> Rules, RunPassOptions options)
-        {
-            var visitor = new DataFlowReWriteVisitor();
-            var post = pre;
-            var last = post;
-            int count = 0;
-            do
-            {
-                OnRewriteStart(last, options, count);
-                foreach (var rule in Rules)
+                var visitor = new DataFlowRewriteVisitor(rule);
+                last = post;
+                post = visitor.Visit(last);
+                if (visitor.IsMutated)
                 {
-                    visitor.Rule = rule;
-                    foreach (var pattern in rule.Patterns)
-                    {
-                        visitor.Pattern = pattern;
-                        last = post;
-                        visitor.Clear();
-                        post = visitor.Visit(last);
-                        if (visitor.isMatched)
-                        {
-                            CompilerServices.InferenceType(post);
-                            break;
-                        }
-                    }
-
-                    if (visitor.isMatched)
-                    {
-                        break;
-                    }
-                }
-
-                OnRewriteEnd(post, options, count++);
-                if (!visitor.isMatched)
-                {
+                    isMutated = true;
+                    CompilerServices.InferenceType(post);
                     break;
                 }
-            } while (true);
-            return post;
-        }
+            }
 
-        public static Expr Rewrite(Expr pre, IEnumerable<IRewriteRule> Rules, RunPassOptions options) => RewriteImpl(pre, Rules, options);
+            OnRewriteEnd(post, options, count++);
+            if (!isMutated)
+            {
+                break;
+            }
+        }
+        while (true);
+        return post;
+    }
+
+    /// <summary>
+    /// callback for rewrite start.
+    /// </summary>
+    private void OnRewriteStart(Expr expr, RunPassOptions options, int count)
+    {
+        switch (options.DumpLevel)
+        {
+            case >= 2:
+                IRPrinter.DumpExprAsIL(expr, $"{count}_Start", Path.Combine(options.PassDumpDir, "Rewrite"));
+                break;
+            case >= 1:
+                expr.DumpExprAsIL();
+                break;
+            default:
+                break;
+        }
+    }
+
+    /// <summary>
+    /// call back for rewrite end.
+    /// </summary>
+    private void OnRewriteEnd(Expr expr, RunPassOptions options, int count)
+    {
+        switch (options.DumpLevel)
+        {
+            case >= 2:
+                IRPrinter.DumpExprAsIL(expr, $"{count}_End", Path.Combine(options.PassDumpDir, "Rewrite"));
+                break;
+            case >= 1:
+                expr.DumpExprAsIL();
+                break;
+            default:
+                break;
+        }
     }
 }

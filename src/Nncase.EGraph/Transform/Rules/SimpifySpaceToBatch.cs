@@ -4,13 +4,13 @@
 using System;
 using System.Linq;
 using Nncase.IR;
-using Nncase.Pattern;
-using Nncase.Pattern.Math;
-using static Nncase.Pattern.Utility;
+using Nncase.PatternMatch;
+using Nncase.PatternMatch.Math;
+using static Nncase.PatternMatch.Utility;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.F.NN;
-using static Nncase.Pattern.F.Tensors;
-using Nncase.Pattern.Tensors;
+using static Nncase.PatternMatch.F.Tensors;
+using Nncase.PatternMatch.Tensors;
 using System.Numerics.Tensors;
 
 namespace Nncase.Transform.Rule

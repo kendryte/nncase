@@ -3,11 +3,11 @@ using Microsoft.Extensions.Hosting;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.F;
-using Nncase.Pattern;
+using Nncase.PatternMatch;
 using Nncase.Tests.ReWriteTest;
 using Nncase.Transform;
 using Xunit;
-using static Nncase.Pattern.Utility;
+using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.CostModelTest
 {

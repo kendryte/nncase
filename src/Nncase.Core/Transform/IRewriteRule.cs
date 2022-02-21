@@ -3,8 +3,9 @@
 
 using System;
 using Nncase.IR;
+using Nncase.PatternMatch;
 
-namespace Nncase.Pattern;
+namespace Nncase.Transform;
 
 /// <summary>
 /// Rewrite rule.

@@ -7,13 +7,13 @@ using System.Linq;
 using Nncase.IR;
 using static Nncase.IR.TypePatternUtility;
 
-namespace Nncase.Pattern;
+namespace Nncase.PatternMatch;
 
 /// <summary>
 /// Pattern for <see cref="TupleConst"/>.
 /// </summary>
 /// <param name="Condition">Expression condition.</param>
-public sealed record TupleConstPattern(Func<TupleConst, bool> Condition) : Pattern<TupleConst>(Condition)
+public sealed record TupleConstPattern(Func<TupleConst, bool> Condition) : Pattern<TupleConst>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="TupleConstPattern"/> class.
@@ -29,6 +29,9 @@ public sealed record TupleConstPattern(Func<TupleConst, bool> Condition) : Patte
     /// Gets value.
     /// </summary>
     public TupleConst? Value { get; }
+
+    /// <inheritdoc/>
+    protected override bool MatchLeafCore(TupleConst expr) => Condition(expr);
 }
 
 public static partial class Utility

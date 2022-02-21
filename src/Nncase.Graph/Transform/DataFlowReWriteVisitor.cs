@@ -5,97 +5,34 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Nncase.IR;
-using Nncase.Pattern;
+using Nncase.PatternMatch;
 
-namespace Nncase.Transform
+namespace Nncase.Transform;
+
+/// <summary>
+/// DataFlowReWriteVisitor.
+/// </summary>
+internal sealed class DataFlowRewriteVisitor : ExprMutator
 {
-    /// <summary>
-    /// DataFlowReWriteVisitor.
-    /// </summary>
-    internal sealed class DataFlowReWriteVisitor : ExprVisitor<Expr, IRType>
+    private readonly IRewriteRule _rule;
+
+    public DataFlowRewriteVisitor(IRewriteRule rule)
     {
-        public ExprPattern Pattern { set; get; } = new InvalidPattern();
+        _rule = rule;
+    }
 
-        public IRewriteRule Rule { set; get; } = new InvalidRule();
-
-        /// <summary>
-        /// a flag for fast exit, we can use it to know this rewrite results.
-        /// </summary>
-        public bool isMatched { private set; get; } = false;
-
-        public override void Clear()
+    public override Expr DefaultMutateLeaf(Expr expr)
+    {
+        var match = CompilerServices.MatchRoot(expr, _rule.Pattern);
+        if (match != null)
         {
-            isMatched = false;
-            base.Clear();
-        }
-
-        /// <summary>
-        /// MatchCurExpr, in each node we try match pattern .
-        /// </summary>
-        /// <param name="expr"></param>
-        /// <returns></returns>
-        private Expr MatchCurExpr(Expr expr)
-        {
-            var matchs = DataFlowMatcher.Match(expr, Pattern);
-            if (matchs.Count == 1)
+            var replace = _rule.GetReplace(match);
+            if (replace != null)
             {
-                isMatched = true;
-                var res = Rule.GetReplace(matchs[0]);
-                Pattern.Clear();
-                return res ?? expr;
+                return replace;
             }
-
-            return expr;
         }
 
-        /// <inheritdoc/>
-        public override Expr DefaultVisitLeaf(Expr expr)
-        {
-            return MatchCurExpr(expr);
-        }
-
-        /// <inheritdoc/>
-        public override Expr VisitLeaf(Call expr)
-        {
-            if (!isMatched)
-            {
-                return MatchCurExpr(expr);
-            }
-
-            return expr with
-            {
-                Target = ExpressionMemo[expr.Target],
-                Parameters = (from p in expr.Parameters select ExpressionMemo[p]).ToImmutableArray(),
-            };
-        }
-
-        /// <inheritdoc/>
-        public override Expr VisitLeaf(Function expr)
-        {
-            if (!isMatched)
-            {
-                return MatchCurExpr(expr);
-            }
-
-            return expr with
-            {
-                Body = ExpressionMemo[expr.Body],
-                Parameters = (from p in expr.Parameters select ExpressionMemo[p]).ToImmutableArray(),
-            };
-        }
-
-        /// <inheritdoc/>
-        public override Expr VisitLeaf(Tuple expr)
-        {
-            if (!isMatched)
-            {
-                return MatchCurExpr(expr);
-            }
-
-            return expr with
-            {
-                Fields = (from f in expr.Fields select ExpressionMemo[f]).ToImmutableArray(),
-            };
-        }
+        return expr;
     }
 }

@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 
-namespace Nncase.Pattern;
+namespace Nncase.PatternMatch;
 
 /// <summary>
 /// Pattern.
@@ -25,7 +25,7 @@ public abstract partial record Pattern : IPattern
       System.HashCode.Combine(EqualityComparer<Type>.Default.GetHashCode(EqualityContract));
 
     /// <inheritdoc/>
-    public abstract bool Match(object input);
+    public abstract bool MatchLeaf(object input);
 
     /// <summary>
     /// Print members.
@@ -43,7 +43,7 @@ public abstract partial record Pattern : IPattern
 /// Pattern.
 /// </summary>
 /// <typeparam name="TExpr">Expression type.</typeparam>
-public record Pattern<TExpr>(Func<TExpr, bool> Condition) : Pattern, IPattern<TExpr>
+public record Pattern<TExpr> : Pattern, IPattern<TExpr>
     where TExpr : Expr
 {
     /// <summary>
@@ -52,13 +52,20 @@ public record Pattern<TExpr>(Func<TExpr, bool> Condition) : Pattern, IPattern<TE
     public TypePattern TypePattern { get; init; } = TypePatternUtility.IsIRType();
 
     /// <inheritdoc/>
-    public bool Match(TExpr expr)
+    public bool MatchLeaf(TExpr expr)
     {
-        return MatchCheckedType(expr) && Condition(expr);
+        return MatchCheckedType(expr) && MatchLeafCore(expr);
     }
 
     /// <inheritdoc/>
-    public sealed override bool Match(object input) => input is TExpr expr && Match(expr);
+    public sealed override bool MatchLeaf(object input) => input is TExpr expr && MatchLeaf(expr);
+
+    /// <summary>
+    /// Match leaf impl.
+    /// </summary>
+    /// <param name="expr">Input expression.</param>
+    /// <returns>Match result.</returns>
+    protected virtual bool MatchLeafCore(TExpr expr) => true;
 
     /// <summary>
     /// Match The Expr Type.
@@ -68,6 +75,6 @@ public record Pattern<TExpr>(Func<TExpr, bool> Condition) : Pattern, IPattern<TE
     private bool MatchCheckedType(Expr expr) => expr.CheckedType switch
     {
         IRType type => TypePattern.MatchLeaf(type),
-        _ => false,
+        _ => throw new InvalidOperationException("Infer type before pattern match."),
     };
 }

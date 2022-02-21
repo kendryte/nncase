@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 
-namespace Nncase.Pattern;
+namespace Nncase.PatternMatch;
 
 /// <summary>
 /// mark the record class auto generate the pattern define.
@@ -25,7 +25,7 @@ public interface IPattern
     /// </summary>
     /// <param name="input">Input.</param>
     /// <returns>Is match.</returns>
-    bool Match(object input);
+    bool MatchLeaf(object input);
 }
 
 /// <summary>
@@ -39,5 +39,5 @@ public interface IPattern<in TInput> : IPattern
     /// </summary>
     /// <param name="input">Input.</param>
     /// <returns>Is match.</returns>
-    bool Match(TInput input);
+    bool MatchLeaf(TInput input);
 }

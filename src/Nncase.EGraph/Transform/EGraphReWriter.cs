@@ -7,7 +7,7 @@ using System.IO;
 using System.Collections.Generic;
 using Nncase.Transform.Rule;
 using Nncase.IR;
-using Nncase.Pattern;
+using Nncase.PatternMatch;
 
 namespace Nncase.Transform
 {

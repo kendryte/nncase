@@ -7,13 +7,13 @@ using System.Linq;
 using Nncase.IR;
 using static Nncase.IR.TypePatternUtility;
 
-namespace Nncase.Pattern;
+namespace Nncase.PatternMatch;
 
 /// <summary>
 /// Pattern for <see cref="TensorConst"/>.
 /// </summary>
 /// <param name="Condition">Expression condition.</param>
-public sealed record TensorConstPattern(Func<TensorConst, bool> Condition) : Pattern<TensorConst>(Condition)
+public sealed record TensorConstPattern(Func<TensorConst, bool> Condition) : Pattern<TensorConst>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="TensorConstPattern"/> class.
@@ -29,6 +29,9 @@ public sealed record TensorConstPattern(Func<TensorConst, bool> Condition) : Pat
     /// Gets value.
     /// </summary>
     public TensorConst? Value { get; }
+
+    /// <inheritdoc/>
+    protected override bool MatchLeafCore(TensorConst expr) => Condition(expr);
 }
 
 public static partial class Utility

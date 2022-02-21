@@ -18,7 +18,7 @@ namespace Nncase.IR
         /// <summary>
         /// for speedup the Mutator, If is Mutated we need MutateLeaf recursive.
         /// </summary>
-        protected bool IsMutated = false;
+        public bool IsMutated { get; protected set; } = false;
 
         /// <inheritdoc/>
         public override Expr VisitLeaf(Call expr)
@@ -63,7 +63,7 @@ namespace Nncase.IR
             return expr with
             {
                 Body = Visit(expr.Body),
-                Parameters = new(expr.Parameters.Select(Visit)),
+                Parameters = new(expr.Parameters.Select(x => (Var)Visit(x))),
             };
         }
 
