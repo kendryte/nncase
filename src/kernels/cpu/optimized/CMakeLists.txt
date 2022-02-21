@@ -16,5 +16,7 @@ set(SRCS convolution.cpp
          gather_nd.cpp
          quantize.cpp
          onehot.cpp
-         ${ARCH}/binary.cpp)
+         ${ARCH}/binary.cpp
+         ${ARCH}/unary.cpp
+         ${ARCH}/matmul.cpp)
 target_sources(kernels PRIVATE ${SRCS})
