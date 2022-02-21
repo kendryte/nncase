@@ -20,17 +20,24 @@ internal class EvaluatorGenerator : ISourceGenerator
 
     public void Execute(GeneratorExecutionContext context)
     {
-        if (context.SyntaxReceiver is not EvaluatorImplReceiver evalReceiver)
+        if (context.SyntaxContextReceiver is not EvaluatorImplReceiver evalReceiver)
             return;
+        if (evalReceiver.Diagnostics.Any())
+        {
+            foreach (var diag in evalReceiver.Diagnostics)
+            {
+                context.ReportDiagnostic(diag);
+            }
+        }
         if (evalReceiver.EvalCandidates.Any())
         {
-            var eval_compilationunit = BuildFile(context, evalReceiver.EvalCandidates, InterfaceKind.IEvaluator);
+            var eval_compilationunit = BuildFile(context, evalReceiver.EvalCandidates);
             context.AddSource("Ops.Evaluator", SyntaxTree(eval_compilationunit, encoding: Encoding.UTF8).GetText());
         }
 
         if (evalReceiver.TypeInferCandidates.Any())
         {
-            var typeinfer_compilationunit = BuildFile(context, evalReceiver.TypeInferCandidates, InterfaceKind.ITypeInferencer);
+            var typeinfer_compilationunit = BuildFile(context, evalReceiver.TypeInferCandidates);
             context.AddSource("Ops.TypeInferencer", SyntaxTree(typeinfer_compilationunit, encoding: Encoding.UTF8).GetText());
         }
     }
@@ -42,47 +49,42 @@ internal class EvaluatorGenerator : ISourceGenerator
     /// <param name="cand"></param>
     /// <returns></returns>
     /// <exception cref="NotSupportedException"></exception>
-    List<StatementSyntax> BuildStatements(GenerateCandidate cand, InterfaceKind target_interface)
+    List<StatementSyntax> BuildStatements(GenerateCandidate cand)
     {
-        var (return_type_name, context_type_name) = target_interface.GetKindInfo();
-        var statements = new List<StatementSyntax>();
+        var (return_type_name, context_type_name) = cand.Target.GetKindInfo();
+        var statementSyntaxes = new List<StatementSyntax>();
         TextInfo myTI = new CultureInfo("en-US", false).TextInfo;
-        foreach (var param in cand.methodDecl.ParameterList.Parameters)
+        foreach (var Parameter in cand.Method.Parameters)
         {
-            var paramName = param.Identifier.ValueText;
-            string callMethod = param.Type switch
+            if (!cand.Op.MemberNames.Any(name => name.ToLower() == Parameter.Name))
+                throw new InvalidOperationException($"The Method Parameter {Parameter.Name} Is Not Valid!");
+            var paramType = Parameter.Type;
+            string callMethod = paramType switch
             {
-                PredefinedTypeSyntax predefinedType => target_interface switch
+                { IsReferenceType: true } => paramType.ToDisplayString() switch
                 {
-                    InterfaceKind.IEvaluator => $"GetArgumentValueAsScalar<{predefinedType.Keyword.ValueText}>",
-                    InterfaceKind.ITypeInferencer => throw new NotSupportedException("The Type Infer Can't Convert Predefined Type"),
-                    _ => throw new NotSupportedException($"The PredefinedType {predefinedType.Keyword.ValueText}")
-                },
-                QualifiedNameSyntax qualified => qualified.GetFullName() switch
-                {
-                    var x when target_interface == InterfaceKind.IEvaluator && x.EndsWith("torch.Tensor") => "GetTorchArgumentValue",
-                    var x when target_interface == InterfaceKind.IEvaluator && x.EndsWith("Tensorflow.Tensor") => "GetTFArgumentValue",
-                    var x when target_interface == InterfaceKind.ITypeInferencer => $"CheckArgumentType<{x}>",
-                    var x when x == cand.OpTypeName => "",
+                    var x when cand.Target == InterfaceKind.IEvaluator && x.EndsWith("torch.Tensor") => "GetTorchArgumentValue",
+                    var x when cand.Target == InterfaceKind.IEvaluator && x.EndsWith("Tensorflow.Tensor") => "GetTFArgumentValue",
+                    var x when cand.Target == InterfaceKind.ITypeInferencer => $"CheckArgumentType<{x}>",
+                    var x when x == cand.Op.Name => "",
                     var x => throw new NotSupportedException(x)
                 },
-                SimpleNameSyntax nameSyntax => nameSyntax switch
+                { IsUnmanagedType: true, IsValueType: true } => cand.Target switch
                 {
-                    var x when x.Identifier.ValueText == context_type_name => "",
-                    var x when target_interface == InterfaceKind.ITypeInferencer => $"CheckArgumentType<{x}>",
-                    _ => throw new NotSupportedException($"When Generate {target_interface.ToString()} Not Support {nameSyntax}")
+                    InterfaceKind.IEvaluator => $"GetArgumentValueAsScalar<{paramType.ToDisplayString()}>",
+                    InterfaceKind.ITypeInferencer => throw new NotSupportedException("The Type Infer Can't Convert Unmanaged Type"),
+                    _ => throw new NotSupportedException(paramType.ToDisplayString())
                 },
-                _ => throw new NotSupportedException($"The param.Type {param.Type.ToString()}")
             };
+
             if (callMethod != string.Empty)
-                statements.Add(
-                  ParseStatement($"var {paramName} = context.{callMethod}({cand.OpTypeName.ToLower()}, {cand.OpTypeName}.{myTI.ToTitleCase(paramName)});")
-                );
+                statementSyntaxes.Add(ParseStatement($"var {Parameter.Name} = context.{callMethod}(target, {cand.Op.ToDisplayString()}.{myTI.ToTitleCase(Parameter.Name)});"));
+            else
+                statementSyntaxes.Add(ParseStatement($"var {Parameter.Name} = target;"));
         }
-        statements.Add(
-          ParseStatement($"return Visit({string.Join(",", cand.methodDecl.ParameterList.Parameters.Select(p => p.Identifier.ValueText))});")
-        );
-        return statements;
+        var visitMethod = cand.Method.ReturnType.BuildReturnWrapper(cand.Target, $"Visit({string.Join(",", cand.Method.Parameters.Select(p => p.Name))})");
+        statementSyntaxes.Add(ParseStatement($"return {visitMethod};"));
+        return statementSyntaxes;
     }
 
     /// <summary>
@@ -99,54 +101,49 @@ internal class EvaluatorGenerator : ISourceGenerator
     /// <param name="cand"></param>
     /// <param name="statements"></param>
     /// <returns></returns>
-    MethodDeclarationSyntax BuildMethod(GenerateCandidate cand, List<StatementSyntax> statements, InterfaceKind target_interface)
+    MethodDeclarationSyntax BuildMethod(GenerateCandidate cand, List<StatementSyntax> statements)
     {
-        var (return_type_name, context_type_name) = target_interface.GetKindInfo();
+        var (return_type_name, context_type_name) = cand.Target.GetKindInfo();
         var method = MethodDeclaration(ParseTypeName(return_type_name), "Visit")
         .AddModifiers(Token(SyntaxKind.PublicKeyword))
         .AddParameterListParameters(
           Parameter(Identifier("context")).WithType(ParseTypeName(context_type_name)),
-          Parameter(Identifier(cand.OpTypeName.ToLower())).WithType(ParseTypeName(cand.OpTypeName)))
+          Parameter(Identifier("target")).WithType(ParseTypeName(cand.Op.ToDisplayString())))
         .WithBody(Block(statements.ToArray()));
         return method;
     }
 
-    CompilationUnitSyntax BuildFile(GeneratorExecutionContext context, Dictionary<string, List<GenerateCandidate>> Candidates, InterfaceKind target_interface)
+    CompilationUnitSyntax BuildFile(GeneratorExecutionContext context, List<GenerateCandidate> Candidates)
     {
-        var namespaces = new List<NamespaceDeclarationSyntax>();
-        foreach (var (namespace_name, candidates) in Candidates.Select(kv => (kv.Key, kv.Value)))
+        List<NamespaceDeclarationSyntax> namespaceDeclarations = new();
+        var NamespaceCandidates = Candidates.GroupBy(keySelector: can => can.Class.ContainingNamespace).ToDictionary(g => g.Key, g => g.ToList());
+        foreach (var (Namespace, candidates) in NamespaceCandidates.Select(kv => (kv.Key, kv.Value)))
         {
-            var classes = new List<ClassDeclarationSyntax>();
+            List<ClassDeclarationSyntax> classDeclarations = new();
             foreach (var cand in candidates)
             {
-                var semanticModel = context.Compilation.GetSemanticModel(cand.methodDecl.SyntaxTree);
                 // 1. generate the param preprocess
-                var statements = BuildStatements(cand, target_interface);
+                var statementSyntaxes = BuildStatements(cand);
                 // 2. generate the IEvaluator Interface Impl
-                var method = BuildMethod(cand, statements, target_interface);
+                var methodDeclarations = BuildMethod(cand, statementSyntaxes);
                 // 3. generate the classes
-                var cls_name = cand.classDecl.Identifier.ValueText;
+                var cls_name = cand.Class.Name;
                 var cls = ClassDeclaration(Identifier(cls_name))
                   .AddModifiers(
                       Token(SyntaxKind.PublicKeyword),
                       Token(SyntaxKind.PartialKeyword))
-                  .AddBaseListTypes(cand.classDecl.BaseList.Types.ToArray())
-                  .AddMembers(method);
-                classes.Add(cls);
+                  .AddBaseListTypes(cand.Class.Interfaces.Select(i => SimpleBaseType(ParseTypeName(i.ToDisplayString()))).ToArray())
+                  .AddMembers(methodDeclarations);
+                classDeclarations.Add(cls);
             }
             // 4. generate the namespaces
-            namespaces.Add(NamespaceDeclaration(ParseName(namespace_name))
-            .AddMembers(classes.ToArray()));
+            namespaceDeclarations.Add(NamespaceDeclaration(ParseName(Namespace.ToDisplayString()))
+            .AddMembers(classDeclarations.ToArray()));
         }
+
         // 4. generate the file
         var compilationUnit = CompilationUnit().
-                AddMembers(namespaces.ToArray()).
-                AddUsings(
-                  UsingDirective(ParseName("Nncase.IR")),
-                  UsingDirective(ParseName("Nncase.IR.Math")),
-                  UsingDirective(ParseName("Nncase.IR.NN")),
-                  UsingDirective(ParseName("Nncase.IR.Tensors"))
-                  ).
+                AddMembers(namespaceDeclarations.ToArray()).
                 NormalizeWhitespace();
         return compilationUnit;
     }

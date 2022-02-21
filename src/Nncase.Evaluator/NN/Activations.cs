@@ -18,9 +18,9 @@ public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>
         return input.celu().ToValue();
     }
 
-    private IRType Visit(TensorType input)
+    private InvalidType Visit(TensorType input)
     {
-        return input;
+        return new("fuck");
     }
 }
 

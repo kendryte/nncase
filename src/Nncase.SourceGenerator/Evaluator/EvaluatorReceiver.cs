@@ -22,8 +22,8 @@ public static class InterfaceKindExtensions
 
     public static string GetReturnType(this InterfaceKind target_interface) => target_interface switch
     {
-        InterfaceKind.IEvaluator => "IValue",
-        InterfaceKind.ITypeInferencer => "IRType",
+        InterfaceKind.IEvaluator => "Nncase.IValue",
+        InterfaceKind.ITypeInferencer => "Nncase.IR.IRType",
         _ => throw new NotImplementedException(),
     };
 
@@ -36,11 +36,48 @@ public static class InterfaceKindExtensions
 
     public static string GetAttrName(this InterfaceKind target_interface) => target_interface switch
     {
-        InterfaceKind.IEvaluator => "EvaluatorGenerator",
-        InterfaceKind.ITypeInferencer => "TypeInferGenerator",
+        InterfaceKind.IEvaluator => "EvaluatorGeneratorAttribute",
+        InterfaceKind.ITypeInferencer => "TypeInferGeneratorAttribute",
         _ => throw new NotImplementedException(),
     };
 
+    /// <summary>
+    /// check the return type , can process the interface type
+    /// </summary>
+    /// <param name="typeSymbol"></param>
+    /// <param name="interfaceKind"></param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    public static bool CheckReturnTypeRange(this ITypeSymbol typeSymbol, InterfaceKind interfaceKind) => interfaceKind switch
+    {
+        InterfaceKind.IEvaluator => typeSymbol switch
+        {
+            { Name: "Tensor" } or { BaseType: { Name: "Tensor" } } => true,
+            { Name: "Const" } or { BaseType: { Name: "Const" } } => true,
+            { Name: "IValue" } => true,
+            _ => false,
+        },
+        InterfaceKind.ITypeInferencer => typeSymbol switch
+        {
+            { Name: "IRType" } => true,
+            { BaseType: { Name: "IRType" } } => true,
+            _ => false,
+        },
+        _ => throw new NotImplementedException(),
+    };
+
+    public static string BuildReturnWrapper(this ITypeSymbol typeSymbol, InterfaceKind interfaceKind, string visitStatement) => interfaceKind switch
+    {
+        InterfaceKind.IEvaluator => typeSymbol switch
+        {
+            { Name: "Tensor" } or { BaseType: { Name: "Tensor" } } => $"Value.FromTensor({visitStatement})",
+            { Name: "Const" } or { BaseType: { Name: "Const" } } => $"Value.FromConst({visitStatement})",
+            { Name: "IValue" } => visitStatement,
+            _ => throw new ArgumentOutOfRangeException($"Can't Return {typeSymbol.ToDisplayString()} For {interfaceKind}!"),
+        },
+        InterfaceKind.ITypeInferencer => visitStatement,
+        _ => throw new NotImplementedException(),
+    };
 }
 
 /// <summary>
@@ -48,167 +85,110 @@ public static class InterfaceKindExtensions
 /// </summary>
 internal class GenerateCandidate
 {
-    public ClassDeclarationSyntax classDecl;
-    public MethodDeclarationSyntax methodDecl;
-    public string OpTypeName;
+    public INamedTypeSymbol Class;
+    public INamedTypeSymbol Op;
+    public IMethodSymbol Method;
+    public InterfaceKind Target;
 
-    public GenerateCandidate(ClassDeclarationSyntax class_decl, MethodDeclarationSyntax method_decl)
-    {
-        classDecl = class_decl;
-        methodDecl = method_decl;
-        OpTypeName = "";
-    }
 
-    public GenerateCandidate(ClassDeclarationSyntax class_decl, MethodDeclarationSyntax method_decl, string op_name, string op_param_name)
+    public GenerateCandidate(INamedTypeSymbol classSymbol, INamedTypeSymbol opSymbol, IMethodSymbol method, InterfaceKind target_kind)
     {
-        classDecl = class_decl;
-        methodDecl = method_decl;
-        OpTypeName = op_name;
+        this.Class = classSymbol;
+        this.Op = opSymbol;
+        this.Method = method;
+        this.Target = target_kind;
     }
 }
 
 /// <summary>
 /// collection the evaluator and typeinfer class to candidates.
 /// </summary>
-internal class EvaluatorImplReceiver : ISyntaxReceiver
+internal class EvaluatorImplReceiver : ISyntaxContextReceiver
 {
 
     /// <summary>
     /// for eval
     /// </summary>
-    public readonly Dictionary<string, List<GenerateCandidate>> EvalCandidates = new();
+    public readonly List<GenerateCandidate> EvalCandidates = new();
 
     /// <summary>
     /// for type infer
     /// </summary>
-    public readonly Dictionary<string, List<GenerateCandidate>> TypeInferCandidates = new();
+    public readonly List<GenerateCandidate> TypeInferCandidates = new();
 
+    public readonly List<Diagnostic> Diagnostics = new();
 
-    public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
+    public void OnVisitSyntaxNode(GeneratorSyntaxContext ctx)
     {
-        if (syntaxNode is ClassDeclarationSyntax { BaseList: var base_list, Modifiers: var modifiers } cls
-            && base_list is not null
-            && modifiers.Any(tok => tok.IsKind(SyntaxKind.PartialKeyword)))
-        {
-            GenerateCandidate eval_cand = new(cls, null);
-            CheckFromInterface(eval_cand, EvalCandidates, InterfaceKind.IEvaluator);
-
-            GenerateCandidate typeinfer_cand = new(cls, null);
-            CheckFromInterface(typeinfer_cand, TypeInferCandidates, InterfaceKind.ITypeInferencer);
-        }
+        ReceiveTargetInterface(ctx, InterfaceKind.IEvaluator, EvalCandidates);
+        ReceiveTargetInterface(ctx, InterfaceKind.ITypeInferencer, TypeInferCandidates);
     }
 
-    /// <summary>
-    /// check the base class list have the valid interface type.
-    /// </summary>
-    /// <param name="baseTypes"></param>
-    /// <param name="target_interface"></param>
-    /// <param name="op_type_name"></param>
-    /// <returns></returns>
-    bool CheckBaseList(SeparatedSyntaxList<BaseTypeSyntax> baseTypes, InterfaceKind target_interface, out string op_type_name)
+    void ReceiveTargetInterface(GeneratorSyntaxContext ctx, InterfaceKind target_kind, List<GenerateCandidate> Candidates)
     {
-        foreach (var baseType in baseTypes)
+        var compilation = ctx.SemanticModel.Compilation;
+        if (ctx.Node is ClassDeclarationSyntax classDeclaration)
         {
-            // check the class is from IEvaluator<Op>, and get the Op 
-            if (baseType is SimpleBaseTypeSyntax
-                {
-                    Type: GenericNameSyntax
-                    {
-                        Identifier: { ValueText: var cur_interface },
-                        TypeArgumentList: { Arguments: var genericArgs }
-                    }
-                }
-                && cur_interface == target_interface.ToString()
-                && genericArgs.Count == 1
-                && genericArgs[0] is IdentifierNameSyntax { Identifier: { ValueText: var cur_op_type_name } }
-            )
+            var classSymbol = ctx.SemanticModel.GetDeclaredSymbol(classDeclaration);
+            if (classSymbol.GetAttributes().Any(attr => attr.AttributeClass.Name == target_kind.GetAttrName()))
             {
-                op_type_name = cur_op_type_name;
-                return true;
-            }
-        }
-        throw new ArgumentOutOfRangeException($"If Your Use {target_interface.GetAttrName()} Attribute, Must From {target_interface} Interface!");
-    }
+                if (!classDeclaration.Modifiers.Any(tok => tok.IsKind(SyntaxKind.PartialKeyword)))
+                    Diagnostics.Add(Diagnostic.Create(ClassNotPartialError, Location.None, classSymbol.ToDisplayString()));
+
+                // 1. find op symbol
+                var interfaces = classSymbol.Interfaces.Where(i => i.TypeArguments.Count() == 1 && i.Name == target_kind.ToString()).ToArray();
+                if (interfaces.Length != 1)
+                    Diagnostics.Add(Diagnostic.Create(ClassNotFromInterfaceError, Location.None, classSymbol.ToDisplayString(), target_kind));
+                var OpSymbol = interfaces[0].TypeArguments.OfType<INamedTypeSymbol>().First();
+                // 2. find the reference method!
+                var methods = classSymbol.GetMembers()
+                                       .OfType<IMethodSymbol>()
+                                       .Where(m => m.Name == "Visit" && m.ReturnType.CheckReturnTypeRange(target_kind)).ToArray();
+                if (methods.Length == 0)
+                    Diagnostics.Add(Diagnostic.Create(ClassNoValidMethodError, Location.None, classSymbol.ToDisplayString()));
 
 
-    void CheckFromInterface(GenerateCandidate candidate, Dictionary<string, List<GenerateCandidate>> Candidates, InterfaceKind target_interface)
-    {
-        ClassDeclarationSyntax cls = candidate.classDecl;
-        if (candidate.classDecl is ClassDeclarationSyntax
-            {
-                AttributeLists: var attrTypes,
-                BaseList: { Types: var baseTypes },
-            }
-            && RecriverUtil.CheckAttributes(attrTypes, target_interface.GetAttrName())
-            && CheckBaseList(baseTypes, target_interface, out var op_type_name)
-        )
-        {
-            candidate.OpTypeName = op_type_name;
-            CheckVisitMethod(candidate, Candidates, target_interface);
-        }
-    }
+                if (methods.Length > 1)
+                    Diagnostics.Add(Diagnostic.Create(ClassMoreMethodError, Location.None, classSymbol.ToDisplayString()));
 
+                var method = methods[0];
+                if (method.ReturnType.Name == target_kind.GetReturnType()
+                                && method.Parameters.Count() == 2
+                                && method.Parameters[0].Type.Name == target_kind.GetContextType()
+                                && method.Parameters[1].Type.Name == OpSymbol.Name)
+                    return;
 
-
-    /// <summary>
-    /// check whether the method needs to be modified
-    /// </summary>
-    /// <param name="candidate">the class op name.</param>
-    /// <param name="Candidates">the dict.</param>
-    /// <returns></returns>
-    void CheckVisitMethod(GenerateCandidate candidate, Dictionary<string, List<GenerateCandidate>> Candidates, InterfaceKind target_interface)
-    {
-        var (return_type_name, context_type_name) = target_interface.GetKindInfo();
-
-        /// remove the default interface impl method
-        bool HasOverride(MemberDeclarationSyntax member)
-        {
-            if (member is MethodDeclarationSyntax
-                {
-                    ReturnType: IdentifierNameSyntax { Identifier: { ValueText: var cur_return_type_name } },
-                    Identifier: { ValueText: "Visit" },
-                    ParameterList: ParameterListSyntax { Parameters: var param },
-                } method
-                  && cur_return_type_name == return_type_name
-                  && param.Count == 2
-                  && param[0] is ParameterSyntax { Type: IdentifierNameSyntax { Identifier: { ValueText: var cur_context_name } } }
-                  && cur_context_name == context_type_name
-                  && param[1] is ParameterSyntax { Type: IdentifierNameSyntax { Identifier: { ValueText: var cur_op_type } } }
-                  && cur_op_type == candidate.OpTypeName
-            )
-                return true;
-            return false;
-        }
-
-        if (candidate.classDecl.Members.Any(HasOverride))
-            throw new ArgumentOutOfRangeException($"If Your Use {target_interface.GetAttrName()} Attribute, Must Not Have The Visit Method!");
-
-        foreach (var member in candidate.classDecl.Members)
-        {
-            // match the method like public IValue Visit(IEvaluateContext context, Celu celu, xxxx)
-            if (member is MethodDeclarationSyntax
-                {
-                    ReturnType: IdentifierNameSyntax { Identifier: { ValueText: var cur_return_type_name } },
-                    Identifier: { ValueText: "Visit" },
-                    ParameterList: ParameterListSyntax { Parameters: var param }
-                } method
-                && param.Count > 0
-                && cur_return_type_name == return_type_name)
-            {
-                candidate.methodDecl = method;
-                var namespaces = (from namespace_decl in method.Ancestors().OfType<BaseNamespaceDeclarationSyntax>()
-                                  select namespace_decl).ToArray();
-                if (namespaces.Length != 1)
-                  throw new ArgumentOutOfRangeException($"You Must Use One Line NameSpace Define!");
-                var namespace_name = namespaces[0].Name.GetFullName();
-                if (!Candidates.TryGetValue(namespace_name, out var member_list))
-                {
-                    member_list = new() { };
-                    Candidates.Add(namespace_name, member_list);
-                }
-                member_list.Add(candidate);
-                return;
+                // 3. add to the Candidates
+                Candidates.Add(new(classSymbol, OpSymbol, method, target_kind));
             }
         }
     }
+
+
+    readonly DiagnosticDescriptor ClassNotPartialError = new DiagnosticDescriptor(id: "EvalGen001",
+                                                                                title: "The Class Must Be partial!",
+                                                                                messageFormat: "The Class '{0}' Must Be partial!.",
+                                                                                category: "EvaluatorGenerator",
+                                                                                DiagnosticSeverity.Error,
+                                                                                isEnabledByDefault: true);
+
+    readonly DiagnosticDescriptor ClassNotFromInterfaceError = new DiagnosticDescriptor(id: "EvalGen002",
+                                                                                title: "The Class Must Be Derived Interface!",
+                                                                                messageFormat: "The '{0}' Must Have '{1}'<T>!.",
+                                                                                category: "EvaluatorGenerator",
+                                                                                DiagnosticSeverity.Error,
+                                                                                isEnabledByDefault: true);
+
+    readonly DiagnosticDescriptor ClassNoValidMethodError = new DiagnosticDescriptor(id: "EvalGen003",
+                                                                                title: "The Class Have No Valid Method!",
+                                                                                messageFormat: "The '{0}' Have Not Valid Method!",
+                                                                                category: "EvaluatorGenerator",
+                                                                                DiagnosticSeverity.Error,
+                                                                                isEnabledByDefault: true);
+    readonly DiagnosticDescriptor ClassMoreMethodError = new DiagnosticDescriptor(id: "EvalGen004",
+                                                                            title: "The Class Have More Valid Method!",
+                                                                            messageFormat: "The '{0}' Have More Valid Method!",
+                                                                            category: "EvaluatorGenerator",
+                                                                            DiagnosticSeverity.Error,
+                                                                            isEnabledByDefault: true);
 }
