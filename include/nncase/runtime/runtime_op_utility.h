@@ -281,6 +281,11 @@ inline bool is_optimized_binary_op(binary_op_t op)
     return op == binary_add || op == binary_sub || op == binary_mul || op == binary_div || op == binary_min || op == binary_max;
 }
 
+inline bool is_optimized_unary_op(unary_op_t op)
+{
+    return op == unary_abs || op == unary_ceil || op == unary_cos || op == unary_exp || op == unary_floor || op == unary_log || op == unary_neg || op == unary_round || op == unary_rsqrt || op == unary_sign || op == unary_sin || op == unary_sqrt || op == unary_square || op == unary_tanh;
+}
+
 template <class TShape>
 bool is_optimized_input_shape(TShape in_shape, TShape out_shape)
 {
