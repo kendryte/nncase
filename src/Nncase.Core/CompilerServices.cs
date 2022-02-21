@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.PatternMatch;
+using Nncase.Transform;
 
 namespace Nncase;
 
@@ -56,7 +57,24 @@ public interface ICompilerServicesProvider
     /// <param name="expr">Expression to match.</param>
     /// <param name="pattern">Match pattern.</param>
     /// <returns>Match result.</returns>
-    IMatchResult? Match(Expr expr, Pattern pattern);
+    IMatchResult? Match(Expr expr, IPattern pattern);
+
+    /// <summary>
+    /// Match expression as root.
+    /// </summary>
+    /// <param name="expr">Expression to match.</param>
+    /// <param name="pattern">Match pattern.</param>
+    /// <returns>Match result.</returns>
+    IMatchResult? MatchRoot(Expr expr, IPattern pattern);
+
+    /// <summary>
+    /// Rewrite expression.
+    /// </summary>
+    /// <param name="expr">Expression.</param>
+    /// <param name="rules">Rewrite rules.</param>
+    /// <param name="options">Options.</param>
+    /// <returns>Rewrited expression.</returns>
+    Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options);
 }
 
 internal interface ICompilerServicesProviderInternal
@@ -69,17 +87,20 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     private readonly IEvaluateProvider _evaluateProvider;
     private readonly ITypeInferenceProvider _typeInferenceProvider;
     private readonly IMatchProvider _matchProvider;
+    private readonly IRewriteProvider _rewriteProvider;
 
     public CompilerServicesProvider(
         IEvaluateProvider evaluateProvider,
         ITypeInferenceProvider typeInferenceProvider,
         IDataTypeServiceProvider dataTypeServiceProvider,
-        IMatchProvider matchProvider)
+        IMatchProvider matchProvider,
+        IRewriteProvider rewriteProvider)
     {
         _evaluateProvider = evaluateProvider;
         _typeInferenceProvider = typeInferenceProvider;
         DataTypeService = dataTypeServiceProvider;
         _matchProvider = matchProvider;
+        _rewriteProvider = rewriteProvider;
     }
 
     public IDataTypeServiceProvider DataTypeService { get; }
@@ -109,9 +130,21 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     }
 
     /// <inheritdoc/>
-    public IMatchResult? Match(Expr expr, Pattern pattern)
+    public IMatchResult? Match(Expr expr, IPattern pattern)
     {
         return _matchProvider.Match(expr, pattern);
+    }
+
+    /// <inheritdoc/>
+    public IMatchResult? MatchRoot(Expr expr, IPattern pattern)
+    {
+        return _matchProvider.MatchRoot(expr, pattern);
+    }
+
+    /// <inheritdoc/>
+    public Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
+    {
+        return _rewriteProvider.Rewrite(expr, rules, options);
     }
 }
 
@@ -184,8 +217,31 @@ public static class CompilerServices
     /// <param name="expr">Expression to match.</param>
     /// <param name="pattern">Match pattern.</param>
     /// <returns>Match result.</returns>
-    public static IMatchResult? Match(Expr expr, Pattern pattern)
+    public static IMatchResult? Match(Expr expr, IPattern pattern)
     {
         return Provider.Match(expr, pattern);
+    }
+
+    /// <summary>
+    /// Match expression as root.
+    /// </summary>
+    /// <param name="expr">Expression to match.</param>
+    /// <param name="pattern">Match pattern.</param>
+    /// <returns>Match result.</returns>
+    public static IMatchResult? MatchRoot(Expr expr, IPattern pattern)
+    {
+        return Provider.MatchRoot(expr, pattern);
+    }
+
+    /// <summary>
+    /// Rewrite expression.
+    /// </summary>
+    /// <param name="expr">Expression.</param>
+    /// <param name="rules">Rewrite rules.</param>
+    /// <param name="options">Options.</param>
+    /// <returns>Rewrited expression.</returns>
+    public static Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
+    {
+        return Provider.Rewrite(expr, rules, options);
     }
 }

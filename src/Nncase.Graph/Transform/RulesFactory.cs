@@ -50,7 +50,7 @@ internal sealed class ExprGeneratorVisitor : PatternVisitor<Expr, IRType>
     /// <inheritdoc/>
     public override Expr VisitLeaf(FunctionPattern pattern)
     {
-        return new Function(PatternMemo[pattern.Body], pattern.Parameters.Select(p => PatternMemo[p]).ToArray());
+        return new Function(PatternMemo[pattern.Body], pattern.Parameters.Select(p => (Var)PatternMemo[p]).ToArray());
     }
 
     /// <inheritdoc/>
@@ -94,9 +94,9 @@ public class TemplateRule : IRewriteRule
     private readonly Pattern? _predicate;
 
     /// <summary>
-    /// <see cref="RulesFactory.Rewrite(ExprPattern, ExprPattern, ExprPattern?)"/>.
+    /// <see cref="RulesFactory.Rewrite(Pattern, Pattern, Pattern?)"/>.
     /// </summary>
-    public TemplateRule(ExprPattern lhs, ExprPattern rhs, ExprPattern? predicate = null)
+    public TemplateRule(Pattern lhs, Pattern rhs, Pattern? predicate = null)
     {
         Pattern = lhs;
         _rhs = rhs;
@@ -131,6 +131,6 @@ public static class RulesFactory
     /// <param name="rhs">rhs pattern expression.</param>
     /// <param name="predicate"> predicate pattern expression. </param>
     /// <returns> PatternRule. </returns>
-    public static IRewriteRule Rewrite(ExprPattern lhs, ExprPattern rhs, ExprPattern? predicate = null)
+    public static IRewriteRule Rewrite(Pattern lhs, Pattern rhs, Pattern? predicate = null)
       => new TemplateRule(lhs, rhs, predicate);
 }

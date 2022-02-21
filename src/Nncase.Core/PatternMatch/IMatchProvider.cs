@@ -21,5 +21,13 @@ public interface IMatchProvider
     /// <param name="expr">Expression to match.</param>
     /// <param name="pattern">Match pattern.</param>
     /// <returns>Match result.</returns>
-    IMatchResult? Match(Expr expr, Pattern pattern);
+    IMatchResult? Match(Expr expr, IPattern pattern);
+
+    /// <summary>
+    /// Match expression as root.
+    /// </summary>
+    /// <param name="expr">Expression to match.</param>
+    /// <param name="pattern">Match pattern.</param>
+    /// <returns>Match result.</returns>
+    IMatchResult? MatchRoot(Expr expr, IPattern pattern);
 }

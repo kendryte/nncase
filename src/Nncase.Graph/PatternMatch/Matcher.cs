@@ -23,7 +23,7 @@ internal sealed class Matcher
     /// <param name="pattern">Pattern.</param>
     /// <param name="expr">Expression.</param>
     /// <returns>Match result.</returns>
-    public static IMatchResult? MatchRoot(Pattern pattern, Expr expr)
+    public static IMatchResult? MatchRoot(IPattern pattern, Expr expr)
     {
         if (!pattern.MatchLeaf(expr))
         {
@@ -42,7 +42,7 @@ internal sealed class Matcher
     /// <param name="pattern">Pattern.</param>
     /// <param name="expr">Expression.</param>
     /// <returns>Match result.</returns>
-    public static IMatchResult? Match(Pattern pattern, Expr expr)
+    public static IMatchResult? Match(IPattern pattern, Expr expr)
     {
         var candidates = new List<Expr>();
         new MatchVisitor(candidates, pattern).Visit(expr);
@@ -59,7 +59,7 @@ internal sealed class Matcher
         return null;
     }
 
-    private bool Visit(Pattern pattern, Expr expr)
+    private bool Visit(IPattern pattern, Expr expr)
     {
         return (pattern, expr) switch
         {
@@ -305,9 +305,9 @@ internal sealed class Matcher
     private sealed class MatchVisitor : ExprVisitor<Expr, IRType>
     {
         private readonly List<Expr> _candidates;
-        private readonly Pattern _rootPattern;
+        private readonly IPattern _rootPattern;
 
-        public MatchVisitor(List<Expr> candidates, Pattern rootPattern)
+        public MatchVisitor(List<Expr> candidates, IPattern rootPattern)
         {
             _candidates = candidates;
             _rootPattern = rootPattern;

@@ -12,8 +12,13 @@ namespace Nncase.PatternMatch;
 
 internal class MatchProvider : IMatchProvider
 {
-    public IMatchResult? Match(Expr expr, Pattern pattern)
+    public IMatchResult? Match(Expr expr, IPattern pattern)
     {
         return Matcher.Match(pattern, expr);
+    }
+
+    public IMatchResult? MatchRoot(Expr expr, IPattern pattern)
+    {
+        return Matcher.MatchRoot(pattern, expr);
     }
 }
