@@ -5,15 +5,14 @@ using System;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 
-namespace Nncase.Pattern;
+namespace Nncase.PatternMatch;
 
 /// <summary>
 /// Pattern for <see cref="Call"/>.
 /// </summary>
 /// <param name="Target">Target pattern.</param>
 /// <param name="Parameters">Parameters pattern.</param>
-public sealed record CallPattern(Pattern Target, VArgsPattern Parameters)
-    : Pattern<Call>(x => Target.Match(x.Target) && Parameters.Match(x.Parameters))
+public sealed record CallPattern(Pattern Target, VArgsPattern Parameters) : Pattern<Call>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="CallPattern"/> class.

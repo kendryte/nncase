@@ -6,12 +6,12 @@ using System.Linq;
 using System.Collections.Immutable;
 using System.Collections.Generic;
 using System;
-using static Nncase.Pattern.Utility;
+using static Nncase.PatternMatch.Utility;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.F.NN;
-using Nncase.Pattern.Tensors;
-using Nncase.Pattern.NN;
-using Nncase.Pattern;
+using Nncase.PatternMatch.Tensors;
+using Nncase.PatternMatch.NN;
+using Nncase.PatternMatch;
 using Nncase.IR;
 
 namespace Nncase.Transform.Rule

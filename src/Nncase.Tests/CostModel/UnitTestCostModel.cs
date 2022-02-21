@@ -3,8 +3,8 @@ using Nncase.IR;
 using Nncase.IR.F;
 using Xunit;
 using Nncase.Transform;
-using Nncase.Pattern;
-using static Nncase.Pattern.Utility;
+using Nncase.PatternMatch;
+using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.CostModelTest;
 

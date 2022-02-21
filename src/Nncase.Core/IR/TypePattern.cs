@@ -18,14 +18,14 @@ namespace Nncase.IR
         public TypePattern(TupleType ValueType) : this(x => (x == ValueType), $"Type = {ValueType.ToString()}") { }
         public TypePattern(CallableType ValueType) : this(x => (x == ValueType), $"Type = {ValueType.ToString()}") { }
 
-        public bool MatchLeaf(IRType? ValueType) => ValueType is not null ? Cond(ValueType) : false;
+        public bool MatchLeaf(IRType ValueType) => Cond(ValueType);
 
         /// <summary>
         /// Check the irtype, if not equal, throw exception.
         /// </summary>
         /// <param name="ValueType"></param>
         /// <exception cref="InvalidOperationException"></exception>
-        public T Check<T>(T? ValueType) where T : IRType
+        public T Check<T>(T ValueType) where T : IRType
         {
             if (ValueType == null || !MatchLeaf(ValueType))
             {

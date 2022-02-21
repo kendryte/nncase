@@ -3,16 +3,16 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using Nncase.IR;
 using Nncase.IR.Math;
-using Nncase.Pattern;
-using Nncase.Pattern.Math;
+using Nncase.PatternMatch;
+using Nncase.PatternMatch.Math;
 using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
-using static Nncase.Pattern.F.Math;
-using static Nncase.Pattern.F.Tensors;
-using static Nncase.Pattern.Utility;
+using static Nncase.PatternMatch.F.Math;
+using static Nncase.PatternMatch.F.Tensors;
+using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.CoreTest;
 
@@ -47,7 +47,7 @@ public class UnitTestExprPattern
         Assert.False(e.InferenceType());
         ExprPattern ep = e;
         Assert.IsType<VarPattern>(ep);
-        Assert.True(ep.Match(e));
+        Assert.True(ep.MatchLeaf(e));
     }
 
     [Fact]
@@ -62,10 +62,10 @@ public class UnitTestExprPattern
         ExprPattern cp3 = IsConst((int x) => x > 1);
         var cp4 = (TensorConstPattern)1.1f;
 
-        Assert.True(cp1.Match(con));
-        Assert.False(cp2.Match(con));
-        Assert.False(cp3.Match(con));
-        Assert.True(cp4.Match(con));
+        Assert.True(cp1.MatchLeaf(con));
+        Assert.False(cp2.MatchLeaf(con));
+        Assert.False(cp3.MatchLeaf(con));
+        Assert.True(cp4.MatchLeaf(con));
     }
 
     [Fact]
@@ -121,8 +121,8 @@ public class UnitTestExprPattern
         CallPattern c3 = IsBinary(x => x is (BinaryOp.Div or BinaryOp.Sub), wc1, wc2);
 
         Assert.True(c.Target.MatchLeaf(e.Target));
-        Assert.True(c2.Target.Match(e.Target));
-        Assert.False(c3.Target.Match(e.Target));
+        Assert.True(c2.Target.MatchLeaf(e.Target));
+        Assert.False(c3.Target.MatchLeaf(e.Target));
     }
 
     [Fact]
@@ -186,11 +186,11 @@ public class UnitTestExprPattern
 
         var tuple = new IR.Tuple(1, new IR.Tuple(6, 7, 8), 3, 4);
         tuple.InferenceType();
-        Assert.True(pattern.Match(tuple.Fields));
-        Assert.True(pattern[0].Match(tuple[0]));
-        Assert.True(pattern[1].Match(tuple[1]));
-        Assert.True(pattern[2].Match(tuple[2]));
-        Assert.True(pattern[3].Match(tuple[3]));
+        Assert.True(pattern.MatchLeaf(tuple.Fields));
+        Assert.True(pattern[0].MatchLeaf(tuple[0]));
+        Assert.True(pattern[1].MatchLeaf(tuple[1]));
+        Assert.True(pattern[2].MatchLeaf(tuple[2]));
+        Assert.True(pattern[3].MatchLeaf(tuple[3]));
     }
 
     [Fact]
@@ -198,7 +198,7 @@ public class UnitTestExprPattern
     {
         var pat = IsVArgsRepeat(() => IsConst());
         IR.Tuple expr = new IR.Tuple(1, 2, 3, 4, 5, 6);
-        pat.Match(expr.Fields);
+        pat.MatchLeaf(expr.Fields);
         Assert.Equal(pat.Count, expr.Fields.Count);
     }
 
@@ -214,8 +214,8 @@ public class UnitTestExprPattern
         var z2 = x * y;
         z1.InferenceType();
         z2.InferenceType();
-        Assert.True(is_op_call.Match(z1));
-        Assert.True(is_op_call.Target.Match(z2.Target));
+        Assert.True(is_op_call.MatchLeaf(z1));
+        Assert.True(is_op_call.Target.MatchLeaf(z2.Target));
 
         var is_op_call2 = IsCall(IsWildcard(), IsVArgs(lhs, rhs));
 

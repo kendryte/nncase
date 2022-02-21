@@ -10,6 +10,7 @@ using CommonServiceLocator;
 using Microsoft.Extensions.DependencyInjection;
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.PatternMatch;
 
 namespace Nncase;
 
@@ -48,6 +49,14 @@ public interface ICompilerServicesProvider
     /// <param name="context">Evaluate context.</param>
     /// <returns>Evaluate result.</returns>
     IValue EvaluateOp(Op op, IEvaluateContext context);
+
+    /// <summary>
+    /// Match expression.
+    /// </summary>
+    /// <param name="expr">Expression to match.</param>
+    /// <param name="pattern">Match pattern.</param>
+    /// <returns>Match result.</returns>
+    IMatchResult? Match(Expr expr, Pattern pattern);
 }
 
 internal interface ICompilerServicesProviderInternal
@@ -59,15 +68,18 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
 {
     private readonly IEvaluateProvider _evaluateProvider;
     private readonly ITypeInferenceProvider _typeInferenceProvider;
+    private readonly IMatchProvider _matchProvider;
 
     public CompilerServicesProvider(
         IEvaluateProvider evaluateProvider,
         ITypeInferenceProvider typeInferenceProvider,
-        IDataTypeServiceProvider dataTypeServiceProvider)
+        IDataTypeServiceProvider dataTypeServiceProvider,
+        IMatchProvider matchProvider)
     {
         _evaluateProvider = evaluateProvider;
         _typeInferenceProvider = typeInferenceProvider;
         DataTypeService = dataTypeServiceProvider;
+        _matchProvider = matchProvider;
     }
 
     public IDataTypeServiceProvider DataTypeService { get; }
@@ -94,6 +106,12 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     public bool InferenceType(Expr expr)
     {
         return _typeInferenceProvider.InferenceType(expr);
+    }
+
+    /// <inheritdoc/>
+    public IMatchResult? Match(Expr expr, Pattern pattern)
+    {
+        return _matchProvider.Match(expr, pattern);
     }
 }
 
@@ -158,5 +176,16 @@ public static class CompilerServices
     public static IValue EvaluateOp(Op op, IEvaluateContext context)
     {
         return Provider.EvaluateOp(op, context);
+    }
+
+    /// <summary>
+    /// Match expression.
+    /// </summary>
+    /// <param name="expr">Expression to match.</param>
+    /// <param name="pattern">Match pattern.</param>
+    /// <returns>Match result.</returns>
+    public static IMatchResult? Match(Expr expr, Pattern pattern)
+    {
+        return Provider.Match(expr, pattern);
     }
 }

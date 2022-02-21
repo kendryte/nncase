@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Nncase.IR;
-using Nncase.Pattern;
+using Nncase.PatternMatch;
 
 namespace Nncase.Transform
 {

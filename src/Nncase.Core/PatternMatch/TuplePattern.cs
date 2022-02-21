@@ -7,14 +7,13 @@ using System.Collections.Immutable;
 using System.Linq;
 using Nncase.IR;
 
-namespace Nncase.Pattern;
+namespace Nncase.PatternMatch;
 
 /// <summary>
 /// Pattern for <see cref="Const"/>.
 /// </summary>
 /// <param name="Fields">Fields condition.</param>
-public sealed record TuplePattern(VArgsPattern Fields)
-    : Pattern<IR.Tuple>(x => Fields.Match(x))
+public sealed record TuplePattern(VArgsPattern Fields) : Pattern<IR.Tuple>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="TuplePattern"/> class.

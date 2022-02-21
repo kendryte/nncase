@@ -3,7 +3,7 @@
 
 using Nncase.IR;
 using System.Collections.Generic;
-using Nncase.Pattern;
+using Nncase.PatternMatch;
 using System.IO;
 using System;
 

@@ -2,7 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
-using Nncase.Pattern;
+using Nncase.PatternMatch;
 using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.NN;

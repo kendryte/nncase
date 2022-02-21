@@ -63,7 +63,7 @@ namespace Nncase.IR
             return expr with
             {
                 Body = Visit(expr.Body),
-                Parameters = new(expr.Parameters.Select(Visit)),
+                Parameters = new(expr.Parameters.Select(x => (Var)Visit(x))),
             };
         }
 

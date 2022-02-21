@@ -7,14 +7,13 @@ using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
 
-namespace Nncase.Pattern;
+namespace Nncase.PatternMatch;
 
 /// <summary>
 /// Pattern for <see cref="Expr"/>.
 /// </summary>
 /// <param name="Condition">Expression condition.</param>
-public sealed record ExprPattern(Func<Expr, bool> Condition)
-    : Pattern<Expr>(Condition)
+public sealed record ExprPattern(Func<Expr, bool> Condition) : Pattern<Expr>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ExprPattern"/> class.
@@ -29,6 +28,9 @@ public sealed record ExprPattern(Func<Expr, bool> Condition)
     /// Gets a value indicating whether is wildcard pattern.
     /// </summary>
     public bool IsWildcard { get; }
+
+    /// <inheritdoc/>
+    protected override bool MatchLeafCore(Expr expr) => Condition(expr);
 }
 
 public static partial class Utility

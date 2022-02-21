@@ -3,8 +3,8 @@
 
 using Nncase.IR;
 using System.Collections.Generic;
-using Nncase.Pattern;
-using static Nncase.Pattern.Utility;
+using Nncase.PatternMatch;
+using static Nncase.PatternMatch.Utility;
 using static Nncase.Transform.RulesFactory;
 using Nncase.Evaluator;
 

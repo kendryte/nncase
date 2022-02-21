@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 
-namespace Nncase.Pattern;
+namespace Nncase.PatternMatch;
 
 public abstract partial record Pattern
 {
@@ -51,13 +51,13 @@ public abstract partial record Pattern
     /// <param name="expr">Expression.</param>
     public static implicit operator Pattern(Expr expr) => expr switch
     {
-        (Var var) => new VarPattern(var),
-        (TensorConst con) => new TensorConstPattern(con),
-        (Const con) => new ConstPattern(con),
-        (Function function) => new FunctionPattern(function),
-        (Call call) => new CallPattern(call),
-        (IR.Tuple tuple) => new TuplePattern(tuple),
-        //(Op op) => OpPattern.CastToPattern(op),
+        Var var => new VarPattern(var),
+        TensorConst con => new TensorConstPattern(con),
+        Const con => new ConstPattern(con),
+        Function function => new FunctionPattern(function),
+        Call call => new CallPattern(call),
+        IR.Tuple tuple => new TuplePattern(tuple),
+        Op op => (Pattern)Activator.CreateInstance(typeof(OpPattern<>).MakeGenericType(op.GetType()), op)!,
         _ => throw new NotImplementedException($"Can't Convert The Expr {expr.GetType().Name} To Pattern"),
     };
 }

@@ -1,24 +1,25 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using Nncase.PatternMatch;
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
 
-namespace Nncase.IR.Tensors;
+namespace Nncase.PatternMatch;
 
 /// <summary>
-/// Cast expression.
+/// Match provider interface.
 /// </summary>
-[PatternFunctionalGenerator]
-public sealed record Cast(DataType NewType) : Op
+public interface IMatchProvider
 {
     /// <summary>
-    /// Gets input.
+    /// Match expression.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Cast), 0, "input");
+    /// <param name="expr">Expression to match.</param>
+    /// <param name="pattern">Match pattern.</param>
+    /// <returns>Match result.</returns>
+    IMatchResult? Match(Expr expr, Pattern pattern);
 }

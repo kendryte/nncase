@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
-using Nncase.Pattern;
+using Nncase.PatternMatch;
 
 namespace Nncase.Transform
 {

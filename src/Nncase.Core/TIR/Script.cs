@@ -406,7 +406,7 @@ namespace Nncase.TIR
         /// <param name="name"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        public static FunctionBuilder PrimFunc(string name, params Expr[] parameters)
+        public static FunctionBuilder PrimFunc(string name, params Var[] parameters)
         {
             return new(new Function(name, new Sequential(), parameters));
         }

@@ -8,20 +8,18 @@ using System.Linq;
 using Nncase.IR;
 using static Nncase.IR.TypePatternUtility;
 
-namespace Nncase.Pattern;
+namespace Nncase.PatternMatch;
 
 /// <summary>
 /// Pattern for <see cref="Var"/>.
 /// </summary>
-/// <param name="Condition">Condition.</param>
-public sealed record VarPattern(Func<Var, bool> Condition) : Pattern<Var>(Condition)
+public sealed record VarPattern : Pattern<Var>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="VarPattern"/> class.
     /// </summary>
     /// <param name="typePattern">Type pattern.</param>
     public VarPattern(TypePattern typePattern)
-        : this(x => true)
     {
         TypePattern = typePattern;
     }
@@ -31,7 +29,7 @@ public sealed record VarPattern(Func<Var, bool> Condition) : Pattern<Var>(Condit
     /// </summary>
     /// <param name="var">Var expression.</param>
     public VarPattern(Var var)
-        : this(x => x.Equals(var))
+        : this(new TypePattern(var.TypeAnnotation))
     {
     }
 

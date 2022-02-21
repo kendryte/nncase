@@ -4,9 +4,9 @@
 using System;
 using System.Linq;
 using Nncase.IR;
-using Nncase.Pattern;
-using Nncase.Pattern.Math;
-using static Nncase.Pattern.Utility;
+using Nncase.PatternMatch;
+using Nncase.PatternMatch.Math;
+using static Nncase.PatternMatch.Utility;
 using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Transform.Rule

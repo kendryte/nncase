@@ -9,11 +9,11 @@ using System.Threading.Tasks;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Tensors;
-using Nncase.Pattern;
-using static Nncase.Pattern.F.Math;
-using static Nncase.Pattern.F.NN;
-using static Nncase.Pattern.F.Tensors;
-using static Nncase.Pattern.Utility;
+using Nncase.PatternMatch;
+using static Nncase.PatternMatch.F.Math;
+using static Nncase.PatternMatch.F.NN;
+using static Nncase.PatternMatch.F.Tensors;
+using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Transform.Rule
 {

@@ -10,7 +10,7 @@ using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
-using static Nncase.Pattern.Utility;
+using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.CoreTest;
 

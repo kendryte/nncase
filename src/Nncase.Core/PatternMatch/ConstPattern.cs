@@ -7,13 +7,13 @@ using System.Linq;
 using Nncase.IR;
 using static Nncase.IR.TypePatternUtility;
 
-namespace Nncase.Pattern;
+namespace Nncase.PatternMatch;
 
 /// <summary>
 /// Pattern for <see cref="Const"/>.
 /// </summary>
 /// <param name="Condition">Expression condition.</param>
-public sealed record ConstPattern(Func<Const, bool> Condition) : Pattern<Const>(Condition)
+public sealed record ConstPattern(Func<Const, bool> Condition) : Pattern<Const>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ConstPattern"/> class.
@@ -29,6 +29,9 @@ public sealed record ConstPattern(Func<Const, bool> Condition) : Pattern<Const>(
     /// Gets value.
     /// </summary>
     public Const? Value { get; }
+
+    /// <inheritdoc/>
+    protected override bool MatchLeafCore(Const expr) => Condition(expr);
 }
 
 public static partial class Utility
