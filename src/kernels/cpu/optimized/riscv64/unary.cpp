@@ -30,6 +30,8 @@ using namespace nncase::kernels::cpu::optimized;
 
 namespace
 {
+#if __riscv_vector
+
 #define c_inv_mant_mask ~0x7f800000u
 #define c_cephes_SQRTHF 0.707106781186547524
 #define c_cephes_log_p0 7.0376836292E-2
@@ -518,6 +520,7 @@ result<void> optimized_unary_impl(const float *input, float *output, const runti
 
     return ok();
 }
+#endif
 }
 
 result<void> optimized::unary(unary_op_t op, const float *input, float *output, const runtime_shape_t &shape,

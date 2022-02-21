@@ -29,6 +29,8 @@ using namespace nncase::kernels::cpu::optimized;
 
 namespace
 {
+#if __riscv_vector
+
 // float
 result<void> optimized_matmul_impl(const float *input_a, const float *input_b, const float *bias, float *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_b_shape, const runtime_shape_t &out_shape,
@@ -106,6 +108,7 @@ result<void> optimized_matmul_impl(const float *input_a, const float *input_b, c
 
     return ok();
 }
+#endif
 }
 
 template result<void> optimized::matmul<float>(const float *input_a, const float *input_b, const float *bias, float *output,
