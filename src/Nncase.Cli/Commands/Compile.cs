@@ -10,6 +10,7 @@ using Autofac.Extras.CommonServiceLocator;
 using CommonServiceLocator;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Nncase.Compiler;
 using Nncase.IR;
 using Nncase.Transform;
 
@@ -44,48 +45,7 @@ namespace Nncase.Cli.Commands
         private void Run(CompileOptions options, IHost host)
         {
             ConfigureServices(host);
-            var module = ImportModule(File.OpenRead(options.InputFile), options);
-            var a = (Const)1;
-            var b = (Const)1;
-            var c = a + b;
-        }
-
-        private IRModule ImportModule(Stream content, CompileOptions options)
-        {
-            Console.WriteLine($"Target: {options.Target}");
-            var module = ImportModel(content, options);
-            DumpModule(module, options, "ir_import");
-            if (!CompilerServices.InferenceType(module.Entry))
-            {
-                InferShape(module, options);
-            }
-
-            DumpModule(module, options, "ir_infertype");
-            Console.WriteLine("ImportModule successful!");
-            return module;
-        }
-
-        private void InferShape(IRModule module, CompileOptions options)
-        {
-            Console.WriteLine("Infer Shape...");
-            var pmgr = new PassManager(module, new RunPassOptions(null, options.DumpLevel, options.DumpDir));
-            //var constFold = new ShapeInferPass();
-            //pmgr.Add(constFold);
-            //pmgr.Run();
-        }
-
-        private IRModule ImportModel(Stream content, CompileOptions options) =>
-          options.InputFormat switch
-          {
-              "tflite" => Importers.ImportTFLite(content),
-              "onnx" => Importers.ImportOnnx(content),
-              _ => throw new NotImplementedException($"Not Implement {options.InputFormat} Impoter!"),
-          };
-
-        private void DumpModule(IRModule module, CompileOptions options, string prefix)
-        {
-            var dumpPath = Path.Combine(options.DumpDir, "dump");
-            module.Entry!.DumpExprAsIL(prefix, dumpPath);
+            var module = new Compiler.Compiler().ImportModule(File.OpenRead(options.InputFile), options);
         }
     }
 }

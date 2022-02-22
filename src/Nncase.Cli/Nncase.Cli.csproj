@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <!-- <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" /> -->
+    <ProjectReference Include="..\Nncase.Compiler\Nncase.Compiler.csproj" />
     <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" />
     <ProjectReference Include="..\Nncase.Graph\Nncase.Graph.csproj" />
     <ProjectReference Include="..\Nncase.Importer\Nncase.Importer.csproj" />
