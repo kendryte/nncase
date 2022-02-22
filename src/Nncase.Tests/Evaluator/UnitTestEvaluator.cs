@@ -24,6 +24,7 @@ namespace Nncase.Tests.EvaluatorTest
     {
         public UnitTestEvaluator(IHost host) : base(host)
         {
+            OrtKI.LoadDLL();
         }
 
         [Fact]

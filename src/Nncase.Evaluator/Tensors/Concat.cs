@@ -7,6 +7,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using OrtKISharp;
 using TorchSharp;
 using torchF = TorchSharp.torch.nn.functional;
 
@@ -22,8 +23,8 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>
     {
         var inputs = context.GetArgumentExpr(cat, Concat.Input);
         var axis = context.GetArgumentValueAsScalar<int>(cat, Concat.Axis);
-        var inputTensors = ((IR.Tuple)inputs).Select(x => ExpandDim(context.GetTorchValue(x))).ToArray();
-        return torch.cat(inputTensors, axis).ToValue();
+        var inputTensors = ((IR.Tuple)inputs).Select(context.GetOrtValue).ToArray();
+        return OrtKI.Concat(inputTensors, axis).ToValue();
     }
 
     /// <inheritdoc/>

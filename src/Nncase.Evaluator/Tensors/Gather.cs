@@ -2,6 +2,7 @@ using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
+using OrtKISharp;
 using static Tensorflow.Binding;
 using torchF = TorchSharp.torch.nn.functional;
 
@@ -15,10 +16,10 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Gather gather)
     {
-        var input = context.GetTFArgumentValue(gather, Gather.Input);
+        var input = context.GetOrtArgumentValue(gather, Gather.Input);
         var axis = context.GetArgumentValueAsScalar<int>(gather, Gather.Axis);
-        var index = context.GetTFArgumentValue(gather, Gather.Index);
-        return tf.gather(input, index, axis: axis).ToValue();
+        var index = context.GetOrtArgumentValue(gather, Gather.Index);
+        return OrtKI.Gather(input, index, axis).ToValue();
     }
 
     /// <inheritdoc/>
@@ -32,7 +33,7 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>
 
     private IRType Visit(ITypeInferenceContext context, Gather target, TensorType input, TensorType axis, TensorType index)
     {
-        if (context.GetArgument(target, Flatten.Axis) is TensorConst axisValue)
+        if (context.GetArgument(target, Gather.Axis) is TensorConst axisValue)
         {
             var axisV = axisValue.Value.ToScalar<int>();
             axisV = axisV < 0 ? axisV + input.Shape.Rank : axisV;

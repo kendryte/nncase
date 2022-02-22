@@ -4,8 +4,7 @@
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
-using static Tensorflow.Binding;
-using torchF = TorchSharp.torch.nn.functional;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -17,9 +16,9 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Squeeze squeeze)
     {
-        var input = context.GetTFArgumentValue(squeeze, Squeeze.Input);
-        var dims = context.GetArgumentValueAsTensor<int>(squeeze, Squeeze.Dim).ToArray();
-        return tf.squeeze(input, dims).ToValue();
+        var input = context.GetOrtArgumentValue(squeeze, Squeeze.Input);
+        var dims = context.GetOrtArgumentValue(squeeze, Squeeze.Dim);
+        return OrtKI.Squeeze(input, dims).ToValue();
     }
 
     /// <inheritdoc/>

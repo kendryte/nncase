@@ -4,6 +4,7 @@
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
+using OrtKISharp;
 using static Tensorflow.Binding;
 
 namespace Nncase.Evaluator.Tensors;
@@ -16,23 +17,15 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Unsqueeze unSqueeze)
     {
-        var input = context.GetTFArgumentValue(unSqueeze, Unsqueeze.Input);
-        var dims = context.GetArgumentValueAsTensor<int>(unSqueeze, Unsqueeze.Dim)
-            .Select(
-                x => Util.PositiveIndex(x, input.shape.rank))
-            .ToArray();
-        foreach (var dim in dims)
-        {
-            input = tf.expand_dims(input, Util.PositiveIndex(dim, input.shape.rank));
-        }
-
-        return input.ToValue();
+        var input = context.GetOrtArgumentValue(unSqueeze, Unsqueeze.Input);
+        var axes = context.GetOrtArgumentValue(unSqueeze, Unsqueeze.Dim);
+        return OrtKI.Unsqueeze(input, axes).ToValue();
     }
 
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Unsqueeze target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Split.Input);
+        var input = context.CheckArgumentType<TensorType>(target, Unsqueeze.Input);
         return Visit(context, target, input);
     }
 

@@ -8,7 +8,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
-using TorchSharp;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -20,22 +20,12 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Slice sl)
     {
-        var input = context.GetTorchArgumentValue(sl, Slice.Input);
-        var begins = context.GetTorchArgumentValue(sl, Slice.Begins);
-        var ends = context.GetTorchArgumentValue(sl, Slice.Ends);
-        var axes = context.GetArgumentValueAsArray<int>(sl, Slice.Axes)
-            .Select(x => x < 0 ? x + input.shape.Rank : x);
-        var strides = context.GetTorchArgumentValue(sl, Slice.Strides);
-        var axesIndex = 0;
-        var indices = Enumerable.Range(0, input.shape.Length).Select(i =>
-            axes.Contains(i) ?
-                torch.TensorIndex.Slice(
-                    GetItem(begins, axesIndex),
-                    GetItem(ends, axesIndex),
-                    GetItem(strides, axesIndex++)) :
-                torch.TensorIndex.Slice()
-        ).ToArray();
-        return input[indices].ToValue();
+        var input = context.GetOrtArgumentValue(sl, Slice.Input);
+        var begins = context.GetOrtArgumentValue(sl, Slice.Begins);
+        var ends = context.GetOrtArgumentValue(sl, Slice.Ends);
+        var axes = context.GetOrtArgumentValue(sl, Slice.Axes);
+        var strides = context.GetOrtArgumentValue(sl, Slice.Strides);
+        return OrtKI.Slice(input, begins, ends, axes, strides).ToValue();
     }
 
     /// <inheritdoc/>
@@ -43,16 +33,6 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>
     {
         var input = context.CheckArgumentType<TensorType>(target, Slice.Input);
         return Visit(context, target, input);
-    }
-
-    private static long GetItem(torch.Tensor tensor, int index)
-    {
-        if (tensor.shape.Rank != 1)
-        {
-            throw new NotSupportedException("Unsupported Rank which > 1 in GetItem(tensor, index)");
-        }
-
-        return tensor.to_type(torch.ScalarType.Int64).ReadCpuInt64(index);
     }
 
     private IRType Visit(ITypeInferenceContext context, Slice target, TensorType input)

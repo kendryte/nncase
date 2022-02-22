@@ -7,8 +7,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
-using TorchSharp;
-using torchF = TorchSharp.torch.nn.functional;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -20,9 +19,8 @@ public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ShapeOf shape)
     {
-        var input = context.GetTorchArgumentValue(shape, ShapeOf.Input);
-        var dtype = context.CurrentCall.CheckedDataType.ToTorchType();
-        return ((torch.Tensor)input.shape).to_type(dtype).ToValue();
+        var input = context.GetOrtArgumentValue(shape, ShapeOf.Input);
+        return OrtKI.Shape(input).ToValue();
     }
 
     /// <inheritdoc/>

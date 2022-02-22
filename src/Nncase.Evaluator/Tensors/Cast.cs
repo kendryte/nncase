@@ -3,6 +3,7 @@
 
 using Nncase.IR;
 using Nncase.IR.Tensors;
+using OrtKISharp;
 using torchF = TorchSharp.torch.nn.functional;
 
 namespace Nncase.Evaluator.Tensors;
@@ -15,8 +16,8 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Cast cast)
     {
-        var input = context.GetTorchArgumentValue(cast, Cast.Input);
-        return input.to_type(cast.NewType.ToTorchType()).ToValue();
+        var input = context.GetOrtArgumentValue(cast, Cast.Input);
+        return input.ToType(cast.NewType.ToOrtType()).ToValue();
     }
 
     /// <inheritdoc/>

@@ -7,6 +7,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using OrtKISharp;
 using TorchSharp;
 using torchF = TorchSharp.torch.nn.functional;
 
@@ -20,23 +21,9 @@ public class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Expand expand)
     {
-        var input = context.GetTorchArgumentValue(expand, Expand.Input);
-        if (input.shape.Length == 0)
-        {
-            input = input.reshape(1L);
-        }
-
-        var shape = context.GetArgumentValueAsTensor<long>(expand, Expand.Shape);
-
-        // When the value of onnx is 1, the value of torch is -1
-        var torchShape = shape.Select(x => x == 1 ? -1 : x).ToArray();
-        if (torchShape.Length < input.shape.Length)
-        {
-            // [-1]*n.Concat(TorchShape)
-            torchShape = Enumerable.Repeat(-1L, input.shape.Length - torchShape.Length).Concat(torchShape).ToArray();
-        }
-
-        return input.expand(torchShape).ToValue();
+        var input = context.GetOrtArgumentValue(expand, Expand.Input);
+        var shape = context.GetOrtArgumentValue(expand, Expand.Shape);
+        return OrtKI.Expand(input, shape).ToValue();
     }
 
     /// <inheritdoc/>

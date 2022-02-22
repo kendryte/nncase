@@ -1,13 +1,9 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Linq;
-using NetFabric.Hyperlinq;
-using Nncase.CostModel;
 using Nncase.IR;
-using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -19,9 +15,9 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Transpose tr)
     {
-        var input = context.GetTorchArgumentValue(tr, Transpose.Input);
-        var perm = context.GetArgumentValueAsTensor<long>(tr, Transpose.Perm);
-        return input.permute(perm.ToArray()).ToValue();
+        var input = context.GetOrtArgumentValue(tr, Transpose.Input);
+        var perm = context.GetArgumentValueAsArray<long>(tr, Transpose.Perm);
+        return OrtKI.Transpose(input, perm).ToValue();
     }
 
     /// <inheritdoc/>

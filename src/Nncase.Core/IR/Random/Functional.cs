@@ -21,7 +21,7 @@ public static class Random
         new Call(new Normal(type), mean, scale, seed, shape);
 
     public static Call NormalLike(DataType type, Expr input, Expr mean, Expr scale, Expr seed) =>
-        new Call(new Normal(type), input, mean, scale, seed);
+        new Call(new NormalLike(type), input, mean, scale, seed);
 
     public static Call Uniform(DataType type, Expr high, Expr low, Expr seed, Expr shape) =>
         new Call(new Uniform(type), high, low, seed, shape);

@@ -2,9 +2,8 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.IR;
-using TorchSharp;
+using OrtKISharp;
 using Range = Nncase.IR.Tensors.Range;
-using torchF = TorchSharp.torch.nn.functional;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -16,10 +15,10 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Range range)
     {
-        var begin = context.GetArgumentValueAsScalar<int>(range, Range.Begin);
-        var end = context.GetArgumentValueAsScalar<int>(range, Range.End);
-        var step = context.GetArgumentValueAsScalar<int>(range, Range.Step);
-        return torch.arange(begin, end, step).ToValue();
+        var begin = context.GetOrtArgumentValue(range, Range.Begin);
+        var end = context.GetOrtArgumentValue(range, Range.End);
+        var step = context.GetOrtArgumentValue(range, Range.Step);
+        return OrtKI.Range(begin, end, step).ToValue();
     }
 
     /// <inheritdoc/>

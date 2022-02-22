@@ -16,7 +16,7 @@ public sealed record NormalLike(DataType Type) : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Slice), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(NormalLike), 0, "input");
 
     /// <summary>
     /// Gets mean.

@@ -1,12 +1,9 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Linq;
-using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
-using TorchSharp;
+using OrtKISharp;
 using Range = Nncase.IR.Tensors.Range;
 
 namespace Nncase.Evaluator.Tensors;
@@ -19,9 +16,9 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Reshape reshape)
     {
-        var input = context.GetTorchArgumentValue(reshape, Reshape.Input);
-        var shape = context.GetArgumentValueAsTensor<long>(reshape, Reshape.Shape).ToArray<long>();
-        return input.reshape(shape).ToValue();
+        var input = context.GetOrtArgumentValue(reshape, Reshape.Input);
+        var shape = context.GetOrtArgumentValue(reshape, Reshape.Shape);
+        return OrtKI.Reshape(input, shape, 0).ToValue();
     }
 
     /// <inheritdoc/>

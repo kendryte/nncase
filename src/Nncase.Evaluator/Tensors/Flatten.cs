@@ -3,12 +3,9 @@
 
 using System;
 using System.Linq;
-using NetFabric.Hyperlinq;
 using Nncase.IR;
-using Nncase.IR.Math;
 using Nncase.IR.Tensors;
-using TorchSharp;
-using torchF = TorchSharp.torch.nn.functional;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -20,16 +17,15 @@ public class FlattenEvaluator : IEvaluator<Flatten>, ITypeInferencer<Flatten>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Flatten flatten)
     {
-        var input = context.GetTorchArgumentValue(flatten, Flatten.Input);
+        var input = context.GetOrtArgumentValue(flatten, Flatten.Input);
         var dim = context.GetArgumentValueAsScalar<int>(flatten, Flatten.Axis);
-        var v = torch.nn.Flatten(0, dim);
-        return v.forward(input).ToValue();
+        return OrtKI.Flatten(input, dim).ToValue();
     }
 
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Flatten target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Cast.Input);
+        var input = context.CheckArgumentType<TensorType>(target, Flatten.Input);
         return Visit(context, target, input);
     }
 

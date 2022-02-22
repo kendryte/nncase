@@ -40,8 +40,8 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
             UnaryOp.Sqrt => OrtKI.Sqrt(i),
             UnaryOp.Square => OrtKI.Square(i),
             UnaryOp.Tanh => OrtKI.Tanh(i),
-            UnaryOp.BitwiseNot => OrtKI.BitwiseNot(i),
-            UnaryOp.LogicalNot => OrtKI.LogicalNot(i),
+            UnaryOp.BitwiseNot => throw new NotSupportedException("NotSupported UnaryOp BitwiseNot"),
+            UnaryOp.LogicalNot => OrtKI.Not(i),
             _ => throw new ArgumentOutOfRangeException(nameof(unary.UnaryOp)),
         };
         return result.ToValue();
