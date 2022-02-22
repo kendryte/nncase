@@ -139,11 +139,21 @@ public static class PrimTypeCodes
         { PrimTypeCode.Int64, DataTypes.Int64 },
     };
 
+    /// <summary>
+    /// convert datatype to typecode
+    /// </summary>
+    /// <param name="dataType">datatype.</param>
+    /// <returns>primtype code.</returns>
     public static PrimTypeCode ToTypeCode(DataType dataType)
     {
         return _primTypeCodes[dataType];
     }
 
+    /// <summary>
+    /// convert primtype code to datatype
+    /// </summary>
+    /// <param name="typeCode">prim type code.</param>
+    /// <returns>datatype.</returns>
     public static DataType ToDataType(PrimTypeCode typeCode)
     {
         return _dataTypes[typeCode];

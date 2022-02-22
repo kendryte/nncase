@@ -15,6 +15,7 @@ namespace Nncase.SourceGenerator.Evaluator;
 internal class EvaluatorGenerator : ISourceGenerator
 {
 
+    GeneratorExecutionContext? Context = null;
 
     public void Initialize(GeneratorInitializationContext context) => context.RegisterForSyntaxNotifications(() => new EvaluatorImplReceiver());
 
@@ -22,6 +23,7 @@ internal class EvaluatorGenerator : ISourceGenerator
     {
         if (context.SyntaxContextReceiver is not EvaluatorImplReceiver evalReceiver)
             return;
+        Context ??= context;
         if (evalReceiver.Diagnostics.Any())
         {
             foreach (var diag in evalReceiver.Diagnostics)
@@ -53,11 +55,10 @@ internal class EvaluatorGenerator : ISourceGenerator
     {
         var (return_type_name, context_type_name) = cand.Target.GetKindInfo();
         var statementSyntaxes = new List<StatementSyntax>();
-        TextInfo myTI = new CultureInfo("en-US", false).TextInfo;
         foreach (var Parameter in cand.Method.Parameters)
         {
-            if (!cand.Op.MemberNames.Any(name => name.ToLower() == Parameter.Name))
-                throw new InvalidOperationException($"The Method Parameter {Parameter.Name} Is Not Valid!");
+            if (!cand.Op.MemberNames.Any(name => name == Parameter.Name))
+                Context.Value.ReportDiagnostic(Diagnostic.Create(MethodParamError, Location.None, cand.Class.Name, string.Join(", ", cand.Method.Parameters.Select(p => p.Name)), cand.Op.Name));
             var paramType = Parameter.Type;
             string callMethod = paramType switch
             {
@@ -78,7 +79,7 @@ internal class EvaluatorGenerator : ISourceGenerator
             };
 
             if (callMethod != string.Empty)
-                statementSyntaxes.Add(ParseStatement($"var {Parameter.Name} = context.{callMethod}(target, {cand.Op.ToDisplayString()}.{myTI.ToTitleCase(Parameter.Name)});"));
+                statementSyntaxes.Add(ParseStatement($"var {Parameter.Name} = context.{callMethod}(target, {cand.Op.ToDisplayString()}.{Parameter.Name});"));
             else
                 statementSyntaxes.Add(ParseStatement($"var {Parameter.Name} = target;"));
         }
@@ -147,4 +148,12 @@ internal class EvaluatorGenerator : ISourceGenerator
                 NormalizeWhitespace();
         return compilationUnit;
     }
+
+    readonly DiagnosticDescriptor MethodParamError = new DiagnosticDescriptor(id: "EvalGen005",
+                                                                        title: "The Method Parameters Is Not Valid!",
+                                                                        messageFormat: "This Class '{0}' Method Parameters Is ('{1}'), But Not Satisfy The Op `'{2}'` ",
+                                                                        category: "EvaluatorGenerator",
+                                                                        DiagnosticSeverity.Error,
+                                                                        isEnabledByDefault: true);
+
 }

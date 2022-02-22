@@ -79,9 +79,9 @@ namespace Nncase.Tests
             {
                 _simplifyPass.Add(SimplifyFactory.SimplifyAdd());
                 _simplifyPass.Add(SimplifyFactory.SimplifyMul());
-                _simplifyPass.Add(new Transform.Rule.FoldConstCall());
+                // _simplifyPass.Add(new Transform.Rule.FoldConstCall());
             }
-            var f = new Function(expr, new Expr[] { });
+            var f = new Function(expr, new Var[] { });
             var result = f.InferenceType();
             RunPassOptions options = RunPassOptions.Invalid;
 

@@ -39,7 +39,7 @@ public class FoldConstCall : RewriteRule<CallPattern>
 public class FoldShapeOf : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
-    public override CallPattern Pattern { get; } = ShapeOf(IsWildcard()) with { TypePattern = IsTensor() };
+    public override CallPattern Pattern { get; } = IsShapeOf(IsWildcard()) with { TypePattern = IsTensor() };
 
     /// <inheritdoc/>
     public override Expr? GetReplace(IMatchResult result)

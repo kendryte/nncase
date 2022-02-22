@@ -13,14 +13,14 @@ namespace Nncase.Evaluator.NN;
 [EvaluatorGenerator, TypeInferGenerator]
 public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>
 {
-    private IValue Visit(TorchSharp.torch.Tensor input, int alpha)
+    private IValue Visit(TorchSharp.torch.Tensor Input, int Alpha)
     {
-        return input.celu().ToValue();
+        return Input.celu().ToValue();
     }
 
-    private TensorType Visit(TensorType input)
+    private TensorType Visit(TensorType Input)
     {
-        return input;
+        return Input;
     }
 }
 
@@ -30,14 +30,14 @@ public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>
 [EvaluatorGenerator, TypeInferGenerator]
 public partial class EluEvaluator : IEvaluator<Elu>, ITypeInferencer<Elu>
 {
-    IValue Visit(TorchSharp.torch.Tensor input, double alpha)
+    IValue Visit(TorchSharp.torch.Tensor Input, double Alpha)
     {
-        return torchF.elu(input, alpha).ToValue();
+        return torchF.elu(Input, Alpha).ToValue();
     }
 
-    IRType Visit(TensorType input)
+    IRType Visit(TensorType Input)
     {
-        return input;
+        return Input;
     }
 }
 

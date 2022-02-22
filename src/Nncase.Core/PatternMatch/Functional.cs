@@ -19,105 +19,105 @@ namespace Nncase.PatternMatch.F
         /// </summary>
         /// <param name="expr">Source expression.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Abs(Pattern expr) => Unary(expr, UnaryOp.Abs);
+        public static CallPattern Abs(Pattern expr) => IsUnary(UnaryOp.Abs, expr);
 
         /// <summary>
         /// CallPattern ceil.
         /// </summary>
         /// <param name="expr">Source expression.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Ceil(Pattern expr) => Unary(expr, UnaryOp.Ceil);
+        public static CallPattern Ceil(Pattern expr) => IsUnary(UnaryOp.Ceil, expr);
 
         /// <summary>
         /// CallPattern cos.
         /// </summary>
         /// <param name="expr">Source expression.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Cos(Pattern expr) => Unary(expr, UnaryOp.Cos);
+        public static CallPattern Cos(Pattern expr) => IsUnary(UnaryOp.Cos, expr);
 
         /// <summary>
         /// CallPattern exp.
         /// </summary>
         /// <param name="expr">Source expression.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Exp(Pattern expr) => Unary(expr, UnaryOp.Exp);
+        public static CallPattern Exp(Pattern expr) => IsUnary(UnaryOp.Exp, expr);
 
         /// <summary>
         /// CallPattern floor.
         /// </summary>
         /// <param name="expr">Source expression.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Floor(Pattern expr) => Unary(expr, UnaryOp.Floor);
+        public static CallPattern Floor(Pattern expr) => IsUnary(UnaryOp.Floor, expr);
 
         /// <summary>
         /// CallPattern log.
         /// </summary>
         /// <param name="expr">Source expression.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Log(Pattern expr) => Unary(expr, UnaryOp.Log);
+        public static CallPattern Log(Pattern expr) => IsUnary(UnaryOp.Log, expr);
 
         /// <summary>
         /// CallPattern neg.
         /// </summary>
         /// <param name="expr">Source expression.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Neg(Pattern expr) => Unary(expr, UnaryOp.Neg);
+        public static CallPattern Neg(Pattern expr) => IsUnary(UnaryOp.Neg, expr);
 
         /// <summary>
         /// CallPattern round.
         /// </summary>
         /// <param name="expr">Source expression.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Round(Pattern expr) => Unary(expr, UnaryOp.Round);
+        public static CallPattern Round(Pattern expr) => IsUnary(UnaryOp.Round, expr);
 
         /// <summary>
         /// CallPattern rsqrt.
         /// </summary>
         /// <param name="expr">Source expression.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Rsqrt(Pattern expr) => Unary(expr, UnaryOp.Rsqrt);
+        public static CallPattern Rsqrt(Pattern expr) => IsUnary(UnaryOp.Rsqrt, expr);
 
         /// <summary>
         /// CallPattern sin.
         /// </summary>
         /// <param name="expr">Source expression.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Sin(Pattern expr) => Unary(expr, UnaryOp.Sin);
+        public static CallPattern Sin(Pattern expr) => IsUnary(UnaryOp.Sin, expr);
 
         /// <summary>
         /// CallPattern sqrt.
         /// </summary>
         /// <param name="expr">Source expression.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Sqrt(Pattern expr) => Unary(expr, UnaryOp.Sqrt);
+        public static CallPattern Sqrt(Pattern expr) => IsUnary(UnaryOp.Sqrt, expr);
 
         /// <summary>
         /// CallPattern square.
         /// </summary>
         /// <param name="expr">Source expression.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Square(Pattern expr) => Unary(expr, UnaryOp.Square);
+        public static CallPattern Square(Pattern expr) => IsUnary(UnaryOp.Square, expr);
 
         /// <summary>
         /// CallPattern tanh.
         /// </summary>
         /// <param name="expr">Source expression.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Tanh(Pattern expr) => Unary(expr, UnaryOp.Tanh);
+        public static CallPattern Tanh(Pattern expr) => IsUnary(UnaryOp.Tanh, expr);
 
         /// <summary>
         /// CallPattern bitwise not.
         /// </summary>
         /// <param name="expr">Source expression.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern BitwiseNot(Pattern expr) => Unary(expr, UnaryOp.BitwiseNot);
+        public static CallPattern BitwiseNot(Pattern expr) => IsUnary(UnaryOp.BitwiseNot, expr);
 
         /// <summary>
         /// CallPattern logical not.
         /// </summary>
         /// <param name="expr">Source expression.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern LogicalNot(Pattern expr) => Unary(expr, UnaryOp.LogicalNot);
+        public static CallPattern LogicalNot(Pattern expr) => IsUnary(UnaryOp.LogicalNot, expr);
 
         /// <summary>
         /// CallPattern add.
@@ -125,7 +125,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Add(Pattern lhs, Pattern rhs) => Binary(lhs, rhs, BinaryOp.Add);
+        public static CallPattern Add(Pattern lhs, Pattern rhs) => IsBinary(BinaryOp.Add, lhs, rhs);
 
         /// <summary>
         /// CallPattern sub.
@@ -133,7 +133,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Sub(Pattern lhs, Pattern rhs) => Binary(lhs, rhs, BinaryOp.Sub);
+        public static CallPattern Sub(Pattern lhs, Pattern rhs) => IsBinary(BinaryOp.Sub, lhs, rhs);
 
         /// <summary>
         /// CallPattern mul.
@@ -141,7 +141,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Mul(Pattern lhs, Pattern rhs) => Binary(lhs, rhs, BinaryOp.Mul);
+        public static CallPattern Mul(Pattern lhs, Pattern rhs) => IsBinary(BinaryOp.Mul, lhs, rhs);
 
         /// <summary>
         /// CallPattern div.
@@ -149,7 +149,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Div(Pattern lhs, Pattern rhs) => Binary(lhs, rhs, BinaryOp.Div);
+        public static CallPattern Div(Pattern lhs, Pattern rhs) => IsBinary(BinaryOp.Div, lhs, rhs);
 
         /// <summary>
         /// CallPattern mod.
@@ -157,7 +157,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Mod(Pattern lhs, Pattern rhs) => Binary(lhs, rhs, BinaryOp.Mod);
+        public static CallPattern Mod(Pattern lhs, Pattern rhs) => IsBinary(BinaryOp.Mod, lhs, rhs);
 
         /// <summary>
         /// CallPattern min.
@@ -165,7 +165,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Min(Pattern lhs, Pattern rhs) => Binary(lhs, rhs, BinaryOp.Min);
+        public static CallPattern Min(Pattern lhs, Pattern rhs) => IsBinary(BinaryOp.Min, lhs, rhs);
 
         /// <summary>
         /// CallPattern max.
@@ -173,7 +173,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Max(Pattern lhs, Pattern rhs) => Binary(lhs, rhs, BinaryOp.Max);
+        public static CallPattern Max(Pattern lhs, Pattern rhs) => IsBinary(BinaryOp.Max, lhs, rhs);
 
         /// <summary>
         /// CallPattern pow.
@@ -181,7 +181,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern Pow(Pattern lhs, Pattern rhs) => Binary(lhs, rhs, BinaryOp.Pow);
+        public static CallPattern Pow(Pattern lhs, Pattern rhs) => IsBinary(BinaryOp.Pow, lhs, rhs);
 
         /// <summary>
         /// CallPattern bitwise and.
@@ -189,7 +189,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern BitwiseAnd(Pattern lhs, Pattern rhs) => Binary(lhs, rhs, BinaryOp.BitwiseAnd);
+        public static CallPattern BitwiseAnd(Pattern lhs, Pattern rhs) => IsBinary(BinaryOp.BitwiseAnd, lhs, rhs);
 
         /// <summary>
         /// CallPattern bitwise or.
@@ -197,7 +197,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern BitwiseOr(Pattern lhs, Pattern rhs) => Binary(lhs, rhs, BinaryOp.BitwiseOr);
+        public static CallPattern BitwiseOr(Pattern lhs, Pattern rhs) => IsBinary(BinaryOp.BitwiseOr, lhs, rhs);
 
         /// <summary>
         /// CallPattern bitwise xor.
@@ -205,7 +205,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern BitwiseXor(Pattern lhs, Pattern rhs) => Binary(lhs, rhs, BinaryOp.BitwiseXor);
+        public static CallPattern BitwiseXor(Pattern lhs, Pattern rhs) => IsBinary(BinaryOp.BitwiseXor, lhs, rhs);
 
         /// <summary>
         /// CallPattern logical and.
@@ -213,7 +213,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern LogicalAnd(Pattern lhs, Pattern rhs) => Binary(lhs, rhs, BinaryOp.LogicalAnd);
+        public static CallPattern LogicalAnd(Pattern lhs, Pattern rhs) => IsBinary(BinaryOp.LogicalAnd, lhs, rhs);
 
         /// <summary>
         /// CallPattern logical or.
@@ -221,7 +221,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern LogicalOr(Pattern lhs, Pattern rhs) => Binary(lhs, rhs, BinaryOp.LogicalOr);
+        public static CallPattern LogicalOr(Pattern lhs, Pattern rhs) => IsBinary(BinaryOp.LogicalOr, lhs, rhs);
 
         /// <summary>
         /// CallPattern logical xor.
@@ -229,7 +229,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern LogicalXor(Pattern lhs, Pattern rhs) => Binary(lhs, rhs, BinaryOp.LogicalXor);
+        public static CallPattern LogicalXor(Pattern lhs, Pattern rhs) => IsBinary(BinaryOp.LogicalXor, lhs, rhs);
 
         /// <summary>
         /// CallPattern left shift.
@@ -237,7 +237,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern LeftShift(Pattern lhs, Pattern rhs) => Binary(lhs, rhs, BinaryOp.LeftShift);
+        public static CallPattern LeftShift(Pattern lhs, Pattern rhs) => IsBinary(BinaryOp.LeftShift, lhs, rhs);
 
         /// <summary>
         /// CallPattern right shift.
@@ -245,7 +245,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern RightShift(Pattern lhs, Pattern rhs) => Binary(lhs, rhs, BinaryOp.RightShift);
+        public static CallPattern RightShift(Pattern lhs, Pattern rhs) => IsBinary(BinaryOp.RightShift, lhs, rhs);
 
         /// <summary>
         /// CallPattern floor div.
@@ -269,7 +269,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns>result.</returns>
-        public static CallPattern Equal(Pattern lhs, Pattern rhs) => Compare(lhs, rhs, CompareOp.Equal);
+        public static CallPattern Equal(Pattern lhs, Pattern rhs) => IsCompare(CompareOp.Equal, lhs, rhs);
 
         /// <summary>
         /// CallPattern not equal.
@@ -277,7 +277,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
-        public static CallPattern NotEqual(Pattern lhs, Pattern rhs) => Compare(lhs, rhs, CompareOp.NotEqual);
+        public static CallPattern NotEqual(Pattern lhs, Pattern rhs) => IsCompare(CompareOp.NotEqual, lhs, rhs);
 
         /// <summary>
         /// CallPattern less than.
@@ -285,7 +285,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
-        public static CallPattern LessThan(Pattern lhs, Pattern rhs) => Compare(lhs, rhs, CompareOp.LowerThan);
+        public static CallPattern LessThan(Pattern lhs, Pattern rhs) => IsCompare(CompareOp.LowerThan, lhs, rhs);
 
         /// <summary>
         /// CallPattern less equal.
@@ -293,7 +293,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
-        public static CallPattern LessEqual(Pattern lhs, Pattern rhs) => Compare(lhs, rhs, CompareOp.LowerOrEqual);
+        public static CallPattern LessEqual(Pattern lhs, Pattern rhs) => IsCompare(CompareOp.LowerOrEqual, lhs, rhs);
 
         /// <summary>
         /// CallPattern greater equal.
@@ -301,7 +301,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
-        public static CallPattern GreaterEqual(Pattern lhs, Pattern rhs) => Compare(lhs, rhs, CompareOp.GreaterThan);
+        public static CallPattern GreaterEqual(Pattern lhs, Pattern rhs) => IsCompare(CompareOp.GreaterThan, lhs, rhs);
 
         /// <summary>
         /// CallPattern greater than.
@@ -309,6 +309,6 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
-        public static CallPattern GreaterThan(Pattern lhs, Pattern rhs) => Compare(lhs, rhs, CompareOp.GreaterOrEqual);
+        public static CallPattern GreaterThan(Pattern lhs, Pattern rhs) => IsCompare(CompareOp.GreaterOrEqual, lhs, rhs);
     }
 }

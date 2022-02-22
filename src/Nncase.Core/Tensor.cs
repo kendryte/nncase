@@ -299,6 +299,29 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     }
 
     /// <summary>
+    /// Create tensor from a ulong address.
+    /// </summary>
+    /// <typeparam name="T">CLR type.</typeparam>
+    /// <param name="value">addr value.</param>
+    /// <returns>Created tensor.</returns>
+    public static Tensor<Pointer<T>> FromPointer<T>(ulong value)
+      where T : unmanaged, IEquatable<T>
+    {
+        return Tensor.FromScalar<Pointer<T>>(new Pointer<T>(value));
+    }
+
+    /// <summary>
+    /// Create tensor from a ulong address.
+    /// </summary>
+    /// <param name="value">addr value.</param>
+    /// <param name="elemType">addr value.</param>
+    /// <returns>Created tensor.</returns>
+    public static Tensor FromPointer(ulong value, DataType elemType)
+    {
+        return Tensor.FromBytes(TensorType.Scalar(new PointerType(elemType)), BitConverter.GetBytes(value));
+    }
+
+    /// <summary>
     /// Cast to typed tensor.
     /// </summary>
     /// <typeparam name="T">Element type.</typeparam>

@@ -160,6 +160,7 @@ internal class EvaluatorImplReceiver : ISyntaxContextReceiver
 
                 // 3. add to the Candidates
                 Candidates.Add(new(classSymbol, OpSymbol, method, target_kind));
+                Console.WriteLine($"EvaluatorGenerator Receive {classSymbol} For {target_kind}");
             }
         }
     }
@@ -185,10 +186,12 @@ internal class EvaluatorImplReceiver : ISyntaxContextReceiver
                                                                                 category: "EvaluatorGenerator",
                                                                                 DiagnosticSeverity.Error,
                                                                                 isEnabledByDefault: true);
+
     readonly DiagnosticDescriptor ClassMoreMethodError = new DiagnosticDescriptor(id: "EvalGen004",
                                                                             title: "The Class Have More Valid Method!",
                                                                             messageFormat: "The '{0}' Have More Valid Method!",
                                                                             category: "EvaluatorGenerator",
                                                                             DiagnosticSeverity.Error,
                                                                             isEnabledByDefault: true);
+
 }
