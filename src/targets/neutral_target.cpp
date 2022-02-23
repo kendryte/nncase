@@ -182,34 +182,27 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
 
     if (type == runtime::stackvm::stackvm_module_type)
     {
-        //lstm_transform
-        {
-            transform_pass p("lstm_transform");
-            p.emplace<fold_constant_transform>();
-            p.emplace<lstm_transform>();
-            pass_mgr.add_pass(std::move(p));
-        }
-        //matmul to conv2d
+        // matmul to conv2d
         {
             transform_pass p("matmul_to_conv2d");
             p.emplace<matmul_to_conv2d_transform>();
             pass_mgr.add_pass(std::move(p));
         }
 
-        //fold_pad_conv
+        // fold_pad_conv
         {
             transform_pass p("fold_pad_conv");
             fold_pad_conv_transform(p, true);
             pass_mgr.add_pass(std::move(p));
         }
-        //fold_dilated_conv
+        // fold_dilated_conv
         {
             transform_pass p("fold_dilated_conv");
             fold_dilated_conv_transform(p, true);
             pass_mgr.add_pass(std::move(p));
         }
 
-        //target_independent_pass
+        // target_independent_pass
         {
             transform_pass p("target_independent_pass");
             add_default_transforms(p, true);
