@@ -48,27 +48,27 @@ public static class OrtKIExtension
     
     private static readonly Dictionary<DataType, OrtDataType> _dataTypesToOrtType = new()
     {
-        { DataType.Bool, OrtDataType.Bool },
-        { DataType.Int8, OrtDataType.Int8 },
-        { DataType.Int16, OrtDataType.Int16 },
-        { DataType.Int32, OrtDataType.Int32 },
-        { DataType.Int64, OrtDataType.Int64 },
-        { DataType.UInt8, OrtDataType.UInt8 },
-        { DataType.Float16, OrtDataType.Float16 },
-        { DataType.Float32, OrtDataType.Float },
-        { DataType.Float64, OrtDataType.Double },
+        { DataTypes.Boolean, OrtDataType.Bool },
+        { DataTypes.Int8, OrtDataType.Int8 },
+        { DataTypes.Int16, OrtDataType.Int16 },
+        { DataTypes.Int32, OrtDataType.Int32 },
+        { DataTypes.Int64, OrtDataType.Int64 },
+        { DataTypes.UInt8, OrtDataType.UInt8 },
+        { DataTypes.Float16, OrtDataType.Float16 },
+        { DataTypes.Float32, OrtDataType.Float },
+        { DataTypes.Float64, OrtDataType.Double },
     };
     
     private static readonly Dictionary<OrtDataType, DataType> _OrtTypeTodataTypes = new()
     {
-        { OrtDataType.Bool, DataType.Bool },
-        { OrtDataType.Int8, DataType.Int8 },
-        { OrtDataType.Int16, DataType.Int16 },
-        { OrtDataType.Int32, DataType.Int32 },
-        { OrtDataType.Int64, DataType.Int64 },
-        { OrtDataType.UInt8, DataType.UInt8 },
-        { OrtDataType.Float16, DataType.Float16 },
-        { OrtDataType.Float, DataType.Float32 },
-        { OrtDataType.Double, DataType.Float64 },
+        { OrtDataType.Bool, DataTypes.Boolean },
+        { OrtDataType.Int8, DataTypes.Int8 },
+        { OrtDataType.Int16, DataTypes.Int16 },
+        { OrtDataType.Int32, DataTypes.Int32 },
+        { OrtDataType.Int64, DataTypes.Int64 },
+        { OrtDataType.UInt8, DataTypes.UInt8 },
+        { OrtDataType.Float16, DataTypes.Float16 },
+        { OrtDataType.Float, DataTypes.Float32 },
+        { OrtDataType.Double, DataTypes.Float64 },
     };
 }

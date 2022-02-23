@@ -28,6 +28,22 @@ namespace Nncase.Tests.EvaluatorTest
         }
 
         [Fact]
+        public void TestOrtKI()
+        {
+            var a = Const.FromTensor(Tensor.FromSpan<int>(new[] {1, 2, 3}));
+            var b = Const.FromTensor(Tensor.FromSpan<int>(new[] {1, 2, 3}));
+            // var b = (Const) 2;
+            a.InferenceType();
+            b.InferenceType();
+            var na = a.Value.ToOrtTensor();
+            var nb = b.Value.ToOrtTensor();
+            Assert.Equal(new[] {1, 2, 3}, na.ToDense<int>().ToArray());
+            var v = na.ToType(OrtDataType.Float).ToValue();
+            var c = na + nb;
+            Assert.Equal(new[] {2, 4, 6}, c.ToTensor().ToArray<int>());
+        }
+        
+        [Fact]
         public void TestUnary()
         {
             var a = (Const)7f;
@@ -39,21 +55,6 @@ namespace Nncase.Tests.EvaluatorTest
                 expr.Evaluate().AsTensor().ToTorchTensor());
         }
 
-        [Fact]
-        public void TestOrtKI()
-        {
-            var a = Const.FromSpan<int>(new[] {1, 2, 3});
-            var b = Const.FromSpan<int>(new[] {1, 2, 3});
-            // var b = (Const) 2;
-            a.InferenceType();
-            b.InferenceType();
-            var na = a.Value.ToOrtTensor();
-            var nb = b.Value.ToOrtTensor();
-            Assert.Equal(new[] {1, 2, 3}, na.ToDense<int>().ToArray());
-            var c = na + nb;
-            Assert.Equal(new[] {2, 4, 6}, c.ToTensor().ToArray<int>());
-        }
-        
         [Fact]
         public void TestBinary()
         {

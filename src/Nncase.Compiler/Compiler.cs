@@ -10,6 +10,7 @@ using Nncase.Evaluator;
 using Nncase.Hosting;
 using Nncase.IR;
 using Nncase.Transform;
+using Nncase.Transform.Passes;
 using OrtKISharp;
 
 namespace Nncase.Compiler;
@@ -36,7 +37,8 @@ public class Compiler
         var assemblies = ApplicationParts.LoadApplicationParts(c =>
         {
             c.AddCore()
-                .AddEvaluator();
+                .AddEvaluator()
+                .AddGraph();
         });
         builder.RegisterAssemblyModules(assemblies);
     }

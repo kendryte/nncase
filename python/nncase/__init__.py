@@ -27,11 +27,11 @@ def _add_dllpath():
     clr.AddReference("System.Collections")
     for dll in ["Nncase.Cli",
                 "Nncase.Core",
-                "Nncase.EGraph",
+                # "Nncase.EGraph",
                 "Nncase.Graph",
                 "Nncase.Evaluator",
                 "Nncase.Importer",
-                "Nncase.Pattern",
+                # "Nncase.Pattern",
                 "Nncase.Compiler",
                 "TorchSharp"]:
         clr.AddReference(os.path.join(nncase_cli_path, dll))
@@ -89,15 +89,15 @@ class RuntimeTensor:
     }
     
     npToDataTypeMap = {
-        np.bool8: _nncase.DataType.Bool,
-        np.int8: _nncase.DataType.Int8,
-        np.int16: _nncase.DataType.Int16,
-        np.int32: _nncase.DataType.Int32,
-        np.int64: _nncase.DataType.Int64,
-        np.uint8: _nncase.DataType.UInt8,
-        np.float16: _nncase.DataType.Float16,
-        np.float32: _nncase.DataType.Float32,
-        np.float64: _nncase.DataType.Float64,
+        np.bool8: _nncase.DataTypes.Boolean,
+        np.int8: _nncase.DataTypes.Int8,
+        np.int16: _nncase.DataTypes.Int16,
+        np.int32: _nncase.DataTypes.Int32,
+        np.int64: _nncase.DataTypes.Int64,
+        np.uint8: _nncase.DataTypes.UInt8,
+        np.float16: _nncase.DataTypes.Float16,
+        np.float32: _nncase.DataTypes.Float32,
+        np.float64: _nncase.DataTypes.Float64,
     }
 
     toNpDataTypeMap = {v:k for k, v in npToDataTypeMap.items()}

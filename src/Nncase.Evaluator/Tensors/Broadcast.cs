@@ -4,7 +4,6 @@
 using System;
 using Nncase.IR;
 using Nncase.IR.Tensors;
-using torchF = TorchSharp.torch.nn.functional;
 
 namespace Nncase.Evaluator.Tensors;
 
