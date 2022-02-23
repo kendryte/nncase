@@ -8,6 +8,16 @@ using Nncase.PatternMatch;
 namespace Nncase.Transform;
 
 /// <summary>
+/// the attrbuite mark the need auto generator the GetReplace overwrite function
+/// </summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+public class RuleGeneratorAttribute : Attribute
+{
+
+}
+
+
+/// <summary>
 /// Rewrite rule.
 /// </summary>
 public interface IRewriteRule

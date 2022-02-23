@@ -52,11 +52,11 @@ public abstract partial record Pattern
     public static implicit operator Pattern(Expr expr) => expr switch
     {
         Var var => new VarPattern(var),
-        TensorConst con => new TensorConstPattern(con),
-        Const con => new ConstPattern(con),
-        Function function => new FunctionPattern(function),
-        Call call => new CallPattern(call),
-        IR.Tuple tuple => new TuplePattern(tuple),
+        TensorConst con => new TensorConstPattern(con, null),
+        Const con => new ConstPattern(con, null),
+        Function function => new FunctionPattern(function, null),
+        Call call => new CallPattern(call, null),
+        IR.Tuple tuple => new TuplePattern(tuple, null),
         Op op => (Pattern)Activator.CreateInstance(typeof(OpPattern<>).MakeGenericType(op.GetType()), op)!,
         _ => throw new NotImplementedException($"Can't Convert The Expr {expr.GetType().Name} To Pattern"),
     };

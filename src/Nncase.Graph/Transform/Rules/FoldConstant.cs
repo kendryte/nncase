@@ -36,14 +36,20 @@ public class FoldConstCall : RewriteRule<CallPattern>
 /// <summary>
 /// Fold shape of.
 /// </summary>
+[RuleGenerator]
 public class FoldShapeOf : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
-    public override CallPattern Pattern { get; } = IsShapeOf(IsWildcard()) with { TypePattern = IsTensor() };
+    public override CallPattern Pattern { get; } = IsShapeOf(null, "call", IsWildcard("wc")) with { TypePattern = IsTensor() };
 
     /// <inheritdoc/>
     public override Expr? GetReplace(IMatchResult result)
     {
         return Const.FromShape(result.Get(Pattern).CheckedShape);
+    }
+
+    ShapeOf GetReplace(CallPattern call, Expr wc)
+    {
+        return new ShapeOf();
     }
 }

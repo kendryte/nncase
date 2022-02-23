@@ -48,49 +48,74 @@ public class PatternGenerator : ISourceGenerator
         foreach (var (old_namespace, candidates) in groupedCandidates)
         {
             List<MemberDeclarationSyntax> members = new List<MemberDeclarationSyntax>();
+
+            var pattern_name_params = new List<ParameterSyntax>()
+                {
+                    Parameter(Identifier("target_name")).WithType(ParseTypeName("string?")),
+                    Parameter(Identifier("call_name")).WithType(ParseTypeName("string?")),
+                };
             foreach (var cand in candidates)
             {
-                { // 1. build normal method
-                    // 1.1 method params
-                    var method_params = (from p in cand.AttrParams
-                                         select Parameter(Identifier(p.Name)).WithType(ParseTypeName(p.Type.Name)))
-                                 .Concat(from f in cand.ExprParams
-                                         select Parameter(Identifier(f.Name.ToLower())).WithType(ParseTypeName("Pattern")));
-                    var statements = new List<StatementSyntax>();
-                    {
-                        // 1.2 build condition
-                        var condition = string.Join("&&", (from p in cand.AttrParams select $"(x.{p.Name} == {p.Name})").DefaultIfEmpty("true"));
-                        var inputs = string.Join("", from f in cand.ExprParams select ", " + f.Name.ToLower());
-                        // 1.3 build method return
-                        statements.Add(ParseStatement($"return new(new OpPattern<{cand.Op.ToDisplayString()}>(x => {condition}){inputs});"));
+                // build the three pattern functional.
+                foreach (var name_params in new List<List<ParameterSyntax?>>() { new(){ null,null },
+                                                                         new(){ pattern_name_params[0],null },
+                                                                    new(){ pattern_name_params[0],pattern_name_params[1] } })
+                {
+                    { // 1. build normal method
+                      // 1.1 method params
+                        var method_params = (from p in name_params
+                                             where p is not null
+                                             select p)
+                                     .Concat(from p in cand.AttrParams
+                                             select Parameter(Identifier(p.Name)).WithType(ParseTypeName(p.Type.Name)))
+                                     .Concat(from f in cand.ExprParams
+                                             select Parameter(Identifier(f.Name.ToLower())).WithType(ParseTypeName("Pattern")));
+                        var statements = new List<StatementSyntax>();
+                        {
+                            // 1.2 build condition
+                            var condition = string.Join("&&", (from p in cand.AttrParams select $"(x.{p.Name} == {p.Name})").DefaultIfEmpty("true"));
+                            var inputs = string.Join(", ", from f in cand.ExprParams select f.Name.ToLower());
+                            // 1.3 build method return
+                            //var x = name_params[0];
+                            statements.Add(ParseStatement(@$"return new(
+new OpPattern<{cand.Op.ToDisplayString()}>(x => {condition}, {(name_params[0] != null ? "target_name" : "null")}), 
+new VArgsPattern (new[]{{ {inputs} }}, null),
+{(name_params[1] != null ? "call_name" : "null")});"));
+                        }
+                        // 1.4. build method body
+                        var method = MethodDeclaration(ParseTypeName("CallPattern"), "Is" + cand.Op.Name)
+                                     .WithParameterList(ParameterList(SeparatedList(method_params)))
+                                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)))
+                                    .WithBody(Block(statements));
+                        members.Add(method);
                     }
-                    // 1.4. build method body
-                    var method = MethodDeclaration(ParseTypeName("CallPattern"), "Is" + cand.Op.Name)
-                                 .WithParameterList(ParameterList(SeparatedList(method_params)))
-                                 .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)))
-                                .WithBody(Block(statements));
-                    members.Add(method);
-                }
-                { // 2. build funciton with condition
-                    // 2.1 method params
-                    var method_params = (from f in cand.ExprParams
-                                         select Parameter(Identifier(f.Name.ToLower()))
-                                         .WithType(ParseTypeName("Pattern"))).ToList();
-                    method_params.Insert(0, Parameter(Identifier("Condition"))
-                                         .WithType(ParseTypeName($"Func<{cand.Op.ToDisplayString()},bool>")));
-                    var statements = new List<StatementSyntax>();
-                    {
-                        // 1.2 build condition
-                        var inputs = string.Join("", from f in cand.ExprParams select ", " + f.Name.ToLower());
-                        // 1.3 build method return
-                        statements.Add(ParseStatement($"return new(new OpPattern<{cand.Op.ToDisplayString()}>(Condition){inputs});"));
+                    { // 2. build funciton with condition
+                      // 2.1 method params
+                        var method_params = (from p in name_params
+                                             where p is not null
+                                             select p)
+                                     .Concat(new[] {Parameter(Identifier("condition"))
+                                             .WithType(ParseTypeName($"Func<{cand.Op.ToDisplayString()},bool>"))})
+                                     .Concat(from f in cand.ExprParams
+                                             select Parameter(Identifier(f.Name.ToLower()))
+                                             .WithType(ParseTypeName("Pattern")));
+                        var statements = new List<StatementSyntax>();
+                        {
+                            // 1.2 build condition
+                            var inputs = string.Join(", ", from f in cand.ExprParams select f.Name.ToLower());
+                            // 1.3 build method return
+                            statements.Add(ParseStatement(@$"return new(
+new OpPattern<{cand.Op.ToDisplayString()}>(condition, {(name_params[0] != null ? "target_name" : "null")}),
+new VArgsPattern( new [] {{ {inputs} }}, null ),
+{(name_params[1] != null ? "call_name" : "null")});"));
+                        }
+                        // 1.4. build method body
+                        var method = MethodDeclaration(ParseTypeName("CallPattern"), "Is" + cand.Op.Name)
+                                     .WithParameterList(ParameterList(SeparatedList(method_params)))
+                                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)))
+                                    .WithBody(Block(statements));
+                        members.Add(method);
                     }
-                    // 1.4. build method body
-                    var method = MethodDeclaration(ParseTypeName("CallPattern"), "Is" + cand.Op.Name)
-                                 .WithParameterList(ParameterList(SeparatedList(method_params)))
-                                 .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)))
-                                .WithBody(Block(statements));
-                    members.Add(method);
                 }
             }
             // 4. build static class

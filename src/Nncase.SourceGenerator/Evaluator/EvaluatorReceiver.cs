@@ -133,23 +133,23 @@ internal class EvaluatorImplReceiver : ISyntaxContextReceiver
             if (classSymbol.GetAttributes().Any(attr => attr.AttributeClass.Name == target_kind.GetAttrName()))
             {
                 if (!classDeclaration.Modifiers.Any(tok => tok.IsKind(SyntaxKind.PartialKeyword)))
-                    Diagnostics.Add(Diagnostic.Create(ClassNotPartialError, Location.None, classSymbol.ToDisplayString()));
+                    Diagnostics.Add(Diagnostic.Create(RecriverUtil.ClassNotPartialError, Location.None, classSymbol.ToDisplayString()));
 
                 // 1. find op symbol
                 var interfaces = classSymbol.Interfaces.Where(i => i.TypeArguments.Count() == 1 && i.Name == target_kind.ToString()).ToArray();
                 if (interfaces.Length != 1)
-                    Diagnostics.Add(Diagnostic.Create(ClassNotFromInterfaceError, Location.None, classSymbol.ToDisplayString(), target_kind));
+                    Diagnostics.Add(Diagnostic.Create(RecriverUtil.ClassNotFromInterfaceError, Location.None, classSymbol.ToDisplayString(), target_kind));
                 var OpSymbol = interfaces[0].TypeArguments.OfType<INamedTypeSymbol>().First();
                 // 2. find the reference method!
                 var methods = classSymbol.GetMembers()
                                        .OfType<IMethodSymbol>()
                                        .Where(m => m.Name == "Visit" && m.ReturnType.CheckReturnTypeRange(target_kind)).ToArray();
                 if (methods.Length == 0)
-                    Diagnostics.Add(Diagnostic.Create(ClassNoValidMethodError, Location.None, classSymbol.ToDisplayString()));
+                    Diagnostics.Add(Diagnostic.Create(RecriverUtil.ClassNoValidMethodError, Location.None, classSymbol.ToDisplayString()));
 
 
                 if (methods.Length > 1)
-                    Diagnostics.Add(Diagnostic.Create(ClassMoreMethodError, Location.None, classSymbol.ToDisplayString()));
+                    Diagnostics.Add(Diagnostic.Create(RecriverUtil.ClassMoreMethodError, Location.None, classSymbol.ToDisplayString()));
 
                 var method = methods[0];
                 if (method.ReturnType.Name == target_kind.GetReturnType()
@@ -166,32 +166,5 @@ internal class EvaluatorImplReceiver : ISyntaxContextReceiver
     }
 
 
-    readonly DiagnosticDescriptor ClassNotPartialError = new DiagnosticDescriptor(id: "EvalGen001",
-                                                                                title: "The Class Must Be partial!",
-                                                                                messageFormat: "The Class '{0}' Must Be partial!.",
-                                                                                category: "EvaluatorGenerator",
-                                                                                DiagnosticSeverity.Error,
-                                                                                isEnabledByDefault: true);
-
-    readonly DiagnosticDescriptor ClassNotFromInterfaceError = new DiagnosticDescriptor(id: "EvalGen002",
-                                                                                title: "The Class Must Be Derived Interface!",
-                                                                                messageFormat: "The '{0}' Must Have '{1}'<T>!.",
-                                                                                category: "EvaluatorGenerator",
-                                                                                DiagnosticSeverity.Error,
-                                                                                isEnabledByDefault: true);
-
-    readonly DiagnosticDescriptor ClassNoValidMethodError = new DiagnosticDescriptor(id: "EvalGen003",
-                                                                                title: "The Class Have No Valid Method!",
-                                                                                messageFormat: "The '{0}' Have Not Valid Method!",
-                                                                                category: "EvaluatorGenerator",
-                                                                                DiagnosticSeverity.Error,
-                                                                                isEnabledByDefault: true);
-
-    readonly DiagnosticDescriptor ClassMoreMethodError = new DiagnosticDescriptor(id: "EvalGen004",
-                                                                            title: "The Class Have More Valid Method!",
-                                                                            messageFormat: "The '{0}' Have More Valid Method!",
-                                                                            category: "EvaluatorGenerator",
-                                                                            DiagnosticSeverity.Error,
-                                                                            isEnabledByDefault: true);
-
+    
 }

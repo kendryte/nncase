@@ -35,8 +35,8 @@ public interface IOrPattern : IPattern
 /// <typeparam name="TInput">Input type.</typeparam>
 /// <param name="ConditionA">Condition a.</param>
 /// <param name="ConditionB">Condition b.</param>
-public sealed record OrPattern<TInput>(IPattern<TInput> ConditionA, IPattern<TInput> ConditionB)
-    : Pattern, IPattern<TInput>, IOrPattern
+public sealed record OrPattern<TInput>(IPattern<TInput> ConditionA, IPattern<TInput> ConditionB, string? Name)
+    : Pattern(Name), IPattern<TInput>, IOrPattern
 {
     /// <inheritdoc/>
     public Type InputType => typeof(TInput);

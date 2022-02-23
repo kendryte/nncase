@@ -13,14 +13,16 @@ namespace Nncase.PatternMatch;
 /// Pattern for <see cref="TupleConst"/>.
 /// </summary>
 /// <param name="Condition">Expression condition.</param>
-public sealed record TupleConstPattern(Func<TupleConst, bool> Condition) : Pattern<TupleConst>
+/// <param name="Name">name.</param>
+public sealed record TupleConstPattern(Func<TupleConst, bool> Condition, string? Name) : Pattern<TupleConst>(Name)
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="TupleConstPattern"/> class.
     /// </summary>
     /// <param name="const"><see cref="Const"/> expression.</param>
-    public TupleConstPattern(TupleConst @const)
-        : this(x => x.Equals(@const))
+    /// <param name="name">name.</param>
+    public TupleConstPattern(TupleConst @const, string? name)
+        : this(x => x.Equals(@const), name)
     {
         Value = @const;
     }
@@ -36,9 +38,26 @@ public sealed record TupleConstPattern(Func<TupleConst, bool> Condition) : Patte
 
 public static partial class Utility
 {
-    public static TupleConstPattern IsTupleConst() => new(x => true);
+    /// <summary>
+    /// create the tupleconst pattern.
+    /// </summary>
+    /// <param name="name">name.</param>
+    /// <returns>TupleConstPattern.</returns>
+    public static TupleConstPattern IsTupleConst(string? name = null) => new(x => true, name);
 
-    public static TupleConstPattern IsTupleConst(Func<TupleConst, bool> Cond) => new(Cond);
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="Cond">condition.</param>
+    /// <param name="name">name.</param>
+    /// <returns>TupleConstPattern.</returns>
+    public static TupleConstPattern IsTupleConst(Func<TupleConst, bool> Cond, string? name = null) => new(Cond, name);
 
-    public static TupleConstPattern IsTupleConst(TypePattern typePattern) => new(x => typePattern.MatchLeaf(x.ValueType));
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="typePattern">typepattern. </param>
+    /// <param name="name">name.</param>
+    /// <returns>TupleConstPattern.</returns>
+    public static TupleConstPattern IsTupleConst(TypePattern typePattern, string? name = null) => new(x => typePattern.MatchLeaf(x.ValueType), name);
 }
