@@ -237,7 +237,7 @@ internal sealed class Matcher
             if (pattern.MatchLeaf(expr))
             {
                 var oldMatches = _matches.Count;
-                if (!pattern.ConditionA.MatchLeaf(expr))
+                if (!Visit(pattern.ConditionA, expr))
                 {
                     // cleanup old matches
                     if (_matches.Count > oldMatches)
@@ -245,7 +245,7 @@ internal sealed class Matcher
                         _matches.RemoveRange(oldMatches, _matches.Count - oldMatches);
                     }
 
-                    if (!pattern.ConditionB.MatchLeaf(expr))
+                    if (!Visit(pattern.ConditionB, expr))
                     {
                         return false;
                     }
@@ -299,6 +299,26 @@ internal sealed class Matcher
             }
 
             return false;
+        }
+    }
+
+    private sealed class MatchScope
+    {
+        private readonly MatchScope? _parent;
+        private readonly Dictionary<IPattern, Expr> _patMemo = new(ReferenceEqualityComparer.Instance);
+        private readonly Dictionary<VArgsPattern, Expr[]> _vargspatMemo = new(ReferenceEqualityComparer.Instance);
+        private readonly List<(IPattern Pattern, object Match)> _matches = new();
+
+        public MatchScope(MatchScope? parent)
+        {
+            _parent = parent;
+        }
+
+        public bool IsMatch { get; set; } = true;
+
+        public MatchScope BeginScope()
+        {
+            return new MatchScope(this);
         }
     }
 

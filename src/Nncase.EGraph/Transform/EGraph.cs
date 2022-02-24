@@ -7,404 +7,304 @@ using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 
-namespace Nncase.Transform
+namespace Nncase.Transform;
+
+/// <summary>
+/// EGraph.
+/// </summary>
+public sealed partial class EGraph
 {
+    private readonly Dictionary<Expr, ENode> _exprMemo = new();
+    private readonly Dictionary<ENode, EClass> _nodes = new();
+
     /// <summary>
-    /// ENode.
+    /// record each Enode's Eclass.
     /// </summary>
-    public sealed record ENode(Expr Expr, IRArray<EClass> Children)
+    private readonly Dictionary<ENode, EClass> _hascons = new Dictionary<ENode, EClass>();
+
+    // private readonly List<EClass> _classes = new List<EClass>();
+    private int _version = 0;
+
+    private int _globalEclassId = 0;
+
+    /// <summary>
+    /// save which node has been merged,
+    /// we should update it's eclass in hashcon.
+    /// </summary>
+    private readonly List<ENode> _mergedlist = new();
+
+    /// <summary>
+    /// which eclass should be repair.
+    /// </summary>
+    private List<EClass> _worklist = new();
+
+    /// <summary>
+    /// the all EClass and it's.
+    /// </summary>
+    /// <returns></returns>
+    public Dictionary<EClass, List<ENode>> EClasses()
     {
-        /// <summary>
-        /// speedup hashcode calc.
-        /// </summary>
-        private int? _hashcode;
-
-        /// <summary>
-        /// Add current enode information to childrens.
-        /// </summary>
-        public void AddUsed(EClass eClass)
+        var eclasses = new Dictionary<EClass, List<ENode>>();
+        foreach (var (enode, eclass) in _hascons)
         {
-            foreach (var children in Children)
+            // NOTE when do Find in here, maybe some enode's child id haven't update.
+            var parentEclass = eclass.Find();
+
+            // if (parentEclass != eclass) { _mergedlist.Add(enode); }
+            if (!eclasses.ContainsKey(parentEclass))
             {
-                children.Used.Add((this, eClass.Find()));
+                eclasses.Add(parentEclass, new List<ENode> { enode });
+            }
+            else
+            {
+                eclasses[parentEclass].Add(enode);
             }
         }
 
-        public ENode Canonicalize()
+        // foreach (var enode in _mergedlist) { _hascons[enode] = _hascons[enode].Find(); }
+        // _mergedlist.Clear();
+        return eclasses;
+    }
+
+    /// <summary>
+    /// <see cref="_hascons"/>.
+    /// </summary>
+    public IReadOnlyDictionary<ENode, EClass> HashCons => _hascons;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EGraph"/> class.
+    /// </summary>
+    public EGraph()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EGraph"/> class.
+    /// </summary>
+    /// <param name="expr">Expression.</param>
+    public EGraph(Expr expr)
+    {
+        Add(expr);
+    }
+
+    /// <summary>
+    /// Gets version.
+    /// </summary>
+    public int Version => _version;
+
+    /// <summary>
+    /// Add expr, get the eclass id.
+    /// </summary>
+    /// <param name="expr">Expression.</param>
+    /// <returns>Eclass of this node.</returns>
+    public EClass Add(Expr expr)
+    {
+        if (expr.CheckedType is null)
         {
-            var children = (from c in Children select c.Find()).ToArray();
-            return new ENode(Expr, children);
+            expr.InferenceType();
         }
 
-        public (ENode, List<EClass>) Canonicalize(EClass TargeteClass)
+        var converter = new ENodeConverter(this);
+        return converter.Visit(expr);
+    }
+
+    /// <summary>
+    /// Union two equal Eclass.
+    /// </summary>
+    /// <param name="classA">class a.</param>
+    /// <param name="classB">class b.</param>
+    /// <returns>If version changed.</returns>
+    public bool Union(EClass classA, EClass classB)
+    {
+        classA = classA.Find();
+        classB = classB.Find();
+        if (classA == classB)
         {
-            var todos = new List<EClass>();
-            EClass find_other_parents(EClass child)
+            return false;
+        }
+
+        _version++;
+        if (classA.Used.Count < classB.Used.Count)
+        {
+            (classA, classB) = (classB, classA);
+        }
+
+        classB.Parent = classA;
+        classA.Used.AddRange(classB.Used);
+        classB.Used.Clear();
+
+        _worklist.Add(classA);
+        return true;
+    }
+
+    /// <summary>
+    /// After merge, we use rebuild get new dep information.
+    /// </summary>
+    public void Rebuild()
+    {
+        while (_worklist.Count > 0)
+        {
+            // swap todos and worklist
+            (var todos, _worklist) = (_worklist, new());
+
+            foreach (var eclass in todos)
             {
-                var neweClass = child.Find();
-                if (neweClass != TargeteClass)
-                {
-                    todos.Add(neweClass);
-                }
-
-                return neweClass;
+                Repair(eclass);
             }
-
-            return (new ENode(Expr, Children.Select(find_other_parents).ToArray()), todos);
-        }
-
-        private int HashVisit(Expr expr) => expr switch
-        {
-            Call call => EqualityComparer<Type>.Default.GetHashCode(typeof(Call)),
-            IR.Tuple tuple => EqualityComparer<Type>.Default.GetHashCode(typeof(IR.Tuple)),
-            Function function => EqualityComparer<Type>.Default.GetHashCode(typeof(Function)),
-            _ => expr.GetHashCode(),
-        };
-
-        private bool EqualVisit(Expr expr) => expr switch
-        {
-            Call call => Expr is Call,
-            IR.Tuple tuple => Expr is IR.Tuple,
-            Function function => Expr is Function,
-            _ => Expr.Equals(expr),
-        };
-
-        public bool Equals(ENode? other)
-        {
-            return !(other is null) && other.GetHashCode() == GetHashCode();
-        }
-
-        public override int GetHashCode()
-        {
-            return _hashcode ??= HashCode.Combine(
-            EqualityComparer<Type>.Default.GetHashCode(EqualityContract),
-            EqualityComparer<IRArray<EClass>>.Default.GetHashCode(Children),
-            HashVisit(Expr));
-        }
-
-        public override string ToString()
-        {
-            var str = string.Join(", ", Children.Select(x => x.Id));
-            return $"{Expr.GetType().Name} ({str})";
         }
     }
 
     /// <summary>
-    /// EClass.
+    /// <see cref="TopSort(IReadOnlyDictionary&lt;EClass, List&lt;ENode&gt;&gt;)"/>.
     /// </summary>
-    public sealed partial class EClass
-    {
-        public EClass(int id)
-        {
-            Id = id;
-        }
-
-        public int Id { get; }
-
-        public EClass? Parent = null;
-
-        /// <summary>
-        /// NOTE the Used mean which Enode use this EClass. eg. z = x + y. the EClass's Used will add {(z, z's eclass id)}.
-        /// <remark> It's Not mean this EClass's Nodes </remark>
-        /// </summary>
-        public readonly List<(ENode, EClass)> Used = new List<(ENode, EClass)>();
-
-        public EClass Find()
-        {
-            if (Parent is null)
-            {
-                return this;
-            }
-
-            Parent = Parent.Find();
-            return Parent;
-        }
-
-        public override string ToString() => $"{Id} -> {Parent?.Id}";
-    }
+    /// <returns></returns>
+    public EClass[] TopSort() => TopSort(EClasses());
 
     /// <summary>
-    /// EGraph.
+    /// Get Top Sorted EGraph Datastruce.
     /// </summary>
-    public sealed partial class EGraph
+    /// <returns> the Eclass array, the root eclass is first one. </returns>
+    public EClass[] TopSort(IReadOnlyDictionary<EClass, List<ENode>> eClasses)
     {
-        /// <summary>
-        /// record each Enode's Eclass.
-        /// </summary>
-        private readonly Dictionary<ENode, EClass> _hascons = new Dictionary<ENode, EClass>();
-
-        // private readonly List<EClass> _classes = new List<EClass>();
-        private int _version = 0;
-
-        private int _globalEclassId = 0;
-
-        /// <summary>
-        /// save which node has been merged,
-        /// we should update it's eclass in hashcon.
-        /// </summary>
-        private readonly List<ENode> _mergedlist = new();
-
-        /// <summary>
-        /// which eclass should be repair.
-        /// </summary>
-        private readonly List<EClass> _worklist = new();
-
-        /// <summary>
-        /// the all EClass and it's.
-        /// </summary>
-        /// <returns></returns>
-        public Dictionary<EClass, List<ENode>> EClasses()
+        void dfs(EClass eclass, Dictionary<EClass, bool> visited, List<EClass> paths)
         {
-            var eclasses = new Dictionary<EClass, List<ENode>>();
-            foreach (var (enode, eclass) in _hascons)
+            visited[eclass] = true;
+            foreach (var (_, used_eclass) in eclass.Used)
             {
-                // NOTE when do Find in here, maybe some enode's child id haven't update.
-                var parentEclass = eclass.Find();
-
-                // if (parentEclass != eclass) { _mergedlist.Add(enode); }
-                if (!eclasses.ContainsKey(parentEclass))
+                if (!visited[eclass])
                 {
-                    eclasses.Add(parentEclass, new List<ENode> { enode });
-                }
-                else
-                {
-                    eclasses[parentEclass].Add(enode);
+                    dfs(used_eclass, visited, paths);
                 }
             }
 
-            // foreach (var enode in _mergedlist) { _hascons[enode] = _hascons[enode].Find(); }
-            // _mergedlist.Clear();
-            return eclasses;
+            paths.Add(eclass); // put the root node into last
         }
 
-        /// <summary>
-        /// <see cref="_hascons"/>.
-        /// </summary>
-        public IReadOnlyDictionary<ENode, EClass> HashCons => _hascons;
-
-        public int Version => _version;
-
-        public EGraph() { }
-
-        public EGraph(Expr expr) => Add(expr, out var eClass);
-
-        /// <summary>
-        /// add expr, get the eclass id.
-        /// </summary>
-        /// <param name="expr"></param>
-        /// <param name="eClass"></param>
-        public void Add(Expr expr, out EClass eClass)
+        var visited = new Dictionary<EClass, bool>();
+        foreach (var (k, _) in eClasses)
         {
-            if (expr.CheckedType is null) { expr.InferenceType(); }
-            var converter = new ENodeConverter(this);
-            eClass = converter.Visit(expr);
+            visited[k] = false;
         }
 
-        /// <summary>
-        /// <see cref="Add(Expr, out EClass)"/>.
-        /// </summary>
-        /// <param name="expr"></param>
-        public void Add(Expr expr) => Add(expr, out var eClass);
-
-        public void Clear()
+        var paths = new List<EClass>();
+        foreach (var (eclass, is_visited) in visited)
         {
-            _worklist.Clear();
-            _version = 0;
-            _hascons.Clear();
-
-            // _classes.Clear();
-        }
-
-        private EClass AddENode(Expr expr, IRArray<EClass> children)
-        {
-            // todo rewrite it.
-            ENode enode = new ENode(expr, children);
-            if (!_hascons.TryGetValue(enode, out var eclass))
+            if (!is_visited)
             {
-                eclass = new EClass(_globalEclassId++);
-                enode.AddUsed(eclass);
-                _hascons.Add(enode, eclass);
-            }
-
-            return eclass.Find();
-        }
-
-        /// <summary>
-        /// merge two equal Eclass.
-        /// </summary>
-        /// <param name="to"></param>
-        /// <param name="from"></param>
-        /// <returns></returns>
-        public bool Merge(EClass to, EClass from)
-        {
-            to = to.Find();
-            from = from.Find();
-            if (to == from)
-            {
-                return false;
-            }
-
-            _version++;
-            from.Parent = to;
-
-            to.Used.AddRange(from.Used);
-            from.Used.Clear();
-
-            _worklist.Add(to);
-            return true;
-        }
-
-        /// <summary>
-        /// After merge, we use rebuild get new dep information.
-        /// </summary>
-        public void ReBuild()
-        {
-            while (_worklist.Count > 0)
-            {
-                // remove same eclass avoid duplicate repair
-                var todos = _worklist.Select(x => x.Find()).Distinct().ToArray();
-                _worklist.Clear();
-                foreach (var eclass in todos)
-                {
-                    RePair(eclass);
-                }
+                dfs(eclass, visited, paths);
             }
         }
 
-        private void RePair(EClass eclass)
+        return paths.ToArray();
+    }
+
+    private EClass AddENode(Expr expr, IRArray<EClass> children)
+    {
+        if (!_exprMemo.TryGetValue(expr, out var enode))
         {
-            // copy and reset the used, will reassgin new used
-            var oldUsed = new List<(ENode, EClass)>(eclass.Used);
-            eclass.Used.Clear();
-            foreach (var (pnode, pclass) in oldUsed)
-            {   // update the parent node.
-                if (_hascons.ContainsKey(pnode))
-                {
-                    _hascons.Remove(pnode);
-                }
-
-                // TODO we update the enode, should put this new node to it's child eclass's oldUsed.
-                // Then when that eclass be repaired, it will update this new enode.
-                var (newPnode, newParents) = pnode.Canonicalize(eclass);
-                var newPclass = pclass.Find();
-                if (!_hascons.TryGetValue(newPnode, out var result))
-                {
-                    _hascons.Add(newPnode, newPclass); // update this node to it's child's used
-                    newParents.ForEach(parent => parent.Used.Add((newPnode, newPclass)));
-                }
-                else if (result.Find() != newPclass)
-                {
-                    throw new InvalidProgramException($"The ENode {newPnode}'s Eclass is {_hascons[newPnode]} but will set to {newPclass}!");
-                }
-            }
-
-            /* Eg. [(x*2)+1] and [(x<<1)+1], when (x*2) <== (x<<1),
-               the [(x*2)+1] and [(x<<1)+1] will got same new enode,
-                so we should merge them.
-             */
-            var newUsed = new Dictionary<ENode, EClass>();
-            foreach (var (pnode, pclass) in oldUsed)
-            {
-                var newPnode = pnode.Canonicalize();
-                if (newUsed.ContainsKey(newPnode))
-                {
-                    Merge(pclass, newUsed[newPnode]);
-                }
-
-                newUsed[newPnode] = _hascons[newPnode];
-            }
-
-            // reassgin current eclass's Used.
-            eclass.Find().Used.AddRange(newUsed.Select(kv => (kv.Key, kv.Value)));
+            enode = new ENode(expr, children);
         }
 
-        /// <summary>
-        /// <see cref="TopSort(IReadOnlyDictionary&lt;EClass, List&lt;ENode&gt;&gt;)"/>.
-        /// </summary>
-        /// <returns></returns>
-        public EClass[] TopSort() => TopSort(EClasses());
-
-        /// <summary>
-        /// Get Top Sorted EGraph Datastruce.
-        /// </summary>
-        /// <returns> the Eclass array, the root eclass is first one. </returns>
-        public EClass[] TopSort(IReadOnlyDictionary<EClass, List<ENode>> eClasses)
+        if (!_nodes.TryGetValue(enode, out var eclass))
         {
-            void dfs(EClass eclass, Dictionary<EClass, bool> visited, List<EClass> paths)
-            {
-                visited[eclass] = true;
-                foreach (var (_, used_eclass) in eclass.Used)
-                {
-                    if (!visited[eclass])
-                    {
-                        dfs(used_eclass, visited, paths);
-                    }
-                }
-
-                paths.Add(eclass); // put the root node into last
-            }
-
-            var visited = new Dictionary<EClass, bool>();
-            foreach (var (k, _) in eClasses)
-            {
-                visited[k] = false;
-            }
-
-            var paths = new List<EClass>();
-            foreach (var (eclass, is_visited) in visited)
-            {
-                if (!is_visited)
-                {
-                    dfs(eclass, visited, paths);
-                }
-            }
-
-            return paths.ToArray();
+            eclass = new EClass(_globalEclassId++);
+            enode.AddUsed(eclass);
         }
 
-        private sealed class ENodeConverter : ExprVisitor<EClass, IRType>
+        return eclass.Find();
+    }
+
+    private void Repair(EClass eclass)
+    {
+        // copy and reset the used, will reassgin new used
+        var oldUsed = new List<(ENode, EClass)>(eclass.Used);
+        eclass.Used.Clear();
+
+        foreach (var (pnode, pclass) in oldUsed)
         {
-            private readonly EGraph _graph;
-
-            public ENodeConverter(EGraph graph)
+            // update the parent node.
+            if (_hascons.ContainsKey(pnode))
             {
-                _graph = graph;
+                _hascons.Remove(pnode);
             }
 
-            public override EClass VisitLeaf(Call expr)
+            // TODO we update the enode, should put this new node to it's child eclass's oldUsed.
+            // Then when that eclass be repaired, it will update this new enode.
+            var (newPnode, newParents) = pnode.Canonicalize(eclass);
+            var newPclass = pclass.Find();
+            if (!_hascons.TryGetValue(newPnode, out var result))
             {
-                var children = new[] { ExpressionMemo[expr.Target] }.Concat(
-                    from p in expr.Parameters select ExpressionMemo[p]).ToArray();
-                return _graph.AddENode(expr, children);
+                _hascons.Add(newPnode, newPclass); // update this node to it's child's used
+                newParents.ForEach(parent => parent.Used.Add((newPnode, newPclass)));
+            }
+            else if (result.Find() != newPclass)
+            {
+                throw new InvalidProgramException($"The ENode {newPnode}'s Eclass is {_hascons[newPnode]} but will set to {newPclass}!");
+            }
+        }
+
+        /* Eg. [(x*2)+1] and [(x<<1)+1], when (x*2) <== (x<<1),
+           the [(x*2)+1] and [(x<<1)+1] will got same new enode,
+            so we should merge them.
+         */
+        var newUsed = new Dictionary<ENode, EClass>();
+        foreach (var (pnode, pclass) in oldUsed)
+        {
+            var newPnode = pnode.Canonicalize();
+            if (newUsed.ContainsKey(newPnode))
+            {
+                Union(pclass, newUsed[newPnode]);
             }
 
-            public override EClass VisitLeaf(Const expr)
-            {
-                return _graph.AddENode(expr, Array.Empty<EClass>());
-            }
+            newUsed[newPnode] = _hascons[newPnode];
+        }
 
-            public override EClass VisitLeaf(Function expr)
-            {
-                var children = new[] { ExpressionMemo[expr.Body] }.Concat(
-                  from p in expr.Parameters select ExpressionMemo[p]).ToArray();
-                return _graph.AddENode(expr, children);
-            }
+        // reassgin current eclass's Used.
+        eclass.Find().Used.AddRange(newUsed.Select(kv => (kv.Key, kv.Value)));
+    }
 
-            public override EClass VisitLeaf(IR.Tuple expr)
-            {
-                var children = (from p in expr.Fields select ExpressionMemo[p]).ToArray();
-                return _graph.AddENode(expr, children);
-            }
+    private sealed class ENodeConverter : ExprVisitor<EClass, IRType>
+    {
+        private readonly EGraph _graph;
 
-            public override EClass VisitLeaf(Op expr)
-            {
-                return _graph.AddENode(expr, Array.Empty<EClass>());
-            }
+        public ENodeConverter(EGraph graph)
+        {
+            _graph = graph;
+        }
 
-            public override EClass VisitLeaf(Var expr)
-            {
-                return _graph.AddENode(expr, Array.Empty<EClass>());
-            }
+        public override EClass VisitLeaf(Call expr)
+        {
+            var children = new[] { ExpressionMemo[expr.Target] }.Concat(
+                from p in expr.Parameters select ExpressionMemo[p]).ToArray();
+            return _graph.AddENode(expr, children);
+        }
+
+        public override EClass VisitLeaf(Const expr)
+        {
+            return _graph.AddENode(expr, Array.Empty<EClass>());
+        }
+
+        public override EClass VisitLeaf(Function expr)
+        {
+            var children = new[] { ExpressionMemo[expr.Body] }.Concat(
+              from p in expr.Parameters select ExpressionMemo[p]).ToArray();
+            return _graph.AddENode(expr, children);
+        }
+
+        public override EClass VisitLeaf(IR.Tuple expr)
+        {
+            var children = (from p in expr.Fields select ExpressionMemo[p]).ToArray();
+            return _graph.AddENode(expr, children);
+        }
+
+        public override EClass VisitLeaf(Op expr)
+        {
+            return _graph.AddENode(expr, Array.Empty<EClass>());
+        }
+
+        public override EClass VisitLeaf(Var expr)
+        {
+            return _graph.AddENode(expr, Array.Empty<EClass>());
         }
     }
 }

@@ -76,7 +76,7 @@ namespace Nncase.Transform
                     last_version = eGraph.Version;
                 }
 
-                eGraph.ReBuild();
+                eGraph.Rebuild();
                 if (options.DumpLevel > 1)
                     EGraphPrinter.DumpEgraphAsDot(eGraph,
                      Path.Combine(options.DumpDir, options.PassName, "Rebuild", $"V{eGraph.Version}"));
