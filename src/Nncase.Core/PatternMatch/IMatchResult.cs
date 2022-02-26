@@ -16,7 +16,7 @@ public interface IMatchResult
     /// </summary>
     /// <param name="name">Pattern name.</param>
     /// <returns>Match result.</returns>
-    //object this[string name] { get; }
+    object this[string name] { get; }
 
     /// <summary>
     /// Get match result by pattern.

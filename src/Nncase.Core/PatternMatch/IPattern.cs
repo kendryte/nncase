@@ -21,6 +21,11 @@ public class PatternFunctionalGeneratorAttribute : Attribute { }
 public interface IPattern
 {
     /// <summary>
+    /// get the name of this pattern.
+    /// </summary>
+    string? Name { get; }
+    
+    /// <summary>
     /// Match leaf.
     /// </summary>
     /// <param name="input">Input.</param>

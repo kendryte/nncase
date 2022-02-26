@@ -49,8 +49,10 @@ public static class RecriverUtil
     /// <param name="typeSymbol"></param>
     /// <param name="baseSymbol"></param>
     /// <returns></returns>
-    public static bool IsInheritFrom(this ITypeSymbol typeSymbol, ITypeSymbol baseSymbol)
+    public static bool IsInheritFrom(this ITypeSymbol? typeSymbol, ITypeSymbol? baseSymbol)
     {
+        if (typeSymbol is null || baseSymbol is null)
+            return false;
         if (SymbolEqualityComparer.Default.Equals(typeSymbol, baseSymbol))
             return true;
         if (typeSymbol.Name != "object")
@@ -89,9 +91,15 @@ public static class RecriverUtil
 
     public static DiagnosticDescriptor MethodParamError = new DiagnosticDescriptor(id: "EvalGen005",
                                                                     title: "The Method Parameters Is Not Valid!",
-                                                                    messageFormat: "This Class '{0}' Method Parameters Is ('{1}'), But Not Satisfy The Op `'{2}'` ",
+                                                                    messageFormat: "This Class '{0}' Method Parameters Is ('{1}'), Because the `'{2}'` ",
                                                                     category: "EvaluatorGenerator",
                                                                     DiagnosticSeverity.Error,
                                                                     isEnabledByDefault: true);
 
+    public static DiagnosticDescriptor ClassNotFromBaseClassError => new DiagnosticDescriptor(id: "EvalGen006",
+                                                                                title: "The Class Must Be Derived From Target Class!",
+                                                                                messageFormat: "The '{0}' Must From '{1}'!",
+                                                                                category: "EvaluatorGenerator",
+                                                                                DiagnosticSeverity.Error,
+                                                                                isEnabledByDefault: true);
 }
