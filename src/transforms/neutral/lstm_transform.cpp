@@ -205,10 +205,6 @@ void lstm_transform::process(transform_context &context)
 std::vector<output_connector *> lstm_transform::forward(transform_context &context)
 {
     auto &output = *context.inputs[0]->connection();
-    auto inputs = context.outputs[0]->connections();
-    auto connect_h = context.outputs[1]->connections();
-    auto connect_c = context.outputs[2]->connections();
-
     auto &old_lstm = static_cast<lstm &>(*context.matched_nodes[0]);
     auto &w = static_cast<constant &>(*context.matched_nodes[1]);
     auto &r = static_cast<constant &>(*context.matched_nodes[2]);
@@ -511,15 +507,10 @@ std::vector<output_connector *> lstm_transform::forward(transform_context &conte
 std::vector<output_connector *> lstm_transform::reverse(transform_context &context)
 {
     auto &output = *context.inputs[0]->connection();
-    auto inputs = context.outputs[0]->connections();
-    auto connect_h = context.outputs[1]->connections();
-    auto connect_c = context.outputs[2]->connections();
-
     auto &old_lstm = static_cast<lstm &>(*context.matched_nodes[0]);
     auto &w = static_cast<constant &>(*context.matched_nodes[1]);
     auto &r = static_cast<constant &>(*context.matched_nodes[2]);
     auto &b = static_cast<constant &>(*context.matched_nodes[3]);
-
     int num_directions = old_lstm.direction() == kBidirectional ? 2 : 1;
 
     // reshape input
