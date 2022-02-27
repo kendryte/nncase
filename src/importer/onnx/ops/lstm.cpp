@@ -28,56 +28,124 @@ void onnx_importer::convert_op_LSTM(const NodeProto &node)
 {
     const auto &op_name { generate_name(node) };
 
+    // attribute
+    auto direction_str = get_attribute<std::string>(node, "direction").value_or("forward");
+    lstm_direction direction = kForward;
+    if (direction_str == "forward")
+        direction = kForward;
+    else if (direction_str == "reverse")
+        direction = kReverse;
+    else
+        direction = kBidirectional;
+
+    size_t num_directions = direction == kBidirectional ? 2 : 1;
+
+    // input
+    auto input_size = node.input_size();
+    assert(input_size >= 3 && input_size <= 8);
     const auto &input = node.input()[0];
     const auto &W = node.input()[1];
     const auto &R = node.input()[2];
-    const auto &B = node.input()[3];
-    const auto &initial_h = node.input()[5];
-    const auto &initial_c = node.input()[6];
-    const auto &output = node.output()[0];
-    [[maybe_unused]] const auto &output_h = node.output()[1];
-    [[maybe_unused]] const auto &output_c = node.output()[2];
-    // [[maybe_unused]] const auto &sequence_lens = node.input()[4];
-    // auto static_shape = shape_t { 1, 1, 1, 1 };
 
     const datatype_t input_type = get_datatype(input).value();
     const auto &input_shape = get_shape(input);
     const auto &W_shape = get_shape(W);
     const auto &R_shape = get_shape(R);
-    const auto &initial_shape = get_shape(initial_h);
-    if (W_shape[0] == 2)
+
+    size_t seq_length = input_shape[0];
+    size_t batch_size = input_shape[1];
+    size_t hidden_size = W_shape[1] / 4;
+
+    // bias
+    std::string B;
+    shape_t B_shape { num_directions, 8 * hidden_size };
+    if (input_size >= 4)
     {
-        throw std::invalid_argument("Not support bidirectional lstm.");
+        B = node.input()[3];
     }
-    // const auto &B_shape = get_shape(B);
-    const auto &output_shape = get_shape(output);
-    [[maybe_unused]] auto bias = get_constant_value<float>(B);
 
-    std::vector<float> W_bias_vec { bias.begin(), bias.begin() + W_shape[1] };
-    std::vector<float> R_bias_vec { bias.begin() + W_shape[1], bias.end() };
+    // sequence_lens
+    // if (input_size >= 5)
+    // {
+    // }
 
-    auto W_bias = graph_.emplace<constant>(input_type, shape_t { W_shape[1] }, W_bias_vec);
-    auto R_bias = graph_.emplace<constant>(input_type, shape_t { W_shape[1] }, R_bias_vec);
+    // initial_h
+    std::string initial_h;
+    shape_t initial_shape { num_directions, batch_size, hidden_size };
+    if (input_size >= 6)
+    {
+        initial_h = node.input()[5];
+    }
 
-    auto lstm_node = graph_.emplace<lstm>(input_shape, W_shape, W_bias->output().shape(), R_shape, R_bias->output().shape(), initial_shape, initial_shape, R_shape[2], false, "onnx");
-    auto bitc_out = graph_.emplace<bitcast>(lstm_node->output().type(), lstm_node->output().shape(), output_shape);
+    // initial_c
+    std::string initial_c;
+    if (input_size >= 7)
+    {
+        initial_c = node.input()[6];
+    }
 
-    W_bias->name(op_name + "_W_bias");
-    R_bias->name(op_name + "_R_bias");
+    // output
+    auto output_size = node.output_size();
+    assert(output_size >= 0 && output_size <= 3);
+    std::string output;
+    if (output_size >= 1)
+        output = node.output()[0];
+
+    std::string output_h;
+    if (output_size >= 2)
+        output_h = node.output()[1];
+
+    std::string output_c;
+    if (output_size >= 3)
+        output_c = node.output()[2];
+
+    shape_t output_shape { seq_length, num_directions, batch_size, hidden_size };
+    auto lstm_node = graph_.emplace<lstm>(input_shape, W_shape, R_shape, B_shape, output_shape, initial_shape,
+        initial_shape, false, direction, "onnx");
     lstm_node->name(op_name);
-    bitc_out->name(op_name + "_bitc_out");
-
-    bitc_out->input().connect(lstm_node->output());
-    lstm_node->b_xc().connect(W_bias->output());
-    lstm_node->b_rc().connect(R_bias->output());
 
     input_tensors_.emplace(&lstm_node->input_at(0), input);
     input_tensors_.emplace(&lstm_node->input_at(1), W);
-    input_tensors_.emplace(&lstm_node->input_at(3), R);
-    input_tensors_.emplace(&lstm_node->input_at(5), initial_h);
-    input_tensors_.emplace(&lstm_node->input_at(6), initial_c);
+    input_tensors_.emplace(&lstm_node->input_at(2), R);
+    if (!B.empty())
+    {
+        input_tensors_.emplace(&lstm_node->input_at(3), B);
+    }
+    else
+    {
+        std::vector<float> v(xt::compute_size(B_shape), 0.f);
+        auto c = graph_.emplace<constant>(input_type, B_shape, v);
+        lstm_node->b().connect(c->output());
+    }
 
-    output_tensors_.emplace(output, &bitc_out->output());
-    output_tensors_.emplace(output_h, &lstm_node->output_h());
-    output_tensors_.emplace(output_c, &lstm_node->output_c());
+    if (!initial_h.empty())
+    {
+        input_tensors_.emplace(&lstm_node->input_at(4), initial_h);
+    }
+    else
+    {
+        std::vector<float> v(xt::compute_size(initial_shape), 0.f);
+        auto c = graph_.emplace<constant>(input_type, initial_shape, v);
+        lstm_node->initial_h().connect(c->output());
+    }
+
+    if (!initial_c.empty())
+    {
+        input_tensors_.emplace(&lstm_node->input_at(5), initial_c);
+    }
+    else
+    {
+        std::vector<float> v(xt::compute_size(initial_shape), 0.f);
+        auto c = graph_.emplace<constant>(input_type, initial_shape, v);
+        lstm_node->initial_c().connect(c->output());
+    }
+
+    if (!output.empty())
+        output_tensors_.emplace(output, &lstm_node->output());
+
+    if (!output_h.empty())
+        output_tensors_.emplace(output_h, &lstm_node->output_h());
+
+    if (!output_c.empty())
+        output_tensors_.emplace(output_c, &lstm_node->output_c());
 }
