@@ -1173,6 +1173,10 @@ namespace IsaGen
             [Description("Source2 stride register")]
             public byte RstrideSrc2 { get; set; }
 
+            [DisplayName("rshape_dest")]
+            [Description("Dest shape register")]
+            public byte RshapeDest { get; set; }
+
             [DisplayName("rstride_dest")]
             [Description("Dest stride register")]
             public byte RstrideDest { get; set; }
@@ -1553,9 +1557,25 @@ namespace IsaGen
             [Description("Source1 shape register")]
             public byte RshapeSrc1 { get; set; }
 
+            [DisplayName("rstride_src1")]
+            [Description("Source1 stride register")]
+            public byte RstrideSrc1 { get; set; }
+
             [DisplayName("rshape_src2")]
             [Description("Source2 shape register")]
             public byte RshapeSrc2 { get; set; }
+
+            [DisplayName("rstride_src2")]
+            [Description("Source2 stride register")]
+            public byte RstrideSrc2 { get; set; }
+
+            [DisplayName("rshape_dest")]
+            [Description("Dest shape register")]
+            public byte RshapeDest { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
 
             [DisplayName("fused_clamp_low")]
             [Description("FusedClampLow")]
