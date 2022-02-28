@@ -38,7 +38,8 @@ namespace Nncase.Tests
             var assemblies = ApplicationParts.LoadApplicationParts(c =>
             {
                 c.AddCore()
-                .AddEvaluator();
+                .AddEvaluator()
+                .AddGraph();
             });
             builder.RegisterAssemblyModules(assemblies);
         }
