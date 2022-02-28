@@ -331,6 +331,13 @@ typedef enum _roi_align_mode
     roi_align_max
 } roi_align_mode_t;
 
+typedef enum _lstm_direction
+{
+    kForward,
+    kReverse,
+    kBidirectional
+} lstm_direction;
+
 typedef struct _quant_param
 {
     int32_t zero_point;
