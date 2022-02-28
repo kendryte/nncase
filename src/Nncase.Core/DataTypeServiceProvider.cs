@@ -30,11 +30,37 @@ internal class DataTypeServiceProvider : IDataTypeServiceProvider
 
     public ISpanConverter GetConverter(Type fromType, Type toType)
     {
-        return (ISpanConverter)_componentContext.Resolve(typeof(ISpanConverter<,>).MakeGenericType(fromType, toType));
+        if (fromType.IsGenericType && fromType.GetGenericTypeDefinition() == typeof(Pointer<>))
+        {
+            var converter = _componentContext.Resolve(typeof(IPointerSpanConverter<>).MakeGenericType(toType));
+            var wrapperType = typeof(PointerSpanConverter<,>).MakeGenericType(fromType.GenericTypeArguments[0], toType);
+            return (ISpanConverter)Activator.CreateInstance(wrapperType, converter)!;
+        }
+        else
+        {
+            return (ISpanConverter)_componentContext.Resolve(typeof(ISpanConverter<,>).MakeGenericType(fromType, toType));
+        }
     }
 
     public PrimType GetPrimTypeFromType(Type type)
     {
         return _primTypes[type];
+    }
+
+    private class PointerSpanConverter<TElem, TTo> : ISpanConverter<Pointer<TElem>, TTo>
+        where TElem : unmanaged, IEquatable<TElem>
+        where TTo : unmanaged, IEquatable<TTo>
+    {
+        private readonly IPointerSpanConverter<TTo> _spanConverter;
+
+        public PointerSpanConverter(IPointerSpanConverter<TTo> spanConverter)
+        {
+            _spanConverter = spanConverter;
+        }
+
+        public void ConvertTo(ReadOnlySpan<Pointer<TElem>> source, Span<TTo> dest, CastMode castMode)
+        {
+            _spanConverter.ConvertTo(source, dest, castMode);
+        }
     }
 }

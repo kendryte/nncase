@@ -33,3 +33,21 @@ public interface ISpanConverter<TFrom, TTo> : ISpanConverter
     /// <param name="castMode">Cast mode.</param>
     void ConvertTo(ReadOnlySpan<TFrom> source, Span<TTo> dest, CastMode castMode);
 }
+
+/// <summary>
+/// Pointer span converter.
+/// </summary>
+/// <typeparam name="TTo">To type.</typeparam>
+public interface IPointerSpanConverter<TTo> : ISpanConverter
+    where TTo : unmanaged, IEquatable<TTo>
+{
+    /// <summary>
+    /// Convert span.
+    /// </summary>
+    /// <typeparam name="T">Pointer elem type.</typeparam>
+    /// <param name="source">Source span.</param>
+    /// <param name="dest">Dest span.</param>
+    /// <param name="castMode">Cast mode.</param>
+    void ConvertTo<T>(ReadOnlySpan<Pointer<T>> source, Span<TTo> dest, CastMode castMode)
+        where T : unmanaged, IEquatable<T>;
+}

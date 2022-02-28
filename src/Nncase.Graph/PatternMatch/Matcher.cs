@@ -320,6 +320,21 @@ internal sealed class Matcher
         {
             return new MatchScope(this);
         }
+
+        public bool TryGetMemo(IPattern pattern, out Expr? expr)
+        {
+            if (_patMemo.TryGetValue(pattern, out expr))
+            {
+                return true;
+            }
+            else if (_parent != null)
+            {
+                return _parent.TryGetMemo(pattern, out expr);
+            }
+
+            expr = null;
+            return false;
+        }
     }
 
     private sealed class MatchVisitor : ExprVisitor<Expr, IRType>

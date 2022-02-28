@@ -26,6 +26,6 @@ public class ConvertersModule : Module
         builder.RegisterType<UInt32Converters>().AsImplementedInterfaces().SingleInstance();
         builder.RegisterType<UInt64Converters>().AsImplementedInterfaces().SingleInstance();
         builder.RegisterType<UInt8Converters>().AsImplementedInterfaces().SingleInstance();
-        builder.RegisterGeneric(typeof(PointerConverters<>)).AsImplementedInterfaces().SingleInstance();
+        builder.RegisterType<PointerConverters>().AsImplementedInterfaces().SingleInstance();
     }
 }

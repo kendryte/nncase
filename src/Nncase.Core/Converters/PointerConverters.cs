@@ -9,11 +9,10 @@ using System.Threading.Tasks;
 
 namespace Nncase.Converters;
 
-internal class PointerConverters<T> :
-    ISpanConverter<Pointer<T>, ulong>
-    where T : unmanaged, IEquatable<T>
+internal class PointerConverters : IPointerSpanConverter<ulong>
 {
-    public void ConvertTo(ReadOnlySpan<Pointer<T>> source, Span<ulong> dest, CastMode castMode)
+    public void ConvertTo<T>(ReadOnlySpan<Pointer<T>> source, Span<ulong> dest, CastMode castMode)
+        where T : unmanaged, IEquatable<T>
     {
         if (castMode == CastMode.Exact)
         {
