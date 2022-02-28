@@ -13,13 +13,15 @@ namespace Nncase.PatternMatch;
 /// Pattern for <see cref="Expr"/>.
 /// </summary>
 /// <param name="Condition">Expression condition.</param>
-public sealed record ExprPattern(Func<Expr, bool> Condition) : Pattern<Expr>
+/// <param name="Name">name.</param>
+public sealed record ExprPattern(Func<Expr, bool> Condition, string? Name) : Pattern<Expr>(Name)
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ExprPattern"/> class.
     /// </summary>
-    public ExprPattern()
-        : this(x => true)
+    /// <param name="name">name.</param>
+    public ExprPattern(string? name)
+        : this(x => true, name)
     {
         IsWildcard = true;
     }
@@ -38,9 +40,9 @@ public static partial class Utility
     /// <summary>
     /// Get the current expr checked Shape.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
+    /// <param name="expr">expr.</param>
+    /// <returns>dimension</returns>
+    /// <exception cref="InvalidOperationException">e.</exception>
     public static List<Dimension> GetShape(Expr expr) => expr.CheckedType switch
     {
         TensorType type => new List<Dimension>(type.Shape),
@@ -50,6 +52,8 @@ public static partial class Utility
     /// <summary>
     /// fast utility for build wildcard pattern.
     /// </summary>
+    /// <param name="name">name.</param>
     /// <returns> Returns. </returns>
-    public static ExprPattern IsWildcard() => new ExprPattern();
+    public static ExprPattern IsWildcard(string? name) => new ExprPattern(name);
+    public static ExprPattern IsWildcard() => IsWildcard(null);
 }

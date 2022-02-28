@@ -13,14 +13,16 @@ namespace Nncase.PatternMatch;
 /// Pattern for <see cref="TensorConst"/>.
 /// </summary>
 /// <param name="Condition">Expression condition.</param>
-public sealed record TensorConstPattern(Func<TensorConst, bool> Condition) : Pattern<TensorConst>
+/// <param name="Name">name.</param>
+public sealed record TensorConstPattern(Func<TensorConst, bool> Condition, string? Name) : Pattern<TensorConst>(Name)
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="TensorConstPattern"/> class.
     /// </summary>
     /// <param name="const"><see cref="Const"/> expression.</param>
-    public TensorConstPattern(TensorConst @const)
-        : this(x => x.Equals(@const))
+    /// <param name="name">name.</param>
+    public TensorConstPattern(TensorConst @const, string? name)
+        : this(x => x.Equals(@const), name)
     {
         Value = @const;
     }
@@ -36,9 +38,30 @@ public sealed record TensorConstPattern(Func<TensorConst, bool> Condition) : Pat
 
 public static partial class Utility
 {
-    public static TensorConstPattern IsTensorConst() => new TensorConstPattern(x => x is TensorConst);
 
-    public static TensorConstPattern IsTensorConst(Func<TensorConst, bool> Cond) => new TensorConstPattern(Cond);
+    /// <summary>
+    /// create the TensorConstPattern.
+    /// </summary>
+    /// <param name="name">name.</param>
+    /// <returns>TensorConstPattern.</returns>
+    public static TensorConstPattern IsTensorConst(string? name) => new TensorConstPattern(x => x is not null, name);
+    public static TensorConstPattern IsTensorConst() => IsTensorConst(name: null);
 
-    public static TensorConstPattern IsTensorConst(TypePattern typePattern) => new TensorConstPattern(x => typePattern.MatchLeaf(x.ValueType));
+    /// <summary>
+    /// create the TensorConstPattern.
+    /// </summary>
+    /// <param name="cond">condition.</param>
+    /// <param name="name">name.</param>
+    /// <returns>TensorConstPattern.</returns>
+    public static TensorConstPattern IsTensorConst(string? name, Func<TensorConst, bool> cond) => new TensorConstPattern(cond, name);
+    public static TensorConstPattern IsTensorConst(Func<TensorConst, bool> cond) => IsTensorConst(null, cond);
+
+    /// <summary>
+    /// create the TensorConstPattern.
+    /// </summary>
+    /// <param name="typePattern">tyeppattern.</param>
+    /// <param name="name">name.</param>
+    /// <returns>TensorConstPattern.</returns>
+    public static TensorConstPattern IsTensorConst(string? name, TypePattern typePattern) => new TensorConstPattern(x => typePattern.MatchLeaf(x.ValueType), name);
+    public static TensorConstPattern IsTensorConst(TypePattern typePattern) => IsTensorConst(null, typePattern);
 }

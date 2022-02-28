@@ -13,38 +13,34 @@ namespace Nncase.PatternMatch;
 /// <summary>
 /// Pattern for <see cref="Var"/>.
 /// </summary>
-public sealed record VarPattern : Pattern<Var>
+/// <param name="Name">name.</param>
+public sealed record VarPattern(string? Name) : Pattern<Var>(Name)
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="VarPattern"/> class.
-    /// </summary>
-    /// <param name="typePattern">Type pattern.</param>
-    public VarPattern(TypePattern typePattern)
-    {
-        TypePattern = typePattern;
-    }
-
     /// <summary>
     /// Initializes a new instance of the <see cref="VarPattern"/> class.
     /// </summary>
     /// <param name="var">Var expression.</param>
     public VarPattern(Var var)
-        : this(new TypePattern(var.TypeAnnotation))
+        : this(var.Name)
     {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="VarPattern"/> class.
-    /// </summary>
-    public VarPattern()
-        : this(new TypePattern(AnyType.Default))
-    {
+        TypePattern = new TypePattern(var.TypeAnnotation);
     }
 }
 
 public static partial class Utility
 {
-    public static VarPattern IsVar(TypePattern Type) => new VarPattern(Type);
+    /// <summary>
+    /// create var pattern.
+    /// </summary>
+    /// <param name="typePattern">type pattern.</param>
+    /// <param name="name">name.</param>
+    /// <returns>the var pattern.</returns>
+    public static VarPattern IsVar(TypePattern typePattern, string? name = null) => new VarPattern(name) with { TypePattern = typePattern };
 
-    public static VarPattern IsVar() => new VarPattern(IsAnyType());
+    /// <summary>
+    /// create var pattern.
+    /// </summary>
+    /// <param name="name">name.</param>
+    /// <returns>the var pattern.</returns>
+    public static VarPattern IsVar(string? name = null) => new VarPattern(name) with { TypePattern = IsAnyType() };
 }

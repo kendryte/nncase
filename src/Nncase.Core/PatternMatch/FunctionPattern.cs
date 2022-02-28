@@ -14,14 +14,16 @@ namespace Nncase.PatternMatch;
 /// </summary>
 /// <param name="Body">Body pattern.</param>
 /// <param name="Parameters">Parameters pattern.</param>
-public sealed record FunctionPattern(Pattern Body, VArgsPattern Parameters) : Pattern<Function>
+/// <param name="Name">Name.</param>
+public sealed record FunctionPattern(Pattern Body, VArgsPattern Parameters, string? Name) : Pattern<Function>(Name)
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="FunctionPattern"/> class.
     /// </summary>
     /// <param name="function"><see cref="Function"/> expression.</param>
-    public FunctionPattern(Function function)
-        : this(function.Body, new VArgsPattern(function.Parameters.Select(x => (Pattern)x).ToArray()))
+    /// <param name="name">name.</param>
+    public FunctionPattern(Function function, string? name)
+        : this(function.Body, new VArgsPattern(function.Parameters.Select(x => (Pattern)x).ToArray(), null), name)
     {
     }
 
@@ -30,13 +32,24 @@ public sealed record FunctionPattern(Pattern Body, VArgsPattern Parameters) : Pa
     /// </summary>
     /// <param name="body">Body pattern.</param>
     /// <param name="parameters">Parameter patterns.</param>
-    public FunctionPattern(Pattern body, params ExprPattern[] parameters)
-        : this(body, new VArgsPattern(parameters))
+    /// <param name="name">name.</param>
+    public FunctionPattern(Pattern body, Pattern[] parameters, string? name)
+        : this(body, new VArgsPattern(parameters, null), name)
     {
     }
 }
 
 public static partial class Utility
 {
-    public static FunctionPattern IsFunction(ExprPattern Body, VArgsPattern Parameters) => new FunctionPattern(Body, Parameters);
+    /// <summary>
+    /// Create the function pattern.
+    /// </summary>
+    /// <param name="body">body.</param>
+    /// <param name="parameters">params.</param>
+    /// <param name="name">name.</param>
+    /// <returns>FunctionPattern .</returns>
+    public static FunctionPattern IsFunction(string? name, Pattern body, VArgsPattern parameters) => new FunctionPattern(body, parameters, name);
+    public static FunctionPattern IsFunction(Pattern body, VArgsPattern parameters) => IsFunction(null, body, parameters);
+    public static FunctionPattern IsFunction(string? name, Pattern body, params Pattern[] parameters) => IsFunction(name, body, IsVArgs(parameters));
+    public static FunctionPattern IsFunction(Pattern body, params Pattern[] parameters) => IsFunction(null, body, IsVArgs(parameters));
 }

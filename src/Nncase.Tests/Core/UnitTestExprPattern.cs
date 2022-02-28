@@ -36,7 +36,7 @@ public class UnitTestExprPattern
     {
         Var e = new Var("x", AnyType.Default);
         Assert.False(e.InferenceType());
-        ExprPattern ep = new ExprPattern(expr => expr == e);
+        ExprPattern ep = new ExprPattern(expr => expr == e, null);
         Assert.IsType<VarPattern>(ep);
         Assert.True(ep.MatchLeaf(e));
     }
@@ -46,7 +46,7 @@ public class UnitTestExprPattern
     {
         var con = (Const)(1.1f);
         Assert.True(con.InferenceType());
-        ExprPattern cp1 = new ExprPattern(e => e == con);
+        ExprPattern cp1 = new ExprPattern(e => e == con, null);
         Assert.IsType<TensorConstPattern>(cp1);
 
         var cp2 = IsConst((float x) => x > 1.2f);
@@ -86,8 +86,8 @@ public class UnitTestExprPattern
     public void TestWildCardPatternHash()
     {
         var wc = IsWildcard();
-        var wc2 = new ExprPattern();
-        var wc3 = new ExprPattern();
+        var wc2 = new ExprPattern(x => true, null);
+        var wc3 = new ExprPattern(x => true, null);
         var d = new Dictionary<ExprPattern, int>();
         d.Add(wc, 1);
         d.Add(wc2, 2);
@@ -122,7 +122,7 @@ public class UnitTestExprPattern
         var wc1 = IsWildcard();
         var wc2 = IsWildcard();
         var c = wc1 + wc2;
-        var fp = new FunctionPattern(c, wc1, wc2);
+        var fp = new FunctionPattern(c, new[] { wc1, wc2 }, null);
         Assert.IsType<FunctionPattern>(fp);
         Assert.IsType<ExprPattern>(fp.Parameters[0]);
         Assert.IsType<ExprPattern>(fp.Parameters[1]);
@@ -130,7 +130,7 @@ public class UnitTestExprPattern
         Assert.IsType<ExprPattern>(((CallPattern)fp.Body).Parameters[0]);
         Assert.IsType<ExprPattern>(((CallPattern)fp.Body).Parameters[1]);
 
-        var fp2 = new FunctionPattern(c, IsVArgs(wc1, wc2));
+        var fp2 = new FunctionPattern(c, IsVArgs(new[] { wc1, wc2 }), null);
         Assert.IsType<ExprPattern>(fp.Parameters[0]);
         Assert.IsType<ExprPattern>(fp.Parameters[1]);
     }
@@ -140,12 +140,12 @@ public class UnitTestExprPattern
     {
         var wc1 = IsWildcard();
         var wc2 = IsWildcard();
-        var t = IsTuple(wc1, wc2);
+        var t = IsTuple(new[] { wc1, wc2 });
         Assert.IsType<TuplePattern>(t);
         Assert.IsType<ExprPattern>(t.Fields[0]);
         Assert.IsType<ExprPattern>(t.Fields[1]);
 
-        var t2 = IsTuple(IsVArgs(wc1, wc2));
+        var t2 = IsTuple(IsVArgs(new[] { wc1, wc2 }));
         Assert.IsType<TuplePattern>(t2);
         Assert.IsType<ExprPattern>(t2.Fields[0]);
         Assert.IsType<ExprPattern>(t2.Fields[1]);
@@ -198,7 +198,7 @@ public class UnitTestExprPattern
     {
         var lhs = IsWildcard();
         var rhs = IsWildcard();
-        var is_op_call = IsCall(IsWildcard(), lhs, rhs);
+        var is_op_call = IsCall(IsWildcard(), new[] { lhs, rhs });
         Const x = (Const)1;
         Const y = (Const)2;
         var z1 = x + y;
@@ -208,7 +208,7 @@ public class UnitTestExprPattern
         Assert.True(is_op_call.MatchLeaf(z1));
         Assert.True(is_op_call.Target.MatchLeaf(z2.Target));
 
-        var is_op_call2 = IsCall(IsWildcard(), IsVArgs(lhs, rhs));
+        var is_op_call2 = IsCall(IsWildcard(), IsVArgs(new[] { lhs, rhs }));
 
         Assert.IsType<ExprPattern>(is_op_call2.Parameters[0]);
         Assert.IsType<ExprPattern>(is_op_call2.Parameters[1]);

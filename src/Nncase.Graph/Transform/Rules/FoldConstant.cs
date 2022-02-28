@@ -11,39 +11,38 @@ using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
+using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
-using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.Transform.Rules;
 
 /// <summary>
 /// Fold call of constants.
 /// </summary>
-public class FoldConstCall : RewriteRule<CallPattern>
+[RuleGenerator]
+public partial class FoldConstCall : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
-    public override CallPattern Pattern { get; } = IsCall(IsWildcard(), IsVArgsRepeat(() => IsConst()));
+    public override CallPattern Pattern { get; } = IsCall("call", IsWildcard(), IsVArgsRepeat(() => IsConst()));
 
-    /// <inheritdoc/>
-    public override Expr? GetReplace(IMatchResult result)
+    Const GetReplace(Call call)
     {
-        var expr = result.Get(Pattern);
-        return Const.FromValue(expr.Evaluate());
+        return Const.FromValue(call.Evaluate());
     }
 }
 
 /// <summary>
 /// Fold shape of.
 /// </summary>
-public class FoldShapeOf : RewriteRule<CallPattern>
+[RuleGenerator]
+public partial class FoldShapeOf : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
-    public override CallPattern Pattern { get; } = IsShapeOf(IsWildcard()) with { TypePattern = IsTensor() };
+    public override CallPattern Pattern { get; } = IsShapeOf(null, "call", IsWildcard("wc")) with { TypePattern = IsTensor() };
 
-    /// <inheritdoc/>
-    public override Expr? GetReplace(IMatchResult result)
+    Const GetReplace(Call call)
     {
-        return Const.FromShape(result.Get(Pattern).CheckedShape);
+        return Const.FromShape(call.CheckedShape);
     }
 }

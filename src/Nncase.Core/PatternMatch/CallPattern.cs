@@ -12,24 +12,16 @@ namespace Nncase.PatternMatch;
 /// </summary>
 /// <param name="Target">Target pattern.</param>
 /// <param name="Parameters">Parameters pattern.</param>
-public sealed record CallPattern(Pattern Target, VArgsPattern Parameters) : Pattern<Call>
+/// <param name="Name"> name. </param>
+public sealed record CallPattern(Pattern Target, VArgsPattern Parameters, string? Name) : Pattern<Call>(Name)
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="CallPattern"/> class.
     /// </summary>
     /// <param name="call"><see cref="Call"/> expression.</param>
-    public CallPattern(Call call)
-        : this(call.Target, new VArgsPattern(call.Parameters))
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CallPattern"/> class.
-    /// </summary>
-    /// <param name="target">Target pattern.</param>
-    /// <param name="parameters">Parameter patterns.</param>
-    public CallPattern(Pattern target, params Pattern[] parameters)
-        : this(target, new VArgsPattern(parameters))
+    /// <param name="name">name.</param>
+    public CallPattern(Call call, string? name)
+        : this(call.Target, new VArgsPattern(call.Parameters, null), name)
     {
     }
 
@@ -46,7 +38,24 @@ public sealed record CallPattern(Pattern Target, VArgsPattern Parameters) : Patt
 
 public static partial class Utility
 {
-    public static CallPattern IsCall(ExprPattern Target, VArgsPattern Parameters) => new CallPattern(Target, Parameters);
+    /// <summary>
+    /// is call .
+    /// </summary>
+    /// <param name="target">target.</param>
+    /// <param name="parameters">params.</param>
+    /// <param name="name">name.</param>
+    /// <returns>call pattern.</returns>
+    public static CallPattern IsCall(string? name, ExprPattern target, VArgsPattern parameters) => new CallPattern(target, parameters, name);
+    public static CallPattern IsCall(ExprPattern target, VArgsPattern parameters) => IsCall(null, target, parameters);
 
-    public static CallPattern IsCall(ExprPattern Target, params ExprPattern[] Parameters) => new CallPattern(Target, Parameters);
+    /// <summary>
+    /// is call .
+    /// </summary>
+    /// <param name="target">target.</param>
+    /// <param name="parameters">params.</param>
+    /// <param name="name">name.</param>
+    /// <returns>call pattern.</returns>
+    public static CallPattern IsCall(string? name, ExprPattern target, params Pattern[] parameters) => new CallPattern(target, new VArgsPattern(parameters, null), name);
+    public static CallPattern IsCall(ExprPattern target, params Pattern[] parameters) => IsCall(null, target, parameters);
+
 }

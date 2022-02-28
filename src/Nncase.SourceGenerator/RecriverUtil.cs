@@ -43,4 +43,63 @@ public static class RecriverUtil
         _ => throw new NotSupportedException(name.GetType().Name)
     };
 
+    /// <summary>
+    /// check this type is inherit from other type.
+    /// </summary>
+    /// <param name="typeSymbol"></param>
+    /// <param name="baseSymbol"></param>
+    /// <returns></returns>
+    public static bool IsInheritFrom(this ITypeSymbol? typeSymbol, ITypeSymbol? baseSymbol)
+    {
+        if (typeSymbol is null || baseSymbol is null)
+            return false;
+        if (SymbolEqualityComparer.Default.Equals(typeSymbol, baseSymbol))
+            return true;
+        if (typeSymbol.Name != "object")
+            return IsInheritFrom(typeSymbol.BaseType, baseSymbol);
+        return false;
+    }
+
+
+    public static DiagnosticDescriptor ClassNotPartialError => new DiagnosticDescriptor(id: "EvalGen001",
+                                                                                title: "The Class Must Be partial!",
+                                                                                messageFormat: "The Class '{0}' Must Be partial!.",
+                                                                                category: "EvaluatorGenerator",
+                                                                                DiagnosticSeverity.Error,
+                                                                                isEnabledByDefault: true);
+
+    public static DiagnosticDescriptor ClassNotFromInterfaceError => new DiagnosticDescriptor(id: "EvalGen002",
+                                                                                title: "The Class Must Be Derived Interface!",
+                                                                                messageFormat: "The '{0}' Must Have '{1}'<T>!.",
+                                                                                category: "EvaluatorGenerator",
+                                                                                DiagnosticSeverity.Error,
+                                                                                isEnabledByDefault: true);
+
+    public static DiagnosticDescriptor ClassNoValidMethodError => new DiagnosticDescriptor(id: "EvalGen003",
+                                                                                title: "The Class Have No Valid Method!",
+                                                                                messageFormat: "The '{0}' Have Not Valid Method!",
+                                                                                category: "EvaluatorGenerator",
+                                                                                DiagnosticSeverity.Error,
+                                                                                isEnabledByDefault: true);
+
+    public static DiagnosticDescriptor ClassMoreMethodError => new DiagnosticDescriptor(id: "EvalGen004",
+                                                                            title: "The Class Have More Valid Method!",
+                                                                            messageFormat: "The '{0}' Have More Valid Method!",
+                                                                            category: "EvaluatorGenerator",
+                                                                            DiagnosticSeverity.Error,
+                                                                            isEnabledByDefault: true);
+
+    public static DiagnosticDescriptor MethodParamError = new DiagnosticDescriptor(id: "EvalGen005",
+                                                                    title: "The Method Parameters Is Not Valid!",
+                                                                    messageFormat: "This Class '{0}' Method Parameters Is ('{1}'), Because the `'{2}'` ",
+                                                                    category: "EvaluatorGenerator",
+                                                                    DiagnosticSeverity.Error,
+                                                                    isEnabledByDefault: true);
+
+    public static DiagnosticDescriptor ClassNotFromBaseClassError => new DiagnosticDescriptor(id: "EvalGen006",
+                                                                                title: "The Class Must Be Derived From Target Class!",
+                                                                                messageFormat: "The '{0}' Must From '{1}'!",
+                                                                                category: "EvaluatorGenerator",
+                                                                                DiagnosticSeverity.Error,
+                                                                                isEnabledByDefault: true);
 }

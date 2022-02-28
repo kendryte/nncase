@@ -13,7 +13,8 @@ namespace Nncase.PatternMatch;
 /// <summary>
 /// Pattern.
 /// </summary>
-public abstract partial record Pattern : IPattern
+/// <param name="Name">this pattern's indenitifer name.</param>
+public abstract partial record Pattern(string? Name) : IPattern
 {
     /// <summary>
     /// Gets or sets hashcode cache, for speedup get hashcode.
@@ -40,12 +41,14 @@ public abstract partial record Pattern : IPattern
 }
 
 /// <summary>
+/// 
 /// Pattern.
 /// </summary>
 /// <typeparam name="TExpr">Expression type.</typeparam>
-public record Pattern<TExpr> : Pattern, IPattern<TExpr>
+public record Pattern<TExpr>(string? Name) : Pattern(Name), IPattern<TExpr>
     where TExpr : Expr
 {
+
     /// <summary>
     /// Gets pattern for CheckedType, defulat match IR Type.
     /// </summary>

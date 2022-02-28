@@ -58,7 +58,7 @@ internal class EvaluatorGenerator : ISourceGenerator
         foreach (var Parameter in cand.Method.Parameters)
         {
             if (!cand.Op.MemberNames.Any(name => name == Parameter.Name))
-                Context.Value.ReportDiagnostic(Diagnostic.Create(MethodParamError, Location.None, cand.Class.Name, string.Join(", ", cand.Method.Parameters.Select(p => p.Name)), cand.Op.Name));
+                Context.Value.ReportDiagnostic(Diagnostic.Create(RecriverUtil.MethodParamError, Location.None, cand.Class.Name, string.Join(", ", cand.Method.Parameters.Select(p => p.Name)), cand.Op.Name));
             var paramType = Parameter.Type;
             string callMethod = paramType switch
             {
@@ -148,12 +148,4 @@ internal class EvaluatorGenerator : ISourceGenerator
                 NormalizeWhitespace();
         return compilationUnit;
     }
-
-    readonly DiagnosticDescriptor MethodParamError = new DiagnosticDescriptor(id: "EvalGen005",
-                                                                        title: "The Method Parameters Is Not Valid!",
-                                                                        messageFormat: "This Class '{0}' Method Parameters Is ('{1}'), But Not Satisfy The Op `'{2}'` ",
-                                                                        category: "EvaluatorGenerator",
-                                                                        DiagnosticSeverity.Error,
-                                                                        isEnabledByDefault: true);
-
 }
