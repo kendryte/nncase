@@ -16,6 +16,11 @@ namespace Nncase.IR
     /// <typeparam name="T"></typeparam>
     public interface IParameterList<T>
     {
+        /// <summary>
+        /// get parameter info
+        /// </summary>
+        /// <param name="parameter"></param>
+        /// <returns></returns>
         public T this[ParameterInfo parameter] { get; }
     }
 
@@ -34,6 +39,12 @@ namespace Nncase.IR
         {
         }
 
+        /// <summary>
+        /// get param expr.
+        /// </summary>
+        /// <param name="parameter"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
         public Expr this[ParameterInfo parameter]
         {
             get

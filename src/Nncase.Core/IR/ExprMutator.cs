@@ -159,7 +159,8 @@ namespace Nncase.IR
                 Sequence = (TIR.Sequential)Visit(expr.Sequence),
             };
         }
-
+        
+        /// <inheritdoc/>
         public override Expr VisitLeaf(TIR.Block expr)
         {
             var nexpr = MutateLeaf(expr);

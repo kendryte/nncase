@@ -1,0 +1,33 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Nncase.Converters;
+
+internal class PointerConverters<T> :
+    ISpanConverter<Pointer<T>, ulong>
+    where T : unmanaged, IEquatable<T>
+{
+    public void ConvertTo(ReadOnlySpan<Pointer<T>> source, Span<ulong> dest, CastMode castMode)
+    {
+        if (castMode == CastMode.Exact)
+        {
+            throw new InvalidCastException();
+        }
+
+        if (dest.Length < source.Length)
+        {
+            throw new ArgumentException("Dest buffer is not sufficient.");
+        }
+
+        for (int i = 0; i < source.Length; i++)
+        {
+            dest[i] = source[i].Value;
+        }
+    }
+}

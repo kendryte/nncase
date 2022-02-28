@@ -111,7 +111,7 @@ public sealed record TensorConst(Tensor Value) : Const(new TensorType(Value.Elem
           {
               var dtype when DataTypes.IsIntegral(dtype) => Value.ToScalar<long>().ToString(),
               var dtype when DataTypes.IsFloat(dtype) => Value.ToScalar<float>().ToString(),
-              var dtype when DataTypes.IsPointer(dtype) => Value.ToScalar<long>().ToString(),
+              var dtype when DataTypes.IsPointer(dtype) => Value.ToScalar<ulong>().ToString(),
               var dtype when dtype == DataTypes.Boolean => Value.ToScalar<bool>().ToString(),
               _ => $"{x.DType} {x.Shape}"
           },

@@ -28,6 +28,12 @@ namespace Nncase.IR
             visitor.Visit(function);
         }
 
+        /// <summary>
+        /// dump function as il.
+        /// </summary>
+        /// <param name="function"></param>
+        /// <param name="prefix"></param>
+        /// <param name="dumpPath"></param>
         public static void DumpFunctionAsIL(Function function, string prefix, string dumpPath)
         {
             var nprefix = prefix.Any() ? prefix + "_" : prefix;
@@ -38,6 +44,11 @@ namespace Nncase.IR
             visitor.Visit(function);
         }
 
+        /// <summary>
+        /// dump any expr as il.
+        /// </summary>
+        /// <param name="textWriter"></param>
+        /// <param name="expr"></param>
         public static void DumpExprAsIL(TextWriter textWriter, Expr expr)
         {
             var visitor = new ILDumpVisitor(textWriter);

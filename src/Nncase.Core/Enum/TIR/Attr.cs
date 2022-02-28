@@ -3,6 +3,9 @@
 
 namespace Nncase.TIR
 {
+    /// <summary>
+    /// the tir attrubute.
+    /// </summary>
     [System.Flags]
     public enum Attr : long
     {
@@ -141,7 +144,7 @@ namespace Nncase.TIR
 
         /// <summary>
         /// Bind the buffer specification to the region of the op
-        ///  When this scope occurs, the stmt.node is a IRArray.<NodeRef> ,
+        ///  When this scope occurs, the stmt.node is a IRArray.{NodeRef} ,
         ///  stmt.value is a tvm_tuple(min0, extent0, min1, extent1, ...).
         ///  The scope represents that we need to bind the storage region of tensor to buffer.
         ///  This will affect replacement of some variables inside the scope that
@@ -205,8 +208,8 @@ namespace Nncase.TIR
         /// during script parsing.
         /// <remarks>
         /// The result should be a integer mask with range [0, 4).
-        /// if (mask & 1) the read region should be detected,
-        /// if (mask & 2) the write region should be detected.
+        /// if (mask and 1) the read region should be detected,
+        /// if (mask and 2) the write region should be detected.
         /// </remarks>
         /// </summary>
         script_parsing_detect_access = 34359738368,
@@ -219,7 +222,7 @@ namespace Nncase.TIR
         /// <summary>
         /// List of thread IterVar that a DeviceLaunch function corresponds to.
         ///
-        /// Type: Array.<tir::IterVar>
+        /// Type: Array.{tir::IterVar}
         ///
         /// We call a device kernel launch function f using the following convention:
         ///

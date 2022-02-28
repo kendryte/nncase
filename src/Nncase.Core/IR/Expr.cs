@@ -16,10 +16,19 @@ namespace Nncase.IR;
 /// </summary>
 public abstract partial record Expr
 {
+    /// <summary>
+    /// hash code cache
+    /// </summary>
     protected int? _hashcode;
 
+    /// <summary>
+    /// checked type.
+    /// </summary>
     public IRType? CheckedType = null;
 
+    /// <summary>
+    /// checked shape.
+    /// </summary>
     public Shape CheckedShape => (CheckedType ?? ((Const)this).ValueType) switch
     {
         TensorType type => type.Shape,
@@ -36,16 +45,19 @@ public abstract partial record Expr
         _ => throw new InvalidOperationException("Expr don't have a valid tensor type"),
     };
 
+    /// <inheritdoc/>
     public virtual bool Equals(Expr? other)
     {
         return !(other is null) && EqualityContract == other.EqualityContract;
     }
-
+    
+    /// <inheritdoc/>
     public override int GetHashCode()
     {
         return _hashcode ??= EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
     }
 
+    /// <inheritdoc/>
     protected virtual bool PrintMembers(StringBuilder builder)
     {
         builder.Append(this.DumpExprAsIL());

@@ -65,7 +65,7 @@ namespace Nncase.TIR
         /// <example>
         /// if type = float32x3, then the store will corresponds to
         /// <code>
-        ///  auto buffer = static_cast<float*>(buffer_var);
+        ///  auto buffer = static_cast{float*}(buffer_var);
         ///  buffer[index.v0] = value.v0;
         ///  buffer[index.v1] = value.v1;
         ///  buffer[index.v2] = value.v2;

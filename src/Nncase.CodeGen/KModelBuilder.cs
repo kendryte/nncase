@@ -18,6 +18,9 @@ namespace Nncase.CodeGen;
 /// </summary>
 public class KModuleSerializeResult : ISerializeResult
 {
+    /// <summary>
+    /// the module alignment.
+    /// </summary>
     public uint Alignment { get; set; }
 
     /// <summary>

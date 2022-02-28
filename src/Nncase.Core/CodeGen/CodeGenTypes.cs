@@ -15,10 +15,25 @@ namespace Nncase.CodeGen;
 /// </summary>
 public static class ModelInfo
 {
+    /// <summary>
+    /// the idenitifer.
+    /// </summary>
     public static uint IDENTIFIER => BitConverter.ToUInt32(Encoding.UTF8.GetBytes("LDMK"), 0);
+    /// <summary>
+    /// kmodel version.
+    /// </summary>
     public const int VERSION = 5;
+    /// <summary>
+    /// merged rdata flag.
+    /// </summary>
     public const int SECTION_MERGED_INTO_RDATA = 1;
+    /// <summary>
+    /// max section name length.
+    /// </summary>
     public const int MAX_SECTION_NAME_LENGTH = 16;
+    /// <summary>
+    /// max module type length.
+    /// </summary>
     public const int MAX_MODULE_TYPE_LENGTH = 16;
 }
 

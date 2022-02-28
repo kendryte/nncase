@@ -18,5 +18,14 @@ namespace Nncase.IR.F;
 /// </summary>
 public static class Imaging
 {
+    /// <summary>
+    /// resize image.
+    /// </summary>
+    /// <param name="resizeMode"></param>
+    /// <param name="input"></param>
+    /// <param name="newSize"></param>
+    /// <param name="alignCorners"></param>
+    /// <param name="halfPixelCenters"></param>
+    /// <returns></returns>
     public static Call ResizeImage(ImageResizeMode resizeMode, Expr input, Expr newSize, Expr alignCorners, Expr halfPixelCenters) => new Call(new ResizeImage(resizeMode), input, newSize, alignCorners, halfPixelCenters);
 }
