@@ -505,7 +505,8 @@ public abstract class BaseRTKModule : IRTModule
         {
             var sec_header = new SectionHeader();
 
-            for (int i = 0; i < section.Key.Length; i++) { sec_header.Name[i] = section.Key[i]; }
+            // for (int i = 0; i < section.Key.Length; i++) {  = section.Key[i]; }
+            sec_header.Name = section.Key;
 
             if (_rdataSectionMerges.TryGetValue(section.Key, out var merge_it) is var finded && finded == false)
             {

@@ -41,14 +41,14 @@ public static class ModelInfo
 /// the module type
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-unsafe public struct ModuleType
+public struct ModuleType
 {
 
     /// <summary>
     /// the module types
     /// </summary>
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = (int)ModelInfo.MAX_MODULE_TYPE_LENGTH)]
-    public fixed char Types[ModelInfo.MAX_MODULE_TYPE_LENGTH];
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = (int)ModelInfo.MAX_MODULE_TYPE_LENGTH)]
+    public string Types;
 
     /// <summary>
     /// create the modult type by name
@@ -58,11 +58,12 @@ unsafe public struct ModuleType
     public static ModuleType Create(string name)
     {
         var mt = new ModuleType();
+        var chars = new char[ModelInfo.MAX_MODULE_TYPE_LENGTH];
         for (int i = 0; i < ModelInfo.MAX_MODULE_TYPE_LENGTH; i++)
         {
-            mt.Types[i] = i < name.Length ? name[i] : '\0';
+            chars[i] = i < name.Length ? name[i] : '\0';
         }
-
+        mt.Types = new(chars);
         return mt;
     }
 }

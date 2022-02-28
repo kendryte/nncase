@@ -78,13 +78,13 @@ public struct SharedMempoolDesc
 /// the section header
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct SectionHeader
+public struct SectionHeader
 {
     /// <summary>
     /// the name
     /// </summary>
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = (int)ModelInfo.MAX_SECTION_NAME_LENGTH)]
-    public fixed char Name[ModelInfo.MAX_SECTION_NAME_LENGTH];
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = (int)ModelInfo.MAX_SECTION_NAME_LENGTH)]
+    public string Name;
     public uint Flags;
     public uint BodyStart;
     public uint BodySize;
