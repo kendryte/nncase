@@ -324,7 +324,15 @@ quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits,
         throw std::runtime_error("Invalid quant mode");
     }
     auto scale = (range.max - range.min) / (Q_max - Q_min);
-    auto bias = std::round((range.max * Q_min - range.min * Q_max) / (range.max - range.min));
+    int32_t bias = 0;
+    if (qm == quant_mode::unsigned_mode)
+        bias = std::round((- range.min * 255) / (range.max - range.min));
+    else if (qm == quant_mode::signed_symmetric_mode)
+        bias = std::round((- range.min * 254) / (range.max - range.min)) - 127;
+    else if (qm == quant_mode::signed_asymmetric_mode)
+        bias = std::round((- range.min * 255) / (range.max - range.min)) - 128;
+    else
+        throw std::runtime_error("Invalid quant mode.");
     return { static_cast<int32_t>(bias), (float)scale };
 }
 
