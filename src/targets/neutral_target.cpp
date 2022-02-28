@@ -121,6 +121,7 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     pass.emplace<transpose_concat_motion_transform>();
     pass.emplace<transpose_pad_motion_transform>();
     pass.emplace<transpose_clamp_motion_transform>();
+    pass.emplace<transpose_sigmoid_motion_transform>();
     pass.emplace<bitcast_clamp_motion_transform>();
 
     pass.emplace<fuse_clamp_conv2d_transform>();
