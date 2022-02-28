@@ -16,6 +16,7 @@ internal class EvaluatorGenerator : ISourceGenerator
 {
 
     GeneratorExecutionContext? Context = null;
+    EvaluatorImplReceiver Receiver;
 
     public void Initialize(GeneratorInitializationContext context) => context.RegisterForSyntaxNotifications(() => new EvaluatorImplReceiver());
 
@@ -23,6 +24,7 @@ internal class EvaluatorGenerator : ISourceGenerator
     {
         if (context.SyntaxContextReceiver is not EvaluatorImplReceiver evalReceiver)
             return;
+        Receiver = evalReceiver;
         Context ??= context;
         if (evalReceiver.Diagnostics.Any())
         {
@@ -57,31 +59,40 @@ internal class EvaluatorGenerator : ISourceGenerator
         var statementSyntaxes = new List<StatementSyntax>();
         foreach (var Parameter in cand.Method.Parameters)
         {
-            if (!cand.Op.MemberNames.Any(name => name == Parameter.Name))
-                Context.Value.ReportDiagnostic(Diagnostic.Create(RecriverUtil.MethodParamError, Location.None, cand.Class.Name, string.Join(", ", cand.Method.Parameters.Select(p => p.Name)), cand.Op.Name));
+            // if (!cand.Op.MemberNames.Any(name => name == Parameter.Name))
+            //     Context.Value.ReportDiagnostic(Diagnostic.Create(RecriverUtil.MethodParamError, Location.None, cand.Class.Name, string.Join(", ", cand.Method.Parameters.Select(p => p.Name)), cand.Op.Name));
             var paramType = Parameter.Type;
-            string callMethod = paramType switch
+            if ((cand.Target == InterfaceKind.IEvaluator && paramType.Equals(Receiver.IEvaluateContextSymobl))
+              || (cand.Target == InterfaceKind.ITypeInferencer && paramType.Equals(Receiver.ITypeInferenceContext)))
             {
-                { IsReferenceType: true } => paramType.ToDisplayString() switch
+                if (Parameter.Name != "context")
+                    statementSyntaxes.Add(ParseStatement($"var {Parameter.Name} = context;"));
+                continue;
+            }
+            if (paramType.Equals(cand.Op))
+            {
+                if (Parameter.Name != "target")
+                    statementSyntaxes.Add(ParseStatement($"var {Parameter.Name} = target;"));
+                continue;
+            }
+            string callMethod = cand.Target switch
+            {
+                InterfaceKind.IEvaluator => paramType switch
                 {
-                    var x when cand.Target == InterfaceKind.IEvaluator && x.EndsWith("torch.Tensor") => "GetTorchArgumentValue",
-                    var x when cand.Target == InterfaceKind.IEvaluator && x.EndsWith("Tensorflow.Tensor") => "GetTFArgumentValue",
-                    var x when cand.Target == InterfaceKind.ITypeInferencer => $"CheckArgumentType<{x}>",
-                    var x when x == cand.Op.Name => "",
-                    var x => throw new NotSupportedException(x)
+                    { IsReferenceType: true } x when x.IsInheritFrom(Receiver.ExprSymobl) => $"GetArgumentExpr<{paramType.ToDisplayString()}>",
+                    { IsReferenceType: true } x when x.ToDisplayString().EndsWith("torch.Tensor") => "GetTorchArgumentValue",
+                    { IsReferenceType: true } x when x.ToDisplayString().EndsWith("Tensorflow.Tensor") => "GetTFArgumentValue",
+                    { IsUnmanagedType: true, IsValueType: true } x => $"GetArgumentValueAsScalar<{paramType.ToDisplayString()}>",
+                    _ => throw new NotSupportedException($"Convert {paramType.ToDisplayString()} For IEvaluator Impl!")
                 },
-                { IsUnmanagedType: true, IsValueType: true } => cand.Target switch
+                InterfaceKind.ITypeInferencer => paramType switch
                 {
-                    InterfaceKind.IEvaluator => $"GetArgumentValueAsScalar<{paramType.ToDisplayString()}>",
-                    InterfaceKind.ITypeInferencer => throw new NotSupportedException("The Type Infer Can't Convert Unmanaged Type"),
-                    _ => throw new NotSupportedException(paramType.ToDisplayString())
+                    { IsReferenceType: true } x when x.IsInheritFrom(Receiver.IRTypeSymobl) => $"CheckArgumentType<{x}>"
                 },
+                _ => throw new NotSupportedException($"{paramType.ToDisplayString()} with {cand.Target}!")
             };
 
-            if (callMethod != string.Empty)
-                statementSyntaxes.Add(ParseStatement($"var {Parameter.Name} = context.{callMethod}(target, {cand.Op.ToDisplayString()}.{Parameter.Name});"));
-            else
-                statementSyntaxes.Add(ParseStatement($"var {Parameter.Name} = target;"));
+            statementSyntaxes.Add(ParseStatement($"var {Parameter.Name} = context.{callMethod}(target, {cand.Op.ToDisplayString()}.{Parameter.Name});"));
         }
         var visitMethod = cand.Method.ReturnType.BuildReturnWrapper(cand.Target, $"Visit({string.Join(",", cand.Method.Parameters.Select(p => p.Name))})");
         statementSyntaxes.Add(ParseStatement($"return {visitMethod};"));

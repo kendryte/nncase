@@ -63,7 +63,7 @@ public static class InterfaceKindExtensions
             { BaseType: { Name: "IRType" } } => true,
             _ => false,
         },
-        _ => throw new NotImplementedException(),
+        _ => throw new NotImplementedException($"CheckReturnTypeRange : {typeSymbol.Name} {interfaceKind}"),
     };
 
     public static string BuildReturnWrapper(this ITypeSymbol typeSymbol, InterfaceKind interfaceKind, string visitStatement) => interfaceKind switch
@@ -118,8 +118,17 @@ internal class EvaluatorImplReceiver : ISyntaxContextReceiver
 
     public readonly List<Diagnostic> Diagnostics = new();
 
+    public INamedTypeSymbol? ExprSymobl;
+    public INamedTypeSymbol? IRTypeSymobl;
+    public INamedTypeSymbol? IEvaluateContextSymobl;
+    public INamedTypeSymbol? ITypeInferenceContext;
+
     public void OnVisitSyntaxNode(GeneratorSyntaxContext ctx)
     {
+        ExprSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Expr");
+        IRTypeSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.IRType");
+        IEvaluateContextSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Evaluator.IEvaluateContext");
+        ITypeInferenceContext ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Evaluator.ITypeInferenceContext");
         ReceiveTargetInterface(ctx, InterfaceKind.IEvaluator, EvalCandidates);
         ReceiveTargetInterface(ctx, InterfaceKind.ITypeInferencer, TypeInferCandidates);
     }
@@ -166,5 +175,5 @@ internal class EvaluatorImplReceiver : ISyntaxContextReceiver
     }
 
 
-    
+
 }

@@ -36,6 +36,19 @@ public interface IEvaluateContext
     IValue GetValue(Expr expr);
 
     /// <summary>
+    /// Get argument expression.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="op">Operator.</param>
+    /// <param name="parameter">Parameter.</param>
+    /// <returns>The argument expression.</returns>
+    public T GetArgumentExpr<T>(Op op, ParameterInfo parameter)
+     where T : Expr
+    {
+        return (T)GetArgumentExpr(op, parameter);
+    }
+
+    /// <summary>
     /// Get argument value.
     /// </summary>
     /// <param name="op">Operator.</param>

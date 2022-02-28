@@ -34,7 +34,6 @@ internal class RuleReceiver : ISyntaxContextReceiver
         ExprSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Expr");
         IMatchResultSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.PatternMatch.IMatchResult");
 
-
         var compilation = ctx.SemanticModel.Compilation;
         if (ctx.Node is ClassDeclarationSyntax classDeclaration)
         {
