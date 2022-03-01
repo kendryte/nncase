@@ -15,7 +15,7 @@ using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 
-namespace Nncase.Transform.Rules;
+namespace Nncase.Transform.Rules.Neutral;
 
 /// <summary>
 /// Fold call of constants.
@@ -24,7 +24,7 @@ namespace Nncase.Transform.Rules;
 public partial class FoldConstCall : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
-    public override CallPattern Pattern { get; } = IsCall("call", IsWildcard(), IsVArgsRepeat(() => IsConst()));
+    public override CallPattern Pattern { get; } = IsCall("call", IsWildcard(), IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())));
 
     Const GetReplace(Call call)
     {

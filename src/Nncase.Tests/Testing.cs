@@ -77,8 +77,8 @@ namespace Nncase.Tests
         {
             if (_simplifyPass.Rules.Count == 0)
             {
-                _simplifyPass.Add(SimplifyFactory.SimplifyAdd());
-                _simplifyPass.Add(SimplifyFactory.SimplifyMul());
+                _simplifyPass.Add(Transform.Rules.Neutral.SimplifyFactory.SimplifyAdd());
+                _simplifyPass.Add(Transform.Rules.Neutral.SimplifyFactory.SimplifyMul());
                 // _simplifyPass.Add(new Transform.Rule.FoldConstCall());
             }
             var f = new Function(expr, new Var[] { });

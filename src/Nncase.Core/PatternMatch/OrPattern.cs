@@ -9,45 +9,24 @@ using Nncase.IR;
 namespace Nncase.PatternMatch;
 
 /// <summary>
-/// Or pattern interface.
-/// </summary>
-public interface IOrPattern : IPattern
-{
-    /// <summary>
-    /// Gets input type.
-    /// </summary>
-    Type InputType { get; }
-
-    /// <summary>
-    /// Gets condition a.
-    /// </summary>
-    IPattern ConditionA { get; }
-
-    /// <summary>
-    /// Gets condition b.
-    /// </summary>
-    IPattern ConditionB { get; }
-}
-
-/// <summary>
 /// The Or Pattern for Match Different branch, NOTE if both branch are matched, choice the Lhs.
 /// </summary>
 /// <typeparam name="TInput">Input type.</typeparam>
 /// <param name="ConditionA">Condition a.</param>
 /// <param name="ConditionB">Condition b.</param>
-public sealed record OrPattern<TInput>(IPattern<TInput> ConditionA, IPattern<TInput> ConditionB, string? Name)
-    : Pattern(Name), IPattern<TInput>, IOrPattern
+public sealed record OrPattern(Pattern ConditionA, Pattern ConditionB, string? Name)
+    : Pattern(Name)
 {
     /// <inheritdoc/>
-    public Type InputType => typeof(TInput);
+    public override bool MatchLeaf(object input) => true;
+}
 
-    IPattern IOrPattern.ConditionA => ConditionA;
 
-    IPattern IOrPattern.ConditionB => ConditionB;
+public static partial class Utility
+{
+    public static OrPattern IsAlt(string? name, Pattern condition_a, Pattern condition_b)
+       => new OrPattern(condition_a, condition_b, name);
 
-    /// <inheritdoc/>
-    public bool MatchLeaf(TInput input) => true;
-
-    /// <inheritdoc/>
-    public sealed override bool MatchLeaf(object input) => input is TInput expr && MatchLeaf(expr);
+    public static OrPattern IsAlt(Pattern condition_a, Pattern condition_b)
+       => IsAlt(null, condition_a, condition_b);
 }

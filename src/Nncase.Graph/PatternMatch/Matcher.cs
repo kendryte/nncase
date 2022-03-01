@@ -71,7 +71,7 @@ internal sealed class Matcher
             (CallPattern callPat, Call call) => Visit(callPat, call),
             (TuplePattern tuplePat, IR.Tuple tuple) => Visit(tuplePat, tuple),
             (IOpPattern opPat, Op op) => Visit(opPat, op),
-            (IOrPattern orPat, _) => Visit(orPat, expr),
+            (OrPattern orPat, _) => Visit(orPat, expr),
             (ExprPattern exprPattern, _) => Visit(exprPattern, expr),
             _ => false,
         };
@@ -226,7 +226,7 @@ internal sealed class Matcher
         }
     }
 
-    private bool Visit(IOrPattern pattern, Expr expr)
+    private bool Visit(OrPattern pattern, Expr expr)
     {
         if (_patMemo.TryGetValue(pattern, out var oldExpr))
         {
