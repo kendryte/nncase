@@ -14,26 +14,42 @@ namespace Nncase.IR.Imaging
     /// <summary>
     /// ResizeImage expression.
     /// </summary>
-    public sealed record ResizeImage(ImageResizeMode ResizeMode) : Op
+    public sealed record ResizeImage(
+        ImageResizeMode ResizeMode, 
+        ImageResizeTransformationMode TransformationMode,
+        ImageResizeNearestMode NearestMode) : Op
     {
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(ResizeImage), 0, "input", HasRank(r => r >= 2, "RanK >= 2"));
+        public static readonly ParameterInfo Input = new(typeof(ResizeImage), 0, "input", IsRank(r => r >= 2, "RanK >= 2"));
+
+        /// <summary>
+        /// Gets roi.
+        /// </summary>
+        public static readonly ParameterInfo Roi = new(typeof(ResizeImage), 1, "roi", IsFloatScalar());
 
         /// <summary>
         /// Gets new_size.
         /// </summary>
-        public static readonly ParameterInfo NewSize = new(typeof(ResizeImage), 1, "new_size", HasRank(1));
-
+        public static readonly ParameterInfo NewSize = new(typeof(ResizeImage), 2, "new_size", IsRank(1));
+        
         /// <summary>
-        /// Gets AlignCorners.
+        /// Gets CubicCoeffA.
         /// </summary>
-        public static readonly ParameterInfo AlignCorners = new(typeof(ResizeImage), 2, "align_corners", IsScalar() & IsIntegral());
-
+        public static readonly ParameterInfo CubicCoeffA = new(typeof(ResizeImage), 3, "cubic_coeff_a", IsFloatScalar());
+        
         /// <summary>
-        /// Gets HalfPixelCenters.
+        /// Gets ExcludeOutside.
         /// </summary>
-        public static readonly ParameterInfo HalfPixelCenters = new(typeof(ResizeImage), 3, "half_pixel_centers", IsScalar() & IsIntegral());
+        public static readonly ParameterInfo ExcludeOutside = new(typeof(ResizeImage), 4, "exclude_outside", IsIntegralScalar());
+        
+        /// <summary>
+        /// Gets ExtrapolationValue.
+        /// </summary>
+        public static readonly ParameterInfo ExtrapolationValue = new(typeof(ResizeImage), 5, "extrapolation_value", IsFloatScalar());
+        
+        public static readonly ParameterInfo AlignCorners = new(typeof(ResizeImage), 6, "align_corners");
+        public static readonly ParameterInfo HalfPixelCenters = new(typeof(ResizeImage), 7, "half_pixel_centers");
     }
 }

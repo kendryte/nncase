@@ -7,8 +7,8 @@ using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Imaging;
-using TorchSharp;
-using torchF = TorchSharp.torch.nn.functional;
+using Nncase.IR.Tensors;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Imaging;
 
@@ -20,7 +20,17 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ResizeImage target)
     {
-        throw new NotImplementedException();
+        var input = context.GetOrtArgumentValue(target, ResizeImage.Input);
+        var roi = context.GetOrtArgumentValue(target, ResizeImage.Roi);
+        var sizes = context.GetOrtArgumentValue(target, ResizeImage.NewSize);
+        var cubicCoeffA = context.GetArgumentValueAsScalar<float>(target, ResizeImage.CubicCoeffA);
+        var excludeOutside = context.GetArgumentValueAsScalar<long>(target, ResizeImage.ExcludeOutside);
+        var extrapolationValue = context.GetArgumentValueAsScalar<float>(target, ResizeImage.ExtrapolationValue);
+        return OrtKI.ResizeWithSizes(input, roi, sizes, 
+            ResizeModeHelper.ToString(target.TransformationMode), 
+            cubicCoeffA, excludeOutside, extrapolationValue,
+            ResizeModeHelper.ToString(target.ResizeMode),
+            ResizeModeHelper.ToString(target.NearestMode)).ToValue();
     }
 
     /// <inheritdoc/>
