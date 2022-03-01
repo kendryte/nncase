@@ -25,6 +25,13 @@ public:
 protected:
     bool skip_self_contained_check() const noexcept override { return true; }
     bool on_try_match(ir::node &node, transform_context &context) override;
+
+private:
+    std::vector<output_connector *> forward(transform_context &context);
+    std::vector<output_connector *> reverse(transform_context &context);
+    void bidirectional(transform_context &context);
+    output_connector *local_sigmoid(output_connector *x, transform_context &context, std::string i);
+    output_connector *local_tanh(output_connector *x, transform_context &context, std::string i);
 };
 
 }

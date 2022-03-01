@@ -129,13 +129,24 @@ result<void> kernels::lut1d(datatype_t type, const gsl::byte *input, const gsl::
 }
 
 template result<void> kernels::matmul<float>(const float *input_a, const float *input_b, const float *bias, float *output,
-    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_b_shape, value_range<float> fused_activation) noexcept;
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
+    value_range<float> fused_activation) noexcept;
 
 template <typename T>
 result<void> kernels::matmul(const T *input_a, const T *input_b, const T *bias, T *output,
-    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_b_shape, value_range<float> fused_activation) noexcept
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
+    value_range<float> fused_activation) noexcept
 {
-    return cpu::reference::matmul(input_a, input_b, bias, output, in_a_shape, in_b_shape, fused_activation);
+    if (is_contiguous(in_a_shape, in_a_strides) && is_contiguous(in_b_shape, in_b_strides) && is_contiguous(out_shape, out_strides))
+    {
+        return cpu::optimized::matmul(input_a, input_b, bias, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides,
+            out_shape, out_strides, fused_activation);
+    }
+
+    return cpu::reference::matmul(input_a, input_b, bias, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides,
+        out_shape, out_strides, fused_activation);
 }
 
 result<void> kernels::onehot(datatype_t type, const int32_t *indices, gsl::byte *output, const runtime_shape_t &indices_shape, const runtime_shape_t &out_shape,
@@ -177,29 +188,40 @@ result<void> kernels::transpose(datatype_t type, const gsl::byte *src, gsl::byte
 
 template result<void> kernels::binary<float>(binary_op_t op, const float *input_a, const float *input_b, float *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
-    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation,
-    kernel_context &context) noexcept;
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
+    value_range<float> fused_activation, kernel_context &context) noexcept;
 template result<void> kernels::binary<int32_t>(binary_op_t op, const int32_t *input_a, const int32_t *input_b, int32_t *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
-    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation,
-    kernel_context &context) noexcept;
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
+    value_range<float> fused_activation, kernel_context &context) noexcept;
 template result<void> kernels::binary<int64_t>(binary_op_t op, const int64_t *input_a, const int64_t *input_b, int64_t *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
-    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation,
-    kernel_context &context) noexcept;
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
+    value_range<float> fused_activation, kernel_context &context) noexcept;
 
 template <typename T>
 result<void> kernels::binary(binary_op_t op, const T *input_a, const T *input_b, T *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
-    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation,
-    kernel_context &context) noexcept
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
+    value_range<float> fused_activation, kernel_context &context) noexcept
 {
-    return cpu::reference::binary(op, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_strides, fused_activation, context);
+    if (is_contiguous(in_a_shape, in_a_strides) && is_contiguous(in_b_shape, in_b_strides) && is_contiguous(out_shape, out_strides))
+    {
+        // optimization
+        if (is_optimized_binary_op(op) && is_optimized_input_shape(in_a_shape, out_shape) && is_optimized_input_shape(in_b_shape, out_shape))
+            return cpu::optimized::binary(op, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides, fused_activation, context);
+    }
+    return cpu::reference::binary(op, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides, fused_activation, context);
 }
 
 result<void> kernels::unary(unary_op_t op, const float *input, float *output, const runtime_shape_t &shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, kernel_context &context) noexcept
 {
+    if (is_contiguous(shape, in_strides) && is_contiguous(shape, out_strides) && is_optimized_unary_op(op))
+    {
+        // optimization
+        return cpu::optimized::unary(op, input, output, shape, in_strides, out_strides, context);
+    }
     return cpu::reference::unary(op, input, output, shape, in_strides, out_strides, context);
 }
 

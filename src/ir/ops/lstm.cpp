@@ -19,26 +19,26 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-lstm::lstm(shape_t input_shape, shape_t w_xc_shape, shape_t b_xc_shape, shape_t w_rc_shape, shape_t b_rc_shape, shape_t initial_h_shape, shape_t initial_c_shape, int32_t num_output, bool has_static, std::string framework)
-    : num_output_(num_output), has_static_(has_static), framework_(framework)
+lstm::lstm(shape_t input_shape, shape_t w_shape, shape_t r_shape, shape_t b_shape, shape_t output_shape,
+    shape_t output_h_shape, shape_t output_c_shape, bool has_static, lstm_direction direction, std::string framework)
+    : has_static_(has_static), direction_(direction), framework_(framework)
 {
     add_input("input", dt_float32, input_shape);
-    add_input("w_xc", dt_float32, w_xc_shape);
-    add_input("b_xc", dt_float32, b_xc_shape);
-    add_input("w_rc", dt_float32, w_rc_shape);
-    add_input("b_rc", dt_float32, b_rc_shape);
-    add_input("initial_h", dt_float32, initial_h_shape);
-    add_input("initial_h", dt_float32, initial_c_shape);
+    add_input("w", dt_float32, w_shape);
+    add_input("r", dt_float32, r_shape);
+    add_input("b", dt_float32, b_shape);
+    add_input("initial_h", dt_float32, output_h_shape);
+    add_input("initial_h", dt_float32, output_c_shape);
     if (has_static)
-        add_input("w_static", dt_float32, shape_t { w_xc_shape[1], w_xc_shape[2] });
+        add_input("w_static", dt_float32, shape_t { w_shape[1], w_shape[2] });
 
-    add_output("output", dt_float32, shape_t { input_shape[0], input_shape[1], (size_t)num_output });
-    add_output("output_h", dt_float32, initial_h_shape);
-    add_output("output_c", dt_float32, initial_c_shape);
+    add_output("output", dt_float32, output_shape);
+    add_output("output_h", dt_float32, output_h_shape);
+    add_output("output_c", dt_float32, output_c_shape);
 }
 
 bool lstm::properties_equal(node &other) const
 {
     auto &r = static_cast<lstm &>(other);
-    return num_output() == r.num_output() && has_static() == r.has_static();
+    return has_static() == r.has_static() && direction() == r.direction() && framework() == r.framework();
 }

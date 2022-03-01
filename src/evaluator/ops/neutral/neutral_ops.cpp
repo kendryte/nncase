@@ -122,19 +122,19 @@ void register_neutral_evaluators()
         {
         case dt_float32:
             kernels::binary(rnode.binary_op(), input_a.buffer().as_span<float>().data(), input_b.buffer().as_span<float>().data(),
-                output.buffer().as_span<float>().data(), input_a.shape(), input_a.strides(), input_b.shape(), input_b.strides(), output.strides(),
+                output.buffer().as_span<float>().data(), input_a.shape(), input_a.strides(), input_b.shape(), input_b.strides(), output.shape(), output.strides(),
                 rnode.fused_activation())
                 .unwrap_or_throw();
             break;
         case dt_int32:
             kernels::binary(rnode.binary_op(), input_a.buffer().as_span<int32_t>().data(), input_b.buffer().as_span<int32_t>().data(),
-                output.buffer().as_span<int32_t>().data(), input_a.shape(), input_a.strides(), input_b.shape(), input_b.strides(), output.strides(),
+                output.buffer().as_span<int32_t>().data(), input_a.shape(), input_a.strides(), input_b.shape(), input_b.strides(), output.shape(), output.strides(),
                 rnode.fused_activation())
                 .unwrap_or_throw();
             break;
         case dt_int64:
             kernels::binary(rnode.binary_op(), input_a.buffer().as_span<int64_t>().data(), input_b.buffer().as_span<int64_t>().data(),
-                output.buffer().as_span<int64_t>().data(), input_a.shape(), input_a.strides(), input_b.shape(), input_b.strides(), output.strides(),
+                output.buffer().as_span<int64_t>().data(), input_a.shape(), input_a.strides(), input_b.shape(), input_b.strides(), output.shape(), output.strides(),
                 rnode.fused_activation())
                 .unwrap_or_throw();
             break;
@@ -566,23 +566,7 @@ void register_neutral_evaluators()
             unary([](auto a) { return -a; });
             break;
         case unary_round:
-            unary([](auto a) {
-#if 0
-                return round(a);
-#else
-                        // bankers rounding method for tensorflow/tflite
-                        auto floor_val = std::floor(a);
-                        auto diff = a - floor_val;
-                        if ((diff < 0.5f) || ((diff == 0.5f) && (static_cast<int>(floor_val) % 2 == 0)))
-                        {
-                            return floor_val;
-                        }
-                        else
-                        {
-                            return floor_val = floor_val + 1.0f;
-                        }
-#endif
-            });
+            unary([](auto a) { return rintf(a); });
             break;
         case unary_rsqrt:
             unary([](auto a) { return 1.f / sqrtf(a); });

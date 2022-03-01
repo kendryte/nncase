@@ -16,6 +16,7 @@
 #include <nncase/ir/ops/binary.h>
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/sigmoid.h>
 #include <nncase/ir/ops/unary.h>
 
 using namespace nncase;
@@ -29,6 +30,7 @@ DEFINE_TFLITE_LOWER(LOGISTIC)
     auto in_shape = get_shape(input.shape());
     auto input_type = to_data_type(input.type());
 
+#if 0
     auto neg = graph_.emplace<unary>(unary_neg, in_shape);
     auto exp = graph_.emplace<unary>(unary_exp, neg->output().shape());
     auto one = graph_.emplace<constant>(1.f);
@@ -49,4 +51,11 @@ DEFINE_TFLITE_LOWER(LOGISTIC)
 
     link_input_tensor(&neg->input(), op.inputs()->Get(0));
     link_output_tensor(op.outputs()->Get(0), &div->output());
+#else
+    auto sigmd = graph_.emplace<sigmoid>(input_type, in_shape);
+    sigmd->name(get_tensor(op.outputs(), 0).name()->string_view());
+
+    link_input_tensor(&sigmd->input(), op.inputs()->Get(0));
+    link_output_tensor(op.outputs()->Get(0), &sigmd->output());
+#endif
 }

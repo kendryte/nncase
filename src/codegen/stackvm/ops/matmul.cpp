@@ -31,6 +31,11 @@ void stackvm_module_builder::emit(matmul &node, stackvm_op_builder &builder)
     builder.lea_buffer(output);
 
     builder.stshape(0, input_a.shape);
-    builder.stshape(1, input_b.shape);
-    builder.tensor_matmul_(0, 1, node.fused_activation().min, node.fused_activation().max);
+    builder.stshape(1, input_a.strides);
+    builder.stshape(2, input_b.shape);
+    builder.stshape(3, input_b.strides);
+    builder.stshape(4, output.shape);
+    builder.stshape(5, output.strides);
+
+    builder.tensor_matmul_(0, 1, 2, 3, 4, 5, node.fused_activation().min, node.fused_activation().max);
 }
