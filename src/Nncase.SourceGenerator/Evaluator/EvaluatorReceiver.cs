@@ -119,6 +119,7 @@ internal class EvaluatorImplReceiver : ISyntaxContextReceiver
     public readonly List<Diagnostic> Diagnostics = new();
 
     public INamedTypeSymbol? ExprSymobl;
+    public INamedTypeSymbol? ParameterInfoSymobl;
     public INamedTypeSymbol? IRTypeSymobl;
     public INamedTypeSymbol? IEvaluateContextSymobl;
     public INamedTypeSymbol? ITypeInferenceContext;
@@ -129,6 +130,7 @@ internal class EvaluatorImplReceiver : ISyntaxContextReceiver
         IRTypeSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.IRType");
         IEvaluateContextSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Evaluator.IEvaluateContext");
         ITypeInferenceContext ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Evaluator.ITypeInferenceContext");
+        ParameterInfoSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.ParameterInfo");
         ReceiveTargetInterface(ctx, InterfaceKind.IEvaluator, EvalCandidates);
         ReceiveTargetInterface(ctx, InterfaceKind.ITypeInferencer, TypeInferCandidates);
     }

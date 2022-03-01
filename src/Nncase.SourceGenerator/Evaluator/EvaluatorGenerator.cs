@@ -57,6 +57,8 @@ internal class EvaluatorGenerator : ISourceGenerator
     {
         var (return_type_name, context_type_name) = cand.Target.GetKindInfo();
         var statementSyntaxes = new List<StatementSyntax>();
+        var allOpParams = new HashSet<string>(cand.Op.GetMembers().OfType<IFieldSymbol>().Where(f => f.Type.Equals(Receiver.ParameterInfoSymobl)).Select(f => f.Name));
+
         foreach (var Parameter in cand.Method.Parameters)
         {
             // if (!cand.Op.MemberNames.Any(name => name == Parameter.Name))
@@ -96,7 +98,18 @@ internal class EvaluatorGenerator : ISourceGenerator
             };
 
             statementSyntaxes.Add(ParseStatement($"var {Parameter.Name} = context.{callMethod}(target, {cand.Op.ToDisplayString()}.{Parameter.Name});"));
+
+            if (allOpParams.Contains(Parameter.Name))
+                allOpParams.Remove(Parameter.Name);
         }
+
+        // when ITypeInferencer we need try check each input parameter.
+        if (cand.Target == InterfaceKind.ITypeInferencer)
+            allOpParams.ToList().ForEach(name =>
+            {
+                statementSyntaxes.Add(ParseStatement($"context.CheckArgumentType<Nncase.IR.IRType>(target, {cand.Op.ToDisplayString()}.{name});"));
+            });
+
         var visitMethod = cand.Method.ReturnType.BuildReturnWrapper(cand.Target, $"Visit({string.Join(",", cand.Method.Parameters.Select(p => p.Name))})");
         statementSyntaxes.Add(ParseStatement($"return {visitMethod};"));
         return statementSyntaxes;

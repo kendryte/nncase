@@ -62,7 +62,7 @@ namespace Nncase.IR
     /// Operator expression.
     /// we will Reflection the specific method to extent the function,
     /// so your need impl the method as follows:
-    /// 1. InferInvokeResultType(ITypeInferenceContext context, IRType arg1, IRType arg2, ...)
+    /// 1. Visit(ITypeInferenceContext context, IRType arg1, IRType arg2, ...)
     /// </summary>
     public abstract record Op() : Expr
     {
