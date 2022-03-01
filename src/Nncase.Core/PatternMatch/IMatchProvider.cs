@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,14 +21,16 @@ public interface IMatchProvider
     /// </summary>
     /// <param name="expr">Expression to match.</param>
     /// <param name="pattern">Match pattern.</param>
-    /// <returns>Match result.</returns>
-    IMatchResult? Match(Expr expr, IPattern pattern);
+    /// <param name="result">Match result.</param>
+    /// <returns>Match success.</returns>
+    bool TryMatch(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result);
 
     /// <summary>
     /// Match expression as root.
     /// </summary>
     /// <param name="expr">Expression to match.</param>
     /// <param name="pattern">Match pattern.</param>
-    /// <returns>Match result.</returns>
-    IMatchResult? MatchRoot(Expr expr, IPattern pattern);
+    /// <param name="result">Match result.</param>
+    /// <returns>Match success.</returns>
+    bool TryMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result);
 }

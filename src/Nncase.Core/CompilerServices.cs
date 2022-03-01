@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -56,16 +57,18 @@ public interface ICompilerServicesProvider
     /// </summary>
     /// <param name="expr">Expression to match.</param>
     /// <param name="pattern">Match pattern.</param>
-    /// <returns>Match result.</returns>
-    IMatchResult? Match(Expr expr, IPattern pattern);
+    /// <param name="result">Match result.</param>
+    /// <returns>Match success.</returns>
+    bool TryMatch(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result);
 
     /// <summary>
     /// Match expression as root.
     /// </summary>
     /// <param name="expr">Expression to match.</param>
     /// <param name="pattern">Match pattern.</param>
-    /// <returns>Match result.</returns>
-    IMatchResult? MatchRoot(Expr expr, IPattern pattern);
+    /// <param name="result">Match result.</param>
+    /// <returns>Match success.</returns>
+    bool TryMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result);
 
     /// <summary>
     /// Rewrite expression.
@@ -130,15 +133,15 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     }
 
     /// <inheritdoc/>
-    public IMatchResult? Match(Expr expr, IPattern pattern)
+    public bool TryMatch(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result)
     {
-        return _matchProvider.Match(expr, pattern);
+        return _matchProvider.TryMatch(expr, pattern, out result);
     }
 
     /// <inheritdoc/>
-    public IMatchResult? MatchRoot(Expr expr, IPattern pattern)
+    public bool TryMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result)
     {
-        return _matchProvider.MatchRoot(expr, pattern);
+        return _matchProvider.TryMatchRoot(expr, pattern, out result);
     }
 
     /// <inheritdoc/>
@@ -216,10 +219,11 @@ public static class CompilerServices
     /// </summary>
     /// <param name="expr">Expression to match.</param>
     /// <param name="pattern">Match pattern.</param>
-    /// <returns>Match result.</returns>
-    public static IMatchResult? Match(Expr expr, IPattern pattern)
+    /// <param name="result">Match result.</param>
+    /// <returns>Match success.</returns>
+    public static bool TryMatch(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result)
     {
-        return Provider.Match(expr, pattern);
+        return Provider.TryMatch(expr, pattern, out result);
     }
 
     /// <summary>
@@ -227,10 +231,11 @@ public static class CompilerServices
     /// </summary>
     /// <param name="expr">Expression to match.</param>
     /// <param name="pattern">Match pattern.</param>
-    /// <returns>Match result.</returns>
-    public static IMatchResult? MatchRoot(Expr expr, IPattern pattern)
+    /// <param name="result">Match result.</param>
+    /// <returns>Match success.</returns>
+    public static bool TryMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result)
     {
-        return Provider.MatchRoot(expr, pattern);
+        return Provider.TryMatchRoot(expr, pattern, out result);
     }
 
     /// <summary>

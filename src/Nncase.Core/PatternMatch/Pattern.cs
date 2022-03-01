@@ -21,6 +21,11 @@ public abstract partial record Pattern(string? Name) : IPattern
     /// </summary>
     protected int? HashCode { get; set; }
 
+    public virtual bool Equals(Pattern? other)
+    {
+        return !(other is null) && EqualityContract == other.EqualityContract;
+    }
+
     /// <inheritdoc/>
     public override int GetHashCode() => HashCode ??=
       System.HashCode.Combine(EqualityComparer<Type>.Default.GetHashCode(EqualityContract));

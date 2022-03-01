@@ -28,6 +28,7 @@ public sealed record VArgsPattern(Func<IReadOnlyList<Expr>, IRArray<Pattern>> Fi
     public VArgsPattern(IRArray<Pattern> fields, string? name)
         : this(x => fields, name)
     {
+        _fields = fields;
     }
 
     /// <summary>
@@ -38,6 +39,7 @@ public sealed record VArgsPattern(Func<IReadOnlyList<Expr>, IRArray<Pattern>> Fi
     public VArgsPattern(IRArray<Expr> fields, string? name)
         : this(x => fields.Select(f => (Pattern)f).ToArray(), name)
     {
+        _fields = fields.Select(f => (Pattern)f).ToArray();
     }
 
     /// <inheritdoc/>

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,13 +13,13 @@ namespace Nncase.PatternMatch;
 
 internal class MatchProvider : IMatchProvider
 {
-    public IMatchResult? Match(Expr expr, IPattern pattern)
+    public bool TryMatch(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result)
     {
-        return Matcher.Match(pattern, expr);
+        return Matcher.TryMatch(expr, pattern, out result);
     }
 
-    public IMatchResult? MatchRoot(Expr expr, IPattern pattern)
+    public bool TryMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result)
     {
-        return Matcher.MatchRoot(pattern, expr);
+        return Matcher.TryMatchRoot(expr, pattern, out result);
     }
 }

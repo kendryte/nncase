@@ -23,8 +23,7 @@ internal sealed class DataFlowRewriteVisitor : ExprMutator
 
     public override Expr DefaultMutateLeaf(Expr expr)
     {
-        var match = CompilerServices.MatchRoot(expr, _rule.Pattern);
-        if (match != null)
+        if (CompilerServices.TryMatchRoot(expr, _rule.Pattern, out var match))
         {
             var replace = _rule.GetReplace(match);
             if (replace != null)

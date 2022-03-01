@@ -112,18 +112,21 @@ public sealed class MatchScope
     /// <summary>
     /// Get flatten match result.
     /// </summary>
-    /// <returns>Match result.</returns>
-    public IMatchResult? ToMatchResult()
+    /// <param name="result">Match result.</param>
+    /// <returns>Match success.</returns>
+    public bool TryGetMatchResult([MaybeNullWhen(false)] out IMatchResult result)
     {
         if (IsMatch)
         {
-            var matches = new Dictionary<IPattern, object>();
+            var matches = new Dictionary<IPattern, object>(ReferenceEqualityComparer.Instance);
             FlattenMatches(matches);
-            return new MatchResult(matches);
+            result = new MatchResult(matches);
+            return true;
         }
         else
         {
-            return null;
+            result = null;
+            return false;
         }
     }
 

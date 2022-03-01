@@ -11,7 +11,7 @@ using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.NN;
 using Nncase.PatternMatch;
-using Nncase.Tests.ReWriteTest;
+using Nncase.Tests.RewriteTest;
 using Nncase.Transform;
 using TorchSharp;
 using Xunit;
@@ -26,7 +26,7 @@ using Binary = Nncase.IR.Math.Binary;
 using Broadcast = Nncase.IR.Tensors.Broadcast;
 using Tuple = Nncase.IR.Tuple;
 
-namespace Nncase.Tests.ReWriteTest
+namespace Nncase.Tests.RewriteTest
 {
 
     public class DataFlowRewriteTestFactory : RewriteFixtrue

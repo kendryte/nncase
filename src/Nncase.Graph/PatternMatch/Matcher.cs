@@ -20,42 +20,45 @@ internal sealed class Matcher
     /// <summary>
     /// Match expression as root.
     /// </summary>
-    /// <param name="pattern">Pattern.</param>
     /// <param name="expr">Expression.</param>
-    /// <returns>Match result.</returns>
-    public static IMatchResult? MatchRoot(IPattern pattern, Expr expr)
+    /// <param name="pattern">Pattern.</param>
+    /// <param name="result">Match result.</param>
+    /// <returns>Match success.</returns>
+    public static bool TryMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result)
     {
         if (!pattern.MatchLeaf(expr))
         {
-            return null;
+            result = null;
+            return false;
         }
 
         var matcher = new Matcher();
         matcher.Visit(pattern, expr);
-        return matcher._currentScope.ToMatchResult();
+        return matcher._currentScope.TryGetMatchResult(out result);
     }
 
     /// <summary>
     /// Match expression.
     /// </summary>
-    /// <param name="pattern">Pattern.</param>
     /// <param name="expr">Expression.</param>
-    /// <returns>Match result.</returns>
-    public static IMatchResult? Match(IPattern pattern, Expr expr)
+    /// <param name="pattern">Pattern.</param>
+    /// <param name="result">Match result.</param>
+    /// <returns>Match success.</returns>
+    public static bool TryMatch(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result)
     {
         var candidates = new List<Expr>();
         new MatchVisitor(candidates, pattern).Visit(expr);
 
         foreach (var candidate in candidates)
         {
-            var result = MatchRoot(pattern, candidate);
-            if (result != null)
+            if (TryMatchRoot(candidate, pattern, out result))
             {
-                return result;
+                return true;
             }
         }
 
-        return null;
+        result = null;
+        return false;
     }
 
     private bool Visit(IPattern pattern, Expr expr)

@@ -18,9 +18,8 @@ namespace Nncase.Tests.CoreTest;
 
 public class UnitTestExprPattern
 {
-
     [Fact]
-    public void TestPatternEqual()
+    public void TestPatternNotEqual()
     {
         var p1 = IsWildcard();
         int p1hash = p1.GetHashCode();
@@ -28,7 +27,7 @@ public class UnitTestExprPattern
 
         ExprPattern p3 = p1 with { TypePattern = IsScalar() };
         int p3hash = p3.GetHashCode();
-        Assert.Equal(p1hash, p3hash);
+        Assert.NotEqual(p1hash, p3hash);
     }
 
     [Fact]
@@ -36,9 +35,9 @@ public class UnitTestExprPattern
     {
         Var e = new Var("x", AnyType.Default);
         Assert.False(e.InferenceType());
-        ExprPattern ep = new ExprPattern(expr => expr == e, null);
+        Pattern ep = e;
         Assert.IsType<VarPattern>(ep);
-        Assert.True(ep.MatchLeaf(e));
+        Assert.True(CompilerServices.TryMatchRoot(e, ep, out _));
     }
 
     [Fact]
@@ -46,17 +45,17 @@ public class UnitTestExprPattern
     {
         var con = (Const)(1.1f);
         Assert.True(con.InferenceType());
-        ExprPattern cp1 = new ExprPattern(e => e == con, null);
+        Pattern cp1 = con;
         Assert.IsType<TensorConstPattern>(cp1);
 
         var cp2 = IsConst((float x) => x > 1.2f);
         var cp3 = IsConst((int x) => x > 1);
         var cp4 = (TensorConstPattern)1.1f;
 
-        Assert.True(cp1.MatchLeaf(con));
-        Assert.False(cp2.MatchLeaf(con));
-        Assert.False(cp3.MatchLeaf(con));
-        Assert.True(cp4.MatchLeaf(con));
+        Assert.True(CompilerServices.TryMatchRoot(con, cp1, out _));
+        Assert.False(CompilerServices.TryMatchRoot(con, cp2, out _));
+        Assert.False(CompilerServices.TryMatchRoot(con, cp3, out _));
+        Assert.True(CompilerServices.TryMatchRoot(con, cp4, out _));
     }
 
     [Fact]
@@ -71,8 +70,8 @@ public class UnitTestExprPattern
         TensorConstPattern cp3 = IsTensorConst();
         TensorConstPattern cp4 = IsTensorConst();
         d.Add(cp3, 1);
-        Assert.NotEqual(cp3, cp4);
-        Assert.DoesNotContain(cp4, d.Keys);
+        Assert.Equal(cp3, cp4);
+        Assert.Contains(cp4, d.Keys);
     }
 
     [Fact]
@@ -111,9 +110,9 @@ public class UnitTestExprPattern
 
         CallPattern c3 = IsBinary(x => x.BinaryOp is (BinaryOp.Div or BinaryOp.Sub), wc1, wc2);
 
-        Assert.True(c.Target.MatchLeaf(e.Target));
-        Assert.True(c2.Target.MatchLeaf(e.Target));
-        Assert.False(c3.Target.MatchLeaf(e.Target));
+        Assert.True(CompilerServices.TryMatchRoot(e, c, out _));
+        Assert.True(CompilerServices.TryMatchRoot(e, c2, out _));
+        Assert.False(CompilerServices.TryMatchRoot(e, c3, out _));
     }
 
     [Fact]
@@ -189,7 +188,7 @@ public class UnitTestExprPattern
     {
         var pat = IsVArgsRepeat(() => IsConst());
         IR.Tuple expr = new IR.Tuple(1, 2, 3, 4, 5, 6);
-        pat.MatchLeaf(expr.Fields);
+        Assert.True(CompilerServices.TryMatchRoot(expr, pat, out _));
         Assert.Equal(pat.Count, expr.Fields.Count);
     }
 
@@ -205,8 +204,8 @@ public class UnitTestExprPattern
         var z2 = x * y;
         z1.InferenceType();
         z2.InferenceType();
-        Assert.True(is_op_call.MatchLeaf(z1));
-        Assert.True(is_op_call.Target.MatchLeaf(z2.Target));
+        Assert.True(CompilerServices.TryMatchRoot(z1, is_op_call, out _));
+        Assert.True(CompilerServices.TryMatchRoot(z2, is_op_call, out _));
 
         var is_op_call2 = IsCall(IsWildcard(), IsVArgs(new[] { lhs, rhs }));
 
@@ -250,7 +249,7 @@ public class UnitTestExprPattern
     {
         var pat = IsWildcard();
         var pat2 = IsWildcard();
-        Assert.NotEqual(pat, pat2);
+        Assert.NotEqual(pat, pat2, ReferenceEqualityComparer.Instance);
     }
 
     [Fact]
@@ -260,6 +259,6 @@ public class UnitTestExprPattern
         var x = IsWildcard();
         var pat = x + c0;
         var res = x - c0;
-        var ped = c0 == 0;
+        var ped = Equal(c0, 0);
     }
 }

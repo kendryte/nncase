@@ -19,7 +19,7 @@ using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 
-namespace Nncase.Tests.ReWriteTest
+namespace Nncase.Tests.RewriteTest
 {
     public static class DummyOp
     {
