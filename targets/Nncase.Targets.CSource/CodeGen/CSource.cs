@@ -185,7 +185,7 @@ public class CSourceCompiler
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            _exe = "cl";
+            _exe = "cmd";
             _ext = "dll";
         }
     }
@@ -212,7 +212,9 @@ public class CSourceCompiler
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            return $"/D_USRDLL /D_WINDLL {sourcePath} /MT /link /DLL /OUT:{outPath}";
+            var vsdir = Environment.GetEnvironmentVariable("VSAPPIDDIR") ?? throw new InvalidOperationException("Cannot find vs");
+            var vcvardir = Path.Combine(vsdir, "..\\..\\VC\\Auxiliary\\Build\\vcvarsall.bat");
+            return $"/C (\"{vcvardir}\" x64) && (cl /D_USRDLL /D_WINDLL \"{sourcePath}\" /MT /link /DLL /OUT:\"{outPath}\")";
         }
         throw new System.ArgumentOutOfRangeException("Only Support Linux/Osx/Windows");
     }
