@@ -142,7 +142,10 @@ internal class EvaluatorImplReceiver : ISyntaxContextReceiver
             if (classSymbol.GetAttributes().Any(attr => attr.AttributeClass.Name == target_kind.GetAttrName()))
             {
                 if (!classDeclaration.Modifiers.Any(tok => tok.IsKind(SyntaxKind.PartialKeyword)))
+                {
                     Diagnostics.Add(Diagnostic.Create(RecriverUtil.ClassNotPartialError, Location.None, classSymbol.ToDisplayString()));
+                    return;
+                }
 
                 // 1. find op symbol
                 var interfaces = classSymbol.Interfaces.Where(i => i.TypeArguments.Count() == 1 && i.Name == target_kind.ToString()).ToArray();
@@ -154,11 +157,17 @@ internal class EvaluatorImplReceiver : ISyntaxContextReceiver
                                        .OfType<IMethodSymbol>()
                                        .Where(m => m.Name == "Visit" && m.ReturnType.CheckReturnTypeRange(target_kind)).ToArray();
                 if (methods.Length == 0)
+                {
                     Diagnostics.Add(Diagnostic.Create(RecriverUtil.ClassNoValidMethodError, Location.None, classSymbol.ToDisplayString()));
+                    return;
+                }
 
 
                 if (methods.Length > 1)
+                {
                     Diagnostics.Add(Diagnostic.Create(RecriverUtil.ClassMoreMethodError, Location.None, classSymbol.ToDisplayString()));
+                    return;
+                }
 
                 var method = methods[0];
                 if (method.ReturnType.Name == target_kind.GetReturnType()

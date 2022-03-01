@@ -79,11 +79,13 @@ internal class EvaluatorGenerator : ISourceGenerator
             {
                 InterfaceKind.IEvaluator => paramType switch
                 {
+                    INamedTypeSymbol { IsGenericType: true, IsReferenceType: true } x when x.Name == "Tensor" => $"GetArgumentValueAsTensor<{x.TypeArguments[0].ToDisplayString()}>",
+                    { IsReferenceType: true } x when x.IsInheritFrom(Receiver.ExprSymobl) => $"GetArgumentExpr<{paramType.ToDisplayString()}>",
                     { IsReferenceType: true } x when x.IsInheritFrom(Receiver.ExprSymobl) => $"GetArgumentExpr<{paramType.ToDisplayString()}>",
                     { IsReferenceType: true } x when x.ToDisplayString().EndsWith("torch.Tensor") => "GetTorchArgumentValue",
                     { IsReferenceType: true } x when x.ToDisplayString().EndsWith("Tensorflow.Tensor") => "GetTFArgumentValue",
                     { IsUnmanagedType: true, IsValueType: true } x => $"GetArgumentValueAsScalar<{paramType.ToDisplayString()}>",
-                    _ => throw new NotSupportedException($"Convert {paramType.ToDisplayString()} For IEvaluator Impl!")
+                    _ => throw new NotSupportedException($"Convert {paramType.Name} {paramType.ToDisplayString()} For IEvaluator Impl!")
                 },
                 InterfaceKind.ITypeInferencer => paramType switch
                 {
