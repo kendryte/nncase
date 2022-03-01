@@ -2,12 +2,10 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
-using TorchSharp;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Math;
 
@@ -19,23 +17,16 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ReduceArg reduceArg)
     {
-        var input = context.GetTorchArgumentValue(reduceArg, ReduceArg.Input);
+        var input = context.GetOrtArgumentValue(reduceArg, ReduceArg.Input);
         var axis = context.GetArgumentValueAsScalar<int>(reduceArg, ReduceArg.Axis);
-        var keepDims = context.GetArgumentValueAsScalar<bool>(reduceArg, ReduceArg.KeepDims);
-        var selectLastIndex = context.GetArgumentValueAsScalar<bool>(reduceArg, ReduceArg.SelectLastIndex);
-        if (selectLastIndex)
+        var keepDims = context.GetArgumentValueAsScalar<long>(reduceArg, ReduceArg.KeepDims);
+        var selectLastIndex = context.GetArgumentValueAsScalar<long>(reduceArg, ReduceArg.SelectLastIndex);
+        return (reduceArg.ReduceArgOp switch
         {
-            throw new NotImplementedException();
-        }
-        else
-        {
-            return (reduceArg.ReduceArgOp switch
-            {
-                ReduceArgOp.ArgMax => input.argmax(axis, keepDims),
-                ReduceArgOp.ArgMin => input.argmin(axis, keepDims),
-                _ => throw new ArgumentOutOfRangeException(nameof(reduceArg.ReduceArgOp)),
-            }).ToValue();
-        }
+            ReduceArgOp.ArgMax => OrtKI.ArgMax(input, axis, keepDims, selectLastIndex),
+            ReduceArgOp.ArgMin => OrtKI.ArgMin(input, axis, keepDims, selectLastIndex),
+            _ => throw new ArgumentOutOfRangeException(nameof(reduceArg.ReduceArgOp)),
+        }).ToValue();
     }
 
     /// <inheritdoc/>

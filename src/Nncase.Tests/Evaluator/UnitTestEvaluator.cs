@@ -38,7 +38,9 @@ namespace Nncase.Tests.EvaluatorTest
             var na = a.Value.ToOrtTensor();
             var nb = b.Value.ToOrtTensor();
             Assert.Equal(new[] {1, 2, 3}, na.ToDense<int>().ToArray());
-            var v = na.ToType(OrtDataType.Float).ToValue();
+            var v = na.ToType(OrtDataType.Float16).ToValue();
+            var f = na.ToType(OrtDataType.Float16).ToType(OrtDataType.Float);
+            
             var c = na + nb;
             Assert.Equal(new[] {2, 4, 6}, c.ToTensor().ToArray<int>());
         }

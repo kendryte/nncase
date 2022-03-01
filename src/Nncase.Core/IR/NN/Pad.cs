@@ -19,10 +19,10 @@ public sealed record Pad(PadMode PadMode) : Op
     public static readonly ParameterInfo Input = new(typeof(Pad), 0, "input");
 
     /// <summary>
-    /// pads , shape is [channels, 2], eg. [[1,1],
-    ///                                     [2,2]]  mean pad shape [1,2,3,4] =>  [1,2,5,8].
+    /// `pads` should be a 1D tensor of shape [2 * input_rank]
+    /// `pads` format should be: [x1_begin, x2_begin,...,x1_end, x2_end,...],
     /// </summary>
-    public static readonly ParameterInfo Pads = new(typeof(Pad), 1, "pads", HasRank(2) & IsIntegral());
+    public static readonly ParameterInfo Pads = new(typeof(Pad), 1, "pads", IsRank(1) & IsIntegral());
 
     /// <summary>
     /// float pad value.

@@ -3,9 +3,7 @@
 
 using Nncase.IR;
 using Nncase.IR.NN;
-using Tensorflow;
-using static Tensorflow.Binding;
-using torchF = TorchSharp.torch.nn.functional;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.NN;
 
@@ -17,9 +15,9 @@ public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSo
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, LogSoftmax logSoftMax)
     {
-        var input = context.GetTorchArgumentValue(logSoftMax, LogSoftmax.Input);
-        var dim = context.GetArgumentValueAsScalar<int>(logSoftMax, LogSoftmax.Axis);
-        return torchF.log_softmax(input, dim).ToValue();
+        var input = context.GetOrtArgumentValue(logSoftMax, LogSoftmax.Input);
+        var axis = context.GetArgumentValueAsScalar<long>(logSoftMax, LogSoftmax.Axis);
+        return OrtKI.LogSoftmax(input, axis).ToValue();
     }
 
     /// <inheritdoc/>
@@ -43,9 +41,9 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Softmax softMax)
     {
-        var input = context.GetTorchArgumentValue(softMax, Softmax.Input);
+        var input = context.GetOrtArgumentValue(softMax, Softmax.Input);
         var dim = context.GetArgumentValueAsScalar<int>(softMax, Softmax.Axis);
-        return torchF.softmax(input, dim).ToValue();
+        return OrtKI.Softmax(input, dim).ToValue();
     }
 
     /// <inheritdoc/>
@@ -69,8 +67,8 @@ public class SoftplusEvaluator : IEvaluator<Softplus>, ITypeInferencer<Softplus>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Softplus softPlus)
     {
-        var input = context.GetTorchArgumentValue(softPlus, Softplus.Input);
-        return input.softplus().ToValue();
+        var input = context.GetOrtArgumentValue(softPlus, Softplus.Input);
+        return OrtKI.Softplus(input).ToValue();
     }
 
     /// <inheritdoc/>
@@ -94,10 +92,8 @@ public class SoftsignEvaluator : IEvaluator<Softsign>, ITypeInferencer<Softsign>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Softsign softSign)
     {
-        var input = context.GetTFArgumentValue(softSign, Softsign.Input);
-
-        // Tensorflow.Net no this interface
-        return tf.Context.ExecuteOp("Softsign", null!, new ExecuteOpArgs(input))[0].ToValue();
+        var input = context.GetOrtArgumentValue(softSign, Softsign.Input);
+        return OrtKI.Softsign(input).ToValue();
     }
 
     /// <inheritdoc/>

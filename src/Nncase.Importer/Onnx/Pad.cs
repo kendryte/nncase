@@ -18,36 +18,21 @@ namespace Nncase.Importer
                 : PadV11(op);
         }
 
-        private Expr TransposePadding(Expr padding)
-        {
-            return Transpose(padding, new[] { 1, 0 });
-        }
-
         private Expr PadV2(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);
             var padMode = GetPadMode(op);
-            var pads = GetIntsAttribute(op, "pads");
-            var paddings = Tensor.FromSpan<long>(pads, new Shape(2, pads.Length / 2));
+            var paddings = GetIntsAttribute(op, "pads");
+            var pads = Tensor.FromSpan<long>(paddings);
             var value = GetFloatAttribute(op, "value", 0f);
-            return Pad(input, TransposePadding(paddings), padMode, value);
+            return Pad(input, pads, padMode, value);
         }
 
-        private Expr ReshapePadding(Expr pads)
-        {
-            return Reshape(pads,
-                Concat(
-                    new IR.Tuple(
-                        new[] { 2 },
-                        ShapeOf(pads) / 2),
-                    0));
-        }
-
+        // `pads` should be a 1D tensor of shape [2 * input_rank].
+        // `pads` format should be: [x1_begin, x2_begin,...,x1_end, x2_end,...]
         private Expr PadV11(in NodeProto op)
         {
-            // todo:pads shape
             var (input, pads) = GetInputExprs(op, 0, 1);
-            var reshapePads = ReshapePadding(pads);
             var padMode = GetPadMode(op);
 
             // GetInputExpr will get a Tensor with shape [1], but padValue is a scalar
@@ -55,7 +40,7 @@ namespace Nncase.Importer
                 .Match(
                     x => SliceIndex(x, 0),
                     () => 0);
-            return Pad(input, TransposePadding(reshapePads), padMode, padValue);
+            return Pad(input, pads, padMode, padValue);
         }
 
         private PadMode GetPadMode(in NodeProto op)

@@ -26,22 +26,11 @@ namespace Nncase.Importer
             return F.NN.Conv2D(input, weights, bias, strides, pads, dilation, PadMode.Constant, group);
         }
 
-        // only used for 2D
-        private Expr GetPadsAttribute(NodeProto op)
+        private Tensor GetPadsAttribute(NodeProto op)
         {
-            // h before, w before, h after, w after
             // todo: padding size == 2?
             var paddings = GetIntsAttribute(op, "pads", 0, 4);
-            var padsValue = new long[paddings.Length];
-            var count = paddings.Length / 2;
-            for (int i = 0; i < count; ++i)
-            {
-                padsValue[2 * i] = paddings[count - 1 - i];
-                padsValue[(2 * i) + 1] = paddings[paddings.Length - 1 - i];
-            }
-
-            var paddingsValue = new long[] { paddings[1], paddings[3], paddings[0], paddings[2] };
-            return Tensor.FromSpan<long>(padsValue, new Shape(count, 2));
+            return Tensor.FromSpan<long>(paddings);
         }
 
         private Tensor GetStrideAttribute(NodeProto op)

@@ -22,10 +22,11 @@ public static class OrtKIExtension
 
     public static OrtKISharp.Tensor ToOrtTensor(this Tensor tensor)
     {
-        return new OrtKISharp.Tensor(
+        var shape = tensor.Dimensions.IsEmpty ? new[] {1} : tensor.Dimensions.ToArray();
+            return new OrtKISharp.Tensor(
             tensor.BytesBuffer, 
             tensor.ElementType.ToOrtType(), 
-            tensor.Dimensions.ToArray());
+            shape);
     }
     
     public static OrtDataType ToOrtType(this DataType dt)

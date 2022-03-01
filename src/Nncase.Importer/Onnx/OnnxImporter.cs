@@ -180,7 +180,7 @@ namespace Nncase.Importer
 
         private (Option<Expr>, Option<Expr>) GetOptionInputExprs(NodeProto n, int index0, int index1)
         {
-            return (GetOptionInputExpr(n, index0), GetOptionInputExpr(n, 1));
+            return (GetOptionInputExpr(n, index0), GetOptionInputExpr(n, index1));
         }
 
         // about op set: https://github.com/onnx/onnx/issues/3678
@@ -275,7 +275,7 @@ namespace Nncase.Importer
                 "Relu" => VisitRelu(op),
                 "Reshape" => VisitReshape(op),
 
-                // "Resize" => VisitResize(op),
+                "Resize" => VisitResize(op),
                 "ReverseSequence" => VisitReverseSequence(op),
                 "Round" => VisitUnary(op, UnaryOp.Round),
                 "Selu" => VisitSelu(op),

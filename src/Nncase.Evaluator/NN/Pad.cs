@@ -2,15 +2,9 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using Nncase.IR;
 using Nncase.IR.NN;
-using Tensorflow;
-using Tensorflow.NumPy;
-using static Tensorflow.Binding;
-using torchF = TorchSharp.torch.nn.functional;
-
+using OrtKISharp;
 namespace Nncase.Evaluator.NN;
 
 /// <summary>
@@ -21,23 +15,18 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Pad pad)
     {
-        var input = context.GetTFArgumentValue(pad, Pad.Input);
-        var pads = context.GetTFArgumentValue(pad, Pad.Pads);
-        var constant_values = context.GetArgumentValueAsScalar<int>(pad, Pad.Value);
+        var input = context.GetOrtArgumentValue(pad, Pad.Input);
+        var pads = context.GetOrtArgumentValue(pad, Pad.Pads);
+        var constValue = context.GetOrtArgumentValue(pad, Pad.Value);
         var mode = pad.PadMode switch
         {
-            PadMode.Constant => "CONSTANT",
-            PadMode.Reflect => "REFLECT",
-            PadMode.Symmetric => "SYMMETRIC",
-            PadMode.Edge => "EDGE",
+            PadMode.Constant => "constant",
+            PadMode.Reflect => "reflect",
+            PadMode.Symmetric => throw new NotImplementedException(),
+            PadMode.Edge => "edge",
             _ => throw new ArgumentOutOfRangeException(nameof(pad.PadMode)),
         };
-        return tf.Context.ExecuteOp(
-            "Pad",
-            null!,
-            new ExecuteOpArgs(input, pads, mode, constant_values))[0].ToValue();
-
-        // return tf.pad(input, pads, mode: mode, constant_values:constant_values).ToConst();
+        return OrtKI.Pad(input, pads, constValue, mode).ToValue();
     }
 
     /// <inheritdoc/>

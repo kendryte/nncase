@@ -3,6 +3,7 @@
 
 using Nncase.IR;
 using Nncase.IR.Math;
+using OrtKISharp;
 using TorchSharp;
 using torchF = TorchSharp.torch.nn.functional;
 
@@ -16,9 +17,9 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, MatMul matMul)
     {
-        var input = context.GetTorchArgumentValue(matMul, MatMul.Lhs);
-        var other = context.GetTorchArgumentValue(matMul, MatMul.Rhs);
-        return input.matmul(other).ToValue();
+        var input = context.GetOrtArgumentValue(matMul, MatMul.Lhs);
+        var other = context.GetOrtArgumentValue(matMul, MatMul.Rhs);
+        return OrtKI.MatMul(input, other).ToValue();
     }
 
     /// <inheritdoc/>

@@ -4,6 +4,7 @@
 using System;
 using Nncase.IR;
 using Nncase.IR.NN;
+using OrtKISharp;
 using TorchSharp;
 using static Tensorflow.Binding;
 using torchF = TorchSharp.torch.nn.functional;
@@ -18,19 +19,17 @@ public class ReduceWindow2DEvaluator : IEvaluator<ReduceWindow2D>, ITypeInferenc
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ReduceWindow2D r)
     {
-        var input = context.GetTorchArgumentValue(r, ReduceWindow2D.Input);
+        var input = context.GetOrtArgumentValue(r, ReduceWindow2D.Input);
         var kernelSize = context.GetArgumentValueAsArray<long>(r, ReduceWindow2D.Filter);
         var stride = context.GetArgumentValueAsArray<long>(r, ReduceWindow2D.Stride);
-        var padding = context.GetArgumentValueAsArray<long>(r, ReduceWindow2D.Padding);
-        var countIncludePad = context.GetArgumentValueAsScalar<bool>(r, ReduceWindow2D.CountIncludePad);
-        var ceilMode = context.GetArgumentValueAsScalar<bool>(r, ReduceWindow2D.CeilMode);
-        var afterPad = torchF.pad(input, padding);
-        var zeroPadding = new[] { 0L, 0 };
+        var dilation = context.GetArgumentValueAsArray<long>(r, ReduceWindow2D.Dilation);
+        var pads = context.GetArgumentValueAsArray<long>(r, ReduceWindow2D.Padding);
+        var countIncludePad = context.GetArgumentValueAsScalar<long>(r, ReduceWindow2D.CountIncludePad);
+        var ceilMode = context.GetArgumentValueAsScalar<long>(r, ReduceWindow2D.CeilMode);
         return (r.ReduceOp switch
         {
-            // avg_pool padding can only pad one side
-            ReduceOp.Mean => torchF.avg_pool2d(afterPad, kernelSize, stride, zeroPadding, ceilMode, countIncludePad),
-            ReduceOp.Max => torchF.max_pool2d(afterPad, kernelSize, stride, zeroPadding, new[] { 1L, 1 }, ceilMode),
+            ReduceOp.Mean => OrtKI.AveragePool(input, "NOTSET", ceilMode, countIncludePad, kernelSize, pads, stride),
+            ReduceOp.Max => OrtKI.MaxPool(input, "NOTSET", ceilMode, dilation, kernelSize, pads, countIncludePad, stride)[0],
             _ => throw new ArgumentOutOfRangeException(nameof(r.ReduceOp)),
         }).ToValue();
     }

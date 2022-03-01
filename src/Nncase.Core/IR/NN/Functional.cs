@@ -36,7 +36,7 @@ namespace Nncase.IR.F
 
         public static Call BatchToSpace(Expr input, Expr blockShape, Expr crops) => new Call(new BatchToSpace(), input, blockShape, crops);
 
-        public static Call InstanceNormalization(Expr input, Expr eps) => new Call(new InstanceNormalization(), input, eps);
+        public static Call InstanceNormalization(Expr input, Expr scale, Expr bias, Expr eps) => new Call(new InstanceNormalization(), input, scale, bias, eps);
 
         public static Call LpNormalization(Expr input, Expr axis, Expr p) => new Call(new LpNormalization(), input, axis, p);
 
@@ -46,15 +46,15 @@ namespace Nncase.IR.F
 
         public static Call HardSwish(Expr input) => new Call(new HardSwish(), input);
 
-        public static Call OneHot(OneHotMode oneHotMode, Expr indices, Expr depth, Expr onValue, Expr offValue, Expr axis) => new Call(new OneHot(oneHotMode), indices, depth, onValue, offValue, axis);
+        public static Call OneHot(OneHotMode oneHotMode, Expr indices, Expr depth, Expr values, Expr axis) => new Call(new OneHot(oneHotMode), indices, depth, values, axis);
 
         /// <summary>
         /// Pads is Const tensor, shape = [channels, 2(before, after)].
         /// </summary>
         public static Call Pad(Expr input, Expr pads, PadMode mode, Expr value) => new Call(new Pad(mode), input, pads, value);
 
-        public static Call ReduceWindow2D(ReduceOp reduceOp, Expr input, Expr initValue, Expr filter, Expr stride, Expr padding, Expr ceilMode, Expr countIncludePad) =>
-            new Call(new ReduceWindow2D(reduceOp), input, initValue, filter, stride, padding, ceilMode, countIncludePad);
+        public static Call ReduceWindow2D(ReduceOp reduceOp, Expr input, Expr initValue, Expr filter, Expr stride, Expr padding, Expr dilation, Expr ceilMode, Expr countIncludePad) =>
+            new Call(new ReduceWindow2D(reduceOp), input, initValue, filter, stride, padding, dilation, ceilMode, countIncludePad);
 
         public static Call Relu(Expr input) => new Call(new Relu(), input);
 

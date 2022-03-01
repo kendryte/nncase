@@ -15,7 +15,7 @@ namespace Nncase.Importer
             var (indices, depth) = GetInputExprs(op, 0, 1);
             var values = GetInputExpr(op, 2);
             var axis = GetIntAttribute(op, "axis", -1);
-            return OneHot(OneHotMode.Normal, indices, depth, SliceIndex(values, 1), SliceIndex(values, 0), axis);
+            return OneHot(OneHotMode.Normal, indices, depth, values, axis);
         }
     }
 }

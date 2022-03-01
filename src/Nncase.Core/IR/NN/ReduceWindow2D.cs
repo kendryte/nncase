@@ -38,6 +38,11 @@ public sealed record ReduceWindow2D(ReduceOp ReduceOp) : Op
     public static readonly ParameterInfo Padding = new(typeof(ReduceWindow2D), 4, "padding", HasRank(2) & IsIntegral());
 
     /// <summary>
+    /// Gets Padding.
+    /// </summary>
+    public static readonly ParameterInfo Dilation = new(typeof(ReduceWindow2D), 5, "dilation", IsRank(1) & IsIntegral());
+    
+    /// <summary>
     /// Gets CeilMode.
     /// </summary>
     public static readonly ParameterInfo CeilMode = new(typeof(ReduceWindow2D), 6, "ceilMode", IsBool());
@@ -45,5 +50,5 @@ public sealed record ReduceWindow2D(ReduceOp ReduceOp) : Op
     /// <summary>
     /// Gets CountIncludePad.
     /// </summary>
-    public static readonly ParameterInfo CountIncludePad = new(typeof(ReduceWindow2D), 6, "countIncludePad", IsBool());
+    public static readonly ParameterInfo CountIncludePad = new(typeof(ReduceWindow2D), 7, "countIncludePad", IsBool());
 }

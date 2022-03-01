@@ -61,6 +61,7 @@ public class Compiler
     
     public IRModule ImportModule(Stream content, CompileOptions options)
     {
+        OrtKI.LoadDLL();
         Console.WriteLine($"Target: {options.Target}");
         var module = ImportModel(content, options);
         DumpModule(module, options, "ir_import");

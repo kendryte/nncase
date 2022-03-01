@@ -26,7 +26,7 @@ namespace Nncase.Importer.TFLite
             var padding = Util.ConcatPadding(padH, padW);
             return F.Tensors.NCHWToNHWC(
                 F.NN.ReduceWindow2D(
-                    reduceOp, F.Tensors.NHWCToNCHW(input), initValue, filter, stride, padding, false, false));
+                    reduceOp, F.Tensors.NHWCToNCHW(input), initValue, filter, stride, padding, Tensor.FromSpan<long>(new long[] {1, 2, 3}),false, false));
         }
     }
 }

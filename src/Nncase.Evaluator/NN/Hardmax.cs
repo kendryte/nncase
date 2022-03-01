@@ -4,6 +4,7 @@
 using System;
 using Nncase.IR;
 using Nncase.IR.NN;
+using OrtKISharp;
 using Tensorflow;
 using static Tensorflow.Binding;
 using torchF = TorchSharp.torch.nn.functional;
@@ -18,8 +19,9 @@ public class HardmaxEvaluator : IEvaluator<Hardmax>, ITypeInferencer<Hardmax>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Hardmax target)
     {
-        // TODO: implement hardmax evaluator
-        throw new NotImplementedException();
+        var input = context.GetOrtArgumentValue(target, Hardmax.Input);
+        var axis = context.GetArgumentValueAsScalar<long>(target, Hardmax.Axis);
+        return OrtKI.Hardmax(input, axis).ToValue();
     }
 
     /// <inheritdoc/>

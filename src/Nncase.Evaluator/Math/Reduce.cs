@@ -8,6 +8,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using OrtKISharp;
 using static Tensorflow.Binding;
 
 namespace Nncase.Evaluator.Math;
@@ -20,17 +21,21 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Reduce reduce)
     {
-        var input = context.GetTFArgumentValue(reduce, Reduce.Input);
+        var input = context.GetOrtArgumentValue(reduce, Reduce.Input);
         var axis = context.GetArgumentValueAsArray<long>(reduce, Reduce.Axis);
-        var keepDims = context.GetArgumentValueAsScalar<bool>(reduce, Reduce.KeepDims);
+        var keepDims = context.GetArgumentValueAsScalar<long>(reduce, Reduce.KeepDims);
 
         return (reduce.ReduceOp switch
         {
-            ReduceOp.Mean => tf.reduce_mean(input, axis, keepDims),
-            ReduceOp.Max => tf.reduce_max(input, axis, keepDims),
-            ReduceOp.Min => tf.reduce_min(input, axis, keepDims),
-            ReduceOp.Prod => tf.reduce_prod(input, axis, keepDims),
-            ReduceOp.Sum => tf.reduce_sum(input, axis, keepdims: keepDims),
+            ReduceOp.Mean => OrtKI.ReduceMean(input, axis, keepDims),
+            ReduceOp.Max => OrtKI.ReduceMax(input, axis, keepDims),
+            ReduceOp.Min => OrtKI.ReduceMin(input, axis, keepDims),
+            ReduceOp.Prod => OrtKI.ReduceProd(input, axis, keepDims),
+            ReduceOp.Sum => OrtKI.ReduceSum(
+                input, 
+                context.GetOrtArgumentValue(reduce, Reduce.Axis), 
+                keepDims, 
+                0),
             _ => throw new ArgumentOutOfRangeException(),
         }).ToValue();
     }
@@ -44,7 +49,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>
 
     private IRType Visit(ITypeInferenceContext context, Reduce target, TensorType input)
     {
-        var args = context.GetArguments(target, Reduce.Axis, Reduce.KeepDims);
+        var args = context.GetArguments(target, Reduce.KeepDims, Reduce.Axis);
         return TypeInference.ReduceType(input, args[0], args[1]);
     }
 }

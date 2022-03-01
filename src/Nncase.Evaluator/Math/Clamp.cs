@@ -8,6 +8,7 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using OrtKISharp;
 using TorchSharp;
 using torchF = TorchSharp.torch.nn.functional;
 
@@ -21,10 +22,10 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEv
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Clamp clamp)
     {
-        var input = context.GetTorchArgumentValue(clamp, Clamp.Input);
-        var min = context.GetArgumentValueAsTensor<float>(clamp, Clamp.Min).ToTorchTensor();
-        var max = context.GetArgumentValueAsTensor<float>(clamp, Clamp.Max).ToTorchTensor();
-        return torch.clamp(input, min, max).ToValue();
+        var input = context.GetOrtArgumentValue(clamp, Clamp.Input);
+        var min = context.GetOrtArgumentValue(clamp, Clamp.Min);
+        var max = context.GetOrtArgumentValue(clamp, Clamp.Max);
+        return OrtKI.Clip(input, min, max).ToValue();
     }
 
     /// <inheritdoc/>

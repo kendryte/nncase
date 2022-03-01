@@ -36,7 +36,7 @@ namespace Nncase.Importer
             var input = GetInputExpr(op, 0);
             var (scale, bias) = GetInputExprs(op, 1, 2);
             var eps = GetFloatAttribute(op, "epsilon", 1e-05f);
-            return (F.NN.InstanceNormalization(input, eps) * ReshapeToByChannel(scale)) + ReshapeToByChannel(bias);
+            return F.NN.InstanceNormalization(input, scale, bias, eps);
         }
 
         private Expr VisitLpNormalization(in NodeProto op)
