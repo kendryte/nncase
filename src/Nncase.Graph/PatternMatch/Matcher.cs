@@ -3,6 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,10 +15,7 @@ namespace Nncase.PatternMatch;
 
 internal sealed class Matcher
 {
-    private readonly Dictionary<IPattern, Expr> _patMemo = new(ReferenceEqualityComparer.Instance);
-    private readonly Dictionary<VArgsPattern, Expr[]> _vargspatMemo = new(ReferenceEqualityComparer.Instance);
-
-    private readonly List<(IPattern, object)> _matches = new();
+    private MatchScope _currentScope = new MatchScope();
 
     /// <summary>
     /// Match expression as root.
@@ -31,9 +31,8 @@ internal sealed class Matcher
         }
 
         var matcher = new Matcher();
-        return matcher.Visit(pattern, expr)
-            ? new MatchResult(matcher._matches.ToDictionary(x => x.Item1, x => x.Item2, (IEqualityComparer<IPattern?>)ReferenceEqualityComparer.Instance))
-            : null;
+        matcher.Visit(pattern, expr);
+        return matcher._currentScope.ToMatchResult();
     }
 
     /// <summary>
@@ -63,97 +62,52 @@ internal sealed class Matcher
     {
         return (pattern, expr) switch
         {
-            (VarPattern varPat, Var var) => Visit(varPat, var),
-            (TensorConstPattern constPat, TensorConst con) => Visit(constPat, con),
-            (TupleConstPattern constPat, TupleConst con) => Visit(constPat, con),
-            (ConstPattern constPat, Const con) => Visit(constPat, con),
+            (VarPattern varPat, Var var) => VisitLeaf(varPat, var),
+            (TensorConstPattern constPat, TensorConst con) => VisitLeaf(constPat, con),
+            (TupleConstPattern constPat, TupleConst con) => VisitLeaf(constPat, con),
+            (ConstPattern constPat, Const con) => VisitLeaf(constPat, con),
             (FunctionPattern functionPat, Function func) => Visit(functionPat, func),
             (CallPattern callPat, Call call) => Visit(callPat, call),
             (TuplePattern tuplePat, IR.Tuple tuple) => Visit(tuplePat, tuple),
-            (IOpPattern opPat, Op op) => Visit(opPat, op),
+            (IOpPattern opPat, Op op) => VisitLeaf(opPat, op),
             (OrPattern orPat, _) => Visit(orPat, expr),
-            (ExprPattern exprPattern, _) => Visit(exprPattern, expr),
+            (ExprPattern exprPattern, _) => VisitLeaf(exprPattern, expr),
             _ => false,
         };
     }
 
-    private bool Visit(VarPattern pattern, Var expr)
+    private bool VisitLeaf(IPattern pattern, Expr expr)
     {
-        if (_patMemo.TryGetValue(pattern, out var oldExpr))
+        if (_currentScope.TryGetMemo(pattern, out var oldExpr))
         {
-            return ReferenceEquals(oldExpr, expr);
+            if (!ReferenceEquals(oldExpr, expr))
+            {
+                _currentScope.IsMatch = false;
+            }
         }
         else
         {
             if (pattern.MatchLeaf(expr))
             {
-                _matches.Add((pattern, expr));
-                return true;
+                _currentScope.AddMatch(pattern, expr);
             }
-
-            return false;
-        }
-    }
-
-    private bool Visit(TensorConstPattern pattern, TensorConst expr)
-    {
-        if (_patMemo.TryGetValue(pattern, out var oldExpr))
-        {
-            return ReferenceEquals(oldExpr, expr);
-        }
-        else
-        {
-            if (pattern.MatchLeaf(expr))
+            else
             {
-                _matches.Add((pattern, expr));
-                return true;
+                _currentScope.IsMatch = false;
             }
-
-            return false;
         }
-    }
 
-    private bool Visit(TupleConstPattern pattern, TupleConst expr)
-    {
-        if (_patMemo.TryGetValue(pattern, out var oldExpr))
-        {
-            return ReferenceEquals(oldExpr, expr);
-        }
-        else
-        {
-            if (pattern.MatchLeaf(expr))
-            {
-                _matches.Add((pattern, expr));
-                return true;
-            }
-
-            return false;
-        }
-    }
-
-    private bool Visit(ConstPattern pattern, Const expr)
-    {
-        if (_patMemo.TryGetValue(pattern, out var oldExpr))
-        {
-            return ReferenceEquals(oldExpr, expr);
-        }
-        else
-        {
-            if (pattern.MatchLeaf(expr))
-            {
-                _matches.Add((pattern, expr));
-                return true;
-            }
-
-            return false;
-        }
+        return _currentScope.IsMatch;
     }
 
     private bool Visit(FunctionPattern pattern, Function expr)
     {
-        if (_patMemo.TryGetValue(pattern, out var oldExpr))
+        if (_currentScope.TryGetMemo(pattern, out var oldExpr))
         {
-            return ReferenceEquals(oldExpr, expr);
+            if (!ReferenceEquals(oldExpr, expr))
+            {
+                _currentScope.IsMatch = false;
+            }
         }
         else
         {
@@ -161,19 +115,25 @@ internal sealed class Matcher
                 && Visit(pattern.Body, expr.Body)
                 && Visit(pattern.Parameters, expr.Parameters))
             {
-                _matches.Add((pattern, expr));
-                return true;
+                _currentScope.AddMatch(pattern, expr);
             }
-
-            return false;
+            else
+            {
+                _currentScope.IsMatch = false;
+            }
         }
+
+        return _currentScope.IsMatch;
     }
 
     private bool Visit(CallPattern pattern, Call expr)
     {
-        if (_patMemo.TryGetValue(pattern, out var oldExpr))
+        if (_currentScope.TryGetMemo(pattern, out var oldExpr))
         {
-            return ReferenceEquals(oldExpr, expr);
+            if (!ReferenceEquals(oldExpr, expr))
+            {
+                _currentScope.IsMatch = false;
+            }
         }
         else
         {
@@ -181,107 +141,91 @@ internal sealed class Matcher
                 && Visit(pattern.Target, expr.Target)
                 && Visit(pattern.Parameters, expr.Parameters))
             {
-                _matches.Add((pattern, expr));
-                return true;
+                _currentScope.AddMatch(pattern, expr);
             }
-
-            return false;
+            else
+            {
+                _currentScope.IsMatch = false;
+            }
         }
+
+        return _currentScope.IsMatch;
     }
 
     private bool Visit(TuplePattern pattern, IR.Tuple expr)
     {
-        if (_patMemo.TryGetValue(pattern, out var oldExpr))
+        if (_currentScope.TryGetMemo(pattern, out var oldExpr))
         {
-            return ReferenceEquals(oldExpr, expr);
+            if (!ReferenceEquals(oldExpr, expr))
+            {
+                _currentScope.IsMatch = false;
+            }
         }
         else
         {
             if (pattern.MatchLeaf(expr)
                 && Visit(pattern.Fields, expr.Fields))
             {
-                _matches.Add((pattern, expr));
-                return true;
+                _currentScope.AddMatch(pattern, expr);
             }
-
-            return false;
-        }
-    }
-
-    private bool Visit(IOpPattern pattern, Op expr)
-    {
-        if (_patMemo.TryGetValue(pattern, out var oldExpr))
-        {
-            return ReferenceEquals(oldExpr, expr);
-        }
-        else
-        {
-            if (pattern.MatchLeaf(expr))
+            else
             {
-                _matches.Add((pattern, expr));
-                return true;
+                _currentScope.IsMatch = false;
             }
-
-            return false;
         }
+
+        return _currentScope.IsMatch;
     }
 
     private bool Visit(OrPattern pattern, Expr expr)
     {
-        if (_patMemo.TryGetValue(pattern, out var oldExpr))
+        if (_currentScope.TryGetMemo(pattern, out var oldExpr))
         {
-            return ReferenceEquals(oldExpr, expr);
+            if (!ReferenceEquals(oldExpr, expr))
+            {
+                _currentScope.IsMatch = false;
+            }
         }
         else
         {
             if (pattern.MatchLeaf(expr))
             {
-                var oldMatches = _matches.Count;
+                // Preserve context
+                var oldScope = _currentScope;
+                _currentScope = new MatchScope(oldScope);
+
                 if (!Visit(pattern.ConditionA, expr))
                 {
-                    // cleanup old matches
-                    if (_matches.Count > oldMatches)
-                    {
-                        _matches.RemoveRange(oldMatches, _matches.Count - oldMatches);
-                    }
-
+                    // Try plan B
+                    _currentScope = new MatchScope(oldScope);
                     if (!Visit(pattern.ConditionB, expr))
                     {
-                        return false;
+                        _currentScope.IsMatch = false;
                     }
                 }
 
-                _matches.Add((pattern, expr));
-                return true;
+                if (_currentScope.IsMatch)
+                {
+                    oldScope.AddMatch(pattern, expr);
+                }
             }
-
-            return false;
-        }
-    }
-
-    private bool Visit(ExprPattern pattern, Expr expr)
-    {
-        if (_patMemo.TryGetValue(pattern, out var oldExpr))
-        {
-            return ReferenceEquals(oldExpr, expr);
-        }
-        else
-        {
-            if (pattern.MatchLeaf(expr))
+            else
             {
-                _matches.Add((pattern, expr));
-                return true;
+                _currentScope.IsMatch = false;
             }
-
-            return false;
         }
+
+        return _currentScope.IsMatch;
     }
 
     private bool Visit(VArgsPattern pattern, IReadOnlyList<Expr> exprs)
     {
-        if (_vargspatMemo.TryGetValue(pattern, out var oldExprs))
+        if (_currentScope.TryGetMemo(pattern, out var oldExprs))
         {
-            return oldExprs.SequenceEqual(exprs, ReferenceEqualityComparer.Instance);
+            if (!oldExprs.SequenceEqual(exprs, ReferenceEqualityComparer.Instance))
+            {
+                _currentScope.IsMatch = false;
+            }
         }
         else
         {
@@ -291,50 +235,17 @@ internal sealed class Matcher
                 {
                     if (!Visit(pattern[i], exprs[i]))
                     {
-                        return false;
+                        _currentScope.IsMatch = false;
                     }
                 }
-
-                return true;
             }
-
-            return false;
-        }
-    }
-
-    private sealed class MatchScope
-    {
-        private readonly MatchScope? _parent;
-        private readonly Dictionary<IPattern, Expr> _patMemo = new(ReferenceEqualityComparer.Instance);
-        private readonly Dictionary<VArgsPattern, Expr[]> _vargspatMemo = new(ReferenceEqualityComparer.Instance);
-        private readonly List<(IPattern Pattern, object Match)> _matches = new();
-
-        public MatchScope(MatchScope? parent)
-        {
-            _parent = parent;
-        }
-
-        public bool IsMatch { get; set; } = true;
-
-        public MatchScope BeginScope()
-        {
-            return new MatchScope(this);
-        }
-
-        public bool TryGetMemo(IPattern pattern, out Expr? expr)
-        {
-            if (_patMemo.TryGetValue(pattern, out expr))
+            else
             {
-                return true;
+                _currentScope.IsMatch = false;
             }
-            else if (_parent != null)
-            {
-                return _parent.TryGetMemo(pattern, out expr);
-            }
-
-            expr = null;
-            return false;
         }
+
+        return _currentScope.IsMatch;
     }
 
     private sealed class MatchVisitor : ExprVisitor<Expr, IRType>

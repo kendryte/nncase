@@ -20,9 +20,17 @@ internal unsafe class NativeMemoryManager<T> : MemoryManager<T>
 
     public NativeMemoryManager(int length)
     {
-        _pointer = Marshal.AllocHGlobal((nint)sizeof(T) * length);
-        _length = length;
-        GC.AddMemoryPressure((long)sizeof(T) * length);
+        if (length < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(length));
+        }
+
+        if (length != 0)
+        {
+            _pointer = Marshal.AllocHGlobal((nint)sizeof(T) * length);
+            _length = length;
+            GC.AddMemoryPressure((long)sizeof(T) * length);
+        }
     }
 
     /// <summary>
@@ -39,6 +47,11 @@ internal unsafe class NativeMemoryManager<T> : MemoryManager<T>
 
     public override Span<T> GetSpan()
     {
+        if (_length == 0)
+        {
+            return Span<T>.Empty;
+        }
+
         return new Span<T>((void*)_pointer, _length);
     }
 
