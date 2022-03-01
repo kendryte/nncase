@@ -322,6 +322,31 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     }
 
     /// <summary>
+    /// convert Const To Tensor
+    /// </summary>
+    /// <param name="const"> const.</param>
+    /// <returns> Tensor. </returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    /// <exception cref="NotSupportedException"></exception>
+    public static Tensor FromConst(Const @const) => @const switch
+    {
+        TensorConst tc => tc.Value,
+        TupleConst tpc => throw new InvalidOperationException("Can't Convert TupleConst To Tensor!"),
+        _ => throw new NotSupportedException(@const.GetType().Name)
+    };
+
+    /// <summary>
+    /// convert Const To Tensor T.
+    /// </summary>
+    /// <typeparam name="T">unmanaged type.</typeparam>
+    /// <param name="const">const.</param>
+    /// <param name="castMode">castmode.</param>
+    /// <returns>Tensor{T}.</returns>
+    public static Tensor<T> FromConst<T>(Const @const, CastMode castMode = CastMode.Default)
+      where T : unmanaged, IEquatable<T>
+      => FromConst(@const).Cast<T>(castMode);
+
+    /// <summary>
     /// Cast to typed tensor.
     /// </summary>
     /// <typeparam name="T">Element type.</typeparam>

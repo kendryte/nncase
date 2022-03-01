@@ -86,6 +86,12 @@ namespace Nncase.IR
         }, reason);
 
         /// <summary>
+        /// the tensor has FixedShape
+        /// </summary>
+        /// <returns>TypePattern.</returns>
+        public static TypePattern HasFixedShape() => IsShape(shape => shape.IsFixed, "IsFixedShape");
+
+        /// <summary>
         /// is target shape
         /// </summary>
         /// <param name="target_shape"></param>
