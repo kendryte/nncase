@@ -70,6 +70,16 @@ public static class TypeInference
         };
     }
 
+    private static (int, int) GetPadByAxis(int[] pads, int axis)
+    {
+        return (pads[axis], pads[axis + pads.Length / 2]);
+    }
+
+    private static int GetPadSumByAxis(int[] pads, int axis)
+    {
+        var paddings = GetPadByAxis(pads, axis);
+        return paddings.Item1 + paddings.Item2;
+    }
     /// <summary>
     /// Broadcast input shapes.
     /// </summary>
@@ -170,13 +180,13 @@ public static class TypeInference
             weights.Shape[3].IsFixed)
         {
             var ts_stride = strideValue.Value.Cast<int>();
-            var ts_padding = paddingValue.Value.Cast<int>();
+            var ts_padding = paddingValue.Value.ToArray<int>();
             var ts_dilation = dilation_con.Value.Cast<int>();
             var groups_v = groups_con.Value.ToScalar<int>();
-
-            outShape[2] = GetWindowedOutputSize(input.Shape[2].FixedValue + ts_padding[0, 0] + ts_padding[0, 1],
+            
+            outShape[2] = GetWindowedOutputSize(input.Shape[2].FixedValue + GetPadSumByAxis(ts_padding, 2),
                 weights.Shape[2].FixedValue, ts_stride[0], ts_dilation[0], false);
-            outShape[3] = GetWindowedOutputSize(input.Shape[3].FixedValue + ts_padding[1, 0] + ts_padding[1, 1],
+            outShape[3] = GetWindowedOutputSize(input.Shape[3].FixedValue + GetPadSumByAxis(ts_padding, 3),
                 weights.Shape[3].FixedValue, ts_stride[1], ts_dilation[1], false);
         }
         else
@@ -194,12 +204,12 @@ public static class TypeInference
     {
         if (pads is TensorConst paddings)
         {
-            var tpads = paddings.Value.Cast<int>();
+            var tpads = paddings.Value.ToArray<int>();
             var newShape = input.Shape.ToList();
-            int channel = tpads.Dimensions[0];
+            int channel = tpads.Length / 2;
             for (int i = 0; i < channel; i++)
             {
-                newShape[newShape.Count - channel + i] += tpads[i, 0] + tpads[i, 1];
+                newShape[newShape.Count - channel + i] += GetPadSumByAxis(tpads, i);
             }
 
             return new TensorType(input.DType, new Shape(newShape));
@@ -226,11 +236,13 @@ public static class TypeInference
             var ts_filter = filterValue.Value.Cast<int>();
             var ts_stride = strideValue.Value.Cast<int>();
             var ceilModeV = ceilModeValue.Value.ToScalar<bool>();
-            var ts_padding = paddingValue.Value.Cast<int>();
-            var padh = ts_padding[0, 0] + ts_padding[0, 1];
-            var padw = ts_padding[1, 0] + ts_padding[1, 1];
-            outShape[2] = input.Shape[2].IsUnknown ? Dimension.Unknown : GetWindowedOutputSize(input.Shape[2].FixedValue + padh, ts_filter[0], ts_stride[0], 1, false, ceilModeV);
-            outShape[3] = input.Shape[3].IsUnknown ? Dimension.Unknown : GetWindowedOutputSize(input.Shape[3].FixedValue + padw, ts_filter[1], ts_stride[1], 1, false, ceilModeV);
+            var ts_padding = paddingValue.Value.ToArray<int>();
+            outShape[2] = input.Shape[2].IsUnknown 
+                ? Dimension.Unknown 
+                : GetWindowedOutputSize(input.Shape[2].FixedValue + GetPadSumByAxis(ts_padding, 2), ts_filter[0], ts_stride[0], 1, false, ceilModeV);
+            outShape[3] = input.Shape[3].IsUnknown 
+                ? Dimension.Unknown 
+                : GetWindowedOutputSize(input.Shape[3].FixedValue + GetPadSumByAxis(ts_padding, 3), ts_filter[1], ts_stride[1], 1, false, ceilModeV);
 
             return input with { Shape = new Shape(outShape) };
         }
