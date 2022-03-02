@@ -55,6 +55,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Transform", "src\Nnc
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.EGraph", "src\Nncase.EGraph\Nncase.EGraph.csproj", "{ED7F9E49-E5F1-4A0F-9AB1-D2247D3AC596}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nncase.Compiler", "src\Nncase.Compiler\Nncase.Compiler.csproj", "{54B4C0B9-8BF0-4157-AB04-A55BA268444C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -133,6 +135,10 @@ Global
 		{87B5DEFB-E2D5-44F0-BDF3-359ADC3E9624}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{87B5DEFB-E2D5-44F0-BDF3-359ADC3E9624}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{87B5DEFB-E2D5-44F0-BDF3-359ADC3E9624}.Release|Any CPU.Build.0 = Release|Any CPU
+		{54B4C0B9-8BF0-4157-AB04-A55BA268444C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54B4C0B9-8BF0-4157-AB04-A55BA268444C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54B4C0B9-8BF0-4157-AB04-A55BA268444C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54B4C0B9-8BF0-4157-AB04-A55BA268444C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -158,6 +164,7 @@ Global
 		{2537C687-E989-47A5-AE93-CA7CEB4CB7AA} = {BCA74168-F015-4B5B-B4CD-C83AE06B9822}
 		{87B5DEFB-E2D5-44F0-BDF3-359ADC3E9624} = {BCA74168-F015-4B5B-B4CD-C83AE06B9822}
 		{ED7F9E49-E5F1-4A0F-9AB1-D2247D3AC596} = {BCA74168-F015-4B5B-B4CD-C83AE06B9822}
+		{54B4C0B9-8BF0-4157-AB04-A55BA268444C} = {BCA74168-F015-4B5B-B4CD-C83AE06B9822}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B251C48E-7D05-4662-8DFF-20843CB2DB99}
