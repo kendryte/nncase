@@ -63,7 +63,7 @@ internal sealed class Matcher
 
     private bool Visit(IPattern pattern, Expr expr)
     {
-        return (pattern, expr) switch
+        _currentScope.IsMatch = (pattern, expr) switch
         {
             (VarPattern varPat, Var var) => VisitLeaf(varPat, var),
             (TensorConstPattern constPat, TensorConst con) => VisitLeaf(constPat, con),
@@ -77,6 +77,7 @@ internal sealed class Matcher
             (ExprPattern exprPattern, _) => VisitLeaf(exprPattern, expr),
             _ => false,
         };
+        return _currentScope.IsMatch;
     }
 
     private bool VisitLeaf(IPattern pattern, Expr expr)
@@ -239,6 +240,7 @@ internal sealed class Matcher
                     if (!Visit(pattern[i], exprs[i]))
                     {
                         _currentScope.IsMatch = false;
+                        break;
                     }
                 }
             }

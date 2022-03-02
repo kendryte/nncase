@@ -67,7 +67,7 @@ public sealed record VArgsPattern(Func<IReadOnlyList<Expr>, IRArray<Pattern>> Fi
     }
 
     /// <inheritdoc/>
-    public override bool MatchLeaf(object input) => input is IReadOnlyList<Expr> exprs && MatchLeaf(exprs);
+    public override bool MatchLeaf(object input) => input is IReadOnlyList<Expr> exprs and not Expr && MatchLeaf(exprs);
 }
 
 public partial class Utility

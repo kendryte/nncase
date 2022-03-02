@@ -57,7 +57,7 @@ public record Pattern<TExpr>(string? Name) : Pattern(Name), IPattern<TExpr>
     /// <summary>
     /// Gets pattern for CheckedType, defulat match IR Type.
     /// </summary>
-    public TypePattern TypePattern { get; init; } = TypePatternUtility.IsIRType();
+    public TypePattern? TypePattern { get; init; }
 
     /// <inheritdoc/>
     public bool MatchLeaf(TExpr expr)
@@ -80,9 +80,10 @@ public record Pattern<TExpr>(string? Name) : Pattern(Name), IPattern<TExpr>
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <returns>Is Matched.</returns>
-    private bool MatchCheckedType(Expr expr) => expr.CheckedType switch
+    private bool MatchCheckedType(Expr expr) => (TypePattern, expr.CheckedType) switch
     {
-        IRType type => TypePattern.MatchLeaf(type),
+        (null, _) => true,
+        (TypePattern pattern, IRType type) => pattern.MatchLeaf(type),
         _ => throw new InvalidOperationException("Infer type before pattern match."),
     };
 }
