@@ -39,7 +39,7 @@ namespace Nncase.Importer
             var padValue = GetOptionInputExpr(op, 2)
                 .Match(
                     x => SliceIndex(x, 0),
-                    () => 0);
+                    () => 0f);
             return Pad(input, pads, padMode, padValue);
         }
 

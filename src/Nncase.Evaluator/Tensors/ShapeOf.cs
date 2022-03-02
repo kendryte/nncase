@@ -32,6 +32,6 @@ public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>
 
     private IRType Visit(ITypeInferenceContext context, ShapeOf target, TensorType input)
     {
-        return new TensorType(DataTypes.Int32, new Shape(input.Shape.Rank));
+        return new TensorType(DataTypes.Int64, new Shape(input.Shape.Rank));
     }
 }

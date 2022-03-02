@@ -23,13 +23,29 @@ namespace Nncase
             return (ShapeIndex(input, 2), ShapeIndex(input, 3));
         }
 
+        public static TensorConst ZeroTensor()
+        {
+            return new TensorConst(Tensor.FromSpan<int>(new[] {0}));
+        }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="padH"> [before, after] </param>
+        /// <param name="padW"> [before, after] </param>
+        /// <returns></returns>
         public static Expr ConcatPadding(Expr[] padH, Expr[] padW)
         {
             // return [[padh_before, padh_after],
             //         [padw_before, padw_after]]
-            return F.Tensors.Stack(new Tuple(
-              F.Tensors.Concat(new Tuple(padH), 0),
-              F.Tensors.Concat(new Tuple(padW), 0)), 0);
+            return F.Tensors.Concat(
+                new Tuple(
+                    0, 0, padH[0], padW[1], 
+                    0, 0, padH[0], padW[1]), 
+                0);
+            // return F.Tensors.Stack(new Tuple(
+            //   F.Tensors.Concat(new Tuple(padH), 0),
+            //   F.Tensors.Concat(new Tuple(padW), 0)), 0);
         }
 
         private static Expr GetWindowedOutputSize(Expr size, Expr filter, Expr stride, Expr dilation, bool same, bool ceilMode)

@@ -69,17 +69,30 @@ public static class TypeInference
             T other => other,
         };
     }
-
+    
+    /// <summary>
+    /// get pad value in axis
+    /// </summary>
+    /// <param name="pads"></param>
+    /// <param name="axis"></param>
+    /// <returns>(pad_before, pad_after)</returns>
     private static (int, int) GetPadByAxis(int[] pads, int axis)
     {
         return (pads[axis], pads[axis + pads.Length / 2]);
     }
 
+    /// <summary>
+    /// get pad sum in axis
+    /// </summary>
+    /// <param name="pads"></param>
+    /// <param name="axis"></param>
+    /// <returns>value = pad_before + pad_after</returns>
     private static int GetPadSumByAxis(int[] pads, int axis)
     {
         var paddings = GetPadByAxis(pads, axis);
         return paddings.Item1 + paddings.Item2;
     }
+    
     /// <summary>
     /// Broadcast input shapes.
     /// </summary>
