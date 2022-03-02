@@ -163,7 +163,7 @@ def _make_module(direction, hidden_size, seq_length, batch_size, input_size, bia
 directions = [
     None,
     'forward',
-    # 'reverse', k510 support?
+    'reverse',
     'bidirectional'
 ]
 
