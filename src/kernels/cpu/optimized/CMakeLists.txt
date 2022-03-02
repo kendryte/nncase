@@ -1,5 +1,11 @@
 cmake_minimum_required (VERSION 3.13)
 
+if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "riscv64")
+    set(ARCH riscv64)
+else()
+    set(ARCH x86_64)
+endif()
+
 set(SRCS convolution.cpp
          concat.cpp
          slice.cpp
@@ -9,5 +15,8 @@ set(SRCS convolution.cpp
          gather.cpp
          gather_nd.cpp
          quantize.cpp
-         onehot.cpp)
+         onehot.cpp
+         ${ARCH}/binary.cpp
+         ${ARCH}/unary.cpp
+         ${ARCH}/matmul.cpp)
 target_sources(kernels PRIVATE ${SRCS})

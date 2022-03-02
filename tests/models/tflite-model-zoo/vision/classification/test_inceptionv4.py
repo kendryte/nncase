@@ -19,6 +19,13 @@ from tflite_test_runner import TfliteTestRunner
 
 def test_inceptionv4(request):
     overwrite_cfg = """
+setup: 
+  root: dataset_tests_output
+  numworkers: 8
+  log_txt: true
+running: 
+  preprocess: null
+  postprocess: null
 case: 
   preprocess_opt:
     - name: preprocess
@@ -111,13 +118,9 @@ judge:
     matchs: null
   specifics:
     - matchs:
-        target: [cpu, k510]
+        target: [cpu]
         ptq: true
-      threshold: 0.01
-    - matchs:
-        target: [cpu, k510]
-        ptq: false
-      threshold: 0.01
+      threshold: 1
 
     """
     runner = TfliteTestRunner(

@@ -66,10 +66,17 @@ DEFINE_CAFFE_LOWER(LSTM)
         w_rc_shape = shape_t { 1, w_rc_shape[0], w_rc_shape[1] };
     }
 
+    lstm_direction direction = kForward;
+    size_t num_directions = direction == kBidirectional ? 2 : 1;
+    size_t bias_size = num_directions * xt::compute_size(b_xc_shape);
+
     std::vector<float> blob_w_xc_vec(blob_w_xc.begin(), blob_w_xc.end());
-    std::vector<float> blob_b_xc_vec(blob_b_xc.begin(), blob_b_xc.end());
+    std::vector<float> bias_vec(bias_size, 0.f);
+    bias_vec.assign(blob_b_xc.begin(), blob_b_xc.end());
+    auto bias_shape = b_xc_shape;
+    // bias_shape[0] = num_directions;
     std::vector<float> blob_w_rc_vec(blob_w_rc.begin(), blob_w_rc.end());
-    std::vector<float> blob_b_rc_vec((int)b_rc_shape[0], 0.f);
+    // std::vector<float> blob_b_rc_vec((int)b_rc_shape[0], 0.f);
 
     // create init_h init_c
     std::vector<float> init_const(w_rc_shape[2], 0.f);
@@ -81,25 +88,26 @@ DEFINE_CAFFE_LOWER(LSTM)
     if (input.shape().size() != 3)
     {
         auto rshape = graph_.emplace<bitcast>(dt_float32, input.shape(), dt_float32, axis_t { (int32_t)input.shape()[0], (int32_t)input.shape()[1] / (int32_t)param.num_output(), (int32_t)param.num_output() });
-        auto node = graph_.emplace<lstm>(rshape->output().shape(), w_xc_shape, b_xc_shape, w_rc_shape, b_rc_shape, init_h->output().shape(), init_c->output().shape(), n_output, has_static, "caffe");
+        auto in_shape = rshape->output().shape();
+        shape_t output_shape { in_shape[0], in_shape[1], n_output };
+        auto node = graph_.emplace<lstm>(rshape->output().shape(), w_xc_shape, w_rc_shape, bias_shape, output_shape,
+            init_h->output().shape(), init_c->output().shape(), has_static, direction, "caffe");
+
         node->name(op.name() + "/lstm");
         input_tensors_.emplace(&rshape->input(), input_name);
         node->input().connect(rshape->output());
 
         auto w_xc_const = graph_.emplace<constant>(dt_float32, w_xc_shape, blob_w_xc_vec);
-        auto b_xc_const = graph_.emplace<constant>(dt_float32, b_xc_shape, blob_b_xc_vec);
         auto w_rc_const = graph_.emplace<constant>(dt_float32, w_rc_shape, blob_w_rc_vec);
-        auto b_rc_const = graph_.emplace<constant>(dt_float32, b_rc_shape, blob_b_rc_vec);
+        auto b_const = graph_.emplace<constant>(dt_float32, bias_shape, bias_vec);
 
         w_xc_const->name(op.name() + "/w_xc_const");
-        b_xc_const->name(op.name() + "/b_xc_const");
         w_rc_const->name(op.name() + "/w_rc_const");
-        b_rc_const->name(op.name() + "/b_rc_const");
+        b_const->name(op.name() + "/bias_const");
 
-        node->w_xc().connect(w_xc_const->output());
-        node->b_xc().connect(b_xc_const->output());
-        node->w_rc().connect(w_rc_const->output());
-        node->b_rc().connect(b_rc_const->output());
+        node->w().connect(w_xc_const->output());
+        node->r().connect(w_rc_const->output());
+        node->b().connect(b_const->output());
         node->initial_h().connect(init_h->output());
         node->initial_c().connect(init_c->output());
 
@@ -117,24 +125,24 @@ DEFINE_CAFFE_LOWER(LSTM)
     }
     else
     {
-        auto node = graph_.emplace<lstm>(input.shape(), w_xc_shape, b_xc_shape, w_rc_shape, b_rc_shape, init_h->output().shape(), init_c->output().shape(), n_output, has_static, "caffe");
+        auto in_shape = input.shape();
+        shape_t output_shape { in_shape[0], in_shape[1], n_output };
+        auto node = graph_.emplace<lstm>(input.shape(), w_xc_shape, w_rc_shape, bias_shape, output_shape,
+            init_h->output().shape(), init_c->output().shape(), has_static, direction, "caffe");
         node->name(op.name() + "/lstm");
         input_tensors_.emplace(&node->input(), input_name);
 
         auto w_xc_const = graph_.emplace<constant>(dt_float32, w_xc_shape, blob_w_xc_vec);
-        auto b_xc_const = graph_.emplace<constant>(dt_float32, b_xc_shape, blob_b_xc_vec);
         auto w_rc_const = graph_.emplace<constant>(dt_float32, w_rc_shape, blob_w_rc_vec);
-        auto b_rc_const = graph_.emplace<constant>(dt_float32, b_rc_shape, blob_b_rc_vec);
+        auto b_const = graph_.emplace<constant>(dt_float32, bias_shape, bias_vec);
 
         w_xc_const->name(op.name() + "/w_xc_const");
-        b_xc_const->name(op.name() + "/b_xc_const");
         w_rc_const->name(op.name() + "/w_rc_const");
-        b_rc_const->name(op.name() + "/b_rc_const");
+        b_const->name(op.name() + "/bias_const");
 
-        node->w_xc().connect(w_xc_const->output());
-        node->b_xc().connect(b_xc_const->output());
-        node->w_rc().connect(w_rc_const->output());
-        node->b_rc().connect(b_rc_const->output());
+        node->w().connect(w_xc_const->output());
+        node->r().connect(w_rc_const->output());
+        node->b().connect(b_const->output());
         node->initial_h().connect(init_h->output());
         node->initial_c().connect(init_c->output());
 

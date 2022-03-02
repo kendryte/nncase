@@ -32,6 +32,7 @@ void stackvm_module_builder::emit(binary &node, stackvm_op_builder &builder)
     builder.stshape(1, input_a.strides);
     builder.stshape(2, input_b.shape);
     builder.stshape(3, input_b.strides);
-    builder.stshape(4, output.strides);
-    builder.tensor_binary_(node.input_a().type(), 0, 1, 2, 3, 4, node.binary_op(), node.fused_activation().min, node.fused_activation().max);
+    builder.stshape(4, output.shape);
+    builder.stshape(5, output.strides);
+    builder.tensor_binary_(node.input_a().type(), 0, 1, 2, 3, 4, 5, node.binary_op(), node.fused_activation().min, node.fused_activation().max);
 }

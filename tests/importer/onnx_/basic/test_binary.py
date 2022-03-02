@@ -14,60 +14,130 @@
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
-import torch
-import numpy as np
+import onnx
+from onnx import helper
+from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
+import numpy as np
 
+def _make_module(op, in_type, in_shape_0, in_shape_1):
+    inputs = []
+    outputs = []
+    initializers = []
+    attributes_dict = {}
+    nodes = []
 
-def _make_module(v_shape):
-    class BinaryModule(torch.nn.Module):
-        def __init__(self):
-            super(BinaryModule, self).__init__()
-            self.v = torch.from_numpy(np.random.rand(*v_shape).astype(np.float32))
+    # input1
+    input1 = helper.make_tensor_value_info('input1', in_type, in_shape_0)
+    inputs.append('input1')
 
-        def forward(self, x):
-            outs = []
-            outs.append(torch.add(x, self.v))
-            outs.append(torch.mul(x, self.v))
-            outs.append(torch.sub(x, self.v))
-            outs.append(torch.max(x, self.v))
-            outs.append(torch.div(x, self.v))
-            outs.append(torch.min(x, self.v))
-            return outs
+    # set input2 to avoid SIGFPE for div op.
+    tensor = helper.make_tensor(
+        'input2',
+        in_type,
+        dims=in_shape_1,
+        vals=(np.random.rand(*in_shape_1) + 2).astype(onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[in_type]).flatten().tolist()
+    )
+    inputs.append('input2')
+    initializers.append(tensor)
 
-    return BinaryModule()
+    # output
+    x = np.random.randn(*in_shape_0)
+    y = np.random.randn(*in_shape_1)
+    output_shape = np.add(x, y).shape
+    output = helper.make_tensor_value_info('output', in_type, output_shape)
+    outputs.append('output')
 
+    node = onnx.helper.make_node(
+        op,
+        inputs=inputs,
+        outputs=outputs,
+        **attributes_dict
+    )
+    nodes.append(node)
 
-lhs_shapes = [
-    [3],
-    [64, 3],
-    [3, 64, 3],
-    [8, 3, 64, 3]
+    graph_def = helper.make_graph(
+        nodes,
+        'test-model',
+        [input1],
+        [output],
+        initializer=initializers)
+
+    model_def = helper.make_model(graph_def, producer_name='onnx')
+    return model_def
+
+ops = [
+    'Add',
+    'Sub',
+    'Mul',
+    'Div',
+    'Min',
+    'Max'
 ]
 
-rhs_shapes = [
-    [1],
-    [3],
-    [1, 3],
-    [64, 1],
-    [64, 3],
-    [3, 64, 1],
-    [3, 64, 3],
-    [8, 3, 64, 1],
-    [8, 3, 64, 3],
-    [8, 3, 1, 3],
-    [8, 1, 64, 3],
-    [1, 3, 64, 1]
+in_types = [
+    TensorProto.FLOAT,
+    # TensorProto.INT32,
+    # TensorProto.INT64
 ]
 
+in_shapes = [
+    # for benchmark
+    # [[1, 16, 4, 256], [1]],
+    # [[1, 16, 4, 256], [256]],
+    # [[1, 16, 4, 256], [1, 16, 4, 256]],
+    # [[1], [1, 16, 4, 256]],
+    # [[256], [1, 16, 4, 256]]
 
-@pytest.mark.parametrize('lhs_shape', lhs_shapes)
-@pytest.mark.parametrize('rhs_shape', rhs_shapes)
-def test_binary(lhs_shape, rhs_shape, request):
-    module = _make_module(rhs_shape)
+    [[1, 3, 16, 16], [1]],
+    [[1, 3, 16, 16], [16]],
+    [[1, 3, 16, 16], [1, 16]],
+    [[1, 3, 16, 16], [16, 16]],
+    [[1, 3, 16, 16], [1, 16, 16]],
+    [[1, 3, 16, 16], [3, 16, 16]],
+    [[1, 3, 16, 16], [1, 3, 16, 16]],
+
+    [[3, 16, 16], [1]],
+    [[3, 16, 16], [16]],
+    [[3, 16, 16], [1, 16]],
+    [[3, 16, 16], [16, 16]],
+    [[3, 16, 16], [1, 16, 16]],
+    [[3, 16, 16], [3, 16, 16]],
+    [[3, 16, 16], [1, 3, 16, 16]],
+
+    [[16, 16], [1]],
+    [[16, 16], [16]],
+    [[16, 16], [1, 16]],
+    [[16, 16], [16, 16]],
+    [[16, 16], [1, 16, 16]],
+    [[16, 16], [3, 16, 16]],
+    [[16, 16], [1, 3, 16, 16]],
+
+    [[1], [1]],
+    [[1], [16]],
+    [[1], [1, 16]],
+    [[1], [16, 16]],
+    [[1], [1, 16, 16]],
+    [[1], [3, 16, 16]],
+    [[1], [1, 3, 16, 16]],
+
+    [[16], [1]],
+    [[16], [16]],
+    [[16], [1, 16]],
+    [[16], [16, 16]],
+    [[16], [1, 16, 16]],
+    [[16], [3, 16, 16]],
+    [[16], [1, 3, 16, 16]]
+]
+
+@pytest.mark.parametrize('op', ops)
+@pytest.mark.parametrize('in_type', in_types)
+@pytest.mark.parametrize('in_shape', in_shapes)
+def test_binary(op, in_type, in_shape, request):
+    model_def = _make_module(op, in_type, in_shape[0], in_shape[1])
 
     runner = OnnxTestRunner(request.node.name)
-    model_file = runner.from_torch(module, lhs_shape)
+    model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
 
 
