@@ -28,7 +28,7 @@ namespace Nncase.Importer
 
         private Expr GetRoi(NodeProto op)
         {
-            return GetOptionInputExpr(op, 1).Or(Array.Empty<float>());
+            return GetOptionInputExpr(op, 1).Or(Tensor.FromSpan<float>(Array.Empty<float>(), new[] {0}));
         }
         
         private Expr ResizeV10(in NodeProto op)
@@ -67,6 +67,7 @@ namespace Nncase.Importer
         {
             return F.Tensors.ShapeOf(input) * scales;
         }
+
         private Expr GetNewSize(NodeProto op)
         {
             // Only one of 'scales' and 'sizes' can be specified.

@@ -54,6 +54,11 @@ namespace Nncase.Importer
             _graph = _model.Graph;
         }
 
+        private bool EmptyTensor(TensorProto tensor)
+        {
+            return tensor.Dims.Count == 1 && tensor.Dims[0] == 0;
+        }
+        
         private Tensor GetTensor(TensorProto tensor)
         {
             var shape = GetShape(tensor).ToValueArray();
@@ -169,8 +174,18 @@ namespace Nncase.Importer
             {
                 return Option<Expr>.None;
             }
-
-            return Option<Expr>.Some(GetInputExpr(n, index));
+            
+            var id = n.Input[index];
+            if (_outputTensors.TryGetValue(id, out var expr))
+            {
+                return expr;
+            }
+            
+            return _graph.Initializer
+                .Find(x => x.Name == id)
+                .Match(
+                    t => EmptyTensor(t) ? Option<Expr>.None : Option<Expr>.Some(GetTensor(t)),
+                    () => throw new InvalidDataException($"Cannot load tensor data (tensor:{id})."));
         }
 
         private Expr GetOptionInputExpr(NodeProto n, int index, Expr defaultExpr)

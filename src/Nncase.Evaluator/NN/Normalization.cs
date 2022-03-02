@@ -22,7 +22,7 @@ public class BatchNormalizationEvaluator : IEvaluator<BatchNormalization>, IType
         var inputVar = context.GetOrtArgumentValue(batchNorm, BatchNormalization.InputVar);
         var eps = context.GetArgumentValueAsScalar<float>(batchNorm, BatchNormalization.Epsilon);
         var mom = context.GetArgumentValueAsScalar<float>(batchNorm, BatchNormalization.Momentum);
-        return OrtKI.BatchNormalization(input, scale, bias, inputMean, inputVar, eps, mom, 0)[0].ToValue();
+        return OrtKI.BatchNormalization(input, scale, bias, inputMean, inputVar, eps, mom).ToValue();
     }
 
     /// <inheritdoc/>

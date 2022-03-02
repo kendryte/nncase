@@ -23,11 +23,10 @@ namespace Nncase.Importer
         private Expr VisitBatchNormalization(in NodeProto op)
         {
             var x = GetInputExpr(op, 0);
-            var (scale, b) = GetInputExprs(op, 1, 2);
+            var (scale, bias) = GetInputExprs(op, 1, 2);
             var (mean, var) = GetInputExprs(op, 3, 4);
             var eps = GetFloatAttribute(op, "epsilon", 1e-05f);
             var mom = GetFloatAttribute(op, "momentum", 0.9f);
-            var bias = ReshapeToByChannel(b);
             return F.NN.BatchNormalization(x, scale, bias, mean, var, eps, mom);
         }
 
