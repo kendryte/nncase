@@ -177,9 +177,6 @@ kernel_shapes = [
 pads = [
     None,
     [0, 0, 1, 0],
-    [0, 1, 0, 0],
-    [1, 0, 0, 0],
-    [0, 0, 0, 1]
 ]
 
 strides = [
@@ -198,7 +195,7 @@ strides = [
 @pytest.mark.parametrize('pad', pads)
 @pytest.mark.parametrize('stride', strides)
 def test_conv(in_shape, kernel_output_channel, bias_shape, auto_pad_mode, dilation, group, kernel_shape, pad, stride, request):
-    if [auto_pad_mode, pad] != [None, None]:
+    if (bias_shape is None or (bias_shape is not None and bias_shape[0] == kernel_output_channel)) and ((auto_pad_mode is not None and pad is None) or (auto_pad_mode is None and pad is not None)) and (dilation is None or (auto_pad_modes is None or auto_pad_modes == 'NOTSET')):
         model_def = _make_module(in_shape, kernel_output_channel, bias_shape,
                                  auto_pad_mode, dilation, group, kernel_shape, pad, stride)
 

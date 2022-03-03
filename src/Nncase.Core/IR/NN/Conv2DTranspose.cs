@@ -49,13 +49,18 @@ namespace Nncase.IR.NN
         public static readonly ParameterInfo Padding = new(typeof(Conv2DTranspose), 5, "padding");
 
         /// <summary>
+        /// Gets Output Padding.
+        /// </summary>
+        public static readonly ParameterInfo OutputPadding = new(typeof(Conv2DTranspose), 6, "output_padding");
+        
+        /// <summary>
         /// Gets Dilation.
         /// </summary>
-        public static readonly ParameterInfo Dilation = new(typeof(Conv2DTranspose), 6, "dilation");
+        public static readonly ParameterInfo Dilation = new(typeof(Conv2DTranspose), 7, "dilation");
 
         /// <summary>
         /// Gets Groups.
         /// </summary>
-        public static readonly ParameterInfo Groups = new(typeof(Conv2DTranspose), 7, "groups");
+        public static readonly ParameterInfo Groups = new(typeof(Conv2DTranspose), 8, "groups");
     }
 }

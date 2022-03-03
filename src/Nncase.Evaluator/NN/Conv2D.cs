@@ -9,8 +9,6 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
 using OrtKISharp;
-// using TorchSharp;
-// using torchF = TorchSharp.torch.nn.functional;
 
 namespace Nncase.Evaluator.NN;
 
@@ -33,24 +31,6 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
         var kernelShape = weights.Shape;
         return OrtKI.Conv(input, weights, bias, "NOTSET", dilation, groups,
             new long[] {kernelShape[2], kernelShape[3]}, pad, stride).ToValue();
-        
-        if (conv.PadMode != PadMode.Constant)
-        {
-            throw new NotImplementedException($"Conv2D with {conv.PadMode}!");
-        }
-
-        // pad in TorchSharp will reorder
-        // when pad.Count == 4, [0, 2, 1, 3]
-        // order should be passed: left top right bottom
-        // var afterPad = torchF.pad(input, new long[] { pad[0, 0], pad[1, 0], pad[0, 1], pad[1, 1] });
-
-        // return torchF.conv2d(
-        //     afterPad,
-        //     weights,
-        //     bias,
-        //     strides: new long[] { stride[0], stride[1] },
-        //     dilation: new long[] { dilation[0], dilation[1] },
-        //     groups: groups).ToValue();
     }
 
     /// <inheritdoc/>

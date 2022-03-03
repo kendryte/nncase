@@ -8,7 +8,9 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using OrtKISharp;
+using Tensorflow;
 using TorchSharp;
+using Shape = Nncase.IR.Shape;
 using torchF = TorchSharp.torch.nn.functional;
 
 namespace Nncase.Evaluator.Tensors;
@@ -35,13 +37,15 @@ public class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>
 
     private IRType Visit(ITypeInferenceContext context, Expand target, TensorType input)
     {
-        if (context.GetArgument(target, Expand.Shape) is TensorConst constShape)
+        var shape = context.GetArgument(target, Expand.Shape);
+        return shape switch
         {
-            return new TensorType(input.DType, new Shape(constShape.Value.Cast<int>()));
-        }
-        else
-        {
-            return new InvalidType("Expand Shape need const value");
-        }
+            TensorConst constShape => new TensorType(input.DType, new Shape(constShape.Value.Cast<int>())),
+            Call call => call.CheckedType is TensorType
+                ? new TensorType(call.CheckedDataType, Shape.Unranked) 
+                : new InvalidType(((InvalidType)call.CheckedType).Reason),
+            Var var => new TensorType(var.CheckedDataType, Shape.Unranked),
+            _ => throw new InvalidArgumentError("invalid shape")
+        };
     }
 }

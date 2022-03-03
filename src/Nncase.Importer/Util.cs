@@ -15,7 +15,12 @@ namespace Nncase
     {
         public static Expr ShapeIndex(in Expr input, int index)
         {
-            return F.Tensors.Squeeze(F.Tensors.Slice(F.Tensors.ShapeOf(input), new[] { index }, new[] { index + 1 }, 1), 0L);
+            return GetItem(F.Tensors.ShapeOf(input), index);
+        }
+
+        public static Expr GetItem(in Expr input, int index)
+        {
+            return F.Tensors.Squeeze(F.Tensors.Slice(input, new[] { index }, new[] { index + 1 }, 1), 0L);
         }
 
         public static (Expr, Expr) GetHW(in Expr input)
@@ -40,8 +45,8 @@ namespace Nncase
             //         [padw_before, padw_after]]
             return F.Tensors.Concat(
                 new Tuple(
-                    0, 0, padH[0], padW[1], 
-                    0, 0, padH[0], padW[1]), 
+                    padH[0], padW[0], 
+                    padH[1], padW[1]), 
                 0);
             // return F.Tensors.Stack(new Tuple(
             //   F.Tensors.Concat(new Tuple(padH), 0),

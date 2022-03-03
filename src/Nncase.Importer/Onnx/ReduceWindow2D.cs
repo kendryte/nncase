@@ -21,7 +21,7 @@ namespace Nncase.Importer
             var countIncludePad = GetBoolAttribute(op, "count_include_pad", false);
             var pads = GetPadsAttribute(op);
             var dilation = reduceOp == ReduceOp.Max 
-                ? GetIntsAttribute(op, "dilations", 1, pads.Length) 
+                ? GetIntsAttribute(op, "dilations", 1, 2) 
                 : Enumerable.Repeat<long>(1, pads.Length).ToArray();
             var kernelShape = isGlobal
                 ? Util.GetHW(input).Map((h, w) => (Expr)F.Tensors.Concat(new Tuple(h, w), 0))

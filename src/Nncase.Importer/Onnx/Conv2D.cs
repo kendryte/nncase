@@ -22,8 +22,8 @@ namespace Nncase.Importer
 
             // if not present, should be inferred from input W
             var strides = GetStrideAttribute(op);
-            var pads = AutoPad(op, autoPad, input, weights, strides.ToArray<long>(), dilation.ToArray<long>());
-            return F.NN.Conv2D(input, weights, bias, strides, pads, dilation, PadMode.Constant, group);
+            var pads = AutoPad(op, autoPad, input, weights, strides.ToArray<long>(), dilation);
+            return F.NN.Conv2D(input, weights, bias, strides, pads, Tensor.FromSpan<long>(dilation), PadMode.Constant, group);
         }
 
         private Tensor GetPadsAttribute(NodeProto op)
@@ -38,9 +38,9 @@ namespace Nncase.Importer
             return Tensor.FromSpan<long>(GetIntsAttribute(op, "strides", 1, 2));
         }
 
-        private Tensor GetDilationsAttribute(NodeProto op)
+        private long[] GetDilationsAttribute(NodeProto op)
         {
-            return Tensor.FromSpan<long>(GetIntsAttribute(op, "dilations", new[] { 1, 1 }));
+            return GetIntsAttribute(op, "dilations", new[] { 1, 1 });
         }
 
         private Expr GetBias(NodeProto op, Expr weights, bool isConvTranspose = false)

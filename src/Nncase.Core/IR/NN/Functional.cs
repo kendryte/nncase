@@ -20,7 +20,7 @@ namespace Nncase.IR.F
 
         public static Call Celu(Expr input, Expr alpha) => new Call(new Celu(), input, alpha);
 
-        public static Call Conv2DTranspose(Expr input, Expr weights, Expr bias, Expr outShape, Expr stride, Expr padding, Expr dilation, PadMode padMode, Expr groups) => new Call(new Conv2DTranspose(padMode), input, weights, bias, outShape, stride, padding, dilation, groups);
+        public static Call Conv2DTranspose(Expr input, Expr weights, Expr bias, Expr outShape, Expr stride, Expr padding, Expr outputPadding, Expr dilation, PadMode padMode, Expr groups) => new Call(new Conv2DTranspose(padMode), input, weights, bias, outShape, stride, padding, outputPadding, dilation, groups);
 
         public static Call Elu(Expr input, Expr alpha) => new Call(new Elu(), input, alpha);
 
