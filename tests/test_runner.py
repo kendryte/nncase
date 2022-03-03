@@ -650,6 +650,7 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.is_fpga = cfg.compile_opt.is_fpga
         compile_options.use_mse_quant_w = cfg.compile_opt.use_mse_quant_w
         compile_options.input_type = preprocess['input_type']
+        compile_options.output_type = preprocess['output_type']
         compile_options.quant_type = cfg.compile_opt.quant_type
         compile_options.w_quant_type = cfg.compile_opt.w_quant_type
         compile_options.swapRB = preprocess['swapRB']
