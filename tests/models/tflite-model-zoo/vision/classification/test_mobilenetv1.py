@@ -19,14 +19,14 @@ from tflite_test_runner import TfliteTestRunner
 
 def test_mobilenetv1(request):
     overwrite_cfg = """
-setup: # 整个runner期间的超参数配置
-  root: tests_output
+setup: 
+  root: dataset_tests_output
   numworkers: 8
   log_txt: true
-running: # 每个case运行时的处理配置
+running: 
   preprocess: null
   postprocess: null
-case: # case的配置，应该是一个多层次的
+case: 
   preprocess_opt:
     - name: preprocess
       values:
@@ -118,13 +118,9 @@ judge:
     matchs: null
   specifics:
     - matchs:
-        target: [cpu, k510]
+        target: [cpu]
         ptq: true
-      threshold: 0.01
-    - matchs:
-        target: [cpu, k510]
-        ptq: false
-      threshold: 0.01
+      threshold: 1
 
     """
     runner = TfliteTestRunner(

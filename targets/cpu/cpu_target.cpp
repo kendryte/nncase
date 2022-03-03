@@ -14,6 +14,9 @@
  */
 #include "cpu_target.h"
 #include <nncase/plugin_loader.h>
+#include <nncase/transforms/neutral/fold_constant.h>
+#include <nncase/transforms/neutral/lstm_transform.h>
+#include <nncase/transforms/pass.h>
 
 #if defined(_MSC_VER)
 #define CPU_TARGET_API __declspec(dllexport)
@@ -24,11 +27,23 @@
 using namespace nncase;
 using namespace nncase::targets;
 using namespace nncase::runtime;
+using namespace nncase::ir::transforms;
 
 extern "C"
 {
     CPU_TARGET_API target *create_target()
     {
         return new cpu_target();
+    }
+}
+
+void cpu_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] bool use_ptq)
+{
+    // lstm_transform
+    {
+        transform_pass p("lstm_transform");
+        p.emplace<fold_constant_transform>();
+        p.emplace<lstm_transform>();
+        pass_mgr.add_pass(std::move(p));
     }
 }

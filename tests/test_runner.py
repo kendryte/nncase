@@ -104,6 +104,8 @@ def generate_random(shape: List[int], dtype: np.dtype,
         data = np.random.randint(0, 256, shape)
     elif dtype == np.int8:
         data = np.random.randint(-128, 128, shape)
+    elif dtype == np.int32:
+        data = np.random.randint(-128, 128, size=shape, dtype='int32')
     elif dtype == np.int64:
         data = np.random.randint(-128, 128, size=shape, dtype='int64')
     elif dtype == np.bool:
@@ -178,8 +180,8 @@ def generate_imagenet_dataset(shape: List[int], dtype: np.dtype,
                               batch_index: int, batch_size: int,
                               case_dir: str,
                               dir_path: str) -> np.ndarray:
-    """ 
-    shape: [N,H,W,C] 
+    """
+    shape: [N,H,W,C]
     """
     dir_path = os.path.join(os.getenv('DATASET_DIR') if os.getenv('DATASET_DIR') else '', dir_path)
     assert(os.path.isdir(dir_path) or os.path.exists(dir_path))

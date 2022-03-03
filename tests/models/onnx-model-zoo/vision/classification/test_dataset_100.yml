@@ -1,5 +1,5 @@
 setup: # 整个runner期间的超参数配置
-  root: tests_output
+  root: dataset_tests_output
   numworkers: 8
   log_txt: true
 running: # 每个case运行时的处理配置
@@ -76,7 +76,6 @@ case: # case的配置，应该是一个多层次的
     - name: target
       values:
         - cpu
-        - k510
     - name: ptq
       values:
         - false
@@ -84,7 +83,6 @@ case: # case的配置，应该是一个多层次的
     - name: target
       values:
         - cpu
-        - k510
     - name: ptq
       values:
         - false
@@ -99,8 +97,4 @@ judge:
     - matchs:
         target: [cpu]
         ptq: true
-      threshold: 0.02
-    - matchs:
-        target: [cpu, k510]
-        ptq: false
-      threshold: 0.02
+      threshold: 1

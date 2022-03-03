@@ -18,6 +18,7 @@
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/pad.h>
 #include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/sigmoid.h>
 #include <nncase/ir/ops/transpose.h>
 #include <nncase/ir/ops/unary.h>
 #include <nncase/ir/visitor.h>
@@ -432,4 +433,85 @@ void transpose_clamp_motion_transform::process(transform_context &context)
 
     for (auto &in : dup(inputs))
         in->connect(tp->output());
+}
+
+bool transpose_sigmoid_motion_transform::on_try_match(node &node, transform_context &context)
+{
+    if (auto sigmd = node_cast<sigmoid>(node))
+    {
+        if (auto tp = try_get_direct_parent<transpose>(*sigmd))
+        {
+            if (tp->output().connections().size() == 1)
+            {
+                context.inputs.emplace_back(&tp->input());
+                context.outputs.emplace_back(&sigmd->output());
+
+                context.matched_nodes.emplace_back(tp);
+                context.matched_nodes.emplace_back(sigmd);
+                return true;
+            }
+            else
+            {
+                // tp-sigmoid has another branch
+                if (auto b = try_get_direct_child<binary>(*sigmd))
+                {
+                    if (tp == node_cast<transpose>(b->input_a().connection()->owner())
+                        || tp == node_cast<transpose>(b->input_b().connection()->owner()))
+                    {
+                        context.inputs.emplace_back(&tp->input());
+                        context.outputs.emplace_back(&b->output());
+
+                        context.matched_nodes.emplace_back(tp);
+                        context.matched_nodes.emplace_back(sigmd);
+                        context.matched_nodes.emplace_back(b);
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+void transpose_sigmoid_motion_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+    auto &old_tp = static_cast<transpose &>(*context.matched_nodes[0]);
+    auto &old_sigmd = static_cast<sigmoid &>(*context.matched_nodes[1]);
+
+    if (context.matched_nodes.size() == 2)
+    {
+        auto new_sigmd = context.graph.emplace<sigmoid>(old_tp.input().type(), old_tp.input().shape());
+        auto new_tp = context.graph.emplace<transpose>(new_sigmd->output().type(), new_sigmd->output().shape(), old_tp.perm());
+        new_sigmd->name(old_sigmd.name());
+        new_tp->name(old_tp.name());
+
+        new_sigmd->input().connect(output);
+        new_tp->input().connect(new_sigmd->output());
+
+        for (auto &in : dup(inputs))
+            in->connect(new_tp->output());
+    }
+    else
+    {
+        // tp-sigmoid has another branch
+        auto &old_b = static_cast<binary &>(*context.matched_nodes[2]);
+
+        auto new_sigmd = context.graph.emplace<sigmoid>(old_tp.input().type(), old_tp.input().shape());
+        auto new_b = context.graph.emplace<binary>(old_b.binary_op(), old_tp.input().type(), old_tp.input().shape(), new_sigmd->output().shape(), old_b.fused_activation());
+        auto new_tp = context.graph.emplace<transpose>(new_b->output().type(), new_b->output().shape(), old_tp.perm());
+        new_sigmd->name(old_sigmd.name());
+        new_b->name(old_b.name());
+        new_tp->name(old_tp.name());
+
+        new_sigmd->input().connect(output);
+        new_b->input_a().connect(output);
+        new_b->input_b().connect(new_sigmd->output());
+        new_tp->input().connect(new_b->output());
+
+        for (auto &in : dup(inputs))
+            in->connect(new_tp->output());
+    }
 }

@@ -105,6 +105,6 @@ jobs:
         TFLITE_MODELS_DIR: /compiler/github-runner/tflite-models
         DATASET_DIR: /compiler/share
       run: |
-
+        
         pytest -n 8 tests/models/tflite-model-zoo --doctest-modules --junitxml=test_results/models-dataset.xml
-        cat tests_output/dataset_test_result.txt
+        for dir in `ls dataset_tests_output`; do cat dataset_tests_output/$dir/dataset_test_result.txt; done

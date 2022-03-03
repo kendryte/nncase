@@ -29,10 +29,12 @@
 #include <nncase/transforms/neutral/add_quant_checkpoints.h>
 #include <nncase/transforms/neutral/add_to_conv2d.h>
 #include <nncase/transforms/neutral/eliminate_dilated_conv2d.h>
+#include <nncase/transforms/neutral/fold_constant.h>
 #include <nncase/transforms/neutral/fold_pad.h>
 #include <nncase/transforms/neutral/fold_quantize.h>
 #include <nncase/transforms/neutral/fold_transpose.h>
 #include <nncase/transforms/neutral/fuse_pad.h>
+#include <nncase/transforms/neutral/lstm_transform.h>
 #include <nncase/transforms/neutral/split_sigmoid.h>
 #include <nncase/transforms/neutral/transpose_motion.h>
 #include <nncase/transforms/pass.h>
@@ -91,6 +93,13 @@ void k210_target::register_evaluator_ops()
 
 void k210_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] bool use_ptq)
 {
+    // lstm_transform
+    {
+        transform_pass p("lstm_transform");
+        p.emplace<fold_constant_transform>();
+        p.emplace<lstm_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
     {
         transform_pass p("sigmoid_lowering");
         p.emplace<split_sigmoid_transform>();
@@ -173,8 +182,8 @@ void k210_target::register_quantize_passes(const module_type_t &type, ir::transf
         neutral_target::register_quantize_passes(type, pass_mgr, quant_type, w_quant_type, use_mse_quant_w, output_type);
 
         transform_pass p("fold_kpu_data_exchg2");
-        //p.emplace<fuse_kpu_download_transform>();
-        //p.emplace<fold_input_kpu_upload_transform>();
+        // p.emplace<fuse_kpu_download_transform>();
+        // p.emplace<fold_input_kpu_upload_transform>();
         add_default_transforms(p);
         p.emplace<fold_quantize_transform>();
         pass_mgr.add_pass(std::move(p));
