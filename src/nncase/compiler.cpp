@@ -518,16 +518,10 @@ private:
             target_->add_quantization_broadcast(opcodes);
             quant->broadcast_output(graph, opcodes);
 
-            ir::transforms::transform_pass p("process i&o node");
-
-            if (compile_options_.output_type != "float32")
-                p.emplace<nncase::ir::transforms::add_output_quantize_transform>(parse_datatype_str(compile_options_.output_type));
-            pmgr.add_pass(std::move(p));
-
             pmgr.quantizer(quant);
             if (compile_options_.dump_ir)
                 pmgr.dump_dir(compile_options_.dump_dir);
-            target_->register_quantize_passes(graph.module_type(), pmgr, parse_datatype_str(compile_options_.quant_type), compile_options_.w_quant_type, compile_options_.use_mse_quant_w);
+            target_->register_quantize_passes(graph.module_type(), pmgr, parse_datatype_str(compile_options_.quant_type), compile_options_.w_quant_type, compile_options_.use_mse_quant_w, parse_datatype_str(compile_options_.output_type));
             pmgr.run();
             dump_graph(graph, "quantize");
         };
