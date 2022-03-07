@@ -9,8 +9,13 @@ namespace Nncase.PatternMatch;
 /// <summary>
 /// Pattern match result.
 /// </summary>
-public interface IMatchResult
+public interface IMatchResult : IEnumerable<KeyValuePair<IPattern, object>>
 {
+    /// <summary>
+    /// Gets root.
+    /// </summary>
+    object Root { get; }
+
     /// <summary>
     /// Get match result by name.
     /// </summary>

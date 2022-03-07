@@ -9,6 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Transform\Rules\**" />
+    <EmbeddedResource Remove="Transform\Rules\**" />
+    <None Remove="Transform\Rules\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="LanguageExt.Core" Version="4.0.3" />
     <PackageReference Include="NetFabric.Hyperlinq" Version="3.0.0-beta48" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.354">

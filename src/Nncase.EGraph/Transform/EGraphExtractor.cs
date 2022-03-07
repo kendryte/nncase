@@ -2,93 +2,97 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Text;
-using System.IO;
 using System.Collections.Generic;
-using Nncase.Transform.Rule;
+using System.IO;
+using System.Linq;
+using System.Text;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.PatternMatch;
-using System.Linq;
-using Nncase.CostModel;
 
-namespace Nncase.Transform
+namespace Nncase.Transform;
+
+internal class EGraphExtractor
 {
-    public static class EGraphExtractor
-    {
-        public static Expr Extract(this EGraph eGraph, EClass entry, RunPassOptions options)
-        {
-            var visitor = new EGraphCostModelVisitor();
-            var costs = visitor.Visit(eGraph);
-            var converter = new ExprConverter(costs);
-            if (options.DumpLevel > 1)
-            {
-                EGraphPrinter.DumpEgraphAsDot(eGraph, new EGraphCosts(eGraph, costs), entry.Find(), Path.Combine(options.PassDumpDir, "Costs", $"V{eGraph.Version}"));
-            }
+    private readonly EGraphCostModel _costModel;
+    private readonly IReadOnlyDictionary<EClass, List<ENode>> _eclasses;
+    private readonly Dictionary<EClass, Expr> _eclassMemo = new();
 
-            return converter.Visit(entry.Find());
-        }
+    public EGraphExtractor(EGraphCostModel costModel, IReadOnlyDictionary<EClass, List<ENode>> eclasses)
+    {
+        _costModel = costModel;
+        _eclasses = eclasses;
     }
 
-    internal sealed class ExprConverter
+    public Expr Extract(EClass root)
     {
-        private Dictionary<EClass, (Cost, ENode)> _context;
-        private readonly Dictionary<ENode, Expr> _enodeMemo = new();
+        return Visit(root);
+    }
 
-        private readonly Dictionary<EClass, Expr> _eclassMemo = new
-        ();
-
-        public ExprConverter(Dictionary<EClass, (Cost, ENode)> context)
+    private Expr Visit(EClass eclass)
+    {
+        if (!_eclassMemo.TryGetValue(eclass, out var expr))
         {
-            _context = context;
-        }
-
-        public Expr Visit(EClass eClass)
-        {
-            if (!_eclassMemo.TryGetValue(eClass, out var result))
+            var enodes = _eclasses[eclass];
+            var minCostEnode = enodes.MinBy(x => _costModel[x]);
+            expr = minCostEnode!.Expr switch
             {
-                Visit(_context[eClass].Item2);
-                result = VisitLeaf(eClass);
-                _eclassMemo.Add(eClass, result);
-            }
-
-            return result;
+                Var var => VisitLeaf(minCostEnode, var),
+                TensorConst con => VisitLeaf(minCostEnode, con),
+                TupleConst con => VisitLeaf(minCostEnode, con),
+                Function func => VisitLeaf(minCostEnode, func),
+                Call call => Visit(minCostEnode, call),
+                IR.Tuple tuple => Visit(minCostEnode, tuple),
+                Op op => VisitLeaf(minCostEnode, op),
+                _ => throw new ArgumentException("Unsupported expression type."),
+            };
+            _eclassMemo.Add(eclass, expr);
         }
 
-        public Expr VisitLeaf(EClass eClass)
+        return expr;
+    }
+
+    private Expr VisitLeaf(ENode enode, Expr expr)
+    {
+        return expr;
+    }
+
+    private IR.Tuple Visit(ENode enode, IR.Tuple tuple)
+    {
+        var fields = enode.Children.Select(Visit);
+        return new(fields);
+    }
+
+    private Call Visit(ENode enode, Call call)
+    {
+        var target = Visit(enode.Children[0]);
+        var parameters = enode.Children.Skip(1).Select(Visit);
+        return new(target, parameters.ToArray());
+    }
+}
+
+/// <summary>
+/// EGraph extract extensions.
+/// </summary>
+public static class EGraphExtractExtensions
+{
+    /// <summary>
+    /// Extract egraph.
+    /// </summary>
+    /// <param name="eGraph">eGraph.</param>
+    /// <param name="root">Root eclass.</param>
+    /// <param name="options">Options.</param>
+    /// <returns>Extracted root expression.</returns>
+    public static Expr Extract(this EGraph eGraph, EClass root, RunPassOptions options)
+    {
+        var eclasses = eGraph.EClasses();
+        var costModel = new EGraphCostEvaluator(eclasses, root).Evaluate();
+        if (options.DumpLevel > 1)
         {
-            return _enodeMemo[_context[eClass].Item2];
+            // TODO: dump graph
+            // EGraphPrinter.DumpEgraphAsDot(eGraph, new EGraphCosts(eGraph, costs), entry.Find(), Path.Combine(options.PassDumpDir, "Costs", $"V{eGraph.Version}"));
         }
 
-        public Expr Visit(ENode eNode)
-        {
-            if (!_enodeMemo.TryGetValue(eNode, out var result))
-            {
-                foreach (var eClass in eNode.Children)
-                {
-                    Visit(eClass);
-                }
-
-                result = VisitLeaf(eNode);
-                _enodeMemo.Add(eNode, result);
-            }
-
-            return result;
-        }
-
-        public Expr VisitLeaf(ENode eNode) => eNode.Expr switch
-        {
-            Var var => var,
-            Const con => con,
-            Function func => new Function(_eclassMemo[eNode.Children[0]], eNode.Children.Skip(1).Select(p => _eclassMemo[p]).ToArray()),
-            Call call => new Call(_eclassMemo[eNode.Children[0]], eNode.Children.Skip(1).Select(p => _eclassMemo[p]).ToArray()),
-            IR.Tuple tuple => new IR.Tuple(eNode.Children.Select(p => _eclassMemo[p]).ToArray()),
-            Op op => op,
-            _ => DefaultVisit(eNode.Expr),
-        };
-
-        public Expr DefaultVisit(Expr expr)
-        {
-            throw new NotImplementedException($"Unhandled visit routine for {expr.GetType()}.");
-        }
+        return new EGraphExtractor(costModel, eclasses).Extract(root);
     }
 }

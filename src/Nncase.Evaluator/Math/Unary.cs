@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using TorchSharp;
@@ -11,7 +12,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Unary"/>.
 /// </summary>
-public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>
+public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEvaluator<Unary>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Unary unary)
@@ -51,6 +52,14 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>
     {
         var input = context.CheckArgumentType<TensorType>(target, Unary.Input);
         return Visit(input);
+    }
+
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, Unary target)
+    {
+        var returnType = context.GetReturnType<TensorType>();
+        var arithm = returnType.Shape.Prod().FixedValue;
+        return new(arithm, arithm * returnType.DType.SizeInBytes);
     }
 
     private IRType Visit(TensorType input)

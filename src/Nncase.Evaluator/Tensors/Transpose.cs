@@ -4,18 +4,17 @@
 using System;
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
-using TorchSharp;
-using torchF = TorchSharp.torch.nn.functional;
 
 namespace Nncase.Evaluator.Tensors;
 
 /// <summary>
 /// Evaluator for <see cref="Transpose"/>.
 /// </summary>
-public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpose>
+public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpose>, ICostEvaluator<Transpose>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Transpose tr)
@@ -30,6 +29,14 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
     {
         var input = context.CheckArgumentType<TensorType>(target, Transpose.Input);
         return Visit(context, target, input);
+    }
+
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, Transpose target)
+    {
+        var returnType = context.GetReturnType<TensorType>();
+        var arithm = returnType.Shape.Prod().FixedValue;
+        return new(arithm, arithm * returnType.DType.SizeInBytes);
     }
 
     private IRType Visit(ITypeInferenceContext context, Transpose target, TensorType input)

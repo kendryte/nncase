@@ -2,96 +2,101 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Text;
-using System.IO;
 using System.Collections.Generic;
-using Nncase.Transform.Rule;
+using System.IO;
+using System.Linq;
+using System.Text;
 using Nncase.IR;
 using Nncase.PatternMatch;
 
-namespace Nncase.Transform
-{
-    public static class EGraphReWriter
-    {
-        public static EGraph ReWrite(EGraph eGraph, IRewriteRule Rules, RunPassOptions options) => ReWrite(eGraph, new List<IRewriteRule>() { Rules }, options);
+namespace Nncase.Transform;
 
-        /// <summary>
-        /// run egraph rewrite.
-        /// </summary>
-        /// <param name="eGraph"></param>
-        /// <param name="Rules"></param>
-        /// <param name="options"></param>
-        /// <returns></returns>
-        public static EGraph ReWrite(EGraph eGraph, IEnumerable<IRewriteRule> Rules, RunPassOptions options)
+internal static class EGraphRewriter
+{
+    public static EGraph Rewrite(EGraph eGraph, IRewriteRule rules, RunPassOptions options) => Rewrite(eGraph, new List<IRewriteRule>() { rules }, options);
+
+    /// <summary>
+    /// Run egraph rewrite.
+    /// </summary>
+    public static EGraph Rewrite(EGraph eGraph, IEnumerable<IRewriteRule> rules, RunPassOptions options)
+    {
+        var matches = new List<(IRewriteRule, IReadOnlyList<IMatchResult>)> { };
+        var last_version = eGraph.Version;
+        int count = 0;
+
+        while (true)
         {
-            var matches = new List<(IRewriteRule, IMatchResult)> { };
-            var last_version = eGraph.Version;
-            int count = 0;
-            do
+            var enodes = eGraph.HashCons.Keys.ToList();
+            var eClasses = eGraph.EClasses();
+            foreach (var rule in rules)
             {
-                var eClasses = eGraph.EClasses();
-                foreach (var rule in Rules)
+                if (EGraphMatcher.TryMatch(eClasses, rule.Pattern, enodes, out var results))
                 {
-                    var results = EGraphMatcher.Match(eClasses, rule.Patterns);
-                    foreach (var result in results)
-                    {
-                        matches.Add((rule, result));
-                    }
+                    matches.Add((rule, results));
 
                     if (options.DumpLevel > 1 && results.Count != 0)
-                        EGraphPrinter.DumpEgraphAsDot(eGraph, results,
-                         Path.Combine(options.DumpDir, options.PassName, "Matches", $"V{eGraph.Version}_{count++}_{rule.GetType().Name}"));
-                }
-
-                foreach (var (rule, result) in matches)
-                {
-                    var replaceExpr = rule.GetReplace(result);
-                    if (replaceExpr is null)
                     {
-                        continue;
+                        EGraphPrinter.DumpEgraphAsDot(
+                            eGraph,
+                            results,
+                            Path.Combine(options.DumpDir, options.PassName, "Matches", $"V{eGraph.Version}_{count++}_{rule.GetType().Name}"));
                     }
+                }
+            }
 
-                    if (!CompilerServices.InferenceType(replaceExpr))
+            foreach (var (rule, results) in matches)
+            {
+                var replacedExprs = (from result in results
+                                     let expr = rule.GetReplace(result)
+                                     where expr != null
+                                     select (eGraph.HashCons[(ENode)result.Root], expr)).ToList();
+
+                foreach (var (oldEClass, newExpr) in replacedExprs)
+                {
+                    if (!CompilerServices.InferenceType(newExpr))
                     {
                         throw new InvalidOperationException("Can't Inference The Replace Expr Type!");
                     }
 
-                    eGraph.Add(replaceExpr, out var neweClass);
-                    var oldeClass = eGraph.HashCons[((EMatchResult)result).Root].Find();
+                    var newEClass = eGraph.Add(newExpr);
                     if (options.DumpLevel == 3)
                     {
-                        Console.WriteLine($"Version {eGraph.Version} : Merge {{{oldeClass}}} to {{{neweClass}}}");
+                        Console.WriteLine($"Version {eGraph.Version} : Merge {{{oldEClass}}} to {{{newEClass}}}");
                     }
 
-                    eGraph.Merge(neweClass, oldeClass);
+                    eGraph.Union(newEClass, oldEClass);
                 }
+            }
 
-                matches.Clear();
-                if (last_version == eGraph.Version)
-                {
-                    break;
-                }
-                else
-                {
-                    last_version = eGraph.Version;
-                }
+            matches.Clear();
+            if (last_version == eGraph.Version)
+            {
+                break;
+            }
+            else
+            {
+                last_version = eGraph.Version;
+            }
 
-                eGraph.Rebuild();
-                if (options.DumpLevel > 1)
-                    EGraphPrinter.DumpEgraphAsDot(eGraph,
-                     Path.Combine(options.DumpDir, options.PassName, "Rebuild", $"V{eGraph.Version}"));
-                if (options.DumpLevel == 3)
+            eGraph.Rebuild();
+            if (options.DumpLevel > 1)
+            {
+                EGraphPrinter.DumpEgraphAsDot(eGraph,
+                 Path.Combine(options.DumpDir, options.PassName, "Rebuild", $"V{eGraph.Version}"));
+            }
+
+            if (options.DumpLevel == 3)
+            {
+                foreach (var (_, eclass) in eGraph.HashCons)
                 {
-                    foreach (var (_, eclass) in eGraph.HashCons)
+                    if (eclass.Parent is not null)
                     {
-                        if (eclass.Parent is not null)
-                        {
-                            // throw new InvalidProgramException("EGraph Rebuild Logic Error!");
-                        }
+                        // throw new InvalidProgramException("EGraph Rebuild Logic Error!");
                     }
                 }
-            } while (true);
-            return eGraph;
+            }
         }
+
+        return eGraph;
     }
 }

@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CommonServiceLocator;
 using Microsoft.Extensions.DependencyInjection;
+using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.PatternMatch;
@@ -53,6 +54,22 @@ public interface ICompilerServicesProvider
     IValue EvaluateOp(Op op, IEvaluateContext context);
 
     /// <summary>
+    /// Evaluate cost of the expression tree.
+    /// </summary>
+    /// <param name="expr">Expression.</param>
+    /// <param name="varsValues">Optional vars' values.</param>
+    /// <returns>Evaluate result.</returns>
+    Cost EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null);
+
+    /// <summary>
+    /// Evaluate cost of operator.
+    /// </summary>
+    /// <param name="op">Target operator.</param>
+    /// <param name="context">Evaluate context.</param>
+    /// <returns>Evaluate result.</returns>
+    Cost EvaluateOpCost(Op op, ICostEvaluateContext context);
+
+    /// <summary>
     /// Match expression.
     /// </summary>
     /// <param name="expr">Expression to match.</param>
@@ -89,18 +106,21 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
 {
     private readonly IEvaluateProvider _evaluateProvider;
     private readonly ITypeInferenceProvider _typeInferenceProvider;
+    private readonly ICostEvaluateProvider _costEvaluateProvider;
     private readonly IMatchProvider _matchProvider;
     private readonly IRewriteProvider _rewriteProvider;
 
     public CompilerServicesProvider(
         IEvaluateProvider evaluateProvider,
         ITypeInferenceProvider typeInferenceProvider,
+        ICostEvaluateProvider costEvaluateProvider,
         IDataTypeServiceProvider dataTypeServiceProvider,
         IMatchProvider matchProvider,
         IRewriteProvider rewriteProvider)
     {
         _evaluateProvider = evaluateProvider;
         _typeInferenceProvider = typeInferenceProvider;
+        _costEvaluateProvider = costEvaluateProvider;
         DataTypeService = dataTypeServiceProvider;
         _matchProvider = matchProvider;
         _rewriteProvider = rewriteProvider;
@@ -148,6 +168,18 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     public Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
     {
         return _rewriteProvider.Rewrite(expr, rules, options);
+    }
+
+    /// <inheritdoc/>
+    public Cost EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null)
+    {
+        return _costEvaluateProvider.EvaluateCost(expr, varsValues);
+    }
+
+    /// <inheritdoc/>
+    public Cost EvaluateOpCost(Op op, ICostEvaluateContext context)
+    {
+        return _costEvaluateProvider.EvaluateOpCost(op, context);
     }
 }
 
@@ -212,6 +244,28 @@ public static class CompilerServices
     public static IValue EvaluateOp(Op op, IEvaluateContext context)
     {
         return Provider.EvaluateOp(op, context);
+    }
+
+    /// <summary>
+    /// Evaluate cost of the expression tree.
+    /// </summary>
+    /// <param name="expr">Expression.</param>
+    /// <param name="varsValues">Optional vars' values.</param>
+    /// <returns>Evaluate result.</returns>
+    public static Cost EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null)
+    {
+        return Provider.EvaluateCost(expr, varsValues);
+    }
+
+    /// <summary>
+    /// Evaluate cost of operator.
+    /// </summary>
+    /// <param name="op">Target operator.</param>
+    /// <param name="context">Evaluate context.</param>
+    /// <returns>Evaluate result.</returns>
+    public static Cost EvaluateOpCost(Op op, ICostEvaluateContext context)
+    {
+        return Provider.EvaluateOpCost(op, context);
     }
 
     /// <summary>
