@@ -18,8 +18,11 @@ public class NNModule : Module
         builder.RegisterType<EluEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<HardSwishEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<LeakyReluEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<PReluEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<ReluEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<SeluEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<SigmoidEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<HardSigmoidEvaluator>().AsImplementedInterfaces();
 
         // Convolution
         builder.RegisterType<Conv2DEvaluator>().AsImplementedInterfaces();

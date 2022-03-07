@@ -28,9 +28,21 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>
             && context.GetArgument(target, Range.End) is TensorConst endValue
             && context.GetArgument(target, Range.Step) is TensorConst stepValue)
         {
-            return new TensorType(
-                DataTypes.Int32,
-                new Shape((beginValue.Value.ToScalar<int>() + endValue.Value.ToScalar<int>()) / stepValue.Value.ToScalar<int>()));
+            if (beginValue.CheckedDataType == endValue.CheckedDataType &&
+                endValue.CheckedDataType == stepValue.CheckedDataType)
+            {
+                return new TensorType(
+                    DataTypes.Int64,
+                    new Shape((beginValue.Value.ToScalar<int>() + endValue.Value.ToScalar<int>()) /
+                              stepValue.Value.ToScalar<int>()));
+            }
+            else
+            {
+                return new InvalidType($"Range Begin End Step must be same type, " +
+                                       $"but get begin:{beginValue.CheckedDataType}," +
+                                       $"end:{endValue.CheckedDataType}," +
+                                       $"step:{stepValue.CheckedDataType}");
+            }
         }
 
         return new InvalidType("Range begin, end, step should be constant");

@@ -24,9 +24,10 @@ namespace Nncase.Importer
         {
             var input = GetSingleInputExpr(op);
             var axesExpr = GetAxesAttribute(op, input);
-            var starts = GetConstIntsAttribute(op, "starts");
-            var ends = GetConstIntsAttribute(op, "ends");
-            return F.Tensors.Slice(input, starts, ends, axesExpr, ExpandOneToRank(input, 1));
+            var starts = GetTensorIntsAttribute(op, "starts");
+            var ends = GetTensorIntsAttribute(op, "ends");
+            return F.Tensors.Slice(input, starts, ends, axesExpr, 
+                F.Tensors.Expand(1L, Tensor.FromSpan<long>(new long[]{ends.Length})));
         }
 
         private Expr SliceV10(in NodeProto op)

@@ -33,13 +33,14 @@ namespace Nncase.Importer
         private Expr VisitLeakyRelu(NodeProto op)
         {
             var input = GetInputExpr(op, 0);
-            return LeakyRelu(input);
+            var alpha = GetFloatAttribute(op, "alpha", 0.01f);
+            return LeakyRelu(input, alpha);
         }
 
         private Expr VisitPRelu(NodeProto op)
         {
             var (input, slope) = GetInputExprs(op, 0, 1);
-            return Max(input, input * slope);
+            return PRelu(input, slope);
         }
 
         private Expr VisitSelu(NodeProto op)
@@ -47,7 +48,7 @@ namespace Nncase.Importer
             var x = GetInputExpr(op, 0);
             var alpha = GetFloatAttribute(op, "alpha", 1.67326319217681884765625F);
             var gamma = GetFloatAttribute(op, "gamma", 1.05070102214813232421875F);
-            return gamma * ((alpha * Min(Exp(x) - 1F, 0F)) + Max(x, 0F));
+            return Selu(x, alpha, gamma);
         }
 
         private Expr VisitSigmoid(NodeProto op)
@@ -61,7 +62,7 @@ namespace Nncase.Importer
             var x = GetInputExpr(op, 0);
             var alpha = GetFloatAttribute(op, "alpha", 0.2f);
             var beta = GetFloatAttribute(op, "alpha", 0.5f);
-            return Max(0F, Min(1F, (alpha * x) + beta));
+            return HardSigmoid(x, alpha, beta);
         }
 
         private Expr VisitHardSwish(NodeProto op)

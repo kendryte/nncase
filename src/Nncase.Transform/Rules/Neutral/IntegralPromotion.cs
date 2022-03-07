@@ -14,7 +14,7 @@ namespace Nncase.Transform.Rules.Neutral;
 /// int32 * int64 -> int64 * int64
 /// </summary>
 [RuleGenerator]
-public partial class IntegralPromotion : RewriteRule<CallPattern>
+public partial class IntegralPromotion : RewriteRule<OrPattern>
 {
     private static bool NeedPromotion(Binary bn)
     {
@@ -24,18 +24,20 @@ public partial class IntegralPromotion : RewriteRule<CallPattern>
             BinaryOp.Sub => true,
             BinaryOp.Mul => true,
             BinaryOp.Div => true,
+            BinaryOp.Max => true,
+            BinaryOp.Min => true,
             _ => false
         };
     }
     
     /// <inheritdoc/>
-    public override CallPattern Pattern { get; } = 
-        IsBinary(NeedPromotion,
+    public override OrPattern Pattern { get; } = 
+        IsAlt(IsBinary("bn", NeedPromotion,
             IsWildcard("lhs") with { TypePattern = IsDataType(DataTypes.Int32)}, 
-            IsWildcard("rhs") with { TypePattern = IsDataType(DataTypes.Int64)}) | 
+            IsWildcard("rhs") with { TypePattern = IsDataType(DataTypes.Int64)}),
         IsBinary("bn", NeedPromotion,
             IsWildcard("lhs") with { TypePattern = IsDataType(DataTypes.Int64)}, 
-            IsWildcard("rhs") with { TypePattern = IsDataType(DataTypes.Int32)});
+            IsWildcard("rhs") with { TypePattern = IsDataType(DataTypes.Int32)}));
 
     Expr GetReplace(Binary bn, Expr lhs, Expr rhs)
     {
@@ -43,7 +45,7 @@ public partial class IntegralPromotion : RewriteRule<CallPattern>
         {
             lhs = F.Tensors.Cast(lhs, DataTypes.Int64);
         }
-        else if (rhs.CheckedDataType == DataTypes.Int64 && rhs.CheckedDataType == DataTypes.Int32)
+        else if (lhs.CheckedDataType == DataTypes.Int64 && rhs.CheckedDataType == DataTypes.Int32)
         {
             rhs = F.Tensors.Cast(rhs, DataTypes.Int64);
         }

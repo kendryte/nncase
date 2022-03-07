@@ -77,7 +77,7 @@ namespace Nncase.Importer
 
         private Call ComputeDefaultAxes(Expr input)
         {
-            return F.Tensors.Range(0, F.Tensors.Rank(input), 1);
+            return F.Tensors.Range(0L, F.Tensors.Cast(F.Tensors.Rank(input), DataTypes.Int64), 1L);
         }
 
         Expr GetAxesAttribute(NodeProto n, Expr input)
@@ -92,9 +92,9 @@ namespace Nncase.Importer
             return GetAttrUnSafe(n, attr, AttributeType.Ints, x => x.Ints.ToArray());
         }
 
-        Const GetConstIntsAttribute(NodeProto n, string attr)
+        Tensor GetTensorIntsAttribute(NodeProto n, string attr)
         {
-            return Const.FromTensor(Tensor.FromSpan<long>(GetIntsAttribute(n, attr)));
+            return Tensor.FromSpan<long>(GetIntsAttribute(n, attr));
         }
 
         Option<long[]> GetOptionIntsAttribute(NodeProto n, string attr)

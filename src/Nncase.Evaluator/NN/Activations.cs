@@ -3,7 +3,7 @@
 
 using Nncase.IR;
 using Nncase.IR.NN;
-using torchF = TorchSharp.torch.nn.functional;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.NN;
 
@@ -13,9 +13,9 @@ namespace Nncase.Evaluator.NN;
 [EvaluatorGenerator, TypeInferGenerator]
 public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>
 {
-    private IValue Visit(TorchSharp.torch.Tensor Input, int Alpha)
+    private IValue Visit(OrtKISharp.Tensor Input, float Alpha)
     {
-        return Input.celu().ToValue();
+        return OrtKI.Celu(Input, Alpha).ToValue();
     }
 
     private TensorType Visit(TensorType Input)
@@ -30,9 +30,9 @@ public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>
 [EvaluatorGenerator, TypeInferGenerator]
 public partial class EluEvaluator : IEvaluator<Elu>, ITypeInferencer<Elu>
 {
-    IValue Visit(TorchSharp.torch.Tensor Input, double Alpha)
+    IValue Visit(OrtKISharp.Tensor Input, float Alpha)
     {
-        return torchF.elu(Input, Alpha).ToValue();
+        return OrtKI.Elu(Input, Alpha).ToValue();
     }
 
     IRType Visit(TensorType Input)
@@ -49,8 +49,9 @@ public class HardSwishEvaluator : IEvaluator<HardSwish>, ITypeInferencer<HardSwi
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, HardSwish hardSwish)
     {
-        var input = context.GetTorchArgumentValue(hardSwish, HardSwish.Input);
-        return input.hardswish().ToValue();
+        // onnxruntime no hardswish impl
+        var input = context.GetOrtArgumentValue(hardSwish, HardSwish.Input);
+        return (input * OrtKI.HardSigmoid(input, 1 / 6f, 0.5f)).ToValue();
     }
 
     /// <inheritdoc/>
@@ -74,8 +75,9 @@ public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRe
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, LeakyRelu leakyRelu)
     {
-        var input = context.GetTorchArgumentValue(leakyRelu, LeakyRelu.Input);
-        return input.leaky_relu(0.01).ToValue();
+        var input = context.GetOrtArgumentValue(leakyRelu, LeakyRelu.Input);
+        var alpha = context.GetArgumentValueAsScalar<float>(leakyRelu, LeakyRelu.Alpha);
+        return OrtKI.LeakyRelu(input, alpha).ToValue();
     }
 
     /// <inheritdoc/>
@@ -99,8 +101,8 @@ public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Relu relu)
     {
-        var input = context.GetTorchArgumentValue(relu, Relu.Input);
-        return input.relu().ToValue();
+        var input = context.GetOrtArgumentValue(relu, Relu.Input);
+        return OrtKI.Relu(input).ToValue();
     }
 
     /// <inheritdoc/>
@@ -124,8 +126,10 @@ public class SeluEvaluator : IEvaluator<Selu>, ITypeInferencer<Selu>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Selu selu)
     {
-        var input = context.GetTorchArgumentValue(selu, Selu.Input);
-        return input.selu().ToValue();
+        var input = context.GetOrtArgumentValue(selu, Selu.Input);
+        var alpha = context.GetArgumentValueAsScalar<float>(selu, Selu.Alpha);
+        var gamma = context.GetArgumentValueAsScalar<float>(selu, Selu.Gamma);
+        return OrtKI.Selu(input, alpha, gamma).ToValue();
     }
 
     /// <inheritdoc/>
@@ -149,14 +153,67 @@ public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Sigmoid sigmoid)
     {
-        var input = context.GetTorchArgumentValue(sigmoid, Sigmoid.Input);
-        return input.sigmoid().ToValue();
+        var input = context.GetOrtArgumentValue(sigmoid, Sigmoid.Input);
+        return OrtKI.Sigmoid(input).ToValue();
     }
 
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Sigmoid target)
     {
         var input = context.CheckArgumentType<TensorType>(target, Sigmoid.Input);
+        return Visit(input);
+    }
+
+    private IRType Visit(TensorType input)
+    {
+        return input;
+    }
+}
+
+/// <summary>
+/// Evaluator for <see cref="HardSigmoid"/>.
+/// </summary>
+public class HardSigmoidEvaluator : IEvaluator<HardSigmoid>, ITypeInferencer<HardSigmoid>
+{
+    /// <inheritdoc/>
+    public IValue Visit(IEvaluateContext context, HardSigmoid sigmoid)
+    {
+        var input = context.GetOrtArgumentValue(sigmoid, HardSigmoid.Input);
+        var alpha = context.GetArgumentValueAsScalar<float>(sigmoid, HardSigmoid.Alpha);
+        var beta = context.GetArgumentValueAsScalar<float>(sigmoid, HardSigmoid.Beta);
+        return OrtKI.HardSigmoid(input, alpha, beta).ToValue();
+    }
+
+    /// <inheritdoc/>
+    public IRType Visit(ITypeInferenceContext context, HardSigmoid target)
+    {
+        var input = context.CheckArgumentType<TensorType>(target, HardSigmoid.Input);
+        return Visit(input);
+    }
+
+    private IRType Visit(TensorType input)
+    {
+        return input;
+    }
+}
+
+/// <summary>
+/// Evaluator for <see cref="PRelu"/>.
+/// </summary>
+public class PReluEvaluator : IEvaluator<PRelu>, ITypeInferencer<PRelu>
+{
+    /// <inheritdoc/>
+    public IValue Visit(IEvaluateContext context, PRelu sigmoid)
+    {
+        var input = context.GetOrtArgumentValue(sigmoid, PRelu.Input);
+        var slope = context.GetOrtArgumentValue(sigmoid, PRelu.Slope);
+        return OrtKI.PRelu(input, slope).ToValue();
+    }
+
+    /// <inheritdoc/>
+    public IRType Visit(ITypeInferenceContext context, PRelu target)
+    {
+        var input = context.CheckArgumentType<TensorType>(target, PRelu.Input);
         return Visit(input);
     }
 

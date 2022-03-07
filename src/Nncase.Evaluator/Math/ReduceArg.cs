@@ -18,7 +18,7 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
     public IValue Visit(IEvaluateContext context, ReduceArg reduceArg)
     {
         var input = context.GetOrtArgumentValue(reduceArg, ReduceArg.Input);
-        var axis = context.GetArgumentValueAsScalar<int>(reduceArg, ReduceArg.Axis);
+        var axis = context.GetArgumentValueAsScalar<long>(reduceArg, ReduceArg.Axis);
         var keepDims = context.GetArgumentValueAsScalar<long>(reduceArg, ReduceArg.KeepDims);
         var selectLastIndex = context.GetArgumentValueAsScalar<long>(reduceArg, ReduceArg.SelectLastIndex);
         return (reduceArg.ReduceArgOp switch

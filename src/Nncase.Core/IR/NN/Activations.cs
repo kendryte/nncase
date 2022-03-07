@@ -58,6 +58,11 @@ public sealed record PRelu() : Op
     /// Gets input.
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(PRelu), 0, "input");
+    
+    /// <summary>
+    /// Gets Slope.
+    /// </summary>
+    public static readonly ParameterInfo Slope = new(typeof(PRelu), 1, "slope");
 }
 
 /// <summary>
@@ -70,6 +75,11 @@ public sealed record LeakyRelu() : Op
     /// Gets input.
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(LeakyRelu), 0, "input");
+    
+    /// <summary>
+    /// Gets Alpha.
+    /// </summary>
+    public static readonly ParameterInfo Alpha = new(typeof(LeakyRelu), 1, "alpha");
 }
 
 /// <summary>
@@ -104,6 +114,11 @@ public sealed record Selu() : Op
     /// Gets Alpha.
     /// </summary>
     public static readonly ParameterInfo Alpha = new(typeof(Selu), 1, "alpha", IsFloatScalar());
+    
+    /// <summary>
+    /// Gets Gamma.
+    /// </summary>
+    public static readonly ParameterInfo Gamma = new(typeof(Selu), 2, "gamma", IsFloatScalar());
 }
 
 /// <summary>

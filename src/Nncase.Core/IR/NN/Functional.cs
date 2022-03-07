@@ -26,7 +26,7 @@ namespace Nncase.IR.F
 
         public static Call Hardmax(Expr input, Expr axis) => new Call(new Hardmax(), input, axis);
 
-        public static Call LeakyRelu(Expr input) => new Call(new LeakyRelu(), input);
+        public static Call LeakyRelu(Expr input, Expr alpha) => new Call(new LeakyRelu(), input, alpha);
 
         public static Call L2Normalization(Expr input) => new Call(new L2Normalization(), input);
 
@@ -60,9 +60,9 @@ namespace Nncase.IR.F
 
         public static Call Relu6(Expr input) => new Call(new Relu6(), input);
 
-        public static Call PRelu(Expr input) => new Call(new PRelu(), input);
+        public static Call PRelu(Expr input, Expr slope) => new Call(new PRelu(), input, slope);
 
-        public static Call Selu(Expr input) => new Call(new Selu(), input);
+        public static Call Selu(Expr input, Expr alpha, Expr gamma) => new Call(new Selu(), input, alpha, gamma);
 
         public static Call Sigmoid(Expr expr) => new Call(new Sigmoid(), expr);
 

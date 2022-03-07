@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Linq;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using OrtKISharp;
@@ -34,6 +35,10 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>
         {
             var dims = dim_con.Value.Cast<int>();
             var outshape = input.Shape.ToList();
+            if (dims.Length == 0)
+            {
+                return input with {Shape = new Shape(outshape.Where(x => x != 1).ToArray())};
+            }
             foreach (var dimValue in dims)
             {
                 if (outshape[dimValue].IsFixed && outshape[dimValue] == 1)
