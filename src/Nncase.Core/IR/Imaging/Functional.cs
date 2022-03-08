@@ -50,9 +50,11 @@ public static class Imaging
     /// <returns></returns>
     public static Call ResizeImage(
         ImageResizeMode resizeMode,
-        Expr input, Expr roi, Expr newSize) 
+        Expr input, Expr roi, Expr newSize, 
+        ImageResizeTransformationMode tranMode = ImageResizeTransformationMode.Asymmetric,
+        ImageResizeNearestMode nearestMode = ImageResizeNearestMode.Floor) 
         => ResizeImage(resizeMode, 
-                ImageResizeTransformationMode.HalfPixel, 
-                ImageResizeNearestMode.RoundPreferFloor,
+                tranMode, 
+                nearestMode,
             input, roi, newSize, -0.75, 0, 0.0f);
 }

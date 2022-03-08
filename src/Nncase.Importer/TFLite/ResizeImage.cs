@@ -7,32 +7,75 @@ using System.IO;
 using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
-using F = Nncase.IR.F;
+using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.Imaging;
 
 namespace Nncase.Importer.TFLite
 {
     public partial class TFLiteImporter
     {
+        private Expr MakeResizeSizes(Expr input, Expr newSize)
+        {
+            var newNC = Concat(
+                new IR.Tuple(
+                    Util.ShapeIndex(input, 0),
+                    Util.ShapeIndex(input, 1)),
+                0);
+            return Cast(
+                Concat(
+                    new IR.Tuple(newNC, newSize),
+                    0),
+                new Int64Type());
+        }
         private Expr VisitResizeImage(in tflite.Operator op, ImageResizeMode resizeMode)
         {
             var (input, newSize) = GetInputExprs(op, 0, 1);
-            var (alignCorners, halfPixelCenters) = GetResizeOptions(op);
-            return F.Tensors.NCHWToNHWC(
-                F.Imaging.ResizeImage(
-                    resizeMode, F.Tensors.NHWCToNCHW(input), Array.Empty<float>(), newSize));
+            input = NHWCToNCHW(input);
+            var tranMode = GetResizeOptions(op);
+            var nearestMode = tranMode == ImageResizeTransformationMode.Asymmetric
+                ? ImageResizeNearestMode.Floor
+                : ImageResizeNearestMode.RoundPreferCeil;
+            return NCHWToNHWC(
+                ResizeImage(
+                    resizeMode, 
+                    input, 
+                    Array.Empty<float>(), 
+                    MakeResizeSizes(input, newSize), 
+                    tranMode,
+                    nearestMode));
         }
-
-        private (bool, bool) GetResizeOptions(in tflite.Operator op)
+        
+        private ImageResizeTransformationMode GetResizeOptions(in tflite.Operator op)
         {
             if (op.BuiltinOptionsType == tflite.BuiltinOptions.ResizeBilinearOptions)
             {
-                return (op.BuiltinOptionsAsResizeBilinearOptions().AlignCorners,
-                    op.BuiltinOptionsAsResizeBilinearOptions().HalfPixelCenters);
+                if (op.BuiltinOptionsAsResizeBilinearOptions().AlignCorners)
+                {
+                    return ImageResizeTransformationMode.AlignCorners;
+                }
+                else if (op.BuiltinOptionsAsResizeBilinearOptions().HalfPixelCenters)
+                {
+                    return ImageResizeTransformationMode.HalfPixel;
+                }
+                else
+                {
+                    return ImageResizeTransformationMode.Asymmetric;
+                }
             }
             else if (op.BuiltinOptionsType == tflite.BuiltinOptions.ResizeNearestNeighborOptions)
             {
-                return (op.BuiltinOptionsAsResizeNearestNeighborOptions().AlignCorners,
-                    op.BuiltinOptionsAsResizeNearestNeighborOptions().HalfPixelCenters);
+                if (op.BuiltinOptionsAsResizeNearestNeighborOptions().AlignCorners)
+                {
+                    return ImageResizeTransformationMode.AlignCorners;
+                }
+                else if (op.BuiltinOptionsAsResizeNearestNeighborOptions().HalfPixelCenters)
+                {
+                    return ImageResizeTransformationMode.HalfPixel;
+                }
+                else
+                {
+                    return ImageResizeTransformationMode.Asymmetric;
+                }
             }
             else
             {

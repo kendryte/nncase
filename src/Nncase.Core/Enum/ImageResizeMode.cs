@@ -14,11 +14,6 @@ public enum ImageResizeMode
     Bilinear,
 
     /// <summary>
-    /// Trilinear.
-    /// </summary>
-    Trilinear,
-
-    /// <summary>
     /// Nereast neighbor.
     /// </summary>
     NearestNeighbor,
@@ -81,9 +76,8 @@ public static class ResizeModeHelper
     {
         return mode switch
         {
-            "nearset" => ImageResizeMode.NearestNeighbor,
-            "bilinear" => ImageResizeMode.Bilinear,
-            "trilinear" => ImageResizeMode.Trilinear,
+            "nearest" => ImageResizeMode.NearestNeighbor,
+            "linear" => ImageResizeMode.Bilinear,
             _ => throw new NotSupportedException($"Unsupported Resize Mode {mode}"),
         };
     }
@@ -92,9 +86,8 @@ public static class ResizeModeHelper
     {
         return mode switch
         {
-             ImageResizeMode.NearestNeighbor => "nearset",
-             ImageResizeMode.Bilinear => "bilinear",
-             ImageResizeMode.Trilinear => "trilinear",
+             ImageResizeMode.NearestNeighbor => "nearest",
+             ImageResizeMode.Bilinear => "linear",
             _ => throw new NotSupportedException($"Unsupported Resize Mode {mode}"),
         };
     }

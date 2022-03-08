@@ -33,9 +33,6 @@ namespace Nncase.Importer
         
         private Expr ResizeV10(in NodeProto op)
         {
-            // todo:string input or attr
-            // todo:multi type is mismatch
-            // todo:is input is not full, index will be error
             var (input, scales) = GetInputExprs(op, 0, 2);
             var roi = GetRoi(op);
             var mode = GetResizeMode(op);
