@@ -73,6 +73,24 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
+        public sealed override TExprResult Visit(TIR.PrimFunction expr)
+        {
+            if (!_exprMemo.TryGetValue(expr, out var result))
+            {
+                foreach (var param in expr.Parameters)
+                {
+                    Visit(param);
+                }
+
+                Visit(expr.Body);
+                result = VisitLeaf(expr);
+                _exprMemo.Add(expr, result);
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc/>
         public sealed override TExprResult Visit(Op expr)
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
@@ -119,8 +137,9 @@ namespace Nncase.IR
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
                 Visit(expr.Value);
-                Visit(expr.Dom.Min);
-                Visit(expr.Dom.Max);
+                Visit(expr.Dom.Start);
+                Visit(expr.Dom.Stop);
+                Visit(expr.Dom.Step);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
@@ -151,8 +170,9 @@ namespace Nncase.IR
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
                 Visit(expr.LoopVar);
-                Visit(expr.Dom.Min);
-                Visit(expr.Dom.Max);
+                Visit(expr.Dom.Start);
+                Visit(expr.Dom.Stop);
+                Visit(expr.Dom.Step);
                 Visit(expr.Sequence);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
@@ -262,9 +282,16 @@ namespace Nncase.IR
         /// <summary>
         /// Visit leaf function expression.
         /// </summary>
-        /// <param name="expr">Variable expression.</param>
+        /// <param name="expr">Function expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult VisitLeaf(Function expr) => DefaultVisitLeaf(expr);
+
+        /// <summary>
+        /// Visit leaf prim function expression.
+        /// </summary>
+        /// <param name="expr">PrimFunction expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult VisitLeaf(TIR.PrimFunction expr) => DefaultVisitLeaf(expr);
 
         /// <summary>
         /// Visit leaf call expression.

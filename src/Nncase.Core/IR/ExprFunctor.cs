@@ -38,6 +38,7 @@ namespace Nncase.IR
                 TIR.BufferLoad bload => Visit(bload),
                 TIR.BufferStore bstore => Visit(bstore),
                 TIR.IfThenElse ift => Visit(ift),
+                TIR.PrimFunction primfunc => Visit(primfunc),
                 _ => DefaultVisit(expr),
             };
         }
@@ -62,6 +63,13 @@ namespace Nncase.IR
         /// <param name="expr">Variable expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult Visit(Function expr) => DefaultVisit(expr);
+
+        /// <summary>
+        /// Visit prim function expression.
+        /// </summary>
+        /// <param name="expr">Variable expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult Visit(TIR.PrimFunction expr) => DefaultVisit(expr);
 
         /// <summary>
         /// Visit call expression.

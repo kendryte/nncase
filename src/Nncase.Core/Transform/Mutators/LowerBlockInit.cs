@@ -37,7 +37,7 @@ namespace Nncase.Transform.Mutator
             {
                 if (iterVar.Mode == IterationMode.CommReduce)
                 {
-                    conds.Append(IR.F.Math.Equal(iterVar, iterVar.Dom.Min));
+                    conds.Append(IR.F.Math.Equal(iterVar, iterVar.Dom.Start));
                 }
             }
 

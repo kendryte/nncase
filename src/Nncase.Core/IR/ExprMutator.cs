@@ -51,7 +51,7 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
-        public override Expr VisitLeaf(Function expr)
+        public override Expr VisitLeaf(TIR.PrimFunction expr)
         {
             var nexpr = MutateLeaf(expr);
             if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
@@ -159,7 +159,7 @@ namespace Nncase.IR
                 Sequence = (TIR.Sequential)Visit(expr.Sequence),
             };
         }
-        
+
         /// <inheritdoc/>
         public override Expr VisitLeaf(TIR.Block expr)
         {
@@ -244,6 +244,13 @@ namespace Nncase.IR
         /// <param name="expr"></param>
         /// <returns></returns>
         public virtual Expr MutateLeaf(Function expr) => DefaultMutateLeaf(expr);
+
+        /// <summary>
+        /// mutate the prim function.
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public virtual Expr MutateLeaf(TIR.PrimFunction expr) => DefaultMutateLeaf(expr);
 
         /// <summary>
         /// mutate the op.
@@ -348,8 +355,9 @@ namespace Nncase.IR
 
             return range with
             {
-                Min = Visit(range.Min),
-                Max = Visit(range.Max),
+                Start = Visit(range.Start),
+                Stop = Visit(range.Stop),
+                Step = Visit(range.Step),
             };
         }
 

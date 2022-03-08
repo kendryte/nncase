@@ -95,4 +95,12 @@ public static class Tensors
 
     // sections (int or list[int])
     public static Call Split(Expr input, Expr axis, Expr sections) => new Call(new Split(), input, axis, sections);
+
+    /// <summary>
+    /// get item from the input.
+    /// </summary>
+    /// <param name="input">input.</param>
+    /// <param name="index">index.</param>
+    /// <returns>call.</returns>
+    public static Call GetItem(Expr input, Expr index) => new Call(new GetItem(), input, index);
 }

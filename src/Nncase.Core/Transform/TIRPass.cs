@@ -58,7 +58,7 @@ namespace Nncase.Transform
             switch (options.DumpLevel)
             {
                 case >= 2:
-                    ScriptPrinter.DumpAsScript(func, "Start", options.PassDumpDir);
+                    IRPrinter.DumpFunctionAsIL(func, "Start", options.PassDumpDir);
                     break;
                 default:
                     break;
@@ -71,7 +71,7 @@ namespace Nncase.Transform
             switch (options.DumpLevel)
             {
                 case >= 2:
-                    ScriptPrinter.DumpAsScript(func, "End", options.PassDumpDir);
+                    IRPrinter.DumpFunctionAsIL(func, "End", options.PassDumpDir);
                     break;
                 default:
                     break;

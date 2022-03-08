@@ -67,7 +67,7 @@ public class PatternGenerator : ISourceGenerator
                                              where p is not null
                                              select p)
                                      .Concat(from p in cand.AttrParams
-                                             select Parameter(Identifier(p.Name)).WithType(ParseTypeName(p.Type.Name)))
+                                             select Parameter(Identifier(p.Name)).WithType(ParseTypeName(p.Type.ToDisplayString())))
                                      .Concat(from f in cand.ExprParams
                                              select Parameter(Identifier(f.Name.ToLower())).WithType(ParseTypeName("Pattern")));
                         var statements = new List<StatementSyntax>();

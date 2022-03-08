@@ -44,6 +44,12 @@ namespace Nncase.IR
         /// <returns> check success. </returns>
         public bool CheckType(IRType type) => Pattern.MatchLeaf(type);
 
+        /// <summary>
+        /// ctor.
+        /// </summary>
+        /// <param name="ownerType">this op type.</param>
+        /// <param name="index">param index.</param>
+        /// <param name="name">param name.</param>
         public ParameterInfo(Type ownerType, int index, string name)
         {
             OwnerType = ownerType;
@@ -51,6 +57,13 @@ namespace Nncase.IR
             Name = name;
         }
 
+        /// <summary>
+        /// ctor.
+        /// </summary>
+        /// <param name="ownerType">this op type.</param>
+        /// <param name="index">param index.</param>
+        /// <param name="name">param name.</param>
+        /// <param name="pattern">the param condition.</param>
         public ParameterInfo(Type ownerType, int index, string name, TypePattern pattern) :
           this(ownerType, index, name)
         {
@@ -68,18 +81,23 @@ namespace Nncase.IR
     {
         private ParameterInfo[]? _parameters;
 
+        /// <summary>
+        /// get the parameters.
+        /// </summary>
         public IEnumerable<ParameterInfo> Parameters =>
             _parameters ??= (from p in this.GetType().GetFields(BindingFlags.Public | BindingFlags.Static)
                              where p.FieldType == typeof(ParameterInfo)
                              let param = (ParameterInfo)(p.GetValue(null) ?? throw new InvalidOperationException())
                              orderby param.Index
                              select param).ToArray();
-
+        
+        /// <inheritdoc/>
         public virtual bool Equals(Op? other)
         {
             return !(other is null) && EqualityContract == other.EqualityContract;
         }
 
+        /// <inheritdoc/>
         public override int GetHashCode()
         {
             return _hashcode ??= EqualityComparer<Type>.Default.GetHashCode(EqualityContract);

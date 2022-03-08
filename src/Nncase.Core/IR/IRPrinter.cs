@@ -82,6 +82,11 @@ namespace Nncase.IR
             DumpExprAsIL(writer, expr);
         }
 
+        /// <summary>
+        /// dump type as il.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static string DumpTypeAsIL(this IRType type)
         {
             var builder = new StringBuilder();
@@ -186,6 +191,10 @@ namespace Nncase.IR
             /// <param name="value"></param>
             public void IndWrite(string? value) => Indent().Write(value);
 
+            /// <summary>
+            /// write the string builder.
+            /// </summary>
+            /// <param name="value"></param>
             public void IndWrite(StringBuilder? value) => Indent().Write(value);
 
             /// <summary>
@@ -194,6 +203,10 @@ namespace Nncase.IR
             /// <param name="value"></param>
             public void IndWriteLine(string? value = null) => Indent().WriteLine(value);
 
+            /// <summary>
+            /// wrtie string builder.
+            /// </summary>
+            /// <param name="value"></param>
             public void IndWriteLine(StringBuilder? value) => Indent().WriteLine(value);
 
             /// <summary>
@@ -201,6 +214,11 @@ namespace Nncase.IR
             /// </summary>
             /// <param name="value"></param>
             public void Append(string value) => Writer.Write(value);
+
+            /// <summary>
+            /// wrtie string builder.
+            /// </summary>
+            /// <param name="value"></param>
             public void Append(StringBuilder value) => Writer.Write(value);
 
             /// <summary>
@@ -208,6 +226,11 @@ namespace Nncase.IR
             /// </summary>
             /// <param name="value"></param>
             public void AppendLine(string value) => Writer.WriteLine(value);
+
+            /// <summary>
+            /// wrtie string builder.
+            /// </summary>
+            /// <param name="value"></param>
             public void AppendLine(StringBuilder value) => Writer.WriteLine(value);
 
             /// <summary>
@@ -266,6 +289,9 @@ namespace Nncase.IR
                     Parent.indentLevel += indentDiff;
                 }
 
+                /// <summary>
+                /// reduce indentLevel
+                /// </summary>
                 public void Dispose()
                 {
                     Parent.indentLevel -= indentDiff;
@@ -415,7 +441,7 @@ namespace Nncase.IR
                 Scope.Push();
 
                 // 1. For Loop signature
-                Scope.Append($"For {expr.Mode}({Visit(expr.LoopVar)} in Range({Visit(expr.Dom.Min)}, {Visit(expr.Dom.Max)})");
+                Scope.Append($"For {expr.Mode}({Visit(expr.LoopVar)} in Range({Visit(expr.Dom.Start)}, {Visit(expr.Dom.Stop)}, {Visit(expr.Dom.Step)})");
                 AppendCheckedType(expr.CheckedType, " {\n");
 
                 // 2. For Body
