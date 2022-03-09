@@ -30,7 +30,7 @@ internal static class EGraphRewriter
             var eClasses = eGraph.EClasses();
             foreach (var rule in rules)
             {
-                if (EGraphMatcher.TryMatch(eClasses, rule.Pattern, enodes, out var results))
+                if (EGraphMatcher.TryMatchRoot(enodes, rule.Pattern, out var results))
                 {
                     matches.Add((rule, results));
 

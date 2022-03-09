@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using Nncase.Transform;
 
 namespace Nncase.PatternMatch;
 
@@ -33,4 +34,19 @@ public interface IMatchProvider
     /// <param name="result">Match result.</param>
     /// <returns>Match success.</returns>
     bool TryMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result);
+}
+
+/// <summary>
+/// EGraph match provider interface.
+/// </summary>
+public interface IEGraphMatchProvider
+{
+    /// <summary>
+    /// Match enodes as root.
+    /// </summary>
+    /// <param name="enodes">ENodes.</param>
+    /// <param name="pattern">Pattern.</param>
+    /// <param name="results">Match results.</param>
+    /// <returns>Match success.</returns>
+    bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results);
 }

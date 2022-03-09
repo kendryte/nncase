@@ -45,27 +45,27 @@ public class UnitTestTBuffer
         Assert.IsType<AccessPtr>(aptr.Target);
     }
 
-    [Fact]
-    public void TestBufferAccessPtrOffset()
-    {
-        var m = T.SizeVar("m");
-        var n = T.SizeVar("n");
-        var dict = new Dictionary<Var, torch.Tensor>() {
-              { n,  torch.tensor(1) },
-              { m,  torch.tensor(3) },
-            };
-        var Ab = T.DeclBuffer((m, n),
-                      DataTypes.Float32,
-                      strides: (n + 1, 1));
-        var aptr = Ab.AccessPtr(AccessMode.ReadWrite, offset: 100);
-        Assert.Equal(AccessMode.ReadWrite, ((AccessPtr)aptr.Target).AccessMode);
+    //[Fact]
+    //public void TestBufferAccessPtrOffset()
+    //{
+    //    var m = T.SizeVar("m");
+    //    var n = T.SizeVar("n");
+    //    var dict = new Dictionary<Var, torch.Tensor>() {
+    //          { n,  torch.tensor(1) },
+    //          { m,  torch.tensor(3) },
+    //        };
+    //    var Ab = T.DeclBuffer((m, n),
+    //                  DataTypes.Float32,
+    //                  strides: (n + 1, 1));
+    //    var aptr = Ab.AccessPtr(AccessMode.ReadWrite, offset: 100);
+    //    Assert.Equal(AccessMode.ReadWrite, ((AccessPtr)aptr.Target).AccessMode);
 
-        var v = T.SizeVar("v");
+    //    var v = T.SizeVar("v");
 
-        var aptr2 = Ab.AccessPtr(AccessMode.ReadWrite, offset: 100 + 100 + v);
+    //    var aptr2 = Ab.AccessPtr(AccessMode.ReadWrite, offset: 100 + 100 + v);
 
-        Testing.AssertExprEqual(aptr2.Parameters[1], v + 200);
-    }
+    //    Testing.AssertExprEqual(aptr2.Parameters[1], v + 200);
+    //}
 
     // [Fact]
     // public void TestBufferAccessPtrExtent()

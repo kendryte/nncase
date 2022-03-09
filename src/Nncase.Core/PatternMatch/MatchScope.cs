@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using Nncase.Transform;
 
 namespace Nncase.PatternMatch;
 
@@ -26,7 +27,16 @@ public sealed class MatchScope
     /// Initializes a new instance of the <see cref="MatchScope"/> class.
     /// </summary>
     /// <param name="root">Match root.</param>
-    public MatchScope(object root)
+    public MatchScope(Expr root)
+    {
+        _root = root;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MatchScope"/> class.
+    /// </summary>
+    /// <param name="root">Match root.</param>
+    public MatchScope(ENode root)
     {
         _root = root;
     }

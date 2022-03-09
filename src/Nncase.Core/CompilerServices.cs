@@ -95,6 +95,15 @@ public interface ICompilerServicesProvider
     /// <param name="options">Options.</param>
     /// <returns>Rewrited expression.</returns>
     Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options);
+
+    /// <summary>
+    /// Match enodes as root.
+    /// </summary>
+    /// <param name="enodes">ENodes.</param>
+    /// <param name="pattern">Pattern.</param>
+    /// <param name="results">Match results.</param>
+    /// <returns>Match success.</returns>
+    bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results);
 }
 
 internal interface ICompilerServicesProviderInternal
@@ -109,6 +118,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     private readonly ICostEvaluateProvider _costEvaluateProvider;
     private readonly IMatchProvider _matchProvider;
     private readonly IRewriteProvider _rewriteProvider;
+    private readonly IEGraphMatchProvider _eGraphMatchProvider;
 
     public CompilerServicesProvider(
         IEvaluateProvider evaluateProvider,
@@ -116,7 +126,8 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         ICostEvaluateProvider costEvaluateProvider,
         IDataTypeServiceProvider dataTypeServiceProvider,
         IMatchProvider matchProvider,
-        IRewriteProvider rewriteProvider)
+        IRewriteProvider rewriteProvider,
+        IEGraphMatchProvider eGraphMatchProvider)
     {
         _evaluateProvider = evaluateProvider;
         _typeInferenceProvider = typeInferenceProvider;
@@ -124,6 +135,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         DataTypeService = dataTypeServiceProvider;
         _matchProvider = matchProvider;
         _rewriteProvider = rewriteProvider;
+        _eGraphMatchProvider = eGraphMatchProvider;
     }
 
     public IDataTypeServiceProvider DataTypeService { get; }
@@ -180,6 +192,11 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     public Cost EvaluateOpCost(Op op, ICostEvaluateContext context)
     {
         return _costEvaluateProvider.EvaluateOpCost(op, context);
+    }
+
+    public bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
+    {
+        return _eGraphMatchProvider.TryMatchRoot(enodes, pattern, out results);
     }
 }
 
@@ -302,5 +319,29 @@ public static class CompilerServices
     public static Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
     {
         return Provider.Rewrite(expr, rules, options);
+    }
+
+    /// <summary>
+    /// Match enodes as root.
+    /// </summary>
+    /// <param name="enodes">ENodes.</param>
+    /// <param name="pattern">Pattern.</param>
+    /// <param name="results">Match results.</param>
+    /// <returns>Match success.</returns>
+    public static bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
+    {
+        return Provider.TryMatchRoot(enodes, pattern, out results);
+    }
+
+    /// <summary>
+    /// Match enode as root.
+    /// </summary>
+    /// <param name="enode">ENode.</param>
+    /// <param name="pattern">Pattern.</param>
+    /// <param name="results">Match results.</param>
+    /// <returns>Match success.</returns>
+    public static bool TryMatchRoot(ENode enode, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
+    {
+        return Provider.TryMatchRoot(new[] { enode }, pattern, out results);
     }
 }

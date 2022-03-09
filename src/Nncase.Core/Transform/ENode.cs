@@ -23,11 +23,14 @@ public sealed record ENode(Expr Expr, IRArray<EClass> Children)
     /// <summary>
     /// Add current enode information to childrens.
     /// </summary>
+    /// <param name="eClass">EClass.</param>
     public void AddUsed(EClass eClass)
     {
-        foreach (var children in Children)
+        eClass.AddNode(this);
+
+        foreach (var child in Children)
         {
-            children.Used.Add((this, eClass.Find()));
+            child.AddUsed(this);
         }
     }
 
@@ -39,23 +42,6 @@ public sealed record ENode(Expr Expr, IRArray<EClass> Children)
     {
         var children = (from c in Children select c.Find()).ToArray();
         return new ENode(Expr, children);
-    }
-
-    public (ENode, List<EClass>) Canonicalize(EClass TargeteClass)
-    {
-        var todos = new List<EClass>();
-        EClass find_other_parents(EClass child)
-        {
-            var neweClass = child.Find();
-            if (neweClass != TargeteClass)
-            {
-                todos.Add(neweClass);
-            }
-
-            return neweClass;
-        }
-
-        return (new ENode(Expr, Children.Select(find_other_parents).ToArray()), todos);
     }
 
     /// <inheritdoc/>

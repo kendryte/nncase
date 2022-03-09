@@ -16,66 +16,25 @@ namespace Nncase.PatternMatch;
 
 internal sealed class EGraphMatcher
 {
-    private readonly IReadOnlyDictionary<EClass, List<ENode>> _eclasses;
-
-    public EGraphMatcher(IReadOnlyDictionary<EClass, List<ENode>> eclasses)
-    {
-        _eclasses = eclasses;
-    }
-
     /// <summary>
-    /// Match expression as root.
+    /// Match enodes as root.
     /// </summary>
-    /// <param name="eclasses">EClasses.</param>
-    /// <param name="pattern">Pattern.</param>
-    /// <param name="enode">ENode.</param>
-    /// <param name="results">Match results.</param>
-    /// <returns>Match success.</returns>
-    public static bool TryMatchRoot(IReadOnlyDictionary<EClass, List<ENode>> eclasses, IPattern pattern, ENode enode, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
-    {
-        if (!pattern.MatchLeaf(enode.Expr))
-        {
-            results = null;
-            return false;
-        }
-
-        var rootScopes = new[] { new MatchScope() };
-        var matcher = new EGraphMatcher(eclasses);
-        var matchScopes = matcher.Visit(rootScopes, pattern, enode);
-        if (matchScopes.Count == 0)
-        {
-            results = null;
-            return false;
-        }
-        else
-        {
-            results = matchScopes.Select(x =>
-              {
-                  x.TryGetMatchResult(out var result);
-                  return result!;
-              }).ToList();
-            return results.Count > 0;
-        }
-    }
-
-    /// <summary>
-    /// Match expression.
-    /// </summary>
-    /// <param name="eclasses">EClasses.</param>
-    /// <param name="pattern">Pattern.</param>
     /// <param name="enodes">ENodes.</param>
+    /// <param name="pattern">Pattern.</param>
     /// <param name="results">Match results.</param>
     /// <returns>Match success.</returns>
-    public static bool TryMatch(IReadOnlyDictionary<EClass, List<ENode>> eclasses, IPattern pattern, IReadOnlyList<ENode> enodes, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
+    public static bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
     {
-        var rootScopes = new[] { new MatchScope() };
-        var matcher = new EGraphMatcher(eclasses);
+        var matcher = new EGraphMatcher();
         var matchScopes = new List<MatchScope>();
 
         foreach (var enode in enodes)
         {
-            var scopes = matcher.Visit(rootScopes, pattern, enode);
-            matchScopes.AddRange(scopes);
+            if (pattern.MatchLeaf(enode.Expr))
+            {
+                var scopes = matcher.Visit(new[] { new MatchScope(enode) }, pattern, enode);
+                matchScopes.AddRange(scopes);
+            }
         }
 
         if (matchScopes.Count == 0)
@@ -116,7 +75,7 @@ internal sealed class EGraphMatcher
     {
         var newScopes = new List<MatchScope>();
 
-        foreach (var node in _eclasses[eClass])
+        foreach (var node in eClass.Nodes)
         {
             var scopes = Visit(matchScopes, pattern, node);
             if (scopes.Count > 0)
@@ -269,7 +228,7 @@ internal sealed class EGraphMatcher
             var newScopes = new List<MatchScope>();
 
             foreach (var enodes in (from ec in eClasses
-                                    select from en in _eclasses[ec]
+                                    select from en in ec.Nodes
                                            select en).CartesianProduct())
             {
                 var scopes = Visit(matchScopes, pattern, enodes.ToList());

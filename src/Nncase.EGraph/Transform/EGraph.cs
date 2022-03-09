@@ -12,31 +12,18 @@ namespace Nncase.Transform;
 /// <summary>
 /// EGraph.
 /// </summary>
-public sealed partial class EGraph
+public sealed partial class EGraph : IEGraph
 {
     private readonly Dictionary<Expr, ENode> _exprMemo = new();
     private readonly Dictionary<ENode, EClass> _nodes = new();
 
-    /// <summary>
-    /// record each Enode's Eclass.
-    /// </summary>
-    private readonly Dictionary<ENode, EClass> _hascons = new Dictionary<ENode, EClass>();
-
-    // private readonly List<EClass> _classes = new List<EClass>();
     private int _version = 0;
-
-    private int _globalEclassId = 0;
-
-    /// <summary>
-    /// save which node has been merged,
-    /// we should update it's eclass in hashcon.
-    /// </summary>
-    private readonly List<ENode> _mergedlist = new();
+    private int _globalEClassId = 0;
 
     /// <summary>
     /// which eclass should be repair.
     /// </summary>
-    private List<EClass> _worklist = new();
+    private Queue<WorkItem> _worklist = new();
 
     /// <summary>
     /// the all EClass and it's.
@@ -45,7 +32,7 @@ public sealed partial class EGraph
     public Dictionary<EClass, List<ENode>> EClasses()
     {
         var eclasses = new Dictionary<EClass, List<ENode>>();
-        foreach (var (enode, eclass) in _hascons)
+        foreach (var (enode, eclass) in _nodes)
         {
             // NOTE when do Find in here, maybe some enode's child id haven't update.
             var parentEclass = eclass.Find();
@@ -69,7 +56,10 @@ public sealed partial class EGraph
     /// <summary>
     /// <see cref="_hascons"/>.
     /// </summary>
-    public IReadOnlyDictionary<ENode, EClass> HashCons => _hascons;
+    public IReadOnlyDictionary<ENode, EClass> HashCons => _nodes;
+
+    /// <inheritdoc/>
+    public IEnumerable<ENode> Nodes => _nodes.Keys;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EGraph"/> class.
@@ -124,16 +114,14 @@ public sealed partial class EGraph
         }
 
         _version++;
-        if (classA.Used.Count < classB.Used.Count)
+        if (classA.Nodes.Count < classB.Nodes.Count)
         {
             (classA, classB) = (classB, classA);
         }
 
         classB.Parent = classA;
-        classA.Used.AddRange(classB.Used);
-        classB.Used.Clear();
-
-        _worklist.Add(classA);
+        classA.AddNodes(classB.Nodes);
+        _worklist.Enqueue(new() { OldClass = classB, NewClass = classA });
         return true;
     }
 
@@ -144,123 +132,81 @@ public sealed partial class EGraph
     {
         while (_worklist.Count > 0)
         {
-            // swap todos and worklist
-            (var todos, _worklist) = (_worklist, new());
-
-            foreach (var eclass in todos)
-            {
-                Repair(eclass);
-            }
+            Repair(_worklist.Dequeue());
         }
-    }
-
-    /// <summary>
-    /// <see cref="TopSort(IReadOnlyDictionary&lt;EClass, List&lt;ENode&gt;&gt;)"/>.
-    /// </summary>
-    /// <returns></returns>
-    public EClass[] TopSort() => TopSort(EClasses());
-
-    /// <summary>
-    /// Get Top Sorted EGraph Datastruce.
-    /// </summary>
-    /// <returns> the Eclass array, the root eclass is first one. </returns>
-    public EClass[] TopSort(IReadOnlyDictionary<EClass, List<ENode>> eClasses)
-    {
-        void dfs(EClass eclass, Dictionary<EClass, bool> visited, List<EClass> paths)
-        {
-            visited[eclass] = true;
-            foreach (var (_, used_eclass) in eclass.Used)
-            {
-                if (!visited[eclass])
-                {
-                    dfs(used_eclass, visited, paths);
-                }
-            }
-
-            paths.Add(eclass); // put the root node into last
-        }
-
-        var visited = new Dictionary<EClass, bool>();
-        foreach (var (k, _) in eClasses)
-        {
-            visited[k] = false;
-        }
-
-        var paths = new List<EClass>();
-        foreach (var (eclass, is_visited) in visited)
-        {
-            if (!is_visited)
-            {
-                dfs(eclass, visited, paths);
-            }
-        }
-
-        return paths.ToArray();
     }
 
     private EClass AddENode(Expr expr, IRArray<EClass> children)
     {
+        // TODO: concurrent safe
         if (!_exprMemo.TryGetValue(expr, out var enode))
         {
             enode = new ENode(expr, children);
+            _exprMemo.Add(expr, enode);
         }
 
         if (!_nodes.TryGetValue(enode, out var eclass))
         {
-            eclass = new EClass(_globalEclassId++);
+            eclass = new EClass(_globalEClassId++);
             enode.AddUsed(eclass);
+            _nodes.Add(enode, eclass);
         }
 
-        return eclass.Find();
+        return eclass;
     }
 
-    private void Repair(EClass eclass)
+    private void Repair(WorkItem workItem)
     {
-        // copy and reset the used, will reassgin new used
-        var oldUsed = new List<(ENode, EClass)>(eclass.Used);
-        eclass.Used.Clear();
+        workItem.NewClass = workItem.NewClass.Find();
 
-        foreach (var (pnode, pclass) in oldUsed)
+        foreach (var enode in workItem.OldClass.Used)
         {
-            // update the parent node.
-            if (_hascons.ContainsKey(pnode))
+            // 1. Check this node is alive and remove it
+            if (_nodes.TryGetValue(enode, out var originalClass))
             {
-                _hascons.Remove(pnode);
+                originalClass = originalClass.Find();
+                _nodes.Remove(enode);
+            }
+            else
+            {
+                continue;
             }
 
-            // TODO we update the enode, should put this new node to it's child eclass's oldUsed.
-            // Then when that eclass be repaired, it will update this new enode.
-            var (newPnode, newParents) = pnode.Canonicalize(eclass);
-            var newPclass = pclass.Find();
-            if (!_hascons.TryGetValue(newPnode, out var result))
+            // 2. Update node's children
+            var newNode = enode.Canonicalize();
+
+            // 3. If new node already exists, union these classes.
+            if (_nodes.TryGetValue(newNode, out var existsClass))
             {
-                _hascons.Add(newPnode, newPclass); // update this node to it's child's used
-                newParents.ForEach(parent => parent.Used.Add((newPnode, newPclass)));
+                originalClass.RemoveNode(enode);
+                Union(originalClass, existsClass);
             }
-            else if (result.Find() != newPclass)
+            else
             {
-                throw new InvalidProgramException($"The ENode {newPnode}'s Eclass is {_hascons[newPnode]} but will set to {newPclass}!");
+                originalClass.ReplaceNode(enode, newNode);
+                _nodes.Add(newNode, originalClass);
             }
         }
 
-        /* Eg. [(x*2)+1] and [(x<<1)+1], when (x*2) <== (x<<1),
-           the [(x*2)+1] and [(x<<1)+1] will got same new enode,
-            so we should merge them.
-         */
-        var newUsed = new Dictionary<ENode, EClass>();
-        foreach (var (pnode, pclass) in oldUsed)
+        foreach (var enode in workItem.OldClass.Nodes)
         {
-            var newPnode = pnode.Canonicalize();
-            if (newUsed.ContainsKey(newPnode))
+            if (_nodes.ContainsKey(enode))
             {
-                Union(pclass, newUsed[newPnode]);
+                _nodes[enode] = workItem.NewClass;
             }
-
-            newUsed[newPnode] = _hascons[newPnode];
+            else
+            {
+                workItem.NewClass.RemoveNode(enode);
+            }
         }
 
-        // reassgin current eclass's Used.
-        eclass.Find().Used.AddRange(newUsed.Select(kv => (kv.Key, kv.Value)));
+        workItem.OldClass.Kill();
+    }
+
+    private struct WorkItem
+    {
+        public EClass OldClass;
+        public EClass NewClass;
     }
 
     private sealed class ENodeConverter : ExprVisitor<EClass, IRType>
