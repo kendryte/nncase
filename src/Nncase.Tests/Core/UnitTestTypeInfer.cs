@@ -151,5 +151,6 @@ public class UnitTestTypeInfer : IHostFixtrue
         AssertReshape(input, new[] { 8, 5, 3, 7}, new[] {8, 5, 3, 7});
         AssertReshape(input, new[] { -1, 5, 6, 7}, new[] {4, 5, 6, 7});
         AssertReshape(input, new[] { -1, 5, 3, 7}, new[] {8, 5, 3, 7});
+        AssertReshape(input, new[] { -1}, new[] {4 * 5 * 6 * 7});
     }
 }
