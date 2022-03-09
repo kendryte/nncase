@@ -379,4 +379,11 @@ public static class TypeInference
 
         return input with { Shape = new Shape(out_shape) };
     }
+
+    /// <summary>
+    /// input x is -1?
+    /// </summary>
+    /// <param name="x"></param>
+    /// <returns></returns>
+    public static bool IsMinus1(int x) => x == -1;
 }
