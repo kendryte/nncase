@@ -16,6 +16,7 @@ public sealed partial class EGraph : IEGraph
 {
     private readonly Dictionary<Expr, ENode> _exprMemo = new();
     private readonly Dictionary<ENode, EClass> _nodes = new();
+    private readonly List<EClass> _classes = new();
 
     private int _version = 0;
     private int _globalEClassId = 0;
@@ -24,42 +25,6 @@ public sealed partial class EGraph : IEGraph
     /// which eclass should be repair.
     /// </summary>
     private Queue<WorkItem> _worklist = new();
-
-    /// <summary>
-    /// the all EClass and it's.
-    /// </summary>
-    /// <returns></returns>
-    public Dictionary<EClass, List<ENode>> EClasses()
-    {
-        var eclasses = new Dictionary<EClass, List<ENode>>();
-        foreach (var (enode, eclass) in _nodes)
-        {
-            // NOTE when do Find in here, maybe some enode's child id haven't update.
-            var parentEclass = eclass.Find();
-
-            // if (parentEclass != eclass) { _mergedlist.Add(enode); }
-            if (!eclasses.ContainsKey(parentEclass))
-            {
-                eclasses.Add(parentEclass, new List<ENode> { enode });
-            }
-            else
-            {
-                eclasses[parentEclass].Add(enode);
-            }
-        }
-
-        // foreach (var enode in _mergedlist) { _hascons[enode] = _hascons[enode].Find(); }
-        // _mergedlist.Clear();
-        return eclasses;
-    }
-
-    /// <summary>
-    /// <see cref="_hascons"/>.
-    /// </summary>
-    public IReadOnlyDictionary<ENode, EClass> HashCons => _nodes;
-
-    /// <inheritdoc/>
-    public IEnumerable<ENode> Nodes => _nodes.Keys;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EGraph"/> class.
@@ -76,6 +41,14 @@ public sealed partial class EGraph : IEGraph
     {
         Add(expr);
     }
+
+    /// <summary>
+    /// <see cref="_hascons"/>.
+    /// </summary>
+    public IEnumerable<EClass> Classes => _classes;
+
+    /// <inheritdoc/>
+    public IEnumerable<ENode> Nodes => _nodes.Keys;
 
     /// <summary>
     /// Gets version.
@@ -96,6 +69,16 @@ public sealed partial class EGraph : IEGraph
 
         var converter = new ENodeConverter(this);
         return converter.Visit(expr);
+    }
+
+    /// <summary>
+    /// Find eclass of enode.
+    /// </summary>
+    /// <param name="node">ENode.</param>
+    /// <returns>EClass.</returns>
+    public EClass Find(ENode node)
+    {
+        return _nodes[node].Find();
     }
 
     /// <summary>
@@ -148,6 +131,7 @@ public sealed partial class EGraph : IEGraph
         if (!_nodes.TryGetValue(enode, out var eclass))
         {
             eclass = new EClass(_globalEClassId++);
+            _classes.Add(eclass);
             enode.AddUsed(eclass);
             _nodes.Add(enode, eclass);
         }
@@ -174,16 +158,16 @@ public sealed partial class EGraph : IEGraph
 
             // 2. Update node's children
             var newNode = enode.Canonicalize();
+            originalClass.RemoveNode(enode);
 
             // 3. If new node already exists, union these classes.
             if (_nodes.TryGetValue(newNode, out var existsClass))
             {
-                originalClass.RemoveNode(enode);
                 Union(originalClass, existsClass);
             }
             else
             {
-                originalClass.ReplaceNode(enode, newNode);
+                newNode.AddUsed(originalClass);
                 _nodes.Add(newNode, originalClass);
             }
         }
@@ -201,6 +185,7 @@ public sealed partial class EGraph : IEGraph
         }
 
         workItem.OldClass.Kill();
+        _classes.Remove(workItem.OldClass);
     }
 
     private struct WorkItem

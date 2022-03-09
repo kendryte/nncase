@@ -15,13 +15,11 @@ namespace Nncase.Transform;
 internal class EGraphExtractor
 {
     private readonly EGraphCostModel _costModel;
-    private readonly IReadOnlyDictionary<EClass, List<ENode>> _eclasses;
     private readonly Dictionary<EClass, Expr> _eclassMemo = new();
 
-    public EGraphExtractor(EGraphCostModel costModel, IReadOnlyDictionary<EClass, List<ENode>> eclasses)
+    public EGraphExtractor(EGraphCostModel costModel)
     {
         _costModel = costModel;
-        _eclasses = eclasses;
     }
 
     public Expr Extract(EClass root)
@@ -33,8 +31,7 @@ internal class EGraphExtractor
     {
         if (!_eclassMemo.TryGetValue(eclass, out var expr))
         {
-            var enodes = _eclasses[eclass];
-            var minCostEnode = enodes.MinBy(x => _costModel[x]);
+            var minCostEnode = eclass.Nodes.MinBy(x => _costModel[x]);
             expr = minCostEnode!.Expr switch
             {
                 Var var => VisitLeaf(minCostEnode, var),
@@ -85,14 +82,13 @@ public static class EGraphExtractExtensions
     /// <returns>Extracted root expression.</returns>
     public static Expr Extract(this EGraph eGraph, EClass root, RunPassOptions options)
     {
-        var eclasses = eGraph.EClasses();
-        var costModel = new EGraphCostEvaluator(eclasses, root).Evaluate();
+        var costModel = new EGraphCostEvaluator(root).Evaluate();
         if (options.DumpLevel > 1)
         {
             // TODO: dump graph
             // EGraphPrinter.DumpEgraphAsDot(eGraph, new EGraphCosts(eGraph, costs), entry.Find(), Path.Combine(options.PassDumpDir, "Costs", $"V{eGraph.Version}"));
         }
 
-        return new EGraphExtractor(costModel, eclasses).Extract(root);
+        return new EGraphExtractor(costModel).Extract(root);
     }
 }

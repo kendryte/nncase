@@ -26,11 +26,9 @@ internal static class EGraphRewriter
 
         while (true)
         {
-            var enodes = eGraph.HashCons.Keys.ToList();
-            var eClasses = eGraph.EClasses();
             foreach (var rule in rules)
             {
-                if (EGraphMatcher.TryMatchRoot(enodes, rule.Pattern, out var results))
+                if (EGraphMatcher.TryMatchRoot(eGraph.Nodes, rule.Pattern, out var results))
                 {
                     matches.Add((rule, results));
 
@@ -49,7 +47,7 @@ internal static class EGraphRewriter
                 var replacedExprs = (from result in results
                                      let expr = rule.GetReplace(result)
                                      where expr != null
-                                     select (eGraph.HashCons[(ENode)result.Root], expr)).ToList();
+                                     select (eGraph.Find((ENode)result.Root), expr)).ToList();
 
                 foreach (var (oldEClass, newExpr) in replacedExprs)
                 {
@@ -87,13 +85,13 @@ internal static class EGraphRewriter
 
             if (options.DumpLevel == 3)
             {
-                foreach (var (_, eclass) in eGraph.HashCons)
-                {
-                    if (eclass.Parent is not null)
-                    {
-                        // throw new InvalidProgramException("EGraph Rebuild Logic Error!");
-                    }
-                }
+                //foreach (var (_, eclass) in eGraph.HashCons)
+                //{
+                //    if (eclass.Parent is not null)
+                //    {
+                //        // throw new InvalidProgramException("EGraph Rebuild Logic Error!");
+                //    }
+                //}
             }
         }
 

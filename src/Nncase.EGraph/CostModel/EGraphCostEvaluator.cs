@@ -14,14 +14,12 @@ namespace Nncase.CostModel;
 
 internal sealed class EGraphCostEvaluator
 {
-    private readonly IReadOnlyDictionary<EClass, List<ENode>> _eclasses;
     private readonly EClass _root;
     private readonly Dictionary<ENode, Cost> _costs = new();
     private bool _changed;
 
-    public EGraphCostEvaluator(IReadOnlyDictionary<EClass, List<ENode>> eclasses, EClass root)
+    public EGraphCostEvaluator(EClass root)
     {
-        _eclasses = eclasses;
         _root = root;
     }
 
@@ -41,7 +39,7 @@ internal sealed class EGraphCostEvaluator
     private Cost? Visit(EClass eclass)
     {
         Cost? cost = null;
-        foreach (var enode in _eclasses[eclass])
+        foreach (var enode in eclass.Nodes)
         {
             var newCost = Visit(enode);
             if (cost == null || (newCost != null && newCost < cost))
@@ -103,7 +101,7 @@ internal sealed class EGraphCostEvaluator
         return Visit(enode, costs =>
         {
             Cost? cost = null;
-            foreach (var targetEnode in _eclasses[enode.Children[0]])
+            foreach (var targetEnode in enode.Children[0].Nodes)
             {
                 Cost? newCost;
                 if (targetEnode.Expr is Op op)
