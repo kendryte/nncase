@@ -18,9 +18,11 @@ namespace Nncase
             return GetItem(F.Tensors.ShapeOf(input), index);
         }
 
-        public static Expr GetItem(in Expr input, int index)
+        public static Expr GetItem(in Expr input, Expr index)
         {
-            return F.Tensors.Squeeze(F.Tensors.Slice(input, new[] { index }, new[] { index + 1 }, 1), 0L);
+            return F.Tensors.Cast(
+                F.Tensors.Squeeze(F.Tensors.Slice(input, index, index + 1, 1), 0L),
+                DataTypes.Int64);
         }
 
         public static (Expr, Expr) GetHW(in Expr input)

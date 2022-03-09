@@ -34,6 +34,7 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>
     {
         var input = context.CheckArgumentType<TensorType>(target, Pad.Input);
         var paddings = context.GetArgument(target, Pad.Pads);
-        return TypeInference.PadType(input, paddings);
+        var padValue = context.GetArgument(target, Pad.Value);
+        return TypeInference.PadType(input, paddings, padValue);
     }
 }

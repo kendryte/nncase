@@ -225,8 +225,17 @@ public static class TypeInference
     /// <summary>
     /// Pad Type Infer.
     /// </summary>
-    public static IRType PadType(TensorType input, Expr pads)
+    public static IRType PadType(TensorType input, Expr pads, Expr pad)
     {
+        if (pad.CheckedType is TensorType padValueType)
+        {
+            if (padValueType.DType != input.DType)
+            {
+                return new InvalidType($"Pad value and input must have same type, " +
+                                       $"input:{input.DType}, padValue:{padValueType.DType}");
+            }
+        }
+        
         if (pads is TensorConst paddings)
         {
             var tpads = paddings.Value.ToArray<int>();
