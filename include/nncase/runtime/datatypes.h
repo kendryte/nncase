@@ -360,7 +360,7 @@ inline bool operator==(const quant_param_t &lhs, const quant_param_t &rhs) noexc
 inline bool almost_equal(const quant_param_t &lhs, const quant_param_t &rhs) noexcept
 {
     return lhs.zero_point == rhs.zero_point
-        && fabs(lhs.scale - rhs.scale) <= std::numeric_limits<float>::epsilon();
+        && fabs(lhs.scale - rhs.scale) <= std::numeric_limits<float>::epsilon() * 1000;
 }
 
 struct fixed_mul
