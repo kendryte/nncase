@@ -76,7 +76,7 @@ void k210_target::register_allocators(const module_type_t &type, allocator_map_t
         allocators.emplace(mem_input, allocator_holders.emplace_back(std::make_shared<linear_buffer_allocator>()).get());
         allocators.emplace(mem_output, allocator_holders.emplace_back(std::make_shared<linear_buffer_allocator>()).get());
         allocators.emplace(mem_rdata, allocator_holders.emplace_back(std::make_shared<linear_buffer_allocator>()).get());
-        allocators.emplace(mem_data, allocator_holders.emplace_back(std::make_shared<linear_buffer_allocator>()).get());
+        allocators.emplace(mem_data, allocator_holders.emplace_back(std::make_shared<first_fit_allocator>()).get());
         allocators.emplace(runtime::k210::mem_kpu, allocator_holders.emplace_back(std::make_shared<kpu_buffer_allocator>()).get());
     }
     else
@@ -153,7 +153,7 @@ void k210_target::register_quantize_annotation_passes(const module_type_t &type,
 
     {
         transform_pass p("annotate_kpu_quantize");
-        p.emplace<add_quant_checkpoints_transform>(std::in_place, ir::op_fused_unary, ir::k210::op_k210_fake_kpu_conv2d);
+        p.emplace<add_quant_checkpoints_transform>(std::in_place, ir::op_fused_unary, ir::k210::op_k210_fake_kpu_conv2d, ir::op_bitcast, ir::op_dequantize);
         pass_mgr.add_pass(std::move(p));
     }
 }
