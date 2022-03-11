@@ -44,10 +44,14 @@ internal class RuleGenerator : ISourceGenerator
               ParseStatement($"return {cand.methodSymbol.Name}({string.Join(",", cand.methodSymbol.Parameters.Where(p => !p.Type.Equals(receiver.IMatchResultSymobl)).Select(p => p.Name))});")
             );
 
+            var modifiers = cand.classSymobl.BaseType is { IsGenericType: true, Name: "RewriteRule" }
+                ? TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.OverrideKeyword))
+                : TokenList(Token(SyntaxKind.PublicKeyword));
+
             // 2. consturct wrapper method.
             var method = MethodDeclaration(ParseTypeName("Nncase.IR.Expr?"), Identifier("GetReplace"))
                         .WithParameterList(ParseParameterList("(IMatchResult result)"))
-                        .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.OverrideKeyword)))
+                        .WithModifiers(modifiers)
                         .WithBody(Block(statements));
 
             // 3. add classes 
