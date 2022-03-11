@@ -4,7 +4,6 @@
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using OrtKISharp;
-using torchF = TorchSharp.torch.nn.functional;
 
 namespace Nncase.Evaluator.Tensors;
 

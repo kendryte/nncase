@@ -5,7 +5,6 @@ using System;
 using Nncase.IR;
 using Nncase.IR.Math;
 using OrtKISharp;
-using TorchSharp;
 
 namespace Nncase.Evaluator.Math;
 

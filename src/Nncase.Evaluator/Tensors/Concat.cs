@@ -8,8 +8,6 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using OrtKISharp;
-using TorchSharp;
-using torchF = TorchSharp.torch.nn.functional;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -35,15 +33,15 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>
         return Visit(context, target, inputs, axis);
     }
 
-    internal static torch.Tensor ExpandDim(torch.Tensor tensor)
-    {
-        if (!tensor.shape.Any())
-        {
-            return tensor.view(new long[] { 1 });
-        }
-
-        return tensor;
-    }
+    // internal static torch.Tensor ExpandDim(torch.Tensor tensor)
+    // {
+    //     if (!tensor.shape.Any())
+    //     {
+    //         return tensor.view(new long[] { 1 });
+    //     }
+    //
+    //     return tensor;
+    // }
 
     private IRType Visit(ITypeInferenceContext context, Concat target, TupleType inputs, TensorType axis)
     {

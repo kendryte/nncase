@@ -2,16 +2,14 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.IO;
 using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using OrtKISharp;
-using Tensorflow;
-using TorchSharp;
 using Shape = Nncase.IR.Shape;
-using torchF = TorchSharp.torch.nn.functional;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -45,7 +43,7 @@ public class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>
                 ? new TensorType(call.CheckedDataType, Shape.Unranked) 
                 : new InvalidType(((InvalidType)call.CheckedType).Reason),
             Var var => new TensorType(var.CheckedDataType, Shape.Unranked),
-            _ => throw new InvalidArgumentError("invalid shape")
+            _ => throw new InvalidDataException("invalid shape")
         };
     }
 }

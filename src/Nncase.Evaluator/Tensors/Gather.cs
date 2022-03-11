@@ -3,8 +3,6 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using OrtKISharp;
-using static Tensorflow.Binding;
-using torchF = TorchSharp.torch.nn.functional;
 
 namespace Nncase.Evaluator.Tensors;
 

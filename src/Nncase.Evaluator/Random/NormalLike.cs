@@ -5,7 +5,6 @@ using System;
 using Nncase.IR;
 using Nncase.IR.Random;
 using OrtKISharp;
-using static Tensorflow.Binding;
 
 namespace Nncase.Evaluator.Random;
 

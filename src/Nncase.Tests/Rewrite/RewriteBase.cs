@@ -9,7 +9,7 @@ using Nncase.PatternMatch;
 using Nncase.Transform;
 using Nncase.Transform.Passes;
 using Nncase.Transform.Rules.Neutral;
-using TorchSharp;
+using OrtKISharp;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
@@ -25,8 +25,8 @@ namespace Nncase.Tests.RewriteTest
     {
         public static Call Conv2D(Expr input, int in_channels, int out_channels, int kernel = 3, int stride = 1)
         {
-            var weights = torch.rand(new long[] { (long)out_channels, (long)in_channels, (long)kernel, (long)kernel }).ToTensor();
-            var bias = torch.rand(new long[] { (long)out_channels }).ToTensor();
+            var weights = OrtKI.Random(out_channels, in_channels, kernel, kernel).ToTensor();
+            var bias = OrtKI.Random(out_channels).ToTensor();
             return IR.F.NN.Conv2D(input, weights, bias, new[] { stride, stride }, Tensor.FromSpan<int>(new[] { 1, 1, 1, 1 }, new[] { 2, 2 }), new[] { 1, 1 }, PadMode.Constant, 1);
         }
     }
@@ -87,7 +87,7 @@ namespace Nncase.Tests.RewriteTest
         /// <summary>
         /// the eval inputs dict
         /// </summary>
-        public virtual Dictionary<Var, torch.Tensor> Inputs { get; } = new();
+        public virtual Dictionary<Var, OrtKISharp.Tensor> Inputs { get; } = new();
     }
 
     // public sealed class TransposeConstBinaryCase : IRewriteCase

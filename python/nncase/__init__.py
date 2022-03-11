@@ -32,8 +32,7 @@ def _add_dllpath():
                 "Nncase.Evaluator",
                 "Nncase.Importer",
                 # "Nncase.Pattern",
-                "Nncase.Compiler",
-                "TorchSharp"]:
+                "Nncase.Compiler"]:
         clr.AddReference(os.path.join(nncase_cli_path, dll))
 
 _add_dllpath()

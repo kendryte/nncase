@@ -5,7 +5,6 @@ using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using OrtKISharp;
-using static Tensorflow.Binding;
 
 namespace Nncase.Evaluator.Tensors;
 

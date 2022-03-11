@@ -2,14 +2,9 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
-using Nncase.IR.Tensors;
 using OrtKISharp;
-using static Tensorflow.Binding;
 
 namespace Nncase.Evaluator.Math;
 

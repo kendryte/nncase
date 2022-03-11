@@ -9,8 +9,6 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using OrtKISharp;
-using TorchSharp;
-using torchF = TorchSharp.torch.nn.functional;
 
 namespace Nncase.Evaluator.Tensors;
 

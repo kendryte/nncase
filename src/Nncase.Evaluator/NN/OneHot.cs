@@ -7,10 +7,6 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.NN;
 using OrtKISharp;
-using Tensorflow;
-using Tensorflow.NumPy;
-using static Tensorflow.Binding;
-using torchF = TorchSharp.torch.nn.functional;
 
 namespace Nncase.Evaluator.NN;
 

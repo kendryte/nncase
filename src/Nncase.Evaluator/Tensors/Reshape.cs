@@ -20,7 +20,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>
     public IValue Visit(IEvaluateContext context, Reshape reshape)
     {
         var input = context.GetOrtArgumentValue(reshape, Reshape.Input);
-        var shape = context.GetOrtArgumentValue(reshape, Reshape.Shape);
+        var shape = context.GetInt64OrtArgumentValue(reshape, Reshape.Shape);
         return OrtKI.Reshape(input, shape, 0).ToValue();
     }
 

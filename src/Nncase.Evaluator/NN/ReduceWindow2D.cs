@@ -5,9 +5,6 @@ using System;
 using Nncase.IR;
 using Nncase.IR.NN;
 using OrtKISharp;
-using TorchSharp;
-using static Tensorflow.Binding;
-using torchF = TorchSharp.torch.nn.functional;
 
 namespace Nncase.Evaluator.NN;
 

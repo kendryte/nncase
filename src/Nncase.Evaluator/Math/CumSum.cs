@@ -4,7 +4,6 @@
 using Nncase.IR;
 using Nncase.IR.Math;
 using OrtKISharp;
-using static Tensorflow.Binding;
 
 namespace Nncase.Evaluator.Math;
 

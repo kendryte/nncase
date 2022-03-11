@@ -4,8 +4,6 @@
 using Nncase.IR;
 using Nncase.IR.Math;
 using OrtKISharp;
-using TorchSharp;
-using torchF = TorchSharp.torch.nn.functional;
 
 namespace Nncase.Evaluator.Math;
 

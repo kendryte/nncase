@@ -1,8 +1,8 @@
 using System;
+using System.IO;
 using Nncase.IR;
 using F = Nncase.IR.F;
 using Nncase.PatternMatch;
-using Tensorflow;
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
@@ -51,7 +51,7 @@ public partial class IntegralPromotion : RewriteRule<OrPattern>
         }
         else
         {
-            throw new InvalidArgumentError("IntegralPromotion lhs and rhs should be int32 and int64");
+            throw new InvalidDataException("IntegralPromotion lhs and rhs should be int32 and int64");
         }
 
         return F.Math.Binary(bn.BinaryOp, lhs, rhs);

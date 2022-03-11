@@ -9,7 +9,6 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using OrtKISharp;
-using TorchSharp;
 
 namespace Nncase.Evaluator.Tensors;
 

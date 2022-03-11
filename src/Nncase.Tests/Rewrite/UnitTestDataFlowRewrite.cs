@@ -15,7 +15,6 @@ using Nncase.Tests.RewriteTest;
 using Nncase.Transform;
 using Nncase.Transform.Passes;
 using OrtKISharp;
-using TorchSharp;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
@@ -120,25 +119,25 @@ namespace Nncase.Tests.RewriteTest
         public void TestFoldConstCall()
         {
             passOptions.SetName("TestFoldConstCall");
-            var lhs = torch.rand(2, 1, 3, torch.ScalarType.Float32);
-            var rhs = torch.rand(2, 6, 3, torch.ScalarType.Float32);
+            var lhs = OrtKI.Random(2, 1, 3);
+            var rhs = OrtKI.Random(2, 6, 3);
             var pre = (Const)lhs.ToTensor() + rhs.ToTensor();
             Assert.True(CompilerServices.InferenceType(pre));
             var post = ApplyFoldConstCallRewrite(pre);
-            Assert.Equal(lhs + rhs, post.Evaluate().AsTensor().ToTorchTensor());
+            Assert.Equal(lhs + rhs, post.Evaluate().AsTensor().ToOrtTensor());
         }
 
         [Fact]
         public void TestFoldConstCallTuple()
         {
             passOptions.SetName("TestFoldConstCallTuple");
-            var lhs = torch.rand(2, 1, 3, torch.ScalarType.Float32);
-            var rhs = torch.rand(2, 6, 3, torch.ScalarType.Float32);
+            var lhs = OrtKI.Random(2, 1, 3);
+            var rhs = OrtKI.Random(2, 6, 3);
             var pre = Concat(new IR.Tuple(lhs.ToTensor(), rhs.ToTensor()), 1);
             Assert.True(CompilerServices.InferenceType(pre));
             var post = ApplyFoldConstCallRewrite(pre);
             Assert.IsType<TensorConst>(post);
-            Assert.Equal(torch.cat(new[] { lhs, rhs }, 1), post.Evaluate().AsTensor().ToTorchTensor());
+            Assert.Equal(OrtKI.Concat(new[] { lhs, rhs }, 1), post.Evaluate().AsTensor().ToOrtTensor());
         }
 
         [Fact]

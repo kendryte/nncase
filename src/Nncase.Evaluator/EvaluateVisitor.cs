@@ -7,7 +7,6 @@ using System.Linq;
 using CommonServiceLocator;
 using Microsoft.Extensions.DependencyInjection;
 using Nncase.IR;
-using TorchSharp;
 
 namespace Nncase.Evaluator;
 
@@ -77,8 +76,4 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
 
         return result;
     }
-
-    // when torch return a scalar, scalar's shape is {0}
-    private static torch.Tensor FixShape(Expr expr, torch.Tensor tensor) =>
-        expr.CheckedShape.IsScalar ? tensor.view(new long[] { }) : tensor;
 }
