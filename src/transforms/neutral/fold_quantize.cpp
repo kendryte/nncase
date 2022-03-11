@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/ir/ops/batch_to_space.h>
+#include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/dequantize.h>
 #include <nncase/ir/ops/quantize.h>
@@ -88,4 +89,40 @@ void fold_quantize_transform::process(transform_context &context)
 
     for (auto &in : dup(inputs))
         in->connect(output);
+}
+
+bool fold_quantize_around_bitcast_transform::on_try_match(node &node, transform_context &context)
+{
+    if (auto q = node_cast<quantize>(node))
+    {
+        if (auto bitc = try_get_direct_parent<bitcast>(*q))
+        {
+            if (auto deq = try_get_direct_parent<dequantize>(*bitc))
+            {
+                if (almost_equal(q->quant_param(), deq->quant_param()))
+                {
+                    context.inputs.emplace_back(&deq->input());
+                    context.outputs.emplace_back(&q->output());
+
+                    context.matched_nodes.emplace_back(bitc);
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+void fold_quantize_around_bitcast_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+    auto mid_node = node_cast<bitcast>(*context.matched_nodes[0]);
+
+    auto new_bitc = context.graph.emplace<bitcast>(output.type(), output.shape(), inputs[0]->type(), inputs[0]->shape());
+    new_bitc->name(mid_node->name());
+    new_bitc->input().connect(output);
+
+    for (auto &in : dup(inputs))
+        in->connect(new_bitc->output());
 }

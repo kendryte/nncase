@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/convert.h>
 #include <nncase/ir/visitor.h>
 #include <nncase/transforms/neutral/fold_convert.h>
@@ -77,4 +78,38 @@ void fold_nop_convert_transform::process(transform_context &context)
 
     for (auto &in : dup(inputs))
         in->connect(output);
+}
+
+bool fold_convert_around_bitcast_transform::on_try_match(node &node, transform_context &context)
+{
+    if (auto cvt = node_cast<convert>(node))
+    {
+        if (auto bitc = try_get_direct_parent<bitcast>(*cvt))
+        {
+            if (auto sec_cvt = try_get_direct_parent<convert>(*bitc))
+            {
+                context.inputs.emplace_back(&sec_cvt->input());
+                context.outputs.emplace_back(&cvt->output());
+
+                context.matched_nodes.emplace_back(bitc);
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+void fold_convert_around_bitcast_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+
+    auto mid_node = node_cast<bitcast>(*context.matched_nodes[0]);
+    auto new_bitc = context.graph.emplace<bitcast>(output.type(), output.shape(), inputs[0]->type(), inputs[0]->shape());
+    new_bitc->name(mid_node->name());
+
+    new_bitc->input().connect(output);
+    for (auto &in : dup(inputs))
+        in->connect(new_bitc->output());
 }
