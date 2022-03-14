@@ -51,6 +51,23 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
+        public override Expr VisitLeaf(Function expr)
+        {
+            var nexpr = MutateLeaf(expr);
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+            if (!IsMutated)
+            {
+                return expr;
+            }
+
+            return expr with
+            {
+                Body = Visit(expr.Body),
+                Parameters = new(expr.Parameters.Select(x => (Var)Visit(x))),
+            };
+        }
+
+        /// <inheritdoc/>
         public override Expr VisitLeaf(TIR.PrimFunction expr)
         {
             var nexpr = MutateLeaf(expr);

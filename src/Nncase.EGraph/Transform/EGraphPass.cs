@@ -51,7 +51,7 @@ public class EGraphPass : FunctionPass
     public void Add(IEnumerable<IRewriteRule> rules) => _rules.AddRange(rules);
 
     /// <inheritdoc/>
-    protected override Function RunCore(Function function, RunPassOptions options)
+    protected override Callable RunCore(Callable function, RunPassOptions options)
     {
         options.SetName(Name);
         var graph = new EGraph();
