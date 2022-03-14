@@ -13,11 +13,13 @@
  * limitations under the License.
  */
 #include "../tflite_importer.h"
+#include <iostream>
 #include <nncase/ir/ops/batch_to_space.h>
 #include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/pad.h>
 #include <nncase/ir/ops/slice.h>
 #include <nncase/ir/ops/space_to_batch.h>
+#include <nncase/ir/ops/space_to_batch_nd.h>
 #include <nncase/ir/ops/transpose.h>
 
 using namespace nncase;
@@ -27,6 +29,13 @@ using namespace nncase::ir;
 DEFINE_TFLITE_LOWER(SPACE_TO_BATCH_ND)
 {
     auto &input = get_tensor(op.inputs(), 0);
+
+    shape_t new_shape;
+    if (input.shape()->size() > 4)
+    {
+        throw std::runtime_error("Only support [3,4]dims space_to_batch_nd");
+    }
+
     auto block_shape = load_axis<int32_t>(get_tensor(op.inputs(), 1));
     auto paddings = load_tensor<int32_t, 2>(get_tensor(op.inputs(), 2));
     auto in_shape = get_shape(input.shape());
@@ -39,24 +48,46 @@ DEFINE_TFLITE_LOWER(SPACE_TO_BATCH_ND)
     // spatial
     for (size_t i = 0; i < spatial_size; i++)
         new_paddings.push_back(padding { paddings(i, 0), paddings(i, 1) });
+    if (spatial_size == 1)
+        new_paddings.push_back(padding::zero());
     // remaining
     for (size_t i = 0; i < remaining_shape_size; i++)
         new_paddings.push_back(padding::zero());
 
     auto block_size_h = block_shape.data()[0];
-    auto block_size_w = block_shape.data()[1];
-
-    auto tp1 = graph_.emplace<transpose>(to_data_type(input.type()), get_shape(input.shape()), axis_t { 0, 3, 1, 2 });
+    int32_t block_size_w = 1;
+    input_connector *input_conn;
+    output_connector *output_conn;
+    transpose *tp1, *tp2;
+    if (input.shape()->size() == 3)
+    {
+        auto in_bitc = graph_.emplace<bitcast>(to_data_type(input.type()), get_shape(input.shape()), shape_t { get_shape(input.shape())[0], get_shape(input.shape())[1], 1, get_shape(input.shape())[2] });
+        tp1 = graph_.emplace<transpose>(in_bitc->output().type(), in_bitc->output().shape(), axis_t { 0, 3, 1, 2 });
+        tp1->input().connect(in_bitc->output());
+        input_conn = &in_bitc->input();
+    }
+    else
+    {
+        block_size_w = block_shape.data()[1];
+        tp1 = graph_.emplace<transpose>(to_data_type(input.type()), get_shape(input.shape()), axis_t { 0, 3, 1, 2 });
+        input_conn = &tp1->input();
+    }
     auto pad_value = input.type() != tflite::TensorType_FLOAT32 ? static_cast<int8_t>(input.quantization()->zero_point()->data()[0]) : 0.f;
+    std::cout << tp1->output().shape()[0] << "," << tp1->output().shape()[1] << "," << tp1->output().shape()[2] << "," << tp1->output().shape()[3] << std::endl;
     auto s2b = graph_.emplace<space_to_batch>(tp1->output().type(), tp1->output().shape(), block_size_h, block_size_w, new_paddings[1], new_paddings[2], pad_value);
 
-    auto tp2 = graph_.emplace<transpose>(s2b->output().type(), s2b->output().shape(), axis_t { 0, 2, 3, 1 });
+    std::cout << "3" << std::endl;
+    tp2 = graph_.emplace<transpose>(s2b->output().type(), s2b->output().shape(), axis_t { 0, 2, 3, 1 });
     s2b->input().connect(tp1->output());
     tp2->input().connect(s2b->output());
-
-    auto input_conn = &tp1->input();
-    auto output_conn = &tp2->output();
-
+    output_conn = &tp2->output();
+    std::cout << "2" << std::endl;
+    if (input.shape()->size() == 3)
+    {
+        auto out_bitc = graph_.emplace<bitcast>(tp2->output().type(), tp2->output().shape(), shape_t { tp2->output().shape()[0], tp2->output().shape()[1], tp2->output().shape()[3] });
+        out_bitc->input().connect(tp2->output());
+        output_conn = &out_bitc->output();
+    }
     link_input_tensor(input_conn, op.inputs()->Get(0));
     link_output_tensor(op.outputs()->Get(0), output_conn);
 }
