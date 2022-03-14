@@ -59,7 +59,7 @@ public class UnitTestTBuffer
 
         var aptr2 = Ab.AccessPtr(AccessMode.ReadWrite, offset: 100 + 100 + v);
 
-        Testing.AssertExprEqual(aptr2.Parameters[1], v + 200);
+        Testing.AssertExprEqual(aptr2.Parameters[1], 200 + v);
     }
 
     // [Fact]

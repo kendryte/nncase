@@ -25,7 +25,6 @@ namespace Nncase.Tests.EvaluatorTest
     {
         public UnitTestEvaluator(IHost host) : base(host)
         {
-            // OrtKI.LoadDLL();
         }
 
         [Fact]
@@ -62,7 +61,7 @@ namespace Nncase.Tests.EvaluatorTest
         public void TestBinary()
         {
             var tA = OrtTensorFromScalar(1f);
-            var tB = tA * 2;
+            var tB = tA * 2f;
 
             var a = (Const)1f;
             var b = (Const)2f;
@@ -113,7 +112,7 @@ namespace Nncase.Tests.EvaluatorTest
         {
             var tinput = OrtKI.Random(1, 1, 2, 3);
             var input = tinput.ToTensor();
-            var pads = Tensor.FromSpan<int>(new[] { 0, 0, 0, 0, 1, 1, 2, 2 }, new Shape(new[] { 4, 2 }));
+            var pads = Tensor.FromSpan<long>(new long[] { 0, 0, 1, 2, 0, 0, 1, 2 });
             var value = Tensor.FromScalar<float>(1.0f);
             var expr = NN.Pad(input, pads, Nncase.PadMode.Constant, value);
             CompilerServices.InferenceType(expr);
@@ -126,7 +125,7 @@ namespace Nncase.Tests.EvaluatorTest
         {
             var tinput = OrtKI.Random(1, 1, 2, 3);
             var input = tinput.ToTensor();
-            var pads = Tensor.FromSpan<long>(new long[] { 0, 0, 1, 2, 2, 4, 5, 6 });
+            var pads = Tensor.FromSpan<long>(new long[] { 0, 1, 2, 5, 0, 2, 4, 6 });
             var value = Tensor.FromScalar<float>(2.0f);
             var expr = NN.Pad(input, pads, Nncase.PadMode.Constant, value);
             CompilerServices.InferenceType(expr);

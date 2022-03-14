@@ -21,10 +21,10 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>
     public IValue Visit(IEvaluateContext context, Slice sl)
     {
         var input = context.GetOrtArgumentValue(sl, Slice.Input);
-        var begins = context.GetOrtArgumentValue(sl, Slice.Begins);
-        var ends = context.GetOrtArgumentValue(sl, Slice.Ends);
-        var axes = context.GetOrtArgumentValue(sl, Slice.Axes);
-        var strides = context.GetOrtArgumentValue(sl, Slice.Strides);
+        var begins = context.GetInt64OrtArgumentValue(sl, Slice.Begins);
+        var ends = context.GetInt64OrtArgumentValue(sl, Slice.Ends);
+        var axes = context.GetInt64OrtArgumentValue(sl, Slice.Axes);
+        var strides = context.GetInt64OrtArgumentValue(sl, Slice.Strides);
         return OrtKI.Slice(input, begins, ends, axes, strides).ToValue();
     }
 

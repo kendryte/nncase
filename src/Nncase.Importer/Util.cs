@@ -20,9 +20,7 @@ namespace Nncase
 
         public static Expr GetItem(in Expr input, Expr index)
         {
-            return F.Tensors.Cast(
-                F.Tensors.Squeeze(F.Tensors.Slice(input, index, index + 1, 1), 0L),
-                DataTypes.Int64);
+            return F.Tensors.Squeeze(F.Tensors.Slice(input, index, index + 1, 1), 0L);
         }
 
         public static (Expr, Expr) GetHW(in Expr input)

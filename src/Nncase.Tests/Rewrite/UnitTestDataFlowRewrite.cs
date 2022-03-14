@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -90,7 +91,6 @@ namespace Nncase.Tests.RewriteTest
         public UnitTestDataFlowRewrite(IHost host) : base(host)
         {
             passOptions.SetDir(Path.Combine(passOptions.PassDumpDir, "UnitTestDataFlowRewrite"));
-            OrtKI.LoadDLL();
         }
 
         // [Fact]
@@ -219,7 +219,6 @@ namespace Nncase.Tests.RewriteTest
         public DataFlowRewriteAndInferIntegrateTest(IHost host) : base(host)
         {
             passOptions.SetDir(Path.Combine(passOptions.PassDumpDir, "DataFlowRewriteAndInferIntegrateTest"));
-            OrtKI.LoadDLL();
         }
         
         [Fact]
@@ -357,10 +356,13 @@ namespace Nncase.Tests.RewriteTest
         {
             var v = Tensor.FromSpan<int>(new[] { 1, 2, 3 });
             var shape = Concat(
-                new IR.Tuple(ShapeOf(v), new[] { 1 }, new[] { 1 }), 0);
+                new IR.Tuple(
+                    ShapeOf(v),
+                    new long[]{1},
+                    new long[]{1}), 0);
             var afterShape = RunShapeInferPass("Shape", shape);
             Assert.True(afterShape.InferenceType());
-            Assert.Equal(new[] { 3, 1, 1 }, afterShape);
+            Assert.Equal(new long[] {3, 1, 1}, afterShape);
             var b = Reshape(v, afterShape);
             b.InferenceType();
             Assert.Equal(new[] { 3, 1, 1 }, b.Evaluate().AsTensor().Dimensions.ToArray());
