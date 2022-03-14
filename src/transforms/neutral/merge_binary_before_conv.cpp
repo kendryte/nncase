@@ -160,13 +160,11 @@ bool merge_binary_b_into_conv_transform::on_try_match(node &node, transform_cont
                             if (auto mul_const = try_get_direct_parent<constant>(*b_mul, 1))
                             {
                                 context.inputs.emplace_back(&b_mul->input_a());
-                                // context.inputs.emplace_back(&b_mul->input_b());
                                 context.matched_nodes.emplace_back(mul_const);
                             }
                             else if (auto mul_const = try_get_direct_parent<constant>(*b_mul, 0))
                             {
                                 context.inputs.emplace_back(&b_mul->input_b());
-                                // context.inputs.emplace_back(&b_mul->input_a());
                                 context.matched_nodes.emplace_back(mul_const);
                             }
                             else
@@ -175,12 +173,10 @@ bool merge_binary_b_into_conv_transform::on_try_match(node &node, transform_cont
                             }
                             if (auto add_const = try_get_direct_parent<constant>(*b_add, 1))
                             {
-                                // context.inputs.emplace_back(&b_mul->input_b());
                                 context.matched_nodes.emplace_back(add_const);
                             }
                             else if (auto add_const = try_get_direct_parent<constant>(*b_add, 0))
                             {
-                                // context.inputs.emplace_back(&b_mul->input_a());
                                 context.matched_nodes.emplace_back(add_const);
                             }
                             else
@@ -199,8 +195,6 @@ bool merge_binary_b_into_conv_transform::on_try_match(node &node, transform_cont
                                 context.outputs.emplace_back(&conv->output());
                             }
 
-                            // context.matched_nodes.emplace_back(b_mul);
-                            // context.matched_nodes.emplace_back(b_add);
                             return true;
                         }
                     }
@@ -221,29 +215,8 @@ void merge_binary_b_into_conv_transform::process(transform_context &context)
     auto &bias = static_cast<constant &>(*context.matched_nodes[3]);
     auto &conv = static_cast<conv2d &>(*context.matched_nodes[4]);
 
-    // std::vector<std::byte> mul_const_byte { const_mul.data().begin(), const_mul.data().end() };
-    // std::vector<std::byte> add_const_byte { const_add.data().begin(), const_add.data().end() };
     std::vector<std::byte> weights_byte { weights.data().begin(), weights.data().end() };
-    // std::vector<std::byte> bias_byte { bias.data().begin(), bias.data().end() };
-
-    // auto mul_const = ToFloats(mul_const_byte);
-    // auto add_const = ToFloats(add_const_byte);
     auto weights_const = ToFloats(weights_byte);
-    // auto bias_const = ToFloats(bias_byte);
-
-    // for (size_t cout = 0; cout < weights.output().shape()[0]; cout++)
-    // {
-    //     for (size_t cin = 0; cin < weights.output().shape()[1]; cin++)
-    //     {
-    //         for (size_t h = 0; h < weights.output().shape()[2]; h++)
-    //         {
-    //             for (size_t w = 0; w < weights.output().shape()[3]; w++)
-    //             {
-    //                 weights_const[cout * weights.output().shape()[0] + cin * weights.output().shape()[1] + h * weights.output().shape()[2] + w] *= mul_const[cin];
-    //             }
-    //         }
-    //     }
-    // }
     auto bitc_mul_const = context.graph.emplace<bitcast>(dt_float32, const_mul.output().shape(), shape_t { 1, const_mul.output().shape()[0], 1, 1 });
     bitc_mul_const->name(conv.name() + "bitc_mul_const");
     auto new_weights = context.graph.emplace<binary>(binary_mul, weights.output().type(), weights.output().shape(), bitc_mul_const->output().shape(), value_range<float>::full());
