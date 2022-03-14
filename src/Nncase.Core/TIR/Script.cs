@@ -1,12 +1,8 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
+
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using Nncase.IR;
 
 namespace Nncase.TIR;
@@ -115,21 +111,21 @@ public static class T
     /// the body expr builer
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class BodyExprBuilder<T> : ISequentialBuilder<T>
-      where T : BodyExpr
+    public class SequentialBuilder<T> : ISequentialBuilder<T>
+      where T : ISequentialExpr
     {
         /// <summary>
         /// expr 
         /// </summary>
-        public T Expr;
+        public T ParentExpr;
 
         /// <summary>
         /// ctor
         /// </summary>
         /// <param name="expr"></param>
-        public BodyExprBuilder(T expr)
+        public SequentialBuilder(T expr)
         {
-            Expr = expr;
+            ParentExpr = expr;
         }
 
         /// <summary>
@@ -139,11 +135,8 @@ public static class T
         /// <returns></returns>
         public T Body(params Expr[] exprs)
         {
-            foreach (var item in exprs)
-            {
-                Expr.Sequence.Add(item);
-            }
-            return Expr;
+            TIR.Sequential.Flatten(exprs).ForEach(e => ParentExpr.Body.Add(e));
+            return ParentExpr;
         }
     }
 
@@ -155,11 +148,11 @@ public static class T
     /// <param name="mode">loop mode.</param>
     /// <param name="loop">loop instance.</param>
     /// <returns> for builder. </returns>
-    public static BodyExprBuilder<For> ForLoop(out Var loopVar, Range Dom, LoopMode mode, out For loop)
+    public static SequentialBuilder<For> ForLoop(out Var loopVar, Range Dom, LoopMode mode, out For loop)
     {
         loopVar = new Var(TensorType.Scalar(DataTypes.Int32));
         loop = new For(loopVar, Dom, mode);
-        return new BodyExprBuilder<For>(loop);
+        return new SequentialBuilder<For>(loop);
     }
 
     /// <summary>
@@ -169,7 +162,7 @@ public static class T
     /// <param name="Dom">ranges.</param>
     /// <param name="loop">loop instance.</param>
     /// <returns> the for loop </returns>
-    public static BodyExprBuilder<For> Serial(out Var loopVar, Range Dom, out For loop) => ForLoop(out loopVar, Dom, LoopMode.Serial, out loop);
+    public static SequentialBuilder<For> Serial(out Var loopVar, Range Dom, out For loop) => ForLoop(out loopVar, Dom, LoopMode.Serial, out loop);
 
     /// <summary>
     /// <see cref="Serial(out Var, Range, out For)"/>.
@@ -177,7 +170,7 @@ public static class T
     /// <param name="loopVar">out index var.</param>
     /// <param name="Dom">ranges.</param>
     /// <returns></returns>
-    public static BodyExprBuilder<For> Serial(out Var loopVar, Range Dom) => Serial(out loopVar, Dom, out _);
+    public static SequentialBuilder<For> Serial(out Var loopVar, Range Dom) => Serial(out loopVar, Dom, out _);
 
     /// <summary>
     /// make unroll for loop
@@ -185,13 +178,13 @@ public static class T
     /// <param name="loopVar">out index var.</param>
     /// <param name="Dom">ranges.</param>
     /// <returns></returns>
-    public static BodyExprBuilder<For> Unroll(out Var loopVar, Range Dom) => ForLoop(out loopVar, Dom, LoopMode.Unrolled, out _);
+    public static SequentialBuilder<For> Unroll(out Var loopVar, Range Dom) => ForLoop(out loopVar, Dom, LoopMode.Unrolled, out _);
 
     /// <summary>
     /// GridWrapper for collect the for item.
     /// </summary>
     public class NestBodyExprBuilder<T> : ISequentialBuilder<T>
-     where T : BodyExpr
+     where T : Expr, ISequentialExpr
     {
         /// <summary>
         /// contain the exprs
@@ -209,7 +202,7 @@ public static class T
         {
             foreach (var i in Enumerable.Range(0, exprs.Count() - 1).Reverse())
             {
-                exprs[i].Sequence.Add(exprs[i + 1]);
+                exprs[i].Body.Add(exprs[i + 1]);
             }
             Exprs = exprs;
         }
@@ -222,7 +215,7 @@ public static class T
         /// <exception cref="NotImplementedException"></exception>
         public T Body(params Expr[] exprs)
         {
-            foreach (var item in exprs) { Exprs.Last().Sequence.Add(item); }
+            Sequential.Flatten(exprs).ForEach(item => Exprs.Last().Body.Add(item));
             return Exprs.First();
         }
     }
@@ -280,110 +273,6 @@ public static class T
     }
 
     /// <summary>
-    /// Declare a new symbolic buffer.
-    /// Normally buffer is created automatically during lower and build.
-    /// This is only needed if user want to specify their own buffer layout.
-    ///
-    /// See the note below for detailed discussion on usage of buffer.
-    ///  <see cref="Buffer"/>.
-    /// </summary>
-    /// <param name="shape">The shape of the buffer.</param>
-    /// <param name="dtype">The data type of the buffer.</param>
-    /// <param name="name">The name of the buffer.</param>
-    /// <param name="data_handle">The data pointer in the buffer.</param>
-    /// <param name="strides">The stride of the buffer.</param>
-    /// <param name="elem_offset">
-    ///   The beginning offset of the array to data.
-    ///   In terms of number of elements of dtype.
-    /// </param>
-    /// <param name="scope">
-    ///   The storage scope of the buffer, if not global.
-    ///   If scope equals empty string, it means it is global memory.
-    /// </param>
-    /// <param name="data_alignment">
-    ///   The alignment of data pointer in bytes.
-    ///   If -1 is passed, the alignment will be set to TVM's internal default.
-    /// </param>
-    /// <param name="offset_factor">
-    ///   The factor of elem_offset field, when set,
-    ///   elem_offset is required to be multiple of offset_factor.
-    ///   If 0 is pssed, the alignment will be set to 1.
-    ///   if non-zero is passed, we will created a Var for elem_offset if elem_offset is not None.
-    /// </param>
-    /// <param name="buffer_mode">
-    ///   auto_broadcast buffer allows one to implement broadcast computation
-    ///   without considering whether dimension size equals to one.
-    ///   TVM maps buffer[i][j][k] -> buffer[i][0][k] if dimension j's shape equals 1.
-    /// </param>
-    /// <returns>Buffer.</returns>
-    public static Buffer DeclBuffer(IR.Tuple shape, DataType? dtype = null, string name = "buffer", Var? data_handle = null, IR.Tuple? strides = null, Expr? elem_offset = null, string scope = "", int data_alignment = -1, int offset_factor = 0, BufferMode buffer_mode = BufferMode.Default)
-    {
-        dtype ??= DataTypes.Float32;
-
-        if (offset_factor != 0 && elem_offset is null)
-        {
-            elem_offset = Var.Scalar($"{name}_elem_offset", shape[0].CheckedDataType);
-        }
-
-        if (data_handle is null)
-        {
-            data_handle = Var.Handle(name, dtype, scope);
-        }
-
-        elem_offset ??= (Const)0;
-        if (data_alignment <= 0)
-        {
-            data_alignment = 128; // TODO add useage.
-        }
-
-        if (offset_factor == 0)
-        {
-            offset_factor = 1;
-        }
-
-        // compute the default stride.
-        Expr acc = 1;
-        Expr prod(Expr dim) { acc = dim * acc; return acc; }
-        strides ??= new(new Expr[] { 1 }.Concat(
-          Enumerable.Range(0, shape.Count - 1).Reverse().Select(i => prod(shape[i + 1]))
-        ).Reverse());
-
-        return new Buffer(shape, name, data_handle, strides, elem_offset, scope, data_alignment, offset_factor, buffer_mode);
-    }
-
-    /// <summary>
-    /// script function builder
-    /// </summary>
-    public class PrimFunctionBuilder
-    {
-        readonly PrimFunction func;
-        /// <summary>
-        /// cotr
-        /// </summary>
-        /// <param name="func"></param>
-        public PrimFunctionBuilder(PrimFunction func)
-        {
-            this.func = func;
-        }
-
-        /// <summary>
-        /// add the body items
-        /// </summary>
-        /// <param name="exprs">the expr instance.</param>
-        /// <returns> the func instance.</returns>
-        public PrimFunction Body(params Expr[] exprs)
-        {
-            var body = (Sequential)func.Body;
-            foreach (var item in exprs)
-            {
-                body.Add(item);
-            }
-
-            return func;
-        }
-    }
-
-    /// <summary>
     /// The script for build funciont with Sequential body.
     /// <code>
     ///  var func = T.PrimFunc("func", A.Handle, n, m).Add(
@@ -401,9 +290,9 @@ public static class T
     /// <param name="name"></param>
     /// <param name="parameters"></param>
     /// <returns></returns>
-    public static PrimFunctionBuilder PrimFunc(string name, params Var[] parameters)
+    public static SequentialBuilder<PrimFunction> PrimFunc(string name, params Buffer[] parameters)
     {
-        return new(new PrimFunction(name, new Sequential(), parameters));
+        return new(new PrimFunction(name, new(), new IRArray<Buffer>(parameters)));
     }
 
     /// <summary>
@@ -494,5 +383,39 @@ public static class T
     public static IfThenElseBuilder If(Expr condition)
     {
         return new(condition);
+    }
+
+    /// <summary>
+    /// create the memRef by tensortype.
+    /// </summary>
+    /// <param name="type"></param>
+    /// <param name="buffer"></param>
+    /// <param name="name"></param>
+    /// <param name="location"></param>
+    /// <returns></returns>
+    public static Buffer Buffer(TensorType type, Schedule.MemoryLocation location, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    {
+        if (name.StartsWith("var "))
+            name = name[4..];
+        buffer = new Buffer(name, location, type);
+        return buffer;
+    }
+
+    /// <summary>
+    /// create buffer from const
+    /// </summary>
+    /// <param name="expr"></param>
+    /// <param name="buffer"></param>
+    /// <param name="name"></param>
+    /// <returns></returns>
+    public static Buffer ConstBuffer(Const expr, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    {
+        if (name.StartsWith("var "))
+            name = name[4..];
+        buffer = new Buffer(name, Schedule.MemoryLocation.Rdata, (TensorType)expr.ValueType)
+        {
+            Const = expr
+        };
+        return buffer;
     }
 }

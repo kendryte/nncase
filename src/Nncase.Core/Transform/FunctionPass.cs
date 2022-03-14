@@ -11,7 +11,7 @@ using Nncase.IR;
 namespace Nncase.Transform
 {
     /// <summary>
-    /// Pass in function scope.
+    /// Pass in Callable scope.
     /// </summary>
     public abstract class FunctionPass
     {
@@ -32,33 +32,33 @@ namespace Nncase.Transform
         /// <summary>
         /// Run current pass for specific function.
         /// </summary>
-        /// <param name="function">Target function.</param>
+        /// <param name="callable">Target function.</param>
         /// <param name="options">Options.</param>
-        public Function Run(Function function, RunPassOptions options)
-            => RunCore(function, options);
+        public Callable Run(Callable callable, RunPassOptions options)
+            => RunCore(callable, options);
 
         /// <summary>
         /// Run pass implementation for derived class.
         /// </summary>
-        /// <param name="function">Target function.</param>
+        /// <param name="callable">Target function.</param>
         /// <param name="options">Options.</param>
-        protected abstract Function RunCore(Function function, RunPassOptions options);
+        protected abstract Callable RunCore(Callable callable, RunPassOptions options);
 
         /// <summary>
         /// the callback function you can custom process func with run pass options.
         /// </summary>
-        /// <param name="func"> func without run pass.</param>
+        /// <param name="callable"> func without run pass.</param>
         /// <param name="options"></param>
-        protected virtual void OnPassStart(Function func, RunPassOptions options)
+        protected virtual void OnPassStart(Callable callable, RunPassOptions options)
         {
         }
 
         /// <summary>
         /// the callback function you can custom process func with run pass options.
         /// </summary>
-        /// <param name="func"> func with rewrited. </param>
+        /// <param name="callable"> func with rewrited. </param>
         /// <param name="options"></param>
-        protected virtual void OnPassEnd(Function func, RunPassOptions options)
+        protected virtual void OnPassEnd(Callable callable, RunPassOptions options)
         { }
     }
 }

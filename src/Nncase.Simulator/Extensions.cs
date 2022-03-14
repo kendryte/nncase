@@ -1,12 +1,9 @@
-using System.Numerics.Tensors;
-using System.Runtime.InteropServices;
 
 namespace Nncase.Simulator;
 
 public static class SimulatorExtension
 {
-    public static string ToFile<T>(this Tensor<T> tensor, string path)
-      where T : unmanaged, System.IEquatable<T>
+    public static string ToFile(this Tensor tensor, string path)
     {
         if (File.Exists(path))
             File.Delete(path);

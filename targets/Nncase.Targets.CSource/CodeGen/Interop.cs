@@ -47,7 +47,7 @@ internal class DynamicAssemble
     /// </summary>
     /// <param name="function"></param>
     /// <returns> func delegate type</returns>
-    public Type BuildDelegateType(Function function)
+    public Type BuildDelegateType(Callable function)
     {
         Type deleType;
         if (function.CheckedType is CallableType ctype)
@@ -120,7 +120,7 @@ public static class Interop
     /// <param name="libName"> the dynamic lib name </param>
     /// <returns></returns>
     /// <exception cref="NotSupportedException"></exception>
-    public static Type ToDelegateType(this Function function, string libName)
+    public static Type ToDelegateType(this Callable function, string libName)
     {
         if (!_definedAsms.TryGetValue(libName, out var dyasm))
         {

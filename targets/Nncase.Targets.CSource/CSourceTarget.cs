@@ -21,16 +21,13 @@ public class CSourceTarget : ITarget
     }
 
     /// <inheritdoc/>
-    public CodeGen.IRTModel CreateRTModel(Schedule.SchedModelResult result)
+    public CodeGen.IRTModel CreateRTModel(IR.IRModel model)
     {
-        return new CodeGen.CSourceRTModel(result, this);
+        return new CodeGen.CSourceRTModel(model, this);
     }
 
     /// <inheritdoc/>
-    public CodeGen.IRTModule CreateRTModule(
-      CodeGen.ModuleType moduleType,
-       Schedule.SchedModuleResult ModuleResult,
-        Schedule.SchedModelResult modelResult)
+    public CodeGen.IRTModule CreateRTModule(IR.IRModel model, IR.IRModule module)
     {
         throw new NotImplementedException("The CSource Target Only Have Runtime Model!");
     }

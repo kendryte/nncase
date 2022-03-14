@@ -45,7 +45,7 @@ public class CSourceRTModel : IRTModule, IRTModel
     /// <inheritdoc/>
     public string SourcePath { get; private set; }
 
-    IRModule _MainModule;
+    public IRModel Model { get; set; }
     IRTFunction? _entry = null;
 
     /// <inheritdoc/>
@@ -56,10 +56,10 @@ public class CSourceRTModel : IRTModule, IRTModel
     /// <summary>
     /// <see cref="CSourceRTModel"/>
     /// </summary>
-    public CSourceRTModel(Schedule.SchedModelResult result, ITarget target)
+    public CSourceRTModel(IRModel model, ITarget target)
     {
         SourcePath = CodeGenUtil.GetTempFileName("c");
-        _MainModule = result.ParentModule;
+        Model = model;
         Target = target;
     }
 
@@ -75,8 +75,6 @@ public class CSourceRTModel : IRTModule, IRTModel
     /// <inheritdoc/>
     public IReadOnlyList<IRTFunction> Functions => _functions;
 
-    public SchedModelResult modelResult { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
     /// <inheritdoc/>
     string _dllPath = "";
 
@@ -91,9 +89,9 @@ public class CSourceRTModel : IRTModule, IRTModel
         using (var writer = new StreamWriter(SourcePath, false, Encoding.UTF8))
         {
             var visior = new CSourceHostBuildVisior(writer);
-            if (_MainModule.Entry is null) { throw new InvalidProgramException("The Model Entry Is Null!"); }
-            if (_MainModule.Entry.CheckedType is null && _MainModule.Entry.InferenceType() == false) { throw new InvalidProgramException("The Model Entry Can't Inference Type!"); }
-            visior.Visit(_MainModule.Entry);
+            if (Model.Entry is null) { throw new InvalidProgramException("The Model Entry Is Null!"); }
+            if (Model.Entry.CheckedType is null && Model.Entry.InferenceType() == false) { throw new InvalidProgramException("The Model Entry Can't Inference Type!"); }
+            visior.Visit(Model.Entry);
         }
     }
 
@@ -114,12 +112,15 @@ public class CSourceRTModel : IRTModule, IRTModel
         if (!File.Exists(_dllPath))
             throw new InvalidProgramException("The DLL Path Is Invalid!");
         var dllPtr = NativeLibrary.Load(_dllPath);
-        foreach (var f in _MainModule.Functions)
+        foreach (var module in Model.Modules)
         {
-            var funcType = f.ToDelegateType(Path.GetFileName(_dllPath));
-            var funPtr = NativeLibrary.GetExport(dllPtr, f.Name);
-            _functions.Add(new CSourceRTFunction(f.Name, funPtr.BindDelegate(funcType)));
-            if (f == _MainModule.Entry) { _entry = _functions.Last(); }
+            foreach (var f in module.Callables)
+            {
+                var funcType = f.ToDelegateType(Path.GetFileName(_dllPath));
+                var funPtr = NativeLibrary.GetExport(dllPtr, f.Name);
+                _functions.Add(new CSourceRTFunction(f.Name, funPtr.BindDelegate(funcType)));
+                if (f == Model.Entry) { _entry = _functions.Last(); }
+            }
         }
     }
 

@@ -84,13 +84,8 @@ namespace Nncase.Cli.Commands
 
         private void DumpModule(IRModule module, CompileOptions options, string prefix)
         {
-            var dumpPath = Path.Combine(options.DumpDir, "dump", prefix);
-            Directory.CreateDirectory(dumpPath);
-
-            var func = module.Entry;
-            using var dumpFile = File.Open(Path.Combine(dumpPath, $"{func.Name}.il"), FileMode.OpenOrCreate);
-            using var dumpWriter = new StreamWriter(dumpFile);
-            IRPrinter.DumpFunctionAsIL(func, dumpWriter);
+            var dumpPath = Path.Combine(options.DumpDir, "dump");
+            module.Entry!.DumpExprAsIL(prefix, dumpPath);
         }
     }
 }

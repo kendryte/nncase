@@ -20,17 +20,17 @@ public abstract class KModelTarget : ITarget
     public abstract void ConfigOptions();
 
     /// <inheritdoc/>
-    public IRTModel CreateRTModel(SchedModelResult result)
+    public IRTModel CreateRTModel(IRModel model)
     {
-        return new CodeGen.RTKModel(result, this);
+        return new CodeGen.RTKModel(model, this);
     }
 
     /// <inheritdoc/>
-    public abstract IRTModule CreateRTModule(ModuleType moduleType, SchedModuleResult ModuleResult, SchedModelResult modelResult);
+    public abstract IRTModule CreateRTModule(IRModel model, IRModule module);
 
     /// <inheritdoc/>
-    public virtual IScheduler CreateScheduler(IRModule main_module)
+    public virtual IScheduler CreateScheduler(IRModule module)
     {
-        return new Schedule.KModelScheduler(this, main_module);
+        return new Schedule.KModelScheduler(this, module);
     }
 }

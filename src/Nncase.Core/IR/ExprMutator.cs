@@ -62,8 +62,8 @@ namespace Nncase.IR
 
             return expr with
             {
-                Body = Visit(expr.Body),
-                Parameters = new(expr.Parameters.Select(x => (Var)Visit(x))),
+                Body = (TIR.Sequential)Visit(expr.Body),
+                Parameters = new(expr.Parameters.Select(x => (TIR.Buffer)Visit(x))),
             };
         }
 
@@ -156,7 +156,7 @@ namespace Nncase.IR
             {
                 LoopVar = (Var)Visit(expr.LoopVar),
                 Dom = MutateLeaf(expr.Dom),
-                Sequence = (TIR.Sequential)Visit(expr.Sequence),
+                Body = (TIR.Sequential)Visit(expr.Body),
             };
         }
 
@@ -173,12 +173,12 @@ namespace Nncase.IR
             return expr with
             {
                 // the block realize 
-                InitSequence = (TIR.Sequential)Visit(expr.InitSequence),
+                InitBody = (TIR.Sequential)Visit(expr.InitBody),
                 Predicate = Visit(expr.Predicate),
                 IterVars = MutateArray(expr.IterVars, x => (TIR.IterVar)Visit(x)),
 
                 // the block internal.
-                Sequence = (TIR.Sequential)Visit(expr.Sequence),
+                Body = (TIR.Sequential)Visit(expr.Body),
                 Reads = MutateArray(expr.Reads, MutateLeaf),
                 Writes = MutateArray(expr.Writes, MutateLeaf),
             };
@@ -215,6 +215,37 @@ namespace Nncase.IR
             {
                 Indices = MutateArray(expr.Indices, Visit),
             };
+        }
+
+        /// <inheritdoc/>
+        public override Expr VisitLeaf(TIR.Let expr)
+        {
+            var nexpr = MutateLeaf(expr);
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+            if (!IsMutated)
+            {
+                return expr;
+            }
+
+            return expr with
+            {
+                Var = (TIR.Buffer)Visit(expr.Var),
+                Expression = Visit(expr.Expression),
+                Body = (TIR.Sequential)Visit(expr.Body),
+            };
+        }
+
+        /// <inheritdoc/>
+        public override Expr VisitLeaf(TIR.Buffer expr)
+        {
+
+            var nexpr = MutateLeaf(expr);
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+            if (!IsMutated)
+            {
+                return expr;
+            }
+            return expr with { };
         }
 
         /// <summary>
@@ -314,6 +345,20 @@ namespace Nncase.IR
         /// <param name="expr"></param>
         /// <returns></returns>
         public virtual Expr MutateLeaf(TIR.BufferLoad expr) => DefaultMutateLeaf(expr);
+
+        /// <summary>
+        /// mutate the let
+        /// </summary>
+        /// <param name="expr">let expr.</param>
+        /// <returns>new expr.</returns>
+        public virtual Expr MutateLeaf(TIR.Let expr) => DefaultMutateLeaf(expr);
+
+        /// <summary>
+        /// mutate the memref
+        /// </summary>
+        /// <param name="expr">new memref.</param>
+        /// <returns>new expr.</returns>
+        public virtual Expr MutateLeaf(TIR.Buffer expr) => DefaultMutateLeaf(expr);
 
         /// <summary>
         /// mutate irarray list.

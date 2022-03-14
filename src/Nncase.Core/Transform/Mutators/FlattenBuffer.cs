@@ -1,12 +1,12 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using System.Linq;
-using System.IO;
-using System.Collections.Generic;
 using System;
-using Nncase.TIR;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Nncase.IR;
+using Nncase.TIR;
 
 namespace Nncase.Transform.Mutator
 {
@@ -24,7 +24,7 @@ namespace Nncase.Transform.Mutator
             }
 
             // 1. Visit the body
-            var nbody = Visit(expr.Sequence);
+            var nbody = Visit(expr.Body);
             IRArrayList<BufferRegion> nreads = new(expr.Reads.Select(MutateLeaf));
             IRArrayList<BufferRegion> nwrites = new(expr.Writes.Select(MutateLeaf));
             var npredicate = Visit(expr.Predicate);
@@ -45,13 +45,15 @@ namespace Nncase.Transform.Mutator
         /// <inheritdoc/>
         public override Expr MutateLeaf(BufferLoad expr)
         {
-            return expr.Buffer.VLoad(MutateArray(expr.Indices, Visit));
+            return expr;
+            // return expr.Buffer.VLoad(MutateArray(expr.Indices, Visit));
         }
 
         /// <inheritdoc/>
         public override Expr MutateLeaf(BufferStore expr)
         {
-            return expr.Buffer.VStore(MutateArray(expr.Indices, Visit), Visit(expr.Value));
+          return expr;
+            // return expr.Buffer.VStore(MutateArray(expr.Indices, Visit), Visit(expr.Value));
         }
     }
 }

@@ -39,6 +39,8 @@ namespace Nncase.IR
                 TIR.BufferStore bstore => Visit(bstore),
                 TIR.IfThenElse ift => Visit(ift),
                 TIR.PrimFunction primfunc => Visit(primfunc),
+                TIR.Let let => Visit(let),
+                TIR.Buffer memref => Visit(memref),
                 _ => DefaultVisit(expr),
             };
         }
@@ -140,6 +142,20 @@ namespace Nncase.IR
         /// <param name="expr">IfThenElse expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult Visit(TIR.IfThenElse expr) => DefaultVisit(expr);
+
+        /// <summary>
+        /// Visit Let expression.
+        /// </summary>
+        /// <param name="expr">Let expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult Visit(TIR.Let expr) => DefaultVisit(expr);
+
+        /// <summary>
+        /// Visit MemRef expression.
+        /// </summary>
+        /// <param name="expr">MemRef expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult Visit(TIR.Buffer expr) => DefaultVisit(expr);
 
         /// <summary>
         /// Default visit routine.

@@ -12,6 +12,9 @@ using Nncase.IR;
 namespace Nncase.TIR;
 
 
+/// <summary>
+/// TIRExtensions
+/// </summary>
 public static class TIRExtensions
 {
 
@@ -21,4 +24,29 @@ public static class TIRExtensions
     /// <param name="enumerable"> instance.</param>
     /// <returns> Sequential. </returns>
     public static Sequential ToSequential(this IEnumerable<Expr> enumerable) => new Sequential(new IRArrayList<Expr>(enumerable));
+
+    /// <summary>
+    /// get the total elements bytes count.
+    /// </summary>
+    public static int SizeInBytes<T>(this IBufferView<T> view)
+      where T : class
+    => view.Size() * view.DType.SizeInBytes;
+
+    /// <summary>
+    /// get the total elements.
+    /// </summary>
+    public static int Size<T>(this IBufferView<T> view)
+      where T : class
+    => view.Shape.ToArray().Aggregate(1, (acc, dim) => acc * dim);
+
+
+    /// <summary>
+    /// print the tensorview string
+    /// </summary>
+    /// <typeparam name="T">type</typeparam>
+    /// <param name="view">view.</param>
+    /// <returns></returns>
+    public static string View<T>(this IBufferView<T> view)
+      where T : class
+    => $"[{string.Join(", ", view.SelectedRanges.ToArray().Select(rg => $"{rg.Start}:{rg.End}"))}]";
 }

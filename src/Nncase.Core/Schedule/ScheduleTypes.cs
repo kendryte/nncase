@@ -8,7 +8,6 @@ using Nncase.Runtime;
 
 namespace Nncase.Schedule;
 
-using AllocationMap = Dictionary<IR.Expr, BufferAllocation>;
 
 /// <summary>
 /// the memory type.
@@ -128,17 +127,17 @@ public class BufferAllocation
     /// <summary>
     /// full shape.
     /// </summary>
-    public IR.Shape Shape;
+    public int[] Shape;
 
     /// <summary>
     /// full stride.
     /// </summary>
-    public IR.Shape Strides;
+    public int[] Strides;
 
     /// <summary>
     /// stride shape.
     /// </summary>
-    public IR.Shape StridesShape;
+    public int[] StridesShape;
 
     /// <summary>
     /// <see cref="BufferAllocation"/>.
@@ -151,7 +150,7 @@ public class BufferAllocation
     /// <param name="shape">full shape.</param>
     /// <param name="strides">full stride.</param>
     /// <param name="strides_shape">stride shape.</param>
-    public BufferAllocation(MemoryLocation memory_locate, DataType d_type, ulong shared_module, ulong start, ulong size, IR.Shape shape, IR.Shape strides, IR.Shape strides_shape)
+    public BufferAllocation(MemoryLocation memory_locate, DataType d_type, ulong shared_module, ulong start, ulong size, int[] shape, int[] strides, int[] strides_shape)
     {
         MemoryLocate = memory_locate;
         DType = d_type;
@@ -179,44 +178,32 @@ public class BufferAllocation
     /// <summary>
     /// get current buffer memory range.
     /// </summary>
-    public MemoryRange RuntimeType => new(this.MemoryLocate,
-         PrimTypeCodes.ToTypeCode(DType),
-         (UInt16)SharedModule,
-         (uint)this.Start,
-         (uint)this.Size);
-}
-
-/// <summary>
-/// SchedModelResult.
-/// </summary>
-public class SchedModelResult
-{
-    /// <summary>
-    /// sched module result.
-    /// </summary>
-    public readonly List<SchedModuleResult> Modules;
-
-    /// <summary>
-    /// sched function result.
-    /// </summary>
-    public SchedFunctionResult? Entry;
-
-    /// <summary>
-    /// the parent ir module.
-    /// </summary>
-    public IR.IRModule ParentModule;
-
-    /// <summary>
-    /// create the SchedModelResult.
-    /// </summary>
-    /// <param name="parent_module"></param>
-    public SchedModelResult(IR.IRModule parent_module)
+    public MemoryRange MemoryRange
     {
-        ParentModule = parent_module;
-        Modules = new();
-        Entry = null;
+        get
+        {
+            // todo because of
+            PrimTypeCode code;
+            try
+            {
+                code = PrimTypeCodes.ToTypeCode(DType);
+            }
+            catch (System.Collections.Generic.KeyNotFoundException e)
+            {
+                if (DType.SizeInBytes == 4)
+                    code = PrimTypeCode.Float32;
+                else
+                    throw e;
+            }
+            return new(this.MemoryLocate,
+               code,
+               (UInt16)SharedModule,
+               (uint)this.Start,
+               (uint)this.Size);
+        }
     }
 }
+
 
 /// <summary>
 /// SchedModuleResult.
@@ -227,21 +214,6 @@ public class SchedModuleResult
     /// current Module type.
     /// </summary>
     public CodeGen.ModuleType ModuleType;
-
-    /// <summary>
-    /// contains functions.
-    /// </summary>
-    public readonly List<SchedFunctionResult> Functions;
-
-    /// <summary>
-    /// schedfunction maps.
-    /// </summary>
-    public readonly Dictionary<IR.Expr, SchedFunctionResult> FunctionsMap;
-
-    /// <summary>
-    /// the buffer allocations.
-    /// </summary>
-    public readonly AllocationMap Allocations;
 
     /// <summary>
     /// mem collection.
@@ -259,9 +231,6 @@ public class SchedModuleResult
     public SchedModuleResult(CodeGen.ModuleType moduleType)
     {
         ModuleType = moduleType;
-        Functions = new();
-        FunctionsMap = new();
-        Allocations = new();
         MaxUsages = new();
         SharedMaxUsages = new();
     }
@@ -273,78 +242,55 @@ public class SchedModuleResult
 public class SchedFunctionResult
 {
     /// <summary>
-    /// parent module.
+    /// inputs
     /// </summary>
-    public SchedModuleResult SchedModule;
+    public IEnumerable<MemoryRange> Inputs => inputs.Select(al => al.MemoryRange);
+
+    /// <summary>
+    /// input shapes.
+    /// </summary>
+    public IEnumerable<int[]> InputShapes => inputs.Select(al => al.Shape);
+
+    /// <summary>
+    /// outputs
+    /// </summary>
+    public IEnumerable<MemoryRange> Outputs => outputs.Select(al => al.MemoryRange);
+
+    /// <summary>
+    /// input shapes.
+    /// </summary>
+    public IEnumerable<int[]> OutputShapes => outputs.Select(al => al.Shape);
 
     /// <summary>
     /// input memory size.
     /// </summary>
-    public ulong InputPoolSize;
+    public ulong InputPoolSize => inputs.Aggregate(0UL, (acc, al) => acc + al.Size);
 
     /// <summary>
     /// ouput memory size.
     /// </summary>
-    public ulong OutputPoolSize;
+    public ulong OutputPoolSize => outputs.Aggregate(0UL, (acc, al) => acc + al.Size);
+
+    private IEnumerable<BufferAllocation> inputs => Allocations.Values.Where(al => al.MemoryLocate == MemoryLocation.Input);
+    private IEnumerable<BufferAllocation> outputs => Allocations.Values.Where(al => al.MemoryLocate == MemoryLocation.Output);
 
     /// <summary>
-    /// compute sequence.
+    /// the buffer allocation
     /// </summary>
-    public List<IR.Expr> ComputeSequence;
+    public readonly Dictionary<TIR.Buffer, BufferAllocation> Allocations;
 
     /// <summary>
-    /// the ir function.
+    /// the function module type
     /// </summary>
-    public IR.Function Function;
-
-    /// <summary>
-    /// the inputs memory info
-    /// <remarks>
-    /// you can manual set the value
-    /// if inputs is empty, when serialize will auto add the value.
-    /// <see cref="Nncase.CodeGen.IRTModule.Serialize"/>
-    /// </remarks>
-    /// </summary>
-    public readonly List<Schedule.MemoryRange> Inputs = new();
-
-    /// <summary>
-    /// the inputs shape.
-    /// </summary>
-    public readonly List<IR.Shape> InputShapes = new();
-
-    /// <summary>
-    /// the outputs memory info
-    /// </summary>
-    public readonly List<Schedule.MemoryRange> Outputs = new();
-
-    /// <summary>
-    /// the outputs shape.
-    /// </summary>
-    public readonly List<IR.Shape> OutputShapes = new();
+    public readonly CodeGen.ModuleType ModuleType;
 
     /// <summary>
     /// create SchedFunctionResult
     /// </summary>
-    /// <param name="sched_module">parent module.</param>
-    /// <param name="input_pool_size">input memory size.</param>
-    /// <param name="output_pool_size">ouput memory size.</param>
-    /// <param name="function">the ir function.</param>
-    public SchedFunctionResult(SchedModuleResult sched_module, ulong input_pool_size, ulong output_pool_size, IR.Function function)
+    public SchedFunctionResult(CodeGen.ModuleType moduleType)
     {
-        SchedModule = sched_module;
-        InputPoolSize = input_pool_size;
-        OutputPoolSize = output_pool_size;
-        ComputeSequence = new();
-        Function = function;
-    }
-
-    /// <summary>
-    /// <see cref="SchedFunctionResult"/>
-    /// </summary>
-    /// <param name="sched_module"></param>
-    /// <param name="function"></param>
-    public SchedFunctionResult(SchedModuleResult sched_module, IR.Function function) : this(sched_module, 0, 0, function)
-    {
+        Allocations = new(ReferenceEqualityComparer.Instance);
+        ModuleType = moduleType;
     }
 }
 
@@ -361,7 +307,7 @@ public interface IScheduler
     /// <summary>
     /// the main module.
     /// </summary>
-    public IR.IRModule ParentModule { get; set; }
+    public IR.IRModule Module { get; set; }
 
     /// <summary>
     /// multi stage schedules.
@@ -369,5 +315,5 @@ public interface IScheduler
     /// </summary>
     /// <param name="skip_buffer_alias"></param>
     /// <returns></returns>
-    public SchedModelResult Schedule(bool skip_buffer_alias = false);
+    public IR.IRModel Schedule(bool skip_buffer_alias = false);
 }

@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.Numerics.Tensors;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -20,21 +19,19 @@ public class InferEngine
         outputPath = Path.Combine(Path.GetDirectoryName(modelPath) ?? "", "infer_output");
     }
 
-    public void InputTensor<T>(int index, Tensor<T> tensor)
-      where T : unmanaged, System.IEquatable<T>
+    public void InputTensor(int index, Tensor tensor)
     {
         if (index != 0)
             throw new NotSupportedException("Only Support 1 Input!");
         tensor.ToFile(inputPath);
     }
 
-    public DenseTensor<T> OutputTensor<T>(int index, int[] shape)
-      where T : unmanaged
+    public Tensor OutputTensor(int index, DataType dataType, int[] shape)
     {
         if (index != 0)
             throw new NotSupportedException("Only Support 1 Output!");
         var bytes = File.ReadAllBytes(Path.Combine(outputPath, $"{index}.bin"));
-        return new DenseTensor<T>(Microsoft.Toolkit.HighPerformance.MemoryExtensions.Cast<byte, T>(new Memory<byte>(bytes)), shape);
+        return Tensor.FromBytes(dataType,bytes,shape);
     }
 
     static string GetRid()

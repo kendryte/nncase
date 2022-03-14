@@ -16,7 +16,7 @@ namespace Nncase.TIR;
 /// <summary>
 /// PrimFunction expression.
 /// </summary>
-public sealed record PrimFunction(string Name, Expr Body, IRArray<Var> Parameters) : Expr
+public sealed record PrimFunction(string Name, Sequential Body, IRArray<Buffer> Parameters) : Callable(Name), ISequentialExpr
 {
     private static int _globalFuncIndex = 0;
 
@@ -25,7 +25,7 @@ public sealed record PrimFunction(string Name, Expr Body, IRArray<Var> Parameter
     /// </summary>
     /// <param name="parameters">Parameters.</param>
     /// <param name="body">Body.</param>
-    public PrimFunction(Expr body, IRArray<Var> parameters)
+    public PrimFunction(Sequential body, IRArray<Buffer> parameters)
         : this($"primfunc_{_globalFuncIndex++}", body, parameters)
     {
     }
@@ -35,7 +35,7 @@ public sealed record PrimFunction(string Name, Expr Body, IRArray<Var> Parameter
     /// </summary>
     /// <param name="body"></param>
     /// <param name="parameters"></param>
-    public PrimFunction(Expr body, params Var[] parameters)
+    public PrimFunction(Sequential body, params Buffer[] parameters)
         : this($"primfunc_{_globalFuncIndex++}", body, new(parameters))
     {
     }
@@ -50,8 +50,22 @@ public sealed record Nop : Expr { }
 /// The container of Exprs.
 /// Represent a sequence of Expr.
 /// </summary>
-public sealed record Sequential(IRArrayList<Expr> Fields) : Expr, IList<Expr>
+public sealed record Sequential : Expr, IList<Expr>
 {
+    /// <summary>
+    /// the sub Fields
+    /// </summary>
+    public IRArrayList<Expr> Fields;
+
+    /// <summary>
+    /// ctor for default.
+    /// </summary>
+    /// <param name="fields">sub fields.</param>
+    public Sequential(IRArrayList<Expr> fields)
+    {
+        Fields = new(Flatten(fields));
+    }
+
     /// <summary>
     /// Sequential ctor.
     /// </summary>
@@ -65,32 +79,21 @@ public sealed record Sequential(IRArrayList<Expr> Fields) : Expr, IList<Expr>
     public Expr this[int index] { get => ((IList<Expr>)Fields)[index]; set => ((IList<Expr>)Fields)[index] = value; }
 
     /// <summary>
-    /// Flatten nested sequential.
+    /// flatten the exprs
     /// </summary>
     /// <param name="exprs"></param>
-    /// <returns>flattend exprs.</returns>
-    public static Sequential Flatten(params Expr[] exprs)
+    /// <returns></returns>
+    public static List<Expr> Flatten(IEnumerable<Expr> exprs)
     {
-        List<Expr> seqs = new();
-        void doflatten(Expr expr)
-        {
-            switch (expr)
-            {
-                case Sequential seq:
-                    foreach (var item in seq) { doflatten(item); }
-                    break;
-                default:
-                    seqs.Add(expr);
-                    break;
-            }
-        }
-
+        var ret = new List<Expr>();
         foreach (var item in exprs)
         {
-            doflatten(item);
+            if (item is Sequential sub)
+                ret.AddRange(Flatten(sub));
+            else
+                ret.Add(item);
         }
-
-        return new Sequential(new IRArrayList<Expr>(seqs));
+        return ret;
     }
 
     /// <inheritdoc/>
@@ -192,16 +195,11 @@ public sealed record Broadcast(Expr Value, int lanes) : Expr
 /// <summary>
 /// Let binding. Bind var to value then evaluate body. return unit.
 /// </summary>
-/// <param name="Var"> The variable. </param>
-/// <param name="Value"> The value to be binded. </param>
-/// <param name="Body"> The result expression. </param>
-public sealed record Let(Var Var, Expr Value, Expr Body) : Expr
+/// <param name="Var"> The expr . </param>
+/// <param name="Expression"> The value to be binded. </param>
+/// <param name="Body"> The Let body. </param>
+public sealed record Let(Buffer Var, Expr Expression, Sequential Body) : Expr, ISequentialExpr
 {
-    /// <inheritdoc/>
-    public override string ToString()
-    {
-        return $"(let {Var.Name} = {Value} in {Body})";
-    }
 }
 
 /// <summary>
@@ -216,21 +214,14 @@ public sealed record While(Expr Condition, Sequential Bodys) : Expr
 { }
 
 /// <summary>
-/// The Expr With Body.
+/// The interface mean the expr has body
 /// </summary>
-/// <param name="Sequence"> The body of the for loop. </param>
-public abstract record BodyExpr(Sequential Sequence) : Expr
+public interface ISequentialExpr
 {
-    /// <inheritdoc/>
-    public BodyExpr Body(params Expr[] exprs)
-    {
-        foreach (var item in exprs)
-        {
-            Sequence.Add(item);
-        }
-
-        return this;
-    }
+    /// <summary>
+    /// The body of the for loop.
+    /// </summary>
+    public Sequential Body { get; }
 }
 
 /// <summary>
@@ -246,8 +237,8 @@ public abstract record BodyExpr(Sequential Sequence) : Expr
 /// <param name="LoopVar">The loop variable.</param>
 /// <param name="Dom">The dom of for range.</param>
 /// <param name="Mode">The kind of the for loop.</param>
-/// <param name="Sequence">the body sequence.</param>
-public sealed record For(Var LoopVar, Range Dom, LoopMode Mode, Sequential Sequence) : BodyExpr(Sequence)
+/// <param name="Body">the body sequence.</param>
+public sealed record For(Var LoopVar, Range Dom, LoopMode Mode, Sequential Body) : Expr, ISequentialExpr
 {
     /// <summary>
     /// ctor.
@@ -404,7 +395,7 @@ public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region)
     /// </summary>
     /// <param name="Buf">The buffer to generate full BufferRegion.</param>
     /// <returns>The BufferRegion which covers all region of the given buffer.</returns>
-    public static BufferRegion Full(Buffer Buf) => new BufferRegion(Buf, new(Buf.Shape.Select(extent => new Range(0, extent, 1))));
+    public static BufferRegion Full(Buffer Buf) => new BufferRegion(Buf, new(Buf.Shape.ToArray().Select(extent => new Range(0, extent, 1))));
 
     /// <summary>
     /// Create a BufferRegion which is a single point of the given buffer.
@@ -451,18 +442,18 @@ public sealed record MatchBufferRegion(Buffer Buffer, BufferRegion Source)
 /// </code>
 /// </summary>
 /// <param name="Name"> The name_hint of the block.</param>
-/// <param name="Sequence"> block body </param>
-/// <param name="InitSequence">the Block init statement.</param>
+/// <param name="Body"> block body </param>
+/// <param name="InitBody">the Block init statement.</param>
 /// <param name="IterVars">The List Exprs contain the IterVars</param>
 /// <param name="Reads">The read buffer regions of the block.</param>
 /// <param name="Writes">The write buffer regions of the block.</param>
 /// <param name="AllocBuffers">The buffer allocated in the block.</param>
 /// <param name="Predicate">The predicate of the block realization, the block will only be executed when the predicate is true.</param>
-public sealed record Block(string Name, Sequential Sequence, Sequential InitSequence,
+public sealed record Block(string Name, Sequential Body, Sequential InitBody,
                             IRArrayList<IterVar> IterVars,
                             IRArrayList<BufferRegion> Reads,
                             IRArrayList<BufferRegion> Writes,
-                            IRArrayList<Buffer> AllocBuffers, Expr Predicate) : BodyExpr(Sequence)
+                            IRArrayList<Buffer> AllocBuffers, Expr Predicate) : Expr, ISequentialExpr
 {
     /// <summary>
     /// <see cref="Block"/>.
@@ -516,11 +507,11 @@ public sealed record Block(string Name, Sequential Sequence, Sequential InitSequ
     /// </summary>
     /// <param name="exprs"></param>
     /// <returns></returns>
-    public T.BodyExprBuilder<Block> Init(params Expr[] exprs)
+    public T.SequentialBuilder<Block> Init(params Expr[] exprs)
     {
         foreach (var item in exprs)
         {
-            InitSequence.Add(item);
+            InitBody.Add(item);
         }
         return new(this);
     }

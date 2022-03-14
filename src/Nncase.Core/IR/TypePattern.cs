@@ -136,8 +136,8 @@ namespace Nncase.IR
         /// check the tensor is handle
         /// </summary>
         /// <returns></returns>
-        public static TypePattern IsHandle() => new TypePattern(
-          x => (x is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType { } } }), "IsHandle"
+        public static TypePattern IsPointer() => new TypePattern(
+          x => (x is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType { } } }), "IsPointer"
         );
 
         /// <summary>

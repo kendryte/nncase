@@ -144,7 +144,7 @@ public class Scheduler
         Expr child = block;
         void collectLoops(Expr expr)
         {
-            if (expr is For parent && object.ReferenceEquals(parent.Sequence[0], child))
+            if (expr is For parent && object.ReferenceEquals(parent.Body[0], child))
             {
                 targetLoops.Insert(0, parent);
                 child = parent;
@@ -176,7 +176,7 @@ public class Scheduler
         }
 
         Dictionary<Block, Block> opaque_block_reuse = new(); // TODO the opaque_block_reuse for what?
-        Sequential nbody = loop.Sequence;
+        Sequential nbody = loop.Body;
         // Step 3. create new for loop.
         var nFor = new For[factors.Length];
         nbody = (Sequential)new SubstituteVarAndCollectOpaqueBlock(v => v == loop.LoopVar ? substitute : v, opaque_block_reuse).Visit(nbody);

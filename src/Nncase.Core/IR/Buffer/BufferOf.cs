@@ -9,12 +9,12 @@ using static Nncase.IR.TypePatternUtility;
 namespace Nncase.IR.Buffer;
 
 /// <summary>
-/// get the buffer basement.
+/// get the buffer from the input.
 /// </summary>
-public record BaseMentOf() : Op
+public record BufferOf() : Op
 {
     /// <summary>
     /// Get the input parameter.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(BaseMentOf), 0, "input", IsPointer());
+    public static readonly ParameterInfo Input = new(typeof(BaseMentOf), 0, "input", IsTensor());
 }

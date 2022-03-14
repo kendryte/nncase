@@ -57,13 +57,6 @@ public abstract partial record Expr
         return _hashcode ??= EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
     }
 
-    /// <inheritdoc/>
-    protected virtual bool PrintMembers(StringBuilder builder)
-    {
-        builder.Append(this.DumpExprAsIL());
-        return true;
-    }
-
     /// <summary>
     /// get the item from the expr.
     /// </summary>
