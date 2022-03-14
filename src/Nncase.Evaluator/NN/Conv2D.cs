@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
 using TorchSharp;
@@ -15,7 +16,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="Conv2D"/>.
 /// </summary>
-public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>
+public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICostEvaluator<Conv2D>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Conv2D conv)
@@ -53,6 +54,18 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>
         var input = context.CheckArgumentType<TensorType>(target, Conv2D.Input);
         var weights = context.CheckArgumentType<TensorType>(target, Conv2D.Weights);
         return Visit(context, target, input, weights);
+    }
+
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, Conv2D target)
+    {
+        var weightsShape = context.GetArgumentType<TensorType>(target, Conv2D.Weights).Shape;
+        var outputType = context.GetReturnType<TensorType>();
+        var outputShape = outputType.Shape;
+
+        // weights: [output, input, H, W]
+        var arithm = (weightsShape.Prod() * outputShape[0] * outputShape[2] * outputShape[3]).FixedValue;
+        return new(arithm, outputShape.Prod().FixedValue * outputType.DType.SizeInBytes);
     }
 
     private IRType Visit(ITypeInferenceContext context, Conv2D target, TensorType input, TensorType weights)

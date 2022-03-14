@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CommonServiceLocator;
 using Microsoft.Extensions.DependencyInjection;
+using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.PatternMatch;
@@ -53,6 +54,22 @@ public interface ICompilerServicesProvider
     IValue EvaluateOp(Op op, IEvaluateContext context);
 
     /// <summary>
+    /// Evaluate cost of the expression tree.
+    /// </summary>
+    /// <param name="expr">Expression.</param>
+    /// <param name="varsValues">Optional vars' values.</param>
+    /// <returns>Evaluate result.</returns>
+    Cost EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null);
+
+    /// <summary>
+    /// Evaluate cost of operator.
+    /// </summary>
+    /// <param name="op">Target operator.</param>
+    /// <param name="context">Evaluate context.</param>
+    /// <returns>Evaluate result.</returns>
+    Cost EvaluateOpCost(Op op, ICostEvaluateContext context);
+
+    /// <summary>
     /// Match expression.
     /// </summary>
     /// <param name="expr">Expression to match.</param>
@@ -78,6 +95,15 @@ public interface ICompilerServicesProvider
     /// <param name="options">Options.</param>
     /// <returns>Rewrited expression.</returns>
     Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options);
+
+    /// <summary>
+    /// Match enodes as root.
+    /// </summary>
+    /// <param name="enodes">ENodes.</param>
+    /// <param name="pattern">Pattern.</param>
+    /// <param name="results">Match results.</param>
+    /// <returns>Match success.</returns>
+    bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results);
 }
 
 internal interface ICompilerServicesProviderInternal
@@ -89,21 +115,27 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
 {
     private readonly IEvaluateProvider _evaluateProvider;
     private readonly ITypeInferenceProvider _typeInferenceProvider;
+    private readonly ICostEvaluateProvider _costEvaluateProvider;
     private readonly IMatchProvider _matchProvider;
     private readonly IRewriteProvider _rewriteProvider;
+    private readonly IEGraphMatchProvider _eGraphMatchProvider;
 
     public CompilerServicesProvider(
         IEvaluateProvider evaluateProvider,
         ITypeInferenceProvider typeInferenceProvider,
+        ICostEvaluateProvider costEvaluateProvider,
         IDataTypeServiceProvider dataTypeServiceProvider,
         IMatchProvider matchProvider,
-        IRewriteProvider rewriteProvider)
+        IRewriteProvider rewriteProvider,
+        IEGraphMatchProvider eGraphMatchProvider)
     {
         _evaluateProvider = evaluateProvider;
         _typeInferenceProvider = typeInferenceProvider;
+        _costEvaluateProvider = costEvaluateProvider;
         DataTypeService = dataTypeServiceProvider;
         _matchProvider = matchProvider;
         _rewriteProvider = rewriteProvider;
+        _eGraphMatchProvider = eGraphMatchProvider;
     }
 
     public IDataTypeServiceProvider DataTypeService { get; }
@@ -148,6 +180,23 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     public Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
     {
         return _rewriteProvider.Rewrite(expr, rules, options);
+    }
+
+    /// <inheritdoc/>
+    public Cost EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null)
+    {
+        return _costEvaluateProvider.EvaluateCost(expr, varsValues);
+    }
+
+    /// <inheritdoc/>
+    public Cost EvaluateOpCost(Op op, ICostEvaluateContext context)
+    {
+        return _costEvaluateProvider.EvaluateOpCost(op, context);
+    }
+
+    public bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
+    {
+        return _eGraphMatchProvider.TryMatchRoot(enodes, pattern, out results);
     }
 }
 
@@ -215,6 +264,28 @@ public static class CompilerServices
     }
 
     /// <summary>
+    /// Evaluate cost of the expression tree.
+    /// </summary>
+    /// <param name="expr">Expression.</param>
+    /// <param name="varsValues">Optional vars' values.</param>
+    /// <returns>Evaluate result.</returns>
+    public static Cost EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null)
+    {
+        return Provider.EvaluateCost(expr, varsValues);
+    }
+
+    /// <summary>
+    /// Evaluate cost of operator.
+    /// </summary>
+    /// <param name="op">Target operator.</param>
+    /// <param name="context">Evaluate context.</param>
+    /// <returns>Evaluate result.</returns>
+    public static Cost EvaluateOpCost(Op op, ICostEvaluateContext context)
+    {
+        return Provider.EvaluateOpCost(op, context);
+    }
+
+    /// <summary>
     /// Match expression.
     /// </summary>
     /// <param name="expr">Expression to match.</param>
@@ -248,5 +319,29 @@ public static class CompilerServices
     public static Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
     {
         return Provider.Rewrite(expr, rules, options);
+    }
+
+    /// <summary>
+    /// Match enodes as root.
+    /// </summary>
+    /// <param name="enodes">ENodes.</param>
+    /// <param name="pattern">Pattern.</param>
+    /// <param name="results">Match results.</param>
+    /// <returns>Match success.</returns>
+    public static bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
+    {
+        return Provider.TryMatchRoot(enodes, pattern, out results);
+    }
+
+    /// <summary>
+    /// Match enode as root.
+    /// </summary>
+    /// <param name="enode">ENode.</param>
+    /// <param name="pattern">Pattern.</param>
+    /// <param name="results">Match results.</param>
+    /// <returns>Match success.</returns>
+    public static bool TryMatchRoot(ENode enode, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
+    {
+        return Provider.TryMatchRoot(new[] { enode }, pattern, out results);
     }
 }

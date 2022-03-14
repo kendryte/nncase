@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using Nncase.Transform;
 
 namespace Nncase.PatternMatch;
 
@@ -16,10 +17,29 @@ namespace Nncase.PatternMatch;
 /// </summary>
 public sealed class MatchScope
 {
+    private readonly object? _root;
     private readonly MatchScope? _parent;
     private readonly Dictionary<IPattern, Expr> _patMemo = new(ReferenceEqualityComparer.Instance);
-    private readonly Dictionary<VArgsPattern, Expr[]> _vargspatMemo = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<VArgsPattern, IReadOnlyList<Expr>> _vargspatMemo = new(ReferenceEqualityComparer.Instance);
     private readonly List<(IPattern Pattern, object Match)> _matches = new();
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MatchScope"/> class.
+    /// </summary>
+    /// <param name="root">Match root.</param>
+    public MatchScope(Expr root)
+    {
+        _root = root;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MatchScope"/> class.
+    /// </summary>
+    /// <param name="root">Match root.</param>
+    public MatchScope(ENode root)
+    {
+        _root = root;
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MatchScope"/> class.
@@ -72,7 +92,7 @@ public sealed class MatchScope
     /// <param name="pattern">Pattern.</param>
     /// <param name="exprs">Expressions.</param>
     /// <returns>Operation succeeded.</returns>
-    public bool TryGetMemo(VArgsPattern pattern, [MaybeNullWhen(false)] out Expr[] exprs)
+    public bool TryGetMemo(VArgsPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<Expr> exprs)
     {
         if (_vargspatMemo.TryGetValue(pattern, out exprs))
         {
@@ -103,7 +123,7 @@ public sealed class MatchScope
     /// </summary>
     /// <param name="pattern">Pattern.</param>
     /// <param name="match">Match expressions.</param>
-    public void AddMatch(VArgsPattern pattern, Expr[] match)
+    public void AddMatch(VArgsPattern pattern, IReadOnlyList<Expr> match)
     {
         _vargspatMemo.Add(pattern, match);
         _matches.Add((pattern, match));
@@ -119,8 +139,8 @@ public sealed class MatchScope
         if (IsMatch)
         {
             var matches = new Dictionary<IPattern, object>(ReferenceEqualityComparer.Instance);
-            FlattenMatches(matches);
-            result = new MatchResult(matches);
+            var root = FlattenMatches(matches);
+            result = new MatchResult(root, matches);
             return true;
         }
         else
@@ -130,16 +150,23 @@ public sealed class MatchScope
         }
     }
 
-    private void FlattenMatches(Dictionary<IPattern, object> matches)
+    private object FlattenMatches(Dictionary<IPattern, object> matches)
     {
+        object root;
         if (_parent != null)
         {
-            _parent.FlattenMatches(matches);
+            root = _parent.FlattenMatches(matches);
+        }
+        else
+        {
+            root = _root!;
         }
 
         foreach (var match in _matches)
         {
             matches.Add(match.Pattern, match.Match);
         }
+
+        return root;
     }
 }

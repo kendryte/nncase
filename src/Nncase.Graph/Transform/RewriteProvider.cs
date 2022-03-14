@@ -11,6 +11,11 @@ internal class RewriteProvider : IRewriteProvider
 {
     public Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
     {
+        if (expr.CheckedType == null)
+        {
+            CompilerServices.InferenceType(expr);
+        }
+
         var rewriter = new DataflowRewriter();
         return rewriter.Rewrite(expr, rules, options);
     }

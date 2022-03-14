@@ -160,6 +160,11 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// <returns>A new tensor that reinterprets backing Buffer of this tensor with different dimensions.</returns>
     public Tensor<T> Reshape(ReadOnlySpan<int> dimensions)
     {
+        if (Length != TensorUtilities.GetProduct(dimensions))
+        {
+            throw new ArgumentException("Length after reshape should remain same.");
+        }
+
         return new Tensor<T>(_memoryOwner, _pointer, dimensions);
     }
 

@@ -15,13 +15,11 @@ namespace Nncase.Evaluator;
 internal sealed class EvaluateContext : IEvaluateContext
 {
     private readonly Dictionary<Expr, IValue> _exprMemo;
-    private readonly IReadOnlyDictionary<Var, IValue> _varsValues;
     private Call? _currentCall;
 
-    public EvaluateContext(Dictionary<Expr, IValue> exprMemo, IReadOnlyDictionary<Var, IValue> varsValues)
+    public EvaluateContext(Dictionary<Expr, IValue> exprMemo)
     {
         _exprMemo = exprMemo;
-        _varsValues = varsValues;
     }
 
     public Call CurrentCall

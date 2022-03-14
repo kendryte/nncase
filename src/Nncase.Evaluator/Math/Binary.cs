@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using TorchSharp;
@@ -11,7 +12,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Binary"/>.
 /// </summary>
-public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binary>
+public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binary>, ICostEvaluator<Binary>
 {
     /// <inheritdoc />
     public IValue Visit(IEvaluateContext context, Binary binary)
@@ -44,6 +45,14 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         var lhs = context.CheckArgumentType<TensorType>(target, Binary.Lhs);
         var rhs = context.CheckArgumentType<TensorType>(target, Binary.Rhs);
         return Visit(lhs, rhs);
+    }
+
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, Binary target)
+    {
+        var returnType = context.GetReturnType<TensorType>();
+        var arithm = returnType.Shape.Prod().FixedValue;
+        return new(arithm, arithm * returnType.DType.SizeInBytes);
     }
 
     private IRType Visit(TensorType lhs, TensorType rhs)

@@ -15,5 +15,6 @@ public class EvaluatorModule : Module
     {
         builder.RegisterType<TypeInferenceProvider>().AsImplementedInterfaces();
         builder.RegisterType<EvaluateProvider>().AsImplementedInterfaces();
+        builder.RegisterType<CostEvaluateProvider>().AsImplementedInterfaces();
     }
 }

@@ -28,9 +28,11 @@ internal class RuleReceiver : ISyntaxContextReceiver
 
     public INamedTypeSymbol? ExprSymobl;
     public INamedTypeSymbol? IMatchResultSymobl;
+    public INamedTypeSymbol? IRewriteRuleSymbol;
 
     public void OnVisitSyntaxNode(GeneratorSyntaxContext ctx)
     {
+        IRewriteRuleSymbol ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Transform.IRewriteRule")!;
         ExprSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Expr");
         IMatchResultSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.PatternMatch.IMatchResult");
 
@@ -41,7 +43,7 @@ internal class RuleReceiver : ISyntaxContextReceiver
             if (classSymbol!.GetAttributes().Any(attr => attr.AttributeClass is { Name: "RuleGeneratorAttribute" }))
             {
                 // 0. check inherit from base class;
-                if (classSymbol.BaseType is not { IsGenericType: true, Name: "RewriteRule" })
+                if (!classSymbol.AllInterfaces.Contains(IRewriteRuleSymbol))
                     Diagnostics.Add(Diagnostic.Create(RecriverUtil.ClassNotFromBaseClassError, Location.None, classSymbol.ToDisplayString(), "RewriteRule"));
 
                 // 1. check is Partial

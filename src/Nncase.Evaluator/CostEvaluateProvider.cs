@@ -7,21 +7,22 @@ using System.Reflection;
 using Autofac;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Nncase.CostModel;
 using Nncase.IR;
 using TorchSharp;
 
 namespace Nncase.Evaluator;
 
-internal sealed class EvaluateProvider : IEvaluateProvider
+internal sealed class CostEvaluateProvider : ICostEvaluateProvider
 {
     private readonly IServiceProvider _serviceProvider;
 
-    public EvaluateProvider(IServiceProvider serviceProvider)
+    public CostEvaluateProvider(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
 
-    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null)
+    public Cost EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null)
     {
         if (expr.CheckedType is null)
         {
@@ -33,15 +34,15 @@ internal sealed class EvaluateProvider : IEvaluateProvider
             throw new InvalidOperationException("Expr in Evaluator need a valid type");
         }
 
-        var evaluatorVisitor = new EvaluateVisitor(varsValues ?? new Dictionary<Var, IValue>());
+        var evaluatorVisitor = new CostEvaluateVisitor(varsValues ?? new Dictionary<Var, Cost>());
         return evaluatorVisitor.Visit(expr);
     }
 
-    public IValue EvaluateOp(Op op, IEvaluateContext context)
+    public Cost EvaluateOpCost(Op op, ICostEvaluateContext context)
     {
         // TODO: Add inferencers cache.
-        var evaluatorType = typeof(IEvaluator<>).MakeGenericType(op.GetType());
-        var evaluator = (IEvaluator)_serviceProvider.GetRequiredService(evaluatorType);
+        var evaluatorType = typeof(ICostEvaluator<>).MakeGenericType(op.GetType());
+        var evaluator = (ICostEvaluator)_serviceProvider.GetRequiredService(evaluatorType);
         return evaluator.Visit(context, op);
     }
 }

@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
@@ -15,7 +16,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Clamp"/>.
 /// </summary>
-public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>
+public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEvaluator<Clamp>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Clamp clamp)
@@ -33,6 +34,14 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>
         var min = context.CheckArgumentType<TensorType>(target, Clamp.Min);
         var max = context.CheckArgumentType<TensorType>(target, Clamp.Max);
         return Visit(input, min, max);
+    }
+
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, Clamp target)
+    {
+        var returnType = context.GetReturnType<TensorType>();
+        var arithm = returnType.Shape.Prod().FixedValue;
+        return new(arithm, arithm * returnType.DType.SizeInBytes);
     }
 
     private IRType Visit(TensorType input, TensorType min, TensorType max)

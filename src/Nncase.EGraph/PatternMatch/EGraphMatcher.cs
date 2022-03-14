@@ -3,6 +3,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,364 +16,229 @@ namespace Nncase.PatternMatch;
 
 internal sealed class EGraphMatcher
 {
-    private readonly IReadOnlyDictionary<EClass, List<ENode>> _eclasses;
-    private readonly List<MatchContext> _contexts = new();
-
-    public EGraphMatcher(IReadOnlyDictionary<EClass, List<ENode>> eclasses)
-    {
-        _eclasses = eclasses;
-    }
-
     /// <summary>
-    /// Match expression as root.
+    /// Match enodes as root.
     /// </summary>
+    /// <param name="enodes">ENodes.</param>
     /// <param name="pattern">Pattern.</param>
-    /// <param name="expr">Expression.</param>
-    /// <returns>Match result.</returns>
-    public static IMatchResult? MatchRoot(IPattern pattern, Expr expr)
+    /// <param name="results">Match results.</param>
+    /// <returns>Match success.</returns>
+    public static bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
     {
-        if (!pattern.MatchLeaf(expr))
-        {
-            return null;
-        }
-
         var matcher = new EGraphMatcher();
-        return matcher.Visit(pattern, expr)
-            ? new MatchResult(matcher._matches.ToDictionary(x => x.Item1, x => x.Item2, (IEqualityComparer<IPattern?>)ReferenceEqualityComparer.Instance))
-            : null;
-    }
+        var matchScopes = new List<MatchScope>();
 
-    /// <summary>
-    /// Match expression.
-    /// </summary>
-    /// <param name="pattern">Pattern.</param>
-    /// <param name="expr">Expression.</param>
-    /// <returns>Match result.</returns>
-    public static IMatchResult? Match(IPattern pattern, Expr expr)
-    {
-        var candidates = new List<Expr>();
-        new MatchVisitor(candidates, pattern).Visit(expr);
-
-        foreach (var candidate in candidates)
+        foreach (var enode in enodes)
         {
-            var result = MatchRoot(pattern, candidate);
-            if (result != null)
+            if (pattern.MatchLeaf(enode.Expr))
             {
-                return result;
+                var scopes = matcher.Visit(new[] { new MatchScope(enode) }, pattern, enode);
+                matchScopes.AddRange(scopes);
             }
         }
 
-        return null;
-    }
-
-    private List<MatchContext> TidyContexts()
-    {
-        _contexts.RemoveAll(x => !x.IsMatch);
-        return _contexts;
-    }
-
-    private bool Visit(IPattern pattern, ENode enode)
-    {
-        return (pattern, enode.Expr) switch
+        if (matchScopes.Count == 0)
         {
-            (VarPattern varPat, Var var) => VisitLeaf(varPat, enode, var),
-            (TensorConstPattern constPat, TensorConst con) => VisitLeaf(constPat, enode, con),
-            (TupleConstPattern constPat, TupleConst con) => VisitLeaf(constPat, enode, con),
-            (ConstPattern constPat, Const con) => VisitLeaf(constPat, enode, con),
-            (FunctionPattern functionPat, Function func) => Visit(functionPat, enode, func),
-            (CallPattern callPat, Call call) => Visit(callPat, enode, call),
-            (TuplePattern tuplePat, IR.Tuple tuple) => Visit(tuplePat, enode, tuple),
-            (IOpPattern opPat, Op op) => VisitLeaf(opPat, enode, op),
-            (IOrPattern orPat, _) => Visit(orPat, enode, expr),
-            (ExprPattern exprPattern, Expr expr) => VisitLeaf(exprPattern, enode, expr),
-            _ => false,
-        };
-    }
-
-    private bool Visit(IPattern pattern, EClass eClass)
-    {
-        bool match = false;
-
-        foreach (var node in _eclasses[eClass])
-        {
-            if (Visit(pattern, node))
-            {
-                match = true;
-            }
-        }
-
-        return match;
-    }
-
-    private bool Visit(VArgsPattern pattern, IEnumerable<EClass> eClasses)
-    {
-        bool match = false;
-
-        foreach (var node in _eclasses[eClass])
-        {
-            if (Visit(pattern, node))
-            {
-                match = true;
-            }
-        }
-
-        return match;
-    }
-
-    private bool VisitLeaf(IPattern pattern, ENode enode, Expr expr)
-    {
-        bool match = false;
-
-        foreach (var context in TidyContexts())
-        {
-            if (context.PatMemo.TryGetValue(pattern, out var oldExpr))
-            {
-                if (ReferenceEquals(oldExpr, expr))
-                {
-                    match = true;
-                }
-                else
-                {
-                    context.IsMatch = false;
-                }
-            }
-            else
-            {
-                if (pattern.MatchLeaf(expr))
-                {
-                    context.Matches.Add((pattern, expr));
-                    match = true;
-                }
-                else
-                {
-                    context.IsMatch = false;
-                }
-            }
-        }
-
-        return match;
-    }
-
-    private bool Visit(FunctionPattern pattern, ENode enode, Function expr)
-    {
-        bool match = false;
-
-        foreach (var context in TidyContexts().ToArray())
-        {
-            if (context.PatMemo.TryGetValue(pattern, out var oldExpr))
-            {
-                if (ReferenceEquals(oldExpr, expr))
-                {
-                    match = true;
-                }
-                else
-                {
-                    context.IsMatch = false;
-                }
-            }
-            else
-            {
-                if (pattern.MatchLeaf(expr)
-                    && Visit(pattern.Body, enode.Children[0])
-                    && Visit(pattern.Parameters, enode.Children.Skip(1)))
-                {
-                    context.Matches.Add((pattern, expr));
-                    match = true;
-                }
-                else
-                {
-                    context.IsMatch = false;
-                }
-            }
-        }
-
-        return match;
-    }
-
-    private bool Visit(CallPattern pattern, ENode enode, Call expr)
-    {
-        bool match = false;
-
-        foreach (var context in TidyContexts().ToArray())
-        {
-            if (context.PatMemo.TryGetValue(pattern, out var oldExpr))
-            {
-                if (ReferenceEquals(oldExpr, expr))
-                {
-                    match = true;
-                }
-                else
-                {
-                    context.IsMatch = false;
-                }
-            }
-            else
-            {
-                if (pattern.MatchLeaf(expr)
-                    && Visit(pattern.Target, enode.Children[0])
-                    && Visit(pattern.Parameters, enode.Children.Skip(1)))
-                {
-                    context.Matches.Add((pattern, expr));
-                    match = true;
-                }
-                else
-                {
-                    context.IsMatch = false;
-                }
-            }
-        }
-
-        return match;
-    }
-
-    private bool Visit(TuplePattern pattern, ENode enode, IR.Tuple expr)
-    {
-        bool match = false;
-
-        foreach (var context in TidyContexts().ToArray())
-        {
-            if (context.PatMemo.TryGetValue(pattern, out var oldExpr))
-            {
-                if (ReferenceEquals(oldExpr, expr))
-                {
-                    match = true;
-                }
-                else
-                {
-                    context.IsMatch = false;
-                }
-            }
-            else
-            {
-                if (pattern.MatchLeaf(expr)
-                    && Visit(pattern.Fields, enode.Children[0]))
-                {
-                    context.Matches.Add((pattern, expr));
-                    match = true;
-                }
-                else
-                {
-                    context.IsMatch = false;
-                }
-            }
-        }
-
-        return match;
-    }
-
-    private bool Visit(IOrPattern pattern, ENode enode, Expr expr)
-    {
-        bool match = false;
-
-        foreach (var context in TidyContexts().ToArray())
-        {
-            if (context.PatMemo.TryGetValue(pattern, out var oldExpr))
-            {
-                if (ReferenceEquals(oldExpr, expr))
-                {
-                    match = true;
-                }
-                else
-                {
-                    context.IsMatch = false;
-                }
-            }
-            else
-            {
-                if (pattern.MatchLeaf(expr))
-                {
-                    var oldMatches = context.Matches.Count;
-                    if (!pattern.ConditionA.MatchLeaf(expr))
-                    {
-                        // cleanup old matches
-                        if (context.Matches.Count > oldMatches)
-                        {
-                            context.Matches.RemoveRange(oldMatches, context.Matches.Count - oldMatches);
-                        }
-
-                        if (!pattern.ConditionB.MatchLeaf(expr))
-                        {
-                            context.IsMatch = false;
-                        }
-                    }
-
-                    if (context.IsMatch)
-                    {
-                        context.Matches.Add((pattern, expr));
-                        match = true;
-                    }
-                }
-            }
-        }
-
-        return match;
-    }
-
-    private bool Visit(VArgsPattern pattern, IReadOnlyList<Expr> exprs)
-    {
-        if (_vargspatMemo.TryGetValue(pattern, out var oldExprs))
-        {
-            return oldExprs.SequenceEqual(exprs, ReferenceEqualityComparer.Instance);
+            results = null;
+            return false;
         }
         else
         {
-            if (pattern.MatchLeaf(exprs))
+            results = matchScopes.Select(x =>
             {
-                for (int i = 0; i < pattern.Count; i++)
+                x.TryGetMatchResult(out var result);
+                return result!;
+            }).ToList();
+            return results.Count > 0;
+        }
+    }
+
+    private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, IPattern pattern, ENode enode)
+    {
+        return (pattern, enode.Expr) switch
+        {
+            (VarPattern varPat, Var var) => VisitLeaf(matchScopes, varPat, enode, var),
+            (TensorConstPattern constPat, TensorConst con) => VisitLeaf(matchScopes, constPat, enode, con),
+            (TupleConstPattern constPat, TupleConst con) => VisitLeaf(matchScopes, constPat, enode, con),
+            (ConstPattern constPat, Const con) => VisitLeaf(matchScopes, constPat, enode, con),
+            (FunctionPattern functionPat, Function func) => Visit(matchScopes, functionPat, enode, func),
+            (CallPattern callPat, Call call) => Visit(matchScopes, callPat, enode, call),
+            (TuplePattern tuplePat, IR.Tuple tuple) => Visit(matchScopes, tuplePat, enode, tuple),
+            (IOpPattern opPat, Op op) => VisitLeaf(matchScopes, opPat, enode, op),
+            (OrPattern orPat, _) => Visit(matchScopes, orPat, enode, enode.Expr),
+            (ExprPattern exprPattern, Expr expr) => VisitLeaf(matchScopes, exprPattern, enode, expr),
+            _ => Array.Empty<MatchScope>(),
+        };
+    }
+
+    private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, IPattern pattern, EClass eClass)
+    {
+        var newScopes = new List<MatchScope>();
+
+        foreach (var node in eClass.Nodes)
+        {
+            var scopes = Visit(matchScopes, pattern, node);
+            if (scopes.Count > 0)
+            {
+                newScopes.AddRange(newScopes);
+            }
+        }
+
+        return newScopes;
+    }
+
+    private IReadOnlyList<MatchScope> VisitLeaf(IReadOnlyList<MatchScope> matchScopes, IPattern pattern, ENode enode, Expr expr)
+    {
+        var context = new MatchContext(matchScopes, pattern, expr);
+
+        if (context.HasCandidates
+            && pattern.MatchLeaf(expr))
+        {
+            context.NewScopes.AddRange(context.Candidates);
+            context.MatchCandidates(pattern, expr);
+        }
+
+        return context.NewScopes;
+    }
+
+    private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, FunctionPattern pattern, ENode enode, Function expr)
+    {
+        var context = new MatchContext(matchScopes, pattern, expr);
+
+        if (context.HasCandidates
+            && pattern.MatchLeaf(expr))
+        {
+            var newScopes = Visit(context.Candidates, pattern.Body, enode.Children[0]);
+            newScopes = Visit(newScopes, pattern.Parameters, enode.Children.Skip(1));
+
+            if (newScopes.Count > 0)
+            {
+                context.NewScopes.AddRange(newScopes);
+                context.MatchCandidates(pattern, expr);
+            }
+        }
+
+        return context.NewScopes;
+    }
+
+    private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, CallPattern pattern, ENode enode, Call expr)
+    {
+        var context = new MatchContext(matchScopes, pattern, expr);
+
+        if (context.HasCandidates
+            && pattern.MatchLeaf(expr))
+        {
+            var newScopes = Visit(context.Candidates, pattern.Target, enode.Children[0]);
+            newScopes = Visit(newScopes, pattern.Parameters, enode.Children.Skip(1));
+
+            if (newScopes.Count > 0)
+            {
+                context.NewScopes.AddRange(newScopes);
+                context.MatchCandidates(pattern, expr);
+            }
+        }
+
+        return context.NewScopes;
+    }
+
+    private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, TuplePattern pattern, ENode enode, IR.Tuple expr)
+    {
+        var context = new MatchContext(matchScopes, pattern, expr);
+
+        if (context.HasCandidates
+            && pattern.MatchLeaf(expr))
+        {
+            var newScopes = Visit(context.Candidates, pattern.Fields, enode.Children);
+
+            if (newScopes.Count > 0)
+            {
+                context.NewScopes.AddRange(newScopes);
+                context.MatchCandidates(pattern, expr);
+            }
+        }
+
+        return context.NewScopes;
+    }
+
+    private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, OrPattern pattern, ENode enode, Expr expr)
+    {
+        var context = new MatchContext(matchScopes, pattern, expr);
+
+        if (context.HasCandidates
+            && pattern.MatchLeaf(expr))
+        {
+            var scopesA = Visit(context.Candidates, pattern.ConditionA, enode);
+            var scopesB = Visit(context.Candidates, pattern.ConditionB, enode);
+
+            if (scopesA.Count > 0)
+            {
+                context.NewScopes.AddRange(scopesA);
+            }
+
+            if (scopesB.Count > 0)
+            {
+                context.NewScopes.AddRange(scopesB);
+            }
+
+            if (scopesA.Count > 0 || scopesB.Count > 0)
+            {
+                context.MatchCandidates(pattern, expr);
+            }
+        }
+
+        return context.NewScopes;
+    }
+
+    private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, VArgsPattern pattern, IReadOnlyList<ENode> enodes)
+    {
+        var exprs = enodes.Select(x => x.Expr).ToList();
+        var context = new MatchContext(matchScopes, pattern, exprs);
+
+        if (context.HasCandidates
+            && pattern.MatchLeaf(exprs))
+        {
+            IReadOnlyList<MatchScope> scopes = context.Candidates;
+            for (int i = 0; i < pattern.Count; i++)
+            {
+                scopes = Visit(scopes, pattern[i], enodes[i]);
+                if (scopes.Count == 0)
                 {
-                    if (!Visit(pattern[i], exprs[i]))
-                    {
-                        return false;
-                    }
+                    break;
                 }
-
-                return true;
             }
 
-            return false;
+            if (scopes.Count > 0)
+            {
+                context.NewScopes.AddRange(scopes);
+                context.MatchCandidates(pattern, exprs);
+            }
         }
+
+        return context.NewScopes;
     }
 
-    private class MatchContext
+    private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, VArgsPattern pattern, IEnumerable<EClass> eClasses)
     {
-        public Dictionary<IPattern, Expr> PatMemo { get; init; } = new(ReferenceEqualityComparer.Instance);
-
-        public Dictionary<VArgsPattern, Expr[]> VargspatMemo { get; init; } = new(ReferenceEqualityComparer.Instance);
-
-        public List<(IPattern, object)> Matches { get; init; } = new();
-
-        public bool IsMatch { get; set; } = true;
-
-        public MatchContext Clone()
+        if (eClasses.Count() != pattern.Count)
         {
-            return new MatchContext
-            {
-                PatMemo = new(PatMemo),
-                VargspatMemo = new(VargspatMemo),
-                Matches = new(Matches),
-            };
+            return Array.Empty<MatchScope>();
         }
-    }
-
-    private sealed class MatchVisitor : ExprVisitor<Expr, IRType>
-    {
-        private readonly List<Expr> _candidates;
-        private readonly IPattern _rootPattern;
-
-        public MatchVisitor(List<Expr> candidates, IPattern rootPattern)
+        else
         {
-            _candidates = candidates;
-            _rootPattern = rootPattern;
-        }
+            var newScopes = new List<MatchScope>();
 
-        public override Expr DefaultVisitLeaf(Expr expr)
-        {
-            if (_rootPattern.MatchLeaf(expr))
+            foreach (var enodes in (from ec in eClasses
+                                    select from en in ec.Nodes
+                                           select en).CartesianProduct())
             {
-                _candidates.Add(expr);
+                var scopes = Visit(matchScopes, pattern, enodes.ToList());
+                if (scopes.Count() > 0)
+                {
+                    newScopes.AddRange(scopes);
+                }
             }
 
-            return expr;
+            return newScopes;
         }
     }
 }

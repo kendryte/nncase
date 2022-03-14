@@ -39,7 +39,8 @@ namespace Nncase.Tests
             {
                 c.AddCore()
                 .AddEvaluator()
-                .AddGraph();
+                .AddGraph()
+                .AddEGraph();
             });
             builder.RegisterAssemblyModules(assemblies);
         }

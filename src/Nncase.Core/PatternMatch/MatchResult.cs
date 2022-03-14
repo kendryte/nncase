@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -19,9 +20,11 @@ public class MatchResult : IMatchResult
     /// <summary>
     /// Initializes a new instance of the <see cref="MatchResult"/> class.
     /// </summary>
+    /// <param name="root">Match root.</param>
     /// <param name="matches">Matches.</param>
-    public MatchResult(Dictionary<IPattern, object> matches)
+    public MatchResult(object root, Dictionary<IPattern, object> matches)
     {
+        Root = root;
         _patternMap = matches;
         _stringMap = (from kv in matches
                       where kv.Key.Name is not null
@@ -29,8 +32,22 @@ public class MatchResult : IMatchResult
     }
 
     /// <inheritdoc/>
+    public object Root { get; }
+
+    /// <inheritdoc/>
     public object this[IPattern pattern] => _patternMap[pattern];
 
     /// <inheritdoc/>
     public object this[string name] => _stringMap[name];
+
+    /// <inheritdoc/>
+    public IEnumerator<KeyValuePair<IPattern, object>> GetEnumerator()
+    {
+        return _patternMap.GetEnumerator();
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
 }

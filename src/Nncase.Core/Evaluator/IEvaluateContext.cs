@@ -38,7 +38,7 @@ public interface IEvaluateContext
     /// <summary>
     /// Get argument expression.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">Argument type.</typeparam>
     /// <param name="op">Operator.</param>
     /// <param name="parameter">Parameter.</param>
     /// <returns>The argument expression.</returns>
@@ -56,16 +56,7 @@ public interface IEvaluateContext
     /// <returns>The argument value.</returns>
     public IValue GetArgumentValue(Op op, ParameterInfo parameter)
     {
-        var expr = GetArgumentExpr(op, parameter);
-        if (expr is Const constValue)
-        {
-            return Value.FromConst(constValue);
-        }
-        else
-        {
-            // maybe a valid type but not const
-            return GetValue(expr);
-        }
+        return GetValue(GetArgumentExpr(op, parameter));
     }
 
     /// <summary>

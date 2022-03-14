@@ -9,47 +9,54 @@ using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.PatternMatch;
 
-namespace Nncase.Transform
+namespace Nncase.Transform;
+
+/// <summary>
+/// EGraph pass.
+/// </summary>
+public class EGraphPass : FunctionPass
 {
+    private readonly List<IRewriteRule> _rules = new();
+
     /// <summary>
-    /// EGraph pass.
+    /// Initializes a new instance of the <see cref="EGraphPass"/> class.
     /// </summary>
-    public class EGraphPass : FunctionPass
+    /// <param name="name">Name.</param>
+    public EGraphPass(string name)
+        : base(name)
     {
-        /// <summary>
-        /// Save rules.
-        /// </summary>
-        public readonly List<IRewriteRule> Rules = new();
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="EGraphPass"/> class.
-        /// </summary>
-        /// <param name="name">Name.</param>
-        public EGraphPass(string name)
-            : base(name)
-        {
-        }
+    /// <summary>
+    /// Gets rules.
+    /// </summary>
+    public IReadOnlyList<IRewriteRule> Rules => _rules;
 
-        /// <summary>
-        /// add rules.
-        /// </summary>
-        /// <param name="rules"></param>
-        public void Add(params IRewriteRule[] rules)
-        {
-            foreach (var rule in rules)
-            {
-                Rules.Add(rule);
-            }
-        }
+    /// <summary>
+    /// add the pattern rule.
+    /// </summary>
+    /// <param name="rule">Rule.</param>
+    public void Add(IRewriteRule rule) => _rules.Add(rule);
 
-        /// <inheritdoc/>
-        protected override Function RunCore(Function function, RunPassOptions options)
-        {
-            options.SetName(Name);
-            var graph = new EGraph();
-            graph.Add(function);
-            EGraphReWriter.ReWrite(graph, Rules, options);
-            return function;
-        }
+    /// <summary>
+    /// add the pattern rules.
+    /// </summary>
+    /// <param name="rules">Rules.</param>
+    public void Add(params IRewriteRule[] rules) => _rules.AddRange(rules);
+
+    /// <summary>
+    /// <see cref="Add(IRewriteRule[])"/>.
+    /// </summary>
+    /// <param name="rules">Rules.</param>
+    public void Add(IEnumerable<IRewriteRule> rules) => _rules.AddRange(rules);
+
+    /// <inheritdoc/>
+    protected override Function RunCore(Function function, RunPassOptions options)
+    {
+        options.SetName(Name);
+        var graph = new EGraph();
+        graph.Add(function);
+        EGraphRewriter.Rewrite(graph, Rules, options);
+        return function;
     }
 }
