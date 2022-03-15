@@ -241,14 +241,14 @@ namespace Nncase.Tests.RewriteTest
         public void TestPaddingCompute()
         {
             passOptions.SetName("TestPaddingCompute");
-            var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 240, 320)));
-            var weights = Tensor.FromSpan<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
+            var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 1, 33, 65)));
+            var weights = Tensor.FromSpan<int>(Enumerable.Range(0, 1 * 1 * 3 * 3).ToArray(), new Shape(new[] { 1, 1, 3, 3 }));
             var (inH, inW) = Util.GetHW(input);
             var (fH, fW) = Util.GetHW(weights);
             var inHPost = RunShapeInferPass("inH", inH);
             var inWPost = RunShapeInferPass("inW", inW);
-            Assert.Equal(240, ((TensorConst)inHPost).Value.ToScalar<int>());
-            Assert.Equal(320, ((TensorConst)inWPost).Value.ToScalar<int>());
+            Assert.Equal(33, ((TensorConst)inHPost).Value.ToScalar<int>());
+            Assert.Equal(65, ((TensorConst)inWPost).Value.ToScalar<int>());
             var strideH = 1;
             var strideW = 1;
             var dilationH = 1;
@@ -258,7 +258,7 @@ namespace Nncase.Tests.RewriteTest
             var padding = Util.ConcatPadding(padH, padW);
             // Assert.True(CompilerServices.InferenceType(padding));
             var paddingPost = RunShapeInferPass("padding", padding, input);
-            Assert.True(paddingPost is Const);
+            Assert.Equal(new[] {1, 1, 1, 1}, paddingPost);
         }
 
         [Fact]

@@ -17,7 +17,7 @@ public class GatherNDEvaluator : IEvaluator<GatherND>, ITypeInferencer<GatherND>
     public IValue Visit(IEvaluateContext context, GatherND gatherND)
     {
         var input = context.GetOrtArgumentValue(gatherND, GatherND.Input);
-        var indices = context.GetOrtArgumentValue(gatherND, GatherND.Index);
+        var indices = context.GetInt64OrtTensorArgumentValue(gatherND, GatherND.Index);
         var batchDims = context.GetArgumentValueAsScalar<long>(gatherND, GatherND.BatchDims);
         return OrtKI.GatherND(input, indices, batchDims).ToValue();
     }

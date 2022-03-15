@@ -17,7 +17,8 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     /// <inheritdoc />
     public IValue Visit(IEvaluateContext context, Binary binary)
     {
-        var a = context.GetOrtArgumentValue(binary, Binary.Lhs);
+        var lhs = context.GetArgumentValue(binary, Binary.Lhs);
+        var a = lhs.AsTensor().ToOrtTensor();
         var b = context.GetOrtArgumentValue(binary, Binary.Rhs);
         return (binary.BinaryOp switch
         {

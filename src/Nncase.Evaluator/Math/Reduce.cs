@@ -28,7 +28,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>
             ReduceOp.Prod => OrtKI.ReduceProd(input, axis, keepDims),
             ReduceOp.Sum => OrtKI.ReduceSum(
                 input, 
-                context.GetOrtArgumentValue(reduce, Reduce.Axis), 
+                context.GetInt64OrtTensorArgumentValue(reduce, Reduce.Axis), 
                 keepDims, 
                 0),
             _ => throw new ArgumentOutOfRangeException(),

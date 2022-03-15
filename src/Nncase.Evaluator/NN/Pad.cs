@@ -16,7 +16,7 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>
     public IValue Visit(IEvaluateContext context, Pad pad)
     {
         var input = context.GetOrtArgumentValue(pad, Pad.Input);
-        var pads = context.GetOrtArgumentValue(pad, Pad.Pads);
+        var pads = context.GetInt64OrtTensorArgumentValue(pad, Pad.Pads);
         var constValue = context.GetOrtArgumentValue(pad, Pad.Value);
         var mode = pad.PadMode switch
         {

@@ -19,7 +19,7 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>
     public IValue Visit(IEvaluateContext context, OneHot oneHot)
     {
         var indices = context.GetOrtArgumentValue(oneHot, OneHot.Indices);
-        var depth = context.GetOrtArgumentValue(oneHot, OneHot.Depth);
+        var depth = context.GetInt64OrtTensorArgumentValue(oneHot, OneHot.Depth);
         var values = context.GetOrtArgumentValue(oneHot, OneHot.Values);
         var axis = context.GetArgumentValueAsScalar<long>(oneHot, OneHot.Axis);
         return OrtKI.OneHot(indices, depth, values, axis).ToValue();

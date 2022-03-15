@@ -22,11 +22,25 @@ public static class OrtKIExtension
 
     public static OrtKISharp.Tensor ToOrtTensor(this Tensor tensor)
     {
-        var shape = tensor.Dimensions.IsEmpty ? new[] {1} : tensor.Dimensions.ToArray();
-            return new OrtKISharp.Tensor(
+        var shape = tensor.Dimensions.ToArray();
+        return tensor.ToOrtTensor(shape);
+    }
+    
+    private static OrtKISharp.Tensor ToOrtTensor(this Tensor tensor, int[] shape)
+    {
+        return new OrtKISharp.Tensor(
             tensor.BytesBuffer, 
             tensor.ElementType.ToOrtType(), 
             shape);
+    }
+
+    public static OrtKISharp.Tensor ScalarToOrtTensor(this Tensor tensor)
+    {
+        if (!tensor.Shape.IsScalar)
+        {
+            throw new InvalidOperationException("Tensor is not a scala in ScalarToOrtTensor");
+        }
+        return tensor.ToOrtTensor(new[] {1});
     }
     
     public static OrtDataType ToOrtType(this DataType dt)

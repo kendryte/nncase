@@ -55,10 +55,11 @@ public static class EvaluateContextExtensions
         return context.GetArgumentValue(op, parameter).AsTensor().ToOrtTensor();
     }
 
-    public static OrtKISharp.Tensor GetInt64OrtArgumentValue(this IEvaluateContext context, Op op,
+    public static OrtKISharp.Tensor GetInt64OrtTensorArgumentValue(this IEvaluateContext context, Op op,
         ParameterInfo parameter)
     {
-        return context.GetArgumentValue(op, parameter).AsTensor().Cast<long>().ToOrtTensor();
+        var tensor = context.GetArgumentValue(op, parameter).AsTensor().Cast<long>();
+        return tensor.Shape.IsScalar ? tensor.ScalarToOrtTensor() : tensor.ToOrtTensor();
     }
     
     public static OrtKISharp.Tensor GetOrtValue(this IEvaluateContext context, Expr expr)

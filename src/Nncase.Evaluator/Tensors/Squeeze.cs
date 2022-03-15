@@ -18,7 +18,7 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>
     public IValue Visit(IEvaluateContext context, Squeeze squeeze)
     {
         var input = context.GetOrtArgumentValue(squeeze, Squeeze.Input);
-        var dims = context.GetOrtArgumentValue(squeeze, Squeeze.Dim);
+        var dims = context.GetInt64OrtTensorArgumentValue(squeeze, Squeeze.Dim);
         return OrtKI.Squeeze(input, dims).ToValue();
     }
 

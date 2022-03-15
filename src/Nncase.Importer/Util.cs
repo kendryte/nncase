@@ -43,7 +43,7 @@ namespace Nncase
         {
             // return [[padh_before, padh_after],
             //         [padw_before, padw_after]]
-            return F.Tensors.Concat(
+            return F.Tensors.Stack(
                 new Tuple(
                     padH[0], padW[0], 
                     padH[1], padW[1]), 
