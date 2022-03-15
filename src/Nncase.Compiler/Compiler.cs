@@ -38,7 +38,8 @@ public class Compiler
         {
             c.AddCore()
                 .AddEvaluator()
-                .AddGraph();
+                .AddGraph()
+                .AddEGraph();
         });
         builder.RegisterAssemblyModules(assemblies);
     }

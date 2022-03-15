@@ -7,17 +7,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.2.0" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
-<!--        <PackageReference Include="System.CommandLine.Hosting" Version="0.3.0-alpha.21216.1" />-->
+        <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.2.0"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0"/>
+        <!--        <PackageReference Include="System.CommandLine.Hosting" Version="0.3.0-alpha.21216.1" />-->
     </ItemGroup>
-    
+
     <ItemGroup>
-      <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
-      <ProjectReference Include="..\Nncase.Graph\Nncase.Graph.csproj" />
-      <ProjectReference Include="..\Nncase.Evaluator\Nncase.Evaluator.csproj" />
-      <ProjectReference Include="..\Nncase.Importer\Nncase.Importer.csproj" />
-      <ProjectReference Include="..\Nncase.Transform\Nncase.Transform.csproj" />
+        <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj"/>
+        <ProjectReference Include="..\Nncase.Graph\Nncase.Graph.csproj"/>
+        <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj"/>
+        <ProjectReference Include="..\Nncase.Evaluator\Nncase.Evaluator.csproj"/>
+        <ProjectReference Include="..\Nncase.Importer\Nncase.Importer.csproj"/>
+        <ProjectReference Include="..\Nncase.Transform\Nncase.Transform.csproj"/>
     </ItemGroup>
 
 </Project>
