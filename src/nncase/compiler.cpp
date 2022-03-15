@@ -519,11 +519,11 @@ private:
                 value_range<float> input_range { min, max };
                 quant->set(graph.inputs()[0]->output(), input_range);
                 quant->record(graph.inputs()[0]->output(), input_range);
+                // broadcast quant ranges
+                std::unordered_set<node_opcode> opcodes;
+                target_->add_quantization_broadcast(opcodes);
+                quant->broadcast_output(graph, opcodes);
             }
-            // broadcast quant ranges
-            std::unordered_set<node_opcode> opcodes;
-            target_->add_quantization_broadcast(opcodes);
-            quant->broadcast_output(graph, opcodes);
 
             ir::transforms::transform_pass p("process i&o node");
 
