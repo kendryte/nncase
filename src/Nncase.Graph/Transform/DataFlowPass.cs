@@ -51,18 +51,16 @@ public class DataflowPass : FunctionPass
     /// <summary>
     /// the callback function you can custom process func with run pass options.
     /// </summary>
-    /// <param name="func"> func without run pass.</param>
+    /// <param name="callable"> func without run pass.</param>
     /// <param name="options">Options.</param>
-    protected override void OnPassStart(Function func, RunPassOptions options)
+    protected override void OnPassStart(Callable callable, RunPassOptions options)
     {
         switch (options.DumpLevel)
         {
             case >= 2:
-                IRPrinter.DumpFunctionAsIL(func, "Start", Path.Combine(options.PassDumpDir, Name));
+                IRPrinter.DumpExprAsIL(callable, "Start", Path.Combine(options.PassDumpDir, Name));
                 break;
             case >= 1:
-                Console.WriteLine($"On {Name} Pass Start:");
-                func.DumpExprAsIL();
                 break;
             default:
                 break;
@@ -72,18 +70,16 @@ public class DataflowPass : FunctionPass
     /// <summary>
     /// the callback function you can custom process func with run pass options.
     /// </summary>
-    /// <param name="func"> func with rewrited. </param>
+    /// <param name="callable"> func with rewrited. </param>
     /// <param name="options">Options.</param>
-    protected override void OnPassEnd(Function func, RunPassOptions options)
+    protected override void OnPassEnd(Callable callable, RunPassOptions options)
     {
         switch (options.DumpLevel)
         {
             case >= 2:
-                IRPrinter.DumpFunctionAsIL(func, "End", Path.Combine(options.PassDumpDir, Name));
+                IRPrinter.DumpExprAsIL(callable, "End", Path.Combine(options.PassDumpDir, Name));
                 break;
             case >= 1:
-                Console.WriteLine($"On {Name} Pass End:");
-                func.DumpExprAsIL();
                 break;
             default:
                 break;
@@ -91,7 +87,7 @@ public class DataflowPass : FunctionPass
     }
 
     /// <inheritdoc/>
-    protected override Function RunCore(Function pre, RunPassOptions options)
+    protected override Callable RunCore(Callable pre, RunPassOptions options)
     {
         OnPassStart(pre, options);
         Function post = (Function)CompilerServices.Rewrite(pre, Rules, options);

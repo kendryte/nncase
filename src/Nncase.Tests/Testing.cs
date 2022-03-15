@@ -93,7 +93,7 @@ namespace Nncase.Tests
             }
             options = new RunPassOptions(null, 2, dumpPath);
 
-            return _simplifyPass.Run(f, options).Body;
+            return ((Function)_simplifyPass.Run(f, options)).Body;
         }
 
         public static void AssertExprEqual(Expr lhs, Expr rhs, [CallerMemberName] string member = null)

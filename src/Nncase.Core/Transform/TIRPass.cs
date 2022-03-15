@@ -31,10 +31,10 @@ namespace Nncase.Transform
         }
 
         /// <inheritdoc/>
-        protected override Function RunCore(Function function, RunPassOptions options)
+        protected override Callable RunCore(Callable callable, RunPassOptions options)
         {
             options.SetName(Name);
-            var pre = function;
+            var pre = callable;
             var post = pre;
             RunPassOptions new_options = new(options);
             new_options.SetDir(options.PassDumpDir);
@@ -42,7 +42,7 @@ namespace Nncase.Transform
             {
                 new_options.SetName(i + "_" + mutator.GetType().Name);
                 OnPassStart(pre, new_options);
-                post = (Function)mutator.Visit(pre);
+                post = (Callable)mutator.Visit(pre);
                 var inferRes = post.InferenceType();
                 OnPassEnd(post, new_options);
                 if (!inferRes) throw new InvalidOperationException("After Run Pass, The Type Inference Failed!");
@@ -53,12 +53,12 @@ namespace Nncase.Transform
         }
 
         /// <inheritdoc/>
-        protected override void OnPassStart(Function func, RunPassOptions options)
+        protected override void OnPassStart(Callable func, RunPassOptions options)
         {
             switch (options.DumpLevel)
             {
                 case >= 2:
-                    ScriptPrinter.DumpAsScript(func, "Start", options.PassDumpDir);
+                    IRPrinter.DumpExprAsIL(func, "Start", options.PassDumpDir);
                     break;
                 default:
                     break;
@@ -66,12 +66,12 @@ namespace Nncase.Transform
         }
 
         /// <inheritdoc/>
-        protected override void OnPassEnd(Function func, RunPassOptions options)
+        protected override void OnPassEnd(Callable func, RunPassOptions options)
         {
             switch (options.DumpLevel)
             {
                 case >= 2:
-                    ScriptPrinter.DumpAsScript(func, "End", options.PassDumpDir);
+                    IRPrinter.DumpExprAsIL(func, "End", options.PassDumpDir);
                     break;
                 default:
                     break;

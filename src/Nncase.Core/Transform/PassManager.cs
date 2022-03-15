@@ -51,11 +51,11 @@ namespace Nncase.Transform
         /// </summary>
         public void Run()
         {
-            foreach (var i in Enumerable.Range(0, _module.Functions.Count))
+            foreach (var i in Enumerable.Range(0, _module.Callables.Count))
             {
                 foreach (var pass in _passes)
                 {
-                    _module.Update(i, pass.Run(_module.Functions[i], _options));
+                    _module.Update(i, pass.Run(_module.Callables[i], _options));
                 }
             }
         }

@@ -48,34 +48,34 @@ public class UnitTestConstructor
         Assert.Equal(sf.Vectors[0], x);
         Assert.Equal((Const)2, sf.Indices[0]);
 
-        var lt = new Let(x, 10.0f, x);
-        Assert.Equal(lt.Var, x);
-        Assert.Equal((Const)10.0f, lt.Value);
-        Assert.Equal(lt.Body, x);
+        // var lt = new Let(x, 10.0f, x);
+        // Assert.Equal(lt.Var, x);
+        // Assert.Equal((Const)10.0f, lt.Value);
+        // Assert.Equal(lt.Body, x);
     }
 
     [Fact]
     public void TestBlockConstructor()
     {
-        var n = T.SizeVar("n");
-        var m = T.SizeVar("m");
-        var A = T.DeclBuffer((n, m), name: "A");
-        var func = T.PrimFunc("func", A.Handle, n, m).Body(
-          T.Serial(out var i, n, out var fi).Body(
-            T.Serial(out var j, m, out var fj).Body(
-              T.Block("init").
-              Remap(out var vi, out var vj, (fi, fj), "SS").
-              Init(
-                T.Store(A[vi, vj], 1.0f)
-              ).Body(
-                T.Store(A[vi, vj], Cast(vi + vj, DataTypes.Float32))
-              )
-            )
-          ),
-          n + m
-        );
-        func.InferenceType();
-        var dumpPath = Path.Combine(DumpDirPath, "TestBlockConstructor");
-        func.DumpAsScript("pre", dumpPath);
+        // var n = T.SizeVar("n");
+        // var m = T.SizeVar("m");
+        // var A = T.DeclBuffer((n, m), name: "A");
+        // var func = T.PrimFunc("func", A.Handle, n, m).Body(
+        //   T.Serial(out var i, n, out var fi).Body(
+        //     T.Serial(out var j, m, out var fj).Body(
+        //       T.Block("init").
+        //       Remap(out var vi, out var vj, (fi, fj), "SS").
+        //       Init(
+        //         T.Store(A[vi, vj], 1.0f)
+        //       ).Body(
+        //         T.Store(A[vi, vj], Cast(vi + vj, DataTypes.Float32))
+        //       )
+        //     )
+        //   ),
+        //   n + m
+        // );
+        // func.InferenceType();
+        // var dumpPath = Path.Combine(DumpDirPath, "TestBlockConstructor");
+        // func.DumpAsScript("pre", dumpPath);
     }
 }

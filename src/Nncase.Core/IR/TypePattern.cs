@@ -136,8 +136,8 @@ namespace Nncase.IR
         /// check the tensor is handle
         /// </summary>
         /// <returns></returns>
-        public static TypePattern IsHandle() => new TypePattern(
-          x => (x is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType { } } }), "IsHandle"
+        public static TypePattern IsPointer() => new TypePattern(
+          x => (x is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType { } } }), "IsPointer"
         );
 
         /// <summary>
@@ -221,16 +221,30 @@ namespace Nncase.IR
         public static TypePattern IsFloatScalar() => IsScalar() & IsFloat();
 
         /// <summary>
+        /// is tuple type.
+        /// </summary>
+        /// <param name="cond">the conditions.</param>
+        /// <param name="reason"> reason. </param>
+        /// <returns>TypePattern.</returns>
+        public static TypePattern IsTuple(Func<TupleType, bool> cond, string reason) => new TypePattern(
+            x => x switch
+            {
+                TupleType ttype => cond(ttype),
+                _ => false
+            }, "IsTuple" + (reason.Length == 0 ? "" : $"&& {reason}")
+        );
+
+        /// <summary>
+        /// <see cref="IsTuple(Func{TupleType, bool}, string)"/>
+        /// </summary>
+        /// <returns>TypePattern.</returns>
+        public static TypePattern IsTuple() => IsTuple(t => true, string.Empty);
+
+        /// <summary>
         /// is void tuple type
         /// </summary>
         /// <returns></returns>
-        public static TypePattern IsUnit() => new TypePattern(
-            x => x switch
-            {
-                TupleType ttype => ttype.Count == 0,
-                _ => false
-            }, "IsUnit"
-        );
+        public static TypePattern IsUnit() => IsTuple(t => t.Count == 0, "IsUnit");
 
         /// <summary>
         /// get padding windows output size

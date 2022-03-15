@@ -50,17 +50,17 @@ public abstract partial record Expr
     {
         return !(other is null) && EqualityContract == other.EqualityContract;
     }
-    
+
     /// <inheritdoc/>
     public override int GetHashCode()
     {
         return _hashcode ??= EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
     }
 
-    /// <inheritdoc/>
-    protected virtual bool PrintMembers(StringBuilder builder)
-    {
-        builder.Append(this.DumpExprAsIL());
-        return true;
-    }
+    /// <summary>
+    /// get the item from the expr.
+    /// </summary>
+    /// <param name="index"> expr. </param>
+    /// <returns> expr. </returns>
+    public Expr this[Expr index] => F.Tensors.GetItem(this, index);
 }

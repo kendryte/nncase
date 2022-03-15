@@ -8,21 +8,21 @@ public class KModelScheduler : IScheduler
     /// <inheritdoc/>
     public ITarget Target { get; set; }
     /// <inheritdoc/>
-    public IRModule ParentModule { get; set; }
+    public IRModule Module { get; set; }
 
     /// <summary>
     /// create instance
     /// </summary>
     /// <param name="target"></param>
-    /// <param name="parent_module"></param>
-    public KModelScheduler(ITarget target, IRModule parent_module)
+    /// <param name="module"></param>
+    public KModelScheduler(ITarget target, IRModule module)
     {
         Target = target;
-        ParentModule = parent_module;
+        Module = module;
     }
 
     /// <inheritdoc/>
-    public SchedModelResult Schedule(bool skip_buffer_alias = false)
+    public IRModel Schedule(bool skip_buffer_alias = false)
     {
         throw new NotImplementedException();
     }

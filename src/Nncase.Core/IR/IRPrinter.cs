@@ -21,67 +21,48 @@ namespace Nncase.IR
         /// Dump function to IL text.
         /// </summary>
         /// <param name="textWriter">Text writer.</param>
-        /// <param name="function">Function.</param>
-        public static void DumpFunctionAsIL(Function function, TextWriter textWriter)
-        {
-            var visitor = new ILDumpVisitor(textWriter);
-            visitor.Visit(function);
-        }
-
-        /// <summary>
-        /// dump function as il.
-        /// </summary>
-        /// <param name="function"></param>
-        /// <param name="prefix"></param>
-        /// <param name="dumpPath"></param>
-        public static void DumpFunctionAsIL(Function function, string prefix, string dumpPath)
-        {
-            var nprefix = prefix.Any() ? prefix + "_" : prefix;
-            Directory.CreateDirectory(dumpPath);
-            using var dumpFile = File.Open(Path.Combine(dumpPath, $"{nprefix}{function.Name}.il"), FileMode.OpenOrCreate);
-            using var dumpWriter = new StreamWriter(dumpFile);
-            var visitor = new ILDumpVisitor(dumpWriter);
-            visitor.Visit(function);
-        }
-
-        /// <summary>
-        /// dump any expr as il.
-        /// </summary>
-        /// <param name="textWriter"></param>
-        /// <param name="expr"></param>
-        public static void DumpExprAsIL(TextWriter textWriter, Expr expr)
+        /// <param name="expr">expression.</param>
+        public static void DumpAsIL(Expr expr, TextWriter textWriter)
         {
             var visitor = new ILDumpVisitor(textWriter);
             visitor.Visit(expr);
         }
 
         /// <summary>
-        /// get this expr's il string.
+        /// dump expression to file 
+        /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.{ext}`
+        /// else write to {dumpPath}/{prefix}_{expr.Type.name}.il`
         /// </summary>
         /// <param name="expr"></param>
-        /// <returns></returns>
-        public static string DumpExprAsIL(this Expr expr)
+        /// <param name="prefix"></param>
+        /// <param name="dumpPath"></param>
+        public static void DumpExprAsIL(this Expr expr, string prefix, string dumpPath)
         {
-            var builder = new StringBuilder();
-            var writer = new StringWriter(builder);
-            DumpExprAsIL(writer, expr);
-            return builder.ToString();
+            var nprefix = prefix.Any() ? prefix + "_" : prefix;
+            string ext = expr is Function ? "il" : "script";
+            string name = expr is Callable c ? c.Name : expr.GetType().Name;
+            string file_path = Path.Combine(dumpPath, $"{nprefix}{name}.{ext}");
+            Directory.CreateDirectory(dumpPath);
+
+            using var dumpFile = File.Open(file_path, FileMode.Create);
+            using var dumpWriter = new StreamWriter(dumpFile);
+            var visitor = new ILDumpVisitor(dumpWriter);
+            switch (expr)
+            {
+                case PrimFunction pf:
+                    ScriptPrinter.DumpAsScript(pf, dumpWriter);
+                    break;
+                default:
+                    DumpAsIL(expr, dumpWriter);
+                    break;
+            }
         }
 
         /// <summary>
-        /// dump Expr IL into `dumpDirPath/name.il`.
+        /// dump type as il.
         /// </summary>
-        /// <param name="expr"></param>
-        /// <param name="name"></param>
-        /// <param name="dumpDirPath"></param>
-        public static void DumpExprAsIL(this Expr expr, string name, string dumpDirPath)
-        {
-            Directory.CreateDirectory(dumpDirPath);
-            using var dumpFile = File.Open($"{dumpDirPath}/{name}.il", FileMode.OpenOrCreate);
-            using var writer = new StreamWriter(dumpFile);
-            DumpExprAsIL(writer, expr);
-        }
-
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static string DumpTypeAsIL(this IRType type)
         {
             var builder = new StringBuilder();
@@ -186,6 +167,10 @@ namespace Nncase.IR
             /// <param name="value"></param>
             public void IndWrite(string? value) => Indent().Write(value);
 
+            /// <summary>
+            /// write the string builder.
+            /// </summary>
+            /// <param name="value"></param>
             public void IndWrite(StringBuilder? value) => Indent().Write(value);
 
             /// <summary>
@@ -194,6 +179,10 @@ namespace Nncase.IR
             /// <param name="value"></param>
             public void IndWriteLine(string? value = null) => Indent().WriteLine(value);
 
+            /// <summary>
+            /// wrtie string builder.
+            /// </summary>
+            /// <param name="value"></param>
             public void IndWriteLine(StringBuilder? value) => Indent().WriteLine(value);
 
             /// <summary>
@@ -201,6 +190,11 @@ namespace Nncase.IR
             /// </summary>
             /// <param name="value"></param>
             public void Append(string value) => Writer.Write(value);
+
+            /// <summary>
+            /// wrtie string builder.
+            /// </summary>
+            /// <param name="value"></param>
             public void Append(StringBuilder value) => Writer.Write(value);
 
             /// <summary>
@@ -208,6 +202,11 @@ namespace Nncase.IR
             /// </summary>
             /// <param name="value"></param>
             public void AppendLine(string value) => Writer.WriteLine(value);
+
+            /// <summary>
+            /// wrtie string builder.
+            /// </summary>
+            /// <param name="value"></param>
             public void AppendLine(StringBuilder value) => Writer.WriteLine(value);
 
             /// <summary>
@@ -225,7 +224,7 @@ namespace Nncase.IR
             /// <returns></returns>
             private TextWriter Indent()
             {
-                for (int i = 0; i < indentLevel; i++) { Writer.Write("  "); }
+                for (int i = 0; i < indentLevel; i++) { Writer.Write(" "); }
                 return Writer;
             }
 
@@ -234,7 +233,7 @@ namespace Nncase.IR
             /// </summary>
             /// <param name="indent_diff"></param>
             /// <returns></returns>
-            public IndentMananger IndentUp(int indent_diff = 1)
+            public IndentMananger IndentUp(int indent_diff = 2)
             {
                 return new(this, indent_diff);
             }
@@ -266,6 +265,9 @@ namespace Nncase.IR
                     Parent.indentLevel += indentDiff;
                 }
 
+                /// <summary>
+                /// reduce indentLevel
+                /// </summary>
                 public void Dispose()
                 {
                     Parent.indentLevel -= indentDiff;
@@ -415,13 +417,13 @@ namespace Nncase.IR
                 Scope.Push();
 
                 // 1. For Loop signature
-                Scope.Append($"For {expr.Mode}({Visit(expr.LoopVar)} in Range({Visit(expr.Dom.Min)}, {Visit(expr.Dom.Max)})");
+                Scope.Append($"For {expr.Mode}({Visit(expr.LoopVar)} in Range({Visit(expr.Dom.Start)}, {Visit(expr.Dom.Stop)}, {Visit(expr.Dom.Step)})");
                 AppendCheckedType(expr.CheckedType, " {\n");
 
                 // 2. For Body
                 using (Scope.IndentUp())
                 {
-                    Visit(expr.Sequence!);
+                    Visit(expr.Body);
                 }
 
                 // 3. For closing

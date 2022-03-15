@@ -4,17 +4,19 @@ namespace Nncase.Schedule;
 
 public class CSourceScheduler : IScheduler
 {
-    public ITarget Target { get; set; }
-    public IRModule ParentModule { get; set; }
 
     public CSourceScheduler(IR.IRModule main_module, ITarget target)
     {
-        ParentModule = main_module;
+        Module = main_module;
         Target = target;
     }
 
-    public SchedModelResult Schedule(bool skip_buffer_alias = false)
+    public ITarget Target { get; set; }
+    public IRModule Module { get; set; }
+
+
+    IRModel IScheduler.Schedule(bool skip_buffer_alias)
     {
-        return new SchedModelResult(this.ParentModule);
+        return new IRModel(new[] { Module });
     }
 }

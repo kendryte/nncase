@@ -3,10 +3,10 @@
 
 using System;
 using System.Collections.Generic;
-using Nncase.IR;
-using F = Nncase.IR.F;
 using System.Linq;
+using Nncase.IR;
 using Nncase.IR.Tensors;
+using F = Nncase.IR.F;
 using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase

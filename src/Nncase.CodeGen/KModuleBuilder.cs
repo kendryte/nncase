@@ -100,14 +100,11 @@ public abstract class BaseRTKModule : IRTModule
     /// <summary>
     /// builder.
     /// </summary>
-    /// <param name="ModuleResult"></param>
-    /// <param name="modelResult"></param>
-    public BaseRTKModule(Schedule.SchedModuleResult ModuleResult,
-            Schedule.SchedModelResult modelResult)
+    public BaseRTKModule(IR.IRModel model, IR.IRModule module)
     {
-        _modelResult = modelResult;
-        _moduleResult = ModuleResult;
-        _currentFunction = modelResult.Entry!;
+        _model = model;
+        _module = module;
+        _currentFunction = model.Entry;
         _symbolOffsets = new();
         _entryPoints = new();
         _functionTextEnd = new();
@@ -121,23 +118,13 @@ public abstract class BaseRTKModule : IRTModule
     // todo public void config_dump(const std::filesystem::path &dump_dir, bool dump_asm);
 
     /// <summary>
-    /// allocation buffer for node, just get it from sched result.
-    /// </summary>
-    /// <param name="conn"></param>
-    /// <returns></returns>
-    public Schedule.BufferAllocation Allocation(IR.Expr conn)
-    {
-        return _moduleResult.Allocations[conn];
-    }
-
-    /// <summary>
     /// get max mem usage.
     /// </summary>
     /// <param name="location"></param>
     /// <returns></returns>
     public ulong MaxUsage(Schedule.MemoryLocation location)
     {
-        if (_moduleResult.MaxUsages.TryGetValue(location, out var value))
+        if (_module.SchedResult!.MaxUsages.TryGetValue(location, out var value))
         {
             return value;
         }
@@ -218,24 +205,23 @@ public abstract class BaseRTKModule : IRTModule
     /// <summary>
     /// get current function id.
     /// </summary>
-    /// <param name="expr"></param>
+    /// <param name="current_func"></param>
     /// <returns></returns>
     /// <exception cref="InvalidProgramException"></exception>
-    protected FunctionCallId FunctionId(IR.Expr expr)
+    protected FunctionCallId FunctionId(TIR.PrimFunction current_func)
     {
-        for (int i = 0; i < _modelResult.Modules.Count; i++)
+        for (int i = 0; i < _model.Modules.Count; i++)
         {
-            var mod_sched = _modelResult.Modules[i];
-            if (mod_sched.FunctionsMap.TryGetValue(expr, out var func_it))
+            var module = _model.Modules[i];
+            for (int j = 0; j < module.Callables.Count; j++)
             {
-                if (mod_sched.Functions.IndexOf(func_it) is var idx)
+                if (ReferenceEqualityComparer.Instance.Equals(current_func, module.Callables[j]))
                 {
-                    return new FunctionCallId() { ModuleId = i, FunctionId = idx };
+                    return new FunctionCallId() { ModuleId = i, FunctionId = j };
                 }
             }
         }
-
-        throw new InvalidProgramException("Can't find expr in modules");
+        throw new InvalidProgramException("Can't find this func in the modules!");
     }
 
     /// <summary>
@@ -265,19 +251,19 @@ public abstract class BaseRTKModule : IRTModule
     /// the callback BeginEmit func.
     /// </summary>
     /// <param name="function"></param>
-    protected abstract void BeginEmitFunction(Schedule.SchedFunctionResult function);
+    protected abstract void BeginEmitFunction(IR.Callable function);
 
     /// <summary>
     /// the call back end emit func.
     /// </summary>
     /// <param name="function"></param>
-    protected abstract void EndEmitFunction(Schedule.SchedFunctionResult function);
+    protected abstract void EndEmitFunction(IR.Callable function);
 
     /// <summary>
     /// the emit.
     /// </summary>
     /// <param name="node"></param>
-    protected abstract void Emit(IR.Function node);
+    protected abstract void Emit(IR.Callable node);
 
     /// <summary>
     /// the call back end emit module.
@@ -297,13 +283,14 @@ public abstract class BaseRTKModule : IRTModule
     private List<IR.Expr> GenerateCurrentRuntimeOps()
     {
         List<IR.Expr> runtime_ops = new();
-        foreach (var item in _currentFunction.ComputeSequence)
-        {
-            if (!s_nonRuntimeOps.Contains(item.GetType().TypeHandle))
-            {
-                runtime_ops.Add(item);
-            }
-        }
+        // todo refactor gen stackvm runtime ops.
+        // foreach (var item in _currentFunction.ComputeSequence)
+        // {
+        //     if (!s_nonRuntimeOps.Contains(item.GetType().TypeHandle))
+        //     {
+        //         runtime_ops.Add(item);
+        //     }
+        // }
 
         return runtime_ops;
     }
@@ -312,11 +299,11 @@ public abstract class BaseRTKModule : IRTModule
     {
         WriteConstants();
         BeginEmitModule();
-        foreach (var func_sched in _moduleResult.Functions)
+        foreach (var func in _module.Callables)
         {
-            _currentFunction = func_sched;
+            _currentFunction = func;
             BeginEmitFunction(_currentFunction);
-            Emit(_currentFunction.Function);
+            Emit(_currentFunction);
             EndEmitFunction(_currentFunction);
 
             if (!_entryPoints.ContainsKey(_currentFunction))
@@ -324,17 +311,10 @@ public abstract class BaseRTKModule : IRTModule
                 throw new InvalidProgramException($"Entry point is not set");
             }
         }
-
         EndEmitModule();
 
+        // todo impl dump_asm
         // if (dump_asm_)
-        // {
-        //     for (auto &section : section_writer_)
-        //         section.second.body = read_stream(section.second.stream);
-
-        //     for (auto &section : section_writer_)
-        //         decompile("compile", section.first, section.second.body, section.second.writer.symbols());
-        // }
     }
 
     private void Decompile(string stage, string section_name, ReadOnlySpan<byte> input, ReadOnlySpan<Symbol> symbols)
@@ -352,20 +332,20 @@ public abstract class BaseRTKModule : IRTModule
 
     private void WriteConstants()
     {
-        if (_moduleResult.MaxUsages.TryGetValue(Schedule.MemoryLocation.Rdata, out var useage))
+        //todo we need refactor the bufferlize.
+        if (_module.SchedResult!.MaxUsages.TryGetValue(Schedule.MemoryLocation.Rdata, out var useage))
         {
             var constants = new byte[useage];
-            foreach (var func_sched in _moduleResult.Functions)
+
+            foreach (var kv in (from func in _module.Callables
+                                let sched = func.SchedResult
+                                where sched is not null
+                                from kv in sched.Allocations
+                                where kv.Key.MemLocation == Schedule.MemoryLocation.Rdata
+                                select kv))
             {
-                foreach (var item in func_sched.ComputeSequence)
-                {
-                    // TODO: TupleConst
-                    if (item is IR.TensorConst con)
-                    {
-                        var alloc = Allocation(con);
-                        con.Value.BytesBuffer.CopyTo(constants.AsSpan((int)alloc.Start));
-                    }
-                }
+                var (buffer, allocate) = (kv.Key, kv.Value);
+                ((IR.TensorConst)buffer.Const!).Value.BytesBuffer.CopyTo(constants.AsSpan((int)allocate.Start));
             }
 
             Writer(".rdata").Write(constants);
@@ -471,6 +451,7 @@ public abstract class BaseRTKModule : IRTModule
         GenerateSymbolOffsets();
         WriteSymbolRefs();
 
+        // todo refactor the dump.
         // if (dump_asm_)
         // {
         //     for (auto &section : section_writer_)
@@ -488,16 +469,16 @@ public abstract class BaseRTKModule : IRTModule
         writer.Seek(Marshal.SizeOf(typeof(ModuleHeader)), SeekOrigin.Current);
 
         // mempools
-        foreach (var mem in _moduleResult.MaxUsages)
+        foreach (var mem in _module.SchedResult!.MaxUsages)
         {
             var desc = new MemPoolDesc { Location = mem.Key, Size = (uint)mem.Value };
             writer.Write(CodeGenUtil.StructToBytes<MemPoolDesc>(desc));
         }
 
         // functions
-        foreach (var func_sched in _moduleResult.Functions)
+        foreach (var func_sched in _module.Callables)
         {
-            WriteFunctionBinary(writer, func_sched);
+            WriteCallableBinary(writer, func_sched);
         }
 
         // sections
@@ -547,9 +528,9 @@ public abstract class BaseRTKModule : IRTModule
         header.Version = (uint)ModuleVersion;
         header.HeaderSize = (uint)Marshal.SizeOf<ModuleHeader>();
         header.Size = (uint)(end_pos - header_pos);
-        header.Mempools = (uint)_moduleResult.MaxUsages.Count;
-        header.SharedMempools = (uint)_moduleResult.SharedMaxUsages.Count;
-        header.Functions = (uint)_moduleResult.Functions.Count;
+        header.Mempools = (uint)_module.SchedResult!.MaxUsages.Count;
+        header.SharedMempools = (uint)_module.SchedResult!.SharedMaxUsages.Count;
+        header.Functions = (uint)_module.Callables.Count;
         header.Sections = (uint)_sectionWriters.Count;
         header.Reserved0 = 0;
         writer.Position(header_pos);
@@ -557,49 +538,32 @@ public abstract class BaseRTKModule : IRTModule
         writer.Position(end_pos);
     }
 
-    private void WriteFunctionBinary(BinaryWriter writer, Schedule.SchedFunctionResult function_sched)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="writer"></param>
+    /// <param name="callable"></param>
+    private void WriteCallableBinary(BinaryWriter writer, IR.Callable callable)
     {
-        void writeShape(IR.Shape shape)
+        void writeShape(ReadOnlySpan<int> shape)
         {
-            writer.Write((uint)shape.Count);
+            writer.Write((uint)shape.Length);
             foreach (var dim in shape)
-            {
-                writer.Write((uint)dim.FixedValue);
-            }
+                writer.Write((uint)dim);
         }
-        if (!function_sched.Inputs.Any() &&
-            !function_sched.InputShapes.Any() &&
-            !function_sched.Outputs.Any() &&
-            !function_sched.OutputShapes.Any())
-        {
-            foreach (var node in function_sched.ComputeSequence)
-            {
-                if (function_sched.Function.Parameters.Contains(node,
-                                ReferenceEqualityComparer.Instance))
-                {
-                    var alloc = Allocation(node);
-                    function_sched.Inputs.Add(alloc.RuntimeType);
-                    function_sched.InputShapes.Add(alloc.Shape);
-                }
-                else if (object.ReferenceEquals(function_sched.Function.Body, node))
-                {
-                    var alloc = Allocation(node);
-                    function_sched.Outputs.Add(alloc.RuntimeType);
-                    function_sched.OutputShapes.Add(alloc.Shape);
-                }
-            }
-        }
+        var funcSched = callable.SchedResult!;
+
         // Skip function header
         var header_pos = writer.Position();
         writer.Skip((ulong)Marshal.SizeOf<FunctionHeader>());
 
         // inputs
-        foreach (var input in function_sched.Inputs) { writer.Write(CodeGenUtil.StructToBytes<Schedule.MemoryRange>(input)); }
-        foreach (var shape in function_sched.InputShapes) { writeShape(shape); }
+        foreach (var input in funcSched.Inputs) { writer.Write(CodeGenUtil.StructToBytes<Schedule.MemoryRange>(input)); }
+        foreach (var shape in funcSched.InputShapes) { writeShape(shape); }
 
         // outputs
-        foreach (var output in function_sched.Outputs) { writer.Write(CodeGenUtil.StructToBytes<Schedule.MemoryRange>(output)); }
-        foreach (var shape in function_sched.OutputShapes) { writeShape(shape); }
+        foreach (var output in funcSched.Outputs) { writer.Write(CodeGenUtil.StructToBytes<Schedule.MemoryRange>(output)); }
+        foreach (var shape in funcSched.OutputShapes) { writeShape(shape); }
 
         writer.AlignPosition(8);
         var end_pos = writer.Position();
@@ -609,12 +573,12 @@ public abstract class BaseRTKModule : IRTModule
         {
             HeaderSize = (uint)Marshal.SizeOf<FunctionHeader>(),
             Size = (uint)(end_pos - header_pos),
-            InputPoolSize = (uint)function_sched.InputPoolSize,
-            OutputPoolSize = (uint)function_sched.OutputPoolSize,
-            Inputs = (uint)function_sched.Inputs.Count,
-            Outputs = (uint)function_sched.Outputs.Count,
-            Entrypoint = (uint)_entryPoints[function_sched],
-            TextSize = (uint)(_functionTextEnd[function_sched] - _entryPoints[function_sched]),
+            InputPoolSize = (uint)funcSched.InputPoolSize,
+            OutputPoolSize = (uint)funcSched.OutputPoolSize,
+            Inputs = (uint)funcSched.Inputs.Count(),
+            Outputs = (uint)funcSched.Outputs.Count(),
+            Entrypoint = (uint)_entryPoints[callable],
+            TextSize = (uint)(_functionTextEnd[callable] - _entryPoints[callable]),
         };
         writer.Position(header_pos);
         writer.Write(CodeGenUtil.StructToBytes<FunctionHeader>(header));
@@ -648,12 +612,12 @@ public abstract class BaseRTKModule : IRTModule
     }
 
     private string _sourcePath = string.Empty;
-    private readonly Schedule.SchedModelResult _modelResult;
-    private readonly Schedule.SchedModuleResult _moduleResult;
-    private Schedule.SchedFunctionResult _currentFunction;
+    private readonly IR.IRModel _model;
+    private readonly IR.IRModule _module;
+    private IR.Callable _currentFunction;
     private readonly SortedDictionary<string, Section> _sectionWriters = new(StringComparer.CurrentCulture);
     private readonly SortedDictionary<string, RdataMergeInfo> _rdataSectionMerges = new(StringComparer.CurrentCulture);
     private readonly Dictionary<string, (ulong Offset, string Name)> _symbolOffsets;
-    private readonly Dictionary<Schedule.SchedFunctionResult, ulong> _entryPoints;
-    private readonly Dictionary<Schedule.SchedFunctionResult, ulong> _functionTextEnd;
+    private readonly Dictionary<IR.Callable, ulong> _entryPoints;
+    private readonly Dictionary<IR.Callable, ulong> _functionTextEnd;
 }

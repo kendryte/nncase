@@ -55,7 +55,7 @@ namespace Nncase.Tests.RewriteTest
             var f = new Function(expr, parameters);
             var result = CompilerServices.InferenceType(f);
             f.DumpExprAsIL("before", Path.Combine(passOptions.PassDumpDir, $"ShapeInfer_{name}"));
-            return new ShapeInferPass($"ShapeInfer_{name}").Run(f, passOptions).Body;
+            return ((Function)new ShapeInferPass($"ShapeInfer_{name}").Run(f, passOptions)).Body;
         }
 
         public Expr ApplyFoldConstCallRewrite(Expr expr) =>

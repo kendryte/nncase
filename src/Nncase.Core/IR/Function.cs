@@ -10,10 +10,23 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR
 {
+
+    /// <summary>
+    /// the Callable Expr
+    /// </summary>
+    public abstract record Callable(string Name) : Expr
+    {
+
+        /// <summary>
+        /// the schedule result, the dag function for stackvm, the prim_func for other backend.
+        /// </summary>
+        public Schedule.SchedFunctionResult? SchedResult = null;
+    }
+
     /// <summary>
     /// Function expression.
     /// </summary>
-    public sealed record Function(string Name, Expr Body, IRArray<Var> Parameters) : Expr
+    public sealed record Function(string Name, Expr Body, IRArray<Var> Parameters) : Callable(Name)
     {
         private static int _globalFuncIndex = 0;
 

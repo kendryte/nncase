@@ -8,17 +8,17 @@ namespace Nncase.CodeGen;
 /// <summary>
 /// static class for codegen collection.
 /// </summary>
-public static class CodeGenExtension
+public static class CodeGenExtensions
 {
     /// <summary>
     /// schedule and build the IRModule to RTModel.
     /// </summary>
-    /// <param name="mod"> input module. </param>
+    /// <param name="module"> input module. </param>
     /// <param name="target"> target information. </param>
     /// <returns> the runtime model instance. </returns>
-    public static IRTModel ToRTModel(this IRModule mod, ITarget target)
+    public static IRTModel ToRTModel(this IRModule module, ITarget target)
     {
-        var sch = target.CreateScheduler(mod);
+        var sch = target.CreateScheduler(module);
         var schr = sch.Schedule();
         return target.CreateRTModel(schr);
     }
@@ -27,7 +27,7 @@ public static class CodeGenExtension
 /// <summary>
 /// BinaryWriterExtension.
 /// </summary>
-public static class BinaryWriterExtension
+public static class BinaryWriterExtensions
 {
     /// <summary>
     /// write the byte 0 into the stream.

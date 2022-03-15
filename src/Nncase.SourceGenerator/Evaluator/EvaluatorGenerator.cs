@@ -81,6 +81,7 @@ internal class EvaluatorGenerator : ISourceGenerator
             {
                 InterfaceKind.IEvaluator => paramType switch
                 {
+                    INamedTypeSymbol { IsReferenceType: true } x when x.ToDisplayString() == "Nncase.IValue" => $"GetArgumentValue",
                     INamedTypeSymbol { IsGenericType: true, IsReferenceType: true } x when x.Name == "Tensor" => $"GetArgumentValueAsTensor<{x.TypeArguments[0].ToDisplayString()}>",
                     IArrayTypeSymbol { ElementType: { IsUnmanagedType: true, IsValueType: true } e } x => $"GetArgumentValueAsArray<{e.ToDisplayString()}>",
                     { IsReferenceType: true } x when x.IsInheritFrom(Receiver.ExprSymobl) => $"GetArgumentExpr<{paramType.ToDisplayString()}>",

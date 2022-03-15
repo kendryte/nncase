@@ -235,9 +235,9 @@ internal class CSourceHostBuildVisior : ExprFunctor<CSymbol, string>
         Scope.Push();
         // 1. For Loop signature
         var loopVar = VisitLoopVar(expr.LoopVar);
-        Scope.Append($"for ({loopVar} = {Visit(expr.Dom.Min).Doc}; {loopVar.Doc} < {Visit(expr.Dom.Max).Doc}; {loopVar.Doc}++) {{");
+        Scope.Append($"for ({loopVar} = {Visit(expr.Dom.Start).Doc}; {loopVar.Doc} < {Visit(expr.Dom.Stop).Doc}; {loopVar.Doc}+={expr.Dom.Step}) {{");
         // 2. For Body
-        Scope.Append(Visit(expr.Sequence).Doc);
+        Scope.Append(Visit(expr.Body).Doc);
         // 3. For closing
         Scope.IndWrite("}");
         symbol = new(VisitType(expr.CheckedType!), Scope.Pop());

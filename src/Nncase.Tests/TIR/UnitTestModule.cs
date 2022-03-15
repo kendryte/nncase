@@ -13,18 +13,5 @@ namespace Nncase.Tests.TIRTest;
 public class UnitTestModule
 {
 
-    [Fact]
-    public void TestName()
-    {
-        var lhs = new Var("lhs", DataTypes.Float32);
-        var rhs = new Var("rhs", DataTypes.Float32);
-        var output = lhs + rhs;
-        var func = new Function(output, lhs, rhs);
-        func.InferenceType();
-        Console.Write(func.DumpExprAsIL());
-        var mod = new IRModule();
-        mod.Add(func);
-        mod.Entry = func;
-    }
 }
 

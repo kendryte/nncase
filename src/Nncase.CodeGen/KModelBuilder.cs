@@ -62,7 +62,7 @@ public class RTKModel : IRTModel
     /// <inheritdoc/>
     public ITarget Target { get; set; }
     /// <inheritdoc/>
-    public Schedule.SchedModelResult modelResult { get; set; }
+    public IRModel Model { get; set; }
     /// <inheritdoc/>
     public string SourcePath { get; private set; }
     /// <inheritdoc/>
@@ -92,12 +92,12 @@ public class RTKModel : IRTModel
     /// <summary>
     /// create the kmodel.
     /// </summary>
-    /// <param name="result"></param>
+    /// <param name="model"></param>
     /// <param name="target"></param>
-    public RTKModel(Schedule.SchedModelResult result, ITarget target)
+    public RTKModel(IRModel model, ITarget target)
     {
         Target = target;
-        modelResult = result;
+        Model = model;
         modules = new();
         SourcePath = CodeGenUtil.GetTempFileName(SourceExt);
         IsSerialized = false;
@@ -142,14 +142,14 @@ public class RTKModel : IRTModel
             HeaderSize = (uint)Marshal.SizeOf(typeof(ModelHeader)),
             Flags = 0,
             Alignment = 8,
-            Modules = (uint)modelResult.Modules.Count,
+            Modules = (uint)Model.Modules.Count,
         };
 
         var header_pos = writer.BaseStream.Position;
         writer.Seek(Marshal.SizeOf(typeof(ModelHeader)), SeekOrigin.Current);
-        foreach (var moduleRes in modelResult.Modules)
+        foreach (var module in Model.Modules)
         {
-            var rtmodule = Target.CreateRTModule(moduleRes.ModuleType, moduleRes, modelResult);
+            var rtmodule = Target.CreateRTModule(Model, module);
             var res = (KModuleSerializeResult)rtmodule.Serialize();
             modules.Add(rtmodule);
             writer.Write(rtmodule.Source);
@@ -157,12 +157,12 @@ public class RTKModel : IRTModel
         }
 
         // Entry point
-        for (int i = 0; i < modelResult.Modules.Count; i++)
+        for (int i = 0; i < Model.Modules.Count; i++)
         {
-            var mod_sched = modelResult.Modules[i];
-            for (int j = 0; j < mod_sched.Functions.Count; j++)
+            var mod = Model.Modules[i];
+            for (int j = 0; j < mod.Callables.Count; j++)
             {
-                if (object.ReferenceEquals(modelResult.Entry, mod_sched.Functions[j]))
+                if (object.ReferenceEquals(Model.Entry, mod.Callables[j]))
                 {
                     header.EntryModule = (uint)i;
                     header.EntryFunction = (uint)j;

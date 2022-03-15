@@ -9,15 +9,14 @@ using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.TIR.Builtin;
 
-namespace Nncase.TIR.F
+namespace Nncase.TIR.F;
+
+public static class Builtin
 {
-    public static class Builtin
-    {
-        /// <summary>
-        /// Make return
-        /// </summary>
-        /// <param name="Input"></param>
-        /// <returns></returns>
-        // public static Call Ret(Expr Input) => new Call(new Ret(), Input);
-    }
+    /// <summary>
+    /// Make return
+    /// </summary>
+    /// <param name="Input"></param>
+    /// <returns></returns>
+    // public static Call Ret(Expr Input) => new Call(new Ret(), Input);
 }

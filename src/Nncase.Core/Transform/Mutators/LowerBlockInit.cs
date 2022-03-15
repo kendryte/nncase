@@ -1,12 +1,12 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using System.Linq;
-using System.IO;
-using System.Collections.Generic;
 using System;
-using Nncase.TIR;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Nncase.IR;
+using Nncase.TIR;
 namespace Nncase.Transform.Mutator
 {
     /// <summary>
@@ -17,16 +17,16 @@ namespace Nncase.Transform.Mutator
         /// <inheritdoc/>
         public override Expr VisitLeaf(Block expr)
         {
-            if (expr.InitSequence.Count == 0)
+            if (expr.InitBody.Count == 0)
             {
                 return base.Visit(expr);
             }
-            var initbody = Lowering(expr.InitSequence, expr.IterVars);
-            var body = Visit(expr.Sequence);
+            var initbody = Lowering(expr.InitBody, expr.IterVars);
+            var body = Visit(expr.Body);
             return expr with
             {
-                InitSequence = new(),
-                Sequence = Sequential.Flatten(initbody, body)
+                InitBody = new(),
+                Body = new Sequential(new() { initbody, body })
             };
         }
 
@@ -37,7 +37,7 @@ namespace Nncase.Transform.Mutator
             {
                 if (iterVar.Mode == IterationMode.CommReduce)
                 {
-                    conds.Append(IR.F.Math.Equal(iterVar, iterVar.Dom.Min));
+                    conds.Append(IR.F.Math.Equal(iterVar, iterVar.Dom.Start));
                 }
             }
 

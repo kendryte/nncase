@@ -28,7 +28,7 @@ public sealed class ShapeInferPass : DataflowPass
     }
 
     /// <inheritdoc/>
-    protected override Function RunCore(Function pre, RunPassOptions options)
+    protected override Callable RunCore(Callable pre, RunPassOptions options)
     {
         Function post;
         int count = 0;

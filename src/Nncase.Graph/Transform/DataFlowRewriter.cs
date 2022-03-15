@@ -62,7 +62,6 @@ internal class DataflowRewriter
                 IRPrinter.DumpExprAsIL(expr, $"{count}_Start", Path.Combine(options.PassDumpDir, "Rewrite"));
                 break;
             case >= 1:
-                expr.DumpExprAsIL();
                 break;
             default:
                 break;
@@ -80,7 +79,6 @@ internal class DataflowRewriter
                 IRPrinter.DumpExprAsIL(expr, $"{count}_End", Path.Combine(options.PassDumpDir, "Rewrite"));
                 break;
             case >= 1:
-                expr.DumpExprAsIL();
                 break;
             default:
                 break;

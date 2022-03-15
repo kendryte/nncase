@@ -33,11 +33,23 @@ public static class TypeInference
     public static T CheckArgumentType<T>(this ITypeInferenceContext context, Op op, ParameterInfo parameter, string? reason = null)
         where T : IRType
     {
+        T WrapperException(T t)
+        {
+            try
+            {
+                return parameter.Pattern.Check(t);
+            }
+            catch (System.InvalidOperationException e)
+            {
+                throw new TypeInferenceInterruptException(new InvalidType(e.Message));
+            }
+        }
+
         return context.GetArgumentType(op, parameter) switch
         {
-            T t => parameter.Pattern.Check(t),
+            T t => WrapperException(t),
             AnyType a => throw new TypeInferenceInterruptException(a),
-            _ => throw new TypeInferenceInterruptException(new InvalidType(reason ?? $"{op}.{parameter.Name} must be a {typeof(T).Name}.")),
+            var x => throw new TypeInferenceInterruptException(new InvalidType(reason ?? $"{op.GetType().Name}.{parameter.Name} Must Be {typeof(T).Name} But Give {x.GetType().Name}.")),
         };
     }
 

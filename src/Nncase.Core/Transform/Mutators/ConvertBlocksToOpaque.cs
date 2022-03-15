@@ -27,12 +27,12 @@ namespace Nncase.Transform.Mutator
             return expr with
             {
                 // the block realize 
-                InitSequence = (TIR.Sequential)Visit(expr.InitSequence),
+                InitBody = (TIR.Sequential)Visit(expr.InitBody),
                 Predicate = Visit(expr.Predicate),
                 IterVars = new(),
 
                 // the block internal.
-                Sequence = (TIR.Sequential)Visit(expr.Sequence),
+                Body = (TIR.Sequential)Visit(expr.Body),
                 Reads = MutateArray(expr.Reads, MutateLeaf),
                 Writes = MutateArray(expr.Writes, MutateLeaf),
             };

@@ -85,7 +85,7 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="ElemType"> the Pointed Element Type</param>
         /// <returns>the pointer tensor type.</returns>
-        public static TensorType Pointer(PrimType ElemType) => new(new PointerType(ElemType), Shape.Scalar);
+        public static TensorType Pointer(DataType ElemType) => new(new PointerType(ElemType), Shape.Scalar);
     }
 
     /// <summary>
@@ -98,17 +98,24 @@ namespace Nncase.IR
         /// </summary>
         public static readonly TupleType Void = new(ImmutableArray<IRType>.Empty);
 
+        /// <summary>
+        /// ctor.
+        /// </summary>
+        /// <param name="Fields">sub fields.</param>
         public TupleType(IEnumerable<IRType> Fields) : this(Fields.ToImmutableArray()) { }
 
+        /// <inheritdoc/>
         public IRType this[int index] => ((IReadOnlyList<IRType>)Fields)[index];
 
+        /// <inheritdoc/>
         public int Count => ((IReadOnlyCollection<IRType>)Fields).Count;
 
+        /// <inheritdoc/>
         public IEnumerator<IRType> GetEnumerator()
         {
             return ((IEnumerable<IRType>)Fields).GetEnumerator();
         }
-
+        /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator()
         {
             return ((IEnumerable)Fields).GetEnumerator();

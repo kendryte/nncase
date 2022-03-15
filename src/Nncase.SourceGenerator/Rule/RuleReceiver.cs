@@ -57,6 +57,7 @@ internal class RuleReceiver : ISyntaxContextReceiver
                   && (m.Parameters.All(
                       p => SymbolEqualityComparer.Default.Equals(p.Type, IMatchResultSymobl)
                            || p.Type.IsInheritFrom(ExprSymobl)
+                           || (p.Type is INamedTypeSymbol { IsGenericType: true } gentype && gentype.TypeArguments.Any(t => t.IsInheritFrom(ExprSymobl)))
                       ))).ToArray();
                 if (methods.Length == 0)
                     return;

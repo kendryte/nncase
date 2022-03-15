@@ -70,9 +70,9 @@ namespace Nncase
         /// <summary>
         /// get the current target schedule.
         /// </summary>
-        /// <param name="main_module"></param>
+        /// <param name="module"></param>
         /// <returns></returns>
-        public abstract IScheduler CreateScheduler(IR.IRModule main_module);
+        public abstract IScheduler CreateScheduler(IR.IRModule module);
 
         /// <summary>
         /// create the target runtime model.
@@ -81,7 +81,7 @@ namespace Nncase
         /// </example>
         /// </summary>
         /// <returns> the <see cref="CodeGen.IRTModel"/>. </returns>
-        public CodeGen.IRTModel CreateRTModel(Schedule.SchedModelResult result);
+        public CodeGen.IRTModel CreateRTModel(IRModel model);
 
         /// <summary>
         /// create the target runtime module, we will call this method when build rtmodel.
@@ -89,10 +89,7 @@ namespace Nncase
         /// eg. the k510/stackvm/k210 subclass from kmodelTarget.
         /// </summary>
         /// <returns> the module builder. </returns>
-        public abstract CodeGen.IRTModule CreateRTModule(
-          CodeGen.ModuleType moduleType,
-          Schedule.SchedModuleResult ModuleResult,
-          Schedule.SchedModelResult modelResult);
+        public abstract CodeGen.IRTModule CreateRTModule(IRModel model, IRModule module);
     }
 
     /// <summary>

@@ -152,7 +152,7 @@ public interface IRTModel
     /// <summary>
     /// schedule result
     /// </summary>
-    public Schedule.SchedModelResult modelResult { get; set; }
+    public IRModel Model { get; set; }
 
     /// <summary>
     /// get source code
