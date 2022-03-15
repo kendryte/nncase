@@ -194,7 +194,6 @@ void k210_target::add_quantization_broadcast(std::unordered_set<node_opcode> &op
 {
     using namespace ir;
     opcodes.emplace(op_input_node);
-    opcodes.emplace(op_concat);
     opcodes.emplace(op_transpose);
     opcodes.emplace(op_dequantize);
     opcodes.emplace(op_pad);
