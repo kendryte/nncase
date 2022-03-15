@@ -60,13 +60,12 @@ bool fold_quantize_transform::on_try_match(node &node, transform_context &contex
             if (conn->owner().runtime_opcode() == op_quantize)
             {
                 auto &q = static_cast<quantize &>(conn->owner());
-                if(deq.name() == "dequantize_input")
-                { 
-                    std::cout<<deq.name()<<std::endl;
-                    std::cout<<"scale:\t"<<deq.quant_param().scale<<"\tbias:\t"<<deq.quant_param().zero_point<<std::endl;
-                    std::cout<<q.name()<<std::endl;
-                    std::cout<<"scale:\t"<<q.quant_param().scale<<"\tbias:\t"<<q.quant_param().zero_point<<std::endl;
-
+                if (deq.name() == "dequantize_input")
+                {
+                    std::cout << deq.name() << std::endl;
+                    std::cout << "scale:\t" << deq.quant_param().scale << "\tbias:\t" << deq.quant_param().zero_point << std::endl;
+                    std::cout << q.name() << std::endl;
+                    std::cout << "scale:\t" << q.quant_param().scale << "\tbias:\t" << q.quant_param().zero_point << std::endl;
                 }
                 if (almost_equal(q.quant_param(), deq.quant_param()) && q.output().type() == deq.input().type())
                 {
