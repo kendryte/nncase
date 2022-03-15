@@ -189,3 +189,16 @@ void k210_target::register_quantize_passes(const module_type_t &type, ir::transf
         pass_mgr.add_pass(std::move(p));
     }
 }
+
+void k210_target::add_quantization_broadcast(std::unordered_set<node_opcode> &opcodes)
+{
+    using namespace ir;
+    opcodes.emplace(op_input_node);
+    opcodes.emplace(op_concat);
+    opcodes.emplace(op_transpose);
+    opcodes.emplace(op_dequantize);
+    opcodes.emplace(op_pad);
+    opcodes.emplace(op_resize_image);
+    opcodes.emplace(op_bitcast);
+    opcodes.emplace(op_reduce_window2d);
+}

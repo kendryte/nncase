@@ -512,7 +512,14 @@ private:
         auto graph_runner = [&](ir::graph &graph) {
             ir::transforms::pass_manager pmgr(graph, *target_);
             auto quant = evaluator.quantizer(graph.module_type());
-
+            if (compile_options_.input_type != "float32" && compile_options_.preprocess == true)
+            {
+                auto min = compile_options_.input_range[0];
+                auto max = compile_options_.input_range[1];
+                value_range<float> input_range { min, max };
+                quant->set(graph.inputs()[0]->output(), input_range);
+                quant->record(graph.inputs()[0]->output(), input_range);
+            }
             // broadcast quant ranges
             std::unordered_set<node_opcode> opcodes;
             target_->add_quantization_broadcast(opcodes);
