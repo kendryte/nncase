@@ -311,10 +311,12 @@ namespace Nncase.Importer
                 "Sub" => VisitBinary(op, BinaryOp.Sub),
                 "Sum" => VisitSum(op),
                 "Tanh" => VisitUnary(op, UnaryOp.Tanh),
+                "Tile" => VisitTile(op),
                 "Transpose" => VisitTranspose(op),
 
                 // "Upsample" => VisitUpsample(op),
                 "Unsqueeze" => VisitUnsqueeze(op),
+                "Where" => VisitWhere(op),
                 _ => throw new NotSupportedException($"Not Supported onnx op {op.OpType}"),
             };
 

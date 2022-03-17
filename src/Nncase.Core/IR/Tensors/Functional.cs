@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR.Math;
+using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Range = Nncase.IR.Tensors.Range;
 
@@ -95,6 +96,10 @@ public static class Tensors
 
     // sections (int or list[int])
     public static Call Split(Expr input, Expr axis, Expr sections) => new Call(new Split(), input, axis, sections);
+    
+    public static Call Tile(Expr input, Expr repeats) => new Call(new Tile(), input, repeats);
+    
+    public static Call Where(Expr cond, Expr x, Expr y) => new Call(new Where(), cond, x, y);
 
     /// <summary>
     /// get item from the input.
