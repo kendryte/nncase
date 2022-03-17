@@ -772,8 +772,7 @@ inline bool pretty_print(std::ostream &stream,
     const std::variant<Ts...> &value)
 {
     stream << "{";
-    std::visit([&stream](auto &&arg)
-        { pretty_print(stream, arg); },
+    std::visit([&stream](auto &&arg) { pretty_print(stream, arg); },
         value);
     stream << "}";
 
