@@ -2,13 +2,8 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.IO;
-using System.Linq;
 using Nncase.IR;
-using Nncase.IR.Tensors;
 using F = Nncase.IR.F;
-using TensorType = tflite.TensorType;
-using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Importer.TFLite
 {
@@ -17,6 +12,8 @@ namespace Nncase.Importer.TFLite
         private Expr VisitConv2D(in tflite.Operator op)
         {
             var (input, weights) = GetInputExprs(op, 0, 1);
+            input = F.Tensors.NHWCToNCHW(input);
+            weights = F.Tensors.NHWCToNCHW(weights);
             var bias = GetInputExprs(op, 2);
             var options = op.BuiltinOptionsAsConv2DOptions();
             var (inH, inW) = Util.GetHW(input);
@@ -32,7 +29,7 @@ namespace Nncase.Importer.TFLite
             var padding = Util.ConcatPadding(padH, padW);
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
             return F.Tensors.NCHWToNHWC(F.Math.Clamp(
-                F.NN.Conv2D(F.Tensors.NHWCToNCHW(input), F.Tensors.NHWCToNCHW(weights), bias, stride, padding, dilation,
+                F.NN.Conv2D(input, weights, bias, stride, padding, dilation,
                     PadMode.Constant, 1),
                 clamp.Min, clamp.Max));
         }
@@ -41,6 +38,9 @@ namespace Nncase.Importer.TFLite
         {
             var (input, weights) = GetInputExprs(op, 0, 1);
             var bias = GetInputExprs(op, 2);
+            input = F.Tensors.NHWCToNCHW(input);
+            weights = F.Tensors.Transpose(weights, new[] {3, 0, 1, 2});
+            var s = GetTensorShape(GetInputTensor(op, 1));
             var options = op.BuiltinOptionsAsDepthwiseConv2DOptions();
             var (inH, inW) = Util.GetHW(input);
             var (fH, fW) = Util.GetHW(weights);
@@ -62,8 +62,8 @@ namespace Nncase.Importer.TFLite
 
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
             return F.Tensors.NCHWToNHWC(F.Math.Clamp(
-                F.NN.Conv2D(F.Tensors.NHWCToNCHW(input), F.Tensors.NHWCToNCHW(weights), bias, stride, padding, dilation,
-                    PadMode.Constant, 1),
+                F.NN.Conv2D(input, weights, bias, stride, padding, dilation,
+                    PadMode.Constant, Util.ShapeIndex(weights, 0)),
                 clamp.Min, clamp.Max));
         }
 

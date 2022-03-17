@@ -24,7 +24,7 @@ namespace Nncase.Importer
                 ? GetIntsAttribute(op, "dilations", 1, 2) 
                 : Enumerable.Repeat<long>(1, pads.Length).ToArray();
             var kernelShape = isGlobal
-                ? Util.GetHW(input).Map((h, w) => (Expr)F.Tensors.Concat(new Tuple(h, w), 0))
+                ? Util.GetHW(input).Map((h, w) => (Expr)F.Tensors.Stack(new Tuple(h, w), 0))
                 : Tensor.FromSpan<long>(GetIntsAttribute(op, "kernel_shape"));
             var strides = GetStrideAttribute(op);
             return F.NN.ReduceWindow2D(reduceOp, input, initValue,

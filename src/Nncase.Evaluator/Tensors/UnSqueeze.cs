@@ -17,7 +17,7 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
     public IValue Visit(IEvaluateContext context, Unsqueeze unSqueeze)
     {
         var input = context.GetOrtArgumentValue(unSqueeze, Unsqueeze.Input);
-        var axes = context.GetOrtArgumentValue(unSqueeze, Unsqueeze.Dim);
+        var axes = context.GetInt64OrtTensorArgumentValue(unSqueeze, Unsqueeze.Dim);
         return OrtKI.Unsqueeze(input, axes).ToValue();
     }
 
@@ -37,13 +37,14 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
             foreach (var dimVal in dimsValue)
             {
                 var dimV = Util.PositiveIndex(dimVal, input);
-                if (dimV < 0)
-                {
-                    for (int i = dimV; i < 0; i++)
-                    {
-                        outShape.Insert(0, 1);
-                    }
-                }
+                outShape.Insert(dimV, 1);
+                // if (dimV < 0)
+                // {
+                //     for (int i = dimV; i < 0; i++)
+                //     {
+                //         outShape.Insert(0, 1);
+                //     }
+                // }
             }
 
             return input with { Shape = new Shape(outShape) };

@@ -33,7 +33,8 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>
 
     private IRType Visit(ITypeInferenceContext context, Reshape target, TensorType input)
     {
-        if (context.GetArgument(target, Reshape.Shape) is TensorConst shapeConst)
+        if (context.GetArgument(target, Reshape.Shape) is TensorConst shapeConst &&
+            input.Shape.IsFixed)
         {
             var shapeValue = shapeConst.Value.ToArray<int>();
             var negCount = shapeValue.Count(IsMinus1);

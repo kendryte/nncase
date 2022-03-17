@@ -30,7 +30,7 @@ namespace Nncase.Importer
                 : Tensor.FromSpan<int>(new[] { axis });
             var first = Prod(Slice(inShape, new[] { 0 }, axisExpr, 1));
             var second = Prod(Slice(inShape, axisExpr, Rank(input), 1));
-            var beforeShape = Concat(new IR.Tuple(first, second), 0);
+            var beforeShape = Stack(new IR.Tuple(first, second), 0);
             var afterShape = ShapeOf(input);
             return Reshape(
                 f(
