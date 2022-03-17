@@ -17,7 +17,7 @@ namespace Nncase.IR.Imaging
     public sealed record ResizeImage(
         ImageResizeMode ResizeMode, 
         ImageResizeTransformationMode TransformationMode,
-        ImageResizeNearestMode NearestMode) : Op
+        ImageResizeNearestMode NearestMode, bool IsTFResize = false) : Op
     {
         /// <summary>
         /// Gets input.

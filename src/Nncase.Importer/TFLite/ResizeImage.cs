@@ -16,7 +16,7 @@ namespace Nncase.Importer.TFLite
     {
         private Expr MakeResizeSizes(Expr input, Expr newSize)
         {
-            var newNC = Concat(
+            var newNC = Stack(
                 new IR.Tuple(
                     Util.ShapeIndex(input, 0),
                     Util.ShapeIndex(input, 1)),
@@ -42,7 +42,7 @@ namespace Nncase.Importer.TFLite
                     Array.Empty<float>(), 
                     MakeResizeSizes(input, newSize), 
                     tranMode,
-                    nearestMode));
+                    nearestMode, true));
         }
         
         private ImageResizeTransformationMode GetResizeOptions(in tflite.Operator op)
