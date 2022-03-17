@@ -66,4 +66,9 @@ public static class EvaluateContextExtensions
     {
         return context.GetValue(expr).AsTensor().ToOrtTensor();
     }
+    
+    public static Tensorflow.Tensor GetTFArgumentValue(this IEvaluateContext context, Op op, ParameterInfo parameter)
+    {
+        return context.GetArgumentValue(op, parameter).AsTensor().ToTFTensor();
+    }
 }

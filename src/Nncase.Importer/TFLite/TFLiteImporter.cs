@@ -136,8 +136,8 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.ADD => VisitBinary(op, BinaryOp.Add, op.BuiltinOptionsAsAddOptions().FusedActivationFunction),
 
                 // tflite.BuiltinOperator.ADD_N,
-                // tflite.BuiltinOperator.ARG_MAX,
-                // tflite.BuiltinOperator.ARG_MIN,
+                tflite.BuiltinOperator.ARG_MAX => VisitReduceArg(op, ReduceArgOp.ArgMax),
+                tflite.BuiltinOperator.ARG_MIN => VisitReduceArg(op, ReduceArgOp.ArgMin),
                 // tflite.BuiltinOperator.ASSIGN_VARIABLE,
                 tflite.BuiltinOperator.AVERAGE_POOL_2D => VisitReduceWindow2D(op, ReduceOp.Mean, 0f),
 

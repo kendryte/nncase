@@ -1,8 +1,9 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using Nncase.IR;
-using F = Nncase.IR.F;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Importer.TFLite
 {
@@ -11,7 +12,22 @@ namespace Nncase.Importer.TFLite
         private Expr VisitReduce(in tflite.Operator op, ReduceOp reduceOp, float initValue)
         {
             var (input, axis) = GetInputExprs(op, 0, 1);
-            return F.Tensors.Reduce(reduceOp, input, axis, initValue, op.BuiltinOptionsAsReducerOptions().KeepDims);
+            return Reduce(reduceOp, input, axis, initValue, op.BuiltinOptionsAsReducerOptions().KeepDims);
+        }
+        
+        private Expr VisitReduceArg(in tflite.Operator op, ReduceArgOp reduceArgOp)
+        {
+            var (input, axis) = GetInputExprs(op, 0, 1);
+            var outType = reduceArgOp switch
+            {
+                ReduceArgOp.ArgMin => op.BuiltinOptionsAsArgMaxOptions().OutputType,
+                ReduceArgOp.ArgMax => op.BuiltinOptionsAsArgMinOptions().OutputType,
+                _ => throw new ArgumentOutOfRangeException(nameof(reduceArgOp), reduceArgOp, null)
+            };
+
+            return Cast(
+                ReduceArg(reduceArgOp, input, axis, false, false),
+                GetDataType(outType));
         }
     }
 }
