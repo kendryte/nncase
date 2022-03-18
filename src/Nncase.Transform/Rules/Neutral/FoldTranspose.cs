@@ -1,6 +1,7 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Generic;
 using System.Linq;
 using Nncase.IR;
 using Nncase.PatternMatch;
@@ -12,10 +13,35 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Transform.Rules.Neutral;
 
 /// <summary>
+/// Fold nop <see cref="IR.Tensors.Transpose"/>.
+/// </summary>
+[RuleGenerator]
+public sealed partial class FoldNopTranspose : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsTranspose(
+        IsWildcard("input"),
+        IsTensorConst("perm", IsIntegral()));
+
+    private Expr? GetReplace(Expr input, Tensor<int> perm)
+    {
+        for (int i = 0; i < perm.Length; i++)
+        {
+            if (perm[i] != i)
+            {
+                return null;
+            }
+        }
+
+        return input;
+    }
+}
+
+/// <summary>
 /// Fold two <see cref="IR.Tensors.Transpose"/>.
 /// </summary>
 [RuleGenerator]
-public class FoldTwoTransposes : IRewriteRule
+public sealed partial class FoldTwoTransposes : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsTranspose(
@@ -32,63 +58,53 @@ public class FoldTwoTransposes : IRewriteRule
                 newPerm[i] = perm1[perm2[i]];
             }
 
-            return Transpose(tp1.Input(), Const.FromTensor(perm));
+            return Transpose(input, Stack(new Tuple(newPerm), 0));
         }
 
         return null;
     }
 }
 
-public class FoldNopTranspose : IRewriteRule
+/// <summary>
+/// Replace <see cref="IR.Tensors.Transpose"/> with <see cref="IR.Tensors.Reshape"/>.
+/// </summary>
+[RuleGenerator]
+public sealed partial class TransposeToReshape : IRewriteRule
 {
-    TransposeWrapper tp;
-    public FoldNopTranspose()
-    {
-        Pattern = tp = Transpose(IsWildcard(), IsConstIntTensor());
-    }
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsTranspose(
+        target_name: null,
+        call_name: "tp",
+        IsWildcard("input") with { TypePattern = HasRank() },
+        IsTensorConst("perm", IsIntegral()));
 
-    public override Expr? GetReplace(IMatchResult result)
+    private Expr? GetReplace(Expr input, Expr tp, Tensor<int> perm)
     {
-        tp.Bind(result);
-        var perm = tp.Perm<TensorConst>().Value.Cast<int>();
-        if (Enumerable.Range(0, (int)perm.Length).All(dim => perm[dim] == dim))
+        // If all significant dims remains ascending order, it can be converted to a reshape.
+        var inShape = input.CheckedShape;
+        var sigAxes = new List<int>();
+        for (int i = 0; i < inShape.Rank; i++)
         {
-            return tp.Input();
-        }
-
-        return null;
-    }
-}
-
-public class TransposeToReshape : IRewriteRule
-{
-    TransposeWrapper tp;
-    public TransposeToReshape()
-    {
-        Pattern = tp = Transpose(IsWildcard(), IsConstIntTensor());
-    }
-
-    public override Expr? GetReplace(IMatchResult result)
-    {
-        tp.Bind(result);
-        var perm = tp.Perm<TensorConst>().Value.Cast<int>();
-        var in_shape = tp.Input().CheckedShape;
-        int last_sig_dim = 0;
-        for (int i = 0; i < perm.Length; i++)
-        {
-            var i_dim = perm[i];
-            if (in_shape[i].FixedValue != 1)
+            if (inShape[i] != 1)
             {
-                if (i_dim < last_sig_dim)
-                {
-                    return null;
-                }
-
-                last_sig_dim = i_dim;
+                sigAxes.Add(i);
             }
         }
 
-        var outshape = result[Pattern].CheckedShape;
-        return Reshape(tp.Input(), Const.FromShape(outshape));
+        var lastPerm = int.MinValue;
+        for (int i = 0; i < perm.Length; i++)
+        {
+            var value = perm[i];
+            if (value > lastPerm)
+            {
+                lastPerm = value;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        return Reshape(input, ShapeOf(tp));
     }
 }
