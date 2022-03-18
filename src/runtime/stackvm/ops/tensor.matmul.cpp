@@ -27,9 +27,13 @@ result<void> stackvm_runtime_function::visit(const tensor_matmul_op_t &op) noexc
     try_var(input_a, pop_addr());
 
     try_var(in_shape_a, module().shape_reg(op.rshape_src1));
+    try_var(in_stride_a, module().shape_reg(op.rstride_src1));
     try_var(in_shape_b, module().shape_reg(op.rshape_src2));
+    try_var(in_stride_b, module().shape_reg(op.rstride_src2));
+    try_var(out_shape, module().shape_reg(op.rshape_dest));
+    try_var(out_stride, module().shape_reg(op.rstride_dest));
 
     return kernels::matmul(reinterpret_cast<const float *>(input_a), reinterpret_cast<const float *>(input_b),
-        reinterpret_cast<const float *>(bias), reinterpret_cast<float *>(output), in_shape_a, in_shape_b,
-        { op.fused_clamp_low, op.fused_clamp_high });
+        reinterpret_cast<const float *>(bias), reinterpret_cast<float *>(output), in_shape_a, in_stride_a,
+        in_shape_b, in_stride_b, out_shape, out_stride, { op.fused_clamp_low, op.fused_clamp_high });
 }

@@ -34,7 +34,6 @@
 #include <nncase/transforms/neutral/fuse_unary.h>
 #include <nncase/transforms/neutral/fused_unary_to_lookup1d.h>
 #include <nncase/transforms/neutral/global_reduce_window_to_reduce.h>
-#include <nncase/transforms/neutral/lstm_transform.h>
 #include <nncase/transforms/neutral/matmul_to_conv2d.h>
 #include <nncase/transforms/neutral/quantize_motion.h>
 #include <nncase/transforms/neutral/remove_binary.h>
@@ -121,6 +120,7 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     pass.emplace<transpose_concat_motion_transform>();
     pass.emplace<transpose_pad_motion_transform>();
     pass.emplace<transpose_clamp_motion_transform>();
+    pass.emplace<transpose_sigmoid_motion_transform>();
     pass.emplace<bitcast_clamp_motion_transform>();
 
     pass.emplace<fuse_clamp_conv2d_transform>();
@@ -182,34 +182,30 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
 
     if (type == runtime::stackvm::stackvm_module_type)
     {
-        //lstm_transform
-        {
-            transform_pass p("lstm_transform");
-            p.emplace<fold_constant_transform>();
-            p.emplace<lstm_transform>();
-            pass_mgr.add_pass(std::move(p));
-        }
-        //matmul to conv2d
+        // matmul to conv2d
         {
             transform_pass p("matmul_to_conv2d");
+            p.emplace<fold_bitcast_transform>();
+            p.emplace<fold_nop_bitcast_transform>();
+            p.emplace<fold_constant_transform>();
             p.emplace<matmul_to_conv2d_transform>();
             pass_mgr.add_pass(std::move(p));
         }
 
-        //fold_pad_conv
+        // fold_pad_conv
         {
             transform_pass p("fold_pad_conv");
             fold_pad_conv_transform(p, true);
             pass_mgr.add_pass(std::move(p));
         }
-        //fold_dilated_conv
+        // fold_dilated_conv
         {
             transform_pass p("fold_dilated_conv");
             fold_dilated_conv_transform(p, true);
             pass_mgr.add_pass(std::move(p));
         }
 
-        //target_independent_pass
+        // target_independent_pass
         {
             transform_pass p("target_independent_pass");
             add_default_transforms(p, true);

@@ -23,12 +23,20 @@ using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::reference;
 
 template result<void> reference::matmul<float>(const float *input_a, const float *input_b, const float *bias, float *output,
-    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_b_shape, value_range<float> fused_activation) noexcept;
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
+    value_range<float> fused_activation) noexcept;
 
 template <typename T>
 result<void> reference::matmul(const T *input_a, const T *input_b, const T *bias, T *output,
-    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_b_shape, value_range<float> fused_activation) noexcept
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
+    value_range<float> fused_activation) noexcept
 {
+    (void)in_a_strides;
+    (void)in_b_strides;
+    (void)out_shape;
+    (void)out_strides;
     int32_t a_rows = static_cast<int32_t>(in_a_shape[0]);
     int32_t a_cols = static_cast<int32_t>(in_a_shape[1]);
     int32_t b_cols = static_cast<int32_t>(in_b_shape[1]);
