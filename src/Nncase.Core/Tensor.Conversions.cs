@@ -168,6 +168,12 @@ public partial class Tensor
     public static implicit operator Tensor(ReadOnlySpan<bool> value) => FromSpan(value);
 
     /// <summary>
+    /// Create Tensor from an <see cref="Array"/>.
+    /// </summary>
+    /// <param name="value">Value.</param>
+    public static implicit operator Tensor(Array value) => FromArray(value);
+
+    /// <summary>
     /// Create value from a <see cref="Tensor"/>.
     /// </summary>
     /// <param name="tensor">Tensor.</param>

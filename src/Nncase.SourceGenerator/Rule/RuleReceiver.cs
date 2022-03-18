@@ -27,6 +27,7 @@ internal class RuleReceiver : ISyntaxContextReceiver
     public readonly List<RuleCandidate> Candidates = new();
 
     public INamedTypeSymbol? ExprSymobl;
+    public INamedTypeSymbol? TensorSymobl;
     public INamedTypeSymbol? IMatchResultSymobl;
     public INamedTypeSymbol? IRewriteRuleSymbol;
 
@@ -34,6 +35,7 @@ internal class RuleReceiver : ISyntaxContextReceiver
     {
         IRewriteRuleSymbol ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Transform.IRewriteRule")!;
         ExprSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Expr");
+        TensorSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Tensor");
         IMatchResultSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.PatternMatch.IMatchResult");
 
         var compilation = ctx.SemanticModel.Compilation;
@@ -57,6 +59,7 @@ internal class RuleReceiver : ISyntaxContextReceiver
                   && (m.Parameters.All(
                       p => SymbolEqualityComparer.Default.Equals(p.Type, IMatchResultSymobl)
                            || p.Type.IsInheritFrom(ExprSymobl)
+                           || p.Type.IsInheritFrom(TensorSymobl)
                            || (p.Type is INamedTypeSymbol { IsGenericType: true } gentype && gentype.TypeArguments.Any(t => t.IsInheritFrom(ExprSymobl)))
                       ))).ToArray();
                 if (methods.Length == 0)

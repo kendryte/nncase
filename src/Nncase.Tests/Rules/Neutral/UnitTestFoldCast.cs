@@ -30,12 +30,40 @@ public class UnitTestFoldCast
         return path;
     }
 
-    [Fact]
-    public void TestFoldTwoCasts()
+    public static IEnumerable<object[]> TestFoldTwoCastsPositiveData =>
+        new[]
+        {
+            new[] { DataTypes.Int8, DataTypes.Int16 },
+            new[] { DataTypes.Int8, DataTypes.Int32 },
+        };
+
+    [Theory]
+    [MemberData(nameof(TestFoldTwoCastsPositiveData))]
+    public void TestFoldTwoCastsPositive(DataType preAndPostType, DataType middleType)
     {
-        var a = Random.Normal(DataTypes.Int8, 0, 1, 0, new[] { 1, 3, 8, 8 });
-        var rootPre = Tensors.Cast(Tensors.Cast(a, DataTypes.Int32), DataTypes.Int8);
+        var a = Random.Normal(preAndPostType, 0, 1, 0, new[] { 1, 3, 8, 8 });
+        var rootPre = Tensors.Cast(Tensors.Cast(a, middleType), preAndPostType);
         var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoCasts() }, passOptions);
+
+        Assert.NotEqual(rootPre, rootPost);
+        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+    }
+
+    public static IEnumerable<object[]> TestFoldNopCastPositiveData =>
+        new[]
+        {
+            new[] { DataTypes.Int8 },
+            new[] { DataTypes.Int16 },
+            new[] { DataTypes.Int32 },
+        };
+
+    [Theory]
+    [MemberData(nameof(TestFoldNopCastPositiveData))]
+    public void TestFoldNopCastPositive(DataType dataType)
+    {
+        var a = Random.Normal(dataType, 0, 1, 0, new[] { 1, 3, 8, 8 });
+        var rootPre = Tensors.Cast(a, dataType);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopCast() }, passOptions);
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));

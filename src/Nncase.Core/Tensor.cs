@@ -299,6 +299,30 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     }
 
     /// <summary>
+    /// Create tensor from an array.
+    /// </summary>
+    /// <param name="array">Array.</param>
+    /// <returns>Created tensor.</returns>
+    public static unsafe Tensor FromArray(Array array)
+    {
+        var elemType = array.GetType().GetElementType()!;
+        var dims = new int[array.Rank];
+        for (int i = 0; i < array.Rank; i++)
+        {
+            dims[i] = array.GetLength(i);
+        }
+
+        var tensor = (Tensor)_tensorCreatorFunc.MakeGenericMethod(elemType).Invoke(null, new object[] { dims })!;
+        var dest = tensor.BytesBuffer;
+        fixed (byte* src = &MemoryMarshal.GetArrayDataReference(array))
+        {
+            new Span<byte>(src, dest.Length).CopyTo(dest);
+        }
+
+        return tensor;
+    }
+
+    /// <summary>
     /// Create tensor from a ulong address.
     /// </summary>
     /// <typeparam name="T">CLR type.</typeparam>
