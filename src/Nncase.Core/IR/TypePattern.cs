@@ -91,7 +91,13 @@ namespace Nncase.IR
         /// the tensor has FixedShape
         /// </summary>
         /// <returns>TypePattern.</returns>
-        public static TypePattern HasFixedShape() => IsShape(shape => shape.IsFixed, "IsFixedShape");
+        public static TypePattern HasFixedShape() => IsShape(shape => shape.IsFixed, "HasFixedShape");
+
+        /// <summary>
+        /// the tensor has FixedShape
+        /// </summary>
+        /// <returns>TypePattern.</returns>
+        public static TypePattern HasRank() => IsShape(shape => shape.IsRanked, "HasRank");
 
         /// <summary>
         /// is target shape

@@ -36,8 +36,17 @@ internal class RuleGenerator : ISourceGenerator
                      $"Parameter Name Can Not Be result."));
                     return;
                 }
+
+                string rightExpr = parameterSymbol.Type switch
+                {
+                    INamedTypeSymbol { IsGenericType: true, IsReferenceType: true } x when x.IsInheritFrom(receiver.TensorSymobl) && x.Name == "Tensor" => $"((Nncase.IR.TensorConst)result[\"{parameterSymbol.Name}\"]).Value.Cast<{x.TypeArguments[0].ToDisplayString()}>()",
+                    IArrayTypeSymbol { ElementType: { IsUnmanagedType: true, IsValueType: true } e } x => $"((Nncase.IR.TensorConst)result[\"{parameterSymbol.Name}\"]).Value.ToArray<{e.ToDisplayString()}>()",
+                    { IsReferenceType: true } x when x.IsInheritFrom(receiver.ExprSymobl) => $"({ parameterSymbol.Type.ToDisplayString() })result[\"{parameterSymbol.Name}\"]",
+                    _ => throw new NotSupportedException($"Convert {parameterSymbol.Name} {parameterSymbol.Type.ToDisplayString()} For IRewriteRule Impl!")
+                };
+
                 statements.Add(
-                  ParseStatement($"var {parameterSymbol.Name} = ({parameterSymbol.Type.ToDisplayString()})result[\"{parameterSymbol.Name}\"];")
+                    ParseStatement($"var {parameterSymbol.Name} = {rightExpr};")
                 );
             }
             statements.Add(
