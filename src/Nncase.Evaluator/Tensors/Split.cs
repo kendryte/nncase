@@ -23,7 +23,8 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>
         var input = context.GetOrtArgumentValue(target, Split.Input);
         var split = context.GetOrtArgumentValue(target, Split.Sections);
         var axis = context.GetArgumentValueAsScalar<long>(target, Split.Axis);
-        return Value.FromTensors(OrtKI.Split(input, split, axis).Select(t => t.ToTensor()).ToArray());
+        var result = OrtKI.Split(input, split, axis);
+        return Value.FromTensors(result.Select(t => t.ToTensor()).ToArray());
     }
 
     /// <inheritdoc/>
@@ -38,8 +39,9 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>
         if (context.GetArgument(target, Split.Axis) is TensorConst axis_con &&
             context.GetArgument(target, Split.Sections) is TensorConst sections_con)
         {
-            var axis_v = axis_con.Value.ToScalar<int>();
+            var axis_v = Util.PositiveIndex(axis_con.Value.ToScalar<int>(), input.Shape.Rank);
             var sections_v = sections_con.Value.Cast<int>();
+            
             var inshape = input.Shape.ToArray();
             if (inshape[axis_v] == Dimension.Unknown)
             {

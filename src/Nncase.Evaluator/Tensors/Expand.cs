@@ -22,7 +22,7 @@ public class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>
     public IValue Visit(IEvaluateContext context, Expand expand)
     {
         var input = context.GetOrtArgumentValue(expand, Expand.Input);
-        var shape = context.GetOrtArgumentValue(expand, Expand.Shape);
+        var shape = context.GetInt64OrtTensorArgumentValue(expand, Expand.Shape);
         return OrtKI.Expand(input, shape).ToValue();
     }
 

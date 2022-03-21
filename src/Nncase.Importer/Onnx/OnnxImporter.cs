@@ -11,6 +11,7 @@ using Nncase.IR;
 using Google.Protobuf;
 using LanguageExt;
 using Onnx;
+using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Importer
 {
@@ -322,8 +323,14 @@ namespace Nncase.Importer
 
             if (output is Expr expr)
             {
-                Debug.Assert(op.Output.Count == 1, "Op outputs length should be 1.");
-                _outputTensors.Add(op.Output[0], expr);
+                if (op.Output.Count == 1)
+                {
+                    _outputTensors.Add(op.Output[0], expr);
+                }
+                for (int i = 0; i < op.Output.Count; i++)
+                {
+                    _outputTensors.Add(op.Output[i], IR.F.Tensors.GetItem(expr, i));
+                }
             }
             else if (output is IReadOnlyList<Expr> exprList)
             {
