@@ -300,6 +300,40 @@ inline shape_t get_strided_slice_output_shape(const axis_t &begin, const axis_t 
     return new_shape.size() ? new_shape : shape_t { 1 };
 }
 
+inline shape_t get_matmul_output_shape(const shape_t &input_a_shape, const shape_t &input_b_shape)
+{
+    shape_t b_shape = input_b_shape;
+    b_shape[b_shape.size() - 2] = input_a_shape[input_a_shape.size() - 2];
+    b_shape[b_shape.size() - 1] = input_a_shape[input_a_shape.size() - 1];
+    shape_t out_shape;
+
+    const auto dest_dims = (int32_t)std::max(input_a_shape.size(), b_shape.size());
+    const auto in_a_ext = dest_dims - (int32_t)input_a_shape.size();
+    const auto in_b_ext = dest_dims - (int32_t)b_shape.size();
+
+    for (int32_t i = 0; i < dest_dims; i++)
+    {
+        const auto in_a_dim = i - (int32_t)in_a_ext;
+        const auto in_b_dim = i - (int32_t)in_b_ext;
+
+        const auto in_a = in_a_dim < 0 ? 1 : input_a_shape[in_a_dim];
+        const auto in_b = in_b_dim < 0 ? 1 : b_shape[in_b_dim];
+        if (in_a == in_b)
+            out_shape.push_back(in_a);
+        else if (in_a == 1)
+            out_shape.push_back(in_b);
+        else if (in_b == 1)
+            out_shape.push_back(in_a);
+        else
+            throw std::invalid_argument("inputs are not compatible to broadcast");
+    }
+
+    out_shape[out_shape.size() - 2] = input_a_shape[input_a_shape.size() - 2];
+    out_shape[out_shape.size() - 1] = input_b_shape.back();
+
+    return out_shape;
+}
+
 inline bool is_copy_slice(const axis_t &strides)
 {
     return std::all_of(strides.begin(), strides.end(), [](int32_t stride) { return stride == 1; });

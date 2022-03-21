@@ -182,16 +182,6 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
 
     if (type == runtime::stackvm::stackvm_module_type)
     {
-        // matmul to conv2d
-        {
-            transform_pass p("matmul_to_conv2d");
-            p.emplace<fold_bitcast_transform>();
-            p.emplace<fold_nop_bitcast_transform>();
-            p.emplace<fold_constant_transform>();
-            p.emplace<matmul_to_conv2d_transform>();
-            pass_mgr.add_pass(std::move(p));
-        }
-
         // fold_pad_conv
         {
             transform_pass p("fold_pad_conv");

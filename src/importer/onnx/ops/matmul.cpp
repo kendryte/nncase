@@ -115,7 +115,7 @@ void onnx_importer::convert_op_MatMul(const NodeProto &node)
     shape_t new_output_shape { 1, new_a_shape[1], new_b_shape[2] };
     new_output_shape[0] = new_a_shape[0] == 1 ? new_b_shape[0] : new_a_shape[0];
 
-    bitcast *bc_a = nullptr;
+    bitcast *bc_a = bc_a_3d;
     if (new_a_shape[0] == 1)
     {
         // reshape to 2D
@@ -125,7 +125,7 @@ void onnx_importer::convert_op_MatMul(const NodeProto &node)
         bc_a->input().connect(bc_a_3d->output());
     }
 
-    bitcast *bc_b = nullptr;
+    bitcast *bc_b = bc_b_3d;
     if (new_b_shape[0] == 1)
     {
         // reshape to 2D
@@ -135,6 +135,7 @@ void onnx_importer::convert_op_MatMul(const NodeProto &node)
         bc_b->input().connect(bc_b_3d->output());
     }
 
+#if 0
     // concat
     std::vector<ir::shape_t> concat_shape(new_output_shape[0], ir::shape_t { 1, new_output_shape[1], new_output_shape[2] });
     auto con = graph_.emplace<concat>(input_type, concat_shape, 0);
@@ -205,10 +206,26 @@ void onnx_importer::convert_op_MatMul(const NodeProto &node)
         con->input_at(i).connect(bc_mm_3d->output());
     }
 
+#else
+    // bias
+    auto b = bc_b->output().shape().back();
+    std::vector<float> bias_value(b, 0.f);
+    shape_t bias_shape = { b };
+    auto bias = graph_.emplace<constant>(dt_float32, bias_shape, bias_value);
+    bias->name(op_name + ".bias(MatMul)");
+
+    // matmul
+    auto mm = graph_.emplace<matmul>(bc_a->output().shape(), bc_b->output().shape(), value_range<float>::full());
+    mm->name(op_name + ".matmul(MatMul)");
+    mm->input_a().connect(bc_a->output());
+    mm->input_b().connect(bc_b->output());
+    mm->bias().connect(bias->output());
+#endif
+
     // reshape to output
-    auto bc_output = graph_.emplace<bitcast>(input_type, con->output().shape(), output_shape);
-    bc_output->name(op_name + ".bitcast_concat(MatMul)");
-    bc_output->input().connect(con->output());
+    auto bc_output = graph_.emplace<bitcast>(input_type, mm->output().shape(), output_shape);
+    bc_output->name(op_name + ".bitcast(MatMul)");
+    bc_output->input().connect(mm->output());
 
     input_tensors_.emplace(&bc_a_3d->input(), input_a);
     input_tensors_.emplace(&bc_b_3d->input(), input_b);

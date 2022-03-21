@@ -28,8 +28,8 @@ matmul::matmul(shape_t input_a_shape, shape_t input_b_shape, value_range<float> 
     //     throw std::invalid_argument("input a's cols must be equal to input b's rows");
     add_input("input_a", dt_float32, input_a_shape);
     add_input("input_b", dt_float32, input_b_shape);
-    add_input("bias", dt_float32, shape_t { input_b_shape[1] });
-    add_output("output", dt_float32, shape_t { input_a_shape[0], input_b_shape[1] });
+    add_input("bias", dt_float32, shape_t { input_b_shape.back() });
+    add_output("output", dt_float32, get_matmul_output_shape(input_a_shape, input_b_shape));
 }
 
 bool matmul::properties_equal(node &other) const
