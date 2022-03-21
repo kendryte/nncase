@@ -347,7 +347,7 @@ void quantize_b2s_motion_transform::process(transform_context &context)
     auto &old_b2s = static_cast<batch_to_space &>(*context.matched_nodes[1]);
 
     auto b2s = context.graph.emplace<batch_to_space>(output.type(), output.shape(), old_b2s.block_size_h(), old_b2s.block_size_w(),
-        old_b2s.strides(), old_b2s.begin(), old_b2s.end(), old_b2s.crop_h(), old_b2s.crop_w());
+        old_b2s.strides(), old_b2s.begin(), old_b2s.end(), old_b2s.crop_h(), old_b2s.crop_w(), old_b2s.real_block_size_h(), old_b2s.real_block_size_w());
     b2s->name(old_b2s.name());
     auto q = context.graph.emplace<quantize>(old_q.input().type(), b2s->output().shape(), old_q.output().type(), old_q.quant_param());
     q->name(old_q.name());
