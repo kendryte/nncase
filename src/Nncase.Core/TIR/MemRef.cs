@@ -29,13 +29,13 @@ public record Padding(int before, int After, int Interior = 0)
     /// zero pad.
     /// </summary>
     /// <returns></returns>
-    public static Padding zero() { return new(0, 0, 0); }
+    public static Padding Zero() { return new(0, 0, 0); }
 }
 
 public record Segment1D
 {
     public System.Range Range;
-    public Padding Pad;
+    public Padding Padding;
     public int Start => Range.Start.Value;
     public int End => Range.End.Value;
     public int Length
@@ -55,14 +55,14 @@ public record Segment1D
         if (range.End.IsFromEnd && !range.Equals(System.Range.All))
             throw new NotSupportedException("The Negative Slice For The Tensor.");
         Range = range;
-        Pad = padding;
+        Padding = padding;
     }
 
     public static Segment1D operator /(Segment1D seg, int scale)
     {
         if (seg.Range.Equals(System.Range.All))
             throw new ArgumentOutOfRangeException("The All Slice Can't Be Divide!");
-        return new(new(seg.Range.Start.Value / scale, seg.Range.End.Value / scale), seg.Pad);
+        return new(new(seg.Range.Start.Value / scale, seg.Range.End.Value / scale), seg.Padding);
     }
 
     public override string ToString()
@@ -72,7 +72,7 @@ public record Segment1D
 
     public static implicit operator Segment1D(System.Range range)
     {
-        return new(range, Padding.zero());
+        return new(range, Padding.Zero());
     }
 }
 
@@ -80,8 +80,8 @@ public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
 {
 
     readonly Segment1D[] _segments;
-    public Padding PadH => _segments[2].Pad;
-    public Padding PadW => _segments[3].Pad;
+    public Padding PadH => _segments[2].Padding;
+    public Padding PadW => _segments[3].Padding;
 
     public ReadOnlySpan<Segment1D> Segments => _segments;
 
@@ -131,7 +131,7 @@ public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
 }
 
 
-public record SelectedRange(int Start, int End)
+public record SelectedRange(int Start, int End, Padding Padding)
 {
     public SelectedRange Slice(Segment1D segment)
     {
@@ -139,7 +139,7 @@ public record SelectedRange(int Start, int End)
             return this with { };
         if (!(segment.Start >= Start && segment.End <= End))
             throw new NotSupportedException("!(segment.Start >= Start && segment.End <= End)");
-        return new(segment.Start, segment.End);
+        return new(segment.Start, segment.End, segment.Padding);
     }
 }
 
@@ -252,7 +252,7 @@ public record Buffer : Expr, IBufferView<Buffer>, IStructuralEquatable
 
         _shape = ((TensorType)elemType).Shape.ToValueArray();
         _stride = TensorUtilities.GetStrides(_shape).Select(s => s * DType.SizeInBytes).ToArray();
-        _selectedRanges = _shape.Select(s => new SelectedRange(0, s)).ToArray();
+        _selectedRanges = _shape.Select(s => new SelectedRange(0, s, Padding.Zero())).ToArray();
         IsSubView = false;
         Parent = this;
         RootParent = this;
@@ -319,17 +319,19 @@ public record Buffer : Expr, IBufferView<Buffer>, IStructuralEquatable
     public Expr Addr => IR.F.Buffer.DDrOf(RootParent);
 
     /// <summary>
+    /// get current Addr
+    /// </summary>
+    public Expr CurAddr => Addr + AddrOffset;
+
+    /// <summary>
     /// get the allocate basement.
     /// </summary>
     public Expr BaseMent => IR.F.Buffer.BaseMentOf(RootParent);
 
-    protected override Type EqualityContract => base.EqualityContract;
-
     /// <summary>
     /// get current buffer view Addr Offset
     /// </summary>
-    public int AddrOffset() => SelectedRanges.ToArray().Zip(Stride.ToArray()).Aggregate(0, (acc, t) => acc + t.Item1.Start * t.Item2);
-
+    public int AddrOffset => SelectedRanges.ToArray().Zip(Stride.ToArray()).Aggregate(0, (acc, t) => acc + t.Item1.Start * t.Item2);
 
     /// <inheritdoc/>
     public bool Equals(object? other, IEqualityComparer comparer)

@@ -17,6 +17,13 @@ public static class TensorUtilities
 {
     private const int StackallocMax = 16;
 
+    /// <summary>
+    /// get the product from the start index on the dimensions.
+    /// </summary>
+    /// <param name="dimensions"></param>
+    /// <param name="startIndex"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
     public static long GetProduct(ReadOnlySpan<int> dimensions, int startIndex = 0)
     {
         if (dimensions.Length == 0)
