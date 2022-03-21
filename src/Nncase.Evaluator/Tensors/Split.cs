@@ -21,7 +21,7 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>
     public IValue Visit(IEvaluateContext context, Split target)
     {
         var input = context.GetOrtArgumentValue(target, Split.Input);
-        var split = context.GetOrtArgumentValue(target, Split.Sections);
+        var split = context.GetInt64OrtTensorArgumentValue(target, Split.Sections);
         var axis = context.GetArgumentValueAsScalar<long>(target, Split.Axis);
         var result = OrtKI.Split(input, split, axis);
         return Value.FromTensors(result.Select(t => t.ToTensor()).ToArray());
