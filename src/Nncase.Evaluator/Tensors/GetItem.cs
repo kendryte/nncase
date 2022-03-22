@@ -12,53 +12,67 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="GetItem"/>.
 /// </summary>
-[EvaluatorGenerator, TypeInferGenerator]
+[EvaluatorGenerator]
+[TypeInferGenerator]
 public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<GetItem>
 {
-    private byte[] ObjectToByteArray(object obj)
-    {
-        if (obj == null)
-            return new byte[] { };
-        BinaryFormatter bf = new BinaryFormatter();
-        MemoryStream ms = new MemoryStream();
-        bf.Serialize(ms, obj);
-        return ms.ToArray();
-    }
-
-    Tensor Visit(IValue Input, int Index)
+    private Tensor Visit(IValue Input, int Index)
     {
         if (Input.Type is TensorType ttype)
         {
-            return Tensor.FromBytes(TensorType.Scalar(ttype.DType), ObjectToByteArray(Input.AsTensor()[Index]));
+            var tensor = Input.AsTensor();
+            if (tensor.Rank != 1)
+            {
+                throw new InvalidOperationException();
+            }
+
+            var elementSize = tensor.ElementType.SizeInBytes;
+            var src = tensor.BytesBuffer.Slice(elementSize * Index, elementSize);
+            return Tensor.FromBytes(TensorType.Scalar(ttype.DType), src);
         }
+
         return Input.AsTensors()[Index];
     }
 
-    IRType Visit(ITypeInferenceContext context, GetItem target, IRType Input)
+    private IRType Visit(ITypeInferenceContext context, GetItem target, IRType Input)
     {
         IRType ret = new InvalidType("Need Be Reset!");
         switch (Input)
         {
             case TensorType tensorType:
-                ret = TensorType.Scalar(tensorType.DType);
+                if (tensorType.Shape.Rank != 1)
+                {
+                    ret = new InvalidType($"The Input tensor's rank should be 1, but {tensorType.Shape.Rank}");
+                }
+                else
+                {
+                    ret = TensorType.Scalar(tensorType.DType);
+                }
+
                 break;
             case TupleType tupleType:
                 if (context.GetArgument(target, GetItem.Index) is TensorConst @const)
                 {
                     var index = @const.Value.ToScalar<int>();
                     if (index < tupleType.Count)
+                    {
                         ret = tupleType[index];
+                    }
                     else
+                    {
                         ret = new InvalidType($"The Input Tuple Count = {tupleType.Count}, But Index = {index}");
+                    }
                 }
                 else
                 {
                     ret = AnyType.Default;
                 }
+
                 break;
             default:
                 break;
         }
+
         return ret;
     }
 }
