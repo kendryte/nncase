@@ -22,7 +22,7 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>
     {
         var inputs = context.GetArgumentExpr(stack, Stack.Inputs);
         var axis = context.GetArgumentValueAsScalar<long>(stack, Stack.Axis);
-        var inputTensors = ((IR.Tuple)inputs).Select(x => context.GetOrtValue(x)).ToArray();
+        var inputTensors = ((IR.Tuple)inputs).Select(context.GetOrtValue).ToArray();
         return OrtKI.ConcatFromSequence(inputTensors, axis, inputTensors.Length).ToValue();
     }
 

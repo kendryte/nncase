@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using Nncase.IR;
 using Google.Protobuf;
+using Google.Protobuf.Collections;
 using LanguageExt;
 using Onnx;
 using Tuple = Nncase.IR.Tuple;
@@ -159,6 +160,15 @@ namespace Nncase.Importer
                         () => throw new InvalidDataException($"Cannot load tensor data (tensor:{id})."));
         }
 
+        private DataType GetInputDataType(NodeProto n, int index)
+        {
+            var id = n.Input[index];
+            return _graph.Input.Concat(_graph.ValueInfo)
+                .Find(x => x.Name == id)
+                .Match(GetDataType,
+                    () => throw new InvalidDataException($"Cannot load tensor data (tensor:{id})."));
+        }
+
         private Expr GetSingleInputExpr(NodeProto n)
         {
             return GetInputExpr(n, 0);
@@ -177,6 +187,11 @@ namespace Nncase.Importer
             }
             
             var id = n.Input[index];
+            if (id == "")
+            {
+                return Option<Expr>.None;
+            }
+            
             if (_outputTensors.TryGetValue(id, out var expr))
             {
                 return expr;
@@ -262,6 +277,7 @@ namespace Nncase.Importer
                 "Log" => VisitUnary(op, UnaryOp.Log),
                 "LogSoftmax" => VisitLogSoftmax(op),
                 "LRN" => VisitLRN(op),
+                "LSTM" => VisitLSTM(op),
                 "MatMul" => VisitMatMul(op),
                 "MaxPool" => VisitReduceWindow2D(op, ReduceOp.Max, float.MinValue),
                 "Max" => VisitBinary(op, BinaryOp.Max),
@@ -327,9 +343,12 @@ namespace Nncase.Importer
                 {
                     _outputTensors.Add(op.Output[0], expr);
                 }
-                for (int i = 0; i < op.Output.Count; i++)
+                else
                 {
-                    _outputTensors.Add(op.Output[i], IR.F.Tensors.GetItem(expr, i));
+                    for (int i = 0; i < op.Output.Count; i++)
+                    {
+                        _outputTensors.Add(op.Output[i], IR.F.Tensors.GetItem(expr, i));
+                    }
                 }
             }
             else if (output is IReadOnlyList<Expr> exprList)
