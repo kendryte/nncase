@@ -71,3 +71,4 @@
 | SQUARED_DIFFERENCE | ✅ |
 | LOG_SOFTMAX | ✅ |
 | SPLIT | ✅ |
+| HARD_SWISH | ✅ |

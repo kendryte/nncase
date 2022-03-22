@@ -25,6 +25,7 @@
 #include <nncase/transforms/neutral/fold_conv2d_binary.h>
 #include <nncase/transforms/neutral/fold_convert.h>
 #include <nncase/transforms/neutral/fold_dilated_conv2d.h>
+#include <nncase/transforms/neutral/fold_matmul_add.h>
 #include <nncase/transforms/neutral/fold_pad.h>
 #include <nncase/transforms/neutral/fold_quantize.h>
 #include <nncase/transforms/neutral/fold_slice.h>
@@ -140,6 +141,8 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     pass.emplace<split_to_slice_transform>();
     pass.emplace<fold_transpose_transform>();
     pass.emplace<fold_nop_transpose_transform>();
+
+    pass.emplace<fold_matmul_add_transform>();
 }
 
 void neutral_target::fold_pad_conv_transform(ir::transforms::transform_pass &pass, [[maybe_unused]] bool add_constant_folding)

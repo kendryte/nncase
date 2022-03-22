@@ -33,9 +33,9 @@ result<void> reference::matmul(const T *input_a, const T *input_b, const T *bias
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
     value_range<float> fused_activation) noexcept
 {
-    int32_t a_rows = static_cast<int32_t>(in_a_shape[in_a_shape.size() - 2]);
-    int32_t a_cols = static_cast<int32_t>(in_a_shape.back());
-    int32_t b_cols = static_cast<int32_t>(in_b_shape.back());
+    size_t M = in_a_shape[in_a_shape.size() - 2];
+    size_t K = in_a_shape.back();
+    size_t N = in_b_shape.back();
 
     // batch
     size_t batch_a = 1;
@@ -58,23 +58,20 @@ result<void> reference::matmul(const T *input_a, const T *input_b, const T *bias
     const T *pb = input_b;
     T *pout = output;
 
-    for (size_t i = 0; i < batch_max; i++)
+    for (size_t b = 0; b < batch_max; b++)
     {
-        // 2D matmul
-        for (int32_t oy = 0; oy < a_rows; oy++)
+        for (size_t m = 0; m < M; m++)
         {
-            for (int32_t ox = 0; ox < b_cols; ox++)
+            for (size_t n = 0; n < N; n++)
             {
-                float value = bias[ox];
+                float value = bias[n];
 
-                for (int32_t i = 0; i < a_cols; i++)
+                for (size_t k = 0; k < K; k++)
                 {
-                    const auto a = pa[oy * a_cols + i];
-                    const auto b = pb[i * b_cols + ox];
-                    value += a * b;
+                    value += pa[m * K + k] * pb[k * N + n];
                 }
 
-                pout[oy * b_cols + ox] = nncase::kernels::detail::apply_activation(value, fused_activation);
+                pout[m * N + n] = nncase::kernels::detail::apply_activation(value, fused_activation);
             }
         }
 

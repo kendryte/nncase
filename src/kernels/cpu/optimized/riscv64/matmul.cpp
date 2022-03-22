@@ -62,10 +62,6 @@ result<void> optimized_matmul_impl(const float *input_a, const float *input_b, c
     const float *p_batch_b = input_b;
     float *p_batch_out = output;
 
-    size_t count = compute_size(out_shape);
-    memset((void *)output, 0x00, count * sizeof(float));
-    float *pout = output;
-
     size_t vl = 0;
     for (size_t i = 0; i < batch_max; i++)
     {
@@ -75,57 +71,36 @@ result<void> optimized_matmul_impl(const float *input_a, const float *input_b, c
         {
             const float *pb = p_batch_b;
             float *pc = ptr_out;
+            const float *pbias = bias;
             for (size_t n = N; n; n -= vl)
             {
                 vl = vsetvl_e32m8(n);
                 const float *pa = ptr_a;
                 const float *pb_vl = pb;
-                auto acc = vle32_v_f32m8(pc, vl);
+
+                // init acc with bias
+                auto acc = vle32_v_f32m8(pbias, vl);
+
                 for (size_t k = 0; k < K; k++)
                 {
                     auto vb = vle32_v_f32m8(pb_vl, vl);
-                    acc = vfmacc_vf_f32m8(acc, *pa, vb, vl);
+                    acc = vfmacc_vf_f32m8(acc, *pa++, vb, vl);
                     pb_vl += N;
-                    pa++;
                 }
+
+                // update acc with act
+                acc = vfmax_vf_f32m8(vfmin_vf_f32m8(acc, fused_activation.max, vl), fused_activation.min, vl);
+
                 vse32_v_f32m8(pc, acc, vl);
                 pb += vl;
                 pc += vl;
+                pbias += vl;
             }
             ptr_a += K;
             ptr_out += N;
         }
         p_batch_a += step_a;
         p_batch_b += step_b;
-        p_batch_out += step_out;
-    }
-
-    p_batch_out = output;
-    for (size_t i = 0; i < batch_max; i++)
-    {
-        pout = p_batch_out;
-        for (size_t m = 0; m < M; m++)
-        {
-            const float *pbias = bias;
-            size_t n = N;
-            while (n)
-            {
-                size_t vl = vsetvl_e32m8(n);
-
-                // bias
-                auto vbias = vle32_v_f32m8(pbias, vl);
-                auto vout = vle32_v_f32m8(pout, vl);
-                vout = vfadd_vv_f32m8(vout, vbias, vl);
-
-                // fused_activation
-                vout = vfmax_vf_f32m8(vfmin_vf_f32m8(vout, fused_activation.max, vl), fused_activation.min, vl);
-                vse32_v_f32m8(pout, vout, vl);
-
-                pbias += vl;
-                pout += vl;
-                n -= vl;
-            }
-        }
         p_batch_out += step_out;
     }
 
