@@ -52,7 +52,7 @@ public sealed partial class FoldTwoTransposes : IRewriteRule
     {
         if (perm1.CheckedShape.Rank is int rank && rank == perm2.CheckedShape.Rank)
         {
-            var newPerm = new Expr[rank];
+            var newPerm = new Expr[perm2.CheckedShape[0].FixedValue];
             for (int i = 0; i < newPerm.Length; i++)
             {
                 newPerm[i] = perm1[perm2[i]];
@@ -82,7 +82,7 @@ public sealed partial class TransposeToReshape : IRewriteRule
     {
         // If all significant dims remains ascending order, it can be converted to a reshape.
         var inShape = input.CheckedShape;
-        var sigAxes = new List<int>();
+        var sigAxes = new HashSet<int>();
         for (int i = 0; i < inShape.Rank; i++)
         {
             if (inShape[i] != 1)
@@ -95,13 +95,16 @@ public sealed partial class TransposeToReshape : IRewriteRule
         for (int i = 0; i < perm.Length; i++)
         {
             var value = perm[i];
-            if (value > lastPerm)
+            if (sigAxes.Contains(value))
             {
-                lastPerm = value;
-            }
-            else
-            {
-                return null;
+                if (value > lastPerm)
+                {
+                    lastPerm = value;
+                }
+                else
+                {
+                    return null;
+                }
             }
         }
 
