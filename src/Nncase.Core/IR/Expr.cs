@@ -57,10 +57,8 @@ public abstract partial record Expr
         return _hashcode ??= EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
     }
 
-    /// <summary>
-    /// get the item from the expr.
-    /// </summary>
-    /// <param name="index"> expr. </param>
-    /// <returns> expr. </returns>
-    public Expr this[Expr index] => F.Tensors.GetItem(this, index);
+    protected virtual bool PrintMembers(System.Text.StringBuilder builder)
+    {
+        return false;
+    }
 }

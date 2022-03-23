@@ -38,6 +38,8 @@ namespace Nncase.IR
         public static TypePattern operator &(TypePattern lhs, TypePattern rhs) => new TypePattern(x => lhs.Cond(x) && rhs.Cond(x), $"<{lhs.Reason}> And <{rhs.Reason}>");
 
         public static TypePattern operator |(TypePattern lhs, TypePattern rhs) => new TypePattern(x => lhs.Cond(x) || rhs.Cond(x), $"<{lhs.Reason}> Or <{rhs.Reason}>");
+
+        public static TypePattern operator !(TypePattern lhs) => new TypePattern(x => !lhs.Cond(x), $"<Not {lhs.Reason}>");
     }
 
     public static partial class TypePatternUtility
@@ -81,7 +83,7 @@ namespace Nncase.IR
         public static TypePattern IsShape(Func<Shape, bool> shapeCond, string reason) => new TypePattern(x => x switch
         {
 
-            TensorType ttype => ttype.IsTensor && shapeCond(ttype.Shape),
+            TensorType ttype => shapeCond(ttype.Shape),
             _ => false,
         }, reason);
 
@@ -102,7 +104,7 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="target_shape"></param>
         /// <returns></returns>
-        public static TypePattern IsShape(Shape target_shape) => IsShape(
+        public static TypePattern HasShape(Shape target_shape) => IsShape(
           inshape =>
             inshape.Rank == target_shape.Rank &&
             inshape.Zip(target_shape).All(
@@ -116,7 +118,7 @@ namespace Nncase.IR
         /// <param name="cond"></param>
         /// <param name="reason"></param>
         /// <returns></returns>
-        public static TypePattern IsRank(Func<int, bool> cond, string reason) => IsShape(
+        public static TypePattern HasRank(Func<int, bool> cond, string reason) => IsShape(
           inshape => cond(inshape.Rank), reason);
 
         /// <summary>
@@ -124,7 +126,7 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="rank"></param>
         /// <returns></returns>
-        public static TypePattern IsRank(int rank) => IsRank(r => r == rank, $"Rank = {rank}");
+        public static TypePattern HasRank(int rank) => HasRank(r => r == rank, $"Rank = {rank}");
 
         /// <summary>
         /// is tensor
@@ -164,7 +166,7 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="dataType"></param>
         /// <returns></returns>
-        public static TypePattern IsDataType(DataType dataType) => new TypePattern(
+        public static TypePattern HasDataType(DataType dataType) => new TypePattern(
           x => x switch
           {
               TensorType ttype => ttype.DType == dataType,

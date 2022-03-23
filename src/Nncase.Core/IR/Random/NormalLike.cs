@@ -36,5 +36,5 @@ public sealed record NormalLike(DataType Type) : Op
     /// <summary>
     /// Gets shape.
     /// </summary>
-    public static readonly ParameterInfo Shape = new(typeof(NormalLike), 4, "shape", IsIntegral() & IsRank(1));
+    public static readonly ParameterInfo Shape = new(typeof(NormalLike), 4, "shape", IsIntegral() & HasRank(1));
 }

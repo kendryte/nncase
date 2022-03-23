@@ -15,7 +15,7 @@ public sealed record ReduceWindow2D(ReduceOp ReduceOp) : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(ReduceWindow2D), 0, "input", IsRank(4));
+    public static readonly ParameterInfo Input = new(typeof(ReduceWindow2D), 0, "input", HasRank(4));
 
     /// <summary>
     /// Get initial value.
@@ -25,17 +25,17 @@ public sealed record ReduceWindow2D(ReduceOp ReduceOp) : Op
     /// <summary>
     /// Get filter.
     /// </summary>
-    public static readonly ParameterInfo Filter = new(typeof(ReduceWindow2D), 2, "filter", IsRank(1) & IsIntegral());
+    public static readonly ParameterInfo Filter = new(typeof(ReduceWindow2D), 2, "filter", HasRank(1) & IsIntegral());
 
     /// <summary>
     /// Gets Stride.
     /// </summary>
-    public static readonly ParameterInfo Stride = new(typeof(ReduceWindow2D), 3, "stride", IsRank(1) & IsIntegral());
+    public static readonly ParameterInfo Stride = new(typeof(ReduceWindow2D), 3, "stride", HasRank(1) & IsIntegral());
 
     /// <summary>
     /// Gets Padding.
     /// </summary>
-    public static readonly ParameterInfo Padding = new(typeof(ReduceWindow2D), 4, "padding", IsRank(2) & IsIntegral());
+    public static readonly ParameterInfo Padding = new(typeof(ReduceWindow2D), 4, "padding", HasRank(2) & IsIntegral());
 
     /// <summary>
     /// Gets CeilMode.

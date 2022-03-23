@@ -20,7 +20,7 @@ public sealed record ReverseSequence() : Op
     /// <summary>
     /// Gets seq_lens.
     /// </summary>
-    public static readonly ParameterInfo SeqLens = new(typeof(ReverseSequence), 1, "seq_lens", IsIntegral() & IsRank(1));
+    public static readonly ParameterInfo SeqLens = new(typeof(ReverseSequence), 1, "seq_lens", IsIntegral() & HasRank(1));
 
     /// <summary>
     /// Gets batch_axis.

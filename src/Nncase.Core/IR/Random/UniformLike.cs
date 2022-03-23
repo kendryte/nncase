@@ -36,5 +36,5 @@ public sealed record UniformLike(DataType Type) : Op
     /// <summary>
     /// Gets shape.
     /// </summary>
-    public static readonly ParameterInfo Shape = new(typeof(UniformLike), 4, "shape", IsIntegral() & IsRank(1));
+    public static readonly ParameterInfo Shape = new(typeof(UniformLike), 4, "shape", IsIntegral() & HasRank(1));
 }

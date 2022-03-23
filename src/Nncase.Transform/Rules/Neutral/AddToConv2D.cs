@@ -25,8 +25,8 @@ public sealed partial class AddToConv2D : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = Add(
-        IsWildcard("a") with { TypePattern = IsRank(4) },
-        IsWildcard("b") with { TypePattern = IsRank(4) });
+        IsWildcard("a") with { TypePattern = HasRank(4) },
+        IsWildcard("b") with { TypePattern = HasRank(4) });
 
     private Expr? GetReplace(Expr a, Expr b)
     {

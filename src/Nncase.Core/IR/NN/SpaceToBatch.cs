@@ -27,11 +27,11 @@ public sealed record SpaceToBatch() : Op
     /// Gets block shape.
     /// </summary>
     public static readonly ParameterInfo BlockShape = new(typeof(SpaceToBatch), 1, "block_shape",
-      IsRank(1) & IsIntegral());
+      HasRank(1) & IsIntegral());
 
     /// <summary>
     /// Gets paddings.
     /// </summary>
     public static readonly ParameterInfo Paddings = new(typeof(SpaceToBatch), 2, "paddings",
-      IsShape(new[] { Dimension.Unknown, 2 }) & IsIntegral());
+      HasShape(new[] { Dimension.Unknown, 2 }) & IsIntegral());
 }

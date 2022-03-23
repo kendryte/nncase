@@ -20,7 +20,7 @@ public sealed record Reduce(ReduceOp ReduceOp) : Op
     /// <summary>
     /// Gets axis.
     /// </summary>
-    public static readonly ParameterInfo Axis = new(typeof(Reduce), 1, "axis", IsIntegral() & IsRank(1));
+    public static readonly ParameterInfo Axis = new(typeof(Reduce), 1, "axis", IsIntegral() & HasRank(1));
 
     /// <summary>
     /// Gets initial value.

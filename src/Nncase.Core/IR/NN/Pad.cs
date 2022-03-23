@@ -22,7 +22,7 @@ public sealed record Pad(PadMode PadMode) : Op
     /// pads , shape is [channels, 2], eg. [[1,1],
     ///                                     [2,2]]  mean pad shape [1,2,3,4] =>  [1,2,5,8].
     /// </summary>
-    public static readonly ParameterInfo Pads = new(typeof(Pad), 1, "pads", IsRank(2) & IsIntegral());
+    public static readonly ParameterInfo Pads = new(typeof(Pad), 1, "pads", HasRank(2) & IsIntegral());
 
     /// <summary>
     /// float pad value.
