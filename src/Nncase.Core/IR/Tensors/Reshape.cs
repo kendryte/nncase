@@ -27,5 +27,5 @@ public sealed record Reshape() : Op
     /// <summary>
     /// Gets shape.
     /// </summary>
-    public static readonly ParameterInfo Shape = new(typeof(Reshape), 1, "shape", IsRank(1));
+    public static readonly ParameterInfo Shape = new(typeof(Reshape), 1, "shape", HasRank(1));
 }

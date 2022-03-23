@@ -21,10 +21,10 @@ public sealed record GetItem() : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(GetItem), 0, "input", (IsTensor() & IsRank(1)) | IsTuple());
+    public static readonly ParameterInfo Input = new(typeof(GetItem), 0, "input", IsTensor() | (IsTuple() & !IsUnit()));
 
     /// <summary>
     /// Gets index.
     /// </summary>
-    public static readonly ParameterInfo Index = new(typeof(GetItem), 1, "index", IsIntegralScalar());
+    public static readonly ParameterInfo Index = new(typeof(GetItem), 1, "index", IsIntegral() & (HasRank(0) | HasRank(1)));
 }

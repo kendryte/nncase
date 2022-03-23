@@ -31,5 +31,5 @@ public sealed record Split() : Op
     /// <summary>
     /// Gets sections.
     /// </summary>
-    public static readonly ParameterInfo Sections = new(typeof(Split), 2, "sections", IsIntegral() & IsRank(1));
+    public static readonly ParameterInfo Sections = new(typeof(Split), 2, "sections", IsIntegral() & HasRank(1));
 }

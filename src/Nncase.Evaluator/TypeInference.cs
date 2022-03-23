@@ -206,7 +206,7 @@ public static class TypeInference
         }
         else
         {
-            return new InvalidType("Pad paddings is dynamic, can't infer shape");
+            return AnyType.Default;
         }
     }
 

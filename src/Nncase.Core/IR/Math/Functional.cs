@@ -217,6 +217,14 @@ namespace Nncase.IR.F
         public static Call Min(Expr lhs, Expr rhs) => Binary(BinaryOp.Min, lhs, rhs);
 
         /// <summary>
+        /// Call matMul.
+        /// </summary>
+        /// <param name="lhs">Left operand.</param>
+        /// <param name="rhs">Right operand.</param>
+        /// <returns>Result expression.</returns>
+        public static Call MatMul(Expr lhs, Expr rhs) => new(new MatMul(), lhs, rhs);
+
+        /// <summary>
         /// Call max.
         /// </summary>
         /// <param name="lhs">Left operand.</param>

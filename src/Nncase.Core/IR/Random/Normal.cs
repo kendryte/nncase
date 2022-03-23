@@ -31,5 +31,5 @@ public sealed record Normal(DataType Type) : Op
     /// <summary>
     /// Gets shape.
     /// </summary>
-    public static readonly ParameterInfo Shape = new(typeof(Normal), 3, "shape", IsIntegral() & IsRank(1));
+    public static readonly ParameterInfo Shape = new(typeof(Normal), 3, "shape", IsIntegral() & HasRank(1));
 }

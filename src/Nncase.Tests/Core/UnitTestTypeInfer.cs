@@ -30,7 +30,7 @@ public class UnitTestTypeInfer : IHostFixtrue
         var c = a + b;
         var ctype = CompilerServices.InferenceType(c);
 
-        Assert.True(IsShape(new[] { 1, 5, 3 }).MatchLeaf(c.CheckedType));
+        Assert.True(HasShape(new[] { 1, 5, 3 }).MatchLeaf(c.CheckedType));
     }
 
     [Fact]

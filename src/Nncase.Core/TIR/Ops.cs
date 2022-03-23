@@ -24,7 +24,7 @@ public record Load() : Op
     /// <summary>
     /// Gets index.
     /// </summary>
-    public static readonly ParameterInfo Index = new(typeof(Load), 1, "index", IsDataType(DataTypes.Int32) & (IsScalar() | IsRank(1)));
+    public static readonly ParameterInfo Index = new(typeof(Load), 1, "index", HasDataType(DataTypes.Int32) & (IsScalar() | HasRank(1)));
 }
 
 /// <summary>
@@ -35,12 +35,12 @@ public record Ramp(int Lanes) : Op
     /// <summary>
     /// Gets offset.
     /// </summary>
-    public static readonly ParameterInfo Offset = new(typeof(Ramp), 0, "offset", IsDataType(DataTypes.Int32) & IsScalar());
+    public static readonly ParameterInfo Offset = new(typeof(Ramp), 0, "offset", HasDataType(DataTypes.Int32) & IsScalar());
 
     /// <summary>
     /// Gets stride.
     /// </summary>
-    public static readonly ParameterInfo Stride = new(typeof(Ramp), 1, "stride", IsDataType(DataTypes.Int32) & IsScalar());
+    public static readonly ParameterInfo Stride = new(typeof(Ramp), 1, "stride", HasDataType(DataTypes.Int32) & IsScalar());
 }
 
 /// <summary>
@@ -56,7 +56,7 @@ public sealed record Store() : Op
     /// <summary>
     /// The index locations to be stored.
     /// </summary>
-    public static readonly ParameterInfo Index = new(typeof(Store), 1, "index", IsDataType(DataTypes.Int32));
+    public static readonly ParameterInfo Index = new(typeof(Store), 1, "index", HasDataType(DataTypes.Int32));
 
     /// <summary>
     /// The value to be stored.

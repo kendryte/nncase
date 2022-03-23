@@ -147,4 +147,18 @@ public partial record Expr
     /// <param name="rhs"></param>
     /// <returns></returns>
     public static Call operator <(Expr lhs, Expr rhs) => LessThan(lhs, rhs);
+
+    /// <summary>
+    /// get the item from the expr.
+    /// </summary>
+    /// <param name="index"> expr. </param>
+    /// <returns> expr. </returns>
+    public Expr this[Expr index] => F.Tensors.GetItem(this, index);
+
+    /// <summary>
+    /// get the item from the expr.
+    /// </summary>
+    /// <param name="index"> expr. </param>
+    /// <returns> expr. </returns>
+    public Expr this[params Expr[] indices] => F.Tensors.GetItem(this, F.Tensors.Stack(new IR.Tuple(indices), 0));
 }

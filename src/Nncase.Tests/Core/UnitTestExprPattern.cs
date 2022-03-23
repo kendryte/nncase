@@ -231,7 +231,7 @@ public class UnitTestExprPattern
     {
         var ttype1 = new TensorType(DataTypes.Float32, new[] { 10, 10 });
         var ttype2 = new TensorType(DataTypes.Int16, new[] { 10 });
-        var ty_pat = IsDataType(DataTypes.Float32);
+        var ty_pat = HasDataType(DataTypes.Float32);
         Assert.IsType<TypePattern>(ty_pat);
         Assert.True(ty_pat.MatchLeaf(ttype1));
         Assert.False(ty_pat.MatchLeaf(ttype2));
@@ -241,7 +241,7 @@ public class UnitTestExprPattern
     public void TestShapePattern()
     {
         var shape = new int[] { 10, 10 };
-        var sp = IsShape(shape);
+        var sp = HasShape(shape);
         var ttype1 = new TensorType(DataTypes.Float32, new[] { 10, 10 });
         var ttype2 = new TensorType(DataTypes.Int16, new[] { 10 });
         Assert.True(sp.MatchLeaf(ttype1));
