@@ -20,7 +20,9 @@ public class UniformLikeEvaluator : IEvaluator<UniformLike>, ITypeInferencer<Uni
         var high = context.GetArgumentValueAsScalar<float>(random, UniformLike.High);
         var low = context.GetArgumentValueAsScalar<float>(random, UniformLike.Low);
         var seed = context.GetArgumentValueAsScalar<int>(random, UniformLike.Seed);
-        return OrtKI.RandomUniformLike(input, (long)random.Type.ToOrtType(), high, low, seed).ToValue();
+        // 1 is float, onnx only support float/half/double
+        var t = OrtKI.RandomUniformLike(input, 1, high, low, seed);
+        return Value.FromTensor(t.ToTensor().CastTo(random.Type));
     }
 
     /// <inheritdoc/>

@@ -43,7 +43,9 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
 {
     private static readonly MethodInfo _tensorCreatorFunc =
         typeof(Tensor).GetMethod(nameof(CreateTensorImpl), BindingFlags.Static | BindingFlags.NonPublic)!;
-
+    private static readonly MethodInfo _tensorCastFunc =
+        typeof(Tensor).GetMethod(nameof(Cast))!;
+    
     private readonly int[] _dimensions;
     private readonly int[] _strides;
 
@@ -378,6 +380,12 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <returns>Typed tensor.</returns>
     public abstract Tensor<T> Cast<T>(CastMode castMode = CastMode.Default)
         where T : unmanaged, IEquatable<T>;
+
+    public Tensor CastTo(DataType type, CastMode castMode = CastMode.Default)
+    {
+        var tensor = (Tensor)_tensorCastFunc.MakeGenericMethod(type.CLRType).Invoke(this, new object[] { castMode })!;
+        return tensor;
+    }
 
     /// <inheritdoc/>
     public IEnumerator GetEnumerator()

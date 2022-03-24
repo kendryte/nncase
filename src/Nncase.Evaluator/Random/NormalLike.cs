@@ -20,7 +20,9 @@ public class NormalLikeEvaluator : IEvaluator<NormalLike>, ITypeInferencer<Norma
         var mean = context.GetArgumentValueAsScalar<float>(random, NormalLike.Mean);
         var scale = context.GetArgumentValueAsScalar<float>(random, NormalLike.Scale);
         var seed = context.GetArgumentValueAsScalar<float>(random, NormalLike.Seed);
-        return OrtKI.RandomNormalLike(input, (int)random.Type.ToOrtType(), mean, scale, seed).ToValue();
+        // 1 is float, onnx only support float/half/double
+        var t = OrtKI.RandomNormalLike(input, 1, mean, scale, seed);
+        return Value.FromTensor(t.ToTensor().CastTo(random.Type));
     }
 
     /// <inheritdoc/>

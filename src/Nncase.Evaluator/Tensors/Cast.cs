@@ -15,8 +15,8 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Cast cast)
     {
-        var input = context.GetOrtArgumentValue(cast, Cast.Input);
-        return input.ToType(cast.NewType.ToOrtType()).ToValue();
+        var input = context.GetArgumentValue(cast, Cast.Input).AsTensor();
+        return Value.FromTensor(input.CastTo(cast.NewType));
     }
 
     /// <inheritdoc/>
