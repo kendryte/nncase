@@ -34,8 +34,8 @@ public class UnitTestFoldPad
     public static IEnumerable<object[]> TestFoldNopPadPositiveData =>
         new[]
         {
-            new object[] { new[] { 1 }, (Tensor)new[,] { { 0, 0 } } },
-            new object[] { new[] { 1, 1 }, (Tensor)new[,] { { 0, 0 }, { 0, 0 } } },
+            new object[] { new[] { 1 }, (Tensor)new[] { 0, 0 } },
+            new object[] { new[] { 1, 1 }, (Tensor)new[] { 0, 0, 0, 0 } },
         };
 
     [Theory]
@@ -53,8 +53,8 @@ public class UnitTestFoldPad
     public static IEnumerable<object[]> TestFoldTwoPadsPositiveData =>
         new[]
         {
-            new object[] { new[] { 1 }, (Tensor)new[,] { { 0, 1 } }, (Tensor)new[,] { { 2, 0 } } },
-            new object[] { new[] { 1, 1 }, (Tensor)new[,] { { 0, 1 }, { 1, 0 } }, (Tensor)new[,] { { 1, 3 }, { 1, 2 } } },
+            new object[] { new[] { 1 }, (Tensor)new[] { 0, 1 }, (Tensor)new[] { 2, 0 } },
+            new object[] { new[] { 1, 1 }, (Tensor)new[] { 0, 1, 1, 0 }, (Tensor)new[] { 1, 1, 3, 2 } },
         };
 
     [Theory]

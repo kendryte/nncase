@@ -32,6 +32,11 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEv
         var input = context.CheckArgumentType<TensorType>(target, Clamp.Input);
         var min = context.CheckArgumentType<TensorType>(target, Clamp.Min);
         var max = context.CheckArgumentType<TensorType>(target, Clamp.Max);
+        if (input.DType != min.DType || input.DType != max.DType || min.DType != max.DType)
+        {
+            return new InvalidType(
+                $"clamp type is not equal, input:{input.DType}, min:${input.DType}, max:${input.DType}");
+        }
         return Visit(input, min, max);
     }
 
