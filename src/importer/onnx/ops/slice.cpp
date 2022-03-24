@@ -97,12 +97,10 @@ void onnx_importer::convert_op_Slice(const NodeProto &node)
             auto min = (-1) * max - 1;
 
             // check starts
-            begins[i] = starts[idx] < min ? min : starts[idx] > max ? max
-                                                                    : starts[idx];
+            begins[i] = starts[idx] < min ? min : starts[idx] > max ? max : starts[idx];
 
             // check stops
-            ends[i] = stops[idx] < min ? min : stops[idx] > max ? max
-                                                                : stops[idx];
+            ends[i] = stops[idx] < min ? min : stops[idx] > max ? max : stops[idx];
 
             // check steps
             if (!steps.empty())
@@ -120,7 +118,7 @@ void onnx_importer::convert_op_Slice(const NodeProto &node)
         }
     }
 
-    auto sl = graph_.emplace<slice>(input_type, input_shape, begins, ends, strides, 0, 0, 0, 0);
+    auto sl = graph_.emplace<slice>(input_type, input_shape, begins, ends, strides, 0, 0, 0, 0, 0);
     sl->name(generate_name(node) + "(Slice)");
 
     input_tensors_.emplace(&sl->input(), input);

@@ -58,7 +58,7 @@ DEFINE_CAFFE_LOWER(Reverse)
     for (size_t i = 0; i < strides.size(); i++)
         strides[i] = 1;
 
-    auto sl = graph_.emplace<slice>(input.type(), p->output().shape(), begin, end, strides, 0, 0, 0, 0);
+    auto sl = graph_.emplace<slice>(input.type(), p->output().shape(), begin, end, strides, 0, 0, 0, 0, 0);
     sl->name(op.name() + "/slice");
 
     input_tensors_.emplace(&p->input(), input_name);

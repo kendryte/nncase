@@ -78,7 +78,7 @@ void strided_slice_motion_transform::process(transform_context &context)
     conv->name(old_conv.name());
     conv->weights().connect(weights);
     conv->bias().connect(bias);
-    auto slc = context.graph.emplace<slice>(dt_float32, conv->output().shape(), axis_t { 0, 0, 0, 0 }, axis_t { 0, 0, 0, 0 }, old_slice.strides(), 15, 15, 0, 0);
+    auto slc = context.graph.emplace<slice>(dt_float32, conv->output().shape(), axis_t { 0, 0, 0, 0 }, axis_t { 0, 0, 0, 0 }, old_slice.strides(), 15, 15, 0, 0, 0);
     slc->input().connect(conv->output());
 
     conv->input().connect(output);
@@ -182,7 +182,7 @@ void strided_slice_conv2d_pool::process(transform_context &context)
 
     auto slc = context.graph.emplace<slice>(dt_float32, conv->output().shape(),
         begins, ends, strides, old_slice.begin_mask(), old_slice.end_mask(),
-        old_slice.ellipsis_mask(), old_slice.new_axis_mask());
+        old_slice.ellipsis_mask(), old_slice.new_axis_mask(), old_slice.shrink_axis_mask());
     slc->name(old_slice.name());
     slc->input().connect(conv->output());
 

@@ -169,7 +169,7 @@ void quantize_slice_motion_transform::process(transform_context &context)
     auto q = context.graph.emplace<quantize>(old_q.input().type(), old_slice.input().shape(), old_q.output().type(), old_q.quant_param());
     q->name(old_q.name());
     auto sl = context.graph.emplace<slice>(q->output().type(), q->output().shape(), old_slice.begin(), old_slice.end(), old_slice.strides(),
-        old_slice.begin_mask(), old_slice.end_mask(), old_slice.ellipsis_mask(), old_slice.new_axis_mask());
+        old_slice.begin_mask(), old_slice.end_mask(), old_slice.ellipsis_mask(), old_slice.new_axis_mask(), old_slice.shrink_axis_mask());
     sl->name(old_slice.name());
 
     q->input().connect(output);

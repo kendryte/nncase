@@ -33,9 +33,10 @@ public:
     int32_t end_mask() const noexcept { return end_mask_; }
     int32_t ellipsis_mask() const noexcept { return ellipsis_mask_; }
     int32_t new_axis_mask() const noexcept { return new_axis_mask_; }
+    int32_t shrink_axis_mask() const noexcept { return shrink_axis_mask_; }
 
     slice(datatype_t type, shape_t input_shape, axis_t begin, axis_t end);
-    slice(datatype_t type, shape_t input_shape, axis_t begin, axis_t end, axis_t strides, int32_t begin_mask, int32_t end_mask, int32_t ellipsis_mask, int32_t new_axis_mask);
+    slice(datatype_t type, shape_t input_shape, axis_t begin, axis_t end, axis_t strides, int32_t begin_mask, int32_t end_mask, int32_t ellipsis_mask, int32_t new_axis_mask, int32_t shrink_axis_mask);
 
 protected:
     bool properties_equal(node &other) const override;
@@ -48,5 +49,6 @@ private:
     int32_t end_mask_;
     int32_t ellipsis_mask_;
     int32_t new_axis_mask_;
+    int32_t shrink_axis_mask_;
 };
 }

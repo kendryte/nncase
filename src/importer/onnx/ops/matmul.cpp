@@ -150,7 +150,7 @@ void onnx_importer::convert_op_MatMul(const NodeProto &node)
             auto sl = graph_.emplace<slice>(input_type, bc_a_3d->output().shape(),
                 axis_t { i, 0, 0 },
                 axis_t { static_cast<int32_t>(i + 1), static_cast<int32_t>(new_a_shape[1]), static_cast<int32_t>(new_a_shape[2]) },
-                axis_t { 1, 1, 1 }, 0, 0, 0, 0);
+                axis_t { 1, 1, 1 }, 0, 0, 0, 0, 0);
             sl->name(op_name + ".slice_A_" + std::to_string(i) + "(MatMul)");
             sl->input().connect(bc_a_3d->output());
 
@@ -169,7 +169,7 @@ void onnx_importer::convert_op_MatMul(const NodeProto &node)
             auto sl = graph_.emplace<slice>(input_type, bc_b_3d->output().shape(),
                 axis_t { i, 0, 0 },
                 axis_t { static_cast<int32_t>(i + 1), static_cast<int32_t>(new_b_shape[1]), static_cast<int32_t>(new_b_shape[2]) },
-                axis_t { 1, 1, 1 }, 0, 0, 0, 0);
+                axis_t { 1, 1, 1 }, 0, 0, 0, 0, 0);
             sl->name(op_name + ".slice_B_" + std::to_string(i) + "(MatMul)");
             sl->input().connect(bc_b_3d->output());
 
