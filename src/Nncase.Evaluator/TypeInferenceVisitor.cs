@@ -123,7 +123,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
             {
                 SetCheckedType(parent, any);
             }
-            else if (!pattern.MatchLeaf(expr.CheckedType))
+            else if (!pattern.MatchLeaf(expr.CheckedType!))
             {
                 SetCheckedType(parent, new InvalidType($"The {exprMsg} Require {pattern.Reason}"));
             }
@@ -148,7 +148,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         IRType type;
         foreach (var i in Enumerable.Range(0, expr.Fields.Count))
         {
-            VerifySubField(expr, expr.Fields[i]);
+            VerifySubField(expr, expr.Fields[i], null, $"Sequential Line {i}");
         }
 
         if (expr.CheckedType is not null) { return expr.CheckedType; }

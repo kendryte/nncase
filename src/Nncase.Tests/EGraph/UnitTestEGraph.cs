@@ -197,7 +197,7 @@ namespace Nncase.Tests.EGraphTest
             // but after rebuid, (x*2) is not in worklist, 
             // so it's eclass in hashcon will not be update
             // should fix it.
-            passOptions.SetName("EGraphTest/TestRebuildCanonicalizeEclass");
+            passOptions.SetPassName("EGraphTest/TestRebuildCanonicalizeEclass");
             var g = new EGraph();
             Var x = "x";
             var e1 = g.Add(x * 2);
@@ -218,7 +218,7 @@ namespace Nncase.Tests.EGraphTest
         [Fact]
         public void TestRebuildUpdateUsed()
         {
-            passOptions.SetName("EGraphTest/TestRebuildUpdateUsed");
+            passOptions.SetPassName("EGraphTest/TestRebuildUpdateUsed");
             var g = new EGraph();
             Var x = "x";
             var e1 = g.Add(x * 2);

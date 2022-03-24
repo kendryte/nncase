@@ -37,7 +37,7 @@ public static class TypeInference
         {
             try
             {
-                return parameter.Pattern.Check(t);
+                return parameter.Pattern.Check(t, $"{op.GetType().Name}.{parameter.Name}");
             }
             catch (System.InvalidOperationException e)
             {

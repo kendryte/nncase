@@ -33,14 +33,14 @@ namespace Nncase.Transform
         /// <inheritdoc/>
         protected override Callable RunCore(Callable callable, RunPassOptions options)
         {
-            options.SetName(Name);
+            options.SetPassName(Name);
             var pre = callable;
             var post = pre;
             RunPassOptions new_options = new(options);
-            new_options.SetDir(options.PassDumpDir);
+            new_options.SetDumpDir(options.PassDumpDir);
             foreach (var (mutator, i) in Mutators.Select((item, i) => (item, i)))
             {
-                new_options.SetName(i + "_" + mutator.GetType().Name);
+                new_options.SetPassName(i + "_" + mutator.GetType().Name);
                 OnPassStart(pre, new_options);
                 post = (Callable)mutator.Visit(pre);
                 var inferRes = post.InferenceType();
@@ -58,7 +58,7 @@ namespace Nncase.Transform
             switch (options.DumpLevel)
             {
                 case >= 2:
-                    IRPrinter.DumpExprAsIL(func, "Start", options.PassDumpDir);
+                    CompilerServices.DumpIR(func, "Start", options.PassDumpDir);
                     break;
                 default:
                     break;
@@ -71,7 +71,7 @@ namespace Nncase.Transform
             switch (options.DumpLevel)
             {
                 case >= 2:
-                    IRPrinter.DumpExprAsIL(func, "End", options.PassDumpDir);
+                    CompilerServices.DumpIR(func, "End", options.PassDumpDir);
                     break;
                 default:
                     break;

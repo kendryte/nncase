@@ -33,7 +33,7 @@ namespace Nncase.Tests.RewriteTest
     {
         public DataFlowRewriteTestFactory(IHost host) : base(host)
         {
-            passOptions.SetDir(Path.Combine(passOptions.PassDumpDir, "DataFlowRewriteTestFactory"));
+            passOptions.SetDumpDir(Path.Combine(passOptions.PassDumpDir, "DataFlowRewriteTestFactory"));
         }
 
         private static IEnumerable<object[]> Data =>
@@ -48,14 +48,14 @@ namespace Nncase.Tests.RewriteTest
 
         protected void RunCore(IRewriteCase Case)
         {
-            passOptions.SetName($"{Case.Name}");
+            passOptions.SetPassName($"{Case.Name}");
             Expr pre = Case.PreExpr;
             var infered = pre.InferenceType();
-            pre.DumpExprAsIL("pre", passOptions.PassDumpDir);
+            CompilerServices.DumpIR(pre, "pre", passOptions.PassDumpDir);
             Assert.True(infered);
             var post = CompilerServices.Rewrite(pre, Case.Rules, passOptions);
             Assert.True(post.InferenceType());
-            post.DumpExprAsIL("post", passOptions.PassDumpDir);
+            CompilerServices.DumpIR(post, "post", passOptions.PassDumpDir);
             Assert.Equal(Case.PostExpr, post);
         }
 
@@ -88,7 +88,7 @@ namespace Nncase.Tests.RewriteTest
     {
         public UnitTestDataFlowRewrite(IHost host) : base(host)
         {
-            passOptions.SetDir(Path.Combine(passOptions.PassDumpDir, "UnitTestDataFlowRewrite"));
+            passOptions.SetDumpDir(Path.Combine(passOptions.PassDumpDir, "UnitTestDataFlowRewrite"));
         }
 
         // [Fact]
@@ -116,7 +116,7 @@ namespace Nncase.Tests.RewriteTest
         [Fact]
         public void TestFoldConstCall()
         {
-            passOptions.SetName("TestFoldConstCall");
+            passOptions.SetPassName("TestFoldConstCall");
             var lhs = torch.rand(2, 1, 3, torch.ScalarType.Float32);
             var rhs = torch.rand(2, 6, 3, torch.ScalarType.Float32);
             var pre = (Const)lhs.ToTensor() + rhs.ToTensor();
@@ -128,7 +128,7 @@ namespace Nncase.Tests.RewriteTest
         [Fact]
         public void TestFoldConstCallTuple()
         {
-            passOptions.SetName("TestFoldConstCallTuple");
+            passOptions.SetPassName("TestFoldConstCallTuple");
             var lhs = torch.rand(2, 1, 3, torch.ScalarType.Float32);
             var rhs = torch.rand(2, 6, 3, torch.ScalarType.Float32);
             var pre = Concat(new IR.Tuple(lhs.ToTensor(), rhs.ToTensor()), 1);
@@ -141,7 +141,7 @@ namespace Nncase.Tests.RewriteTest
         [Fact]
         public void TestFoldConstCallType()
         {
-            passOptions.SetName("TestFoldConstCallType");
+            passOptions.SetPassName("TestFoldConstCallType");
             var a = (Const)1;
             var b = (Const)2;
             var expr = a * b + 3;
@@ -172,7 +172,7 @@ namespace Nncase.Tests.RewriteTest
         // [Fact]
         // public void TestRewriteSameAsShapeInferPass()
         // {
-        //     passOptions.SetName("SameAsShapeInferPass");
+        //     passOptions.SetPassName("SameAsShapeInferPass");
         //     var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(new[] { 1, 3, 240, 320 })));
         //     Assert.True(CompilerServices.InferenceType(input));
         //     var computeShape = ShapeOf(input);
@@ -198,7 +198,7 @@ namespace Nncase.Tests.RewriteTest
     {
         public DataFlowRewriteAndInferIntegrateTest(IHost host) : base(host)
         {
-            passOptions.SetDir(Path.Combine(passOptions.PassDumpDir, "DataFlowRewriteAndInferIntegrateTest"));
+            passOptions.SetDumpDir(Path.Combine(passOptions.PassDumpDir, "DataFlowRewriteAndInferIntegrateTest"));
         }
 
 
@@ -207,7 +207,7 @@ namespace Nncase.Tests.RewriteTest
         [Fact]
         public void TestPaddingCompute()
         {
-            passOptions.SetName("TestPaddingCompute");
+            passOptions.SetPassName("TestPaddingCompute");
             var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 240, 320)));
             var weights = Tensor.FromSpan<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
             var (inH, inW) = Util.GetHW(input);
@@ -231,7 +231,7 @@ namespace Nncase.Tests.RewriteTest
         [Fact]
         public void TestYolo20MinStructure()
         {
-            passOptions.SetName("TestYolo20MinStructure");
+            passOptions.SetPassName("TestYolo20MinStructure");
             var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(new[] { 1, 240, 320, 3 })));
             var weights = Tensor.FromSpan<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
             var bias = Tensor.FromSpan<int>(Enumerable.Range(0, 16).ToArray());
@@ -275,7 +275,7 @@ namespace Nncase.Tests.RewriteTest
         [Fact]
         public void SliceForShapeIndex()
         {
-            passOptions.SetName("SliceForShapeIndex");
+            passOptions.SetPassName("SliceForShapeIndex");
             var input = new Var(new TensorType(DataTypes.Float32, new Shape(1, 7, 7, 75)));
             var slice = Util.ShapeIndex(input, 1);
             CompilerServices.InferenceType(slice);

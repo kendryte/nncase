@@ -68,14 +68,14 @@ namespace Nncase.Transform
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public RunPassOptions SetName(string name) { PassName = name; return this; }
+        public RunPassOptions SetPassName(string name) { PassName = name; return this; }
 
         /// <summary>
         /// set the dumpDir.
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public RunPassOptions SetDir(string path) { DumpDir = path; return this; }
+        public RunPassOptions SetDumpDir(string path) { DumpDir = path; return this; }
 
         /// <summary>
         /// return "{DumpDir}/{PassName}".

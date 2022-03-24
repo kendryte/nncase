@@ -38,6 +38,7 @@ public record Segment1D
     public Padding Padding;
     public int Start => Range.Start.Value;
     public int End => Range.End.Value;
+    public int Index;
     public int Length
     {
         get
@@ -48,7 +49,7 @@ public record Segment1D
         }
     }
 
-    public Segment1D(System.Range range, Padding padding)
+    public Segment1D(System.Range range, Padding padding, int index = 0)
     {
         if (range.Start.IsFromEnd)
             throw new NotSupportedException("The Negative Start Slice");
@@ -56,6 +57,7 @@ public record Segment1D
             throw new NotSupportedException("The Negative Slice For The Tensor.");
         Range = range;
         Padding = padding;
+        Index = 0;
     }
 
     public static Segment1D operator /(Segment1D seg, int scale)

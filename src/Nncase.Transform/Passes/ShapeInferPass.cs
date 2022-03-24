@@ -33,10 +33,10 @@ public sealed class ShapeInferPass : DataflowPass
         Function post;
         int count = 0;
         RunPassOptions new_options = new(options);
-        new_options.SetDir(options.PassDumpDir);
+        new_options.SetDumpDir(options.PassDumpDir);
         while (true)
         {
-            post = (Function)CompilerServices.Rewrite(pre, Rules, new_options.SetName($"{Name}/Run_{count}"));
+            post = (Function)CompilerServices.Rewrite(pre, Rules, new_options.SetPassName($"{Name}/Run_{count}"));
             if (post == pre)
             {
                 if (!CompilerServices.InferenceType(post))

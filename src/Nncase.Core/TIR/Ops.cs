@@ -63,3 +63,8 @@ public sealed record Store() : Op
     /// </summary>
     public static readonly ParameterInfo Value = new(typeof(Store), 2, "value");
 }
+
+/// <summary>
+/// The Nop Expresstion, When We build the Ir, It's like the return the Void Value. We will skip it when print Ir/lower.
+/// </summary>
+public sealed record Nop() : Op { }

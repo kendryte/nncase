@@ -103,10 +103,10 @@ namespace Nncase.Tests
             var res = Equals(simpled_lhs, simpled_rhs);
             if (!res)
             {
-                lhs.DumpExprAsIL("Lhs", Path.Combine(GetNncsaeDumpDirPath(), member));
-                rhs.DumpExprAsIL("Rhs", Path.Combine(GetNncsaeDumpDirPath(), member));
-                simpled_lhs.DumpExprAsIL("Simpled_Lhs", Path.Combine(GetNncsaeDumpDirPath(), member));
-                simpled_rhs.DumpExprAsIL("Simpled_Rhs", Path.Combine(GetNncsaeDumpDirPath(), member));
+                CompilerServices.DumpIR(lhs, "Lhs", Path.Combine(GetNncsaeDumpDirPath(), member));
+                CompilerServices.DumpIR(rhs, "Rhs", Path.Combine(GetNncsaeDumpDirPath(), member));
+                CompilerServices.DumpIR(simpled_lhs, "Simpled_Lhs", Path.Combine(GetNncsaeDumpDirPath(), member));
+                CompilerServices.DumpIR(simpled_rhs, "Simpled_Rhs", Path.Combine(GetNncsaeDumpDirPath(), member));
             }
             Assert.True(res);
         }

@@ -85,7 +85,7 @@ namespace Nncase.Cli.Commands
         private void DumpModule(IRModule module, CompileOptions options, string prefix)
         {
             var dumpPath = Path.Combine(options.DumpDir, "dump");
-            module.Entry!.DumpExprAsIL(prefix, dumpPath);
+            CompilerServices.DumpIR(module.Entry!, prefix, dumpPath);
         }
     }
 }

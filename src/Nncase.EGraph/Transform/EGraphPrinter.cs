@@ -101,7 +101,7 @@ public partial class EGraphPrinter
                 {
                     exprNode.ToRecordNode(rb =>
                     {
-                        rb.AppendFlippedRecord(new DotRecord(args)).AppendFlippedRecord(enode.Expr.CheckedType?.DumpTypeAsIL() ?? "None");
+                        rb.AppendFlippedRecord(new DotRecord(args)).AppendFlippedRecord(enode.Expr.CheckedType is not null ? CompilerServices.Print(enode.Expr.CheckedType!) : "None");
                     }, true);
                 }
                 else
