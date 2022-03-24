@@ -5,13 +5,13 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR.F;
 using Nncase.Transform;
 using Nncase.Transform.Rules.Neutral;
 using Xunit;
-using Nncase.IR.F;
 using Random = Nncase.IR.F.Random;
 
-namespace Nncase.Tests.Rules.Neutral;
+namespace Nncase.Tests.Rules.NeutralTest;
 
 public class UnitTestFoldCast
 {
@@ -19,15 +19,7 @@ public class UnitTestFoldCast
 
     public UnitTestFoldCast()
     {
-        string dumpDir = Path.Combine(GetThisFilePath(), "..", "..", "..", "..", "tests_output");
-        dumpDir = Path.GetFullPath(dumpDir);
-        Directory.CreateDirectory(dumpDir);
-        passOptions = new RunPassOptions(null, 3, dumpDir);
-    }
-
-    private static string GetThisFilePath([CallerFilePath] string path = null)
-    {
-        return path;
+        passOptions = new RunPassOptions(null, 3, Testing.GetDumpDirPath(this.GetType()));
     }
 
     public static IEnumerable<object[]> TestFoldTwoCastsPositiveData =>
@@ -41,9 +33,10 @@ public class UnitTestFoldCast
     [MemberData(nameof(TestFoldTwoCastsPositiveData))]
     public void TestFoldTwoCastsPositive(DataType preAndPostType, DataType middleType)
     {
+        var caseOptions = passOptions.IndentDir($"{preAndPostType.GetDisplayName()}_{middleType.GetDisplayName()}");
         var a = Random.Normal(preAndPostType, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Tensors.Cast(Tensors.Cast(a, middleType), preAndPostType);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoCasts() }, passOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoCasts() }, caseOptions);
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -61,9 +54,10 @@ public class UnitTestFoldCast
     [MemberData(nameof(TestFoldNopCastPositiveData))]
     public void TestFoldNopCastPositive(DataType dataType)
     {
+        var caseOptions = passOptions.IndentDir($"{dataType.GetDisplayName()}");
         var a = Random.Normal(dataType, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Tensors.Cast(a, dataType);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopCast() }, passOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopCast() }, caseOptions);
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
