@@ -16,5 +16,6 @@ public class TIRModule : Module
         builder.RegisterType<LoadEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<RampEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<StoreEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<NopEvaluator>().AsImplementedInterfaces();
     }
 }

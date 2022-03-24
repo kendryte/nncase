@@ -94,7 +94,7 @@ internal class CSourceHostBuildVisior : ExprFunctor<CSymbol, string>
     /// source writer .
     /// TODO we need the decl writer
     /// </summary>
-    readonly IRPrinter.ScopeWriter Scope;
+    readonly ScopeWriter Scope;
 
     /// <summary>
     /// symbols name memo
@@ -107,7 +107,7 @@ internal class CSourceHostBuildVisior : ExprFunctor<CSymbol, string>
     /// <param name="textWriter"></param>
     public CSourceHostBuildVisior(TextWriter textWriter)
     {
-        Scope = new IRPrinter.ScopeWriter(textWriter);
+        Scope = new ScopeWriter(textWriter);
         // insert some declare
         Scope.IndWriteLine(@"
 #ifdef _WIN32

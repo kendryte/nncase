@@ -38,6 +38,38 @@ public interface ICompilerServicesProvider
     IRType InferenceOp(Op op, ITypeInferenceContext context);
 
     /// <summary>
+    /// printer op.
+    /// </summary>
+    /// <param name="op">Target operator.</param>
+    /// <param name="context">Context.</param>
+    /// <param name="ILmode">if is print is il or script.</param>
+    /// <returns>Result.</returns>
+    string PrintOp(Op op, IIRPrinterContext context, bool ILmode);
+
+    /// <summary>
+    /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.{ext}`
+    /// else write to {dumpPath}/{prefix}_{expr.Type.name}.il`
+    /// </summary>
+    /// <param name="expr"></param>
+    /// <param name="prefix"></param>
+    /// <param name="dumpPath"></param>
+    void DumpIR(Expr expr, string prefix, string dumpPath);
+
+    /// <summary>
+    /// print ir type.
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    string Print(IRType type);
+
+    /// <summary>
+    /// print ir type.
+    /// </summary>
+    /// <param name="expr"> the expression </param>
+    /// <returns>the string.</returns>
+    string Print(Expr expr);
+
+    /// <summary>
     /// Evaluate the expression tree.
     /// </summary>
     /// <param name="expr">Expression.</param>
@@ -115,6 +147,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
 {
     private readonly IEvaluateProvider _evaluateProvider;
     private readonly ITypeInferenceProvider _typeInferenceProvider;
+    private readonly IIRPrinterProvider _irprinterProvider;
     private readonly ICostEvaluateProvider _costEvaluateProvider;
     private readonly IMatchProvider _matchProvider;
     private readonly IRewriteProvider _rewriteProvider;
@@ -123,6 +156,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     public CompilerServicesProvider(
         IEvaluateProvider evaluateProvider,
         ITypeInferenceProvider typeInferenceProvider,
+        IIRPrinterProvider irprinterProvider,
         ICostEvaluateProvider costEvaluateProvider,
         IDataTypeServiceProvider dataTypeServiceProvider,
         IMatchProvider matchProvider,
@@ -131,6 +165,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     {
         _evaluateProvider = evaluateProvider;
         _typeInferenceProvider = typeInferenceProvider;
+        _irprinterProvider = irprinterProvider;
         _costEvaluateProvider = costEvaluateProvider;
         DataTypeService = dataTypeServiceProvider;
         _matchProvider = matchProvider;
@@ -163,6 +198,21 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     {
         return _typeInferenceProvider.InferenceType(expr);
     }
+
+    /// <inheritdoc/>
+    public string PrintOp(Op op, IIRPrinterContext context, bool ILmode)
+    {
+        return _irprinterProvider.PrintOp(op, context, ILmode);
+    }
+
+    /// <inheritdoc/>
+    public void DumpIR(Expr expr, string prefix, string dumpPath) => _irprinterProvider.DumpIR(expr, prefix, dumpPath);
+
+    /// <inheritdoc/>
+    public string Print(IRType type) => _irprinterProvider.Print(type);
+
+    /// <inheritdoc/>
+    public string Print(Expr expr) => _irprinterProvider.Print(expr);
 
     /// <inheritdoc/>
     public bool TryMatch(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result)
@@ -344,4 +394,22 @@ public static class CompilerServices
     {
         return Provider.TryMatchRoot(new[] { enode }, pattern, out results);
     }
+
+    /// <summary>
+    /// printer op.
+    /// </summary>
+    /// <param name="op">Target operator.</param>
+    /// <param name="context">Context.</param>
+    /// <param name="ILmode">if is print is il or script.</param>
+    /// <returns>Result.</returns>
+    public static string PrintOp(Op op, IIRPrinterContext context, bool ILmode) => Provider.PrintOp(op, context, ILmode);
+
+    /// <inheritdoc/>
+    public static void DumpIR(Expr expr, string prefix, string dumpPath) => Provider.DumpIR(expr, prefix, dumpPath);
+
+    /// <inheritdoc/>
+    public static string Print(IRType type) => Provider.Print(type);
+
+    /// <inheritdoc/>
+    public static string Print(Expr expr) => Provider.Print(expr);
 }

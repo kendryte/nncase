@@ -23,13 +23,15 @@ namespace Nncase.IR
         /// <summary>
         /// Check the irtype, if not equal, throw exception.
         /// </summary>
-        /// <param name="ValueType"></param>
+        /// <param name="ValueType">give the ir type.</param>
+        /// <param name="FieldName"> the argument name.</param>
         /// <exception cref="InvalidOperationException"></exception>
-        public T Check<T>(T ValueType) where T : IRType
+        public T Check<T>(T ValueType,string FieldName) where T : IRType
         {
             if (ValueType == null || !MatchLeaf(ValueType))
             {
-                throw new InvalidOperationException($"Requrie <{Reason}>, But {ValueType}!");
+                var cur = ValueType is null ? "None" : CompilerServices.Print(ValueType);
+                throw new InvalidOperationException($"{FieldName} Requrie <{Reason}>, But {cur}!");
             }
 
             return ValueType;
@@ -171,7 +173,7 @@ namespace Nncase.IR
           {
               TensorType ttype => ttype.DType == dataType,
               _ => false
-          }, $"IsDataType {dataType}"
+          }, $"{dataType.GetDisplayName()}"
         );
 
         /// <summary>

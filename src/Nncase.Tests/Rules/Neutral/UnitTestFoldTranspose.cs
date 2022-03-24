@@ -5,14 +5,14 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR.F;
 using Nncase.Transform;
 using Nncase.Transform.Rules.Neutral;
 using Xunit;
-using Nncase.IR.F;
-using Random = Nncase.IR.F.Random;
 using Math = Nncase.IR.F.Math;
+using Random = Nncase.IR.F.Random;
 
-namespace Nncase.Tests.Rules.Neutral;
+namespace Nncase.Tests.Rules.NeutralTest;
 
 public class UnitTestFoldTranspose
 {
@@ -20,15 +20,7 @@ public class UnitTestFoldTranspose
 
     public UnitTestFoldTranspose()
     {
-        string dumpDir = Path.Combine(GetThisFilePath(), "..", "..", "..", "..", "tests_output");
-        dumpDir = Path.GetFullPath(dumpDir);
-        Directory.CreateDirectory(dumpDir);
-        passOptions = new RunPassOptions(null, 3, dumpDir);
-    }
-
-    private static string GetThisFilePath([CallerFilePath] string path = null)
-    {
-        return path;
+        passOptions = new RunPassOptions(null, 3, Testing.GetDumpDirPath(this.GetType()));
     }
 
     public static IEnumerable<object[]> TestFoldNopTransposePositiveData =>
@@ -42,9 +34,10 @@ public class UnitTestFoldTranspose
     [MemberData(nameof(TestFoldNopTransposePositiveData))]
     public void TestFoldNopTransposePositive(int[] shape, int[] perm)
     {
+        var caseOptions = passOptions.IndentDir($"FoldNop_{string.Join("_", shape)}_{string.Join("_", perm)}");
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Transpose(a, perm);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopTranspose() }, passOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopTranspose() }, caseOptions);
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -61,9 +54,10 @@ public class UnitTestFoldTranspose
     [MemberData(nameof(TestFoldTwoTransposesPositiveData))]
     public void TestFoldTwoTransposesPositive(int[] shape, int[] perm1, int[] perm2)
     {
+        var caseOptions = passOptions.IndentDir($"FoldTwo_{string.Join("_", shape)}_{string.Join("_", perm1)}_{string.Join("_", perm2)}");
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Transpose(Tensors.Transpose(a, perm1), perm2);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoTransposes() }, passOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoTransposes() }, caseOptions);
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -80,13 +74,14 @@ public class UnitTestFoldTranspose
     [MemberData(nameof(TestTransposeToReshapePositiveData))]
     public void TestTransposeToReshapePositive(int[] shape, int[] perm)
     {
+        var caseOptions = passOptions.IndentDir($"FoldTToR_{string.Join("_", shape)}_{string.Join("_", perm)}");
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Transpose(a, perm);
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new FoldShapeOf(),
             new TransposeToReshape()
-        }, passOptions);
+        }, caseOptions);
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));

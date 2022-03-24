@@ -55,6 +55,12 @@ public static class T
     public static Call Load(Var handle, Expr index) => new Call(new Load(), handle, index);
 
     /// <summary>
+    /// get the nop op
+    /// </summary>
+    /// <returns></returns>
+    public static Call Nop() => new Call(new Nop());
+
+    /// <summary>
     /// Store value to the buffer.
     /// Equivalent to ((DType*)buffer_var)[index] = value.
     /// where DType is the type specified by type().element_of().
@@ -410,6 +416,29 @@ public static class T
     /// <returns></returns>
     public static Buffer ConstBuffer(Const expr, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
     {
+        if (name.StartsWith("var "))
+            name = name[4..];
+        buffer = new Buffer(name, Schedule.MemoryLocation.Rdata, (TensorType)expr.ValueType)
+        {
+            Const = expr
+        };
+        return buffer;
+    }
+
+    /// <summary>
+    /// maybe can get the const.
+    /// </summary>
+    /// <param name="expr"></param>
+    /// <param name="buffer"></param>
+    /// <param name="name"></param>
+    /// <returns></returns>
+    public static Expr MayBeConst(Const? expr, out Buffer? buffer, [CallerArgumentExpression("buffer")] string name = "")
+    {
+        if (expr is null)
+        {
+            buffer = null;
+            return Nop();
+        }
         if (name.StartsWith("var "))
             name = name[4..];
         buffer = new Buffer(name, Schedule.MemoryLocation.Rdata, (TensorType)expr.ValueType)

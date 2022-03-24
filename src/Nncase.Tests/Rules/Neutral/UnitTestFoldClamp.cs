@@ -5,14 +5,14 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR.F;
 using Nncase.Transform;
 using Nncase.Transform.Rules.Neutral;
 using Xunit;
-using Nncase.IR.F;
-using Random = Nncase.IR.F.Random;
 using Math = Nncase.IR.F.Math;
+using Random = Nncase.IR.F.Random;
 
-namespace Nncase.Tests.Rules.Neutral;
+namespace Nncase.Tests.Rules.NeutralTest;
 
 public class UnitTestFoldClamp
 {
@@ -20,32 +20,25 @@ public class UnitTestFoldClamp
 
     public UnitTestFoldClamp()
     {
-        string dumpDir = Path.Combine(GetThisFilePath(), "..", "..", "..", "..", "tests_output");
-        dumpDir = Path.GetFullPath(dumpDir);
-        Directory.CreateDirectory(dumpDir);
-        passOptions = new RunPassOptions(null, 3, dumpDir);
-    }
-
-    private static string GetThisFilePath([CallerFilePath] string path = null)
-    {
-        return path;
+        passOptions = new RunPassOptions(null, 3, Testing.GetDumpDirPath(this.GetType()));
     }
 
     public static IEnumerable<object[]> TestFoldNopClampPositiveData =>
         new[]
         {
-            new Tensor[] { float.NegativeInfinity, float.PositiveInfinity },
-            new Tensor[] { float.MinValue, float.MaxValue },
-            new Tensor[] { double.NegativeInfinity, double.PositiveInfinity },
-        };
+            new object[] { (Tensor)float.NegativeInfinity, (Tensor)float.PositiveInfinity },
+            new object[] { (Tensor)float.MinValue, (Tensor)float.MaxValue },
+            new object[] { (Tensor)double.NegativeInfinity, (Tensor)double.PositiveInfinity },
+        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
     [MemberData(nameof(TestFoldNopClampPositiveData))]
-    public void TestFoldNopCastPositive(Tensor min, Tensor max)
+    public void TestFoldNopCastPositive(Tensor min, Tensor max, int index)
     {
+        var caseOptions = passOptions.IndentDir($"case_{index}");
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Math.Clamp(a, min, max);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopClamp() }, passOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopClamp() }, caseOptions);
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));

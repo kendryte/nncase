@@ -53,7 +53,7 @@ public class EGraphPass : FunctionPass
     /// <inheritdoc/>
     protected override Callable RunCore(Callable function, RunPassOptions options)
     {
-        options.SetName(Name);
+        options.SetPassName(Name);
         var graph = new EGraph();
         graph.Add(function);
         EGraphRewriter.Rewrite(graph, Rules, options);
