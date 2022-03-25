@@ -95,6 +95,6 @@ public class Compiler
     private void DumpModule(IRModule module, CompileOptions options, string prefix)
     {
         var dumpPath = Path.Combine(options.DumpDir, "dump", prefix);
-        module.Entry!.DumpExprAsIL(prefix, dumpPath);
+        CompilerServices.DumpIR(module.Entry!, prefix, dumpPath);
     }
 }
