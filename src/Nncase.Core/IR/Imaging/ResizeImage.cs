@@ -22,7 +22,7 @@ namespace Nncase.IR.Imaging
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(ResizeImage), 0, "input", IsRank(r => r >= 2, "RanK >= 2"));
+        public static readonly ParameterInfo Input = new(typeof(ResizeImage), 0, "input", HasRank(r => r >= 2, "RanK >= 2"));
 
         /// <summary>
         /// Gets roi.
@@ -32,7 +32,7 @@ namespace Nncase.IR.Imaging
         /// <summary>
         /// Gets new_size.
         /// </summary>
-        public static readonly ParameterInfo NewSize = new(typeof(ResizeImage), 2, "new_size", IsRank(1));
+        public static readonly ParameterInfo NewSize = new(typeof(ResizeImage), 2, "new_size", HasRank(1));
         
         /// <summary>
         /// Gets CubicCoeffA.

@@ -229,7 +229,7 @@ namespace Nncase.Tests.RewriteTest
             var f = new Function(expr);
             var result = CompilerServices.InferenceType(f);
             Assert.False(result);
-            f.DumpExprAsIL("before", Path.Combine(passOptions.PassDumpDir, "TypePromotion"));
+            CompilerServices.DumpIR(f, "before", Path.Combine(passOptions.PassDumpDir, "TypePromotion"));
             var body = new ShapeInferPass("TypePromotion").Run(f, passOptions);
             Assert.True(CompilerServices.InferenceType(body));
             Assert.Equal(Value.FromTensor(3L), body.Evaluate());
