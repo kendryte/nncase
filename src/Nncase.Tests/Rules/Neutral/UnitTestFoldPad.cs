@@ -26,13 +26,13 @@ public class UnitTestFoldPad
     public static IEnumerable<object[]> TestFoldNopPadPositiveData =>
         new[]
         {
-            new object[] { new[] { 1 }, (Tensor)new[] { 0, 0 } },
-            new object[] { new[] { 1, 1 }, (Tensor)new[] { 0, 0, 0, 0 } },
+            new object[] { new[] { 1 }, new[] { 0, 0 } },
+            new object[] { new[] { 1, 1 }, new[] { 0, 0, 0, 0 } },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
     [MemberData(nameof(TestFoldNopPadPositiveData))]
-    public void TestFoldNopPadPositive(int[] shape, Tensor pads, int index)
+    public void TestFoldNopPadPositive(int[] shape, int[] pads, int index)
     {
         var caseOptions = passOptions.IndentDir($"case_{index}");
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
@@ -46,13 +46,13 @@ public class UnitTestFoldPad
     public static IEnumerable<object[]> TestFoldTwoPadsPositiveData =>
         new[]
         {
-            new object[] { new[] { 1 }, (Tensor)new[] { 0, 1 }, (Tensor)new[] { 2, 0 } },
-            new object[] { new[] { 1, 1 }, (Tensor)new[] { 0, 1, 1, 0 }, (Tensor)new[] { 1, 1, 3, 2 } },
+            new object[] { new[] { 1 }, new[] { 0, 1 }, new[] { 2, 0 } },
+            new object[] { new[] { 1, 1 }, new[] { 0, 1, 1, 0 }, new[] { 1, 1, 3, 2 } },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
     [MemberData(nameof(TestFoldTwoPadsPositiveData))]
-    public void TestFoldTwoPadsPositive(int[] shape, Tensor pads1, Tensor pads2, int index)
+    public void TestFoldTwoPadsPositive(int[] shape, int[] pads1, int[] pads2, int index)
     {
         var caseOptions = passOptions.IndentDir($"case_{index}");
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);

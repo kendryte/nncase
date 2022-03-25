@@ -230,9 +230,9 @@ namespace Nncase.Tests.RewriteTest
             var result = CompilerServices.InferenceType(f);
             Assert.False(result);
             CompilerServices.DumpIR(f, "before", Path.Combine(passOptions.PassDumpDir, "TypePromotion"));
-            var body = new ShapeInferPass("TypePromotion").Run(f, passOptions);
-            Assert.True(CompilerServices.InferenceType(body));
-            Assert.Equal(Value.FromTensor(3L), body.Evaluate());
+            var post = new ShapeInferPass("TypePromotion").Run(f, passOptions);
+            Assert.True(CompilerServices.InferenceType(post));
+            Assert.Equal(Value.FromTensor(3L), ((Function)post).Body.Evaluate());
         }
 
         public T Dim1ExprToScalar<T>(Expr expr) where T : unmanaged, System.IEquatable<T> => (expr as TensorConst).Value.Cast<T>()[0];
@@ -241,7 +241,7 @@ namespace Nncase.Tests.RewriteTest
         public void TestPaddingCompute()
         {
             passOptions.SetPassName("TestPaddingCompute");
-            var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 240, 320)));
+            var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 33, 65)));
             var weights = Tensor.FromSpan<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
             var (inH, inW) = Util.GetHW(input);
             var (fH, fW) = Util.GetHW(weights);

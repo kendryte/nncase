@@ -26,19 +26,19 @@ public class UnitTestFusePadConv2D
     public static IEnumerable<object[]> TestFusePadConv2DPositiveData =>
         new[]
         {
-            new object[] { new[] { 1, 1, 2, 2 }, new[,] { { 0, 0 },{ 0, 0 },{ 1, 1 },{ 1, 1 } }, new[,] { { 0, 0 }, { 0, 0 } }, new[] { 3, 1, 1, 1 } },
-            new object[] { new[] { 1, 3, 4, 2 }, new[,] { { 0, 0 },{ 0, 0 },{ 5, 0 },{ 1, 3 } }, new[,] { { 0, 2 }, { 3, 2 } }, new[] { 1, 3, 2, 2 } },
+            new object[] { new[] { 1, 1, 2, 2 }, new[] { 0, 0, 1, 0, 0, 0, 1, 1 }, new[] { 0, 0, 0, 0 }, new[] { 3, 1, 1, 1 } },
+            new object[] { new[] { 1, 3, 4, 2 }, new[] { 0, 0, 5, 1, 0, 0, 0, 3 }, new[] { 0, 3, 2, 2 }, new[] { 1, 3, 2, 2 } },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
     [MemberData(nameof(TestFusePadConv2DPositiveData))]
-    public void TestFusePadConv2DPositive(int[] shape, int[,] pads1, int[,] pads2, int[] wShape, int index)
+    public void TestFusePadConv2DPositive(int[] shape, int[] pads1, int[] pads2, int[] wShape, int index)
     {
         var caseOptions = passOptions.IndentDir($"case_{index}");
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var w = Random.Normal(DataTypes.Float32, 0, 1, 0, wShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { wShape[0] });
-        var rootPre = NN.Conv2D(NN.Pad(a, pads1, PadMode.Constant, 0), w, b, new[] { 1, 1 }, pads2, new[] { 1, 1 }, PadMode.Constant, 1);
+        var rootPre = NN.Conv2D(NN.Pad(a, pads1, PadMode.Constant, 0f), w, b, new[] { 1, 1 }, pads2, new[] { 1, 1 }, PadMode.Constant, 1);
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new FoldConstCall(),
