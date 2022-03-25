@@ -60,7 +60,7 @@ internal class RuleReceiver : ISyntaxContextReceiver
                       p => SymbolEqualityComparer.Default.Equals(p.Type, IMatchResultSymobl)
                            || p.Type.IsInheritFrom(ExprSymobl)
                            || p.Type.IsInheritFrom(TensorSymobl)
-                           || (p.Type is INamedTypeSymbol { IsGenericType: true } gentype && gentype.TypeArguments.Any(t => t.IsInheritFrom(ExprSymobl)))
+                           || (p.Type is INamedTypeSymbol { IsGenericType: true, Name: "IReadOnlyList" } gentype && gentype.TypeArguments[0].IsInheritFrom(ExprSymobl))
                       ))).ToArray();
                 if (methods.Length == 0)
                     return;

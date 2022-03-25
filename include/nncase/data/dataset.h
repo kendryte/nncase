@@ -17,6 +17,8 @@
 #include <functional>
 #include <nncase/io_utils.h>
 #include <nncase/runtime/datatypes.h>
+#include <nncase/runtime/host_runtime_tensor.h>
+#include <nncase/runtime/runtime_tensor.h>
 #include <optional>
 #include <span>
 #include <string>
@@ -26,35 +28,34 @@
 
 namespace nncase::data
 {
-template <class T>
+
 struct data_batch
 {
-    xt::xarray<T> tensor;
+    std::vector<uint8_t> tensor;
     std::span<const std::filesystem::path> filenames;
 };
 
 class NNCASE_API dataset
 {
 public:
-    template <class T>
     class iterator
     {
     public:
         using iterator_category = std::forward_iterator_tag;
-        using value_type = data_batch<T>;
-        using pointer = data_batch<T> *;
-        using reference = data_batch<T> &;
+        using value_type = data_batch;
+        using pointer = data_batch *;
+        using reference = data_batch &;
 
         bool operator==(const iterator &rhs) const noexcept { return from_ == rhs.from_; }
         bool operator!=(const iterator &rhs) const noexcept { return from_ != rhs.from_; }
 
         iterator &operator++()
         {
-            value_ = dataset_->batch<T>(from_ + dataset_->batch_size());
+            value_ = dataset_->batch(from_ + dataset_->batch_size());
             if (value_)
                 from_ += dataset_->batch_size();
             else
-                *this = dataset_->end<T>();
+                *this = dataset_->end();
             return *this;
         }
 
@@ -65,7 +66,7 @@ public:
             return *this;
         }
 
-        data_batch<T> &operator*()
+        data_batch &operator*()
         {
             if (value_)
                 return *value_;
@@ -73,7 +74,7 @@ public:
             throw std::runtime_error("Invalid datast iterator");
         }
 
-        data_batch<T> *operator->()
+        data_batch *operator->()
         {
             if (value_)
                 return &value_.value();
@@ -85,26 +86,24 @@ public:
         friend class dataset;
 
         iterator(dataset &dataset, size_t from)
-            : dataset_(&dataset), from_(from), value_(dataset.batch<T>(from))
+            : dataset_(&dataset), from_(from), value_(dataset.batch(from))
         {
         }
 
         dataset *dataset_;
         size_t from_;
-        std::optional<data_batch<T>> value_;
+        std::optional<data_batch> value_;
     };
 
     dataset(const std::filesystem::path &path, std::function<bool(const std::filesystem::path &)> file_filter, xt::dynamic_shape<size_t> input_shape, std::string input_layout);
     virtual ~dataset() = default;
 
-    template <class T>
-    iterator<T> begin()
+    iterator begin()
     {
         return { *this, 0 };
     }
 
-    template <class T>
-    iterator<T> end()
+    iterator end()
     {
         return { *this, filenames_.size() };
     }
@@ -119,20 +118,18 @@ protected:
     virtual bool do_normalize() const noexcept { return true; }
 
 private:
-    template <class T>
-    std::optional<data_batch<T>> batch(size_t from)
+    std::optional<data_batch> batch(size_t from)
     {
         if (from + batch_size() <= filenames_.size())
         {
             size_t start = from;
 
-            xt::xarray<T> batch(input_shape_);
             auto file = read_file(filenames_[from++]);
-            process(file, batch.data(), batch.shape(), input_layout_);
-
+            // NOTE not support process
+            // process(file, batch.data(), batch.shape(), input_layout_);
             std::span<const std::filesystem::path> filenames(filenames_.data() + start, filenames_.data() + from);
 
-            return data_batch<T> { std::move(batch), filenames };
+            return data_batch { file, filenames };
         }
 
         return {};
