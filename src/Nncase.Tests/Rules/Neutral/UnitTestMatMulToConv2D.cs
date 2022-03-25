@@ -32,7 +32,7 @@ public class UnitTestMatMulToConv2D
 
     [Theory]
     [MemberData(nameof(TestMatMulToConv2DPositiveData))]
-    public void TestFusePadConv2DPositive(int[] aShape, int[] bShape)
+    public void TestMatMulToConv2DPositive(int[] aShape, int[] bShape)
     {
         var caseOptions = passOptions.IndentDir($"{string.Join("_", aShape)}_{string.Join("_", bShape)}");
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, aShape);
