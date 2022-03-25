@@ -41,55 +41,76 @@ public:
         if (!std::filesystem::exists(options_.output_path))
             std::filesystem::create_directories(options_.output_path);
 
-        if (interp_.inputs_size() != 1)
-            throw std::invalid_argument("Simulator only support models that have single 1 input");
+        auto dataset_paths = split(options_.dataset.string(), ":");
+        if (interp_.inputs_size() != 1 && options_.dataset_format == "image")
+            throw std::invalid_argument("Simulator only support models that have single 1 input for image dataset!");
+        if (interp_.inputs_size() != dataset_paths.size())
+            throw std::invalid_argument("Dataset Paths Must Equal To Inputs Number");
 
-        auto &in_shape = interp_.input_shape(0);
-        xt::dynamic_shape<size_t> dataset_in_shape(in_shape.begin(), in_shape.end());
-        std::unique_ptr<dataset> ds;
-        if (options_.dataset_format == "image")
-            ds = std::make_unique<image_dataset>(options_.dataset, dataset_in_shape, options_.input_layout);
-        else if (options_.dataset_format == "raw")
-            ds = std::make_unique<raw_dataset>(options_.dataset, dataset_in_shape);
-        else
-            throw std::runtime_error("Invalid dataset format: " + options_.dataset_format);
-
-        auto in_type = interp_.input_desc(0).datatype;
-        switch (in_type)
+        std::vector<std::unique_ptr<dataset>> datasets;
+        for (int i = 0; i < interp_.inputs_size(); i++)
         {
-        case dt_float32:
-            eval<float>(*ds);
-            break;
-        case dt_uint8:
-            eval<uint8_t>(*ds);
-            break;
-        case dt_int8:
-            eval<int8_t>(*ds);
-            break;
-        default:
-            throw std::runtime_error("Unsupported input datatype: " + std::string(datatype_names(in_type)));
+            auto &in_shape = interp_.input_shape(i);
+            auto &path = dataset_paths[i];
+            xt::dynamic_shape<size_t> dataset_in_shape(in_shape.begin(), in_shape.end());
+            std::unique_ptr<dataset> ds;
+
+            if (options_.dataset_format == "raw")
+                ds = std::make_unique<raw_dataset>(std::filesystem::path(path), dataset_in_shape);
+            else
+                throw std::runtime_error("Invalid dataset format: " + options_.dataset_format);
+            datasets.push_back(std::move(ds));
         }
+
+        eval(std::move(datasets));
     }
 
 private:
-    template <class T>
-    void eval(dataset &dataset)
+    std::vector<std::string> split(const std::string &str, const std::string &delim)
     {
-        size_t i = 0;
-        for (auto it = dataset.begin<T>(); it != dataset.end<T>(); ++it)
+        std::vector<std::string> tokens;
+        size_t prev = 0, pos = 0;
+        do
         {
+            pos = str.find(delim, prev);
+            if (pos == std::string::npos)
+                pos = str.length();
+            std::string token = str.substr(prev, pos - prev);
+            if (!token.empty())
+                tokens.push_back(token);
+            prev = pos + delim.length();
+        } while (pos < str.length() && prev < str.length());
+        return tokens;
+    }
+
+    void eval(const std::vector<std::unique_ptr<dataset>> &datasets)
+    {
+        size_t count = 0;
+        auto begins = std::vector<dataset::iterator>();
+        auto ends = std::vector<dataset::iterator>();
+        auto indexer = std::vector<int>(begins.size());
+        std::iota(indexer.begin(), indexer.end(), 0);
+        for (auto &ds : datasets)
+        {
+            begins.push_back(ds->begin());
+            begins.push_back(ds->end());
+        }
+        while (std::accumulate(indexer.begin(), indexer.end(), true, [&](bool acc, int i)
+            { return acc && begins[i] != ends[i]; }))
+        {
+            for (int j = 0; j < interp_.inputs_size(); j++)
             {
-                auto input_tensor = interp_.input_tensor(0).unwrap();
+                auto input_tensor = interp_.input_tensor(j).unwrap();
                 auto input_map = std::move(hrt::map(input_tensor, hrt::map_write).unwrap());
                 auto input_buffer = input_map.buffer();
-                auto &tensor = it->tensor;
+                auto &tensor = begins[j]->tensor;
                 std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
             }
 
             auto r = interp_.run();
             if (r.is_ok())
             {
-                std::filesystem::path out_filename(options_.output_path / it->filenames[0].filename());
+                std::filesystem::path out_filename(options_.output_path / ("out" + std::to_string(count)));
                 out_filename.replace_extension(".bin");
 
                 std::ofstream of(out_filename, std::ios::binary | std::ios::out);
@@ -103,11 +124,18 @@ private:
             }
             else
             {
-                std::cerr << "Eval " << it->filenames[0].filename() << " failed: " << r.unwrap_err().message() << std::endl;
+                std::cerr << "Eval " << std::to_string(count) << " failed: " << r.unwrap_err().message() << std::endl;
             }
 
-            if (options_.progress)
-                options_.progress(i, dataset.total_size());
+            // todo current not support
+            // if (options_.progress)
+            //     options_.progress(i, dataset.total_size());
+
+            for (auto &it : begins)
+            {
+                ++it;
+            }
+            count++;
         }
     }
 

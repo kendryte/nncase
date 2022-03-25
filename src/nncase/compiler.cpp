@@ -597,7 +597,7 @@ private:
     }
 
     template <class T, class TOpt>
-    void run_calibration_eval(TOpt &options, dataset &dataset, ir::evaluator &evaluator, eval_step step)
+    void run_calibration_eval(TOpt &options, NNCASE_UNUSED dataset &dataset, ir::evaluator &evaluator, eval_step step)
     {
         std::string step_str = step == nncase::ir::eval_step::after_import ? "1" : (step == nncase::ir::eval_step::after_calib ? "4.2" : "4.4");
         const size_t max_stages = options.calibrate_method == "no_clip" ? 1 : 2;
@@ -614,18 +614,18 @@ private:
                 evaluator.begin_collect_distribution();
             }
 
-            size_t i = 0;
-            for (auto it = dataset.begin<T>(); it != dataset.end<T>(); ++it)
-            {
-                auto input_buffer = evaluator.input_at(0).buffer();
-                auto &tensor = it->tensor;
-                std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
+            // size_t i = 0;
+            // for (auto it = dataset.begin<T>(); it != dataset.end<T>(); ++it)
+            // {
+            //     auto input_buffer = evaluator.input_at(0).buffer();
+            //     auto &tensor = it->tensor;
+            //     std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
 
-                evaluator.evaluate(step, stage, compile_options_.dump_quant_error);
-                evaluator.end_sample();
-                if (options.progress)
-                    options.progress(i++, dataset.total_size());
-            }
+            //     evaluator.evaluate(step, stage, compile_options_.dump_quant_error);
+            //     evaluator.end_sample();
+            //     if (options.progress)
+            //         options.progress(i++, dataset.total_size());
+            // }
 
             if (stage == 1)
             {

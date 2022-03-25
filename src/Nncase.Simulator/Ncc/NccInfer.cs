@@ -9,21 +9,28 @@ public class InferEngine
 {
 
     string modelPath;
-    string inputPath = string.Empty;
-    string outputPath = string.Empty;
+    string inputPathPattern;
+    List<string> inputPaths;
+    string outputPath;
 
     public InferEngine(string model_path)
     {
         modelPath = model_path;
-        inputPath = Path.Combine(Path.GetDirectoryName(modelPath) ?? "", "infer_input", "0.bin");
+        inputPathPattern = Path.Combine(Path.GetDirectoryName(modelPath) ?? "", "infer_input_{0}", "0.bin").ToString();
+        inputPaths = new();
         outputPath = Path.Combine(Path.GetDirectoryName(modelPath) ?? "", "infer_output");
     }
 
     public void InputTensor(int index, Tensor tensor)
     {
-        if (index != 0)
-            throw new NotSupportedException("Only Support 1 Input!");
-        tensor.ToFile(inputPath);
+        var path = string.Format(inputPathPattern, index);
+        if (inputPaths.Count == index)
+            inputPaths.Add(path[..^5]);
+        else if (inputPaths.Count > index)
+            inputPaths[index] = path[..^5];
+        else
+            throw new NotSupportedException($"Can't Set The Index {index}");
+        tensor.ToFile(path);
     }
 
     public Tensor OutputTensor(int index, DataType dataType, int[] shape)
@@ -31,7 +38,7 @@ public class InferEngine
         if (index != 0)
             throw new NotSupportedException("Only Support 1 Output!");
         var bytes = File.ReadAllBytes(Path.Combine(outputPath, $"{index}.bin"));
-        return Tensor.FromBytes(dataType,bytes,shape);
+        return Tensor.FromBytes(dataType, bytes, shape);
     }
 
     static string GetRid()
@@ -75,7 +82,8 @@ public class InferEngine
         using var logWriter = new StringWriter(logMsg);
         using var proc = new Process();
         proc.StartInfo.FileName = Path.Combine("runtimes", GetRid(), "native", "ncc");
-        proc.StartInfo.Arguments = $"infer {modelPath} {outputPath} --dataset {inputPath} --dataset-format raw --wait-key"; proc.StartInfo.UseShellExecute = false;
+        proc.StartInfo.Arguments = $"infer {modelPath} {outputPath} --dataset {string.Join(":", inputPaths)} --dataset-format raw --wait-key";
+        proc.StartInfo.UseShellExecute = false;
         proc.StartInfo.RedirectStandardInput = true;
         proc.StartInfo.RedirectStandardError = true;
         proc.StartInfo.RedirectStandardOutput = true;
