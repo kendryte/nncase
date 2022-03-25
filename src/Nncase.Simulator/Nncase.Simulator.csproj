@@ -11,6 +11,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
     <PackageReference Include="System.Numerics.Tensors" Version="6.0.0-rc.2.21480.5" />
-    <!-- <PackageReference Include="Nncase.Simulator.Native" Version="1.0.0" /> -->
+    <PackageReference Include="Nncase.Simulator.Native" Version="1.0.0" />
   </ItemGroup>
 </Project>
