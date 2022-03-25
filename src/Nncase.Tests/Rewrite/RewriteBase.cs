@@ -54,7 +54,7 @@ namespace Nncase.Tests.RewriteTest
             expr.InferenceType();
             var f = new Function(expr, parameters);
             var result = CompilerServices.InferenceType(f);
-            f.DumpExprAsIL("before", Path.Combine(passOptions.PassDumpDir, $"ShapeInfer_{name}"));
+            CompilerServices.DumpIR(f, "before", Path.Combine(passOptions.PassDumpDir, $"ShapeInfer_{name}"));
             return ((Function)new ShapeInferPass($"ShapeInfer_{name}").Run(f, passOptions)).Body;
         }
 

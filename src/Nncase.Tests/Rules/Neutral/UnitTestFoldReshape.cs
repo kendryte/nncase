@@ -5,30 +5,23 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR.F;
 using Nncase.Transform;
 using Nncase.Transform.Rules.Neutral;
 using Xunit;
-using Nncase.IR.F;
-using Random = Nncase.IR.F.Random;
 using Math = Nncase.IR.F.Math;
+using Random = Nncase.IR.F.Random;
 
-namespace Nncase.Tests.Rules.Neutral;
+namespace Nncase.Tests.Rules.NeutralTest;
 
 public class UnitTestFoldReshape
 {
+
     private readonly RunPassOptions passOptions;
 
     public UnitTestFoldReshape()
     {
-        string dumpDir = Path.Combine(GetThisFilePath(), "..", "..", "..", "..", "tests_output");
-        dumpDir = Path.GetFullPath(dumpDir);
-        Directory.CreateDirectory(dumpDir);
-        passOptions = new RunPassOptions(null, 3, dumpDir);
-    }
-
-    private static string GetThisFilePath([CallerFilePath] string path = null)
-    {
-        return path;
+        passOptions = new RunPassOptions(null, 3, Testing.GetDumpDirPath(this.GetType()));
     }
 
     public static IEnumerable<object[]> TestFoldNopReshapePositiveData =>
@@ -42,9 +35,10 @@ public class UnitTestFoldReshape
     [MemberData(nameof(TestFoldNopReshapePositiveData))]
     public void TestFoldNopReshapePositive(int[] shape, int[] newShape)
     {
+        var caseOptions = passOptions.IndentDir(string.Join("_", shape) + "_" + string.Join("_", newShape));
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Reshape(a, newShape);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopReshape() }, passOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopReshape() }, caseOptions);
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -61,6 +55,7 @@ public class UnitTestFoldReshape
     [MemberData(nameof(TestFoldTwoReshapesPositiveData))]
     public void TestFoldTwoReshapesPositive(int[] shape, int[] newShape1, int[] newShape2)
     {
+        var caseOptions = passOptions.IndentDir(string.Join("_", shape) + "_" + string.Join("_", newShape1) + "_" + string.Join("_", newShape2));
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Reshape(Tensors.Reshape(a, newShape1), newShape2);
         var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoReshapes() }, passOptions);

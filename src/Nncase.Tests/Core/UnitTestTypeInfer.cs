@@ -104,7 +104,7 @@ public class UnitTestTypeInfer : IHostFixtrue
     void AssertInferShape(Expr expr, Shape shape)
     {
         Assert.True(CompilerServices.InferenceType(expr));
-        Assert.Equal(shape, expr.CheckedShape);
+        Assert.Equal(expr.CheckedShape, shape);
     }
 
     [Fact]
@@ -152,5 +152,20 @@ public class UnitTestTypeInfer : IHostFixtrue
         AssertReshape(input, new[] { -1, 5, 6, 7}, new[] {4, 5, 6, 7});
         AssertReshape(input, new[] { -1, 5, 3, 7}, new[] {8, 5, 3, 7});
         AssertReshape(input, new[] { -1}, new[] {4 * 5 * 6 * 7});
+    }
+
+    [Fact]
+    public void TestReInference()
+    {
+        // 1. before the transfrom the dag is invalid type
+        Var x = new("x");
+        Const b = 2;
+        Function f = new("f", x + b, new[] { x });
+        Assert.False(CompilerServices.InferenceType(f));
+
+        // 2. after the  transfrom the dag is valid type
+        var y = x with { TypeAnnotation = TensorType.Scalar(DataTypes.Int32) };
+        var new_f = f with { Body = y + b, Parameters = new[] { y } };
+        Assert.True(CompilerServices.InferenceType(new_f));
     }
 }

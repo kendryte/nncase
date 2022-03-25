@@ -5,14 +5,14 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR.F;
 using Nncase.Transform;
 using Nncase.Transform.Rules.Neutral;
 using Xunit;
-using Nncase.IR.F;
-using Random = Nncase.IR.F.Random;
 using Math = Nncase.IR.F.Math;
+using Random = Nncase.IR.F.Random;
 
-namespace Nncase.Tests.Rules.Neutral;
+namespace Nncase.Tests.Rules.NeutralTest;
 
 public class UnitTestMatMulToConv2D
 {
@@ -20,15 +20,7 @@ public class UnitTestMatMulToConv2D
 
     public UnitTestMatMulToConv2D()
     {
-        string dumpDir = Path.Combine(GetThisFilePath(), "..", "..", "..", "..", "tests_output");
-        dumpDir = Path.GetFullPath(dumpDir);
-        Directory.CreateDirectory(dumpDir);
-        passOptions = new RunPassOptions(null, 3, dumpDir);
-    }
-
-    private static string GetThisFilePath([CallerFilePath] string path = null)
-    {
-        return path;
+        passOptions = new RunPassOptions(null, 3, Testing.GetDumpDirPath(this.GetType()));
     }
 
     public static IEnumerable<object[]> TestMatMulToConv2DPositiveData =>
@@ -42,6 +34,7 @@ public class UnitTestMatMulToConv2D
     [MemberData(nameof(TestMatMulToConv2DPositiveData))]
     public void TestFusePadConv2DPositive(int[] aShape, int[] bShape)
     {
+        var caseOptions = passOptions.IndentDir($"{string.Join("_", aShape)}_{string.Join("_", bShape)}");
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, aShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, bShape);
         var rootPre = Math.MatMul(a, b);
@@ -49,7 +42,7 @@ public class UnitTestMatMulToConv2D
         {
             new FoldConstCall(),
             new FusePadConv2d()
-        }, passOptions);
+        }, caseOptions);
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));

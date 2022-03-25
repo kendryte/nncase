@@ -2,10 +2,10 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.IO;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -59,7 +59,7 @@ internal class DataflowRewriter
         switch (options.DumpLevel)
         {
             case >= 2:
-                IRPrinter.DumpExprAsIL(expr, $"{count}_Start", Path.Combine(options.PassDumpDir, "Rewrite"));
+                CompilerServices.DumpIR(expr, $"{count}_Start", Path.Combine(options.PassDumpDir, "Rewrite"));
                 break;
             case >= 1:
                 break;
@@ -76,7 +76,7 @@ internal class DataflowRewriter
         switch (options.DumpLevel)
         {
             case >= 2:
-                IRPrinter.DumpExprAsIL(expr, $"{count}_End", Path.Combine(options.PassDumpDir, "Rewrite"));
+                CompilerServices.DumpIR(expr, $"{count}_End", Path.Combine(options.PassDumpDir, "Rewrite"));
                 break;
             case >= 1:
                 break;

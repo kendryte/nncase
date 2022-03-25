@@ -15,6 +15,7 @@ public class CoreModule : Module
     {
         builder.RegisterType<CompilerServicesProvider>().AsImplementedInterfaces().SingleInstance();
         builder.RegisterType<DataTypeServiceProvider>().AsImplementedInterfaces().SingleInstance();
+        builder.RegisterType<IR.IRPrinterProvider>().AsImplementedInterfaces().SingleInstance();
 
         // Prim types
         builder.RegisterType<BooleanType>().As<PrimType>().SingleInstance();

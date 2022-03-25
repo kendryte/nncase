@@ -58,7 +58,7 @@ public class DataflowPass : FunctionPass
         switch (options.DumpLevel)
         {
             case >= 2:
-                IRPrinter.DumpExprAsIL(callable, "Start", Path.Combine(options.PassDumpDir, Name));
+                CompilerServices.DumpIR(callable, "Start", Path.Combine(options.PassDumpDir, Name));
                 break;
             case >= 1:
                 break;
@@ -77,7 +77,7 @@ public class DataflowPass : FunctionPass
         switch (options.DumpLevel)
         {
             case >= 2:
-                IRPrinter.DumpExprAsIL(callable, "End", Path.Combine(options.PassDumpDir, Name));
+                CompilerServices.DumpIR(callable, "End", Path.Combine(options.PassDumpDir, Name));
                 break;
             case >= 1:
                 break;

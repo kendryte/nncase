@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Binary"/>.
 /// </summary>
-public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binary>, ICostEvaluator<Binary>
+public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binary>, ICostEvaluator<Binary>, IOpPrinter<Binary>
 {
     /// <inheritdoc />
     public IValue Visit(IEvaluateContext context, Binary binary)
@@ -56,6 +56,15 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         var returnType = context.GetReturnType<TensorType>();
         var arithm = returnType.Shape.Prod().FixedValue;
         return new(arithm, arithm * returnType.DType.SizeInBytes);
+    }
+
+    /// <inheritdoc/>
+    public string Visit(IIRPrinterContext context, Binary target, bool ILmode)
+    {
+        var lhs = context.GetArgument(target, Binary.Lhs);
+        var rhs = context.GetArgument(target, Binary.Rhs);
+
+        return $"({lhs.Serialize()} {context.Get(target).Serialize()} {rhs.Serialize()})";
     }
 
     private IRType Visit(TensorType lhs, TensorType rhs)
