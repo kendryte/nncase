@@ -95,7 +95,7 @@ bool fold_nop_slice_transform::on_try_match(node &node, transform_context &conte
 {
     if (auto rp1 = node_cast<slice>(node))
     {
-        if (rp1->input().shape() == rp1->output().shape())
+        if (rp1->input().shape() == rp1->output().shape() && rp1->strides() == axis_t { 1, 1, 1, 1 })
         {
             context.inputs.emplace_back(&rp1->input());
             context.outputs.emplace_back(&rp1->output());
