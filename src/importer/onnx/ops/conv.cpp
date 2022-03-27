@@ -37,10 +37,17 @@ void onnx_importer::convert_op_Conv(const NodeProto &node)
 
     auto input_shape = get_shape(input);
     auto weight_shape = get_shape(weight);
-
+    auto output_shape = get_shape(output);
+    auto input_type = get_datatype(input).value();
+    auto weights_type = get_datatype(weight).value();
+    auto output_type = get_datatype(output).value();
     // group
     const auto &group_attr = get_attribute<int>(node, "group");
     size_t group = group_attr ? group_attr.value() : 1;
+    if (generate_name(node) == "Conv_56")
+    {
+        NNCASE_UNUSED auto a = 1;
+    }
 
     // stride
     std::array<size_t, 2> strides = { 1, 1 };
@@ -76,14 +83,15 @@ void onnx_importer::convert_op_Conv(const NodeProto &node)
         if (paddings_attr)
         {
             const auto &paddings_values = paddings_attr.value();
-            if (paddings_values.size() > 1)
+            if (paddings_values.size() == 2)
+            {
+                paddings[0].before = paddings_values[0];
+                paddings[0].after = paddings_values[1];
+            }
+            else if (paddings_values.size() == 4)
             {
                 paddings[0].before = paddings_values[0];
                 paddings[1].before = paddings_values[1];
-            }
-
-            if (paddings_values.size() > 3)
-            {
                 paddings[0].after = paddings_values[2];
                 paddings[1].after = paddings_values[3];
             }
@@ -105,12 +113,42 @@ void onnx_importer::convert_op_Conv(const NodeProto &node)
             std::swap(paddings[1].before, paddings[1].after);
     }
 
+    // fit 3D input
+    bitcast *bitc_data, *bitc_weights;
+    bool model_3d = false;
+    if (input_shape.size() == 3)
+    {
+        model_3d = true;
+        paddings[1] = padding::zero();
+        strides[1] = 1;
+        dilations[1] = 1;
+        auto data_shape = input_shape;
+        input_shape.push_back(1);
+        bitc_data = graph_.emplace<bitcast>(input_type, data_shape, input_shape);
+
+        auto weights_shape = weight_shape;
+        weight_shape.push_back(1);
+        bitc_weights = graph_.emplace<bitcast>(weights_type, weights_shape, weight_shape);
+    }
+
     auto conv = graph_.emplace<conv2d>(input_shape, weight_shape, group, paddings[0], paddings[1], strides[0], strides[1],
         dilations[0], dilations[1], value_range<float>::full());
     conv->name(generate_name(node) + "(Conv)");
 
-    input_tensors_.emplace(&conv->input(), input);
-    input_tensors_.emplace(&conv->weights(), weight);
+    if (model_3d)
+    {
+        conv->input().connect(bitc_data->output());
+        input_tensors_.emplace(&bitc_data->input(), input);
+
+        conv->weights().connect(bitc_weights->output());
+        input_tensors_.emplace(&bitc_weights->input(), weight);
+    }
+    else
+    {
+        input_tensors_.emplace(&conv->input(), input);
+        input_tensors_.emplace(&conv->weights(), weight);
+    }
+
     if (node.input().size() > 2)
     {
         input_tensors_.emplace(&conv->bias(), node.input()[2]);
@@ -122,7 +160,15 @@ void onnx_importer::convert_op_Conv(const NodeProto &node)
         auto bias = graph_.emplace<constant>(dt_float32, shape, zeros);
         conv->bias().connect(bias->output());
     }
-    output_tensors_.emplace(output, &conv->output());
+
+    if (model_3d)
+    {
+        auto bitc_out = graph_.emplace<bitcast>(output_type, conv->output().shape(), shape_t { conv->output().shape()[0], conv->output().shape()[1], conv->output().shape()[2] });
+        bitc_out->input().connect(conv->output());
+        output_tensors_.emplace(output, &bitc_out->output());
+    }
+    else
+        output_tensors_.emplace(output, &conv->output());
 }
 
 void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
