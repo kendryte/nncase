@@ -115,6 +115,10 @@ void onnx_importer::convert_op_Slice(const NodeProto &node)
                 begins[i] = begins[i] == min ? min + 1 : begins[i];
                 begins[i] = begins[i] == max ? max - 1 : begins[i];
             }
+            if (begins[i] < 0)
+                begins[i] += max;
+            if (ends[i] < 0)
+                ends[i] += max;
         }
     }
 
