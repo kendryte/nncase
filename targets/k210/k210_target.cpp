@@ -28,6 +28,7 @@
 #include <nncase/transforms/k210/strided_slice_motion.h>
 #include <nncase/transforms/neutral/add_quant_checkpoints.h>
 #include <nncase/transforms/neutral/add_to_conv2d.h>
+#include <nncase/transforms/neutral/dequantize_motion.h>
 #include <nncase/transforms/neutral/eliminate_dilated_conv2d.h>
 #include <nncase/transforms/neutral/fold_constant.h>
 #include <nncase/transforms/neutral/fold_pad.h>
@@ -186,6 +187,12 @@ void k210_target::register_quantize_passes(const module_type_t &type, ir::transf
         // p.emplace<fold_input_kpu_upload_transform>();
         add_default_transforms(p);
         p.emplace<fold_quantize_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+    {
+        transform_pass p("optimize_output_dequantize");
+        p.emplace<dequantize_transpose_motion_transform>();
+        p.emplace<dequantize_bitcast_motion_transform>();
         pass_mgr.add_pass(std::move(p));
     }
 }
