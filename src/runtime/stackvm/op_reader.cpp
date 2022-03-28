@@ -14,11 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <nncase/runtime/stackvm/op_profile.h>
 #include <nncase/runtime/stackvm/op_reader.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
+
+std::unordered_map<std::string, double> op_profile::op_time_cast_;
 
 result<void> op_visitor::next() noexcept
 {
@@ -29,71 +32,170 @@ result<void> op_visitor::next() noexcept
         switch (tensor_funct)
         {
         case tensor_function_t::BATCH_TO_SPACE:
+        {
+            op_profile st(std::string("batch_to_space"));
             return visit(op_reader<tensor_batch_to_space_op_t>()(reader_));
+        }
         case tensor_function_t::BROADCAST:
+        {
+            op_profile st(std::string("broadcast"));
             return visit(op_reader<tensor_broadcast_op_t>()(reader_));
+        }
         case tensor_function_t::BINARY:
+        {
+            op_profile st(std::string("binary"));
             return visit(op_reader<tensor_binary_op_t>()(reader_));
+        }
         case tensor_function_t::CALL:
+        {
+            op_profile st(std::string("call"));
             return visit(op_reader<tensor_call_op_t>()(reader_));
+        }
         case tensor_function_t::CONV2D:
+        {
+            op_profile st(std::string("conv2d"));
             return visit(op_reader<tensor_conv2d_op_t>()(reader_));
+        }
         case tensor_function_t::COPY:
+        {
+            op_profile st(std::string("copy"));
             return visit(op_reader<tensor_copy_op_t>()(reader_));
+        }
         case tensor_function_t::CONVERT:
+        {
+            op_profile st(std::string("convert"));
             return visit(op_reader<tensor_convert_op_t>()(reader_));
+        }
         case tensor_function_t::CUMSUM:
+        {
+            op_profile st(std::string("cumsum"));
             return visit(op_reader<tensor_cumsum_op_t>()(reader_));
+        }
         case tensor_function_t::DEQUANTIZE:
+        {
+            op_profile st(std::string("dequantize"));
             return visit(op_reader<tensor_dequantize_op_t>()(reader_));
+        }
         case tensor_function_t::EQUAL:
+        {
+            op_profile st(std::string("equal"));
             return visit(op_reader<tensor_equal_op_t>()(reader_));
+        }
         case tensor_function_t::GATHER:
+        {
+            op_profile st(std::string("gather"));
             return visit(op_reader<tensor_gather_op_t>()(reader_));
+        }
         case tensor_function_t::GATHER_ND:
+        {
+            op_profile st(std::string("gather_nd"));
             return visit(op_reader<tensor_gather_nd_op_t>()(reader_));
+        }
         case tensor_function_t::HARDMAX:
+        {
+            op_profile st(std::string("hardmax"));
             return visit(op_reader<tensor_hardmax_op_t>()(reader_));
+        }
         case tensor_function_t::LUT1D:
+        {
+            op_profile st(std::string("lut1d"));
             return visit(op_reader<tensor_lut1d_op_t>()(reader_));
+        }
         case tensor_function_t::MATMUL:
+        {
+            op_profile st(std::string("matmul"));
             return visit(op_reader<tensor_matmul_op_t>()(reader_));
+        }
         case tensor_function_t::ONEHOT:
+        {
+            op_profile st(std::string("onehot"));
             return visit(op_reader<tensor_onehot_op_t>()(reader_));
+        }
         case tensor_function_t::PAD:
+        {
+            op_profile st(std::string("pad"));
             return visit(op_reader<tensor_pad_op_t>()(reader_));
+        }
         case tensor_function_t::QUANTIZE:
+        {
+            op_profile st(std::string("quantize"));
             return visit(op_reader<tensor_quantize_op_t>()(reader_));
+        }
         case tensor_function_t::RANDOM_NORMAL:
+        {
+            op_profile st(std::string("random_normal"));
             return visit(op_reader<tensor_random_normal_op_t>()(reader_));
+        }
         case tensor_function_t::RANDOM_UNIFORM:
+        {
+            op_profile st(std::string("random_uniform"));
             return visit(op_reader<tensor_random_uniform_op_t>()(reader_));
+        }
         case tensor_function_t::REDUCE:
+        {
+            op_profile st(std::string("reduce"));
             return visit(op_reader<tensor_reduce_op_t>()(reader_));
+        }
         case tensor_function_t::REDUCE_ARG:
+        {
+            op_profile st(std::string("reduce_arg"));
             return visit(op_reader<tensor_reduce_arg_op_t>()(reader_));
+        }
         case tensor_function_t::REDUCE_PROD:
+        {
+            op_profile st(std::string("reduce_prod"));
             return visit(op_reader<tensor_reduce_prod_op_t>()(reader_));
+        }
         case tensor_function_t::REDUCE_WINDOW2D:
+        {
+            op_profile st(std::string("reduce_window2s"));
             return visit(op_reader<tensor_reduce_window2d_op_t>()(reader_));
+        }
         case tensor_function_t::RESIZE_IMAGE:
+        {
+            op_profile st(std::string("resize_image"));
             return visit(op_reader<tensor_resize_image_op_t>()(reader_));
+        }
         case tensor_function_t::ROI_ALIGN:
+        {
+            op_profile st(std::string("roi_align"));
             return visit(op_reader<tensor_roi_align_op_t>()(reader_));
+        }
         case tensor_function_t::SIGMOID:
+        {
+            op_profile st(std::string("sigmoid"));
             return visit(op_reader<tensor_sigmoid_op_t>()(reader_));
+        }
         case tensor_function_t::SLICE:
+        {
+            op_profile st(std::string("slice"));
             return visit(op_reader<tensor_slice_op_t>()(reader_));
+        }
         case tensor_function_t::TERNARY:
+        {
+            op_profile st(std::string("ternary"));
             return visit(op_reader<tensor_ternary_op_t>()(reader_));
+        }
         case tensor_function_t::TOPK:
+        {
+            op_profile st(std::string("topk"));
             return visit(op_reader<tensor_topk_op_t>()(reader_));
+        }
         case tensor_function_t::TRILU:
+        {
+            op_profile st(std::string("trilu"));
             return visit(op_reader<tensor_trilu_op_t>()(reader_));
+        }
         case tensor_function_t::UNARY:
+        {
+            op_profile st(std::string("unary"));
             return visit(op_reader<tensor_unary_op_t>()(reader_));
+        }
         case tensor_function_t::TRANSPOSE:
+        {
+            op_profile st(std::string("transpose"));
             return visit(op_reader<tensor_transpose_op_t>()(reader_));
+        }
         default:
             break;
         }
@@ -305,5 +407,7 @@ result<void> op_visitor::visit(gsl::span<const gsl::byte> text) noexcept
 
     while (!interrupted_ && !reader_.empty())
         try_(next());
+    op_profile profile_time;
+    profile_time.print_profile();
     return ok();
 }
