@@ -2,6 +2,9 @@ name: .NET
 
 on:
   push:
+    branches: [ rebuild-ir-ort ]
+  pull_request:
+    branches: [ rebuild-ir-ort ]
 
 jobs:
   build:
@@ -9,28 +12,22 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-2019]
+        os: [ubuntu-18.04] #,windows-2019,macos-10.15]
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 6.0.x
-    - name: Build
-      run: dotnet build
+      - uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
+          
+      - uses: actions/checkout@v2
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        
+      - name: Build
+        run: dotnet build
 
-#    - name: TestLib
-#      working-directory: ${{github.workspace}}/src/Nncase.Tests/bin/Debug/net6.0/runtimes/linux-x64/native/
-#      run: cp ${{github.workspace}}/main.c main.c
-#
-#
-#    - name: TestLibLoad
-#      working-directory: ${{github.workspace}}/src/Nncase.Tests/bin/Debug/net6.0/runtimes/linux-x64/native/
-#      run: gcc main.c -L . -lortki
-      
-    - name: Test
-      run: #|
-#         export LD_LIBRARY_PATH=${{github.workspace}}/src/Nncase.Tests/bin/Debug/net6.0/runtimes/linux-x64/native:${{github.workspace}}/src/Nncase.Cli/bin/Debug/net6.0/runtimes/linux-x64/native:$LD_LIBRARY_PATH
-#         echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
-        dotnet test --no-build --verbosity normal 
+      - name: Test
+        run: |
+          dotnet test --no-build --verbosity normal 
