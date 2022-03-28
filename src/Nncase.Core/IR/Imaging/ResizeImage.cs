@@ -24,7 +24,7 @@ namespace Nncase.IR.Imaging
         /// <summary>
         /// Gets new_size.
         /// </summary>
-        public static readonly ParameterInfo NewSize = new(typeof(ResizeImage), 1, "new_size", HasRank(1));
+        public static readonly ParameterInfo NewSize = new(typeof(ResizeImage), 1, "new_size", HasShape(new[] { 2 }));
 
         /// <summary>
         /// Gets AlignCorners.
