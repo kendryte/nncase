@@ -258,7 +258,7 @@ namespace Nncase.Tests.RewriteTest
             var padding = Util.ConcatPadding(padH, padW);
             // Assert.True(CompilerServices.InferenceType(padding));
             var paddingPost = RunShapeInferPass("padding", padding, input);
-            Assert.Equal(new[] {1, 1, 1, 1}, paddingPost);
+            Assert.Equal(Tensor.FromSpan(new[] {1, 1, 1, 1}, new Shape(2, 2)), paddingPost);
         }
 
         [Fact]

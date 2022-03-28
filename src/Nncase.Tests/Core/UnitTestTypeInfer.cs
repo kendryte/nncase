@@ -45,7 +45,7 @@ public class UnitTestTypeInfer : IHostFixtrue
     public void TestInferPad()
     {
         var a = new Var(new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
-        var pads = Tensor.FromSpan<int>(new[] { 0, 1, 2, 3, 0, 1, 2, 3 });
+        var pads = Tensor.FromSpan(new[] { 0, 0, 1, 1, 2, 2, 3, 3 }, new Shape(4, 2));
         var pad = Pad(a, pads, PadMode.Constant, 1f);
         Assert.True(CompilerServices.InferenceType(pad));
         Assert.Equal(pad.CheckedShape, new Shape(1, 5, 228, 230));

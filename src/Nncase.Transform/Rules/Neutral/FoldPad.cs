@@ -61,7 +61,8 @@ public sealed partial class FoldTwoPads : IRewriteRule
             var newt = new Tensor<int>(t1.Dimensions);
             for (int i = 0; i < t1.Dimensions[0]; i++)
             {
-                newt[i] = t1[i] + t2[i];
+                newt[i, 0] = t1[i, 0] + t2[i, 0];
+                newt[i, 1] = t1[i, 1] + t2[i, 1];
             }
 
             return Pad(input, newt, PadMode.Constant, padValue1);
