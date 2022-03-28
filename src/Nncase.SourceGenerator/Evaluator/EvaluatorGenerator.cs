@@ -93,7 +93,9 @@ internal class EvaluatorGenerator : ISourceGenerator
                 },
                 InterfaceKind.ITypeInferencer => paramType switch
                 {
-                    { IsReferenceType: true } x when x.IsInheritFrom(Receiver.IRTypeSymobl) => $"CheckArgumentType<{x}>"
+                    { IsReferenceType: true } x when x.IsInheritFrom(Receiver.IRTypeSymobl) => $"CheckArgumentType<{x}>",
+                    var x when x.Equals(Receiver.ExprSymobl) => $"GetArgument",
+                    _ => throw new NotSupportedException($"Convert {paramType.Name} {paramType.ToDisplayString()} For ITypeInferencer Impl!")
                 },
                 _ => throw new NotSupportedException($"{paramType.ToDisplayString()} with {cand.Target}!")
             };

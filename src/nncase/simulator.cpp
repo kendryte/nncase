@@ -88,12 +88,12 @@ private:
         size_t count = 0;
         auto begins = std::vector<dataset::iterator>();
         auto ends = std::vector<dataset::iterator>();
-        auto indexer = std::vector<int>(begins.size());
+        auto indexer = std::vector<int>(datasets.size());
         std::iota(indexer.begin(), indexer.end(), 0);
         for (auto &ds : datasets)
         {
             begins.push_back(ds->begin());
-            begins.push_back(ds->end());
+            ends.push_back(ds->end());
         }
         while (std::accumulate(indexer.begin(), indexer.end(), true, [&](bool acc, int i)
             { return acc && begins[i] != ends[i]; }))
