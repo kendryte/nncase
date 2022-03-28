@@ -11,7 +11,9 @@ using Nncase.IR;
 using Google.Protobuf;
 using Google.Protobuf.Collections;
 using LanguageExt;
+using Nncase.IR.Tensors;
 using Onnx;
+using static Nncase.IR.F.Tensors;
 using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Importer
@@ -363,6 +365,11 @@ namespace Nncase.Importer
             {
                 throw new InvalidOperationException("Visit result is not expression(s).");
             }
+        }
+
+        private Expr ToNncasePadFormat(Expr pads)
+        {
+            return Transpose(Reshape(pads, new[] {-1, 2}), new[] {1, 0});
         }
     }
 }

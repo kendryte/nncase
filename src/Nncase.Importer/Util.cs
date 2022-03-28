@@ -8,10 +8,11 @@ using Nncase.IR;
 using Nncase.IR.Tensors;
 using F = Nncase.IR.F;
 using Tuple = Nncase.IR.Tuple;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase
 {
-    public class Util
+    public static class Util
     {
         public static Expr ShapeIndex(in Expr input, int index)
         {
@@ -28,6 +29,16 @@ namespace Nncase
             return (ShapeIndex(input, 2), ShapeIndex(input, 3));
         }
 
+        /// <summary>
+        /// onnx format pads to nncase format(same as tf)
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public static Expr PadTranslate(Expr pads)
+        {
+            return Transpose(Reshape(pads, new[] {-1, 2}), new[] {1, 0});
+        }
+        
         public static TensorConst ZeroTensor()
         {
             return new TensorConst(Tensor.FromSpan<int>(new[] {0}));

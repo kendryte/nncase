@@ -9,6 +9,7 @@ using Nncase.IR.NN;
 using OrtKISharp;
 using Tensorflow;
 using Tensorflow.NumPy;
+using static Nncase.Evaluator.EvaluatorUtil;
 
 namespace Nncase.Evaluator.NN;
 using static Tensorflow.Binding;
@@ -36,17 +37,13 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>
             PadMode.Edge => "edge",
             _ => throw new ArgumentOutOfRangeException(nameof(pad.PadMode)),
         };
-        return OrtKI.Pad(input, pads, constValue, mode).ToValue();
+        return OrtKI.Pad(input, ToOnnxPadFormat(pads), constValue, mode).ToValue();
     }
 
     public IValue SymmetricPad(IEvaluateContext context, Pad pad)
     {
         var input = context.GetTFArgumentValue(pad, Pad.Input);
-        var paddings = context.GetTFArgumentValue(pad, Pad.Pads);
-        var shape = Tensor.FromSpan<int>(new[] {2, (int) paddings.size / 2});
-        paddings = tf.reshape(paddings, shape.ToTFTensor());
-        var pads = tf.transpose(paddings, new Axis(1, 0));
-
+        var pads = context.GetTFArgumentValue(pad, Pad.Pads);
         var mode = "SYMMETRIC";
         var result = tf.Context.ExecuteOp(
             "MirrorPad",

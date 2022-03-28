@@ -25,7 +25,7 @@ namespace Nncase.Importer
             var paddings = GetIntsAttribute(op, "pads");
             var pads = Tensor.FromSpan<long>(paddings);
             var value = GetFloatAttribute(op, "value", 0f);
-            return Pad(input, pads, padMode, value);
+            return Pad(input, ToNncasePadFormat(pads), padMode, value);
         }
 
         // `pads` should be a 1D tensor of shape [2 * input_rank].
@@ -40,7 +40,7 @@ namespace Nncase.Importer
                 .Match(
                     x => SliceIndex(x, 0),
                     () => 0f);
-            return Pad(input, pads, padMode, padValue);
+            return Pad(input, ToNncasePadFormat(pads), padMode, padValue);
         }
 
         private PadMode GetPadMode(in NodeProto op)
