@@ -21,6 +21,7 @@ namespace Nncase.Importer
             var group = GetIntAttribute(op, "group", 1);
 
             // if not present, should be inferred from input W
+            
             var strides = GetStrideAttribute(op);
             var pads = AutoPad(op, autoPad, input, weights, strides.ToArray<long>(), dilation);
             return F.NN.Conv2D(input, weights, bias, strides, pads, Tensor.FromSpan<long>(dilation), PadMode.Constant, group);
@@ -52,7 +53,7 @@ namespace Nncase.Importer
         }
 
         private Expr AutoPad(NodeProto op, string autoPad, Expr input, Expr weights,
-            long[] strides, long[] dilation) => autoPad switch
+            long[] strides, long[] dilation) => ToNncasePadFormat(autoPad switch
             {
                 "NOTSET" => GetPadsAttribute(op),
                 "SAME_UPPER" => Util.GetPaddings(input, weights, strides, dilation, true),
@@ -63,6 +64,6 @@ namespace Nncase.Importer
                 // in onnx doc, not spec when VALID value
                 // https://github.com/onnx/onnx/blob/master/docs/Operators.md#Conv
                 _ => throw new InvalidDataException($"invalid AutoPad Value: {autoPad}"),
-            };
+            });
     }
 }

@@ -9,6 +9,7 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
 using OrtKISharp;
+using static Nncase.Evaluator.EvaluatorUtil;
 
 namespace Nncase.Evaluator.NN;
 
@@ -25,12 +26,12 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
         var bias = context.GetOrtArgumentValue(conv, Conv2D.Bias);
         
         var stride = context.GetArgumentValueAsArray<long>(conv, Conv2D.Stride);
-        var pad = context.GetArgumentValueAsArray<long>(conv, Conv2D.Padding);
+        var pad = context.GetInt64OrtTensorArgumentValue(conv, Conv2D.Padding);
         var dilation = context.GetArgumentValueAsArray<long>(conv, Conv2D.Dilation);
         var groups = context.GetArgumentValueAsScalar<long>(conv, Conv2D.Groups);
         var kernelShape = weights.Shape;
         return OrtKI.Conv(input, weights, bias, "NOTSET", dilation, groups,
-            new long[] {kernelShape[2], kernelShape[3]}, pad, stride).ToValue();
+            new long[] {kernelShape[2], kernelShape[3]}, ToOnnxPadFormat(pad), stride).ToValue();
     }
 
     /// <inheritdoc/>

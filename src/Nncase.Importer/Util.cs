@@ -54,14 +54,9 @@ namespace Nncase
         {
             // return [[padh_before, padh_after],
             //         [padw_before, padw_after]]
-            return F.Tensors.Stack(
-                new Tuple(
-                    padH[0], padW[0], 
-                    padH[1], padW[1]), 
-                0);
-            // return F.Tensors.Stack(new Tuple(
-            //   F.Tensors.Concat(new Tuple(padH), 0),
-            //   F.Tensors.Concat(new Tuple(padW), 0)), 0);
+            return Stack(new Tuple(
+                Stack(new Tuple(padH), 0),
+                Stack(new Tuple(padW), 0)), 0);
         }
 
         private static Expr GetWindowedOutputSize(Expr size, Expr filter, Expr stride, Expr dilation, bool same, bool ceilMode)
