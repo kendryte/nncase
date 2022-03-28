@@ -407,7 +407,7 @@ result<void> op_visitor::visit(gsl::span<const gsl::byte> text) noexcept
 
     while (!interrupted_ && !reader_.empty())
         try_(next());
-    // op_profile profile_time;
-    // profile_time.print_profile();
+    op_profile profile_time;
+    profile_time.print_profile();
     return ok();
 }
