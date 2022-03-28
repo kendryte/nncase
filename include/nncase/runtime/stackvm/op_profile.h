@@ -23,20 +23,20 @@ public:
     op_profile(const std::string &op_type)
         : op_type_(op_type)
     {
-        begin_ = clock();
+        // begin_ = clock();
     }
     ~op_profile()
     {
-        end_ = clock();
-        auto cast_time = (end_ - begin_) / (double)1000;
-        if (op_time_cast_.find(op_type_) == op_time_cast_.end())
-        {
-            op_time_cast_.emplace(op_type_, cast_time);
-        }
-        else
-        {
-            op_time_cast_[op_type_] += cast_time;
-        }
+        // end_ = clock();
+        // auto cast_time = (end_ - begin_) / (double)1000;
+        // if (op_time_cast_.find(op_type_) == op_time_cast_.end())
+        // {
+        //     op_time_cast_.emplace(op_type_, cast_time);
+        // }
+        // else
+        // {
+        //     op_time_cast_[op_type_] += cast_time;
+        // }
     }
     void print_profile();
 
