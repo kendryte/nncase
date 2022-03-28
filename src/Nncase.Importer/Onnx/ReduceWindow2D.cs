@@ -22,7 +22,7 @@ namespace Nncase.Importer
             var pads = GetPadsAttribute(op);
             var dilation = reduceOp == ReduceOp.Max 
                 ? GetIntsAttribute(op, "dilations", 1, 2) 
-                : Enumerable.Repeat<long>(1, pads.Length).ToArray();
+                : Enumerable.Repeat<long>(1, 2).ToArray();
             var kernelShape = isGlobal
                 ? Util.GetHW(input).Map((h, w) => (Expr)F.Tensors.Stack(new Tuple(h, w), 0))
                 : Tensor.FromSpan<long>(GetIntsAttribute(op, "kernel_shape"));

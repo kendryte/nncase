@@ -5,6 +5,7 @@ using System;
 using Nncase.IR;
 using Nncase.IR.NN;
 using OrtKISharp;
+using static Nncase.Evaluator.EvaluatorUtil;
 
 namespace Nncase.Evaluator.NN;
 
@@ -20,13 +21,14 @@ public class ReduceWindow2DEvaluator : IEvaluator<ReduceWindow2D>, ITypeInferenc
         var kernelSize = context.GetArgumentValueAsArray<long>(r, ReduceWindow2D.Filter);
         var stride = context.GetArgumentValueAsArray<long>(r, ReduceWindow2D.Stride);
         var dilation = context.GetArgumentValueAsArray<long>(r, ReduceWindow2D.Dilation);
-        var pads = context.GetArgumentValueAsArray<long>(r, ReduceWindow2D.Padding);
+        var pads = context.GetInt64OrtTensorArgumentValue(r, ReduceWindow2D.Padding);
         var countIncludePad = context.GetArgumentValueAsScalar<long>(r, ReduceWindow2D.CountIncludePad);
         var ceilMode = context.GetArgumentValueAsScalar<long>(r, ReduceWindow2D.CeilMode);
+        var onnxPads = ToOnnxPadFormat(pads);
         return (r.ReduceOp switch
         {
-            ReduceOp.Mean => OrtKI.AveragePool(input, "NOTSET", ceilMode, countIncludePad, kernelSize, pads, stride),
-            ReduceOp.Max => OrtKI.MaxPool(input, "NOTSET", ceilMode, dilation, kernelSize, pads, countIncludePad, stride)[0],
+            ReduceOp.Mean => OrtKI.AveragePool(input, "NOTSET", ceilMode, countIncludePad, kernelSize, onnxPads, stride),
+            ReduceOp.Max => OrtKI.MaxPool(input, "NOTSET", ceilMode, dilation, kernelSize, onnxPads, countIncludePad, stride)[0],
             _ => throw new ArgumentOutOfRangeException(nameof(r.ReduceOp)),
         }).ToValue();
     }
