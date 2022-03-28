@@ -27,6 +27,7 @@ set(SRCS batch_to_space.cpp
          resize_image.cpp
          roi_align.cpp
          sigmoid.cpp
+         softmax.cpp
          slice.cpp
          ternary.cpp
          topk.cpp

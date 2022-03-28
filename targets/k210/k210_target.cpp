@@ -38,6 +38,7 @@
 #include <nncase/transforms/neutral/lstm_transform.h>
 #include <nncase/transforms/neutral/matmul_to_conv2d.h>
 #include <nncase/transforms/neutral/split_sigmoid.h>
+#include <nncase/transforms/neutral/split_softmax.h>
 #include <nncase/transforms/neutral/transpose_motion.h>
 #include <nncase/transforms/pass.h>
 
@@ -114,6 +115,7 @@ void k210_target::register_target_dependent_passes([[maybe_unused]] const module
     {
         transform_pass p("sigmoid_lowering");
         p.emplace<split_sigmoid_transform>();
+        p.emplace<split_softmax_transform>();
         pass_mgr.add_pass(std::move(p));
     }
 

@@ -42,6 +42,7 @@ target_sources(ir PRIVATE
     onehot.cpp
     roi_align.cpp
     sigmoid.cpp
+    softmax.cpp
     ternary.cpp
     topk.cpp
     trilu.cpp)

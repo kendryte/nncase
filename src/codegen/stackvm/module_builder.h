@@ -42,6 +42,7 @@
 #include <nncase/ir/ops/roi_align.h>
 #include <nncase/ir/ops/sigmoid.h>
 #include <nncase/ir/ops/slice.h>
+#include <nncase/ir/ops/softmax.h>
 #include <nncase/ir/ops/table_lookup.h>
 #include <nncase/ir/ops/ternary.h>
 #include <nncase/ir/ops/topk.h>

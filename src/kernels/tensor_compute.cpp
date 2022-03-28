@@ -389,6 +389,20 @@ result<void> kernels::sigmoid(const T *input, T *output, const runtime_shape_t &
     return cpu::reference::sigmoid(input, output, in_shape, in_strides, out_strides);
 }
 
+template result<void> kernels::softmax<float>(const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    const runtime_shape_t &out_strides, int32_t axis, float beta) noexcept;
+
+template <typename T>
+NNCASE_API result<void> kernels::softmax(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    const runtime_shape_t &out_strides, int32_t axis, float beta) noexcept
+{
+    if (is_contiguous(in_shape, in_strides) && is_contiguous(in_shape, out_strides))
+    {
+        return cpu::optimized::softmax(input, output, in_shape, in_strides, out_strides, axis, beta);
+    }
+    return cpu::reference::softmax(input, output, in_shape, in_strides, out_strides, axis, beta);
+}
+
 template result<void> kernels::ternary<float>(const float *input_a, const float *input_b, const float *input_c, float *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &in_c_shape, const runtime_shape_t &in_c_strides,

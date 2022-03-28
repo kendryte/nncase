@@ -24,16 +24,12 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::optimized;
 
-template result<void> optimized::matmul<float>(const float *input_a, const float *input_b, const float *bias, float *output,
-    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
-    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
-    value_range<float> fused_activation) noexcept;
+template result<void> optimized::softmax<float>(const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    const runtime_shape_t &out_strides, int32_t axis, float beta) noexcept;
 
 template <typename T>
-result<void> optimized::matmul(const T *input_a, const T *input_b, const T *bias, T *output, const runtime_shape_t &in_a_shape,
-    const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape, const runtime_shape_t &in_b_strides,
-    const runtime_shape_t &out_shape, const runtime_shape_t &out_strides, value_range<float> fused_activation) noexcept
+result<void> optimized::softmax(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    const runtime_shape_t &out_strides, int32_t axis, float beta) noexcept
 {
-    return cpu::reference::matmul(input_a, input_b, bias, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides,
-        fused_activation);
+    return cpu::reference::softmax(input, output, in_shape, in_strides, out_strides, axis, beta);
 }

@@ -2030,6 +2030,38 @@ namespace IsaGen
             public byte Strides { get; set; }
         }
 
+        [DisplayName("TENSOR.SOFTMAX")]
+        [Category("Tensor Instructions")]
+        [Description("Softmax")]
+        public class SoftmaxInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.SOFTMAX;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
+            [DisplayName("axis")]
+            [Description("Axis")]
+            public int Axis { get; set; }
+
+            [DisplayName("beta")]
+            [Description("Beta")]
+            public float Beta { get; set; }
+        }
+
         [DisplayName("TENSOR.TERNARY")]
         [Category("Tensor Instructions")]
         [Description("Ternary")]
