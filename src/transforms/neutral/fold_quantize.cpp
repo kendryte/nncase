@@ -60,7 +60,6 @@ bool fold_quantize_transform::on_try_match(node &node, transform_context &contex
             if (conn->owner().runtime_opcode() == op_quantize)
             {
                 auto &q = static_cast<quantize &>(conn->owner());
-
                 if (almost_equal(q.quant_param(), deq.quant_param()) && q.output().type() == deq.input().type())
                 {
                     context.inputs.emplace_back(&deq.input());
