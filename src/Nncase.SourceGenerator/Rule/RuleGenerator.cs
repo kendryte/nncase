@@ -42,7 +42,8 @@ internal class RuleGenerator : ISourceGenerator
                     INamedTypeSymbol { IsGenericType: true, IsReferenceType: true } x when x.IsInheritFrom(receiver.TensorSymobl) && x.Name == "Tensor" => $"((Nncase.IR.TensorConst)result[\"{parameterSymbol.Name}\"]).Value.Cast<{x.TypeArguments[0].ToDisplayString()}>()",
                     IArrayTypeSymbol { ElementType: { IsUnmanagedType: true, IsValueType: true } e } x => $"((Nncase.IR.TensorConst)result[\"{parameterSymbol.Name}\"]).Value.ToArray<{e.ToDisplayString()}>()",
                     { IsReferenceType: true } x when x.IsInheritFrom(receiver.ExprSymobl) => $"({ parameterSymbol.Type.ToDisplayString() })result[\"{parameterSymbol.Name}\"]",
-                    INamedTypeSymbol { IsGenericType: true, Name: "IReadOnlyList" } x when x.TypeArguments[0].IsInheritFrom(receiver.ExprSymobl) => $"((System.Collections.Generic.IReadOnlyList<Nncase.IR.Expr>)result[\"{parameterSymbol.Name}\"])", 
+                    INamedTypeSymbol { IsGenericType: true, Name: "IReadOnlyList" } x when x.TypeArguments[0].IsInheritFrom(receiver.ExprSymobl) => $"((System.Collections.Generic.IReadOnlyList<Nncase.IR.Expr>)result[\"{parameterSymbol.Name}\"])",
+                    { IsUnmanagedType: true, IsValueType: true } e => $"((Nncase.IR.TensorConst)result[\"{parameterSymbol.Name}\"]).Value.ToScalar<{e.ToDisplayString()}>()",
                     _ => throw new NotSupportedException($"Convert {parameterSymbol.Name} {parameterSymbol.Type.ToDisplayString()} For IRewriteRule Impl!")
                 };
 

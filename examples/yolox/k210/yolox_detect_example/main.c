@@ -171,7 +171,7 @@ int main(void)
 #endif
 
     uint8_t *model_data_align = model_data;
-    kpu_image[0].pixel = 1;
+    kpu_image[0].pixel = 3;
     kpu_image[0].width = FRAME_WIDTH;
     kpu_image[0].height = FRAME_HEIGHT;
     image_init(&kpu_image[0]);

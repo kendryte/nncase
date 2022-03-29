@@ -58,9 +58,11 @@ internal class RuleReceiver : ISyntaxContextReceiver
                   && m.ReturnType.IsInheritFrom(ExprSymobl!)
                   && (m.Parameters.All(
                       p => SymbolEqualityComparer.Default.Equals(p.Type, IMatchResultSymobl)
-                           || p.Type.IsInheritFrom(ExprSymobl)
-                           || p.Type.IsInheritFrom(TensorSymobl)
-                           || (p.Type is INamedTypeSymbol { IsGenericType: true, Name: "IReadOnlyList" } gentype && gentype.TypeArguments[0].IsInheritFrom(ExprSymobl))
+                           || p.Type.IsInheritFrom(ExprSymobl) // Expr/ Const / Tuple ...
+                           || p.Type.IsInheritFrom(TensorSymobl) // Tensor<?>
+                           || (p.Type is INamedTypeSymbol { IsGenericType: true, Name: "IReadOnlyList" } gentype && gentype.TypeArguments[0].IsInheritFrom(ExprSymobl)) // IReadOnlyList<Expr>
+                           || p.Type is { IsUnmanagedType: true, IsValueType: true } // int / float ...
+                           || p.Type is IArrayTypeSymbol { Rank: 1, ElementType: { IsUnmanagedType: true, IsValueType: true } } // int[] / float[] ...
                       ))).ToArray();
                 if (methods.Length == 0)
                     return;
