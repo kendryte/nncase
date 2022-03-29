@@ -23,7 +23,7 @@
     <PackageReference Include="System.Numerics.Tensors" Version="6.0.0-rc.2.21480.5" />
     <PackageReference Include="ValueTaskSupplement" Version="1.1.0" />
     <PackageReference Include="Microsoft.Toolkit.HighPerformance" Version="7.1.1" />
-	  <ProjectReference Include="$(SolutionDir)/tools/Nncase.SourceGenerator/Nncase.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	  <ProjectReference Include="../../tools/Nncase.SourceGenerator/Nncase.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
