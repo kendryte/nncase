@@ -28,6 +28,7 @@
 #include <nncase/transforms/k210/strided_slice_motion.h>
 #include <nncase/transforms/neutral/add_quant_checkpoints.h>
 #include <nncase/transforms/neutral/add_to_conv2d.h>
+#include <nncase/transforms/neutral/dequantize_motion.h>
 #include <nncase/transforms/neutral/eliminate_dilated_conv2d.h>
 #include <nncase/transforms/neutral/fold_constant.h>
 #include <nncase/transforms/neutral/fold_pad.h>
@@ -77,7 +78,7 @@ void k210_target::register_allocators(const module_type_t &type, allocator_map_t
         allocators.emplace(mem_input, allocator_holders.emplace_back(std::make_shared<linear_buffer_allocator>()).get());
         allocators.emplace(mem_output, allocator_holders.emplace_back(std::make_shared<linear_buffer_allocator>()).get());
         allocators.emplace(mem_rdata, allocator_holders.emplace_back(std::make_shared<linear_buffer_allocator>()).get());
-        allocators.emplace(mem_data, allocator_holders.emplace_back(std::make_shared<linear_buffer_allocator>()).get());
+        allocators.emplace(mem_data, allocator_holders.emplace_back(std::make_shared<first_fit_allocator>()).get());
         allocators.emplace(runtime::k210::mem_kpu, allocator_holders.emplace_back(std::make_shared<kpu_buffer_allocator>()).get());
     }
     else
@@ -156,7 +157,7 @@ void k210_target::register_quantize_annotation_passes(const module_type_t &type,
 
     {
         transform_pass p("annotate_kpu_quantize");
-        p.emplace<add_quant_checkpoints_transform>(std::in_place, ir::op_fused_unary, ir::k210::op_k210_fake_kpu_conv2d);
+        p.emplace<add_quant_checkpoints_transform>(std::in_place, ir::op_fused_unary, ir::k210::op_k210_fake_kpu_conv2d, ir::op_bitcast, ir::op_dequantize);
         pass_mgr.add_pass(std::move(p));
     }
 }
@@ -191,4 +192,22 @@ void k210_target::register_quantize_passes(const module_type_t &type, ir::transf
         p.emplace<fold_quantize_transform>();
         pass_mgr.add_pass(std::move(p));
     }
+    {
+        transform_pass p("optimize_output_dequantize");
+        p.emplace<dequantize_transpose_motion_transform>();
+        p.emplace<dequantize_bitcast_motion_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+}
+
+void k210_target::add_quantization_broadcast(std::unordered_set<node_opcode> &opcodes)
+{
+    using namespace ir;
+    opcodes.emplace(op_input_node);
+    opcodes.emplace(op_transpose);
+    opcodes.emplace(op_dequantize);
+    opcodes.emplace(op_pad);
+    opcodes.emplace(op_resize_image);
+    opcodes.emplace(op_bitcast);
+    opcodes.emplace(op_reduce_window2d);
 }
