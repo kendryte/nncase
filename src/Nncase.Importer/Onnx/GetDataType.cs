@@ -13,18 +13,21 @@ namespace Nncase.Importer
     {
         private DataType GetDataType(string name)
         {
-            if (_outputTensors.TryGetValue(name, out var expr))
-            {
-                return expr.CheckedDataType;
-            }
-            else if (_constTensors.TryGetValue(name, out var tensor))
-            {
-                return GetDataType(tensor);
-            }
-            else
-            {
-                throw new InvalidDataException($"{name} DataType Info not found");
-            }
+            return _graph.Input
+                .Find(x => x.Name == name)
+                .Match(
+                    GetDataType,
+                    () =>
+                    {
+                        if (_constTensors.TryGetValue(name, out var tensor))
+                        {
+                            return GetDataType(tensor);
+                        }
+                        else
+                        {
+                            throw new InvalidDataException($"{name} DataType Info not found");
+                        }
+                    });
         }
 
         private DataType GetDataType(ValueInfoProto v)

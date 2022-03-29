@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
-using TorchSharp;
 
 namespace Nncase.Evaluator;
 

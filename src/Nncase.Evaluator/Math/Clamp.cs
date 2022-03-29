@@ -8,8 +8,7 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
-using TorchSharp;
-using torchF = TorchSharp.torch.nn.functional;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Math;
 
@@ -21,10 +20,10 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEv
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Clamp clamp)
     {
-        var input = context.GetTorchArgumentValue(clamp, Clamp.Input);
-        var min = context.GetArgumentValueAsTensor<float>(clamp, Clamp.Min).ToTorchTensor();
-        var max = context.GetArgumentValueAsTensor<float>(clamp, Clamp.Max).ToTorchTensor();
-        return torch.clamp(input, min, max).ToValue();
+        var input = context.GetOrtArgumentValue(clamp, Clamp.Input);
+        var min = context.GetOrtArgumentValue(clamp, Clamp.Min);
+        var max = context.GetOrtArgumentValue(clamp, Clamp.Max);
+        return OrtKI.Clip(input, min, max).ToValue();
     }
 
     /// <inheritdoc/>
@@ -33,6 +32,11 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEv
         var input = context.CheckArgumentType<TensorType>(target, Clamp.Input);
         var min = context.CheckArgumentType<TensorType>(target, Clamp.Min);
         var max = context.CheckArgumentType<TensorType>(target, Clamp.Max);
+        if (input.DType != min.DType || input.DType != max.DType || min.DType != max.DType)
+        {
+            return new InvalidType(
+                $"clamp type is not equal, input:{input.DType}, min:${input.DType}, max:${input.DType}");
+        }
         return Visit(input, min, max);
     }
 

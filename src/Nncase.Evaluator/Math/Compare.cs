@@ -4,7 +4,7 @@
 using System;
 using Nncase.IR;
 using Nncase.IR.Math;
-using TorchSharp;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Math;
 
@@ -16,7 +16,9 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>
     /// <inheritdoc />
     public IValue Visit(IEvaluateContext context, Compare target)
     {
-        throw new NotImplementedException();
+        var a = context.GetOrtArgumentValue(target, Compare.Lhs);
+        var b = context.GetOrtArgumentValue(target, Compare.Rhs);
+        return OrtKI.Equal(a, b).ToValue();
     }
 
     /// <inheritdoc/>

@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Nncase.Cli.Commands
+namespace Nncase.Compiler
 {
     /// <summary>
     /// Options of compile command.

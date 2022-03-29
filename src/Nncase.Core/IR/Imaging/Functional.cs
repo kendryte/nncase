@@ -19,13 +19,43 @@ namespace Nncase.IR.F;
 public static class Imaging
 {
     /// <summary>
+    ///  resize image.
+    /// </summary>
+    /// <param name="resizeMode"></param>
+    /// <param name="transformationMode"></param>
+    /// <param name="nearestMode"></param>
+    /// <param name="input"></param>
+    /// <param name="roi"></param>
+    /// <param name="newSize"></param>
+    /// <param name="cubicCoeffA"></param>
+    /// <param name="excludeOutside"></param>
+    /// <param name="extrapolationValue"></param>
+    /// <returns></returns>
+    public static Call ResizeImage(
+        ImageResizeMode resizeMode, 
+        ImageResizeTransformationMode transformationMode, 
+        ImageResizeNearestMode nearestMode,
+        Expr input, Expr roi, Expr newSize, Expr cubicCoeffA, 
+        Expr excludeOutside, Expr extrapolationValue, bool isTFResize = false) 
+        => new Call(new ResizeImage(resizeMode, transformationMode, nearestMode, isTFResize),
+            input, roi, newSize, cubicCoeffA, excludeOutside, extrapolationValue);
+    
+    /// <summary>
     /// resize image.
     /// </summary>
     /// <param name="resizeMode"></param>
     /// <param name="input"></param>
+    /// <param name="roi"></param>
     /// <param name="newSize"></param>
-    /// <param name="alignCorners"></param>
-    /// <param name="halfPixelCenters"></param>
     /// <returns></returns>
-    public static Call ResizeImage(ImageResizeMode resizeMode, Expr input, Expr newSize, Expr alignCorners, Expr halfPixelCenters) => new Call(new ResizeImage(resizeMode), input, newSize, alignCorners, halfPixelCenters);
+    public static Call ResizeImage(
+        ImageResizeMode resizeMode,
+        Expr input, Expr roi, Expr newSize, 
+        ImageResizeTransformationMode tranMode = ImageResizeTransformationMode.Asymmetric,
+        ImageResizeNearestMode nearestMode = ImageResizeNearestMode.Floor,
+        bool isTFResize = false) 
+        => ResizeImage(resizeMode, 
+                tranMode, 
+                nearestMode,
+            input, roi, newSize, -0.75, 0, 0.0f, isTFResize);
 }

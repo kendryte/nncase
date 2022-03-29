@@ -3,7 +3,7 @@
 
 using Nncase.IR;
 using Nncase.IR.Math;
-using static Tensorflow.Binding;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Math;
 
@@ -15,13 +15,12 @@ public class CumSumEvaluator : IEvaluator<CumSum>, ITypeInferencer<CumSum>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, CumSum cumSum)
     {
-        var input = context.GetTFArgumentValue(cumSum, CumSum.Input);
-
+        var input = context.GetOrtArgumentValue(cumSum, CumSum.Input);
         // in onnx, CumSum.Axis is a input tensor with one value
-        var axis = context.GetArgumentValueAsTensor<int>(cumSum, CumSum.Axis)[0];
-        var exclusive = context.GetArgumentValueAsScalar<bool>(cumSum, CumSum.Exclusive);
-        var reverse = context.GetArgumentValueAsScalar<bool>(cumSum, CumSum.Reverse);
-        return tf.cumsum(input, axis, exclusive, reverse).ToValue();
+        var axis = context.GetOrtArgumentValue(cumSum, CumSum.Axis);
+        var exclusive = context.GetArgumentValueAsScalar<long>(cumSum, CumSum.Exclusive);
+        var reverse = context.GetArgumentValueAsScalar<long>(cumSum, CumSum.Reverse);
+        return OrtKI.CumSum(input, axis, exclusive, reverse).ToValue();
     }
 
     /// <inheritdoc/>

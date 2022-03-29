@@ -45,8 +45,8 @@ public class UnitTestTypeInfer : IHostFixtrue
     public void TestInferPad()
     {
         var a = new Var(new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
-        var pads = Tensor.FromSpan<int>(new[] { 0, 0, 1, 1, 2, 2, 3, 3 }, new Shape(4, 2));
-        var pad = Pad(a, pads, PadMode.Constant, 1);
+        var pads = Tensor.FromSpan(new[] { 0, 0, 1, 1, 2, 2, 3, 3 }, new Shape(4, 2));
+        var pad = Pad(a, pads, PadMode.Constant, 1f);
         Assert.True(CompilerServices.InferenceType(pad));
         Assert.Equal(pad.CheckedShape, new Shape(1, 5, 228, 230));
     }
@@ -138,10 +138,26 @@ public class UnitTestTypeInfer : IHostFixtrue
             4, 5, 6, 1);
     }
 
+
+    public void AssertReshape(Expr input, int[] reshapeArgs, int[] expectShape)
+    {
+        AssertInferShape(Reshape(input, reshapeArgs), expectShape);
+    }
+    
+    [Fact]
+    public void TestInferReshape()
+    {
+        var input = new Var("v", new TensorType(DataTypes.Float32, new Shape(4, 5, 6, 7)));
+        AssertReshape(input, new[] { 8, 5, 3, 7}, new[] {8, 5, 3, 7});
+        AssertReshape(input, new[] { -1, 5, 6, 7}, new[] {4, 5, 6, 7});
+        AssertReshape(input, new[] { -1, 5, 3, 7}, new[] {8, 5, 3, 7});
+        AssertReshape(input, new[] { -1}, new[] {4 * 5 * 6 * 7});
+    }
+
     [Fact]
     public void TestReInference()
     {
-        // 1. before the transfrom the dag is invalid type
+        // 1. before the transform the dag is invalid type
         Var x = new("x");
         Const b = 2;
         Function f = new("f", x + b, new[] { x });
@@ -156,15 +172,24 @@ public class UnitTestTypeInfer : IHostFixtrue
     [Fact]
     public void TestResize()
     {
-        var resize = IR.F.Imaging.ResizeImage(ImageResizeMode.NearestNeighbor, IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 1, 3, 34, 67 }), Const.FromShape(new[] { 32, 48 }), true, false);
+        var resize = IR.F.Imaging.ResizeImage(ImageResizeMode.NearestNeighbor, 
+            IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 1, 3, 34, 67 }), 
+            float.NaN,
+            Const.FromShape(new[] { 32, 48 }));
         Assert.True(CompilerServices.InferenceType(resize));
         Assert.True(HasShape(new[] { 1, 3, 32, 48 }).MatchLeaf(resize.CheckedType!));
 
-        var resize2 = IR.F.Imaging.ResizeImage(ImageResizeMode.NearestNeighbor, IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 3, 34, 67 }), Const.FromShape(new[] { 32, 48 }), true, false);
+        var resize2 = IR.F.Imaging.ResizeImage(ImageResizeMode.NearestNeighbor,
+            IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 3, 34, 67 }), 
+            float.NaN,
+            Const.FromShape(new[] { 32, 48 }));
         Assert.True(CompilerServices.InferenceType(resize2));
         Assert.True(HasShape(new[] { 32, 48, 67 }).MatchLeaf(resize2.CheckedType!));
 
-        var resize3 = IR.F.Imaging.ResizeImage(ImageResizeMode.NearestNeighbor, IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 34, 67 }), Const.FromShape(new[] { 32, 48 }), true, false);
+        var resize3 = IR.F.Imaging.ResizeImage(ImageResizeMode.NearestNeighbor, 
+            IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 34, 67 }), 
+            float.NaN,
+            Const.FromShape(new[] { 32, 48 }));
         Assert.True(CompilerServices.InferenceType(resize3));
         Assert.True(HasShape(new[] { 32, 48 }).MatchLeaf(resize3.CheckedType!));
     }

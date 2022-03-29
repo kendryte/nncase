@@ -190,8 +190,17 @@ public static class TypeInference
     /// <summary>
     /// Pad Type Infer.
     /// </summary>
-    public static IRType PadType(TensorType input, Expr pads)
+    public static IRType PadType(TensorType input, Expr pads, Expr pad)
     {
+        if (pad.CheckedType is TensorType padValueType)
+        {
+            if (padValueType.DType != input.DType)
+            {
+                return new InvalidType($"Pad value and input must have same type, " +
+                                       $"input:{input.DType}, padValue:{padValueType.DType}");
+            }
+        }
+        
         if (pads is TensorConst paddings)
         {
             var tpads = paddings.Value.Cast<int>();
@@ -334,4 +343,11 @@ public static class TypeInference
             out_shape[0] = out_shape[0] * inputbbox.Shape[0].FixedValue;
         return input with { Shape = new Shape(out_shape) };
     }
+
+    /// <summary>
+    /// input x is -1?
+    /// </summary>
+    /// <param name="x"></param>
+    /// <returns></returns>
+    public static bool IsMinus1(int x) => x == -1;
 }

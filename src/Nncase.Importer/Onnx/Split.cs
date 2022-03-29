@@ -13,7 +13,7 @@ namespace Nncase.Importer
     {
         private Expr VisitSplit(in NodeProto op)
         {
-            return GetOpSet(op) <= 13
+            return GetOpSet(op) < 13
                 ? SplitV11(op)
                 : SplitV13(op);
         }
@@ -26,7 +26,7 @@ namespace Nncase.Importer
             // inShape[axis] / outputSize
             var split = GetOptionIntsAttribute(op, "split")
                 .Map(x => (Expr)Tensor.FromSpan<long>(x))
-                .Or(ComputeSplit(input, op.Output.Count));
+                .Or(ComputeSplit(input, op.Output.Count, axis));
             return F.Tensors.Split(input, axis, split);
         }
 
@@ -35,15 +35,15 @@ namespace Nncase.Importer
             var input = GetInputExpr(op, 0);
             var axis = GetIntAttribute(op, "axis", 0);
             var split = GetOptionInputExpr(op, 1)
-                .Or(ComputeSplit(input, op.Output.Count));
+                .Or(ComputeSplit(input, op.Output.Count, axis));
             return F.Tensors.Split(input, axis, split);
         }
 
-        private Expr ComputeSplit(Expr input, int outputSize)
+        private Expr ComputeSplit(Expr input, int outputSize, long axis)
         {
             return F.Tensors.Expand(
-                F.Tensors.Rank(input) / outputSize,
-                new[] { outputSize });
+                Util.ShapeIndex(input, (int) axis) / outputSize,
+                new[] {outputSize});
         }
     }
 }

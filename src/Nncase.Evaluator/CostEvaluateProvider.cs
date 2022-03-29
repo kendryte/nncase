@@ -9,7 +9,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Nncase.CostModel;
 using Nncase.IR;
-using TorchSharp;
 
 namespace Nncase.Evaluator;
 

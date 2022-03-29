@@ -7,8 +7,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
-using TorchSharp;
-using torchF = TorchSharp.torch.nn.functional;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -22,8 +21,8 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>
     {
         var inputs = context.GetArgumentExpr(cat, Concat.Input);
         var axis = context.GetArgumentValueAsScalar<int>(cat, Concat.Axis);
-        var inputTensors = ((IR.Tuple)inputs).Select(x => ExpandDim(context.GetTorchValue(x))).ToArray();
-        return torch.cat(inputTensors, axis).ToValue();
+        var inputTensors = ((IR.Tuple)inputs).Select(context.GetOrtValue).ToArray();
+        return OrtKI.Concat(inputTensors, axis).ToValue();
     }
 
     /// <inheritdoc/>
@@ -34,15 +33,15 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>
         return Visit(context, target, inputs, axis);
     }
 
-    internal static torch.Tensor ExpandDim(torch.Tensor tensor)
-    {
-        if (!tensor.shape.Any())
-        {
-            return tensor.view(new long[] { 1 });
-        }
-
-        return tensor;
-    }
+    // internal static torch.Tensor ExpandDim(torch.Tensor tensor)
+    // {
+    //     if (!tensor.shape.Any())
+    //     {
+    //         return tensor.view(new long[] { 1 });
+    //     }
+    //
+    //     return tensor;
+    // }
 
     private IRType Visit(ITypeInferenceContext context, Concat target, TupleType inputs, TensorType axis)
     {

@@ -8,8 +8,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
-using TorchSharp;
-using torchF = TorchSharp.torch.nn.functional;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -22,9 +21,9 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>
     public IValue Visit(IEvaluateContext context, Stack stack)
     {
         var inputs = context.GetArgumentExpr(stack, Stack.Inputs);
-        var axis = context.GetTorchArgumentValue(stack, Stack.Axis);
-        var inputTensors = ((IR.Tuple)inputs).Select(x => context.GetTorchValue(x)).ToArray();
-        return torch.stack(inputTensors, axis.ToScalar().ToInt64()).ToValue();
+        var axis = context.GetArgumentValueAsScalar<long>(stack, Stack.Axis);
+        var inputTensors = ((IR.Tuple)inputs).Select(context.GetOrtValue).ToArray();
+        return OrtKI.ConcatFromSequence(inputTensors, axis, inputTensors.Length).ToValue();
     }
 
     /// <inheritdoc/>

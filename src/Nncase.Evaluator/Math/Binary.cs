@@ -5,7 +5,7 @@ using System;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
-using TorchSharp;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Math;
 
@@ -17,8 +17,9 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     /// <inheritdoc />
     public IValue Visit(IEvaluateContext context, Binary binary)
     {
-        var a = context.GetTorchArgumentValue(binary, Binary.Lhs);
-        var b = context.GetTorchArgumentValue(binary, Binary.Rhs);
+        var lhs = context.GetArgumentValue(binary, Binary.Lhs);
+        var a = lhs.AsTensor().ToOrtTensor();
+        var b = context.GetOrtArgumentValue(binary, Binary.Rhs);
         return (binary.BinaryOp switch
         {
             BinaryOp.Add => a + b,
@@ -26,17 +27,19 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             BinaryOp.Mul => a * b,
             BinaryOp.Div => a / b,
             BinaryOp.Mod => a % b,
-            BinaryOp.Min => torch.minimum(a, b),
-            BinaryOp.Max => torch.maximum(a, b),
-            BinaryOp.Pow => torch.pow(a, b),
-            BinaryOp.BitwiseAnd => torch.bitwise_and(a, b),
-            BinaryOp.BitwiseOr => torch.bitwise_or(a, b),
-            BinaryOp.BitwiseXor => torch.bitwise_xor(a, b),
-            BinaryOp.LogicalAnd => torch.logical_and(a, b),
-            BinaryOp.LogicalOr => torch.logical_or(a, b),
-            BinaryOp.LogicalXor => torch.logical_xor(a, b),
+            BinaryOp.Min => OrtKI.Min(new[] { a, b }),
+            BinaryOp.Max => OrtKI.Max(new[] { a, b }),
+            BinaryOp.Pow => OrtKI.Pow(a, b),
+            BinaryOp.BitwiseAnd => throw new NotSupportedException("NotSupported BinaryOp BitwiseAnd"),
+            BinaryOp.BitwiseOr => throw new NotSupportedException("NotSupported BinaryOp BitwiseOr"),
+            BinaryOp.BitwiseXor => throw new NotSupportedException("NotSupported BinaryOp BitwiseXor"),
+            BinaryOp.LogicalAnd => OrtKI.And(a, b),
+            BinaryOp.LogicalOr => OrtKI.Or(a, b),
+            BinaryOp.LogicalXor => OrtKI.Xor(a, b),
+            BinaryOp.LeftShift => OrtKI.LeftShift(a, b),
+            BinaryOp.RightShift => OrtKI.RightShift(a, b),
             _ => throw new ArgumentOutOfRangeException(nameof(binary.BinaryOp)),
-        }).to_type(context.CurrentCall.CheckedDataType.ToTorchType()).ToValue();
+        }).ToType(context.CurrentCall.CheckedDataType.ToOrtType()).ToValue();
     }
 
     /// <inheritdoc/>

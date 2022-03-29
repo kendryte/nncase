@@ -86,8 +86,7 @@ internal class EvaluatorGenerator : ISourceGenerator
                     IArrayTypeSymbol { ElementType: { IsUnmanagedType: true, IsValueType: true } e } x => $"GetArgumentValueAsArray<{e.ToDisplayString()}>",
                     { IsReferenceType: true } x when x.IsInheritFrom(Receiver.ExprSymobl) => $"GetArgumentExpr<{paramType.ToDisplayString()}>",
                     { IsReferenceType: true } x when x.IsInheritFrom(Receiver.ExprSymobl) => $"GetArgumentExpr<{paramType.ToDisplayString()}>",
-                    { IsReferenceType: true } x when x.ToDisplayString().EndsWith("torch.Tensor") => "GetTorchArgumentValue",
-                    { IsReferenceType: true } x when x.ToDisplayString().EndsWith("Tensorflow.Tensor") => "GetTFArgumentValue",
+                    { IsReferenceType: true } x when x.ToDisplayString().EndsWith("OrtKISharp.Tensor") => "GetOrtArgumentValue",
                     { IsUnmanagedType: true, IsValueType: true } x => $"GetArgumentValueAsScalar<{paramType.ToDisplayString()}>",
                     _ => throw new NotSupportedException($"Convert {paramType.Name} {paramType.ToDisplayString()} For IEvaluator Impl!")
                 },

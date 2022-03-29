@@ -106,6 +106,12 @@ namespace Nncase.IR
         public static implicit operator Expr(int[] array) => Tensor.FromSpan<int>(array);
 
         /// <summary>
+        /// Create <see cref="Expr"/> from an array of<see cref="int"/>.
+        /// </summary>
+        /// <param name="array">Array.</param>
+        public static implicit operator Expr(long[] array) => Tensor.FromSpan<long>(array);
+        
+        /// <summary>
         /// Create <see cref="Expr"/> from an array of<see cref="float"/>.
         /// </summary>
         /// <param name="array">Array.</param>
@@ -123,6 +129,12 @@ namespace Nncase.IR
         /// <param name="span">Span.</param>
         public static implicit operator Expr(ReadOnlySpan<int> span) => Tensor.FromSpan<int>(span);
 
+        /// <summary>
+        /// Create <see cref="Expr"/> from a span of<see cref="long"/>.
+        /// </summary>
+        /// <param name="span">Span.</param>
+        public static implicit operator Expr(ReadOnlySpan<long> span) => Tensor.FromSpan<long>(span);
+        
         /// <summary>
         /// Create <see cref="Expr"/> from a span of<see cref="float"/>.
         /// </summary>

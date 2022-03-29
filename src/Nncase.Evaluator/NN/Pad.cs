@@ -2,16 +2,17 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.NN;
+using OrtKISharp;
 using Tensorflow;
 using Tensorflow.NumPy;
-using static Tensorflow.Binding;
-using torchF = TorchSharp.torch.nn.functional;
+using static Nncase.Evaluator.EvaluatorUtil;
 
 namespace Nncase.Evaluator.NN;
+using static Tensorflow.Binding;
 
 /// <summary>
 /// Evaluator for <see cref="Pad"/>.
@@ -21,30 +22,42 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Pad pad)
     {
-        var input = context.GetTFArgumentValue(pad, Pad.Input);
-        var pads = context.GetTFArgumentValue(pad, Pad.Pads);
-        var constant_values = context.GetArgumentValueAsScalar<int>(pad, Pad.Value);
+        var input = context.GetOrtArgumentValue(pad, Pad.Input);
+        var pads = context.GetInt64OrtTensorArgumentValue(pad, Pad.Pads);
+        var constValue = context.GetOrtArgumentValue(pad, Pad.Value);
+        if (pad.PadMode == PadMode.Symmetric)
+        {
+            var result = SymmetricPad(context, pad);
+            return result;
+        }
         var mode = pad.PadMode switch
         {
-            PadMode.Constant => "CONSTANT",
-            PadMode.Reflect => "REFLECT",
-            PadMode.Symmetric => "SYMMETRIC",
-            PadMode.Edge => "EDGE",
+            PadMode.Constant => "constant",
+            PadMode.Reflect => "reflect",
+            PadMode.Edge => "edge",
             _ => throw new ArgumentOutOfRangeException(nameof(pad.PadMode)),
         };
-        return tf.Context.ExecuteOp(
-            "Pad",
-            null!,
-            new ExecuteOpArgs(input, pads, mode, constant_values))[0].ToValue();
-
-        // return tf.pad(input, pads, mode: mode, constant_values:constant_values).ToConst();
+        return OrtKI.Pad(input, ToOnnxPadFormat(pads), constValue, mode).ToValue();
     }
 
+    public IValue SymmetricPad(IEvaluateContext context, Pad pad)
+    {
+        var input = context.GetTFArgumentValue(pad, Pad.Input);
+        var pads = context.GetTFArgumentValue(pad, Pad.Pads);
+        var mode = "SYMMETRIC";
+        var result = tf.Context.ExecuteOp(
+            "MirrorPad",
+            null!,
+            new ExecuteOpArgs(input, pads).SetAttributes(new {mode}))[0];
+        return result.ToValue();
+    }
+    
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Pad target)
     {
         var input = context.CheckArgumentType<TensorType>(target, Pad.Input);
         var paddings = context.GetArgument(target, Pad.Pads);
-        return TypeInference.PadType(input, paddings);
+        var padValue = context.GetArgument(target, Pad.Value);
+        return TypeInference.PadType(input, paddings, padValue);
     }
 }

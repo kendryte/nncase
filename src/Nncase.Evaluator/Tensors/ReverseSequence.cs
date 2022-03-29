@@ -1,11 +1,9 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using System;
 using Nncase.IR;
 using Nncase.IR.Tensors;
-using Tensorflow;
-using static Tensorflow.Binding;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -17,25 +15,17 @@ public class ReverseSequenceEvaluator : IEvaluator<ReverseSequence>, ITypeInfere
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ReverseSequence random)
     {
-        var input = context.GetTFArgumentValue(random, ReverseSequence.Input);
-        var seqLens = context.GetTFArgumentValue(random, ReverseSequence.SeqLens);
-        var batchAxis = context.GetArgumentValueAsScalar<int>(random, ReverseSequence.BatchAxis);
-        var timeAxis = context.GetArgumentValueAsScalar<int>(random, ReverseSequence.TimeAxis);
-        return tf.Context.ExecuteOp(
-            "ReverseSequence",
-            null!,
-            new ExecuteOpArgs(input, seqLens)
-                .SetAttributes(new
-                {
-                    seq_dim = timeAxis,
-                    batch_dim = batchAxis,
-                }))[0].ToValue();
+        var input = context.GetOrtArgumentValue(random, ReverseSequence.Input);
+        var seqLens = context.GetOrtArgumentValue(random, ReverseSequence.SeqLens);
+        var batchAxis = context.GetArgumentValueAsScalar<long>(random, ReverseSequence.BatchAxis);
+        var timeAxis = context.GetArgumentValueAsScalar<long>(random, ReverseSequence.TimeAxis);
+        return OrtKI.ReverseSequence(input, seqLens, batchAxis, timeAxis).ToValue();
     }
 
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, ReverseSequence target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Reshape.Input);
+        var input = context.CheckArgumentType<TensorType>(target, ReverseSequence.Input);
         return Visit(context, target, input);
     }
 

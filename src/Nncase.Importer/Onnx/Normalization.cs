@@ -17,17 +17,16 @@ namespace Nncase.Importer
         {
             return F.Tensors.Reshape(
                 v, F.Tensors.Concat(
-                    new IR.Tuple(F.Tensors.ShapeOf(v), new[] { 1 }, new[] { 1 }), 0));
+                    new IR.Tuple(F.Tensors.ShapeOf(v), new long [] { 1 }, new long[] { 1 }), 0));
         }
 
         private Expr VisitBatchNormalization(in NodeProto op)
         {
             var x = GetInputExpr(op, 0);
-            var (scale, b) = GetInputExprs(op, 1, 2);
+            var (scale, bias) = GetInputExprs(op, 1, 2);
             var (mean, var) = GetInputExprs(op, 3, 4);
             var eps = GetFloatAttribute(op, "epsilon", 1e-05f);
             var mom = GetFloatAttribute(op, "momentum", 0.9f);
-            var bias = ReshapeToByChannel(b);
             return F.NN.BatchNormalization(x, scale, bias, mean, var, eps, mom);
         }
 
@@ -36,7 +35,7 @@ namespace Nncase.Importer
             var input = GetInputExpr(op, 0);
             var (scale, bias) = GetInputExprs(op, 1, 2);
             var eps = GetFloatAttribute(op, "epsilon", 1e-05f);
-            return (F.NN.InstanceNormalization(input, eps) * ReshapeToByChannel(scale)) + ReshapeToByChannel(bias);
+            return F.NN.InstanceNormalization(input, scale, bias, eps);
         }
 
         private Expr VisitLpNormalization(in NodeProto op)

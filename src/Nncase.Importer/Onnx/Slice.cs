@@ -23,10 +23,11 @@ namespace Nncase.Importer
         private Expr SliceV1(in NodeProto op)
         {
             var input = GetSingleInputExpr(op);
-            Expr axesExpr = GetAxesAttribute(op, input);
-            var starts = GetConstIntsAttribute(op, "starts");
-            var ends = GetConstIntsAttribute(op, "ends");
-            return F.Tensors.Slice(input, starts, ends, axesExpr, ExpandOneToRank(input, 1));
+            var axesExpr = GetAxesAttribute(op, input);
+            var starts = GetTensorIntsAttribute(op, "starts");
+            var ends = GetTensorIntsAttribute(op, "ends");
+            return F.Tensors.Slice(input, starts, ends, axesExpr, 
+                F.Tensors.Expand(1L, Tensor.FromSpan<long>(new long[]{ends.Length})));
         }
 
         private Expr SliceV10(in NodeProto op)
@@ -38,9 +39,9 @@ namespace Nncase.Importer
             return F.Tensors.Slice(input, starts, ends, axes, steps);
         }
 
-        private Call ExpandOneToRank(Expr input, Expr value, int rankOffset = 0)
+        private Call ExpandOneToRank(Expr input, long value, int rankOffset = 0)
         {
-            return F.Tensors.Expand(value, F.Tensors.Rank(input) - rankOffset);
+            return F.Tensors.Expand(value, F.Tensors.Cast(F.Tensors.Rank(input) - rankOffset, new Int64Type()));
         }
     }
 }

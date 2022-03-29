@@ -54,7 +54,7 @@ half_pixel_centers = [
 ]
 
 modes = [
-    tf.image.ResizeMethod.BILINEAR,
+    # tf.image.ResizeMethod.BILINEAR,
     tf.image.ResizeMethod.NEAREST_NEIGHBOR
 ]
 
@@ -65,7 +65,7 @@ modes = [
 @pytest.mark.parametrize('half_pixel_centers', half_pixel_centers)
 @pytest.mark.parametrize('mode', modes)
 def test_resize(in_shape, size, align_corners, half_pixel_centers, mode, request):
-    if mode == tf.image.ResizeMethod.BILINEAR and align_corners and half_pixel_centers:
+    if align_corners and half_pixel_centers:
         return
     module = _make_module(in_shape, size, align_corners, half_pixel_centers, mode)
     runner = TfliteTestRunner(request.node.name, ['cpu', 'k210'])

@@ -6,9 +6,9 @@ using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
-using TorchSharp;
+using OrtKISharp;
 using Range = Nncase.IR.Tensors.Range;
-
+using static Nncase.Evaluator.TypeInference;
 namespace Nncase.Evaluator.Tensors;
 
 /// <summary>
@@ -19,9 +19,9 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Reshape reshape)
     {
-        var input = context.GetTorchArgumentValue(reshape, Reshape.Input);
-        var shape = context.GetArgumentValueAsTensor<long>(reshape, Reshape.Shape).ToArray<long>();
-        return input.reshape(shape).ToValue();
+        var input = context.GetOrtArgumentValue(reshape, Reshape.Input);
+        var shape = context.GetInt64OrtTensorArgumentValue(reshape, Reshape.Shape);
+        return OrtKI.Reshape(input, shape, 0).ToValue();
     }
 
     /// <inheritdoc/>
@@ -33,9 +33,39 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>
 
     private IRType Visit(ITypeInferenceContext context, Reshape target, TensorType input)
     {
-        if (context.GetArgument(target, Reshape.Shape) is TensorConst shape_con)
+        if (context.GetArgument(target, Reshape.Shape) is TensorConst shapeConst &&
+            input.Shape.IsFixed)
         {
-            return input with { Shape = new Shape(shape_con.Value.Cast<int>()) };
+            var shapeValue = shapeConst.Value.ToArray<int>();
+            var negCount = shapeValue.Count(IsMinus1);
+            var inputSize = input.Shape.Prod().FixedValue;
+            var shapeSize = shapeValue.Aggregate(1, (x, y) => x * y);
+            if (negCount > 1)
+            {
+                return new InvalidType(
+                    $"Reshape at most one dimension of the new shape can be -1," +
+                    $" shape:{shapeValue}");
+            }
+            else if (negCount < 1)
+            {
+                if (inputSize != shapeSize)
+                {
+                    return new InvalidType("Reshape input shape size and param shape size must be same," +
+                                           $" shape:{shapeValue.ToArray().Aggregate("", (s, i) => s + i + " ")}, input shape${input.Shape}");
+                }
+                return input with { Shape = new Shape(shapeValue) };
+            }
+            else
+            {
+                shapeSize = -shapeSize;
+                var negIndex = shapeValue.Select((dim, index) => (dim, index)).First(x => IsMinus1(x.dim)).index;
+                if (inputSize % shapeSize != 0)
+                {
+                    return new InvalidType("Reshape input size must be divisible by shapeSize when has -1");
+                }
+                shapeValue[negIndex] = inputSize / shapeSize;
+                return input with {Shape = new Shape(shapeValue)};
+            }
         }
 
         return input with { Shape = Shape.Unranked };

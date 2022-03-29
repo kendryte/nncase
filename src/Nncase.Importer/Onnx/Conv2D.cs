@@ -21,27 +21,16 @@ namespace Nncase.Importer
             var group = GetIntAttribute(op, "group", 1);
 
             // if not present, should be inferred from input W
+            
             var strides = GetStrideAttribute(op);
-            var pads = AutoPad(op, autoPad, input, weights, strides.ToArray<long>(), dilation.ToArray<long>());
-            return F.NN.Conv2D(input, weights, bias, strides, pads, dilation, PadMode.Constant, group);
+            var pads = AutoPad(op, autoPad, input, weights, strides.ToArray<long>(), dilation);
+            return F.NN.Conv2D(input, weights, bias, strides, pads, Tensor.FromSpan<long>(dilation), PadMode.Constant, group);
         }
 
-        // only used for 2D
         private Expr GetPadsAttribute(NodeProto op)
         {
-            // h before, w before, h after, w after
-            // todo: padding size == 2?
             var paddings = GetIntsAttribute(op, "pads", 0, 4);
-            var padsValue = new long[paddings.Length];
-            var count = paddings.Length / 2;
-            for (int i = 0; i < count; ++i)
-            {
-                padsValue[2 * i] = paddings[count - 1 - i];
-                padsValue[(2 * i) + 1] = paddings[paddings.Length - 1 - i];
-            }
-
-            var paddingsValue = new long[] { paddings[1], paddings[3], paddings[0], paddings[2] };
-            return Tensor.FromSpan<long>(padsValue, new Shape(count, 2));
+            return ToNncasePadFormat(paddings);
         }
 
         private Tensor GetStrideAttribute(NodeProto op)
@@ -49,9 +38,9 @@ namespace Nncase.Importer
             return Tensor.FromSpan<long>(GetIntsAttribute(op, "strides", 1, 2));
         }
 
-        private Tensor GetDilationsAttribute(NodeProto op)
+        private long[] GetDilationsAttribute(NodeProto op)
         {
-            return Tensor.FromSpan<long>(GetIntsAttribute(op, "dilations", new[] { 1, 1 }));
+            return GetIntsAttribute(op, "dilations", new[] { 1, 1 });
         }
 
         private Expr GetBias(NodeProto op, Expr weights, bool isConvTranspose = false)

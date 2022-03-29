@@ -24,7 +24,11 @@ namespace Nncase.Transform.Rules.Neutral;
 public partial class FoldConstCall : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
-    public override CallPattern Pattern { get; } = IsCall("call", IsWildcard(), IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())));
+    public override CallPattern Pattern { get; } = IsCall(
+        "call", 
+        IsWildcard(), 
+        IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())))
+        with { TypePattern = IsType(x => !(x is InvalidType) ) };
 
     Const GetReplace(Call call)
     {

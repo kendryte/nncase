@@ -11,7 +11,6 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
-using TorchSharp;
 using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Transform;

@@ -4,6 +4,7 @@
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -15,10 +16,11 @@ public class ProdEvaluator : IEvaluator<Prod>, ITypeInferencer<Prod>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Prod prod)
     {
-        var input = context.GetTorchArgumentValue(prod, Prod.Input);
-        var size = input.shape.Aggregate(1L, (sum, v) => sum * v);
-        var v = input.reshape(size).cumprod(0)[size - 1];
-        return v.ToValue();
+        var input = context.GetOrtArgumentValue(prod, Prod.Input);
+        return OrtKI.ReduceProd(
+            input,
+            Enumerable.Range(0, input.Shape.Length).Select(x => (long)x).ToArray(),
+            0).ToValue();
     }
 
     /// <inheritdoc/>

@@ -64,9 +64,19 @@ public sealed record InstanceNormalization() : Op
     public static readonly ParameterInfo Input = new(typeof(InstanceNormalization), 0, "input");
 
     /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Scale = new(typeof(InstanceNormalization), 1, "scale");
+
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Bias = new(typeof(InstanceNormalization), 2, "bias");
+
+    /// <summary>
     /// Gets Epsilon.
     /// </summary>
-    public static readonly ParameterInfo Epsilon = new(typeof(InstanceNormalization), 1, "epsilon", IsFloatScalar());
+    public static readonly ParameterInfo Epsilon = new(typeof(InstanceNormalization), 3, "epsilon", IsFloatScalar());
 }
 
 [PatternFunctionalGenerator]

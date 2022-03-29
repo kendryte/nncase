@@ -11,15 +11,23 @@ namespace Nncase.Importer
     {
         private Expr VisitSqueeze(in NodeProto op)
         {
+            return GetOpSet(op) < 13
+                ? SqueezeV11(op)
+                : SqueezeV13(op);
+        }
+
+        private Expr SqueezeV11(in NodeProto op)
+        {
             var input = GetInputExpr(op, 0);
-            var axes = GetOptionInputExpr(op, 1, SqueezeAxes(input));
+            var axes = GetOptionIntsAttribute(op, "axes").Or(new long[]{});
             return Squeeze(input, axes);
         }
 
-        // todo:default is error
-        private Expr SqueezeAxes(Expr input)
+        private Expr SqueezeV13(in NodeProto op)
         {
-            return ReduceArg(ReduceArgOp.ArgMin, ShapeOf(input), 0, true, false);
+            var input = GetInputExpr(op, 0);
+            var axes = GetOptionInputExpr(op, 1, Tensor.FromSpan<long>(new long[]{}));
+            return Squeeze(input, axes);
         }
     }
 }

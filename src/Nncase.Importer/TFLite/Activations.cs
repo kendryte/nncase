@@ -47,14 +47,14 @@ namespace Nncase.Importer.TFLite
 
         private Expr VisitPRelu(in tflite.Operator op)
         {
-            var input = GetInputExprs(op, 0);
-            return F.NN.PRelu(input);
+            var (input, slope) = GetInputExprs(op, 0, 1);
+            return F.NN.PRelu(input, slope);
         }
 
         private Expr VisitLeakyRelu(in tflite.Operator op)
         {
             var input = GetInputExprs(op, 0);
-            return F.NN.LeakyRelu(input);
+            return F.NN.LeakyRelu(input, 0.01f);
         }
     }
 }

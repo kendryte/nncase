@@ -8,7 +8,6 @@ using Autofac;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Nncase.IR;
-using TorchSharp;
 
 namespace Nncase.Evaluator;
 

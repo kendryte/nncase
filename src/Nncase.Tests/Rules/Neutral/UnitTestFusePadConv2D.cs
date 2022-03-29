@@ -38,7 +38,7 @@ public class UnitTestFusePadConv2D
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var w = Random.Normal(DataTypes.Float32, 0, 1, 0, wShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { wShape[0] });
-        var rootPre = NN.Conv2D(NN.Pad(a, pads1, PadMode.Constant, 0), w, b, new[] { 1, 1 }, pads2, new[] { 1, 1 }, PadMode.Constant, 1);
+        var rootPre = NN.Conv2D(NN.Pad(a, pads1, PadMode.Constant, 0f), w, b, new[] { 1, 1 }, pads2, new[] { 1, 1 }, PadMode.Constant, 1);
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new FoldConstCall(),

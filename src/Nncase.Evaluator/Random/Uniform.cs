@@ -4,7 +4,7 @@
 using System;
 using Nncase.IR;
 using Nncase.IR.Random;
-using static Tensorflow.Binding;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Random;
 
@@ -16,11 +16,13 @@ public class UniformEvaluator : IEvaluator<Uniform>, ITypeInferencer<Uniform>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Uniform random)
     {
-        var shape = context.GetArgumentValueAsTensor<int>(random, Normal.Shape);
-        var mean = context.GetArgumentValueAsScalar<float>(random, Normal.Mean);
-        var scale = context.GetArgumentValueAsScalar<float>(random, Normal.Scale);
-        var seed = context.GetArgumentValueAsScalar<int>(random, Normal.Seed);
-        return tf.random.normal(shape.ToArray(), mean, stddev: scale, seed: seed).ToValue();
+        var shape = context.GetArgumentValueAsArray<long>(random, Uniform.Shape);
+        var high = context.GetArgumentValueAsScalar<float>(random, Uniform.High);
+        var low = context.GetArgumentValueAsScalar<float>(random, Uniform.Low);
+        var seed = context.GetArgumentValueAsScalar<int>(random, Uniform.Seed);
+        // 1 is float, onnx only support float/half/double
+        var t = OrtKI.RandomUniform(1, high, low, seed, shape);
+        return Value.FromTensor(t.ToTensor().CastTo(random.Type));
     }
 
     /// <inheritdoc/>

@@ -8,7 +8,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
-using TorchSharp;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -20,7 +20,11 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Split target)
     {
-        throw new NotImplementedException();
+        var input = context.GetOrtArgumentValue(target, Split.Input);
+        var split = context.GetInt64OrtTensorArgumentValue(target, Split.Sections);
+        var axis = context.GetArgumentValueAsScalar<long>(target, Split.Axis);
+        var result = OrtKI.Split(input, split, axis);
+        return Value.FromTensors(result.Select(t => t.ToTensor()).ToArray());
     }
 
     /// <inheritdoc/>
@@ -35,8 +39,9 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>
         if (context.GetArgument(target, Split.Axis) is TensorConst axis_con &&
             context.GetArgument(target, Split.Sections) is TensorConst sections_con)
         {
-            var axis_v = axis_con.Value.ToScalar<int>();
+            var axis_v = Util.PositiveIndex(axis_con.Value.ToScalar<int>(), input.Shape.Rank);
             var sections_v = sections_con.Value.Cast<int>();
+            
             var inshape = input.Shape.ToArray();
             if (inshape[axis_v] == Dimension.Unknown)
             {

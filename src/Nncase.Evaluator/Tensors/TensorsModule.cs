@@ -31,8 +31,10 @@ public class TensorsModule : Module
         builder.RegisterType<SplitEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<SqueezeEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<StackEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<TileEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<TransposeEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<UnsqueezeEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<WhereEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<GetItemEvaluator>().AsImplementedInterfaces();
     }
 }

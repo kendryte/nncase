@@ -3,6 +3,7 @@
 
 using Nncase.IR;
 using Nncase.IR.Tensors;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -14,9 +15,8 @@ public class SizeOfEvaluator : IEvaluator<SizeOf>, ITypeInferencer<SizeOf>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, SizeOf size)
     {
-        var input = context.GetTorchArgumentValue(size, SizeOf.Input);
-        var v = (Tensor)(int)input.numel();
-        return Value.FromTensor(v);
+        var input = context.GetOrtArgumentValue(size, SizeOf.Input);
+        return OrtKI.Size(input).ToValue();
     }
 
     /// <inheritdoc/>

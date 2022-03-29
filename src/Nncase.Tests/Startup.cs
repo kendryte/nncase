@@ -59,6 +59,8 @@ namespace Nncase.Tests
 
         public void Configure(ICompilerServicesProvider provider)
         {
+            Environment.SetEnvironmentVariable("NNCASE_TARGET_PATH", "");
+
             CompilerServices.Configure(provider);
         }
     }

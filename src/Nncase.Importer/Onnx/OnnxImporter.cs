@@ -9,8 +9,12 @@ using System.IO;
 using System.Linq;
 using Nncase.IR;
 using Google.Protobuf;
+using Google.Protobuf.Collections;
 using LanguageExt;
+using Nncase.IR.Tensors;
 using Onnx;
+using static Nncase.IR.F.Tensors;
+using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Importer
 {
@@ -54,6 +58,11 @@ namespace Nncase.Importer
             _graph = _model.Graph;
         }
 
+        private bool EmptyTensor(TensorProto tensor)
+        {
+            return tensor.Dims.Count == 1 && tensor.Dims[0] == 0;
+        }
+        
         private Tensor GetTensor(TensorProto tensor)
         {
             var shape = GetShape(tensor).ToValueArray();
@@ -94,15 +103,16 @@ namespace Nncase.Importer
             _constTensors = _graph.Initializer
                 .ToDictionary(tensor => tensor.Name, tensor => tensor);
 
-            var inputTensors = _graph.Input
+            var createdInputs = _graph.Input
                 .Where(n => !_constTensors.ContainsKey(n.Name))
-                .ToDictionary(n => n.Name, n => new Var(n.Name, GetIRType(n)));
+                .Select(n => new Var(n.Name, GetIRType(n)));
 
+            _outputTensors = createdInputs.ToDictionary(n => n.Name, n => (Expr) n);
             _graph.Node.ToList().ForEach(Visit);
 
             var outputs = _graph.Output.Select(o => _outputTensors[o.Name]).ToArray();
 
-            return MakeMainModule(outputs, inputTensors.Values.ToArray());
+            return MakeMainModule(outputs, createdInputs.ToArray());
         }
 
         private IRModule MakeMainModule(Expr[] body, IRArray<Var> parameter)
@@ -152,6 +162,15 @@ namespace Nncase.Importer
                         () => throw new InvalidDataException($"Cannot load tensor data (tensor:{id})."));
         }
 
+        private DataType GetInputDataType(NodeProto n, int index)
+        {
+            var id = n.Input[index];
+            return _graph.Input.Concat(_graph.ValueInfo)
+                .Find(x => x.Name == id)
+                .Match(GetDataType,
+                    () => throw new InvalidDataException($"Cannot load tensor data (tensor:{id})."));
+        }
+
         private Expr GetSingleInputExpr(NodeProto n)
         {
             return GetInputExpr(n, 0);
@@ -168,8 +187,23 @@ namespace Nncase.Importer
             {
                 return Option<Expr>.None;
             }
-
-            return Option<Expr>.Some(GetInputExpr(n, index));
+            
+            var id = n.Input[index];
+            if (id == "")
+            {
+                return Option<Expr>.None;
+            }
+            
+            if (_outputTensors.TryGetValue(id, out var expr))
+            {
+                return expr;
+            }
+            
+            return _graph.Initializer
+                .Find(x => x.Name == id)
+                .Match(
+                    t => EmptyTensor(t) ? Option<Expr>.None : Option<Expr>.Some(GetTensor(t)),
+                    () => throw new InvalidDataException($"Cannot load tensor data (tensor:{id})."));
         }
 
         private Expr GetOptionInputExpr(NodeProto n, int index, Expr defaultExpr)
@@ -179,7 +213,7 @@ namespace Nncase.Importer
 
         private (Option<Expr>, Option<Expr>) GetOptionInputExprs(NodeProto n, int index0, int index1)
         {
-            return (GetOptionInputExpr(n, index0), GetOptionInputExpr(n, 1));
+            return (GetOptionInputExpr(n, index0), GetOptionInputExpr(n, index1));
         }
 
         // about op set: https://github.com/onnx/onnx/issues/3678
@@ -245,6 +279,7 @@ namespace Nncase.Importer
                 "Log" => VisitUnary(op, UnaryOp.Log),
                 "LogSoftmax" => VisitLogSoftmax(op),
                 "LRN" => VisitLRN(op),
+                "LSTM" => VisitLSTM(op),
                 "MatMul" => VisitMatMul(op),
                 "MaxPool" => VisitReduceWindow2D(op, ReduceOp.Max, float.MinValue),
                 "Max" => VisitBinary(op, BinaryOp.Max),
@@ -274,7 +309,7 @@ namespace Nncase.Importer
                 "Relu" => VisitRelu(op),
                 "Reshape" => VisitReshape(op),
 
-                // "Resize" => VisitResize(op),
+                "Resize" => VisitResize(op),
                 "ReverseSequence" => VisitReverseSequence(op),
                 "Round" => VisitUnary(op, UnaryOp.Round),
                 "Selu" => VisitSelu(op),
@@ -295,17 +330,28 @@ namespace Nncase.Importer
                 "Sub" => VisitBinary(op, BinaryOp.Sub),
                 "Sum" => VisitSum(op),
                 "Tanh" => VisitUnary(op, UnaryOp.Tanh),
+                "Tile" => VisitTile(op),
                 "Transpose" => VisitTranspose(op),
 
                 // "Upsample" => VisitUpsample(op),
                 "Unsqueeze" => VisitUnsqueeze(op),
+                "Where" => VisitWhere(op),
                 _ => throw new NotSupportedException($"Not Supported onnx op {op.OpType}"),
             };
 
             if (output is Expr expr)
             {
-                Debug.Assert(op.Output.Count == 1, "Op outputs length should be 1.");
-                _outputTensors.Add(op.Output[0], expr);
+                if (op.Output.Count == 1)
+                {
+                    _outputTensors.Add(op.Output[0], expr);
+                }
+                else
+                {
+                    for (int i = 0; i < op.Output.Count; i++)
+                    {
+                        _outputTensors.Add(op.Output[i], IR.F.Tensors.GetItem(expr, i));
+                    }
+                }
             }
             else if (output is IReadOnlyList<Expr> exprList)
             {
@@ -319,6 +365,11 @@ namespace Nncase.Importer
             {
                 throw new InvalidOperationException("Visit result is not expression(s).");
             }
+        }
+
+        private Expr ToNncasePadFormat(Expr pads)
+        {
+            return Transpose(Reshape(pads, new[] {-1, 2}), new[] {1, 0});
         }
     }
 }

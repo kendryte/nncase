@@ -13,6 +13,7 @@ namespace Nncase.Importer.TFLite
         private Expr VisitReduceWindow2D(in tflite.Operator op, ReduceOp reduceOp, float initValue)
         {
             var input = GetInputExprs(op, 0);
+            input = F.Tensors.NHWCToNCHW(input);
             var option = op.BuiltinOptionsAsPool2DOptions();
             var (inH, inW) = Util.GetHW(input);
             var filterH = option.FilterHeight;
@@ -26,7 +27,7 @@ namespace Nncase.Importer.TFLite
             var padding = Util.ConcatPadding(padH, padW);
             return F.Tensors.NCHWToNHWC(
                 F.NN.ReduceWindow2D(
-                    reduceOp, F.Tensors.NHWCToNCHW(input), initValue, filter, stride, padding, false, false));
+                    reduceOp, input, initValue, filter, stride, padding, Tensor.FromSpan<long>(new long[] {1, 1}),false, false));
         }
     }
 }

@@ -1,15 +1,9 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Linq;
-using NetFabric.Hyperlinq;
 using Nncase.IR;
-using Nncase.IR.Math;
 using Nncase.IR.NN;
-using Nncase.IR.Tensors;
-using TorchSharp;
-using torchF = TorchSharp.torch.nn.functional;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.NN;
 
@@ -21,11 +15,14 @@ public class BatchNormalizationEvaluator : IEvaluator<BatchNormalization>, IType
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, BatchNormalization batchNorm)
     {
-        var input = context.GetTorchArgumentValue(batchNorm, BatchNormalization.Input);
+        var input = context.GetOrtArgumentValue(batchNorm, BatchNormalization.Input);
+        var scale = context.GetOrtArgumentValue(batchNorm, BatchNormalization.Scale);
+        var bias = context.GetOrtArgumentValue(batchNorm, BatchNormalization.Bias);
+        var inputMean = context.GetOrtArgumentValue(batchNorm, BatchNormalization.InputMean);
+        var inputVar = context.GetOrtArgumentValue(batchNorm, BatchNormalization.InputVar);
         var eps = context.GetArgumentValueAsScalar<float>(batchNorm, BatchNormalization.Epsilon);
         var mom = context.GetArgumentValueAsScalar<float>(batchNorm, BatchNormalization.Momentum);
-        var m = torch.nn.BatchNorm2d(input.shape[^3], eps, mom);
-        return m.forward(input).ToValue();
+        return OrtKI.BatchNormalization(input, scale, bias, inputMean, inputVar, eps, mom).ToValue();
     }
 
     /// <inheritdoc/>
@@ -49,10 +46,11 @@ public class InstanceNormalizationEvaluator : IEvaluator<InstanceNormalization>,
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, InstanceNormalization i)
     {
-        var input = context.GetTorchArgumentValue(i, InstanceNormalization.Input);
+        var input = context.GetOrtArgumentValue(i, InstanceNormalization.Input);
+        var scale = context.GetOrtArgumentValue(i, InstanceNormalization.Scale);
+        var bias = context.GetOrtArgumentValue(i, InstanceNormalization.Bias);
         var eps = context.GetArgumentValueAsScalar<float>(i, InstanceNormalization.Epsilon);
-        var f = torch.nn.InstanceNorm2d(input.shape[1], eps);
-        return f.forward(input).ToValue();
+        return OrtKI.InstanceNormalization(input, scale, bias, eps).ToValue();
     }
 
     /// <inheritdoc/>
@@ -76,12 +74,12 @@ public class LRNEvaluator : IEvaluator<LRN>, ITypeInferencer<LRN>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, LRN l)
     {
-        var input = context.GetTorchArgumentValue(l, LRN.Input);
+        var input = context.GetOrtArgumentValue(l, LRN.Input);
         var size = context.GetArgumentValueAsScalar<long>(l, LRN.Size);
         var alpha = context.GetArgumentValueAsScalar<float>(l, LRN.Alpha);
         var beta = context.GetArgumentValueAsScalar<float>(l, LRN.Beta);
-        var k = context.GetArgumentValueAsScalar<float>(l, LRN.Bias);
-        return torch.nn.LocalResponseNorm(size, alpha, beta, k).forward(input).ToValue();
+        var bias = context.GetArgumentValueAsScalar<float>(l, LRN.Bias);
+        return OrtKI.LRN(input, alpha, beta, bias, size).ToValue();
     }
 
     /// <inheritdoc/>

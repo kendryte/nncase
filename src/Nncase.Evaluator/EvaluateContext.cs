@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using Nncase.Evaluator;
 using Nncase.IR;
-using TorchSharp;
 
 namespace Nncase.Evaluator;
 
@@ -51,16 +50,23 @@ internal sealed class EvaluateContext : IEvaluateContext
 /// </summary>
 public static class EvaluateContextExtensions
 {
-    public static torch.Tensor GetTorchArgumentValue(this IEvaluateContext context, Op op, ParameterInfo parameter)
+    public static OrtKISharp.Tensor GetOrtArgumentValue(this IEvaluateContext context, Op op, ParameterInfo parameter)
     {
-        return context.GetArgumentValue(op, parameter).AsTensor().ToTorchTensor();
+        return context.GetArgumentValue(op, parameter).AsTensor().ToOrtTensor();
     }
 
-    public static torch.Tensor GetTorchValue(this IEvaluateContext context, Expr expr)
+    public static OrtKISharp.Tensor GetInt64OrtTensorArgumentValue(this IEvaluateContext context, Op op,
+        ParameterInfo parameter)
     {
-        return context.GetValue(expr).AsTensor().ToTorchTensor();
+        var tensor = context.GetArgumentValue(op, parameter).AsTensor().Cast<long>();
+        return tensor.Shape.IsScalar ? tensor.ScalarToOrtTensor() : tensor.ToOrtTensor();
     }
-
+    
+    public static OrtKISharp.Tensor GetOrtValue(this IEvaluateContext context, Expr expr)
+    {
+        return context.GetValue(expr).AsTensor().ToOrtTensor();
+    }
+    
     public static Tensorflow.Tensor GetTFArgumentValue(this IEvaluateContext context, Op op, ParameterInfo parameter)
     {
         return context.GetArgumentValue(op, parameter).AsTensor().ToTFTensor();

@@ -4,8 +4,7 @@
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
-using Tensorflow;
-using static Tensorflow.Binding;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -17,10 +16,10 @@ public class GatherNDEvaluator : IEvaluator<GatherND>, ITypeInferencer<GatherND>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, GatherND gatherND)
     {
-        var input = context.GetTFArgumentValue(gatherND, GatherND.Input);
-        var indices = context.GetTFArgumentValue(gatherND, GatherND.Index);
-        var batchDims = context.GetTFArgumentValue(gatherND, GatherND.BatchDims);
-        return GatherNDImpl(input, indices, batchDims).ToValue();
+        var input = context.GetOrtArgumentValue(gatherND, GatherND.Input);
+        var indices = context.GetInt64OrtTensorArgumentValue(gatherND, GatherND.Index);
+        var batchDims = context.GetArgumentValueAsScalar<long>(gatherND, GatherND.BatchDims);
+        return OrtKI.GatherND(input, indices, batchDims).ToValue();
     }
 
     /// <inheritdoc/>
@@ -52,13 +51,5 @@ public class GatherNDEvaluator : IEvaluator<GatherND>, ITypeInferencer<GatherND>
         {
             return new InvalidType("GatherND batch_dims must be constant");
         }
-    }
-
-    private Tensorflow.Tensor GatherNDImpl(Tensorflow.Tensor input, Tensorflow.Tensor indices, Tensorflow.Tensor batchDims)
-    {
-        return tf.Context.ExecuteOp(
-            "GatherNd",
-            null!,
-            new ExecuteOpArgs(input, indices));
     }
 }

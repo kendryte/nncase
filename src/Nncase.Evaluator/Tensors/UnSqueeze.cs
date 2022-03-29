@@ -4,7 +4,7 @@
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
-using static Tensorflow.Binding;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -16,23 +16,15 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Unsqueeze unSqueeze)
     {
-        var input = context.GetTFArgumentValue(unSqueeze, Unsqueeze.Input);
-        var dims = context.GetArgumentValueAsTensor<int>(unSqueeze, Unsqueeze.Dim)
-            .Select(
-                x => Util.PositiveIndex(x, input.shape.rank))
-            .ToArray();
-        foreach (var dim in dims)
-        {
-            input = tf.expand_dims(input, Util.PositiveIndex(dim, input.shape.rank));
-        }
-
-        return input.ToValue();
+        var input = context.GetOrtArgumentValue(unSqueeze, Unsqueeze.Input);
+        var axes = context.GetInt64OrtTensorArgumentValue(unSqueeze, Unsqueeze.Dim);
+        return OrtKI.Unsqueeze(input, axes).ToValue();
     }
 
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Unsqueeze target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Split.Input);
+        var input = context.CheckArgumentType<TensorType>(target, Unsqueeze.Input);
         return Visit(context, target, input);
     }
 
@@ -45,13 +37,14 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
             foreach (var dimVal in dimsValue)
             {
                 var dimV = Util.PositiveIndex(dimVal, input);
-                if (dimV < 0)
-                {
-                    for (int i = dimV; i < 0; i++)
-                    {
-                        outShape.Insert(0, 1);
-                    }
-                }
+                outShape.Insert(dimV, 1);
+                // if (dimV < 0)
+                // {
+                //     for (int i = dimV; i < 0; i++)
+                //     {
+                //         outShape.Insert(0, 1);
+                //     }
+                // }
             }
 
             return input with { Shape = new Shape(outShape) };

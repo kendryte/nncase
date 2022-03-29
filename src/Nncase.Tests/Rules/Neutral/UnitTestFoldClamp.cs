@@ -26,20 +26,20 @@ public class UnitTestFoldClamp
     public static IEnumerable<object[]> TestFoldNopClampPositiveData =>
         new[]
         {
-            new object[] { (Tensor)float.NegativeInfinity, (Tensor)float.PositiveInfinity },
-            new object[] { (Tensor)float.MinValue, (Tensor)float.MaxValue },
-            new object[] { (Tensor)double.NegativeInfinity, (Tensor)double.PositiveInfinity },
+            new object[] { float.NegativeInfinity, float.PositiveInfinity },
+            new object[] { float.MinValue, float.MaxValue },
+            // new object[] { double.NegativeInfinity, double.PositiveInfinity },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
     [MemberData(nameof(TestFoldNopClampPositiveData))]
-    public void TestFoldNopCastPositive(Tensor min, Tensor max, int index)
+    public void TestFoldNopCastPositive(float min, float max, int index)
     {
         var caseOptions = passOptions.IndentDir($"case_{index}");
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Math.Clamp(a, min, max);
         var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopClamp() }, caseOptions);
-
+    
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }

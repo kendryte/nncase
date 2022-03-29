@@ -20,13 +20,13 @@ namespace Nncase.IR.F
 
         public static Call Celu(Expr input, Expr alpha) => new Call(new Celu(), input, alpha);
 
-        public static Call Conv2DTranspose(Expr input, Expr weights, Expr bias, Expr outShape, Expr stride, Expr padding, Expr dilation, PadMode padMode, Expr groups) => new Call(new Conv2DTranspose(padMode), input, weights, bias, outShape, stride, padding, dilation, groups);
+        public static Call Conv2DTranspose(Expr input, Expr weights, Expr bias, Expr outShape, Expr stride, Expr padding, Expr outputPadding, Expr dilation, PadMode padMode, Expr groups) => new Call(new Conv2DTranspose(padMode), input, weights, bias, outShape, stride, padding, outputPadding, dilation, groups);
 
         public static Call Elu(Expr input, Expr alpha) => new Call(new Elu(), input, alpha);
 
         public static Call Hardmax(Expr input, Expr axis) => new Call(new Hardmax(), input, axis);
 
-        public static Call LeakyRelu(Expr input) => new Call(new LeakyRelu(), input);
+        public static Call LeakyRelu(Expr input, Expr alpha) => new Call(new LeakyRelu(), input, alpha);
 
         public static Call L2Normalization(Expr input) => new Call(new L2Normalization(), input);
 
@@ -36,7 +36,7 @@ namespace Nncase.IR.F
 
         public static Call BatchToSpace(Expr input, Expr blockShape, Expr crops) => new Call(new BatchToSpace(), input, blockShape, crops);
 
-        public static Call InstanceNormalization(Expr input, Expr eps) => new Call(new InstanceNormalization(), input, eps);
+        public static Call InstanceNormalization(Expr input, Expr scale, Expr bias, Expr eps) => new Call(new InstanceNormalization(), input, scale, bias, eps);
 
         public static Call LpNormalization(Expr input, Expr axis, Expr p) => new Call(new LpNormalization(), input, axis, p);
 
@@ -46,23 +46,23 @@ namespace Nncase.IR.F
 
         public static Call HardSwish(Expr input) => new Call(new HardSwish(), input);
 
-        public static Call OneHot(OneHotMode oneHotMode, Expr indices, Expr depth, Expr onValue, Expr offValue, Expr axis) => new Call(new OneHot(oneHotMode), indices, depth, onValue, offValue, axis);
+        public static Call OneHot(OneHotMode oneHotMode, Expr indices, Expr depth, Expr values, Expr axis) => new Call(new OneHot(oneHotMode), indices, depth, values, axis);
 
         /// <summary>
         /// Pads is Const tensor, shape = [channels, 2(before, after)].
         /// </summary>
         public static Call Pad(Expr input, Expr pads, PadMode mode, Expr value) => new Call(new Pad(mode), input, pads, value);
 
-        public static Call ReduceWindow2D(ReduceOp reduceOp, Expr input, Expr initValue, Expr filter, Expr stride, Expr padding, Expr ceilMode, Expr countIncludePad) =>
-            new Call(new ReduceWindow2D(reduceOp), input, initValue, filter, stride, padding, ceilMode, countIncludePad);
+        public static Call ReduceWindow2D(ReduceOp reduceOp, Expr input, Expr initValue, Expr filter, Expr stride, Expr padding, Expr dilation, Expr ceilMode, Expr countIncludePad) =>
+            new Call(new ReduceWindow2D(reduceOp), input, initValue, filter, stride, padding, dilation, ceilMode, countIncludePad);
 
         public static Call Relu(Expr input) => new Call(new Relu(), input);
 
         public static Call Relu6(Expr input) => new Call(new Relu6(), input);
 
-        public static Call PRelu(Expr input) => new Call(new PRelu(), input);
+        public static Call PRelu(Expr input, Expr slope) => new Call(new PRelu(), input, slope);
 
-        public static Call Selu(Expr input) => new Call(new Selu(), input);
+        public static Call Selu(Expr input, Expr alpha, Expr gamma) => new Call(new Selu(), input, alpha, gamma);
 
         public static Call Sigmoid(Expr expr) => new Call(new Sigmoid(), expr);
 

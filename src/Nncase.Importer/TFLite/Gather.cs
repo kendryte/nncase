@@ -11,7 +11,7 @@ namespace Nncase.Importer.TFLite
         private Expr VisitGather(in tflite.Operator op)
         {
             var (input, indices) = GetInputExprs(op, 0, 1);
-            return F.Tensors.Gather(input, indices, op.BuiltinOptionsAsGatherOptions().Axis);
+            return F.Tensors.Gather(input, op.BuiltinOptionsAsGatherOptions().Axis, indices);
         }
 
         private Expr VisitGatherND(in tflite.Operator op)

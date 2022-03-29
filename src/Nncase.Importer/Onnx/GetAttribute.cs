@@ -77,7 +77,7 @@ namespace Nncase.Importer
 
         private Call ComputeDefaultAxes(Expr input)
         {
-            return F.Tensors.Range(0, F.Tensors.Rank(input), 1);
+            return F.Tensors.Range(0L, F.Tensors.Cast(F.Tensors.Rank(input), DataTypes.Int64), 1L);
         }
 
         Expr GetAxesAttribute(NodeProto n, Expr input)
@@ -92,9 +92,9 @@ namespace Nncase.Importer
             return GetAttrUnSafe(n, attr, AttributeType.Ints, x => x.Ints.ToArray());
         }
 
-        Const GetConstIntsAttribute(NodeProto n, string attr)
+        Tensor GetTensorIntsAttribute(NodeProto n, string attr)
         {
-            return Const.FromTensor(Tensor.FromSpan<long>(GetIntsAttribute(n, attr)));
+            return Tensor.FromSpan<long>(GetIntsAttribute(n, attr));
         }
 
         Option<long[]> GetOptionIntsAttribute(NodeProto n, string attr)
@@ -102,11 +102,33 @@ namespace Nncase.Importer
             return GetAttrOption(n, attr, AttributeType.Ints, x => x.Ints.ToArray());
         }
 
+        Option<float[]> GetOptionFloatsAttribute(NodeProto n, string attr)
+        {
+            return GetAttrOption(n, attr, AttributeType.Floats, x => x.Floats.ToArray());
+        }
+        
+        Option<string[]> GetOptionStringsAttribute(NodeProto n, string attr)
+        {
+            return GetAttrOption(n, attr, AttributeType.Strings, 
+                x => x.Strings.Select(x => x.ToString()).ToArray());
+        }
+        
         Option<long> GetOptionIntAttribute(NodeProto n, string attr)
         {
             return GetAttrOption(n, attr, AttributeType.Int, x => x.I);
         }
 
+        Option<float> GetOptionFloatAttribute(NodeProto n, string attr)
+        {
+            return GetAttrOption(n, attr, AttributeType.Float, x => x.F);
+        }
+        
+        Option<string> GetOptionStringAttribute(NodeProto n, string attr)
+        {
+            return GetAttrOption(n, attr, AttributeType.String, 
+                x => x.S.ToString());
+        }
+        
         long[] GetIntsAttribute(NodeProto n, string attr, int[] defaultValue)
         {
             return GetAttrSafe(n, attr, AttributeType.Ints, x => x.Ints.ToArray(),

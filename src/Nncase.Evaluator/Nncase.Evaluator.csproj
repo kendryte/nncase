@@ -9,9 +9,8 @@
 
   <ItemGroup>
     <PackageReference Include="Autofac" Version="6.3.0" />
-    <PackageReference Include="TorchSharp" Version="0.95.4" />
-    <PackageReference Include="libtorch-cpu" Version="1.10.0.1" />
-    <PackageReference Include="SciSharp.TensorFlow.Redist" Version="2.7.0" />
+    <PackageReference Include="OrtKISharp" Version="0.0.1" />
+    <PackageReference Include="MagicalTensorflowLib" Version="0.0.1" />
     <PackageReference Include="TensorFlow.NET" Version="0.60.5" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.354">
       <PrivateAssets>all</PrivateAssets>

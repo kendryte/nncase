@@ -8,14 +8,20 @@ using Nncase.IR;
 using Nncase.IR.Tensors;
 using F = Nncase.IR.F;
 using Tuple = Nncase.IR.Tuple;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase
 {
-    public class Util
+    public static class Util
     {
         public static Expr ShapeIndex(in Expr input, int index)
         {
-            return F.Tensors.Squeeze(F.Tensors.Slice(F.Tensors.ShapeOf(input), new[] { index }, new[] { index + 1 }, 1), 0);
+            return GetItem(F.Tensors.ShapeOf(input), index);
+        }
+
+        public static Expr GetItem(in Expr input, Expr index)
+        {
+            return F.Tensors.Squeeze(F.Tensors.Slice(input, index, index + 1, 1), 0L);
         }
 
         public static (Expr, Expr) GetHW(in Expr input)
@@ -23,13 +29,34 @@ namespace Nncase
             return (ShapeIndex(input, 2), ShapeIndex(input, 3));
         }
 
+        /// <summary>
+        /// onnx format pads to nncase format(same as tf)
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public static Expr PadTranslate(Expr pads)
+        {
+            return Transpose(Reshape(pads, new[] {-1, 2}), new[] {1, 0});
+        }
+        
+        public static TensorConst ZeroTensor()
+        {
+            return new TensorConst(Tensor.FromSpan<int>(new[] {0}));
+        }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="padH"> [before, after] </param>
+        /// <param name="padW"> [before, after] </param>
+        /// <returns></returns>
         public static Expr ConcatPadding(Expr[] padH, Expr[] padW)
         {
             // return [[padh_before, padh_after],
             //         [padw_before, padw_after]]
-            return F.Tensors.Stack(new Tuple(
-              F.Tensors.Concat(new Tuple(padH), 0),
-              F.Tensors.Concat(new Tuple(padW), 0)), 0);
+            return Stack(new Tuple(
+                Stack(new Tuple(padH), 0),
+                Stack(new Tuple(padW), 0)), 0);
         }
 
         private static Expr GetWindowedOutputSize(Expr size, Expr filter, Expr stride, Expr dilation, bool same, bool ceilMode)

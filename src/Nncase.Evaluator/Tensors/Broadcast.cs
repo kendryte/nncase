@@ -4,7 +4,6 @@
 using System;
 using Nncase.IR;
 using Nncase.IR.Tensors;
-using torchF = TorchSharp.torch.nn.functional;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -16,9 +15,9 @@ public class BroadcastEvaluator : IEvaluator<Broadcast>, ITypeInferencer<Broadca
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Broadcast b)
     {
-        var input = context.GetTorchArgumentValue(b, Broadcast.Input);
-        var shape = context.GetArgumentValueAsTensor<long>(b, Broadcast.Shape);
-        return input.broadcast_to(shape.ToArray()).ToValue();
+        var input = context.GetOrtArgumentValue(b, Broadcast.Input);
+        var shape = context.GetArgumentValueAsArray<int>(b, Broadcast.Shape);
+        return input.BroadcastTo(shape).ToValue();
     }
 
     /// <inheritdoc/>

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,7 +14,8 @@ using Nncase.IR.NN;
 using Nncase.PatternMatch;
 using Nncase.Tests.RewriteTest;
 using Nncase.Transform;
-using TorchSharp;
+using Nncase.Transform.Passes;
+using OrtKISharp;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
@@ -117,25 +119,25 @@ namespace Nncase.Tests.RewriteTest
         public void TestFoldConstCall()
         {
             passOptions.SetPassName("TestFoldConstCall");
-            var lhs = torch.rand(2, 1, 3, torch.ScalarType.Float32);
-            var rhs = torch.rand(2, 6, 3, torch.ScalarType.Float32);
+            var lhs = OrtKI.Random(2, 1, 3);
+            var rhs = OrtKI.Random(2, 6, 3);
             var pre = (Const)lhs.ToTensor() + rhs.ToTensor();
             Assert.True(CompilerServices.InferenceType(pre));
             var post = ApplyFoldConstCallRewrite(pre);
-            Assert.Equal(lhs + rhs, post.Evaluate().AsTensor().ToTorchTensor());
+            Assert.Equal(lhs + rhs, post.Evaluate().AsTensor().ToOrtTensor());
         }
 
         [Fact]
         public void TestFoldConstCallTuple()
         {
             passOptions.SetPassName("TestFoldConstCallTuple");
-            var lhs = torch.rand(2, 1, 3, torch.ScalarType.Float32);
-            var rhs = torch.rand(2, 6, 3, torch.ScalarType.Float32);
+            var lhs = OrtKI.Random(2, 1, 3);
+            var rhs = OrtKI.Random(2, 6, 3);
             var pre = Concat(new IR.Tuple(lhs.ToTensor(), rhs.ToTensor()), 1);
             Assert.True(CompilerServices.InferenceType(pre));
             var post = ApplyFoldConstCallRewrite(pre);
             Assert.IsType<TensorConst>(post);
-            Assert.Equal(torch.cat(new[] { lhs, rhs }, 1), post.Evaluate().AsTensor().ToTorchTensor());
+            Assert.Equal(OrtKI.Concat(new[] { lhs, rhs }, 1), post.Evaluate().AsTensor().ToOrtTensor());
         }
 
         [Fact]
@@ -188,9 +190,27 @@ namespace Nncase.Tests.RewriteTest
             var weights = new Var("weights", new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
             var t = Util.ShapeIndex(weights, 0);
             t.InferenceType();
-            var expand = Expand(0f, Util.ShapeIndex(weights, 0));
+            var expand = Expand(0f, Cast(Util.ShapeIndex(weights, 0), DataTypes.Int64));
             var s = RunShapeInferPass("", expand, weights);
             Assert.True(s is Const);
+        }
+
+        [Fact]
+        public void TestFoldShapeOf()
+        {
+            var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 240, 320)));
+            var shape = ShapeOf(input);
+            var shapePost = RunShapeInferPass("FoldShapeOf", shape);
+            Assert.Equal(new long[] {1, 3, 240, 320}, ((TensorConst)shapePost).Value.ToArray<long>());
+        }
+
+        [Fact]
+        public void TestExpandToRank()
+        {
+            var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 240, 320)));
+            var exp = Expand(1, Cast(Rank(input) - 0, new Int64Type()));
+            var result = RunShapeInferPass("ExpandToRank", exp);
+            Assert.Equal(new[] {1, 1, 1, 1}, result.Evaluate().AsTensor().ToArray<int>());
         }
     }
 
@@ -200,7 +220,20 @@ namespace Nncase.Tests.RewriteTest
         {
             passOptions.SetDumpDir(Path.Combine(passOptions.PassDumpDir, "DataFlowRewriteAndInferIntegrateTest"));
         }
-
+        
+        [Fact]
+        public void TestTypePromotion()
+        {
+            var expr = (TensorConst) 1 + (TensorConst) 2L;
+            expr.InferenceType();
+            var f = new Function(expr);
+            var result = CompilerServices.InferenceType(f);
+            Assert.False(result);
+            CompilerServices.DumpIR(f, "before", Path.Combine(passOptions.PassDumpDir, "TypePromotion"));
+            var post = new ShapeInferPass("TypePromotion").Run(f, passOptions);
+            Assert.True(CompilerServices.InferenceType(post));
+            Assert.Equal(Value.FromTensor(3L), ((Function)post).Body.Evaluate());
+        }
 
         public T Dim1ExprToScalar<T>(Expr expr) where T : unmanaged, System.IEquatable<T> => (expr as TensorConst).Value.Cast<T>()[0];
 
@@ -208,14 +241,14 @@ namespace Nncase.Tests.RewriteTest
         public void TestPaddingCompute()
         {
             passOptions.SetPassName("TestPaddingCompute");
-            var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 240, 320)));
+            var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 33, 65)));
             var weights = Tensor.FromSpan<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
             var (inH, inW) = Util.GetHW(input);
             var (fH, fW) = Util.GetHW(weights);
             var inHPost = RunShapeInferPass("inH", inH);
             var inWPost = RunShapeInferPass("inW", inW);
-            Assert.Equal(240, ((TensorConst)inHPost).Value.ToScalar<int>());
-            Assert.Equal(320, ((TensorConst)inWPost).Value.ToScalar<int>());
+            Assert.Equal(33, ((TensorConst)inHPost).Value.ToScalar<int>());
+            Assert.Equal(65, ((TensorConst)inWPost).Value.ToScalar<int>());
             var strideH = 1;
             var strideW = 1;
             var dilationH = 1;
@@ -223,9 +256,9 @@ namespace Nncase.Tests.RewriteTest
             var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, true);
             var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, true);
             var padding = Util.ConcatPadding(padH, padW);
-            Assert.True(CompilerServices.InferenceType(padding));
+            // Assert.True(CompilerServices.InferenceType(padding));
             var paddingPost = RunShapeInferPass("padding", padding, input);
-            Assert.True(paddingPost is Const);
+            Assert.Equal(Tensor.FromSpan(new[] {1, 1, 1, 1}, new Shape(2, 2)), paddingPost);
         }
 
         [Fact]
@@ -266,7 +299,7 @@ namespace Nncase.Tests.RewriteTest
             var rPadH = Util.GetWindowedPadding(rInH, 2, 2, dilationH, true);
             var rPadW = Util.GetWindowedPadding(rInW, 2, 2, dilationW, true);
             var rPadding = Util.ConcatPadding(rPadH, rPadW);
-            var reduce = NCHWToNHWC(ReduceWindow2D(ReduceOp.Max, NHWCToNCHW(max), initValue, doubleV, doubleV, rPadding, dilation, false));
+            var reduce = NCHWToNHWC(ReduceWindow2D(ReduceOp.Max, NHWCToNCHW(max), initValue, doubleV, doubleV, rPadding, dilation, false, false));
             var post = RunShapeInferPass("reduce", reduce);
             Assert.True(CompilerServices.InferenceType(post));
             Assert.Equal(new Shape(1, 120, 160, 16), post.CheckedShape);
@@ -323,10 +356,13 @@ namespace Nncase.Tests.RewriteTest
         {
             var v = Tensor.FromSpan<int>(new[] { 1, 2, 3 });
             var shape = Concat(
-                new IR.Tuple(ShapeOf(v), new[] { 1 }, new[] { 1 }), 0);
+                new IR.Tuple(
+                    ShapeOf(v),
+                    new long[]{1},
+                    new long[]{1}), 0);
             var afterShape = RunShapeInferPass("Shape", shape);
             Assert.True(afterShape.InferenceType());
-            Assert.Equal(new[] { 3, 1, 1 }, afterShape);
+            Assert.Equal(new long[] {3, 1, 1}, afterShape);
             var b = Reshape(v, afterShape);
             b.InferenceType();
             Assert.Equal(new[] { 3, 1, 1 }, b.Evaluate().AsTensor().Dimensions.ToArray());

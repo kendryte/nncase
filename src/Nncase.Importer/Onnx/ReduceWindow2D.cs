@@ -19,15 +19,19 @@ namespace Nncase.Importer
             var input = GetInputExpr(op, 0);
             var ceilMode = GetBoolAttribute(op, "ceil_mode", false);
             var countIncludePad = GetBoolAttribute(op, "count_include_pad", false);
-            var kernelShape = isGlobal
-                ? Util.GetHW(input).Map((h, w) => (Expr)F.Tensors.Concat(new Tuple(h, w), 0))
-                : Tensor.FromSpan<long>(GetIntsAttribute(op, "kernel_shape"));
             var pads = GetPadsAttribute(op);
+            var dilation = reduceOp == ReduceOp.Max 
+                ? GetIntsAttribute(op, "dilations", 1, 2) 
+                : Enumerable.Repeat<long>(1, 2).ToArray();
+            var kernelShape = isGlobal
+                ? Util.GetHW(input).Map((h, w) => (Expr)F.Tensors.Stack(new Tuple(h, w), 0))
+                : Tensor.FromSpan<long>(GetIntsAttribute(op, "kernel_shape"));
             var strides = GetStrideAttribute(op);
             return F.NN.ReduceWindow2D(reduceOp, input, initValue,
                 kernelShape,
                 strides,
                 pads,
+                Tensor.FromSpan<long>(dilation),
                 ceilMode,
                 countIncludePad);
         }

@@ -4,7 +4,6 @@ using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.TIR;
 using Nncase.TIR.Builtin;
-using TorchSharp;
 using Xunit;
 
 namespace Nncase.Tests.TIRTest;

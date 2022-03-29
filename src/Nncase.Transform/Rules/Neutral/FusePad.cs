@@ -35,8 +35,8 @@ public sealed partial class FusePadConv2d : IRewriteRule
 
     private Expr? GetReplace(Expr input, Expr pads1, Expr weights, Expr bias, Expr stride, Expr pads2, Expr dilation, Expr groups)
     {
-        var newPadsH = new int[] { 0, 0 };
-        var newPadsW = new int[] { 0, 0 };
+        var newPadsH = new[] { 0, 0 };
+        var newPadsW = new[] { 0, 0 };
         var convPadsH = Stack(new IR.Tuple(pads1[2, 0] + pads2[0, 0], pads1[2, 1] + pads2[0, 1]), 0);
         var convPadsW = Stack(new IR.Tuple(pads1[3, 0] + pads2[1, 0], pads1[3, 1] + pads2[1, 1]), 0);
         var newPads = Stack(new IR.Tuple(pads1[0], pads1[1], newPadsH, newPadsW), 0);
