@@ -43,4 +43,5 @@ target_sources(transforms PRIVATE
     split_sigmoid.cpp
     fold_1x1_conv2d_depthwise_conv2d.cpp
     fix_tflite_error_shape.cpp
+    pad_conv.cpp
     )

@@ -35,6 +35,7 @@
 #include <nncase/transforms/neutral/fold_transpose.h>
 #include <nncase/transforms/neutral/fuse_pad.h>
 #include <nncase/transforms/neutral/lstm_transform.h>
+#include <nncase/transforms/neutral/pad_conv.h>
 #include <nncase/transforms/neutral/split_sigmoid.h>
 #include <nncase/transforms/neutral/transpose_motion.h>
 #include <nncase/transforms/pass.h>
@@ -124,6 +125,7 @@ void k210_target::register_quantize_annotation_passes(const module_type_t &type,
     {
         transform_pass p("annotate_kpu1");
         p.emplace<eliminate_dilated_conv2d_transform>();
+        p.emplace<pad_conv_transform>();
         p.emplace<fake_kpu_conv2d_transform>();
         p.emplace<strided_slice_motion_transform>();
         p.emplace<fuse_fake_kpu_conv2d_strided_slice_transform>();
@@ -136,6 +138,7 @@ void k210_target::register_quantize_annotation_passes(const module_type_t &type,
     {
         transform_pass p("annotate_kpu2");
         p.emplace<add_to_conv2d_transform>();
+        p.emplace<pad_conv_transform>();
         p.emplace<eliminate_dilated_conv2d_transform>();
         p.emplace<fake_kpu_conv2d_transform>();
         p.emplace<strided_slice_motion_transform>();
