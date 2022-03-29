@@ -447,4 +447,12 @@ public static class T
         };
         return buffer;
     }
+
+    public static SequentialBuilder<For> ForSegment(out (Expr b, Expr e) seg, Expr low, Expr chunck, Expr high)
+    {
+        var count = IR.F.Tensors.Cast((high - low) / IR.F.Tensors.Cast(chunck, DataTypes.Float32), DataTypes.Int32);
+        var forloop = T.Serial(out var i, (0, count));
+        seg = ((i * chunck), IR.F.Math.Min(((i + 1) * chunck), high));
+        return forloop;
+    }
 }

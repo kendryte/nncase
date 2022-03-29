@@ -307,7 +307,7 @@ public static class TypeInference
     /// <summary>
     /// Resize Type Infer.
     /// </summary>
-    public static IRType ResizeType(TensorType input, Expr newSize)
+    public static IRType ResizeType(TensorType input, Expr newSize, TensorType? inputbbox)
     {
         var out_shape = input.Shape.ToArray();
         if (newSize is TensorConst new_size_con)
@@ -315,13 +315,13 @@ public static class TypeInference
             var ts_new_size = new_size_con.Value.Cast<int>();
             switch (out_shape.Length)
             {
-                case 2 or 3:
+                case 2 or 3: // [h,w] ,[h,w,c]
                     out_shape[0] = ts_new_size[0];
                     out_shape[1] = ts_new_size[1];
                     break;
-                case > 3:
-                    out_shape[^3] = ts_new_size[0];
-                    out_shape[^2] = ts_new_size[1];
+                case > 3: // resize [n,c,h,w]
+                    out_shape[^2] = ts_new_size[0]; // h
+                    out_shape[^1] = ts_new_size[1]; // w
                     break;
             }
         }
@@ -334,12 +334,13 @@ public static class TypeInference
                     out_shape[1] = Dimension.Unknown;
                     break;
                 case > 3:
-                    out_shape[^3] = Dimension.Unknown;
                     out_shape[^2] = Dimension.Unknown;
+                    out_shape[^1] = Dimension.Unknown;
                     break;
             }
         }
-
+        if (inputbbox is not null && out_shape.Length == 4) // for roi amount.
+            out_shape[0] = out_shape[0] * inputbbox.Shape[0].FixedValue;
         return input with { Shape = new Shape(out_shape) };
     }
 

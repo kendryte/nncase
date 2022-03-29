@@ -57,7 +57,7 @@ public record Segment1D
             throw new NotSupportedException("The Negative Slice For The Tensor.");
         Range = range;
         Padding = padding;
-        Index = 0;
+        Index = index;
     }
 
     public static Segment1D operator /(Segment1D seg, int scale)

@@ -32,7 +32,7 @@ namespace Nncase.IR.Imaging
         /// <summary>
         /// Gets new_size.
         /// </summary>
-        public static readonly ParameterInfo NewSize = new(typeof(ResizeImage), 2, "new_size", HasRank(1));
+        public static readonly ParameterInfo NewSize = new(typeof(ResizeImage), 2, "new_size", HasShape(new[] { 2 }));
         
         /// <summary>
         /// Gets CubicCoeffA.
@@ -50,6 +50,7 @@ namespace Nncase.IR.Imaging
         public static readonly ParameterInfo ExtrapolationValue = new(typeof(ResizeImage), 5, "extrapolation_value", IsFloatScalar());
         
         public static readonly ParameterInfo AlignCorners = new(typeof(ResizeImage), 6, "align_corners");
+        
         public static readonly ParameterInfo HalfPixelCenters = new(typeof(ResizeImage), 7, "half_pixel_centers");
     }
 }

@@ -82,7 +82,7 @@ namespace Nncase.IR
         /// <param name="shapeCond"></param>
         /// <param name="reason"></param>
         /// <returns></returns>
-        public static TypePattern IsShape(Func<Shape, bool> shapeCond, string reason) => new TypePattern(x => x switch
+        public static TypePattern HasShape(Func<Shape, bool> shapeCond, string reason) => new TypePattern(x => x switch
         {
 
             TensorType ttype => shapeCond(ttype.Shape),
@@ -93,20 +93,20 @@ namespace Nncase.IR
         /// the tensor has FixedShape
         /// </summary>
         /// <returns>TypePattern.</returns>
-        public static TypePattern HasFixedShape() => IsShape(shape => shape.IsFixed, "HasFixedShape");
+        public static TypePattern HasFixedShape() => HasShape(shape => shape.IsFixed, "HasFixedShape");
 
         /// <summary>
         /// the tensor has FixedShape
         /// </summary>
         /// <returns>TypePattern.</returns>
-        public static TypePattern HasRank() => IsShape(shape => shape.IsRanked, "HasRank");
+        public static TypePattern HasRank() => HasShape(shape => shape.IsRanked, "HasRank");
 
         /// <summary>
         /// is target shape
         /// </summary>
         /// <param name="target_shape"></param>
         /// <returns></returns>
-        public static TypePattern HasShape(Shape target_shape) => IsShape(
+        public static TypePattern HasShape(Shape target_shape) => HasShape(
           inshape =>
             inshape.Rank == target_shape.Rank &&
             inshape.Zip(target_shape).All(
@@ -120,7 +120,7 @@ namespace Nncase.IR
         /// <param name="cond"></param>
         /// <param name="reason"></param>
         /// <returns></returns>
-        public static TypePattern HasRank(Func<int, bool> cond, string reason) => IsShape(
+        public static TypePattern HasRank(Func<int, bool> cond, string reason) => HasShape(
           inshape => cond(inshape.Rank), reason);
 
         /// <summary>
