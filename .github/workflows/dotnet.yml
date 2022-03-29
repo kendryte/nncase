@@ -2,9 +2,9 @@ name: .NET
 
 on:
   push:
-    branches: [ rebuild-ir-ort ]
+    branches: [ feature/rebuild-ir ]
   pull_request:
-    branches: [ rebuild-ir-ort ]
+    branches: [ feature/rebuild-ir ]
 
 jobs:
   build:
@@ -21,10 +21,6 @@ jobs:
         with:
           dotnet-version: 6.0.x
           
-      - uses: actions/checkout@v2
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        
       - name: Build
         run: dotnet build
 
