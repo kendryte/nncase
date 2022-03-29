@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-	<ProjectReference Include="..\Nncase.SourceGenerator\Nncase.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="$(SolutionDir)/tools/Nncase.SourceGenerator/Nncase.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>
