@@ -157,7 +157,7 @@ public class UnitTestTypeInfer : IHostFixtrue
     [Fact]
     public void TestReInference()
     {
-        // 1. before the transfrom the dag is invalid type
+        // 1. before the transform the dag is invalid type
         Var x = new("x");
         Const b = 2;
         Function f = new("f", x + b, new[] { x });
