@@ -295,7 +295,7 @@ inline shape_t get_strided_slice_output_shape(const axis_t &begin, const axis_t 
         auto begin_val = begin[i];
         auto end_val = end[i];
         auto dim = (shrink_axis_mask & (1 << i)) == 0
-            ? abs((int)std::ceil((float)(end_val - begin_val) / abs((float)stride)))
+            ? (int)std::ceil(((float)abs(end_val - begin_val) / (float)abs(stride)))
             : 1;
         new_shape.push_back(dim);
     }
