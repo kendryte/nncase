@@ -17,6 +17,26 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Transform.Rules.Neutral;
 
 /// <summary>
+/// Fold nop <see cref="IR.Tensors.Cast"/>.
+/// </summary>
+[RuleGenerator]
+public sealed partial class FoldNopCast : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsCast("c1", x => true, IsWildcard("x"));
+
+    private Expr? GetReplace(Expr x, Cast c1)
+    {
+        if (c1.NewType == x.CheckedDataType)
+        {
+            return x;
+        }
+
+        return null;
+    }
+}
+
+/// <summary>
 /// Fold two <see cref="IR.Tensors.Cast"/> into one <see cref="IR.Tensors.Cast"/>.
 /// </summary>
 [RuleGenerator]
@@ -77,25 +97,5 @@ public sealed partial class FoldTwoCasts : IRewriteRule
         }
 
         return false;
-    }
-}
-
-/// <summary>
-/// Fold nop <see cref="IR.Tensors.Cast"/>.
-/// </summary>
-[RuleGenerator]
-public sealed partial class FoldNopCast : IRewriteRule
-{
-    /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsCast("c1", x => true, IsWildcard("x"));
-
-    private Expr? GetReplace(Expr x, Cast c1)
-    {
-        if (c1.NewType == x.CheckedDataType)
-        {
-            return x;
-        }
-
-        return null;
     }
 }

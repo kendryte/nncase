@@ -26,24 +26,14 @@ internal class RuleGenerator : ISourceGenerator
             var statements = new List<StatementSyntax>();
             foreach (var parameterSymbol in cand.methodSymbol.Parameters)
             {
-                if (parameterSymbol.Equals(receiver.IMatchResultSymobl))
-                    continue;
-                if (parameterSymbol.Name == "result")
-                {
-                    context.ReportDiagnostic(Diagnostic.Create(RecriverUtil.MethodParamError, Location.None,
-                     cand.classSymobl.ToDisplayString(),
-                     parameterSymbol.Name,
-                     $"Parameter Name Can Not Be result."));
-                    return;
-                }
-
                 string rightExpr = parameterSymbol.Type switch
                 {
-                    INamedTypeSymbol { IsGenericType: true, IsReferenceType: true } x when x.IsInheritFrom(receiver.TensorSymobl) && x.Name == "Tensor" => $"((Nncase.IR.TensorConst)result[\"{parameterSymbol.Name}\"]).Value.Cast<{x.TypeArguments[0].ToDisplayString()}>()",
-                    IArrayTypeSymbol { ElementType: { IsUnmanagedType: true, IsValueType: true } e } x => $"((Nncase.IR.TensorConst)result[\"{parameterSymbol.Name}\"]).Value.ToArray<{e.ToDisplayString()}>()",
-                    { IsReferenceType: true } x when x.IsInheritFrom(receiver.ExprSymobl) => $"({ parameterSymbol.Type.ToDisplayString() })result[\"{parameterSymbol.Name}\"]",
-                    INamedTypeSymbol { IsGenericType: true, Name: "IReadOnlyList" } x when x.TypeArguments[0].IsInheritFrom(receiver.ExprSymobl) => $"((System.Collections.Generic.IReadOnlyList<Nncase.IR.Expr>)result[\"{parameterSymbol.Name}\"])",
-                    { IsUnmanagedType: true, IsValueType: true } e => $"((Nncase.IR.TensorConst)result[\"{parameterSymbol.Name}\"]).Value.ToScalar<{e.ToDisplayString()}>()",
+                    INamedTypeSymbol { IsGenericType: true, IsReferenceType: true } x when x.IsInheritFrom(receiver.TensorSymobl) && x.Name == "Tensor" => $"((Nncase.IR.TensorConst)__result[\"{parameterSymbol.Name}\"]).Value.Cast<{x.TypeArguments[0].ToDisplayString()}>()",
+                    IArrayTypeSymbol { ElementType: { IsUnmanagedType: true, IsValueType: true } e } x => $"((Nncase.IR.TensorConst)__result[\"{parameterSymbol.Name}\"]).Value.ToArray<{e.ToDisplayString()}>()",
+                    { IsUnmanagedType: true, IsValueType: true } x => $"((Nncase.IR.TensorConst)__result[\"{parameterSymbol.Name}\"]).Value.ToScalar<{x.ToDisplayString()}>()",
+                    { IsReferenceType: true } x when x.IsInheritFrom(receiver.ExprSymobl) => $"({ parameterSymbol.Type.ToDisplayString() })__result[\"{parameterSymbol.Name}\"]",
+                    ITypeSymbol x when SymbolEqualityComparer.Default.Equals(x, receiver.IMatchResultSymobl) => $"__result",
+                    INamedTypeSymbol { IsGenericType: true, Name: "IReadOnlyList" } x when x.TypeArguments[0].IsInheritFrom(receiver.ExprSymobl) => $"((System.Collections.Generic.IReadOnlyList<Nncase.IR.Expr>)__result[\"{parameterSymbol.Name}\"])",
                     _ => throw new NotSupportedException($"Convert {parameterSymbol.Name} {parameterSymbol.Type.ToDisplayString()} For IRewriteRule Impl!")
                 };
 
@@ -52,7 +42,7 @@ internal class RuleGenerator : ISourceGenerator
                 );
             }
             statements.Add(
-              ParseStatement($"return {cand.methodSymbol.Name}({string.Join(",", cand.methodSymbol.Parameters.Where(p => !p.Type.Equals(receiver.IMatchResultSymobl)).Select(p => p.Name))});")
+              ParseStatement($"return {cand.methodSymbol.Name}({string.Join(",", cand.methodSymbol.Parameters.Select(p => p.Name))});")
             );
 
             var modifiers = cand.classSymobl.BaseType is { IsGenericType: true, Name: "RewriteRule" }
@@ -61,7 +51,7 @@ internal class RuleGenerator : ISourceGenerator
 
             // 2. consturct wrapper method.
             var method = MethodDeclaration(ParseTypeName("Nncase.IR.Expr?"), Identifier("GetReplace"))
-                        .WithParameterList(ParseParameterList("(IMatchResult result)"))
+                        .WithParameterList(ParseParameterList("(IMatchResult __result)"))
                         .WithModifiers(modifiers)
                         .WithBody(Block(statements));
 
