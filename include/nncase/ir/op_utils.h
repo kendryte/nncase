@@ -258,7 +258,7 @@ inline axis_t normalize_strided_slice_begin(const shape_t &in_shape, const axis_
         auto stride = strides[i];
         assert(stride);
         new_shape[i] = (begin_mask & (1 << i)) != 0
-            ? stride > 0 ? 0 : (int32_t)in_shape[i] - 1
+            ? stride > 0 ? 0 : (int32_t)in_shape[i]
             : (begin[i] >= 0 ? begin[i] : (int32_t)in_shape[i] + begin[i]);
     }
 
@@ -271,9 +271,9 @@ inline axis_t normalize_strided_slice_end(const shape_t &in_shape, [[maybe_unuse
     for (size_t i = 0; i < new_shape.size(); i++)
     {
         auto stride = strides[i];
-        auto end_val = (end_mask & (1 << i)) != 0
+        int32_t end_val = (end_mask & (1 << i)) != 0
             ? stride > 0 ? (int32_t)in_shape[i] : -1
-            : (shrink_axis_mask & (1 << i)) == 0 ? (end[i] >= 0 ? end[i] : in_shape[i] + end[i])
+            : (shrink_axis_mask & (1 << i)) == 0 ? (end[i] >= 0 ? end[i] : in_shape[i] + end[i] + 1)
                                                  : begin[i] + 1;
         new_shape[i] = (int32_t)end_val;
     }
@@ -294,7 +294,9 @@ inline shape_t get_strided_slice_output_shape(const axis_t &begin, const axis_t 
         auto stride = strides[i];
         auto begin_val = begin[i];
         auto end_val = end[i];
-        auto dim = (shrink_axis_mask & (1 << i)) == 0 ? std::ceil((float)(end_val - begin_val) / abs((float)stride)) : 1;
+        auto dim = (shrink_axis_mask & (1 << i)) == 0
+            ? abs((int)std::ceil((float)(end_val - begin_val) / abs((float)stride)))
+            : 1;
         new_shape.push_back(dim);
     }
 
