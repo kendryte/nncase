@@ -92,7 +92,7 @@ float fadd(float a, float b)
 }");
             }
         }
-        var p = Process.Start("gcc", $"{src_path} -fPIC -shared -arch {arch} -o {lib_path}");
+        var p = Process.Start("clang", $"{src_path} -fPIC -shared -arch {arch} -o {lib_path}");
 
         var lib_ptr = NativeLibrary.Load(lib_path);
         var func_ptr = NativeLibrary.GetExport(lib_ptr, "fadd");
