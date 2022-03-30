@@ -121,7 +121,6 @@ void k210_target::register_target_dependent_passes([[maybe_unused]] const module
     }
     {
         transform_pass p("add_to_conv");
-        p.emplace<add_to_conv2d_transform>();
         p.emplace<pad_conv_transform>();
         pass_mgr.add_pass(std::move(p));
     }
