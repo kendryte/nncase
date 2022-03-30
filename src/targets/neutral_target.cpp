@@ -141,7 +141,7 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     pass.emplace<split_to_slice_transform>();
     pass.emplace<fold_transpose_transform>();
     pass.emplace<fold_nop_transpose_transform>();
-
+    pass.emplace<fold_nop_slice_transform>();
     pass.emplace<fold_matmul_add_transform>();
 }
 
