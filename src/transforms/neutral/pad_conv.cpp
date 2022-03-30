@@ -23,6 +23,11 @@ using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::ir::transforms;
 
+int gcd(int x, int y)
+{
+    return y ? gcd(y, x % y) : x;
+}
+
 bool pad_conv_transform::on_try_match(node &node, transform_context &context)
 {
     conv2d *conv;
@@ -56,13 +61,12 @@ void pad_conv_transform::process(transform_context &context)
     xt::svector<padding> data_pad_padding;
     data_pad_padding.push_back(padding { 0, 0 });
     data_pad_padding.push_back(padding { 0, 0 });
-    int32_t pad_before;
     for (int i = 2; i < 4; i++)
     {
         if (output.shape()[i] < 4)
         {
-            pad_before = 4 - output.shape()[i];
-            data_pad_padding.push_back(padding { pad_before, 0 });
+            int pad_before = 4 - output.shape()[i];
+            data_pad_padding.push_back(padding { 0, pad_before });
         }
         else
         {
@@ -77,10 +81,10 @@ void pad_conv_transform::process(transform_context &context)
     new_conv->weights().connect(weights);
     new_conv->bias().connect(bias);
     axis_t data_slice_begin, data_slice_after;
-    for (auto &it : data_pad_padding)
+    for (int i = 0; i < data_pad_padding.size(); i++)
     {
-        data_slice_begin.push_back(it.before);
-        data_slice_after.push_back(-1);
+        data_slice_begin.push_back(0);
+        data_slice_after.push_back(conv.output().shape()[i]);
     }
     auto data_slice = context.graph.emplace<slice>(new_conv->output().type(), new_conv->output().shape(), data_slice_begin, data_slice_after);
     data_slice->input().connect(new_conv->output());
