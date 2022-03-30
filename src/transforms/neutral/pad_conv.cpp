@@ -74,9 +74,11 @@ void pad_conv_transform::process(transform_context &context)
         }
     }
     auto data_pad = context.graph.emplace<pad>(output.type(), output.shape(), data_pad_padding, pad_mode_t::pad_constant, (scalar)0);
+    data_pad->name(conv.name() + "(pre_pad)");
     auto new_conv = context.graph.emplace<conv2d>(data_pad->output().shape(), weights.shape(),
         conv.groups(), conv.padding_h(), conv.padding_w(), conv.stride_h(), conv.stride_w(),
         conv.dilation_h(), conv.dilation_w(), conv.fused_activation());
+    new_conv->name(conv.name());
     new_conv->input().connect(data_pad->output());
     new_conv->weights().connect(weights);
     new_conv->bias().connect(bias);
@@ -87,6 +89,7 @@ void pad_conv_transform::process(transform_context &context)
         data_slice_after.push_back(conv.output().shape()[i]);
     }
     auto data_slice = context.graph.emplace<slice>(new_conv->output().type(), new_conv->output().shape(), data_slice_begin, data_slice_after);
+    data_slice->name(conv.name() + "(post_slice)");
     data_slice->input().connect(new_conv->output());
 
     data_pad->input().connect(output);
