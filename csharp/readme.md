@@ -30,3 +30,7 @@ nuget push Nncase.Simulator.Native.osx-arm64.1.0.0.nupkg <apikey> -Source https:
 nuget push Nncase.Simulator.Native.osx-x64.1.0.0.nupkg <apikey> -Source https://www.myget.org/F/zhen8838/api/v3/index.json
 nuget push Nncase.Simulator.Native.win-x64.1.0.0.nupkg <apikey> -Source https://www.myget.org/F/zhen8838/api/v3/index.json
 ```
+
+# ChangeLog
+
+1. Ncc Infer Support Multiple Inputs.
