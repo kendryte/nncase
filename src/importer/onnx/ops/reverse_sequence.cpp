@@ -63,7 +63,7 @@ void onnx_importer::convert_op_ReverseSequence(const NodeProto &node)
         axis_t batch_end(input_shape.begin(), input_shape.end());
         batch_end[batch_axis] = i + 1;
 
-        auto batch_sl = graph_.emplace<slice>(input_type, input_shape, batch_begin, batch_end, forward_stride, 0, 0, 0, 0);
+        auto batch_sl = graph_.emplace<slice>(input_type, input_shape, batch_begin, batch_end, forward_stride, 0, 0, 0, 0, 0);
         batch_sl->name(op_name + ".slice_" + std::to_string(i) + "(batch_axis)");
         input_tensors_.emplace(&batch_sl->input(), input);
 
@@ -90,8 +90,8 @@ void onnx_importer::convert_op_ReverseSequence(const NodeProto &node)
         axis_t time_stride(batch_sl_shape.size(), 1);
         time_stride[time_axis] = -1;
 
-        auto backward_sl = graph_.emplace<slice>(input_type, batch_sl_shape, time_begin, time_end, time_stride, 0, time_end_mask, 0, 0);
-        backward_sl->name(op_name + ".slice(backward)");
+        auto backward_sl = graph_.emplace<slice>(input_type, batch_sl_shape, time_begin, time_end, time_stride, 0, time_end_mask, 0, 0, 0);
+        backward_sl->name(op_name + ".slice_" + std::to_string(i) + "(backward)");
         backward_sl->input().connect(batch_sl->output());
         slices.push_back(backward_sl);
 
@@ -105,8 +105,8 @@ void onnx_importer::convert_op_ReverseSequence(const NodeProto &node)
             axis_t time_end(batch_sl_shape.begin(), batch_sl_shape.end());
             time_end[batch_axis] = 1;
 
-            auto forward_sl = graph_.emplace<slice>(input_type, batch_sl_shape, time_begin, time_end, forward_stride, 0, 0, 0, 0);
-            forward_sl->name(op_name + ".slice(forward)");
+            auto forward_sl = graph_.emplace<slice>(input_type, batch_sl_shape, time_begin, time_end, forward_stride, 0, 0, 0, 0, 0);
+            forward_sl->name(op_name + ".slice_" + std::to_string(i) + "(forward)");
             forward_sl->input().connect(batch_sl->output());
             slices.push_back(forward_sl);
         }

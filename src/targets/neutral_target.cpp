@@ -20,6 +20,7 @@
 #include <nncase/transforms/neutral/binary_motion.h>
 #include <nncase/transforms/neutral/bitcast_motion.h>
 #include <nncase/transforms/neutral/dequantize_motion.h>
+#include <nncase/transforms/neutral/fix_tflite_error_shape.h>
 #include <nncase/transforms/neutral/fold_bitcast.h>
 #include <nncase/transforms/neutral/fold_constant.h>
 #include <nncase/transforms/neutral/fold_conv2d_binary.h>
@@ -140,6 +141,7 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     pass.emplace<split_to_slice_transform>();
     pass.emplace<fold_transpose_transform>();
     pass.emplace<fold_nop_transpose_transform>();
+    pass.emplace<fold_nop_slice_transform>();
 }
 
 void neutral_target::fold_pad_conv_transform(ir::transforms::transform_pass &pass, [[maybe_unused]] bool add_constant_folding)
@@ -201,6 +203,7 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
         // fold_dilated_conv
         {
             transform_pass p("fold_dilated_conv");
+            p.emplace<fix_dilated_conv_transform>();
             fold_dilated_conv_transform(p, true);
             pass_mgr.add_pass(std::move(p));
         }

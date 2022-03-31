@@ -117,10 +117,14 @@ void onnx_importer::convert_op_Slice(const NodeProto &node)
                 begins[i] = begins[i] == min ? min + 1 : begins[i];
                 begins[i] = begins[i] == max ? max - 1 : begins[i];
             }
+            if (begins[i] < 0)
+                begins[i] += max;
+            if (ends[i] < 0)
+                ends[i] += max;
         }
     }
 
-    auto sl = graph_.emplace<slice>(input_type, input_shape, begins, ends, strides, 0, 0, 0, 0);
+    auto sl = graph_.emplace<slice>(input_type, input_shape, begins, ends, strides, 0, 0, 0, 0, 0);
     sl->name(generate_name(node) + "(Slice)");
 
     input_tensors_.emplace(&sl->input(), input);
