@@ -17,11 +17,9 @@
 #include <nncase/kernels/cpu/reference/tensor_compute.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
-#if defined ENABLE_RVV
 #if __riscv_vector
 #include "utils.h"
 #include <riscv_vector.h>
-#endif
 #endif
 
 using namespace nncase;
@@ -32,7 +30,6 @@ using namespace nncase::kernels::cpu::optimized;
 
 namespace
 {
-#if defined ENABLE_RVV
 #if __riscv_vector
 
 result<void> optimized_softmax_impl(const float *input, float *output, const runtime_shape_t &in_shape, int32_t axis, float beta) noexcept
@@ -209,7 +206,6 @@ result<void> optimized_softmax_impl(const float *input, float *output, const run
     return ok();
 }
 #endif
-#endif
 }
 
 template result<void> optimized::softmax<float>(const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
@@ -219,10 +215,8 @@ template <typename T>
 result<void> optimized::softmax(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
     const runtime_shape_t &out_strides, int32_t axis, float beta) noexcept
 {
-#if defined ENABLE_RVV
 #if __riscv_vector
     return optimized_softmax_impl(input, output, in_shape, axis, beta);
-#endif
 #endif
 
     return cpu::reference::softmax(input, output, in_shape, in_strides, out_strides, axis, beta);

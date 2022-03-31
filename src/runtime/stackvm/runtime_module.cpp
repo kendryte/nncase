@@ -49,20 +49,20 @@ result<void> stackvm_runtime_module::initialize_before_functions(runtime_module_
 
 result<uintptr_t> stackvm_runtime_module::reg(size_t id) const noexcept
 {
-    // CHECK_WITH_ERR(id < regs_.size(), std::errc::result_out_of_range);
+    CHECK_WITH_ERR(id < regs_.size(), std::errc::result_out_of_range);
     return ok(regs_[id]);
 }
 
 result<void> stackvm_runtime_module::reg(size_t id, uintptr_t value) noexcept
 {
-    // CHECK_WITH_ERR(id < regs_.size(), std::errc::result_out_of_range);
+    CHECK_WITH_ERR(id < regs_.size(), std::errc::result_out_of_range);
     regs_[id] = value;
     return ok();
 }
 
 result<runtime_shape_t> stackvm_runtime_module::shape_reg(size_t id) const noexcept
 {
-    // CHECK_WITH_ERR(id < shape_regs_.size(), std::errc::result_out_of_range);
+    CHECK_WITH_ERR(id < shape_regs_.size(), std::errc::result_out_of_range);
     return ok(shape_regs_[id]);
 }
 
@@ -84,7 +84,7 @@ result<void> stackvm_runtime_module::shape_reg(size_t id, runtime_shape_t value)
 
 result<runtime_paddings_t> stackvm_runtime_module::paddings_reg(size_t id) const noexcept
 {
-    // CHECK_WITH_ERR(id < paddings_regs_.size(), std::errc::result_out_of_range);
+    CHECK_WITH_ERR(id < paddings_regs_.size(), std::errc::result_out_of_range);
     return ok(paddings_regs_[id]);
 }
 

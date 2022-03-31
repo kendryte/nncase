@@ -386,6 +386,11 @@ template <typename T>
 result<void> kernels::sigmoid(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
     const runtime_shape_t &out_strides) noexcept
 {
+    if (is_contiguous(in_shape, out_strides))
+    {
+        return cpu::optimized::sigmoid(input, output, in_shape, in_strides, out_strides);
+    }
+
     return cpu::reference::sigmoid(input, output, in_shape, in_strides, out_strides);
 }
 
