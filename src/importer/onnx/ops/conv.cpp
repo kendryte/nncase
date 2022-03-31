@@ -44,10 +44,6 @@ void onnx_importer::convert_op_Conv(const NodeProto &node)
     // group
     const auto &group_attr = get_attribute<int>(node, "group");
     size_t group = group_attr ? group_attr.value() : 1;
-    if (generate_name(node) == "Conv_56")
-    {
-        NNCASE_UNUSED auto a = 1;
-    }
 
     // stride
     std::array<size_t, 2> strides = { 1, 1 };
