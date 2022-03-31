@@ -248,6 +248,12 @@ shape_t onnx_importer::get_shape(const string &value) const
 {
     const auto oit = output_tensors_.find(value);
 
+    if (oit != std::end(output_tensors_))
+    {
+        auto result_shape = oit->second->shape();
+        return result_shape;
+    }
+
     const auto value_info = find_value_info(value);
     if (value_info)
         return get_shape(value_info.value());
@@ -256,11 +262,6 @@ shape_t onnx_importer::get_shape(const string &value) const
     if (initializer)
         return get_shape(initializer.value());
 
-    if (oit != std::end(output_tensors_))
-    {
-        auto result_shape = oit->second->shape();
-        return result_shape;
-    }
     throw std::runtime_error("Can't find value info for " + value + " to parse its shape");
 }
 
