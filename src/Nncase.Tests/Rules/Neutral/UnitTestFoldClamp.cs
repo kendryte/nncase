@@ -28,7 +28,7 @@ public class UnitTestFoldClamp
         {
             new object[] { float.NegativeInfinity, float.PositiveInfinity },
             new object[] { float.MinValue, float.MaxValue },
-            // new object[] { double.NegativeInfinity, double.PositiveInfinity },
+            new object[] { double.NegativeInfinity, double.PositiveInfinity },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
@@ -39,8 +39,28 @@ public class UnitTestFoldClamp
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Math.Clamp(a, min, max);
         var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopClamp() }, caseOptions);
-    
         Assert.NotEqual(rootPre, rootPost);
+        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+    }
+
+    public static IEnumerable<object[]> TestFoldNopClampNegtiveData =>
+        new[]
+        {
+            new object[] { float.MinValue, float.IsNormal(10) },
+            new object[] { float.IsNormal(-2), float.IsNormal(10) },
+            new object[] { float.IsNormal(-2), float.MaxValue },
+        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
+
+    [Theory]
+    [MemberData(nameof(TestFoldNopClampNegtiveData))]
+    public void TestFoldNopCastNegtive(float min, float max, int index)
+    {
+        var caseOptions = passOptions.IndentDir($"case_{index}");
+        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
+        var rootPre = Math.Clamp(a, min, max);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopClamp() }, caseOptions);
+
+        Assert.Equal(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
 }
