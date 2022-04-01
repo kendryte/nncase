@@ -38,6 +38,7 @@
 #include <nncase/transforms/neutral/fuse_pad.h>
 #include <nncase/transforms/neutral/lstm_transform.h>
 #include <nncase/transforms/neutral/matmul_to_conv2d.h>
+#include <nncase/transforms/neutral/pad_conv.h>
 #include <nncase/transforms/neutral/split_sigmoid.h>
 #include <nncase/transforms/neutral/split_softmax.h>
 #include <nncase/transforms/neutral/transpose_motion.h>
@@ -129,6 +130,11 @@ void k210_target::register_target_dependent_passes([[maybe_unused]] const module
     {
         transform_pass p("conv2d_transpose_lowering");
         p.emplace<conv2d_transpose_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+    {
+        transform_pass p("add_to_conv");
+        p.emplace<pad_conv_transform>();
         pass_mgr.add_pass(std::move(p));
     }
 }

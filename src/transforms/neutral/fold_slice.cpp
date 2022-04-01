@@ -82,7 +82,7 @@ void fold_slice_slice_transform::process(transform_context &context)
     }
 
     auto new_rp = context.graph.emplace<slice>(
-        output.type(), output.shape(), new_begin, new_end, new_strides, 0, 0, 0, 0);
+        output.type(), output.shape(), new_begin, new_end, new_strides, 0, 0, 0, 0, 0);
     new_rp->name(rp2->name() + "_F");
 
     new_rp->input().connect(output);

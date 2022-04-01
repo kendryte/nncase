@@ -46,7 +46,7 @@ DEFINE_TFLITE_LOWER(STRIDED_SLICE)
     auto strides = load_axis<int32_t>(get_tensor(op.inputs(), 3));
     auto &options = *op.builtin_options_as_StridedSliceOptions();
     auto node = graph_.emplace<slice>(to_data_type(input.type()), get_shape(input.shape()), begin, end, strides, options.begin_mask(),
-        options.end_mask(), options.ellipsis_mask(), options.new_axis_mask());
+        options.end_mask(), options.ellipsis_mask(), options.new_axis_mask(), options.shrink_axis_mask());
     node->name(get_tensor(op.outputs(), 0).name()->string_view());
     auto rshape = graph_.emplace<bitcast>(node->output().type(), node->output().shape(), get_shape(output.shape()));
     rshape->name(node->name() + "/reshape");

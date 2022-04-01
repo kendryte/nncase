@@ -43,6 +43,8 @@ target_sources(transforms PRIVATE
     split_sigmoid.cpp
     split_softmax.cpp
     fold_1x1_conv2d_depthwise_conv2d.cpp
+    fix_tflite_error_shape.cpp
+    pad_conv.cpp
     merge_binary_before_conv.cpp
     fold_matmul_add.cpp
     )

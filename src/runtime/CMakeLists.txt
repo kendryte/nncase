@@ -9,7 +9,8 @@ set(SRCS interpreter.cpp
          runtime_tensor_impl.cpp
          section.cpp
          host_runtime_tensor.cpp
-         allocator.cpp)
+         allocator.cpp
+         op_profile.cpp)
 
 if ((NOT BUILDING_RUNTIME) OR DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL)
     list(APPEND SRCS shared_runtime_tensor.platform.cpp)
