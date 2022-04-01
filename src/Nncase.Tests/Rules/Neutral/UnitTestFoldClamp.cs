@@ -43,7 +43,7 @@ public class UnitTestFoldClamp
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
 
-    public static IEnumerable<object[]> TestFoldNopClampNegtiveData =>
+    public static IEnumerable<object[]> TestFoldNopClampNegativeData =>
         new[]
         {
             new object[] { float.MinValue, float.IsNormal(10) },
@@ -52,8 +52,8 @@ public class UnitTestFoldClamp
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
-    [MemberData(nameof(TestFoldNopClampNegtiveData))]
-    public void TestFoldNopCastNegtive(float min, float max, int index)
+    [MemberData(nameof(TestFoldNopClampNegativeData))]
+    public void TestFoldNopCastNegative(float min, float max, int index)
     {
         var caseOptions = passOptions.IndentDir($"case_{index}");
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
