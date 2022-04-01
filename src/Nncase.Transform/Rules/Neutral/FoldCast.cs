@@ -47,7 +47,7 @@ public sealed partial class FoldTwoCasts : IRewriteRule
 
     private Expr? GetReplace(Expr x, Cast c1, Cast c2)
     {
-        if (IsLosslessCast(x.CheckedDataType, c1.NewType))
+        if (IsLosslessCast(x.CheckedDataType, c1.NewType) && IsLosslessCast(c1.NewType, c2.NewType))
         {
             return Cast(x, c2.NewType);
         }
@@ -57,7 +57,6 @@ public sealed partial class FoldTwoCasts : IRewriteRule
 
     private bool IsLosslessCast(DataType pre, DataType post)
     {
-        // TODO: Support more types
         if (pre == DataTypes.UInt8)
         {
             return post == DataTypes.UInt8
@@ -74,7 +73,8 @@ public sealed partial class FoldTwoCasts : IRewriteRule
         }
         else if (pre == DataTypes.Int8)
         {
-            return post == DataTypes.UInt16
+            return post == DataTypes.Int8
+                || post == DataTypes.UInt16
                 || post == DataTypes.UInt32
                 || post == DataTypes.UInt64
                 || post == DataTypes.Int16
@@ -94,6 +94,53 @@ public sealed partial class FoldTwoCasts : IRewriteRule
                 || post == DataTypes.Int64
                 || post == DataTypes.Float32
                 || post == DataTypes.Float64;
+        }
+        else if (pre == DataTypes.Int16)
+        {
+            return post == DataTypes.Int16
+                || post == DataTypes.UInt32
+                || post == DataTypes.UInt64
+                || post == DataTypes.Int32
+                || post == DataTypes.Int64
+                || post == DataTypes.Float32
+                || post == DataTypes.Float64;
+        }
+        else if (pre == DataTypes.BFloat16)
+        {
+            return post == DataTypes.UInt32
+                || post == DataTypes.UInt64
+                || post == DataTypes.Int32
+                || post == DataTypes.Int64
+                || post == DataTypes.Float32
+                || post == DataTypes.Float64;
+        }
+        else if (pre == DataTypes.UInt32)
+        {
+            return post == DataTypes.UInt32
+                || post == DataTypes.UInt64
+                || post == DataTypes.Int64
+                || post == DataTypes.Float64;
+        }
+        else if (pre == DataTypes.Int32)
+        {
+            return post == DataTypes.Int32
+                || post == DataTypes.UInt64
+                || post == DataTypes.Int64
+                || post == DataTypes.Float64;
+        }
+        else if (pre == DataTypes.Float32)
+        {
+            return post == DataTypes.UInt64
+                || post == DataTypes.Int64
+                || post == DataTypes.Float64;
+        }
+        else if (pre == DataTypes.UInt64)
+        {
+            return post == DataTypes.UInt64;
+        }
+        else if (pre == DataTypes.Int64)
+        {
+            return post == DataTypes.Int64;
         }
 
         return false;
