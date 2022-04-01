@@ -43,6 +43,26 @@ public class UnitTestFoldPad
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
 
+    public static IEnumerable<object[]> TestFoldNopPadNegativeData =>
+        new[]
+        {
+            new object[] { new[] { 1 }, new[,] { { 1, 0 } } },
+            new object[] { new[] { 1, 1 }, new[,] { { 0, 1 }, { 2, 0 } } },
+        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
+
+    [Theory]
+    [MemberData(nameof(TestFoldNopPadNegativeData))]
+    public void TestFoldNopPadNegative(int[] shape, int[,] pads, int index)
+    {
+        var caseOptions = passOptions.IndentDir($"case_{index}");
+        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
+        var rootPre = NN.Pad(a, pads, PadMode.Constant, 0.0f);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopPad() }, passOptions);
+
+        Assert.Equal(rootPre, rootPost);
+        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+    }
+
     public static IEnumerable<object[]> TestFoldTwoPadsPositiveData =>
         new[]
         {
@@ -60,6 +80,26 @@ public class UnitTestFoldPad
         var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoPads() }, caseOptions);
 
         Assert.NotEqual(rootPre, rootPost);
+        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+    }
+
+    public static IEnumerable<object[]> TestFoldTwoPadsNegativeData =>
+       new[]
+       {
+            new object[] { new[] { 1 }, new[,] { { 0, 1 } }, 1.0f ,new[,] { { 2, 0 } } , 2.0f},
+            new object[] { new[] { 1, 1 }, new[,] { { 0, 1 }, { 1, 0 } }, 1.0f, new[,] { { 1, 3 }, { 1, 2 } } ,0.0f},
+       }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
+
+    [Theory]
+    [MemberData(nameof(TestFoldTwoPadsNegativeData))]
+    public void TestFoldTwoPadsNegative(int[] shape, int[,] pads1, float padValue1, int[,] pads2, float padValue2, int index)
+    {
+        var caseOptions = passOptions.IndentDir($"case_{index}");
+        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
+        var rootPre = NN.Pad(NN.Pad(a, pads1, PadMode.Constant, padValue1), pads2, PadMode.Constant, padValue2);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoPads() }, caseOptions);
+
+        Assert.Equal(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
 }
