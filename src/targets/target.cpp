@@ -54,7 +54,7 @@ void target::register_target_dependent_after_buffer_fusion_passes([[maybe_unused
 
 std::unique_ptr<ir::quantizer> target::create_quantizer([[maybe_unused]] const module_type_t &type, ir::calibrate_method calib_method)
 {
-    return std::make_unique<ir::quantizer>(calib_method, 8192);
+    return std::make_unique<ir::quantizer>(calib_method, 1024);
 }
 
 std::unique_ptr<codegen::module_builder> target::create_module_builder(const module_type_t &type, std::string_view module_name, const codegen::module_builder_params &params)
