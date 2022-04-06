@@ -47,7 +47,9 @@ public class UnitTestFoldTranspose
         new[]
         {
             new object[] { new[] { 2, 4 }, new[] { 1, 0 }, new[] { 0, 1 } },
+            new object[] { new[] { 2, 4, 6 }, new[] { 0, 2, 1 }, new[] {  1, 2, 0 } },
             new object[] { new[] { 2, 4, 6, 8 }, new[] { 0, 2, 3, 1 }, new[] { 3, 1, 2, 0 } },
+            new object[] { new[] { 2, 4, 6, 8, 2}, new[] { 0, 2, 3, 1, 4 }, new[] { 3, 1, 2, 4, 0 } },
         };
 
     [Theory]
