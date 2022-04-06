@@ -66,6 +66,8 @@ calibrate_method to_calibrate_method(std::string name)
         return calibrate_method::kld_m0;
     if (name == "kld_m1")
         return calibrate_method::kld_m1;
+    if (name == "kld_m2")
+        return calibrate_method::kld_m2;
     if (name == "cdf")
         return calibrate_method::cdf;
     return calibrate_method::no_clip;

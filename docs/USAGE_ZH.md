@@ -74,8 +74,8 @@ py::class_<compile_options>(m, "CompileOptions")
 | 属性名称         | 类型   | 是否必须 | 描述                                                         |
 | ---------------- | ------ | -------- | ------------------------------------------------------------ |
 | target           | string | 是       | 指定编译目标, 如'k210', 'k510'                               |
-| quant_type       | string | 否       | 指定数据量化类型, 如'uint8', 'int8'                          |
-| w_quant_type     | string | 否       | 指定权重量化类型, 如'uint8', 'int8', 默认为'uint8'           |
+| quant_type       | string | 否       | 指定数据量化类型, 如'uint8', 'int8', 'int16'                 |
+| w_quant_type     | string | 否       | 指定权重量化类型, 如'uint8', 'int8', 'int16', 默认为'uint8'  |
 | use_mse_quant_w  | bool   | 否       | 指定权重量化时是否使用最小化均方误差(mean-square error, MSE)算法优化量化参数 |
 | preprocess       | bool   | 否       | 是否开启前处理，默认为False                                  |
 | swapRB           | bool   | 否       | 是否交换RGB输入数据的红和蓝两个通道(RGB-->BGR或者BGR-->RGB)，默认为False |
@@ -701,7 +701,7 @@ def main():
     import_options = nncase.ImportOptions()
 
     # quantize model
-    compile_options.quant_type = 'uint8' # or 'int8'
+    compile_options.quant_type = 'uint8' # or 'int8' 'int16'
 
     # ptq_options
     ptq_options = nncase.PTQTensorOptions()
@@ -1209,9 +1209,9 @@ OPTIONS
   --output-arrays <output arrays>
                           output arrays
   --quant-type <quant type>
-                          post trainning quantize type, e.g uint8|int8, default is uint8
+                          post trainning quantize type, e.g uint8|int8|int16, default is uint8
   --w-quant-type <w quant type>
-                          post trainning weights quantize type, e.g uint8|int8, default is uint8
+                          post trainning weights quantize type, e.g uint8|int8|int16, default is uint8
   --use-mse-quant-w       use min mse algorithm to refine weights quantilization or not, default is 0
   --dataset <dataset path>
                           calibration dataset, used in post quantization
@@ -1277,8 +1277,8 @@ OPTIONS
 - `--input-prototxt`用于指定caffe模型的prototxt文件
 - `<output file>` 用于指定输出模型文件
 - `--output-arrays `用于指定输出结点的名称
-- `--quant-type` 用于指定数据的量化类型, 如`uint8`/`int8`, 默认是`uint8`
-- `--w-quant-type` 用于指定权重的量化类型, 如`uint8`/`int8`, 默认是`uint8`
+- `--quant-type` 用于指定数据的量化类型, 如`uint8`/`int8`/`int16, 默认是`uint8
+- `--w-quant-type` 用于指定权重的量化类型, 如`uint8`/`int8`/`int16, 默认是`uint8
 - `--use-mse-quant-w`指定是否使用最小化mse(mean-square error, 均方误差)算法来量化权重.
 - `--dataset` 用于提供量化校准集来量化你的模型。你需要从训练集中选择几百到上千个数据放到这个目录里。
 - `--dataset-format` 用于指定量化校准集的格式。默认是 `image`，nncase 将使用 `opencv` 读取你的图片，并自动缩放到你的模型输入需要的尺寸。如果你的输入有 3 个通道，ncc 会将你的图片转换为值域是 [0,1] 布局是 `NCHW` 的张量。如果你的输入只有 1 个通道，ncc 会灰度化你的图片。如果你的数据集不是图片（例如音频或者矩阵），把它设置为 `raw`。这种场景下你需要把你的数据集转换为 float 张量的二进制文件。
