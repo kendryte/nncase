@@ -137,9 +137,7 @@ namespace Nncase.IR
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
                 Visit(expr.Value);
-                Visit(expr.Dom.Start);
-                Visit(expr.Dom.Stop);
-                Visit(expr.Dom.Step);
+                expr.Dom.Accept(this);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
@@ -170,9 +168,7 @@ namespace Nncase.IR
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
                 Visit(expr.LoopVar);
-                Visit(expr.Dom.Start);
-                Visit(expr.Dom.Stop);
-                Visit(expr.Dom.Step);
+                expr.Dom.Accept(this);
                 Visit(expr.Body);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);

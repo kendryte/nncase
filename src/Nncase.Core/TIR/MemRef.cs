@@ -67,6 +67,11 @@ public record Segment1D
         return new(new(seg.Range.Start.Value / scale, seg.Range.End.Value / scale), seg.Padding);
     }
 
+    public static Segment1D operator *(Segment1D seg, int scale)
+    {
+        return new(new(seg.Range.Start.Value * scale, seg.Range.End.Value * scale), seg.Padding);
+    }
+
     public override string ToString()
     {
         return $"{Range}";
@@ -105,15 +110,12 @@ public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
     {
     }
 
+    /// <summary>
+    /// todo remove it
+    /// </summary>
     public int shape_size => _segments.Aggregate(1, (acc, seg) => acc * seg.Length);
 
     public int Count => ((IReadOnlyCollection<Segment1D>)_segments).Count;
-
-    public SegmentND Update(int index, Segment1D seg)
-    {
-        this[index] = seg;
-        return this;
-    }
 
     public override bool Equals(object? obj)
     {
@@ -129,6 +131,12 @@ public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
     IEnumerator IEnumerable.GetEnumerator()
     {
         return _segments.GetEnumerator();
+    }
+
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return $"{string.Join(",", _segments.Select(s => s.ToString()))}";
     }
 }
 
@@ -233,6 +241,11 @@ public record Buffer : Expr, IBufferView<Buffer>, IStructuralEquatable
     /// get the memory loacation
     /// </summary>
     public Schedule.MemoryLocation MemLocation;
+
+    /// <summary>
+    /// set the cache level.
+    /// </summary>
+    public int CacheLevel;
 
     /// <summary>
     /// create from the IRType.

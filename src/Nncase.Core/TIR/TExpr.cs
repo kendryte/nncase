@@ -157,14 +157,6 @@ public sealed record Sequential : Expr, IList<Expr>
 }
 
 /// <summary>
-/// select the value and return it, the true and false must have same type!.
-/// </summary>
-/// <param name="Condition"></param>
-/// <param name="TrueValue"></param>
-/// <param name="FalseValue"></param>
-public sealed record Select(Expr Condition, Expr TrueValue, Expr FalseValue) : Expr { }
-
-/// <summary>
 /// Load value from the result produced by the producer.
 /// </summary>
 /// <remarks>
@@ -400,6 +392,21 @@ public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region)
     /// <param name="Indices">The access point indices of the buffer.</param>
     /// <returns>The BufferRegion which is the single point of the given buffer.</returns>
     public static BufferRegion FromPoint(Buffer Buf, IRArray<Expr> Indices) => new BufferRegion(Buf, new(Indices.Select(index => new Range(index, index + 1, 1))));
+
+    /// <summary>
+    /// Get the Addr Offset.
+    /// </summary>
+    public Expr AddrOffset => Region.Zip(Buffer.Stride.ToArray()).Aggregate((Expr)0, (acc, t) => acc + t.Item1.Start * t.Item2);
+
+    /// <summary>
+    /// Get the Current Offset.
+    /// </summary>
+    public Expr CurAddr => Buffer.Addr + AddrOffset;
+
+    /// <summary>
+    /// Get the Shape.
+    /// </summary>
+    public Expr[] Shape => Region.Select(r => r.Stop - r.Start).ToArray();
 }
 
 /// <summary>
@@ -491,9 +498,9 @@ public sealed record Block(string Name, Sequential Body, Sequential InitBody,
     /// <param name="mode"></param>
     /// <param name="value"></param>
     /// <returns></returns>
-    public Block Bind(out IterVar vi, Range dom, IterationMode mode, Expr value)
+    public Block Bind(out IterVar vi, Range dom, IterationMode mode, Var value)
     {
-        vi = new IterVar(TensorType.Scalar(DataTypes.Int32), dom, mode, value);
+        vi = new IterVar(dom, mode, value);
         IterVars.Add(vi);
         return this;
     }

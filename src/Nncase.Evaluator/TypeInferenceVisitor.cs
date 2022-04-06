@@ -146,16 +146,17 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     {
         try
         {
-            VerifySubField(expr, expr.Value);
-            VerifySubField(expr, expr.Dom.Start);
-            VerifySubField(expr, expr.Dom.Stop);
+            VerifySubField(expr, expr.Value, TypePatternUtility.IsScalar() & TypePatternUtility.HasDataType(DataTypes.Int32));
+            VerifySubField(expr, expr.Dom.Start, TypePatternUtility.IsScalar() & TypePatternUtility.HasDataType(DataTypes.Int32));
+            VerifySubField(expr, expr.Dom.Stop, TypePatternUtility.IsScalar() & TypePatternUtility.HasDataType(DataTypes.Int32));
+            VerifySubField(expr, expr.Dom.Step, TypePatternUtility.IsScalar() & TypePatternUtility.HasDataType(DataTypes.Int32));
         }
         catch (TypeInferenceInterruptException e)
         {
             SetCheckedType(expr, e.ReasonType);
             return e.ReasonType;
         }
-        var type = expr.TypeAnnotation;
+        var type = TensorType.Scalar(DataTypes.Int32);
         SetCheckedType(expr, type);
         return type;
     }

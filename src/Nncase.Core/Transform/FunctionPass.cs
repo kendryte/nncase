@@ -51,6 +51,16 @@ namespace Nncase.Transform
         /// <param name="options"></param>
         protected virtual void OnPassStart(Callable callable, RunPassOptions options)
         {
+            switch (options.DumpLevel)
+            {
+                case >= 2:
+                    CompilerServices.DumpIR(callable, "Start", Path.Combine(options.PassDumpDir, Name));
+                    break;
+                case >= 1:
+                    break;
+                default:
+                    break;
+            }
         }
 
         /// <summary>
@@ -59,6 +69,17 @@ namespace Nncase.Transform
         /// <param name="callable"> func with rewrited. </param>
         /// <param name="options"></param>
         protected virtual void OnPassEnd(Callable callable, RunPassOptions options)
-        { }
+        {
+            switch (options.DumpLevel)
+            {
+                case >= 2:
+                    CompilerServices.DumpIR(callable, "End", Path.Combine(options.PassDumpDir, Name));
+                    break;
+                case >= 1:
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 }

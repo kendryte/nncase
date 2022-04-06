@@ -376,5 +376,14 @@ namespace Nncase.IR.F
         /// <param name="rhs"></param>
         /// <returns></returns>
         public static Call GreaterThan(Expr lhs, Expr rhs) => Compare(CompareOp.GreaterOrEqual, lhs, rhs);
+
+        /// <summary>
+        /// call select function.
+        /// </summary>
+        /// <param name="predicate">conditon value.</param>
+        /// <param name="true_value">lhs.</param>
+        /// <param name="false_value">rhs.</param>
+        /// <returns></returns>
+        public static Call Select(Expr predicate, Expr true_value, Expr false_value) => new Call(new Select(), predicate, true_value, false_value);
     }
 }

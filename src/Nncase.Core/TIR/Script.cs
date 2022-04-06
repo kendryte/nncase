@@ -259,6 +259,16 @@ public static class T
     }
 
     /// <summary>
+    /// make the the grid by ranges.
+    /// </summary>
+    /// <param name="ranges"></param>
+    /// <returns></returns>
+    public static NestBodyExprBuilder<For> Grid(params Range[] ranges)
+    {
+        return new NestBodyExprBuilder<For>(ranges.Select(rg => T.Serial(out var _, rg, out var _).Body()).ToArray());
+    }
+
+    /// <summary>
     /// a named variable represents a tensor index size.
     /// </summary>
     /// <param name="name"></param>

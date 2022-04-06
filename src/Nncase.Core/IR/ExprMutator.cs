@@ -10,6 +10,21 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR
 {
+
+    /// <summary>
+    /// IMutatable Define.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public interface IMutatable<T>
+    {
+        /// <summary>
+        /// mutate the current object.
+        /// </summary>
+        /// <param name="mutator">ExprMutator.</param>
+        /// <returns> new instance. </returns>
+        T Mutate(ExprMutator mutator);
+    }
+
     /// <summary>
     /// Expression matutor.
     /// </summary>
@@ -139,7 +154,7 @@ namespace Nncase.IR
             return expr with
             {
                 Dom = MutateLeaf(expr.Dom),
-                Value = Visit(expr.Value),
+                Value = (Var)Visit(expr.Value),
             };
         }
 
