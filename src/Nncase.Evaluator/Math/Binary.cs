@@ -63,8 +63,13 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     {
         var lhs = context.GetArgument(target, Binary.Lhs);
         var rhs = context.GetArgument(target, Binary.Rhs);
-
-        return $"({lhs.Serialize()} {context.Get(target).Serialize()} {rhs.Serialize()})";
+        if (ILmode)
+            return $"{target.BinaryOp}({lhs}, {rhs})";
+        return target.BinaryOp switch
+        {
+            BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div => $"({lhs.Serialize()} {target.ToLiteral()} {rhs.Serialize()})",
+            _ => $"{target.BinaryOp}({lhs}, {rhs})"
+        };
     }
 
     private IRType Visit(TensorType lhs, TensorType rhs)

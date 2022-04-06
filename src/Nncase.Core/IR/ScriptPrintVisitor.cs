@@ -168,13 +168,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     public override IPrintSymbol Visit(Op expr)
     {
         if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
-        doc = new(new(expr switch
-        {
-            Unary op => op.UnaryOp.ToString(),
-            Binary op => op.ToLiteral(),
-            IR.Tensors.Cast op => "Cast",
-            _ => expr.GetType().Name,
-        }));
+        doc = new(new(expr.GetType().Name));
         exprMemo.Add(expr, doc);
         return doc;
     }
@@ -398,7 +392,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     {
         if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
         Scope.Push();
-        Scope.Append($"T.MemRef({expr.Name}, {VisitType(expr.ElemType)})");
+        Scope.Append($"T.Buffer({expr.Name}, {VisitType(expr.ElemType)})");
         doc = new(Scope.Pop(), expr.Name, true);
         exprMemo.Add(expr, doc);
         return doc;
