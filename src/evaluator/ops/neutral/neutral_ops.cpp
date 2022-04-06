@@ -222,6 +222,7 @@ void register_neutral_evaluators()
     }
             DEQUANTIZE(dt_uint8)
             DEQUANTIZE(dt_int8)
+            DEQUANTIZE(dt_int16)
             DEQUANTIZE(dt_int32)
         default:
             assert(false && "not supported type!");
