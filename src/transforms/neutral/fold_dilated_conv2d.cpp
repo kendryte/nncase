@@ -72,9 +72,15 @@ void fold_dilated_conv2d::process(transform_context &context)
     int32_t weight_w = weights.shape()[3];
     int32_t out_h = b2s.output().shape()[2] + b2s.crop_h()[0] + b2s.crop_h()[1];
     int32_t out_w = b2s.output().shape()[3] + b2s.crop_w()[0] + b2s.crop_w()[1];
-
-    int32_t stride_h = (padded_if_h - dilation_h * (weight_h - 1) - 1) / (out_h - 1);
-    int32_t stride_w = (padded_if_w - dilation_w * (weight_w - 1) - 1) / (out_w - 1);
+    int32_t stride_h, stride_w;
+    if (out_h == 1)
+        stride_h = 1;
+    else
+        stride_h = (padded_if_h - dilation_h * (weight_h - 1) - 1) / (out_h - 1);
+    if (out_w == 1)
+        stride_w = 1;
+    else
+        stride_w = (padded_if_w - dilation_w * (weight_w - 1) - 1) / (out_w - 1);
 
     auto begin = b2s.begin();
     auto end = b2s.end();
@@ -94,7 +100,7 @@ void fold_dilated_conv2d::process(transform_context &context)
     new_s2b_pad_paddings[3] = { s2b.padding_w().before + stride_w * slice_paddings[3].before - b2s.crop_w()[0], s2b.padding_w().after + stride_w * slice_paddings[3].after - b2s.crop_w()[1] };
 
     auto dilated_conv = context.graph.emplace<conv2d>(s2b.input().shape(), conv.weights().shape(), conv.groups(), new_s2b_pad_paddings[2], new_s2b_pad_paddings[3], stride_h, stride_w, dilation_h, dilation_w, conv.fused_activation());
-
+    dilated_conv->name(conv.name());
     dilated_conv->input().connect(output);
     dilated_conv->weights().connect(weights);
     dilated_conv->bias().connect(bias);

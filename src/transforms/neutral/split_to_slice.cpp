@@ -81,13 +81,13 @@ void split_to_slice_transform::process(transform_context &context)
         for (size_t i = 0; i < indices_or_sections.size(); i++)
         {
             end[axis] += indices_or_sections[i];
-            new_slices.push_back(context.graph.emplace<slice>(output.type(), output.shape(), begin, end, strides, 0, 0, 0, 0));
+            new_slices.push_back(context.graph.emplace<slice>(output.type(), output.shape(), begin, end, strides, 0, 0, 0, 0, 0));
             begin[axis] = end[axis];
         }
         if (indices_count < output.shape()[axis])
         {
             end[axis] = output.shape()[axis];
-            new_slices.push_back(context.graph.emplace<slice>(output.type(), output.shape(), begin, end, strides, 0, 0, 0, 0));
+            new_slices.push_back(context.graph.emplace<slice>(output.type(), output.shape(), begin, end, strides, 0, 0, 0, 0, 0));
         }
     }
     else
@@ -97,7 +97,7 @@ void split_to_slice_transform::process(transform_context &context)
         for (size_t i = 0; i < indices_or_sections[0]; i++)
         {
             end[axis] += output.shape()[axis] / indices_or_sections[0];
-            new_slices.push_back(context.graph.emplace<slice>(output.type(), output.shape(), begin, end, strides, 0, 0, 0, 0));
+            new_slices.push_back(context.graph.emplace<slice>(output.type(), output.shape(), begin, end, strides, 0, 0, 0, 0, 0));
             begin[axis] = end[axis];
         }
     }

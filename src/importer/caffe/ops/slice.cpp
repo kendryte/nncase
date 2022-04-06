@@ -45,7 +45,7 @@ DEFINE_CAFFE_LOWER(Slice)
         if (i != op.top_size() - 1)
             axis_beg = end[param.axis()] = axis_beg + param.slice_point(i);
 
-        auto sl = graph_.emplace<slice>(dt_float32, in_shape, begin, end, strides, 0, 0, 0, 0);
+        auto sl = graph_.emplace<slice>(dt_float32, in_shape, begin, end, strides, 0, 0, 0, 0, 0);
         sl->name(op.name() + "/slice");
         input_tensors_.emplace(&sl->input(), input_name);
         output_tensors_.emplace(op.top(i), &sl->output());
