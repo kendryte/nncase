@@ -19,7 +19,7 @@ public static class Mutator
     /// Unroll Loop
     /// </summary>
     /// <returns></returns>
-    public static Func<ExprMutator> UnrollLoop() => () => new Mutators.UnrollLoop();
+    public static Func<ExprMutator> UnRollLoop() => () => new Mutators.UnRollLoop();
 
     /// <summary>
     /// flatten the sequential

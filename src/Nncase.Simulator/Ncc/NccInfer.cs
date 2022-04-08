@@ -74,6 +74,8 @@ public class InferEngine
     /// <exception cref="InvalidOperationException"></exception>
     public void Run()
     {
+        if (!inputPaths.Any())
+            throw new NotSupportedException("Not Support The 0 Inputs Kmodel!");
         var rid = GetRid();
 
         var errMsg = new StringBuilder();

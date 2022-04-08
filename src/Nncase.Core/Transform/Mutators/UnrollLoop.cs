@@ -13,7 +13,7 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// unroll loop
 /// </summary>
-internal sealed class UnrollLoop : ExprMutator
+internal sealed class UnRollLoop : ExprMutator
 {
     /// <inheritdoc/>
     public override Expr MutateLeaf(TIR.For expr)
@@ -29,19 +29,21 @@ internal sealed class UnrollLoop : ExprMutator
             return expr;
         Dictionary<Var, Expr> vmap = new(ReferenceEqualityComparer.Instance);
         List<Expr> unrolled = new();
-        for (int i = ((TensorConst)expr.Dom.Start).Value.ToScalar<int>();
-                  i < ((TensorConst)expr.Dom.Stop).Value.ToScalar<int>();
-                  i += ((TensorConst)expr.Dom.Step).Value.ToScalar<int>())
+        int start = ((TensorConst)expr.Dom.Start).Value.ToScalar<int>();
+        int stop = ((TensorConst)expr.Dom.Stop).Value.ToScalar<int>();
+        int step = ((TensorConst)expr.Dom.Step).Value.ToScalar<int>();
+        for (int i = start; i < stop; i += step)
         {
             vmap[expr.LoopVar] = i;
-            Expr step = new Substitutor(e =>
+            
+            Expr body = new Substitutor(e =>
             {
                 if (e is Var v && vmap.ContainsKey(v))
                     return vmap[v];
                 return e;
             }).Visit(Visit(expr.Body));
-
-            unrolled.Add(step);
+            
+            unrolled.Add(body);
         }
         return new Sequential(unrolled);
     }
