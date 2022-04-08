@@ -57,7 +57,7 @@ public sealed record Sequential : Expr, IList<Expr>
     /// ctor for default.
     /// </summary>
     /// <param name="fields">sub fields.</param>
-    public Sequential(IRArrayList<Expr> fields)
+    public Sequential(IEnumerable<Expr> fields)
     {
         Fields = new(Flatten(fields));
     }
@@ -407,6 +407,35 @@ public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region)
     /// Get the Shape.
     /// </summary>
     public Expr[] Shape => Region.Select(r => r.Stop - r.Start).ToArray();
+
+    /// <summary>
+    /// the hook for print it.
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns></returns>
+    public IPrintSymbol Print(IIRPrinterContext context)
+    {
+        var buffer = context.Visit(Buffer);
+        var sb = new StringBuilder();
+        sb.Append(buffer.Name);
+        if (Region.Count == 0)
+        {
+            sb.Append("[()]");
+        }
+        else
+        {
+            var regions = Region.Select(rg =>
+            {
+                if (rg.Step is TensorConst con && con.Value.ToScalar<int>() == 1)
+                {
+                    return $"{context.Visit(rg.Start)}..{context.Visit(rg.Stop)}";
+                }
+                throw new NotSupportedException("The Step Must Be 1");
+            });
+            sb.Append($"[{string.Join(", ", regions)}]");
+        }
+        return new ScriptSymobl(sb, buffer.Name, false);
+    }
 }
 
 /// <summary>
@@ -545,7 +574,7 @@ public sealed record BufferLoad(Buffer Buffer, IRArray<Expr> Indices) : Expr
 /// <param name="Condition"></param>
 /// <param name="Then"> Sequential. </param>
 /// <param name="Else"> Sequential. </param>
-public sealed record IfThenElse(Expr Condition, Expr Then, Expr Else) : Expr
+public sealed record IfThenElse(Expr Condition, Sequential Then, Sequential Else) : Expr
 {
 
     /// <summary>
@@ -553,5 +582,5 @@ public sealed record IfThenElse(Expr Condition, Expr Then, Expr Else) : Expr
     /// </summary>
     /// <param name="Condition"></param>
     /// <param name="Then"></param>
-    public IfThenElse(Expr Condition, Expr Then) : this(Condition, Then, new Sequential()) { }
+    public IfThenElse(Expr Condition, Sequential Then) : this(Condition, Then, new Sequential()) { }
 }

@@ -12,14 +12,15 @@ using Nncase.TIR;
 namespace Nncase.Transform
 {
     /// <summary>
-    /// EGraph pass.
+    /// TIR Mutator Pass.
+    /// Because of we will mutate the expression multiple times, so use MutatorCreator create the new mutator.
     /// </summary>
-    public class TIRPass : FunctionPass, IEnumerable<ExprMutator>
+    public class TIRPass : FunctionPass, IEnumerable<Func<ExprMutator>>
     {
         /// <summary>
         /// Save rules.
         /// </summary>
-        public readonly List<ExprMutator> Mutators = new();
+        public readonly List<Func<ExprMutator>> MutatorCreators = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TIRPass"/> class.
@@ -33,32 +34,46 @@ namespace Nncase.Transform
         /// <inheritdoc/>
         protected override Callable RunCore(Callable callable, RunPassOptions options)
         {
-            options.SetPassName(Name);
-            var pre = callable;
-            var post = pre;
-            RunPassOptions new_options = new(options);
-            new_options.SetDumpDir(options.PassDumpDir);
-            foreach (var (mutator, i) in Mutators.Select((item, i) => (item, i)))
+            var pass_options = options.SetPassName(Name);
+            var post = callable;
+            var last = post;
+            int count = 0;
+            var typeinfer_ret = true;
+            OnPassStart(last, pass_options);
+            do
             {
-                new_options.SetPassName(i + "_" + mutator.GetType().Name);
-                OnPassStart(pre, new_options);
-                post = (Callable)mutator.Visit(pre);
-                var inferRes = post.InferenceType();
-                OnPassEnd(post, new_options);
-                if (!inferRes) throw new InvalidOperationException("After Run Pass, The Type Inference Failed!");
-                pre = post;
-            }
+                bool isMutated = false;
+                foreach (var creator in MutatorCreators)
+                {
+                    var mutator = creator();
+                    last = post;
+                    post = (Callable)mutator.Visit(last);
+                    if (mutator.IsMutated)
+                    {
+                        isMutated = true;
+                        typeinfer_ret = CompilerServices.InferenceType(post);
+                        if (!typeinfer_ret) throw new InvalidOperationException($"After Run Mutator {mutator.GetType().Name} , The Type Inference Failed!");
+                        OnMutated(post, $"{count++}_{mutator.GetType().Name}", pass_options);
+                        break;
+                    }
+                }
 
+                if (!isMutated)
+                    break;
+            } while (true);
+
+            OnPassEnd(post, pass_options);
             return post;
         }
 
-        /// <inheritdoc/>
-        protected override void OnPassStart(Callable func, RunPassOptions options)
+        void OnMutated(Callable callable, string prefix, RunPassOptions options)
         {
             switch (options.DumpLevel)
             {
                 case >= 2:
-                    CompilerServices.DumpIR(func, "Start", options.PassDumpDir);
+                    CompilerServices.DumpIR(callable, prefix, options.PassDumpDir);
+                    break;
+                case >= 1:
                     break;
                 default:
                     break;
@@ -66,38 +81,25 @@ namespace Nncase.Transform
         }
 
         /// <inheritdoc/>
-        protected override void OnPassEnd(Callable func, RunPassOptions options)
+        public IEnumerator<Func<ExprMutator>> GetEnumerator()
         {
-            switch (options.DumpLevel)
-            {
-                case >= 2:
-                    CompilerServices.DumpIR(func, "End", options.PassDumpDir);
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        /// <inheritdoc/>
-        public IEnumerator<ExprMutator> GetEnumerator()
-        {
-            return ((IEnumerable<ExprMutator>)Mutators).GetEnumerator();
+            return ((IEnumerable<Func<ExprMutator>>)MutatorCreators).GetEnumerator();
 
         }
 
         /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return ((IEnumerable)Mutators).GetEnumerator();
+            return ((IEnumerable)MutatorCreators).GetEnumerator();
         }
 
         /// <summary>
         /// add the mutator
         /// </summary>
         /// <param name="mutator"></param>
-        public void Add(ExprMutator mutator)
+        public void Add(Func<ExprMutator> mutator)
         {
-            Mutators.Add(mutator);
+            MutatorCreators.Add(mutator);
         }
     }
 }

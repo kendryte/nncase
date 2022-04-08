@@ -25,7 +25,7 @@ namespace Nncase.IR
         public Dictionary<Expr, TExprResult> ExpressionMemo => _exprMemo;
 
         /// <inheritdoc/>
-        public sealed override TExprResult Visit(Call expr)
+        public override TExprResult Visit(Call expr)
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
@@ -73,7 +73,7 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
-        public sealed override TExprResult Visit(TIR.PrimFunction expr)
+        public override TExprResult Visit(TIR.PrimFunction expr)
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
@@ -120,7 +120,7 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
-        public sealed override TExprResult Visit(Var expr)
+        public override TExprResult Visit(Var expr)
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
@@ -252,7 +252,7 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
-        public sealed override TExprResult Visit(TIR.Buffer expr)
+        public override TExprResult Visit(TIR.Buffer expr)
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {

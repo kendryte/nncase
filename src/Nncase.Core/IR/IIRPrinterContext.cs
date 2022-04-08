@@ -35,4 +35,11 @@ public interface IIRPrinterContext
     /// <param name="op">Operator.</param>
     /// <returns>The arguments expression.</returns>
     IPrintSymbol[] GetArguments(Op op);
+
+    /// <summary>
+    /// we can explict visit the expr which not in the params.
+    /// </summary>
+    /// <param name="expr">give the expr.</param>
+    /// <returns> symobl. </returns>
+    IPrintSymbol Visit(Expr expr);
 }

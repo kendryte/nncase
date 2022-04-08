@@ -54,7 +54,7 @@ namespace Nncase.Transform
             switch (options.DumpLevel)
             {
                 case >= 2:
-                    CompilerServices.DumpIR(callable, "Start", Path.Combine(options.PassDumpDir, Name));
+                    CompilerServices.DumpIR(callable, "Start", options.PassDumpDir);
                     break;
                 case >= 1:
                     break;
@@ -73,7 +73,7 @@ namespace Nncase.Transform
             switch (options.DumpLevel)
             {
                 case >= 2:
-                    CompilerServices.DumpIR(callable, "End", Path.Combine(options.PassDumpDir, Name));
+                    CompilerServices.DumpIR(callable, "End", options.PassDumpDir);
                     break;
                 case >= 1:
                     break;

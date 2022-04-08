@@ -183,8 +183,9 @@ public static class T
     /// </summary>
     /// <param name="loopVar">out index var.</param>
     /// <param name="Dom">ranges.</param>
+    /// <param name="loop">ranges.</param>
     /// <returns></returns>
-    public static SequentialBuilder<For> Unroll(out Var loopVar, Range Dom) => ForLoop(out loopVar, Dom, LoopMode.Unrolled, out _);
+    public static SequentialBuilder<For> Unrolled(out Var loopVar, Range Dom, out For loop) => ForLoop(out loopVar, Dom, LoopMode.Unrolled, out loop);
 
     /// <summary>
     /// GridWrapper for collect the for item.
@@ -261,11 +262,12 @@ public static class T
     /// <summary>
     /// make the the grid by ranges.
     /// </summary>
+    /// <param name="loopMode"></param>
     /// <param name="ranges"></param>
     /// <returns></returns>
-    public static NestBodyExprBuilder<For> Grid(params Range[] ranges)
+    public static NestBodyExprBuilder<For> Grid(LoopMode loopMode, params Range[] ranges)
     {
-        return new NestBodyExprBuilder<For>(ranges.Select(rg => T.Serial(out var _, rg, out var _).Body()).ToArray());
+        return new NestBodyExprBuilder<For>(ranges.Select(rg => T.ForLoop(out var _, rg, loopMode, out var _).Body()).ToArray());
     }
 
     /// <summary>
