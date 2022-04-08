@@ -139,13 +139,7 @@ result<void> kernels::matmul(const T *input_a, const T *input_b, const T *bias, 
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
     value_range<float> fused_activation) noexcept
 {
-    // if (is_contiguous(in_a_shape, in_a_strides) && is_contiguous(in_b_shape, in_b_strides) && is_contiguous(out_shape, out_strides))
-    // {
     return cpu::optimized::matmul(input_a, input_b, bias, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides,
-        out_shape, out_strides, fused_activation);
-    // }
-
-    return cpu::reference::matmul(input_a, input_b, bias, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides,
         out_shape, out_strides, fused_activation);
 }
 
