@@ -26,6 +26,9 @@ public class UnitTestFoldSlice
     public static IEnumerable<object[]> TestFoldNopSlicePositiveData =>
         new[]
         {
+            new object[] { new[] { 2}, new[] { 0 }, new[] { 2 }, new[] { 0 }, new[] { 1 } },
+            new object[] { new[] { 2, 4,}, new[] { 0 }, new[] { 4 }, new[] { 1 }, new[] { 1 } },
+            new object[] { new[] { 2, 4,}, new[] { 0, 0 }, new[] { 2,4 }, new[] { 0, 1 }, new[] { 1, 1 } },
             new object[] { new[] { 2, 4, 6, 8 }, new[] { 0 }, new[] { 6 }, new[] { 2 }, new[] { 1 } },
             new object[] { new[] { 2, 4, 6, 8 }, new[] { 0, 0 }, new[] { 4, 6 }, new[] { 1, 2 }, new[] { 1, 1 } },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
@@ -43,5 +46,70 @@ public class UnitTestFoldSlice
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
 
-    // TODO: Add tests for FoldTwoSlices
+    public static IEnumerable<object[]> TestFoldNopSliceNegativeData =>
+        new[]
+        {
+            new object[] { new[] { 2}, new[] { 0 }, new[] { 1 }, new[] { 0 }, new[] { 1 } },
+            new object[] { new[] { 2, 4,}, new[] { 0 }, new[] { 2 }, new[] { 1 }, new[] { 2 } },
+            new object[] { new[] { 2, 4,}, new[] { 0, 2 }, new[] { 2,4 }, new[] { 0, 1 }, new[] { 1, 3 } },
+            new object[] { new[] { 2, 4, 6, 8 }, new[] { 2 }, new[] { 6 }, new[] { 2 }, new[] { -1 } },
+            new object[] { new[] { 2, 4, 6, 8 }, new[] { 0, 1 }, new[] { 4, 6 }, new[] { 1, 2 }, new[] { 1, 1 } },
+            new object[] { new[] { 2, 4, 6, 8 }, new[] { 0, 0 }, new[] { -1, 6 }, new[] { 1, 2 }, new[] { -1, -1 } },
+        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
+
+    [Theory]
+    [MemberData(nameof(TestFoldNopSliceNegativeData))]
+    public void TestFoldNopSliceNegative(int[] shape, int[] begins, int[] ends, int[] axes, int[] strides, int index)
+    {
+        var caseOptions = passOptions.IndentDir($"case_{index}");
+        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
+        var rootPre = Tensors.Slice(a, begins, ends, axes, strides);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopSlice() }, caseOptions);
+
+        Assert.Equal(rootPre, rootPost);
+        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+    }
+
+    public static IEnumerable<object[]> TestFoldTwoSlicePositiveData =>
+        new[]
+        {
+            new object[]
+            {
+                new[] {2, 4, 6, 8},
+                new[] {0}, new[] {6}, new[] {3}, new[] {2},
+                new[] {0}, new[] {2}, new[] {3}, new[] {1}
+            }, // Naive Case
+            new object[]
+            {
+                new[] {1, 4, 6, 8},
+                new[] {0}, new[] {6}, new[] {3}, new[] {3},
+                new[] {0}, new[] {4}, new[] {2}, new[] {2}
+            }, // Diff axis
+            new object[]
+            {
+                new[] {4, 4, 6, 8},
+                new[] {0}, new[] {6}, new[] {3}, new[] {-3},
+                new[] {0}, new[] {4}, new[] {2}, new[] {-2}
+            }, // negative axis
+            new object[]
+            {
+                new[] {3, 4, 6, 8},
+                new[] {0}, new[] {-1}, new[] {3}, new[] {-3},
+                new[] {-5}, new[] {4}, new[] {2}, new[] {-2}
+            }, // negative begin|end
+        }.Select((o, i) => o.Concat(new object[] {i}).ToArray());
+
+    [Theory]
+    [MemberData(nameof(TestFoldTwoSlicePositiveData))]
+    public void TestFoldTwoSlicePositive(int[] shape, int[] begins1, int[] ends1, int[] axes1, int[] strides1, int[] begins2, int[] ends2, int[] axes2, int[] strides2, int index)
+    {
+        var caseOptions = passOptions.IndentDir($"fold_two_slice_{index}");
+        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
+        var first_slice = Tensors.Slice(a, begins1, ends1, axes1, strides1);
+        var rootPre = Tensors.Slice(first_slice, begins2, ends2, axes2, strides2);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoSlices() }, caseOptions);
+
+        Assert.NotEqual(rootPre, rootPost);
+        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+    }
 }

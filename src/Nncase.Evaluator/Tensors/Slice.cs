@@ -42,7 +42,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>
             context.GetArgument(target, Slice.Axes) is TensorConst axes_con &&
             context.GetArgument(target, Slice.Strides) is TensorConst strides_con)
         {
-            var outShape = new List<Dimension>();
+            var outShape = input.Shape.ToArray();
             var ts_begins = begins_con.Value.Cast<int>();
             var ts_ends = ends_con.Value.Cast<int>();
             var ts_strides = strides_con.Value.Cast<int>();
@@ -64,11 +64,11 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>
                     begin = begin >= 0 ? begin : old + begin;
                     end = end >= 0 ? end : old + begin;
                     stride = stride >= 0 ? stride : -stride;
-                    outShape.Add((end - begin) / stride);
+                    outShape[axis] = (end - begin) / stride;
                 }
                 else
                 {
-                    outShape.Add(Dimension.Unknown);
+                    outShape[axis] = Dimension.Unknown;
                 }
             }
 

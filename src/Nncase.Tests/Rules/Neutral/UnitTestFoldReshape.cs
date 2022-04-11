@@ -44,6 +44,26 @@ public class UnitTestFoldReshape
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
 
+    public static IEnumerable<object[]> TestFoldNopReshapeNegativeData =>
+        new[]
+        {
+            new object[] { new[] { 4 }, new[] { 2, 2 } },
+            new object[] { new[] { 2, 3 }, new[] { 3, 2 } },
+        };
+
+    [Theory]
+    [MemberData(nameof(TestFoldNopReshapeNegativeData))]
+    public void TestFoldNopReshapeNegative(int[] shape, int[] newShape)
+    {
+        var caseOptions = passOptions.IndentDir(string.Join("_", shape) + "_" + string.Join("_", newShape));
+        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
+        var rootPre = Tensors.Reshape(a, newShape);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopReshape() }, caseOptions);
+
+        Assert.Equal(rootPre, rootPost);
+        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+    }
+
     public static IEnumerable<object[]> TestFoldTwoReshapesPositiveData =>
         new[]
         {

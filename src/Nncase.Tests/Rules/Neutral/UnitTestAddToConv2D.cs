@@ -33,4 +33,17 @@ public class UnitTestAddToConv2D
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
+
+    [Fact]
+    public void TestNegElementwiseAdd()
+    {
+        var caseOptions = passOptions.IndentDir("TestNegElementwiseAdd");
+        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
+        var b = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 1, 8, 8 });
+        var rootPre = a + b;
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new AddToConv2D() }, caseOptions);
+
+        Assert.Equal(rootPre, rootPost);
+        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+    }
 }
