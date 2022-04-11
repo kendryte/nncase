@@ -40,8 +40,8 @@ public class UnitTestMatMulToConv2D
         var rootPre = Math.MatMul(a, b);
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
-            new FoldConstCall(),
-            new FusePadConv2d()
+            new MatMulToConv2D(),
+            // new FoldConstCall(),
         }, caseOptions);
 
         Assert.NotEqual(rootPre, rootPost);
