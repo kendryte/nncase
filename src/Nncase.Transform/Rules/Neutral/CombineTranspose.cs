@@ -128,7 +128,7 @@ public sealed partial class CombineTransposeReduce : IRewriteRule
     public IPattern Pattern { get; } = IsReduce(
         "reduce",
         x => true,
-        IsTranspose(IsWildcard("input") with { TypePattern = HasRank() }, IsWildcard("perm")),
+        IsTranspose(IsWildcard("input"), IsWildcard("perm")),
         IsWildcard("axis"),
         IsWildcard("initValue"),
         IsTensorConst("keepDims", IsBoolScalar()));
