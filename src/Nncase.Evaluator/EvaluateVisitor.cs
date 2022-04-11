@@ -68,7 +68,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
             throw new ArgumentException($"Must Set Input For Var {expr.Name}!");
         }
 
-        if (result.Type != expr.CheckedType)
+        if (expr.CheckedType is not AnyType && result.Type != expr.CheckedType)
         {
             throw new ArgumentException(
               $"The Var {expr.Name} Require {expr.CheckedType} But Give {result.Type}");
