@@ -6,14 +6,16 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics.Tensors;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.NN;
 using Nncase.PatternMatch;
+using Tensorflow;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
 using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.Utility;
-
+using Random = Nncase.IR.F.Random;
 namespace Nncase.Transform.Rules.Neutral;
 
 /// <summary>
@@ -26,25 +28,10 @@ public sealed partial class FusePadConv2d : IRewriteRule
     public IPattern Pattern { get; } = IsConv2D(
         PadMode.Constant,
         IsPad(
-            PadMode.Constant, 
+            PadMode.Constant,
             IsWildcard("input"),
-            IsTensorConst("pads1", x =>
-            {
-                // Get *_b index
-                for (var i = 0; i < x.Value.ToArray<int>().Length; i++, i++)
-                {
-                    // Paddings [ n_b, n_a, c_b, c_a, h_b, h_a, w_b, w_a ]
-                    if (i >= 4)
-                    {
-                        if (x.Value.ToArray<int>()[i] == 0 && x.Value.ToArray<int>()[i + 1] == 0)
-                        {
-                            return false;
-                        }
-                    }
-                }
-
-                return true;
-            }), IsWildcard("value")),
+            IsWildcard("pads1"),
+            IsWildcard("value")),
         IsWildcard("weights"),
         IsWildcard("bias"),
         IsWildcard("stride"),
@@ -56,11 +43,22 @@ public sealed partial class FusePadConv2d : IRewriteRule
     {
         var newPadsH = new[] { 0, 0 };
         var newPadsW = new[] { 0, 0 };
+
+        var needPaddingShape = pads1.Evaluate().AsTensor();
+        if (needPaddingShape[2, 0] is 0
+            && needPaddingShape[2, 1] is 0
+            && needPaddingShape[3, 0] is 0
+            && needPaddingShape[3, 1] is 0)
+        {
+            return null;
+        }
+
         var convPadsH = Stack(new IR.Tuple(pads1[2, 0] + pads2[0, 0], pads1[2, 1] + pads2[0, 1]), 0);
         var convPadsW = Stack(new IR.Tuple(pads1[3, 0] + pads2[1, 0], pads1[3, 1] + pads2[1, 1]), 0);
-        var newPads = Stack(new IR.Tuple(pads1[0], pads1[1], new int[] { 0, 0 }, new int[] { 0, 0 }), 0);
+        var newPads = Stack(new IR.Tuple(pads1[0], pads1[1], newPadsH, newPadsW), 0);
         var convPads = Stack(new IR.Tuple(convPadsH, convPadsW), 0);
 
         return Conv2D(Pad(input, newPads, PadMode.Constant, 0f), weights, bias, stride, convPads, dilation, PadMode.Constant, groups);
+
     }
 }
