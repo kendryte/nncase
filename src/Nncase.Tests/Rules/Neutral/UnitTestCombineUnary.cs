@@ -38,23 +38,21 @@ public class UnitTestCombineUnary
     public static IEnumerable<object[]> TestCombinePadUnaryPositiveData =>
         new[]
         {
-            // TODO : pad support change padMode
-            // new object[] { UnaryOp.Exp, new[] {1, 3, 4, 5},  new[,] {{ 1, 1 }, { 2, 2 }, { 1, 1 }, { 3, 3 }}, PadMode.Symmetric, 0f},
-            // new object[] { UnaryOp.Abs, new[] {1, 3, 4, 5},  new[,] {{ 1, 1 }, { 2, 2 }, { 1, 1 }, { 3, 3 }}, PadMode.Reflect, 0f},
-            new object[] { UnaryOp.Exp, new[] {1, 3, 4, 5},  new[,] {{ 1, 1 }, { 2, 2 }, { 1, 1 }, { 3, 3 }},0f},
-            new object[] { UnaryOp.Abs, new[] {1, 3, 4, 5},  new[,] {{ 1, 1 }, { -1, -1 }, { 1, 1 }, { 3, 3 }},0f},
-            new object[] { UnaryOp.Floor, new[] {1, 3, 4, 5},  new[,] {{ 1, 1 }, { 0, 0 }, { 1, 1 }, { 0, 0 }},0f},
+            new object[] { UnaryOp.Exp, new[] {1, 3, 4, 5},  new[,] {{ 1, 1 }, { 2, 2 }, { 1, 1 }, { 3, 3 }}, PadMode.Symmetric, 0f},
+            new object[] { UnaryOp.Abs, new[] {1, 3, 4, 5},  new[,] {{ 1, 1 }, { -1, -1 }, { 1, 1 }, { 3, 3 }}, PadMode.Reflect, 0f},
+            new object[] { UnaryOp.Floor, new[] {1, 3, 4, 5},  new[,] {{ 1, 1 }, { 0, 0 }, { 1, 1 }, { 0, 0 }}, PadMode.Constant , 2f},
+            new object[] { UnaryOp.Floor, new[] {1, 3, 4, 5},  new[,] {{ 1, 1 }, { 0, 0 }, { 1, 3 }, { 6, 0 }}, PadMode.Edge , 2f},
         };
 
     [Theory]
     [MemberData(nameof(TestCombinePadUnaryPositiveData))]
-    public void TestCombinePadUnaryPositive(UnaryOp opType, int[] inShape, int[,] paddings, float padValue)
+    public void TestCombinePadUnaryPositive(UnaryOp opType, int[] inShape, int[,] paddings, PadMode padM, float padValue)
     {
-        var caseOptions = passOptions.IndentDir($"{(inShape.Length)}D_{opType}_pad_motion");
+        var caseOptions = passOptions.IndentDir($"{(inShape.Length)}D_{opType}_{padM}_motion");
         var a = new Var();
         var Normal = new Dictionary<Var, IValue>();
         Normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
-        var rootPre = IR.F.Math.Unary(opType, Pad(a, paddings, PadMode.Constant, padValue));
+        var rootPre = IR.F.Math.Unary(opType, Pad(a, paddings, padM, padValue));
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new CombinePadUnary(),
@@ -64,7 +62,6 @@ public class UnitTestCombineUnary
         Assert.Equal(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal));
     }
 
-    // TODO: CombineSliceUnary
     public static IEnumerable<object[]> TestCombineSliceUnaryPositiveData =>
         new[]
         {
@@ -77,7 +74,7 @@ public class UnitTestCombineUnary
     [Theory]
     [MemberData(nameof(TestCombineSliceUnaryPositiveData))]
     public void TestCombineSliceUnaryPositive(UnaryOp opType, int[] inShape, int[] begins, int[] ends, int[] axes, int[] strides)
-    { 
+    {
         var caseOptions = passOptions.IndentDir($"{(inShape.Length)}D_{opType}_Slice_motion");
         var a = new Var();
         var Normal = new Dictionary<Var, IValue>();
@@ -105,7 +102,7 @@ public class UnitTestCombineUnary
     [Theory]
     [MemberData(nameof(TestCombineReshapeUnaryPositiveData))]
     public void TestCombineReshapeUnaryPositive(UnaryOp opType, int[] inShape, int[] outShape)
-    { 
+    {
         var caseOptions = passOptions.IndentDir($"{(inShape.Length)}D_{opType}_Reshape_motion");
         var a = new Var();
         var Normal = new Dictionary<Var, IValue>();
