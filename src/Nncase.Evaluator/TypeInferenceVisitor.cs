@@ -103,8 +103,20 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     /// <inheritdoc/>
     public override IRType VisitLeaf(IR.Tuple expr)
     {
-        var fieldTypes = expr.Fields.Select(Visit).ToArray();
-        var type = new TupleType(ImmutableArray.Create(fieldTypes));
+        try
+        {
+            foreach (var i in Enumerable.Range(0, expr.Fields.Count))
+            {
+                VerifySubField(expr, expr.Fields[i], null, $"IR.Tuple Item {i}");
+            }
+        }
+        catch (TypeInferenceInterruptException e)
+        {
+            SetCheckedType(expr, e.ReasonType);
+            return e.ReasonType;
+        }
+
+        var type = new TupleType(expr.Fields.Select(f => f.CheckedType!).ToArray());
         SetCheckedType(expr, type);
         return type;
     }

@@ -105,7 +105,7 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
         if (_names.TryGetValue(expr, out var name)) { return name; }
         name = $"%{expr.Name}";
         _names.Add(expr, name);
-        if (expr.CheckedType is IRType type) { name += $": // {VisitType(type)}"; }
+        if (expr.CheckedType is IRType type) { name += $": {VisitType(type)}"; }
         return name;
     }
 

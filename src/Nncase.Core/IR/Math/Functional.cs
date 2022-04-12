@@ -367,7 +367,7 @@ namespace Nncase.IR.F
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
-        public static Call GreaterEqual(Expr lhs, Expr rhs) => Compare(CompareOp.GreaterThan, lhs, rhs);
+        public static Call GreaterEqual(Expr lhs, Expr rhs) => Compare(CompareOp.GreaterOrEqual, lhs, rhs);
 
         /// <summary>
         /// call greater than.
@@ -375,7 +375,7 @@ namespace Nncase.IR.F
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
-        public static Call GreaterThan(Expr lhs, Expr rhs) => Compare(CompareOp.GreaterOrEqual, lhs, rhs);
+        public static Call GreaterThan(Expr lhs, Expr rhs) => Compare(CompareOp.GreaterThan, lhs, rhs);
 
         /// <summary>
         /// call select function.
@@ -385,5 +385,14 @@ namespace Nncase.IR.F
         /// <param name="false_value">rhs.</param>
         /// <returns></returns>
         public static Call Select(Expr predicate, Expr true_value, Expr false_value) => new Call(new Select(), predicate, true_value, false_value);
+
+        /// <summary>
+        /// call select function.
+        /// </summary>
+        /// <param name="predicate">conditon value.</param>
+        /// <param name="value">value.</param>
+        /// <param name="message">requrie message.</param>
+        /// <returns></returns>
+        public static Call Require(Expr predicate, Expr value, [System.Runtime.CompilerServices.CallerArgumentExpression("predicate")] string? message = null) => new Call(new Require(message!), predicate, value);
     }
 }

@@ -261,7 +261,7 @@ namespace Nncase.IR
 
             return expr with
             {
-                Var = (TIR.Buffer)Visit(expr.Var),
+                Var = (Var)Visit(expr.Var),
                 Expression = Visit(expr.Expression),
                 Body = (TIR.Sequential)Visit(expr.Body),
             };

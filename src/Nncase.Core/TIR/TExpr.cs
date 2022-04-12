@@ -186,7 +186,7 @@ public sealed record Broadcast(Expr Value, int lanes) : Expr
 /// <param name="Var"> The expr . </param>
 /// <param name="Expression"> The value to be binded. </param>
 /// <param name="Body"> The Let body. </param>
-public sealed record Let(Buffer Var, Expr Expression, Sequential Body) : Expr, ISequentialExpr
+public sealed record Let(Var Var, Expr Expression, Sequential Body) : Expr, ISequentialExpr
 {
 }
 

@@ -467,4 +467,17 @@ public static class T
         seg = ((i * chunck), IR.F.Math.Min(((i + 1) * chunck), high));
         return forloop;
     }
+
+    /// <summary>
+    /// Let bind.
+    /// </summary>
+    /// <param name="var"></param>
+    /// <param name="expression"></param>
+    /// <returns></returns>
+    public static SequentialBuilder<Let> Let(out Var @var, Expr expression)
+    {
+        @var = new Var();
+        var let = new Let(@var, expression, new());
+        return new(let);
+    }
 }
