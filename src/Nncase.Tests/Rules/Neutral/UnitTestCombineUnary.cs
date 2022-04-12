@@ -112,34 +112,7 @@ public class UnitTestCombineTranspose
         // Assert.Equal(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal));
     }
     
-    public static IEnumerable<object[]> TestCombineTransposePadPositiveData =>
-        new[]
-        {
-            // new object[] { new[] {1, 2, 3, 4}, new[] {0, 2, 3, 1}, new[,] {{ 4, 4 }, { 3, 3 }, { 2, 2 }, { 1, 1 }}, PadMode.Constant, 1},
-            new object[] { new[] {1, 2, 3, 4}, new[] {0, 3, 1, 2}, new[,] {{ 1, 1 }, { 2, 2 }, { 1, 1 }, { 1, 1 }}, PadMode.Constant, 0f},
-          
-        };
-
-    [Theory]
-    [MemberData(nameof(TestCombineTransposePadPositiveData))]
-    public void TestCombineTransposePadPositive(int[] inShape, int[] perm, int[,] paddings, PadMode padM, float padValue)
-    {
-        var caseOptions = passOptions.IndentDir($"{(perm.Length)}D_{padM}_pad_motion");
-        var a = new Var();
-        var Normal = new Dictionary<Var, IValue>();
-        Normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
-        // var a = Random.Normal(DataTypes.Float32, 0, 1, 0, inShape);
-        var rootPre = Pad(Tensors.Transpose(a, perm), paddings, padM, padValue);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new FoldConstCall(),
-            new CombineTransposePad(),
-        }, caseOptions);
-
-        Assert.NotEqual(rootPre, rootPost);
-        // Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
-        Assert.Equal(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal));
-    }
+    // TODO? ??TestCombineTransposePadPositiveData
     
     public static IEnumerable<object[]> TestCombineTransposeReducePositiveData =>
         new[]
