@@ -60,6 +60,12 @@ public sealed record Range(Expr Start, Expr Stop, Expr Step) : IR.IMutatable<Ran
     public static Range operator *(Range range, Expr expr) => new Range(range.Start * expr, range.Stop * expr, range.Step);
 
     /// <inheritdoc/>
+    public static Range operator -(Range range, Expr expr) => new Range(range.Start - expr, range.Stop - expr, range.Step);
+
+    /// <inheritdoc/>
+    public static Range operator +(Range range, Expr expr) => new Range(range.Start + expr, range.Stop + expr, range.Step);
+
+    /// <inheritdoc/>
     public static Range operator /(Range range, Expr expr) => new Range(range.Start / expr, range.Stop / expr, range.Step);
 }
 
