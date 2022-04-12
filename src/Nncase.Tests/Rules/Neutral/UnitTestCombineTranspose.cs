@@ -68,7 +68,7 @@ public class UnitTestCombineTranspose
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal));
     }
-    
+
     public static IEnumerable<object[]> TestCombineTransposeConcatPositiveData =>
         new[]
         {
@@ -83,7 +83,7 @@ public class UnitTestCombineTranspose
     {
         var caseOptions = passOptions.IndentDir($"{(perm.Length)}D_concat_motion");
         var inputList = new List<Var>();
-        for(int i = 0;  i < concatNum; i++)
+        for (int i = 0; i < concatNum; i++)
         {
             inputList.Add(new Var());
         }
@@ -95,11 +95,11 @@ public class UnitTestCombineTranspose
             // Normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
             // tpList.Add(Tensors.Transpose(a, perm));
             var b = Random.Normal(DataTypes.Float32, 0, 1, 0, inShape);
-            tpList.Add(Tensors.Transpose(b, perm ));
+            tpList.Add(Tensors.Transpose(b, perm));
         }
 
         var input = Enumerable.Range(0, concatNum).Select(i => tpList[i]);
-        var rootPre = Tensors.Concat(new IR.Tuple(input), axis );
+        var rootPre = Tensors.Concat(new IR.Tuple(input), axis);
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new CombineTransposeConcat(),
@@ -111,13 +111,13 @@ public class UnitTestCombineTranspose
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
         // Assert.Equal(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal));
     }
-    
+
     public static IEnumerable<object[]> TestCombineTransposePadPositiveData =>
         new[]
         {
-            // new object[] { new[] {1, 2, 3, 4}, new[] {0, 2, 3, 1}, new[,] {{ 4, 4 }, { 3, 3 }, { 2, 2 }, { 1, 1 }}, PadMode.Constant, 1},
+            new object[] { new[] {1, 2, 3, 4}, new[] {0, 2, 3, 1}, new[,] {{ 4, 4 }, { 3, 3 }, { 2, 2 }, { 1, 1 }}, PadMode.Constant, 1f},
             new object[] { new[] {1, 2, 3, 4}, new[] {0, 3, 1, 2}, new[,] {{ 1, 1 }, { 2, 2 }, { 1, 1 }, { 1, 1 }}, PadMode.Constant, 0f},
-          
+
         };
 
     [Theory]
@@ -140,7 +140,7 @@ public class UnitTestCombineTranspose
         // Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
         Assert.Equal(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal));
     }
-    
+
     public static IEnumerable<object[]> TestCombineTransposeReducePositiveData =>
         new[]
         {
@@ -165,7 +165,7 @@ public class UnitTestCombineTranspose
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal));
     }
-    
+
     // TODO : CombineTransposeUnary
     public static IEnumerable<object[]> TestCombineTransposeUnaryPositiveData =>
         new[]
