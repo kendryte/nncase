@@ -9,7 +9,9 @@ using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.Tensors;
 using Nncase.Transform;
+using Nncase.Transform.Passes;
 using Nncase.Transform.Rules.Neutral;
 using Tensorflow.Operations.Initializers;
 using Xunit;
@@ -27,7 +29,7 @@ public class UnitTestIntegralPromotion
         passOptions = new RunPassOptions(null, 3, Testing.GetDumpDirPath(this.GetType()));
     }
 
-    public static IEnumerable<object[]> TestFoldNopBinaryNegativeData =>
+    public static IEnumerable<object[]> TestIntegralPromotionPositiveData =>
         new[]
         {
             new object[] {DataTypes.Int32, DataTypes.Int64},
@@ -35,26 +37,17 @@ public class UnitTestIntegralPromotion
         };
 
     [Theory]
-    [MemberData(nameof(TestFoldNopBinaryNegativeData))]
-    public void TestFoldNopBinaryNegative(DataType aType, DataType bType)
+    [MemberData(nameof(TestIntegralPromotionPositiveData))]
+    public void TestIntegralPromotionPositive(DataType aType, DataType bType)
     {
-        var caseOptions = passOptions.IndentDir($"{aType}_{bType}");
-        // var a = new Var();
-        // var b = new Var();
-        // var Normal = new Dictionary<Var, IValue>();
-        // Normal.Add(a, Random.Normal(aType, 0, 1, 0, new[]{2,2}).Evaluate());
-        // Normal.Add(b, Random.Normal(bType, 0, 1, 0, new[]{2,2}).Evaluate());
-        var a = Random.Normal(aType, 0, 1, 0, new[] {2, 2});
-        var b = Random.Normal(bType, 0, 1, 0, new[] {2, 2});
-        var rootPre = Math.Binary(BinaryOp.Add, a, b);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new IntegralPromotion(),
-        }, caseOptions);
-        // rootPre.InferenceType();
-        Assert.NotEqual(rootPre, rootPost);
-        // Assert.Equal(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal));
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        var expr = Tensors.Cast(1, aType) + Tensors.Cast(2, bType);
+        expr.InferenceType();
+        var f = new Function(expr);
+        var result = CompilerServices.InferenceType(f);
+        Assert.False(result);
+        CompilerServices.DumpIR(f, "before", Path.Combine(passOptions.PassDumpDir, "TypePromotion"));
+        var post = new ShapeInferPass("TypePromotion").Run(f, passOptions);
+        Assert.True(CompilerServices.InferenceType(post));
+        Assert.Equal(Value.FromTensor(3L), ((Function) post).Body.Evaluate());
     }
-
 }
