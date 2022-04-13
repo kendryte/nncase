@@ -34,83 +34,83 @@ public class UnitTestCombineTranspose
         passOptions = new RunPassOptions(null, 3, Testing.GetDumpDirPath(this.GetType()));
     }
 
-    public static IEnumerable<object[]> TestCombineTransposeBinaryPositiveData =>
-        new[]
-        {
-            new object[] {new[] {4}, new[] {4}, new[] {0}},
-            new object[] {new[] {4, 4}, new[] {4, 4}, new[] {1, 0}},
-            new object[] {new[] {1, 3, 4}, new[] {1, 3, 4}, new[] {0, 2, 1}},
-            new object[] {new[] {1, 3, 2, 4}, new[] {1, 3, 2, 4}, new[] {0, 2, 3, 1}},
-            // new object[] {new[] {5, 4, }, new[] {4, 6}, new[] {1, 0}},
-        };
+    // public static IEnumerable<object[]> TestCombineTransposeBinaryPositiveData =>
+    //     new[]
+    //     {
+    //         new object[] {new[] {4}, new[] {4}, new[] {0}},
+    //         new object[] {new[] {4, 4}, new[] {4, 4}, new[] {1, 0}},
+    //         new object[] {new[] {1, 3, 4}, new[] {1, 3, 4}, new[] {0, 2, 1}},
+    //         new object[] {new[] {1, 3, 2, 4}, new[] {1, 3, 2, 4}, new[] {0, 2, 3, 1}},
+    //         // new object[] {new[] {5, 4, }, new[] {4, 6}, new[] {1, 0}},
+    //     };
+    //
+    // [Theory]
+    // [MemberData(nameof(TestCombineTransposeBinaryPositiveData))]
+    // public void TestCombineTransposeBinaryPositive(int[] lShape, int[] rShape, int[] perm)
+    // {
+    //     var caseOptions = passOptions.IndentDir($"{(perm.Length)}D_binary_motion");
+    //     var a = new Var();
+    //     var b = new Var();
+    //
+    //     var Normal = new Dictionary<Var, IValue>();
+    //
+    //     Normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, lShape).Evaluate());
+    //     Normal.Add(b, Random.Normal(DataTypes.Float32, 0, 1, 0, rShape).Evaluate());
+    //
+    //     // TODO: Rely cse to fold same constant. 
+    //     var rootPre = Math.Binary(BinaryOp.Add, Tensors.Transpose(a, perm), Tensors.Transpose(b, perm));
+    //     var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
+    //     {
+    //         // new FoldConstCall(),
+    //         new CombineTransposeBinary(),
+    //     }, caseOptions);
+    //
+    //     Assert.NotEqual(rootPre, rootPost);
+    //     Assert.Equal(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal));
+    // }
 
-    [Theory]
-    [MemberData(nameof(TestCombineTransposeBinaryPositiveData))]
-    public void TestCombineTransposeBinaryPositive(int[] lShape, int[] rShape, int[] perm)
-    {
-        var caseOptions = passOptions.IndentDir($"{(perm.Length)}D_binary_motion");
-        var a = new Var();
-        var b = new Var();
-
-        var Normal = new Dictionary<Var, IValue>();
-
-        Normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, lShape).Evaluate());
-        Normal.Add(b, Random.Normal(DataTypes.Float32, 0, 1, 0, rShape).Evaluate());
-
-        // TODO: Rely cse to fold same constant. 
-        var rootPre = Math.Binary(BinaryOp.Add, Tensors.Transpose(a, perm), Tensors.Transpose(b, perm));
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            // new FoldConstCall(),
-            new CombineTransposeBinary(),
-        }, caseOptions);
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal));
-    }
-
-    public static IEnumerable<object[]> TestCombineTransposeConcatPositiveData =>
-        new[]
-        {
-            // new object[] {new[] {4, 4}, new[] {1, 0}, 1, 2},
-            new object[] {new[] {1, 3, 4}, new[] {0, 2, 1}, 1, 6},
-            // new object[] {new[] {1, 3, 2, 4}, new[] {0, 2, 3, 1}, 2, 1},
-        };
-
-    [Theory]
-    [MemberData(nameof(TestCombineTransposeConcatPositiveData))]
-    public void TestCombineTransposeConcatPositive(int[] inShape, int[] perm, int axis, int concatNum)
-    {
-        var caseOptions = passOptions.IndentDir($"{(perm.Length)}D_concat_motion");
-        var inputList = new List<Var>();
-        for (int i = 0; i < concatNum; i++)
-        {
-            inputList.Add(new Var());
-        }
-        var Normal = new Dictionary<Var, IValue>();
-        var tpList = new List<Call>();
-        foreach (Var a in inputList)
-        {
-            // TODO:  Rely type infer and cse
-            // Normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
-            // tpList.Add(Tensors.Transpose(a, perm));
-            var b = Random.Normal(DataTypes.Float32, 0, 1, 0, inShape);
-            tpList.Add(Tensors.Transpose(b, perm));
-        }
-
-        var input = Enumerable.Range(0, concatNum).Select(i => tpList[i]);
-        var rootPre = Tensors.Concat(new IR.Tuple(input), axis);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new CombineTransposeConcat(),
-            // Should not open constant fold.
-            new FoldConstCall(),
-        }, caseOptions);
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
-        // Assert.Equal(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal));
-    }
+    // public static IEnumerable<object[]> TestCombineTransposeConcatPositiveData =>
+    //     new[]
+    //     {
+    //         // new object[] {new[] {4, 4}, new[] {1, 0}, 1, 2},
+    //         new object[] {new[] {1, 3, 4}, new[] {0, 2, 1}, 1, 6},
+    //         // new object[] {new[] {1, 3, 2, 4}, new[] {0, 2, 3, 1}, 2, 1},
+    //     };
+    //
+    // [Theory]
+    // [MemberData(nameof(TestCombineTransposeConcatPositiveData))]
+    // public void TestCombineTransposeConcatPositive(int[] inShape, int[] perm, int axis, int concatNum)
+    // {
+    //     var caseOptions = passOptions.IndentDir($"{(perm.Length)}D_concat_motion");
+    //     var inputList = new List<Var>();
+    //     for (int i = 0; i < concatNum; i++)
+    //     {
+    //         inputList.Add(new Var());
+    //     }
+    //     var Normal = new Dictionary<Var, IValue>();
+    //     var tpList = new List<Call>();
+    //     foreach (Var a in inputList)
+    //     {
+    //         // TODO:  Rely type infer and cse
+    //         // Normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
+    //         // tpList.Add(Tensors.Transpose(a, perm));
+    //         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, inShape);
+    //         tpList.Add(Tensors.Transpose(b, perm));
+    //     }
+    //
+    //     var input = Enumerable.Range(0, concatNum).Select(i => tpList[i]);
+    //     var rootPre = Tensors.Concat(new IR.Tuple(input), axis);
+    //     var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
+    //     {
+    //         new CombineTransposeConcat(),
+    //         // Should not open constant fold.
+    //         // new FoldConstCall(),
+    //     }, caseOptions);
+    //
+    //     Assert.NotEqual(rootPre, rootPost);
+    //     Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+    //     // Assert.Equal(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal));
+    // }
 
     public static IEnumerable<object[]> TestCombineTransposePadPositiveData =>
         new[]
