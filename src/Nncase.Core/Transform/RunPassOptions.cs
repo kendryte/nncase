@@ -27,6 +27,7 @@ namespace Nncase.Transform
             DumpLevel = dumpLevel;
             DumpDir = dumpDir;
             PassName = "";
+            RewriteOnce = false;
         }
 
         /// <summary>
@@ -39,6 +40,7 @@ namespace Nncase.Transform
             DumpLevel = other.DumpLevel;
             DumpDir = other.DumpDir;
             PassName = other.PassName;
+            RewriteOnce = other.RewriteOnce;
         }
 
         /// <summary>
@@ -64,6 +66,12 @@ namespace Nncase.Transform
         public string PassName { private set; get; }
 
         /// <summary>
+        /// Control rewrite once or not.
+        /// Default is false.
+        /// </summary>
+        public bool RewriteOnce { private set; get; }
+
+        /// <summary>
         /// set the pass name
         /// </summary>
         /// <param name="name"></param>
@@ -76,6 +84,13 @@ namespace Nncase.Transform
         /// <param name="path"></param>
         /// <returns></returns>
         public RunPassOptions SetDumpDir(string path) => new(Target, DumpLevel, path) { PassName = PassName };
+
+        /// <summary>
+        /// set the RewriteOnce
+        /// </summary>
+        /// <param name="once"></param>
+        /// <returns></returns>
+        public RunPassOptions SetRewriteOnce(bool once) => new(Target, DumpLevel, DumpDir) { PassName = PassName, RewriteOnce = once };
 
         /// <summary>
         /// indent the dumpDir.
