@@ -218,7 +218,7 @@ public interface IBufferView<T>
 /// <summary>
 /// todo tempory named memref, need change to buffer.
 /// </summary>
-public record Buffer : Expr, IBufferView<Buffer>, IStructuralEquatable
+public record Buffer : Expr, IBufferView<Buffer>
 {
 
     /// <summary>
@@ -349,13 +349,13 @@ public record Buffer : Expr, IBufferView<Buffer>, IStructuralEquatable
     public int AddrOffset => SelectedRanges.ToArray().Zip(Stride.ToArray()).Aggregate(0, (acc, t) => acc + t.Item1.Start * t.Item2);
 
     /// <inheritdoc/>
-    public bool Equals(object? other, IEqualityComparer comparer)
+    public virtual bool Equals(Buffer? other)
     {
-        return other is Buffer memRef && EqualityContract == memRef.EqualityContract;
+        return !(other is null) && EqualityContract == other.EqualityContract;
     }
 
     /// <inheritdoc/>
-    public int GetHashCode(IEqualityComparer comparer)
+    public override int GetHashCode()
     {
         return EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
     }

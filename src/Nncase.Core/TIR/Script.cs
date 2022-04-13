@@ -480,4 +480,18 @@ public static class T
         var let = new Let(@var, expression, new());
         return new(let);
     }
+
+    /// <summary>
+    /// we can use it get some temp var.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="value"></param>
+    /// <param name="creator"></param>
+    /// <returns></returns>
+    public static Call Emit<T>(out T value, Func<T> creator)
+    {
+        value = creator();
+        return Nop();
+    }
+
 }

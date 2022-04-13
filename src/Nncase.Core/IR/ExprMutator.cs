@@ -211,8 +211,8 @@ namespace Nncase.IR
 
                 // the block internal.
                 Body = (TIR.Sequential)Visit(expr.Body),
-                Reads = MutateArray(expr.Reads, MutateLeaf),
-                Writes = MutateArray(expr.Writes, MutateLeaf),
+                Reads = MutateArray(expr.Reads, b => (TIR.BufferRegion)Visit(b)),
+                Writes = MutateArray(expr.Writes, b => (TIR.BufferRegion)Visit(b)),
             };
         }
 
@@ -278,6 +278,23 @@ namespace Nncase.IR
                 return expr;
             }
             return expr with { };
+        }
+
+        /// <inheritdoc/>
+        public override Expr VisitLeaf(TIR.BufferRegion expr)
+        {
+
+            var nexpr = MutateLeaf(expr);
+            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!IsMutated)
+            {
+                return expr;
+            }
+            return expr with
+            {
+                Buffer = (TIR.Buffer)Visit(expr.Buffer),
+                Region = MutateArray(expr.Region, MutateLeaf)
+            };
         }
 
         /// <summary>
@@ -393,6 +410,13 @@ namespace Nncase.IR
         public virtual Expr MutateLeaf(TIR.Buffer expr) => DefaultMutateLeaf(expr);
 
         /// <summary>
+        /// mutate the buffer region
+        /// </summary>
+        /// <param name="expr">new memref.</param>
+        /// <returns>new expr.</returns>
+        public virtual Expr MutateLeaf(TIR.BufferRegion expr) => DefaultMutateLeaf(expr);
+
+        /// <summary>
         /// mutate irarray list.
         /// </summary>
         /// <typeparam name="TInput"></typeparam>
@@ -425,34 +449,11 @@ namespace Nncase.IR
         /// <returns></returns>
         public virtual TIR.Range MutateLeaf(TIR.Range range)
         {
-            if (!IsMutated)
-            {
-                return range;
-            }
-
             return range with
             {
                 Start = Visit(range.Start),
                 Stop = Visit(range.Stop),
                 Step = Visit(range.Step),
-            };
-        }
-
-        /// <summary>
-        /// mutate the buffer region.
-        /// </summary>
-        /// <param name="region"></param>
-        /// <returns></returns>
-        public virtual TIR.BufferRegion MutateLeaf(TIR.BufferRegion region)
-        {
-            if (!IsMutated)
-            {
-                return region;
-            }
-
-            return region with
-            {
-                Region = MutateArray(region.Region, MutateLeaf),
             };
         }
     }

@@ -318,13 +318,41 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         return type;
     }
 
+    public override IRType Visit(Let expr)
+    {
+        if (!ExpressionMemo.TryGetValue(expr, out var result))
+        {
+            Visit(expr.Expression);
+            if (expr.Var.TypeAnnotation is not AnyType)
+            {
+                // now we need custom visit the var.
+                result = new InvalidType("The Let Bind Var Must Be Any Type!");
+                SetCheckedType(expr.Var, result);
+                ExpressionMemo.Add(expr.Var, result);
+
+                SetCheckedType(expr, result);
+            }
+            else
+            {
+                // now change the var checkedtype
+                SetCheckedType(expr.Var, expr.Expression.CheckedType!);
+                ExpressionMemo[expr.Var] = expr.Expression.CheckedType!;
+                
+                Visit(expr.Body);
+                result = VisitLeaf(expr);
+            }
+            ExpressionMemo.Add(expr, result);
+        }
+        return result;
+    }
+
     /// <inheritdoc/>
     public override IRType VisitLeaf(Let expr)
     {
         try
         {
-            VerifySubField(expr, expr.Var, TypePatternUtility.IsPointer());
-            VerifySubField(expr, expr.Expression, TypePatternUtility.IsPointer());
+            if (expr.Var.CheckedType != expr.Expression.CheckedType)
+                throw new TypeInferenceInterruptException(new InvalidType("Var Type != Expression Type"));
             VerifySubField(expr, expr.Body, TypePatternUtility.IsUnit());
         }
         catch (TypeInferenceInterruptException e)
@@ -342,6 +370,28 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     public override IRType VisitLeaf(Nncase.TIR.Buffer expr)
     {
         IRType type = TensorType.Pointer(expr.ElemType.DType);
+        SetCheckedType(expr, type);
+        return type;
+    }
+
+    public override IRType VisitLeaf(Nncase.TIR.BufferRegion expr)
+    {
+        try
+        {
+            VerifySubField(expr, expr.Buffer, TypePatternUtility.IsPointer());
+            foreach (var r in expr.Region)
+            {
+                VerifySubField(expr, r.Start, TypePatternUtility.IsIntegralScalar());
+                VerifySubField(expr, r.Stop, TypePatternUtility.IsIntegralScalar());
+                VerifySubField(expr, r.Stop, TypePatternUtility.IsIntegralScalar());
+            }
+        }
+        catch (TypeInferenceInterruptException e)
+        {
+            SetCheckedType(expr, e.ReasonType);
+            return e.ReasonType;
+        }
+        IRType type = TensorType.Pointer(expr.Buffer.DType);
         SetCheckedType(expr, type);
         return type;
     }

@@ -273,7 +273,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         exprMemo.Add(expr, doc);
         return doc;
     }
-    
+
     /// <inheritdoc/>
     public override IPrintSymbol Visit(Block expr)
     {
@@ -389,12 +389,49 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         return doc;
     }
 
+    /// <inheritdoc/>
     public override IPrintSymbol Visit(TIR.Buffer expr)
     {
         if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
         Scope.Push();
         Scope.Append($"T.Buffer({expr.Name}, {VisitType(expr.ElemType)})");
         doc = new(Scope.Pop(), expr.Name, true);
+        exprMemo.Add(expr, doc);
+        return doc;
+    }
+
+    /// <inheritdoc/>
+    public override IPrintSymbol Visit(TIR.BufferRegion expr)
+    {
+        if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
+        var buffer = Visit(expr.Buffer);
+        var sb = new StringBuilder();
+        sb.Append(buffer.Name);
+        if (expr.Region.Count == 0)
+        {
+            sb.Append("[()]");
+        }
+        else
+        {
+            var regions = expr.Region.Select(rg =>
+            {
+                if (rg.Step is TensorConst con && con.Value.ToScalar<int>() == 1)
+                {
+                    return $"{Visit(rg.Start)}..{Visit(rg.Stop)}";
+                }
+                throw new NotSupportedException("The Step Must Be 1");
+            });
+            sb.Append($"[{string.Join(", ", regions)}]");
+        }
+        doc = new ScriptSymobl(sb, buffer.Name, false);
+        exprMemo.Add(expr, doc);
+        return doc;
+    }
+
+    public override IPrintSymbol Visit(None expr)
+    {
+        if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
+        doc = new ScriptSymobl(new("None"), "None", false);
         exprMemo.Add(expr, doc);
         return doc;
     }
@@ -417,5 +454,8 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 
     /// <inheritdoc/>
     public override string VisitType(InvalidType type) => $"Invalid:{type.Reason}";
+
+    /// <inheritdoc/>
+    public override string VisitType(NoneType type) => $"";
 }
 

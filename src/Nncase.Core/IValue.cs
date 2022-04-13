@@ -76,6 +76,59 @@ public static class Value
             return new TupleValue(tpc.Fields.Select(x => FromConst(x)).ToArray());
         }
     }
+
+    /// <summary>
+    /// get the None Value.
+    /// </summary>
+    /// <returns></returns>
+    public static IValue None => Nncase.NoneValue.Default;
+}
+
+/// <summary>
+/// The None Value.
+/// </summary>
+public sealed class NoneValue : IValue
+{
+    /// <summary>
+    /// Get the default None Value instane.
+    /// </summary>
+    public static readonly NoneValue Default = new();
+
+    private NoneValue()
+    {
+    }
+
+    /// <inheritdoc/>
+    public IValue this[int index] => throw new InvalidOperationException("This Is None Value!");
+
+    /// <inheritdoc/>
+    public IRType Type => NoneType.Default;
+
+    /// <inheritdoc/>
+    public int Count => throw new InvalidOperationException("This Is None Value!");
+
+    /// <inheritdoc/>
+    public Tensor AsTensor()
+    {
+        throw new InvalidOperationException("This Is None Value!");
+    }
+
+    /// <inheritdoc/>
+    public Tensor[] AsTensors()
+    {
+        throw new InvalidOperationException("This Is None Value!");
+    }
+
+    /// <inheritdoc/>
+    public IEnumerator<IValue> GetEnumerator()
+    {
+        throw new InvalidOperationException("This Is None Value!");
+    }
+    /// <inheritdoc/>
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        throw new InvalidOperationException("This Is None Value!");
+    }
 }
 
 /// <summary>

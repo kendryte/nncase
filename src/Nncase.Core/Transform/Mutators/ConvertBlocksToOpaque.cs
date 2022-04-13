@@ -33,8 +33,8 @@ internal sealed class ConvertBlocksToOpaque : ExprMutator
 
             // the block internal.
             Body = (TIR.Sequential)Visit(expr.Body),
-            Reads = MutateArray(expr.Reads, MutateLeaf),
-            Writes = MutateArray(expr.Writes, MutateLeaf),
+            Reads = MutateArray(expr.Reads, b => (BufferRegion)Visit(b)),
+            Writes = MutateArray(expr.Writes, b => (BufferRegion)Visit(b)),
         };
     }
 }

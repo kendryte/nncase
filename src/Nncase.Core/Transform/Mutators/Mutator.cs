@@ -22,9 +22,22 @@ public static class Mutator
     public static Func<ExprMutator> UnRollLoop() => () => new Mutators.UnRollLoop();
 
     /// <summary>
+    /// fold let when expression is const.
+    /// </summary>
+    /// <returns></returns>
+    public static Func<ExprMutator> FoldLet() => () => new Mutators.FoldLet();
+
+    /// <summary>
     /// flatten the sequential
     /// </summary>
     /// <returns></returns>
     public static Func<ExprMutator> FlattenSequential() => () => new Mutators.FlattenSequential();
+
+    /// <summary>
+    /// substitute.
+    /// </summary>
+    /// <param name="maper"></param>
+    /// <returns></returns>
+    public static Func<ExprMutator> Substitute(Func<Expr, Expr?> maper) => () => new Mutators.Substitutor(maper);
 }
 

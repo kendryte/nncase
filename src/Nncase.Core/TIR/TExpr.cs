@@ -376,7 +376,7 @@ public sealed record Reduction : Expr
 /// </summary>
 /// <param name="Buffer">The buffer of the buffer region.</param>
 /// <param name="Region">The region array of the buffer region.</param>
-public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region)
+public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region) : Expr
 {
     /// <summary>
     /// Create a BufferRegion which is full region of the given buffer.
@@ -408,33 +408,16 @@ public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region)
     /// </summary>
     public Expr[] Shape => Region.Select(r => r.Stop - r.Start).ToArray();
 
-    /// <summary>
-    /// the hook for print it.
-    /// </summary>
-    /// <param name="context"></param>
-    /// <returns></returns>
-    public IPrintSymbol Print(IIRPrinterContext context)
+    /// <inheritdoc/>
+    public bool Equals(BufferRegion? other)
     {
-        var buffer = context.Visit(Buffer);
-        var sb = new StringBuilder();
-        sb.Append(buffer.Name);
-        if (Region.Count == 0)
-        {
-            sb.Append("[()]");
-        }
-        else
-        {
-            var regions = Region.Select(rg =>
-            {
-                if (rg.Step is TensorConst con && con.Value.ToScalar<int>() == 1)
-                {
-                    return $"{context.Visit(rg.Start)}..{context.Visit(rg.Stop)}";
-                }
-                throw new NotSupportedException("The Step Must Be 1");
-            });
-            sb.Append($"[{string.Join(", ", regions)}]");
-        }
-        return new ScriptSymobl(sb, buffer.Name, false);
+        return other is BufferRegion bufferRegion && EqualityContract == bufferRegion.EqualityContract;
+    }
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        return EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
     }
 }
 

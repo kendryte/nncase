@@ -42,4 +42,11 @@ public interface IIRPrinterContext
     /// <param name="expr">give the expr.</param>
     /// <returns> symobl. </returns>
     IPrintSymbol Visit(Expr expr);
+
+    /// <summary>
+    /// get the default Serialize;
+    /// </summary>
+    /// <param name="op">Operator.</param>
+    /// <returns>string.</returns>/
+    string GetDefault(Op op) => $"{Get(op)}({string.Join(", ", GetArguments(op).Select(s => s.Serialize()))})";
 }

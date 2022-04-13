@@ -26,7 +26,7 @@ namespace Nncase.IR
         /// <param name="ValueType">give the ir type.</param>
         /// <param name="FieldName"> the argument name.</param>
         /// <exception cref="InvalidOperationException"></exception>
-        public T Check<T>(T ValueType,string FieldName) where T : IRType
+        public T Check<T>(T ValueType, string FieldName) where T : IRType
         {
             if (ValueType == null || !MatchLeaf(ValueType))
             {
@@ -255,6 +255,16 @@ namespace Nncase.IR
         /// </summary>
         /// <returns></returns>
         public static TypePattern IsUnit() => IsTuple(t => t.Count == 0, "IsUnit");
+
+        /// <summary>
+        /// Check the datatype is None type.
+        /// </summary>
+        /// <returns></returns>
+        public static TypePattern IsNone() => new TypePattern(x => x switch
+        {
+            NoneType ntype => true,
+            _ => false
+        }, "IsNone");
 
         /// <summary>
         /// get padding windows output size
