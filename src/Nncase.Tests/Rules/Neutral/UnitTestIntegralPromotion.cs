@@ -50,4 +50,26 @@ public class UnitTestIntegralPromotion
         Assert.True(CompilerServices.InferenceType(post));
         Assert.Equal(Value.FromTensor(3L), ((Function) post).Body.Evaluate());
     }
+    
+    public static IEnumerable<object[]> TestIntegralPromotionNegativeData =>
+        new[]
+        {
+            new object[] {DataTypes.Int32, DataTypes.Int32},
+            new object[] {DataTypes.Int64, DataTypes.Int64},
+        };
+
+    [Theory]
+    [MemberData(nameof(TestIntegralPromotionNegativeData))]
+    public void TestIntegralPromotionNegative(DataType aType, DataType bType)
+    {
+        var expr = Tensors.Cast(1, aType) + Tensors.Cast(2, bType);
+        expr.InferenceType();
+        var f = new Function(expr);
+        var result = CompilerServices.InferenceType(f);
+        Assert.True(result);
+        CompilerServices.DumpIR(f, "before", Path.Combine(passOptions.PassDumpDir, "TypePromotion"));
+        var post = new ShapeInferPass("TypePromotion").Run(f, passOptions);
+        Assert.True(CompilerServices.InferenceType(post));
+        Assert.Equal(Value.FromTensor(3L), ((Function) post).Body.Evaluate());
+    }
 }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.Transform;
 using Nncase.Transform.Rules.Neutral;
@@ -41,7 +42,6 @@ public class UnitTestMatMulToConv2D
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new MatMulToConv2D(),
-            // new FoldConstCall(),
         }, caseOptions);
 
         Assert.NotEqual(rootPre, rootPost);

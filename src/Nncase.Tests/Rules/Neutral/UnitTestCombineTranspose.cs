@@ -116,7 +116,9 @@ public class UnitTestCombineTranspose
         new[]
         {
             new object[] { new[] {1, 2, 3, 4}, new[] {0, 2, 3, 1}, new[,] {{ 4, 4 }, { 3, 3 }, { 2, 2 }, { 1, 1 }}, PadMode.Constant, 1f},
-            new object[] { new[] {1, 2, 3, 4}, new[] {0, 3, 1, 2}, new[,] {{ 1, 1 }, { 2, 2 }, { 1, 1 }, { 1, 1 }}, PadMode.Constant, 0f},
+            new object[] { new[] {1, 2, 3, 4}, new[] {0, 3, 1, 2}, new[,] {{ 1, 1 }, { 0, 0 }, { 1, 1 }, { 1, 1 }}, PadMode.Symmetric, 0f},
+            new object[] { new[] {5, 2, 3, 4}, new[] {3, 0, 1, 2}, new[,] {{ 2, 2 }, { 0, 0 }, { 1, 1 }, { 1, 1 }}, PadMode.Reflect, 0f},
+            new object[] { new[] {1, 2, 3, 4}, new[] {0, 3, 1, 2}, new[,] {{ 1, 1 }, { 0, 0 }, { -1, -1 }, { 1, 1 }}, PadMode.Edge, 0f},
 
         };
 
