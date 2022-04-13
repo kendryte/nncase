@@ -221,20 +221,6 @@ namespace Nncase.Tests.RewriteTest
             passOptions.SetDumpDir(Path.Combine(passOptions.PassDumpDir, "DataFlowRewriteAndInferIntegrateTest"));
         }
         
-        [Fact]
-        public void TestTypePromotion()
-        {
-            var expr = (TensorConst) 1 + (TensorConst) 2L;
-            expr.InferenceType();
-            var f = new Function(expr);
-            var result = CompilerServices.InferenceType(f);
-            Assert.False(result);
-            CompilerServices.DumpIR(f, "before", Path.Combine(passOptions.PassDumpDir, "TypePromotion"));
-            var post = new ShapeInferPass("TypePromotion").Run(f, passOptions);
-            Assert.True(CompilerServices.InferenceType(post));
-            Assert.Equal(Value.FromTensor(3L), ((Function)post).Body.Evaluate());
-        }
-
         public T Dim1ExprToScalar<T>(Expr expr) where T : unmanaged, System.IEquatable<T> => (expr as TensorConst).Value.Cast<T>()[0];
 
         [Fact]
