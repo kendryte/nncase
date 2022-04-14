@@ -239,8 +239,8 @@ public static class T
     /// <returns>the inner for loop.</returns>
     public static NestBodyExprBuilder<For> Grid(out Var i, out Var j, (Expr i, Expr j) ends)
     {
-        var builder_i = T.Serial(out i, ends.i, out var for_i);
-        var builder_j = T.Serial(out j, ends.j, out var for_j);
+        var builder_i = T.Serial(out i, (0, ends.i), out var for_i);
+        var builder_j = T.Serial(out j, (0, ends.j), out var for_j);
         return new NestBodyExprBuilder<For>(for_i, for_j);
     }
 
@@ -254,8 +254,8 @@ public static class T
     /// <returns></returns>
     public static NestBodyExprBuilder<For> Grid(out Var i, out Var j, (Expr i, Expr j) ends, out (For i, For j) loops)
     {
-        T.Serial(out i, ends.i, out loops.i);
-        T.Serial(out j, ends.j, out loops.j);
+        T.Serial(out i, (0, ends.i), out loops.i);
+        T.Serial(out j, (0, ends.j), out loops.j);
         return new NestBodyExprBuilder<For>(loops.i, loops.j);
     }
 

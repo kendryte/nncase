@@ -404,9 +404,9 @@ public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region) : Expr
     public Expr CurAddr => Buffer.Addr + AddrOffset;
 
     /// <summary>
-    /// Get the Shape.
+    /// Get the RegionSize.
     /// </summary>
-    public Expr[] Shape => Region.Select(r => r.Stop - r.Start).ToArray();
+    public Expr[] RegionSize => Region.Select(r => r.Stop - r.Start).ToArray();
 
     /// <inheritdoc/>
     public bool Equals(BufferRegion? other)
@@ -418,6 +418,19 @@ public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region) : Expr
     public override int GetHashCode()
     {
         return EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
+    }
+
+    /// <summary>
+    /// get the new buffer range.
+    /// </summary>
+    /// <param name="ranges"></param>
+    /// <returns></returns>
+    public BufferRegion this[params TIR.Range[] ranges]
+    {
+        get => new(Buffer, new(ranges.Zip(Buffer.Shape.ToArray()).Select(
+            tp => tp.First.Equals(System.Range.All) ?
+                  new Range(0, tp.Second, 1) :
+                  tp.First)));
     }
 }
 

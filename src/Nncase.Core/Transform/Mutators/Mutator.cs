@@ -18,8 +18,9 @@ public static class Mutator
     /// <summary>
     /// Unroll Loop
     /// </summary>
+    /// <param name="for_loops"> target for loop.</param>
     /// <returns></returns>
-    public static Func<ExprMutator> UnRollLoop() => () => new Mutators.UnRollLoop();
+    public static Func<ExprMutator> UnRollLoop(params For[] for_loops) => () => new Mutators.UnRollLoop(for_loops);
 
     /// <summary>
     /// fold let when expression is const.
