@@ -4,6 +4,7 @@
 using System;
 using Nncase.IR;
 using Nncase.IR.Math;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Math;
 
@@ -15,7 +16,10 @@ public class DequantizeEvaluator : IEvaluator<Dequantize>, ITypeInferencer<Dequa
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Dequantize target)
     {
-        throw new NotImplementedException();
+        var input = context.GetOrtArgumentValue(target, Dequantize.Input);
+        var scale = context.GetOrtArgumentValue(target, Dequantize.Scale);
+        var bias = context.GetOrtArgumentValue(target, Dequantize.ZeroPoint);
+        return OrtKI.DequantizeLinear(input, scale, bias, 0).ToValue();
     }
 
     /// <inheritdoc/>

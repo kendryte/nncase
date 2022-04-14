@@ -10,6 +10,7 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.PatternMatch;
+using Tensorflow;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
@@ -18,6 +19,7 @@ using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
+using Tuple = System.Tuple;
 
 namespace Nncase.Transform.Rules.Neutral;
 
@@ -100,20 +102,22 @@ public sealed partial class CombineTransposePad : IRewriteRule
     public IPattern Pattern { get; } = IsPad(
         "pad",
         x => true,
-        IsTranspose(IsWildcard("input") with { TypePattern = HasRank() }, IsWildcard("perm")),
+        IsTranspose(IsWildcard("input") , IsWildcard("perm")),
         IsWildcard("pads"),
         IsWildcard("padValue"));
 
     private Expr GetReplace(Pad pad, Expr input, Expr perm, Expr pads, Expr padValue)
     {
-        var rank = input.CheckedShape.Rank;
-        var newPads = new Expr[rank];
-        for (var i = 0; i < newPads.Length; i++)
+        var rank = pads.CheckedShape[0].FixedValue;
+        var newPads = new List<Expr>();
+        for (var i = 0; i < rank; i++)
         {
-            newPads[i] = pads[perm[i]];
+            newPads.Add(pads[perm[i]]);
+            // newPads[i] = pads[perm[i]];
         }
 
-        return Transpose(Pad(input, Stack(newPads, 0), pad.PadMode, padValue), perm);
+        var p = Pad(input, Stack(new IR.Tuple(newPads), 0), pad.PadMode, padValue);
+        return Transpose(p, perm);
     }
 }
 
@@ -128,7 +132,7 @@ public sealed partial class CombineTransposeReduce : IRewriteRule
     public IPattern Pattern { get; } = IsReduce(
         "reduce",
         x => true,
-        IsTranspose(IsWildcard("input") with { TypePattern = HasRank() }, IsWildcard("perm")),
+        IsTranspose(IsWildcard("input"), IsWildcard("perm")),
         IsWildcard("axis"),
         IsWildcard("initValue"),
         IsTensorConst("keepDims", IsBoolScalar()));

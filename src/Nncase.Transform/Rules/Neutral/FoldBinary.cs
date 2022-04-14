@@ -27,16 +27,16 @@ public sealed partial class FoldNopBinary : IRewriteRule
         IsWildcard("lhs"),
         IsTensorConst("rhs", IsScalar()));
 
-    private Expr? GetReplace(Binary binary, Expr lhs, double rhs)
+    private Expr? GetReplace(Binary binary, Expr lhs, TensorConst rhs)
     {
-        return (binary.BinaryOp, rhs) switch
+        return (binary.BinaryOp, rhs.Value.ToScalar<float>()) switch
         {
-            (BinaryOp.Add, 0) => lhs,
-            (BinaryOp.Sub, 0) => lhs,
-            (BinaryOp.Mul, 1) => lhs,
-            (BinaryOp.Div, 1) => lhs,
-            (BinaryOp.Mod, 1) => lhs,
-            (BinaryOp.Pow, 1) => lhs,
+            (BinaryOp.Add, 0f) => lhs,
+            (BinaryOp.Sub, 0f) => lhs,
+            (BinaryOp.Mul, 1f) => lhs,
+            (BinaryOp.Mod, 1f) => lhs,
+            (BinaryOp.Pow, 1f) => lhs,
+            (BinaryOp.Div, 1f) => lhs,
             _ => null,
         };
     }

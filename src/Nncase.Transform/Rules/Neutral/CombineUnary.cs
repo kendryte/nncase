@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
@@ -30,12 +31,24 @@ public sealed partial class CombinePadUnary : IRewriteRule
     public IPattern Pattern { get; } = IsUnary(
         "unary",
         x => true,
-        IsPad(PadMode.Constant, IsWildcard("input"), IsWildcard("pads"), IsWildcard("padValue")));
+        IsPad(
+            "pad",
+            x => true,
+            IsWildcard("input"),
+            IsWildcard("pads"),
+            IsWildcard("padValue")));
 
-    private Expr? GetReplace(Unary unary, Expr input, Expr pads, Expr padValue)
+    private Expr? GetReplace(Unary unary, Pad pad, Expr input, Expr pads, Expr padValue)
     {
-        var newPadValue = Unary(unary.UnaryOp, padValue);
-        return Pad(Unary(unary.UnaryOp, input), pads, PadMode.Constant, newPadValue);
+        if (pad.PadMode == PadMode.Constant)
+        {
+            var newPadValue = Unary(unary.UnaryOp, padValue);
+            return Pad(Unary(unary.UnaryOp, input), pads, PadMode.Constant, newPadValue);
+        }
+        else
+        {
+            return Pad(Unary(unary.UnaryOp, input), pads, pad.PadMode, 0f);
+        }
     }
 }
 
@@ -67,7 +80,8 @@ public sealed partial class CombineSliceUnary : IRewriteRule
     public IPattern Pattern { get; } = IsUnary(
         "unary",
         x => true,
-        IsSlice(IsWildcard("input"), IsWildcard("begins"), IsWildcard("ends"), IsWildcard("axes"), IsWildcard("strides")));
+        IsSlice(IsWildcard("input"), IsWildcard("begins"), IsWildcard("ends"), IsWildcard("axes"),
+            IsWildcard("strides")));
 
     private Expr? GetReplace(Unary unary, Expr input, Expr begins, Expr ends, Expr axes, Expr strides)
     {

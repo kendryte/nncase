@@ -29,15 +29,17 @@ public partial class IntegralPromotion : RewriteRule<OrPattern>
             _ => false
         };
     }
-    
+
     /// <inheritdoc/>
-    public override OrPattern Pattern { get; } = 
-        IsAlt(IsBinary("bn", NeedPromotion,
-            IsWildcard("lhs") with { TypePattern = HasDataType(DataTypes.Int32)}, 
-            IsWildcard("rhs") with { TypePattern = HasDataType(DataTypes.Int64)}),
-        IsBinary("bn", NeedPromotion,
-            IsWildcard("lhs") with { TypePattern = HasDataType(DataTypes.Int64)}, 
-            IsWildcard("rhs") with { TypePattern = HasDataType(DataTypes.Int32)}));
+    public override OrPattern Pattern { get; } =
+        IsAlt(
+            IsBinary(
+                "bn", NeedPromotion,
+                IsWildcard("lhs") with {TypePattern = HasDataType(DataTypes.Int32)},
+                IsWildcard("rhs") with {TypePattern = HasDataType(DataTypes.Int64)}),
+            IsBinary("bn", NeedPromotion,
+                IsWildcard("lhs") with {TypePattern = HasDataType(DataTypes.Int64)},
+                IsWildcard("rhs") with {TypePattern = HasDataType(DataTypes.Int32)}));
 
     Expr GetReplace(Binary bn, Expr lhs, Expr rhs)
     {
