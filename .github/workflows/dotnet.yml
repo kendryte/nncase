@@ -24,9 +24,6 @@ jobs:
       - name: Build
         run: dotnet build
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        
       - name: Test
         run: |
           dotnet test --no-build --verbosity normal 
