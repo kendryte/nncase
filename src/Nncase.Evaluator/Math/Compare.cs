@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Compare"/>.
 /// </summary>
-public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>
+public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, IOpPrinter<Compare>
 {
     /// <inheritdoc />
     public IValue Visit(IEvaluateContext context, Compare target)
@@ -41,5 +41,20 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>
     private IRType Visit(TensorType lhs, TensorType rhs)
     {
         return ((TensorType)TypeInference.BroadcastType(lhs, rhs)) with { DType = DataTypes.Boolean };
+    }
+
+    public string Visit(IIRPrinterContext context, Compare target, bool ILmode)
+    {
+        var op = target.CompareOp switch
+        {
+            CompareOp.Equal => "==",
+            CompareOp.LowerOrEqual => "<=",
+            CompareOp.GreaterOrEqual => ">=",
+            CompareOp.GreaterThan => ">",
+            CompareOp.LowerThan => "<",
+            CompareOp.NotEqual => "!=",
+            _ => throw new ArgumentOutOfRangeException(target.CompareOp.ToString())
+        };
+        return $"{context.GetArgument(target, Compare.Lhs)} {op} {context.GetArgument(target, Compare.Rhs)}";
     }
 }

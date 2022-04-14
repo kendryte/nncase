@@ -35,6 +35,6 @@ public partial class RequireEvaluator : IEvaluator<Require>, ITypeInferencer<Req
     {
         var condition = context.GetArgument(target, Require.Predicate);
         var value = context.GetArgument(target, Require.Value);
-        return $"({condition}!, {value})";
+        return $"IR.F.Math.Require({condition}, {value})";
     }
 }

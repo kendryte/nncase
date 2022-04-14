@@ -129,6 +129,14 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         return type;
     }
 
+    /// <inheritdoc/>
+    public override IRType VisitLeaf(None expr)
+    {
+        var type =  NoneType.Default;
+        SetCheckedType(expr, type);
+        return type;
+    }
+
     /// <summary>
     /// Verify the expression sub field type is valid.
     /// </summary>
