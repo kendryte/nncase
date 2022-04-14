@@ -20,6 +20,8 @@ public static class Random
     public static Call Normal(DataType type, Expr mean, Expr scale, Expr seed, Expr shape) =>
         new Call(new Normal(type), mean, scale, seed, shape);
 
+    public static Call Normal(DataType type, Expr shape) => Normal(type, 0, 1, 0, shape);
+    
     public static Call NormalLike(DataType type, Expr input, Expr mean, Expr scale, Expr seed) =>
         new Call(new NormalLike(type), input, mean, scale, seed);
 
