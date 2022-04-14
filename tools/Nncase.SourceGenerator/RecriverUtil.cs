@@ -102,4 +102,11 @@ public static class RecriverUtil
                                                                                 category: "EvaluatorGenerator",
                                                                                 DiagnosticSeverity.Error,
                                                                                 isEnabledByDefault: true);
+
+    public static DiagnosticDescriptor GeneratorError => new DiagnosticDescriptor(id: "EvalGen007",
+                                                                                title: "When Generator Get Error",
+                                                                                messageFormat: "'{0}'",
+                                                                                category: "EvaluatorGenerator",
+                                                                                DiagnosticSeverity.Error,
+                                                                                isEnabledByDefault: true);
 }
