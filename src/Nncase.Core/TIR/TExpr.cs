@@ -57,7 +57,7 @@ public sealed record Sequential : Expr, IList<Expr>
     /// ctor for default.
     /// </summary>
     /// <param name="fields">sub fields.</param>
-    public Sequential(IRArrayList<Expr> fields)
+    public Sequential(IEnumerable<Expr> fields)
     {
         Fields = new(Flatten(fields));
     }
@@ -157,14 +157,6 @@ public sealed record Sequential : Expr, IList<Expr>
 }
 
 /// <summary>
-/// select the value and return it, the true and false must have same type!.
-/// </summary>
-/// <param name="Condition"></param>
-/// <param name="TrueValue"></param>
-/// <param name="FalseValue"></param>
-public sealed record Select(Expr Condition, Expr TrueValue, Expr FalseValue) : Expr { }
-
-/// <summary>
 /// Load value from the result produced by the producer.
 /// </summary>
 /// <remarks>
@@ -194,7 +186,7 @@ public sealed record Broadcast(Expr Value, int lanes) : Expr
 /// <param name="Var"> The expr . </param>
 /// <param name="Expression"> The value to be binded. </param>
 /// <param name="Body"> The Let body. </param>
-public sealed record Let(Buffer Var, Expr Expression, Sequential Body) : Expr, ISequentialExpr
+public sealed record Let(Var Var, Expr Expression, Sequential Body) : Expr, ISequentialExpr
 {
 }
 
@@ -384,7 +376,7 @@ public sealed record Reduction : Expr
 /// </summary>
 /// <param name="Buffer">The buffer of the buffer region.</param>
 /// <param name="Region">The region array of the buffer region.</param>
-public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region)
+public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region) : Expr
 {
     /// <summary>
     /// Create a BufferRegion which is full region of the given buffer.
@@ -400,6 +392,33 @@ public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region)
     /// <param name="Indices">The access point indices of the buffer.</param>
     /// <returns>The BufferRegion which is the single point of the given buffer.</returns>
     public static BufferRegion FromPoint(Buffer Buf, IRArray<Expr> Indices) => new BufferRegion(Buf, new(Indices.Select(index => new Range(index, index + 1, 1))));
+
+    /// <summary>
+    /// Get the Addr Offset.
+    /// </summary>
+    public Expr AddrOffset => Region.Zip(Buffer.Stride.ToArray()).Aggregate((Expr)0, (acc, t) => acc + t.Item1.Start * t.Item2);
+
+    /// <summary>
+    /// Get the Current Offset.
+    /// </summary>
+    public Expr CurAddr => Buffer.Addr + AddrOffset;
+
+    /// <summary>
+    /// Get the Shape.
+    /// </summary>
+    public Expr[] Shape => Region.Select(r => r.Stop - r.Start).ToArray();
+
+    /// <inheritdoc/>
+    public bool Equals(BufferRegion? other)
+    {
+        return other is BufferRegion bufferRegion && EqualityContract == bufferRegion.EqualityContract;
+    }
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        return EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
+    }
 }
 
 /// <summary>
@@ -491,9 +510,9 @@ public sealed record Block(string Name, Sequential Body, Sequential InitBody,
     /// <param name="mode"></param>
     /// <param name="value"></param>
     /// <returns></returns>
-    public Block Bind(out IterVar vi, Range dom, IterationMode mode, Expr value)
+    public Block Bind(out IterVar vi, Range dom, IterationMode mode, Var value)
     {
-        vi = new IterVar(TensorType.Scalar(DataTypes.Int32), dom, mode, value);
+        vi = new IterVar(dom, mode, value);
         IterVars.Add(vi);
         return this;
     }
@@ -538,7 +557,7 @@ public sealed record BufferLoad(Buffer Buffer, IRArray<Expr> Indices) : Expr
 /// <param name="Condition"></param>
 /// <param name="Then"> Sequential. </param>
 /// <param name="Else"> Sequential. </param>
-public sealed record IfThenElse(Expr Condition, Expr Then, Expr Else) : Expr
+public sealed record IfThenElse(Expr Condition, Sequential Then, Sequential Else) : Expr
 {
 
     /// <summary>
@@ -546,5 +565,5 @@ public sealed record IfThenElse(Expr Condition, Expr Then, Expr Else) : Expr
     /// </summary>
     /// <param name="Condition"></param>
     /// <param name="Then"></param>
-    public IfThenElse(Expr Condition, Expr Then) : this(Condition, Then, new Sequential()) { }
+    public IfThenElse(Expr Condition, Sequential Then) : this(Condition, Then, new Sequential()) { }
 }

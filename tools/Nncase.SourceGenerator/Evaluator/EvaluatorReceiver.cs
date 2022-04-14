@@ -119,6 +119,7 @@ internal class EvaluatorImplReceiver : ISyntaxContextReceiver
     public readonly List<Diagnostic> Diagnostics = new();
 
     public INamedTypeSymbol? ExprSymobl;
+    public INamedTypeSymbol? TensorSymobl;
     public INamedTypeSymbol? ParameterInfoSymobl;
     public INamedTypeSymbol? IRTypeSymobl;
     public INamedTypeSymbol? IEvaluateContextSymobl;
@@ -127,6 +128,7 @@ internal class EvaluatorImplReceiver : ISyntaxContextReceiver
     public void OnVisitSyntaxNode(GeneratorSyntaxContext ctx)
     {
         ExprSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Expr");
+        TensorSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Tensor");
         IRTypeSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.IRType");
         IEvaluateContextSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Evaluator.IEvaluateContext");
         ITypeInferenceContext ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Evaluator.ITypeInferenceContext");

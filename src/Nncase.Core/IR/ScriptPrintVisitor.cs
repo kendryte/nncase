@@ -36,10 +36,13 @@ internal sealed record ScriptSymobl(StringBuilder Span, string Name, bool IsRefS
 internal sealed class ScriptPrintContext : IIRPrinterContext
 {
     readonly Dictionary<Expr, ScriptSymobl> _exprMemo;
+    readonly ExprFunctor<IPrintSymbol, string> _printVisitor;
 
-    public ScriptPrintContext(Dictionary<Expr, ScriptSymobl> exprMemo)
+    public ScriptPrintContext(Dictionary<Expr, ScriptSymobl> exprMemo,
+    ExprFunctor<IPrintSymbol, string> visitor)
     {
         _exprMemo = exprMemo;
+        _printVisitor = visitor;
     }
 
     public Call? CurrentCall { get; set; }
@@ -64,6 +67,9 @@ internal sealed class ScriptPrintContext : IIRPrinterContext
 
     /// <inheritdoc/>
     public IPrintSymbol Get(Op op) => _exprMemo[op];
+
+    /// <inheritdoc/>
+    public IPrintSymbol Visit(Expr expr) => _printVisitor.Visit(expr);
 }
 
 /// <summary>
@@ -95,7 +101,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     public ScriptPrintVisitor(TextWriter textWriter)
     {
         Scope = new(textWriter);
-        context = new(exprMemo);
+        context = new(exprMemo, this);
     }
 
     /// <inheritdoc/>
@@ -150,12 +156,11 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 
         // 1. Function signature
 
-        Scope.IndWrite($"T.PrimFunc(\"{expr.Name}\", {string.Join(", ", expr.Parameters.Select(Visit))}).Body(");
-        Scope.Append(" // " + VisitType(expr.CheckedType!));
+        Scope.IndWrite($"T.PrimFunc(\"{expr.Name}\", {string.Join(", ", expr.Parameters.Select(Visit))}).Body");
 
         // 2. Function body
-        Scope.Append(Visit(expr.Body).Serialize());
-        Scope.IndWrite(");");
+        Scope.AppendLine(VisitTypeSequential(expr.Body, VisitType(expr.CheckedType!)).Serialize());
+
         doc = new(Scope.Pop(), expr.Name, true);
         exprMemo.Add(expr, doc);
 
@@ -168,13 +173,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     public override IPrintSymbol Visit(Op expr)
     {
         if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
-        doc = new(new(expr switch
-        {
-            Unary op => op.UnaryOp.ToString(),
-            Binary op => op.ToLiteral(),
-            IR.Tensors.Cast op => "Cast",
-            _ => expr.GetType().Name,
-        }));
+        doc = new(new(expr.GetType().Name));
         exprMemo.Add(expr, doc);
         return doc;
     }
@@ -212,12 +211,42 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 
         // 1. For Loop signature
         var i_name = VisitLoopVar(expr.LoopVar);
-        Scope.Append($"T.{expr.Mode}(out var {i_name}, ({Visit(expr.Dom.Start)}, {Visit(expr.Dom.Stop)}, {Visit(expr.Dom.Step)}), out var f{i_name}).Body(");
-        Scope.Append(" // " + VisitType(expr.CheckedType!));
+        Scope.Append($"T.{expr.Mode}(out var {i_name}, ({Visit(expr.Dom.Start)}, {Visit(expr.Dom.Stop)}, {Visit(expr.Dom.Step)}), out var f{i_name}).Body");
 
         // 2. For Body
-        Scope.Append(Visit(expr.Body).Serialize());
+        Scope.Append(VisitTypeSequential(expr.Body, VisitType(expr.CheckedType!)).Serialize());
+
+        doc = new(Scope.Pop());
+        exprMemo.Add(expr, doc);
+        return doc;
+    }
+
+    /// <summary>
+    /// indent xxxxxx ( // type_info
+    /// indent indent xxx
+    /// indent indent xxx
+    /// indent )
+    /// </summary>
+    public IPrintSymbol VisitTypeSequential(Sequential expr, string type_info)
+    {
+        if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
+        Scope.Push();
+
+        if (type_info != string.Empty)
+            Scope.AppendLine("( // " + type_info);
+        else
+            Scope.AppendLine("(");
+
+        // 1. Foreach Body
+        using (Scope.IndentUp())
+        {
+            foreach (var item in expr.Fields)
+            {
+                Scope.IndWriteLine(Visit(item).Serialize());
+            }
+        }
         Scope.IndWrite(")");
+
         doc = new(Scope.Pop());
         exprMemo.Add(expr, doc);
         return doc;
@@ -228,8 +257,8 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     {
         if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
         Scope.Push();
-        Scope.AppendLine("");
 
+        Scope.AppendLine("(");
         // 1. Foreach Body
         using (Scope.IndentUp())
         {
@@ -238,6 +267,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
                 Scope.IndWriteLine(Visit(item).Serialize());
             }
         }
+        Scope.IndWrite(")");
 
         doc = new(Scope.Pop());
         exprMemo.Add(expr, doc);
@@ -282,13 +312,9 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         // 3. write init body
         if (expr.InitBody.Count > 0)
         {
-            Scope.IndWriteLine("Init(");
-            foreach (var item in expr.InitBody)
-            {
-                Scope.IndWriteLine(Visit(item).Serialize());
-            }
-
-            Scope.IndWrite(").");
+            Scope.IndWrite("Init");
+            Scope.Append(VisitTypeSequential(expr.InitBody, string.Empty).Serialize());
+            Scope.Append(".");
         }
         else
         {
@@ -296,17 +322,9 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         }
 
         // 4. wirte body
-        Scope.Append("Body(");
-        Scope.AppendLine(" // " + VisitType(expr.CheckedType!));
-        using (Scope.IndentUp())
-        {
-            foreach (var item in expr.Body)
-            {
-                Scope.IndWriteLine(Visit(item).Serialize());
-            }
-        }
+        Scope.Append("Body");
+        Scope.AppendLine(VisitTypeSequential(expr.Body, VisitType(expr.CheckedType!)).Serialize());
 
-        Scope.IndWrite(")");
         doc = new(Scope.Pop());
         exprMemo.Add(expr, doc);
         return doc;
@@ -344,29 +362,13 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     {
         if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
         Scope.Push();
-        Scope.Append($"T.If({Visit(expr.Condition)}).Then(");
-        Scope.AppendLine($" // {VisitType(expr.CheckedType!)}");
-        using (Scope.IndentUp())
-        {
-            foreach (var item in (Sequential)expr.Then)
-            {
-                Scope.IndWriteLine(Visit(item).Serialize());
-            }
-        }
+        Scope.Append($"T.If({Visit(expr.Condition)}).Then");
+        Scope.Append(VisitTypeSequential(expr.Then, VisitType(expr.CheckedType!)).Serialize());
 
-        Scope.IndWrite(")");
-        if (((Sequential)expr.Else).Count > 0)
+        if (expr.Else.Count > 0)
         {
-            Scope.AppendLine(".Then(");
-            using (Scope.IndentUp())
-            {
-                foreach (var item in (Sequential)expr.Else)
-                {
-                    Scope.IndWriteLine(Visit(item).Serialize());
-                }
-            }
-
-            Scope.IndWrite(")");
+            Scope.Append(".Then");
+            Scope.AppendLine(VisitTypeSequential(expr.Else, string.Empty).Serialize());
         }
 
         doc = new(Scope.Pop());
@@ -379,27 +381,57 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     {
         if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
         Scope.Push();
-        Scope.Append($"T.Let({Visit(expr.Var)}, {Visit(expr.Expression)}).Body(");
-        Scope.AppendLine($" // {VisitType(expr.CheckedType!)}");
-        using (Scope.IndentUp(1))
-        {
-            foreach (var item in (Sequential)expr.Body)
-            {
-                Scope.IndWriteLine(Visit(item).Serialize());
-            }
-        }
-        Scope.IndWrite(")");
+        Scope.Append($"T.Let({Visit(expr.Var)}, {Visit(expr.Expression)}).Body");
+        Scope.AppendLine(VisitTypeSequential(expr.Body, VisitType(expr.CheckedType!)).Serialize());
+
         doc = new(Scope.Pop());
         exprMemo.Add(expr, doc);
         return doc;
     }
 
+    /// <inheritdoc/>
     public override IPrintSymbol Visit(TIR.Buffer expr)
     {
         if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
         Scope.Push();
-        Scope.Append($"T.MemRef({expr.Name}, {VisitType(expr.ElemType)})");
+        Scope.Append($"T.Buffer({expr.Name}, {VisitType(expr.ElemType)})");
         doc = new(Scope.Pop(), expr.Name, true);
+        exprMemo.Add(expr, doc);
+        return doc;
+    }
+
+    /// <inheritdoc/>
+    public override IPrintSymbol Visit(TIR.BufferRegion expr)
+    {
+        if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
+        var buffer = Visit(expr.Buffer);
+        var sb = new StringBuilder();
+        sb.Append(buffer.Name);
+        if (expr.Region.Count == 0)
+        {
+            sb.Append("[()]");
+        }
+        else
+        {
+            var regions = expr.Region.Select(rg =>
+            {
+                if (rg.Step is TensorConst con && con.Value.ToScalar<int>() == 1)
+                {
+                    return $"{Visit(rg.Start)}..{Visit(rg.Stop)}";
+                }
+                throw new NotSupportedException("The Step Must Be 1");
+            });
+            sb.Append($"[{string.Join(", ", regions)}]");
+        }
+        doc = new ScriptSymobl(sb, buffer.Name, false);
+        exprMemo.Add(expr, doc);
+        return doc;
+    }
+
+    public override IPrintSymbol Visit(None expr)
+    {
+        if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
+        doc = new ScriptSymobl(new("None"), "None", false);
         exprMemo.Add(expr, doc);
         return doc;
     }
@@ -422,5 +454,8 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 
     /// <inheritdoc/>
     public override string VisitType(InvalidType type) => $"Invalid:{type.Reason}";
+
+    /// <inheritdoc/>
+    public override string VisitType(NoneType type) => $"";
 }
 

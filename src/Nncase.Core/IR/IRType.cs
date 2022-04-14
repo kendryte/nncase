@@ -126,3 +126,18 @@ public sealed record TupleType(IRArray<IRType> Fields) : IRType, IEnumerable<IRT
 /// Callable type.
 /// </summary>
 public sealed record CallableType(IRType ReturnType, IRArray<IRType> Parameters) : IRType;
+
+/// <summary>
+/// None type.
+/// </summary>
+public sealed record NoneType : IRType
+{
+    /// <summary>
+    /// The default any type instance.
+    /// </summary>
+    public static readonly NoneType Default = new();
+
+    private NoneType()
+    {
+    }
+}

@@ -60,7 +60,7 @@ public interface IEvaluateContext
     }
 
     /// <summary>
-    /// Get argument value as scalar.
+    /// Get argument value as Tensor{T}
     /// </summary>
     /// <typeparam name="T">Scalar type.</typeparam>
     /// <param name="op">Operator.</param>
@@ -70,6 +70,17 @@ public interface IEvaluateContext
         where T : unmanaged, IEquatable<T>
     {
         return GetArgumentValue(op, parameter).AsTensor().Cast<T>();
+    }
+
+    /// <summary>
+    /// Get argument value as Tensor
+    /// </summary>
+    /// <param name="op">Operator.</param>
+    /// <param name="parameter">Parameter.</param>
+    /// <returns>The argument value.</returns>
+    public Tensor GetArgumentValueAsTensor(Op op, ParameterInfo parameter)
+    {
+        return GetArgumentValue(op, parameter).AsTensor();
     }
 
     /// <summary>

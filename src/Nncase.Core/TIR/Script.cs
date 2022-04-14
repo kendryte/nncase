@@ -183,8 +183,9 @@ public static class T
     /// </summary>
     /// <param name="loopVar">out index var.</param>
     /// <param name="Dom">ranges.</param>
+    /// <param name="loop">ranges.</param>
     /// <returns></returns>
-    public static SequentialBuilder<For> Unroll(out Var loopVar, Range Dom) => ForLoop(out loopVar, Dom, LoopMode.Unrolled, out _);
+    public static SequentialBuilder<For> Unrolled(out Var loopVar, Range Dom, out For loop) => ForLoop(out loopVar, Dom, LoopMode.Unrolled, out loop);
 
     /// <summary>
     /// GridWrapper for collect the for item.
@@ -256,6 +257,17 @@ public static class T
         T.Serial(out i, ends.i, out loops.i);
         T.Serial(out j, ends.j, out loops.j);
         return new NestBodyExprBuilder<For>(loops.i, loops.j);
+    }
+
+    /// <summary>
+    /// make the the grid by ranges.
+    /// </summary>
+    /// <param name="loopMode"></param>
+    /// <param name="ranges"></param>
+    /// <returns></returns>
+    public static NestBodyExprBuilder<For> Grid(LoopMode loopMode, params Range[] ranges)
+    {
+        return new NestBodyExprBuilder<For>(ranges.Select(rg => T.ForLoop(out var _, rg, loopMode, out var _).Body()).ToArray());
     }
 
     /// <summary>
@@ -455,4 +467,31 @@ public static class T
         seg = ((i * chunck), IR.F.Math.Min(((i + 1) * chunck), high));
         return forloop;
     }
+
+    /// <summary>
+    /// Let bind.
+    /// </summary>
+    /// <param name="var"></param>
+    /// <param name="expression"></param>
+    /// <returns></returns>
+    public static SequentialBuilder<Let> Let(out Var @var, Expr expression)
+    {
+        @var = new Var();
+        var let = new Let(@var, expression, new());
+        return new(let);
+    }
+
+    /// <summary>
+    /// we can use it get some temp var.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="value"></param>
+    /// <param name="creator"></param>
+    /// <returns></returns>
+    public static Call Emit<T>(out T value, Func<T> creator)
+    {
+        value = creator();
+        return Nop();
+    }
+
 }

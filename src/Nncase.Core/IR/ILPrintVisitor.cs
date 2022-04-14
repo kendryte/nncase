@@ -105,7 +105,16 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
         if (_names.TryGetValue(expr, out var name)) { return name; }
         name = $"%{expr.Name}";
         _names.Add(expr, name);
-        if (expr.CheckedType is IRType type) { name += $": // {VisitType(type)}"; }
+        if (expr.CheckedType is IRType type) { name += $": {VisitType(type)}"; }
+        return name;
+    }
+
+    /// <inheritdoc/>
+    public override string Visit(None expr)
+    {
+        if (_names.TryGetValue(expr, out var name)) { return name; }
+        name = $"None";
+        _names.Add(expr, name);
         return name;
     }
 
@@ -168,6 +177,9 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
 
     /// <inheritdoc/>
     public override string VisitType(InvalidType type) => $"invalid:{type.Reason}";
+
+    /// <inheritdoc/>
+    public override string VisitType(NoneType type) => $"";
 
     /// <inheritdoc/>
     public override string VisitType(TensorType type)

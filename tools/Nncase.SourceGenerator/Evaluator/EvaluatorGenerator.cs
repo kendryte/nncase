@@ -15,7 +15,6 @@ namespace Nncase.SourceGenerator.Evaluator;
 internal class EvaluatorGenerator : ISourceGenerator
 {
 
-    GeneratorExecutionContext? Context = null;
     EvaluatorImplReceiver Receiver;
 
     public void Initialize(GeneratorInitializationContext context) => context.RegisterForSyntaxNotifications(() => new EvaluatorImplReceiver());
@@ -25,7 +24,6 @@ internal class EvaluatorGenerator : ISourceGenerator
         if (context.SyntaxContextReceiver is not EvaluatorImplReceiver evalReceiver)
             return;
         Receiver = evalReceiver;
-        Context ??= context;
         if (evalReceiver.Diagnostics.Any())
         {
             foreach (var diag in evalReceiver.Diagnostics)
@@ -33,16 +31,23 @@ internal class EvaluatorGenerator : ISourceGenerator
                 context.ReportDiagnostic(diag);
             }
         }
-        if (evalReceiver.EvalCandidates.Any())
+        try
         {
-            var eval_compilationunit = BuildFile(context, evalReceiver.EvalCandidates);
-            context.AddSource("Ops.Evaluator", SyntaxTree(eval_compilationunit, encoding: Encoding.UTF8).GetText());
-        }
+            if (evalReceiver.EvalCandidates.Any())
+            {
+                var eval_compilationunit = BuildFile(context, evalReceiver.EvalCandidates);
+                context.AddSource("Ops.Evaluator", SyntaxTree(eval_compilationunit, encoding: Encoding.UTF8).GetText());
+            }
 
-        if (evalReceiver.TypeInferCandidates.Any())
+            if (evalReceiver.TypeInferCandidates.Any())
+            {
+                var typeinfer_compilationunit = BuildFile(context, evalReceiver.TypeInferCandidates);
+                context.AddSource("Ops.TypeInferencer", SyntaxTree(typeinfer_compilationunit, encoding: Encoding.UTF8).GetText());
+            }
+        }
+        catch (System.NotSupportedException e)
         {
-            var typeinfer_compilationunit = BuildFile(context, evalReceiver.TypeInferCandidates);
-            context.AddSource("Ops.TypeInferencer", SyntaxTree(typeinfer_compilationunit, encoding: Encoding.UTF8).GetText());
+            context.ReportDiagnostic(Diagnostic.Create(RecriverUtil.GeneratorError, Location.None, e.Message));
         }
     }
 
@@ -84,17 +89,16 @@ internal class EvaluatorGenerator : ISourceGenerator
                     INamedTypeSymbol { IsReferenceType: true } x when x.ToDisplayString() == "Nncase.IValue" => $"GetArgumentValue",
                     INamedTypeSymbol { IsGenericType: true, IsReferenceType: true } x when x.Name == "Tensor" => $"GetArgumentValueAsTensor<{x.TypeArguments[0].ToDisplayString()}>",
                     IArrayTypeSymbol { ElementType: { IsUnmanagedType: true, IsValueType: true } e } x => $"GetArgumentValueAsArray<{e.ToDisplayString()}>",
-                    { IsReferenceType: true } x when x.IsInheritFrom(Receiver.ExprSymobl) => $"GetArgumentValue<{paramType.ToDisplayString()}>",
-                    { IsReferenceType: true } x when x.IsInheritFrom(Receiver.ExprSymobl) => $"GetArgumentValue<{paramType.ToDisplayString()}>",
+                    { IsReferenceType: true } x when x.Equals(Receiver.TensorSymobl) => $"GetArgumentValueAsTensor",
                     { IsReferenceType: true } x when x.ToDisplayString().EndsWith("OrtKISharp.Tensor") => "GetOrtArgumentValue",
                     { IsUnmanagedType: true, IsValueType: true } x => $"GetArgumentValueAsScalar<{paramType.ToDisplayString()}>",
-                    _ => throw new NotSupportedException($"Convert {paramType.Name} {paramType.ToDisplayString()} For IEvaluator Impl!")
+                    _ => throw new NotSupportedException($"Convert {cand.Class.Name} Params {paramType.ToDisplayString()} For IEvaluator Impl!")
                 },
                 InterfaceKind.ITypeInferencer => paramType switch
                 {
                     { IsReferenceType: true } x when x.IsInheritFrom(Receiver.IRTypeSymobl) => $"CheckArgumentType<{x}>",
                     var x when x.Equals(Receiver.ExprSymobl) => $"GetArgument",
-                    _ => throw new NotSupportedException($"Convert {paramType.Name} {paramType.ToDisplayString()} For ITypeInferencer Impl!")
+                    _ => throw new NotSupportedException($"Convert {cand.Class.Name} Params {paramType.ToDisplayString()} For ITypeInferencer Impl!")
                 },
                 _ => throw new NotSupportedException($"{paramType.ToDisplayString()} with {cand.Target}!")
             };

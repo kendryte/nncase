@@ -9,15 +9,15 @@ using Microsoft.Extensions.Hosting;
 using NetFabric.Hyperlinq;
 using Nncase.Evaluator;
 using Nncase.IR;
-using Nncase.IR.F;
-using static Nncase.IR.F.NN;
-using static Nncase.IR.F.Tensors;
 using Nncase.IR;
+using Nncase.IR.F;
 using Nncase.IR.Tensors;
 using OrtKISharp;
 using Xunit;
-using Tuple = Nncase.IR.Tuple;
+using static Nncase.IR.F.NN;
+using static Nncase.IR.F.Tensors;
 using static OrtKISharp.TensorHelper;
+using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Tests.EvaluatorTest
 {
@@ -30,21 +30,21 @@ namespace Nncase.Tests.EvaluatorTest
         [Fact]
         public void TestOrtKI()
         {
-            var a = Const.FromTensor(Tensor.FromSpan<int>(new[] {1, 2, 3}));
-            var b = Const.FromTensor(Tensor.FromSpan<int>(new[] {1, 2, 3}));
+            var a = Const.FromTensor(Tensor.FromSpan<int>(new[] { 1, 2, 3 }));
+            var b = Const.FromTensor(Tensor.FromSpan<int>(new[] { 1, 2, 3 }));
             // var b = (Const) 2;
             a.InferenceType();
             b.InferenceType();
             var na = a.Value.ToOrtTensor();
             var nb = b.Value.ToOrtTensor();
-            Assert.Equal(new[] {1, 2, 3}, na.ToDense<int>().ToArray());
+            Assert.Equal(new[] { 1, 2, 3 }, na.ToDense<int>().ToArray());
             var v = na.ToType(OrtDataType.Float16).ToValue();
             var f = na.ToType(OrtDataType.Float16).ToType(OrtDataType.Float);
-            
+
             var c = na + nb;
-            Assert.Equal(new[] {2, 4, 6}, c.ToTensor().ToArray<int>());
+            Assert.Equal(new[] { 2, 4, 6 }, c.ToTensor().ToArray<int>());
         }
-        
+
         [Fact]
         public void TestUnary()
         {
@@ -73,6 +73,23 @@ namespace Nncase.Tests.EvaluatorTest
         }
 
         [Fact]
+        public void TestCompare()
+        {
+            Assert.True(CompilerServices.Evaluate((Expr)5 <= (Expr)10).AsTensor().ToScalar<bool>());
+            Assert.True(CompilerServices.Evaluate((Expr)5 <= (Expr)5).AsTensor().ToScalar<bool>());
+            Assert.False(CompilerServices.Evaluate((Expr)(-1) <= (Expr)(-2)).AsTensor().ToScalar<bool>());
+
+            Assert.False(CompilerServices.Evaluate((Expr)10 != (Expr)10).AsTensor().ToScalar<bool>());
+            Assert.True(CompilerServices.Evaluate((Expr)10 != (Expr)(-2)).AsTensor().ToScalar<bool>());
+
+            Assert.True(CompilerServices.Evaluate((Expr)10 == (Expr)10).AsTensor().ToScalar<bool>());
+            Assert.False(CompilerServices.Evaluate((Expr)10 == (Expr)2).AsTensor().ToScalar<bool>());
+
+            Assert.False(CompilerServices.Evaluate((Expr)1 > (Expr)10).AsTensor().ToScalar<bool>());
+            Assert.True(CompilerServices.Evaluate((Expr)1 > (Expr)0).AsTensor().ToScalar<bool>());
+        }
+
+        [Fact]
         public void TestConcat()
         {
             var a = Const.FromTensor(Tensor.FromSpan<int>(Enumerable.Range(0, 12).ToArray(), new Shape(new[] { 1, 3, 4 })));
@@ -87,6 +104,18 @@ namespace Nncase.Tests.EvaluatorTest
             Assert.Equal(
                 OrtKI.Concat(new[] { tA, tB }, 0),
                 expr.Evaluate().AsTensor().ToOrtTensor());
+        }
+
+        [Fact]
+        public void TestStack()
+        {
+            Expr a = 1;
+            Expr b = 2;
+            var inputList = new Tuple(a, b);
+            var expr = Tensors.Stack(inputList, 0);
+            CompilerServices.InferenceType(expr);
+
+            Assert.Equal(new[] { 1, 2 }, expr.Evaluate().AsTensor().ToArray<int>());
         }
 
         [Fact]
@@ -117,7 +146,7 @@ namespace Nncase.Tests.EvaluatorTest
             var expr = NN.Pad(input, pads, Nncase.PadMode.Constant, value);
             CompilerServices.InferenceType(expr);
             var result = expr.Evaluate().AsTensor().ToOrtTensor();
-            Assert.Equal(new [] { 1, 1, 4, 7 }, result.Shape);
+            Assert.Equal(new[] { 1, 1, 4, 7 }, result.Shape);
         }
 
         [Fact]
@@ -130,7 +159,7 @@ namespace Nncase.Tests.EvaluatorTest
             var expr = NN.Pad(input, pads, Nncase.PadMode.Constant, value);
             CompilerServices.InferenceType(expr);
             var result = expr.Evaluate().AsTensor().ToOrtTensor();
-            Assert.Equal(new [] { 1, 4, 8, 14 }, result.Shape);
+            Assert.Equal(new[] { 1, 4, 8, 14 }, result.Shape);
         }
 
         [Fact]
@@ -146,7 +175,7 @@ namespace Nncase.Tests.EvaluatorTest
               Tensors.Concat(new Tuple(padw_before, padw_after), 0)), 0);
             CompilerServices.InferenceType(expr);
             var result = expr.Evaluate().AsTensor().ToOrtTensor();
-            Assert.Equal(MakeOrtTensor(new[] { 1, 2, 3, 4 }, new [] { 2, 2 }), result);
+            Assert.Equal(MakeOrtTensor(new[] { 1, 2, 3, 4 }, new[] { 2, 2 }), result);
         }
 
         [Fact]

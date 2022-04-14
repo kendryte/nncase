@@ -25,6 +25,7 @@ namespace Nncase.IR
             return type switch
             {
                 AnyType t => VisitType(t),
+                NoneType t => VisitType(t),
                 InvalidType t => VisitType(t),
                 TensorType t => VisitType(t),
                 TupleType t => VisitType(t),
@@ -39,6 +40,13 @@ namespace Nncase.IR
         /// <param name="type">Any type.</param>
         /// <returns>Result.</returns>
         public virtual TResult VisitType(AnyType type) => DefaultVisitType(type);
+
+        /// <summary>
+        /// Visit None type.
+        /// </summary>
+        /// <param name="type">None type.</param>
+        /// <returns>Result.</returns>
+        public virtual TResult VisitType(NoneType type) => DefaultVisitType(type);
 
         /// <summary>
         /// Visit invalid type.

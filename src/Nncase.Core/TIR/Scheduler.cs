@@ -9,76 +9,11 @@ using Nncase.TIR;
 
 namespace Nncase.TIR;
 
-class Substitutor : ExprMutator
-{
-    Func<Expr, Expr?> Maper;
 
-    public Substitutor(Func<Expr, Expr?> maper)
-    {
-        Maper = maper;
-    }
-
-    /// <inheritdoc/>
-    public override Expr DefaultMutateLeaf(Expr expr)
-    {
-        var mexpr = Maper(expr);
-        if (mexpr is not null) { return mexpr; }
-        return expr;
-    }
-}
-
-/// <summary>
-/// Substitute vars and collect the reuse mapping of opaque blocks.
-/// </summary>
-class SubstituteVarAndCollectOpaqueBlock : ExprMutator
-{
-    Func<Var, Expr?> VarMaper;
-
-    readonly Dictionary<Block, Block> OpaqueBlocks;
-
-    /// <summary>
-    /// <see cref="SubstituteVarAndCollectOpaqueBlock"/>.
-    /// </summary>
-    /// <param name="varMaper"></param>
-    /// <param name="opaque_blocks"></param>
-    public SubstituteVarAndCollectOpaqueBlock(Func<Var, Expr?> varMaper,
-                                          Dictionary<Block, Block> opaque_blocks)
-    {
-        VarMaper = varMaper;
-        OpaqueBlocks = opaque_blocks;
-    }
-
-    /// <inheritdoc/>
-    public override Expr MutateLeaf(Var expr)
-    {
-        if (VarMaper(expr) is var nexpr && nexpr is not null)
-        {
-            IsMutated = true;
-            return nexpr;
-        }
-
-        return expr;
-    }
-
-    /// <inheritdoc/>
-    public override Expr VisitLeaf(Block expr)
-    {
-        var nblock = (Block)base.VisitLeaf(expr);
-        if (nblock.IterVars.Count == 0)
-        {
-            OpaqueBlocks.Add(expr, nblock);
-        }
-
-        return nblock;
-    }
-}
-
-;
-
-class TIRCollector : ExprVisitor<bool, bool>
+internal sealed class ExprCollector : ExprVisitor<bool, bool>
 {
     Action<Expr> CollectFunc;
-    public TIRCollector(Action<Expr> func)
+    public ExprCollector(Action<Expr> func)
     {
         CollectFunc = func;
     }
@@ -123,7 +58,7 @@ public class Scheduler
             }
         }
 
-        var collector = new TIRCollector(collectBlock);
+        var collector = new ExprCollector(collectBlock);
         collector.Visit(Entry);
         if (TargetBlock is null)
         {
@@ -153,7 +88,7 @@ public class Scheduler
             ;
         }
 
-        var collector = new TIRCollector(collectLoops);
+        var collector = new ExprCollector(collectLoops);
         collector.Visit(Entry);
         return targetLoops.ToArray();
     }
@@ -179,7 +114,7 @@ public class Scheduler
         Sequential nbody = loop.Body;
         // Step 3. create new for loop.
         var nFor = new For[factors.Length];
-        nbody = (Sequential)new SubstituteVarAndCollectOpaqueBlock(v => v == loop.LoopVar ? substitute : v, opaque_block_reuse).Visit(nbody);
+        nbody = (Sequential)new Transform.Mutators.SubstituteVarAndCollectOpaqueBlock(v => v == loop.LoopVar ? substitute : v, opaque_block_reuse).Visit(nbody);
         for (int i = factors.Length - 1; i >= 0; i--)
         {
             var @for = new For(newloopVars[i], (0, factors[i]), LoopMode.Serial, nbody);
@@ -188,7 +123,7 @@ public class Scheduler
         }
 
         // Setp 4. update the function
-        Entry = (Function)new Substitutor(expr => object.ReferenceEquals(expr, loop) ? nFor[0] : null).Visit(Entry);
+        Entry = (Function)new Transform.Mutators.Substitutor(expr => object.ReferenceEquals(expr, loop) ? nFor[0] : null).Visit(Entry);
         return nFor;
     }
 }

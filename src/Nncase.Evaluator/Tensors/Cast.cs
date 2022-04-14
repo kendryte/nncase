@@ -10,7 +10,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Cast"/>.
 /// </summary>
-public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>
+public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter<Cast>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Cast cast)
@@ -24,6 +24,12 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>
     {
         var input = context.CheckArgumentType<TensorType>(target, Cast.Input);
         return Visit(target, input);
+    }
+    
+    /// <inheritdoc/>
+    public string Visit(IIRPrinterContext context, Cast target, bool ILmode)
+    {
+        return $"Cast({context.GetArgument(target, Cast.Input)},{CompilerServices.Print(target.NewType)})";
     }
 
     private IRType Visit(Cast target, TensorType input)

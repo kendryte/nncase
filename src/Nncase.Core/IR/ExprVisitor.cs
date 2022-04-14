@@ -25,7 +25,7 @@ namespace Nncase.IR
         public Dictionary<Expr, TExprResult> ExpressionMemo => _exprMemo;
 
         /// <inheritdoc/>
-        public sealed override TExprResult Visit(Call expr)
+        public override TExprResult Visit(Call expr)
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
@@ -73,7 +73,7 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
-        public sealed override TExprResult Visit(TIR.PrimFunction expr)
+        public override TExprResult Visit(TIR.PrimFunction expr)
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
@@ -120,7 +120,19 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
-        public sealed override TExprResult Visit(Var expr)
+        public override TExprResult Visit(Var expr)
+        {
+            if (!_exprMemo.TryGetValue(expr, out var result))
+            {
+                result = VisitLeaf(expr);
+                _exprMemo.Add(expr, result);
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public override TExprResult Visit(None expr)
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
@@ -137,9 +149,7 @@ namespace Nncase.IR
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
                 Visit(expr.Value);
-                Visit(expr.Dom.Start);
-                Visit(expr.Dom.Stop);
-                Visit(expr.Dom.Step);
+                expr.Dom.Accept(this);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
@@ -170,9 +180,7 @@ namespace Nncase.IR
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
                 Visit(expr.LoopVar);
-                Visit(expr.Dom.Start);
-                Visit(expr.Dom.Stop);
-                Visit(expr.Dom.Step);
+                expr.Dom.Accept(this);
                 Visit(expr.Body);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
@@ -241,7 +249,7 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
-        public sealed override TExprResult Visit(TIR.Let expr)
+        public override TExprResult Visit(TIR.Let expr)
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
@@ -256,7 +264,7 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
-        public sealed override TExprResult Visit(TIR.Buffer expr)
+        public override TExprResult Visit(TIR.Buffer expr)
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
@@ -264,6 +272,24 @@ namespace Nncase.IR
                 _exprMemo.Add(expr, result);
             }
 
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public override TExprResult Visit(TIR.BufferRegion expr)
+        {
+            if (!_exprMemo.TryGetValue(expr, out var result))
+            {
+                Visit(expr.Buffer);
+                foreach (var param in expr.Region)
+                {
+                    Visit(param.Start);
+                    Visit(param.Stop);
+                    Visit(param.Step);
+                }
+                result = VisitLeaf(expr);
+                _exprMemo.Add(expr, result);
+            }
             return result;
         }
 
@@ -282,6 +308,7 @@ namespace Nncase.IR
                 Call call => VisitLeaf(call),
                 Tuple tuple => VisitLeaf(tuple),
                 Op op => VisitLeaf(op),
+                None none => VisitLeaf(none),
                 TIR.Sequential seq => VisitLeaf(seq),
                 TIR.For @for => VisitLeaf(@for),
                 TIR.Block block => VisitLeaf(block),
@@ -342,6 +369,13 @@ namespace Nncase.IR
         /// <param name="expr">Operator expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult VisitLeaf(Op expr) => DefaultVisitLeaf(expr);
+
+        /// <summary>
+        /// Visit leaf None expression.
+        /// </summary>
+        /// <param name="expr">None expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult VisitLeaf(None expr) => DefaultVisitLeaf(expr);
 
         /// <summary>
         /// Visit leaf IterVar expression.
@@ -405,6 +439,13 @@ namespace Nncase.IR
         /// <param name="expr">MemRef expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult VisitLeaf(TIR.Buffer expr) => DefaultVisitLeaf(expr);
+
+        /// <summary>
+        /// Visit leaf buffer region expression.
+        /// </summary>
+        /// <param name="expr">buffer region expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult VisitLeaf(TIR.BufferRegion expr) => DefaultVisitLeaf(expr);
 
         /// <summary>
         /// Default leaf visit routine.

@@ -1,9 +1,9 @@
-using Xunit;
 using System.IO;
+using Nncase.IR;
+using Nncase.TIR;
+using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
-using Nncase.TIR;
-using Nncase.IR;
 
 
 
@@ -24,14 +24,14 @@ public class UnitTestConstructor
 
         var r = new Reduction(
           null, new Expr[] { 1 },
-          new[] { new IterVar(TensorType.Scalar(DataTypes.Int32), (0, 1), IterationMode.CommReduce, 1) },
+          new[] { new IterVar((0, 1), IterationMode.CommReduce, new Var(TensorType.Scalar(DataTypes.Int32))) },
           null, 0);
         Assert.Null(r.Combiner);
         Assert.Equal(0, r.ValueIndex);
 
         var lhs = Var.Scalar("x", DataTypes.Float32) > (Const)1;
         var rhs = Equal(Var.Scalar("x", DataTypes.Float32), (Const)1);
-        var s = new Select(lhs, rhs, (Const)1);
+        var s = Select((Const)1, lhs, rhs);
         var buffer_var = Var.Handle("x", DataTypes.Float32);
         var ld = TIR.T.Load(buffer_var, 1);
         Assert.Equal(ld[Load.Handle], buffer_var);

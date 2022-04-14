@@ -82,8 +82,6 @@ namespace Nncase.IR
 
         /// <summary>
         /// init from the dimensions
-        /// </summary>
-        /// <param name="dimensions"></param>
         /// Initializes a new instance of the <see cref="Shape"/> class.
         /// </summary>
         /// <param name="dimensions">Dimensions.</param>

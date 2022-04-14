@@ -31,6 +31,7 @@ namespace Nncase.IR
                 Call call => Visit(call),
                 Tuple tuple => Visit(tuple),
                 Op op => Visit(op),
+                None none => Visit(none),
                 TIR.IterVar itvar => Visit(itvar),
                 TIR.Sequential seq => Visit(seq),
                 TIR.For @for => Visit(@for),
@@ -41,6 +42,7 @@ namespace Nncase.IR
                 TIR.PrimFunction primfunc => Visit(primfunc),
                 TIR.Let let => Visit(let),
                 TIR.Buffer memref => Visit(memref),
+                TIR.BufferRegion region => Visit(region),
                 _ => DefaultVisit(expr),
             };
         }
@@ -93,6 +95,13 @@ namespace Nncase.IR
         /// <param name="expr">Operator expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult Visit(Op expr) => DefaultVisit(expr);
+
+        /// <summary>
+        /// Visit None expression
+        /// </summary>
+        /// <param name="expr">None expr.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult Visit(None expr) => DefaultVisit(expr);
 
         /// <summary>
         /// Visit IterVar expression.
@@ -156,6 +165,13 @@ namespace Nncase.IR
         /// <param name="expr">MemRef expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult Visit(TIR.Buffer expr) => DefaultVisit(expr);
+
+        /// <summary>
+        /// Visit buffer region expression.
+        /// </summary>
+        /// <param name="expr">buffer region expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult Visit(TIR.BufferRegion expr) => DefaultVisit(expr);
 
         /// <summary>
         /// Default visit routine.
