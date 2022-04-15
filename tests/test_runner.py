@@ -311,7 +311,7 @@ class TestRunner(metaclass=ABCMeta):
         if self.pre_process[3]['input_type'] == "float32":
             data = np.asarray(data, dtype=np.float32)
         if self.pre_process[0]['preprocess'] and len(data.shape) == 4:
-            if self.pre_process[-1]['input_layout'] == 'NCHW':
+            if self.model_type=="tflite" and self.pre_process[-1]['input_layout'] == 'NCHW':
                 data = np.transpose(data, [0, 2, 3, 1])
             if self.pre_process[3]['input_type'] == "uint8":
                 data *= 255.
