@@ -1032,13 +1032,21 @@ auto identity(T &&, U &&...u) -> last_t<U...>
         .checked_print({ DBG_MAP(DBG_STRINGIFY, x) }, \
             { DBG_MAP(DBG_TYPE_NAME, x) }, x)
 
-#define CHECK_WITH_ERR(x, e) \
-    if (!CHECK(x))           \
-    return nncase::err(e)
+#define CHECK_WITH_ERR(x, e)                               \
+    {                                                      \
+        auto &&v = (x);                                    \
+        if (!v)                                            \
+        {                                                  \
+            dbg::DebugOutput(__FILE__, __LINE__, __func__) \
+                .print({ DBG_MAP(DBG_STRINGIFY, x) },      \
+                    { DBG_MAP(DBG_TYPE_NAME, x) }, v);     \
+            return nncase::err(e);                         \
+        }                                                  \
+    }
 
 #define checked_try(x)                                     \
     {                                                      \
-        auto v = (x);                                      \
+        auto &&v = (x);                                    \
         if (!v.is_ok())                                    \
         {                                                  \
             dbg::DebugOutput(__FILE__, __LINE__, __func__) \
@@ -1050,7 +1058,7 @@ auto identity(T &&, U &&...u) -> last_t<U...>
 #define checked_try_var(name, x)                           \
     typename decltype((x))::traits::ok_type name;          \
     {                                                      \
-        auto v = (x);                                      \
+        auto &&v = (x);                                    \
         if (v.is_ok())                                     \
         {                                                  \
             name = std::move(v.unwrap());                  \
@@ -1065,7 +1073,7 @@ auto identity(T &&, U &&...u) -> last_t<U...>
 
 #define checked_try_set(name, x)                           \
     {                                                      \
-        auto v = (x);                                      \
+        auto &&v = (x);                                    \
         if (v.is_ok())                                     \
         {                                                  \
             name = std::move(v.unwrap());                  \

@@ -18,13 +18,13 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-space_to_batch::space_to_batch(datatype_t input_type, shape_t input_shape, int32_t block_h, int32_t block_w, padding padding_h, padding padding_w, scalar pad_value)
-    : block_size_h_(block_h), block_size_w_(block_w), padding_h_(padding_h), padding_w_(padding_w), pad_value_(std::move(pad_value))
+space_to_batch::space_to_batch(datatype_t input_type, shape_t input_shape, int32_t block_h, int32_t block_w, padding padding_h, padding padding_w, scalar pad_value, int32_t real_block_size_h, int32_t real_block_size_w)
+    : block_size_h_(block_h), block_size_w_(block_w), real_block_size_h_(real_block_size_h), real_block_size_w_(real_block_size_w), padding_h_(padding_h), padding_w_(padding_w), pad_value_(std::move(pad_value))
 {
     add_input("input", input_type, input_shape);
     add_output("output", input_type,
         shape_t {
-            input_shape[0] * block_h * block_w,
+            input_shape[0] * real_block_size_h_ * real_block_size_w_,
             input_shape[1],
             (input_shape[2] + padding_h_.sum()) / block_h,
             (input_shape[3] + padding_w_.sum()) / block_w });
@@ -34,6 +34,7 @@ bool space_to_batch::properties_equal(node &other) const
 {
     auto &r = static_cast<space_to_batch &>(other);
     return block_size_h() == r.block_size_h() && block_size_w() == r.block_size_w()
+        && real_block_size_h() == r.real_block_size_h() && real_block_size_w() == r.real_block_size_w()
         && padding_h() == r.padding_h() && padding_w() == r.padding_w()
         && pad_value() == r.pad_value();
 }

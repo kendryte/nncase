@@ -28,6 +28,8 @@ public:
 
     int32_t block_size_h() const noexcept { return block_size_h_; }
     int32_t block_size_w() const noexcept { return block_size_w_; }
+    int32_t real_block_size_h() const noexcept { return real_block_size_h_; }
+    int32_t real_block_size_w() const noexcept { return real_block_size_w_; }
 
     const axis_t &begin() const noexcept { return begin_; }
     const axis_t &end() const noexcept { return end_; }
@@ -40,7 +42,7 @@ public:
     std::array<int32_t, 2> crop_h() const noexcept { return crop_h_; }
     std::array<int32_t, 2> crop_w() const noexcept { return crop_w_; }
 
-    batch_to_space(datatype_t input_type, shape_t input_shape, int32_t block_shape_h, int32_t block_shape_w, axis_t stride, axis_t begin, axis_t end, std::array<int32_t, 2> crop_h_, std::array<int32_t, 2> crop_w_);
+    batch_to_space(datatype_t input_type, shape_t input_shape, int32_t block_shape_h, int32_t block_shape_w, axis_t stride, axis_t begin, axis_t end, std::array<int32_t, 2> crop_h_, std::array<int32_t, 2> crop_w_, int32_t real_block_shape_h, int32_t real_block_shape_w);
 
 protected:
     bool properties_equal(node &other) const override;
@@ -58,5 +60,7 @@ private:
     int32_t shrink_axis_mask_;
     std::array<int32_t, 2> crop_h_;
     std::array<int32_t, 2> crop_w_;
+    int32_t real_block_size_h_;
+    int32_t real_block_size_w_;
 };
 }

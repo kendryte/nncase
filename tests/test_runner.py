@@ -353,8 +353,8 @@ class TestRunner(metaclass=ABCMeta):
                             in_h, in_w = data.shape[1], data.shape[2]
                             model_h, model_w = model_shape[1], model_shape[2]
                             ratio = min(model_h / in_h, model_w / in_w)
-                            resize_shape = data.shape[0], round(
-                                in_h * ratio), round(in_w * ratio), 3
+                            resize_shape = data.shape[0], int(round(
+                                in_h * ratio)), int(round(in_w * ratio)), 3
                             resize_data = cv2.resize(data[0], (resize_shape[2],
                                                                resize_shape[1]), interpolation=cv2.INTER_LINEAR)
                             dh = model_shape[1] - resize_shape[1]
@@ -362,8 +362,8 @@ class TestRunner(metaclass=ABCMeta):
                             dh /= 2
                             dw /= 2
                             resize_data = np.array(resize_data, dtype=np.float32)
-                            data = cv2.copyMakeBorder(resize_data, round(dh - 0.1), round(model_h - resize_shape[1] - round(dh - 0.1)), round(dw - 0.1), round(
-                                model_w - resize_shape[2] - round(dw - 0.1)), cv2.BORDER_CONSTANT, value=(item['letterbox_value'], item['letterbox_value'], item['letterbox_value']))
+                            data = cv2.copyMakeBorder(resize_data, int(round(dh - 0.1)), int(round(model_h - resize_shape[1] - round(dh - 0.1))), int(round(dw - 0.1)), int(round(
+                                model_w - resize_shape[2] - round(dw - 0.1))), cv2.BORDER_CONSTANT, value=(item['letterbox_value'], item['letterbox_value'], item['letterbox_value']))
 
                             data = np.array(data, dtype=np.float32)
                             data = np.expand_dims(data, 0)

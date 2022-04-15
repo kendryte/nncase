@@ -42,4 +42,7 @@ target_sources(transforms PRIVATE
     post_process_transform.cpp
     split_sigmoid.cpp
     fold_1x1_conv2d_depthwise_conv2d.cpp
+    fix_tflite_error_shape.cpp
+    pad_conv.cpp
+    merge_binary_before_conv.cpp
     )

@@ -74,8 +74,8 @@ The details of all attributes are following.
 | Attribute        | Data Type | *Required* | Description                                                  |
 | ---------------- | --------- | ---------- | ------------------------------------------------------------ |
 | target           | string    | Y          | Specify the compile target,  such as 'k210', 'k510'          |
-| quant_type       | string    | N          | Specify the quantization type for input data , such as 'uint8', 'int8' |
-| w_quant_type     | string    | N          | Specify the quantization type for weight , such as 'uint8'(by default), 'int8' |
+| quant_type       | string    | N          | Specify the quantization type for input data , such as 'uint8', 'int8', 'int16' |
+| w_quant_type     | string    | N          | Specify the quantization type for weight , such as 'uint8'(by default), 'int8', 'int16' |
 | use_mse_quant_w  | bool      | N          | Specify whether use  mean-square error when quantizing weight |
 | preprocess       | bool      | N          | Whether enable preprocess, False by default                  |
 | swapRB           | bool      | N          | Whether swap red and blue channel for RGB data(from RGB to BGR or from BGR to RGB), False by default |
@@ -697,7 +697,7 @@ def main():
     import_options = nncase.ImportOptions()
 
     # quantize model
-    compile_options.quant_type = 'uint8' # or 'int8'
+    compile_options.quant_type = 'uint8' # or 'int8' 'int16'
 
     # ptq_options
     ptq_options = nncase.PTQTensorOptions()
@@ -1201,9 +1201,9 @@ OPTIONS
   --output-arrays <output arrays>
                           output arrays
   --quant-type <quant type>
-                          post trainning quantize type, e.g uint8|int8, default is uint8
+                          post trainning quantize type, e.g uint8|int8|int16, default is uint8
   --w-quant-type <w quant type>
-                          post trainning weights quantize type, e.g uint8|int8, default is uint8
+                          post trainning weights quantize type, e.g uint8|int8|int16, default is uint8
   --use-mse-quant-w       use min mse algorithm to refine weights quantilization or not, default is 0
   --dataset <dataset path>
                           calibration dataset, used in post quantization
@@ -1267,8 +1267,8 @@ OPTIONS
 - `--input-prototxt` is the prototxt file for caffe model.
 - `<output file>` is the output model path.
 - `--output-arrays` is the names of nodes to output.
-- `--quant-type` is used to specify quantize type, such as `uint8` by default and `int8`.
-- `--w-quant-type` is used to specify quantize type for weight, such as `uint8` by default and `int8`.
+- `--quant-type` is used to specify quantize type, such as `uint8` by default and `int8` and `int16`.
+- `--w-quant-type` is used to specify quantize type for weight, such as `uint8` by default and `int8 `and `int16`.
 - `--use-mse-quant-w ` is used to specify whether use minimize mse(mean-square error, mse) algorithm to quantize weight or not.
 - `--dataset` is to provide your quantization calibration dataset to quantize your models. You should put hundreds or thousands of data in training set to this directory.
 - `--dataset-format` is to set the format of the calibration dataset. Default is `image`, nncase will use `opencv` to read your images and autoscale to the desired input size of your model. If the input has 3 channels, ncc will convert images to RGB float tensors [0,1] in `NCHW` layout. If the input has only 1 channel, ncc will grayscale your images. Set to `raw` if your dataset is not image dataset for example, audio or matrices. In this scenario you should convert your dataset to raw binaries which contains float tensors.
