@@ -29,7 +29,7 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     /// <inheritdoc/>
     public string Visit(IIRPrinterContext context, Cast target, bool ILmode)
     {
-        return $"Cast({context.GetArgument(target, Cast.Input)},{CompilerServices.Print(target.NewType)})";
+        return $"{CompilerServices.Print(target.NewType)}({context.GetArgument(target, Cast.Input)})";
     }
 
     private IRType Visit(Cast target, TensorType input)

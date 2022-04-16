@@ -53,7 +53,7 @@ namespace Nncase.Transform
                         isMutated = true;
                         typeinfer_ret = CompilerServices.InferenceType(post);
                         OnMutated(post, $"{count++}_{mutator.GetType().Name}", pass_options);
-                        if (!typeinfer_ret) throw new InvalidOperationException($"After Run Mutator {mutator.GetType().Name} , The Type Inference Failed!");
+                        if (!typeinfer_ret) throw new InvalidOperationException($"After Run Mutator {count - 1}_{mutator.GetType().Name} , The Type Inference Failed!");
                         break;
                     }
                 }

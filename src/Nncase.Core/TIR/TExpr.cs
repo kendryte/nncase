@@ -373,6 +373,7 @@ public sealed record Reduction : Expr
 
 /// <summary>
 /// Representing the region of multi-dimensional buffer access.
+/// NOTE the region can be negative, we can use negative calc the padding.
 /// </summary>
 /// <param name="Buffer">The buffer of the buffer region.</param>
 /// <param name="Region">The region array of the buffer region.</param>
@@ -383,20 +384,13 @@ public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region) : Expr
     /// </summary>
     /// <param name="Buf">The buffer to generate full BufferRegion.</param>
     /// <returns>The BufferRegion which covers all region of the given buffer.</returns>
-    public static BufferRegion Full(Buffer Buf) => new BufferRegion(Buf, new(Buf.Shape.ToArray().Select(extent => new Range(0, extent, 1))));
-
-    /// <summary>
-    /// Create a BufferRegion which is a single point of the given buffer.
-    /// </summary>
-    /// <param name="Buf">The buffer to generate single point BufferRegion.</param>
-    /// <param name="Indices">The access point indices of the buffer.</param>
-    /// <returns>The BufferRegion which is the single point of the given buffer.</returns>
-    public static BufferRegion FromPoint(Buffer Buf, IRArray<Expr> Indices) => new BufferRegion(Buf, new(Indices.Select(index => new Range(index, index + 1, 1))));
+    public static BufferRegion All(Buffer Buf) => new BufferRegion(Buf, new(Buf.Shape.ToArray().Select(extent => new Range(0, extent, 1))));
 
     /// <summary>
     /// Get the Addr Offset.
+    /// NOTE We clamp the region expr with {0,shape[dim]}
     /// </summary>
-    public Expr AddrOffset => Region.Zip(Buffer.Stride.ToArray()).Aggregate((Expr)0, (acc, t) => acc + t.Item1.Start * t.Item2);
+    public Expr AddrOffset => Region.Zip(Buffer.Stride.ToArray()).Select((p, i) => (p, i)).Aggregate((Expr)0, (acc, t) => acc + IR.F.Math.Clamp(t.p.First.Start, 0, Buffer.Shape[t.i]) * t.Item2);
 
     /// <summary>
     /// Get the Current Offset.
@@ -407,6 +401,13 @@ public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region) : Expr
     /// Get the RegionSize.
     /// </summary>
     public Expr[] RegionSize => Region.Select(r => r.Stop - r.Start).ToArray();
+
+    /// <summary>
+    /// Get padding at the dim.
+    /// </summary>
+    /// <param name="dim"></param>
+    /// <returns></returns>
+    public (Expr Before, Expr After) Padding(int dim) => (IR.F.Math.Max(-Region[dim].Start, 0), IR.F.Math.Max(Region[dim].Stop - Buffer.Shape[dim], 0));
 
     /// <inheritdoc/>
     public bool Equals(BufferRegion? other)
@@ -430,7 +431,13 @@ public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region) : Expr
         get => new(Buffer, new(ranges.Zip(Buffer.Shape.ToArray()).Select(
             tp => tp.First.Equals(System.Range.All) ?
                   new Range(0, tp.Second, 1) :
-                  tp.First)));
+                  tp.First.Stop switch
+                  {
+                      // if stop is neg, add the shape
+                      Call { Target: IR.Math.Unary { UnaryOp: UnaryOp.Neg } } => tp.First with { Stop = tp.Second + tp.First.Stop },
+                      // else return the origin range.
+                      _ => tp.First
+                  })));
     }
 }
 

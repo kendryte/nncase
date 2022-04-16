@@ -73,6 +73,44 @@ namespace Nncase.Tests.EvaluatorTest
         }
 
         [Fact]
+        public void TestBinarySub()
+        {
+            var tA = OrtTensorFromScalar((int)4);
+            var tB = OrtTensorFromScalar((int)1);
+            var tC = tA - tB;
+        }
+
+        [Fact]
+        public void TestBinaryShift()
+        {
+            var tA = OrtTensorFromScalar((uint)1);
+            var tB = OrtKI.LeftShift(tA, OrtTensorFromScalar((uint)2));
+            var tC = OrtKI.RightShift(tA, OrtTensorFromScalar((uint)2));
+
+            var a = (Const)(uint)1;
+            var b = (Const)(uint)2;
+
+            Assert.Equal(
+                (uint)1 << 2,
+                IR.F.Math.LeftShift(a, b).Evaluate().AsTensor().ToScalar<uint>());
+
+            Assert.Equal(
+                (uint)1 >> 2,
+                IR.F.Math.RightShift(a, b).Evaluate().AsTensor().ToScalar<uint>());
+        }
+
+        [Fact]
+        public void TestBinaryShift2()
+        {
+            var a = (Const)(uint)1;
+            var b = (Const)(uint)2;
+
+            Assert.Equal(
+                (int)((uint)1 << 2) - 1,
+                 (IR.F.Tensors.Cast(IR.F.Math.LeftShift(a, b), DataTypes.Int32) - 1).Evaluate().AsTensor().ToScalar<int>());
+        }
+
+        [Fact]
         public void TestCompare()
         {
             Assert.True(CompilerServices.Evaluate((Expr)5 <= (Expr)10).AsTensor().ToScalar<bool>());

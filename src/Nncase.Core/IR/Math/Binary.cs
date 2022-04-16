@@ -26,20 +26,4 @@ public sealed record Binary(BinaryOp BinaryOp) : Op
     /// Gets rhs.
     /// </summary>
     public static readonly ParameterInfo Rhs = new(typeof(Binary), 1, "rhs");
-
-    /// <summary>
-    /// convert Binary Op to literal.
-    /// <example>
-    ///   BinaryOp.Add => "+"
-    /// </example>
-    /// </summary>
-    /// <returns></returns>
-    public string ToLiteral() => BinaryOp switch
-    {
-        BinaryOp.Add => "+",
-        BinaryOp.Sub => "-",
-        BinaryOp.Mul => "*",
-        BinaryOp.Div => "/",
-        _ => throw new NotSupportedException($"{BinaryOp}"),
-    };
 }

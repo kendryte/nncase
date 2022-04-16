@@ -135,13 +135,28 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     public override IPrintSymbol Visit(Const expr)
     {
         if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
-        if (expr.ValueType is TensorType ttype && ttype.IsScalar)
+        if (expr is TensorConst @const)
         {
-            doc = new(new($"{expr}"));
+            if (@const.Value.Shape == Shape.Scalar)
+                doc = new(new($"{expr}"));
+            else
+                if (@const.Value.ElementType.IsFloat())
+            {
+
+                doc = new(new($"{string.Join(",", @const.Value.ToArray<float>())}"));
+            }
+            else if (@const.Value.ElementType.IsIntegral())
+            {
+                doc = new(new($"{string.Join(",", @const.Value.ToArray<int>())}"));
+            }
+            else if (@const.Value.ElementType.IsPointer())
+            {
+                doc = new(new($"{string.Join(",", @const.Value.ToArray<int>().Select(i => "0x" + i.ToString("X")))}"));
+            }
         }
         else
         {
-            throw new NotSupportedException("The Tir NotSupport the Tensor Const!");
+            throw new NotSupportedException("The Tir NotSupport the Tuple Const!");
         }
 
         exprMemo.Add(expr, doc);
@@ -182,21 +197,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     public override IPrintSymbol Visit(Var expr)
     {
         if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
-        doc = new(new(expr.Name));
-        exprMemo.Add(expr, doc);
-        return doc;
-    }
-
-    /// <summary>
-    /// visit loop var , we will assgin the var new name.
-    /// </summary>
-    /// <param name="expr"></param>
-    /// <param name="prefix"> the prefix for this var name.</param>
-    /// <returns></returns>
-    public ScriptSymobl VisitLoopVar(Expr expr, string prefix = "")
-    {
-        if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
-        doc = new(new(Scope.GetUniqueLoopVarName(expr, prefix)));
+        doc = (ScriptSymobl)Scope.GetUniqueVarSymbol(expr);
         exprMemo.Add(expr, doc);
         return doc;
     }
@@ -210,8 +211,8 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         Scope.Push();
 
         // 1. For Loop signature
-        var i_name = VisitLoopVar(expr.LoopVar);
-        Scope.Append($"T.{expr.Mode}(out var {i_name}, ({Visit(expr.Dom.Start)}, {Visit(expr.Dom.Stop)}, {Visit(expr.Dom.Step)}), out var f{i_name}).Body");
+        var loop_var = Visit(expr.LoopVar);
+        Scope.Append($"T.{expr.Mode}(out var {loop_var}, ({Visit(expr.Dom.Start)}, {Visit(expr.Dom.Stop)}, {Visit(expr.Dom.Step)}), out var f{loop_var}).Body");
 
         // 2. For Body
         Scope.Append(VisitTypeSequential(expr.Body, VisitType(expr.CheckedType!)).Serialize());
@@ -227,7 +228,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     /// indent indent xxx
     /// indent )
     /// </summary>
-    public IPrintSymbol VisitTypeSequential(Sequential expr, string type_info)
+    public IPrintSymbol VisitTypeSequential(Sequential expr, string type_info, int indent = 2)
     {
         if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
         Scope.Push();
@@ -238,7 +239,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
             Scope.AppendLine("(");
 
         // 1. Foreach Body
-        using (Scope.IndentUp())
+        using (Scope.IndentUp(indent))
         {
             foreach (var item in expr.Fields)
             {
@@ -305,7 +306,6 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
                     throw new NotSupportedException($"{iterVar.Mode}");
             }
 
-            // Scope.IndWriteLine($"Remap(out var {VisitSymbolVar(iterVar, loop.LoopVar)}, f{VisitLoopVar(loop.LoopVar)}, \'{mode_doc}\').");
             Scope.IndWriteLine($"Bind(out var {Visit(iterVar)}, ({Visit(iterVar.Dom.Start)}, {Visit(iterVar.Dom.Stop)}, ({Visit(iterVar.Dom.Step)})), IterMode.{iterVar.Mode}, {Visit(iterVar.Value)}).");
         }
 
@@ -354,7 +354,9 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     public override IPrintSymbol Visit(IterVar expr)
     {
         if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
-        return VisitLoopVar(expr, "v");
+        doc = (ScriptSymobl)Scope.GetUniqueVarSymbol(expr.Value, "v");
+        exprMemo.Add(expr, doc);
+        return doc;
     }
 
     /// <inheritdoc/>
@@ -368,7 +370,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         if (expr.Else.Count > 0)
         {
             Scope.Append(".Then");
-            Scope.AppendLine(VisitTypeSequential(expr.Else, string.Empty).Serialize());
+            Scope.Append(VisitTypeSequential(expr.Else, string.Empty).Serialize());
         }
 
         doc = new(Scope.Pop());
@@ -381,8 +383,8 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     {
         if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
         Scope.Push();
-        Scope.Append($"T.Let({Visit(expr.Var)}, {Visit(expr.Expression)}).Body");
-        Scope.AppendLine(VisitTypeSequential(expr.Body, VisitType(expr.CheckedType!)).Serialize());
+        Scope.Append($"T.Let(out var {Visit(expr.Var)}, {Visit(expr.Expression)}).Body");
+        Scope.Append(VisitTypeSequential(expr.Body, VisitType(expr.CheckedType!), 0).Serialize());
 
         doc = new(Scope.Pop());
         exprMemo.Add(expr, doc);
@@ -419,7 +421,10 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
                 {
                     return $"{Visit(rg.Start)}..{Visit(rg.Stop)}";
                 }
-                throw new NotSupportedException("The Step Must Be 1");
+                else
+                {
+                    return $"({Visit(rg.Start)}, {Visit(rg.Stop)}, {Visit(rg.Step)})";
+                }
             });
             sb.Append($"[{string.Join(", ", regions)}]");
         }
@@ -439,7 +444,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     /// <inheritdoc/>
     public override string VisitType(TensorType type) => type.DType switch
     {
-        PrimType ptype => $"{ptype.GetDisplayName()}{type.Shape}",
+        PrimType ptype => ptype.GetDisplayName() + (type.Shape.IsScalar ? "" : type.Shape.ToString()),
         PointerType { ElemType: PrimType etype } ptype => $"*{etype.GetDisplayName()}",
         _ => throw new NotSupportedException(type.DType.GetType().Name),
     };

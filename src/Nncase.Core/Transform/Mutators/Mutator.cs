@@ -40,5 +40,18 @@ public static class Mutator
     /// <param name="maper"></param>
     /// <returns></returns>
     public static Func<ExprMutator> Substitute(Func<Expr, Expr?> maper) => () => new Mutators.Substitutor(maper);
+
+    /// <summary>
+    /// fold if then else block.
+    /// </summary>
+    /// <returns></returns>
+    public static Func<ExprMutator> FoldIfThen() => () => new Mutators.FoldIfThen();
+
+
+    /// <summary>
+    /// 删除内部的T.Nop
+    /// </summary>
+    /// <returns>RemoveNop</returns>
+    public static Func<ExprMutator> RemoveNop() => () => new Mutators.RemoveNop();
 }
 

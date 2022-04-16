@@ -47,7 +47,7 @@ namespace Nncase.IR.F
         /// <returns>Result expression.</returns>
         public static Call Clamp(Expr input, Expr min, Expr max)
         {
-            return new Call(new Clamp(), input, min, max);
+            return IR.F.Math.Min(IR.F.Math.Max(input, min), max);
         }
 
         /// <summary>
