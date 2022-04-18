@@ -130,6 +130,14 @@ def _cast_bfloat16_then_float32(values: np.array):
         values[i] = value
 
 
+def deq_output(kmodel_info, data):
+    with open(kmodel_info, 'r') as f:
+        a = f.readlines()[2:4]
+        scale = float(a[0].split(' ')[-1][:-1])
+        zero_point = int(a[1].split(' ')[-1][:-1])
+        return np.float32((data.astype(np.int) - zero_point) * scale)
+
+
 def generate_image_dataset(shape: List[int], dtype: np.dtype,
                            batch_index: int, batch_size: int,
                            case_dir: str,
@@ -742,6 +750,13 @@ class TestRunner(metaclass=ABCMeta):
                 infer_output_paths.append((
                     os.path.join(infer_dir, f'nncase_result_{i}.bin'),
                     os.path.join(infer_dir, f'nncase_result_{i}.txt')))
+                if cfg.compile_opt.output_type != "float32" and infer_dir.split('/')[-1] == "ptq":
+                    result.tofile(os.path.join(
+                        infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.bin'))
+                    self.totxtfile(os.path.join(
+                        infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.txt'), result)
+                    result = deq_output(os.path.join(
+                        infer_dir, f'kmodel_info.txt'), result)
                 result.tofile(infer_output_paths[-1][0])
                 self.totxtfile(infer_output_paths[-1][1], result)
         return infer_output_paths
