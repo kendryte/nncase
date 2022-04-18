@@ -17,6 +17,7 @@
 #include <nncase/schedule/buffer_allocator.h>
 #include <nncase/targets/neutral_target.h>
 #include <nncase/transforms/neutral/add_quant_checkpoints.h>
+#include <nncase/transforms/neutral/add_quant_motion.h>
 #include <nncase/transforms/neutral/binary_motion.h>
 #include <nncase/transforms/neutral/bitcast_motion.h>
 #include <nncase/transforms/neutral/dequantize_motion.h>
@@ -242,12 +243,12 @@ void neutral_target::register_quantize_annotation_passes([[maybe_unused]] const 
 
     {
         transform_pass p("annotate_neutral_quantize");
-        p.emplace<add_quant_checkpoints_transform>(std::in_place, ir::op_fused_unary);
+        p.emplace<add_quant_checkpoints_transform>(std::in_place, ir::op_fused_unary, ir::op_bitcast, ir::op_dequantize, ir::op_binary);
         pass_mgr.add_pass(std::move(p));
     }
 }
 
-void neutral_target::register_quantize_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type, [[maybe_unused]] std::string_view w_quant_type, [[maybe_unused]] bool use_mse_quant_w, [[maybe_unused]] datatype_t output_type)
+void neutral_target::register_quantize_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type, [[maybe_unused]] std::string_view w_quant_type, [[maybe_unused]] bool use_mse_quant_w, [[maybe_unused]] datatype_t output_type, [[maybe_unused]] quant_param_t &output_quant_param)
 {
     {
         transform_pass p("fused_unary_to_lut");
@@ -258,6 +259,11 @@ void neutral_target::register_quantize_passes([[maybe_unused]] const module_type
         transform_pass p("fold_quantize");
         add_default_transforms(p);
         p.emplace<fold_quantize_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+    {
+        transform_pass p("change_output_type");
+        p.emplace<add_output_quantize_transform>(output_type, output_quant_param);
         pass_mgr.add_pass(std::move(p));
     }
 }
