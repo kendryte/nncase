@@ -15,7 +15,7 @@ case: # case的配置，应该是一个多层次的
         - false
     - name: input_shape
       values:
-        - [1,224,224,3]
+        - []
     - name: mean
       values:
         - [0,0,0]
@@ -30,10 +30,13 @@ case: # case的配置，应该是一个多层次的
         - uint8
     - name: input_layout
       values:
-        - NHWC
+        - NCHW
+    - name: model_layout
+      values:
+        - NCHW
     - name: output_layout
       values:
-        - NHWC
+        - NCHW
     - name: letterbox_value
       values:
         - 0.
