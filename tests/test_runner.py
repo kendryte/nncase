@@ -24,7 +24,7 @@ from models.preprocess.preprocess import preprocess
 
 class Edict:
     def __init__(self, d: Dict[str, int]) -> None:
-        assert(isinstance(d, dict)), "the Edict only accepct Dict for init"
+        assert (isinstance(d, dict)), "the Edict only accepct Dict for init"
         for name, value in d.items():
             if isinstance(value, (list, tuple)):
                 setattr(self, name,
@@ -144,7 +144,7 @@ def generate_image_dataset(shape: List[int], dtype: np.dtype,
                            dir_path: str) -> np.ndarray:
     """ read image from folder, return the rgb image with padding, dtype = float32, range = [0,255]. same as k210 carmera.
     """
-    assert(os.path.isdir(dir_path) or os.path.exists(dir_path))
+    assert (os.path.isdir(dir_path) or os.path.exists(dir_path))
 
     def preproc(img, input_size, transpose=True):
         # todo maybe need move this to postprocess
@@ -192,7 +192,7 @@ def generate_imagenet_dataset(shape: List[int], dtype: np.dtype,
     shape: [N,H,W,C]
     """
     dir_path = os.path.join(os.getenv('DATASET_DIR') if os.getenv('DATASET_DIR') else '', dir_path)
-    assert(os.path.isdir(dir_path) or os.path.exists(dir_path))
+    assert (os.path.isdir(dir_path) or os.path.exists(dir_path))
 
     img_paths = []
     if os.path.isdir(dir_path):
@@ -255,7 +255,7 @@ class TestRunner(metaclass=ABCMeta):
         if(len(values.shape) == 4 and (self.pre_process[0]['preprocess'] or self.cfg.case.generate_inputs.name != "generate_random")):
             if stage == "CPU":
                 # onnx \ caffe
-                if ((self.model_type == "onnx" or self.model_type == "caffe") and self.inputs[0]['model_shape'][1] in [1, 3]):
+                if ((self.model_type == "onnx" or self.model_type == "caffe") and self.pre_process[5]['model_layout'] == "NCHW"):
                     values = np.transpose(values, [0, 3, 1, 2])
 
             if type == 'float32':
@@ -306,6 +306,7 @@ class TestRunner(metaclass=ABCMeta):
         # get layout
         process_layout = {}
         process_layout['input_layout'] = config['input_layout']
+        process_layout['model_layout'] = config['model_layout']
 
         self.pre_process.append(preprocess_flag)
         self.pre_process.append(process_deq)
@@ -343,7 +344,7 @@ class TestRunner(metaclass=ABCMeta):
                 # swapRB
                 if 'swapRB' in item.keys():
                     if data.shape[-1] != 3:
-                        assert("Please confirm your input channel is 3.")
+                        assert ("Please confirm your input channel is 3.")
                     if item['swapRB'] == True:
                         data = data[:, :, :, ::-1]
                         data = np.array(data)
@@ -385,7 +386,7 @@ class TestRunner(metaclass=ABCMeta):
                         data[:, :, :, i] = (data[:, :, :, i] - float(item['norm']['mean'][k])) / \
                             float(item['norm']['std'][k])
         else:
-            assert("Please confirm your input shape and model shape is 4D!")
+            assert ("Please confirm your input shape and model shape is 4D!")
 
         return data
 
@@ -412,6 +413,7 @@ class TestRunner(metaclass=ABCMeta):
                 else:
                     print("WARN: target[{0}] not found".format(t))
             return new_targets
+
         self.cfg.case.eval[0].update({"values": _validate_targets(
             targets if targets else self.cfg.case.eval[0].values)})
         self.cfg.case.infer[0].update({"values": _validate_targets(
@@ -443,7 +445,7 @@ class TestRunner(metaclass=ABCMeta):
             shutil.rmtree(case_dir)
         os.makedirs(case_dir)
 
-    @ abstractmethod
+    @abstractmethod
     def parse_model_input_output(self, model_path: Union[List[str], str]):
         pass
 
@@ -506,6 +508,9 @@ class TestRunner(metaclass=ABCMeta):
                 compile_options.output_layout = cfg['output_layout']
 
         for k, v in cfg.items():
+            # model_layout just use in test_runner
+            if k == "model_layout":
+                continue
             e = '"'
             exec(f"compile_options.{k} = {e + v + e if isinstance(v, str) else v}")
         return import_options, compile_options
@@ -523,7 +528,7 @@ class TestRunner(metaclass=ABCMeta):
                 compile_options, model_content, dict_args, preprocess_opt)
             judge, result = self.compare_results(
                 self.output_paths, eval_output_paths, dict_args)
-            assert(judge), 'Fault result in eval' + result
+            assert (judge), 'Fault result in eval' + result
 
     def run_inference(self, cfg, case_dir, import_options, compile_options, model_content, preprocess_opt):
         names, args = TestRunner.split_value(cfg.infer)
@@ -538,7 +543,7 @@ class TestRunner(metaclass=ABCMeta):
                 compile_options, model_content, dict_args, preprocess_opt)
             judge, result = self.compare_results(
                 self.output_paths, infer_output_paths, dict_args)
-            assert(judge), 'Fault result in infer' + result
+            assert (judge), 'Fault result in infer' + result
 
     @staticmethod
     def split_value(kwcfg: List[Dict[str, str]]) -> Tuple[List[str], List[str]]:
@@ -565,7 +570,7 @@ class TestRunner(metaclass=ABCMeta):
                 model_content.append(f.read())
             return model_content
 
-    @ staticmethod
+    @staticmethod
     def kwargs_to_path(path: str, kwargs: Dict[str, str]):
         for k, v in kwargs.items():
             if isinstance(v, str):
@@ -699,6 +704,7 @@ class TestRunner(metaclass=ABCMeta):
             else:
                 ptq_options.set_tensor_data(np.asarray(
                     [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
+                ptq_options.calibrate_method = self.cfg.case.compile_opt.quant_method
             ptq_options.samples_count = cfg.generate_calibs.batch_size
             compiler.use_ptq(ptq_options)
 
@@ -743,7 +749,7 @@ class TestRunner(metaclass=ABCMeta):
             for i in range(sim.outputs_size):
                 result = sim.get_output_tensor(i).to_numpy()
                 if preprocess['preprocess'] and len(result.shape) == 4:
-                    if(preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
+                    if (preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
                         result = np.transpose(result, [0, 3, 1, 2])
                     elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
                         result = np.transpose(result, [0, 2, 3, 1])
@@ -771,7 +777,7 @@ class TestRunner(metaclass=ABCMeta):
                 shape = []
                 if preprocess_opt['preprocess']:
                     if preprocess_opt['input_shape'] != []:
-                        assert(len(preprocess_opt['input_shape']) == 4)
+                        assert (len(preprocess_opt['input_shape']) == 4)
                         shape = copy.deepcopy(preprocess_opt['input_shape'])
                     else:
                         if self.model_type == "tflite" and preprocess_opt['input_layout'] == "NCHW":
@@ -786,7 +792,7 @@ class TestRunner(metaclass=ABCMeta):
                     shape = copy.deepcopy(input['model_shape'])
                 if shape[0] != cfg.batch_size:
                     shape[0] *= cfg.batch_size
-                if self.model_type != "tflite" and cfg.name == "generate_imagenet_dataset" and shape[1] in [1, 3]:
+                if self.model_type != "tflite" and cfg.name == "generate_imagenet_dataset" and self.pre_process[5]['model_layout'] == "NCHW":
                     shape = shape[0], shape[2], shape[3], shape[1]
                 data = DataFactory[cfg.name](shape, input['dtype'], n,
                                              cfg.batch_size, self.model_path, **cfg.kwargs)
