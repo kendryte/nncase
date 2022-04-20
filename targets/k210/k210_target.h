@@ -25,7 +25,7 @@ public:
     void register_allocators(const module_type_t &type, schedule::allocator_map_t &allocators, std::vector<std::shared_ptr<schedule::buffer_allocator>> &allocator_holders) override;
     void register_evaluator_ops() override;
     void register_quantize_annotation_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr) override;
-    void register_quantize_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr, datatype_t quant_type, std::string_view w_quant_type, bool use_mse_quant_w) override;
+    void register_quantize_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr, datatype_t quant_type, std::string_view w_quant_type, bool use_mse_quant_w, datatype_t output_type, quant_param_t &output_quant_param) override;
     void register_target_dependent_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr, bool use_ptq) override;
     void add_quantization_broadcast(std::unordered_set<ir::node_opcode> &opcodes) override;
 

@@ -36,7 +36,7 @@ void target::register_quantize_annotation_passes([[maybe_unused]] const module_t
 {
 }
 
-void target::register_quantize_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type, [[maybe_unused]] std::string_view w_quant_type, [[maybe_unused]] bool use_mse_quant_w)
+void target::register_quantize_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type, [[maybe_unused]] std::string_view w_quant_type, [[maybe_unused]] bool use_mse_quant_w, [[maybe_unused]] datatype_t output_type, [[maybe_unused]] quant_param_t &output_quant_param)
 {
 }
 
