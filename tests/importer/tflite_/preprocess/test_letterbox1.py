@@ -77,6 +77,9 @@ case:
     - name: input_layout
       values:
         - NCHW
+    - name: model_layout
+      values:
+        - NHWC
     - name: output_layout
       values:
         - NCHW
