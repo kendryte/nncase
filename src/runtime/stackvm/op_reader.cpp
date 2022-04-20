@@ -51,6 +51,11 @@ result<void> op_visitor::next() noexcept
             op_profile st("call");
             return visit(op_reader<tensor_call_op_t>()(reader_));
         }
+        case tensor_function_t::COMPARE:
+        {
+            op_profile st("compare");
+            return visit(op_reader<tensor_compare_op_t>()(reader_));
+        }
         case tensor_function_t::CONV2D:
         {
             op_profile st("conv2d");
@@ -75,11 +80,6 @@ result<void> op_visitor::next() noexcept
         {
             op_profile st("dequantize");
             return visit(op_reader<tensor_dequantize_op_t>()(reader_));
-        }
-        case tensor_function_t::EQUAL:
-        {
-            op_profile st("equal");
-            return visit(op_reader<tensor_equal_op_t>()(reader_));
         }
         case tensor_function_t::GATHER:
         {

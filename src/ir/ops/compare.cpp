@@ -13,20 +13,22 @@
  * limitations under the License.
  */
 #include <nncase/ir/op_utils.h>
-#include <nncase/ir/ops/equal.h>
+#include <nncase/ir/ops/compare.h>
 #include <xtensor/xarray.hpp>
 
 using namespace nncase;
 using namespace nncase::ir;
 
-equal::equal(datatype_t input_type, shape_t input_a_shape, shape_t input_b_shape)
+compare::compare(compare_op_t compare_op, datatype_t input_type, shape_t input_a_shape, shape_t input_b_shape)
+    : compare_op_(compare_op)
 {
     add_input("input_a", input_type, input_a_shape);
     add_input("input_b", input_type, input_b_shape);
     add_output("output", dt_uint8, get_binary_output_shape(input_a_shape, input_b_shape));
 }
 
-bool equal::properties_equal([[maybe_unused]] node &other) const
+bool compare::properties_equal(node &other) const
 {
-    return false;
+    auto &r = static_cast<compare &>(other);
+    return compare_op() == r.compare_op();
 }

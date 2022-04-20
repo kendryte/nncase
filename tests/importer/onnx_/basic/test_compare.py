@@ -20,7 +20,7 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
-def _make_module(in_type, in_shape_0, in_shape_1):
+def _make_module(compare_op, in_type, in_shape_0, in_shape_1):
     inputs = []
     outputs = []
     initializers = []
@@ -42,7 +42,7 @@ def _make_module(in_type, in_shape_0, in_shape_1):
     outputs.append('output')
 
     node = onnx.helper.make_node(
-        'Equal',
+        compare_op,
         inputs=inputs,
         outputs=outputs,
         **attributes_dict
@@ -60,10 +60,18 @@ def _make_module(in_type, in_shape_0, in_shape_1):
 
     return model_def
 
+compare_ops = {
+    'Equal',
+    'Greater',
+    'GreaterOrEqual',
+    'Less',
+    'LessOrEqual'
+}
 
 in_types = [
     TensorProto.BOOL,
     TensorProto.FLOAT,
+    TensorProto.INT32,
     TensorProto.INT64
 ]
 
@@ -75,15 +83,16 @@ in_shapes = [
     [[1, 1, 16, 16], [3, 3, 1, 16]],
 ]
 
+@pytest.mark.parametrize('compare_op', compare_ops)
 @pytest.mark.parametrize('in_type', in_types)
 @pytest.mark.parametrize('in_shape', in_shapes)
-def test_equal(in_type, in_shape, request):
-    model_def = _make_module(in_type, in_shape[0], in_shape[1])
-
-    runner = OnnxTestRunner(request.node.name)
-    model_file = runner.from_onnx_helper(model_def)
-    runner.run(model_file)
-
+def test_compare(compare_op, in_type, in_shape, request):
+    # TensorProto.BOOL is supported by Equal only.
+    if compare_op == "Equal" or in_type != TensorProto.BOOL:
+        model_def = _make_module(compare_op, in_type, in_shape[0], in_shape[1])
+        runner = OnnxTestRunner(request.node.name)
+        model_file = runner.from_onnx_helper(model_def)
+        runner.run(model_file)
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_equal.py'])
+    pytest.main(['-vv', 'test_compare.py'])

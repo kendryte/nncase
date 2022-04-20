@@ -148,6 +148,7 @@ namespace IsaGen
         BINARY,
         BROADCAST,
         CALL,
+        COMPARE,
         CLAMP,
         CONV2D,
         CONV2D_TRANSPOSE,
@@ -155,7 +156,6 @@ namespace IsaGen
         COPY,
         CUMSUM,
         DEQUANTIZE,
-        EQUAL,
         GATHER,
         GATHER_ND,
         HARDMAX,
@@ -245,6 +245,13 @@ namespace IsaGen
     [EnumName("unary_op_t")]
     [Browsable(false)]
     public enum UnaryOp
+    {
+    }
+
+    [BitLength(8)]
+    [EnumName("compare_op_t")]
+    [Browsable(false)]
+    public enum CompareOp
     {
     }
 
@@ -1218,6 +1225,45 @@ namespace IsaGen
             public byte DstCount { get; set; }
         }
 
+        [DisplayName("TENSOR.COMPARE")]
+        [Category("Tensor Instructions")]
+        [Description("Compare")]
+        public class CompareInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.COMPARE;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src1")]
+            [Description("Source1 shape register")]
+            public byte RshapeSrc1 { get; set; }
+
+            [DisplayName("rstride_src1")]
+            [Description("Source1 stride register")]
+            public byte RstrideSrc1 { get; set; }
+
+            [DisplayName("rshape_src2")]
+            [Description("Source2 shape register")]
+            public byte RshapeSrc2 { get; set; }
+
+            [DisplayName("rstride_src2")]
+            [Description("Source2 stride register")]
+            public byte RstrideSrc2 { get; set; }
+
+            [DisplayName("rshape_dest")]
+            [Description("Dest shape register")]
+            public byte RshapeDest { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
+            [DisplayName("compare_op")]
+            [Description("Compare operator")]
+            public CompareOp CompareOp { get; set; }
+        }
         [DisplayName("TENSOR.CONV2D")]
         [Category("Tensor Instructions")]
         [Description("Conv2D")]
@@ -1384,38 +1430,6 @@ namespace IsaGen
             [DisplayName("rstride_src")]
             [Description("Source stride register")]
             public byte RstrideSrc { get; set; }
-
-            [DisplayName("rstride_dest")]
-            [Description("Dest stride register")]
-            public byte RstrideDest { get; set; }
-        }
-
-        [DisplayName("TENSOR.EQUAL")]
-        [Category("Tensor Instructions")]
-        [Description("Equal")]
-        public class EqualInstruction : TensorInstruction
-        {
-            public override TensorFunction Function => TensorFunction.EQUAL;
-
-            [DisplayName("datatype")]
-            [Description("Datatype")]
-            public DataType DataType { get; set; }
-
-            [DisplayName("rshape_src1")]
-            [Description("Source1 shape register")]
-            public byte RshapeSrc1 { get; set; }
-
-            [DisplayName("rstride_src1")]
-            [Description("Source1 stride register")]
-            public byte RstrideSrc1 { get; set; }
-
-            [DisplayName("rshape_src2")]
-            [Description("Source2 shape register")]
-            public byte RshapeSrc2 { get; set; }
-
-            [DisplayName("rstride_src2")]
-            [Description("Source2 stride register")]
-            public byte RstrideSrc2 { get; set; }
 
             [DisplayName("rstride_dest")]
             [Description("Dest stride register")]
