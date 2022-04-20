@@ -65,7 +65,7 @@ public class Compiler
         Console.WriteLine($"Target: {options.Target}");
         var module = ImportModel(content, options);
         DumpModule(module, options, "ir_import");
-        if (!CompilerServices.InferenceType(module.Entry))
+        if (!CompilerServices.InferenceType(module.Entry!))
         {
             InferShape(module, options);
         }
@@ -78,7 +78,7 @@ public class Compiler
     private void InferShape(IRModule module, CompileOptions options)
     {
         Console.WriteLine("Infer Shape...");
-        var pmgr = new PassManager(module, new RunPassOptions(null, options.DumpLevel, options.DumpDir));
+        var pmgr = new PassManager(module, new RunPassOptions(null!, options.DumpLevel, options.DumpDir));
         var constFold = new ShapeInferPass();
         pmgr.Add(constFold);
         pmgr.Run();

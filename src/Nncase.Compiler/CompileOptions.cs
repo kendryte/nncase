@@ -13,17 +13,17 @@ namespace Nncase.Compiler
         /// <summary>
         /// Gets or sets input file.
         /// </summary>
-        public string InputFile { get; set; }
+        public string InputFile { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the import model format.
         /// </summary>
-        public string InputFormat { get; set; }
+        public string InputFormat { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets target.
         /// </summary>
-        public string Target { get; set; }
+        public string Target { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the dump level.
@@ -33,6 +33,6 @@ namespace Nncase.Compiler
         /// <summary>
         /// Gets or sets the dump directory.
         /// </summary>
-        public string DumpDir { get; set; }
+        public string DumpDir { get; set; } = string.Empty;
     }
 }
