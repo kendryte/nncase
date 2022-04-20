@@ -308,7 +308,7 @@ namespace Nncase.IR
             {
                 return expr;
             }
-            return expr with { };
+            return expr;
         }
 
         /// <inheritdoc/>

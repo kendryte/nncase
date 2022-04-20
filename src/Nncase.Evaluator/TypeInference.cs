@@ -85,7 +85,7 @@ public static class TypeInference
         var dataType = inputs[0].DType;
         if (inputs.Any(x => x.DType != dataType))
         {
-            return new InvalidType("Inputs of broadcast must have same datatype.");
+            return new InvalidType($"Inputs of broadcast must have same datatype: {string.Join(",", inputs.Select(x => x.DType.GetDisplayName()))}");
         }
 
         // If any input is invalid, result is invalid

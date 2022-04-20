@@ -48,5 +48,5 @@ public interface IIRPrinterContext
     /// </summary>
     /// <param name="op">Operator.</param>
     /// <returns>string.</returns>/
-    string GetDefault(Op op) => $"{Get(op)}({string.Join(", ", GetArguments(op).Select(s => s.Serialize()))})";
+    string GetDefault(Op op) => $"{Get(op)}({string.Join(", ", op.Parameters.Select(p => p.Name + ": " + GetArgument(op, p).Serialize()))})";
 }

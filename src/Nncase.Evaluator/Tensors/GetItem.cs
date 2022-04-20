@@ -16,8 +16,13 @@ namespace Nncase.Evaluator.Tensors;
 /// </summary>
 [EvaluatorGenerator]
 [TypeInferGenerator]
-public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<GetItem>
+public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<GetItem>, IOpPrinter<GetItem>
 {
+    public string Visit(IIRPrinterContext context, GetItem target, bool ILmode)
+    {
+        return $"{context.GetArgument(target, GetItem.Input)}[{context.GetArgument(target, GetItem.Index)}]";
+    }
+
     private Tensor Visit(IValue Input, IValue Index)
     {
         if (Input.Type is TensorType ttype)
@@ -71,4 +76,6 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
 
         return ret;
     }
+
+
 }

@@ -96,12 +96,12 @@ public class UnitTestTypeInfer : IHostFixtrue
         Assert.Equal(new Shape(2, 3), ss.CheckedShape);
     }
 
-    void AssertInferShape(Expr expr, params int[] shapeDimensions)
+    void CheckInferShape(Expr expr, params int[] shapeDimensions)
     {
-        AssertInferShape(expr, new Shape(shapeDimensions));
+        CheckInferShape(expr, new Shape(shapeDimensions));
     }
 
-    void AssertInferShape(Expr expr, Shape shape)
+    void CheckInferShape(Expr expr, Shape shape)
     {
         Assert.True(CompilerServices.InferenceType(expr));
         Assert.Equal(expr.CheckedShape, shape);
@@ -111,47 +111,47 @@ public class UnitTestTypeInfer : IHostFixtrue
     public void TestReduceArgTypeInfer()
     {
         var input = new Var("v", new TensorType(DataTypes.Float32, new Shape(4, 5, 6, 7)));
-        AssertInferShape(
+        CheckInferShape(
             ReduceArg(ReduceArgOp.ArgMax, input, 0, false, false),
             5, 6, 7);
-        AssertInferShape(
+        CheckInferShape(
             ReduceArg(ReduceArgOp.ArgMax, input, 1, false, false),
             4, 6, 7);
-        AssertInferShape(
+        CheckInferShape(
             ReduceArg(ReduceArgOp.ArgMax, input, 2, false, false),
             4, 5, 7);
-        AssertInferShape(
+        CheckInferShape(
             ReduceArg(ReduceArgOp.ArgMax, input, 3, false, false),
             4, 5, 6);
 
-        AssertInferShape(
+        CheckInferShape(
             ReduceArg(ReduceArgOp.ArgMax, input, 0, true, false),
             1, 5, 6, 7);
-        AssertInferShape(
+        CheckInferShape(
             ReduceArg(ReduceArgOp.ArgMax, input, 1, true, false),
             4, 1, 6, 7);
-        AssertInferShape(
+        CheckInferShape(
             ReduceArg(ReduceArgOp.ArgMax, input, 2, true, false),
             4, 5, 1, 7);
-        AssertInferShape(
+        CheckInferShape(
             ReduceArg(ReduceArgOp.ArgMax, input, 3, true, false),
             4, 5, 6, 1);
     }
 
 
-    public void AssertReshape(Expr input, int[] reshapeArgs, int[] expectShape)
+    void CheckReshape(Expr input, int[] reshapeArgs, int[] expectShape)
     {
-        AssertInferShape(Reshape(input, reshapeArgs), expectShape);
+        CheckInferShape(Reshape(input, reshapeArgs), expectShape);
     }
-    
+
     [Fact]
     public void TestInferReshape()
     {
         var input = new Var("v", new TensorType(DataTypes.Float32, new Shape(4, 5, 6, 7)));
-        AssertReshape(input, new[] { 8, 5, 3, 7}, new[] {8, 5, 3, 7});
-        AssertReshape(input, new[] { -1, 5, 6, 7}, new[] {4, 5, 6, 7});
-        AssertReshape(input, new[] { -1, 5, 3, 7}, new[] {8, 5, 3, 7});
-        AssertReshape(input, new[] { -1}, new[] {4 * 5 * 6 * 7});
+        CheckReshape(input, new[] { 8, 5, 3, 7 }, new[] { 8, 5, 3, 7 });
+        CheckReshape(input, new[] { -1, 5, 6, 7 }, new[] { 4, 5, 6, 7 });
+        CheckReshape(input, new[] { -1, 5, 3, 7 }, new[] { 8, 5, 3, 7 });
+        CheckReshape(input, new[] { -1 }, new[] { 4 * 5 * 6 * 7 });
     }
 
     [Fact]
@@ -172,22 +172,22 @@ public class UnitTestTypeInfer : IHostFixtrue
     [Fact]
     public void TestResize()
     {
-        var resize = IR.F.Imaging.ResizeImage(ImageResizeMode.NearestNeighbor, 
-            IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 1, 3, 34, 67 }), 
+        var resize = IR.F.Imaging.ResizeImage(ImageResizeMode.NearestNeighbor,
+            IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 1, 3, 34, 67 }),
             float.NaN,
             Const.FromShape(new[] { 32, 48 }));
         Assert.True(CompilerServices.InferenceType(resize));
         Assert.True(HasShape(new[] { 1, 3, 32, 48 }).MatchLeaf(resize.CheckedType!));
 
         var resize2 = IR.F.Imaging.ResizeImage(ImageResizeMode.NearestNeighbor,
-            IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 3, 34, 67 }), 
+            IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 3, 34, 67 }),
             float.NaN,
             Const.FromShape(new[] { 32, 48 }));
         Assert.True(CompilerServices.InferenceType(resize2));
         Assert.True(HasShape(new[] { 32, 48, 67 }).MatchLeaf(resize2.CheckedType!));
 
-        var resize3 = IR.F.Imaging.ResizeImage(ImageResizeMode.NearestNeighbor, 
-            IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 34, 67 }), 
+        var resize3 = IR.F.Imaging.ResizeImage(ImageResizeMode.NearestNeighbor,
+            IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 34, 67 }),
             float.NaN,
             Const.FromShape(new[] { 32, 48 }));
         Assert.True(CompilerServices.InferenceType(resize3));

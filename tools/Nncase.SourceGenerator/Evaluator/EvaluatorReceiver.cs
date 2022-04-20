@@ -143,7 +143,7 @@ internal class EvaluatorImplReceiver : ISyntaxContextReceiver
         if (ctx.Node is ClassDeclarationSyntax classDeclaration)
         {
             var classSymbol = ctx.SemanticModel.GetDeclaredSymbol(classDeclaration);
-            if (classSymbol.GetAttributes().Any(attr => attr.AttributeClass.Name == target_kind.GetAttrName()))
+            if (classSymbol!.GetAttributes().Any(attr => attr!.AttributeClass!.Name == target_kind.GetAttrName()))
             {
                 if (!classDeclaration.Modifiers.Any(tok => tok.IsKind(SyntaxKind.PartialKeyword)))
                 {

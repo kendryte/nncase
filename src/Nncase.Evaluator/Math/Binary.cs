@@ -86,6 +86,25 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             return new InvalidType("The Binary LeftShift RightShift Only Accept The UInt32 Datatype.");
         if (target.BinaryOp is BinaryOp.Sub && (lhs.DType == DataTypes.UInt32 || rhs.DType == DataTypes.UInt32))
             return new InvalidType("The Binary Sub Only Accept The UInt32 Datatype.");
+        if (lhs is { DType: PointerType { ElemType: var letype } } && rhs is { DType: PointerType { ElemType: var retype } })
+        {
+
+            if (letype == retype)
+                return TensorType.Pointer(letype);
+            else
+                return new InvalidType($"The Binary Lhs {CompilerServices.Print(lhs)} != Rhs {CompilerServices.Print(rhs)}");
+        }
+
+        if (lhs is { DType: PointerType { ElemType: var lt } } && rhs.DType == DataTypes.Int32)
+        {
+            return TensorType.Pointer(lt);
+        }
+
+        if (lhs.DType == DataTypes.Int32 && rhs is { DType: PointerType { ElemType: var rt } })
+        {
+            return TensorType.Pointer(rt);
+        }
+
         return TypeInference.BroadcastType(lhs, rhs);
     }
 }

@@ -15,6 +15,6 @@ public partial class BaseMentOfEvaluator : ITypeInferencer<BaseMentOf>
 {
     IRType Visit(TensorType Input)
     {
-        return TensorType.Scalar(DataTypes.UInt64);
+        return TensorType.Scalar(DataTypes.Int32);
     }
 }

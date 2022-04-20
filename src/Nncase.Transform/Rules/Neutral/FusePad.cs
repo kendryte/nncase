@@ -59,6 +59,5 @@ public sealed partial class FusePadConv2d : IRewriteRule
         var convPads = Stack(new IR.Tuple(convPadsH, convPadsW), 0);
 
         return Conv2D(Pad(input, newPads, PadMode.Constant, 0f), weights, bias, stride, convPads, dilation, PadMode.Constant, groups);
-
     }
 }

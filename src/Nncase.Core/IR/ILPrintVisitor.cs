@@ -83,6 +83,7 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
         {
             Unary op => op.UnaryOp.ToString(),
             Binary op => op.BinaryOp.ToString(),
+            Compare op => op.CompareOp.ToString(),
             _ => expr.GetType().Name,
         };
     }

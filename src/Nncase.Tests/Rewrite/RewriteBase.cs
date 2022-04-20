@@ -179,9 +179,7 @@ namespace Nncase.Tests.RewriteTest
     //     };
     // }
 
-    /// <summary>
-    /// a simple noptranspose case, for the match test
-    /// </summary>
+
     // public class FoldNopTransposeCase1 : IRewriteCase
     // {
     //     public override Expr PreExpr
@@ -252,9 +250,6 @@ namespace Nncase.Tests.RewriteTest
     // }
 
 
-    /// <summary>
-    /// transpose demo
-    /// </summary>
     // public sealed class TransposeDemoCase : FoldNopTransposeCase3
     // {
     //     public override Expr PreExpr

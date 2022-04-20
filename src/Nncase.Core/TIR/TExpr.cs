@@ -422,21 +422,21 @@ public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region) : Expr
     }
 
     /// <summary>
-    /// get the new buffer range.
+    /// 获得新的buffer region.
     /// </summary>
     /// <param name="ranges"></param>
     /// <returns></returns>
     public BufferRegion this[params TIR.Range[] ranges]
     {
-        get => new(Buffer, new(ranges.Zip(Buffer.Shape.ToArray()).Select(
-            tp => tp.First.Equals(System.Range.All) ?
-                  new Range(0, tp.Second, 1) :
-                  tp.First.Stop switch
+        get => new(Buffer, new(Region.Zip(ranges).Select(
+            tp => tp.Second.Equals(System.Range.All) ?
+                  tp.First :
+                  tp.Second.Stop switch
                   {
                       // if stop is neg, add the shape
-                      Call { Target: IR.Math.Unary { UnaryOp: UnaryOp.Neg } } => tp.First with { Stop = tp.Second + tp.First.Stop },
+                      Call { Target: IR.Math.Unary { UnaryOp: UnaryOp.Neg } } => throw new NotSupportedException("Neg Region!"),
                       // else return the origin range.
-                      _ => tp.First
+                      _ => tp.Second
                   })));
     }
 }

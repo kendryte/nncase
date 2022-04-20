@@ -97,11 +97,28 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     readonly ScopeWriter Scope;
     readonly ScriptPrintContext context;
     readonly Dictionary<Expr, ScriptSymobl> exprMemo = new(ReferenceEqualityComparer.Instance);
+    readonly Dictionary<Function, ScriptSymobl> extFuncMemo = new(ReferenceEqualityComparer.Instance);
 
     public ScriptPrintVisitor(TextWriter textWriter)
     {
         Scope = new(textWriter);
         context = new(exprMemo, this);
+    }
+
+    /// <inheritdoc/>
+    public override IPrintSymbol Visit(Function expr)
+    {
+        if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
+
+        var il_sb = new StringBuilder();
+        var il_visitor = new ILPrintVisitor(new StringWriter(il_sb));
+        il_visitor.Visit(expr);
+
+        doc = new(il_sb, expr.Name, true);
+        extFuncMemo[expr] = doc;
+
+        exprMemo.Add(expr, doc);
+        return doc;
     }
 
     /// <inheritdoc/>
@@ -118,6 +135,8 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
                 Scope.Append(CompilerServices.PrintOp(op, context, false));
                 break;
             case Function:
+                Scope.Append($"{target.Name}({string.Join(", ", (from a in args select a.ToString()))})");
+                break;
             case TIR.PrimFunction:
                 Scope.AppendLine("");
                 Scope.IndWrite($"{target.Name}({string.Join(", ", (from a in args select a.ToString()))})");
@@ -180,7 +199,11 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         exprMemo.Add(expr, doc);
 
         // 3. only write all doc into root scope
-        Scope.Append(doc.Span);
+        Scope.AppendLine(doc.Span);
+        foreach (var extFunc in extFuncMemo.Values)
+        {
+            Scope.IndWriteLine(extFunc.Serialize());
+        }
         return doc;
     }
 
