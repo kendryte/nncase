@@ -55,5 +55,18 @@ public static partial class Utility
     /// <param name="name">name.</param>
     /// <returns> Returns. </returns>
     public static ExprPattern IsWildcard(string? name) => new ExprPattern(name);
+
+    /// <summary>
+    /// <see cref="IsWildcard(string?)"/>
+    /// </summary>
+    /// <returns></returns>
     public static ExprPattern IsWildcard() => IsWildcard(null);
+
+
+    /// <summary>
+    /// fast utitlty for build optional none pattern.
+    /// </summary>
+    /// <returns></returns>
+    public static ExprPattern IsNone() => new ExprPattern(e => e == None.Default, null);
+
 }
