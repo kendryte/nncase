@@ -52,5 +52,10 @@ namespace Nncase.IR.NN
         /// Gets Groups.
         /// </summary>
         public static readonly ParameterInfo Groups = new(typeof(Conv2D), 6, "groups", IsScalar() & IsIntegral());
+        
+        /// <summary>
+        /// Gets FusedClamp.
+        /// </summary>
+        public static readonly ParameterInfo FusedClamp = new(typeof(Conv2D), 7, "fused_clamp", HasShape(new Shape(2)) & HasDataType(DataTypes.Float32));
     }
 }

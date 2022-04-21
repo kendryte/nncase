@@ -37,9 +37,10 @@ public sealed partial class FusePadConv2d : IRewriteRule
         IsWildcard("stride"),
         IsWildcard("pads2"),
         IsWildcard("dilation"),
-        IsWildcard("groups"));
+        IsWildcard("groups"),
+        IsWildcard("fusedClamp"));
 
-    private Expr? GetReplace(Expr input, Expr pads1, Expr weights, Expr bias, Expr stride, Expr pads2, Expr dilation, Expr groups)
+    private Expr? GetReplace(Expr input, Expr pads1, Expr weights, Expr bias, Expr stride, Expr pads2, Expr dilation, Expr groups, Expr fusedClamp)
     {
         var newPadsH = new[] { 0, 0 };
         var newPadsW = new[] { 0, 0 };
@@ -58,7 +59,7 @@ public sealed partial class FusePadConv2d : IRewriteRule
         var newPads = Stack(new IR.Tuple(pads1[0], pads1[1], newPadsH, newPadsW), 0);
         var convPads = Stack(new IR.Tuple(convPadsH, convPadsW), 0);
 
-        return Conv2D(Pad(input, newPads, PadMode.Constant, 0f), weights, bias, stride, convPads, dilation, PadMode.Constant, groups);
+        return Conv2D(Pad(input, newPads, PadMode.Constant, 0f), weights, bias, stride, convPads, dilation, PadMode.Constant, groups, fusedClamp);
 
     }
 }

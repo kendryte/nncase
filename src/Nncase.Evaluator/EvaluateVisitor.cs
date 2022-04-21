@@ -38,6 +38,11 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
         return Value.FromConst(expr);
     }
 
+    public override IValue VisitLeaf(None expr)
+    {
+        return Value.None;
+    }
+    
     public override IValue VisitLeaf(Op expr)
     {
         // Value of Op is not needed in evaluate context.

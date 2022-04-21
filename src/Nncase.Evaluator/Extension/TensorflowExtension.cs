@@ -58,6 +58,7 @@ public static class TensorflowExtension
         { DataTypes.Int64, TF_DataType.TF_INT64 },
         { DataTypes.UInt8, TF_DataType.TF_UINT8 },
         { DataTypes.Float16, TF_DataType.TF_HALF },
+        { DataTypes.BFloat16, TF_DataType.TF_BFLOAT16 },
         { DataTypes.Float32, TF_DataType.TF_FLOAT },
         { DataTypes.Float64, TF_DataType.TF_DOUBLE },
     };
@@ -71,6 +72,7 @@ public static class TensorflowExtension
         { TF_DataType.TF_INT64, DataTypes.Int64 },
         { TF_DataType.TF_UINT8, DataTypes.UInt8 },
         { TF_DataType.TF_HALF, DataTypes.Float16 },
+        { TF_DataType.TF_BFLOAT16, DataTypes.BFloat16 },
         { TF_DataType.TF_FLOAT, DataTypes.Float32 },
         { TF_DataType.TF_DOUBLE, DataTypes.Float64 },
     };

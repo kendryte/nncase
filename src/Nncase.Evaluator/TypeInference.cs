@@ -312,7 +312,7 @@ public static class TypeInference
         var out_shape = input.Shape.ToArray();
         if (newSize is TensorConst new_size_con)
         {
-            var ts_new_size = new_size_con.Value.Cast<int>();
+            var ts_new_size = new_size_con.Value.ToArray<int>();
             switch (out_shape.Length)
             {
                 case 2 or 3: // [h,w] ,[h,w,c]
@@ -320,8 +320,8 @@ public static class TypeInference
                     out_shape[1] = ts_new_size[1];
                     break;
                 case > 3: // resize [n,c,h,w]
-                    out_shape[^2] = ts_new_size[0]; // h
-                    out_shape[^1] = ts_new_size[1]; // w
+                    out_shape[^2] = ts_new_size[^2]; // h
+                    out_shape[^1] = ts_new_size[^1]; // w
                     break;
             }
         }
