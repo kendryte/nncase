@@ -260,7 +260,7 @@ namespace Nncase.IR
         /// Check the datatype is None type.
         /// </summary>
         /// <returns></returns>
-        public static TypePattern IsNone() => new TypePattern(x => x switch
+        public static TypePattern IsNoneType() => new TypePattern(x => x switch
         {
             NoneType ntype => true,
             _ => false
