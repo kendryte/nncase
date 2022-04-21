@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.PatternMatch;
 using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Imaging
@@ -14,6 +15,7 @@ namespace Nncase.IR.Imaging
     /// <summary>
     /// ResizeImage expression.
     /// </summary>
+    [PatternFunctionalGenerator]
     public sealed record ResizeImage(
         ImageResizeMode ResizeMode, 
         ImageResizeTransformationMode TransformationMode,
@@ -32,7 +34,7 @@ namespace Nncase.IR.Imaging
         /// <summary>
         /// Gets new_size.
         /// </summary>
-        public static readonly ParameterInfo NewSize = new(typeof(ResizeImage), 2, "new_size", HasShape(new[] { 2 }));
+        public static readonly ParameterInfo NewSize = new(typeof(ResizeImage), 2, "new_size", HasShape(new[] { 4 }));
         
         /// <summary>
         /// Gets CubicCoeffA.
@@ -48,9 +50,5 @@ namespace Nncase.IR.Imaging
         /// Gets ExtrapolationValue.
         /// </summary>
         public static readonly ParameterInfo ExtrapolationValue = new(typeof(ResizeImage), 5, "extrapolation_value", IsFloatScalar());
-        
-        public static readonly ParameterInfo AlignCorners = new(typeof(ResizeImage), 6, "align_corners");
-        
-        public static readonly ParameterInfo HalfPixelCenters = new(typeof(ResizeImage), 7, "half_pixel_centers");
     }
 }

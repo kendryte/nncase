@@ -50,7 +50,7 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
     {
         var input = context.GetOrtArgumentValue(target, ResizeImage.Input);
         var roi = context.GetOrtArgumentValue(target, ResizeImage.Roi);
-        var sizes = context.GetOrtArgumentValue(target, ResizeImage.NewSize);
+        var sizes = context.GetInt64OrtTensorArgumentValue(target, ResizeImage.NewSize);
         var cubicCoeffA = context.GetArgumentValueAsScalar<float>(target, ResizeImage.CubicCoeffA);
         var excludeOutside = context.GetArgumentValueAsScalar<long>(target, ResizeImage.ExcludeOutside);
         var extrapolationValue = context.GetArgumentValueAsScalar<float>(target, ResizeImage.ExtrapolationValue);

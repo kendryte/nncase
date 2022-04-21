@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.NN
 {
@@ -62,5 +63,10 @@ namespace Nncase.IR.NN
         /// Gets Groups.
         /// </summary>
         public static readonly ParameterInfo Groups = new(typeof(Conv2DTranspose), 8, "groups");
+        
+        /// <summary>
+        /// Gets FusedClamp.
+        /// </summary>
+        public static readonly ParameterInfo FusedClamp = new(typeof(Conv2D), 9, "fused_clamp", HasShape(new Shape(2)) & HasDataType(DataTypes.Float32));
     }
 }
