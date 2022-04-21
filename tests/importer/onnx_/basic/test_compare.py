@@ -83,7 +83,8 @@ in_shapes = [
     [[1, 1, 16, 16], [3, 3, 1, 16]],
 ]
 
-@pytest.mark.parametrize('compare_op', compare_ops)
+# pytest with multiprocess will fail on uppercase names
+@pytest.mark.parametrize('compare_op', compare_ops, ids=['equal','greater','greater_or_equal','less','less_or_equal'])
 @pytest.mark.parametrize('in_type', in_types)
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_compare(compare_op, in_type, in_shape, request):

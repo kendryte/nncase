@@ -52,7 +52,7 @@ result<void> stackvm_runtime_function::visit(const tensor_compare_op_t &op) noex
             reinterpret_cast<bool *>(output), in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides);
         break;
     default:
-        std::cerr << "unsupported dtype for compare: " + std::string(datatype_names(op.datatype));
+        std::cerr << "unsupported dtype for compare: " + std::string(datatype_names(op.datatype)) << std::endl;
         return err(std::errc::invalid_argument);
     }
 }
