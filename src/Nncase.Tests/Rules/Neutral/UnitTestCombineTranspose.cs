@@ -9,7 +9,6 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using static Nncase.IR.F.NN;
-using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using Nncase.TIR.Builtin;

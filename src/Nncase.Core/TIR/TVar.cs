@@ -22,7 +22,13 @@ public sealed record Range(Expr Start, Expr Stop, Expr Step) : IR.IMutatable<Ran
     /// <summary>
     /// <see cref="Range"/>.
     /// </summary>
-    /// <param name="tuple"></param>
+    /// <param name="tuple"> value tuple. </param>
+    public static implicit operator Range((int, Expr) tuple) => new Range(tuple.Item1, tuple.Item2, 1);
+
+    /// <summary>
+    /// <see cref="Range"/>.
+    /// </summary>
+    /// <param name="tuple"> value tuple. </param>
     public static implicit operator Range((int, int) tuple) => new Range(tuple.Item1, tuple.Item2, 1);
 
     /// <summary>
@@ -32,10 +38,65 @@ public sealed record Range(Expr Start, Expr Stop, Expr Step) : IR.IMutatable<Ran
     public static implicit operator Range((Expr, Expr, Expr) tuple) => new Range(tuple.Item1, tuple.Item2, tuple.Item3);
 
     /// <summary>
-    /// <see cref="Range"/>.
+    /// <see cref="Range"/>
     /// </summary>
-    /// <param name="Stop">end expr.</param>
-    public static implicit operator Range(Expr Stop) => new Range(0, Stop, 1);
+    /// <param name="tuple"></param>
+    public static implicit operator Range((int, Expr, Expr) tuple) => new Range(tuple.Item1, tuple.Item2, tuple.Item3);
+
+    /// <summary>
+    /// <see cref="Range"/>
+    /// </summary>
+    /// <param name="tuple"></param>
+    public static implicit operator Range((Expr, int, Expr) tuple) => new Range(tuple.Item1, tuple.Item2, tuple.Item3);
+
+    /// <summary>
+    /// <see cref="Range"/>
+    /// </summary>
+    /// <param name="tuple"></param>
+    public static implicit operator Range((Expr, Expr, int) tuple) => new Range(tuple.Item1, tuple.Item2, tuple.Item3);
+
+    /// <summary>
+    /// <see cref="Range"/>
+    /// </summary>
+    /// <param name="tuple"></param>
+    public static implicit operator Range((int, int, Expr) tuple) => new Range(tuple.Item1, tuple.Item2, tuple.Item3);
+
+    /// <summary>
+    /// <see cref="Range"/>
+    /// </summary>
+    /// <param name="tuple"></param>
+    public static implicit operator Range((int, Expr, int) tuple) => new Range(tuple.Item1, tuple.Item2, tuple.Item3);
+
+    /// <summary>
+    /// <see cref="Range"/>
+    /// </summary>
+    /// <param name="tuple"></param>
+    public static implicit operator Range((Expr, int, int) tuple) => new Range(tuple.Item1, tuple.Item2, tuple.Item3);
+
+    /// <summary>
+    /// <see cref="Range"/>
+    /// </summary>
+    /// <param name="tuple"></param>
+    public static implicit operator Range((int, int, int) tuple) => new Range(tuple.Item1, tuple.Item2, tuple.Item3);
+
+    /// <summary>
+    /// <see cref="Range"/>
+    /// </summary>
+    /// <param name="range"></param>
+    public static implicit operator Range(System.Range range)
+    {
+        if (range.Equals(System.Range.All))
+            return All;
+        if (range.Start.IsFromEnd || range.End.IsFromEnd)
+            throw new NotSupportedException("The System.Range From End.");
+        return new Range(range.Start.Value, range.End.Value, 1);
+    }
+
+
+    /// <summary>
+    /// the full range.
+    /// </summary>
+    public static readonly Range All = new Range(int.MinValue, int.MaxValue, 1);
 
     /// <summary>
     /// accept the any visitor.

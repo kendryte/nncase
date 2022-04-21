@@ -153,10 +153,11 @@ public static class T
     /// <param name="Dom">ranges.</param>
     /// <param name="mode">loop mode.</param>
     /// <param name="loop">loop instance.</param>
+    /// <param name="var_name">loop var name.</param>
     /// <returns> for builder. </returns>
-    public static SequentialBuilder<For> ForLoop(out Var loopVar, Range Dom, LoopMode mode, out For loop)
+    public static SequentialBuilder<For> ForLoop(out Var loopVar, Range Dom, LoopMode mode, out For loop, [CallerArgumentExpression("loopVar")] string var_name = "v")
     {
-        loopVar = new Var(TensorType.Scalar(DataTypes.Int32));
+        loopVar = new Var(var_name.StartsWith("var ") ? var_name[4..] : var_name, TensorType.Scalar(DataTypes.Int32));
         loop = new For(loopVar, Dom, mode);
         return new SequentialBuilder<For>(loop);
     }
@@ -167,16 +168,18 @@ public static class T
     /// <param name="loopVar">out index var.</param>
     /// <param name="Dom">ranges.</param>
     /// <param name="loop">loop instance.</param>
+    /// <param name="var_name">loop var name.</param>
     /// <returns> the for loop </returns>
-    public static SequentialBuilder<For> Serial(out Var loopVar, Range Dom, out For loop) => ForLoop(out loopVar, Dom, LoopMode.Serial, out loop);
+    public static SequentialBuilder<For> Serial(out Var loopVar, Range Dom, out For loop, [CallerArgumentExpression("loopVar")] string var_name = "v") => ForLoop(out loopVar, Dom, LoopMode.Serial, out loop, var_name);
 
     /// <summary>
-    /// <see cref="Serial(out Var, Range, out For)"/>.
+    /// serial
     /// </summary>
     /// <param name="loopVar">out index var.</param>
     /// <param name="Dom">ranges.</param>
+    /// <param name="var_name">loop var name.</param>
     /// <returns></returns>
-    public static SequentialBuilder<For> Serial(out Var loopVar, Range Dom) => Serial(out loopVar, Dom, out _);
+    public static SequentialBuilder<For> Serial(out Var loopVar, Range Dom, [CallerArgumentExpression("loopVar")] string var_name = "v") => Serial(out loopVar, Dom, out _, var_name);
 
     /// <summary>
     /// make unroll for loop
@@ -184,8 +187,9 @@ public static class T
     /// <param name="loopVar">out index var.</param>
     /// <param name="Dom">ranges.</param>
     /// <param name="loop">ranges.</param>
+    /// <param name="var_name">loop var name.</param>
     /// <returns></returns>
-    public static SequentialBuilder<For> Unrolled(out Var loopVar, Range Dom, out For loop) => ForLoop(out loopVar, Dom, LoopMode.Unrolled, out loop);
+    public static SequentialBuilder<For> Unrolled(out Var loopVar, Range Dom, out For loop, [CallerArgumentExpression("loopVar")] string var_name = "v") => ForLoop(out loopVar, Dom, LoopMode.Unrolled, out loop, var_name);
 
     /// <summary>
     /// GridWrapper for collect the for item.
@@ -239,8 +243,8 @@ public static class T
     /// <returns>the inner for loop.</returns>
     public static NestBodyExprBuilder<For> Grid(out Var i, out Var j, (Expr i, Expr j) ends)
     {
-        var builder_i = T.Serial(out i, ends.i, out var for_i);
-        var builder_j = T.Serial(out j, ends.j, out var for_j);
+        var builder_i = T.Serial(out i, (0, ends.i), out var for_i);
+        var builder_j = T.Serial(out j, (0, ends.j), out var for_j);
         return new NestBodyExprBuilder<For>(for_i, for_j);
     }
 
@@ -254,8 +258,8 @@ public static class T
     /// <returns></returns>
     public static NestBodyExprBuilder<For> Grid(out Var i, out Var j, (Expr i, Expr j) ends, out (For i, For j) loops)
     {
-        T.Serial(out i, ends.i, out loops.i);
-        T.Serial(out j, ends.j, out loops.j);
+        T.Serial(out i, (0, ends.i), out loops.i);
+        T.Serial(out j, (0, ends.j), out loops.j);
         return new NestBodyExprBuilder<For>(loops.i, loops.j);
     }
 
@@ -267,7 +271,10 @@ public static class T
     /// <returns></returns>
     public static NestBodyExprBuilder<For> Grid(LoopMode loopMode, params Range[] ranges)
     {
-        return new NestBodyExprBuilder<For>(ranges.Select(rg => T.ForLoop(out var _, rg, loopMode, out var _).Body()).ToArray());
+        string[] names = { "i", "j", "k", "l" };
+        return new NestBodyExprBuilder<For>(ranges.Select((rg, i) =>
+             T.ForLoop(out var _, rg, loopMode, out var _, names[i % 4] + (i / 4 == 0 ? "" : (i / 4).ToString())).Body()
+        ).ToArray());
     }
 
     /// <summary>
@@ -471,13 +478,14 @@ public static class T
     /// <summary>
     /// Let bind.
     /// </summary>
-    /// <param name="var"></param>
-    /// <param name="expression"></param>
-    /// <returns></returns>
-    public static SequentialBuilder<Let> Let(out Var @var, Expr expression)
+    /// <param name="v"></param>
+    /// <param name="expression">the expression.</param>
+    /// <param name="name">the var name.</param>
+    /// <returns>let builder.</returns>
+    public static SequentialBuilder<Let> Let(out Var v, Expr expression, [CallerArgumentExpression("v")] string name = "")
     {
-        @var = new Var();
-        var let = new Let(@var, expression, new());
+        v = new Var(name.StartsWith("var ") ? name[4..] : name);
+        var let = new Let(v, expression, new());
         return new(let);
     }
 

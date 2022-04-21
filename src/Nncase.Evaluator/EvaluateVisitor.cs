@@ -24,13 +24,12 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
     public override IValue VisitLeaf(Call expr)
     {
         _context.CurrentCall = expr;
-        if (expr.Target is Function)
+        return expr.Target switch
         {
-            throw new NotImplementedException();
-        }
-
-        var target = (Op)expr.Target;
-        return CompilerServices.EvaluateOp(target, _context);
+            Op op => CompilerServices.EvaluateOp(op, _context),
+            Function func => CompilerServices.Evaluate(func.Body, func.Parameters.Zip(expr.Parameters).ToDictionary(kv => kv.First, kv => Visit(kv.Second), (IEqualityComparer<Var>)ReferenceEqualityComparer.Instance)),
+            _ => throw new NotImplementedException(expr.Target.ToString())
+        };
     }
 
     public override IValue VisitLeaf(Const expr)
@@ -42,14 +41,14 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
     {
         return Value.None;
     }
-    
+
     public override IValue VisitLeaf(Op expr)
     {
         // Value of Op is not needed in evaluate context.
         return null!;
     }
 
-    public override IValue VisitLeaf(Function expr)
+    public override IValue Visit(Function expr)
     {
         // Value of Function is not needed in evaluate context.
         return null!;

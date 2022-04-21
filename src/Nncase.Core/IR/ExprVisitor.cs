@@ -55,7 +55,7 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
-        public sealed override TExprResult Visit(Function expr)
+        public override TExprResult Visit(Function expr)
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {

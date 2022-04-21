@@ -17,8 +17,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     /// <inheritdoc />
     public IValue Visit(IEvaluateContext context, Binary binary)
     {
-        var lhs = context.GetArgumentValue(binary, Binary.Lhs);
-        var a = lhs.AsTensor().ToOrtTensor();
+        var a = context.GetOrtArgumentValue(binary, Binary.Lhs);
         var b = context.GetOrtArgumentValue(binary, Binary.Rhs);
         return (binary.BinaryOp switch
         {
@@ -47,7 +46,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     {
         var lhs = context.CheckArgumentType<TensorType>(target, Binary.Lhs);
         var rhs = context.CheckArgumentType<TensorType>(target, Binary.Rhs);
-        return Visit(lhs, rhs);
+        return Visit(target, lhs, rhs);
     }
 
     /// <inheritdoc/>
@@ -67,13 +66,45 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             return $"{target.BinaryOp}({lhs}, {rhs})";
         return target.BinaryOp switch
         {
-            BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div => $"({lhs.Serialize()} {target.ToLiteral()} {rhs.Serialize()})",
+            BinaryOp.Add => $"({lhs} + {rhs})",
+            BinaryOp.Sub => $"({lhs} - {rhs})",
+            BinaryOp.Mul => $"({lhs} * {rhs})",
+            BinaryOp.Div => $"({lhs} / {rhs})",
+            BinaryOp.Mod => $"({lhs} % {rhs})",
+            BinaryOp.LogicalAnd => $"({lhs} & {rhs})",
+            BinaryOp.LogicalOr => $"({lhs} | {rhs})",
+            BinaryOp.LogicalXor => $"({lhs} ^ {rhs})",
+            BinaryOp.LeftShift => $"({lhs} << {rhs})",
+            BinaryOp.RightShift => $"({lhs} >> {rhs})",
             _ => $"{target.BinaryOp}({lhs}, {rhs})"
         };
     }
 
-    private IRType Visit(TensorType lhs, TensorType rhs)
+    private IRType Visit(Binary target, TensorType lhs, TensorType rhs)
     {
+        if (target.BinaryOp is BinaryOp.LeftShift or BinaryOp.RightShift && (lhs.DType != DataTypes.UInt32 || rhs.DType != DataTypes.UInt32))
+            return new InvalidType("The Binary LeftShift RightShift Only Accept The UInt32 Datatype.");
+        if (target.BinaryOp is BinaryOp.Sub && (lhs.DType == DataTypes.UInt32 || rhs.DType == DataTypes.UInt32))
+            return new InvalidType("The Binary Sub Only Accept The UInt32 Datatype.");
+        if (lhs is { DType: PointerType { ElemType: var letype } } && rhs is { DType: PointerType { ElemType: var retype } })
+        {
+
+            if (letype == retype)
+                return TensorType.Pointer(letype);
+            else
+                return new InvalidType($"The Binary Lhs {CompilerServices.Print(lhs)} != Rhs {CompilerServices.Print(rhs)}");
+        }
+
+        if (lhs is { DType: PointerType { ElemType: var lt } } && rhs.DType == DataTypes.Int32)
+        {
+            return TensorType.Pointer(lt);
+        }
+
+        if (lhs.DType == DataTypes.Int32 && rhs is { DType: PointerType { ElemType: var rt } })
+        {
+            return TensorType.Pointer(rt);
+        }
+
         return TypeInference.BroadcastType(lhs, rhs);
     }
 }

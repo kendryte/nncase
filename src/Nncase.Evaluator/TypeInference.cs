@@ -44,11 +44,11 @@ public static class TypeInference
                 throw new TypeInferenceInterruptException(new InvalidType(e.Message));
             }
         }
-
         return context.GetArgumentType(op, parameter) switch
         {
             T t => WrapperException(t),
             AnyType a => throw new TypeInferenceInterruptException(a),
+            InvalidType iv => throw new TypeInferenceInterruptException(iv),
             var x => throw new TypeInferenceInterruptException(new InvalidType(reason ?? $"{op.GetType().Name}.{parameter.Name} Must Be {typeof(T).Name} But Give {x.GetType().Name}.")),
         };
     }
@@ -85,7 +85,7 @@ public static class TypeInference
         var dataType = inputs[0].DType;
         if (inputs.Any(x => x.DType != dataType))
         {
-            return new InvalidType("Inputs of broadcast must have same datatype.");
+            return new InvalidType($"Inputs of broadcast must have same datatype: {string.Join(",", inputs.Select(x => x.DType.GetDisplayName()))}");
         }
 
         // If any input is invalid, result is invalid
@@ -200,7 +200,7 @@ public static class TypeInference
                                        $"input:{input.DType}, padValue:{padValueType.DType}");
             }
         }
-        
+
         if (pads is TensorConst paddings)
         {
             var tpads = paddings.Value.Cast<int>();

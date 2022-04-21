@@ -18,8 +18,9 @@ public static class Mutator
     /// <summary>
     /// Unroll Loop
     /// </summary>
+    /// <param name="for_loops"> target for loop.</param>
     /// <returns></returns>
-    public static Func<ExprMutator> UnRollLoop() => () => new Mutators.UnRollLoop();
+    public static Func<ExprMutator> UnRollLoop(params For[] for_loops) => () => new Mutators.UnRollLoop(for_loops);
 
     /// <summary>
     /// fold let when expression is const.
@@ -39,5 +40,18 @@ public static class Mutator
     /// <param name="maper"></param>
     /// <returns></returns>
     public static Func<ExprMutator> Substitute(Func<Expr, Expr?> maper) => () => new Mutators.Substitutor(maper);
+
+    /// <summary>
+    /// fold if then else block.
+    /// </summary>
+    /// <returns></returns>
+    public static Func<ExprMutator> FoldIfThen() => () => new Mutators.FoldIfThen();
+
+
+    /// <summary>
+    /// 删除内部的T.Nop
+    /// </summary>
+    /// <returns>RemoveNop</returns>
+    public static Func<ExprMutator> RemoveNop() => () => new Mutators.RemoveNop();
 }
 

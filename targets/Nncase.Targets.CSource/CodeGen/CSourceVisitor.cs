@@ -198,7 +198,15 @@ internal class CSourceHostBuildVisior : ExprFunctor<CSymbol, string>
         if (Symbols.TryGetValue(expr, out var symbol)) { return symbol; }
         symbol = new("Invalid Op", new(expr switch
         {
-            IR.Math.Binary op => op.ToLiteral(),
+            IR.Math.Binary op => op.BinaryOp switch
+            {
+                BinaryOp.Add => "+",
+                BinaryOp.Sub => "-",
+                BinaryOp.Mul => "*",
+                BinaryOp.Div => "/",
+                BinaryOp.Mod => "%",
+                _ => throw new ArgumentOutOfRangeException(op.BinaryOp.ToString())
+            },
             TIR.Store op => "Store",
             TIR.Load op => "Load",
             IR.Tensors.Cast op => op.NewType.toC(),
@@ -212,18 +220,8 @@ internal class CSourceHostBuildVisior : ExprFunctor<CSymbol, string>
     public override CSymbol Visit(Var expr)
     {
         if (Symbols.TryGetValue(expr, out var symbol)) { return symbol; }
-        symbol = new(VisitType(expr.CheckedType!), new(expr.Name));
-        Symbols.Add(expr, symbol);
-        return symbol;
-    }
-
-    /// <summary>
-    /// assgin the loop var better name.
-    /// </summary>
-    public CSymbol VisitLoopVar(Expr expr, string prefix = "")
-    {
-        if (Symbols.TryGetValue(expr, out var symbol)) { return symbol; }
-        symbol = new(VisitType(expr.CheckedType!), new(Scope.GetUniqueLoopVarName(expr, prefix)));
+        var isymbol = Scope.GetUniqueVarSymbol(expr);
+        symbol = new(VisitType(expr.CheckedType!), isymbol.Span);
         Symbols.Add(expr, symbol);
         return symbol;
     }
@@ -234,7 +232,7 @@ internal class CSourceHostBuildVisior : ExprFunctor<CSymbol, string>
         if (Symbols.TryGetValue(expr, out var symbol)) { return symbol; }
         Scope.Push();
         // 1. For Loop signature
-        var loopVar = VisitLoopVar(expr.LoopVar);
+        var loopVar = Visit(expr.LoopVar);
         Scope.Append($"for ({loopVar} = {Visit(expr.Dom.Start).Doc}; {loopVar.Doc} < {Visit(expr.Dom.Stop).Doc}; {loopVar.Doc}+={expr.Dom.Step}) {{");
         // 2. For Body
         Scope.Append(Visit(expr.Body).Doc);

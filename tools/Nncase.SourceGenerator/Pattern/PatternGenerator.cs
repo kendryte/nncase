@@ -40,9 +40,7 @@ public class PatternGenerator : ISourceGenerator
         if (!receiver.Candidates.Any())
             return;
 
-        var groupedCandidates = (from cand in receiver.Candidates
-                                 group cand by cand.Op.ContainingNamespace into g
-                                 select (g.Key, g.ToArray()));
+        var groupedCandidates = receiver.Candidates.GroupBy(cand => cand.Op.ContainingNamespace, SymbolEqualityComparer.Default).Select(g => (g.Key, g.ToArray()));
 
         List<NamespaceDeclarationSyntax> namespaces = new();
         foreach (var (old_namespace, candidates) in groupedCandidates)

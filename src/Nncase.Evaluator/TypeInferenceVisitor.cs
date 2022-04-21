@@ -29,7 +29,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
 
     /// <inheritdoc/>
     public override IRType VisitLeaf(Call expr)
-    {
+    {   
         _context.CurrentCall = expr;
         var type = expr.Target switch
         {
@@ -132,7 +132,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     /// <inheritdoc/>
     public override IRType VisitLeaf(None expr)
     {
-        var type =  NoneType.Default;
+        var type = NoneType.Default;
         SetCheckedType(expr, type);
         return type;
     }
@@ -345,7 +345,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
                 // now change the var checkedtype
                 SetCheckedType(expr.Var, expr.Expression.CheckedType!);
                 ExpressionMemo[expr.Var] = expr.Expression.CheckedType!;
-                
+
                 Visit(expr.Body);
                 result = VisitLeaf(expr);
             }

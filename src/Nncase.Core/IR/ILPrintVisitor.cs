@@ -83,6 +83,7 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
         {
             Unary op => op.UnaryOp.ToString(),
             Binary op => op.BinaryOp.ToString(),
+            Compare op => op.CompareOp.ToString(),
             _ => expr.GetType().Name,
         };
     }
@@ -182,10 +183,12 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
     public override string VisitType(NoneType type) => $"";
 
     /// <inheritdoc/>
-    public override string VisitType(TensorType type)
+    public override string VisitType(TensorType type) => type.DType switch
     {
-        return $"{type.DType.GetDisplayName()}{type.Shape}";
-    }
+        PrimType ptype => ptype.GetDisplayName() + (type.Shape.IsScalar ? "" : type.Shape.ToString()),
+        PointerType { ElemType: PrimType etype } ptype => $"*{etype.GetDisplayName()}",
+        _ => throw new NotSupportedException(type.DType.GetType().Name),
+    };
 
     /// <inheritdoc/>
     public override string VisitType(TupleType type) =>
@@ -222,7 +225,7 @@ public sealed class ScopeWriter
     /// <summary>
     /// current VarNamelist.
     /// </summary>
-    List<string> VarNameList => VarNameStack.Peek();
+    List<IPrintSymbol> VarSymbolList => VarSymbolStack.Peek();
 
     /// <summary>
     /// stack container.
@@ -237,17 +240,12 @@ public sealed class ScopeWriter
     /// <summary>
     /// record the all var name's in this scope and parent's scope.
     /// </summary>
-    readonly Dictionary<Expr, string> GlobalVarNameMap = new();
-
-    /// <summary>
-    /// record the all name used count.
-    /// </summary>
-    readonly Dictionary<string, int> GlobalNameUseMap = new();
+    readonly Dictionary<string, int> GlobalVarCountMap = new();
 
     /// <summary>
     /// the scopes var name stack.
     /// </summary>
-    readonly Stack<List<string>> VarNameStack = new();
+    readonly Stack<List<IPrintSymbol>> VarSymbolStack = new();
 
     /// <summary>
     /// ctor.
@@ -257,7 +255,7 @@ public sealed class ScopeWriter
     {
         rootWriter = textWriter;
         Writer = textWriter;
-        VarNameStack.Push(new());
+        VarSymbolStack.Push(new());
     }
 
     /// <summary>
@@ -270,7 +268,7 @@ public sealed class ScopeWriter
         ScopeStack.Push((builder, writer));
         Writer = writer;
 
-        VarNameStack.Push(new());
+        VarSymbolStack.Push(new());
     }
 
     /// <summary>
@@ -291,7 +289,12 @@ public sealed class ScopeWriter
             Writer = ScopeStack.Peek().Item2;
         }
 
-        foreach (var name in VarNameStack.Pop()) { GlobalNameUseMap[name]--; }
+        foreach (var name in VarSymbolStack.Pop())
+        {
+            GlobalVarCountMap[name.Name]--;
+            if (GlobalVarCountMap[name.Name] == 0)
+                GlobalVarCountMap.Remove(name.Name);
+        }
 
         // VarNameList
         return builder;
@@ -375,40 +378,21 @@ public sealed class ScopeWriter
     }
 
     /// <summary>
-    /// get the unique loop var name, it allocate orderby i,j,k,l,i0,j0,k0...
+    /// get the unique var symbol.
     /// </summary>
-    /// <param name="loopVar"></param>
-    /// <param name="prefix"></param>
+    /// <param name="var">var name</param>
+    /// <param name="prefix">prefix name</param>
     /// <returns></returns>
-    public string GetUniqueLoopVarName(Expr loopVar, string prefix)
+    public IPrintSymbol GetUniqueVarSymbol(Var @var, string prefix = "")
     {
-        if (GlobalVarNameMap.TryGetValue(loopVar, out var name))
+        if (!GlobalVarCountMap.TryGetValue(prefix + @var.Name, out var count))
         {
-            return name;
+            count = 0;
         }
-
-        int TryGetDefault(string name)
-        {
-            if (!GlobalNameUseMap.TryGetValue(name, out var count))
-            {
-                count = 0;
-                GlobalNameUseMap.Add(name, count);
-            }
-
-            return count;
-        }
-
-        var hint = (from c in new[] { "i", "j", "k", "l" }
-                    let nc = prefix + c
-                    let count = TryGetDefault(nc)
-                    orderby count
-                    select nc).First();
-        var usecount = GlobalNameUseMap[hint];
-        name = hint + (usecount == 0 ? string.Empty : usecount);
-        GlobalNameUseMap[hint]++;
-        GlobalVarNameMap.Add(loopVar, name);
-        VarNameList.Add(name);
-        return name;
+        var symbol = new ScriptSymobl(new(prefix + @var.Name + (count == 0 ? "" : $"_{count}")), @var.Name, false);
+        count++;
+        GlobalVarCountMap[@var.Name] = count;
+        return symbol;
     }
 }
 

@@ -302,6 +302,19 @@ public record Buffer : Expr, IBufferView<Buffer>
     /// <inheritdoc/>
     public Buffer this[params Segment1D[] segments] => new(new(segments), this);
 
+    /// <summary>
+    /// get the new buffer range.
+    /// </summary>
+    /// <param name="ranges"></param>
+    /// <returns></returns>
+    public BufferRegion this[params TIR.Range[] ranges]
+    {
+        get => new(this, new(ranges.Zip(Shape.ToArray()).Select(
+            tp => tp.First.Equals(System.Range.All) ?
+                  new Range(0, tp.Second, 1) :
+                  tp.First)));
+    }
+
     /// <inheritdoc/>
     public Buffer Parent { get; init; }
 

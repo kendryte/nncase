@@ -16,5 +16,5 @@ public record BufferOf() : Op
     /// <summary>
     /// Get the input parameter.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(BaseMentOf), 0, "input", IsTensor());
+    public static readonly ParameterInfo Input = new(typeof(BufferOf), 0, "input", IsTensor());
 }

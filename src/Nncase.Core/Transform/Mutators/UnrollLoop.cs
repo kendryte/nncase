@@ -15,10 +15,21 @@ namespace Nncase.Transform.Mutators;
 /// </summary>
 internal sealed class UnRollLoop : ExprMutator
 {
+    private readonly HashSet<For> _candidates = new(ReferenceEqualityComparer.Instance);
+    private bool foldAll;
+    public UnRollLoop(params For[] for_loops)
+    {
+        foreach (var f in for_loops)
+        {
+            _candidates.Add(f);
+        }
+        foldAll = _candidates.Count == 0;
+    }
+
     /// <inheritdoc/>
     public override Expr MutateLeaf(TIR.For expr)
     {
-        return unroll(expr);
+        return foldAll ? unroll(expr) : _candidates.Contains(expr) ? unroll(expr) : expr;
     }
 
     Expr unroll(TIR.For expr)
@@ -35,14 +46,14 @@ internal sealed class UnRollLoop : ExprMutator
         for (int i = start; i < stop; i += step)
         {
             vmap[expr.LoopVar] = i;
-            
+
             Expr body = new Substitutor(e =>
             {
                 if (e is Var v && vmap.ContainsKey(v))
                     return vmap[v];
                 return e;
             }).Visit(Visit(expr.Body));
-            
+
             unrolled.Add(body);
         }
         return new Sequential(unrolled);

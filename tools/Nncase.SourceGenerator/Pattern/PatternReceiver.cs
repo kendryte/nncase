@@ -25,12 +25,12 @@ internal class PatternReceiver : ISyntaxContextReceiver
         if (ctx.Node is RecordDeclarationSyntax recordDeclaration)
         {
             var op = ctx.SemanticModel.GetDeclaredSymbol(recordDeclaration);
-            if (op.BaseType is { Name: "Op" }
-              && op.GetAttributes().Any(attr => attr.AttributeClass.Name == "PatternFunctionalGeneratorAttribute")
+            if (op!.BaseType is { Name: "Op" }
+              && op!.GetAttributes().Any(attr => attr!.AttributeClass!.Name == "PatternFunctionalGeneratorAttribute")
                )
             {
-                var attrParams = (from p in recordDeclaration.ParameterList.Parameters
-                                  select ctx.SemanticModel.GetDeclaredSymbol(p)).ToArray();
+                var attrParams = (from p in recordDeclaration.ParameterList!.Parameters
+                                  select ctx.SemanticModel.GetDeclaredSymbol(p)!).ToArray();
                 var exprParams = op.GetMembers()
                     .OfType<IFieldSymbol>()
                     .Where(f => f.Type.Name == "ParameterInfo")

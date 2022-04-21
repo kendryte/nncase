@@ -15,7 +15,8 @@ namespace Nncase.SourceGenerator.Evaluator;
 internal class EvaluatorGenerator : ISourceGenerator
 {
 
-    EvaluatorImplReceiver Receiver;
+    EvaluatorImplReceiver? _receiver;
+    EvaluatorImplReceiver Receiver => _receiver!;
 
     public void Initialize(GeneratorInitializationContext context) => context.RegisterForSyntaxNotifications(() => new EvaluatorImplReceiver());
 
@@ -23,7 +24,7 @@ internal class EvaluatorGenerator : ISourceGenerator
     {
         if (context.SyntaxContextReceiver is not EvaluatorImplReceiver evalReceiver)
             return;
-        Receiver = evalReceiver;
+        _receiver ??= evalReceiver;
         if (evalReceiver.Diagnostics.Any())
         {
             foreach (var diag in evalReceiver.Diagnostics)
@@ -62,21 +63,21 @@ internal class EvaluatorGenerator : ISourceGenerator
     {
         var (return_type_name, context_type_name) = cand.Target.GetKindInfo();
         var statementSyntaxes = new List<StatementSyntax>();
-        var allOpParams = new HashSet<string>(cand.Op.GetMembers().OfType<IFieldSymbol>().Where(f => f.Type.Equals(Receiver.ParameterInfoSymobl)).Select(f => f.Name));
+        var allOpParams = new HashSet<string>(cand.Op.GetMembers().OfType<IFieldSymbol>().Where(f => SymbolEqualityComparer.Default.Equals(f.Type, Receiver.ParameterInfoSymobl)).Select(f => f.Name));
 
         foreach (var Parameter in cand.Method.Parameters)
         {
             // if (!cand.Op.MemberNames.Any(name => name == Parameter.Name))
             //     Context.Value.ReportDiagnostic(Diagnostic.Create(RecriverUtil.MethodParamError, Location.None, cand.Class.Name, string.Join(", ", cand.Method.Parameters.Select(p => p.Name)), cand.Op.Name));
             var paramType = Parameter.Type;
-            if ((cand.Target == InterfaceKind.IEvaluator && paramType.Equals(Receiver.IEvaluateContextSymobl))
-              || (cand.Target == InterfaceKind.ITypeInferencer && paramType.Equals(Receiver.ITypeInferenceContext)))
+            if ((cand.Target == InterfaceKind.IEvaluator && SymbolEqualityComparer.Default.Equals(paramType, Receiver.IEvaluateContextSymobl))
+              || (cand.Target == InterfaceKind.ITypeInferencer && SymbolEqualityComparer.Default.Equals(paramType, Receiver.ITypeInferenceContext)))
             {
                 if (Parameter.Name != "context")
                     statementSyntaxes.Add(ParseStatement($"var {Parameter.Name} = context;"));
                 continue;
             }
-            if (paramType.Equals(cand.Op))
+            if (SymbolEqualityComparer.Default.Equals(paramType, cand.Op))
             {
                 if (Parameter.Name != "target")
                     statementSyntaxes.Add(ParseStatement($"var {Parameter.Name} = target;"));
@@ -89,7 +90,7 @@ internal class EvaluatorGenerator : ISourceGenerator
                     INamedTypeSymbol { IsReferenceType: true } x when x.ToDisplayString() == "Nncase.IValue" => $"GetArgumentValue",
                     INamedTypeSymbol { IsGenericType: true, IsReferenceType: true } x when x.Name == "Tensor" => $"GetArgumentValueAsTensor<{x.TypeArguments[0].ToDisplayString()}>",
                     IArrayTypeSymbol { ElementType: { IsUnmanagedType: true, IsValueType: true } e } x => $"GetArgumentValueAsArray<{e.ToDisplayString()}>",
-                    { IsReferenceType: true } x when x.Equals(Receiver.TensorSymobl) => $"GetArgumentValueAsTensor",
+                    { IsReferenceType: true } x when SymbolEqualityComparer.Default.Equals(x, Receiver.TensorSymobl) => $"GetArgumentValueAsTensor",
                     { IsReferenceType: true } x when x.ToDisplayString().EndsWith("OrtKISharp.Tensor") => "GetOrtArgumentValue",
                     { IsUnmanagedType: true, IsValueType: true } x => $"GetArgumentValueAsScalar<{paramType.ToDisplayString()}>",
                     _ => throw new NotSupportedException($"Convert {cand.Class.Name} Params {paramType.ToDisplayString()} For IEvaluator Impl!")
@@ -97,7 +98,7 @@ internal class EvaluatorGenerator : ISourceGenerator
                 InterfaceKind.ITypeInferencer => paramType switch
                 {
                     { IsReferenceType: true } x when x.IsInheritFrom(Receiver.IRTypeSymobl) => $"CheckArgumentType<{x}>",
-                    var x when x.Equals(Receiver.ExprSymobl) => $"GetArgument",
+                    var x when SymbolEqualityComparer.Default.Equals(x, Receiver.ExprSymobl) => $"GetArgument",
                     _ => throw new NotSupportedException($"Convert {cand.Class.Name} Params {paramType.ToDisplayString()} For ITypeInferencer Impl!")
                 },
                 _ => throw new NotSupportedException($"{paramType.ToDisplayString()} with {cand.Target}!")
@@ -150,7 +151,7 @@ internal class EvaluatorGenerator : ISourceGenerator
     CompilationUnitSyntax BuildFile(GeneratorExecutionContext context, List<GenerateCandidate> Candidates)
     {
         List<NamespaceDeclarationSyntax> namespaceDeclarations = new();
-        var NamespaceCandidates = Candidates.GroupBy(keySelector: can => can.Class.ContainingNamespace).ToDictionary(g => g.Key, g => g.ToList());
+        var NamespaceCandidates = Candidates.GroupBy(keySelector: can => can.Class.ContainingNamespace, SymbolEqualityComparer.Default).ToDictionary(g => g.Key, g => g.ToList(), SymbolEqualityComparer.Default);
         foreach (var (Namespace, candidates) in NamespaceCandidates.Select(kv => (kv.Key, kv.Value)))
         {
             List<ClassDeclarationSyntax> classDeclarations = new();
