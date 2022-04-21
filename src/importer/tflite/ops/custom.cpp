@@ -27,17 +27,17 @@ DEFINE_TFLITE_LOWER(CUSTOM)
     std::cout << "custom_code = " << custom_code << std::endl;
     if (custom_code == "FlexRandomUniform")
     {
-        auto custom_options = op.custom_options();
-        auto r = flexbuffers::GetRoot(custom_options->data(), custom_options->size());
-        std::cout << "Reference type: " << r.GetType() << std::endl;
-        auto v = flexbuffers::GetRoot(custom_options->data(), custom_options->size()).AsVector();
-        std::cout << "v.size = " << v.size() << std::endl;
-        for (size_t i = 0; i < v.size(); i++)
-        {
-            std::cout << "i = " << i << ": Reference type: " << v[i].GetType() << std::endl;
-            if (v[i].IsString())
-                std::cout << v[i].AsString().str() << std::endl;
-        }
+        // auto custom_options = op.custom_options();
+        // auto r = flexbuffers::GetRoot(custom_options->data(), custom_options->size());
+        // std::cout << "Reference type: " << r.GetType() << std::endl;
+        // auto v = flexbuffers::GetRoot(custom_options->data(), custom_options->size()).AsVector();
+        // std::cout << "v.size = " << v.size() << std::endl;
+        // for (size_t i = 0; i < v.size(); i++)
+        // {
+        //     std::cout << "i = " << i << ": Reference type: " << v[i].GetType() << std::endl;
+        //     if (v[i].IsString())
+        //         std::cout << v[i].AsString().str() << std::endl;
+        // }
         auto &output = get_tensor(op.outputs(), 0);
         auto node = graph_.emplace<random_uniform>(to_data_type(output.type()), get_shape(output.shape()), 0.f, 1.f, time(nullptr));
         node->name(output.name()->string_view());

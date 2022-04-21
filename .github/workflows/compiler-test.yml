@@ -103,7 +103,7 @@ jobs:
       run: |
 
         pytest -n 50 --dist=load tests/other --doctest-modules --junitxml=test_results/other.xml
-        pytest -n 50 --dist=load tests/importer --doctest-modules --junitxml=test_results/importer.xml
+        pytest --dist=load tests/importer --doctest-modules --junitxml=test_results/importer.xml
         pytest -n 50 --dist=load tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
         pytest -n 50 --dist=load tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
         pytest -n 50 --dist=load tests/transform --doctest-modules --junitxml=test_results/transform.xml
