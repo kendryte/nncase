@@ -340,16 +340,25 @@ void register_neutral_evaluators()
 
     register_evaluator(op_reduce, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<reduce &>(node);
-
-        assert(rnode.input().type() == dt_float32);
         auto input = context.memory_at(rnode.input());
         auto output = context.memory_at(rnode.output());
-        auto input_mem = input.buffer().as_span<float>();
-        auto output_mem = output.buffer().as_span<float>();
 
-        kernels::reduce(rnode.reduce_op(), rnode.init_value(), input_mem.data(), output_mem.data(), input.shape(),
-            to(rnode.axis()), input.strides(), output.strides(), rnode.keep_dims())
-            .unwrap_or_throw();
+        auto input_type = rnode.input().type();
+        switch (input_type)
+        {
+        case dt_float32:
+            kernels::reduce(rnode.reduce_op(), static_cast<float>(rnode.init_value()), input.buffer().as_span<float>().data(),
+                output.buffer().as_span<float>().data(), input.shape(), to(rnode.axis()), input.strides(), output.strides(), rnode.keep_dims())
+                .unwrap_or_throw();
+            break;
+        case dt_int32:
+            kernels::reduce(rnode.reduce_op(), static_cast<int32_t>(rnode.init_value()), input.buffer().as_span<int32_t>().data(),
+                output.buffer().as_span<int32_t>().data(), input.shape(), to(rnode.axis()), input.strides(), output.strides(), rnode.keep_dims())
+                .unwrap_or_throw();
+            break;
+        default:
+            std::cerr << "unsupported dtype for reduce: " + std::string(datatype_names(input_type));
+        }
     });
 
     register_evaluator(op_reduce_arg, [](ir::node &node, function_evaluate_context &context) {

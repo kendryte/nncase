@@ -79,7 +79,8 @@ NNCASE_API result<void> quantize(datatype_t in_type, datatype_t out_type, const 
 NNCASE_API result<void> unary(unary_op_t op, const float *input, float *output, const runtime_shape_t &shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, kernel_context &context = default_kernel_context()) noexcept;
 
-NNCASE_API result<void> reduce(reduce_op_t op, float init_value, const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
+template <typename T>
+NNCASE_API result<void> reduce(reduce_op_t op, T init_value, const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims, kernel_context &context = default_kernel_context()) noexcept;
 
 template <typename T>
