@@ -267,6 +267,10 @@ template result<void> kernels::reduce_prod<float>(const float *input, float *out
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
     const runtime_shape_t &axes, bool keep_dims) noexcept;
 
+template result<void> kernels::reduce_prod<int32_t>(const int32_t *input, int32_t *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
+    const runtime_shape_t &axes, bool keep_dims) noexcept;
+
 template <typename T>
 result<void> kernels::reduce_prod(const T *input, T *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,

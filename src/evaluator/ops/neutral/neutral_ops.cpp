@@ -390,16 +390,25 @@ void register_neutral_evaluators()
 
     register_evaluator(op_reduce_prod, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<reduce_prod &>(node);
-
-        assert(rnode.input().type() == dt_float32);
         auto input = context.memory_at(rnode.input());
         auto output = context.memory_at(rnode.output());
-        auto input_mem = input.buffer().as_span<float>();
-        auto output_mem = output.buffer().as_span<float>();
 
-        kernels::reduce_prod(input_mem.data(), output_mem.data(), input.shape(),
-            input.strides(), output.strides(), to(rnode.axis()), rnode.keep_dims())
-            .unwrap_or_throw();
+        auto input_type = rnode.input().type();
+        switch (input_type)
+        {
+        case dt_float32:
+            kernels::reduce_prod(input.buffer().as_span<float>().data(), output.buffer().as_span<float>().data(), input.shape(),
+                input.strides(), output.strides(), to(rnode.axis()), rnode.keep_dims())
+                .unwrap_or_throw();
+            break;
+        case dt_int32:
+            kernels::reduce_prod(input.buffer().as_span<int32_t>().data(), output.buffer().as_span<int32_t>().data(), input.shape(),
+                input.strides(), output.strides(), to(rnode.axis()), rnode.keep_dims())
+                .unwrap_or_throw();
+            break;
+        default:
+            std::cerr << "unsupported dtype for reduce_prod: " + std::string(datatype_names(input_type));
+        }
     });
 
     register_evaluator(op_reduce_window2d, [](ir::node &node, function_evaluate_context &context) {

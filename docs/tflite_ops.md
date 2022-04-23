@@ -46,6 +46,7 @@
 | POW | ✅ |
 | REDUCE_MAX | ✅ |
 | REDUCE_MIN | ✅ |
+| REDUCE_PROD | ✅ |
 | RELU | ✅ |
 | PRELU | ✅ |
 | RELU6 | ✅ |

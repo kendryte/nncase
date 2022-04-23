@@ -27,6 +27,7 @@ void onnx_importer::convert_op_ReduceProd(const NodeProto &node)
 {
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
+    const auto input_type = get_datatype(input).value();
     const auto &input_shape = get_shape(input);
 
     // axes
@@ -41,7 +42,7 @@ void onnx_importer::convert_op_ReduceProd(const NodeProto &node)
     // keepdims
     bool keepdims = get_attribute<int>(node, "keepdims").value_or(1);
 
-    auto op = graph_.emplace<reduce_prod>(input_shape, axes, keepdims);
+    auto op = graph_.emplace<reduce_prod>(input_type, input_shape, axes, keepdims);
     op->name(generate_name(node));
 
     input_tensors_.emplace(&op->input(), input);

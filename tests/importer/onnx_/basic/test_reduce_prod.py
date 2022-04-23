@@ -22,7 +22,7 @@ from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
 
-def _make_module(in_type, in_shape, reduce_op, axes, keepdims):
+def _make_module(in_type, in_shape, axes, keepdims):
     inputs = []
     outputs = []
     initializers = []
@@ -48,7 +48,7 @@ def _make_module(in_type, in_shape, reduce_op, axes, keepdims):
         attributes_dict['keepdims'] = keepdims
 
     node = onnx.helper.make_node(
-        reduce_op,
+        'ReduceProd',
         inputs=inputs,
         outputs=outputs,
         **attributes_dict
@@ -72,14 +72,9 @@ in_types = [
     TensorProto.INT32
 ]
 
+# The input data for ReduceProd should be located in a reasonable range, such as [1, 2]
 in_shapes = [
-    [1, 3, 16, 16]
-]
-
-reduce_ops = [
-    'ReduceMax',
-    'ReduceMean',
-    'ReduceMin',
+    [1, 3, 2, 2]
 ]
 
 axes_list = [
@@ -104,12 +99,11 @@ keepdims_lists = [
 
 @pytest.mark.parametrize('in_type', in_types)
 @pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('reduce_op', reduce_ops)
 @pytest.mark.parametrize('axes', axes_list)
 @pytest.mark.parametrize('keepdims', keepdims_lists)
-def test_reduce(in_type, in_shape, reduce_op, axes, keepdims, request):
+def test_reduce_prod(in_type, in_shape, axes, keepdims, request):
     if len(axes) <= len(in_shape):
-        model_def = _make_module(in_type, in_shape, reduce_op, axes, keepdims)
+        model_def = _make_module(in_type, in_shape, axes, keepdims)
 
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_onnx_helper(model_def)
@@ -117,4 +111,4 @@ def test_reduce(in_type, in_shape, reduce_op, axes, keepdims, request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_reduce.py'])
+    pytest.main(['-vv', 'test_reduce_prod.py'])
