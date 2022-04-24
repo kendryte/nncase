@@ -45,4 +45,5 @@ target_sources(transforms PRIVATE
     fix_tflite_error_shape.cpp
     pad_conv.cpp
     merge_binary_before_conv.cpp
+    fold_matmul_add.cpp
     )
