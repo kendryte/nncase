@@ -52,7 +52,7 @@ void global_reduce_window_to_reduce_transform::process(transform_context &contex
 
     // TODO: Handle activation
     assert(old_rw.fused_activation() == value_range<float>::full());
-    auto rd = context.graph.emplace<reduce>(old_rw.reduce_op(), old_rw.input().shape(), axis_t { 2, 3 }, old_rw.init_value(), true);
+    auto rd = context.graph.emplace<reduce>(old_rw.reduce_op(), output.type(), old_rw.input().shape(), axis_t { 2, 3 }, old_rw.init_value(), true);
     rd->name(old_rw.name());
 
     rd->input().connect(output);

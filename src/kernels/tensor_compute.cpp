@@ -102,24 +102,33 @@ result<void> kernels::dequantize(datatype_t in_type, datatype_t out_type, const 
     return cpu::reference::dequantize(in_type, out_type, input, output, in_shape, in_strides, out_strides, scale, bias, context);
 }
 
-template result<void> kernels::equal<uint8_t>(const uint8_t *input_a, const uint8_t *input_b, bool *output,
-    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
-    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides) noexcept;
+template result<void> kernels::compare<uint8_t>(compare_op_t op, const uint8_t *input_a, const uint8_t *input_b, bool *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides,
+    const runtime_shape_t &in_b_shape, const runtime_shape_t &in_b_strides,
+    const runtime_shape_t &out_shape, const runtime_shape_t &out_strides) noexcept;
 
-template result<void> kernels::equal<float>(const float *input_a, const float *input_b, bool *output,
-    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
-    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides) noexcept;
+template result<void> kernels::compare<float>(compare_op_t op, const float *input_a, const float *input_b, bool *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides,
+    const runtime_shape_t &in_b_shape, const runtime_shape_t &in_b_strides,
+    const runtime_shape_t &out_shape, const runtime_shape_t &out_strides) noexcept;
 
-template result<void> kernels::equal<int64_t>(const int64_t *input_a, const int64_t *input_b, bool *output,
-    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
-    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides) noexcept;
+template result<void> kernels::compare<int32_t>(compare_op_t op, const int32_t *input_a, const int32_t *input_b, bool *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides,
+    const runtime_shape_t &in_b_shape, const runtime_shape_t &in_b_strides,
+    const runtime_shape_t &out_shape, const runtime_shape_t &out_strides) noexcept;
+
+template result<void> kernels::compare<int64_t>(compare_op_t op, const int64_t *input_a, const int64_t *input_b, bool *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides,
+    const runtime_shape_t &in_b_shape, const runtime_shape_t &in_b_strides,
+    const runtime_shape_t &out_shape, const runtime_shape_t &out_strides) noexcept;
 
 template <typename T>
-result<void> kernels::equal(const T *input_a, const T *input_b, bool *output,
-    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
-    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides) noexcept
+result<void> kernels::compare(compare_op_t op, const T *input_a, const T *input_b, bool *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides,
+    const runtime_shape_t &in_b_shape, const runtime_shape_t &in_b_strides,
+    const runtime_shape_t &out_shape, const runtime_shape_t &out_strides) noexcept
 {
-    return cpu::reference::equal(input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_strides);
+    return cpu::reference::compare(op, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides);
 }
 
 result<void> kernels::lut1d(datatype_t type, const gsl::byte *input, const gsl::byte *table, gsl::byte *output, const runtime_shape_t &shape,
@@ -225,7 +234,14 @@ result<void> kernels::unary(unary_op_t op, const float *input, float *output, co
     return cpu::reference::unary(op, input, output, shape, in_strides, out_strides, context);
 }
 
-result<void> kernels::reduce(reduce_op_t op, float init_value, const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
+template result<void> kernels::reduce<float>(reduce_op_t op, float init_value, const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims, kernel_context &context) noexcept;
+
+template result<void> kernels::reduce<int32_t>(reduce_op_t op, int32_t init_value, const int32_t *input, int32_t *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims, kernel_context &context) noexcept;
+
+template <typename T>
+result<void> kernels::reduce(reduce_op_t op, T init_value, const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims, kernel_context &context) noexcept
 {
     return cpu::reference::reduce(op, init_value, input, output, in_shape, axis, in_strides, out_strides, keep_dims, context);
@@ -248,6 +264,10 @@ result<void> kernels::reduce_arg(reduce_arg_op_t op, const float *input, T *outp
 }
 
 template result<void> kernels::reduce_prod<float>(const float *input, float *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
+    const runtime_shape_t &axes, bool keep_dims) noexcept;
+
+template result<void> kernels::reduce_prod<int32_t>(const int32_t *input, int32_t *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
     const runtime_shape_t &axes, bool keep_dims) noexcept;
 

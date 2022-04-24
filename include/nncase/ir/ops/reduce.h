@@ -31,7 +31,7 @@ public:
     float init_value() const noexcept { return init_value_; }
     bool keep_dims() const noexcept { return keep_dims_; }
 
-    reduce(reduce_op_t reduce_op, shape_t input_shape, axis_t axis, float init_value, bool keep_dims);
+    reduce(reduce_op_t reduce_op, datatype_t input_type, shape_t input_shape, axis_t axis, float init_value, bool keep_dims);
 
 protected:
     bool properties_equal(node &other) const override;

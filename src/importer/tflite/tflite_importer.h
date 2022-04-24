@@ -51,6 +51,7 @@ private:
     void convert_reduce_arg(const tflite::Operator &op, reduce_arg_op_t reduce_arg_op, const tflite::TensorType output_type);
     void convert_unary(const tflite::Operator &op, unary_op_t unary_op);
     void convert_resize_image(const tflite::Operator &op, image_resize_mode_t mode);
+    void convert_compare(const tflite::Operator &op, compare_op_t compare_op);
 
     const tflite::Tensor &get_tensor(const flatbuffers::Vector<int32_t> *ids, int32_t offset)
     {
@@ -222,8 +223,10 @@ private:
             return dt_int32;
         case tflite::TensorType_INT64:
             return dt_int64;
+        case tflite::TensorType_BOOL:
+            return dt_uint8;
         default:
-            throw std::runtime_error("Invalid tensor type");
+            throw std::runtime_error(std::string("Invalid tensor type: ") + tflite::EnumNameTensorType(type));
         }
     }
 

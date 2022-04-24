@@ -60,7 +60,7 @@ void simplify_reduce_transform::process(transform_context &context)
 
     auto rp = context.graph.emplace<bitcast>(output.type(), output.shape(), new_shape);
     rp->name(old_r.name());
-    auto r = context.graph.emplace<reduce>(old_r.reduce_op(), rp->output().shape(), old_r.axis(), old_r.init_value(), true);
+    auto r = context.graph.emplace<reduce>(old_r.reduce_op(), output.type(), rp->output().shape(), old_r.axis(), old_r.init_value(), true);
     r->name(old_r.name() + "_F");
     r->input().connect(rp->output());
 

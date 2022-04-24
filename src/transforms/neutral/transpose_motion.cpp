@@ -316,7 +316,7 @@ void transpose_reduce_motion_transform::process(transform_context &context)
         }
     }
 
-    auto r = context.graph.emplace<reduce>(old_r.reduce_op(), output.shape(), axes, old_r.init_value(), old_r.keep_dims());
+    auto r = context.graph.emplace<reduce>(old_r.reduce_op(), output.type(), output.shape(), axes, old_r.init_value(), old_r.keep_dims());
     r->name(old_r.name());
     auto tp = context.graph.emplace<transpose>(r->output().type(), r->output().shape(), perm);
     tp->name(old_tp.name());

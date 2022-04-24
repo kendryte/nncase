@@ -13,12 +13,12 @@ set(SRCS runtime_module.cpp
          ops/tensor.binary.cpp
          ops/tensor.broadcast.cpp
          ops/tensor.call.cpp
+         ops/tensor.compare.cpp
          ops/tensor.conv2d.cpp
          ops/tensor.convert.cpp
          ops/tensor.copy.cpp
          ops/tensor.cumsum.cpp
          ops/tensor.dequantize.cpp
-         ops/tensor.equal.cpp
          ops/tensor.gather.cpp
          ops/tensor.gather_nd.cpp
          ops/tensor.hardmax.cpp

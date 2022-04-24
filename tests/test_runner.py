@@ -105,7 +105,7 @@ def generate_random(shape: List[int], dtype: np.dtype,
     elif dtype == np.int8:
         data = np.random.randint(-128, 128, shape)
     elif dtype == np.int32:
-        data = np.random.randint(-128, 128, size=shape, dtype='int32')
+        data = np.random.randint(1, 3, size=shape, dtype='int32')
     elif dtype == np.int64:
         data = np.random.randint(-128, 128, size=shape, dtype='int64')
     elif dtype == np.bool:
