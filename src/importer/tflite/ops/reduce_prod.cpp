@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #include "../tflite_importer.h"
-#include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/reduce_prod.h>
 #include <nncase/ir/ops/transpose.h>
 #include <schema_generated.h>
 
@@ -21,45 +21,22 @@ using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
 
-DEFINE_TFLITE_LOWER(REDUCE_MAX)
-{
-    convert_reduce(op, reduce_max, std::numeric_limits<float>::lowest());
-}
-
-DEFINE_TFLITE_LOWER(MEAN)
-{
-    convert_reduce(op, reduce_mean, 0.f);
-}
-
-DEFINE_TFLITE_LOWER(REDUCE_MIN)
-{
-    convert_reduce(op, reduce_min, std::numeric_limits<float>::max());
-}
-
-DEFINE_TFLITE_LOWER(SUM)
-{
-    convert_reduce(op, reduce_sum, 0.f);
-}
-
-void tflite_importer::convert_reduce(const tflite::Operator &op, reduce_op_t reduce_op, float init_value)
+DEFINE_TFLITE_LOWER(REDUCE_PROD)
 {
     auto &input = get_tensor(op.inputs(), 0);
     auto axis = load_axis<int32_t>(get_tensor(op.inputs(), 1));
     auto &output = get_tensor(op.outputs(), 0);
     auto &options = *op.builtin_options_as_ReducerOptions();
 
-    [[maybe_unused]] dequantize *input_dequant;
-    [[maybe_unused]] quantize *output_quant;
-
     auto input_type = to_data_type(input.type());
-    auto node = graph_.emplace<reduce>(reduce_op, input_type, get_shape(input.shape()), std::move(axis), init_value, options.keep_dims());
+    auto node = graph_.emplace<reduce_prod>(input_type, get_shape(input.shape()), std::move(axis), options.keep_dims());
     node->name(output.name()->string_view());
 
     //input dequant
     if (input_type == dt_uint8 || input_type == dt_int8)
     {
         quant_param_t input_dequant_paras = to_quant_param(input.quantization());
-        input_dequant = graph_.emplace<dequantize>(input_type, get_shape(input.shape()), dt_float32, input_dequant_paras);
+        auto input_dequant = graph_.emplace<dequantize>(input_type, get_shape(input.shape()), dt_float32, input_dequant_paras);
         input_dequant->name(std::string(output.name()->string_view()) + "/input_dequant");
         node->input().connect(input_dequant->output());
         input_tensors_.emplace(&input_dequant->input(), op.inputs()->Get(0));
@@ -73,7 +50,7 @@ void tflite_importer::convert_reduce(const tflite::Operator &op, reduce_op_t red
     if (node->output().type() != input_type)
     {
         quant_param_t output_quant_paras = to_quant_param(output.quantization());
-        output_quant = graph_.emplace<quantize>(dt_float32, get_shape(output.shape()), to_data_type(output.type()), output_quant_paras);
+        auto output_quant = graph_.emplace<quantize>(dt_float32, get_shape(output.shape()), to_data_type(output.type()), output_quant_paras);
         output_quant->name(std::string(output.name()->string_view()) + "/output_quant");
         output_quant->input().connect(node->output());
         output_tensors_.emplace(op.outputs()->Get(0), &output_quant->output());

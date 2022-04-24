@@ -66,7 +66,7 @@ void onnx_importer::convert_op_InstanceNormalization(const NodeProto &node)
     }
     float init_value = 0.f;
     bool keepdims = true;
-    auto mean = graph_.emplace<reduce>(reduce_mean, input_shape, axes, init_value, keepdims);
+    auto mean = graph_.emplace<reduce>(reduce_mean, input_type, input_shape, axes, init_value, keepdims);
     mean->name(op_name + ".reduce_mean(InstanceNormalization)");
 
     // x - mean
@@ -80,7 +80,7 @@ void onnx_importer::convert_op_InstanceNormalization(const NodeProto &node)
     // variance
     auto square = graph_.emplace<unary>(unary_square, sub->output().shape());
     square->name(op_name + ".square(InstanceNormalization)");
-    auto variance = graph_.emplace<reduce>(reduce_mean, square->output().shape(), axes, init_value, keepdims);
+    auto variance = graph_.emplace<reduce>(reduce_mean, input_type, square->output().shape(), axes, init_value, keepdims);
     variance->name(op_name + ".reduce(InstanceNormalization)");
 
     // sqrt(variance + epsilon)

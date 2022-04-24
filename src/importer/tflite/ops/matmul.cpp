@@ -63,13 +63,13 @@ DEFINE_TFLITE_LOWER(FULLY_CONNECTED)
         link_input_tensor(&input_b_trans->input(), op.inputs()->Get(1));
     }
 
-    auto rshape = graph_.emplace<bitcast>(dt_float32, get_shape(input_a.shape()), dt_float32,
+    auto rshape_input_a = graph_.emplace<bitcast>(dt_float32, get_shape(input_a.shape()), dt_float32,
         axis_t { -1, (int32_t)input_b_trans->output().shape()[0] });
-    auto fc = graph_.emplace<matmul>(rshape->output().shape(), input_b_trans->output().shape(),
+    auto fc = graph_.emplace<matmul>(rshape_input_a->output().shape(), input_b_trans->output().shape(),
         to_float_clamp_range(options.fused_activation_function()));
 
     // bias dequantize
-    if (op.inputs()->size() == 3)
+    if ((op.inputs()->size() == 3) && (op.inputs()->Get(2) != -1))
     {
         auto &bias = get_tensor(op.inputs(), 2);
         if (bias.type() != tflite::TensorType_FLOAT32)
@@ -89,30 +89,34 @@ DEFINE_TFLITE_LOWER(FULLY_CONNECTED)
     // input_a?dequant connect
     if (not_f32)
     {
-        rshape->input().connect(input_a_dequant->output());
+        rshape_input_a->input().connect(input_a_dequant->output());
         link_input_tensor(&input_a_dequant->input(), op.inputs()->Get(0));
     }
     else
     {
-        link_input_tensor(&rshape->input(), op.inputs()->Get(0));
+        link_input_tensor(&rshape_input_a->input(), op.inputs()->Get(0));
     }
 
-    rshape->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/reshape");
+    auto rshape_output = graph_.emplace<bitcast>(dt_float32, fc->output().shape(), get_shape(output.shape()));
+
+    rshape_input_a->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/reshape");
     fc->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/fc");
+    rshape_output->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/reshape");
 
-    fc->input_a().connect(rshape->output());
+    fc->input_a().connect(rshape_input_a->output());
     fc->input_b().connect(input_b_trans->output());
+    rshape_output->input().connect(fc->output());
 
-    if (fc->output().type() != to_data_type(output.type()))
+    if (rshape_output->output().type() != to_data_type(output.type()))
     {
         quant_param_t output_quant_paras = to_quant_param(output.quantization());
-        output_quant = graph_.emplace<quantize>(dt_float32, fc->output().shape(), to_data_type(output.type()), output_quant_paras);
+        output_quant = graph_.emplace<quantize>(dt_float32, rshape_output->output().shape(), to_data_type(output.type()), output_quant_paras);
         output_quant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/output_quant");
-        output_quant->input().connect(fc->output());
+        output_quant->input().connect(rshape_output->output());
         link_output_tensor(op.outputs()->Get(0), &output_quant->output());
     }
     else
     {
-        link_output_tensor(op.outputs()->Get(0), &fc->output());
+        link_output_tensor(op.outputs()->Get(0), &rshape_output->output());
     }
 }

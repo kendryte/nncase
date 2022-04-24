@@ -1835,6 +1835,10 @@ namespace IsaGen
         {
             public override TensorFunction Function => TensorFunction.REDUCE_PROD;
 
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
             [DisplayName("rshape_src")]
             [Description("Source shape register")]
             public byte RshapeSrc { get; set; }

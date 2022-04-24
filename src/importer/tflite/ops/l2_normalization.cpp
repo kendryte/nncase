@@ -41,7 +41,7 @@ DEFINE_TFLITE_LOWER(L2_NORMALIZATION)
     }
 
     auto square = graph_.emplace<unary>(unary_square, in_shape);
-    auto sum = graph_.emplace<reduce>(reduce_sum, square->output().shape(), reduce_axis, 0.f, true);
+    auto sum = graph_.emplace<reduce>(reduce_sum, input_type, square->output().shape(), reduce_axis, 0.f, true);
     auto epsilon = graph_.emplace<constant>(1e-10f);
     auto max = graph_.emplace<binary>(binary_max, input_type, sum->output().shape(), epsilon->output().shape(), value_range<float>::full());
     auto rsqrt = graph_.emplace<unary>(unary_rsqrt, max->output().shape());

@@ -28,7 +28,7 @@ public:
     const axis_t &axis() const noexcept { return axis_; }
     bool keep_dims() const noexcept { return keep_dims_; }
 
-    reduce_prod(shape_t input_shape, axis_t axis, bool keep_dims);
+    reduce_prod(datatype_t input_type, shape_t input_shape, axis_t axis, bool keep_dims);
 
 protected:
     bool properties_equal(node &other) const override;
