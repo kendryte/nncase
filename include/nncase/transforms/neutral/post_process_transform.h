@@ -20,8 +20,8 @@ namespace nncase::ir::transforms
 class NNCASE_API post_process_transform : public graph_pass
 {
 public:
-    post_process_transform(std::string output_layout, std::string output_type, std::string real_outlayout) noexcept
-        : output_layout_(output_layout), output_type_(output_type), real_outlayout_(real_outlayout) {};
+    post_process_transform(std::string output_layout, std::string real_outlayout) noexcept
+        : output_layout_(output_layout), real_outlayout_(real_outlayout) {};
     using graph_pass::graph_pass;
 
 protected:
@@ -29,7 +29,6 @@ protected:
 
 private:
     std::string output_layout_;
-    std::string output_type_;
     std::string real_outlayout_;
 };
 }

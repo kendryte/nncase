@@ -24,7 +24,7 @@ from models.preprocess.preprocess import preprocess
 
 class Edict:
     def __init__(self, d: Dict[str, int]) -> None:
-        assert(isinstance(d, dict)), "the Edict only accepct Dict for init"
+        assert (isinstance(d, dict)), "the Edict only accepct Dict for init"
         for name, value in d.items():
             if isinstance(value, (list, tuple)):
                 setattr(self, name,
@@ -69,9 +69,6 @@ class Edict:
                     old_value = getattr(self, name)
                     if old_value is None:
                         setattr(self, name, Edict(new_value))
-                    for i in range(len(new_value['preprocess_opt'])):
-                        self.case.preprocess_opt[i].values = copy.deepcopy(
-                            new_value['preprocess_opt'][i]['values'])
                     if isinstance(old_value, (Edict, dict)):
                         old_value.update(new_value)
                 elif isinstance(new_value, dict):
@@ -144,7 +141,7 @@ def generate_image_dataset(shape: List[int], dtype: np.dtype,
                            dir_path: str) -> np.ndarray:
     """ read image from folder, return the rgb image with padding, dtype = float32, range = [0,255]. same as k210 carmera.
     """
-    assert(os.path.isdir(dir_path) or os.path.exists(dir_path))
+    assert (os.path.isdir(dir_path) or os.path.exists(dir_path))
 
     def preproc(img, input_size, transpose=True):
         # todo maybe need move this to postprocess
@@ -192,7 +189,7 @@ def generate_imagenet_dataset(shape: List[int], dtype: np.dtype,
     shape: [N,H,W,C]
     """
     dir_path = os.path.join(os.getenv('DATASET_DIR') if os.getenv('DATASET_DIR') else '', dir_path)
-    assert(os.path.isdir(dir_path) or os.path.exists(dir_path))
+    assert (os.path.isdir(dir_path) or os.path.exists(dir_path))
 
     img_paths = []
     if os.path.isdir(dir_path):
@@ -343,7 +340,7 @@ class TestRunner(metaclass=ABCMeta):
                 # swapRB
                 if 'swapRB' in item.keys():
                     if data.shape[-1] != 3:
-                        assert("Please confirm your input channel is 3.")
+                        assert ("Please confirm your input channel is 3.")
                     if item['swapRB'] == True:
                         data = data[:, :, :, ::-1]
                         data = np.array(data)
@@ -385,7 +382,7 @@ class TestRunner(metaclass=ABCMeta):
                         data[:, :, :, i] = (data[:, :, :, i] - float(item['norm']['mean'][k])) / \
                             float(item['norm']['std'][k])
         else:
-            assert("Please confirm your input shape and model shape is 4D!")
+            assert ("Please confirm your input shape and model shape is 4D!")
 
         return data
 
@@ -412,6 +409,7 @@ class TestRunner(metaclass=ABCMeta):
                 else:
                     print("WARN: target[{0}] not found".format(t))
             return new_targets
+
         self.cfg.case.eval[0].update({"values": _validate_targets(
             targets if targets else self.cfg.case.eval[0].values)})
         self.cfg.case.infer[0].update({"values": _validate_targets(
@@ -443,7 +441,7 @@ class TestRunner(metaclass=ABCMeta):
             shutil.rmtree(case_dir)
         os.makedirs(case_dir)
 
-    @ abstractmethod
+    @abstractmethod
     def parse_model_input_output(self, model_path: Union[List[str], str]):
         pass
 
@@ -523,7 +521,7 @@ class TestRunner(metaclass=ABCMeta):
                 compile_options, model_content, dict_args, preprocess_opt)
             judge, result = self.compare_results(
                 self.output_paths, eval_output_paths, dict_args)
-            assert(judge), 'Fault result in eval' + result
+            assert (judge), 'Fault result in eval' + result
 
     def run_inference(self, cfg, case_dir, import_options, compile_options, model_content, preprocess_opt):
         names, args = TestRunner.split_value(cfg.infer)
@@ -538,7 +536,7 @@ class TestRunner(metaclass=ABCMeta):
                 compile_options, model_content, dict_args, preprocess_opt)
             judge, result = self.compare_results(
                 self.output_paths, infer_output_paths, dict_args)
-            assert(judge), 'Fault result in infer' + result
+            assert (judge), 'Fault result in infer' + result
 
     @staticmethod
     def split_value(kwcfg: List[Dict[str, str]]) -> Tuple[List[str], List[str]]:
@@ -565,7 +563,7 @@ class TestRunner(metaclass=ABCMeta):
                 model_content.append(f.read())
             return model_content
 
-    @ staticmethod
+    @staticmethod
     def kwargs_to_path(path: str, kwargs: Dict[str, str]):
         for k, v in kwargs.items():
             if isinstance(v, str):
@@ -661,6 +659,7 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.use_mse_quant_w = cfg.compile_opt.use_mse_quant_w
         compile_options.input_type = preprocess['input_type']
         compile_options.output_type = cfg.compile_opt.output_type
+        compile_options.output_range = cfg.compile_opt.output_range
         compile_options.quant_type = cfg.compile_opt.quant_type
         compile_options.w_quant_type = cfg.compile_opt.w_quant_type
         compile_options.swapRB = preprocess['swapRB']
@@ -669,10 +668,10 @@ class TestRunner(metaclass=ABCMeta):
         else:
             if self.model_type == "tflite" and preprocess['input_layout'] == "NCHW":
                 compile_options.input_shape = np.array([self.pre_process[3]['model_shape'][0], self.pre_process[3]
-                                                       ['model_shape'][3], self.pre_process[3]['model_shape'][1], self.pre_process[3]['model_shape'][2]])
+                                                        ['model_shape'][3], self.pre_process[3]['model_shape'][1], self.pre_process[3]['model_shape'][2]])
             elif self.model_type != "tflite" and preprocess['input_layout'] == "NHWC":
                 compile_options.input_shape = np.array([self.pre_process[3]['model_shape'][0], self.pre_process[3]
-                                                       ['model_shape'][2], self.pre_process[3]['model_shape'][3], self.pre_process[3]['model_shape'][1]])
+                                                        ['model_shape'][2], self.pre_process[3]['model_shape'][3], self.pre_process[3]['model_shape'][1]])
             else:
                 compile_options.input_shape = self.pre_process[3]['model_shape']
         compile_options.input_range = preprocess['input_range']
@@ -771,7 +770,7 @@ class TestRunner(metaclass=ABCMeta):
                 shape = []
                 if preprocess_opt['preprocess']:
                     if preprocess_opt['input_shape'] != []:
-                        assert(len(preprocess_opt['input_shape']) == 4)
+                        assert (len(preprocess_opt['input_shape']) == 4)
                         shape = copy.deepcopy(preprocess_opt['input_shape'])
                     else:
                         if self.model_type == "tflite" and preprocess_opt['input_layout'] == "NCHW":

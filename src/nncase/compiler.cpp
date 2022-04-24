@@ -436,7 +436,7 @@ private:
     {
         using namespace ir::transforms;
         run_passes("post_process", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { pmgr.add_pass<post_process_transform>(
-                                                                                                                                           cmp_options.output_layout, cmp_options.output_type, real_outlayout_); });
+                                                                                                                                           cmp_options.output_layout, real_outlayout_); });
     }
 
     void optimize_target_independent(ir::graph &graph)
@@ -527,16 +527,16 @@ private:
                 value_range<float> input_range { min, max };
                 quant->set(graph.inputs()[0]->output(), input_range);
                 quant->record(graph.inputs()[0]->output(), input_range);
-                // broadcast quant ranges
-                std::unordered_set<node_opcode> opcodes;
-                target_->add_quantization_broadcast(opcodes);
-                quant->broadcast_output(graph, opcodes);
             }
-
+            std::unordered_set<node_opcode> opcodes;
+            target_->add_quantization_broadcast(opcodes);
+            quant->broadcast_output(graph, opcodes);
+            quant->set_model_output_range(graph);
             pmgr.quantizer(quant);
+
             if (compile_options_.dump_ir)
                 pmgr.dump_dir(compile_options_.dump_dir);
-            target_->register_quantize_passes(graph.module_type(), pmgr, parse_datatype_str(compile_options_.quant_type), compile_options_.w_quant_type, compile_options_.use_mse_quant_w, parse_datatype_str(compile_options_.output_type), output_quant_params_);
+            target_->register_quantize_passes(graph.module_type(), pmgr, parse_datatype_str(compile_options_.quant_type), compile_options_.w_quant_type, compile_options_.use_mse_quant_w, parse_datatype_str(compile_options_.output_type), output_quant_params_, compile_options_.output_range);
             pmgr.run();
             dump_graph(graph, "quantize");
         };

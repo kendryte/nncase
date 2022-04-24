@@ -41,6 +41,7 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(cli_mean_, "normalize mean").name("--mean").optional().help("normalize mean, default is " + cli_mean_))
                          .add_argument(lyra::opt(cli_std_, "normalize std").name("--std").optional().help("normalize std, default is " + cli_std_))
                          .add_argument(lyra::opt(cli_input_range_, "input range").name("--input-range").optional().help("float range after preprocess"))
+                         .add_argument(lyra::opt(cli_output_range_, "output range").name("--output-range").optional().help("float range to quantize output"))
                          .add_argument(lyra::opt(cli_input_shape_, "input shape").name("--input-shape").optional().help("shape for input data"))
                          .add_argument(lyra::opt(letterbox_value_, "letter box value").name("--letterbox-value").optional().help("letter box pad value, default is " + std::to_string(letterbox_value_)))
                          .add_argument(lyra::opt(input_type_, "input type").name("--input-type").optional().help("input type, e.g float32|uint8|default, default is " + input_type_))
@@ -74,6 +75,7 @@ void compile_command::run()
     parser_vector_opt(cli_std_, std_);
     parser_vector_opt(cli_input_range_, input_range_);
     parser_vector_opt(cli_input_shape_, input_shape_);
+    parser_vector_opt(cli_output_range_, output_range_);
 
     compile_options c_options;
     c_options.dump_asm = dump_asm_;
@@ -90,6 +92,7 @@ void compile_command::run()
     c_options.mean = mean_;
     c_options.std = std_;
     c_options.input_range = input_range_;
+    c_options.output_range = output_range_;
     c_options.input_shape = input_shape_;
     c_options.w_quant_type = w_quant_type_;
     c_options.benchmark_only = benchmark_only_;

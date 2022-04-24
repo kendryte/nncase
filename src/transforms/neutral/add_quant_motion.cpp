@@ -83,7 +83,12 @@ void add_output_quantize_transform::process(transform_context &context)
     auto &quantizer = *context.quantizer;
     size_t bits = 8;
     auto qm = output_type_ == dt_uint8 ? quantizer::quant_mode::unsigned_mode : quantizer::quant_mode::signed_asymmetric_mode;
-    auto old_range = quantizer.get(output.owner().output_at(0));
+    value_range<float> old_range;
+    if (output_type_ != dt_float32 && output_range_.size() != 0)
+        old_range = { output_range_[0], output_range_[1] };
+    else
+        old_range = quantizer.get_model_output_range();
+    std::cout << "old_range: " << old_range.min << "\t" << old_range.max << std::endl;
     auto params = quantizer.get_quant_param(old_range, bits, qm);
 
     // get quant param for qint output
