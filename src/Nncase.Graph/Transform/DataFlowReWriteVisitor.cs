@@ -15,17 +15,18 @@ namespace Nncase.Transform;
 internal sealed class DataFlowRewriteVisitor : ExprMutator
 {
     private readonly IRewriteRule _rule;
-
-    public DataFlowRewriteVisitor(IRewriteRule rule)
+    private readonly RunPassOptions _options;
+    public DataFlowRewriteVisitor(IRewriteRule rule, RunPassOptions options)
     {
         _rule = rule;
+        _options = options;
     }
 
     public override Expr DefaultMutateLeaf(Expr expr)
     {
         if (CompilerServices.TryMatchRoot(expr, _rule.Pattern, out var match))
         {
-            var replace = _rule.GetReplace(match);
+            var replace = _rule.GetReplace(match, _options);
             if (replace != null)
             {
                 return replace;

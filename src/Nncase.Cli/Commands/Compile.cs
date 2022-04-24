@@ -33,7 +33,7 @@ namespace Nncase.Cli.Commands
             AddOption(new Option<int>("--dump-level", () => 0, "dump ir to .il, default is 0") { IsRequired = false });
             AddOption(new Option<string>("--dump-dir", () => ".", "dump to directory, default is .") { IsRequired = false });
 
-            Handler = CommandHandler.Create<CompileOptions, IHost>(Run);
+            Handler = CommandHandler.Create<ICompileOptions, IHost>(Run);
         }
 
         internal void ConfigureServices(IHost host)
@@ -42,7 +42,7 @@ namespace Nncase.Cli.Commands
             CompilerServices.Configure(provider);
         }
 
-        private void Run(CompileOptions options, IHost host)
+        private void Run(ICompileOptions options, IHost host)
         {
             ConfigureServices(host);
             var module = new Compiler.Compiler().ImportModule(File.OpenRead(options.InputFile), options);

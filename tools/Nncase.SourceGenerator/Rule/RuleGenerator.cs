@@ -46,17 +46,22 @@ internal class RuleGenerator : ISourceGenerator
                     ParseStatement($"var {parameterSymbol.Name} = {rightExpr};")
                 );
             }
+            if(cand.classSymobl.IsInheritFrom(receiver.LowerRuleSymbol))
+            {
+                statements.Add(ParseStatement($"Option = options;"));
+                statements.Add(ParseStatement($"Root = (Expr)result.Root;"));
+            }
             statements.Add(
               ParseStatement($"return {cand.methodSymbol.Name}({string.Join(",", cand.methodSymbol.Parameters.Select(p => p.Name))});")
             );
 
-            var modifiers = cand.classSymobl.BaseType is { IsGenericType: true, Name: "RewriteRule" }
+            var modifiers = cand.classSymobl.BaseType is { IsGenericType: true, Name: "RewriteRule" } || cand.classSymobl.IsInheritFrom(receiver.LowerRuleSymbol)
                 ? TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.OverrideKeyword))
                 : TokenList(Token(SyntaxKind.PublicKeyword));
 
             // 2. consturct wrapper method.
             var method = MethodDeclaration(ParseTypeName("Nncase.IR.Expr?"), Identifier("GetReplace"))
-                        .WithParameterList(ParseParameterList("(IMatchResult result)"))
+                        .WithParameterList(ParseParameterList("(IMatchResult result, RunPassOptions options)"))
                         .WithModifiers(modifiers)
                         .WithBody(Block(statements));
 

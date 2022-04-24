@@ -60,7 +60,7 @@ public class Compiler
         loggingBuilder.AddConsole();
     }
     
-    public IRModule ImportModule(Stream content, CompileOptions options)
+    public IRModule ImportModule(Stream content, ICompileOptions options)
     {
         Console.WriteLine($"Target: {options.Target}");
         var module = ImportModel(content, options);
@@ -75,7 +75,7 @@ public class Compiler
         return module;
     }
 
-    private void InferShape(IRModule module, CompileOptions options)
+    private void InferShape(IRModule module, ICompileOptions options)
     {
         Console.WriteLine("Infer Shape...");
         var pmgr = new PassManager(module, new RunPassOptions(null!, options.DumpLevel, options.DumpDir));
@@ -84,7 +84,7 @@ public class Compiler
         pmgr.Run();
     }
 
-    private IRModule ImportModel(Stream content, CompileOptions options) =>
+    private IRModule ImportModel(Stream content, ICompileOptions options) =>
         options.InputFormat switch
         {
             "tflite" => Importers.ImportTFLite(content),
@@ -92,7 +92,7 @@ public class Compiler
             _ => throw new NotImplementedException($"Not Implement {options.InputFormat} Impoter!"),
         };
 
-    private void DumpModule(IRModule module, CompileOptions options, string prefix)
+    private void DumpModule(IRModule module, ICompileOptions options, string prefix)
     {
         var dumpPath = Path.Combine(options.DumpDir, "dump", prefix);
         CompilerServices.DumpIR(module.Entry!, prefix, dumpPath);

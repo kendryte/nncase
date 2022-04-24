@@ -32,5 +32,5 @@ public interface IRewriteRule
     /// </summary>
     /// <param name="result">Match result.</param>
     /// <returns>Replace expression or null if nothing changed.</returns>
-    Expr? GetReplace(IMatchResult result);
+    Expr? GetReplace(IMatchResult result, RunPassOptions options);
 }

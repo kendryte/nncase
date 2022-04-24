@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Autofac;
+using Nncase.Compiler;
 
 namespace Nncase;
 
@@ -16,7 +17,8 @@ public class CoreModule : Module
         builder.RegisterType<CompilerServicesProvider>().AsImplementedInterfaces().SingleInstance();
         builder.RegisterType<DataTypeServiceProvider>().AsImplementedInterfaces().SingleInstance();
         builder.RegisterType<IR.IRPrinterProvider>().AsImplementedInterfaces().SingleInstance();
-
+        builder.RegisterType<CompileOptions>().AsImplementedInterfaces().SingleInstance();
+            
         // Prim types
         builder.RegisterType<BooleanType>().As<PrimType>().SingleInstance();
         builder.RegisterType<Utf8CharType>().As<PrimType>().SingleInstance();
