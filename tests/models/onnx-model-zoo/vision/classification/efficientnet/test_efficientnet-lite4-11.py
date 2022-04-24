@@ -18,8 +18,113 @@ from onnx_test_runner import OnnxTestRunner
 
 
 def test_efficientnet_lite4_11(request):
-    overwrite_file = open('tests/models/onnx-model-zoo/vision/classification/test_dataset_100.yml', 'r', encoding="utf8").read()
-    runner = OnnxTestRunner(request.node.name, ['cpu', 'k510'], overwrite_configs = overwrite_file)
+
+    overwrite_file = '''
+    setup: # 整个runner期间的超参数配置
+  root: dataset_tests_output
+  numworkers: 8
+  log_txt: true
+running: # 每个case运行时的处理配置
+  preprocess: null
+  postprocess: null
+case: # case的配置，应该是一个多层次的
+  preprocess_opt:
+    - name: preprocess
+      values:
+        - true
+    - name: swapRB
+      values:
+        - false
+    - name: input_shape
+      values:
+        - []
+    - name: mean
+      values:
+        - [0,0,0]
+    - name: std
+      values:
+        - [1,1,1]
+    - name: input_range
+      values:
+        - [0,255]
+    - name: input_type
+      values:
+        - float32
+    - name: input_layout
+      values:
+        - NHWC
+    - name: model_layout
+      values:
+        - NHWC
+    - name: output_layout
+      values:
+        - NHWC
+    - name: letterbox_value
+      values:
+        - 0.
+  importer_opt:
+    kwargs: null
+  compile_opt:
+    is_fpga: false
+    dump_asm: true
+    dump_ir: true
+    dump_quant_error: false
+    dump_import_op_range: false
+    quant_type: 'uint8'
+    w_quant_type: 'uint8'
+    use_mse_quant_w: true
+    quant_method: "l2"
+
+  ptq_opt:
+    kwargs:
+      input_mean: 0.5
+      input_std: 0.5
+  generate_inputs:
+    name: generate_imagenet_dataset
+    kwargs: 
+      dir_path: "ImageNet/ImageNet_1000_first"
+    numbers: 1
+    batch_size: 100
+  generate_calibs:
+    name: generate_imagenet_dataset
+    kwargs:
+      dir_path: "ImageNet/ImageNet_1000_first"
+    numbers: 1
+    batch_size: 10
+  generate_dump_range_data:
+    name: generate_imagenet_dataset
+    kwargs:
+      dir_path: "ImageNet/ImageNet_1000_first"
+    numbers: 1
+    batch_size: 1
+  eval:
+    - name: target
+      values:
+        - cpu
+    - name: ptq
+      values:
+        - false
+  infer:
+    - name: target
+      values:
+        - cpu
+    - name: ptq
+      values:
+        - false
+        - true
+judge:
+  common: &judge_common
+    simarity_name:  top1
+    threshold: 0.01
+    log_hist: true
+    matchs: null
+  specifics:
+    - matchs:
+        target: [cpu]
+        ptq: true
+      threshold: 1
+    '''
+    runner = OnnxTestRunner(request.node.name, ['cpu', 'k510'], overwrite_configs=overwrite_file)
     model_file = 'onnx-models/vision/classification/efficientnet-lite4/model/efficientnet-lite4-11.onnx'
     runner.run(model_file)
 
