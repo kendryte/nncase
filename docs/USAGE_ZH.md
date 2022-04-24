@@ -5,13 +5,9 @@ nncase目前提供了python wheel包和ncc客户端两种方法编译模型.
 - nncase wheel包需要去[nncase release](https://github.com/kendryte/nncase/releases)获取,  target wheel包除cpu/K210不需要安装外, 其它target需要从nncase sdk离线获取
 - ncc客户端需要用户下载并编译nncase
 
-
-
 # nncase python APIs
 
 nncase提供了Python APIs, 用于在PC上编译/推理深度学习模型.
-
-
 
 ## 安装
 
@@ -31,8 +27,6 @@ root@f74598de4a02:/mnt# pip3 install nncase_github/nncase-1.0.0.20211029-cp38-cp
 
 > 若不使用cpu/K210作为target, 需要从相应target的nncase sdk中获取wheel包并进行安装
 
-
-
 ## nncase 编译模型APIs
 
 ### CompileOptions
@@ -45,55 +39,58 @@ CompileOptions类, 用于配置nncase编译选项
 
 ```python
 py::class_<compile_options>(m, "CompileOptions")
-    .def(py::init())
-    .def_readwrite("target", &compile_options::target)
-    .def_readwrite("quant_type", &compile_options::quant_type)
-    .def_readwrite("w_quant_type", &compile_options::w_quant_type)
-    .def_readwrite("use_mse_quant_w", &compile_options::use_mse_quant_w)
-    .def_readwrite("preprocess", &compile_options::preprocess)
-    .def_readwrite("swapRB", &compile_options::swapRB)
-    .def_readwrite("mean", &compile_options::mean)
-    .def_readwrite("std", &compile_options::std)
-    .def_readwrite("input_range", &compile_options::input_range)
-    .def_readwrite("input_shape", &compile_options::input_shape)
-    .def_readwrite("letterbox_value", &compile_options::letterbox_value)
-    .def_readwrite("input_type", &compile_options::input_type)
-    .def_readwrite("output_type", &compile_options::output_type)
-    .def_readwrite("input_layout", &compile_options::input_layout)
-    .def_readwrite("output_layout", &compile_options::output_layout)
-    .def_readwrite("is_fpga", &compile_options::is_fpga)
-    .def_readwrite("dump_ir", &compile_options::dump_ir)
-    .def_readwrite("dump_asm", &compile_options::dump_asm)
-    .def_readwrite("dump_quant_error", &compile_options::dump_quant_error)
-    .def_readwrite("dump_dir", &compile_options::dump_dir)
-    .def_readwrite("benchmark_only", &compile_options::benchmark_only);
+        .def(py::init())
+        .def_readwrite("target", &compile_options::target)
+        .def_readwrite("quant_type", &compile_options::quant_type)
+        .def_readwrite("w_quant_type", &compile_options::w_quant_type)
+        .def_readwrite("use_mse_quant_w", &compile_options::use_mse_quant_w)
+        .def_readwrite("preprocess", &compile_options::preprocess)
+        .def_readwrite("swapRB", &compile_options::swapRB)
+        .def_readwrite("mean", &compile_options::mean)
+        .def_readwrite("std", &compile_options::std)
+        .def_readwrite("input_range", &compile_options::input_range)
+        .def_readwrite("output_range", &compile_options::output_range)
+        .def_readwrite("input_shape", &compile_options::input_shape)
+        .def_readwrite("letterbox_value", &compile_options::letterbox_value)
+        .def_readwrite("input_type", &compile_options::input_type)
+        .def_readwrite("output_type", &compile_options::output_type)
+        .def_readwrite("input_layout", &compile_options::input_layout)
+        .def_readwrite("output_layout", &compile_options::output_layout)
+        .def_readwrite("is_fpga", &compile_options::is_fpga)
+        .def_readwrite("dump_ir", &compile_options::dump_ir)
+        .def_readwrite("dump_asm", &compile_options::dump_asm)
+        .def_readwrite("dump_quant_error", &compile_options::dump_quant_error)
+        .def_readwrite("dump_import_op_range", &compile_options::dump_import_op_range)
+        .def_readwrite("dump_dir", &compile_options::dump_dir)
+        .def_readwrite("benchmark_only", &compile_options::benchmark_only);
 ```
 
 各属性说明如下
 
-| 属性名称         | 类型   | 是否必须 | 描述                                                         |
-| ---------------- | ------ | -------- | ------------------------------------------------------------ |
-| target           | string | 是       | 指定编译目标, 如'k210', 'k510'                               |
-| quant_type       | string | 否       | 指定数据量化类型, 如'uint8', 'int8', 'int16'                 |
-| w_quant_type     | string | 否       | 指定权重量化类型, 如'uint8', 'int8', 'int16', 默认为'uint8'  |
-| use_mse_quant_w  | bool   | 否       | 指定权重量化时是否使用最小化均方误差(mean-square error, MSE)算法优化量化参数 |
-| preprocess       | bool   | 否       | 是否开启前处理，默认为False                                  |
-| swapRB           | bool   | 否       | 是否交换RGB输入数据的红和蓝两个通道(RGB-->BGR或者BGR-->RGB)，默认为False |
-| mean             | list   | 否       | 前处理标准化参数均值，默认为[0, 0, 0]                        |
-| std              | list   | 否       | 前处理标准化参数方差，默认为[1, 1, 1]                        |
-| input_range      | list   | 否       | 输入数据反量化后对应浮点数的范围，默认为[0，1]               |
+| 属性名称         | 类型   | 是否必须 | 描述                                                                                                                                                  |
+| ---------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| target           | string | 是       | 指定编译目标, 如'k210', 'k510'                                                                                                                        |
+| quant_type       | string | 否       | 指定数据量化类型, 如'uint8', 'int8', 'int16'                                                                                                          |
+| w_quant_type     | string | 否       | 指定权重量化类型, 如'uint8', 'int8', 'int16', 默认为'uint8'                                                                                           |
+| use_mse_quant_w  | bool   | 否       | 指定权重量化时是否使用最小化均方误差(mean-square error, MSE)算法优化量化参数                                                                          |
+| preprocess       | bool   | 否       | 是否开启前处理，默认为False                                                                                                                           |
+| swapRB           | bool   | 否       | 是否交换RGB输入数据的红和蓝两个通道(RGB-->BGR或者BGR-->RGB)，默认为False                                                                              |
+| mean             | list   | 否       | 前处理标准化参数均值，默认为[0, 0, 0]                                                                                                                 |
+| std              | list   | 否       | 前处理标准化参数方差，默认为[1, 1, 1]                                                                                                                 |
+| input_range      | list   | 否       | 输入数据反量化后对应浮点数的范围，默认为[0，1]                                                                                                        |
+| output_range     | list   | 否       | 输出定点数据前对应浮点数的范围，默认为空，使用模型实际浮点输出范围                                                                                    |
 | input_shape      | list   | 否       | 指定输入数据的shape，input_shape的layout需要与input layout保持一致，输入数据的input_shape与模型的input shape不一致时会进行letterbox操作(resize/pad等) |
-| letterbox_value  | float  | 否       | 指定前处理letterbox的填充值                                  |
-| input_type       | string | 否       | 指定输入数据的类型, 默认为'float32'                          |
-| output_type      | string | 否       | 指定输出数据的类型, 如'float32', 'uint8'(仅用于指定量化情况下), 默认为'float32' |
-| input_layout     | string | 否       | 指定输入数据的layout, 如'NCHW', 'NHWC'. 若输入数据layout与模型本身layout不同, nncase会插入transpose进行转换 |
-| output_layout    | string | 否       | 指定输出数据的layout, 如'NCHW', 'NHWC'. 若输出数据layout与模型本身layout不同, nncase会插入transpose进行转换 |
-| is_fpga          | bool   | 否       | 指定kmodel是否用于fpga, 默认为False                          |
-| dump_ir          | bool   | 否       | 指定是否dump IR, 默认为False                                 |
-| dump_asm         | bool   | 否       | 指定是否dump asm汇编文件, 默认为False                        |
-| dump_quant_error | bool   | 否       | 指定是否dump量化前后的模型误差                               |
-| dump_dir         | string | 否       | 前面指定dump_ir等开关后, 这里指定dump的目录, 默认为空字符串  |
-| benchmark_only   | bool   | 否       | 指定kmodel是否只用于benchmark, 默认为False                   |
+| letterbox_value  | float  | 否       | 指定前处理letterbox的填充值                                                                                                                           |
+| input_type       | string | 否       | 指定输入数据的类型, 默认为'float32'                                                                                                                   |
+| output_type      | string | 否       | 指定输出数据的类型, 如'float32', 'uint8'(仅用于指定量化情况下), 默认为'float32'                                                                       |
+| input_layout     | string | 否       | 指定输入数据的layout, 如'NCHW', 'NHWC'. 若输入数据layout与模型本身layout不同, nncase会插入transpose进行转换                                           |
+| output_layout    | string | 否       | 指定输出数据的layout, 如'NCHW', 'NHWC'. 若输出数据layout与模型本身layout不同, nncase会插入transpose进行转换                                           |
+| is_fpga          | bool   | 否       | 指定kmodel是否用于fpga, 默认为False                                                                                                                   |
+| dump_ir          | bool   | 否       | 指定是否dump IR, 默认为False                                                                                                                          |
+| dump_asm         | bool   | 否       | 指定是否dump asm汇编文件, 默认为False                                                                                                                 |
+| dump_quant_error | bool   | 否       | 指定是否dump量化前后的模型误差                                                                                                                        |
+| dump_dir         | string | 否       | 前面指定dump_ir等开关后, 这里指定dump的目录, 默认为空字符串                                                                                           |
+| benchmark_only   | bool   | 否       | 指定kmodel是否只用于benchmark, 默认为False                                                                                                            |
 
 > 1. mean和std为浮点数进行normalize的参数，用户可以自由指定.
 > 2. input range为浮点数的范围，即如果输入数据类型为uint8，则input range为反量化到浮点之后的范围（可以不为0~1），可以自由指定.
@@ -113,6 +110,7 @@ py::class_<compile_options>(m, "CompileOptions")
 compile_options = nncase.CompileOptions()
 compile_options.target = target
 compile_options.input_type = 'float32'  # or 'uint8' 'int8'
+compile_options.output_type = 'float32'  # or 'uint8' 'int8'. Only work in PTQ
 compile_options.preprocess = True # if False, the args below will unworked
 compile_options.swapRB = True
 compile_options.input_shape = [1,224,224,3] # keep layout same as input layout
@@ -121,6 +119,7 @@ compile_options.output_layout = 'NHWC'
 compile_options.mean = [0,0,0]
 compile_options.std = [1,1,1]
 compile_options.input_range = [0,1]
+compile_options.output_range = []  # Only work in PTQ and output type is not "float32"
 compile_options.letterbox_value = 114. # pad what you want
 compile_options.dump_ir = True
 compile_options.dump_asm = True
@@ -181,10 +180,10 @@ py::class_<ptq_tensor_options>(m, "PTQTensorOptions")
 
 各属性说明如下
 
-| 字段名称         | 类型   | 是否必须 | 描述                                                         |
-| ---------------- | ------ | -------- | ------------------------------------------------------------ |
+| 字段名称         | 类型   | 是否必须 | 描述                                                                                  |
+| ---------------- | ------ | -------- | ------------------------------------------------------------------------------------- |
 | calibrate_method | string | 否       | 校准方法 ,  支持'no_clip', 'l2', 'kld_m0', 'kld_m1', 'kld_m2', 'cdf', 默认是'no_clip' |
-| samples_count    | int    | 否       | 样本个数                                                     |
+| samples_count    | int    | 否       | 样本个数                                                                              |
 
 #### set_tensor_data()
 
@@ -426,8 +425,6 @@ kmodel = compiler.gencode_tobytes()
 with open(os.path.join(infer_dir, 'test.kmodel'), 'wb') as f:
     f.write(kmodel)
 ```
-
-
 
 ## 编译模型示例
 
@@ -726,14 +723,78 @@ if __name__ == '__main__':
 
 ```
 
+### 编译更改输出类型tflite模型
+
+```python
+import nncase
+import numpy as np
+
+def read_model_file(model_file):
+    with open(model_file, 'rb') as f:
+        model_content = f.read()
+    return model_content
+
+def generate_data(shape, batch):
+    shape[0] *= batch
+    data = np.random.rand(*shape).astype(np.float32)
+    return data
+
+def main():
+    model='examples/mobilenetv2/data/model_f32.tflite'
+    input_shape = [1,224,224,3]
+    target = 'k510'
+
+    # compile_options
+    compile_options = nncase.CompileOptions()
+    compile_options.target = target
+    compile_options.input_type = 'float32'
+    compile_options.input_layout = 'NHWC'
+    compile_options.output_layout = 'NHWC'
+    compile_options.dump_ir = True
+    compile_options.dump_asm = True
+    compile_options.dump_dir = 'tmp'
+
+    # compiler
+    compiler = nncase.Compiler(compile_options)
+
+    # import_options
+    import_options = nncase.ImportOptions()
+
+    # quantize model
+    compile_options.quant_type = 'uint8' # or 'int8' 'int16'
+    compile_options.output_type = 'float32' # or 'int8' 'uint8'
+    compile_options.output_range = [] # work in output type is not "float32"
+
+    # ptq_options
+    ptq_options = nncase.PTQTensorOptions()
+    ptq_options.samples_count = 10
+    ptq_options.set_tensor_data(generate_data(input_shape, ptq_options.samples_count).tobytes())
+
+    # import
+    model_content = read_model_file(model)
+    compiler.import_tflite(model_content, import_options)
+
+    # compile
+    compiler.use_ptq(ptq_options)
+    compiler.compile()
+
+    # kmodel
+    kmodel = compiler.gencode_tobytes()
+    with open('test.kmodel', 'wb') as f:
+        f.write(kmodel)
+
+if __name__ == '__main__':
+    main()
+
+```
+
 
 ## 部署 nncase runtime
 
 ### K210
 
-1. 从 [Release](https://github.com/kendryte/nncase/releases) 页面下载 `k210-runtime.zip`。 
+1. 从 [Release](https://github.com/kendryte/nncase/releases) 页面下载 `k210-runtime.zip`。
 2. 解压到 [kendryte-standalone-sdk](https://github.com/kendryte/kendryte-standalone-sdk) 's `lib/nncase/v1` 目录。
-
 
 ## nncase 推理模型APIs
 
@@ -759,12 +820,12 @@ py::class_<memory_range>(m, "MemoryRange")
 
 各属性说明如下
 
-| 属性名称 | 类型           | 是否必须 | 描述                                                         |
-| -------- | -------------- | -------- | ------------------------------------------------------------ |
+| 属性名称 | 类型           | 是否必须 | 描述                                                                       |
+| -------- | -------------- | -------- | -------------------------------------------------------------------------- |
 | location | int            | 否       | 内存位置, 0表示input, 1表示output, 2表示rdata, 3表示data, 4表示shared_data |
-| dtype    | python数据类型 | 否       | 数据类型                                                     |
-| start    | int            | 否       | 内存起始地址                                                 |
-| size     | int            | 否       | 内存大小                                                     |
+| dtype    | python数据类型 | 否       | 数据类型                                                                   |
+| start    | int            | 否       | 内存起始地址                                                               |
+| size     | int            | 否       | 内存大小                                                                   |
 
 #### 代码示例
 
@@ -1169,11 +1230,10 @@ N/A
 sim.run()
 ```
 
-
-
 # ncc
 
 ## 命令行
+
 ```shell
 DESCRIPTION
 NNCASE model compiler and inference tool.
@@ -1269,16 +1329,14 @@ OPTIONS
 
 `compile` 命令将你训练好的模型 (`.tflite`, `.caffemodel`, `.onnx`) 编译到 `.kmodel`。
 
-
-
 - `-i, --input-format` 用来指定输入模型的格式。nncase 现在支持 `tflite`、`caffe` 和 `onnx` 输入格式。
 - `-t, --target` 用来指定你想要你的模型在哪种目标设备上运行。`cpu` 几乎所有平台都支持的通用目标。`k210` 是 Kendryte K210 SoC 平台。如果你指定了 `k210`，这个模型就只能在 K210 运行或在你的 PC 上模拟运行。
 - `<input file>` 用于指定输入模型文件
 - `--input-prototxt`用于指定caffe模型的prototxt文件
 - `<output file>` 用于指定输出模型文件
 - `--output-arrays `用于指定输出结点的名称
-- `--quant-type` 用于指定数据的量化类型, 如`uint8`/`int8`/`int16, 默认是`uint8
-- `--w-quant-type` 用于指定权重的量化类型, 如`uint8`/`int8`/`int16, 默认是`uint8
+- `--quant-type` 用于指定数据的量化类型, 如 `uint8`/`int8`/`int16, 默认是`uint8
+- `--w-quant-type` 用于指定权重的量化类型, 如 `uint8`/`int8`/`int16, 默认是`uint8
 - `--use-mse-quant-w`指定是否使用最小化mse(mean-square error, 均方误差)算法来量化权重.
 - `--dataset` 用于提供量化校准集来量化你的模型。你需要从训练集中选择几百到上千个数据放到这个目录里。
 - `--dataset-format` 用于指定量化校准集的格式。默认是 `image`，nncase 将使用 `opencv` 读取你的图片，并自动缩放到你的模型输入需要的尺寸。如果你的输入有 3 个通道，ncc 会将你的图片转换为值域是 [0,1] 布局是 `NCHW` 的张量。如果你的输入只有 1 个通道，ncc 会灰度化你的图片。如果你的数据集不是图片（例如音频或者矩阵），把它设置为 `raw`。这种场景下你需要把你的数据集转换为 float 张量的二进制文件。
@@ -1287,13 +1345,13 @@ OPTIONS
 - `--calibrate-method` 用于设置量化校准方法，它被用来选择最优的激活函数值域。默认值是 `no_clip`，ncc 会使用整个激活函数值域。如果你需要更好的量化结果，你可以使用 `l2`，但它需要花更长的时间寻找最优值域。
 - `--preprocess`指定是否预处理, 添加后表示开启预处理
 - `--swapRB`指定**预处理时**是否交换红和蓝两个通道数据, 用于实现RGB2BGR或BGR2RGB功能
-- `--mean`指定**预处理时**标准化参数均值,例如添加`--mean "0.1 2.3 33.1f"`用于设置三个通道的均值.
-- `--std`指定**预处理时**标准化参数方差,例如添加`--std "1. 2. 3."`用于设置三个通道的方差.
-- `--input-range`指定输入数据反量化后的数据范围,例如添加`--input-range "0.1 2."`设置反量化的范围为`[0.1~2]`.
-- `--input-shape`指定输入数据的形状. 若与模型的输入形状不同, 则预处理时会做resize/pad等处理, 例如添加`--input-shape "1 1 28 28"`指明当前输入图像尺寸.
+- `--mean`指定**预处理时**标准化参数均值,例如添加 `--mean "0.1 2.3 33.1f"`用于设置三个通道的均值.
+- `--std`指定**预处理时**标准化参数方差,例如添加 `--std "1. 2. 3."`用于设置三个通道的方差.
+- `--input-range`指定输入数据反量化后的数据范围,例如添加 `--input-range "0.1 2."`设置反量化的范围为 `[0.1~2]`.
+- `--input-shape`指定输入数据的形状. 若与模型的输入形状不同, 则预处理时会做resize/pad等处理, 例如添加 `--input-shape "1 1 28 28"`指明当前输入图像尺寸.
 - `--letterbox-value`用于指定预处理时pad填充的值.
 - `--input-type` 用于指定推理时输入的数据类型。如果 `--input-type` 是 `uint8`，推理时你需要提供 RGB888 uint8 张量。如果 `--input-type` 是 `float`，你则需要提供 RGB float 张量.
-- `--output-type` 用于指定推理时输出的数据类型。如`float`/`uint8`,  `uint8`仅在量化模型时才有效. 默认是`float`
+- `--output-type` 用于指定推理时输出的数据类型。如 `float`/`uint8`,  `uint8`仅在量化模型时才有效. 默认是 `float`
 - `--input-layout`用于指定输入数据的layout. 若输入数据的layout与模型的layout不同, 预处理会添加transpose进行转换.
 - `--output-layout`用于指定输出数据的layout
 - `--tcu-num`用于指定tcu个数, 默认值为0, 表示不配置tcu个数.
@@ -1305,11 +1363,9 @@ OPTIONS
 - `--dump-dir`是一个调试选项, 用于指定dump目录.
 - `--benchmark-only`是一个调试选项, 用于指定编译后的kmodel用于benchmark.
 
-
-
 `infer` 命令可以运行你的 kmodel，通常它被用来调试。ncc 会将你模型的输出张量按 `NCHW` 布局保存到 `.bin` 文件。
 
 - `<input file>` kmodel 的路径。
 - `<output path>` ncc 输出目录。
 - `--dataset` 测试集路径。
-- `--dataset-format`和`--input-layout`同 `compile` 命令中的含义。
+- `--dataset-format`和 `--input-layout`同 `compile` 命令中的含义。
