@@ -15,7 +15,6 @@
 #include "../tflite_importer.h"
 #include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/concat.h>
-#include <nncase/ir/ops/range.h>
 #include <schema_generated.h>
 
 using namespace nncase;
