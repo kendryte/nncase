@@ -45,7 +45,7 @@ void onnx_importer::convert_op_MatMul(const NodeProto &node)
     const auto &output = node.output()[0];
     const auto &output_shape = get_shape(output);
 
-    // reshape A to [batch, n, k]
+    // reshape A to [batch, m, k]
     shape_t new_a_shape { 1, 1, 1 };
     auto input_a_shape_size = input_a_shape.size();
     if (input_a_shape_size == 1)
@@ -75,7 +75,7 @@ void onnx_importer::convert_op_MatMul(const NodeProto &node)
     auto bc_a_3d = graph_.emplace<bitcast>(input_type, input_a_shape, new_a_shape);
     bc_a_3d->name(op_name + ".bitcast_A_3d(MatMul)");
 
-    // reshape B to [batch, k, m]
+    // reshape B to [batch, k, n]
     shape_t new_b_shape = { 1, 1, 1 };
     auto input_b_shape_size = input_b_shape.size();
     if (input_b_shape_size == 1)

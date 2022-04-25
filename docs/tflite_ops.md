@@ -69,6 +69,7 @@
 | SUB | ✅ |
 | SUM | ✅ |
 | TANH | ✅ |
+| TILE | ✅ |
 | TRANSPOSE | ✅ |
 | TRANSPOSE_CONV | ✅ |
 | QUANTIZE | ✅ |

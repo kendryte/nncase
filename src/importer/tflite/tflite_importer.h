@@ -96,6 +96,12 @@ private:
             return { 1 };
     }
 
+    template <typename T>
+    bool is_constant_tensor(const tflite::Tensor &tensor)
+    {
+        return get_buffer<T>(tensor).data() != nullptr;
+    }
+
     ir::axis_t get_axis(const flatbuffers::Vector<int32_t> &shape)
     {
         return { std::begin(shape), std::end(shape) };
