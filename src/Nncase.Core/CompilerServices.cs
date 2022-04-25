@@ -9,7 +9,6 @@ using System.Text;
 using System.Threading.Tasks;
 using CommonServiceLocator;
 using Microsoft.Extensions.DependencyInjection;
-using Nncase.Compiler;
 using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;

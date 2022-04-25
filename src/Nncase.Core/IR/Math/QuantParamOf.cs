@@ -20,5 +20,5 @@ public sealed record QuantParamOf(QuantMode QuantMode) : Op
     /// <summary>
     /// Gets bits;
     /// </summary>
-    public static readonly ParameterInfo Bits = new(typeof(QuantParamOf), 0, "bits", IsIntegralScalar());
+    public static readonly ParameterInfo Bits = new(typeof(QuantParamOf), 1, "bits", IsIntegralScalar());
 }

@@ -17,21 +17,19 @@ public class QuantizeEvaluator : IEvaluator<Quantize>, ITypeInferencer<Quantize>
     public IValue Visit(IEvaluateContext context, Quantize target)
     {
         var input = context.GetOrtArgumentValue(target, Quantize.Input);
-        var scale = context.GetOrtArgumentValue(target, Quantize.Scale);
-        var bias = context.GetOrtArgumentValue(target, Quantize.ZeroPoint);
-        return OrtKI.QuantizeLinear(input, scale, bias, 0).ToValue();
+        var quantParam = context.GetArgumentValueAsScalar<QuantParam>(target, Quantize.QuantParam);
+        return OrtKI.QuantizeLinear(input, quantParam.Scale, quantParam.ZeroPoint, 0).ToValue();
     }
 
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Quantize target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Dequantize.Input);
-        var zeroPoint = context.CheckArgumentType<TensorType>(target, Dequantize.ZeroPoint);
-        var scale = context.CheckArgumentType<TensorType>(target, Dequantize.Scale);
-        return Visit(target, input, zeroPoint, scale);
+        var input = context.CheckArgumentType<TensorType>(target, Quantize.Input);
+        var quantParam = context.CheckArgumentType<TensorType>(target, Quantize.QuantParam);
+        return Visit(target, input, quantParam);
     }
 
-    private IRType Visit(Quantize target, TensorType input, TensorType zeroPoint, TensorType scale)
+    private IRType Visit(Quantize target, TensorType input, TensorType quantParam)
     {
         return new TensorType(target.TargetType, input.Shape);
     }

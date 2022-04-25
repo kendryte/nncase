@@ -146,5 +146,11 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="tensor">Tensor.</param>
         public static implicit operator Expr(Tensor tensor) => Const.FromTensor(tensor);
+
+        /// <summary>
+        /// Create <see cref="Expr"/> from a <see cref="QuantParam"/>.
+        /// </summary>
+        /// <param name="quantParam">QuantParam.</param>
+        public static implicit operator Expr(QuantParam quantParam) => Tensor.FromScalar(quantParam);
     }
 }

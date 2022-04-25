@@ -42,7 +42,7 @@ internal class DataflowRewriter
             }
 
             OnRewriteEnd(post, options, count++);
-            if (!isMutated | options.RewriteOnce)
+            if (!isMutated || options.RewriteOnce)
             {
                 break;
             }

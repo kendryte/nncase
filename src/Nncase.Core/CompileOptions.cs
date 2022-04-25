@@ -3,9 +3,24 @@
 
 using System;
 
-namespace Nncase.Compiler
+namespace Nncase
 {
-    internal class CompileOptions { }
+    public class CompileOptions : ICompileOptions
+    {
+        public CompileOptions(bool usePtq)
+        {
+            UsePTQ = usePtq;
+        }
+
+        public string InputFile { get; set; }
+        public string InputFormat { get; set; }
+        public string Target { get; set; }
+        public int DumpLevel { get; set; }
+        public string DumpDir { get; set; }
+        public bool UsePTQ { get; set; }
+        public DataType QuantType { get; set; }
+        public QuantMode QuantMode { get; set; }
+    }
     
     /// <summary>
     /// Options of compile command.
@@ -38,5 +53,9 @@ namespace Nncase.Compiler
         public string DumpDir { get; set; }
 
         public bool UsePTQ { get; set; }
+        
+        public DataType QuantType { get; set; }
+        
+        public QuantMode QuantMode { get; set; }
     }
 }

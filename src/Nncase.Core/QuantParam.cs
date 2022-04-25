@@ -53,7 +53,7 @@ public sealed record QuantParamType : PrimType
     public override string ShortName => "q";
 
     /// <inheritdoc/>
-    public override Type CLRType => typeof(QuantParamType);
+    public override Type CLRType => typeof(QuantParam);
 
     /// <inheritdoc/>
     public unsafe override int SizeInBytes => sizeof(QuantParam);

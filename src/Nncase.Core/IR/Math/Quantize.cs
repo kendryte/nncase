@@ -17,12 +17,7 @@ public sealed record Quantize(DataType TargetType) : Op
     public static readonly ParameterInfo Input = new(typeof(Quantize), 0, "input");
 
     /// <summary>
-    /// Gets zero-point.
+    /// Gets QuantParam.
     /// </summary>
-    public static readonly ParameterInfo ZeroPoint = new(typeof(Quantize), 1, "zeroPoint");
-
-    /// <summary>
-    /// Gets scale.
-    /// </summary>
-    public static readonly ParameterInfo Scale = new(typeof(Quantize), 2, "scale");
+    public static readonly ParameterInfo QuantParam = new(typeof(Quantize), 1, "quantParam");
 }

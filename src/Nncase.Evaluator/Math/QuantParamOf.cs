@@ -44,7 +44,7 @@ public class QuantParamOfEvaluator : IEvaluator<QuantParamOf>, ITypeInferencer<Q
         var scale = (range.Max - range.Min) / (QMax - QMin);
         var bias = SMath.Round((range.Min * (QMin - QMax)) / (range.Max - range.Min)) + QMin;
         var r = new QuantParam((float)scale, (int)bias);
-        return Value.FromTensor(Tensor.FromScalar(r));
+        return Value.FromTensor(Tensor.FromScalar<QuantParam>(r));
     }
     
     private ValueRange<float> fixupRange(ValueRange<float> range, bool symmetric = false)
@@ -77,7 +77,7 @@ public class QuantParamOfEvaluator : IEvaluator<QuantParamOf>, ITypeInferencer<Q
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, QuantParamOf target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Dequantize.Input);
+        var input = context.CheckArgumentType<TensorType>(target, QuantParamOf.Range);
         return new TensorType(new QuantParamType(), Shape.Scalar);
     }
 }

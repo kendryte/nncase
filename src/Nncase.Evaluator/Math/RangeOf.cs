@@ -34,7 +34,7 @@ public class RangeOfEvaluator : IEvaluator<RangeOf>, ITypeInferencer<RangeOf>
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, RangeOf target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Dequantize.Input);
+        var input = context.CheckArgumentType<TensorType>(target, RangeOf.Input);
         return input with { Shape = new Shape(2) };
     }
 }

@@ -266,6 +266,8 @@ namespace Nncase.IR
             _ => false
         }, "IsNone");
 
+        public static TypePattern IsQuantParamType() => IsScalar() & HasDataType(new QuantParamType());
+            
         /// <summary>
         /// get padding windows output size
         /// </summary>

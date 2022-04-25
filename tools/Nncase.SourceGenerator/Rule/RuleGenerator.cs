@@ -46,16 +46,17 @@ internal class RuleGenerator : ISourceGenerator
                     ParseStatement($"var {parameterSymbol.Name} = {rightExpr};")
                 );
             }
-            if(cand.classSymobl.IsInheritFrom(receiver.LowerRuleSymbol))
+            if(cand.classSymobl.IsInheritFrom(receiver.QuantRuleSymbol))
             {
                 statements.Add(ParseStatement($"Option = options;"));
                 statements.Add(ParseStatement($"Root = (Expr)result.Root;"));
+                statements.Add(ParseStatement($"Init();"));
             }
             statements.Add(
               ParseStatement($"return {cand.methodSymbol.Name}({string.Join(",", cand.methodSymbol.Parameters.Select(p => p.Name))});")
             );
 
-            var modifiers = cand.classSymobl.BaseType is { IsGenericType: true, Name: "RewriteRule" } || cand.classSymobl.IsInheritFrom(receiver.LowerRuleSymbol)
+            var modifiers = cand.classSymobl.BaseType is { IsGenericType: true, Name: "RewriteRule" } || cand.classSymobl.IsInheritFrom(receiver.QuantRuleSymbol)
                 ? TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.OverrideKeyword))
                 : TokenList(Token(SyntaxKind.PublicKeyword));
 

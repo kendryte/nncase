@@ -14,8 +14,20 @@ namespace Nncase.Transform;
 /// <summary>
 /// Lower Rewrite rule.
 /// </summary>
-public abstract class LowerRule : RewriteRule<Pattern>
+public abstract class QuantRule : RewriteRule<Pattern>
 {
     public RunPassOptions Option;
+    
     public Expr Root;
+    
+    public bool IsQuantType(DataType dt) => dt == DataTypes.Int8 || dt == DataTypes.UInt8;
+    
+    public bool UsePTQ => Option.CompileOptions.UsePTQ;
+    
+    public DataType QuantType => Option.CompileOptions.QuantType;
+
+    public QuantMode QuantMode => Option.CompileOptions.QuantMode;
+
+    public abstract void Init();
+
 }

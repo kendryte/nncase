@@ -15,6 +15,11 @@ namespace Nncase.PatternMatch;
 
 internal sealed class Matcher
 {
+    private Matcher(Expr root)
+    {
+        _currentScope = new MatchScope(root);
+    }
+    
     private MatchScope _currentScope = new MatchScope();
 
     /// <summary>
@@ -32,7 +37,7 @@ internal sealed class Matcher
             return false;
         }
 
-        var matcher = new Matcher();
+        var matcher = new Matcher(expr);
         matcher.Visit(pattern, expr);
         return matcher._currentScope.TryGetMatchResult(out result);
     }

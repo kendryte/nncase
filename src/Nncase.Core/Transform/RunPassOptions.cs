@@ -7,7 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Nncase.Compiler;
 
 namespace Nncase.Transform
 {
@@ -100,7 +99,7 @@ namespace Nncase.Transform
         /// </summary>
         /// <param name="once"></param>
         /// <returns></returns>
-        public RunPassOptions SetRewriteOnce(bool once) => new(Target, DumpLevel, DumpDir) { PassName = PassName, RewriteOnce = once };
+        public RunPassOptions SetRewriteOnce(bool once) => new(Target, DumpLevel, DumpDir, CompileOptions) { PassName = PassName, RewriteOnce = once };
 
         /// <summary>
         /// indent the dumpDir.

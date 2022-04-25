@@ -15,14 +15,9 @@ public sealed record Dequantize(DataType TargetType) : Op
     /// Gets input.
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(Dequantize), 0, "input");
-
+    
     /// <summary>
-    /// Gets zero-point.
+    /// Gets DequantParam.
     /// </summary>
-    public static readonly ParameterInfo ZeroPoint = new(typeof(Dequantize), 1, "zero_point");
-
-    /// <summary>
-    /// Gets scale.
-    /// </summary>
-    public static readonly ParameterInfo Scale = new(typeof(Dequantize), 2, "scale");
+    public static readonly ParameterInfo DequantParam = new(typeof(Dequantize), 1, "dequantParam");
 }
