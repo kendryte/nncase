@@ -531,7 +531,8 @@ private:
             std::unordered_set<node_opcode> opcodes;
             target_->add_quantization_broadcast(opcodes);
             quant->broadcast_output(graph, opcodes);
-            quant->set_model_output_range(graph);
+            if (compile_options_.output_type != "float32")
+                quant->set_model_output_range(graph);
             pmgr.quantizer(quant);
 
             if (compile_options_.dump_ir)
