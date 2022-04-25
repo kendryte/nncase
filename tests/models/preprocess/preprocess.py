@@ -50,7 +50,7 @@ def preprocess(model, img_data, shape):
     if model in _default_process:
         return default_preprocess(img_data, shape)
     elif model in _vgg_precess:
-        return vgg_preprocess(img_data, shape[1], shape[2], False, 256, 256, False)
+        return vgg_preprocess(img_data, shape)
     else:
         # # TODO: add more dataset test model
         # raise "model not in model_zoo"

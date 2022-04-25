@@ -20,13 +20,6 @@ from onnx_test_runner import OnnxTestRunner
 def test_efficientnet_lite4_11(request):
 
     overwrite_file = '''
-    setup: # 整个runner期间的超参数配置
-  root: dataset_tests_output
-  numworkers: 8
-  log_txt: true
-running: # 每个case运行时的处理配置
-  preprocess: null
-  postprocess: null
 case: # case的配置，应该是一个多层次的
   preprocess_opt:
     - name: preprocess
@@ -75,10 +68,6 @@ case: # case的配置，应该是一个多层次的
     use_mse_quant_w: true
     quant_method: "l2"
 
-  ptq_opt:
-    kwargs:
-      input_mean: 0.5
-      input_std: 0.5
   generate_inputs:
     name: generate_imagenet_dataset
     kwargs: 
