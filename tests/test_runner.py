@@ -673,8 +673,8 @@ class TestRunner(metaclass=ABCMeta):
                 elif self.model_type != "tflite" and preprocess['input_layout'] == "NHWC":
                     compile_options.input_shape = np.array([self.pre_process[3]['model_shape'][0], self.pre_process[3]
                                                             ['model_shape'][2], self.pre_process[3]['model_shape'][3], self.pre_process[3]['model_shape'][1]])
-                else:
-                    compile_options.input_shape = self.pre_process[3]['model_shape']
+        else:
+            compile_options.input_shape = self.inputs[0]['model_shape']
         compile_options.input_range = preprocess['input_range']
         compile_options.preprocess = preprocess['preprocess']
         compile_options.mean = preprocess['mean']
