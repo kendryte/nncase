@@ -570,9 +570,6 @@ private:
             evaluator.enable_ptq(*target_, calib_method);
         }
 
-        if (graph.inputs().size() != 1)
-            throw std::invalid_argument("Collect ranges only support models that have single 1 input");
-
         if (step != eval_step::after_import)
         {
             if (ptq_options_.index() == 0)
@@ -709,8 +706,13 @@ private:
 
             for (size_t i = 0; i < options.samples_count; i++)
             {
-                auto input_buffer = evaluator.input_at(0).buffer();
-                std::memcpy(input_buffer.data(), options.tensor_data.data() + i * input_buffer.size_bytes(), input_buffer.size_bytes());
+                uint32_t input_offset = 0;
+                for (uint32_t j = 0; j < evaluator.inputs_size(); j++)
+                {
+                    auto input_buffer = evaluator.input_at(j).buffer();
+                    std::memcpy(input_buffer.data(), options.tensor_data.data() + input_offset + i * input_buffer.size_bytes(), input_buffer.size_bytes());
+                    input_offset += (options.samples_count * input_buffer.size_bytes());
+                }
 
                 evaluator.evaluate(step, stage, compile_options_.dump_quant_error);
                 evaluator.end_sample();
