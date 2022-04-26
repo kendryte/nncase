@@ -14,16 +14,22 @@
 | CONCATENATION | ✅ |
 | CONV_2D | ✅ |
 | COS | ✅ |
+| CUSTOM | ✅ |
 | DEPTHWISE_CONV_2D | ✅ |
 | DIV | ✅ |
+| EQUAL | ✅ |
 | EXP | ✅ |
 | EXPAND_DIMS | ✅ |
 | FLOOR | ✅ |
 | FLOOR_DIV | ✅ |
 | FLOOR_MOD | ✅ |
 | FULLY_CONNECTED | ✅ |
+| GREATER | ✅ |
+| GREATER_EQUAL | ✅ |
 | L2_NORMALIZATION | ✅ |
 | LEAKY_RELU | ✅ |
+| LESS | ✅ |
+| LESS_EQUAL | ✅ |
 | LOG | ✅ |
 | LOGISTIC | ✅ |
 | MAX_POOL_2D | ✅ |
@@ -32,6 +38,7 @@
 | MINIMUM | ✅ |
 | MUL | ✅ |
 | NEG | ✅ |
+| NOT_EQUAL | ✅ |
 | PAD | ✅ |
 | PADV2 | ✅ |
 | MIRROR_PAD | ✅ |
@@ -39,6 +46,7 @@
 | POW | ✅ |
 | REDUCE_MAX | ✅ |
 | REDUCE_MIN | ✅ |
+| REDUCE_PROD | ✅ |
 | RELU | ✅ |
 | PRELU | ✅ |
 | RELU6 | ✅ |
@@ -71,3 +79,4 @@
 | SQUARED_DIFFERENCE | ✅ |
 | LOG_SOFTMAX | ✅ |
 | SPLIT | ✅ |
+| HARD_SWISH | ✅ |

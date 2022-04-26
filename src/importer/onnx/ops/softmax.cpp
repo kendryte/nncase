@@ -60,7 +60,7 @@ void onnx_importer::convert_op_Softmax(const NodeProto &node)
         bc1->name(op_name + ".bitcast1(Softmax)");
 
         axis_t axes { 1 };
-        auto rmax = graph_.emplace<reduce>(reduce_max, bc1->output().shape(), axes, std::numeric_limits<float>::lowest(), true);
+        auto rmax = graph_.emplace<reduce>(reduce_max, input_type, bc1->output().shape(), axes, std::numeric_limits<float>::lowest(), true);
         rmax->name(op_name + ".rmax(Softmax)");
 
         auto sub = graph_.emplace<binary>(binary_sub, input_type, bc1->output().shape(), rmax->output().shape(), value_range<float>::full());
@@ -69,7 +69,7 @@ void onnx_importer::convert_op_Softmax(const NodeProto &node)
         auto exp = graph_.emplace<unary>(unary_exp, sub->output().shape());
         exp->name(op_name + ".exp(Softmax)");
 
-        auto rsum = graph_.emplace<reduce>(reduce_sum, exp->output().shape(), axes, 0.f, true);
+        auto rsum = graph_.emplace<reduce>(reduce_sum, input_type, exp->output().shape(), axes, 0.f, true);
         rsum->name(op_name + ".rsum(Softmax)");
 
         auto div = graph_.emplace<binary>(binary_div, input_type, exp->output().shape(), rsum->output().shape(), value_range<float>::full());
@@ -93,7 +93,7 @@ void onnx_importer::convert_op_Softmax(const NodeProto &node)
     else
     {
         axis_t axes { axis };
-        auto rmax = graph_.emplace<reduce>(reduce_max, input_shape, axes, std::numeric_limits<float>::lowest(), true);
+        auto rmax = graph_.emplace<reduce>(reduce_max, input_type, input_shape, axes, std::numeric_limits<float>::lowest(), true);
         rmax->name(op_name + ".rmax(Softmax)");
 
         auto sub = graph_.emplace<binary>(binary_sub, input_type, input_shape, rmax->output().shape(), value_range<float>::full());
@@ -102,7 +102,7 @@ void onnx_importer::convert_op_Softmax(const NodeProto &node)
         auto exp = graph_.emplace<unary>(unary_exp, sub->output().shape());
         exp->name(op_name + ".exp(Softmax)");
 
-        auto rsum = graph_.emplace<reduce>(reduce_sum, exp->output().shape(), axes, 0.f, true);
+        auto rsum = graph_.emplace<reduce>(reduce_sum, input_type, exp->output().shape(), axes, 0.f, true);
         rsum->name(op_name + ".rsum(Softmax)");
 
         auto div = graph_.emplace<binary>(binary_div, input_type, exp->output().shape(), rsum->output().shape(), value_range<float>::full());
@@ -154,7 +154,7 @@ void onnx_importer::convert_op_LogSoftmax(const NodeProto &node)
         bc1->name(op_name + ".bitcast1(LogSoftmax)");
 
         axis_t axes { 1 };
-        auto rmax = graph_.emplace<reduce>(reduce_max, bc1->output().shape(), axes, std::numeric_limits<float>::lowest(), true);
+        auto rmax = graph_.emplace<reduce>(reduce_max, input_type, bc1->output().shape(), axes, std::numeric_limits<float>::lowest(), true);
         rmax->name(op_name + ".rmax(LogSoftmax)");
 
         auto sub1 = graph_.emplace<binary>(binary_sub, input_type, bc1->output().shape(), rmax->output().shape(), value_range<float>::full());
@@ -163,7 +163,7 @@ void onnx_importer::convert_op_LogSoftmax(const NodeProto &node)
         auto exp = graph_.emplace<unary>(unary_exp, sub1->output().shape());
         exp->name(op_name + ".exp(LogSoftmax)");
 
-        auto rsum = graph_.emplace<reduce>(reduce_sum, exp->output().shape(), axes, 0.f, true);
+        auto rsum = graph_.emplace<reduce>(reduce_sum, input_type, exp->output().shape(), axes, 0.f, true);
         rsum->name(op_name + ".rsum(LogSoftmax)");
 
         auto log = graph_.emplace<unary>(unary_log, rsum->output().shape());
@@ -192,7 +192,7 @@ void onnx_importer::convert_op_LogSoftmax(const NodeProto &node)
     {
         // opset 13
         axis_t axes { axis };
-        auto rmax = graph_.emplace<reduce>(reduce_max, input_shape, axes, std::numeric_limits<float>::lowest(), true);
+        auto rmax = graph_.emplace<reduce>(reduce_max, input_type, input_shape, axes, std::numeric_limits<float>::lowest(), true);
         rmax->name(op_name + ".rmax(LogSoftmax)");
 
         auto sub1 = graph_.emplace<binary>(binary_sub, input_type, input_shape, rmax->output().shape(), value_range<float>::full());
@@ -201,7 +201,7 @@ void onnx_importer::convert_op_LogSoftmax(const NodeProto &node)
         auto exp = graph_.emplace<unary>(unary_exp, sub1->output().shape());
         exp->name(op_name + ".exp(LogSoftmax)");
 
-        auto rsum = graph_.emplace<reduce>(reduce_sum, exp->output().shape(), axes, 0.f, true);
+        auto rsum = graph_.emplace<reduce>(reduce_sum, input_type, exp->output().shape(), axes, 0.f, true);
         rsum->name(op_name + ".rsum(LogSoftmax)");
 
         auto log = graph_.emplace<unary>(unary_log, rsum->output().shape());

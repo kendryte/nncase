@@ -18,20 +18,22 @@
 
 namespace nncase::ir
 {
-class NNCASE_API equal : public node
+class NNCASE_API compare : public node
 {
 public:
-    DEFINE_NODE_OPCODE(op_equal);
+    DEFINE_NODE_OPCODE(op_compare);
 
     input_connector &input_a() { return input_at(0); }
     input_connector &input_b() { return input_at(1); }
     output_connector &output() { return output_at(0); }
 
-    equal(datatype_t input_type, shape_t input_a_shape, shape_t input_b_shape);
+    compare_op_t compare_op() const noexcept { return compare_op_; }
+    compare(compare_op_t compare_op, datatype_t input_type, shape_t input_a_shape, shape_t input_b_shape);
 
 protected:
     bool properties_equal(node &other) const override;
 
 private:
+    compare_op_t compare_op_;
 };
 }

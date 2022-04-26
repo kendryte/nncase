@@ -20,13 +20,13 @@
 #include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/broadcast.h>
 #include <nncase/ir/ops/clamp.h>
+#include <nncase/ir/ops/compare.h>
 #include <nncase/ir/ops/concat.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/conv2d_transpose.h>
 #include <nncase/ir/ops/convert.h>
 #include <nncase/ir/ops/cumsum.h>
 #include <nncase/ir/ops/dequantize.h>
-#include <nncase/ir/ops/equal.h>
 #include <nncase/ir/ops/fused_unary.h>
 #include <nncase/ir/ops/gather.h>
 #include <nncase/ir/ops/gather_nd.h>
@@ -231,8 +231,8 @@ void register_neutral_evaluators()
         }
     });
 
-    register_evaluator(op_equal, [](ir::node &node, function_evaluate_context &context) {
-        auto &rnode = static_cast<equal &>(node);
+    register_evaluator(op_compare, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<compare &>(node);
 
         auto input_a = context.memory_at(rnode.input_a());
         auto input_b = context.memory_at(rnode.input_b());
@@ -242,25 +242,31 @@ void register_neutral_evaluators()
         switch (input_type)
         {
         case dt_uint8:
-            kernels::equal(input_a.buffer().as_span<uint8_t>().data(), input_b.buffer().as_span<uint8_t>().data(),
+            kernels::compare(rnode.compare_op(), input_a.buffer().as_span<uint8_t>().data(), input_b.buffer().as_span<uint8_t>().data(),
                 output.buffer().as_span<bool>().data(), input_a.shape(), input_a.strides(),
-                input_b.shape(), input_b.strides(), output.strides())
+                input_b.shape(), input_b.strides(), output.shape(), output.strides())
                 .unwrap_or_throw();
             break;
         case dt_float32:
-            kernels::equal(input_a.buffer().as_span<float>().data(), input_b.buffer().as_span<float>().data(),
+            kernels::compare(rnode.compare_op(), input_a.buffer().as_span<float>().data(), input_b.buffer().as_span<float>().data(),
                 output.buffer().as_span<bool>().data(), input_a.shape(), input_a.strides(),
-                input_b.shape(), input_b.strides(), output.strides())
+                input_b.shape(), input_b.strides(), output.shape(), output.strides())
+                .unwrap_or_throw();
+            break;
+        case dt_int32:
+            kernels::compare(rnode.compare_op(), input_a.buffer().as_span<int32_t>().data(), input_b.buffer().as_span<int32_t>().data(),
+                output.buffer().as_span<bool>().data(), input_a.shape(), input_a.strides(),
+                input_b.shape(), input_b.strides(), output.shape(), output.strides())
                 .unwrap_or_throw();
             break;
         case dt_int64:
-            kernels::equal(input_a.buffer().as_span<int64_t>().data(), input_b.buffer().as_span<int64_t>().data(),
+            kernels::compare(rnode.compare_op(), input_a.buffer().as_span<int64_t>().data(), input_b.buffer().as_span<int64_t>().data(),
                 output.buffer().as_span<bool>().data(), input_a.shape(), input_a.strides(),
-                input_b.shape(), input_b.strides(), output.strides())
+                input_b.shape(), input_b.strides(), output.shape(), output.strides())
                 .unwrap_or_throw();
             break;
         default:
-            std::cerr << "unsupported dtype for equal: " + std::string(datatype_names(input_type));
+            std::cerr << "unsupported dtype for compare: " + std::string(datatype_names(input_type));
         }
     });
 
@@ -334,16 +340,25 @@ void register_neutral_evaluators()
 
     register_evaluator(op_reduce, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<reduce &>(node);
-
-        assert(rnode.input().type() == dt_float32);
         auto input = context.memory_at(rnode.input());
         auto output = context.memory_at(rnode.output());
-        auto input_mem = input.buffer().as_span<float>();
-        auto output_mem = output.buffer().as_span<float>();
 
-        kernels::reduce(rnode.reduce_op(), rnode.init_value(), input_mem.data(), output_mem.data(), input.shape(),
-            to(rnode.axis()), input.strides(), output.strides(), rnode.keep_dims())
-            .unwrap_or_throw();
+        auto input_type = rnode.input().type();
+        switch (input_type)
+        {
+        case dt_float32:
+            kernels::reduce(rnode.reduce_op(), static_cast<float>(rnode.init_value()), input.buffer().as_span<float>().data(),
+                output.buffer().as_span<float>().data(), input.shape(), to(rnode.axis()), input.strides(), output.strides(), rnode.keep_dims())
+                .unwrap_or_throw();
+            break;
+        case dt_int32:
+            kernels::reduce(rnode.reduce_op(), static_cast<int32_t>(rnode.init_value()), input.buffer().as_span<int32_t>().data(),
+                output.buffer().as_span<int32_t>().data(), input.shape(), to(rnode.axis()), input.strides(), output.strides(), rnode.keep_dims())
+                .unwrap_or_throw();
+            break;
+        default:
+            std::cerr << "unsupported dtype for reduce: " + std::string(datatype_names(input_type));
+        }
     });
 
     register_evaluator(op_reduce_arg, [](ir::node &node, function_evaluate_context &context) {
@@ -375,16 +390,25 @@ void register_neutral_evaluators()
 
     register_evaluator(op_reduce_prod, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<reduce_prod &>(node);
-
-        assert(rnode.input().type() == dt_float32);
         auto input = context.memory_at(rnode.input());
         auto output = context.memory_at(rnode.output());
-        auto input_mem = input.buffer().as_span<float>();
-        auto output_mem = output.buffer().as_span<float>();
 
-        kernels::reduce_prod(input_mem.data(), output_mem.data(), input.shape(),
-            input.strides(), output.strides(), to(rnode.axis()), rnode.keep_dims())
-            .unwrap_or_throw();
+        auto input_type = rnode.input().type();
+        switch (input_type)
+        {
+        case dt_float32:
+            kernels::reduce_prod(input.buffer().as_span<float>().data(), output.buffer().as_span<float>().data(), input.shape(),
+                input.strides(), output.strides(), to(rnode.axis()), rnode.keep_dims())
+                .unwrap_or_throw();
+            break;
+        case dt_int32:
+            kernels::reduce_prod(input.buffer().as_span<int32_t>().data(), output.buffer().as_span<int32_t>().data(), input.shape(),
+                input.strides(), output.strides(), to(rnode.axis()), rnode.keep_dims())
+                .unwrap_or_throw();
+            break;
+        default:
+            std::cerr << "unsupported dtype for reduce_prod: " + std::string(datatype_names(input_type));
+        }
     });
 
     register_evaluator(op_reduce_window2d, [](ir::node &node, function_evaluate_context &context) {

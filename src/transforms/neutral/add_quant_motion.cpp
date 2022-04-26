@@ -86,6 +86,8 @@ void add_output_quantize_transform::process(transform_context &context)
     auto old_range = quantizer.get(output.owner().output_at(0));
     auto params = quantizer.get_quant_param(old_range, bits, qm);
 
+    // get quant param for qint output
+    output_quant_param_ = params;
     auto q = context.graph.emplace<quantize>(dt_float32, output.shape(), output_type_, params);
     auto new_out_node = context.graph.emplace<output_node>(q->output().type(), q->output().shape());
     old_out->input().clear_connection();

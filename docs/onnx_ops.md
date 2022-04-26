@@ -42,6 +42,8 @@
 | Gemm | ✅ |
 | GlobalAveragePool | ✅ |
 | GlobalMaxPool | ✅ |
+| Greater | ✅ |
+| GreaterOrEqual | ✅ |
 | Hardmax | ✅ |
 | HardSigmoid | ✅ |
 | HardSwish | ✅ |
@@ -49,6 +51,8 @@
 | InstanceNormalization | ✅ |
 | LpNormalization | ✅ |
 | LeakyRelu | ✅ |
+| Less | ✅ |
+| LessOrEqual | ✅ |
 | Log | ✅ |
 | LogSoftmax | ✅ |
 | LRN | ✅ |

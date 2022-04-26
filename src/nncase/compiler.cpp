@@ -533,16 +533,10 @@ private:
                 quant->broadcast_output(graph, opcodes);
             }
 
-            ir::transforms::transform_pass p("process i&o node");
-
-            if (compile_options_.output_type != "float32")
-                p.emplace<nncase::ir::transforms::add_output_quantize_transform>(parse_datatype_str(compile_options_.output_type));
-            pmgr.add_pass(std::move(p));
-
             pmgr.quantizer(quant);
             if (compile_options_.dump_ir)
                 pmgr.dump_dir(compile_options_.dump_dir);
-            target_->register_quantize_passes(graph.module_type(), pmgr, parse_datatype_str(compile_options_.quant_type), compile_options_.w_quant_type, compile_options_.use_mse_quant_w);
+            target_->register_quantize_passes(graph.module_type(), pmgr, parse_datatype_str(compile_options_.quant_type), compile_options_.w_quant_type, compile_options_.use_mse_quant_w, parse_datatype_str(compile_options_.output_type), output_quant_params_);
             pmgr.run();
             dump_graph(graph, "quantize");
         };
@@ -786,7 +780,18 @@ private:
         std::cout << "TOTAL"
                   << "\t" << format_size(total_usage) << std::endl;
 
-        std::ofstream file(compile_options_.dump_dir / "memory_usage.txt");
+        std::ofstream file(compile_options_.dump_dir / "kmodel_info.txt");
+        if (compile_options_.dump_dir.filename().string() == "ptq" and compile_options_.output_type != "float32")
+        {
+            file << "\nOUTPUT_QUANT_PARAM" << std::endl;
+            file << "scale:      " << output_quant_params_.scale << std::endl;
+            file << "zero_point: " << output_quant_params_.zero_point << std::endl;
+
+            std::cout << "\nOUTPUT_QUANT_PARAM" << std::endl;
+            std::cout << "scale:      " << output_quant_params_.scale << std::endl;
+            std::cout << "zero_point: " << output_quant_params_.zero_point << std::endl;
+        }
+        file << "\nMEMORY USAGES" << std::endl;
         file << "input: " << format_size(mod_builder.max_usage(mem_input)) << std::endl;
         file << "output: " << format_size(mod_builder.max_usage(mem_output)) << std::endl;
         file << "data: " << format_size(mod_builder.max_usage(mem_data)) << std::endl;
@@ -811,6 +816,7 @@ private:
     std::unique_ptr<nncase::target> target_;
     std::string real_inlayout_ = "";
     std::string real_outlayout_ = "";
+    quant_param_t output_quant_params_ = { 0, 0 };
 };
 }
 

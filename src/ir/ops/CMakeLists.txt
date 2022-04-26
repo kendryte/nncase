@@ -2,12 +2,12 @@
 
 target_sources(ir PRIVATE
     call.cpp
+    compare.cpp
     copy.cpp
     conv2d.cpp
     conv2d_transpose.cpp
     convert.cpp
     cumsum.cpp
-    equal.cpp
     fused_unary.cpp
     matmul.cpp
     transpose.cpp
