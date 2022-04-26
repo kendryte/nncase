@@ -12,7 +12,7 @@ namespace Nncase;
 /// <summary>
 /// Unary operator kind.
 /// </summary>
-public enum UnaryOp
+public enum UnaryOp : byte
 {
     /// <summary>
     /// Abs.

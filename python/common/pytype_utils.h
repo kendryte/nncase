@@ -18,14 +18,11 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
-namespace nncase
-{
-pybind11::dtype to_dtype(datatype_t type)
-{
+namespace nncase {
+pybind11::dtype to_dtype(typecode_t type) {
     namespace py = pybind11;
 
-    switch (type)
-    {
+    switch (type) {
     case dt_uint8:
         return py::dtype::of<uint8_t>();
     case dt_uint16:
@@ -49,12 +46,19 @@ pybind11::dtype to_dtype(datatype_t type)
     case dt_float64:
         return py::dtype::of<double>();
     default:
-        throw std::runtime_error("Unsupported dtype " + (std::string)datatype_names(type));
+        throw std::runtime_error("Unsupported dtype " + to_string(type));
     }
 }
 
-datatype_t from_dtype(pybind11::dtype dtype)
-{
+pybind11::dtype to_dtype(const datatype_t type) {
+    auto primtype = type.as<prim_type_t>();
+    if (primtype.is_err()) {
+        throw std::runtime_error("Only support primtype.");
+    }
+    return to_dtype(primtype.unwrap()->typecode());
+}
+
+typecode_t from_dtype(pybind11::dtype dtype) {
     namespace py = pybind11;
 
     if (dtype.is(py::dtype::of<uint8_t>()) || dtype.is(py::dtype::of<bool>()))
@@ -79,27 +83,26 @@ datatype_t from_dtype(pybind11::dtype dtype)
         return dt_float32;
     else if (dtype.is(py::dtype::of<double>()))
         return dt_float64;
-    throw std::runtime_error("Unsupported dtype " + (std::string)py::str(dtype));
+    throw std::runtime_error("Unsupported dtype " +
+                             (std::string)py::str(dtype));
 }
 
-runtime_shape_t to_rt_shape(const std::vector<pybind11::ssize_t> &value)
-{
-    runtime_shape_t shape(value.size());
+dims_t to_rt_shape(const std::vector<pybind11::ssize_t> &value) {
+    dims_t shape(value.size());
     for (size_t i = 0; i < shape.size(); i++)
         shape[i] = (size_t)value[i];
     return shape;
 }
 
-runtime_shape_t to_rt_strides(size_t elemsize, const std::vector<pybind11::ssize_t> &value)
-{
-    runtime_shape_t strides(value.size());
+strides_t to_rt_strides(size_t elemsize,
+                        const std::vector<pybind11::ssize_t> &value) {
+    strides_t strides(value.size());
     for (size_t i = 0; i < strides.size(); i++)
         strides[i] = (size_t)value[i] / elemsize;
     return strides;
 }
 
-std::vector<pybind11::ssize_t> to_py_shape(const runtime_shape_t &value)
-{
+std::vector<pybind11::ssize_t> to_py_shape(gsl::span<const size_t> value) {
     namespace py = pybind11;
 
     std::vector<py::ssize_t> shape(value.size());
@@ -108,8 +111,8 @@ std::vector<pybind11::ssize_t> to_py_shape(const runtime_shape_t &value)
     return shape;
 }
 
-std::vector<pybind11::ssize_t> to_py_strides(size_t elemsize, const runtime_shape_t &value)
-{
+std::vector<pybind11::ssize_t> to_py_strides(size_t elemsize,
+                                             gsl::span<const size_t> value) {
     namespace py = pybind11;
 
     std::vector<py::ssize_t> strides(value.size());
@@ -117,4 +120,4 @@ std::vector<pybind11::ssize_t> to_py_strides(size_t elemsize, const runtime_shap
         strides[i] = (py::ssize_t)value[i] * elemsize;
     return strides;
 }
-}
+} // namespace nncase

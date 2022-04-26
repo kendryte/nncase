@@ -12,13 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-py::class_<memory_range>(m, "MemoryRange")
-    .def_readwrite("location", &memory_range::memory_location)
+py::class_<tensor_desc>(m, "TensorDesc")
     .def_property(
-        "dtype", [](const memory_range &range) { return to_dtype(range.datatype); },
-        [](memory_range &range, py::object dtype) { range.datatype = from_dtype(py::dtype::from_args(dtype)); })
-    .def_readwrite("start", &memory_range::start)
-    .def_readwrite("size", &memory_range::size);
+        "dtype",
+        [](const tensor_desc &desc) { return to_dtype(desc.datatype); },
+        [](tensor_desc &desc, py::object dtype) {
+            desc.datatype = from_dtype(py::dtype::from_args(dtype));
+        })
+    .def_readwrite("start", &tensor_desc::start)
+    .def_readwrite("size", &tensor_desc::size);
 
 py::class_<runtime_tensor>(m, "RuntimeTensor")
     .def_static("from_numpy", [](py::array arr) {
@@ -38,7 +40,7 @@ py::class_<runtime_tensor>(m, "RuntimeTensor")
         from.copy_to(to).unwrap_or_throw();
     })
     .def("to_numpy", [](runtime_tensor &tensor) {
-        auto host = tensor.as_host().unwrap_or_throw();
+        auto host = tensor.to_host().unwrap_or_throw();
         auto src_map = std::move(hrt::map(host, hrt::map_read).unwrap_or_throw());
         auto src_buffer = src_map.buffer();
         return py::array(

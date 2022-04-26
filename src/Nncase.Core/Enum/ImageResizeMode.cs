@@ -6,7 +6,7 @@ namespace Nncase;
 /// <summary>
 /// Image resize mode.
 /// </summary>
-public enum ImageResizeMode
+public enum ImageResizeMode : byte
 {
     /// <summary>
     /// Bilinear.
