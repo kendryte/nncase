@@ -17,10 +17,13 @@ namespace Nncase.IR.F;
 /// </summary>
 public static class Random
 {
+    private static System.Random Rand = new System.Random();
     public static Call Normal(DataType type, Expr mean, Expr scale, Expr seed, Expr shape) =>
         new Call(new Normal(type), mean, scale, seed, shape);
 
-    public static Call Normal(DataType type, Expr shape) => Normal(type, 0, 1, 0, shape);
+    public static Call Normal(DataType type, Expr shape) => Normal(type, 0, 1, Rand.Next(1, 1000), shape);
+    
+    public static Call Normal(Expr shape) => Normal(DataTypes.Float32, shape);
     
     public static Call NormalLike(DataType type, Expr input, Expr mean, Expr scale, Expr seed) =>
         new Call(new NormalLike(type), input, mean, scale, seed);
