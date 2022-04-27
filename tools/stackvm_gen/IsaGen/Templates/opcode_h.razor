@@ -31,11 +31,11 @@ BEGIN_NS_NNCASE_RT_MODULE(stackvm)
 @foreach (var e in Model.Enums)
 {
 @:
-@:enum class @e.Name : @e.UnderlyingType
+@:enum class @e.CppName : @e.UnderlyingCppType
 @:{
 foreach (var f in e.Fields)
 {
-@:    @f.Name = @f.Value,
+@:    @f.CppName = @f.Value,
 }
 @:};
 }
@@ -47,13 +47,13 @@ struct op_base_t
 };
 @foreach (var inst in Model.Instructions.SelectMany(x => x.Value))
 {
-    var name = inst.Name.ToLowerInvariant().Replace('.', '_');
+    var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:
 @:struct @(name)_op_t : public op_base_t
 @:{
 foreach (var field in inst.Fields.Where(x => !x.IsOpCode))
 {
-@:    @field.Type @field.Name;
+@:    @field.CppType @field.CppName;
 }
 @:};
 }
@@ -63,15 +63,15 @@ struct tensor_op_base_t : public op_base_t
 {
     tensor_function_t tensor_funct;
 };
-@foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.Name))
+@foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.CppName))
 {
-    var name = "tensor_" + inst.Name.ToLowerInvariant().Replace('.', '_');
+    var name = "tensor_" + inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:
 @:struct @(name)_op_t : public tensor_op_base_t
 @:{
 foreach (var field in inst.Fields.Where(x => !x.IsOpCode))
 {
-@:    @field.Type @field.Name;
+@:    @field.CppType @field.CppName;
 }
 @:};
 }

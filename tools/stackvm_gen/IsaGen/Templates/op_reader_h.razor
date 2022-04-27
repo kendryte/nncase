@@ -34,7 +34,7 @@ template <class TOp>
 struct op_reader;
 @foreach (var inst in Model.Instructions.SelectMany(x => x.Value))
 {
-    var name = inst.Name.ToLowerInvariant().Replace('.', '_');
+    var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:
 @:template <>
 @:struct op_reader<@(name)_op_t>
@@ -46,20 +46,20 @@ foreach (var field in inst.Fields)
 {
     if (field.IsEnum)
     {
-@:        op.@field.Name = static_cast<@field.Type>(reader.read_unaligned<uint@(field.Length)_t>());
+@:        op.@field.CppName = static_cast<@field.CppType>(reader.read_unaligned<uint@(field.Length)_t>());
     }
     else
     {
-@:        op.@field.Name = reader.read_unaligned<@field.Type>();
+@:        op.@field.CppName = reader.read_unaligned<@field.CppType>();
     }
 }
 @:        return op;
 @:    }
 @:};
 }
-@foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.Name))
+@foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.CppName))
 {
-    var name = "tensor_" + inst.Name.ToLowerInvariant().Replace('.', '_');
+    var name = "tensor_" + inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:
 @:template <>
 @:struct op_reader<@(name)_op_t>
@@ -71,11 +71,11 @@ foreach (var field in inst.Fields)
 {
     if (field.IsEnum)
     {
-@:        op.@field.Name = static_cast<@field.Type>(reader.read_unaligned<uint@(field.Length)_t>());
+@:        op.@field.CppName = static_cast<@field.CppType>(reader.read_unaligned<uint@(field.Length)_t>());
     }
     else
     {
-@:        op.@field.Name = reader.read_unaligned<@field.Type>();
+@:        op.@field.CppName = reader.read_unaligned<@field.CppType>();
     }
 }
 @:        return op;
@@ -97,13 +97,13 @@ public:
 
     @foreach (var inst in Model.Instructions.SelectMany(x => x.Value))
     {
-        var name = inst.Name.ToLowerInvariant().Replace('.', '_');
+        var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:    virtual result<void> visit(NNCASE_UNUSED const @(name)_op_t &op) noexcept { return default_visit(op); }
     }
 
-    @foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.Name))
+    @foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.CppName))
     {
-        var name = "tensor_" + inst.Name.ToLowerInvariant().Replace('.', '_');
+        var name = "tensor_" + inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:    virtual result<void> visit(NNCASE_UNUSED const @(name)_op_t &op) noexcept { return default_visit(op); }
     }
 

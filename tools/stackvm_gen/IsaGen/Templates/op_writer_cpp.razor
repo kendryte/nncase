@@ -38,10 +38,10 @@ op_builder::op_builder(ir::node &node, section_writer &writer)
 
 @foreach (var inst in Model.Instructions.SelectMany(x => x.Value))
 {
-    var name = inst.Name.ToLowerInvariant().Replace('.', '_');
-@:void op_builder::@(name)_(@string.Join(", ", inst.Fields.Where(x => x.Value == null).Select(x => $"{x.Type} {x.Name}")))
+    var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
+@:void op_builder::@(name)_(@string.Join(", ", inst.Fields.Where(x => x.Value == null).Select(x => $"{x.Type} {x.CppName}")))
 @:{
-@:    op_writer<@(name)_op_t>()(@(name)_op_t(@string.Join(", ", inst.Fields.Where(x => x.Value == null).Select(x => x.Name))), writer_);
+@:    op_writer<@(name)_op_t>()(@(name)_op_t(@string.Join(", ", inst.Fields.Where(x => x.Value == null).Select(x => x.CppName))), writer_);
 @:}
 @:
 }

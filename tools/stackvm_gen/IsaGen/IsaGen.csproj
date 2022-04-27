@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Templates\emitter.razor" />
+    <None Remove="Templates\emitter_cs.razor" />
     <None Remove="Templates\opcode_h.razor" />
     <None Remove="Templates\op_reader_cpp.razor" />
     <None Remove="Templates\op_reader_h.razor" />
@@ -21,7 +21,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Templates\op_writer_cpp.razor" />
     <EmbeddedResource Include="Templates\op_reader_cpp.razor" />
-    <EmbeddedResource Include="Templates\emitter.razor" />
+    <EmbeddedResource Include="Templates\emitter_cs.razor" />
     <EmbeddedResource Include="Templates\op_reader_h.razor" />
     <EmbeddedResource Include="Templates\opcode_h.razor" />
   </ItemGroup>

@@ -74,11 +74,14 @@ namespace IsaGen
         DUP,
         POP,
 
-        STSHAPE,
-        STSTRIDES,
+        LDSHAPE,
+        LDSTRIDES,
 
         LDTUPLE_ELEM,
-        STTUPLE,
+        LDTUPLE,
+
+        LDDATATYPE,
+        LDTENSOR,    
 
         NEG,
         ADD,
@@ -128,18 +131,6 @@ namespace IsaGen
         BREAK,
 
         TENSOR,
-    }
-
-    [EnumName("tensor_function_t")]
-    [Browsable(false)]
-    public enum TensorFunction : ushort
-    {
-    }
-
-    [EnumName("typecode_t")]
-    [Browsable(false)]
-    public enum TypeCode : byte
-    {
     }
 
     public abstract class Instruction
@@ -526,20 +517,20 @@ namespace IsaGen
         public override OpCode OpCode => OpCode.LDARG_5;
     }
 
-    [DisplayName("STSHAPE")]
+    [DisplayName("LDSHAPE")]
     [Category("Load Store Instructions")]
-    [Description("Store a shape from stack")]
-    public class StShapeInstruction : Instruction
+    [Description("Load a shape to stack")]
+    public class LdShapeInstruction : Instruction
     {
-        public override OpCode OpCode => OpCode.STSHAPE;
+        public override OpCode OpCode => OpCode.LDSHAPE;
     }
 
-    [DisplayName("STSTRIDES")]
+    [DisplayName("LDSTRIDES")]
     [Category("Load Store Instructions")]
-    [Description("Store a strides from stack")]
-    public class StStridesInstruction : Instruction
+    [Description("Load a strides to stack")]
+    public class LdStridesInstruction : Instruction
     {
-        public override OpCode OpCode => OpCode.STSTRIDES;
+        public override OpCode OpCode => OpCode.LDSTRIDES;
     }
 
     [DisplayName("LDTUPLE_ELEM")]
@@ -550,12 +541,28 @@ namespace IsaGen
         public override OpCode OpCode => OpCode.LDTUPLE_ELEM;
     }
 
-    [DisplayName("STTUPLE")]
+    [DisplayName("LDTUPLE")]
     [Category("Load Store Instructions")]
-    [Description("Store a tuple to stack")]
-    public class StTupleInstruction : Instruction
+    [Description("Load a tuple to stack")]
+    public class LdTupleInstruction : Instruction
     {
-        public override OpCode OpCode => OpCode.STTUPLE;
+        public override OpCode OpCode => OpCode.LDTUPLE;
+    }
+
+    [DisplayName("LDDATATYPE")]
+    [Category("Load Store Instructions")]
+    [Description("Load a datatype to stack")]
+    public class LdDataTypeInstruction : Instruction
+    {
+        public override OpCode OpCode => OpCode.LDDATATYPE;
+    }
+
+    [DisplayName("LDTENSOR")]
+    [Category("Load Store Instructions")]
+    [Description("Load a tensor to stack")]
+    public class LdTensorInstruction : Instruction
+    {
+        public override OpCode OpCode => OpCode.LDTENSOR;
     }
 
     [DisplayName("DUP")]
@@ -940,17 +947,5 @@ namespace IsaGen
     public class BreakInstruction : Instruction
     {
         public override OpCode OpCode => OpCode.BREAK;
-    }
-
-    public static class TensorCalls
-    {
-        public abstract class TensorInstruction : Instruction
-        {
-            public sealed override OpCode OpCode => OpCode.TENSOR;
-
-            [DisplayName("funct")]
-            [Description("Tensor call function")]
-            public abstract TensorFunction Function { get; }
-        }
     }
 }

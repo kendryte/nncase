@@ -36,10 +36,10 @@ result<void> op_visitor::next() noexcept
         auto tensor_funct = static_cast<tensor_function_t>(reader_.peek_unaligned_with_offset<uint16_t>(1));
         switch (tensor_funct)
         {
-@foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.Name))
+@foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.CppName))
 {
-    var name = "tensor_" + inst.Name.ToLowerInvariant().Replace('.', '_');
-@:        case tensor_function_t::@inst.Name:
+    var name = "tensor_" + inst.CppName.ToLowerInvariant().Replace('.', '_');
+@:        case tensor_function_t::@inst.CppName:
 @:            return visit(op_reader<@(name)_op_t>()(reader_));
 }
         default:
@@ -52,8 +52,8 @@ result<void> op_visitor::next() noexcept
         {
 @foreach (var inst in Model.Instructions.SelectMany(x => x.Value))
 {
-    var name = inst.Name.ToLowerInvariant().Replace('.', '_');
-@:        case @inst.Fields.First(x => x.Name == "opcode").ValueText:
+    var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
+@:        case @inst.Fields.First(x => x.CppName == "opcode").CppValueText:
 @:            return visit(op_reader<@(name)_op_t>()(reader_));
 }
         default:
