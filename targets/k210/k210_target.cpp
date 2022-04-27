@@ -31,12 +31,14 @@
 #include <nncase/transforms/neutral/add_to_conv2d.h>
 #include <nncase/transforms/neutral/dequantize_motion.h>
 #include <nncase/transforms/neutral/eliminate_dilated_conv2d.h>
+#include <nncase/transforms/neutral/fold_bitcast.h>
 #include <nncase/transforms/neutral/fold_constant.h>
 #include <nncase/transforms/neutral/fold_pad.h>
 #include <nncase/transforms/neutral/fold_quantize.h>
 #include <nncase/transforms/neutral/fold_transpose.h>
 #include <nncase/transforms/neutral/fuse_pad.h>
 #include <nncase/transforms/neutral/lstm_transform.h>
+#include <nncase/transforms/neutral/matmul_to_conv2d.h>
 #include <nncase/transforms/neutral/pad_conv.h>
 #include <nncase/transforms/neutral/split_sigmoid.h>
 #include <nncase/transforms/neutral/transpose_motion.h>
@@ -101,6 +103,15 @@ void k210_target::register_target_dependent_passes([[maybe_unused]] const module
         transform_pass p("lstm_transform");
         p.emplace<fold_constant_transform>();
         p.emplace<lstm_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+    // matmul to conv2d
+    {
+        transform_pass p("matmul_to_conv2d");
+        p.emplace<fold_bitcast_transform>();
+        p.emplace<fold_nop_bitcast_transform>();
+        p.emplace<fold_constant_transform>();
+        p.emplace<matmul_to_conv2d_transform>();
         pass_mgr.add_pass(std::move(p));
     }
     {
