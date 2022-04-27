@@ -22,6 +22,7 @@ set(SRCS tflite_importer.cpp
          ops/softmax.cpp
          ops/slice.cpp
          ops/resize_image.cpp
+         ops/tile.cpp
          ops/transpose.cpp
          ops/space_to_batch.cpp
          ops/l2_normalization.cpp

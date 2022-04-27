@@ -293,15 +293,18 @@ void register_neutral_evaluators()
 
         assert(rnode.input_a().type() == dt_float32);
         assert(rnode.input_b().type() == dt_float32);
-        auto input_a = context.memory_at(rnode.input_a()).buffer().as_span<float>();
-        auto input_b = context.memory_at(rnode.input_b()).buffer().as_span<float>();
-        auto bias = context.memory_at(rnode.bias()).buffer().as_span<float>();
-        auto output = context.memory_at(rnode.output()).buffer().as_span<float>();
+        auto input_a = context.memory_at(rnode.input_a());
+        auto input_b = context.memory_at(rnode.input_b());
+        auto bias = context.memory_at(rnode.bias());
+        auto output = context.memory_at(rnode.output());
+        auto input_a_mem = input_a.buffer().as_span<float>();
+        auto input_b_mem = input_b.buffer().as_span<float>();
+        auto bias_mem = bias.buffer().as_span<float>();
+        auto output_mem = output.buffer().as_span<float>();
 
-        auto &a_shape = rnode.input_a().shape();
-        auto &b_shape = rnode.input_b().shape();
-
-        neutral::matmul(input_a.data(), input_b.data(), output.data(), bias.data(), (int32_t)a_shape[0], (int32_t)a_shape[1], (int32_t)b_shape[1], rnode.fused_activation());
+        kernels::matmul(input_a_mem.data(), input_b_mem.data(), bias_mem.data(), output_mem.data(), input_a.shape(), input_a.strides(),
+            input_b.shape(), input_b.strides(), output.shape(), output.strides(), rnode.fused_activation())
+            .unwrap_or_throw();
     });
 
     register_evaluator(op_pad, [](ir::node &node, function_evaluate_context &context) {

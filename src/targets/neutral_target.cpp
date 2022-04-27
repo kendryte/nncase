@@ -27,6 +27,7 @@
 #include <nncase/transforms/neutral/fold_conv2d_binary.h>
 #include <nncase/transforms/neutral/fold_convert.h>
 #include <nncase/transforms/neutral/fold_dilated_conv2d.h>
+#include <nncase/transforms/neutral/fold_matmul_add.h>
 #include <nncase/transforms/neutral/fold_pad.h>
 #include <nncase/transforms/neutral/fold_quantize.h>
 #include <nncase/transforms/neutral/fold_slice.h>
@@ -143,6 +144,7 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     pass.emplace<fold_transpose_transform>();
     pass.emplace<fold_nop_transpose_transform>();
     pass.emplace<fold_nop_slice_transform>();
+    pass.emplace<fold_matmul_add_transform>();
 }
 
 void neutral_target::fold_pad_conv_transform(ir::transforms::transform_pass &pass, [[maybe_unused]] bool add_constant_folding)
@@ -185,16 +187,6 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
 
     if (type == runtime::stackvm::stackvm_module_type)
     {
-        // matmul to conv2d
-        {
-            transform_pass p("matmul_to_conv2d");
-            p.emplace<fold_bitcast_transform>();
-            p.emplace<fold_nop_bitcast_transform>();
-            p.emplace<fold_constant_transform>();
-            p.emplace<matmul_to_conv2d_transform>();
-            pass_mgr.add_pass(std::move(p));
-        }
-
         // fold_pad_conv
         {
             transform_pass p("fold_pad_conv");

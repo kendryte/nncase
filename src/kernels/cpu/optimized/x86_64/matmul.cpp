@@ -17,9 +17,6 @@
 #include <nncase/kernels/cpu/reference/tensor_compute.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
-#if __riscv_vector
-#include <riscv_vector.h>
-#endif
 
 using namespace nncase;
 using namespace nncase::runtime;
