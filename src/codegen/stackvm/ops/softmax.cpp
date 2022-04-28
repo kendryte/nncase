@@ -12,23 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../caffe_importer.h"
-#include <nncase/ir/ops/softmax.h>
+#include "../module_builder.h"
 
 using namespace nncase;
-using namespace nncase::importer;
+using namespace nncase::codegen;
+using namespace nncase::codegen::stackvm;
 using namespace nncase::ir;
 
-DEFINE_CAFFE_LOWER(Softmax)
+void stackvm_module_builder::emit(softmax &node, stackvm_op_builder &builder)
 {
-    // check if there are bn/scale/relu above
-    std::string input_name = get_real_input_names(op)[0];
+    auto &input = allocation(node.input());
+    auto &output = allocation(node.output());
 
-    auto &input = *output_tensors_.at(input_name);
-    auto &param = op.softmax_param();
+    builder.lea_buffer(input);
+    builder.lea_buffer(output);
 
-    auto sm = graph_.emplace<softmax>(dt_float32, input.shape(), param.axis());
-    sm->name(op.name() + "/softmax");
-    input_tensors_.emplace(&sm->input(), input_name);
-    output_tensors_.emplace(op.top(0), &sm->output());
+    builder.stshape(0, input.shape);
+    builder.stshape(1, input.strides);
+    builder.stshape(2, output.strides);
+
+    builder.tensor_softmax_(node.input().type(), 0, 1, 2, node.axis(), node.beta());
 }

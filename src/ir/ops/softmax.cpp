@@ -12,23 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../caffe_importer.h"
+#include <nncase/ir/op_utils.h>
 #include <nncase/ir/ops/softmax.h>
+#include <xtensor/xarray.hpp>
 
 using namespace nncase;
-using namespace nncase::importer;
 using namespace nncase::ir;
 
-DEFINE_CAFFE_LOWER(Softmax)
+softmax::softmax(datatype_t input_type, shape_t input_shape, int32_t axis, float beta)
+    : axis_(normalize_axis(input_shape, axis)), beta_(beta)
 {
-    // check if there are bn/scale/relu above
-    std::string input_name = get_real_input_names(op)[0];
+    add_input("input", input_type, input_shape);
+    add_output("output", input_type, input_shape);
+}
 
-    auto &input = *output_tensors_.at(input_name);
-    auto &param = op.softmax_param();
-
-    auto sm = graph_.emplace<softmax>(dt_float32, input.shape(), param.axis());
-    sm->name(op.name() + "/softmax");
-    input_tensors_.emplace(&sm->input(), input_name);
-    output_tensors_.emplace(op.top(0), &sm->output());
+bool softmax::properties_equal(node &other) const
+{
+    auto &r = static_cast<softmax &>(other);
+    return axis() == r.axis() && beta() == r.beta();
 }

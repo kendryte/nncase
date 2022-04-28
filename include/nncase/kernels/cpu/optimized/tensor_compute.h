@@ -77,4 +77,12 @@ NNCASE_API result<void> matmul(const T *input_a, const T *input_b, const T *bias
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
     value_range<float> fused_activation) noexcept;
 
+template <typename T>
+NNCASE_API result<void> softmax(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    const runtime_shape_t &out_strides, int32_t axis, float beta) noexcept;
+
+template <typename T>
+NNCASE_API result<void> sigmoid(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    const runtime_shape_t &out_strides) noexcept;
+
 END_NS_NNCASE_KERNELS_CPU_OPT

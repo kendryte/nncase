@@ -45,6 +45,7 @@
 #include <nncase/ir/ops/roi_align.h>
 #include <nncase/ir/ops/sigmoid.h>
 #include <nncase/ir/ops/slice.h>
+#include <nncase/ir/ops/softmax.h>
 #include <nncase/ir/ops/table_lookup.h>
 #include <nncase/ir/ops/ternary.h>
 #include <nncase/ir/ops/topk.h>
@@ -514,6 +515,25 @@ void register_neutral_evaluators()
         kernels::slice(input.datatype(), input_mem.data(), output_mem.data(), input.shape(),
             input.strides(), output.strides(), to(rnode.begin()), to<int32_t>(rnode.end()), to<int32_t>(rnode.strides()))
             .unwrap_or_throw();
+    });
+
+    register_evaluator(op_softmax, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<softmax &>(node);
+
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+
+        auto output_type = rnode.output().type();
+        switch (output_type)
+        {
+        case dt_float32:
+            kernels::softmax(input.buffer().as_span<float>().data(), output.buffer().as_span<float>().data(), input.shape(),
+                input.strides(), output.strides(), rnode.axis(), rnode.beta())
+                .unwrap_or_throw();
+            break;
+        default:
+            std::cerr << "unsupported dtype for softmax: " + std::string(datatype_names(output_type));
+        }
     });
 
     register_evaluator(op_ternary, [](ir::node &node, function_evaluate_context &context) {
