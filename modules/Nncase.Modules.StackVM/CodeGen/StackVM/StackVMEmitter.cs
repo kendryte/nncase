@@ -12,7 +12,7 @@ namespace Nncase.CodeGen.StackVM;
 /// <summary>
 /// StackVM IL emitter.
 /// </summary>
-public sealed partial class StackVMEmitter : IDisposable
+public sealed partial class StackVMEmitter
 {
     private static readonly Dictionary<Type, byte> _typeCodes = new()
     {
@@ -45,11 +45,10 @@ public sealed partial class StackVMEmitter : IDisposable
     /// </summary>
     public TensorEmitter T { get; }
 
-    /// <inheritdoc/>
-    public void Dispose()
-    {
-        _writer.Dispose();
-    }
+    /// <summary>
+    /// Gets position.
+    /// </summary>
+    public long Position => _writer.Position();
 
     private void Write(byte value)
     {
