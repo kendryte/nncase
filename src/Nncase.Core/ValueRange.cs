@@ -63,7 +63,7 @@ public struct ValueRange<T> : IEquatable<ValueRange<T>>
 
     /// <inheritdoc/>
     public static bool operator !=(ValueRange<T>? lhs, ValueRange<T>? rhs) => !(lhs == rhs);
-
+    
     private static class Limits
     {
         public static T MinValue
@@ -78,6 +78,11 @@ public struct ValueRange<T> : IEquatable<ValueRange<T>>
                 if (typeof(T) == typeof(float))
                 {
                     return (T)(object)float.NegativeInfinity;
+                }
+
+                if (typeof(T) == typeof(BFloat16))
+                {
+                    return (T)(object)(BFloat16.NegInfinity);
                 }
 
                 throw new NotSupportedException();
@@ -97,7 +102,12 @@ public struct ValueRange<T> : IEquatable<ValueRange<T>>
                 {
                     return (T)(object)float.PositiveInfinity;
                 }
-
+                
+                if (typeof(T) == typeof(BFloat16))
+                {
+                    return (T)(object)(BFloat16.Infinity);
+                }
+                
                 throw new NotSupportedException();
             }
         }
