@@ -212,6 +212,11 @@ public:
         {
             std::cout << "1.1 Pre-process..." << std::endl;
             input_layout_ = compile_options_.input_layout;
+            if (!compile_options_.model_layout.empty())
+            {
+                real_inlayout_ = compile_options_.model_layout;
+                real_outlayout_ = compile_options_.model_layout;
+            }
             pre_process(graph_, compile_options_);
             post_process(graph_, compile_options_);
         }

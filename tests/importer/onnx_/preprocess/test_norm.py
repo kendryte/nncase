@@ -69,6 +69,9 @@ case:
     - name: input_type
       values:
         - uint8
+    - name: model_layout
+      values:
+        - NCHW
     - name: input_layout
       values:
         - NCHW
