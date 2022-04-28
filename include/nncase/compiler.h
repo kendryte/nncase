@@ -57,6 +57,7 @@ struct compile_options
     bool use_mse_quant_w = false;
     std::string input_layout = "NCHW";
     std::string output_layout = "NCHW";
+    std::string model_layout;
 };
 
 struct import_options

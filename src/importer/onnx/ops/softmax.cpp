@@ -20,6 +20,7 @@
 #include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/softmax.h>
 #include <nncase/ir/ops/unary.h>
 
 using namespace nncase;
@@ -59,64 +60,24 @@ void onnx_importer::convert_op_Softmax(const NodeProto &node)
         auto bc1 = graph_.emplace<bitcast>(input_type, input_shape, new_shape);
         bc1->name(op_name + ".bitcast1(Softmax)");
 
-        axis_t axes { 1 };
-        auto rmax = graph_.emplace<reduce>(reduce_max, input_type, bc1->output().shape(), axes, std::numeric_limits<float>::lowest(), true);
-        rmax->name(op_name + ".rmax(Softmax)");
+        auto sm = graph_.emplace<softmax>(input_type, bc1->output().shape(), 1);
+        sm->name(op_name + ".softmax(Softmax)");
+        sm->input().connect(bc1->output());
 
-        auto sub = graph_.emplace<binary>(binary_sub, input_type, bc1->output().shape(), rmax->output().shape(), value_range<float>::full());
-        sub->name(op_name + ".sub(Softmax)");
-
-        auto exp = graph_.emplace<unary>(unary_exp, sub->output().shape());
-        exp->name(op_name + ".exp(Softmax)");
-
-        auto rsum = graph_.emplace<reduce>(reduce_sum, input_type, exp->output().shape(), axes, 0.f, true);
-        rsum->name(op_name + ".rsum(Softmax)");
-
-        auto div = graph_.emplace<binary>(binary_div, input_type, exp->output().shape(), rsum->output().shape(), value_range<float>::full());
-        div->name(op_name + ".div(Softmax)");
-
-        auto bc2 = graph_.emplace<bitcast>(input_type, div->output().shape(), input_shape);
+        auto bc2 = graph_.emplace<bitcast>(input_type, sm->output().shape(), input_shape);
         bc2->name(op_name + ".bitcast2(Softmax)");
-
-        rmax->input().connect(bc1->output());
-        sub->input_a().connect(bc1->output());
-        sub->input_b().connect(rmax->output());
-        exp->input().connect(sub->output());
-        rsum->input().connect(exp->output());
-        div->input_a().connect(exp->output());
-        div->input_b().connect(rsum->output());
-        bc2->input().connect(div->output());
+        bc2->input().connect(sm->output());
 
         input_tensors_.emplace(&bc1->input(), input);
         output_tensors_.emplace(output, &bc2->output());
     }
     else
     {
-        axis_t axes { axis };
-        auto rmax = graph_.emplace<reduce>(reduce_max, input_type, input_shape, axes, std::numeric_limits<float>::lowest(), true);
-        rmax->name(op_name + ".rmax(Softmax)");
+        auto sm = graph_.emplace<softmax>(input_type, input_shape, axis);
+        sm->name(op_name + ".softmax(Softmax)");
 
-        auto sub = graph_.emplace<binary>(binary_sub, input_type, input_shape, rmax->output().shape(), value_range<float>::full());
-        sub->name(op_name + ".sub(Softmax)");
-
-        auto exp = graph_.emplace<unary>(unary_exp, sub->output().shape());
-        exp->name(op_name + ".exp(Softmax)");
-
-        auto rsum = graph_.emplace<reduce>(reduce_sum, input_type, exp->output().shape(), axes, 0.f, true);
-        rsum->name(op_name + ".rsum(Softmax)");
-
-        auto div = graph_.emplace<binary>(binary_div, input_type, exp->output().shape(), rsum->output().shape(), value_range<float>::full());
-        div->name(op_name + ".div(Softmax)");
-
-        sub->input_b().connect(rmax->output());
-        exp->input().connect(sub->output());
-        rsum->input().connect(exp->output());
-        div->input_a().connect(exp->output());
-        div->input_b().connect(rsum->output());
-
-        input_tensors_.emplace(&rmax->input(), input);
-        input_tensors_.emplace(&sub->input_a(), input);
-        output_tensors_.emplace(output, &div->output());
+        input_tensors_.emplace(&sm->input(), input);
+        output_tensors_.emplace(output, &sm->output());
     }
 }
 

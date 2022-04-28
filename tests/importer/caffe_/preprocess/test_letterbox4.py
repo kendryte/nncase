@@ -94,6 +94,9 @@ case:
     - name: input_layout
       values:
         - NHWC
+    - name: model_layout
+      values:
+        - NCHW
     - name: output_layout
       values:
         - NHWC
