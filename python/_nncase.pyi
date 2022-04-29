@@ -21,6 +21,7 @@ class CompileOptions:
     target: str
     w_quant_type: str
     use_mse_quant_w: bool
+    split_w_to_act: bool
     input_layout: str
     output_layout: str
     letterbox_value: float

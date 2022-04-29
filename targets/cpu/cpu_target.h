@@ -22,6 +22,6 @@ class cpu_target : public neutral_target
 public:
     using neutral_target::neutral_target;
 
-    void register_target_dependent_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr, bool use_ptq) override;
+    void register_target_dependent_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr, bool use_ptq, bool split_w_to_act) override;
 };
 }

@@ -77,6 +77,7 @@ private:
     std::string output_layout_ = "NCHW";
     std::string model_layout_;
     bool use_mse_quant_w_ = false;
+    bool split_w_to_act_ = false;
     std::vector<float> mean_ = { 0.f, 0.f, 0.f };
     std::vector<float> std_ = { 1.f, 1.f, 1.f };
     std::vector<float> input_range_;

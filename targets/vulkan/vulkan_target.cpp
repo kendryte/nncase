@@ -55,7 +55,7 @@ void vulkan_target::register_allocators(const module_type_t &type, allocator_map
     }
 }
 
-void vulkan_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] bool use_ptq)
+void vulkan_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] bool use_ptq, [[maybe_unused]] bool split_w_to_act)
 {
     {
         transform_pass p("mark_vulkan_ops");

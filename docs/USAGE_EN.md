@@ -46,6 +46,7 @@ py::class_<compile_options>(m, "CompileOptions")
     .def_readwrite("quant_type", &compile_options::quant_type)
     .def_readwrite("w_quant_type", &compile_options::w_quant_type)
     .def_readwrite("use_mse_quant_w", &compile_options::use_mse_quant_w)
+    .def_readwrite("split_w_to_act", &compile_options::split_w_to_act)
     .def_readwrite("preprocess", &compile_options::preprocess)
     .def_readwrite("swapRB", &compile_options::swapRB)
     .def_readwrite("mean", &compile_options::mean)
@@ -74,6 +75,7 @@ The details of all attributes are following.
 | quant_type       | string    | N            | Specify the quantization type for input data , such as 'uint8', 'int8', 'int16'                                                                                                                         |
 | w_quant_type     | string    | N            | Specify the quantization type for weight , such as 'uint8'(by default), 'int8', 'int16'                                                                                                                 |
 | use_mse_quant_w  | bool      | N            | Specify whether use  mean-square error when quantizing weight                                                                                                                                           |
+| split_w_to_act   | bool      | N            | Specify whether split weight into activation                                                                                                                                            |
 | preprocess       | bool      | N            | Whether enable preprocess, False by default                                                                                                                                                             |
 | swapRB           | bool      | N            | Whether swap red and blue channel for RGB data(from RGB to BGR or from BGR to RGB), False by default                                                                                                    |
 | mean             | list      | N            | Normalize mean value for preprocess, [0, 0, 0] by default                                                                                                                                               |

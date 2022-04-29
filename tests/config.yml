@@ -52,6 +52,7 @@ case: # case的配置，应该是一个多层次的
     w_quant_type: 'uint8'
     output_type: 'float32'
     use_mse_quant_w: true
+    split_w_to_act: false
     quant_method: "no_clip"
 
   ptq_opt:

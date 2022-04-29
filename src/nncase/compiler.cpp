@@ -507,7 +507,7 @@ private:
 
     void optimize_target_dependent(ir::graph &graph, bool use_ptq)
     {
-        run_passes("target_dep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_target_dependent_passes(module_type, pmgr, use_ptq); });
+        run_passes("target_dep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_target_dependent_passes(module_type, pmgr, use_ptq, compile_options_.split_w_to_act); });
     }
 
     void optimize_target_dependent_after_quant(ir::graph &graph)
