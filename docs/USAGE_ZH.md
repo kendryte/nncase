@@ -44,6 +44,7 @@ py::class_<compile_options>(m, "CompileOptions")
     .def_readwrite("quant_type", &compile_options::quant_type)
     .def_readwrite("w_quant_type", &compile_options::w_quant_type)
     .def_readwrite("use_mse_quant_w", &compile_options::use_mse_quant_w)
+    .def_readwrite("split_w_to_act", &compile_options::split_w_to_act)
     .def_readwrite("preprocess", &compile_options::preprocess)
     .def_readwrite("swapRB", &compile_options::swapRB)
     .def_readwrite("mean", &compile_options::mean)
@@ -72,6 +73,7 @@ py::class_<compile_options>(m, "CompileOptions")
 | quant_type       | string | 否       | 指定数据量化类型, 如'uint8', 'int8', 'int16'                                                                                                          |
 | w_quant_type     | string | 否       | 指定权重量化类型, 如'uint8', 'int8', 'int16', 默认为'uint8'                                                                                           |
 | use_mse_quant_w  | bool   | 否       | 指定权重量化时是否使用最小化均方误差(mean-square error, MSE)算法优化量化参数                                                                          |
+| split_w_to_act   | bool   | 否       | 指定是否将权重数据平衡到激活数据中                                                                                                                     |
 | preprocess       | bool   | 否       | 是否开启前处理，默认为False                                                                                                                           |
 | swapRB           | bool   | 否       | 是否交换RGB输入数据的红和蓝两个通道(RGB-->BGR或者BGR-->RGB)，默认为False                                                                              |
 | mean             | list   | 否       | 前处理标准化参数均值，默认为[0, 0, 0]                                                                                                                 |

@@ -31,6 +31,7 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(quant_type_, "quant type").name("--quant-type").optional().help("post trainning quantize type, e.g uint8|int8|int16, default is " + quant_type_))
                          .add_argument(lyra::opt(w_quant_type_, "w quant type").name("--w-quant-type").optional().help("post trainning weights quantize type, e.g uint8|int8|int16, default is " + w_quant_type_))
                          .add_argument(lyra::opt(use_mse_quant_w_).name("--use-mse-quant-w").optional().help("use min mse algorithm to refine weights quantilization or not, default is " + std::to_string(use_mse_quant_w_)))
+                         .add_argument(lyra::opt(split_w_to_act_).name("--split-w-to-act").optional().help("split weights to act or not, default is " + std::to_string(split_w_to_act_)))
                          .add_argument(lyra::opt(dataset_, "dataset path").name("--dataset").optional().help("calibration dataset, used in post quantization"))
                          .add_argument(lyra::opt(dataset_format_, "dataset format").name("--dataset-format").optional().help("datset format: e.g. image|raw, default is " + dataset_format_))
                          .add_argument(lyra::opt(dump_range_dataset_, "dataset path").name("--dump-range-dataset").optional().help("dump import op range dataset"))
@@ -96,6 +97,7 @@ void compile_command::run()
     c_options.benchmark_only = benchmark_only_;
     c_options.preprocess = preprocess_;
     c_options.use_mse_quant_w = use_mse_quant_w_;
+    c_options.split_w_to_act = split_w_to_act_;
     c_options.input_layout = input_layout_;
     c_options.output_layout = output_layout_;
     c_options.model_layout = model_layout_;
