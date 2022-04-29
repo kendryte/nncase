@@ -519,9 +519,9 @@ class TestRunner(metaclass=ABCMeta):
         names, args = TestRunner.split_value(cfg.eval)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
-            if dict_args['ptq'] and len(self.inputs) != 1:
+            if dict_args['ptq'] and len(self.inputs) == 0:
                 continue
-            if cfg.compile_opt.dump_import_op_range and len(self.inputs) != 1:
+            if cfg.compile_opt.dump_import_op_range and len(self.inputs) == 0:
                 continue
             eval_output_paths = self.generate_evaluates(
                 cfg, case_dir, import_options,
@@ -534,9 +534,9 @@ class TestRunner(metaclass=ABCMeta):
         names, args = TestRunner.split_value(cfg.infer)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
-            if dict_args['ptq'] and len(self.inputs) != 1:
+            if dict_args['ptq'] and len(self.inputs) == 0:
                 continue
-            if cfg.compile_opt.dump_import_op_range and len(self.inputs) != 1:
+            if cfg.compile_opt.dump_import_op_range and len(self.inputs) == 0:
                 continue
             infer_output_paths = self.nncase_infer(
                 cfg, case_dir, import_options,
@@ -597,14 +597,20 @@ class TestRunner(metaclass=ABCMeta):
 
         if cfg.compile_opt.dump_import_op_range:
             dump_range_options = nncase.DumpRangeTensorOptions()
-            dump_range_options.set_tensor_data(np.asarray(
-                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]).tobytes())
+            raw_inputs = [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]
+            byte_inputs = np.asarray(raw_inputs[0]).tobytes()
+            for i in range(1, len(raw_inputs)):
+                byte_inputs += np.asarray(raw_inputs[i]).tobytes()
+            dump_range_options.set_tensor_data(byte_inputs)
             dump_range_options.samples_count = cfg.generate_dump_range_data.batch_size
             compiler.dump_range_options(dump_range_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
-            ptq_options.set_tensor_data(np.asarray(
-                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
+            raw_inputs = [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]
+            byte_inputs = np.asarray(raw_inputs[0]).tobytes()
+            for i in range(1, len(raw_inputs)):
+                byte_inputs += np.asarray(raw_inputs[i]).tobytes()
+            ptq_options.set_tensor_data(byte_inputs)
             ptq_options.samples_count = cfg.generate_calibs.batch_size
             compiler.use_ptq(ptq_options)
 
@@ -701,8 +707,11 @@ class TestRunner(metaclass=ABCMeta):
 
         if cfg.compile_opt.dump_import_op_range:
             dump_range_options = nncase.DumpRangeTensorOptions()
-            dump_range_options.set_tensor_data(np.asarray(
-                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]).tobytes())
+            raw_inputs = [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]
+            byte_inputs = np.asarray(raw_inputs[0]).tobytes()
+            for i in range(1, len(raw_inputs)):
+                byte_inputs += np.asarray(raw_inputs[i]).tobytes()
+            dump_range_options.set_tensor_data(byte_inputs)
             dump_range_options.samples_count = cfg.generate_dump_range_data.batch_size
             compiler.dump_range_options(dump_range_options)
         if kwargs['ptq']:
@@ -712,8 +721,11 @@ class TestRunner(metaclass=ABCMeta):
                     [sample['data'] for sample in self.calibs]).tobytes())
                 ptq_options.calibrate_method = self.cfg.case.compile_opt.quant_method
             else:
-                ptq_options.set_tensor_data(np.asarray(
-                    [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
+                raw_inputs = [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]
+                byte_inputs = np.asarray(raw_inputs[0]).tobytes()
+                for i in range(1, len(raw_inputs)):
+                    byte_inputs += np.asarray(raw_inputs[i]).tobytes()
+                ptq_options.set_tensor_data(byte_inputs)
                 ptq_options.calibrate_method = self.cfg.case.compile_opt.quant_method
             ptq_options.samples_count = cfg.generate_calibs.batch_size
             compiler.use_ptq(ptq_options)
