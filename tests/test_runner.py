@@ -721,8 +721,11 @@ class TestRunner(metaclass=ABCMeta):
                     [sample['data'] for sample in self.calibs]).tobytes())
                 ptq_options.calibrate_method = self.cfg.case.compile_opt.quant_method
             else:
-                ptq_options.set_tensor_data(np.asarray(
-                    [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
+                raw_inputs = [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]
+                byte_inputs = np.asarray(raw_inputs[0]).tobytes()
+                for i in range(1, len(raw_inputs)):
+                    byte_inputs += np.asarray(raw_inputs[i]).tobytes()
+                ptq_options.set_tensor_data(byte_inputs)
                 ptq_options.calibrate_method = self.cfg.case.compile_opt.quant_method
             ptq_options.samples_count = cfg.generate_calibs.batch_size
             compiler.use_ptq(ptq_options)
