@@ -29,6 +29,7 @@ set(SRCS module_builder.cpp
          ops/roi_align.cpp
          ops/slice.cpp
          ops/sigmoid.cpp
+         ops/softmax.cpp
          ops/table_lookup1d.cpp
          ops/ternary.cpp
          ops/topk.cpp

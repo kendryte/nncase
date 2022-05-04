@@ -212,6 +212,11 @@ public:
         {
             std::cout << "1.1 Pre-process..." << std::endl;
             input_layout_ = compile_options_.input_layout;
+            if (!compile_options_.model_layout.empty())
+            {
+                real_inlayout_ = compile_options_.model_layout;
+                real_outlayout_ = compile_options_.model_layout;
+            }
             pre_process(graph_, compile_options_);
             post_process(graph_, compile_options_);
         }
@@ -502,7 +507,7 @@ private:
 
     void optimize_target_dependent(ir::graph &graph, bool use_ptq)
     {
-        run_passes("target_dep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_target_dependent_passes(module_type, pmgr, use_ptq); });
+        run_passes("target_dep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_target_dependent_passes(module_type, pmgr, use_ptq, compile_options_.split_w_to_act); });
     }
 
     void optimize_target_dependent_after_quant(ir::graph &graph)
@@ -570,9 +575,6 @@ private:
             auto calib_method = std::visit([](auto &options) { return to_calibrate_method(options.calibrate_method); }, dump_range_options_);
             evaluator.enable_ptq(*target_, calib_method);
         }
-
-        if (graph.inputs().size() != 1)
-            throw std::invalid_argument("Collect ranges only support models that have single 1 input");
 
         if (step != eval_step::after_import)
         {
@@ -710,8 +712,13 @@ private:
 
             for (size_t i = 0; i < options.samples_count; i++)
             {
-                auto input_buffer = evaluator.input_at(0).buffer();
-                std::memcpy(input_buffer.data(), options.tensor_data.data() + i * input_buffer.size_bytes(), input_buffer.size_bytes());
+                uint32_t input_offset = 0;
+                for (uint32_t j = 0; j < evaluator.inputs_size(); j++)
+                {
+                    auto input_buffer = evaluator.input_at(j).buffer();
+                    std::memcpy(input_buffer.data(), options.tensor_data.data() + input_offset + i * input_buffer.size_bytes(), input_buffer.size_bytes());
+                    input_offset += (options.samples_count * input_buffer.size_bytes());
+                }
 
                 evaluator.evaluate(step, stage, compile_options_.dump_quant_error);
                 evaluator.end_sample();

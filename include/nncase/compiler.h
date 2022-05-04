@@ -56,8 +56,10 @@ struct compile_options
     std::vector<int32_t> input_shape {};
     std::string w_quant_type = "uint8";
     bool use_mse_quant_w = false;
+    bool split_w_to_act = false;
     std::string input_layout = "NCHW";
     std::string output_layout = "NCHW";
+    std::string model_layout;
 };
 
 struct import_options

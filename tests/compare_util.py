@@ -82,6 +82,8 @@ def top1(gt_path, result_path):
     percent_result = infer_result / len(result_data_dict)
 
     path = result_path.split("/")[3:5]
+    if not os.path.exists(os.path.join("dataset_tests_output", case_name)):
+        os.makedirs(os.path.join("dataset_tests_output", case_name))
     with open(os.path.join("dataset_tests_output", case_name, "dataset_test_result.txt"), 'a+') as f:
 
         if path in [["cpu", "ptq"], ["k510", "noptq"], ["k510", "ptq"]]:

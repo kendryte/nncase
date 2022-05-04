@@ -13,10 +13,7 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <nncase/ir/ops/binary.h>
-#include <nncase/ir/ops/constant.h>
-#include <nncase/ir/ops/reduce.h>
-#include <nncase/ir/ops/unary.h>
+#include <nncase/ir/ops/softmax.h>
 
 using namespace nncase;
 using namespace nncase::importer;
@@ -30,27 +27,8 @@ DEFINE_CAFFE_LOWER(Softmax)
     auto &input = *output_tensors_.at(input_name);
     auto &param = op.softmax_param();
 
-    axis_t reduce_axis;
-    reduce_axis.push_back(param.axis());
-
-    auto max = graph_.emplace<reduce>(reduce_max, dt_float32, input.shape(), reduce_axis, std::numeric_limits<float>::lowest(), true);
-    max->name(op.name() + "/max");
-    auto sub = graph_.emplace<binary>(binary_sub, dt_float32, input.shape(), max->output().shape(), value_range<float>::full());
-    sub->name(op.name() + "/sub");
-    auto exp = graph_.emplace<unary>(unary_exp, sub->output().shape());
-    exp->name(op.name() + "/exp");
-    auto sum = graph_.emplace<reduce>(reduce_sum, dt_float32, exp->output().shape(), reduce_axis, 0.f, true);
-    sum->name(op.name() + "/sum");
-    auto div = graph_.emplace<binary>(binary_div, dt_float32, exp->output().shape(), sum->output().shape(), value_range<float>::full());
-    div->name(op.name() + "/div");
-
-    sub->input_b().connect(max->output());
-    exp->input().connect(sub->output());
-    sum->input().connect(exp->output());
-    div->input_a().connect(exp->output());
-    div->input_b().connect(sum->output());
-
-    input_tensors_.emplace(&max->input(), input_name);
-    input_tensors_.emplace(&sub->input_a(), input_name);
-    output_tensors_.emplace(op.top(0), &div->output());
+    auto sm = graph_.emplace<softmax>(dt_float32, input.shape(), param.axis());
+    sm->name(op.name() + "/softmax");
+    input_tensors_.emplace(&sm->input(), input_name);
+    output_tensors_.emplace(op.top(0), &sm->output());
 }

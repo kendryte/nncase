@@ -148,11 +148,11 @@ result<void> kernels::matmul(const T *input_a, const T *input_b, const T *bias, 
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
     value_range<float> fused_activation) noexcept
 {
-    if (is_contiguous(in_a_shape, in_a_strides) && is_contiguous(in_b_shape, in_b_strides) && is_contiguous(out_shape, out_strides))
-    {
-        return cpu::optimized::matmul(input_a, input_b, bias, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides,
-            out_shape, out_strides, fused_activation);
-    }
+    // if (is_contiguous(in_a_shape, in_a_strides) && is_contiguous(in_b_shape, in_b_strides) && is_contiguous(out_shape, out_strides))
+    // {
+    return cpu::optimized::matmul(input_a, input_b, bias, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides,
+        out_shape, out_strides, fused_activation);
+    // }
 
     return cpu::reference::matmul(input_a, input_b, bias, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides,
         out_shape, out_strides, fused_activation);
@@ -217,7 +217,7 @@ result<void> kernels::binary(binary_op_t op, const T *input_a, const T *input_b,
     if (is_contiguous(in_a_shape, in_a_strides) && is_contiguous(in_b_shape, in_b_strides) && is_contiguous(out_shape, out_strides))
     {
         // optimization
-        if (is_optimized_binary_op(op) && is_optimized_input_shape(in_a_shape, out_shape) && is_optimized_input_shape(in_b_shape, out_shape))
+        if (is_optimized_binary_op(op) && is_optimized_input_shape(in_a_shape, out_shape) && is_optimized_input_shape(in_b_shape, out_shape) && (std::is_same_v<T, float> || std::is_same_v<T, int32_t>))
             return cpu::optimized::binary(op, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides, fused_activation, context);
     }
     return cpu::reference::binary(op, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides, fused_activation, context);
@@ -406,7 +406,26 @@ template <typename T>
 result<void> kernels::sigmoid(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
     const runtime_shape_t &out_strides) noexcept
 {
+    if (is_contiguous(in_shape, out_strides))
+    {
+        return cpu::optimized::sigmoid(input, output, in_shape, in_strides, out_strides);
+    }
+
     return cpu::reference::sigmoid(input, output, in_shape, in_strides, out_strides);
+}
+
+template result<void> kernels::softmax<float>(const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    const runtime_shape_t &out_strides, int32_t axis, float beta) noexcept;
+
+template <typename T>
+result<void> kernels::softmax(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    const runtime_shape_t &out_strides, int32_t axis, float beta) noexcept
+{
+    if (is_contiguous(in_shape, in_strides) && is_contiguous(in_shape, out_strides))
+    {
+        return cpu::optimized::softmax(input, output, in_shape, in_strides, out_strides, axis, beta);
+    }
+    return cpu::reference::softmax(input, output, in_shape, in_strides, out_strides, axis, beta);
 }
 
 template result<void> kernels::ternary<float>(const float *input_a, const float *input_b, const float *input_c, float *output,

@@ -19,8 +19,7 @@
 class op_profile
 {
 public:
-    op_profile() = default;
-    op_profile(const std::string &op_type)
+    op_profile(const std::string &op_type = "op_profile")
         : op_type_(op_type)
     {
         begin_ = clock();
@@ -29,19 +28,19 @@ public:
     {
         end_ = clock();
         auto cast_time = (end_ - begin_) / (double)1000;
-        if (op_time_cast_.find(op_type_) == op_time_cast_.end())
+        if (op_timing_.find(op_type_) == op_timing_.end())
         {
-            op_time_cast_.emplace(op_type_, cast_time);
+            op_timing_.emplace(op_type_, cast_time);
         }
         else
         {
-            op_time_cast_[op_type_] += cast_time;
+            op_timing_[op_type_] += cast_time;
         }
     }
-    void print_profile();
+    void print();
 
 public:
-    static std::unordered_map<std::string, double> op_time_cast_;
+    static std::unordered_map<std::string, double> op_timing_;
 
 private:
     clock_t begin_;

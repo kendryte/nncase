@@ -53,6 +53,11 @@ public:
         return memory_at(*inputs_[index]);
     }
 
+    uint32_t inputs_size()
+    {
+        return inputs_.size();
+    }
+
     evaluate_tensor output_at(size_t index)
     {
         return memory_at(*outputs_[index]);
@@ -124,6 +129,11 @@ public:
     evaluate_tensor input_at(size_t index)
     {
         return entrypoint().input_at(index);
+    }
+
+    uint32_t inputs_size()
+    {
+        return entrypoint().inputs_size();
     }
 
     evaluate_tensor output_at(size_t index)

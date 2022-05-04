@@ -2,7 +2,8 @@
 
 nncase目前提供了python wheel包和ncc客户端两种方法编译模型.
 
-- nncase wheel包需要去[nncase release](https://github.com/kendryte/nncase/releases)获取,  target wheel包除cpu/K210不需要安装外, 其它target需要从nncase sdk离线获取
+- nncase wheel包需要去[nncase release](https://github.com/kendryte/nncase/releases)获取, target wheel包除cpu/K210不需要安装外,
+  其它target需要从nncase sdk离线获取
 - ncc客户端需要用户下载并编译nncase
 
 # nncase python APIs
@@ -11,7 +12,8 @@ nncase提供了Python APIs, 用于在PC上编译/推理深度学习模型.
 
 ## 安装
 
-用户若没有Ubuntu环境, 可使用[nncase docker image](https://github.com/kendryte/nncase/blob/master/docs/build.md)(Ubuntu 20.04 + Python 3.8)
+用户若没有Ubuntu环境, 可使用[nncase docker image](https://github.com/kendryte/nncase/blob/master/docs/build.md)(Ubuntu 20.04 +
+Python 3.8)
 
 ```shell
 $ docker pull registry.cn-hangzhou.aliyuncs.com/kendryte/nncase:latest
@@ -39,30 +41,31 @@ CompileOptions类, 用于配置nncase编译选项
 
 ```python
 py::class_<compile_options>(m, "CompileOptions")
-        .def(py::init())
-        .def_readwrite("target", &compile_options::target)
-        .def_readwrite("quant_type", &compile_options::quant_type)
-        .def_readwrite("w_quant_type", &compile_options::w_quant_type)
-        .def_readwrite("use_mse_quant_w", &compile_options::use_mse_quant_w)
-        .def_readwrite("preprocess", &compile_options::preprocess)
-        .def_readwrite("swapRB", &compile_options::swapRB)
-        .def_readwrite("mean", &compile_options::mean)
-        .def_readwrite("std", &compile_options::std)
-        .def_readwrite("input_range", &compile_options::input_range)
-        .def_readwrite("output_range", &compile_options::output_range)
-        .def_readwrite("input_shape", &compile_options::input_shape)
-        .def_readwrite("letterbox_value", &compile_options::letterbox_value)
-        .def_readwrite("input_type", &compile_options::input_type)
-        .def_readwrite("output_type", &compile_options::output_type)
-        .def_readwrite("input_layout", &compile_options::input_layout)
-        .def_readwrite("output_layout", &compile_options::output_layout)
-        .def_readwrite("is_fpga", &compile_options::is_fpga)
-        .def_readwrite("dump_ir", &compile_options::dump_ir)
-        .def_readwrite("dump_asm", &compile_options::dump_asm)
-        .def_readwrite("dump_quant_error", &compile_options::dump_quant_error)
-        .def_readwrite("dump_import_op_range", &compile_options::dump_import_op_range)
-        .def_readwrite("dump_dir", &compile_options::dump_dir)
-        .def_readwrite("benchmark_only", &compile_options::benchmark_only);
+    .def(py::init())
+    .def_readwrite("target", &compile_options::target)
+    .def_readwrite("quant_type", &compile_options::quant_type)
+    .def_readwrite("w_quant_type", &compile_options::w_quant_type)
+    .def_readwrite("use_mse_quant_w", &compile_options::use_mse_quant_w)
+    .def_readwrite("split_w_to_act", &compile_options::split_w_to_act)
+    .def_readwrite("preprocess", &compile_options::preprocess)
+    .def_readwrite("swapRB", &compile_options::swapRB)
+    .def_readwrite("mean", &compile_options::mean)
+    .def_readwrite("std", &compile_options::std)
+    .def_readwrite("input_range", &compile_options::input_range)
+    .def_readwrite("output_range", &compile_options::output_range)
+    .def_readwrite("input_shape", &compile_options::input_shape)
+    .def_readwrite("letterbox_value", &compile_options::letterbox_value)
+    .def_readwrite("input_type", &compile_options::input_type)
+    .def_readwrite("output_type", &compile_options::output_type)
+    .def_readwrite("input_layout", &compile_options::input_layout)
+    .def_readwrite("output_layout", &compile_options::output_layout)
+    .def_readwrite("model_layout", &compile_options::model_layout)
+    .def_readwrite("is_fpga", &compile_options::is_fpga)
+    .def_readwrite("dump_ir", &compile_options::dump_ir)
+    .def_readwrite("dump_asm", &compile_options::dump_asm)
+    .def_readwrite("dump_quant_error", &compile_options::dump_quant_error)
+    .def_readwrite("dump_dir", &compile_options::dump_dir)
+    .def_readwrite("benchmark_only", &compile_options::benchmark_only);
 ```
 
 各属性说明如下
@@ -73,6 +76,7 @@ py::class_<compile_options>(m, "CompileOptions")
 | quant_type       | string | 否       | 指定数据量化类型, 如'uint8', 'int8', 'int16'                                                                                                          |
 | w_quant_type     | string | 否       | 指定权重量化类型, 如'uint8', 'int8', 'int16', 默认为'uint8'                                                                                           |
 | use_mse_quant_w  | bool   | 否       | 指定权重量化时是否使用最小化均方误差(mean-square error, MSE)算法优化量化参数                                                                          |
+| split_w_to_act   | bool   | 否       | 指定是否将权重数据平衡到激活数据中                                                                                                                     |
 | preprocess       | bool   | 否       | 是否开启前处理，默认为False                                                                                                                           |
 | swapRB           | bool   | 否       | 是否交换RGB输入数据的红和蓝两个通道(RGB-->BGR或者BGR-->RGB)，默认为False                                                                              |
 | mean             | list   | 否       | 前处理标准化参数均值，默认为[0, 0, 0]                                                                                                                 |
@@ -85,6 +89,7 @@ py::class_<compile_options>(m, "CompileOptions")
 | output_type      | string | 否       | 指定输出数据的类型, 如'float32', 'uint8'(仅用于指定量化情况下), 默认为'float32'                                                                       |
 | input_layout     | string | 否       | 指定输入数据的layout, 如'NCHW', 'NHWC'. 若输入数据layout与模型本身layout不同, nncase会插入transpose进行转换                                           |
 | output_layout    | string | 否       | 指定输出数据的layout, 如'NCHW', 'NHWC'. 若输出数据layout与模型本身layout不同, nncase会插入transpose进行转换                                           |
+| model_layout     | string | 否       | 指定模型的layout，默认为空，当tflite模型layout为‘NCHW’，Onnx和Caffe模型layout为‘NHWC’时需指定                                                     |
 | is_fpga          | bool   | 否       | 指定kmodel是否用于fpga, 默认为False                                                                                                                   |
 | dump_ir          | bool   | 否       | 指定是否dump IR, 默认为False                                                                                                                          |
 | dump_asm         | bool   | 否       | 指定是否dump asm汇编文件, 默认为False                                                                                                                 |
@@ -94,7 +99,8 @@ py::class_<compile_options>(m, "CompileOptions")
 
 > 1. mean和std为浮点数进行normalize的参数，用户可以自由指定.
 > 2. input range为浮点数的范围，即如果输入数据类型为uint8，则input range为反量化到浮点之后的范围（可以不为0~1），可以自由指定.
-> 3. input_shape需要按照input_layout进行指定，以[1，224，224，3]为例，如果input_layout为NCHW，则input_shape需指定为[1,3,224,224];input_layout为NHWC，则input_shape需指定为[1,224,224,3];
+> 3. input_shape需要按照input_layout进行指定，以[1，224，224，3]为例，如果input_layout为NCHW，则input_shape需指定为[1,3,224,224]
+     ;input_layout为NHWC，则input_shape需指定为[1,224,224,3];
 >
 > 例如:
 >
@@ -112,15 +118,16 @@ compile_options.target = target
 compile_options.input_type = 'float32'  # or 'uint8' 'int8'
 compile_options.output_type = 'float32'  # or 'uint8' 'int8'. Only work in PTQ
 compile_options.output_range = []  # Only work in PTQ and output type is not "float32"
-compile_options.preprocess = True # if False, the args below will unworked
+compile_options.preprocess = True  # if False, the args below will unworked
 compile_options.swapRB = True
-compile_options.input_shape = [1,224,224,3] # keep layout same as input layout
+compile_options.input_shape = [1, 224, 224, 3]  # keep layout same as input layout
 compile_options.input_layout = 'NHWC'
 compile_options.output_layout = 'NHWC'
-compile_options.mean = [0,0,0]
-compile_options.std = [1,1,1]
-compile_options.input_range = [0,1]
-compile_options.letterbox_value = 114. # pad what you want
+compile_options.model_layout = ''  # default is empty. Specific it when tflite model with "NCHW" layout and Onnx(Caffe) model with "NHWC" layout
+compile_options.mean = [0, 0, 0]
+compile_options.std = [1, 1, 1]
+compile_options.input_range = [0, 1]
+compile_options.letterbox_value = 114.  # pad what you want
 compile_options.dump_ir = True
 compile_options.dump_asm = True
 compile_options.dump_dir = 'tmp'
@@ -153,7 +160,7 @@ py::class_<import_options>(m, "ImportOptions")
 ```python
 # import_options
 import_options = nncase.ImportOptions()
-import_options.output_arrays = 'output' # Your output node name
+import_options.output_arrays = 'output'  # Your output node name
 ```
 
 ### PTQTensorOptions
@@ -182,7 +189,7 @@ py::class_<ptq_tensor_options>(m, "PTQTensorOptions")
 
 | 字段名称         | 类型   | 是否必须 | 描述                                                                                  |
 | ---------------- | ------ | -------- | ------------------------------------------------------------------------------------- |
-| calibrate_method | string | 否       | 校准方法 ,  支持'no_clip', 'l2', 'kld_m0', 'kld_m1', 'kld_m2', 'cdf', 默认是'no_clip' |
+| calibrate_method | string | 否       | 校准方法 , 支持'no_clip', 'l2', 'kld_m0', 'kld_m1', 'kld_m2', 'cdf', 默认是'no_clip' |
 | samples_count    | int    | 否       | 样本个数                                                                              |
 
 #### set_tensor_data()
@@ -732,7 +739,7 @@ if __name__ == '__main__':
 
 ## nncase 推理模型APIs
 
-除了编译模型APIs, nncase还提供了推理模型的APIs, 在PC上可推理前面编译生成的kmodel,  用来验证nncase推理结果和相应深度学习框架的runtime的结果是否一致等.
+除了编译模型APIs, nncase还提供了推理模型的APIs, 在PC上可推理前面编译生成的kmodel, 用来验证nncase推理结果和相应深度学习框架的runtime的结果是否一致等.
 
 ### MemoryRange
 
@@ -743,13 +750,16 @@ MemoryRange类, 用于表示内存范围
 #### 类定义
 
 ```python
-py::class_<memory_range>(m, "MemoryRange")
-    .def_readwrite("location", &memory_range::memory_location)
-    .def_property(
-        "dtype", [](const memory_range &range) { return to_dtype(range.datatype); },
-        [](memory_range &range, py::object dtype) { range.datatype = from_dtype(py::dtype::from_args(dtype)); })
-    .def_readwrite("start", &memory_range::start)
-    .def_readwrite("size", &memory_range::size);
+py::class_ < memory_range > (m, "MemoryRange")
+.def_readwrite("location", & memory_range::memory_location)
+.def_property(
+    "dtype", [](const
+memory_range & range) {
+return to_dtype(range.datatype);},
+[](memory_range & range, py::object
+dtype) {range.datatype = from_dtype(py::dtype::from_args(dtype));})
+.def_readwrite("start", & memory_range::start)
+.def_readwrite("size", & memory_range::size);
 ```
 
 各属性说明如下
@@ -829,7 +839,8 @@ py::class_<runtime_tensor>(m, "RuntimeTensor")
 ##### 接口定义
 
 ```python
-from_numpy(py::array arr)
+from_numpy(py::array
+arr)
 ```
 
 ##### 输入参数
@@ -857,7 +868,8 @@ tensor = nncase.RuntimeTensor.from_numpy(self.inputs[i]['data'])
 ##### 接口定义
 
 ```python
-copy_to(RuntimeTensor to)
+copy_to(RuntimeTensor
+to)
 ```
 
 ##### 输入参数
@@ -1264,7 +1276,8 @@ OPTIONS
 `compile` 命令将你训练好的模型 (`.tflite`, `.caffemodel`, `.onnx`) 编译到 `.kmodel`。
 
 - `-i, --input-format` 用来指定输入模型的格式。nncase 现在支持 `tflite`、`caffe` 和 `onnx` 输入格式。
-- `-t, --target` 用来指定你想要你的模型在哪种目标设备上运行。`cpu` 几乎所有平台都支持的通用目标。`k210` 是 Kendryte K210 SoC 平台。如果你指定了 `k210`，这个模型就只能在 K210 运行或在你的 PC 上模拟运行。
+- `-t, --target` 用来指定你想要你的模型在哪种目标设备上运行。`cpu` 几乎所有平台都支持的通用目标。`k210` 是 Kendryte K210 SoC 平台。如果你指定了 `k210`，这个模型就只能在 K210
+  运行或在你的 PC 上模拟运行。
 - `<input file>` 用于指定输入模型文件
 - `--input-prototxt`用于指定caffe模型的prototxt文件
 - `<output file>` 用于指定输出模型文件
@@ -1273,10 +1286,15 @@ OPTIONS
 - `--w-quant-type` 用于指定权重的量化类型, 如 `uint8`/`int8`/`int16, 默认是`uint8
 - `--use-mse-quant-w`指定是否使用最小化mse(mean-square error, 均方误差)算法来量化权重.
 - `--dataset` 用于提供量化校准集来量化你的模型。你需要从训练集中选择几百到上千个数据放到这个目录里。
-- `--dataset-format` 用于指定量化校准集的格式。默认是 `image`，nncase 将使用 `opencv` 读取你的图片，并自动缩放到你的模型输入需要的尺寸。如果你的输入有 3 个通道，ncc 会将你的图片转换为值域是 [0,1] 布局是 `NCHW` 的张量。如果你的输入只有 1 个通道，ncc 会灰度化你的图片。如果你的数据集不是图片（例如音频或者矩阵），把它设置为 `raw`。这种场景下你需要把你的数据集转换为 float 张量的二进制文件。
+- `--dataset-format` 用于指定量化校准集的格式。默认是 `image`，nncase 将使用 `opencv` 读取你的图片，并自动缩放到你的模型输入需要的尺寸。如果你的输入有 3 个通道，ncc
+  会将你的图片转换为值域是 [0,1] 布局是 `NCHW` 的张量。如果你的输入只有 1 个通道，ncc 会灰度化你的图片。如果你的数据集不是图片（例如音频或者矩阵），把它设置为 `raw`。这种场景下你需要把你的数据集转换为
+  float 张量的二进制文件。
 - `--dump-range-dataset` 用于提供统计范围数据集来统计原始模型每个节点输出数据范围。你需要从训练集中选择几百到上千个数据放到这个目录里。
-- `--dump-range-dataset-format` 用于指定统计范围数据集的格式。默认是 `image`，nncase 将使用 `opencv` 读取你的图片，并自动缩放到你的模型输入需要的尺寸。如果你的输入有 3 个通道，ncc 会将你的图片转换为值域是 [0,1] 布局是 `NCHW` 的张量。如果你的输入只有 1 个通道，ncc 会灰度化你的图片。如果你的数据集不是图片（例如音频或者矩阵），把它设置为 `raw`。这种场景下你需要把你的数据集转换为 float 张量的二进制文件。
-- `--calibrate-method` 用于设置量化校准方法，它被用来选择最优的激活函数值域。默认值是 `no_clip`，ncc 会使用整个激活函数值域。如果你需要更好的量化结果，你可以使用 `l2`，但它需要花更长的时间寻找最优值域。
+- `--dump-range-dataset-format` 用于指定统计范围数据集的格式。默认是 `image`，nncase 将使用 `opencv` 读取你的图片，并自动缩放到你的模型输入需要的尺寸。如果你的输入有 3
+  个通道，ncc 会将你的图片转换为值域是 [0,1] 布局是 `NCHW` 的张量。如果你的输入只有 1 个通道，ncc 会灰度化你的图片。如果你的数据集不是图片（例如音频或者矩阵），把它设置为 `raw`
+  。这种场景下你需要把你的数据集转换为 float 张量的二进制文件。
+- `--calibrate-method` 用于设置量化校准方法，它被用来选择最优的激活函数值域。默认值是 `no_clip`，ncc 会使用整个激活函数值域。如果你需要更好的量化结果，你可以使用 `l2`
+  ，但它需要花更长的时间寻找最优值域。
 - `--preprocess`指定是否预处理, 添加后表示开启预处理
 - `--swapRB`指定**预处理时**是否交换红和蓝两个通道数据, 用于实现RGB2BGR或BGR2RGB功能
 - `--mean`指定**预处理时**标准化参数均值,例如添加 `--mean "0.1 2.3 33.1f"`用于设置三个通道的均值.
@@ -1284,13 +1302,15 @@ OPTIONS
 - `--input-range`指定输入数据反量化后的数据范围,例如添加 `--input-range "0.1 2."`设置反量化的范围为 `[0.1~2]`.
 - `--input-shape`指定输入数据的形状. 若与模型的输入形状不同, 则预处理时会做resize/pad等处理, 例如添加 `--input-shape "1 1 28 28"`指明当前输入图像尺寸.
 - `--letterbox-value`用于指定预处理时pad填充的值.
-- `--input-type` 用于指定推理时输入的数据类型。如果 `--input-type` 是 `uint8`，推理时你需要提供 RGB888 uint8 张量。如果 `--input-type` 是 `float`，你则需要提供 RGB float 张量.
+- `--input-type` 用于指定推理时输入的数据类型。如果 `--input-type` 是 `uint8`，推理时你需要提供 RGB888 uint8 张量。如果 `--input-type` 是 `float`，你则需要提供
+  RGB float 张量.
 - `--output-type` 用于指定推理时输出的数据类型。如 `float`/`uint8`,  `uint8`仅在量化模型时才有效. 默认是 `float`
 - `--input-layout`用于指定输入数据的layout. 若输入数据的layout与模型的layout不同, 预处理会添加transpose进行转换.
 - `--output-layout`用于指定输出数据的layout
 - `--tcu-num`用于指定tcu个数, 默认值为0, 表示不配置tcu个数.
 - `--is-fpga`指定编译后的kmodel是否运行在fpga上
-- `--dump-ir` 是一个调试选项。当它打开时 ncc 会在工作目录产生一些 `.dot` 文件。你可以使用 `Graphviz` 或 [Graphviz Online](https://dreampuf.github.io/GraphvizOnline) 来查看这些文件。
+- `--dump-ir` 是一个调试选项。当它打开时 ncc 会在工作目录产生一些 `.dot` 文件。你可以使用 `Graphviz`
+  或 [Graphviz Online](https://dreampuf.github.io/GraphvizOnline) 来查看这些文件。
 - `--dump-asm` 是一个调试选项。当它打开时 ncc 会生成硬件指令文件compile.text.asm
 - `--dump-quant-error`是一个调试选项, 用于dump量化错误信息
 - `--dump-import-op-range`是一个调试选项, 用于dump import之后节点的数据范围，需要同时指定dump-range-dataset
