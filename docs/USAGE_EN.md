@@ -4,8 +4,7 @@
 
 nncase provides both python wheel package and ncc client to compile your neural models.
 
-- nncase wheel package can be downloaded at [nncase release](https://github.com/kendryte/nncase/releases), target wheel
-  package except for both cpu and K210 can be got from nncase sdk for your target.
+- nncase wheel package can be  downloaded at [nncase release](https://github.com/kendryte/nncase/releases),  target wheel package except for both cpu and K210 can be got from nncase sdk for your target.
 - For ncc client, you should git clone nncase repository and then build it by yourself.
 
 # nncase python APIs
@@ -14,8 +13,7 @@ nncase provides Python APIs to compile neural network model and inference on you
 
 ## Installation
 
-You can make use of [nncase docker image](https://github.com/kendryte/nncase/blob/master/docs/build.md)(Ubuntu 20.04 +
-Python 3.8) if you do not have Ubuntu development.
+You can make use of [nncase docker image](https://github.com/kendryte/nncase/blob/master/docs/build.md)(Ubuntu 20.04 + Python 3.8) if you do not have Ubuntu development.
 
 ```shell
 $ docker pull registry.cn-hangzhou.aliyuncs.com/kendryte/nncase:latest
@@ -72,10 +70,9 @@ py::class_<compile_options>(m, "CompileOptions")
 
 The details of all attributes are following.
 
-| Attribute        | Data Type | *
-Required* | Description                                                                                                                                                                                             |
+| Attribute        | Data Type | *Required* | Description                                                                                                                                                                                             |
 | ---------------- | --------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| target           | string    | Y            | Specify the compile target, such as 'k210', 'k510'                                                                                                                                                     |
+| target           | string    | Y            | Specify the compile target,  such as 'k210', 'k510'                                                                                                                                                     |
 | quant_type       | string    | N            | Specify the quantization type for input data , such as 'uint8', 'int8', 'int16'                                                                                                                         |
 | w_quant_type     | string    | N            | Specify the quantization type for weight , such as 'uint8'(by default), 'int8', 'int16'                                                                                                                 |
 | use_mse_quant_w  | bool      | N            | Specify whether use  mean-square error when quantizing weight                                                                                                                                           |
@@ -85,13 +82,13 @@ Required* | Description                                                         
 | mean             | list      | N            | Normalize mean value for preprocess, [0, 0, 0] by default                                                                                                                                               |
 | std              | list      | N            | Normalize std value for preprocess, [1, 1, 1] by default                                                                                                                                                |
 | input_range      | list      | N            | The float range for dequantized input data, [0，1] by default                                                                                                                                           |
-| output_range     | list      | N            | The float range for quantized output data, [] by default                                                                                                                                                |
-| input_shape      | list      | N            | Specify the shape of input data. input_shape should be consistent with input _layout. There will be letterbox  operations(Such as resize/pad) if input_shape is not the same as input shape of model. |
+| output_range | list | N | The float range for quantized output data,  [ ] by default |
+| input_shape      | list      | N            | Specify the shape of input data.  input_shape should be consistent with input _layout.  There will be letterbox  operations(Such as resize/pad) if input_shape is not the same as input shape of model. |
 | letterbox_value  | float     | N            | Specify the pad value of letterbox during preprocess.                                                                                                                                                   |
 | input_type       | string    | N            | Specify the data type of input data, 'float32' by default.                                                                                                                                              |
 | output_type      | string    | N            | Specify the data type of output data, 'float32' by default.                                                                                                                                             |
-| input_layout     | string    | N            | Specify the layout of input data, such as 'NCHW', 'NHWC'. Nncase will insert transpose operation if input_layout is different with the layout of model.                                                |
-| output_layout    | string    | N            | Specify the layout of output data, such as 'NCHW', 'NHWC'. Nncase will insert transpose operation if output_layout is different with the layout of model.                                              |
+| input_layout     | string    | N            | Specify the layout of input data, such as 'NCHW', 'NHWC'.  Nncase will insert transpose operation if input_layout is different with the layout of model.                                                |
+| output_layout    | string    | N            | Specify the layout of output data, such as 'NCHW', 'NHWC'.  Nncase will insert transpose operation if output_layout is different with the layout of model.                                              |
 | model_layout     | string    | N            | Specific the layout of model when the layout of tflite model is "NCHW" and the layout of Onnx model or Caffe model is "NHWC", default is empty.                                                         |
 | is_fpga          | bool      | N            | Specify the generated kmodel is used for fpga or not, False by default.                                                                                                                                 |
 | dump_ir          | bool      | N            | Specify whether dump IR, False by default.                                                                                                                                                              |
@@ -101,17 +98,13 @@ Required* | Description                                                         
 | benchmark_only   | bool      | N            | Specify whether the generated kmodel is used for benchmark, False by default.                                                                                                                           |
 
 > 1. Both mean and std are floating numbers to normalize.
-> 2. input_range is the range for floating numbers. If the input_type is uint8, input_range means the dequantized range
-     of uint8.
-> 3. input_shape should be consistent with onput_layout. Take [1，224，224，3] for example. If input_layout is '
-     NCHW'，input_shape should be [1,3,224,224], or input_shape should be [1,224,224,3];
+> 2. input_range is the range for floating numbers. If the input_type is uint8, input_range means the dequantized range of uint8.
+> 3. input_shape should be consistent with onput_layout. Take [1，224，224，3] for example.  If input_layout is 'NCHW'，input_shape should be [1,3,224,224], or input_shape should be [1,224,224,3];
 >
 > Examples
 >
-> 1. input_type is uint8，range is [0, 255]，input_range is also [0, 255]，so preprocess will convert input data from uint8
-     to float32.
-> 2. input_type is uint8，range is [0, 255]，input_range is [0, 1]，so preprocess will dequantize the input data from uint8
-     to float32。
+> 1. input_type is uint8，range is [0, 255]，input_range is also [0, 255]，so preprocess will convert input data from uint8 to float32.
+> 2. input_type is uint8，range is [0, 255]，input_range is [0, 1]，so preprocess will dequantize the input data from uint8 to float32。
 
 #### Example
 
@@ -162,7 +155,7 @@ The details of all attributes are following.
 ```python
 # import_options
 import_options = nncase.ImportOptions()
-import_options.output_arrays = 'output'  # Your output node name
+import_options.output_arrays = 'output' # Your output node name
 ```
 
 ### PTQTensorOptions
@@ -737,13 +730,11 @@ if __name__ == '__main__':
 ### K210
 
 1. Download `k210-runtime.zip` from [Release](https://github.com/kendryte/nncase/releases) page.
-2. Unzip to your [kendryte-standalone-sdk](https://github.com/kendryte/kendryte-standalone-sdk) 's `lib/nncase/v1`
-   directory.
+2. Unzip to your [kendryte-standalone-sdk](https://github.com/kendryte/kendryte-standalone-sdk) 's `lib/nncase/v1` directory.
 
 ## nncase inference APIs
 
-Nncase provides inference APIs to inference kmodel. You can make use of it to check the result with runtime for deep
-learning frameworks.
+Nncase provides inference APIs to inference kmodel. You can make use of it to check the result with runtime for deep learning frameworks.
 
 ### MemoryRange
 
@@ -754,16 +745,13 @@ MemoryRange is used to describe the range to memory.
 #### Definition
 
 ```python
-py::class_ < memory_range > (m, "MemoryRange")
-.def_readwrite("location", & memory_range::memory_location)
-.def_property(
-    "dtype", [](const
-memory_range & range) {
-return to_dtype(range.datatype);},
-[](memory_range & range, py::object
-dtype) {range.datatype = from_dtype(py::dtype::from_args(dtype));})
-.def_readwrite("start", & memory_range::start)
-.def_readwrite("size", & memory_range::size);
+py::class_<memory_range>(m, "MemoryRange")
+    .def_readwrite("location", &memory_range::memory_location)
+    .def_property(
+        "dtype", [](const memory_range &range) { return to_dtype(range.datatype); },
+        [](memory_range &range, py::object dtype) { range.datatype = from_dtype(py::dtype::from_args(dtype)); })
+    .def_readwrite("start", &memory_range::start)
+    .def_readwrite("size", &memory_range::size);
 ```
 
 The details of all attributes are following.
@@ -841,8 +829,7 @@ Construct RuntimeTensor from numpy.ndarray
 ##### Definition
 
 ```python
-from_numpy(py::array
-arr)
+from_numpy(py::array arr)
 ```
 
 ##### Parameters
@@ -870,8 +857,7 @@ Copy RuntimeTensor
 ##### Definition
 
 ```python
-copy_to(RuntimeTensor
-to)
+copy_to(RuntimeTensor to)
 ```
 
 ##### Parameters
@@ -1275,48 +1261,28 @@ OPTIONS
 
 `compile` command compile your trained models (`.tflite`, `.caffemodel`, `.onnx`) to `.kmodel`.
 
-- `-i, --input-format` option is used to specify the input model format. nncase supports `tflite`, `caffe` and `onnx`
-  input model currently.
-- `-t, --target` option is used to set your desired target device to run the model. `cpu` is the most general target
-  that almost every platform should support. `k210` is the Kendryte K210 SoC platform. If you set this option to `k210`,
-  this model can only run on K210 or be emulated on your PC.
+- `-i, --input-format` option is used to specify the input model format. nncase supports `tflite`, `caffe` and `onnx` input model currently.
+- `-t, --target` option is used to set your desired target device to run the model. `cpu` is the most general target that almost every platform should support. `k210` is the Kendryte K210 SoC platform. If you set this option to `k210`, this model can only run on K210 or be emulated on your PC.
 - `<input file>` is your input model path.
 - `--input-prototxt` is the prototxt file for caffe model.
 - `<output file>` is the output model path.
 - `--output-arrays` is the names of nodes to output.
 - `--quant-type` is used to specify quantize type, such as `uint8` by default and `int8` and `int16`.
 - `--w-quant-type` is used to specify quantize type for weight, such as `uint8` by default and `int8 `and `int16`.
-- `--use-mse-quant-w ` is used to specify whether use minimize mse(mean-square error, mse) algorithm to quantize weight
-  or not.
-- `--dataset` is to provide your quantization calibration dataset to quantize your models. You should put hundreds or
-  thousands of data in training set to this directory.
-- `--dataset-format` is to set the format of the calibration dataset. Default is `image`, nncase will use `opencv` to
-  read your images and autoscale to the desired input size of your model. If the input has 3 channels, ncc will convert
-  images to RGB float tensors [0,1] in `NCHW` layout. If the input has only 1 channel, ncc will grayscale your images.
-  Set to `raw` if your dataset is not image dataset for example, audio or matrices. In this scenario you should convert
-  your dataset to raw binaries which contains float tensors.
-- `--dump-range-dataset` is to provide your dump range dataset to dump each op data range of your models. You should put
-  hundreds or thousands of data in training set to this directory.
-- `--dump-range-dataset-format` is to set the format of the dump range dataset. Default is `image`, nncase will
-  use `opencv` to read your images and autoscale to the desired input size of your model. If the input has 3 channels,
-  ncc will convert images to RGB float tensors [0,1] in `NCHW` layout. If the input has only 1 channel, ncc will
-  grayscale your images. Set to `raw` if your dataset is not image dataset for example, audio or matrices. In this
-  scenario you should convert your dataset to raw binaries which contains float tensors.
-- `--calibrate-method` is to set your desired calibration method, which is used to select the optimal activation ranges.
-  The default is `no_clip` in that ncc will use the full range of activations. If you want a better quantization result,
-  you can use `l2` but it will take a longer time to find the optimal ranges.
+- `--use-mse-quant-w ` is used to specify whether use minimize mse(mean-square error, mse) algorithm to quantize weight or not.
+- `--dataset` is to provide your quantization calibration dataset to quantize your models. You should put hundreds or thousands of data in training set to this directory.
+- `--dataset-format` is to set the format of the calibration dataset. Default is `image`, nncase will use `opencv` to read your images and autoscale to the desired input size of your model. If the input has 3 channels, ncc will convert images to RGB float tensors [0,1] in `NCHW` layout. If the input has only 1 channel, ncc will grayscale your images. Set to `raw` if your dataset is not image dataset for example, audio or matrices. In this scenario you should convert your dataset to raw binaries which contains float tensors.
+- `--dump-range-dataset` is to provide your dump range dataset to dump each op data range of your models. You should put hundreds or thousands of data in training set to this directory.
+- `--dump-range-dataset-format` is to set the format of the dump range dataset. Default is `image`, nncase will use `opencv` to read your images and autoscale to the desired input size of your model. If the input has 3 channels, ncc will convert images to RGB float tensors [0,1] in `NCHW` layout. If the input has only 1 channel, ncc will grayscale your images. Set to `raw` if your dataset is not image dataset for example, audio or matrices. In this scenario you should convert your dataset to raw binaries which contains float tensors.
+- `--calibrate-method` is to set your desired calibration method, which is used to select the optimal activation ranges. The default is `no_clip` in that ncc will use the full range of activations. If you want a better quantization result, you can use `l2` but it will take a longer time to find the optimal ranges.
 - `--preprocess ` is used specify whether enable preprocessing or not.
-- `--swapRB ` is used specify whether swap red and blue channel or not. You can use this flag to implement RGB2BGR or
-  BGR2RGB feature.
+- `--swapRB ` is used specify whether swap red and blue channel or not. You can use this flag to implement RGB2BGR or BGR2RGB feature.
 - `--mean` is the mean values to be subtracted during preprocessing.
 - `--std` is the std values to be divided during preprocessing.
 - `--input-range` is the input range in float after dequantization.
-- `--input-shape` is used to specify the shape of input data. If the input shape is different from the input shape of
-  your model, the preprocess will add resize/pad ops automatically for the transformation.
+- `--input-shape` is used to specify the shape of input data. If the input shape is different from the input shape of your model, the preprocess will add resize/pad ops automatically for the transformation.
 - `--letterbox-value` is used to specify the pad values when pad is added during preprocessing.
-- `--input-type` is to set your desired input data type when do inference. If `--input-type` is `uint8`, for example you
-  should provide RGB888 uint8 tensors when you do inference. If `--input-type` is `float`, you should provide RGB float
-  tensors instead.
+- `--input-type` is to set your desired input data type when do inference. If `--input-type` is `uint8`, for example you should provide RGB888 uint8 tensors when you do inference. If `--input-type` is `float`, you should provide RGB float tensors instead.
 - `--output-type` is the type of output data.
 - `--input-layout` is the layout of input data.
 - `--output-layout` is the layout of output data.
@@ -1325,13 +1291,11 @@ OPTIONS
 - `--dump-ir` is a debug option. It is used to specify whether dump IR or not.
 - `--dump-asm` is a debug option. It is used to specify whether dump asm file or not.
 - `--dump-quant-error` is a debug option. It is used to specify whether dump quantization error information or not.
-- `--dump-import-op-range` is a debug option. It is used to specify whether dump imported op data range or not, need to
-  also specify dump-range-dataset if enabled.
+- `--dump-import-op-range` is a debug option. It is used to specify whether dump imported op data range or not, need to also specify dump-range-dataset if enabled.
 - `--dump-dir` is used to specify dump directory.
 - `--benchmark-only` is used to specify whether the kmodel is used for benchmark or not.
 
-`infer` command can run your kmodel, and it's often used as debug purpose. ncc will save the model's output tensors
-to `.bin` files in `NCHW` layout.
+`infer` command can run your kmodel, and it's often used as debug purpose. ncc will save the model's output tensors to `.bin` files in `NCHW` layout.
 
 - `<input file>` is your kmodel path.
 - `<output path>` is the output directory ncc will produce to.
