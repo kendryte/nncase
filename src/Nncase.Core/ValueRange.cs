@@ -20,7 +20,9 @@ public struct ValueRange<T> : IEquatable<ValueRange<T>>
     /// Gets full value range.
     /// </summary>
     public static ValueRange<T> Full => (Limits.MinValue, Limits.MaxValue);
-
+    
+    public bool IsFull => this == Full;
+    
     /// <summary>
     /// Gets or sets min value.
     /// </summary>
