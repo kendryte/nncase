@@ -21,7 +21,7 @@ public class RangeOfEvaluator : IEvaluator<RangeOf>, ITypeInferencer<RangeOf>
         var max = float.MinValue;
         foreach (var f in input)
         {
-            if (!(f == float.NaN || float.IsInfinity(f)))
+            if (!float.IsNaN(f) && !float.IsInfinity(f))
             {
                 min = System.Math.Min(min, f);
                 max = System.Math.Max(max, f);
