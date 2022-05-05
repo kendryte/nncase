@@ -30,7 +30,7 @@ internal class DataflowRewriter
             OnRewriteStart(last, options, count);
             foreach (var rule in rules)
             {
-                var visitor = new DataFlowRewriteVisitor(rule);
+                var visitor = new DataFlowRewriteVisitor(rule, options);
                 last = post;
                 post = visitor.Visit(last);
                 if (visitor.IsMutated)
@@ -42,7 +42,7 @@ internal class DataflowRewriter
             }
 
             OnRewriteEnd(post, options, count++);
-            if (!isMutated | options.RewriteOnce)
+            if (!isMutated || options.RewriteOnce)
             {
                 break;
             }

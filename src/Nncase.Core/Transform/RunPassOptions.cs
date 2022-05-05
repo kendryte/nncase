@@ -21,15 +21,21 @@ namespace Nncase.Transform
         /// <param name="target"> target device. </param>
         /// <param name="dumpLevel"> int level. </param>
         /// <param name="dumpDir"> dir. </param>
-        public RunPassOptions(ITarget target, int dumpLevel, string dumpDir)
+        public RunPassOptions(ITarget target, int dumpLevel, string dumpDir) 
+            : this(target, dumpLevel, dumpDir, CompilerServices.GetCompileOptions())
+        {
+        }
+
+        public RunPassOptions(ITarget target, int dumpLevel, string dumpDir, ICompileOptions options)
         {
             Target = target;
             DumpLevel = dumpLevel;
             DumpDir = dumpDir;
             PassName = "";
             RewriteOnce = false;
+            CompileOptions = options;
         }
-
+        
         /// <summary>
         /// copy construct.
         /// </summary>
@@ -41,6 +47,7 @@ namespace Nncase.Transform
             DumpDir = other.DumpDir;
             PassName = other.PassName;
             RewriteOnce = other.RewriteOnce;
+            CompileOptions = other.CompileOptions;
         }
 
         /// <summary>
@@ -70,6 +77,8 @@ namespace Nncase.Transform
         /// Default is false.
         /// </summary>
         public bool RewriteOnce { private set; get; }
+        
+        public ICompileOptions CompileOptions { private set; get; }
 
         /// <summary>
         /// set the pass name
@@ -90,7 +99,7 @@ namespace Nncase.Transform
         /// </summary>
         /// <param name="once"></param>
         /// <returns></returns>
-        public RunPassOptions SetRewriteOnce(bool once) => new(Target, DumpLevel, DumpDir) { PassName = PassName, RewriteOnce = once };
+        public RunPassOptions SetRewriteOnce(bool once) => new(Target, DumpLevel, DumpDir, CompileOptions) { PassName = PassName, RewriteOnce = once };
 
         /// <summary>
         /// indent the dumpDir.

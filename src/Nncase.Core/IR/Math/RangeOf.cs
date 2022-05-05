@@ -6,18 +6,13 @@ using System;
 namespace Nncase.IR.Math;
 
 /// <summary>
-/// Quantize expression.
+/// RangeOf expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Quantize(DataType TargetType) : Op
+public sealed record RangeOf() : Op
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Quantize), 0, "input");
-
-    /// <summary>
-    /// Gets QuantParam.
-    /// </summary>
-    public static readonly ParameterInfo QuantParam = new(typeof(Quantize), 1, "quantParam");
+    public static readonly ParameterInfo Input = new(typeof(RangeOf), 0, "input");
 }

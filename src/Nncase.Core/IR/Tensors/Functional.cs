@@ -86,11 +86,7 @@ public static class Tensors
     public static Call Squeeze(Expr input, Expr dims) => new Call(new Squeeze(), input, dims);
 
     public static Call Unsqueeze(Expr input, Expr dims) => new Call(new Unsqueeze(), input, dims);
-
-    public static Call Quantize(Expr input, Expr zeroPoint, Expr scale, DataType targetType) => new Call(new Quantize(targetType), input, zeroPoint, scale);
-
-    public static Call DeQuantize(Expr input, Expr zeroPoint, Expr scale, DataType targetType) => new Call(new Dequantize(targetType), input, zeroPoint, scale);
-
+    
     // return a scalar
     public static Expr Rank(Expr input) => Slice(ShapeOf(ShapeOf(input)), new[] { 0 }, new[] { 1 }, 1);
 

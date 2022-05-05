@@ -20,6 +20,8 @@ public class MathModule : Module
         builder.RegisterType<DequantizeEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<MatMulEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<QuantizeEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<QuantParamOfEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<RangeOfEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<ReduceEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<ReduceArgEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<UnaryEvaluator>().AsImplementedInterfaces();

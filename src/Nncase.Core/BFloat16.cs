@@ -93,6 +93,10 @@ public struct BFloat16 : IEquatable<BFloat16>
         return FromRaw((ushort)(input >> 16));
     }
 
+    public static BFloat16 Infinity => FromRaw(0x7f80);
+    
+    public static BFloat16 NegInfinity => FromRaw(0xff80);
+    
     /// <summary>
     /// Returns a value indicating whether this instance and other BFloat16 represent the same value.
     /// </summary>

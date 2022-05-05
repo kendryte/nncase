@@ -30,10 +30,12 @@ internal class RuleReceiver : ISyntaxContextReceiver
     public INamedTypeSymbol? TensorSymobl;
     public INamedTypeSymbol? IMatchResultSymobl;
     public INamedTypeSymbol? IRewriteRuleSymbol;
+    public INamedTypeSymbol? QuantRuleSymbol;
 
     public void OnVisitSyntaxNode(GeneratorSyntaxContext ctx)
     {
         IRewriteRuleSymbol ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Transform.IRewriteRule")!;
+        QuantRuleSymbol ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Transform.QuantRule")!;
         ExprSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Expr");
         TensorSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Tensor");
         IMatchResultSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.PatternMatch.IMatchResult");

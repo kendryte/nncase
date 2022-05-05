@@ -1,0 +1,24 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+using Nncase.PatternMatch;
+using System;
+using static Nncase.IR.TypePatternUtility;
+
+namespace Nncase.IR.Math;
+
+/// <summary>
+/// QuantParamOf expression.
+/// </summary>
+[PatternFunctionalGenerator]
+public sealed record QuantParamOf(QuantMode QuantMode) : Op
+{
+    /// <summary>
+    /// Gets range.
+    /// </summary>
+    public static readonly ParameterInfo Range = new(typeof(QuantParamOf), 0, "range", HasShape(new Shape(2)));
+    
+    /// <summary>
+    /// Gets bits;
+    /// </summary>
+    public static readonly ParameterInfo Bits = new(typeof(QuantParamOf), 1, "bits", IsIntegralScalar());
+}

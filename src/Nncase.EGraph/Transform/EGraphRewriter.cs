@@ -45,7 +45,7 @@ internal static class EGraphRewriter
             foreach (var (rule, results) in matches)
             {
                 var replacedExprs = (from result in results
-                                     let expr = rule.GetReplace(result)
+                                     let expr = rule.GetReplace(result, options)
                                      where expr != null
                                      select (eGraph.Find((ENode)result.Root), expr)).ToList();
 

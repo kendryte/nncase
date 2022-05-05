@@ -26,5 +26,5 @@ public abstract class RewriteRule<TPattern> : IRewriteRule
     IPattern IRewriteRule.Pattern => Pattern;
 
     /// <inheritdoc/>
-    public abstract Expr? GetReplace(IMatchResult result);
+    public abstract Expr? GetReplace(IMatchResult result, RunPassOptions options);
 }

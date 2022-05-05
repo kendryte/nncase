@@ -106,7 +106,7 @@ public class TemplateRule : IRewriteRule
     public IPattern Pattern { get; }
 
     /// <inheritdoc/>
-    public Expr? GetReplace(IMatchResult result)
+    public Expr? GetReplace(IMatchResult result, RunPassOptions options)
     {
         var converter = new ExprGeneratorVisitor(result);
         if (_predicate is null || (_predicate is not null && converter.Visit(_predicate).Evaluate().AsTensor().ToScalar<bool>()))
