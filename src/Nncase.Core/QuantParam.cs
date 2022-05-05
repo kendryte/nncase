@@ -16,19 +16,19 @@ namespace Nncase;
 public struct QuantParam : IEquatable<QuantParam>
 {
     /// <summary>
+    /// Get the ZeroPoint
+    /// </summary>
+    public int ZeroPoint;
+    
+    /// <summary>
     /// Get the Scale
     /// </summary>
     public float Scale;
 
-    /// <summary>
-    /// Get the ZeroPoint
-    /// </summary>
-    public int ZeroPoint;
-
-    public QuantParam(float scale, int zeroPoint)
+    public QuantParam(int zeroPoint, float scale)
     {
-        Scale = scale;
         ZeroPoint = zeroPoint;
+        Scale = scale;
     }
     
     /// <inheritdoc/>

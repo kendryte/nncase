@@ -43,7 +43,7 @@ public class QuantParamOfEvaluator : IEvaluator<QuantParamOf>, ITypeInferencer<Q
 
         var scale = (range.Max - range.Min) / (QMax - QMin);
         var bias = SMath.Round((range.Min * (QMin - QMax)) / (range.Max - range.Min)) + QMin;
-        var r = new QuantParam((float)scale, (int)bias);
+        var r = new QuantParam((int)bias, (float)scale);
         return Value.FromTensor(Tensor.FromScalar<QuantParam>(r));
     }
     
