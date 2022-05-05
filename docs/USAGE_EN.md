@@ -52,6 +52,7 @@ py::class_<compile_options>(m, "CompileOptions")
     .def_readwrite("mean", &compile_options::mean)
     .def_readwrite("std", &compile_options::std)
     .def_readwrite("input_range", &compile_options::input_range)
+    .def_readwrite("output_range", &compile_options::output_range)
     .def_readwrite("input_shape", &compile_options::input_shape)
     .def_readwrite("letterbox_value", &compile_options::letterbox_value)
     .def_readwrite("input_type", &compile_options::input_type)
@@ -81,6 +82,7 @@ The details of all attributes are following.
 | mean             | list      | N            | Normalize mean value for preprocess, [0, 0, 0] by default                                                                                                                                               |
 | std              | list      | N            | Normalize std value for preprocess, [1, 1, 1] by default                                                                                                                                                |
 | input_range      | list      | N            | The float range for dequantized input data, [0，1] by default                                                                                                                                           |
+| output_range | list | N | The float range for quantized output data,  [ ] by default |
 | input_shape      | list      | N            | Specify the shape of input data.  input_shape should be consistent with input _layout.  There will be letterbox  operations(Such as resize/pad) if input_shape is not the same as input shape of model. |
 | letterbox_value  | float     | N            | Specify the pad value of letterbox during preprocess.                                                                                                                                                   |
 | input_type       | string    | N            | Specify the data type of input data, 'float32' by default.                                                                                                                                              |
@@ -111,16 +113,18 @@ The details of all attributes are following.
 compile_options = nncase.CompileOptions()
 compile_options.target = target
 compile_options.input_type = 'float32'  # or 'uint8' 'int8'
-compile_options.preprocess = True # if False, the args below will unworked
+compile_options.output_type = 'float32'  # or 'uint8' 'int8'. Only work in PTQ
+compile_options.output_range = []  # Only work in PTQ and output type is not "float32"
+compile_options.preprocess = True  # if False, the args below will unworked
 compile_options.swapRB = True
-compile_options.input_shape = [1,224,224,3] # keep layout same as input layout
+compile_options.input_shape = [1, 224, 224, 3]  # keep layout same as input layout
 compile_options.input_layout = 'NHWC'
 compile_options.output_layout = 'NHWC'
-compile_options.model_layout = '' # default is empty. Specific it when tflite model with "NCHW" layout and Onnx(Caffe) model with "NHWC" layout
-compile_options.mean = [0,0,0]
-compile_options.std = [1,1,1]
-compile_options.input_range = [0,1]
-compile_options.letterbox_value = 114. # pad what you want
+compile_options.model_layout = ''  # default is empty. Specific it when tflite model with "NCHW" layout and Onnx(Caffe) model with "NHWC" layout
+compile_options.mean = [0, 0, 0]
+compile_options.std = [1, 1, 1]
+compile_options.input_range = [0, 1]
+compile_options.letterbox_value = 114.  # pad what you want
 compile_options.dump_ir = True
 compile_options.dump_asm = True
 compile_options.dump_dir = 'tmp'

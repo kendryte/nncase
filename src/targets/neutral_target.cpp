@@ -235,12 +235,12 @@ void neutral_target::register_quantize_annotation_passes([[maybe_unused]] const 
 
     {
         transform_pass p("annotate_neutral_quantize");
-        p.emplace<add_quant_checkpoints_transform>(std::in_place, ir::op_fused_unary, ir::op_bitcast, ir::op_dequantize, ir::op_binary);
+        p.emplace<add_quant_checkpoints_transform>(std::in_place, ir::op_fused_unary, ir::op_bitcast, ir::op_dequantize, ir::op_binary, ir::op_output_node);
         pass_mgr.add_pass(std::move(p));
     }
 }
 
-void neutral_target::register_quantize_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type, [[maybe_unused]] std::string_view w_quant_type, [[maybe_unused]] bool use_mse_quant_w, [[maybe_unused]] datatype_t output_type, [[maybe_unused]] quant_param_t &output_quant_param)
+void neutral_target::register_quantize_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type, [[maybe_unused]] std::string_view w_quant_type, [[maybe_unused]] bool use_mse_quant_w, [[maybe_unused]] datatype_t output_type, [[maybe_unused]] quant_param_t &output_quant_param, [[maybe_unused]] std::vector<float> output_range)
 {
     {
         transform_pass p("fused_unary_to_lut");
@@ -255,7 +255,7 @@ void neutral_target::register_quantize_passes([[maybe_unused]] const module_type
     }
     {
         transform_pass p("change_output_type");
-        p.emplace<add_output_quantize_transform>(output_type, output_quant_param);
+        p.emplace<add_output_quantize_transform>(output_type, output_quant_param, output_range);
         pass_mgr.add_pass(std::move(p));
     }
 }
@@ -273,6 +273,7 @@ void neutral_target::add_quantization_broadcast([[maybe_unused]] std::unordered_
 {
     using namespace ir;
     opcodes.emplace(op_input_node);
+    opcodes.emplace(op_output_node);
     opcodes.emplace(op_transpose);
     opcodes.emplace(op_pad);
     opcodes.emplace(op_resize_image);

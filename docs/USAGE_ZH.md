@@ -50,6 +50,7 @@ py::class_<compile_options>(m, "CompileOptions")
     .def_readwrite("mean", &compile_options::mean)
     .def_readwrite("std", &compile_options::std)
     .def_readwrite("input_range", &compile_options::input_range)
+    .def_readwrite("output_range", &compile_options::output_range)
     .def_readwrite("input_shape", &compile_options::input_shape)
     .def_readwrite("letterbox_value", &compile_options::letterbox_value)
     .def_readwrite("input_type", &compile_options::input_type)
@@ -67,31 +68,32 @@ py::class_<compile_options>(m, "CompileOptions")
 
 各属性说明如下
 
-| 属性名称         | 类型   | 是否必须 | 描述                                                                                                                                                  |
-| ---------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| target           | string | 是       | 指定编译目标, 如'k210', 'k510'                                                                                                                        |
-| quant_type       | string | 否       | 指定数据量化类型, 如'uint8', 'int8', 'int16'                                                                                                          |
-| w_quant_type     | string | 否       | 指定权重量化类型, 如'uint8', 'int8', 'int16', 默认为'uint8'                                                                                           |
-| use_mse_quant_w  | bool   | 否       | 指定权重量化时是否使用最小化均方误差(mean-square error, MSE)算法优化量化参数                                                                          |
-| split_w_to_act   | bool   | 否       | 指定是否将权重数据平衡到激活数据中                                                                                                                     |
-| preprocess       | bool   | 否       | 是否开启前处理，默认为False                                                                                                                           |
-| swapRB           | bool   | 否       | 是否交换RGB输入数据的红和蓝两个通道(RGB-->BGR或者BGR-->RGB)，默认为False                                                                              |
-| mean             | list   | 否       | 前处理标准化参数均值，默认为[0, 0, 0]                                                                                                                 |
-| std              | list   | 否       | 前处理标准化参数方差，默认为[1, 1, 1]                                                                                                                 |
-| input_range      | list   | 否       | 输入数据反量化后对应浮点数的范围，默认为[0，1]                                                                                                        |
+| 属性名称         | 类型   | 是否必须 | 描述                                                         |
+| ---------------- | ------ | -------- | ------------------------------------------------------------ |
+| target           | string | 是       | 指定编译目标, 如'k210', 'k510'                               |
+| quant_type       | string | 否       | 指定数据量化类型, 如'uint8', 'int8', 'int16'                 |
+| w_quant_type     | string | 否       | 指定权重量化类型, 如'uint8', 'int8', 'int16', 默认为'uint8'  |
+| use_mse_quant_w  | bool   | 否       | 指定权重量化时是否使用最小化均方误差(mean-square error, MSE)算法优化量化参数 |
+| split_w_to_act   | bool   | 否       | 指定是否将权重数据平衡到激活数据中                           |
+| preprocess       | bool   | 否       | 是否开启前处理，默认为False                                  |
+| swapRB           | bool   | 否       | 是否交换RGB输入数据的红和蓝两个通道(RGB-->BGR或者BGR-->RGB)，默认为False |
+| mean             | list   | 否       | 前处理标准化参数均值，默认为[0, 0, 0]                        |
+| std              | list   | 否       | 前处理标准化参数方差，默认为[1, 1, 1]                        |
+| input_range      | list   | 否       | 输入数据反量化后对应浮点数的范围，默认为[0，1]               |
+| output_range     | list   | 否       | 输出定点数据前对应浮点数的范围，默认为空，使用模型实际浮点输出范围 |
 | input_shape      | list   | 否       | 指定输入数据的shape，input_shape的layout需要与input layout保持一致，输入数据的input_shape与模型的input shape不一致时会进行letterbox操作(resize/pad等) |
-| letterbox_value  | float  | 否       | 指定前处理letterbox的填充值                                                                                                                           |
-| input_type       | string | 否       | 指定输入数据的类型, 默认为'float32'                                                                                                                   |
-| output_type      | string | 否       | 指定输出数据的类型, 如'float32', 'uint8'(仅用于指定量化情况下), 默认为'float32'                                                                       |
-| input_layout     | string | 否       | 指定输入数据的layout, 如'NCHW', 'NHWC'. 若输入数据layout与模型本身layout不同, nncase会插入transpose进行转换                                           |
-| output_layout    | string | 否       | 指定输出数据的layout, 如'NCHW', 'NHWC'. 若输出数据layout与模型本身layout不同, nncase会插入transpose进行转换                                           |
-| model_layout     | string | 否       | 指定模型的layout，默认为空，当tflite模型layout为‘NCHW’，Onnx和Caffe模型layout为‘NHWC’时需指定                                                     |
-| is_fpga          | bool   | 否       | 指定kmodel是否用于fpga, 默认为False                                                                                                                   |
-| dump_ir          | bool   | 否       | 指定是否dump IR, 默认为False                                                                                                                          |
-| dump_asm         | bool   | 否       | 指定是否dump asm汇编文件, 默认为False                                                                                                                 |
-| dump_quant_error | bool   | 否       | 指定是否dump量化前后的模型误差                                                                                                                        |
-| dump_dir         | string | 否       | 前面指定dump_ir等开关后, 这里指定dump的目录, 默认为空字符串                                                                                           |
-| benchmark_only   | bool   | 否       | 指定kmodel是否只用于benchmark, 默认为False                                                                                                            |
+| letterbox_value  | float  | 否       | 指定前处理letterbox的填充值                                  |
+| input_type       | string | 否       | 指定输入数据的类型, 默认为'float32'                          |
+| output_type      | string | 否       | 指定输出数据的类型, 如'float32', 'uint8'(仅用于指定量化情况下), 默认为'float32' |
+| input_layout     | string | 否       | 指定输入数据的layout, 如'NCHW', 'NHWC'. 若输入数据layout与模型本身layout不同, nncase会插入transpose进行转换 |
+| output_layout    | string | 否       | 指定输出数据的layout, 如'NCHW', 'NHWC'. 若输出数据layout与模型本身layout不同, nncase会插入transpose进行转换 |
+| model_layout     | string | 否       | 指定模型的layout，默认为空，当tflite模型layout为‘NCHW’，Onnx和Caffe模型layout为‘NHWC’时需指定 |
+| is_fpga          | bool   | 否       | 指定kmodel是否用于fpga, 默认为False                          |
+| dump_ir          | bool   | 否       | 指定是否dump IR, 默认为False                                 |
+| dump_asm         | bool   | 否       | 指定是否dump asm汇编文件, 默认为False                        |
+| dump_quant_error | bool   | 否       | 指定是否dump量化前后的模型误差                               |
+| dump_dir         | string | 否       | 前面指定dump_ir等开关后, 这里指定dump的目录, 默认为空字符串  |
+| benchmark_only   | bool   | 否       | 指定kmodel是否只用于benchmark, 默认为False                   |
 
 > 1. mean和std为浮点数进行normalize的参数，用户可以自由指定.
 > 2. input range为浮点数的范围，即如果输入数据类型为uint8，则input range为反量化到浮点之后的范围（可以不为0~1），可以自由指定.
@@ -111,16 +113,18 @@ py::class_<compile_options>(m, "CompileOptions")
 compile_options = nncase.CompileOptions()
 compile_options.target = target
 compile_options.input_type = 'float32'  # or 'uint8' 'int8'
-compile_options.preprocess = True # if False, the args below will unworked
+compile_options.output_type = 'float32'  # or 'uint8' 'int8'. Only work in PTQ
+compile_options.output_range = []  # Only work in PTQ and output type is not "float32"
+compile_options.preprocess = True  # if False, the args below will unworked
 compile_options.swapRB = True
-compile_options.input_shape = [1,224,224,3] # keep layout same as input layout
+compile_options.input_shape = [1, 224, 224, 3]  # keep layout same as input layout
 compile_options.input_layout = 'NHWC'
 compile_options.output_layout = 'NHWC'
-compile_options.model_layout = '' # default is empty. Specific it when tflite model with "NCHW" layout and Onnx(Caffe) model with "NHWC" layout
-compile_options.mean = [0,0,0]
-compile_options.std = [1,1,1]
-compile_options.input_range = [0,1]
-compile_options.letterbox_value = 114. # pad what you want
+compile_options.model_layout = ''  # default is empty. Specific it when tflite model with "NCHW" layout and Onnx(Caffe) model with "NHWC" layout
+compile_options.mean = [0, 0, 0]
+compile_options.std = [1, 1, 1]
+compile_options.input_range = [0, 1]
+compile_options.letterbox_value = 114.  # pad what you want
 compile_options.dump_ir = True
 compile_options.dump_asm = True
 compile_options.dump_dir = 'tmp'
