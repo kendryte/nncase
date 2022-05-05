@@ -53,5 +53,11 @@ public static class Mutator
     /// </summary>
     /// <returns>RemoveNop</returns>
     public static Func<ExprMutator> RemoveNop() => () => new Mutators.RemoveNop();
+
+    /// <summary>
+    /// fold math calc operator
+    /// </summary>
+    /// <returns>FoldMathCall.</returns>
+    public static Func<ExprMutator> FoldMathCall() => () => new Mutators.FoldMathCall();
 }
 
