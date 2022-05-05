@@ -47,6 +47,7 @@ struct compile_options
     bool dump_import_op_range = false;
     bool use_dataset_as_input_stat = true;
     bool use_mse_quant_w = false;
+    bool split_w_to_act = false;
     uint32_t max_solve_secs = 60;
 
     clipp::group parser(mode &mode);

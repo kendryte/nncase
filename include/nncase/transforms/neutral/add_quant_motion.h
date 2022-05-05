@@ -35,8 +35,8 @@ private:
 class NNCASE_API add_output_quantize_transform : public transform
 {
 public:
-    add_output_quantize_transform(datatype_t dt) noexcept
-        : output_type_(dt) { }
+    add_output_quantize_transform(datatype_t dt, quant_param_t &output_quant_param, std::vector<float> output_range) noexcept
+        : output_type_(dt), output_quant_param_(output_quant_param), output_range_(output_range) { }
     void process(transform_context &context) override;
 
 protected:
@@ -45,5 +45,7 @@ protected:
 
 private:
     datatype_t output_type_;
+    quant_param_t &output_quant_param_;
+    std::vector<float> output_range_;
 };
 }

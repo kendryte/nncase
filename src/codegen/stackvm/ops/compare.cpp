@@ -19,7 +19,7 @@ using namespace nncase::codegen;
 using namespace nncase::codegen::stackvm;
 using namespace nncase::ir;
 
-void stackvm_module_builder::emit(equal &node, stackvm_op_builder &builder)
+void stackvm_module_builder::emit(compare &node, stackvm_op_builder &builder)
 {
     auto &input_a = allocation(node.input_a());
     auto &input_b = allocation(node.input_b());
@@ -32,6 +32,7 @@ void stackvm_module_builder::emit(equal &node, stackvm_op_builder &builder)
     builder.stshape(1, input_a.strides);
     builder.stshape(2, input_b.shape);
     builder.stshape(3, input_b.strides);
-    builder.stshape(4, output.strides);
-    builder.tensor_equal_(node.input_a().type(), 0, 1, 2, 3, 4);
+    builder.stshape(4, output.shape);
+    builder.stshape(5, output.strides);
+    builder.tensor_compare_(node.input_a().type(), 0, 1, 2, 3, 4, 5, node.compare_op());
 }

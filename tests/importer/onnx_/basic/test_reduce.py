@@ -22,7 +22,7 @@ from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
 
-def _make_module(in_shape, reduce_op, axes, keepdims):
+def _make_module(in_type, in_shape, reduce_op, axes, keepdims):
     inputs = []
     outputs = []
     initializers = []
@@ -30,14 +30,14 @@ def _make_module(in_shape, reduce_op, axes, keepdims):
     nodes = []
 
     # input
-    input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
+    input = helper.make_tensor_value_info('input', in_type, in_shape)
     inputs.append('input')
 
     # output
     kd = 1 if keepdims is None else keepdims
     data = np.ones(in_shape)
     out_shape = np.prod(data, axis=tuple(axes), keepdims=kd).shape
-    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, out_shape)
+    output = helper.make_tensor_value_info('output', in_type, out_shape)
     outputs.append('output')
 
     # axes
@@ -67,6 +67,11 @@ def _make_module(in_shape, reduce_op, axes, keepdims):
     return model_def
 
 
+in_types = [
+    TensorProto.FLOAT,
+    TensorProto.INT32
+]
+
 in_shapes = [
     [1, 3, 16, 16]
 ]
@@ -75,7 +80,6 @@ reduce_ops = [
     'ReduceMax',
     'ReduceMean',
     'ReduceMin',
-    'ReduceProd'
 ]
 
 axes_list = [
@@ -98,14 +102,14 @@ keepdims_lists = [
     0
 ]
 
-
+@pytest.mark.parametrize('in_type', in_types)
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('reduce_op', reduce_ops)
 @pytest.mark.parametrize('axes', axes_list)
 @pytest.mark.parametrize('keepdims', keepdims_lists)
-def test_reduce(in_shape, reduce_op, axes, keepdims, request):
+def test_reduce(in_type, in_shape, reduce_op, axes, keepdims, request):
     if len(axes) <= len(in_shape):
-        model_def = _make_module(in_shape, reduce_op, axes, keepdims)
+        model_def = _make_module(in_type, in_shape, reduce_op, axes, keepdims)
 
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_onnx_helper(model_def)

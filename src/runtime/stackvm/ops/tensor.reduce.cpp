@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 #include "../runtime_function.h"
+#include <iostream>
 #include <nncase/kernels/tensor_compute.h>
+#include <nncase/runtime/debug.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -29,5 +31,18 @@ result<void> stackvm_runtime_function::visit(const tensor_reduce_op_t &op) noexc
     try_var(in_strides, module().shape_reg(op.rstride_src));
     try_var(out_strides, module().shape_reg(op.rstride_dest));
 
-    return kernels::reduce(op.reduce_op, init_value.as_r4(), reinterpret_cast<const float *>(input), reinterpret_cast<float *>(output), in_shape, axis, in_strides, out_strides, op.keep_dims, module().kernel_context());
+    switch (op.datatype)
+    {
+    case dt_float32:
+        return kernels::reduce(op.reduce_op, init_value.as_r4(), reinterpret_cast<const float *>(input),
+            reinterpret_cast<float *>(output), in_shape, axis, in_strides, out_strides, op.keep_dims, module().kernel_context());
+        break;
+    case dt_int32:
+        return kernels::reduce(op.reduce_op, init_value.as_i4(), reinterpret_cast<const int32_t *>(input),
+            reinterpret_cast<int32_t *>(output), in_shape, axis, in_strides, out_strides, op.keep_dims, module().kernel_context());
+        break;
+    default:
+        std::cerr << "unsupported dtype for reduce: " + std::string(datatype_names(op.datatype)) << std::endl;
+        return err(std::errc::invalid_argument);
+    }
 }

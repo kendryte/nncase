@@ -140,6 +140,8 @@ public:
     std::vector<ir::output_connector *> quant_buffers_insert_order() const noexcept { return quant_buffers_insert_order_; }
     std::unordered_map<ir::output_connector *, value_range<float>> ranges() const noexcept { return quant_ranges_; }
     std::vector<ir::output_connector *> ranges_insert_order() const noexcept { return ranges_insert_order_; }
+    void set_model_output_range(ir::graph &graph);
+    value_range<float> get_model_output_range() const noexcept { return model_output_range_; }
 
 private:
     calibrate_method cali_method_;
@@ -151,5 +153,6 @@ private:
     std::unordered_map<ir::output_connector *, std::vector<float>> output_buffers_;
     std::vector<ir::output_connector *> quant_buffers_insert_order_;
     std::vector<ir::output_connector *> ranges_insert_order_;
+    value_range<float> model_output_range_;
 };
 }

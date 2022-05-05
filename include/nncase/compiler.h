@@ -51,12 +51,15 @@ struct compile_options
     std::vector<float> mean { 0.f, 0.f, 0.f };
     std::vector<float> std { 1.f, 1.f, 1.f };
     std::vector<float> input_range { 0.f, 1.f };
+    std::vector<float> output_range;
     float letterbox_value = 0.f;
     std::vector<int32_t> input_shape {};
     std::string w_quant_type = "uint8";
     bool use_mse_quant_w = false;
+    bool split_w_to_act = false;
     std::string input_layout = "NCHW";
     std::string output_layout = "NCHW";
+    std::string model_layout;
 };
 
 struct import_options

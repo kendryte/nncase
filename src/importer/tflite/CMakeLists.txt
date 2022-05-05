@@ -8,8 +8,11 @@ set(SRCS tflite_importer.cpp
          ops/pool2d.cpp
          ops/binary.cpp
          ops/cast.cpp
+         ops/compare.cpp
+         ops/custom.cpp
          ops/reduce.cpp
          ops/reduce_arg.cpp
+         ops/reduce_prod.cpp
          ops/unary.cpp
          ops/concat.cpp
          ops/matmul.cpp
@@ -19,6 +22,7 @@ set(SRCS tflite_importer.cpp
          ops/softmax.cpp
          ops/slice.cpp
          ops/resize_image.cpp
+         ops/tile.cpp
          ops/transpose.cpp
          ops/space_to_batch.cpp
          ops/l2_normalization.cpp

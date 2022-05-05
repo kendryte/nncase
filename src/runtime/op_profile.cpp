@@ -13,18 +13,32 @@
  * limitations under the License.
  */
 
+#include <algorithm>
 #include <nncase/runtime/stackvm/op_profile.h>
+#include <vector>
 
-void op_profile::print_profile()
+std::unordered_map<std::string, double> op_profile::op_timing_;
+void op_profile::print()
 {
-    std::cout << "OPS PROFILE" << std::endl;
-    double ops_time = 0.;
-    for (auto &it : op_time_cast_)
+    double total = 0.f;
+    std::vector<std::pair<std::string, double>> v;
+    for (auto e : op_timing_)
     {
-        if (it.first == "")
-            continue;
-        std::cout << "Op type: " << std::setw(15) << std::left << it.first << "(" << it.second << " ms)" << std::endl;
-        ops_time += it.second;
+        total += e.second;
+        v.push_back(e);
     }
-    std::cout << "All OPS cast: " << ops_time << std::endl;
+
+    std::sort(v.begin(), v.end(),
+        [=](std::pair<std::string, double> &a, std::pair<std::string, double> &b) { return a.second > b.second; });
+
+    std::cout << "stackvm OPs profile" << std::endl;
+    std::cout << std::setw(24) << std::left << "stackvm tensor op" << std::setw(12) << std::left << "timing(ms)"
+              << std::setw(12) << std::left << "percent(%)" << std::endl;
+    for (auto e : v)
+    {
+        std::cout << std::setw(24) << std::left << e.first << std::setw(12) << std::left << e.second
+                  << std::setw(12) << std::left << e.second / total * 100 << std::endl;
+    }
+    std::cout << std::setw(24) << std::left << "total" << std::setw(12) << std::left << total
+              << std::setw(12) << std::left << total / total * 100 << std::endl;
 }

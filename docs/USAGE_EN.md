@@ -1,4 +1,4 @@
-[TOC]
+[toc]
 
 # Overview
 
@@ -6,8 +6,6 @@ nncase provides both python wheel package and ncc client to compile your neural 
 
 - nncase wheel package can be  downloaded at [nncase release](https://github.com/kendryte/nncase/releases),  target wheel package except for both cpu and K210 can be got from nncase sdk for your target.
 - For ncc client, you should git clone nncase repository and then build it by yourself.
-
-
 
 # nncase python APIs
 
@@ -31,8 +29,6 @@ root@f74598de4a02:/mnt# pip3 install nncase_github/nncase-1.0.0.20211029-cp38-cp
 
 > You should get and install target wheel package from your nncase sdk if you do not take cpu/K210 as your target
 
-
-
 ## nncase compile model APIs
 
 ### CompileOptions
@@ -50,17 +46,20 @@ py::class_<compile_options>(m, "CompileOptions")
     .def_readwrite("quant_type", &compile_options::quant_type)
     .def_readwrite("w_quant_type", &compile_options::w_quant_type)
     .def_readwrite("use_mse_quant_w", &compile_options::use_mse_quant_w)
+    .def_readwrite("split_w_to_act", &compile_options::split_w_to_act)
     .def_readwrite("preprocess", &compile_options::preprocess)
     .def_readwrite("swapRB", &compile_options::swapRB)
     .def_readwrite("mean", &compile_options::mean)
     .def_readwrite("std", &compile_options::std)
     .def_readwrite("input_range", &compile_options::input_range)
+    .def_readwrite("output_range", &compile_options::output_range)
     .def_readwrite("input_shape", &compile_options::input_shape)
     .def_readwrite("letterbox_value", &compile_options::letterbox_value)
     .def_readwrite("input_type", &compile_options::input_type)
     .def_readwrite("output_type", &compile_options::output_type)
     .def_readwrite("input_layout", &compile_options::input_layout)
     .def_readwrite("output_layout", &compile_options::output_layout)
+    .def_readwrite("model_layout", &compile_options::model_layout)
     .def_readwrite("is_fpga", &compile_options::is_fpga)
     .def_readwrite("dump_ir", &compile_options::dump_ir)
     .def_readwrite("dump_asm", &compile_options::dump_asm)
@@ -71,29 +70,32 @@ py::class_<compile_options>(m, "CompileOptions")
 
 The details of all attributes are following.
 
-| Attribute        | Data Type | *Required* | Description                                                  |
-| ---------------- | --------- | ---------- | ------------------------------------------------------------ |
-| target           | string    | Y          | Specify the compile target,  such as 'k210', 'k510'          |
-| quant_type       | string    | N          | Specify the quantization type for input data , such as 'uint8', 'int8' |
-| w_quant_type     | string    | N          | Specify the quantization type for weight , such as 'uint8'(by default), 'int8' |
-| use_mse_quant_w  | bool      | N          | Specify whether use  mean-square error when quantizing weight |
-| preprocess       | bool      | N          | Whether enable preprocess, False by default                  |
-| swapRB           | bool      | N          | Whether swap red and blue channel for RGB data(from RGB to BGR or from BGR to RGB), False by default |
-| mean             | list      | N          | Normalize mean value for preprocess, [0, 0, 0] by default    |
-| std              | list      | N          | Normalize std value for preprocess, [1, 1, 1] by default     |
-| input_range      | list      | N          | The float range for dequantized input data, [0，1] by default |
-| input_shape      | list      | N          | Specify the shape of input data.  input_shape should be consistent with input _layout.  There will be letterbox  operations(Such as resize/pad) if input_shape is not the same as input shape of model. |
-| letterbox_value  | float     | N          | Specify the pad value of letterbox during preprocess.        |
-| input_type       | string    | N          | Specify the data type of input data, 'float32' by default.   |
-| output_type      | string    | N          | Specify the data type of output data, 'float32' by default.  |
-| input_layout     | string    | N          | Specify the layout of input data, such as 'NCHW', 'NHWC'.  Nncase will insert transpose operation if input_layout is different with the layout of model. |
-| output_layout    | string    | N          | Specify the layout of output data, such as 'NCHW', 'NHWC'.  Nncase will insert transpose operation if output_layout is different with the layout of model. |
-| is_fpga          | bool      | N          | Specify the generated kmodel is used for fpga or not, False by default. |
-| dump_ir          | bool      | N          | Specify whether dump IR, False by default.                   |
-| dump_asm         | bool      | N          | Specify whether dump asm file, False by default.             |
-| dump_quant_error | bool      | N          | Specify whether dump quantization error, False by default.   |
-| dump_dir         | string    | N          | Specify dump directory                                       |
-| benchmark_only   | bool      | N          | Specify whether the generated kmodel is used for benchmark, False by default. |
+| Attribute        | Data Type | *Required* | Description                                                                                                                                                                                             |
+| ---------------- | --------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| target           | string    | Y            | Specify the compile target,  such as 'k210', 'k510'                                                                                                                                                     |
+| quant_type       | string    | N            | Specify the quantization type for input data , such as 'uint8', 'int8', 'int16'                                                                                                                         |
+| w_quant_type     | string    | N            | Specify the quantization type for weight , such as 'uint8'(by default), 'int8', 'int16'                                                                                                                 |
+| use_mse_quant_w  | bool      | N            | Specify whether use  mean-square error when quantizing weight                                                                                                                                           |
+| split_w_to_act   | bool      | N            | Specify whether split weight into activation                                                                                                                                            |
+| preprocess       | bool      | N            | Whether enable preprocess, False by default                                                                                                                                                             |
+| swapRB           | bool      | N            | Whether swap red and blue channel for RGB data(from RGB to BGR or from BGR to RGB), False by default                                                                                                    |
+| mean             | list      | N            | Normalize mean value for preprocess, [0, 0, 0] by default                                                                                                                                               |
+| std              | list      | N            | Normalize std value for preprocess, [1, 1, 1] by default                                                                                                                                                |
+| input_range      | list      | N            | The float range for dequantized input data, [0，1] by default                                                                                                                                           |
+| output_range | list | N | The float range for quantized output data,  [ ] by default |
+| input_shape      | list      | N            | Specify the shape of input data.  input_shape should be consistent with input _layout.  There will be letterbox  operations(Such as resize/pad) if input_shape is not the same as input shape of model. |
+| letterbox_value  | float     | N            | Specify the pad value of letterbox during preprocess.                                                                                                                                                   |
+| input_type       | string    | N            | Specify the data type of input data, 'float32' by default.                                                                                                                                              |
+| output_type      | string    | N            | Specify the data type of output data, 'float32' by default.                                                                                                                                             |
+| input_layout     | string    | N            | Specify the layout of input data, such as 'NCHW', 'NHWC'.  Nncase will insert transpose operation if input_layout is different with the layout of model.                                                |
+| output_layout    | string    | N            | Specify the layout of output data, such as 'NCHW', 'NHWC'.  Nncase will insert transpose operation if output_layout is different with the layout of model.                                              |
+| model_layout     | string    | N            | Specific the layout of model when the layout of tflite model is "NCHW" and the layout of Onnx model or Caffe model is "NHWC", default is empty.                                                         |
+| is_fpga          | bool      | N            | Specify the generated kmodel is used for fpga or not, False by default.                                                                                                                                 |
+| dump_ir          | bool      | N            | Specify whether dump IR, False by default.                                                                                                                                                              |
+| dump_asm         | bool      | N            | Specify whether dump asm file, False by default.                                                                                                                                                        |
+| dump_quant_error | bool      | N            | Specify whether dump quantization error, False by default.                                                                                                                                              |
+| dump_dir         | string    | N            | Specify dump directory                                                                                                                                                                                  |
+| benchmark_only   | bool      | N            | Specify whether the generated kmodel is used for benchmark, False by default.                                                                                                                           |
 
 > 1. Both mean and std are floating numbers to normalize.
 > 2. input_range is the range for floating numbers. If the input_type is uint8, input_range means the dequantized range of uint8.
@@ -111,15 +113,18 @@ The details of all attributes are following.
 compile_options = nncase.CompileOptions()
 compile_options.target = target
 compile_options.input_type = 'float32'  # or 'uint8' 'int8'
-compile_options.preprocess = True # if False, the args below will unworked
+compile_options.output_type = 'float32'  # or 'uint8' 'int8'. Only work in PTQ
+compile_options.output_range = []  # Only work in PTQ and output type is not "float32"
+compile_options.preprocess = True  # if False, the args below will unworked
 compile_options.swapRB = True
-compile_options.input_shape = [1,224,224,3] # keep layout same as input layout
+compile_options.input_shape = [1, 224, 224, 3]  # keep layout same as input layout
 compile_options.input_layout = 'NHWC'
 compile_options.output_layout = 'NHWC'
-compile_options.mean = [0,0,0]
-compile_options.std = [1,1,1]
-compile_options.input_range = [0,1]
-compile_options.letterbox_value = 114. # pad what you want
+compile_options.model_layout = ''  # default is empty. Specific it when tflite model with "NCHW" layout and Onnx(Caffe) model with "NHWC" layout
+compile_options.mean = [0, 0, 0]
+compile_options.std = [1, 1, 1]
+compile_options.input_range = [0, 1]
+compile_options.letterbox_value = 114.  # pad what you want
 compile_options.dump_ir = True
 compile_options.dump_asm = True
 compile_options.dump_dir = 'tmp'
@@ -142,8 +147,8 @@ py::class_<import_options>(m, "ImportOptions")
 The details of all attributes are following.
 
 | Attribute     | Data Type | *Required* | Description       |
-| ------------- | --------- | ---------- | ----------------- |
-| output_arrays | string    | N          | output array name |
+| ------------- | --------- | ------------ | ----------------- |
+| output_arrays | string    | N            | output array name |
 
 #### Example
 
@@ -177,10 +182,10 @@ py::class_<ptq_tensor_options>(m, "PTQTensorOptions")
 
 The details of all attributes are following.
 
-| Attribute     | Data Type | Required | Description |
-| ---------------- | ------ | -------- | ------------------------------------------------------------ |
-| calibrate_method | string | N      | Specify calibrate method, such as 'no_clip', 'l2', 'kld_m0', 'kld_m1', 'kld_m2' and 'cdf',  'no_clip' by default. |
-| samples_count    | int    | N      | Specify the number of samples.                  |
+| Attribute        | Data Type | Required | Description                                                                                                       |
+| ---------------- | --------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
+| calibrate_method | string    | N        | Specify calibrate method, such as 'no_clip', 'l2', 'kld_m0', 'kld_m1', 'kld_m2' and 'cdf',  'no_clip' by default. |
+| samples_count    | int       | N        | Specify the number of samples.                                                                                    |
 
 #### set_tensor_data()
 
@@ -196,9 +201,9 @@ set_tensor_data(calib_data)
 
 ##### Parameters
 
-| Attribute     | Data Type | Required | Description |
-| ---------- | ------ | -------- | -------- |
-| calib_data | byte[] | Y      | The data for calibrating. |
+| Attribute  | Data Type | Required | Description               |
+| ---------- | --------- | -------- | ------------------------- |
+| calib_data | byte[]    | Y        | The data for calibrating. |
 
 ##### Returns
 
@@ -261,10 +266,10 @@ import_tflite(model_content, import_options)
 
 ##### Parameters
 
-| Attribute     | Data Type | Required | Description |
-| -------------- | ------------- | -------- | -------------- |
-| model_content  | byte[]        | Y      | The content of model. |
-| import_options | ImportOptions | Y      | Import options |
+| Attribute      | Data Type     | Required | Description           |
+| -------------- | ------------- | -------- | --------------------- |
+| model_content  | byte[]        | Y        | The content of model. |
+| import_options | ImportOptions | Y        | Import options        |
 
 ##### Returns
 
@@ -291,10 +296,10 @@ import_onnx(model_content, import_options)
 
 ##### Parameters
 
-| Attribute     | Data Type | Required | Description |
-| -------------- | ------------- | -------- | -------------- |
-| model_content  | byte[]        | Y      | The content of model. |
-| import_options | ImportOptions | Y     | Import options |
+| Attribute      | Data Type     | Required | Description           |
+| -------------- | ------------- | -------- | --------------------- |
+| model_content  | byte[]        | Y        | The content of model. |
+| import_options | ImportOptions | Y        | Import options        |
 
 ##### Returns
 
@@ -323,10 +328,10 @@ import_caffe(caffemodel, prototxt)
 
 ##### Parameters
 
-| Attribute     | Data Type | Required | Description |
-| ---------- | ------ | -------- | -------------------- |
-| caffemodel | byte[] | Y      | The content of caffemodel. |
-| prototxt   | byte[] | Y      | The content of prototxt. |
+| Attribute  | Data Type | Required | Description                |
+| ---------- | --------- | -------- | -------------------------- |
+| caffemodel | byte[]    | Y        | The content of caffemodel. |
+| prototxt   | byte[]    | Y        | The content of prototxt.   |
 
 ##### Returns
 
@@ -355,9 +360,9 @@ use_ptq(ptq_options)
 
 ##### Parameters
 
-| Attribute     | Data Type | Required | Description |
-| ----------- | ---------------- | -------- | ----------- |
-| ptq_options | PTQTensorOptions | Y      | PTQ options. |
+| Attribute   | Data Type        | Required | Description  |
+| ----------- | ---------------- | -------- | ------------ |
+| ptq_options | PTQTensorOptions | Y        | PTQ options. |
 
 ##### Returns
 
@@ -422,8 +427,6 @@ kmodel = compiler.gencode_tobytes()
 with open(os.path.join(infer_dir, 'test.kmodel'), 'wb') as f:
     f.write(kmodel)
 ```
-
-
 
 ## Examples for compiling model
 
@@ -697,7 +700,7 @@ def main():
     import_options = nncase.ImportOptions()
 
     # quantize model
-    compile_options.quant_type = 'uint8' # or 'int8'
+    compile_options.quant_type = 'uint8' # or 'int8' 'int16'
 
     # ptq_options
     ptq_options = nncase.PTQTensorOptions()
@@ -722,14 +725,12 @@ if __name__ == '__main__':
 
 ```
 
-
 ## Deploy nncase runtime
 
 ### K210
 
 1. Download `k210-runtime.zip` from [Release](https://github.com/kendryte/nncase/releases) page.
 2. Unzip to your [kendryte-standalone-sdk](https://github.com/kendryte/kendryte-standalone-sdk) 's `lib/nncase/v1` directory.
-
 
 ## nncase inference APIs
 
@@ -755,12 +756,12 @@ py::class_<memory_range>(m, "MemoryRange")
 
 The details of all attributes are following.
 
-| Attribute     | Data Type | Required | Description |
-| -------- | -------------- | -------- | ------------------------------------------------------------ |
-| location | int            | N      | Specify the location of memory. 0 means input, 1 means output, 2 means rdata, 3 means data, 4 means shared_data. |
-| dtype    | python data type | N      | data type                                           |
-| start    | int            | N      | The start of memory                           |
-| size     | int            | N      | The size of memory                                   |
+| Attribute | Data Type        | Required | Description                                                                                                      |
+| --------- | ---------------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| location  | int              | N        | Specify the location of memory. 0 means input, 1 means output, 2 means rdata, 3 means data, 4 means shared_data. |
+| dtype     | python data type | N        | data type                                                                                                        |
+| start     | int              | N        | The start of memory                                                                                              |
+| size      | int              | N        | The size of memory                                                                                               |
 
 #### Example
 
@@ -814,10 +815,10 @@ py::class_<runtime_tensor>(m, "RuntimeTensor")
 
 The details of all attributes are following.
 
-| Attribute     | Data Type | Required | Description |
-| -------- | ---- | -------- | ---------------- |
-| dtype    | int  | N      | The data type of tensor |
-| shape    | list | N      | The shape of tensor |
+| Attribute | Data Type | Required | Description             |
+| --------- | --------- | -------- | ----------------------- |
+| dtype     | int       | N        | The data type of tensor |
+| shape     | list      | N        | The shape of tensor     |
 
 #### from_numpy()
 
@@ -833,9 +834,9 @@ from_numpy(py::array arr)
 
 ##### Parameters
 
-| Attribute     | Data Type | Required | Description |
-| -------- | ------------- | -------- | ----------------- |
-| arr      | numpy.ndarray | Y     | numpy.ndarray |
+| Attribute | Data Type     | Required | Description   |
+| --------- | ------------- | -------- | ------------- |
+| arr       | numpy.ndarray | Y        | numpy.ndarray |
 
 ##### Returns
 
@@ -861,9 +862,9 @@ copy_to(RuntimeTensor to)
 
 ##### Parameters
 
-| Attribute     | Data Type | Required | Description |
-| -------- | ------------- | -------- | ----------------- |
-| to       | RuntimeTensor | Y      | RuntimeTensor |
+| Attribute | Data Type     | Required | Description   |
+| --------- | ------------- | -------- | ------------- |
+| to        | RuntimeTensor | Y        | RuntimeTensor |
 
 ##### Returns
 
@@ -926,10 +927,10 @@ py::class_<interpreter>(m, "Simulator")
 
 The details of all attributes are following.
 
-| Attribute     | Data Type | Required | Description |
-| ------------ | ---- | -------- | -------- |
-| inputs_size  | int  | N      | The number of inputs. |
-| outputs_size | int  | N      | The number of outputs. |
+| Attribute    | Data Type | Required | Description            |
+| ------------ | --------- | -------- | ---------------------- |
+| inputs_size  | int       | N        | The number of inputs.  |
+| outputs_size | int       | N        | The number of outputs. |
 
 #### Example
 
@@ -951,9 +952,9 @@ load_model(model_content)
 
 ##### Parameters
 
-| Attribute     | Data Type | Required | Description |
-| ------------- | ------ | -------- | ------------ |
-| model_content | byte[] | Y      | kmodel byte stream |
+| Attribute     | Data Type | Required | Description        |
+| ------------- | --------- | -------- | ------------------ |
+| model_content | byte[]    | Y        | kmodel byte stream |
 
 ##### Returns
 
@@ -979,9 +980,9 @@ get_input_desc(index)
 
 ##### Parameters
 
-| Attribute     | Data Type | Required | Description |
-| -------- | ---- | -------- | ---------- |
-| index    | int  | Y      | The index for input. |
+| Attribute | Data Type | Required | Description          |
+| --------- | --------- | -------- | -------------------- |
+| index     | int       | Y        | The index for input. |
 
 ##### Returns
 
@@ -1007,9 +1008,9 @@ get_output_desc(index)
 
 ##### Parameters
 
-| Attribute     | Data Type | Required | Description |
-| -------- | ---- | -------- | ---------- |
-| index    | int  | Y      | The index for output. |
+| Attribute | Data Type | Required | Description           |
+| --------- | --------- | -------- | --------------------- |
+| index     | int       | Y        | The index for output. |
 
 ##### Returns
 
@@ -1035,9 +1036,9 @@ get_input_tensor(index)
 
 ##### Parameters
 
-| Attribute     | Data Type | Required | Description |
-| -------- | ---- | -------- | ---------------- |
-| index    | int  | Y      | The index for input tensor. |
+| Attribute | Data Type | Required | Description                 |
+| --------- | --------- | -------- | --------------------------- |
+| index     | int       | Y        | The index for input tensor. |
 
 ##### Returns
 
@@ -1063,10 +1064,10 @@ set_input_tensor(index, tensor)
 
 ##### Parameters
 
-| Attribute     | Data Type | Required | Description |
-| -------- | ------------- | -------- | ----------------------- |
-| index    | int           | Y      | The index for input tensor. |
-| tensor   | RuntimeTensor | Y      | RuntimeTensor       |
+| Attribute | Data Type     | Required | Description                 |
+| --------- | ------------- | -------- | --------------------------- |
+| index     | int           | Y        | The index for input tensor. |
+| tensor    | RuntimeTensor | Y        | RuntimeTensor               |
 
 ##### Returns
 
@@ -1092,9 +1093,9 @@ get_output_tensor(index)
 
 ##### Parameters
 
-| Attribute     | Data Type | Required | Description |
-| -------- | ---- | -------- | ----------------------- |
-| index    | int  | Y      | The index for output tensor. |
+| Attribute | Data Type | Required | Description                  |
+| --------- | --------- | -------- | ---------------------------- |
+| index     | int       | Y        | The index for output tensor. |
 
 ##### Returns
 
@@ -1120,10 +1121,10 @@ set_output_tensor(index, tensor)
 
 ##### Parameters
 
-| Attribute     | Data Type | Required | Description |
-| -------- | ------------- | -------- | ----------------------- |
-| index    | int           | Y      | The index for output tensor. |
-| tensor   | RuntimeTensor | Y      | RuntimeTensor |
+| Attribute | Data Type     | Required | Description                  |
+| --------- | ------------- | -------- | ---------------------------- |
+| index     | int           | Y        | The index for output tensor. |
+| tensor    | RuntimeTensor | Y        | RuntimeTensor                |
 
 ##### Returns
 
@@ -1161,11 +1162,10 @@ N/A
 sim.run()
 ```
 
-
-
 # ncc
 
 ## Comannd line
+
 ```shell
 DESCRIPTION
 NNCASE model compiler and inference tool.
@@ -1201,9 +1201,9 @@ OPTIONS
   --output-arrays <output arrays>
                           output arrays
   --quant-type <quant type>
-                          post trainning quantize type, e.g uint8|int8, default is uint8
+                          post trainning quantize type, e.g uint8|int8|int16, default is uint8
   --w-quant-type <w quant type>
-                          post trainning weights quantize type, e.g uint8|int8, default is uint8
+                          post trainning weights quantize type, e.g uint8|int8|int16, default is uint8
   --use-mse-quant-w       use min mse algorithm to refine weights quantilization or not, default is 0
   --dataset <dataset path>
                           calibration dataset, used in post quantization
@@ -1267,8 +1267,8 @@ OPTIONS
 - `--input-prototxt` is the prototxt file for caffe model.
 - `<output file>` is the output model path.
 - `--output-arrays` is the names of nodes to output.
-- `--quant-type` is used to specify quantize type, such as `uint8` by default and `int8`.
-- `--w-quant-type` is used to specify quantize type for weight, such as `uint8` by default and `int8`.
+- `--quant-type` is used to specify quantize type, such as `uint8` by default and `int8` and `int16`.
+- `--w-quant-type` is used to specify quantize type for weight, such as `uint8` by default and `int8 `and `int16`.
 - `--use-mse-quant-w ` is used to specify whether use minimize mse(mean-square error, mse) algorithm to quantize weight or not.
 - `--dataset` is to provide your quantization calibration dataset to quantize your models. You should put hundreds or thousands of data in training set to this directory.
 - `--dataset-format` is to set the format of the calibration dataset. Default is `image`, nncase will use `opencv` to read your images and autoscale to the desired input size of your model. If the input has 3 channels, ncc will convert images to RGB float tensors [0,1] in `NCHW` layout. If the input has only 1 channel, ncc will grayscale your images. Set to `raw` if your dataset is not image dataset for example, audio or matrices. In this scenario you should convert your dataset to raw binaries which contains float tensors.
@@ -1294,8 +1294,6 @@ OPTIONS
 - `--dump-import-op-range` is a debug option. It is used to specify whether dump imported op data range or not, need to also specify dump-range-dataset if enabled.
 - `--dump-dir` is used to specify dump directory.
 - `--benchmark-only` is used to specify whether the kmodel is used for benchmark or not.
-
-
 
 `infer` command can run your kmodel, and it's often used as debug purpose. ncc will save the model's output tensors to `.bin` files in `NCHW` layout.
 

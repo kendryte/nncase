@@ -71,6 +71,11 @@ evaluate_tensor evaluator::input_at(size_t index)
     return model_eval_.input_at(index);
 }
 
+uint32_t evaluator::inputs_size()
+{
+    return model_eval_.inputs_size();
+}
+
 evaluate_tensor evaluator::output_at(size_t index)
 {
     return model_eval_.output_at(index);

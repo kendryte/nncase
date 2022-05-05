@@ -12,21 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/op_utils.h>
-#include <nncase/ir/ops/equal.h>
-#include <xtensor/xarray.hpp>
+#include "../module_builder.h"
 
 using namespace nncase;
+using namespace nncase::codegen;
+using namespace nncase::codegen::stackvm;
 using namespace nncase::ir;
 
-equal::equal(datatype_t input_type, shape_t input_a_shape, shape_t input_b_shape)
+void stackvm_module_builder::emit(softmax &node, stackvm_op_builder &builder)
 {
-    add_input("input_a", input_type, input_a_shape);
-    add_input("input_b", input_type, input_b_shape);
-    add_output("output", dt_uint8, get_binary_output_shape(input_a_shape, input_b_shape));
-}
+    auto &input = allocation(node.input());
+    auto &output = allocation(node.output());
 
-bool equal::properties_equal([[maybe_unused]] node &other) const
-{
-    return false;
+    builder.lea_buffer(input);
+    builder.lea_buffer(output);
+
+    builder.stshape(0, input.shape);
+    builder.stshape(1, input.strides);
+    builder.stshape(2, output.strides);
+
+    builder.tensor_softmax_(node.input().type(), 0, 1, 2, node.axis(), node.beta());
 }

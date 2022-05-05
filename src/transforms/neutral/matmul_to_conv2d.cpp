@@ -31,7 +31,7 @@ bool matmul_to_conv2d_transform::on_try_match(node &node, transform_context &con
     if (auto mm = node_cast<matmul>(node))
     {
         // The second matrix must be constant
-        if (try_get_direct_parent<constant>(*mm, 1))
+        if (mm->input_a().shape().size() == 2 && mm->input_b().shape().size() == 2 && try_get_direct_parent<constant>(*mm, 1))
         {
             context.inputs.emplace_back(&mm->input_a());
             context.inputs.emplace_back(&mm->input_b());

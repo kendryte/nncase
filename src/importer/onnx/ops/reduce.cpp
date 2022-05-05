@@ -53,6 +53,7 @@ void onnx_importer::convert_reduce(const NodeProto &node, const reduce_op_t redu
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
 
+    const auto input_type = get_datatype(input).value();
     const auto &input_shape = get_shape(input);
     axis_t axes(input_shape.size());
     std::iota(begin(axes), end(axes), 0);
@@ -70,7 +71,7 @@ void onnx_importer::convert_reduce(const NodeProto &node, const reduce_op_t redu
     if (keepdims_attr)
         keepdims = static_cast<bool>(keepdims_attr.value());
 
-    auto op = graph_.emplace<reduce>(reduce_op, input_shape, std::move(axes), init_value, keepdims);
+    auto op = graph_.emplace<reduce>(reduce_op, input_type, input_shape, std::move(axes), init_value, keepdims);
     op->name(op_name + '(' + reduce_op_to_string(reduce_op) + ')');
 
     input_tensors_.emplace(&op->input(), input);
@@ -83,6 +84,7 @@ void onnx_importer::convert_op_ReduceL1(const NodeProto &node)
 
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
+    const auto input_type = get_datatype(input).value();
     const auto &input_shape = get_shape(input);
 
     // axes
@@ -103,7 +105,7 @@ void onnx_importer::convert_op_ReduceL1(const NodeProto &node)
     auto abs = graph_.emplace<unary>(unary_abs, input_shape);
     abs->name(op_name + ".abs(ReduceL1)");
 
-    auto sum = graph_.emplace<reduce>(reduce_sum, abs->output().shape(), axes, 0.f, keepdims);
+    auto sum = graph_.emplace<reduce>(reduce_sum, input_type, abs->output().shape(), axes, 0.f, keepdims);
     sum->name(op_name + ".reduce_sum(ReduceL1)");
 
     sum->input().connect(abs->output());
@@ -118,6 +120,7 @@ void onnx_importer::convert_op_ReduceL2(const NodeProto &node)
 
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
+    const auto input_type = get_datatype(input).value();
     const auto &input_shape = get_shape(input);
 
     // axes
@@ -138,7 +141,7 @@ void onnx_importer::convert_op_ReduceL2(const NodeProto &node)
     auto square = graph_.emplace<unary>(unary_square, input_shape);
     square->name(op_name + ".square(ReduceL2)");
 
-    auto sum = graph_.emplace<reduce>(reduce_sum, square->output().shape(), axes, 0.f, keepdims);
+    auto sum = graph_.emplace<reduce>(reduce_sum, input_type, square->output().shape(), axes, 0.f, keepdims);
     sum->name(op_name + ".reduce_sum(ReduceL2)");
 
     auto sqrt = graph_.emplace<unary>(unary_sqrt, sum->output().shape());
@@ -157,6 +160,7 @@ void onnx_importer::convert_op_ReduceLogSum(const NodeProto &node)
     const auto &op_name { generate_name(node) };
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
+    const auto input_type = get_datatype(input).value();
     const auto &input_shape = get_shape(input);
 
     // axes
@@ -175,7 +179,7 @@ void onnx_importer::convert_op_ReduceLogSum(const NodeProto &node)
     bool keepdims = keepdims_attr ? keepdims_attr.value() == 1 : true;
 
     // sum
-    auto sum = graph_.emplace<reduce>(reduce_sum, input_shape, axes, 0.f, keepdims);
+    auto sum = graph_.emplace<reduce>(reduce_sum, input_type, input_shape, axes, 0.f, keepdims);
     sum->name(op_name + ".reduce_sum(ReduceLogSum)");
 
     // log
@@ -193,6 +197,7 @@ void onnx_importer::convert_op_ReduceLogSumExp(const NodeProto &node)
     const auto &op_name { generate_name(node) };
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
+    const auto input_type = get_datatype(input).value();
     const auto &input_shape = get_shape(input);
 
     // axes
@@ -215,7 +220,7 @@ void onnx_importer::convert_op_ReduceLogSumExp(const NodeProto &node)
     exp->name(op_name + ".exp(ReduceLogSumExp)");
 
     // sum
-    auto sum = graph_.emplace<reduce>(reduce_sum, exp->output().shape(), axes, 0.f, keepdims);
+    auto sum = graph_.emplace<reduce>(reduce_sum, input_type, exp->output().shape(), axes, 0.f, keepdims);
     sum->name(op_name + ".reduce_sum(ReduceLogSumExp)");
     sum->input().connect(exp->output());
 
@@ -234,6 +239,7 @@ void onnx_importer::convert_op_ReduceSumSquare(const NodeProto &node)
     const auto &op_name { generate_name(node) };
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
+    const auto input_type = get_datatype(input).value();
     const auto &input_shape = get_shape(input);
 
     // axes
@@ -256,7 +262,7 @@ void onnx_importer::convert_op_ReduceSumSquare(const NodeProto &node)
     square->name(op_name + ".square(ReduceSumSquare)");
 
     // sum
-    auto sum = graph_.emplace<reduce>(reduce_sum, square->output().shape(), axes, 0.f, keepdims);
+    auto sum = graph_.emplace<reduce>(reduce_sum, input_type, square->output().shape(), axes, 0.f, keepdims);
     sum->name(op_name + ".reduce_sum(ReduceSumSquare)");
     sum->input().connect(square->output());
 

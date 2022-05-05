@@ -47,7 +47,7 @@ void onnx_importer::convert_op_LpNormalization(const NodeProto &node)
     {
         auto abs = graph_.emplace<unary>(unary_abs, input_shape);
         abs->name(op_name + ".abs(L1Normalization)");
-        auto sum = graph_.emplace<reduce>(reduce_sum, abs->output().shape(), reduce_axis, 0.f, true);
+        auto sum = graph_.emplace<reduce>(reduce_sum, input_type, abs->output().shape(), reduce_axis, 0.f, true);
         sum->name(op_name + ".reduce_sum(L1Normalization)");
         auto div = graph_.emplace<binary>(binary_div, input_type, input_shape, sum->output().shape(), value_range<float>::full());
         div->name(op_name + ".div(L1Normalization)");
@@ -64,7 +64,7 @@ void onnx_importer::convert_op_LpNormalization(const NodeProto &node)
     {
         auto square = graph_.emplace<unary>(unary_square, input_shape);
         square->name(op_name + ".square(L2Normalization)");
-        auto sum = graph_.emplace<reduce>(reduce_sum, square->output().shape(), reduce_axis, 0.f, true);
+        auto sum = graph_.emplace<reduce>(reduce_sum, input_type, square->output().shape(), reduce_axis, 0.f, true);
         sum->name(op_name + ".reduce_sum(L2Normalization)");
         auto epsilon = graph_.emplace<constant>(1e-10f);
         epsilon->name(op_name + ".eps(L2Normalization)");

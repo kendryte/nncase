@@ -30,6 +30,18 @@ result<void> stackvm_runtime_function::visit(const tensor_reduce_prod_op_t &op) 
     try_var(out_strides, module().shape_reg(op.rstride_dest));
     try_var(axes, module().shape_reg(op.rshape_axes));
 
-    return kernels::reduce_prod(reinterpret_cast<const float *>(input), reinterpret_cast<float *>(output),
-        in_shape, in_strides, out_strides, axes, op.keep_dims);
+    switch (op.datatype)
+    {
+    case dt_float32:
+        return kernels::reduce_prod(reinterpret_cast<const float *>(input), reinterpret_cast<float *>(output),
+            in_shape, in_strides, out_strides, axes, op.keep_dims);
+        break;
+    case dt_int32:
+        return kernels::reduce_prod(reinterpret_cast<const int32_t *>(input), reinterpret_cast<int32_t *>(output),
+            in_shape, in_strides, out_strides, axes, op.keep_dims);
+        break;
+    default:
+        std::cerr << "unsupported dtype for reduce_prod: " + std::string(datatype_names(op.datatype));
+        return err(std::errc::invalid_argument);
+    }
 }

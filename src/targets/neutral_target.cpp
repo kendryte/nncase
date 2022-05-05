@@ -17,6 +17,7 @@
 #include <nncase/schedule/buffer_allocator.h>
 #include <nncase/targets/neutral_target.h>
 #include <nncase/transforms/neutral/add_quant_checkpoints.h>
+#include <nncase/transforms/neutral/add_quant_motion.h>
 #include <nncase/transforms/neutral/binary_motion.h>
 #include <nncase/transforms/neutral/bitcast_motion.h>
 #include <nncase/transforms/neutral/dequantize_motion.h>
@@ -26,6 +27,7 @@
 #include <nncase/transforms/neutral/fold_conv2d_binary.h>
 #include <nncase/transforms/neutral/fold_convert.h>
 #include <nncase/transforms/neutral/fold_dilated_conv2d.h>
+#include <nncase/transforms/neutral/fold_matmul_add.h>
 #include <nncase/transforms/neutral/fold_pad.h>
 #include <nncase/transforms/neutral/fold_quantize.h>
 #include <nncase/transforms/neutral/fold_slice.h>
@@ -142,6 +144,7 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     pass.emplace<fold_transpose_transform>();
     pass.emplace<fold_nop_transpose_transform>();
     pass.emplace<fold_nop_slice_transform>();
+    pass.emplace<fold_matmul_add_transform>();
 }
 
 void neutral_target::fold_pad_conv_transform(ir::transforms::transform_pass &pass, [[maybe_unused]] bool add_constant_folding)
@@ -184,16 +187,6 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
 
     if (type == runtime::stackvm::stackvm_module_type)
     {
-        // matmul to conv2d
-        {
-            transform_pass p("matmul_to_conv2d");
-            p.emplace<fold_bitcast_transform>();
-            p.emplace<fold_nop_bitcast_transform>();
-            p.emplace<fold_constant_transform>();
-            p.emplace<matmul_to_conv2d_transform>();
-            pass_mgr.add_pass(std::move(p));
-        }
-
         // fold_pad_conv
         {
             transform_pass p("fold_pad_conv");
@@ -224,7 +217,7 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
     }
 }
 
-void neutral_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] bool use_ptq)
+void neutral_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] bool use_ptq, [[maybe_unused]] bool split_w_to_act)
 {
 }
 
@@ -242,12 +235,12 @@ void neutral_target::register_quantize_annotation_passes([[maybe_unused]] const 
 
     {
         transform_pass p("annotate_neutral_quantize");
-        p.emplace<add_quant_checkpoints_transform>(std::in_place, ir::op_fused_unary);
+        p.emplace<add_quant_checkpoints_transform>(std::in_place, ir::op_fused_unary, ir::op_bitcast, ir::op_dequantize, ir::op_binary, ir::op_output_node);
         pass_mgr.add_pass(std::move(p));
     }
 }
 
-void neutral_target::register_quantize_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type, [[maybe_unused]] std::string_view w_quant_type, [[maybe_unused]] bool use_mse_quant_w)
+void neutral_target::register_quantize_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type, [[maybe_unused]] std::string_view w_quant_type, [[maybe_unused]] bool use_mse_quant_w, [[maybe_unused]] datatype_t output_type, [[maybe_unused]] quant_param_t &output_quant_param, [[maybe_unused]] std::vector<float> output_range)
 {
     {
         transform_pass p("fused_unary_to_lut");
@@ -258,6 +251,11 @@ void neutral_target::register_quantize_passes([[maybe_unused]] const module_type
         transform_pass p("fold_quantize");
         add_default_transforms(p);
         p.emplace<fold_quantize_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+    {
+        transform_pass p("change_output_type");
+        p.emplace<add_output_quantize_transform>(output_type, output_quant_param, output_range);
         pass_mgr.add_pass(std::move(p));
     }
 }
@@ -275,6 +273,7 @@ void neutral_target::add_quantization_broadcast([[maybe_unused]] std::unordered_
 {
     using namespace ir;
     opcodes.emplace(op_input_node);
+    opcodes.emplace(op_output_node);
     opcodes.emplace(op_transpose);
     opcodes.emplace(op_pad);
     opcodes.emplace(op_resize_image);

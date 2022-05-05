@@ -55,7 +55,10 @@ DEFINE_TFLITE_LOWER(TRANSPOSE_CONV)
 
     conv->input().connect(pre_trans->output());
     conv->weights().connect(weights_trans->output());
-    conv->bias().connect(bias->output());
+    if (op.inputs()->size() > 3)
+        link_input_tensor(&conv->bias(), op.inputs()->Get(3));
+    else
+        conv->bias().connect(bias->output());
 
     auto sur_trans = nchw_to_nhwc(dt_float32, conv->output().shape());
     sur_trans->name(get_tensor(op.outputs(), 0).name()->string_view());

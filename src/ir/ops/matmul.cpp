@@ -22,14 +22,10 @@ using namespace nncase::ir;
 matmul::matmul(shape_t input_a_shape, shape_t input_b_shape, value_range<float> fused_activation)
     : fused_activation_(fused_activation)
 {
-    // if (input_a_shape.size() != 2 || input_b_shape.size() != 2)
-    //     throw std::invalid_argument("inputs must be 2 rank");
-    // if (input_a_shape[1] != input_b_shape[0])
-    //     throw std::invalid_argument("input a's cols must be equal to input b's rows");
     add_input("input_a", dt_float32, input_a_shape);
     add_input("input_b", dt_float32, input_b_shape);
-    add_input("bias", dt_float32, shape_t { input_b_shape[1] });
-    add_output("output", dt_float32, shape_t { input_a_shape[0], input_b_shape[1] });
+    add_input("bias", dt_float32, shape_t { input_b_shape.back() });
+    add_output("output", dt_float32, get_matmul_output_shape(input_a_shape, input_b_shape));
 }
 
 bool matmul::properties_equal(node &other) const
