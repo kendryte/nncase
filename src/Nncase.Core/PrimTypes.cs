@@ -28,6 +28,9 @@ public sealed record BooleanType : PrimType
 
     /// <inheritdoc/>
     public override int SizeInBytes => sizeof(bool);
+
+    /// <inheritdoc/>
+    public override Runtime.TypeCode TypeCode => Runtime.TypeCode.Boolean;
 }
 
 /// <summary>
@@ -49,6 +52,9 @@ public sealed record Utf8CharType : PrimType
 
     /// <inheritdoc/>
     public unsafe override int SizeInBytes => sizeof(Utf8Char);
+
+    /// <inheritdoc/>
+    public override Runtime.TypeCode TypeCode => Runtime.TypeCode.Utf8Char;
 }
 
 /// <summary>
@@ -70,6 +76,9 @@ public sealed record Int8Type : PrimType
 
     /// <inheritdoc/>
     public override int SizeInBytes => sizeof(sbyte);
+
+    /// <inheritdoc/>
+    public override Runtime.TypeCode TypeCode => Runtime.TypeCode.Int8;
 }
 
 /// <summary>
@@ -91,6 +100,9 @@ public sealed record UInt8Type : PrimType
 
     /// <inheritdoc/>
     public override int SizeInBytes => sizeof(byte);
+
+    /// <inheritdoc/>
+    public override Runtime.TypeCode TypeCode => Runtime.TypeCode.UInt8;
 }
 
 /// <summary>
@@ -112,6 +124,9 @@ public sealed record Int16Type : PrimType
 
     /// <inheritdoc/>
     public override int SizeInBytes => sizeof(short);
+
+    /// <inheritdoc/>
+    public override Runtime.TypeCode TypeCode => Runtime.TypeCode.Int16;
 }
 
 /// <summary>
@@ -133,6 +148,9 @@ public sealed record UInt16Type : PrimType
 
     /// <inheritdoc/>
     public override int SizeInBytes => sizeof(ushort);
+
+    /// <inheritdoc/>
+    public override Runtime.TypeCode TypeCode => Runtime.TypeCode.UInt16;
 }
 
 /// <summary>
@@ -154,6 +172,9 @@ public sealed record Int32Type : PrimType
 
     /// <inheritdoc/>
     public override int SizeInBytes => sizeof(int);
+
+    /// <inheritdoc/>
+    public override Runtime.TypeCode TypeCode => Runtime.TypeCode.Int32;
 }
 
 /// <summary>
@@ -175,6 +196,9 @@ public sealed record UInt32Type : PrimType
 
     /// <inheritdoc/>
     public override int SizeInBytes => sizeof(uint);
+
+    /// <inheritdoc/>
+    public override Runtime.TypeCode TypeCode => Runtime.TypeCode.UInt32;
 }
 
 /// <summary>
@@ -196,6 +220,9 @@ public sealed record Int64Type : PrimType
 
     /// <inheritdoc/>
     public override int SizeInBytes => sizeof(long);
+
+    /// <inheritdoc/>
+    public override Runtime.TypeCode TypeCode => Runtime.TypeCode.Int64;
 }
 
 /// <summary>
@@ -217,6 +244,9 @@ public sealed record UInt64Type : PrimType
 
     /// <inheritdoc/>
     public override int SizeInBytes => sizeof(ulong);
+
+    /// <inheritdoc/>
+    public override Runtime.TypeCode TypeCode => Runtime.TypeCode.UInt64;
 }
 
 /// <summary>
@@ -238,6 +268,9 @@ public sealed record Float16Type : PrimType
 
     /// <inheritdoc/>
     public unsafe override int SizeInBytes => sizeof(Half);
+
+    /// <inheritdoc/>
+    public override Runtime.TypeCode TypeCode => Runtime.TypeCode.Float16;
 }
 
 /// <summary>
@@ -259,6 +292,9 @@ public sealed record Float32Type : PrimType
 
     /// <inheritdoc/>
     public unsafe override int SizeInBytes => sizeof(float);
+
+    /// <inheritdoc/>
+    public override Runtime.TypeCode TypeCode => Runtime.TypeCode.Float32;
 }
 
 /// <summary>
@@ -280,6 +316,9 @@ public sealed record Float64Type : PrimType
 
     /// <inheritdoc/>
     public unsafe override int SizeInBytes => sizeof(double);
+
+    /// <inheritdoc/>
+    public override Runtime.TypeCode TypeCode => Runtime.TypeCode.Float64;
 }
 
 /// <summary>
@@ -301,4 +340,7 @@ public sealed record BFloat16Type : PrimType
 
     /// <inheritdoc/>
     public unsafe override int SizeInBytes => sizeof(BFloat16);
+
+    /// <inheritdoc/>
+    public override Runtime.TypeCode TypeCode => Runtime.TypeCode.BFloat16;
 }

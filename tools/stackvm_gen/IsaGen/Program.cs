@@ -30,8 +30,8 @@ namespace IsaGen
             var emitter_cs = await ex.RenderAsync("Templates.emitter_cs");
             File.WriteAllText(Path.Combine(args[0], "modules/Nncase.Modules.StackVM/CodeGen/StackVM", "StackVMEmitter.g.cs"), emitter_cs);
 
-            //var opwriter_cpp = await ex.RenderAsync("Templates.op_writer_cpp");
-            //File.WriteAllText(Path.Combine(args[0], "src/codegen/stackvm", "op_writer.cpp"), opwriter_cpp);
+            var codegen_cs = await ex.RenderAsync("Templates.codegen_cs");
+            File.WriteAllText(Path.Combine(args[0], "modules/Nncase.Modules.StackVM/CodeGen/StackVM", "CodeGenVisitor.g.cs"), codegen_cs);
         }
     }
 
@@ -102,7 +102,7 @@ namespace IsaGen
                      )).ToList();
 
             TensorInstructions = (from t in _tensorInsts.Select((x, i) => (x, i))
-                                  let c = t.x.Namespace.Replace("Nncase.IR.", string.Empty).Replace('.', '_').ToLowerInvariant()
+                                  let c = t.x.Namespace.Replace("Nncase.IR.", string.Empty)
                                   let fs = GetTensorInstructionFields(t.i, t.x)
                                   group new InstructionInfo
                                   (
@@ -246,6 +246,7 @@ namespace IsaGen
                             (
                                 CppName: f.GetCustomAttribute<DisplayNameAttribute>().DisplayName,
                                 CSharpName: f.GetCustomAttribute<DisplayNameAttribute>().DisplayName,
+                                CSharpPropName: f.GetCustomAttribute<DisplayNameAttribute>().DisplayName,
                                 CppType: CppFieldType(f.PropertyType),
                                 CSharpType: CSharpFieldType(f.PropertyType),
                                 UnderlyingCSharpType: f.PropertyType.IsEnum ? CSharpFieldType(f.PropertyType.GetEnumUnderlyingType()) : null,
@@ -277,6 +278,7 @@ namespace IsaGen
                 (
                     CppName: "opcode",
                     CSharpName: "opcode",
+                    CSharpPropName: "OpCode",
                     CppType: "opcode_t",
                     CSharpType: "OpCode",
                     UnderlyingCSharpType: CSharpFieldType(typeof(byte)),
@@ -292,6 +294,7 @@ namespace IsaGen
                 (
                     CppName: "tensor_funct",
                     CSharpName: "tensorFunction",
+                    CSharpPropName: "TensorFunction",
                     CppType: "tensor_function_t",
                     CSharpType: "TensorFunction",
                     UnderlyingCSharpType: CSharpFieldType(typeof(ushort)),
@@ -313,6 +316,7 @@ namespace IsaGen
                             (
                                 CppName: SnakeName(f.Name),
                                 CSharpName: CamelName(f.Name),
+                                CSharpPropName: f.Name,
                                 CppType: CppFieldType(f.PropertyType),
                                 CSharpType: CSharpFieldType(f.PropertyType),
                                 UnderlyingCSharpType: f.PropertyType.IsEnum ? CSharpFieldType(f.PropertyType.GetEnumUnderlyingType()) : null,
@@ -424,7 +428,7 @@ namespace IsaGen
         }
     }
 
-    public record InstructionField(string CppName, string CSharpName, string CppType, string CSharpType, string UnderlyingCSharpType, uint Length, uint? Value, string CppValueText, string Description, bool IsEnum, bool IsOpCode);
+    public record InstructionField(string CppName, string CSharpName, string CSharpPropName, string CppType, string CSharpType, string UnderlyingCSharpType, uint Length, uint? Value, string CppValueText, string Description, bool IsEnum, bool IsOpCode);
 
     public record InstructionInfo(int index, string CppName, string CSharpName, string Category, OpCode OpCode, string Description, List<InstructionField> Fields);
 

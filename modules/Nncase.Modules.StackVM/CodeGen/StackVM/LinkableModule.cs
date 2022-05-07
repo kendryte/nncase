@@ -9,10 +9,10 @@ using System.Threading.Tasks;
 
 namespace Nncase.CodeGen.StackVM;
 
-internal static class DataTypeSerializer
+internal class LinkableModule
 {
-    public static void Serialize(BinaryWriter writer, DataType dataType)
+    public void Build(Stream output)
     {
-        writer.Position
+
     }
 }

@@ -16,11 +16,25 @@ namespace Nncase.CodeGen.StackVM;
 /// </summary>
 public class StackVMModuleBuilder : IModuleBuilder
 {
+    private readonly MemoryStream _rdataContent = new MemoryStream();
+    private readonly BinaryWriter _rdataWriter;
+
+    public StackVMModuleBuilder()
+    {
+        _rdataWriter = new BinaryWriter(_rdataContent, Encoding.UTF8, leaveOpen: true);
+    }
+
     /// <inheritdoc/>
     public string ModuleKind => StackVMRTModule.Kind;
 
     /// <inheritdoc/>
     public IRTModule Build(IReadOnlyList<Callable> functions)
     {
+        return Compile(functions.Cast<Function>());
+    }
+
+    private LinkableFunction[] Compile(IEnumerable<Function> functions)
+    {
+        return functions.Select(f => new StackVMFunctionBuilder(_rdataWriter).Build(f)).ToArray();
     }
 }

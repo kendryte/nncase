@@ -12,7 +12,7 @@ namespace Nncase.IR
     /// <summary>
     /// Dimension kind.
     /// </summary>
-    public enum DimensionKind
+    public enum DimensionKind : byte
     {
         /// <summary>
         /// Unknown dimension.

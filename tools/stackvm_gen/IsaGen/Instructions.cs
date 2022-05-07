@@ -74,6 +74,9 @@ namespace IsaGen
         DUP,
         POP,
 
+        LDLOCAL,
+        STLOCAL,
+
         LDSHAPE,
         LDSTRIDES,
 
@@ -466,7 +469,7 @@ namespace IsaGen
 
         [DisplayName("index")]
         [Description("Argument index")]
-        public uint Index { get; set; }
+        public ushort Index { get; set; }
     }
 
     [DisplayName("LDARG_0")]
@@ -579,6 +582,30 @@ namespace IsaGen
     public class PopInstruction : Instruction
     {
         public override OpCode OpCode => OpCode.POP;
+    }
+
+    [DisplayName("LDLOCAL")]
+    [Category("Load Store Instructions")]
+    [Description("Load a local to stack")]
+    public class LdlocalInstruction : Instruction
+    {
+        public override OpCode OpCode => OpCode.LDLOCAL;
+
+        [DisplayName("index")]
+        [Description("Local index")]
+        public ushort Index { get; set; }
+    }
+
+    [DisplayName("STLOCAL")]
+    [Category("Load Store Instructions")]
+    [Description("Store a local from stack")]
+    public class StlocalInstruction : Instruction
+    {
+        public override OpCode OpCode => OpCode.STLOCAL;
+
+        [DisplayName("index")]
+        [Description("Local index")]
+        public ushort Index { get; set; }
     }
 
     [DisplayName("NEG")]

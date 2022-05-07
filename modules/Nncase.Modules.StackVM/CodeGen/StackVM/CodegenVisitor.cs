@@ -10,32 +10,25 @@ using Nncase.IR;
 
 namespace Nncase.CodeGen.StackVM;
 
-public enum SectionKind
+internal enum SectionKind
 {
     Text,
     Rdata
 }
 
-public class Symbol
+internal class Symbol
 {
     public SectionKind Section { get; set; }
 
-    public int Index { get; set; }
-}
-
-public class SymbolRef
-{
     public long Position { get; set; }
-
-    public int Length { get; set; }
-
-    public Symbol Symbol { get; set; }
-
-    public int Offset { get; set; }
 }
+
+internal record SymbolRef(long Position, int Length, Symbol Symbol, int Offset);
 
 internal class TextSnippet
 {
+    private readonly List<TextSnippet> _inputSnippets = new List<TextSnippet>();
+
     public TextSnippet(Symbol symbol)
     {
         Symbol = symbol;
@@ -51,9 +44,40 @@ internal class TextSnippet
 
     public List<SymbolRef> SymbolRefs { get; } = new List<SymbolRef>();
 
-    public List<TextSnippet> InputSnippets { get; } = new List<TextSnippet>();
+    public IReadOnlyList<TextSnippet> InputSnippets => _inputSnippets;
 
     public Symbol Symbol { get; }
+
+    public int UseCount { get; private set; }
+
+    public int RefCount { get; set; }
+
+    public void AddInput(TextSnippet input)
+    {
+        _inputSnippets.Add(input);
+        input.UseCount++;
+    }
+}
+
+internal class CodeGenContext
+{
+    private readonly List<TextSnippet> _textSnippets = new List<TextSnippet>();
+    private readonly MemoryStream _rdataContent = new MemoryStream();
+
+    public CodeGenContext(BinaryWriter rdataWriter)
+    {
+    }
+
+    public BinaryWriter RdataWriter { get; }
+
+    public Dictionary<DataType, Symbol> DataTypes { get; } = new Dictionary<DataType, Symbol>();
+
+    public IReadOnlyList<TextSnippet> TextSnippets => _textSnippets;
+
+    public void AddTextSnippet(TextSnippet textSnippet)
+    {
+        _textSnippets.Add(textSnippet);
+    }
 }
 
 internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
@@ -62,11 +86,12 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     private const byte _rdataGpid = 0;
 
     private readonly Function _function;
+    private readonly CodeGenContext _context;
 
-    public CodeGenVisitor(Function function)
+    public CodeGenVisitor(Function function, CodeGenContext context)
     {
         _function = function;
-        _rdataWriter = new BinaryWriter(_rdataContent);
+        _context = context;
     }
 
     public override TextSnippet VisitLeaf(Const expr)
@@ -84,7 +109,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     public override TextSnippet VisitLeaf(Var expr)
     {
         var snippet = BeginTextSnippet();
-        Emitter.Ldarg((uint)_function.Parameters.IndexOf(expr));
+        Emitter.Ldarg((ushort)_function.Parameters.IndexOf(expr));
         return snippet;
     }
 
@@ -93,7 +118,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         var snippet = BeginTextSnippet();
         foreach (var field in expr.Fields.Reverse())
         {
-            snippet.InputSnippets.Add(Visit(field));
+            snippet.AddInput(Visit(field));
         }
 
         Emitter.LdTuple();
@@ -117,7 +142,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
             var snippet = BeginTextSnippet();
             foreach (var param in expr.Parameters.Reverse())
             {
-                snippet.InputSnippets.Add(Visit(param));
+                snippet.AddInput(Visit(param));
             }
 
             EmitTensorCall(op);
@@ -145,12 +170,12 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private Symbol WriteRdata(DataType dataType)
     {
-        if (!_dataTypes.TryGetValue(dataType, out var symbol))
+        if (!_context.DataTypes.TryGetValue(dataType, out var symbol))
         {
             symbol = AddSymbol(SectionKind.Rdata);
 
-            DataTypeSerializer.Serialize(_rdataWriter, dataType);
-            _dataTypes.Add(dataType, symbol);
+            TypeSerializer.Serialize(_context.RdataWriter, dataType);
+            _context.DataTypes.Add(dataType, symbol);
         }
 
         return symbol;
@@ -158,26 +183,21 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private Symbol WriteRdata(ReadOnlySpan<byte> data, int alignment)
     {
-        _rdataWriter.AlignPosition(alignment);
+        _context.RdataWriter.AlignPosition(alignment);
         var symbol = AddSymbol(SectionKind.Rdata);
-        _rdataWriter.Write(data);
+        _context.RdataWriter.Write(data);
         return symbol;
     }
 
     private Symbol AddSymbol(SectionKind kind)
     {
-        return new Symbol { Section = kind };
+        var position = kind == SectionKind.Text ? 0 : _context.RdataWriter.Position();
+        return new Symbol { Section = kind, Position = position };
     }
 
     private SymbolRef AddSymbolRef(Symbol symbol, int positionOffset, int length, int offset = 0)
     {
-        var symbolRef = new SymbolRef
-        {
-            Position = Emitter.Position + positionOffset,
-            Symbol = symbol,
-            Length = length,
-            Offset = offset,
-        };
+        var symbolRef = new SymbolRef(Emitter.Position + positionOffset, length, symbol, offset);
         CurrentTextSnippet.SymbolRefs.Add(symbolRef);
         return symbolRef;
     }
@@ -221,17 +241,13 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     {
         var snippet = new TextSnippet(AddSymbol(SectionKind.Text));
         _currentTextSnippet = snippet;
+        _context.AddTextSnippet(snippet);
         return snippet;
     }
 
     private TextSnippet? _currentTextSnippet;
 
-    private TextSnippet CurrentTextSnippet => _currentTextSnippet;
+    private TextSnippet CurrentTextSnippet => _currentTextSnippet!;
 
     private StackVMEmitter Emitter => CurrentTextSnippet.Emitter;
-
-    private readonly List<TextSnippet> _textSnippets = new List<TextSnippet>();
-    private readonly MemoryStream _rdataContent = new MemoryStream();
-    private readonly BinaryWriter _rdataWriter;
-    private readonly Dictionary<DataType, Symbol> _dataTypes = new Dictionary<DataType, Symbol>();
 }
