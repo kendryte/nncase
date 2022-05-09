@@ -10,12 +10,15 @@ using NetFabric.Hyperlinq;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.F;
+using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using OrtKISharp;
 using Xunit;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.Math;
 using static OrtKISharp.TensorHelper;
+using RangeOf = Nncase.IR.Math.RangeOf;
 using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Tests.EvaluatorTest;
@@ -268,5 +271,25 @@ public class UnitTestEvaluator : IHostFixtrue
         var size = Tensors.SizeOf(input);
         size.InferenceType();
         Assert.Equal(1 * 3 * 224 * 224, size.Evaluate().AsTensor().ToScalar<int>());
+    }
+
+    private void AssertRangeOf(Expr input, float[] r)
+    {
+        Assert.Equal(r, RangeOf(input).Evaluate().AsTensor().ToArray<float>());
+    }
+    
+    [Fact]
+    public void TestRangeOf()
+    {
+        var input = Enumerable.Range(0, 32).Select(x => (float)x);
+        var r = new[] { 0f, 31 };
+        AssertRangeOf(input.ToArray(), r);
+        var n1 = input.ToList();
+        n1.Add(float.NaN);
+        AssertRangeOf(n1.ToArray(), r);
+        var n2 = input.ToList();
+        n2.Add(float.PositiveInfinity);
+        n2.Add(float.NegativeInfinity);
+        AssertRangeOf(n2.ToArray(), r);
     }
 }
