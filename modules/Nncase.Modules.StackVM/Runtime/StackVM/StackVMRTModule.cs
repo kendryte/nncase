@@ -20,6 +20,11 @@ public class StackVMRTModule : RTModule
     public static readonly string Kind = "stackvm";
 
     /// <summary>
+    /// StackVM module version.
+    /// </summary>
+    public static readonly uint Version = 1;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="StackVMRTModule"/> class.
     /// </summary>
     /// <param name="functions">Functions.</param>

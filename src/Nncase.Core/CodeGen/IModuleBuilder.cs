@@ -73,6 +73,11 @@ public interface ILinkedSection
 public interface ILinkedFunction
 {
     /// <summary>
+    /// Gets id.
+    /// </summary>
+    uint Id { get; }
+
+    /// <summary>
     /// Gets parameter types.
     /// </summary>
     IReadOnlyList<IRType> ParameterTypes { get; }
@@ -83,9 +88,14 @@ public interface ILinkedFunction
     IRType ReturnType { get; }
 
     /// <summary>
-    /// Gets sections.
+    /// Gets text begin.
     /// </summary>
-    IReadOnlyList<ILinkedSection> Sections { get; }
+    uint TextBegin { get; }
+
+    /// <summary>
+    /// Gets text length.
+    /// </summary>
+    uint TextLength { get; }
 }
 
 /// <summary>
@@ -101,22 +111,46 @@ public interface ILinkedModule
     /// <summary>
     /// Gets module version.
     /// </summary>
-    int Version { get; }
+    uint Version { get; }
 
     /// <summary>
     /// Gets linked functions.
     /// </summary>
     IReadOnlyList<ILinkedFunction> Functions { get; }
+
+    /// <summary>
+    /// Gets sections.
+    /// </summary>
+    IReadOnlyList<ILinkedSection> Sections { get; }
 }
 
+/// <summary>
+/// Linkable module.
+/// </summary>
 public interface ILinkableModule
 {
+    /// <summary>
+    /// Link module.
+    /// </summary>
+    /// <param name="linkContext">Link context.</param>
+    /// <returns>Linked module.</returns>
     ILinkedModule Link(ILinkContext linkContext);
 }
 
+/// <summary>
+/// Module builder.
+/// </summary>
 public interface IModuleBuilder
 {
+    /// <summary>
+    /// Gets module kind.
+    /// </summary>
     string ModuleKind { get; }
 
+    /// <summary>
+    /// Build linkable module.
+    /// </summary>
+    /// <param name="functions">Source functions.</param>
+    /// <returns>Compiled linkable module.</returns>
     ILinkableModule Build(IReadOnlyList<Callable> functions);
 }

@@ -11,13 +11,12 @@ using Nncase.Runtime.StackVM;
 
 namespace Nncase.CodeGen.StackVM;
 
-internal record LinkableFunction(ushort MaxLocals, byte[] Text);
-
 /// <summary>
 /// StackVM function builder.
 /// </summary>
 internal class StackVMFunctionBuilder
 {
+    private readonly uint _id;
     private readonly CodeGenContext _context;
     private readonly Dictionary<Symbol, long> _symbolAddrs = new Dictionary<Symbol, long>();
     private readonly MemoryStream _textContent = new MemoryStream();
@@ -27,26 +26,25 @@ internal class StackVMFunctionBuilder
     private readonly Dictionary<TextSnippet, ushort> _snippetLocals = new Dictionary<TextSnippet, ushort>();
     private readonly List<SymbolRef> _symbolRefs = new List<SymbolRef>();
 
-    public StackVMFunctionBuilder(BinaryWriter rdataWriter)
+    public StackVMFunctionBuilder(uint id, BinaryWriter rdataWriter)
     {
+        _id = id;
         _context = new CodeGenContext(rdataWriter);
         _textWriter = new BinaryWriter(_textContent, Encoding.UTF8, leaveOpen: true);
         _textEmitter = new StackVMEmitter(_textWriter);
     }
 
-    public string ModuleKind => StackVMRTModule.Kind;
-
-    public LinkableFunction Build(Callable function)
+    public LinkableFunction Build(Function function)
     {
         // 1. Compile
-        Compile((Function)function);
+        Compile(function);
 
         // 2. Write text
         WriteText();
 
         // 3. Fix addrs
         FixAddrs();
-        return new LinkableFunction(_localsAllocator.MaxCount, _textContent.ToArray());
+        return new LinkableFunction(_id, function, _localsAllocator.MaxCount, _textContent.ToArray());
     }
 
     private static void WriteByLength(BinaryWriter textWriter, long symbolAddr, int length)

@@ -62,10 +62,10 @@ internal class TextSnippet
 internal class CodeGenContext
 {
     private readonly List<TextSnippet> _textSnippets = new List<TextSnippet>();
-    private readonly MemoryStream _rdataContent = new MemoryStream();
 
     public CodeGenContext(BinaryWriter rdataWriter)
     {
+        RdataWriter = rdataWriter;
     }
 
     public BinaryWriter RdataWriter { get; }
@@ -88,11 +88,17 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     private readonly Function _function;
     private readonly CodeGenContext _context;
 
+    private TextSnippet? _currentTextSnippet;
+
     public CodeGenVisitor(Function function, CodeGenContext context)
     {
         _function = function;
         _context = context;
     }
+
+    private TextSnippet CurrentTextSnippet => _currentTextSnippet!;
+
+    private StackVMEmitter Emitter => CurrentTextSnippet.Emitter;
 
     public override TextSnippet VisitLeaf(Const expr)
     {
@@ -244,10 +250,4 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         _context.AddTextSnippet(snippet);
         return snippet;
     }
-
-    private TextSnippet? _currentTextSnippet;
-
-    private TextSnippet CurrentTextSnippet => _currentTextSnippet!;
-
-    private StackVMEmitter Emitter => CurrentTextSnippet.Emitter;
 }
