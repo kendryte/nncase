@@ -118,17 +118,31 @@ void onnx_importer::convert_op_PRelu(const NodeProto &node)
     }
     assert(alpha != nullptr);
 
-    auto mul = graph_.emplace<binary>(binary_mul, input_type, in_shape, alpha->output().shape(), value_range<float>::full());
-    mul->name(op_name + ".mul(PRelu)");
-    auto max = graph_.emplace<binary>(binary_max, input_type, in_shape, mul->output().shape(), value_range<float>::full());
+    auto zero = graph_.emplace<constant>(0.f);
+    zero->name(op_name + ".zero(PRelu)");
+
+    auto max = graph_.emplace<binary>(binary_max, input_type, in_shape, zero->output().shape(), value_range<float>::full());
     max->name(op_name + ".max(PRelu)");
 
-    mul->input_b().connect(alpha->output());
-    max->input_b().connect(mul->output());
+    auto min = graph_.emplace<binary>(binary_min, input_type, in_shape, zero->output().shape(), value_range<float>::full());
+    min->name(op_name + ".min(PRelu)");
 
-    input_tensors_.emplace(&mul->input_a(), input);
+    auto mul = graph_.emplace<binary>(binary_mul, input_type, min->output().shape(), alpha->output().shape(), value_range<float>::full());
+    mul->name(op_name + ".mul(PRelu)");
+
+    auto add = graph_.emplace<binary>(binary_add, input_type, max->output().shape(), mul->output().shape(), value_range<float>::full());
+    add->name(op_name + ".add(PRelu)");
+
+    max->input_b().connect(zero->output());
+    min->input_b().connect(zero->output());
+    mul->input_a().connect(min->output());
+    mul->input_b().connect(alpha->output());
+    add->input_a().connect(max->output());
+    add->input_b().connect(mul->output());
+
     input_tensors_.emplace(&max->input_a(), input);
-    output_tensors_.emplace(output, &max->output());
+    input_tensors_.emplace(&min->input_a(), input);
+    output_tensors_.emplace(output, &add->output());
 }
 
 // y = 1 / (1 + exp(-x))
