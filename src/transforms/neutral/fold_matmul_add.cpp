@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/ir/ops/binary.h>
+#include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/matmul.h>
 #include <nncase/ir/visitor.h>
@@ -26,11 +27,12 @@ bool fold_matmul_add_transform::on_try_match(node &node, transform_context &cont
 {
     matmul *mm = nullptr;
     binary *add = nullptr;
+    bitcast *bc = nullptr;
     constant *bias_constant = nullptr;
     constant *add_constant = nullptr;
     if ((add = node_cast<binary>(node))
         && (add->binary_op() == binary_add)
-        && (((mm = try_get_direct_parent<matmul>(*add, 0)) && (add_constant = try_get_direct_parent<constant>(*add, 1))) || ((mm = try_get_direct_parent<matmul>(*add, 1)) && (add_constant = try_get_direct_parent<constant>(*add, 0))))
+        && ((((mm = try_get_direct_parent<matmul>(*add, 0)) && (add_constant = try_get_direct_parent<constant>(*add, 1))) || ((mm = try_get_direct_parent<matmul>(*add, 1)) && (add_constant = try_get_direct_parent<constant>(*add, 0)))) || ((bc = try_get_direct_parent<bitcast>(*add, 0)) && (mm = try_get_direct_parent<matmul>(*bc)) && (add_constant = try_get_direct_parent<constant>(*add, 1))) || ((bc = try_get_direct_parent<bitcast>(*add, 1)) && (mm = try_get_direct_parent<matmul>(*bc)) && (add_constant = try_get_direct_parent<constant>(*add, 0))))
         && (mm->fused_activation() == value_range<float>::full())
         && (bias_constant = node_cast<constant>(mm->bias().connection()->owner()))
         && (bias_constant->data().size() == add_constant->data().size()))
@@ -79,12 +81,16 @@ void fold_matmul_add_transform::process(transform_context &context)
 
     // create new matmul
     auto new_mm = context.graph.emplace<matmul>(old_mm->input_a().shape(), old_mm->input_b().shape(), mm_act);
+    auto new_bc = context.graph.emplace<bitcast>(new_mm->output().type(), new_mm->output().shape(), add->output().shape());
+
+    new_bc->name(old_mm->name() + "/bitcast");
     new_mm->name(old_mm->name());
     new_mm->input_a().connect(*context.inputs[0]->connection());
     new_mm->input_b().connect(*context.inputs[1]->connection());
     new_mm->bias().connect(new_bias->output());
+    new_bc->input().connect(new_mm->output());
 
     auto inputs = context.outputs[0]->connections();
     for (auto &in : dup(inputs))
-        in->connect(new_mm->output());
+        in->connect(new_bc->output());
 }
