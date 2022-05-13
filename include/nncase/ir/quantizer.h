@@ -34,7 +34,8 @@ enum class calibrate_method
     kld_m0,
     kld_m1,
     kld_m2,
-    cdf
+    cdf,
+    auto_select
 };
 
 class NNCASE_API quantizer

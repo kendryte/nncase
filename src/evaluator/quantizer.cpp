@@ -44,12 +44,14 @@ static std::vector<float> smooth_distribution(const std::vector<float> &p, const
     {
         auto it = p.begin();
         std::generate(is_zeros.begin(), is_zeros.end(),
-            [&it]() { return static_cast<size_t>(*(it++) == 0.f); });
+            [&it]()
+            { return static_cast<size_t>(*(it++) == 0.f); });
     }
     {
         auto it = p.begin();
         std::generate(is_nonzeros.begin(), is_nonzeros.end(),
-            [&it]() { return static_cast<size_t>(*(it++) != 0.f); });
+            [&it]()
+            { return static_cast<size_t>(*(it++) != 0.f); });
     }
     size_t n_zeros = std::accumulate(is_zeros.begin(), is_zeros.end(), 0);
     size_t n_nonzeros = p.size() - n_zeros;
@@ -135,6 +137,154 @@ float compute_l2(xtl::span<float> p, value_range<float> p_range, value_range<flo
     }
 
     return d;
+}
+
+void run_kld_m2(std::vector<float> &src_bins_, std::optional<std::pair<size_t, size_t>> &threshold, size_t &zero_threshold, const unsigned long &dest_bins)
+{
+    src_bins_ = smooth(src_bins_);
+    auto min_kld = std::numeric_limits<float>::max();
+
+    auto kld = [&](size_t lower_threshold, size_t upper_threshold)
+    {
+        auto src_range = upper_threshold - lower_threshold;
+        auto src_per_bin = src_range / dest_bins;
+
+        std::vector<float> range_dist(src_bins_.begin() + lower_threshold, src_bins_.begin() + upper_threshold);
+
+        // ref dist
+        std::vector<float> ref_dist(range_dist);
+        ref_dist.front() += std::reduce(src_bins_.begin(), src_bins_.begin() + lower_threshold);
+        ref_dist.back() += std::reduce(src_bins_.begin() + upper_threshold, src_bins_.end());
+
+        // quant dist
+        std::vector<float> q_dist(dest_bins);
+        for (size_t i = 0; i < dest_bins; i++)
+        {
+            auto start = i * src_per_bin;
+            auto end = start + src_per_bin;
+            auto value = 0.f;
+
+            value += std::reduce(ref_dist.begin() + start, ref_dist.begin() + end);
+            q_dist[i] = value;
+        }
+
+        // upsample quant dist
+        std::vector<float> ups_q_dist(src_range);
+        for (size_t i = 0; i < dest_bins; i++)
+        {
+            auto start = i * src_per_bin;
+            auto end = start + src_per_bin;
+            auto count = 0.f;
+
+            count += std::count_if(ref_dist.begin() + start, ref_dist.begin() + end, [](float v)
+                { return v; });
+            if (!count)
+                continue;
+            auto upsample_value = q_dist[i] / count;
+
+            for (size_t j = start; j < end; j++)
+            {
+                if (ref_dist[j])
+                    ups_q_dist[j] += upsample_value;
+            }
+        }
+
+        float kld = 0.f;
+        std::vector<float> ups2_q_dist(src_bins_.size());
+        // left outliers
+        auto count = 0.f;
+        count += std::count_if(src_bins_.begin(), src_bins_.begin() + lower_threshold + src_per_bin, [](float v)
+            { return v; });
+        auto value = std::reduce(src_bins_.begin(), src_bins_.begin() + lower_threshold + src_per_bin) / count;
+        for (size_t i = 0; i < lower_threshold + src_per_bin; i++)
+        {
+            if (src_bins_[i])
+                ups2_q_dist[i] += value;
+        }
+        // median
+        std::copy(ups_q_dist.begin() + src_per_bin, ups_q_dist.end() - src_per_bin, ups2_q_dist.begin() + lower_threshold + src_per_bin);
+        // right outliers
+        count = 0.f;
+        count += std::count_if(src_bins_.begin() + upper_threshold - src_per_bin, src_bins_.end(), [](float v)
+            { return v; });
+        value = std::reduce(src_bins_.begin() + upper_threshold - src_per_bin, src_bins_.end()) / count;
+        for (size_t i = upper_threshold - src_per_bin; i < src_bins_.size(); i++)
+        {
+            if (src_bins_[i])
+                ups2_q_dist[i] += value;
+        }
+
+        src_bins_ = smooth_distribution(src_bins_);
+        ups2_q_dist = smooth_distribution(ups2_q_dist);
+        kld = compute_kld(src_bins_, ups2_q_dist);
+
+        if (kld < min_kld)
+        {
+            min_kld = kld;
+            threshold = { lower_threshold, upper_threshold };
+        }
+    };
+
+    // range max fisrt
+    {
+        min_kld = std::numeric_limits<float>::max();
+        size_t lower_threshold = 0;
+        for (size_t upper_threshold = src_bins_.size(); upper_threshold >= dest_bins && upper_threshold >= zero_threshold; upper_threshold -= dest_bins)
+        {
+            kld(lower_threshold, upper_threshold);
+        }
+    }
+    // range min
+    {
+        min_kld = std::numeric_limits<float>::max();
+        size_t upper_threshold = threshold->second;
+        for (size_t lower_threshold = 0; lower_threshold <= zero_threshold && lower_threshold <= upper_threshold - dest_bins; lower_threshold += dest_bins)
+        {
+            kld(lower_threshold, upper_threshold);
+        }
+    }
+}
+
+void run_l2(std::vector<float> src_bins_, std::optional<std::pair<size_t, size_t>> &threshold, size_t zero_threshold, float src_bin_interval_, value_range<float> range_, const unsigned long dest_bins)
+{
+    auto min_loss = std::numeric_limits<float>::max();
+
+    for (size_t lower_threshold = 0; lower_threshold <= zero_threshold; lower_threshold++)
+    {
+        for (size_t upper_threshold = src_bins_.size(); upper_threshold >= lower_threshold + dest_bins && upper_threshold >= zero_threshold; upper_threshold--)
+        {
+            auto dest_min = lower_threshold * src_bin_interval_ + range_.min;
+            auto dest_max = upper_threshold * src_bin_interval_ + range_.min;
+
+            auto loss = compute_l2(src_bins_, range_, { dest_min, dest_max }, dest_bins);
+            if (loss < min_loss)
+            {
+                min_loss = loss;
+                threshold = { lower_threshold, upper_threshold };
+            }
+        }
+    }
+}
+
+void run_cdf(std::vector<float> &src_bins_, std::optional<std::pair<size_t, size_t>> &threshold, size_t &zero_threshold, const unsigned long &dest_bins)
+{
+    auto slope_threshold = 0.001f;
+    auto cdf = calc_cdf(src_bins_);
+
+    size_t lower_threshold = 0;
+    for (; lower_threshold <= zero_threshold; lower_threshold++)
+    {
+        if (cdf[lower_threshold] / (lower_threshold + 1) * src_bins_.size() > slope_threshold)
+            break;
+    }
+    size_t upper_threshold = src_bins_.size() - 1;
+    for (; upper_threshold >= lower_threshold + dest_bins && upper_threshold >= zero_threshold; upper_threshold--)
+    {
+        if ((1 - cdf[upper_threshold]) / (src_bins_.size() - upper_threshold) * src_bins_.size() > slope_threshold)
+            break;
+    }
+
+    threshold = { lower_threshold, upper_threshold };
 }
 }
 
@@ -233,7 +383,7 @@ void quantizer::record_buffers(output_connector &connector, std::span<const bflo
 {
     std::vector<float> data_vec;
     for (int i = 0; i < data.size(); i++)
-        data_vec.push_back(static_cast<float>(data.data()[i]));
+        data_vec.push_back((float)(data.data()[i]));
     output_buffers_.emplace(&connector, data_vec);
 }
 
@@ -241,7 +391,7 @@ void quantizer::record_buffers(output_connector &connector, std::span<const half
 {
     std::vector<float> data_vec;
     for (int i = 0; i < data.size(); i++)
-        data_vec.push_back(static_cast<float>(data.data()[i]));
+        data_vec.push_back((float)(data.data()[i]));
     output_buffers_.emplace(&connector, data_vec);
 }
 
@@ -370,7 +520,8 @@ fixed_mul quantizer::get_fixed_mul(float value, int32_t max_bits, uint8_t max_sh
 
 void quantizer::set_model_output_range(ir::graph &graph)
 {
-    auto visitor = make_relay_ir_visitor([&](node &node) {
+    auto visitor = make_relay_ir_visitor([&](node &node)
+        {
         if (node.runtime_opcode() == op_output_node)
         {
             auto it = quant_ranges_.find(node.input_at(0).connection());
@@ -384,14 +535,14 @@ void quantizer::set_model_output_range(ir::graph &graph)
 
 void quantizer::broadcast_output(ir::graph &graph, const std::unordered_set<node_opcode> &ops)
 {
-    auto visitor = make_relay_ir_visitor([&](node &node) {
+    auto visitor = make_relay_ir_visitor([&](node &node)
+        {
         if (node.inputs().size() == 1)
         {
             auto it = quant_ranges_.find(node.input_at(0).connection());
             if (it != quant_ranges_.end())
                 broadcast_output(node, it->second, ops);
-        }
-    });
+        } });
     visitor.visit(graph);
 }
 
@@ -518,7 +669,8 @@ void quantizer::histogram::finish()
                             count += (end - right_lower);
                     }
 
-                    count += std::count_if(range_dist.begin() + left_upper, range_dist.begin() + right_lower, [](float v) { return v; });
+                    count += std::count_if(range_dist.begin() + left_upper, range_dist.begin() + right_lower, [](float v)
+                        { return v; });
                     if (!count)
                         continue;
                     auto upsample_value = q_dist[i] / count;
@@ -565,144 +717,50 @@ void quantizer::histogram::finish()
     }
     else if (cali_method_ == calibrate_method::kld_m2)
     {
-        src_bins_ = smooth(src_bins_);
-        auto min_kld = std::numeric_limits<float>::max();
-
-        auto kld = [&](size_t lower_threshold, size_t upper_threshold) {
-            auto src_range = upper_threshold - lower_threshold;
-            auto src_per_bin = src_range / dest_bins;
-
-            std::vector<float> range_dist(src_bins_.begin() + lower_threshold, src_bins_.begin() + upper_threshold);
-
-            // ref dist
-            std::vector<float> ref_dist(range_dist);
-            ref_dist.front() += std::reduce(src_bins_.begin(), src_bins_.begin() + lower_threshold);
-            ref_dist.back() += std::reduce(src_bins_.begin() + upper_threshold, src_bins_.end());
-
-            // quant dist
-            std::vector<float> q_dist(dest_bins);
-            for (size_t i = 0; i < dest_bins; i++)
-            {
-                auto start = i * src_per_bin;
-                auto end = start + src_per_bin;
-                auto value = 0.f;
-
-                value += std::reduce(ref_dist.begin() + start, ref_dist.begin() + end);
-                q_dist[i] = value;
-            }
-
-            // upsample quant dist
-            std::vector<float> ups_q_dist(src_range);
-            for (size_t i = 0; i < dest_bins; i++)
-            {
-                auto start = i * src_per_bin;
-                auto end = start + src_per_bin;
-                auto count = 0.f;
-
-                count += std::count_if(ref_dist.begin() + start, ref_dist.begin() + end, [](float v) { return v; });
-                if (!count)
-                    continue;
-                auto upsample_value = q_dist[i] / count;
-
-                for (size_t j = start; j < end; j++)
-                {
-                    if (ref_dist[j])
-                        ups_q_dist[j] += upsample_value;
-                }
-            }
-
-            float kld = 0.f;
-            std::vector<float> ups2_q_dist(src_bins_.size());
-            // left outliers
-            auto count = 0.f;
-            count += std::count_if(src_bins_.begin(), src_bins_.begin() + lower_threshold + src_per_bin, [](float v) { return v; });
-            auto value = std::reduce(src_bins_.begin(), src_bins_.begin() + lower_threshold + src_per_bin) / count;
-            for (size_t i = 0; i < lower_threshold + src_per_bin; i++)
-            {
-                if (src_bins_[i])
-                    ups2_q_dist[i] += value;
-            }
-            // median
-            std::copy(ups_q_dist.begin() + src_per_bin, ups_q_dist.end() - src_per_bin, ups2_q_dist.begin() + lower_threshold + src_per_bin);
-            // right outliers
-            count = 0.f;
-            count += std::count_if(src_bins_.begin() + upper_threshold - src_per_bin, src_bins_.end(), [](float v) { return v; });
-            value = std::reduce(src_bins_.begin() + upper_threshold - src_per_bin, src_bins_.end()) / count;
-            for (size_t i = upper_threshold - src_per_bin; i < src_bins_.size(); i++)
-            {
-                if (src_bins_[i])
-                    ups2_q_dist[i] += value;
-            }
-
-            src_bins_ = smooth_distribution(src_bins_);
-            ups2_q_dist = smooth_distribution(ups2_q_dist);
-            kld = compute_kld(src_bins_, ups2_q_dist);
-
-            if (kld < min_kld)
-            {
-                min_kld = kld;
-                threshold = { lower_threshold, upper_threshold };
-            }
-        };
-
-        // range max fisrt
-        {
-            min_kld = std::numeric_limits<float>::max();
-            size_t lower_threshold = 0;
-            for (size_t upper_threshold = src_bins_.size(); upper_threshold >= dest_bins && upper_threshold >= zero_threshold; upper_threshold -= dest_bins)
-            {
-                kld(lower_threshold, upper_threshold);
-            }
-        }
-        // range min
-        {
-            min_kld = std::numeric_limits<float>::max();
-            size_t upper_threshold = threshold->second;
-            for (size_t lower_threshold = 0; lower_threshold <= zero_threshold && lower_threshold <= upper_threshold - dest_bins; lower_threshold += dest_bins)
-            {
-                kld(lower_threshold, upper_threshold);
-            }
-        }
+        run_kld_m2(src_bins_, threshold, zero_threshold, dest_bins);
     }
     else if (cali_method_ == calibrate_method::l2)
     {
-        auto min_loss = std::numeric_limits<float>::max();
-
-        for (size_t lower_threshold = 0; lower_threshold <= zero_threshold; lower_threshold++)
-        {
-            for (size_t upper_threshold = src_bins_.size(); upper_threshold >= lower_threshold + dest_bins && upper_threshold >= zero_threshold; upper_threshold--)
-            {
-                auto dest_min = lower_threshold * src_bin_interval_ + range_.min;
-                auto dest_max = upper_threshold * src_bin_interval_ + range_.min;
-
-                auto loss = compute_l2(src_bins_, range_, { dest_min, dest_max }, dest_bins);
-                if (loss < min_loss)
-                {
-                    min_loss = loss;
-                    threshold = { lower_threshold, upper_threshold };
-                }
-            }
-        }
+        run_l2(src_bins_, threshold, zero_threshold, src_bin_interval_, range_, dest_bins);
     }
     else if (cali_method_ == calibrate_method::cdf)
     {
-        auto slope_threshold = 0.001f;
-        auto cdf = calc_cdf(src_bins_);
+        run_cdf(src_bins_, threshold, zero_threshold, dest_bins);
+    }
+    else if (cali_method_ == calibrate_method::auto_select)
+    {
 
-        size_t lower_threshold = 0;
-        for (; lower_threshold <= zero_threshold; lower_threshold++)
+        std::vector<calibrate_method> method_list { calibrate_method::kld_m2, calibrate_method::l2, calibrate_method::no_clip };
+        auto min_loss = std::numeric_limits<float>::max();
+        auto new_threshold = threshold;
+        for (auto i : method_list)
         {
-            if (cdf[lower_threshold] / (lower_threshold + 1) * src_bins_.size() > slope_threshold)
-                break;
+            if (i == calibrate_method::kld_m2)
+            {
+                run_kld_m2(src_bins_, new_threshold, zero_threshold, dest_bins);
+            }
+            else if (i == calibrate_method::l2)
+            {
+                run_l2(src_bins_, new_threshold, zero_threshold, src_bin_interval_, range_, dest_bins);
+            }
+            else if (i == calibrate_method::cdf)
+            {
+                run_cdf(src_bins_, new_threshold, zero_threshold, dest_bins);
+            }
+            else
+            {
+                new_threshold = { size_t(0), size_t(src_bins_.size() - 1) };
+            }
+            auto opt_min = (new_threshold->first - 0.5f) * src_bin_interval_ + range_.min;
+            auto opt_max = (new_threshold->second + 0.5f) * src_bin_interval_ + range_.min;
+            value_range<float> tmp_range = { opt_min, opt_max };
+            auto new_loss = compute_l2(src_bins_, range_, tmp_range, dest_bins);
+            if (new_loss < min_loss)
+            {
+                min_loss = new_loss;
+                threshold = new_threshold;
+            }
         }
-        size_t upper_threshold = src_bins_.size() - 1;
-        for (; upper_threshold >= lower_threshold + dest_bins && upper_threshold >= zero_threshold; upper_threshold--)
-        {
-            if ((1 - cdf[upper_threshold]) / (src_bins_.size() - upper_threshold) * src_bins_.size() > slope_threshold)
-                break;
-        }
-
-        threshold = { lower_threshold, upper_threshold };
     }
 
     assert(threshold);
