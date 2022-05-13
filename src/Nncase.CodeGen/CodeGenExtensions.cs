@@ -1,28 +1,10 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.Runtime.InteropServices;
 using Nncase.IR;
 
 namespace Nncase.CodeGen;
-
-/// <summary>
-/// static class for codegen collection.
-/// </summary>
-public static class CodeGenExtensions
-{
-    /// <summary>
-    /// schedule and build the IRModule to RTModel.
-    /// </summary>
-    /// <param name="module"> input module. </param>
-    /// <param name="target"> target information. </param>
-    /// <returns> the runtime model instance. </returns>
-    public static IRTModel ToRTModel(this IRModule module, ITarget target)
-    {
-        var sch = target.CreateScheduler(module);
-        var schr = sch.Schedule();
-        return target.CreateRTModel(schr);
-    }
-}
 
 /// <summary>
 /// BinaryWriterExtension.
@@ -83,5 +65,12 @@ public static class BinaryWriterExtensions
     public static void Skip(this BinaryWriter writer, ulong len)
     {
         writer.Seek((int)len, SeekOrigin.Current);
+    }
+
+    public static unsafe void Write<T>(this BinaryWriter writer, ref T value)
+        where T : unmanaged
+    {
+        var span = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref value, 1));
+        writer.Write(span);
     }
 }

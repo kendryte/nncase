@@ -24,6 +24,4 @@ internal class LinkableFunction
     public ushort MaxLocals { get; }
 
     public byte[] Text { get; }
-
-    public ILinkedFunction
 }

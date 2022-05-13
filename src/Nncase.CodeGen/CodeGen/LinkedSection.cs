@@ -13,14 +13,14 @@ internal class LinkedSection : ILinkedSection
 {
     private readonly byte[]? _content;
 
-    public LinkedSection(byte[]? content, string name, int attributes, int alignment, int sizeInMemory)
+    public LinkedSection(byte[]? content, string name, uint flags, uint alignment, uint sizeInMemory)
     {
         if (alignment == 0)
         {
             throw new ArgumentOutOfRangeException(nameof(alignment));
         }
 
-        SizeInFile = content?.Length ?? 0;
+        SizeInFile = (uint?)content?.Length ?? 0;
         if (sizeInMemory < SizeInFile)
         {
             throw new ArgumentOutOfRangeException(nameof(sizeInMemory));
@@ -28,20 +28,20 @@ internal class LinkedSection : ILinkedSection
 
         _content = content;
         Name = name;
-        Attributes = attributes;
+        Flags = flags;
         Alignment = alignment;
         SizeInMemory = sizeInMemory;
     }
 
     public string Name { get; }
 
-    public int Attributes { get; }
+    public uint Flags { get; }
 
-    public int Alignment { get; }
+    public uint Alignment { get; }
 
-    public int SizeInFile { get; }
+    public uint SizeInFile { get; }
 
-    public int SizeInMemory { get; }
+    public uint SizeInMemory { get; }
 
     public void Serialize(Stream output)
     {

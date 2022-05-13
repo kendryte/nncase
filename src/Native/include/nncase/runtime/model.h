@@ -20,6 +20,7 @@ BEGIN_NS_NNCASE_RUNTIME
 
 inline constexpr size_t MAX_SECTION_NAME_LENGTH = 16;
 inline constexpr size_t MAX_MODULE_KIND_LENGTH = 16;
+inline constexpr uint32_t MODEL_HAS_NO_ENTRY = -1;
 
 typedef std::array<char, MAX_MODULE_KIND_LENGTH> module_kind_t;
 
@@ -37,38 +38,36 @@ constexpr module_kind_t to_module_kind(const char (&a)[N]) {
 struct model_header {
     uint32_t identifier;
     uint32_t version;
-    uint32_t header_size;
     uint32_t flags;
     uint32_t alignment;
     uint32_t modules;
     uint32_t entry_module;
     uint32_t entry_function;
+    uint32_t reserved0;
 };
 
 struct function_header {
-    uint32_t header_size;
-    uint32_t size;
     uint32_t parameters;
     uint32_t entrypoint;
     uint32_t text_size;
-    uint32_t reserved0[3];
+    uint32_t size;
 };
 
 struct module_header {
     module_kind_t kind;
     uint32_t version;
-    uint32_t header_size;
     uint32_t size;
     uint32_t sections;
     uint32_t functions;
-    uint32_t reserved0[3];
 };
 
 struct section_header {
     char name[MAX_SECTION_NAME_LENGTH];
     uint32_t flags;
+    uint32_t size;
     uint32_t body_start;
     uint32_t body_size;
+    uint32_t memory_size;
     uint32_t reserved0;
 };
 

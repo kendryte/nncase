@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
 
 namespace Nncase.Runtime.StackVM;
 
@@ -17,7 +18,7 @@ public class StackVMRTModule : RTModule
     /// <summary>
     /// StackVM module kind.
     /// </summary>
-    public static readonly string Kind = "stackvm";
+    public static readonly string Kind = Callable.StackVMModuleKind;
 
     /// <summary>
     /// StackVM module version.

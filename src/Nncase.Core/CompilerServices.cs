@@ -13,6 +13,7 @@ using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.PatternMatch;
+using Nncase.Targets;
 using Nncase.Transform;
 
 namespace Nncase;
@@ -136,6 +137,13 @@ public interface ICompilerServicesProvider
     /// <param name="results">Match results.</param>
     /// <returns>Match success.</returns>
     bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results);
+
+    /// <summary>
+    /// Get target.
+    /// </summary>
+    /// <param name="name">Target name.</param>
+    /// <returns>Target</returns>
+    ITarget GetTarget(string name);
 }
 
 internal interface ICompilerServicesProviderInternal
@@ -152,6 +160,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     private readonly IMatchProvider _matchProvider;
     private readonly IRewriteProvider _rewriteProvider;
     private readonly IEGraphMatchProvider _eGraphMatchProvider;
+    private readonly ITargetProvider _targetProvider;
 
     public CompilerServicesProvider(
         IEvaluateProvider evaluateProvider,
@@ -161,7 +170,8 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         IDataTypeServiceProvider dataTypeServiceProvider,
         IMatchProvider matchProvider,
         IRewriteProvider rewriteProvider,
-        IEGraphMatchProvider eGraphMatchProvider)
+        IEGraphMatchProvider eGraphMatchProvider,
+        ITargetProvider targetProvider)
     {
         _evaluateProvider = evaluateProvider;
         _typeInferenceProvider = typeInferenceProvider;
@@ -171,6 +181,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         _matchProvider = matchProvider;
         _rewriteProvider = rewriteProvider;
         _eGraphMatchProvider = eGraphMatchProvider;
+        _targetProvider = targetProvider;
     }
 
     public IDataTypeServiceProvider DataTypeService { get; }
@@ -247,6 +258,11 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     public bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
     {
         return _eGraphMatchProvider.TryMatchRoot(enodes, pattern, out results);
+    }
+
+    public ITarget GetTarget(string name)
+    {
+        return _targetProvider.GetTarget(name);
     }
 }
 
@@ -414,6 +430,13 @@ public static class CompilerServices
 
     /// <inheritdoc/>
     public static string Print(Expr expr) => Provider.Print(expr);
+
+    /// <summary>
+    /// Get target.
+    /// </summary>
+    /// <param name="name">Target name.</param>
+    /// <returns>Target</returns>
+    public static ITarget GetTarget(string name) => Provider.GetTarget(name);
     
     public static ICompileOptions GetCompileOptions() => _compileOptions;
 }

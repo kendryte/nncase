@@ -15,14 +15,17 @@ namespace Nncase.CodeGen;
 /// </summary>
 public static class ModelInfo
 {
+    public static readonly uint ModelHasNoEntry = unchecked((uint)-1);
+
     /// <summary>
     /// the idenitifer.
     /// </summary>
-    public static uint IDENTIFIER => BitConverter.ToUInt32(Encoding.UTF8.GetBytes("LDMK"), 0);
+    public static readonly uint IDENTIFIER = BitConverter.ToUInt32(Encoding.UTF8.GetBytes("LDMK"), 0);
+
     /// <summary>
     /// kmodel version.
     /// </summary>
-    public const int VERSION = 5;
+    public const int VERSION = 6;
     /// <summary>
     /// merged rdata flag.
     /// </summary>
@@ -34,7 +37,7 @@ public static class ModelInfo
     /// <summary>
     /// max module type length.
     /// </summary>
-    public const int MAX_MODULE_TYPE_LENGTH = 16;
+    public const int MAX_MODULE_KIND_LENGTH = 16;
 }
 
 /// <summary>
@@ -47,7 +50,7 @@ public struct ModuleType
     /// <summary>
     /// the module types
     /// </summary>
-    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = (int)ModelInfo.MAX_MODULE_TYPE_LENGTH)]
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = (int)ModelInfo.MAX_MODULE_KIND_LENGTH)]
     public string Types;
 
     /// <summary>
@@ -58,8 +61,8 @@ public struct ModuleType
     public static ModuleType Create(string name)
     {
         var mt = new ModuleType();
-        var chars = new char[ModelInfo.MAX_MODULE_TYPE_LENGTH];
-        for (int i = 0; i < ModelInfo.MAX_MODULE_TYPE_LENGTH; i++)
+        var chars = new char[ModelInfo.MAX_MODULE_KIND_LENGTH];
+        for (int i = 0; i < ModelInfo.MAX_MODULE_KIND_LENGTH; i++)
         {
             chars[i] = i < name.Length ? name[i] : '\0';
         }

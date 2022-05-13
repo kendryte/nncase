@@ -15,7 +15,7 @@ namespace Nncase.CodeGen;
 /// </summary>
 /// <param name="Id">Id.</param>
 /// <param name="ModuleId">Module id.</param>
-public record FunctionId(int Id, int ModuleId);
+public record FunctionId(uint Id, uint ModuleId);
 
 /// <summary>
 /// Link context.
@@ -41,24 +41,24 @@ public interface ILinkedSection
     string Name { get; }
 
     /// <summary>
-    /// Gets attributes.
+    /// Gets flags.
     /// </summary>
-    int Attributes { get; }
+    uint Flags { get; }
 
     /// <summary>
     /// Gets alignment.
     /// </summary>
-    int Alignment { get; }
+    uint Alignment { get; }
 
     /// <summary>
     /// Gets size in file.
     /// </summary>
-    int SizeInFile { get; }
+    uint SizeInFile { get; }
 
     /// <summary>
     /// Gets size in memory.
     /// </summary>
-    int SizeInMemory { get; }
+    uint SizeInMemory { get; }
 
     /// <summary>
     /// Serialize payload.

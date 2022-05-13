@@ -12,6 +12,8 @@ namespace Nncase.CodeGen.StackVM;
 
 internal class LinkableModule : ILinkableModule
 {
+    private const int _textAlignment = 8;
+
     private readonly byte[] _rdata;
     private readonly IReadOnlyList<LinkableFunction> _functions;
 
@@ -23,6 +25,19 @@ internal class LinkableModule : ILinkableModule
 
     public ILinkedModule Link(ILinkContext linkContext)
     {
-        throw new NotImplementedException();
+        var linkedFunctions = new List<LinkedFunction>();
+        var text = new MemoryStream();
+        using (var bw = new BinaryWriter(text, Encoding.UTF8, true))
+        {
+            foreach (var func in _functions)
+            {
+                bw.AlignPosition(_textAlignment);
+                var textBegin = bw.Position();
+                bw.Write(func.Text);
+                linkedFunctions.Add(new LinkedFunction(func.Id, func.SourceFunction, (uint)textBegin, (uint)func.Text.Length));
+            }
+        }
+
+        return new LinkedModule(linkedFunctions, text.ToArray(), _rdata);
     }
 }

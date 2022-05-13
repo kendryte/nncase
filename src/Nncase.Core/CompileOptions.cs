@@ -33,6 +33,11 @@ namespace Nncase
         public string InputFile { get; set; }
 
         /// <summary>
+        /// Gets or sets output file.
+        /// </summary>
+        public string OutputFile { get; set; }
+
+        /// <summary>
         /// Gets or sets the import model format.
         /// </summary>
         public string InputFormat { get; set; }

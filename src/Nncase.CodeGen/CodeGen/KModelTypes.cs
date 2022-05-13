@@ -18,76 +18,45 @@ public struct ModelHeader
 {
     public uint Identifier;
     public uint Version;
-    public uint HeaderSize;
     public uint Flags;
     public uint Alignment;
     public uint Modules;
     public uint EntryModule;
     public uint EntryFunction;
+    public uint Reserved0;
 }
-
-
 
 [StructLayout(LayoutKind.Sequential)]
 public struct FunctionHeader
 {
-    public uint HeaderSize;
-    public uint Size;
-    public uint InputPoolSize;
-    public uint OutputPoolSize;
-    public uint Inputs;
-    public uint Outputs;
+    public uint Parameters;
     public uint Entrypoint;
     public uint TextSize;
+    public uint Size;
 }
 
-
 [StructLayout(LayoutKind.Sequential)]
-public struct ModuleHeader
+public unsafe struct ModuleHeader
 {
-    public ModuleType Type;
+    public fixed byte Kind[ModelInfo.MAX_MODULE_KIND_LENGTH];
     public uint Version;
-    public uint HeaderSize;
     public uint Size;
-    public uint Mempools;
-    public uint SharedMempools;
     public uint Sections;
     public uint Functions;
-    public uint Reserved0;
 }
-
-
-[StructLayout(LayoutKind.Sequential)]
-public unsafe struct MemPoolDesc
-{
-    public Schedule.MemoryLocation Location;
-    public fixed byte Reserved0[3];
-    public uint Size;
-}
-
-
-[StructLayout(LayoutKind.Sequential)]
-public struct SharedMempoolDesc
-{
-    public uint Module;
-    public uint Size;
-}
-
 
 /// <summary>
-/// the section header
+/// the section header.
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-public struct SectionHeader
+public unsafe struct SectionHeader
 {
-    /// <summary>
-    /// the name
-    /// </summary>
-    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = (int)ModelInfo.MAX_SECTION_NAME_LENGTH)]
-    public string Name;
+    public fixed byte Name[ModelInfo.MAX_SECTION_NAME_LENGTH];
     public uint Flags;
+    public uint Size;
     public uint BodyStart;
     public uint BodySize;
+    public uint MemorySize;
     public uint Reserved0;
 }
 
