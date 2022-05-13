@@ -19,18 +19,8 @@ public class DequantizeEvaluator : IEvaluator<Dequantize>, ITypeInferencer<Dequa
     {
         var input = context.GetOrtArgumentValue(target, Dequantize.Input);
         var dequantParam = context.GetArgumentValueAsScalar<QuantParam>(target, Dequantize.DequantParam);
-        return input.DataType switch
-        {
-            OrtDataType.Int8 => OrtKI.DequantizeLinear(input,
-                dequantParam.Scale, 
-                (sbyte) dequantParam.ZeroPoint,
-                0).ToValue(),
-            OrtDataType.UInt8 => OrtKI.DequantizeLinear(input,
-                dequantParam.Scale, 
-                (byte) dequantParam.ZeroPoint,
-                0).ToValue(),
-            _ => throw new NotImplementedException("Deq only impl qint8")
-        };
+        var zeroPoint = Tensor.FromScalar(dequantParam.ZeroPoint).CastTo(input.DataType.ToDataType());
+        return OrtKI.DequantizeLinear(input, dequantParam.Scale, zeroPoint.ToOrtTensor(), 0).ToValue();
     }
 
     /// <inheritdoc/>

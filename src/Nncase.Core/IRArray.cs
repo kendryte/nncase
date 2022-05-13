@@ -136,8 +136,10 @@ namespace Nncase.IR
 
         public T this[int index] => ((IReadOnlyList<T>)_array)[index];
 
+        public T this[ParameterInfo info] => this[info.Index];
+        
         T IList<T>.this[int index] { get => ((IList<T>)_array)[index]; set => ((IList<T>)_array)[index] = value; }
-
+        
         public int Count => ((IReadOnlyCollection<T>)_array).Count;
 
         public bool IsReadOnly => ((ICollection<T>)_array).IsReadOnly;

@@ -24,9 +24,15 @@ public sealed record OrPattern(Pattern ConditionA, Pattern ConditionB, string? N
 
 public static partial class Utility
 {
-    public static OrPattern IsAlt(string? name, Pattern condition_a, Pattern condition_b)
-       => new OrPattern(condition_a, condition_b, name);
+    private static OrPattern IsAltImpl(string? name, Pattern condition_a, Pattern condition_b)
+        => new OrPattern(condition_a, condition_b, name);
 
-    public static OrPattern IsAlt(Pattern condition_a, Pattern condition_b)
-       => IsAlt(null, condition_a, condition_b);
+    public static OrPattern IsAlt(string? name, Pattern condition_a, Pattern condition_b)
+        => IsAltImpl(name, condition_a, condition_b);
+
+    public static OrPattern IsAlt(params Pattern[] patterns) 
+        => (OrPattern)(patterns
+            .Aggregate(
+                (pattern, pattern1) 
+                    => IsAltImpl(null, pattern, pattern1)));
 }
