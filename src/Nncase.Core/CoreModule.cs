@@ -17,7 +17,7 @@ public class CoreModule : Module
         builder.RegisterType<DataTypeServiceProvider>().AsImplementedInterfaces().SingleInstance();
         builder.RegisterType<IR.IRPrinterProvider>().AsImplementedInterfaces().SingleInstance();
         builder.RegisterType<CompileOptions>().AsImplementedInterfaces().SingleInstance();
-            
+
         // Prim types
         builder.RegisterType<BooleanType>().As<PrimType>().SingleInstance();
         builder.RegisterType<Utf8CharType>().As<PrimType>().SingleInstance();
@@ -33,6 +33,6 @@ public class CoreModule : Module
         builder.RegisterType<Float32Type>().As<PrimType>().SingleInstance();
         builder.RegisterType<Float64Type>().As<PrimType>().SingleInstance();
         builder.RegisterType<BFloat16Type>().As<PrimType>().SingleInstance();
-        builder.RegisterType<QuantParamType>().As<PrimType>().SingleInstance();
+        builder.RegisterType<QuantParamType>().As<ValueType>().SingleInstance();
     }
 }

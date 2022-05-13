@@ -20,6 +20,7 @@ namespace Nncase
         public bool UsePTQ { get; set; }
         public DataType QuantType { get; set; }
         public QuantMode QuantMode { get; set; }
+        public string OutputFile {get; set; }
     }
     
     /// <summary>

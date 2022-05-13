@@ -51,7 +51,7 @@ namespace Nncase.Cli.Commands
             BuildKModel(module, options);
         }
 
-        private void BuildKModel(IRModule module, CompileOptions options)
+        private void BuildKModel(IRModule module, ICompileOptions options)
         {
             var target = CompilerServices.GetTarget(options.Target);
             var modelBuilder = new ModelBuilder(target);
@@ -62,7 +62,7 @@ namespace Nncase.Cli.Commands
             }
         }
 
-        private IRModule ImportModule(Stream content, CompileOptions options)
+        private IRModule ImportModule(Stream content, ICompileOptions options)
         {
             Console.WriteLine($"Target: {options.Target}");
             var module = ImportModel(content, options);
@@ -77,7 +77,7 @@ namespace Nncase.Cli.Commands
             return module;
         }
 
-        private void InferShape(IRModule module, CompileOptions options)
+        private void InferShape(IRModule module, ICompileOptions options)
         {
             Console.WriteLine("Infer Shape...");
             var pmgr = new PassManager(module, new RunPassOptions(null, options.DumpLevel, options.DumpDir));
@@ -86,7 +86,7 @@ namespace Nncase.Cli.Commands
             //pmgr.Run();
         }
 
-        private IRModule ImportModel(Stream content, CompileOptions options) =>
+        private IRModule ImportModel(Stream content, ICompileOptions options) =>
           options.InputFormat switch
           {
               "tflite" => Importers.ImportTFLite(content),
@@ -94,7 +94,7 @@ namespace Nncase.Cli.Commands
               _ => throw new NotImplementedException($"Not Implement {options.InputFormat} Impoter!"),
           };
 
-        private void DumpModule(IRModule module, CompileOptions options, string prefix)
+        private void DumpModule(IRModule module, ICompileOptions options, string prefix)
         {
             var dumpPath = Path.Combine(options.DumpDir, "dump");
             CompilerServices.DumpIR(module.Entry!, prefix, dumpPath);
