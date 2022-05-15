@@ -390,7 +390,9 @@ public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region) : Expr
     /// Get the Addr Offset.
     /// NOTE We clamp the region expr with {0,shape[dim]}
     /// </summary>
-    public Expr AddrOffset => Region.Zip(Buffer.Stride.ToArray()).Select((p, i) => (p, i)).Aggregate((Expr)0, (acc, t) => acc + IR.F.Math.MinMax(t.p.First.Start, 0, Buffer.Shape[t.i]) * t.Item2);
+    public Expr AddrOffset => Region.Zip(Buffer.Stride.ToArray())
+      .Select((p, i) => (p, i))
+      .Aggregate((Expr)0, (acc, t) => acc + IR.F.Math.MinMax(t.p.First.Start, 0, Buffer.Shape[t.i]) * t.p.Second);
 
     /// <summary>
     /// Get the Current Offset.

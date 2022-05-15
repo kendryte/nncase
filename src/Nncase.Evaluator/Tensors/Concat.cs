@@ -19,10 +19,9 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Concat cat)
     {
-        var inputs = context.GetArgumentExpr(cat, Concat.Input);
+        var inputs = context.GetArgumentValueAsTensors(cat, Concat.Input);
         var axis = context.GetArgumentValueAsScalar<int>(cat, Concat.Axis);
-        var inputTensors = ((IR.Tuple)inputs).Select(context.GetOrtValue).ToArray();
-        return OrtKI.Concat(inputTensors, axis).ToValue();
+        return OrtKI.Concat(inputs.Select(t => t.ToOrtTensor()).ToArray(), axis).ToValue();
     }
 
     /// <inheritdoc/>

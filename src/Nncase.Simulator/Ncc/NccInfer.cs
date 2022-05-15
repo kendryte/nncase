@@ -37,7 +37,7 @@ public class InferEngine
     {
         if (index != 0)
             throw new NotSupportedException("Only Support 1 Output!");
-        var bytes = File.ReadAllBytes(Path.Combine(outputPath, $"{index}.bin"));
+        var bytes = File.ReadAllBytes(Path.Combine(outputPath, $"out{index}.bin"));
         return Tensor.FromBytes(dataType, bytes, shape);
     }
 
@@ -68,6 +68,8 @@ public class InferEngine
         return $"{os}-{arch}";
     }
 
+    public string RunArguments => $"infer {modelPath} {outputPath} --dataset {string.Join(":", inputPaths)} --dataset-format raw --wait-key";
+
     /// <summary>
     /// infer the model
     /// </summary>
@@ -84,7 +86,7 @@ public class InferEngine
         using var logWriter = new StringWriter(logMsg);
         using var proc = new Process();
         proc.StartInfo.FileName = Path.Combine("runtimes", GetRid(), "native", "ncc");
-        proc.StartInfo.Arguments = $"infer {modelPath} {outputPath} --dataset {string.Join(":", inputPaths)} --dataset-format raw --wait-key";
+        proc.StartInfo.Arguments = RunArguments;
         proc.StartInfo.UseShellExecute = false;
         proc.StartInfo.RedirectStandardInput = true;
         proc.StartInfo.RedirectStandardError = true;
