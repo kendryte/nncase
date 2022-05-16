@@ -596,7 +596,7 @@ void onnx_importer::convert_op_ThresholdedRelu(const NodeProto &node)
     new_alpha->input().connect(cmp->output());
 
     auto b_max = graph_.emplace<binary>(binary_mul, input_type, in_shape, new_alpha->output().shape(), value_range<float>::nonnegative());
-    b_max->name(op_name + ".max(ThresholdedRelu)");
+    b_max->name(op_name + ".mul(ThresholdedRelu)");
 
     b_max->input_b().connect(new_alpha->output());
 
