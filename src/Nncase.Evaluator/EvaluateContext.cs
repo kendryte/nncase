@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using Nncase.Evaluator;
 using Nncase.IR;
-
 namespace Nncase.Evaluator;
 
 /// <summary>
@@ -55,6 +54,14 @@ public static class EvaluateContextExtensions
         return context.GetArgumentValue(op, parameter).AsTensor().ToOrtTensor();
     }
 
+    public static OrtKISharp.Tensor GetOptionalOrtArgumentValue(this IEvaluateContext context, Op op, ParameterInfo parameter, Tensor tensor)
+    {
+        return context.GetOptionalArgumentValue(op, parameter).Match(
+            x => x.AsTensor(),
+            () => tensor
+        ).ToOrtTensor();
+    }
+    
     public static OrtKISharp.Tensor GetInt64OrtTensorArgumentValue(this IEvaluateContext context, Op op,
         ParameterInfo parameter)
     {

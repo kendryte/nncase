@@ -57,5 +57,5 @@ public static class Imaging
         => ResizeImage(resizeMode, 
                 tranMode, 
                 nearestMode,
-            input, roi, newSize, -0.75, 0, 0.0f, isTFResize);
+            input, roi, newSize, None.Default, None.Default, None.Default, isTFResize);
 }

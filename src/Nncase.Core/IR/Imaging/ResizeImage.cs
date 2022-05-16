@@ -29,7 +29,7 @@ namespace Nncase.IR.Imaging
         /// <summary>
         /// Gets roi.
         /// </summary>
-        public static readonly ParameterInfo Roi = new(typeof(ResizeImage), 1, "roi", IsFloatScalar());
+        public static readonly ParameterInfo Roi = new(typeof(ResizeImage), 1, "roi", IsNoneType() | IsFloatScalar());
 
         /// <summary>
         /// Gets new_size.
@@ -39,16 +39,16 @@ namespace Nncase.IR.Imaging
         /// <summary>
         /// Gets CubicCoeffA.
         /// </summary>
-        public static readonly ParameterInfo CubicCoeffA = new(typeof(ResizeImage), 3, "cubic_coeff_a", IsFloatScalar());
+        public static readonly ParameterInfo CubicCoeffA = new(typeof(ResizeImage), 3, "cubic_coeff_a", IsNoneType() | IsFloatScalar());
         
         /// <summary>
         /// Gets ExcludeOutside.
         /// </summary>
-        public static readonly ParameterInfo ExcludeOutside = new(typeof(ResizeImage), 4, "exclude_outside", IsIntegralScalar());
+        public static readonly ParameterInfo ExcludeOutside = new(typeof(ResizeImage), 4, "exclude_outside", IsNoneType() | IsIntegralScalar());
         
         /// <summary>
         /// Gets ExtrapolationValue.
         /// </summary>
-        public static readonly ParameterInfo ExtrapolationValue = new(typeof(ResizeImage), 5, "extrapolation_value", IsFloatScalar());
+        public static readonly ParameterInfo ExtrapolationValue = new(typeof(ResizeImage), 5, "extrapolation_value", IsNoneType() | IsFloatScalar());
     }
 }

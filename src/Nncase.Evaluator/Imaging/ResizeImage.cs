@@ -49,11 +49,11 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
     public IValue OnnxResize(IEvaluateContext context, ResizeImage target)
     {
         var input = context.GetOrtArgumentValue(target, ResizeImage.Input);
-        var roi = context.GetOrtArgumentValue(target, ResizeImage.Roi);
+        var roi = context.GetOptionalOrtArgumentValue(target, ResizeImage.Roi, Array.Empty<float>());
         var sizes = context.GetInt64OrtTensorArgumentValue(target, ResizeImage.NewSize);
-        var cubicCoeffA = context.GetArgumentValueAsScalar<float>(target, ResizeImage.CubicCoeffA);
-        var excludeOutside = context.GetArgumentValueAsScalar<long>(target, ResizeImage.ExcludeOutside);
-        var extrapolationValue = context.GetArgumentValueAsScalar<float>(target, ResizeImage.ExtrapolationValue);
+        var cubicCoeffA = context.GetOptionArgumentValueAsScalar<float>(target, ResizeImage.CubicCoeffA, -0.75f);
+        var excludeOutside = context.GetOptionArgumentValueAsScalar<long>(target, ResizeImage.ExcludeOutside, 0);
+        var extrapolationValue = context.GetOptionArgumentValueAsScalar<float>(target, ResizeImage.ExtrapolationValue, 0f);
         return OrtKI.ResizeWithSizes(input, roi, sizes, 
             ResizeModeHelper.ToString(target.TransformationMode), 
             cubicCoeffA, excludeOutside, extrapolationValue,

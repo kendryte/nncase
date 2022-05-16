@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 
 namespace Nncase.Evaluator;
@@ -59,6 +60,12 @@ public interface IEvaluateContext
         return GetValue(GetArgumentExpr(op, parameter));
     }
 
+    public Option<IValue> GetOptionalArgumentValue(Op op, ParameterInfo parameter)
+    {
+        var v = GetValue(GetArgumentExpr(op, parameter));
+        return v is NoneValue ? Option.None : Option.Some(v);
+    }
+    
     /// <summary>
     /// Get argument value as Tensor{T}
     /// </summary>
@@ -105,6 +112,14 @@ public interface IEvaluateContext
         where T : unmanaged, IEquatable<T>
     {
         return GetArgumentValue(op, parameter).AsTensor().ToScalar<T>();
+    }
+
+    public T GetOptionArgumentValueAsScalar<T>(Op op, ParameterInfo parameter, T dft)
+        where T : unmanaged, IEquatable<T>
+    {
+        return GetOptionalArgumentValue(op, parameter).Match(
+            x => x.AsTensor().ToScalar<T>(),
+            () => dft);
     }
 
     /// <summary>
