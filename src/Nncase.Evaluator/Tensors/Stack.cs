@@ -20,10 +20,9 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Stack stack)
     {
-        var inputs = context.GetArgumentExpr(stack, Stack.Inputs);
+        var inputs = context.GetArgumentValueAsTensors(stack, Stack.Inputs);
         var axis = context.GetArgumentValueAsScalar<long>(stack, Stack.Axis);
-        var inputTensors = ((IR.Tuple)inputs).Select(context.GetOrtValue).ToArray();
-        return OrtKI.ConcatFromSequence(inputTensors, axis, inputTensors.Length).ToValue();
+        return OrtKI.ConcatFromSequence(inputs.Select(t => t.ToOrtTensor()).ToArray(), axis, inputs.Length).ToValue();
     }
 
     /// <inheritdoc/>
