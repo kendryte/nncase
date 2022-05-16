@@ -20,17 +20,17 @@ using namespace nncase::runtime;
 namespace {
 class host_buffer_allocator : public buffer_allocator {
   public:
-    result<buffer_t> allocate(size_t bytes,
-                              const buffer_allocate_options &options) override {
+    result<buffer_t> allocate([[maybe_unused]] size_t bytes,
+                              [[maybe_unused]] const buffer_allocate_options &options) override {
         return err(std::errc::not_supported);
     }
 
-    result<buffer_t> attach(gsl::span<gsl::byte> data,
-                            const buffer_attach_options &options) override {
+    result<buffer_t> attach([[maybe_unused]] gsl::span<gsl::byte> data,
+                            [[maybe_unused]] const buffer_attach_options &options) override {
         return err(std::errc::not_supported);
     }
 
-    result<void> free(buffer_node &buffer) override {
+    result<void> free([[maybe_unused]] buffer_node &buffer) override {
         return err(std::errc::not_supported);
     }
 };

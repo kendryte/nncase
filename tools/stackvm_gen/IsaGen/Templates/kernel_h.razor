@@ -23,58 +23,20 @@
  * limitations under the License.
  */
 #pragma once
-#include "../datatypes.h"
-#include <vector>
+#include <nncase/kernels/kernel_context.h>
+#include <nncase/runtime/datatypes.h>
+#include <nncase/runtime/error.h>
+#include <nncase/runtime/result.h>
+#include <nncase/runtime/stackvm/opcode.h>
+#include <nncase/tensor.h>
+#include <nncase/value.h>
 
-BEGIN_NS_NNCASE_RT_MODULE(stackvm)
-
-// Enums
-@foreach (var e in Model.Enums)
-{
-@:
-@:enum class @e.CppName : @e.UnderlyingCppType
-@:{
-foreach (var f in e.Fields)
-{
-@:    @f.CppName = @f.Value,
-}
-@:};
-}
-
-// Instructions
-struct op_base_t
-{
-    opcode_t opcode;
-};
-@foreach (var inst in Model.Instructions.SelectMany(x => x.Value))
+BEGIN_NS_NNCASE_KERNELS_MODULE(stackvm)
+@foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.CppName))
 {
     var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:
-@:struct @(name)_op_t : public op_base_t
-@:{
-foreach (var field in inst.Fields.Where(x => !x.IsOpCode))
-{
-@:    @field.CppType @field.CppName;
-}
-@:};
+@:NNCASE_API result<void> @(name)(@string.Join(", ", inst.Fields.Where(x => !x.IsOpCode && x.CppName != "tensor_funct").Select(x => $"{(x.IsEnum && x.CppType != "typecode_t" ? "runtime::stackvm::" + x.CppType : x.CppType)} {x.CppName}").Concat(inst.Inputs.Select(x => $"{x.CppType} {x.CppName}").Concat(new[]{"tensor output = nullptr", "kernel_context &context = default_kernel_context()"}))));
 }
 
-// Tensor instructions
-struct tensor_op_base_t : public op_base_t
-{
-    tensor_function_t tensor_funct;
-};
-@foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.CppName))
-{
-    var name = "tensor_" + inst.CppName.ToLowerInvariant().Replace('.', '_');
-@:
-@:struct @(name)_op_t : public tensor_op_base_t
-@:{
-foreach (var field in inst.Fields.Where(x => !x.IsOpCode))
-{
-@:    @field.CppType @field.CppName;
-}
-@:};
-}
-
-END_NS_NNCASE_RT_MODULE
+END_NS_NNCASE_KERNELS_MODULE

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Nncase.CodeGen;
 
-internal class LinkedSection : ILinkedSection
+public class LinkedSection : ILinkedSection
 {
     private readonly byte[]? _content;
 

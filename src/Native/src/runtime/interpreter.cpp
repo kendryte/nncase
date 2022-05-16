@@ -156,8 +156,9 @@ result<void> interpreter::run() noexcept {
         ret_fields[i] = output_tensors_[i].impl();
     }
 
-    return entry_function_->invoke(params,
-                                   tuple(std::in_place, std::move(ret_fields)));
+    try_(entry_function_->invoke(params,
+                                   tuple(std::in_place, std::move(ret_fields))));
+    return ok();
 }
 
 result<runtime_module *> interpreter::find_module_by_id(size_t index) noexcept {

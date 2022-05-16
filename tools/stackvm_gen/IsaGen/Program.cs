@@ -27,6 +27,15 @@ namespace IsaGen
             var opreader_cpp = await ex.RenderAsync("Templates.op_reader_cpp");
             File.WriteAllText(Path.Combine(args[0], "src/Native/src/runtime/stackvm", "op_reader.cpp"), opreader_cpp);
 
+            var kernel_h = await ex.RenderAsync("Templates.kernel_h");
+            File.WriteAllText(Path.Combine(args[0], "src/Native/include/nncase/kernels/stackvm", "tensor_ops.h"), kernel_h);
+
+            var runtime_function_ops_h = await ex.RenderAsync("Templates.runtime_function_ops_h");
+            File.WriteAllText(Path.Combine(args[0], "src/Native/src/runtime/stackvm", "runtime_function_ops.h"), runtime_function_ops_h);
+
+            var runtime_function_tensor_ops_cpp = await ex.RenderAsync("Templates.runtime_function_tensor_ops_cpp");
+            File.WriteAllText(Path.Combine(args[0], "src/Native/src/runtime/stackvm/ops", "tensor.cpp"), runtime_function_tensor_ops_cpp);
+
             var emitter_cs = await ex.RenderAsync("Templates.emitter_cs");
             File.WriteAllText(Path.Combine(args[0], "modules/Nncase.Modules.StackVM/CodeGen/StackVM", "StackVMEmitter.g.cs"), emitter_cs);
 
@@ -85,7 +94,8 @@ namespace IsaGen
                                 Category: c,
                                 OpCode: inst.OpCode,
                                 Description: t.GetCustomAttribute<DescriptionAttribute>().Description,
-                                Fields: fs
+                                Fields: fs,
+                                Inputs: new()
                             ) by c).Select(x => new KeyValuePair<string, IReadOnlyList<InstructionInfo>>(x.Key, x.ToList())).ToList();
 
 
@@ -104,6 +114,7 @@ namespace IsaGen
             TensorInstructions = (from t in _tensorInsts.Select((x, i) => (x, i))
                                   let c = t.x.Namespace.Replace("Nncase.IR.", string.Empty)
                                   let fs = GetTensorInstructionFields(t.i, t.x)
+                                  let inputs = GetTensorInstructionInputs(t.x)
                                   group new InstructionInfo
                                   (
                                       index: t.i,
@@ -112,7 +123,8 @@ namespace IsaGen
                                       Category: c,
                                       OpCode: OpCode.TENSOR,
                                       Description: string.Empty,
-                                      Fields: fs
+                                      Fields: fs,
+                                      Inputs: inputs
                                   ) by c).Select(x => new KeyValuePair<string, IReadOnlyList<InstructionInfo>>(x.Key, x.ToList())).ToList();
 
             AddTensorFunctionEnum();
@@ -332,6 +344,30 @@ namespace IsaGen
             return fields.ToList();
         }
 
+        private List<InstructionInput> GetTensorInstructionInputs(Type t)
+        {
+            var props = new List<(int, FieldInfo)>();
+            var fields = new List<InstructionInput>();
+            foreach (var f in t.GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly))
+            {
+                int metadataToken = f.MetadataToken;
+                props.Add((metadataToken, f));
+            }
+
+            props.Sort((a, b) => a.Item1 - b.Item1);
+
+            foreach (var (m, f) in props)
+            {
+                fields.Add(new InstructionInput
+                            (
+                                CppType: "tensor",
+                                CppName: SnakeName(f.Name)
+                            ));
+            }
+
+            return fields.ToList();
+        }
+
         private string CppFieldValueText(PropertyInfo f, object v)
         {
             if (f.SetMethod != null)
@@ -383,6 +419,10 @@ namespace IsaGen
                 return "float";
             else if (t == typeof(Nncase.DataType))
                 return "typecode_t";
+            else if (t == typeof(string))
+                return "std::string";
+            else if (t == typeof(string[]))
+                return "std::vector<std::string>";
             else
                 return SnakeTypeName(t.Name);
         }
@@ -405,6 +445,10 @@ namespace IsaGen
                 return "float";
             else if (t == typeof(Nncase.DataType))
                 return "DataType";
+            else if (t == typeof(string))
+                return "string";
+            else if (t == typeof(string[]))
+                return "string[]";
             else
                 return PascalName(t.Name);
         }
@@ -430,7 +474,9 @@ namespace IsaGen
 
     public record InstructionField(string CppName, string CSharpName, string CSharpPropName, string CppType, string CSharpType, string UnderlyingCSharpType, uint Length, uint? Value, string CppValueText, string Description, bool IsEnum, bool IsOpCode);
 
-    public record InstructionInfo(int index, string CppName, string CSharpName, string Category, OpCode OpCode, string Description, List<InstructionField> Fields);
+    public record InstructionInput(string CppType, string CppName);
+
+    public record InstructionInfo(int index, string CppName, string CSharpName, string Category, OpCode OpCode, string Description, List<InstructionField> Fields, List<InstructionInput> Inputs);
 
     public record EnumFieldInfo(string CppName, uint Value, string Description);
 

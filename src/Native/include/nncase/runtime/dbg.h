@@ -896,8 +896,8 @@ auto identity(T &&, U &&...u) -> last_t<U...> {
         }                                                                      \
     }
 
-#define checked_try_var(name, x, ...)                                          \
-    typename decltype((x))::traits::ok_type name{__VA_ARGS__};                 \
+#define checked_try_var(name, x)                                               \
+    typename decltype((x))::traits::ok_type name;                              \
     {                                                                          \
         auto v = (x);                                                          \
         if (v.is_ok()) {                                                       \

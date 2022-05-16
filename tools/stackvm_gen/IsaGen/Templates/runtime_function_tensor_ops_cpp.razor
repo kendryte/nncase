@@ -22,59 +22,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include "../datatypes.h"
-#include <vector>
+#include "../runtime_function.h"
+#include <nncase/kernels/stackvm/tensor_ops.h>
 
-BEGIN_NS_NNCASE_RT_MODULE(stackvm)
+using namespace nncase;
+using namespace nncase::runtime;
+using namespace nncase::runtime::stackvm;
 
-// Enums
-@foreach (var e in Model.Enums)
-{
-@:
-@:enum class @e.CppName : @e.UnderlyingCppType
-@:{
-foreach (var f in e.Fields)
-{
-@:    @f.CppName = @f.Value,
-}
-@:};
-}
-
-// Instructions
-struct op_base_t
-{
-    opcode_t opcode;
-};
-@foreach (var inst in Model.Instructions.SelectMany(x => x.Value))
+BEGIN_NS_NNCASE_KERNELS_MODULE(stackvm)
+@foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.CppName))
 {
     var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:
-@:struct @(name)_op_t : public op_base_t
-@:{
-foreach (var field in inst.Fields.Where(x => !x.IsOpCode))
+@:result<void> stackvm_runtime_function::visit(const @(name)_op_t &op) noexcept {
+foreach(var input in Enumerable.Reverse(inst.Inputs))
 {
-@:    @field.CppType @field.CppName;
+@:    try_var(@input.CppName, pop_tensor());
 }
-@:};
+@:    tensor output;
+@:    try_(kernels::stackvm::@(name)(@string.Join(", ", inst.Fields.Where(x => !x.IsOpCode && x.CppName != "tensor_funct").Select(x => $"op.{x.CppName}").Concat(inst.Inputs.Select(x => $"{x.CppName}").Concat(new[]{"output", "module().kernel_context()"})))));
+@:    return ok(output);
+@:}
 }
-
-// Tensor instructions
-struct tensor_op_base_t : public op_base_t
-{
-    tensor_function_t tensor_funct;
-};
-@foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.CppName))
-{
-    var name = "tensor_" + inst.CppName.ToLowerInvariant().Replace('.', '_');
-@:
-@:struct @(name)_op_t : public tensor_op_base_t
-@:{
-foreach (var field in inst.Fields.Where(x => !x.IsOpCode))
-{
-@:    @field.CppType @field.CppName;
-}
-@:};
 }
 
-END_NS_NNCASE_RT_MODULE
+END_NS_NNCASE_KERNELS_MODULE

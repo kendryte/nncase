@@ -13,97 +13,67 @@
  * limitations under the License.
  */
 #pragma once
+#include "nncase/runtime/simple_types.h"
 #include <nncase/runtime/stackvm/op_reader.h>
+#include <sys/_types/_intptr_t.h>
+#include <variant>
+#include <vector>
 
 BEGIN_NS_NNCASE_RT_MODULE(stackvm)
 
-class stack_entry
-{
-public:
+class stack_entry {
+  public:
     stack_entry() = default;
 
-    stack_entry(uint8_t v) noexcept
-        : stack_entry((intptr_t)v)
-    {
+    stack_entry(uint8_t v) noexcept : stack_entry((intptr_t)v) {}
+
+    stack_entry(uint16_t v) noexcept : stack_entry((intptr_t)v) {}
+
+    stack_entry(uint32_t v) noexcept : stack_entry((intptr_t)v) {}
+
+    stack_entry(int8_t v) noexcept : stack_entry((intptr_t)v) {}
+
+    stack_entry(int16_t v) noexcept : stack_entry((intptr_t)v) {}
+
+    stack_entry(int32_t v) noexcept : stack_entry((intptr_t)v) {}
+
+    stack_entry(uintptr_t v) noexcept : stack_entry((intptr_t)v) {}
+
+    stack_entry(intptr_t v) noexcept : value_(v) {}
+
+    stack_entry(bfloat16 v) noexcept : stack_entry((float)v) {}
+
+    stack_entry(half v) noexcept : stack_entry((float)v) {}
+
+    stack_entry(float v) noexcept : value_(v) {}
+
+    stack_entry(dims_t v) noexcept : value_(std::move(v)) {}
+
+    bool is_real() const noexcept { return value_.index() == 1; }
+
+    uint8_t as_u1() const noexcept { return (uint8_t)as_i(); }
+    uint16_t as_u2() const noexcept { return (uint16_t)as_i(); }
+    uint32_t as_u4() const noexcept { return (uint32_t)as_i(); }
+    int8_t as_i1() const noexcept { return (int8_t)as_i(); }
+    int16_t as_i2() const noexcept { return (int16_t)as_i(); }
+    int32_t as_i4() const noexcept { return (int32_t)as_i(); }
+    uintptr_t as_u() const noexcept { return (uintptr_t)as_i(); }
+    intptr_t as_i() const noexcept { return std::get<intptr_t>(value_); }
+
+    bfloat16 as_br2() const noexcept {
+        return bfloat16::round_to_bfloat16(as_r());
     }
+    float as_r4() const noexcept { return as_r(); }
+    float as_r() const noexcept { return std::get<float>(value_); }
 
-    stack_entry(uint16_t v) noexcept
-        : stack_entry((intptr_t)v)
-    {
-    }
+    const dims_t &as_shape() const noexcept { return std::get<dims_t>(value_); }
 
-    stack_entry(uint32_t v) noexcept
-        : stack_entry((intptr_t)v)
-    {
-    }
-
-    stack_entry(int8_t v) noexcept
-        : stack_entry((intptr_t)v)
-    {
-    }
-
-    stack_entry(int16_t v) noexcept
-        : stack_entry((intptr_t)v)
-    {
-    }
-
-    stack_entry(int32_t v) noexcept
-        : stack_entry((intptr_t)v)
-    {
-    }
-
-    stack_entry(uintptr_t v) noexcept
-        : stack_entry((intptr_t)v)
-    {
-    }
-
-    stack_entry(intptr_t v) noexcept
-        : i_(v), is_real_(false)
-    {
-    }
-
-    stack_entry(bfloat16 v) noexcept
-        : stack_entry((float)v)
-    {
-    }
-
-    stack_entry(half v) noexcept
-        : stack_entry((float)v)
-    {
-    }
-
-    stack_entry(float v) noexcept
-        : r_(v), is_real_(true)
-    {
-    }
-
-    bool is_real() const noexcept { return is_real_; }
-
-    uint8_t as_u1() const noexcept { return (uint8_t)i_; }
-    uint16_t as_u2() const noexcept { return (uint16_t)i_; }
-    uint32_t as_u4() const noexcept { return (uint32_t)i_; }
-    int8_t as_i1() const noexcept { return (int8_t)i_; }
-    int16_t as_i2() const noexcept { return (int16_t)i_; }
-    int32_t as_i4() const noexcept { return (int32_t)i_; }
-    uintptr_t as_u() const noexcept { return (uintptr_t)i_; }
-    intptr_t as_i() const noexcept { return i_; }
-
-    bfloat16 as_br2() const noexcept { return bfloat16::round_to_bfloat16(r_); }
-    float as_r4() const noexcept { return r_; }
-    float as_r() const noexcept { return r_; }
-
-private:
-    union
-    {
-        intptr_t i_;
-        float r_;
-    };
-    bool is_real_;
+  private:
+    std::variant<intptr_t, float, dims_t> value_;
 };
 
-class evaluate_stack
-{
-public:
+class evaluate_stack {
+  public:
     evaluate_stack() noexcept;
 
     bool empty() const noexcept;
@@ -112,7 +82,7 @@ public:
     result<stack_entry> pop() noexcept;
     result<void> push(stack_entry entry) noexcept;
 
-private:
+  private:
     std::vector<stack_entry> entries_;
     size_t top_;
 };

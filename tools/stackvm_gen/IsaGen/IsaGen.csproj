@@ -17,6 +17,9 @@
     <None Remove="Templates\op_reader_cpp.razor" />
     <None Remove="Templates\op_reader_h.razor" />
     <None Remove="Templates\op_writer_cpp.razor" />
+    <None Remove="Templates\kernel_h.razor" />
+    <None Remove="Templates\runtime_function_ops_h.razor" />
+    <None Remove="Templates\runtime_function_tensor_ops_cpp.razor" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,6 +29,9 @@
     <EmbeddedResource Include="Templates\emitter_cs.razor" />
     <EmbeddedResource Include="Templates\op_reader_h.razor" />
     <EmbeddedResource Include="Templates\opcode_h.razor" />
+    <EmbeddedResource Include="Templates\kernel_h.razor" />
+    <EmbeddedResource Include="Templates\runtime_function_ops_h.razor" />
+    <EmbeddedResource Include="Templates\runtime_function_tensor_ops_cpp.razor" />
   </ItemGroup>
 
   <ItemGroup>

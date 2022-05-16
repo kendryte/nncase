@@ -37,8 +37,7 @@
 #if gsl_CPP17_OR_GREATER
 #define NNCASE_INLINE_VAR inline
 #define NNCASE_UNUSED [[maybe_unused]]
-namespace nncase
-{
+namespace nncase {
 template <class Callable, class... Args>
 using invoke_result_t = std::invoke_result_t<Callable, Args...>;
 }
@@ -49,8 +48,7 @@ using invoke_result_t = std::invoke_result_t<Callable, Args...>;
 #else
 #define NNCASE_UNUSED __attribute__((unused))
 #endif
-namespace nncase
-{
+namespace nncase {
 template <class Callable, class... Args>
 using invoke_result_t = std::result_of_t<Callable(Args...)>;
 }
@@ -62,47 +60,48 @@ using invoke_result_t = std::result_of_t<Callable(Args...)>;
 #define NNCASE_NODISCARD gsl_NODISCARD
 #define NNCASE_NORETURN gsl_NORETURN
 
-#define BEGIN_NS_NNCASE_RUNTIME \
-    namespace nncase            \
-    {                           \
-        namespace runtime       \
-        {
-#define END_NS_NNCASE_RUNTIME \
-    }                         \
+#define BEGIN_NS_NNCASE_RUNTIME                                                \
+    namespace nncase {                                                         \
+    namespace runtime {
+#define END_NS_NNCASE_RUNTIME                                                  \
+    }                                                                          \
     }
 
-#define BEGIN_NS_NNCASE_RT_MODULE(MODULE) \
-    namespace nncase                      \
-    {                                     \
-        namespace runtime                 \
-        {                                 \
-            namespace MODULE              \
-            {
+#define BEGIN_NS_NNCASE_RT_MODULE(MODULE)                                      \
+    namespace nncase {                                                         \
+    namespace runtime {                                                        \
+    namespace MODULE {
 
-#define END_NS_NNCASE_RT_MODULE \
-    }                           \
-    }                           \
+#define END_NS_NNCASE_RT_MODULE                                                \
+    }                                                                          \
+    }                                                                          \
     }
 
-#define BEGIN_NS_NNCASE_KERNELS \
-    namespace nncase            \
-    {                           \
-        namespace kernels       \
-        {
+#define BEGIN_NS_NNCASE_KERNELS                                                \
+    namespace nncase {                                                         \
+    namespace kernels {
 
-#define END_NS_NNCASE_KERNELS \
-    }                         \
+#define END_NS_NNCASE_KERNELS                                                  \
+    }                                                                          \
+    }
+
+#define BEGIN_NS_NNCASE_KERNELS_MODULE(MODULE)                                 \
+    namespace nncase {                                                         \
+    namespace kernels {                                                        \
+    namespace MODULE {
+
+#define END_NS_NNCASE_KERNELS_MODULE                                           \
+    }                                                                          \
+    }                                                                          \
     }
 
 #ifndef DEFINE_ENUM_BITMASK_OPERATORS
-#define DEFINE_ENUM_BITMASK_OPERATORS(ENUMTYPE) gsl_DEFINE_ENUM_BITMASK_OPERATORS(ENUMTYPE)
+#define DEFINE_ENUM_BITMASK_OPERATORS(ENUMTYPE)                                \
+    gsl_DEFINE_ENUM_BITMASK_OPERATORS(ENUMTYPE)
 #endif
 
-namespace nncase
-{
-struct default_init_t
-{
-};
+namespace nncase {
+struct default_init_t {};
 
-NNCASE_INLINE_VAR constexpr default_init_t default_init {};
-}
+NNCASE_INLINE_VAR constexpr default_init_t default_init{};
+} // namespace nncase

@@ -14,6 +14,7 @@
  */
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/type_serializer.h>
+#include <utility>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -70,17 +71,17 @@ result<datatype_t> runtime::deserialize_datatype(span_reader &sr) noexcept {
     switch (typecode) {
     case dt_pointer: {
         checked_try_var(elem_type, deserialize_datatype(sr));
-        return ok<datatype_t>(pointer_type_t(elem_type));
+        return ok<datatype_t>(pointer_type_t(std::in_place, elem_type));
     }
     case dt_valuetype: {
         auto uuid = sr.read_unaligned<uuid_t>();
         auto size_bytes = sr.read_unaligned<uint32_t>();
-        return ok<datatype_t>(value_type_t(uuid, size_bytes));
+        return ok<datatype_t>(value_type_t(std::in_place, uuid, size_bytes));
     }
         // prim types
     default: {
         if (typecode >= dt_boolean && typecode <= dt_bfloat16) {
-            return ok<datatype_t>(prim_type_t(typecode));
+            return ok<datatype_t>(prim_type_t(std::in_place, typecode));
         } else {
             return err(std::errc::invalid_argument);
         }

@@ -15,7 +15,10 @@
 #pragma once
 #include <cstring>
 #include <gsl/gsl-lite.hpp>
+#include <iterator>
 #include <nncase/compiler_defs.h>
+#include <string>
+#include <vector>
 
 BEGIN_NS_NNCASE_RUNTIME
 
@@ -56,9 +59,32 @@ class span_reader {
         return span;
     }
 
+    std::string read_string() {
+        auto span = read_until((gsl::byte)0).as_span<const char>();
+        advance(1);
+        return {span.begin(), span.end()};
+    }
+
+    std::vector<std::string> read_string_array() {
+        std::vector<std::string> array;
+        while (true) {
+            if (peek<char>() == '\0') {
+                advance(1);
+                break;
+            }
+            array.emplace_back(read_string());
+        }
+        return array;
+    }
+
     void read_avail(gsl::span<const gsl::byte> &span) {
         span = span_;
         span_ = {};
+    }
+
+    gsl::span<const gsl::byte> read_until(gsl::byte value) {
+        auto it = std::find(span_.begin(), span_.end(), value);
+        return read_span((size_t)std::distance(span_.begin(), it));
     }
 
     gsl::span<const gsl::byte> read_avail() {

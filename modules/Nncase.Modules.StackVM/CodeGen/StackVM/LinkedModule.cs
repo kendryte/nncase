@@ -14,6 +14,11 @@ internal class LinkedModule : ILinkedModule
 {
     public LinkedModule(IReadOnlyList<LinkedFunction> functions, byte[] text, byte[] rdata)
     {
+        Functions = functions;
+        Sections = new[]{
+            new LinkedSection(text, ".text", 0, 8, (uint)text.Length),
+            new LinkedSection(rdata, ".rdata", 0, 8, (uint)rdata.Length)
+        };
     }
 
     public string ModuleKind => StackVMRTModule.Kind;

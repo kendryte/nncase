@@ -92,8 +92,8 @@ result<void> runtime_function::initialize(
     return initialize_core(init_context);
 }
 
-result<void> runtime_function::invoke(gsl::span<value_t> parameters,
+result<value_t> runtime_function::invoke(gsl::span<value_t> parameters,
                                       value_t return_value) noexcept {
-    checked_try(invoke_core(parameters, return_value));
-    return ok();
+    checked_try_var(retval, invoke_core(parameters, return_value));
+    return ok(retval);
 }

@@ -51,6 +51,7 @@ result<buffer_t> attach_buffer(gsl::span<gsl::byte> data,
                                hrt::data_deleter_t deleter,
                                hrt::memory_pool_t pool) noexcept {
     buffer_attach_options options{};
+    options.deleter = std::move(deleter);
 
     result<buffer_t> buffer(std::errc::not_enough_memory);
     while (true) {

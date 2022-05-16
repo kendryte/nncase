@@ -100,6 +100,27 @@ public sealed partial class StackVMEmitter
         _writer.Write(value);
     }
 
+    private void Write(bool value)
+    {
+        _writer.Write(value);
+    }
+
+    private void Write(string value)
+    {
+        _writer.Write(Encoding.UTF8.GetBytes(value));
+        _writer.Write((byte)0);
+    }
+
+    private void Write(string[] value)
+    {
+        foreach (var str in value)
+        {
+            Write(str);
+        }
+        
+        _writer.Write((byte)0);
+    }
+
     private void Write(DataType value)
     {
         // TODO: Support generic datatype.

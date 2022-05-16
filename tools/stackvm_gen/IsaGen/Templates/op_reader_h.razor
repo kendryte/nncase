@@ -73,6 +73,14 @@ foreach (var field in inst.Fields)
     {
 @:        op.@field.CppName = static_cast<@field.CppType>(reader.read_unaligned<uint@(field.Length)_t>());
     }
+    else if (field.CppType == "std::string")
+    {
+@:        op.@field.CppName = reader.read_string();
+    }
+    else if (field.CppType == "std::vector<std::string>")
+    {
+@:        op.@field.CppName = reader.read_string_array();
+    }
     else
     {
 @:        op.@field.CppName = reader.read_unaligned<@field.CppType>();

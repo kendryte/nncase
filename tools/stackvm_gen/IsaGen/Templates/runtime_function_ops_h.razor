@@ -22,59 +22,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include "../datatypes.h"
-#include <vector>
 
-BEGIN_NS_NNCASE_RT_MODULE(stackvm)
-
-// Enums
-@foreach (var e in Model.Enums)
-{
-@:
-@:enum class @e.CppName : @e.UnderlyingCppType
-@:{
-foreach (var f in e.Fields)
-{
-@:    @f.CppName = @f.Value,
-}
-@:};
-}
-
-// Instructions
-struct op_base_t
-{
-    opcode_t opcode;
-};
 @foreach (var inst in Model.Instructions.SelectMany(x => x.Value))
 {
     var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
-@:
-@:struct @(name)_op_t : public op_base_t
-@:{
-foreach (var field in inst.Fields.Where(x => !x.IsOpCode))
-{
-@:    @field.CppType @field.CppName;
-}
-@:};
+@:result<void> visit(const @(name)_op_t &op) noexcept override;
 }
 
-// Tensor instructions
-struct tensor_op_base_t : public op_base_t
-{
-    tensor_function_t tensor_funct;
-};
 @foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.CppName))
 {
     var name = "tensor_" + inst.CppName.ToLowerInvariant().Replace('.', '_');
-@:
-@:struct @(name)_op_t : public tensor_op_base_t
-@:{
-foreach (var field in inst.Fields.Where(x => !x.IsOpCode))
-{
-@:    @field.CppType @field.CppName;
+@:result<void> visit(const @(name)_op_t &op) noexcept override;
 }
-@:};
-}
-
-END_NS_NNCASE_RT_MODULE
