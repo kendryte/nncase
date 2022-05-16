@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using Autofac;
@@ -14,9 +15,9 @@ using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using OrtKISharp;
 using Xunit;
+using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
-using static Nncase.IR.F.Math;
 using static OrtKISharp.TensorHelper;
 using RangeOf = Nncase.IR.Math.RangeOf;
 using Tuple = Nncase.IR.Tuple;
@@ -160,6 +161,23 @@ public class UnitTestEvaluator : IHostFixtrue
     }
 
     [Fact]
+    public void TestConcat2()
+    {
+        var a = Const.FromTensor(Tensor.FromSpan<int>(Enumerable.Range(0, 12).ToArray(), new Shape(new[] { 1, 3, 4 })));
+        var b = Const.FromTensor(Tensor.FromSpan<int>(new int[12], new Shape(new[] { 1, 3, 4 })));
+        var inputList = new TupleConst(ImmutableArray.Create<Const>(a, b));
+        var expr = Tensors.Concat(inputList, 0);
+        CompilerServices.InferenceType(expr);
+
+        var tA = a.Value.ToOrtTensor();
+        var tB = b.Value.ToOrtTensor();
+
+        Assert.Equal(
+            OrtKI.Concat(new[] { tA, tB }, 0),
+            expr.Evaluate().AsTensor().ToOrtTensor());
+    }
+
+    [Fact]
     public void TestStack()
     {
         Expr a = 1;
@@ -277,7 +295,7 @@ public class UnitTestEvaluator : IHostFixtrue
     {
         Assert.Equal(r, RangeOf(input).Evaluate().AsTensor().ToArray<float>());
     }
-    
+
     [Fact]
     public void TestRangeOf()
     {

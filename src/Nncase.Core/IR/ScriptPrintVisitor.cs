@@ -121,6 +121,16 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         return doc;
     }
 
+    public override IPrintSymbol Visit(Tuple expr)
+    {
+        if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
+        Scope.Push();
+        Scope.Append($"{{{string.Join(", ", (from item in expr select Visit(item).ToString()))}}}");
+        doc = new(Scope.Pop());
+        exprMemo.Add(expr, doc);
+        return doc;
+    }
+
     /// <inheritdoc/>
     public override IPrintSymbol Visit(Call expr)
     {
@@ -173,13 +183,17 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
                 doc = new(new($"{string.Join(",", @const.Value.ToArray<int>().Select(i => "0x" + i.ToString("X")))}"));
             }
         }
+        else if (expr is TupleConst tp)
+        {
+            doc = new(new($"{{{string.Join(",", tp.Fields.Select(Visit))}}}"));
+        }
         else
         {
-            throw new NotSupportedException("The Tir NotSupport the Tuple Const!");
+            throw new NotSupportedException();
         }
 
-        exprMemo.Add(expr, doc);
-        return doc;
+        exprMemo.Add(expr, doc!);
+        return doc!;
     }
 
     /// <inheritdoc/>

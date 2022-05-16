@@ -21,7 +21,7 @@ public sealed record Stack() : Op
     /// <summary>
     /// Gets inputs.
     /// </summary>
-    public static readonly ParameterInfo Inputs = new(typeof(Stack), 0, "inputs");
+    public static readonly ParameterInfo Inputs = new(typeof(Stack), 0, "inputs", IsTuple());
 
     /// <summary>
     /// Gets axis.

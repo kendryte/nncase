@@ -94,13 +94,13 @@ public struct BFloat16 : IEquatable<BFloat16>
     }
 
     public static BFloat16 Infinity => FromRaw(0x7f80);
-    
+
     public static BFloat16 NegInfinity => FromRaw(0xff80);
 
     public static BFloat16 Epsilon => FromRaw(0x3c00);
 
     public static BFloat16 NaN => FromRaw(0x7fc0);
-    
+
     /// <summary>
     /// Returns a value indicating whether this instance and other BFloat16 represent the same value.
     /// </summary>
@@ -136,5 +136,11 @@ public struct BFloat16 : IEquatable<BFloat16>
     public override int GetHashCode()
     {
         return _value.GetHashCode();
+    }
+
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return ((float)this).ToString();
     }
 }
