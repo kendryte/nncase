@@ -58,8 +58,8 @@ class NNCASE_API interpreter {
     interpreter(interpreter &) = delete;
     interpreter(interpreter &&) = default;
 
-    [[nodiscard]] result<void>
-    load_model(gsl::span<const gsl::byte> buffer) noexcept;
+    [[nodiscard]] result<void> load_model(gsl::span<const gsl::byte> buffer,
+                                          bool copy_buffer = false) noexcept;
 
     options_dict &options() noexcept;
     result<runtime_module *> find_module_by_id(size_t index) noexcept;
@@ -90,6 +90,7 @@ class NNCASE_API interpreter {
     tensor_type output_tensor_type(size_t index) const noexcept;
 
   private:
+    std::unique_ptr<gsl::byte[]> model_data_;
     std::vector<std::unique_ptr<runtime_module>> modules_;
     runtime_function *entry_function_;
     options_dict options_;

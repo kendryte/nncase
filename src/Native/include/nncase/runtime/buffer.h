@@ -26,7 +26,6 @@ class NNCASE_API buffer_node : public object_node {
 
   public:
     buffer_node(size_t size_bytes, buffer_allocator &allocator);
-    ~buffer_node();
 
     size_t size_bytes() const noexcept { return size_bytes_; }
     buffer_allocator &allocator() const noexcept { return allocator_; }

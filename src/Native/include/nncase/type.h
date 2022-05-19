@@ -28,6 +28,16 @@ class NNCASE_API type_node : public object_node {
 /** @brief Type */
 using type = object_t<type_node>;
 
+class any_type_node;
+
+/** @brief Any type */
+class any_type : public object_t<any_type_node> {
+  public:
+    using object_t::object_t;
+
+    static any_type value;
+};
+
 /** @brief Any type node */
 class NNCASE_API any_type_node : public type_node {
     DEFINE_OBJECT_KIND(object_node, object_any_type);
@@ -35,8 +45,15 @@ class NNCASE_API any_type_node : public type_node {
   public:
 };
 
-/** @brief Any type */
-using any_type = object_t<any_type_node>;
+class invalid_type_node;
+
+/** @brief Invalid type */
+class invalid_type : public object_t<invalid_type_node> {
+  public:
+    using object_t::object_t;
+
+    static invalid_type value;
+};
 
 /** @brief Invalid type node */
 class NNCASE_API invalid_type_node : public type_node {
@@ -57,9 +74,6 @@ class NNCASE_API invalid_type_node : public type_node {
   private:
     std::string reason_;
 };
-
-/** @brief Invalid type */
-using invalid_type = object_t<invalid_type_node>;
 
 /** @brief Tensor type node */
 class NNCASE_API tensor_type_node : public type_node {

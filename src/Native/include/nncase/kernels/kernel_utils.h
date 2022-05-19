@@ -88,9 +88,9 @@ inline size_t get_windowed_output_size(size_t size, int32_t filter, int32_t stri
     return (size_t)((int32_t)size + padding.before + padding.after - effective_filter_size + stride) / stride;
 }
 
-inline runtime_shape_t get_binary_output_shape(const runtime_shape_t &input_a_shape, const runtime_shape_t &input_b_shape)
-{
-    runtime_shape_t out_shape;
+inline dims_t get_binary_output_shape(const dims_t &input_a_shape,
+                                      const dims_t &input_b_shape) {
+    dims_t out_shape;
 
     const auto dest_dims = (int32_t)std::max(input_a_shape.size(), input_b_shape.size());
     const auto in_a_ext = dest_dims - (int32_t)input_a_shape.size();
@@ -249,7 +249,7 @@ constexpr T quantize(float value, const quant_param_t &param) noexcept
     return (T)clamp((int32_t)lrintf(value / param.scale + param.zero_point), (int32_t)std::numeric_limits<T>::lowest(), (int32_t)std::numeric_limits<T>::max());
 }
 
-inline std::pair<float, float> get_resize_scales(const runtime_shape_t &in_shape, int32_t out_h, int32_t out_w, bool align_corners)
+inline std::pair<float, float> get_resize_scales(const dims_t &in_shape, int32_t out_h, int32_t out_w, bool align_corners)
 {
     auto height_scale = (float)in_shape[2] / out_h;
     auto width_scale = (float)in_shape[3] / out_w;

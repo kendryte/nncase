@@ -28,22 +28,16 @@
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
-
-BEGIN_NS_NNCASE_KERNELS_MODULE(stackvm)
 @foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.CppName))
 {
     var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:
-@:result<void> stackvm_runtime_function::visit(const @(name)_op_t &op) noexcept {
+@:result<void> stackvm_runtime_function::visit(const tensor_@(name)_op_t &op) noexcept {
 foreach(var input in Enumerable.Reverse(inst.Inputs))
 {
 @:    try_var(@input.CppName, pop_tensor());
 }
-@:    tensor output;
-@:    try_(kernels::stackvm::@(name)(@string.Join(", ", inst.Fields.Where(x => !x.IsOpCode && x.CppName != "tensor_funct").Select(x => $"op.{x.CppName}").Concat(inst.Inputs.Select(x => $"{x.CppName}").Concat(new[]{"output", "module().kernel_context()"})))));
-@:    return ok(output);
+@:    try_var(output, kernels::stackvm::@(name)(@string.Join(", ", inst.Fields.Where(x => !x.IsOpCode && x.CppName != "tensor_funct").Select(x => $"op.{x.CppName}").Concat(inst.Inputs.Select(x => $"{x.CppName}").Concat(new[]{"nullptr", "module().kernel_context()"})))));
+@:    return stack_.push(std::move(output));
 @:}
 }
-}
-
-END_NS_NNCASE_KERNELS_MODULE

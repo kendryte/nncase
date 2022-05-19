@@ -50,7 +50,7 @@ class NNCASE_API tensor_node : public value_node {
 
     result<void> copy_from(tensor src) const noexcept;
     result<void> copy_to(tensor dest) const noexcept;
-    result<tensor> to_host() const noexcept;
+    result<tensor> to_host() noexcept;
 
   private:
     datatype_t dtype_;

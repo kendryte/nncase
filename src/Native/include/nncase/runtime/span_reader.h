@@ -112,8 +112,13 @@ class span_reader {
         return peek_unaligned_with_offset<T>(0);
     }
 
-    template <class T> const T *get_ref() {
+    template <class T> const T *peek_ref() {
         auto ptr = reinterpret_cast<const T *>(span_.data());
+        return ptr;
+    }
+
+    template <class T> const T *get_ref() {
+        auto ptr = peek_ref<T>();
         advance(sizeof(T));
         return ptr;
     }

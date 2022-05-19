@@ -17,8 +17,20 @@
 
 using namespace nncase;
 
-namespace {
-result<prim_type_t> from_typecode(typecode_t typecode) {
+prim_type_t datatype_t::uint8(std::in_place, dt_uint8);
+prim_type_t datatype_t::uint16(std::in_place, dt_uint16);
+prim_type_t datatype_t::uint32(std::in_place, dt_uint32);
+prim_type_t datatype_t::uint64(std::in_place, dt_uint64);
+prim_type_t datatype_t::int8(std::in_place, dt_uint8);
+prim_type_t datatype_t::int16(std::in_place, dt_uint16);
+prim_type_t datatype_t::int32(std::in_place, dt_uint32);
+prim_type_t datatype_t::int64(std::in_place, dt_uint64);
+prim_type_t datatype_t::float16(std::in_place, dt_float16);
+prim_type_t datatype_t::float32(std::in_place, dt_float32);
+prim_type_t datatype_t::float64(std::in_place, dt_float64);
+prim_type_t datatype_t::bfloat16(std::in_place, dt_bfloat16);
+
+result<prim_type_t> datatype_t::from_typecode(typecode_t typecode) {
     switch (typecode) {
     case dt_uint8:
         return ok(datatype_t::uint8);
@@ -48,20 +60,6 @@ result<prim_type_t> from_typecode(typecode_t typecode) {
         return err(std::errc::invalid_argument);
     }
 }
-} // namespace
-
-prim_type_t datatype_t::uint8(std::in_place, dt_uint8);
-prim_type_t datatype_t::uint16(std::in_place, dt_uint16);
-prim_type_t datatype_t::uint32(std::in_place, dt_uint32);
-prim_type_t datatype_t::uint64(std::in_place, dt_uint64);
-prim_type_t datatype_t::int8(std::in_place, dt_uint8);
-prim_type_t datatype_t::int16(std::in_place, dt_uint16);
-prim_type_t datatype_t::int32(std::in_place, dt_uint32);
-prim_type_t datatype_t::int64(std::in_place, dt_uint64);
-prim_type_t datatype_t::float16(std::in_place, dt_float16);
-prim_type_t datatype_t::float32(std::in_place, dt_float32);
-prim_type_t datatype_t::float64(std::in_place, dt_float64);
-prim_type_t datatype_t::bfloat16(std::in_place, dt_bfloat16);
 
 datatype_t::datatype_t(typecode_t typecode)
     : datatype_t(from_typecode(typecode).unwrap()) {}

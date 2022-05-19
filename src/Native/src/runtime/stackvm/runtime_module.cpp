@@ -29,6 +29,7 @@ result<void> stackvm_runtime_module::initialize_before_functions(
     runtime_module_init_context &context) noexcept {
     assert(context.is_section_pinned());
     rdata_ = context.section(".rdata");
+    regs_[0] = (uintptr_t)rdata_.data();
     return ok();
 }
 

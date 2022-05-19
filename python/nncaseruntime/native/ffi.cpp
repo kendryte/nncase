@@ -82,7 +82,7 @@ PYBIND11_MODULE(_nncaseruntime, m)
 
     py::class_<interpreter>(m, "Interpreter")
         .def(py::init())
-        .def("load_model", [](interpreter &interp, gsl::span<const gsl::byte> buffer) { interp.load_model(buffer).unwrap_or_throw(); })
+        .def("load_model", [](interpreter &interp, gsl::span<const gsl::byte> buffer) { interp.load_model(buffer, true).unwrap_or_throw(); })
         .def_property_readonly("inputs_size", &interpreter::inputs_size)
         .def_property_readonly("outputs_size", &interpreter::outputs_size)
         .def("get_input_desc", &interpreter::input_desc)

@@ -19,19 +19,6 @@
 
 BEGIN_NS_NNCASE_RUNTIME
 
-typedef enum sync_op_ { sync_invalidate, sync_write_back } sync_op_t;
-
-typedef enum map_access_ {
-    map_none = 0,
-    map_read = 1,
-    map_write = 2,
-    map_read_write = 3
-} map_access_t;
-
-DEFINE_ENUM_BITMASK_OPERATORS(map_access_t)
-
-enum class host_sync_status_t { valid, need_invalidate, need_write_back };
-
 class host_buffer_node;
 using host_buffer_t = object_t<host_buffer_node>;
 

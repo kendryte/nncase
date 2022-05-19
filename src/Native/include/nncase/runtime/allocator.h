@@ -41,8 +41,6 @@ class NNCASE_API buffer_allocator {
     virtual result<buffer_t> attach(gsl::span<gsl::byte> data,
                                     const buffer_attach_options &options) = 0;
 
-    virtual result<void> free(buffer_node &buffer) = 0;
-
     static buffer_allocator &host();
 };
 

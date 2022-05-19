@@ -14,8 +14,8 @@
  */
 #pragma once
 #include "nncase/runtime/simple_types.h"
+#include <nncase/object.h>
 #include <nncase/runtime/stackvm/op_reader.h>
-#include <sys/_types/_intptr_t.h>
 #include <variant>
 #include <vector>
 
@@ -49,7 +49,14 @@ class stack_entry {
 
     stack_entry(dims_t v) noexcept : value_(std::move(v)) {}
 
-    bool is_real() const noexcept { return value_.index() == 1; }
+    template <class T,
+              class = std::enable_if_t<std::is_convertible_v<T, object>>>
+    stack_entry(T v) noexcept : value_(object(std::move(v))) {}
+
+    bool is_i() const noexcept { return value_.index() == 0; }
+    bool is_r() const noexcept { return value_.index() == 1; }
+    bool is_shape() const noexcept { return value_.index() == 2; }
+    bool is_object() const noexcept { return value_.index() == 3; }
 
     uint8_t as_u1() const noexcept { return (uint8_t)as_i(); }
     uint16_t as_u2() const noexcept { return (uint16_t)as_i(); }
@@ -67,9 +74,12 @@ class stack_entry {
     float as_r() const noexcept { return std::get<float>(value_); }
 
     const dims_t &as_shape() const noexcept { return std::get<dims_t>(value_); }
+    const object &as_object() const noexcept {
+        return std::get<object>(value_);
+    }
 
   private:
-    std::variant<intptr_t, float, dims_t> value_;
+    std::variant<intptr_t, float, dims_t, object> value_;
 };
 
 class evaluate_stack {

@@ -44,5 +44,5 @@ public enum TypeSignatureToken : byte
     /// <summary>
     /// End of type signature.
     /// </summary>
-    End,
+    End = 0xFF,
 }

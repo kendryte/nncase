@@ -15,3 +15,6 @@
 #include <nncase/type.h>
 
 using namespace nncase;
+
+any_type any_type::value(std::in_place);
+invalid_type invalid_type::value(std::in_place);

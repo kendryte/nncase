@@ -13,25 +13,63 @@
  * limitations under the License.
  */
 #include <nncase/runtime/allocator.h>
+#include <nncase/runtime/host_buffer.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
 
 namespace {
+class host_buffer_impl : public host_buffer_node {
+  public:
+    host_buffer_impl(gsl::byte *data, size_t bytes,
+                     std::function<void(gsl::byte *)> deleter,
+                     buffer_allocator &allocator,
+                     host_sync_status_t host_sync_status)
+        : host_buffer_node(bytes, allocator, host_sync_status),
+          data_(std::move(data)),
+          deleter_(std::move(deleter)) {}
+
+    ~host_buffer_impl() { deleter_(data_); }
+
+    bool has_physical_address() const noexcept override { return false; }
+
+    result<uintptr_t> physical_address() noexcept override {
+        return err(std::errc::not_supported);
+    }
+
+    result<gsl::span<gsl::byte>> map_core(map_access_t access) override {
+        return ok(gsl::span<gsl::byte>(data_, size_bytes()));
+    }
+
+    result<void> unmap_core(map_access_t access) override { return ok(); }
+
+    result<void> sync_core(sync_op_t op) override { return ok(); }
+
+  private:
+    gsl::byte *data_;
+    std::function<void(gsl::byte *)> deleter_;
+};
+
 class host_buffer_allocator : public buffer_allocator {
   public:
-    result<buffer_t> allocate([[maybe_unused]] size_t bytes,
-                              [[maybe_unused]] const buffer_allocate_options &options) override {
-        return err(std::errc::not_supported);
+    result<buffer_t>
+    allocate([[maybe_unused]] size_t bytes,
+             [[maybe_unused]] const buffer_allocate_options &options) override {
+        auto data = new (std::nothrow) gsl::byte[bytes];
+        if (!data)
+            return err(std::errc::not_enough_memory);
+        return ok<buffer_t>(object_t<host_buffer_impl>(
+            std::in_place, data, bytes, [](gsl::byte *p) { delete[] p; }, *this,
+            host_sync_status_t::valid));
     }
 
-    result<buffer_t> attach([[maybe_unused]] gsl::span<gsl::byte> data,
-                            [[maybe_unused]] const buffer_attach_options &options) override {
-        return err(std::errc::not_supported);
-    }
-
-    result<void> free([[maybe_unused]] buffer_node &buffer) override {
-        return err(std::errc::not_supported);
+    result<buffer_t>
+    attach([[maybe_unused]] gsl::span<gsl::byte> data,
+           [[maybe_unused]] const buffer_attach_options &options) override {
+        return ok<buffer_t>(object_t<host_buffer_impl>(
+            std::in_place, data.data(), data.size_bytes(),
+            []([[maybe_unused]] gsl::byte *p) {}, *this,
+            host_sync_status_t::valid));
     }
 };
 

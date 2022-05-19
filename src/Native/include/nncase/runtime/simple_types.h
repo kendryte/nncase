@@ -14,7 +14,6 @@
  */
 #pragma once
 #include "../compiler_defs.h"
-#include "../object.h"
 #include "bfloat16.h"
 #include "half.h"
 #include "small_vector.hpp"
@@ -116,57 +115,70 @@ using uuid_t = std::array<uint8_t, 16>;
 using dims_t = itlib::small_vector<size_t, 4>;
 using strides_t = itlib::small_vector<size_t, 4>;
 
-typedef enum _reduce_op {
-    reduce_mean,
-    reduce_min,
-    reduce_max,
-    reduce_sum
-} reduce_op_t;
+struct padding {
+    int32_t before;
+    int32_t after;
+    int32_t interior = 0;
 
-typedef enum _binary_op {
-    binary_add,
-    binary_sub,
-    binary_mul,
-    binary_div,
-    binary_mod,
-    binary_min,
-    binary_max,
-    binary_pow,
-    binary_bitwise_and,
-    binary_bitwise_or,
-    binary_bitwise_xor,
-    binary_logical_and,
-    binary_logical_or,
-    binary_logical_xor
-} binary_op_t;
+    int32_t sum() const noexcept { return before + after; }
 
-typedef enum _unary_op {
-    unary_abs,
-    unary_ceil,
-    unary_cos,
-    unary_exp,
-    unary_floor,
-    unary_log,
-    unary_neg,
-    unary_round,
-    unary_rsqrt,
-    unary_sin,
-    unary_sqrt,
-    unary_square,
-    unary_tanh,
-    unary_bitwise_not,
-    unary_logical_not
-} unary_op_t;
+    static padding zero() noexcept { return {}; }
+};
 
-typedef enum _image_resize_mode {
-    image_resize_bilinear,
-    image_resize_nearest_neighbor
-} image_resize_mode_t;
+template <class T> struct value_range {
+    T min;
+    T max;
 
-typedef enum _pad_mode {
-    pad_constant,
-    pad_reflect,
-    pad_symmetric,
-    pad_edge
-} pad_mode_t;
+    static constexpr value_range<T> full() noexcept {
+        if (std::is_floating_point<T>::value ||
+            std::is_same<T, bfloat16>::value || std::is_same<T, half>::value)
+            return {-std::numeric_limits<T>::infinity(),
+                    std::numeric_limits<T>::infinity()};
+        else
+            return {std::numeric_limits<T>::lowest(),
+                    std::numeric_limits<T>::max()};
+    }
+
+    static constexpr value_range<T> nonnegative() noexcept {
+        return {0, std::numeric_limits<T>::max()};
+    }
+
+    constexpr T length() const noexcept { return max - min; }
+};
+
+typedef struct _quant_param {
+    int32_t zero_point;
+    float scale;
+
+    template <class T> constexpr value_range<float> range() const noexcept {
+        return {(std::numeric_limits<T>::lowest() - zero_point) * scale,
+                (std::numeric_limits<T>::max() - zero_point) * scale};
+    }
+} quant_param_t;
+
+inline bool operator==(const quant_param_t &lhs,
+                       const quant_param_t &rhs) noexcept {
+    return lhs.zero_point == rhs.zero_point && lhs.scale == rhs.scale;
+}
+
+inline bool almost_equal(const quant_param_t &lhs,
+                         const quant_param_t &rhs) noexcept {
+    return lhs.zero_point == rhs.zero_point &&
+           fabs(lhs.scale - rhs.scale) <= std::numeric_limits<float>::epsilon();
+}
+
+namespace runtime {
+typedef enum sync_op_ { sync_invalidate, sync_write_back } sync_op_t;
+
+typedef enum map_access_ {
+    map_none = 0,
+    map_read = 1,
+    map_write = 2,
+    map_read_write = 3
+} map_access_t;
+
+DEFINE_ENUM_BITMASK_OPERATORS(map_access_t)
+
+enum class host_sync_status_t { valid, need_invalidate, need_write_back };
+} // namespace runtime
 } // namespace nncase

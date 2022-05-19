@@ -18,53 +18,42 @@
 using namespace nncase;
 using namespace nncase::runtime;
 
-gsl::span<const gsl::byte> runtime::find_section(const char *name, gsl::span<const gsl::byte> sections) noexcept
-{
+gsl::span<const gsl::byte>
+runtime::find_section(const char *name,
+                      gsl::span<const gsl::byte> sections) noexcept {
     span_reader reader(sections);
-    while (!reader.empty())
-    {
-        auto header = reader.get_ref<section_header>();
-        if (!strncmp(header->name, name, MAX_SECTION_NAME_LENGTH))
-        {
+    while (!reader.empty()) {
+        auto header = reader.peek_ref<section_header>();
+        if (!strncmp(header->name, name, MAX_SECTION_NAME_LENGTH)) {
             gsl::span<const gsl::byte> result;
-            if (header->flags & SECTION_MERGED_INTO_RDATA)
-            {
+            if (header->flags & SECTION_MERGED_INTO_RDATA) {
                 auto rdata_span = find_section(".rdata", sections);
-                result = rdata_span.subspan(header->body_start, header->body_size);
-            }
-            else
-            {
-                result = reader.read_avail().subspan(header->body_start, header->body_size);
+                result =
+                    rdata_span.subspan(header->body_start, header->body_size);
+            } else {
+                reader.skip(sizeof(section_header));
+                result = reader.read_avail().subspan(header->body_start,
+                                                     header->body_size);
             }
 
             return result;
-        }
-        else
-        {
-            if (!(header->flags & SECTION_MERGED_INTO_RDATA))
-                reader.skip((size_t)header->body_start + header->body_size);
+        } else {
+            reader.skip(header->size);
         }
     }
 
     return {};
 }
 
-gsl::span<const gsl::byte> runtime::read_sections(span_reader &sr, size_t sections) noexcept
-{
+gsl::span<const gsl::byte> runtime::read_sections(span_reader &sr,
+                                                  size_t sections) noexcept {
     auto nest_sr = sr;
     size_t size = 0;
 
-    for (size_t i = 0; i < sections; i++)
-    {
-        auto header = nest_sr.get_ref<section_header>();
-        size += sizeof(section_header);
-
-        if (!(header->flags & SECTION_MERGED_INTO_RDATA))
-        {
-            auto to_skip = (size_t)header->body_start + header->body_size;
-            nest_sr.skip(to_skip);
-            size += to_skip;
-        }
+    for (size_t i = 0; i < sections; i++) {
+        auto header = nest_sr.peek_ref<section_header>();
+        size += header->size;
+        nest_sr.skip(header->size);
     }
 
     return sr.read_span(size);

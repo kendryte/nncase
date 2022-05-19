@@ -30,6 +30,9 @@ namespace IsaGen
             var kernel_h = await ex.RenderAsync("Templates.kernel_h");
             File.WriteAllText(Path.Combine(args[0], "src/Native/include/nncase/kernels/stackvm", "tensor_ops.h"), kernel_h);
 
+            var dummy_kernel_cpp = await ex.RenderAsync("Templates.dummy_kernel_cpp");
+            File.WriteAllText(Path.Combine(args[0], "src/Native/src/kernels/stackvm", "dummy_tensor_ops.cpp"), dummy_kernel_cpp);
+
             var runtime_function_ops_h = await ex.RenderAsync("Templates.runtime_function_ops_h");
             File.WriteAllText(Path.Combine(args[0], "src/Native/src/runtime/stackvm", "runtime_function_ops.h"), runtime_function_ops_h);
 

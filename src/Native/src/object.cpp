@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <cassert>
 #include <nncase/object.h>
 
 using namespace nncase;
@@ -32,8 +33,9 @@ uint32_t object_node::add_ref() const noexcept {
 }
 
 uint32_t object_node::release() const noexcept {
+    assert(ref_count_);
     auto count = ref_count_.fetch_sub(1, std::memory_order_acq_rel);
-    if (!count) {
+    if (count == 1) {
         delete this;
     }
     return count;

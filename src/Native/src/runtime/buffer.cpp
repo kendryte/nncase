@@ -23,8 +23,6 @@ using namespace nncase::runtime;
 buffer_node::buffer_node(size_t size_bytes, buffer_allocator &allocator)
     : size_bytes_(size_bytes), allocator_(allocator) {}
 
-buffer_node::~buffer_node() { checked_dbg(allocator_.free(*this)); }
-
 result<host_buffer_slice> buffer_slice::as_host() const noexcept {
     checked_try_var(host_buffer, buffer_.as<host_buffer_t>());
     return ok(host_buffer_slice(host_buffer, start_, length_));

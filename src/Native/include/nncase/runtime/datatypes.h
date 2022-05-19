@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "../object.h"
 #include "simple_types.h"
 
 namespace nncase {
@@ -47,6 +48,8 @@ class NNCASE_API datatype_t : public object_t<datatype_node> {
     static prim_type_t bfloat16;
 
     datatype_t(typecode_t typecode);
+
+    static result<prim_type_t> from_typecode(typecode_t typecode);
 
     template <class T> static datatype_t from_type();
 };

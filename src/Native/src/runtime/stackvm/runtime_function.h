@@ -13,11 +13,13 @@
  * limitations under the License.
  */
 #pragma once
+#include "call_frame.h"
 #include "evaluate_stack.h"
 #include "runtime_module.h"
 #include <nncase/kernels/kernel_context.h>
 #include <nncase/runtime/runtime_function.h>
 #include <nncase/runtime/stackvm/op_reader.h>
+#include <nncase/tensor.h>
 
 BEGIN_NS_NNCASE_RT_MODULE(stackvm)
 
@@ -41,7 +43,17 @@ class stackvm_runtime_function : public runtime_function, private op_visitor {
     result<void> pc(uintptr_t value) noexcept;
     result<void> pc_relative(intptr_t offset) noexcept;
     result<uintptr_t> pop_addr() noexcept;
-    result<scalar> pop_scalar(datatype_t type) noexcept;
+    result<scalar> pop_scalar(typecode_t type) noexcept;
+    result<dims_t> pop_shape() noexcept;
+
+    template <class T> result<T> pop_object() noexcept {
+        try_var(var, stack_.pop());
+        if (var.is_object())
+            return var.as_object().as<T>();
+        return err(std::errc::invalid_argument);
+    }
+
+    result<tensor> pop_tensor() noexcept { return pop_object<tensor>(); }
 
     template <class T> result<T> pop_addr() noexcept {
         try_var(addr, pop_addr());
@@ -51,7 +63,7 @@ class stackvm_runtime_function : public runtime_function, private op_visitor {
   private:
     gsl::span<const gsl::byte> text_;
     evaluate_stack stack_;
-    size_t call_depth_;
+    call_frames frames_;
 };
 
 END_NS_NNCASE_RT_MODULE

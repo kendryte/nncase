@@ -127,6 +127,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
             snippet.AddInput(Visit(field));
         }
 
+        Emitter.LdcI4(expr.Count);
         Emitter.LdTuple();
         return snippet;
     }

@@ -16,6 +16,7 @@
 #include "object_kind.h"
 #include <atomic>
 #include <memory>
+#include <nncase/api.h>
 #include <nncase/runtime/result.h>
 #include <optional>
 #include <type_traits>
@@ -58,6 +59,7 @@ class NNCASE_API object_node {
     uint32_t release() const noexcept;
 
     template <class T> friend class object_t;
+    friend int ::nncase_object_free(nncase::object_node *node);
 
   private:
     mutable std::atomic<uint32_t> ref_count_;
@@ -73,10 +75,19 @@ template <class T> class object_t {
 
     object_t(T *node) noexcept : object_(node) { add_ref(); }
 
+    object_t(object_t &&other) noexcept : object_(other.object_) {
+        other.object_ = nullptr;
+    }
+
+    object_t(const object_t &other) noexcept : object_(other.object_) {
+        add_ref();
+    }
+
     template <class U,
               class = std::enable_if_t<std::is_convertible_v<U *, T *>>>
-    object_t(object_t<U> &&other) noexcept
-        : object_(std::move(other.object_)) {}
+    object_t(object_t<U> &&other) noexcept : object_(other.object_) {
+        other.object_ = nullptr;
+    }
 
     template <class U,
               class = std::enable_if_t<std::is_convertible_v<U *, T *>>>
@@ -125,6 +136,30 @@ template <class T> class object_t {
         else if (!empty() && !other.empty())
             return object_->equals(*other.get());
         return false;
+    }
+
+    object_t &operator=(object_t &&other) noexcept {
+        if (this != &other) {
+            release();
+            object_ = other.object_;
+            other.object_ = nullptr;
+        }
+        return *this;
+    }
+
+    object_t &operator=(const object_t &other) noexcept {
+        if (this != &other) {
+            release();
+            object_ = other.object_;
+            add_ref();
+        }
+        return *this;
+    }
+
+    T *detach() noexcept {
+        auto obj = object_;
+        object_ = nullptr;
+        return obj;
     }
 
   private:

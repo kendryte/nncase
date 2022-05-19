@@ -1,18 +1,21 @@
 ﻿cmake_minimum_required (VERSION 3.13)
 
-set(SRCS interpreter.cpp
-         error.cpp
-         runtime_loader.cpp
-         runtime_function.cpp
-         runtime_module.cpp
-         runtime_tensor.cpp
-         runtime_tensor_impl.cpp
-         section.cpp
-         host_runtime_tensor.cpp
-         allocator.cpp)
+set(SRCS buffer.cpp
+		 datatypes.cpp
+		 error.cpp
+		 host_allocator.cpp
+		 host_buffer.cpp
+		 host_runtime_tensor.cpp
+	     interpreter.cpp
+	     runtime_loader.cpp
+	     runtime_module.cpp
+		 runtime_function.cpp
+		 section.cpp
+		 type_serializer.cpp
+		 runtime_tensor.cpp)
 
 if ((NOT BUILDING_RUNTIME) OR DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL)
-    list(APPEND SRCS shared_runtime_tensor.platform.cpp)
+    #list(APPEND SRCS shared_runtime_tensor.platform.cpp)
 endif()
 
 if (BUILDING_RUNTIME)
@@ -28,9 +31,9 @@ if (BUILDING_RUNTIME)
 
     add_library(nncaseruntime STATIC dummy.cpp)
     target_link_libraries(nncaseruntime PRIVATE kernels runtime runtime_stackvm)
-    target_link_libraries(nncaseruntime PUBLIC gsl::gsl-lite mpark_variant::mpark_variant)
+    target_link_libraries(nncaseruntime PUBLIC nncasebase gsl::gsl-lite mpark_variant::mpark_variant)
     set_target_properties(nncaseruntime PROPERTIES
-                                        OUTPUT_NAME "nncase.runtime")
+                                        OUTPUT_NAME "Nncase.Runtime.Native")
     install(TARGETS nncaseruntime EXPORT nncaseruntimeTargets
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
@@ -54,6 +57,12 @@ else()
         target_compile_definitions(simulator PRIVATE -DNNCASE_DEFAULT_BUILTIN_RUNTIMES)
     endif ()
     set_property(TARGET simulator PROPERTY POSITION_INDEPENDENT_CODE ON)
+    
+    add_library(nncaseruntime SHARED dummy.cpp)
+    target_link_libraries(nncaseruntime PRIVATE kernels simulator simulator_stackvm)
+    target_link_libraries(nncaseruntime PUBLIC nncasebase gsl::gsl-lite mpark_variant::mpark_variant)
+    set_target_properties(nncaseruntime PROPERTIES
+                                        OUTPUT_NAME "Nncase.Runtime.Native")
 endif()
 
 add_subdirectory(stackvm)

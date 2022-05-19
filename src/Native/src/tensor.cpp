@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/tensor.h>
 #include <numeric>
@@ -24,11 +25,9 @@ tensor_node::tensor_node(datatype_t dtype, dims_t shape, strides_t strides,
     : dtype_(std::move(dtype)),
       shape_(std::move(shape)),
       strides_(std::move(strides)),
-      length_(std::reduce(shape_.begin(), shape_.end(), size_t(1),
-                          std::multiplies<>())),
+      length_(compute_size(shape_)),
       buffer_(buffer) {
-    assert(dtype_->size_bytes() * shape_.front() * strides_.front() ==
-           buffer.size_bytes());
+    assert(get_bytes(dtype_, shape_, strides_) == buffer.size_bytes());
 }
 
 bool tensor_node::is_contiguous() const noexcept {
@@ -43,6 +42,8 @@ result<void> tensor_node::copy_to(tensor dest) const noexcept {
     return err(std::errc::not_supported);
 }
 
-result<tensor> tensor_node::to_host() const noexcept {
+result<tensor> tensor_node::to_host() noexcept {
+    if (buffer_.buffer().is_a<host_buffer_t>())
+        return ok(tensor(this));
     return err(std::errc::not_supported);
 }

@@ -1,10 +1,6 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
-set(SRCS convolution.cpp
-         kernel_context.cpp
-         nnil.cpp
-         reduce_window.cpp
-         tensor_compute.cpp)
+set(SRCS kernel_context.cpp)
 
 if (BUILDING_RUNTIME)
     add_library(kernels OBJECT ${SRCS})
@@ -36,4 +32,4 @@ if(ENABLE_OPENMP)
     target_compile_definitions(kernels PRIVATE "-DNNCASE_OPENMP")
 endif()
 
-add_subdirectory(cpu)
+add_subdirectory(stackvm)

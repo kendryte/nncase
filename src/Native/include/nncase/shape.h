@@ -25,7 +25,7 @@ struct unknown_dim_t {};
 
 inline constexpr unknown_dim_t unknown_dim;
 
-enum dim_kind_t { dim_fixed = 0, dim_unknown = 1 };
+enum dim_kind_t { dim_unknown = 0, dim_fixed = 1 };
 
 using dim_value_t = int64_t;
 

@@ -22,9 +22,9 @@ using namespace nncase::runtime;
 result<type> runtime::deserialize_type(span_reader &sr) noexcept {
     switch (sr.read_unaligned<type_signature_token_t>()) {
     case type_sig_invalid:
-        return ok<type>(invalid_type());
+        return ok<type>(invalid_type::value);
     case type_sig_any:
-        return ok<type>(any_type());
+        return ok<type>(any_type::value);
     case type_sig_tensor: {
         checked_try_var(elem_type, deserialize_datatype(sr));
         shape_t shape(unranked_shape);

@@ -48,10 +48,12 @@ public static class TypeSerializer
                 writer.Write((byte)TypeSignatureToken.Any);
                 break;
             case TensorType t:
+                writer.Write((byte)TypeSignatureToken.Tensor);
                 Serialize(writer, t.DType);
                 Serialize(writer, t.Shape);
                 break;
             case TupleType t:
+                writer.Write((byte)TypeSignatureToken.Tuple);
                 foreach (var field in t.Fields)
                 {
                     Serialize(writer, field);

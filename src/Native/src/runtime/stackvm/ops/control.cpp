@@ -18,61 +18,56 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const nop_op_t &op) noexcept
-{
+result<void>
+stackvm_runtime_function::visit(NNCASE_UNUSED const nop_op_t &op) noexcept {
     return ok();
 }
 
-result<void> stackvm_runtime_function::visit(const br_op_t &op) noexcept
-{
+result<void> stackvm_runtime_function::visit(const br_op_t &op) noexcept {
     return pc_relative(op.target);
 }
 
-result<void> stackvm_runtime_function::visit(const br_true_op_t &op) noexcept
-{
+result<void> stackvm_runtime_function::visit(const br_true_op_t &op) noexcept {
     try_var(value, stack_.pop());
     if (value.as_i())
         return pc_relative(op.target);
     return ok();
 }
 
-result<void> stackvm_runtime_function::visit(const br_false_op_t &op) noexcept
-{
+result<void> stackvm_runtime_function::visit(const br_false_op_t &op) noexcept {
     try_var(value, stack_.pop());
     if (!value.as_i())
         return pc_relative(op.target);
     return ok();
 }
 
-result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const ret_op_t &op) noexcept
-{
-    if (call_depth_ == 0)
-    {
+result<void>
+stackvm_runtime_function::visit(NNCASE_UNUSED const ret_op_t &op) noexcept {
+    try_var(ret_addr, frames_.pop());
+    if (frames_.empty()) {
         interrupted_ = true;
         return ok();
     }
 
-    call_depth_--;
-    try_var(target, stack_.pop());
-    return pc(target.as_u());
+    return pc(ret_addr);
 }
 
-result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const call_op_t &op) noexcept
-{
+result<void>
+stackvm_runtime_function::visit(NNCASE_UNUSED const call_op_t &op) noexcept {
     return err(std::errc::not_supported);
 }
 
-result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const ecall_op_t &op) noexcept
-{
+result<void>
+stackvm_runtime_function::visit(NNCASE_UNUSED const ecall_op_t &op) noexcept {
     return err(std::errc::not_supported);
 }
 
-result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const throw_op_t &op) noexcept
-{
+result<void>
+stackvm_runtime_function::visit(NNCASE_UNUSED const throw_op_t &op) noexcept {
     return err(std::errc::not_supported);
 }
 
-result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const break_op_t &op) noexcept
-{
+result<void>
+stackvm_runtime_function::visit(NNCASE_UNUSED const break_op_t &op) noexcept {
     return err(std::errc::not_supported);
 }

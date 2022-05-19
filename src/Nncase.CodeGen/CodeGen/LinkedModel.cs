@@ -119,6 +119,7 @@ public sealed class LinkedModel
             BodySize = section.SizeInFile,
             MemorySize = section.SizeInMemory,
         };
+        FillSectionName(ref header, section.Name);
 
         var headerPos = writer.Position();
         writer.Skip((ulong)sizeof(SectionHeader));
@@ -144,6 +145,17 @@ public sealed class LinkedModel
             if (Encoding.UTF8.GetBytes(source, new Span<byte>(kind, ModelInfo.MAX_MODULE_KIND_LENGTH)) < 1)
             {
                 throw new ArgumentException("Invalid module kind");
+            }
+        }
+    }
+
+    private static unsafe void FillSectionName(ref SectionHeader header, string source)
+    {
+        fixed (byte* kind = header.Name)
+        {
+            if (Encoding.UTF8.GetBytes(source, new Span<byte>(kind, ModelInfo.MAX_SECTION_NAME_LENGTH)) < 1)
+            {
+                throw new ArgumentException("Invalid section name");
             }
         }
     }

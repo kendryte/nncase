@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <None Remove="Templates\codegen_cs.razor" />
+    <None Remove="Templates\dummy_kernel_cpp.razor" />
     <None Remove="Templates\emitter_cs.razor" />
     <None Remove="Templates\opcode_h.razor" />
     <None Remove="Templates\op_reader_cpp.razor" />
@@ -24,6 +25,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Templates\codegen_cs.razor" />
+    <EmbeddedResource Include="Templates\dummy_kernel_cpp.razor" />
     <EmbeddedResource Include="Templates\op_writer_cpp.razor" />
     <EmbeddedResource Include="Templates\op_reader_cpp.razor" />
     <EmbeddedResource Include="Templates\emitter_cs.razor" />

@@ -24,10 +24,20 @@
 using namespace nncase;
 using namespace nncase::runtime;
 
-interpreter::interpreter() noexcept : entry_function_(nullptr) {}
+interpreter::interpreter() noexcept
+    : entry_function_(nullptr), model_data_(nullptr) {}
 
-result<void>
-interpreter::load_model(gsl::span<const gsl::byte> buffer) noexcept {
+result<void> interpreter::load_model(gsl::span<const gsl::byte> buffer,
+                                     bool copy_buffer) noexcept {
+    entry_function_ = nullptr;
+    if (copy_buffer) {
+        model_data_ = std::make_unique<gsl::byte[]>(buffer.size());
+        memcpy(model_data_.get(), buffer.data(), buffer.size_bytes());
+        buffer = {model_data_.get(), buffer.size()};
+    } else {
+        model_data_.reset();
+    }
+
     span_reader reader(buffer);
     auto header = reader.get_ref<model_header>();
     // 1. Validate model
@@ -52,9 +62,13 @@ interpreter::load_model(gsl::span<const gsl::byte> buffer) noexcept {
         try_var(rt_module, runtime_module::create(mod_type));
 
         try_(rt_module->initialize(payload, *this));
-        if (i == header->entry_module)
-            try_set(entry_function_,
-                    rt_module->find_function_by_id(header->entry_function));
+        if (header->entry_module != MODEL_HAS_NO_ENTRY) {
+            if (i == header->entry_module) {
+                try_set(entry_function_,
+                        rt_module->find_function_by_id(header->entry_function));
+            }
+        }
+
         modules_[i] = std::move(rt_module);
     }
 
@@ -157,7 +171,7 @@ result<void> interpreter::run() noexcept {
     }
 
     try_(entry_function_->invoke(params,
-                                   tuple(std::in_place, std::move(ret_fields))));
+                                 tuple(std::in_place, std::move(ret_fields))));
     return ok();
 }
 
@@ -167,3 +181,9 @@ result<runtime_module *> interpreter::find_module_by_id(size_t index) noexcept {
 }
 
 options_dict &interpreter::options() noexcept { return options_; }
+
+result<runtime_function *> interpreter::entry_function() noexcept {
+    if (entry_function_)
+        return ok(entry_function_);
+    return err(std::errc::no_such_file_or_directory);
+}
