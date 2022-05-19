@@ -98,7 +98,7 @@ jobs:
       if: runner.os == 'Macos'
       shell: bash
       run: |
-        brew install sunnycase/core/libomp@11.1.0
+        brew install libomp
 
     - name: Install Vulkan SDK
       if: runner.os == 'Linux'
