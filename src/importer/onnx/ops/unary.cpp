@@ -67,6 +67,33 @@ void onnx_importer::convert_op_Sin(const onnx::NodeProto &node)
     convert_unary(node, unary_sin);
 }
 
+void onnx_importer::convert_op_Tan(const onnx::NodeProto &node)
+{
+    assert(node.input().size() == 1);
+    assert(node.output().size() == 1);
+
+    const auto &op_name { generate_name(node) };
+
+    const auto &input = node.input()[0];
+    const auto input_type = get_datatype(input).value();
+    const auto &output = node.output()[0];
+
+    const auto &input_shape = get_shape(input);
+    auto sin = graph_.emplace<unary>(unary_sin, input_shape);
+    sin->name(op_name + '(' + unary_op_to_string(unary_sin) + ')');
+    auto cos = graph_.emplace<unary>(unary_cos, input_shape);
+    cos->name(op_name + '(' + unary_op_to_string(unary_cos) + ')');
+    auto div = graph_.emplace<binary>(binary_div, input_type, sin->output().shape(), cos->output().shape(), value_range<float>::full());
+    div->name(op_name + ".div(Tan)");
+
+    div->input_a().connect(sin->output());
+    div->input_b().connect(cos->output());
+
+    input_tensors_.emplace(&sin->input(), input);
+    input_tensors_.emplace(&cos->input(), input);
+    output_tensors_.emplace(output, &div->output());
+}
+
 void onnx_importer::convert_op_Exp(const onnx::NodeProto &node)
 {
     convert_unary(node, unary_exp);
@@ -322,4 +349,77 @@ void onnx_importer::convert_op_Acosh(const onnx::NodeProto &node)
     input_tensors_.emplace(&square->input(), input);
     input_tensors_.emplace(&add->input_a(), input);
     output_tensors_.emplace(output, &log->output());
+}
+
+// Atanh(x) = ln((1 + x) / (1 - x)) / 2, -1 < x < 1
+void onnx_importer::convert_op_Atanh(const onnx::NodeProto &node)
+{
+    assert(node.input().size() == 1);
+    assert(node.output().size() == 1);
+
+    const auto &op_name { generate_name(node) };
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
+    const auto &in_shape = get_shape(input);
+    const auto input_type = get_datatype(input).value();
+
+    struct value_range<float> zero_to_two =
+    {
+        0, 2
+    };
+    auto one = graph_.emplace<constant>(1.f);
+    one->name(op_name + ".one(Atanh)");
+
+    auto sub = graph_.emplace<binary>(binary_sub, input_type, one->output().shape(), in_shape, zero_to_two);
+    sub->name(op_name + ".sub(Atanh)");
+
+    auto add = graph_.emplace<binary>(binary_add, input_type, one->output().shape(), in_shape, zero_to_two);
+    add->name(op_name + ".add(Atanh)");
+
+    auto div1 = graph_.emplace<binary>(binary_div, input_type, add->output().shape(), sub->output().shape(), value_range<float>::nonnegative());
+    div1->name(op_name + ".div1(Atanh)");
+
+    auto log = graph_.emplace<unary>(unary_log, div1->output().shape());
+    log->name(op_name + ".log(Atanh)");
+
+    auto two = graph_.emplace<constant>(2.f);
+    two->name(op_name + ".two(Atanh)");
+
+    auto div2 = graph_.emplace<binary>(binary_div, input_type, log->output().shape(), two->output().shape(), value_range<float>::full());
+    div2->name(op_name + ".div2(Atanh)");
+
+    sub->input_a().connect(one->output());
+    add->input_a().connect(one->output());
+    div1->input_a().connect(add->output());
+    div1->input_b().connect(sub->output());
+    log->input().connect(div1->output());
+    div2->input_a().connect(log->output());
+    div2->input_b().connect(two->output());
+
+    input_tensors_.emplace(&sub->input_b(), input);
+    input_tensors_.emplace(&add->input_b(), input);
+    output_tensors_.emplace(output, &div2->output());
+}
+
+void onnx_importer::convert_op_Reciprocal(const onnx::NodeProto &node)
+{
+    assert(node.input().size() == 1);
+    assert(node.output().size() == 1);
+
+    const auto &op_name { generate_name(node) };
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
+    const auto &in_shape = get_shape(input);
+    const auto input_type = get_datatype(input).value();
+
+    auto one = graph_.emplace<constant>(1.f);
+    one->name(op_name + ".one(Reciprocal)");
+
+    auto div = graph_.emplace<binary>(binary_div, input_type, one->output().shape(), in_shape, value_range<float>::full());
+    div->name(op_name + ".div(Reciprocal)");
+
+    div->input_a().connect(one->output());
+
+    input_tensors_.emplace(&div->input_b(), input);
+    output_tensors_.emplace(output, &div->output());
 }

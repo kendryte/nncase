@@ -12,6 +12,7 @@
 | ArgMin | ✅ |
 | Asin | ✅ |
 | Asinh | ✅ |
+| Atanh | ✅ |
 | Add | ✅ |
 | AveragePool | ✅ |
 | BatchNormalization | ✅ |
@@ -49,6 +50,8 @@
 | HardSwish | ✅ |
 | Identity | ✅ |
 | InstanceNormalization | ✅ |
+| IsInf | ✅ |
+| IsNaN | ✅ |
 | LpNormalization | ✅ |
 | LeakyRelu | ✅ |
 | Less | ✅ |
@@ -60,11 +63,14 @@
 | MatMul | ✅ |
 | MaxPool | ✅ |
 | Max | ✅ |
+| Mean | ✅ |
 | Min | ✅ |
+| Mod | ✅ |
 | Mul | ✅ |
 | Neg | ✅ |
 | Not | ✅ |
 | OneHot | ✅ |
+| Or | ✅ |
 | Pad | ✅ |
 | Pow | ✅ |
 | PRelu | ✅ |
@@ -73,6 +79,7 @@
 | RandomNormalLike | ✅ |
 | RandomUniform | ✅ |
 | RandomUniformLike | ✅ |
+| Reciprocal | ✅ |
 | ReduceL1 | ✅ |
 | ReduceL2 | ✅ |
 | ReduceLogSum | ✅ |
@@ -106,7 +113,9 @@
 | Squeeze | ✅ |
 | Sub | ✅ |
 | Sum | ✅ |
+| Tan | ✅ |
 | Tanh | ✅ |
+| ThresholdedRelu | ✅ |
 | Tile | ✅ |
 | TopK | ✅ |
 | Transpose | ✅ |
@@ -114,3 +123,4 @@
 | Upsample | ✅ |
 | Unsqueeze | ✅ |
 | Where | ✅ |
+| Xor | ✅ |

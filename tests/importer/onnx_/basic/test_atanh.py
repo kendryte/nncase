@@ -13,61 +13,58 @@
 # limitations under the License.
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
+import math
 import pytest
 import onnx
 from onnx import helper
 from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
+import numpy as np
 
 
-def _make_module(in_shape, ratio):
-    x = helper.make_tensor_value_info('x', TensorProto.FLOAT, in_shape)
-    y = helper.make_tensor_value_info('y', TensorProto.FLOAT, in_shape)
-    z = helper.make_tensor_value_info('z', TensorProto.FLOAT, in_shape)
+def _make_module(in_shape):
+    inputs = []
+    outputs = []
+    initializers = []
+    attributes_dict = {}
+    nodes = []
 
-    add = onnx.helper.make_node(
-        'Add',
-        inputs=['x', 'y'],
-        outputs=['sum'],
+    # input
+    input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
+    inputs.append('input')
+
+    # output
+    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, in_shape)
+    outputs.append('output')
+
+    # Atanh
+    node = onnx.helper.make_node(
+        'Atanh',
+        inputs=inputs,
+        outputs=outputs,
+        **attributes_dict
     )
-
-    dropout = onnx.helper.make_node(
-        'Dropout',
-        inputs=['sum'],
-        outputs=['z'],
-        ratio=ratio,
-    )
+    nodes.append(node)
 
     graph_def = helper.make_graph(
-        [add, dropout],
+        nodes,
         'test-model',
-        [x, y],
-        [z]
-    )
+        [input],
+        [output],
+        initializer=initializers)
 
-    op = onnx.OperatorSetIdProto()
-    op.version = 10
-    model_def = helper.make_model(graph_def, producer_name='kendryte', opset_imports=[op])
+    model_def = helper.make_model(graph_def, producer_name='kendryte')
 
     return model_def
 
 
 in_shapes = [
-    [1, 3, 60, 72],
-    [1, 3, 224, 224]
+    [1, 3, 16, 16]
 ]
-
-ratios = [
-    0.0,
-    0.1,
-    0.5
-]
-
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('ratio', ratios)
-def test_dropout(in_shape, ratio, request):
-    model_def = _make_module(in_shape, ratio)
+def test_atanh(in_shape, request):
+    model_def = _make_module(in_shape)
 
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
@@ -75,4 +72,4 @@ def test_dropout(in_shape, ratio, request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_dropout.py'])
+    pytest.main(['-vv', 'test_atanh.py'])

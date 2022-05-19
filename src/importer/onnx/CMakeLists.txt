@@ -31,6 +31,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/lpnorm.cpp
     ops/lrn.cpp
     ops/matmul.cpp
+    ops/mean.cpp
     ops/onehot.cpp
     ops/pad.cpp
     ops/pool.cpp
