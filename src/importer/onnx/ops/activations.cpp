@@ -18,7 +18,9 @@
 #include <nncase/ir/graph.h>
 #include <nncase/ir/ops/binary.h>
 #include <nncase/ir/ops/clamp.h>
+#include <nncase/ir/ops/compare.h>
 #include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/convert.h>
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/sigmoid.h>
 #include <nncase/ir/ops/trilu.h>
@@ -571,4 +573,34 @@ void onnx_importer::convert_op_Softsign(const NodeProto &node)
     input_tensors_.emplace(&abs->input(), input);
     input_tensors_.emplace(&div->input_a(), input);
     output_tensors_.emplace(output, &div->output());
+}
+
+void onnx_importer::convert_op_ThresholdedRelu(const NodeProto &node)
+{
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
+    auto in_shape = get_shape(input);
+    const auto input_type = get_datatype(input).value();
+    const auto &op_name { generate_name(node) };
+
+    const auto alpha_value = get_attribute<float>(node, "alpha").value_or(1.0);
+    auto alpha = graph_.emplace<constant>(alpha_value);
+    alpha->name(op_name + ".alpha(ThresholdedRelu)");
+
+    auto cmp = graph_.emplace<compare>(compare_op_t::compare_greater, input_type, in_shape, alpha->output().shape());
+    cmp->name(op_name + ".greater(ThresholdedRelu)");
+    cmp->input_b().connect(alpha->output());
+
+    auto new_alpha = graph_.emplace<convert>(cmp->output().type(), cmp->output().shape(), dt_float32);
+    new_alpha->name(op_name + ".new_alpha(ThresholdedRelu)");
+    new_alpha->input().connect(cmp->output());
+
+    auto b_max = graph_.emplace<binary>(binary_mul, input_type, in_shape, new_alpha->output().shape(), value_range<float>::nonnegative());
+    b_max->name(op_name + ".mul(ThresholdedRelu)");
+
+    b_max->input_b().connect(new_alpha->output());
+
+    input_tensors_.emplace(&cmp->input_a(), input);
+    input_tensors_.emplace(&b_max->input_a(), input);
+    output_tensors_.emplace(output, &b_max->output());
 }
