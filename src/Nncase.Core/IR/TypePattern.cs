@@ -267,7 +267,7 @@ namespace Nncase.IR
         }, "IsNone");
 
         public static TypePattern IsQuantParamType() => IsScalar() & HasDataType(new QuantParamType());
-            
+
         /// <summary>
         /// get padding windows output size
         /// </summary>
@@ -296,6 +296,21 @@ namespace Nncase.IR
                     return (int)System.Math.Ceiling(((float)(size - effective_filter_size + stride) / stride));
                 }
             }
+        }
+
+        /// <summary>
+        /// GetWindowedOutputSize
+        /// </summary>
+        /// <param name="size"></param>
+        /// <param name="filter"></param>
+        /// <param name="stride"></param>
+        /// <param name="dilation"></param>
+        /// <param name="padding"></param>
+        /// <returns></returns>
+        public static int GetWindowedOutputSize(int size, int filter, int stride, int dilation, (int before, int after) padding)
+        {
+            var effective_filter_size = (filter - 1) * dilation + 1;
+            return (size + padding.before + padding.after - effective_filter_size + stride) / stride;
         }
     }
 }
