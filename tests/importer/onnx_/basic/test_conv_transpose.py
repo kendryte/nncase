@@ -30,10 +30,12 @@ def _make_module(in_shape, kernel_output_channel, bias_shape, auto_pad_mode, dil
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
     inputs.append('input')
 
+    group = 1 if group is None else group
+
     # weight
     w_shape = []
     w_shape.append(in_shape[1])
-    w_shape.append(kernel_output_channel)
+    w_shape.append(kernel_output_channel // group)
     w_shape.extend(kernel_shape)
     weight = helper.make_tensor(
         'weight',
@@ -67,7 +69,7 @@ def _make_module(in_shape, kernel_output_channel, bias_shape, auto_pad_mode, dil
     # output
     out_shape = []
     out_shape.append(in_shape[0])
-    out_shape.append(w_shape[1])
+    out_shape.append(w_shape[1] * group)
 
     # pad
     padding = [0, 0, 0, 0]
@@ -136,7 +138,7 @@ in_shapes = [
 ]
 
 kernel_output_channels = [
-    2
+    3
 ]
 
 bias_shapes = [
@@ -158,6 +160,7 @@ dilations = [
 
 groups = [
     None,
+    3
 ]
 
 kernel_shapes = [
