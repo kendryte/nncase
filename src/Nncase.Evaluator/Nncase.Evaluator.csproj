@@ -11,8 +11,8 @@
     <PackageReference Include="Autofac" Version="6.3.0" />
     <PackageReference Include="OrtKISharp" Version="0.0.1" />
     <PackageReference Include="MagicalTensorflowLib" Version="0.0.2" />
-    <PackageReference Include="MagicalTensorflowLibOSX-ARM64" Version="0.0.3" />
-    <PackageReference Include="TensorFlow.NET" Version="0.70.1" />
+    <PackageReference Include="MagicalTensorflowLibOSX-ARM64" Version="0.0.4" />
+    <PackageReference Include="AnyTensorFlow.NET" Version="0.70.1" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.354">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
