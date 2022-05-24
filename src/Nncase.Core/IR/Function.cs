@@ -26,7 +26,7 @@ namespace Nncase.IR
     /// <summary>
     /// Function expression.
     /// </summary>
-    public sealed record Function(string Name, Expr Body, IRArray<Var> Parameters) : Callable(Name)
+    public record Function(string Name, Expr Body, IRArray<Var> Parameters) : Callable(Name)
     {
         private static int _globalFuncIndex = 0;
 

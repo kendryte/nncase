@@ -23,12 +23,13 @@ namespace Nncase.IR
         /// <returns></returns>
         public T this[ParameterInfo parameter] { get; }
     }
-
+    
     /// <summary>
     /// Call expression.
     /// </summary>
     public sealed record Call(Expr Target, IRArray<Expr> Parameters) : Expr, IParameterList<Expr>
     {
+        public CallAttr Attribute = CallAttr.None;
         /// <summary>
         /// Initializes a new instance of the <see cref="Call"/> class.
         /// </summary>

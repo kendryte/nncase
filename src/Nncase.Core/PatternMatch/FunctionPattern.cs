@@ -41,6 +41,8 @@ public sealed record FunctionPattern(Pattern Body, VArgsPattern Parameters, stri
 
 public static partial class Utility
 {
+    public static FunctionPattern IsFusion(string? name, Pattern body, VArgsPattern parameters) => new FunctionPattern(body, parameters, name);
+
     /// <summary>
     /// Create the function pattern.
     /// </summary>
@@ -49,6 +51,7 @@ public static partial class Utility
     /// <param name="name">name.</param>
     /// <returns>FunctionPattern .</returns>
     public static FunctionPattern IsFunction(string? name, Pattern body, VArgsPattern parameters) => new FunctionPattern(body, parameters, name);
+
     public static FunctionPattern IsFunction(Pattern body, VArgsPattern parameters) => IsFunction(null, body, parameters);
     public static FunctionPattern IsFunction(string? name, Pattern body, params Pattern[] parameters) => IsFunction(name, body, IsVArgs(parameters));
     public static FunctionPattern IsFunction(Pattern body, params Pattern[] parameters) => IsFunction(null, body, IsVArgs(parameters));
