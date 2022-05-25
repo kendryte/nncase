@@ -6,7 +6,7 @@ namespace Nncase;
 /// <summary>
 /// Pad mode.
 /// </summary>
-public enum PadMode
+public enum PadMode : byte
 {
     /// <summary>
     /// Constant.

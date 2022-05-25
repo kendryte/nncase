@@ -6,7 +6,7 @@ namespace Nncase;
 /// <summary>
 /// One hot mode.
 /// </summary>
-public enum OneHotMode
+public enum OneHotMode : byte
 {
     /// <summary>
     /// Normal.

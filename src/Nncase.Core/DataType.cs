@@ -32,8 +32,12 @@ public sealed record PointerType(DataType ElemType) : DataType
 /// <summary>
 /// the abstract datatype record.
 /// </summary>
-public abstract record DataType()
+public abstract record DataType
 {
+    internal DataType()
+    {
+    }
+
     /// <summary>
     /// Gets CLR type.
     /// </summary>
@@ -115,4 +119,20 @@ public abstract record PrimType : DataType
     /// Gets short name.
     /// </summary>
     public abstract string ShortName { get; }
+
+    /// <summary>
+    /// Gets typecode.
+    /// </summary>
+    public abstract Runtime.TypeCode TypeCode { get; }
+}
+
+/// <summary>
+/// Value type.
+/// </summary>
+public abstract record ValueType : DataType
+{
+    /// <summary>
+    /// Gets uuid.
+    /// </summary>
+    public abstract Guid Uuid { get; }
 }

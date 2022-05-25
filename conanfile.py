@@ -51,13 +51,9 @@ class nncaseConan(ConanFile):
             self.requires('pybind11/2.6.1')
 
         if not self.options.runtime:
-            self.requires('flatbuffers/2.0.0')
             self.requires('fmt/7.1.3')
-            self.requires('lyra/1.5.0')
             self.requires('magic_enum/0.7.0')
             self.requires('nlohmann_json/3.9.1')
-            self.requires('opencv/4.5.1')
-            self.requires('protobuf/3.17.1')
             self.requires('xtensor/0.21.5')
             self.requires('spdlog/1.8.2')
             self.requires('libzippp/4.0')
@@ -82,19 +78,11 @@ class nncaseConan(ConanFile):
             self.options.halide = False
 
         if not self.options.runtime:
-            self.options["opencv"].contrib = False
-            self.options["opencv"].with_webp = False
-            self.options["opencv"].with_openexr = False
-            self.options["opencv"].with_eigen = False
-            self.options["opencv"].with_quirc = False
-            self.options["opencv"].dnn = False
-            self.options["flatbuffers"].options_from_context = False
             self.options["xtensor"].xsimd = False
             self.options["libzip"].with_bzip2 = False
             self.options["libzip"].with_zstd = False
             self.options["libzip"].crypto = False
             if self.settings.os == 'Linux':
-                self.options["opencv"].with_gtk = False
                 self.options["spirv-tools"].link_libcpp = False
                 self.options["shaderc"].link_libcpp = False
 

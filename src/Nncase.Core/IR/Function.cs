@@ -14,8 +14,12 @@ namespace Nncase.IR
     /// <summary>
     /// the Callable Expr
     /// </summary>
-    public abstract record Callable(string Name) : Expr
+    public abstract record Callable(string Name, string ModuleKind) : Expr
     {
+        /// <summary>
+        /// StackVM module kind.
+        /// </summary>
+        public static readonly string StackVMModuleKind = "stackvm";
 
         /// <summary>
         /// the schedule result, the dag function for stackvm, the prim_func for other backend.
@@ -26,7 +30,7 @@ namespace Nncase.IR
     /// <summary>
     /// Function expression.
     /// </summary>
-    public record Function(string Name, Expr Body, IRArray<Var> Parameters) : Callable(Name)
+    public record Function(string Name, Expr Body, IRArray<Var> Parameters) : Callable(Name, StackVMModuleKind)
     {
         private static int _globalFuncIndex = 0;
 

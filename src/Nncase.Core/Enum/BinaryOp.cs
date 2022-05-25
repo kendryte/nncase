@@ -12,7 +12,7 @@ namespace Nncase;
 /// <summary>
 /// Binary opeartor kind.
 /// </summary>
-public enum BinaryOp
+public enum BinaryOp : byte
 {
     /// <summary>
     /// Add.

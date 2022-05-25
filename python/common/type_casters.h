@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/runtime/compiler_defs.h>
+#include <nncase/compiler_defs.h>
 #include <pybind11/pybind11.h>
 
 namespace pybind11

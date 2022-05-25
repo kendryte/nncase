@@ -1,0 +1,290 @@
+/* Copyright 2019-2021 Canaan Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#include <nncase/api.h>
+#include <nncase/object.h>
+#include <nncase/runtime/allocator.h>
+#include <nncase/runtime/dbg.h>
+#include <nncase/runtime/interpreter.h>
+
+using namespace nncase;
+using namespace nncase::runtime;
+
+namespace {
+#define c_try(x)                                                               \
+    {                                                                          \
+        auto v = (x);                                                          \
+        if (!v.is_ok())                                                        \
+            return v.unwrap_err().value();                                     \
+    }
+
+#define c_try_var(name, x)                                                     \
+    typename decltype((x))::traits::ok_type name;                              \
+    {                                                                          \
+        auto v = (x);                                                          \
+        if (v.is_ok())                                                         \
+            name = std::move(v.unwrap());                                      \
+        else                                                                   \
+            return v.unwrap_err().value();                                     \
+    }
+
+#define c_try_set(name, x)                                                     \
+    {                                                                          \
+        auto v = (x);                                                          \
+        if (v.is_ok())                                                         \
+            name = std::move(v.unwrap());                                      \
+        else                                                                   \
+            return v.unwrap_err().value();                                     \
+    }
+
+result<dims_t> to_dims(const uint32_t *dims, uint32_t length) {
+    CHECK_WITH_ERR(dims || !length, std::errc::invalid_argument);
+    dims_t d(length);
+    for (size_t i = 0; i < length; i++) {
+        d[i] = (size_t)dims[i];
+    }
+    return ok(std::move(d));
+}
+
+result<strides_t> to_strides(const uint32_t *strides, uint32_t length) {
+    CHECK_WITH_ERR(strides || !length, std::errc::invalid_argument);
+    strides_t s(length);
+    for (size_t i = 0; i < length; i++) {
+        s[i] = (size_t)strides[i];
+    }
+    return ok(std::move(s));
+}
+} // namespace
+
+extern "C" {
+int nncase_object_free(nncase::object_node *node) {
+    if (node)
+        node->release();
+    return 0;
+}
+
+int nncase_interp_create(nncase::runtime::interpreter **interp) {
+    if (interp) {
+        *interp = new interpreter();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_interp_free(nncase::runtime::interpreter *interp) {
+    if (interp) {
+        delete interp;
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_interp_load_model(nncase::runtime::interpreter *interp,
+                             void *model_buffer, uint32_t model_size,
+                             bool copy_buffer) {
+    if (interp) {
+        c_try(interp->load_model(
+            {reinterpret_cast<const gsl::byte *>(model_buffer), model_size},
+            copy_buffer));
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_interp_get_entry_func(nncase::runtime::interpreter *interp,
+                                 nncase::runtime::runtime_function **func) {
+    if (interp && func) {
+        c_try_var(entry, interp->entry_function());
+        *func = entry;
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_func_get_params_size(nncase::runtime::runtime_function *func,
+                                uint32_t *size) {
+    if (func && size) {
+        *size = func->parameters_size();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_func_invoke(nncase::runtime::runtime_function *func,
+                       value_node **params, uint32_t params_size,
+                       value_node **result) {
+    if (func && (params || !params_size) && result) {
+        gsl::span<value_t> param_values{reinterpret_cast<value_t *>(params),
+                                        params_size};
+        value_t retval(*result);
+        c_try_set(retval, func->invoke(param_values, retval));
+        *result = retval.detach();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_buffer_allocator_get_host(
+    nncase::runtime::buffer_allocator **alloc) {
+    if (alloc) {
+        *alloc = &buffer_allocator::host();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_buffer_allocator_alloc(nncase::runtime::buffer_allocator *alloc,
+                                  uint32_t bytes, void *options,
+                                  nncase::runtime::buffer_node **buffer) {
+    if (alloc && buffer) {
+        c_try_var(buf, alloc->allocate(bytes, {}));
+        *buffer = buf.detach();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_buffer_as_host(nncase::runtime::buffer_node *buffer,
+                          nncase::runtime::host_buffer_node **host_buffer) {
+    if (buffer && host_buffer) {
+        c_try_var(hbuf, buffer_t(buffer).as<host_buffer_t>());
+        *host_buffer = hbuf.detach();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_buffer_free(nncase::runtime::buffer_node *buffer) {
+    return nncase_object_free(buffer);
+}
+
+int nncase_host_buffer_map(nncase::runtime::host_buffer_node *host_buffer,
+                           nncase::runtime::map_access_t access, void **data,
+                           uint32_t *bytes) {
+    if (host_buffer) {
+        c_try_var(mapped_b, host_buffer->map(access));
+        if (data)
+            *data = mapped_b.buffer().data();
+        if (bytes)
+            *bytes = (uint32_t)mapped_b.buffer().size_bytes();
+        mapped_b.release();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_host_buffer_unmap(nncase::runtime::host_buffer_node *host_buffer) {
+    if (host_buffer) {
+        c_try(host_buffer->unmap());
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_host_buffer_free(nncase::runtime::host_buffer_node *host_buffer) {
+    return nncase_object_free(host_buffer);
+}
+
+int nncase_dtype_create_prime(nncase::typecode_t typecode,
+                              nncase::datatype_node **dtype) {
+    if (dtype) {
+        c_try_var(type, datatype_t::from_typecode(typecode));
+        *dtype = type.detach();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_dtype_free(nncase::datatype_node *dtype) {
+    return nncase_object_free(dtype);
+}
+
+int nncase_tensor_create(nncase::datatype_node *dtype, const uint32_t *dims,
+                         uint32_t dims_length, const uint32_t *strides,
+                         uint32_t strides_length, nncase_buffer_slice *buffer,
+                         nncase::tensor_node **tensor) {
+    if (dtype && buffer && tensor) {
+        c_try_var(d, to_dims(dims, dims_length));
+        c_try_var(s, to_strides(strides, strides_length));
+        *tensor =
+            nncase::tensor(
+                std::in_place, dtype, std::move(d), std::move(s),
+                buffer_slice(buffer->buffer, buffer->start, buffer->size_bytes))
+                .detach();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_tensor_get_dtype(nncase::tensor_node *tensor,
+                            nncase::datatype_node **dtype) {
+    if (tensor && dtype) {
+        *dtype = datatype_t(tensor->dtype()).detach();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_tensor_get_buffer(nncase::tensor_node *tensor,
+                             nncase_buffer_slice *buffer) {
+    if (tensor && buffer) {
+        auto &slice = tensor->buffer();
+        buffer->buffer = buffer_t(slice.buffer()).detach();
+        buffer->start = (uint32_t)slice.start();
+        buffer->size_bytes = (uint32_t)slice.size_bytes();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_tensor_get_dims(nncase::tensor_node *tensor, uint32_t *dims,
+                           uint32_t *dims_length) {
+    if (tensor && dims_length) {
+        auto &shape = tensor->shape();
+        auto required_length = (uint32_t)shape.size();
+        if (*dims_length < required_length) {
+            return -EOVERFLOW;
+        }
+
+        *dims_length = required_length;
+        if (dims) {
+            for (size_t i = 0; i < shape.size(); i++) {
+                dims[i] = (uint32_t)shape[i];
+            }
+        }
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_tensor_get_strides(nncase::tensor_node *tensor, uint32_t *strides,
+                              uint32_t *strides_length) {
+    if (tensor && strides_length) {
+        auto &src_strides = tensor->strides();
+        auto required_length = (uint32_t)src_strides.size();
+        if (*strides_length < required_length) {
+            return -EOVERFLOW;
+        }
+
+        *strides_length = required_length;
+        if (strides) {
+            for (size_t i = 0; i < src_strides.size(); i++) {
+                strides[i] = (uint32_t)src_strides[i];
+            }
+        }
+        return 0;
+    }
+    return -EINVAL;
+}
+}

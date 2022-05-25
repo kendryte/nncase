@@ -24,6 +24,7 @@
  */
 #pragma once
 #include "../datatypes.h"
+#include <vector>
 
 BEGIN_NS_NNCASE_RT_MODULE(stackvm)
 
@@ -31,32 +32,48 @@ BEGIN_NS_NNCASE_RT_MODULE(stackvm)
 @foreach (var e in Model.Enums)
 {
 @:
-@:enum class @e.Name
+@:enum class @e.CppName : @e.UnderlyingCppType
 @:{
 foreach (var f in e.Fields)
 {
-@:    @f.Name = @HexTemplate(f.Value, e.Length),
+@:    @f.CppName = @f.Value,
 }
 @:};
 }
 
 // Instructions
+struct op_base_t
+{
+    opcode_t opcode;
+};
 @foreach (var inst in Model.Instructions.SelectMany(x => x.Value))
 {
-    var name = inst.Name.ToLowerInvariant().Replace('.', '_');
+    var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:
-@:struct @(name)_op_t
+@:struct @(name)_op_t : public op_base_t
 @:{
-foreach (var field in inst.Fields)
+foreach (var field in inst.Fields.Where(x => !x.IsOpCode))
 {
-@:    @field.Type @field.Name;
+@:    @field.CppType @field.CppName;
 }
+@:};
+}
+
+// Tensor instructions
+struct tensor_op_base_t : public op_base_t
+{
+    tensor_function_t tensor_funct;
+};
+@foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.CppName))
+{
+    var name = "tensor_" + inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:
-@:    @(name)_op_t(default_init_t) noexcept { }
-@:    explicit @(name)_op_t(@string.Join(", ", inst.Fields.Where(x => x.Value == null).Select(x => $"{x.Type} {x.Name}"))) noexcept
-@:        : @string.Join(", ", inst.Fields.Select(x => x.Name + "(" + (x.Value.HasValue ? x.ValueText : x.Name) + ")"))
-@:    {
-@:    }
+@:struct @(name)_op_t : public tensor_op_base_t
+@:{
+foreach (var field in inst.Fields.Where(x => !x.IsOpCode))
+{
+@:    @field.CppType @field.CppName;
+}
 @:};
 }
 

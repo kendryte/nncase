@@ -6,7 +6,7 @@ namespace Nncase;
 /// <summary>
 /// Reduce arg operator.
 /// </summary>
-public enum ReduceArgOp
+public enum ReduceArgOp : byte
 {
     /// <summary>
     /// Arg min.

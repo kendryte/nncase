@@ -20,6 +20,7 @@ namespace Nncase
         public bool UsePTQ { get; set; }
         public DataType QuantType { get; set; }
         public QuantMode QuantMode { get; set; }
+        public string OutputFile {get; set; }
     }
     
     /// <summary>
@@ -31,6 +32,11 @@ namespace Nncase
         /// Gets or sets input file.
         /// </summary>
         public string InputFile { get; set; }
+
+        /// <summary>
+        /// Gets or sets output file.
+        /// </summary>
+        public string OutputFile { get; set; }
 
         /// <summary>
         /// Gets or sets the import model format.

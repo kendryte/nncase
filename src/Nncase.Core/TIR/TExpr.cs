@@ -16,7 +16,7 @@ namespace Nncase.TIR;
 /// <summary>
 /// PrimFunction expression.
 /// </summary>
-public sealed record PrimFunction(string Name, Sequential Body, IRArray<Buffer> Parameters) : Callable(Name), ISequentialExpr
+public sealed record PrimFunction(string Name, string ModuleKind, Sequential Body, IRArray<Buffer> Parameters) : Callable(Name, ModuleKind), ISequentialExpr
 {
     private static int _globalFuncIndex = 0;
 
@@ -25,8 +25,8 @@ public sealed record PrimFunction(string Name, Sequential Body, IRArray<Buffer> 
     /// </summary>
     /// <param name="parameters">Parameters.</param>
     /// <param name="body">Body.</param>
-    public PrimFunction(Sequential body, IRArray<Buffer> parameters)
-        : this($"primfunc_{_globalFuncIndex++}", body, parameters)
+    public PrimFunction(string moduleKind, Sequential body, IRArray<Buffer> parameters)
+        : this($"primfunc_{_globalFuncIndex++}", moduleKind, body, parameters)
     {
     }
 
@@ -35,8 +35,8 @@ public sealed record PrimFunction(string Name, Sequential Body, IRArray<Buffer> 
     /// </summary>
     /// <param name="body"></param>
     /// <param name="parameters"></param>
-    public PrimFunction(Sequential body, params Buffer[] parameters)
-        : this($"primfunc_{_globalFuncIndex++}", body, new(parameters))
+    public PrimFunction(string moduleKind, Sequential body, params Buffer[] parameters)
+        : this($"primfunc_{_globalFuncIndex++}", moduleKind, body, new(parameters))
     {
     }
 }

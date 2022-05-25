@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using RazorLight;
 using RazorLight.Razor;
@@ -18,19 +19,31 @@ namespace IsaGen
             ex.Extract();
 
             var inst_h = await ex.RenderAsync("Templates.opcode_h");
-            File.WriteAllText(Path.Combine(args[0], "include/nncase/runtime/stackvm", "opcode.h"), inst_h);
+            File.WriteAllText(Path.Combine(args[0], "src/Native/include/nncase/runtime/stackvm", "opcode.h"), inst_h);
 
             var opreader_h = await ex.RenderAsync("Templates.op_reader_h");
-            File.WriteAllText(Path.Combine(args[0], "include/nncase/runtime/stackvm", "op_reader.h"), opreader_h);
+            File.WriteAllText(Path.Combine(args[0], "src/Native/include/nncase/runtime/stackvm", "op_reader.h"), opreader_h);
 
             var opreader_cpp = await ex.RenderAsync("Templates.op_reader_cpp");
-            File.WriteAllText(Path.Combine(args[0], "src/runtime/stackvm", "op_reader.cpp"), opreader_cpp);
+            File.WriteAllText(Path.Combine(args[0], "src/Native/src/runtime/stackvm", "op_reader.cpp"), opreader_cpp);
 
-            var opwriter_h = await ex.RenderAsync("Templates.op_writer_h");
-            File.WriteAllText(Path.Combine(args[0], "include/nncase/codegen/stackvm", "op_writer.h"), opwriter_h);
+            var kernel_h = await ex.RenderAsync("Templates.kernel_h");
+            File.WriteAllText(Path.Combine(args[0], "src/Native/include/nncase/kernels/stackvm", "tensor_ops.h"), kernel_h);
 
-            var opwriter_cpp = await ex.RenderAsync("Templates.op_writer_cpp");
-            File.WriteAllText(Path.Combine(args[0], "src/codegen/stackvm", "op_writer.cpp"), opwriter_cpp);
+            var dummy_kernel_cpp = await ex.RenderAsync("Templates.dummy_kernel_cpp");
+            File.WriteAllText(Path.Combine(args[0], "src/Native/src/kernels/stackvm", "dummy_tensor_ops.cpp"), dummy_kernel_cpp);
+
+            var runtime_function_ops_h = await ex.RenderAsync("Templates.runtime_function_ops_h");
+            File.WriteAllText(Path.Combine(args[0], "src/Native/src/runtime/stackvm", "runtime_function_ops.h"), runtime_function_ops_h);
+
+            var runtime_function_tensor_ops_cpp = await ex.RenderAsync("Templates.runtime_function_tensor_ops_cpp");
+            File.WriteAllText(Path.Combine(args[0], "src/Native/src/runtime/stackvm/ops", "tensor.cpp"), runtime_function_tensor_ops_cpp);
+
+            var emitter_cs = await ex.RenderAsync("Templates.emitter_cs");
+            File.WriteAllText(Path.Combine(args[0], "modules/Nncase.Modules.StackVM/CodeGen/StackVM", "StackVMEmitter.g.cs"), emitter_cs);
+
+            var codegen_cs = await ex.RenderAsync("Templates.codegen_cs");
+            File.WriteAllText(Path.Combine(args[0], "modules/Nncase.Modules.StackVM/CodeGen/StackVM", "CodeGenVisitor.g.cs"), codegen_cs);
         }
     }
 
@@ -38,11 +51,15 @@ namespace IsaGen
     {
         private readonly RazorLightEngine _engine;
         private readonly List<Instruction> _insts;
+        private readonly List<Type> _tensorInsts;
         private readonly List<Type> _enums;
+        private readonly HashSet<Type> _generatedEnums = new HashSet<Type>();
 
         public IReadOnlyList<KeyValuePair<string, IReadOnlyList<InstructionInfo>>> Instructions { get; private set; }
 
-        public IReadOnlyList<EnumInfo> Enums { get; private set; }
+        public IReadOnlyList<KeyValuePair<string, IReadOnlyList<InstructionInfo>>> TensorInstructions { get; private set; }
+
+        public List<EnumInfo> Enums { get; private set; }
 
         public IsaExtractor()
         {
@@ -59,6 +76,11 @@ namespace IsaGen
                       where t.IsEnum && t.IsDefined(typeof(EnumNameAttribute))
                       orderby t.MetadataToken
                       select t).ToList();
+            _tensorInsts = (from t in typeof(Nncase.CoreModule).Assembly.ExportedTypes
+                            where !t.IsAbstract && t.IsAssignableTo(typeof(Nncase.IR.Op))
+                            where t.Namespace.StartsWith("Nncase.IR.")
+                            where t.Namespace != "Nncase.IR.Buffer"
+                            select t).OrderBy(x => x.Name).ToList();
         }
 
         public void Extract()
@@ -69,23 +91,67 @@ namespace IsaGen
                             let fs = GetInstructionFields(inst, t)
                             group new InstructionInfo
                             (
-                                Name: t.GetCustomAttribute<DisplayNameAttribute>().DisplayName,
+                                index: (int)inst.OpCode,
+                                CppName: t.GetCustomAttribute<DisplayNameAttribute>().DisplayName,
+                                CSharpName: t.Name.Replace("Instruction", string.Empty),
                                 Category: c,
                                 OpCode: inst.OpCode,
-                                Length: (uint)(from f in fs select (int)f.Length).Sum(),
                                 Description: t.GetCustomAttribute<DescriptionAttribute>().Description,
-                                Fields: fs
+                                Fields: fs,
+                                Inputs: new()
                             ) by c).Select(x => new KeyValuePair<string, IReadOnlyList<InstructionInfo>>(x.Key, x.ToList())).ToList();
+
 
             Enums = (from e in _enums
                      let b = e.GetCustomAttribute<BrowsableAttribute>()
                      where b == null || b.Browsable
                      select new EnumInfo
                      (
-                         Name: e.GetCustomAttribute<EnumNameAttribute>().Name,
-                         Length: e.GetCustomAttribute<BitLengthAttribute>().BitLength,
+                         CppName: e.GetCustomAttribute<EnumNameAttribute>().Name,
+                         UnderlyingCppType: CppFieldType(e.GetEnumUnderlyingType()),
+                         UnderlyingCSharpType: CSharpFieldType(e.GetEnumUnderlyingType()),
+                         Length: FieldLength(e),
                          Fields: GetEnumFields(e)
                      )).ToList();
+
+            TensorInstructions = (from t in _tensorInsts.Select((x, i) => (x, i))
+                                  let c = t.x.Namespace.Replace("Nncase.IR.", string.Empty)
+                                  let fs = GetTensorInstructionFields(t.i, t.x)
+                                  let inputs = GetTensorInstructionInputs(t.x)
+                                  group new InstructionInfo
+                                  (
+                                      index: t.i,
+                                      CppName: SnakeName(t.x.Name),
+                                      CSharpName: PascalName(t.x.Name),
+                                      Category: c,
+                                      OpCode: OpCode.TENSOR,
+                                      Description: string.Empty,
+                                      Fields: fs,
+                                      Inputs: inputs
+                                  ) by c).Select(x => new KeyValuePair<string, IReadOnlyList<InstructionInfo>>(x.Key, x.ToList())).ToList();
+
+            AddTensorFunctionEnum();
+
+        }
+
+        private void AddTensorFunctionEnum()
+        {
+            var fields = (from t in TensorInstructions.SelectMany(x => x.Value)
+                          select new EnumFieldInfo
+                          (
+                              CppName: t.CppName,
+                              Value: (uint)t.index,
+                              Description: string.Empty
+                          )).ToList();
+            var e = new EnumInfo
+                (
+                    CppName: "tensor_function_t",
+                    UnderlyingCppType: CppFieldType(typeof(ushort)),
+                    UnderlyingCSharpType: CSharpFieldType(typeof(ushort)),
+                    Length: FieldLength(typeof(ushort)),
+                    Fields: fields
+                );
+            Enums.Insert(Enums.FindIndex(x => x.CppName == "opcode_t") + 1, e);
         }
 
         public Task<string> RenderAsync(string templateName)
@@ -98,17 +164,73 @@ namespace IsaGen
             return (from f in e.GetFields(BindingFlags.Public | BindingFlags.Static)
                     select new EnumFieldInfo
                     (
-                        Name: f.Name,
-                        Value: (uint)(int)f.GetValue(null),
+                        CppName: e == typeof(OpCode) ? f.Name : SnakeName(f.Name),
+                        Value: (uint)Convert.ToInt32(f.GetValue(null)),
                         Description: f.GetCustomAttribute<DescriptionAttribute>()?.Description ?? string.Empty
                     )).ToList();
+        }
+
+        private string SnakeName(string name)
+        {
+            if (name == "OpCode")
+                return "opcode";
+
+            var sb = new StringBuilder();
+            bool lastCapital = true;
+            bool lastIsLetter = true;
+            foreach (var c in name)
+            {
+                var isLetter = char.IsLetter(c);
+                var isCaptial = isLetter ? char.IsUpper(c) : false;
+                if (!lastCapital && isCaptial && sb.Length != 0)
+                {
+                    if (lastIsLetter || c != 'D')
+                        sb.Append('_');
+                }
+                sb.Append(char.ToLowerInvariant(c));
+
+                if (!lastIsLetter && c == 'D')
+                    sb.Append('_');
+
+                lastCapital = isCaptial;
+                lastIsLetter = isLetter;
+            }
+            return sb.ToString().Trim('_');
+        }
+
+        private string SnakeTypeName(string name)
+        {
+            return SnakeName(name) + "_t";
+        }
+
+        private string PascalName(string name)
+        {
+            return name;
+        }
+
+        private string CamelName(string name)
+        {
+            return char.ToLowerInvariant(name[0]) + name.Substring(1);
+        }
+
+        private void GenerateEnum(Type type)
+        {
+            if (_generatedEnums.Contains(type)) return;
+            _generatedEnums.Add(type);
+            Enums.Add(new EnumInfo
+                (
+                    CppName: SnakeTypeName(type.Name),
+                    UnderlyingCppType: CppFieldType(type.GetEnumUnderlyingType()),
+                    UnderlyingCSharpType: CSharpFieldType(type.GetEnumUnderlyingType()),
+                    Length: FieldLength(type),
+                    Fields: GetEnumFields(type)
+                ));
         }
 
         private List<InstructionField> GetInstructionFields(Instruction inst, Type t)
         {
             var props = new List<(int, PropertyInfo)>();
             var fields = new List<InstructionField>();
-            uint start = 0;
             foreach (var f in t.GetProperties())
             {
                 int metadataToken = f.MetadataToken;
@@ -137,35 +259,131 @@ namespace IsaGen
                 var len = FieldLength(f.PropertyType);
                 fields.Add(new InstructionField
                             (
-                                Name: f.GetCustomAttribute<DisplayNameAttribute>().DisplayName,
-                                Type: FieldType(f.PropertyType),
-                                Start: start,
+                                CppName: f.GetCustomAttribute<DisplayNameAttribute>().DisplayName,
+                                CSharpName: f.GetCustomAttribute<DisplayNameAttribute>().DisplayName,
+                                CSharpPropName: f.GetCustomAttribute<DisplayNameAttribute>().DisplayName,
+                                CppType: CppFieldType(f.PropertyType),
+                                CSharpType: CSharpFieldType(f.PropertyType),
+                                UnderlyingCSharpType: f.PropertyType.IsEnum ? CSharpFieldType(f.PropertyType.GetEnumUnderlyingType()) : null,
                                 Length: len,
-                                End: start + len - 1,
                                 Value: FieldValue(f, f.GetValue(inst)),
-                                ValueText: FieldValueText(f, f.GetValue(inst)),
+                                CppValueText: CppFieldValueText(f, f.GetValue(inst)),
                                 Description: f.GetCustomAttribute<DescriptionAttribute>().Description,
-                                IsEnum: f.PropertyType.IsEnum
+                                IsEnum: f.PropertyType.IsEnum,
+                                IsOpCode: f.PropertyType == typeof(OpCode)
                             ));
-                start += len;
             }
 
             return fields.ToList();
         }
 
-        private string FieldValueText(PropertyInfo f, object v)
+        private List<InstructionField> GetTensorInstructionFields(int index, Type t)
+        {
+            var props = new List<(int, PropertyInfo)>();
+            var fields = new List<InstructionField>();
+            foreach (var f in t.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            {
+                int metadataToken = f.MetadataToken;
+                props.Add((metadataToken, f));
+            }
+
+            props.Sort((a, b) => a.Item1 - b.Item1);
+
+            fields.Add(new InstructionField
+                (
+                    CppName: "opcode",
+                    CSharpName: "opcode",
+                    CSharpPropName: "OpCode",
+                    CppType: "opcode_t",
+                    CSharpType: "OpCode",
+                    UnderlyingCSharpType: CSharpFieldType(typeof(byte)),
+                    Length: FieldLength(typeof(byte)),
+                    Value: (uint)OpCode.TENSOR,
+                    CppValueText: null,
+                    Description: null,
+                    IsEnum: true,
+                    IsOpCode: true
+                ));
+
+            fields.Add(new InstructionField
+                (
+                    CppName: "tensor_funct",
+                    CSharpName: "tensorFunction",
+                    CSharpPropName: "TensorFunction",
+                    CppType: "tensor_function_t",
+                    CSharpType: "TensorFunction",
+                    UnderlyingCSharpType: CSharpFieldType(typeof(ushort)),
+                    Length: FieldLength(typeof(ushort)),
+                    Value: (uint)index,
+                    CppValueText: null,
+                    Description: null,
+                    IsEnum: true,
+                    IsOpCode: false
+                ));
+
+            foreach (var (m, f) in props)
+            {
+                if (f.PropertyType.IsEnum)
+                    GenerateEnum(f.PropertyType);
+
+                var len = FieldLength(f.PropertyType);
+                fields.Add(new InstructionField
+                            (
+                                CppName: SnakeName(f.Name),
+                                CSharpName: CamelName(f.Name),
+                                CSharpPropName: f.Name,
+                                CppType: CppFieldType(f.PropertyType),
+                                CSharpType: CSharpFieldType(f.PropertyType),
+                                UnderlyingCSharpType: f.PropertyType.IsEnum ? CSharpFieldType(f.PropertyType.GetEnumUnderlyingType()) : null,
+                                Length: len,
+                                Value: null,
+                                CppValueText: null,
+                                Description: string.Empty,
+                                IsEnum: f.PropertyType == typeof(Nncase.DataType) ? true : f.PropertyType.IsEnum,
+                                IsOpCode: f.PropertyType == typeof(OpCode)
+                            ));
+            }
+
+            return fields.ToList();
+        }
+
+        private List<InstructionInput> GetTensorInstructionInputs(Type t)
+        {
+            var props = new List<(int, FieldInfo)>();
+            var fields = new List<InstructionInput>();
+            foreach (var f in t.GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly))
+            {
+                int metadataToken = f.MetadataToken;
+                props.Add((metadataToken, f));
+            }
+
+            props.Sort((a, b) => a.Item1 - b.Item1);
+
+            foreach (var (m, f) in props)
+            {
+                fields.Add(new InstructionInput
+                            (
+                                CppType: "tensor",
+                                CppName: SnakeName(f.Name)
+                            ));
+            }
+
+            return fields.ToList();
+        }
+
+        private string CppFieldValueText(PropertyInfo f, object v)
         {
             if (f.SetMethod != null)
                 return null;
             if (f.PropertyType.IsEnum)
-                return FieldType(f.PropertyType) + "::" + v.ToString();
+                return CppFieldType(f.PropertyType) + "::" + v.ToString();
             return v.ToString();
         }
 
         private uint FieldLength(Type t)
         {
             if (t.IsEnum)
-                return t.GetCustomAttribute<BitLengthAttribute>().BitLength;
+                return FieldLength(t.GetEnumUnderlyingType());
             else if (t == typeof(bool))
                 return 8;
             else if (t == typeof(byte))
@@ -180,16 +398,15 @@ namespace IsaGen
                 return 32;
             else if (t == typeof(float))
                 return 32;
-            // Bits
+            else if (t == typeof(Nncase.DataType))
+                return 8;
             else
-                return uint.Parse(t.Name.Substring(3));
+                return 0;
         }
 
-        private string FieldType(Type t)
+        private string CppFieldType(Type t)
         {
-            if (t.IsEnum)
-                return t.GetCustomAttribute<EnumNameAttribute>().Name;
-            else if (t == typeof(bool))
+            if (t == typeof(bool))
                 return "bool";
             else if (t == typeof(byte))
                 return "uint8_t";
@@ -203,9 +420,40 @@ namespace IsaGen
                 return "int32_t";
             else if (t == typeof(float))
                 return "float";
-            // Bits
+            else if (t == typeof(Nncase.DataType))
+                return "typecode_t";
+            else if (t == typeof(string))
+                return "std::string";
+            else if (t == typeof(string[]))
+                return "std::vector<std::string>";
             else
-                return t.Name.ToUpperInvariant();
+                return SnakeTypeName(t.Name);
+        }
+
+        private string CSharpFieldType(Type t)
+        {
+            if (t == typeof(bool))
+                return "bool";
+            else if (t == typeof(byte))
+                return "byte";
+            else if (t == typeof(ushort))
+                return "ushort";
+            else if (t == typeof(uint))
+                return "uint";
+            else if (t == typeof(short))
+                return "short";
+            else if (t == typeof(int))
+                return "int";
+            else if (t == typeof(float))
+                return "float";
+            else if (t == typeof(Nncase.DataType))
+                return "DataType";
+            else if (t == typeof(string))
+                return "string";
+            else if (t == typeof(string[]))
+                return "string[]";
+            else
+                return PascalName(t.Name);
         }
 
         private uint? FieldValue(PropertyInfo f, object v)
@@ -227,11 +475,13 @@ namespace IsaGen
         }
     }
 
-    public record InstructionField(string Name, string Type, uint Start, uint Length, uint End, uint? Value, string ValueText, string Description, bool IsEnum);
+    public record InstructionField(string CppName, string CSharpName, string CSharpPropName, string CppType, string CSharpType, string UnderlyingCSharpType, uint Length, uint? Value, string CppValueText, string Description, bool IsEnum, bool IsOpCode);
 
-    public record InstructionInfo(string Name, string Category, OpCode OpCode, uint Length, string Description, List<InstructionField> Fields);
+    public record InstructionInput(string CppType, string CppName);
 
-    public record EnumFieldInfo(string Name, uint Value, string Description);
+    public record InstructionInfo(int index, string CppName, string CSharpName, string Category, OpCode OpCode, string Description, List<InstructionField> Fields, List<InstructionInput> Inputs);
 
-    public record EnumInfo(string Name, uint Length, List<EnumFieldInfo> Fields);
+    public record EnumFieldInfo(string CppName, uint Value, string Description);
+
+    public record EnumInfo(string CppName, string UnderlyingCppType, string UnderlyingCSharpType, uint Length, List<EnumFieldInfo> Fields);
 }

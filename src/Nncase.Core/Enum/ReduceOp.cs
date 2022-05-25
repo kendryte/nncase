@@ -6,7 +6,7 @@ namespace Nncase;
 /// <summary>
 /// Reduce operator.
 /// </summary>
-public enum ReduceOp
+public enum ReduceOp : byte
 {
     /// <summary>
     /// Mean.

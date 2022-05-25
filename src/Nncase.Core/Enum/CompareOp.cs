@@ -12,7 +12,7 @@ namespace Nncase;
 /// <summary>
 /// Comparision operator.
 /// </summary>
-public enum CompareOp
+public enum CompareOp : byte
 {
     /// <summary>
     /// a == b.

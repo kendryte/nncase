@@ -69,8 +69,8 @@ include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 include(cmake/dependencies.cmake)
 
 if (BUILDING_RUNTIME)
-    set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
-    set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
+    set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/Native/include)
+    set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/Native/include)
     set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
     set_property(GLOBAL PROPERTY POSITION_INDEPENDENT_CODE ON)
     
@@ -91,10 +91,10 @@ if (BUILDING_RUNTIME)
     include_directories(${NNCASE_MAIN_INCLUDE_DIR})
     include_directories(${NNCASE_INCLUDE_DIR})
     
-    add_subdirectory(include/nncase)
-    add_subdirectory(src/kernels)
-    add_subdirectory(src/runtime)
-    add_subdirectory(src/functional)
+    add_subdirectory(src/Native/include/nncase)
+    add_subdirectory(src/Native/src/kernels)
+    add_subdirectory(src/Native/src/runtime)
+    add_subdirectory(src/Native/src/functional)
     if(BUILD_BENCHMARK)
         add_subdirectory(benchmark)
     endif()
@@ -112,7 +112,7 @@ if (BUILDING_RUNTIME)
         PATTERN "CMakeFiles" EXCLUDE
         )
     
-    install(DIRECTORY include/nncase/kernels
+    install(DIRECTORY src/Native/include/nncase/kernels
         DESTINATION include/nncase
         COMPONENT nncase-headers
         FILES_MATCHING
@@ -124,7 +124,7 @@ if (BUILDING_RUNTIME)
         PATTERN "LICENSE.TXT"
         )
     
-    install(DIRECTORY include/nncase/runtime
+    install(DIRECTORY src/Native/include/nncase/runtime
         DESTINATION include/nncase
         COMPONENT nncase-headers
         FILES_MATCHING
@@ -138,8 +138,8 @@ if (BUILDING_RUNTIME)
 else()
     set(CMAKE_SKIP_RPATH OFF)
 
-    set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
-    set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
+    set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/Native/include)
+    set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/Native/include)
     set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
     set_property(GLOBAL PROPERTY POSITION_INDEPENDENT_CODE ON)
     if (APPLE)
@@ -160,7 +160,7 @@ else()
         if (APPLE)
             add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized -Wno-deprecated)
         elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-            add_compile_options(-Wno-uninitialized)
+            add_compile_options(-Wno-uninitialized -Wno-gnu-zero-variadic-macro-arguments)
         else ()
             add_compile_options(-Wno-maybe-uninitialized -Wno-deprecated-copy)
             add_link_options(-Wl,--exclude-libs,ALL)
@@ -170,21 +170,8 @@ else()
     include_directories(${NNCASE_MAIN_INCLUDE_DIR})
     include_directories(${NNCASE_INCLUDE_DIR})
     
-    add_subdirectory(include/nncase)
-    add_subdirectory(src/nncase)
-    add_subdirectory(src/data)
-    add_subdirectory(src/ir)
-    add_subdirectory(src/importer)
-    add_subdirectory(src/schedule)
-    add_subdirectory(src/evaluator)
-    add_subdirectory(src/functional)
-    add_subdirectory(src/transforms)
-    add_subdirectory(src/codegen)
-    add_subdirectory(src/kernels)
-    add_subdirectory(src/runtime)
-    add_subdirectory(src/targets)
-    add_subdirectory(src/plugin)
-    add_subdirectory(src/cli)
+    add_subdirectory(src/Native/include/nncase)
+    add_subdirectory(src/Native/src)
 
     if(BUILD_TESTING)
         add_subdirectory(tests/kernels)
@@ -192,18 +179,18 @@ else()
     
     # Python binding
     if(BUILD_PYTHON_BINDING)
-        add_subdirectory(python/nncase/native)
+        add_subdirectory(python/nncaseruntime/native)
     endif()
 
     # Csharp binding
     if(BUILD_CSHARP_BINDING)
-        add_subdirectory(csharp)
+        #add_subdirectory(csharp)
     endif()  
 
     # Thrid party
-    add_subdirectory(third_party/onnx)
+    # add_subdirectory(third_party/onnx)
     
-    install(DIRECTORY include/nncase
+    install(DIRECTORY src/Native/include/nncase
         DESTINATION include
         COMPONENT nncase-headers
         FILES_MATCHING
@@ -236,11 +223,11 @@ else()
         )
     
     # Targets
-    add_subdirectory(targets/cpu)
-    add_subdirectory(targets/k210)
-    add_subdirectory(targets/vulkan)
+    #add_subdirectory(targets/cpu)
+    #add_subdirectory(targets/k210)
+    #add_subdirectory(targets/vulkan)
 endif()
 
 # Modules
-add_subdirectory(modules/k210)
-add_subdirectory(modules/vulkan)
+#add_subdirectory(modules/k210)
+#add_subdirectory(modules/vulkan)
