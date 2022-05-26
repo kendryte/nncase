@@ -41,7 +41,9 @@ internal static class Native
     [DllImport(LibraryName, EntryPoint = "nncase_buffer_as_host")]
     public static extern unsafe ErrorCode BufferAsHost(IntPtr buffer, out IntPtr hostBuffer);
 
+    [DllImport(LibraryName, EntryPoint = "nncase_host_buffer_map")]
+    public static extern ErrorCode HostBufferMap(IntPtr hostBuffer, RTMapAccess mapAccess, out IntPtr data, out uint bytes);
+
     [DllImport(LibraryName, EntryPoint = "nncase_host_buffer_unmap")]
     public static extern unsafe ErrorCode HostBufferUnmap(IntPtr hostBuffer);
-
 }

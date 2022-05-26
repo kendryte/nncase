@@ -9,15 +9,14 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using Nncase.Runtime.Interop;
 
-namespace Nncase.Buffers;
+namespace Nncase.Runtime.Interop;
 
 internal unsafe class RTHostMemoryManager : MemoryManager<byte>
 {
+    private readonly uint _length;
     private RTHostBuffer? _buffer;
     private IntPtr _pointer;
-    private readonly uint _length;
 
     public RTHostMemoryManager(RTHostBuffer buffer, IntPtr pointer, uint length)
     {
@@ -29,16 +28,6 @@ internal unsafe class RTHostMemoryManager : MemoryManager<byte>
         {
             GC.AddMemoryPressure(length);
         }
-    }
-
-    /// <summary>
-    /// Finalizes an instance of the <see cref="RTHostMemoryManager"/> class.
-    /// </summary>
-#pragma warning disable CA2015 // Used only in DenseTensor
-    ~RTHostMemoryManager()
-#pragma warning restore CA2015
-    {
-        Dispose(false);
     }
 
     public IntPtr Pointer => _pointer;

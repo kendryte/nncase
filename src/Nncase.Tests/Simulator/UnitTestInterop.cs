@@ -48,7 +48,15 @@ namespace Nncase.Tests.SimulatorTest
         {
             var allocator = RTBufferAllocator.Host;
             var buffer = allocator.Allocate(256);
-            Assert.NotNull(buffer);
+            Assert.NotNull(buffer.AsHost());
+        }
+
+        [Fact]
+        public void TestMapHostBuffer()
+        {
+            var allocator = RTBufferAllocator.Host;
+            var buffer = allocator.Allocate(256).AsHost();
+            using var mmOwner = buffer.Map(RTMapAccess.Write);
         }
 
         [Fact]

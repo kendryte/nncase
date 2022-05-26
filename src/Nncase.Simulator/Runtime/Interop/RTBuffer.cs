@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -60,8 +61,15 @@ public class RTHostBuffer : RTBuffer
     {
     }
 
-    public Memory<byte> Map(RTMapAccess mapAccess)
+    /// <summary>
+    /// Map host buffer.
+    /// </summary>
+    /// <param name="mapAccess">Access rights.</param>
+    /// <returns>Mapped memory.</returns>
+    public unsafe IMemoryOwner<byte> Map(RTMapAccess mapAccess)
     {
-        throw new NotImplementedException();
+        Native.HostBufferMap(Handle, mapAccess, out var data, out var bytes).ThrowIfFailed();
+        var mm = new RTHostMemoryManager(this, data, bytes);
+        return mm.Memory;
     }
 }
