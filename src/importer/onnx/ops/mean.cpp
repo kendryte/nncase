@@ -67,4 +67,3 @@ void onnx_importer::convert_op_Mean(const NodeProto &node)
 
     output_tensors_.emplace(output, &div->output());
 }
-

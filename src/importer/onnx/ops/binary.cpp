@@ -157,27 +157,51 @@ void onnx_importer::convert_op_Mod(const onnx::NodeProto &node)
     auto input_a_shape = get_shape(input_a);
     auto input_b_shape = get_shape(input_b);
 
-    auto div = graph_.emplace<binary>(binary_div, input_type, input_a_shape, input_b_shape, value_range<float>::full());
-    div->name(op_name + '(' + binary_op_to_string(binary_div) + ')');
+    // input_type is float
+    if (input_type == 9)
+    {
+        auto div = graph_.emplace<binary>(binary_div, input_type, input_a_shape, input_b_shape, value_range<float>::full());
+        div->name(op_name + '(' + binary_op_to_string(binary_div) + ')');
 
-    auto floor = graph_.emplace<unary>(unary_floor, div->output().shape());
-    floor->name(op_name + '(' + unary_op_to_string(unary_floor) + ')');
+        auto floor = graph_.emplace<unary>(unary_floor, div->output().shape());
+        floor->name(op_name + '(' + unary_op_to_string(unary_floor) + ')');
 
-    auto mul = graph_.emplace<binary>(binary_mul, floor->output().type(), floor->output().shape(), input_b_shape, value_range<float>::full());
-    mul->name(op_name + '(' + binary_op_to_string(binary_mul) + ')');
+        auto mul = graph_.emplace<binary>(binary_mul, floor->output().type(), floor->output().shape(), input_b_shape, value_range<float>::full());
+        mul->name(op_name + '(' + binary_op_to_string(binary_mul) + ')');
 
-    auto sub = graph_.emplace<binary>(binary_sub, input_type, input_a_shape, mul->output().shape(), value_range<float>::full());
-    sub->name(op_name + '(' + binary_op_to_string(binary_sub) + ')');
+        auto sub = graph_.emplace<binary>(binary_sub, input_type, input_a_shape, mul->output().shape(), value_range<float>::full());
+        sub->name(op_name + '(' + binary_op_to_string(binary_sub) + ')');
 
-    floor->input().connect(div->output());
-    mul->input_a().connect(floor->output());
-    sub->input_b().connect(mul->output());
+        floor->input().connect(div->output());
+        mul->input_a().connect(floor->output());
+        sub->input_b().connect(mul->output());
 
-    input_tensors_.emplace(&div->input_a(), input_a);
-    input_tensors_.emplace(&sub->input_a(), input_a);
-    input_tensors_.emplace(&div->input_b(), input_b);
-    input_tensors_.emplace(&mul->input_b(), input_b);
-    output_tensors_.emplace(output, &sub->output());
+        input_tensors_.emplace(&div->input_a(), input_a);
+        input_tensors_.emplace(&sub->input_a(), input_a);
+        input_tensors_.emplace(&div->input_b(), input_b);
+        input_tensors_.emplace(&mul->input_b(), input_b);
+        output_tensors_.emplace(output, &sub->output());
+    }
+    else
+    {
+        auto div = graph_.emplace<binary>(binary_div, input_type, input_a_shape, input_b_shape, value_range<float>::full());
+        div->name(op_name + '(' + binary_op_to_string(binary_div) + ')');
+
+        auto mul = graph_.emplace<binary>(binary_mul, div->output().type(), div->output().shape(), input_b_shape, value_range<float>::full());
+        mul->name(op_name + '(' + binary_op_to_string(binary_mul) + ')');
+
+        auto sub = graph_.emplace<binary>(binary_sub, input_type, input_a_shape, mul->output().shape(), value_range<float>::full());
+        sub->name(op_name + '(' + binary_op_to_string(binary_sub) + ')');
+
+        mul->input_a().connect(div->output());
+        sub->input_b().connect(mul->output());
+
+        input_tensors_.emplace(&div->input_a(), input_a);
+        input_tensors_.emplace(&sub->input_a(), input_a);
+        input_tensors_.emplace(&div->input_b(), input_b);
+        input_tensors_.emplace(&mul->input_b(), input_b);
+        output_tensors_.emplace(output, &sub->output());
+    }
 }
 
 void onnx_importer::convert_op_logical(const onnx::NodeProto &node, const binary_op_t binary_op)

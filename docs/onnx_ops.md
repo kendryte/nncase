@@ -35,6 +35,7 @@
 | Elu | ✅ |
 | Exp | ✅ |
 | Expand | ✅ |
+| EyeLike | ✅ |
 | Equal | ✅ |
 | Flatten | ✅ |
 | Floor | ✅ |

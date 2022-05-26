@@ -72,8 +72,8 @@ def _make_module(in_type, in_shape_0, in_shape_1):
 
 in_types = [
     TensorProto.FLOAT,
-    TensorProto.INT32,
-    TensorProto.INT64
+    # TensorProto.INT32,
+    # TensorProto.INT64
 ]
 
 in_shapes = [
