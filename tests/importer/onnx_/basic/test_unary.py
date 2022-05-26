@@ -39,7 +39,7 @@ def _make_module():
             outs.append(torch.sin(x))
             outs.append(torch.sqrt(x + 2))
             outs.append(torch.tanh(x))
-            outs.append(torch.reciprocal(x))
+            #outs.append(torch.reciprocal(x))
             outs.append(torch.tan(x))
             return outs
 
