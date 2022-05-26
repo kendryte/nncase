@@ -154,7 +154,6 @@ internal class StackVMFunctionBuilder
             if (_locals.Count == 0)
             {
                 var id = MaxCount++;
-                _locals.Add(id);
                 return id;
             }
             else
