@@ -642,7 +642,8 @@ void transpose(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, const TShape
 template <class T, class TShape>
 void strided_slice(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, const TShape &in_shape, const TShape &begin, const TShape &end, const TShape &strides)
 {
-    auto loop_cond = [](int32_t i, int32_t stop, int32_t stride) {
+    auto loop_cond = [](int32_t i, int32_t stop, int32_t stride)
+    {
         return stride > 0 ? i < stop : i > stop;
     };
 
@@ -828,10 +829,12 @@ void gru(const T *CXX_RESTRICT input, const T *CXX_RESTRICT w, const T *CXX_REST
     const int hidden_size = w_shape[1] / 3;
 
     int count = 0;
-    auto sigmoid = [&](float x) {
+    auto sigmoid = [&](float x)
+    {
         return 1 / (1 + std::exp(-x));
     };
-    auto tanh = [&](float x) {
+    auto tanh = [&](float x)
+    {
         return std::tanh(x);
     };
     // copy input to output
@@ -866,16 +869,16 @@ void gru(const T *CXX_RESTRICT input, const T *CXX_RESTRICT w, const T *CXX_REST
         std::fill(tmp_a.begin(), tmp_a.end(), 0.f);
         std::fill(tmp_b.begin(), tmp_b.end(), 0.f);
         // gate_z = x_i * w_i_z + b_w_z + h_t *r_i_z + b_r_z
-        for (size_t bs = 0; bs < batch_size; bs++)
+        for (int bs = 0; bs < batch_size; bs++)
         {
-            for (size_t hs = 0; hs < hidden_size; hs++)
+            for (int hs = 0; hs < hidden_size; hs++)
             {
-                for (size_t is = 0; is < input_size; is++)
+                for (int is = 0; is < input_size; is++)
                 {
                     tmp_a[bs * hidden_size + hs] += x_i[bs * input_size + is] * w_i[hs * input_size + is];
                 }
                 tmp_a[bs * hidden_size + hs] += b[hs];
-                for (size_t rs = 0; rs < hidden_size; rs++)
+                for (int rs = 0; rs < hidden_size; rs++)
                 {
                     tmp_b[bs * hidden_size + hs] += h_t[bs * hidden_size + rs] * r_i[hs * hidden_size + rs];
                 }
@@ -890,16 +893,16 @@ void gru(const T *CXX_RESTRICT input, const T *CXX_RESTRICT w, const T *CXX_REST
         std::fill(tmp_a.begin(), tmp_a.end(), 0.f);
         std::fill(tmp_b.begin(), tmp_b.end(), 0.f);
         // gate_r = x_i * w_i_r + b_w_r + h_t *r_i_r + b_r_r
-        for (size_t bs = 0; bs < batch_size; bs++)
+        for (int bs = 0; bs < batch_size; bs++)
         {
-            for (size_t hs = 0; hs < hidden_size; hs++)
+            for (int hs = 0; hs < hidden_size; hs++)
             {
-                for (size_t is = 0; is < input_size; is++)
+                for (int is = 0; is < input_size; is++)
                 {
                     tmp_a[bs * hidden_size + hs] += x_i[bs * input_size + is] * w_i[hidden_size * input_size + hs * input_size + is];
                 }
                 tmp_a[bs * hidden_size + hs] += b[hidden_size + hs];
-                for (size_t rs = 0; rs < hidden_size; rs++)
+                for (int rs = 0; rs < hidden_size; rs++)
                 {
                     tmp_b[bs * hidden_size + hs] += h_t[bs * hidden_size + rs] * r_i[hidden_size * hidden_size + hs * hidden_size + rs];
                 }
@@ -914,16 +917,16 @@ void gru(const T *CXX_RESTRICT input, const T *CXX_RESTRICT w, const T *CXX_REST
         std::fill(tmp_a.begin(), tmp_a.end(), 0.f);
         std::fill(tmp_b.begin(), tmp_b.end(), 0.f);
         // gate_h = x_i * w_i_h + b_w_h + gate_r·h_t *r_i_h + b_r_h
-        for (size_t bs = 0; bs < batch_size; bs++)
+        for (int bs = 0; bs < batch_size; bs++)
         {
-            for (size_t hs = 0; hs < hidden_size; hs++)
+            for (int hs = 0; hs < hidden_size; hs++)
             {
-                for (size_t is = 0; is < input_size; is++)
+                for (int is = 0; is < input_size; is++)
                 {
                     tmp_a[bs * hidden_size + hs] += x_i[bs * input_size + is] * w_i[2 * hidden_size * input_size + hs * input_size + is];
                 }
                 tmp_a[bs * hidden_size + hs] += b[2 * hidden_size + hs];
-                for (size_t rs = 0; rs < hidden_size; rs++)
+                for (int rs = 0; rs < hidden_size; rs++)
                 {
                     // if not linear
                     tmp_b[bs * hidden_size + hs] += gate_r[bs * hidden_size + rs] * h_t[bs * hidden_size + rs] * r_i[2 * hidden_size * hidden_size + hs * hidden_size + rs];
@@ -941,7 +944,7 @@ void gru(const T *CXX_RESTRICT input, const T *CXX_RESTRICT w, const T *CXX_REST
         // gate_h = tanh(gate_h);
         std::transform(gate_h.begin(), gate_h.end(), gate_h.begin(), tanh);
 
-        for (size_t k = 0; k < batch_size * hidden_size; k++)
+        for (int k = 0; k < batch_size * hidden_size; k++)
         {
             h_t[k] = (1 - gate_z[k]) * gate_h[k] + gate_z[k] * h_t[k];
             *output++ = h_t[k];

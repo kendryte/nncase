@@ -25,7 +25,7 @@ using namespace nncase::kernels::cpu::reference;
 template result<void> reference::gru<float>(const float *input, const float *w, const float *r, const float *b, float *initial_h, float *output, float *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape) noexcept;
 
 template <typename T>
-result<void> reference::gru(const T *input, const T *w, const T *r, NNCASE_UNUSED const T *b, T *initial_h, NNCASE_UNUSED T *output, NNCASE_UNUSED T *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape) noexcept
+result<void> reference::gru(const T *input, const T *w, const T *r, const T *b, T *initial_h, T *output, T *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape) noexcept
 {
     const int seq_length = input_shape[0];
     const int batch_size = input_shape[1];
@@ -34,10 +34,12 @@ result<void> reference::gru(const T *input, const T *w, const T *r, NNCASE_UNUSE
     const int hidden_size = w_shape[1] / 3;
 
     int count = 0;
-    auto sigmoid = [&](float x) {
+    auto sigmoid = [&](float x)
+    {
         return 1 / (1 + std::exp(-x));
     };
-    auto tanh = [&](float x) {
+    auto tanh = [&](float x)
+    {
         return std::tanh(x);
     };
     // copy input to output
@@ -72,16 +74,16 @@ result<void> reference::gru(const T *input, const T *w, const T *r, NNCASE_UNUSE
         std::fill(tmp_a.begin(), tmp_a.end(), 0.f);
         std::fill(tmp_b.begin(), tmp_b.end(), 0.f);
         // gate_z = x_i * w_i_z + b_w_z + h_t *r_i_z + b_r_z
-        for (size_t bs = 0; bs < batch_size; bs++)
+        for (int bs = 0; bs < batch_size; bs++)
         {
-            for (size_t hs = 0; hs < hidden_size; hs++)
+            for (int hs = 0; hs < hidden_size; hs++)
             {
-                for (size_t is = 0; is < input_size; is++)
+                for (int is = 0; is < input_size; is++)
                 {
                     tmp_a[bs * hidden_size + hs] += x_i[bs * input_size + is] * w_i[hs * input_size + is];
                 }
                 tmp_a[bs * hidden_size + hs] += b[hs];
-                for (size_t rs = 0; rs < hidden_size; rs++)
+                for (int rs = 0; rs < hidden_size; rs++)
                 {
                     tmp_b[bs * hidden_size + hs] += h_t[bs * hidden_size + rs] * r_i[hs * hidden_size + rs];
                 }
@@ -96,16 +98,16 @@ result<void> reference::gru(const T *input, const T *w, const T *r, NNCASE_UNUSE
         std::fill(tmp_a.begin(), tmp_a.end(), 0.f);
         std::fill(tmp_b.begin(), tmp_b.end(), 0.f);
         // gate_r = x_i * w_i_r + b_w_r + h_t *r_i_r + b_r_r
-        for (size_t bs = 0; bs < batch_size; bs++)
+        for (int bs = 0; bs < batch_size; bs++)
         {
-            for (size_t hs = 0; hs < hidden_size; hs++)
+            for (int hs = 0; hs < hidden_size; hs++)
             {
-                for (size_t is = 0; is < input_size; is++)
+                for (int is = 0; is < input_size; is++)
                 {
                     tmp_a[bs * hidden_size + hs] += x_i[bs * input_size + is] * w_i[hidden_size * input_size + hs * input_size + is];
                 }
                 tmp_a[bs * hidden_size + hs] += b[hidden_size + hs];
-                for (size_t rs = 0; rs < hidden_size; rs++)
+                for (int rs = 0; rs < hidden_size; rs++)
                 {
                     tmp_b[bs * hidden_size + hs] += h_t[bs * hidden_size + rs] * r_i[hidden_size * hidden_size + hs * hidden_size + rs];
                 }
@@ -120,16 +122,16 @@ result<void> reference::gru(const T *input, const T *w, const T *r, NNCASE_UNUSE
         std::fill(tmp_a.begin(), tmp_a.end(), 0.f);
         std::fill(tmp_b.begin(), tmp_b.end(), 0.f);
         // gate_h = x_i * w_i_h + b_w_h + gate_r·h_t *r_i_h + b_r_h
-        for (size_t bs = 0; bs < batch_size; bs++)
+        for (int bs = 0; bs < batch_size; bs++)
         {
-            for (size_t hs = 0; hs < hidden_size; hs++)
+            for (int hs = 0; hs < hidden_size; hs++)
             {
-                for (size_t is = 0; is < input_size; is++)
+                for (int is = 0; is < input_size; is++)
                 {
                     tmp_a[bs * hidden_size + hs] += x_i[bs * input_size + is] * w_i[2 * hidden_size * input_size + hs * input_size + is];
                 }
                 tmp_a[bs * hidden_size + hs] += b[2 * hidden_size + hs];
-                for (size_t rs = 0; rs < hidden_size; rs++)
+                for (int rs = 0; rs < hidden_size; rs++)
                 {
                     // if not linear
                     tmp_b[bs * hidden_size + hs] += gate_r[bs * hidden_size + rs] * h_t[bs * hidden_size + rs] * r_i[2 * hidden_size * hidden_size + hs * hidden_size + rs];
@@ -147,7 +149,7 @@ result<void> reference::gru(const T *input, const T *w, const T *r, NNCASE_UNUSE
         // gate_h = tanh(gate_h);
         std::transform(gate_h.begin(), gate_h.end(), gate_h.begin(), tanh);
 
-        for (size_t k = 0; k < batch_size * hidden_size; k++)
+        for (int k = 0; k < batch_size * hidden_size; k++)
         {
             h_t[k] = (1 - gate_z[k]) * gate_h[k] + gate_z[k] * h_t[k];
             *output++ = h_t[k];
