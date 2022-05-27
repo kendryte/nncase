@@ -164,7 +164,7 @@ input_sizes = [
 ]
 
 biases = [
-    # None,
+    None,
     1
 ]
 
@@ -173,7 +173,7 @@ sequence_lenses = [
 ]
 
 initial_hs = [
-    # None,
+    None,
     1
 ]
 
