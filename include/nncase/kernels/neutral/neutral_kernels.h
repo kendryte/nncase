@@ -642,8 +642,7 @@ void transpose(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, const TShape
 template <class T, class TShape>
 void strided_slice(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, const TShape &in_shape, const TShape &begin, const TShape &end, const TShape &strides)
 {
-    auto loop_cond = [](int32_t i, int32_t stop, int32_t stride)
-    {
+    auto loop_cond = [](int32_t i, int32_t stop, int32_t stride) {
         return stride > 0 ? i < stop : i > stop;
     };
 
@@ -829,12 +828,10 @@ void gru(const T *CXX_RESTRICT input, const T *CXX_RESTRICT w, const T *CXX_REST
     const int hidden_size = w_shape[1] / 3;
 
     int count = 0;
-    auto sigmoid = [&](float x)
-    {
+    auto sigmoid = [&](float x) {
         return 1 / (1 + std::exp(-x));
     };
-    auto tanh = [&](float x)
-    {
+    auto tanh = [&](float x) {
         return std::tanh(x);
     };
     // copy input to output
