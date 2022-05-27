@@ -46,4 +46,7 @@ internal static class Native
 
     [DllImport(LibraryName, EntryPoint = "nncase_host_buffer_unmap")]
     public static extern unsafe ErrorCode HostBufferUnmap(IntPtr hostBuffer);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_dtype_create_prime")]
+    public static extern unsafe ErrorCode DTypeCreatePrim(TypeCode typeCode, out IntPtr dtype);
 }

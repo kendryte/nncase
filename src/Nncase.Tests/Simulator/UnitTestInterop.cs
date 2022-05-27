@@ -56,7 +56,22 @@ namespace Nncase.Tests.SimulatorTest
         {
             var allocator = RTBufferAllocator.Host;
             var buffer = allocator.Allocate(256).AsHost();
-            using var mmOwner = buffer.Map(RTMapAccess.Write);
+            using (var mmOwner = buffer.Map(RTMapAccess.Write))
+            {
+                mmOwner.Memory.Span.Fill(1);
+            }
+
+            using (var mmOwner = buffer.Map(RTMapAccess.Read))
+            {
+                Assert.All(mmOwner.Memory.Span.ToArray(), x => Assert.Equal(1, x));
+            }
+        }
+
+        [Fact]
+        public void TestDataTypeCreatePrim()
+        {
+            var dtype = RTDataType.FromTypeCode(Runtime.TypeCode.Float32);
+            Assert.NotNull(dtype);
         }
 
         [Fact]

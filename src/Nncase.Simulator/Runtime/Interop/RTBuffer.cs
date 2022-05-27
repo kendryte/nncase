@@ -69,7 +69,6 @@ public class RTHostBuffer : RTBuffer
     public unsafe IMemoryOwner<byte> Map(RTMapAccess mapAccess)
     {
         Native.HostBufferMap(Handle, mapAccess, out var data, out var bytes).ThrowIfFailed();
-        var mm = new RTHostMemoryManager(this, data, bytes);
-        return mm.Memory;
+        return new RTHostMemoryManager(this, data, bytes);
     }
 }
