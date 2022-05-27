@@ -486,10 +486,10 @@ result<void> op_visitor::visit(gsl::span<const gsl::byte> text) noexcept
     while (!interrupted_ && !reader_.empty())
         try_(next());
 
-    #ifdef ENABLE_OP_PROFILE
-        op_profile profile_time;
-        profile_time.print();
-    #endif
+#ifdef ENABLE_OP_PROFILE
+    op_profile profile_time;
+    profile_time.print();
+#endif
 
     return ok();
 }

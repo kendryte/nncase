@@ -34,12 +34,10 @@ result<void> reference::gru(const T *input, const T *w, const T *r, NNCASE_UNUSE
     const int hidden_size = w_shape[1] / 3;
 
     int count = 0;
-    auto sigmoid = [&](float x)
-    {
+    auto sigmoid = [&](float x) {
         return 1 / (1 + std::exp(-x));
     };
-    auto tanh = [&](float x)
-    {
+    auto tanh = [&](float x) {
         return std::tanh(x);
     };
     // copy input to output
