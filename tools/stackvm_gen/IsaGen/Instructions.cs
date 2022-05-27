@@ -158,6 +158,7 @@ namespace IsaGen
         DEQUANTIZE,
         GATHER,
         GATHER_ND,
+        GRU,
         HARDMAX,
         LOGISTIC,
         LUT1D,
@@ -1506,6 +1507,23 @@ namespace IsaGen
             [DisplayName("batch_dims")]
             [Description("Batch Dims")]
             public byte Batchdims { get; set; }
+        }
+
+        [DisplayName("TENSOR.GRU")]
+        [Category("Tensor Instructions")]
+        [Description("Gru")]
+        public class GruInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.GRU;
+
+            [DisplayName("input_shape_src")]
+            [Description("Input shape register")]
+            public byte RshapeSrc1 { get; set; }
+
+            [DisplayName("w_shape_src")]
+            [Description("W shape register")]
+            public byte RshapeSrc2 { get; set; }
+
         }
 
         [DisplayName("TENSOR.HARDMAX")]

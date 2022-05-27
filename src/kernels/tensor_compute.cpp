@@ -467,3 +467,11 @@ result<void> kernels::trilu(const T *input, T *output, const runtime_shape_t &in
 {
     return cpu::reference::trilu(input, output, in_shape, upper, k);
 }
+
+template result<void> kernels::gru<float>(const float *input, const float *w, const float *r, const float *b, float *initial_h, float *output, float *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape) noexcept;
+
+template <typename T>
+result<void> kernels::gru(const T *input, const T *w, const T *r, const T *b, T *initial_h, T *output, T *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape) noexcept
+{
+    return cpu::reference::gru(input, w, r, b, initial_h, output, output_h, input_shape, w_shape);
+}
