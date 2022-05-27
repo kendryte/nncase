@@ -429,8 +429,8 @@ class TestRunner(metaclass=ABCMeta):
             model_content = self.read_model_file(model_file)
             self.run_evaluator(cfg, case_dir, import_options,
                                compile_options, model_content, dict_args)
-            # self.run_inference(cfg, case_dir, import_options,
-            #                    compile_options, model_content, dict_args)
+            self.run_inference(cfg, case_dir, import_options,
+                               compile_options, model_content, dict_args)
 
     def get_compiler_options(self, cfg, model_file):
         import_options = nncase.ImportOptions()

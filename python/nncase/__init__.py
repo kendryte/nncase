@@ -17,6 +17,9 @@ from __future__ import annotations
 import clr
 import sys
 import os
+
+import numpy
+from numpy import empty
 import subprocess
 import shutil
 
@@ -31,7 +34,7 @@ def _add_dllpath():
                 "Nncase.Graph",
                 "Nncase.Evaluator",
                 "Nncase.Importer",
-                # "Nncase.Pattern",
+                "Nncase.Simulator",
                 "Nncase.Compiler"]:
         clr.AddReference(os.path.join(nncase_cli_path, dll))
 
@@ -41,6 +44,7 @@ from io import BytesIO
 import numpy as np
 from typing import Any, List, Dict, Tuple, Union
 from System.IO import MemoryStream, Stream
+from System import Memory
 from System.Collections.Generic import Dictionary
 from System import (Array, Byte,
                     Int16,
@@ -145,7 +149,7 @@ class MemoryRange:
 
 class Simulator:
     def __init__(self) -> None:
-        pass
+        self.interpreter = _nncase.Runtime.Interop.RTInterpreter()
 
     def get_input_desc(self, index: int) -> MemoryRange:
         pass
@@ -160,7 +164,9 @@ class Simulator:
         pass
 
     def load_model(self, model: bytes) -> None:
-        pass
+        model_bytes = [i for i in model]
+        mem = _nncase.Compiler.PythonHelper.ToMemory(model_bytes)
+        self.interpreter.LoadModel(mem)
 
     def run(self) -> None:
         pass
@@ -236,12 +242,13 @@ class Compiler:
         self._compiler.init()
 
     def __process_compile_options(self, compile_options: CompileOptions) -> CliCompileOptions:
-        self._compile_options: CliCompileOptions = _nncase.Compiler.CompileOptions()
+        self._compile_options: CliCompileOptions = _nncase.CompileOptions(False)
+        self._compile_options.Target = compile_options.target
         self._compile_options.DumpLevel = 3 if compile_options.dump_ir == True else 0
         self._compile_options.DumpDir = compile_options.dump_dir
 
     def compile(self) -> None:
-        pass
+        self._compiler.Compile(self._compile_options)
 
     def create_evaluator(self, stage: int) -> GraphEvaluator:
         return GraphEvaluator(self._module)
@@ -250,7 +257,11 @@ class Compiler:
         pass
 
     def gencode_tobytes(self) -> bytes:
-        pass
+        code = self._compiler.Gencode()
+        arr = []
+        for i in range(0, code.Length):
+            arr.append(code[i])
+        return bytes(arr)
 
     def import_caffe(self, model: bytes, prototxt: bytes) -> None:
         raise NotImplementedError("import_caffe")
@@ -273,7 +284,7 @@ class Compiler:
 
 
 def test_target(target: str):
-    return target == 'cpu'
+    return target in ["cpu", "k510"]
 
 
 class DumpRangeTensorOptions:
@@ -290,6 +301,9 @@ class CliCompileOptions():
     Target: str
     DumpLevel: int
     DumpDir: str
+    UsePTQ: bool
+    QuantType: int
+    QuantMode: int
 
 
 class CompileOptions:

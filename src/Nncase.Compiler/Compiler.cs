@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Nncase.CodeGen;
 using Nncase.Evaluator;
 using Nncase.Hosting;
 using Nncase.IR;
@@ -17,6 +18,8 @@ namespace Nncase.Compiler;
 
 public class Compiler
 {
+    private IRModule Module;
+    private ICompileOptions Options;
     public static void init()
     {
         OrtKI.LoadDLL();
@@ -39,7 +42,8 @@ public class Compiler
             c.AddCore()
                 .AddEvaluator()
                 .AddGraph()
-                .AddEGraph();
+                .AddEGraph()
+                .AddStackVM();
         });
         builder.RegisterAssemblyModules(assemblies);
     }
@@ -84,17 +88,55 @@ public class Compiler
         pmgr.Run();
     }
 
-    private IRModule ImportModel(Stream content, ICompileOptions options) =>
-        options.InputFormat switch
+    private IRModule ImportModel(Stream content, ICompileOptions options)
+    {
+        Module = options.InputFormat switch
         {
             "tflite" => Importers.ImportTFLite(content),
             "onnx" => Importers.ImportOnnx(content),
             _ => throw new NotImplementedException($"Not Implement {options.InputFormat} Impoter!"),
         };
+        return Module;
+    }
+
 
     private void DumpModule(IRModule module, ICompileOptions options, string prefix)
     {
         var dumpPath = Path.Combine(options.DumpDir, "dump", prefix);
         CompilerServices.DumpIR(module.Entry!, prefix, dumpPath);
+    }
+
+    private void RunPass(Action<PassManager> register)
+    {
+        // todo:dump dir
+        var pmgr = new PassManager(Module, new RunPassOptions(CompilerServices.GetTarget(Options.Target), 0, "null", Options));
+        register(pmgr);
+        pmgr.Run();
+    }
+
+    public void TargetIndependentPass()
+    {
+    }
+    
+    public void Compile(ICompileOptions options)
+    {
+        Options = options;
+        var t = CompilerServices.GetTarget(options.Target);
+        TargetIndependentPass();
+        RunPass(p => t.RegisterTargetDependentPass(p, options));
+        RunPass(p => t.RegisterTargetDependentAfterQuantPass(p));
+        Console.WriteLine("Compile successful");
+    }
+
+    public byte[] Gencode()
+    {
+        // todo:collect functions
+        var target = CompilerServices.GetTarget(Options.Target);
+        var moduleBuilder = new ModelBuilder(target);
+        var linkedModel = moduleBuilder.Build(Module);
+        using var output = new MemoryStream();
+        linkedModel.Serialize(output);
+        Console.WriteLine("Gencode successful");
+        return output.ToArray();
     }
 }

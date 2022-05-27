@@ -29,6 +29,7 @@
     <ProjectReference Include="..\Nncase.CodeGen\Nncase.CodeGen.csproj" />
     <ProjectReference Include="..\Nncase.Schedule\Nncase.Schedule.csproj" />
     <ProjectReference Include="..\Nncase.Targets\Nncase.Targets.csproj" />
+    <ProjectReference Include="..\Nncase.Simulator\Nncase.Simulator.csproj" />
   </ItemGroup>
 
   <ItemGroup>

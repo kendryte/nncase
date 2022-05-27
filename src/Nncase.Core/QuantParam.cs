@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using TypeCode = Nncase.Runtime.TypeCode;
 
 namespace Nncase;
 
@@ -41,7 +42,7 @@ public struct QuantParam : IEquatable<QuantParam>
 /// <summary>
 /// Prim type of <see cref="QuantizeParam"/>.
 /// </summary>
-public sealed record QuantParamType : ValueType
+public sealed record QuantParamType : PrimType
 {
     /// <inheritdoc/>
     public override Type CLRType => typeof(QuantParam);
@@ -49,5 +50,9 @@ public sealed record QuantParamType : ValueType
     /// <inheritdoc/>
     public unsafe override int SizeInBytes => sizeof(QuantParam);
 
-    public override Guid Uuid => throw new NotImplementedException();
+    public override PrimTypeAttributes Attributes { get; }
+
+    public override string FullName => "QuantParam";
+    public override string ShortName => "qp";
+    public override TypeCode TypeCode => TypeCode.ValueType;
 }

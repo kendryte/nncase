@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Nncase.CodeGen;
 using Nncase.CodeGen.StackVM;
 using Nncase.IR;
+using Nncase.Transform;
 
 namespace Nncase.Targets;
 
@@ -19,6 +20,18 @@ public class CPUTarget : ITarget
 {
     /// <inheritdoc/>
     public string Kind => "cpu";
+
+    public void RegisterTargetDependentPass(PassManager passManager, ICompileOptions options)
+    {
+    }
+
+    public void RegisterQuantizePass(PassManager passManager)
+    {
+    }
+
+    public void RegisterTargetDependentAfterQuantPass(PassManager passManager)
+    {
+    }
 
     /// <inheritdoc/>
     public IModuleBuilder CreateModuleBuilder(string moduleKind)

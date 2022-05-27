@@ -11,4 +11,7 @@ public static class PythonHelper
     {
         return value.BytesBuffer.ToArray();
     }
+
+    public static Memory<byte> ToMemory(byte[] bytes) => new(bytes);
+
 }

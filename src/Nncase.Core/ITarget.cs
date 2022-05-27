@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Nncase.CodeGen;
+using Nncase.Transform;
 
 namespace Nncase;
 
@@ -19,6 +20,12 @@ public interface ITarget
     /// Gets target kind.
     /// </summary>
     string Kind { get; }
+
+    void RegisterTargetDependentPass(PassManager passManager, ICompileOptions options);
+
+    void RegisterQuantizePass(PassManager passManager);
+
+    void RegisterTargetDependentAfterQuantPass(PassManager passManager);
 
     /// <summary>
     /// Create module builder.

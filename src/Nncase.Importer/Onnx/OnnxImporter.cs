@@ -117,7 +117,12 @@ namespace Nncase.Importer
 
         private IRModule MakeMainModule(Expr[] body, IRArray<Var> parameter)
         {
-            var outputTuple = new IR.Tuple(ImmutableArray.Create(body));
+            if (body.Length > 1)
+            {
+                throw new NotImplementedException("RuntimeNotSupportedTuple");
+            }
+            // var outputTuple = new IR.Tuple(ImmutableArray.Create(body));
+            var outputTuple = body[0];
             var mainFunc = new Function("main", outputTuple, parameter);
             var module = new IRModule();
             module.Add(mainFunc);
