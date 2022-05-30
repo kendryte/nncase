@@ -64,7 +64,7 @@ public class RTTensor : RTValue
             if (_dimensions == null)
             {
                 uint dimsLength = 0;
-                Native.TensorGetDims(Handle, null, ref dimsLength).ThrowIfNotEqual(-84);
+                Native.TensorGetDims(Handle, null, ref dimsLength);
                 var dims = new uint[dimsLength];
                 fixed (uint* dimsPtr = dims)
                 {
@@ -85,7 +85,7 @@ public class RTTensor : RTValue
             if (_strides == null)
             {
                 uint stridesLength = 0;
-                Native.TensorGetStrides(Handle, null, ref stridesLength).ThrowIfNotEqual(-84);
+                Native.TensorGetStrides(Handle, null, ref stridesLength);
                 var strides = new uint[stridesLength];
                 fixed (uint* stridesPtr = strides)
                 {
