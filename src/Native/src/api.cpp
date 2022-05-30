@@ -127,8 +127,7 @@ int nncase_func_invoke(nncase::runtime::runtime_function *func,
     if (func && (params || !params_size) && result) {
         gsl::span<value_t> param_values{reinterpret_cast<value_t *>(params),
                                         params_size};
-        value_t retval(*result);
-        c_try_set(retval, func->invoke(param_values, retval));
+        c_try_var(retval, func->invoke(param_values));
         *result = retval.detach();
         return 0;
     }
@@ -145,7 +144,7 @@ int nncase_buffer_allocator_get_host(
 }
 
 int nncase_buffer_allocator_alloc(nncase::runtime::buffer_allocator *alloc,
-                                  uint32_t bytes, void *options,
+                                  uint32_t bytes, [[maybe_unused]] void *options,
                                   nncase::runtime::buffer_node **buffer) {
     if (alloc && buffer) {
         c_try_var(buf, alloc->allocate(bytes, {}));
@@ -254,6 +253,7 @@ int nncase_tensor_get_dims(nncase::tensor_node *tensor, uint32_t *dims,
         auto &shape = tensor->shape();
         auto required_length = (uint32_t)shape.size();
         if (*dims_length < required_length) {
+            *dims_length = required_length;
             return -EOVERFLOW;
         }
 
@@ -274,6 +274,7 @@ int nncase_tensor_get_strides(nncase::tensor_node *tensor, uint32_t *strides,
         auto &src_strides = tensor->strides();
         auto required_length = (uint32_t)src_strides.size();
         if (*strides_length < required_length) {
+            *strides_length = required_length;
             return -EOVERFLOW;
         }
 

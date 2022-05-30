@@ -37,13 +37,13 @@ class host_buffer_impl : public host_buffer_node {
         return err(std::errc::not_supported);
     }
 
-    result<gsl::span<gsl::byte>> map_core(map_access_t access) override {
+    result<gsl::span<gsl::byte>> map_core([[maybe_unused]] map_access_t access) override {
         return ok(gsl::span<gsl::byte>(data_, size_bytes()));
     }
 
-    result<void> unmap_core(map_access_t access) override { return ok(); }
+    result<void> unmap_core([[maybe_unused]] map_access_t access) override { return ok(); }
 
-    result<void> sync_core(sync_op_t op) override { return ok(); }
+    result<void> sync_core([[maybe_unused]] sync_op_t op) override { return ok(); }
 
   private:
     gsl::byte *data_;

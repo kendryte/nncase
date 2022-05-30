@@ -34,11 +34,11 @@ bool tensor_node::is_contiguous() const noexcept {
     return strides() == get_default_strides(shape());
 }
 
-result<void> tensor_node::copy_from(tensor src) const noexcept {
+result<void> tensor_node::copy_from([[maybe_unused]] tensor src) const noexcept {
     return err(std::errc::not_supported);
 }
 
-result<void> tensor_node::copy_to(tensor dest) const noexcept {
+result<void> tensor_node::copy_to([[maybe_unused]] tensor dest) const noexcept {
     return err(std::errc::not_supported);
 }
 

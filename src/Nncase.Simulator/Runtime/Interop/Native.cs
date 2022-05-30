@@ -49,4 +49,19 @@ internal static class Native
 
     [DllImport(LibraryName, EntryPoint = "nncase_dtype_create_prime")]
     public static extern unsafe ErrorCode DTypeCreatePrim(TypeCode typeCode, out IntPtr dtype);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_tensor_create")]
+    public static extern unsafe ErrorCode TensorCreate(IntPtr dtype, uint* dims, uint dimsLength, uint* strides, uint stridesLength, in RTBufferSlice.RuntimeStruct bufferSlice, out IntPtr tensor);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_tensor_get_dtype")]
+    public static extern unsafe ErrorCode TensorGetDtype(IntPtr tensor, out IntPtr dtype);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_tensor_get_buffer")]
+    public static extern unsafe ErrorCode TensorGetBuffer(IntPtr tensor, out RTBufferSlice.RuntimeStruct buffer);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_tensor_get_dims")]
+    public static extern unsafe ErrorCode TensorGetDims(IntPtr tensor, uint* dims, ref uint dimsLength);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_tensor_get_strides")]
+    public static extern unsafe ErrorCode TensorGetStrides(IntPtr tensor, uint* strides, ref uint stridesLength);
 }

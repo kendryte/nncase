@@ -75,6 +75,23 @@ namespace Nncase.Tests.SimulatorTest
         }
 
         [Fact]
+        public void TestCreateTensor()
+        {
+            var allocator = RTBufferAllocator.Host;
+            var buffer = allocator.Allocate(256);
+            var dtype = RTDataType.FromTypeCode(Runtime.TypeCode.Float32);
+            var dims = new uint[] { 1, 64 };
+            var strides = new uint[] { 1, 1 };
+            var bufferSlice = new RTBufferSlice { Buffer = buffer, Start = 0, SizeBytes = 256 };
+            var tensor = RTTensor.Create(dtype, dims, strides, bufferSlice);
+            Assert.NotNull(tensor);
+            Assert.Equal(dtype, tensor.ElementType);
+            Assert.Equal(bufferSlice, tensor.Buffer);
+            Assert.Equal(dims, tensor.Dimensions.ToArray());
+            Assert.Equal(strides, tensor.Strides.ToArray());
+        }
+
+        [Fact]
         public void TestRTInterpreterLoadModel()
         {
             var interp = new RTInterpreter();

@@ -25,7 +25,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 
 interpreter::interpreter() noexcept
-    : entry_function_(nullptr), model_data_(nullptr) {}
+    : model_data_(nullptr), entry_function_(nullptr) {}
 
 result<void> interpreter::load_model(gsl::span<const gsl::byte> buffer,
                                      bool copy_buffer) noexcept {

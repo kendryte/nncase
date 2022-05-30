@@ -35,4 +35,17 @@ public abstract class RTObject
     /// Gets object handle.
     /// </summary>
     public IntPtr Handle { get; }
+
+    /// <inheritedoc/>
+    public override bool Equals(object? obj)
+    {
+        return obj is RTObject @object &&
+               EqualityComparer<IntPtr>.Default.Equals(Handle, @object.Handle);
+    }
+
+    /// <inheritedoc/>
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Handle);
+    }
 }

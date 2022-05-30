@@ -5,6 +5,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -70,5 +71,54 @@ public class RTHostBuffer : RTBuffer
     {
         Native.HostBufferMap(Handle, mapAccess, out var data, out var bytes).ThrowIfFailed();
         return new RTHostMemoryManager(this, data, bytes);
+    }
+}
+
+/// <summary>
+/// Runtime buffer slice.
+/// </summary>
+public struct RTBufferSlice
+{
+    /// <summary>
+    /// Buffer.
+    /// </summary>
+    public RTBuffer Buffer { get; set; }
+
+    /// <summary>
+    /// Start.
+    /// </summary>
+    public uint Start { get; set; }
+
+    /// <summary>
+    /// Size in bytes.
+    /// </summary>
+    public uint SizeBytes { get; set; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct RuntimeStruct
+    {
+        public IntPtr Buffer;
+        public uint Start;
+        public uint SizeBytes;
+    }
+
+    internal RuntimeStruct ToRT()
+    {
+        return new RuntimeStruct
+        {
+            Buffer = Buffer.Handle,
+            Start = Start,
+            SizeBytes = SizeBytes
+        };
+    }
+
+    internal static RTBufferSlice FromRT(in RuntimeStruct rt)
+    {
+        return new RTBufferSlice
+        {
+            Buffer = new RTBuffer(rt.Buffer),
+            Start = rt.Start,
+            SizeBytes = rt.SizeBytes
+        };
     }
 }

@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 #pragma once
+#include "nncase/runtime/simple_types.h"
+#include "nncase/shape.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -33,7 +35,7 @@ enum OpType
     Ref
 };
 
-void print_index(const runtime_shape_t &index)
+void print_index(const dims_t &index)
 {
     for (size_t i = 0; i < index.size(); ++i)
     {
@@ -42,7 +44,7 @@ void print_index(const runtime_shape_t &index)
     std::cout << std::endl;
 }
 
-size_t get_last_no_zero_stride(const runtime_shape_t &strides, size_t i)
+size_t get_last_no_zero_stride(const strides_t &strides, size_t i)
 {
     for (size_t j = i; j < strides.size(); ++j)
     {
@@ -57,9 +59,9 @@ size_t get_last_no_zero_stride(const runtime_shape_t &strides, size_t i)
 
 // strides bias first value is no effect
 // line is contiguous
-runtime_shape_t get_strides(const runtime_shape_t &shape, const runtime_shape_t &strides_bias)
+dims_t get_strides(const dims_t &shape, const strides_t &strides_bias)
 {
-    runtime_shape_t strides(shape.size(), 1);
+    dims_t strides(shape.size(), 1);
     for (int i = (int)shape.size() - 2; i >= 0; i--)
     {
         const auto line_width = shape[i + 1] + strides_bias[i + 1];
@@ -70,7 +72,7 @@ runtime_shape_t get_strides(const runtime_shape_t &shape, const runtime_shape_t 
     return strides;
 }
 
-uint32_t &get(runtime_tensor &t, const runtime_shape_t &index)
+uint32_t &get(runtime_tensor &t, const dims_t &index)
 {
     auto map = std::move(hrt::map(t, hrt::map_read).unwrap_or_throw());
     auto data = map.buffer().as_span<uint32_t>();
@@ -86,7 +88,7 @@ void init_tensor_data(runtime_tensor &tensor)
     // auto *ptr = tensor.data_as<uint32_t>();
     // auto ptr = reinterpret_cast<uint32_t*>(host_runtime_tensor::buffer(tensor).unwrap().begin());
     NNCASE_UNUSED auto res = cpu::reference::apply(tensor.shape(),
-        [&](const runtime_shape_t &index) -> result<void> {
+        [&](const dims_t &index) -> result<void> {
             // print_index(index);
             // ptr[offset(tensor.strides(), index)] = dis(gen);
             get(tensor, index) = dis(gen);
@@ -95,14 +97,14 @@ void init_tensor_data(runtime_tensor &tensor)
         });
 }
 
-runtime_tensor create_tensor(const runtime_shape_t &shape, const runtime_shape_t &strides_bias)
+runtime_tensor create_tensor(const dims_t &shape, const strides_t &strides_bias)
 {
     auto strides = get_strides(shape, strides_bias);
     // std::make_shared<uint32_t>(compute_size(shape, strides))
     return host_runtime_tensor::create(dt_float32, shape, strides).unwrap();
 }
 
-runtime_tensor create_input_tensor(const runtime_shape_t &shape, const runtime_shape_t &strides_bias)
+runtime_tensor create_input_tensor(const dims_t &shape, const strides_t &strides_bias)
 {
     auto tensor = create_tensor(shape, strides_bias);
     init_tensor_data(tensor);
@@ -121,9 +123,9 @@ gsl::byte *get_tensor_begin(runtime_tensor &t)
     return map.buffer().begin();
 }
 
-runtime_shape_t shape_sub(runtime_shape_t begin, runtime_axis_t end)
+runtime_shape_t shape_sub(dims_t begin, dims_t end)
 {
-    runtime_shape_t v;
+    dims_t v;
     for (size_t i = 0; i < begin.size(); ++i)
     {
         v.push_back(end[i] - begin[i]);
@@ -138,7 +140,7 @@ bool is_same_tensor(runtime_tensor &lhs, runtime_tensor &rhs)
         return false;
     }
     return cpu::reference::apply(lhs.shape(),
-        [&](const runtime_shape_t &index) -> result<void> {
+        [&](const dims_t &index) -> result<void> {
             // print_index(index);
             // std::cout << get(index) << " " << rhs.get(index) << std::endl;
             if (get(lhs, index) == get(rhs, index))
@@ -156,7 +158,7 @@ bool is_same_tensor(runtime_tensor &lhs, runtime_tensor &rhs)
 void print_data(runtime_tensor &data)
 {
     NNCASE_UNUSED auto res = cpu::reference::apply(data.shape(),
-        [&](const runtime_shape_t &index) -> result<void> {
+        [&](const dims_t &index) -> result<void> {
             std::cout << get(data, index) << std::endl;
             return ok();
         });
@@ -186,7 +188,7 @@ void output_data(runtime_tensor &data, std::string name, std::string dir_name = 
     shape_str.pop_back();
     f << "shape(" << shape_str << ")" << std::endl;
     NNCASE_UNUSED auto res = cpu::reference::apply(data.shape(),
-        [&](const runtime_shape_t &index) -> result<void> {
+        [&](const dims_t &index) -> result<void> {
             f << get(data, index) << std::endl;
             return ok();
         });
