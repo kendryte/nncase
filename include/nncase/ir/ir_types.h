@@ -30,7 +30,8 @@ enum node_attributes
     node_attr_need_quantize = 2,
     node_attr_fuse_input_slice = 4,
     node_attr_fuse_output_concat = 8,
-    node_attr_skip_constant_folding = 16
+    node_attr_skip_constant_folding = 16,
+    node_attr_skip_quantize = 32,
 };
 
 enum connector_attributes
