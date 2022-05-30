@@ -48,7 +48,7 @@ class nncaseConan(ConanFile):
             self.requires('gtest/1.10.0')
 
         if self.options.python:
-            self.requires('pybind11/2.6.1')
+            self.requires('pybind11/2.9.1')
 
         if not self.options.runtime:
             self.requires('flatbuffers/2.0.0')
