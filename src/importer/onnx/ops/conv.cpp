@@ -29,6 +29,20 @@ using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace onnx;
 
+namespace
+{
+    shape_t generate_output_shape(const shape_t &input, const shape_t &kernel, const std::array<padding, 2> &pads, const std::array<size_t, 2> &dilations, const std::array<size_t, 2> &strides)
+    {
+        return
+        {
+            input[0],
+            kernel[0],
+            get_windowed_output_size(input[2] + pads[0].sum(), kernel[2], strides[0], dilations[0], false),
+            get_windowed_output_size(input[3] + pads[1].sum(), kernel[3], strides[1], dilations[1], false)
+        };
+    }
+}
+
 void onnx_importer::convert_op_Conv(const NodeProto &node)
 {
     const auto &input = node.input()[0];
@@ -37,10 +51,7 @@ void onnx_importer::convert_op_Conv(const NodeProto &node)
 
     auto input_shape = get_shape(input);
     auto weight_shape = get_shape(weight);
-    auto output_shape = get_shape(output);
     auto input_type = get_datatype(input).value();
-    auto weights_type = get_datatype(weight).value();
-    auto output_type = get_datatype(output).value();
     // group
     const auto &group_attr = get_attribute<int>(node, "group");
     size_t group = group_attr ? group_attr.value() : 1;
@@ -124,7 +135,7 @@ void onnx_importer::convert_op_Conv(const NodeProto &node)
 
         auto weights_shape = weight_shape;
         weight_shape.push_back(1);
-        bitc_weights = graph_.emplace<bitcast>(weights_type, weights_shape, weight_shape);
+        bitc_weights = graph_.emplace<bitcast>(input_type, weights_shape, weight_shape);
     }
 
     auto conv = graph_.emplace<conv2d>(input_shape, weight_shape, group, paddings[0], paddings[1], strides[0], strides[1],
@@ -159,7 +170,7 @@ void onnx_importer::convert_op_Conv(const NodeProto &node)
 
     if (model_3d)
     {
-        auto bitc_out = graph_.emplace<bitcast>(output_type, conv->output().shape(), shape_t { conv->output().shape()[0], conv->output().shape()[1], conv->output().shape()[2] });
+        auto bitc_out = graph_.emplace<bitcast>(input_type, conv->output().shape(), shape_t { conv->output().shape()[0], conv->output().shape()[1], conv->output().shape()[2] });
         bitc_out->input().connect(conv->output());
         output_tensors_.emplace(output, &bitc_out->output());
     }
@@ -177,7 +188,6 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
     auto input_shape = get_shape(input);
     auto weight_shape = get_shape(weight);
     auto weight_type = get_datatype(weight).value();
-    auto output_shape = get_shape(output);
 
     // group
     const auto &group_attr = get_attribute<int>(node, "group");
@@ -239,9 +249,13 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
     std::string pad_mode = auto_pad_attr ? auto_pad_attr.value() : "NOTSET";
 
     // output_shape
+    auto output_shape { generate_output_shape(input_shape, weight_shape, paddings, dilations, strides) };
     const auto &output_shape_attr = get_attribute<std::vector<int>>(node, "output_shape");
     if (output_shape_attr)
     {
+        const auto &output_shape_value { output_shape_attr.value() };
+        output_shape = shape_t { begin(output_shape_value), end(output_shape_value) };
+
         std::array<int, 2> total_paddings { { 0, 0 } };
         total_paddings[0] = strides[0] * (input_shape[2] - 1) + output_paddings[0] + ((tp_shape[2] - 1) * dilations[0] + 1) - output_shape[2];
         total_paddings[1] = strides[1] * (input_shape[3] - 1) + output_paddings[1] + ((tp_shape[3] - 1) * dilations[1] + 1) - output_shape[3];
