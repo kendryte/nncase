@@ -313,7 +313,7 @@ void transpose_reduce_motion_transform::process(transform_context &context)
         {
             auto it = std::find(perm.begin(), perm.end(), axis);
             perm.erase(it);
-            std::for_each(perm.begin(), perm.end(), [=](auto &val) { 
+            std::for_each(perm.begin(), perm.end(), [=](auto &val) {
                 val = val > axis ? val - 1 : val;
             });
         }
