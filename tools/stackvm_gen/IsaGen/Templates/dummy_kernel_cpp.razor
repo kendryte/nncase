@@ -33,7 +33,7 @@ using namespace nncase::runtime::stackvm;
 {
     var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:
-@:result<tensor> nncase::kernels::stackvm::@(name)(@string.Join(", ", inst.Fields.Where(x => !x.IsOpCode && x.CppName != "tensor_funct").Select(x => $"[[maybe_unused]] {x.CppType} {x.CppName}").Concat(inst.Inputs.Select(x => $"[[maybe_unused]] {x.CppType} {x.CppName}").Concat(new[]{"[[maybe_unused]] tensor output", "[[maybe_unused]] kernel_context &context"})))) {
+@:result<value_t> nncase::kernels::stackvm::@(name)(@string.Join(", ", inst.Fields.Where(x => !x.IsOpCode && x.CppName != "tensor_funct").Select(x => $"[[maybe_unused]] {x.CppType} {x.CppName}").Concat(inst.Inputs.Select(x => $"[[maybe_unused]] {x.CppType} {x.CppName}").Concat(new[]{"[[maybe_unused]] value_t output", "[[maybe_unused]] kernel_context &context"})))) {
 @:    return err(std::errc::not_supported);
 @:}
 }

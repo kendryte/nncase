@@ -363,7 +363,7 @@ namespace IsaGen
             {
                 fields.Add(new InstructionInput
                             (
-                                CppType: "tensor",
+                                CppType: "value_t",
                                 CppName: SnakeName(f.Name)
                             ));
             }
