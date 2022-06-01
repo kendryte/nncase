@@ -6,7 +6,6 @@ using Nncase.CodeGen;
 using Nncase.IR;
 using Nncase.Runtime.Interop;
 using Nncase.Schedule;
-using Nncase.Simulator;
 using Xunit;
 
 namespace Nncase.Tests.SimulatorTest
@@ -92,6 +91,24 @@ namespace Nncase.Tests.SimulatorTest
         }
 
         [Fact]
+        public void TestCreateTensorFromTensor()
+        {
+            var tensor = (Tensor)new float[] { 1.0f, 2.0f };
+            var rtTensor = RTTensor.FromTensor(tensor);
+            var dtype = RTDataType.FromTypeCode(Runtime.TypeCode.Float32);
+            Assert.NotNull(rtTensor);
+            Assert.Equal(dtype, rtTensor.ElementType);
+            Assert.Equal(MemoryMarshal.Cast<int, uint>(tensor.Dimensions).ToArray(), rtTensor.Dimensions.ToArray());
+            Assert.Equal(MemoryMarshal.Cast<int, uint>(tensor.Strides).ToArray(), rtTensor.Strides.ToArray());
+
+            var buffer = rtTensor.Buffer.Buffer.AsHost()!;
+            using (var mmOwner = buffer.Map(RTMapAccess.Read))
+            {
+                Assert.Equal(mmOwner.Memory.Span.ToArray(), tensor.BytesBuffer.ToArray());
+            }
+        }
+
+        [Fact]
         public void TestRTInterpreterLoadModel()
         {
             var interp = new RTInterpreter();
@@ -99,6 +116,22 @@ namespace Nncase.Tests.SimulatorTest
             var entry = interp.Entry;
             Assert.NotNull(entry);
             Assert.Equal(1u, entry.ParamsCount);
+        }
+
+        [Fact]
+        public void TestRTInterpreterRunModel()
+        {
+            var interp = new RTInterpreter();
+            interp.LoadModel(_kmodel);
+            var entry = interp.Entry;
+
+            var input = RTTensor.FromTensor(new[] { 2.0f });
+            var result = (RTTensor)entry.Invoke(input);
+            var buffer = result.Buffer.Buffer.AsHost()!;
+            using (var mmOwner = buffer.Map(RTMapAccess.Read))
+            {
+                Assert.Equal(new[] { 3.0f }, MemoryMarshal.Cast<byte, float>(mmOwner.Memory.Span).ToArray());
+            }
         }
     }
 }

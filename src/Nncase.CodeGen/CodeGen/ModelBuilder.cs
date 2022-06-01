@@ -54,7 +54,7 @@ public sealed class ModelBuilder
             uint funcId = 0;
             foreach (var func in fp)
             {
-                ids.Add(func, new FunctionId(funcId, moduleId++));
+                ids.Add(func, new FunctionId(funcId++, moduleId));
             }
 
             moduleId++;

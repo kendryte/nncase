@@ -55,7 +55,10 @@ namespace Nncase.IR
             get => _entryIndex == -1 ? null : Callables[_entryIndex];
             set
             {
-                if (value is null) _entryIndex = -1;
+                if (value is null)
+                {
+                    _entryIndex = -1;
+                }
                 else
                 {
                     _entryIndex = _callables.IndexOf(value);
@@ -87,10 +90,5 @@ namespace Nncase.IR
             _callables.RemoveAt(i);
             _callables.Add(function);
         }
-
-        /// <summary>
-        /// schedule result.
-        /// </summary>
-        public Schedule.SchedModuleResult? SchedResult;
     }
 }

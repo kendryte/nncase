@@ -32,6 +32,9 @@ internal static class Native
     [DllImport(LibraryName, EntryPoint = "nncase_func_get_params_size")]
     public static extern unsafe ErrorCode FuncGetParamsSize(IntPtr func, out uint size);
 
+    [DllImport(LibraryName, EntryPoint = "nncase_func_invoke")]
+    public static extern unsafe ErrorCode FuncInvoke(IntPtr func, IntPtr* @params, uint paramsSize, out IntPtr result);
+
     [DllImport(LibraryName, EntryPoint = "nncase_buffer_allocator_get_host")]
     public static extern ErrorCode BufferAllocatorGetHost(out IntPtr allocator);
 
@@ -49,6 +52,9 @@ internal static class Native
 
     [DllImport(LibraryName, EntryPoint = "nncase_dtype_create_prime")]
     public static extern unsafe ErrorCode DTypeCreatePrim(TypeCode typeCode, out IntPtr dtype);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_value_is_tensor")]
+    public static extern unsafe ErrorCode ValueIsTensor(IntPtr value, out bool isTensor);
 
     [DllImport(LibraryName, EntryPoint = "nncase_tensor_create")]
     public static extern unsafe ErrorCode TensorCreate(IntPtr dtype, uint* dims, uint dimsLength, uint* strides, uint stridesLength, in RTBufferSlice.RuntimeStruct bufferSlice, out IntPtr tensor);

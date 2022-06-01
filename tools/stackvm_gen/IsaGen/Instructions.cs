@@ -130,6 +130,7 @@ namespace IsaGen
         RET,
         CALL,
         ECALL,
+        EXTCALL,
         THROW,
         BREAK,
 
@@ -941,7 +942,7 @@ namespace IsaGen
 
         [DisplayName("args")]
         [Description("Arguments count")]
-        public byte ArgsCount { get; set; }
+        public ushort ArgsCount { get; set; }
 
         [DisplayName("target")]
         [Description("Call a target method at the specified offset")]
@@ -950,14 +951,26 @@ namespace IsaGen
 
     [DisplayName("ECALL")]
     [Category("Control and Status Instructions")]
-    [Description("Call a environment method")]
+    [Description("Call an environment method")]
     public class ECallInstruction : Instruction
     {
         public override OpCode OpCode => OpCode.ECALL;
 
         [DisplayName("args")]
         [Description("Arguments count")]
-        public byte ArgsCount { get; set; }
+        public ushort ArgsCount { get; set; }
+    }
+
+    [DisplayName("EXTCALL")]
+    [Category("Control and Status Instructions")]
+    [Description("Call an external method")]
+    public class ExtCallInstruction : Instruction
+    {
+        public override OpCode OpCode => OpCode.EXTCALL;
+
+        [DisplayName("args")]
+        [Description("Arguments count")]
+        public ushort ArgsCount { get; set; }
     }
 
     [DisplayName("THROW")]

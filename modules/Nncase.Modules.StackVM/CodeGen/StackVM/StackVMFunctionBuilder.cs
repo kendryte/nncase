@@ -25,6 +25,7 @@ internal class StackVMFunctionBuilder
     private readonly LocalsAllocator _localsAllocator = new LocalsAllocator();
     private readonly Dictionary<TextSnippet, ushort> _snippetLocals = new Dictionary<TextSnippet, ushort>();
     private readonly List<SymbolRef> _symbolRefs = new List<SymbolRef>();
+    private readonly List<FunctionRef> _functionRefs = new List<FunctionRef>();
 
     public StackVMFunctionBuilder(uint id, BinaryWriter rdataWriter)
     {
@@ -44,28 +45,7 @@ internal class StackVMFunctionBuilder
 
         // 3. Fix addrs
         FixAddrs();
-        return new LinkableFunction(_id, function, _localsAllocator.MaxCount, _textContent.ToArray());
-    }
-
-    private static void WriteByLength(BinaryWriter textWriter, long symbolAddr, int length)
-    {
-        switch (length)
-        {
-            case 1:
-                textWriter.Write(checked((byte)symbolAddr));
-                break;
-            case 2:
-                textWriter.Write(checked((ushort)symbolAddr));
-                break;
-            case 4:
-                textWriter.Write(checked((uint)symbolAddr));
-                break;
-            case 8:
-                textWriter.Write(checked((ulong)symbolAddr));
-                break;
-            default:
-                throw new ArgumentException("Unsupported symbol ref length.");
-        }
+        return new LinkableFunction(_id, function, _functionRefs, _localsAllocator.MaxCount, _textContent.ToArray());
     }
 
     private void Compile(Function function)
@@ -112,6 +92,11 @@ internal class StackVMFunctionBuilder
                 _symbolRefs.Add(refer with { Position = refer.Position + bodyPosition });
             }
 
+            foreach (var refer in snippet.FunctionRefs)
+            {
+                _functionRefs.Add(refer with { Position = refer.Position + bodyPosition });
+            }
+
             snippet.Writer.Flush();
             _textWriter.Write(snippet.Text.ToArray());
 
@@ -139,7 +124,7 @@ internal class StackVMFunctionBuilder
                 symbolAddr += _symbolAddrs[refer.Symbol];
             }
 
-            WriteByLength(_textWriter, symbolAddr + refer.Offset, refer.Length);
+            _textWriter.WriteByLength(symbolAddr + refer.Offset, refer.Length);
         }
     }
 

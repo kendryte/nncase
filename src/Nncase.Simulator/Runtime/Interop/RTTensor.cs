@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -14,6 +15,20 @@ public abstract class RTValue : RTObject
     internal RTValue(IntPtr handle)
      : base(handle)
     {
+    }
+
+    internal static RTValue FromHandle(IntPtr handle)
+    {
+        try
+        {
+            Native.ValueIsTensor(handle, out var isTensor).ThrowIfFailed();
+            return isTensor ? new RTTensor(handle) : new RTTuple(handle);
+        }
+        catch
+        {
+            Native.ObjectFree(handle);
+            throw;
+        }
     }
 }
 
@@ -114,5 +129,33 @@ public class RTTensor : RTValue
             Native.TensorCreate(dataType.Handle, dimsPtr, (uint)dims.Length, stridesPtr, (uint)strides.Length, bufferSlice.ToRT(), out var tensor).ThrowIfFailed();
             return new RTTensor(tensor);
         }
+    }
+
+    /// <summary>
+    /// Create runtime tensor from tensor.
+    /// </summary>
+    /// <param name="tensor">Tensor.</param>
+    /// <returns>Created runtime tensor.</returns>
+    public static unsafe RTTensor FromTensor(Tensor tensor)
+    {
+        var dtype = (PrimType)tensor.ElementType;
+        var sizeBytes = (uint)tensor.BytesBuffer.Length;
+        var buffer = RTBufferAllocator.Host.Allocate(sizeBytes).AsHost()!;
+        using (var mem = buffer.Map(RTMapAccess.Write))
+        {
+            tensor.BytesBuffer.CopyTo(mem.Memory.Span);
+        }
+
+        var dims = MemoryMarshal.Cast<int, uint>(tensor.Dimensions);
+        var strides = MemoryMarshal.Cast<int, uint>(tensor.Strides);
+        return Create(RTDataType.FromTypeCode(dtype.TypeCode), dims, strides, new RTBufferSlice { Buffer = buffer, Start = 0, SizeBytes = sizeBytes });
+    }
+}
+
+public class RTTuple : RTValue
+{
+    internal RTTuple(IntPtr handle)
+        : base(handle)
+    {
     }
 }

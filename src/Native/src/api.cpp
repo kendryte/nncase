@@ -144,7 +144,8 @@ int nncase_buffer_allocator_get_host(
 }
 
 int nncase_buffer_allocator_alloc(nncase::runtime::buffer_allocator *alloc,
-                                  uint32_t bytes, [[maybe_unused]] void *options,
+                                  uint32_t bytes,
+                                  [[maybe_unused]] void *options,
                                   nncase::runtime::buffer_node **buffer) {
     if (alloc && buffer) {
         c_try_var(buf, alloc->allocate(bytes, {}));
@@ -207,6 +208,14 @@ int nncase_dtype_create_prime(nncase::typecode_t typecode,
 
 int nncase_dtype_free(nncase::datatype_node *dtype) {
     return nncase_object_free(dtype);
+}
+
+int nncase_value_is_tensor(nncase::value_node *value, bool *is_tensor) {
+    if (value && is_tensor) {
+        *is_tensor = value_t(value).is_a<tensor>();
+        return 0;
+    }
+    return -EINVAL;
 }
 
 int nncase_tensor_create(nncase::datatype_node *dtype, const uint32_t *dims,
