@@ -43,9 +43,10 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
 {
     private static readonly MethodInfo _tensorCreatorFunc =
         typeof(Tensor).GetMethod(nameof(CreateTensorImpl), BindingFlags.Static | BindingFlags.NonPublic)!;
+
     private static readonly MethodInfo _tensorCastFunc =
         typeof(Tensor).GetMethod(nameof(Cast))!;
-    
+
     private readonly int[] _dimensions;
     private readonly int[] _strides;
 

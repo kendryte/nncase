@@ -41,13 +41,13 @@ class host_buffer_slice;
 
 class NNCASE_API buffer_slice {
   public:
-    constexpr buffer_slice() = default;
-    buffer_slice(buffer_t buffer)
+    buffer_slice() noexcept = default;
+    buffer_slice(buffer_t buffer) noexcept
         : buffer_(std::move(buffer)),
           start_(0),
           length_(buffer_->size_bytes()) {}
 
-    buffer_slice(buffer_t buffer, size_t start, size_t length)
+    buffer_slice(buffer_t buffer, size_t start, size_t length) noexcept
         : buffer_(std::move(buffer)), start_(start), length_(length) {}
 
     const buffer_t &buffer() const noexcept { return buffer_; }

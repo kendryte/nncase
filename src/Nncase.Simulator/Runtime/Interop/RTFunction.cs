@@ -34,4 +34,19 @@ public sealed class RTFunction
             return size;
         }
     }
+
+    /// <summary>
+    /// Invoke function.
+    /// </summary>
+    /// <param name="parameters">Parameter values.</param>
+    /// <returns>Result value.</returns>
+    public unsafe RTValue Invoke(params RTValue[] parameters)
+    {
+        var paramsHandles = parameters.Select(x => x.Handle).ToArray();
+        fixed (IntPtr* paramsHandlesPtr = paramsHandles)
+        {
+            Native.FuncInvoke(_handle, paramsHandlesPtr, (uint)paramsHandles.Length, out var result).ThrowIfFailed();
+            return RTValue.FromHandle(result);
+        }
+    }
 }

@@ -31,6 +31,7 @@ internal class LinkableModule : ILinkableModule
         {
             foreach (var func in _functions)
             {
+                FixFunctionRefs(func, linkContext);
                 bw.AlignPosition(_textAlignment);
                 var textBegin = bw.Position();
                 bw.Write(func.Text);
@@ -39,5 +40,17 @@ internal class LinkableModule : ILinkableModule
         }
 
         return new LinkedModule(linkedFunctions, text.ToArray(), _rdata);
+    }
+
+    private void FixFunctionRefs(LinkableFunction func, ILinkContext linkContext)
+    {
+        using var writer = new BinaryWriter(new MemoryStream(func.Text));
+        foreach (var funcRef in func.FunctionRefs)
+        {
+            var id = linkContext.GetFunctionId(funcRef.Callable);
+            var value = funcRef.Component == FunctionIdComponent.ModuleId ? id.ModuleId : id.Id;
+            writer.Position(funcRef.Position);
+            writer.WriteByLength(value, funcRef.Length);
+        }
     }
 }

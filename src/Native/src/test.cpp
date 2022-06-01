@@ -25,7 +25,7 @@ using namespace nncase::runtime;
 
 int main() {
     auto kmodel = read_file(
-        R"(E:\Work\Repos\nncase\src\Nncase.Tests\bin\Debug\net6.0\testSimpleCodegen.kmodel)");
+        R"(E:\Work\Repos\nncase\src\Nncase.Tests\bin\Debug\net6.0\TestCallFunction.kmodel)");
 
     interpreter *interp;
     TRY(nncase_interp_create(&interp));

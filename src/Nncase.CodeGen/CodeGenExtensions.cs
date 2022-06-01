@@ -73,4 +73,25 @@ public static class BinaryWriterExtensions
         var span = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref value, 1));
         writer.Write(span);
     }
+
+    public static void WriteByLength(this BinaryWriter writer, long value, int length)
+    {
+        switch (length)
+        {
+            case 1:
+                writer.Write(checked((byte)value));
+                break;
+            case 2:
+                writer.Write(checked((ushort)value));
+                break;
+            case 4:
+                writer.Write(checked((uint)value));
+                break;
+            case 8:
+                writer.Write(checked((ulong)value));
+                break;
+            default:
+                throw new ArgumentException("Unsupported value length.");
+        }
+    }
 }

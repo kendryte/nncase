@@ -26,7 +26,15 @@ internal struct ErrorCode
     {
         if (!IsSuccess)
         {
-            throw new InvalidOperationException();
+            throw new InvalidOperationException($"Status code: {Value}");
+        }
+    }
+
+    public void ThrowIfNotEqual(int expected)
+    {
+        if (Value != expected)
+        {
+            throw new InvalidOperationException($"Status code: {Value}");
         }
     }
 }

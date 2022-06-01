@@ -79,10 +79,10 @@ class NNCASE_API host_buffer_node : public buffer_node {
 
 class NNCASE_API host_buffer_slice : public buffer_slice {
   public:
-    constexpr host_buffer_slice() = default;
-    host_buffer_slice(host_buffer_t buffer) : buffer_slice(std::move(buffer)) {}
+    host_buffer_slice() noexcept = default;
+    host_buffer_slice(host_buffer_t buffer) noexcept : buffer_slice(std::move(buffer)) {}
 
-    host_buffer_slice(host_buffer_t buffer, size_t start, size_t length)
+    host_buffer_slice(host_buffer_t buffer, size_t start, size_t length) noexcept
         : buffer_slice(std::move(buffer), start, length) {}
 
     const host_buffer_t &buffer() const noexcept {

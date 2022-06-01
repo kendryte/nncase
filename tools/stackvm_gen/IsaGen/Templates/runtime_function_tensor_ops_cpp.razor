@@ -32,7 +32,7 @@ using namespace nncase::runtime::stackvm;
 {
     var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:
-@:result<void> stackvm_runtime_function::visit(const tensor_@(name)_op_t &op) noexcept {
+@:result<void> stackvm_runtime_function::visit([[maybe_unused]] const tensor_@(name)_op_t &op) noexcept {
 foreach(var input in Enumerable.Reverse(inst.Inputs))
 {
 @:    try_var(@input.CppName, pop_tensor());

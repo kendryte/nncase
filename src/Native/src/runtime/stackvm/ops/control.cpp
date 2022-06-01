@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "../runtime_function.h"
+#include <nncase/runtime/interpreter.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -60,6 +61,23 @@ stackvm_runtime_function::visit(NNCASE_UNUSED const call_op_t &op) noexcept {
 result<void>
 stackvm_runtime_function::visit(NNCASE_UNUSED const ecall_op_t &op) noexcept {
     return err(std::errc::not_supported);
+}
+
+result<void>
+stackvm_runtime_function::visit(NNCASE_UNUSED const extcall_op_t &op) noexcept {
+    try_var(module_id, stack_.pop());
+    try_var(func_id, stack_.pop());
+    try_var(mod, module().interp().find_module_by_id(module_id.as_u()));
+    try_var(func, mod->find_function_by_id(func_id.as_u()));
+
+    std::vector<value_t> params(op.args);
+    for (size_t i = 0; i < op.args; i++) {
+        try_var(arg, pop_object<value_t>());
+        params[i] = std::move(arg);
+    }
+
+    try_var(retval, func->invoke(params));
+    return stack_.push(retval);
 }
 
 result<void>

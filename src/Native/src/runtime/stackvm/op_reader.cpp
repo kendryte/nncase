@@ -188,6 +188,8 @@ result<void> op_visitor::next() noexcept
             return visit(op_reader<call_op_t>()(reader_));
         case opcode_t::ECALL:
             return visit(op_reader<ecall_op_t>()(reader_));
+        case opcode_t::EXTCALL:
+            return visit(op_reader<extcall_op_t>()(reader_));
         case opcode_t::THROW:
             return visit(op_reader<throw_op_t>()(reader_));
         case opcode_t::BREAK:

@@ -22,6 +22,7 @@ result<void> visit(const br_false_op_t &op) noexcept override;
 result<void> visit(const ret_op_t &op) noexcept override;
 result<void> visit(const call_op_t &op) noexcept override;
 result<void> visit(const ecall_op_t &op) noexcept override;
+result<void> visit(const extcall_op_t &op) noexcept override;
 result<void> visit(const throw_op_t &op) noexcept override;
 result<void> visit(const break_op_t &op) noexcept override;
 result<void> visit(const ldc_i4_op_t &op) noexcept override;

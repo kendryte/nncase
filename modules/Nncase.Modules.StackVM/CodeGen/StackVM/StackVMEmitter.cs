@@ -117,7 +117,7 @@ public sealed partial class StackVMEmitter
         {
             Write(str);
         }
-        
+
         _writer.Write((byte)0);
     }
 

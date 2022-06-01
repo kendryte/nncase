@@ -249,37 +249,37 @@ stackvm_runtime_function::visit(NNCASE_UNUSED const ldarg_op_t &op) noexcept {
 
 result<void>
 stackvm_runtime_function::visit(NNCASE_UNUSED const ldarg_0_op_t &op) noexcept {
-    ldarg_op_t ldarg_op{opcode_t::LDARG, 0};
+    ldarg_op_t ldarg_op{{opcode_t::LDARG}, 0};
     return visit(ldarg_op);
 }
 
 result<void>
 stackvm_runtime_function::visit(NNCASE_UNUSED const ldarg_1_op_t &op) noexcept {
-    ldarg_op_t ldarg_op{opcode_t::LDARG, 1};
+    ldarg_op_t ldarg_op{{opcode_t::LDARG}, 1};
     return visit(ldarg_op);
 }
 
 result<void>
 stackvm_runtime_function::visit(NNCASE_UNUSED const ldarg_2_op_t &op) noexcept {
-    ldarg_op_t ldarg_op{opcode_t::LDARG, 2};
+    ldarg_op_t ldarg_op{{opcode_t::LDARG}, 2};
     return visit(ldarg_op);
 }
 
 result<void>
 stackvm_runtime_function::visit(NNCASE_UNUSED const ldarg_3_op_t &op) noexcept {
-    ldarg_op_t ldarg_op{opcode_t::LDARG, 3};
+    ldarg_op_t ldarg_op{{opcode_t::LDARG}, 3};
     return visit(ldarg_op);
 }
 
 result<void>
 stackvm_runtime_function::visit(NNCASE_UNUSED const ldarg_4_op_t &op) noexcept {
-    ldarg_op_t ldarg_op{opcode_t::LDARG, 4};
+    ldarg_op_t ldarg_op{{opcode_t::LDARG}, 4};
     return visit(ldarg_op);
 }
 
 result<void>
 stackvm_runtime_function::visit(NNCASE_UNUSED const ldarg_5_op_t &op) noexcept {
-    ldarg_op_t ldarg_op{opcode_t::LDARG, 5};
+    ldarg_op_t ldarg_op{{opcode_t::LDARG}, 5};
     return visit(ldarg_op);
 }
 

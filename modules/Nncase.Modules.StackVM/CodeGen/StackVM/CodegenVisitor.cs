@@ -16,6 +16,12 @@ internal enum SectionKind
     Rdata
 }
 
+internal enum FunctionIdComponent
+{
+    ModuleId,
+    FunctionId,
+}
+
 internal class Symbol
 {
     public SectionKind Section { get; set; }
@@ -24,6 +30,8 @@ internal class Symbol
 }
 
 internal record SymbolRef(long Position, int Length, Symbol Symbol, int Offset);
+
+internal record FunctionRef(long Position, int Length, Callable Callable, FunctionIdComponent Component, int Offset);
 
 internal class TextSnippet
 {
@@ -43,6 +51,8 @@ internal class TextSnippet
     public StackVMEmitter Emitter { get; }
 
     public List<SymbolRef> SymbolRefs { get; } = new List<SymbolRef>();
+
+    public List<FunctionRef> FunctionRefs { get; } = new List<FunctionRef>();
 
     public IReadOnlyList<TextSnippet> InputSnippets => _inputSnippets;
 
@@ -134,7 +144,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     public override TextSnippet Visit(Function expr)
     {
-        throw new NotSupportedException();
+        return null!;
     }
 
     public override TextSnippet VisitLeaf(Op expr)
@@ -142,23 +152,31 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return null!;
     }
 
+    public override TextSnippet Visit(Call expr)
+    {
+        return base.Visit(expr);
+    }
+
     public override TextSnippet VisitLeaf(Call expr)
     {
+        var snippet = BeginTextSnippet();
+        foreach (var param in expr.Parameters.Reverse())
+        {
+            snippet.AddInput(Visit(param));
+        }
+
         if (expr.Target is Op op)
         {
-            var snippet = BeginTextSnippet();
-            foreach (var param in expr.Parameters.Reverse())
-            {
-                snippet.AddInput(Visit(param));
-            }
-
             EmitTensorCall(op);
-            return snippet;
         }
         else
         {
-            throw new NotSupportedException();
+            var target = (Callable)expr.Target;
+            LdFunctionId(target);
+            Emitter.ExtCall(checked((ushort)expr.Parameters.Count));
         }
+
+        return snippet;
     }
 
     private TextSnippet Visit(Tensor tensor)
@@ -209,10 +227,25 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return symbolRef;
     }
 
+    private FunctionRef AddFunctionRef(Callable callable, FunctionIdComponent component, int positionOffset, int length, int offset = 0)
+    {
+        var functionRef = new FunctionRef(Emitter.Position + positionOffset, length, callable, component, offset);
+        CurrentTextSnippet.FunctionRefs.Add(functionRef);
+        return functionRef;
+    }
+
     private void LeaGp(byte gpid, Symbol symbol, int offset = 0)
     {
-        AddSymbolRef(symbol, 2, 1, offset);
+        AddSymbolRef(symbol, 2, 4, offset);
         Emitter.LeaGP(gpid, 0);
+    }
+
+    private void LdFunctionId(Callable callable)
+    {
+        AddFunctionRef(callable, FunctionIdComponent.FunctionId, 1, 4, 0);
+        Emitter.LdcI4(0);
+        AddFunctionRef(callable, FunctionIdComponent.ModuleId, 1, 4, 0);
+        Emitter.LdcI4(0);
     }
 
     private void LdShape(ReadOnlySpan<int> shape)

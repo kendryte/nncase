@@ -43,7 +43,13 @@ stackvm_runtime_function::invoke_core(gsl::span<value_t> parameters,
 
     checked_try_var(ret, stack_.pop());
     CHECK_WITH_ERR(ret.is_object(), nncase_errc::stackvm_illegal_instruction);
-    return ret.as_object().as<value_t>();
+    try_var(ret_val, ret.as_object().as<value_t>());
+    if (!return_value.empty()) {
+        // TODO: support copy back
+        return err(std::errc::not_supported);
+    }
+
+    return ok(ret_val);
 }
 
 uintptr_t stackvm_runtime_function::pc() const noexcept {
