@@ -52,7 +52,7 @@ void split_softmax_transform::process(transform_context &context)
     rmax->name(sm.name() + ".rmax");
 
     auto sub = context.graph.emplace<binary>(binary_sub, input_type, input_shape, rmax->output().shape(), value_range<float>::full());
-    sub->attributes(sub->attributes | node_attributes::node_attr_skip_quantize);
+    sub->attributes(sub->attributes() | node_attributes::node_attr_skip_quantize);
     sub->name(sm.name() + ".sub");
 
     auto beta = context.graph.emplace<constant>(sm.beta());
