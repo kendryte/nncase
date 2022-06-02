@@ -12,11 +12,13 @@
 | ArgMin | ✅ |
 | Asin | ✅ |
 | Asinh | ✅ |
+| Atan | ✅ |
 | Atanh | ✅ |
 | Add | ✅ |
 | AveragePool | ✅ |
 | BatchNormalization | ✅ |
 | Cast | ✅ |
+| CastLike | ✅ |
 | Ceil | ✅ |
 | Celu | ✅ |
 | Clip | ✅ |
@@ -33,6 +35,7 @@
 | Div | ✅ |
 | Dropout | ✅ |
 | Elu | ✅ |
+| Erf | ✅ |
 | Exp | ✅ |
 | Expand | ✅ |
 | EyeLike | ✅ |
