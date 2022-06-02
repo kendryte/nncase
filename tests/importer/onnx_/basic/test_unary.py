@@ -41,6 +41,7 @@ def _make_module():
             outs.append(torch.tanh(x))
             #outs.append(torch.reciprocal(x))
             outs.append(torch.tan(x))
+            outs.append(torch.atan(x))
             return outs
 
     return UnaryModule()

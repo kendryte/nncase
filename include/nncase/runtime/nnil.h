@@ -47,6 +47,7 @@ typedef enum _nnil_opcode
     nnil_acos = 0x2F,
     nnil_asin = 0x30,
     nnil_sign = 0x31,
+    nnil_atan = 0x32,
     nnil_add = 0x40,
     nnil_sub = 0x41,
     nnil_mul = 0x42,

@@ -99,6 +99,12 @@ result<void> reference::nnil_unary_method(const float *input, float *output, siz
                 stack.push((0 < val) - (val < 0));
                 break;
             }
+            case nnil_atan:
+            {
+                auto val = stack.pop();
+                stack.push(std::atan(val));
+                break;
+            }
             case nnil_sin:
                 stack.push(sinf(stack.pop()));
                 break;
