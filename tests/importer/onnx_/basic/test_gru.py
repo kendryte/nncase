@@ -141,10 +141,10 @@ def _make_module(direction, hidden_size, seq_length, batch_size, input_size, bia
     return model_def
 
 directions = [
-    # None,
+    None,
     'forward',
-    # 'reverse',
-    # 'bidirectional'
+    'reverse',
+    'bidirectional'
 ]
 
 hidden_sizes = [
@@ -178,14 +178,13 @@ initial_hs = [
 ]
 
 Ys = [
-    # None,
     1
 ]
 
 
 Y_hs = [
     None,
-    # 1
+    1
 ]
 
 

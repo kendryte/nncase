@@ -1524,6 +1524,10 @@ namespace IsaGen
             [Description("W shape register")]
             public byte RshapeSrc2 { get; set; }
 
+            [DisplayName("direction")]
+            [Description("direction register")]
+            public byte Direction { get; set; }
+
         }
 
         [DisplayName("TENSOR.HARDMAX")]

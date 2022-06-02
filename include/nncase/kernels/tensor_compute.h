@@ -153,6 +153,6 @@ template <typename T>
 NNCASE_API result<void> trilu(const T *input, T *output, const runtime_shape_t &in_shape, const bool upper, const int64_t k) noexcept;
 
 template <typename T>
-NNCASE_API result<void> gru(const T *input, const T *w, const T *r, const T *b, T *initial_h, T *output, T *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape) noexcept;
+NNCASE_API result<void> gru(const T *input, const T *w, const T *r, const T *b, T *initial_h, T *output, T *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape, int mode) noexcept;
 
 END_NS_NNCASE_KERNELS
