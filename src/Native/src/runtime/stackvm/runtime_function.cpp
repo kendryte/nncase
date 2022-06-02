@@ -33,7 +33,7 @@ result<void> stackvm_runtime_function::initialize_core(
 
 result<value_t>
 stackvm_runtime_function::invoke_core(gsl::span<value_t> parameters,
-                                      value_t return_value) noexcept {
+                                      [[maybe_unused]] value_t return_value) noexcept {
     try_var(frame, frames_.push(0));
     for (auto arg : parameters) {
         try_(frame->push_back_arg(std::move(arg)));

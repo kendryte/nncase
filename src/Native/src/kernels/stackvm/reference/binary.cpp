@@ -15,6 +15,7 @@
 #include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/tensor_ops.h>
+#include <nncase/runtime/util.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -27,11 +28,6 @@ using namespace nncase::kernels::cpu::reference;
 using namespace nncase::kernels::stackvm;
 
 namespace {
-result<typecode_t> to_typecode(const datatype_t &dtype) {
-    try_var(prim_type, dtype.as<prim_type_t>());
-    return ok(prim_type->typecode());
-}
-
 template <class T, class TOp>
 result<void> binary_impl(TOp &&op, const T *lhs, const T *rhs, T *output,
                          const dims_t &lhs_shape, const strides_t &lhs_strides,
@@ -76,63 +72,18 @@ result<void> binary_impl(binary_op_t op, const T *lhs, const T *rhs, T *output,
         return err(std::errc::not_supported);
     }
 }
-
-#define BINARY_IMPL_DTYPE(dtype, type)                                         \
-    case dtype:                                                                \
-        return binary_impl(op, reinterpret_cast<const type *>(lhs),            \
-                           reinterpret_cast<const type *>(rhs),                \
-                           reinterpret_cast<type *>(output), lhs_shape,        \
-                           lhs_strides, rhs_shape, rhs_strides, out_shape,     \
-                           out_strides, context);
-
-result<void> binary_impl(typecode_t dtype, binary_op_t op, const gsl::byte *lhs,
-                         const gsl::byte *rhs, gsl::byte *output,
-                         const dims_t &lhs_shape, const strides_t &lhs_strides,
-                         const dims_t &rhs_shape, const strides_t &rhs_strides,
-                         const dims_t &out_shape, const strides_t &out_strides,
-                         kernel_context &context) noexcept {
-    switch (dtype) {
-        BINARY_IMPL_DTYPE(dt_float32, float)
-    default:
-        return err(nncase_errc::datatype_mismatch);
-    }
-}
 } // namespace
 
-result<tensor> kernels::stackvm::binary(binary_op_t binary_op, tensor lhs,
-                                        tensor rhs, tensor output,
+result<value_t> kernels::stackvm::binary(binary_op_t binary_op, value_t lhs,
+                                        value_t rhs, value_t output,
                                         kernel_context &context) {
-    auto dtype = lhs->dtype();
-    try_var(typecode, to_typecode(dtype));
-    auto out_shape =
-        kernels::detail::get_binary_output_shape(lhs->shape(), rhs->shape());
-
-    // TODO: copy back output
-    assert(output.empty());
-    if (output.empty()) {
-        auto out_strides = get_default_strides(out_shape);
-        try_var(out_buffer, buffer_allocator::host().allocate(
-                                get_bytes(dtype, out_shape, out_strides), {}));
-        output =
-            tensor(std::in_place, dtype, out_shape, out_strides, out_buffer);
-    } else {
-        if (output->shape() != out_shape)
-            return err(nncase_errc::shape_mismatch);
-    }
-
-    try_var(lhs_host, lhs->to_host());
-    try_var(rhs_host, rhs->to_host());
-
-    try_var(lhs_buffer, lhs_host->buffer().as_host());
-    try_var(rhs_buffer, rhs_host->buffer().as_host());
-    try_var(out_buffer, output->buffer().as_host());
-    try_var(lhs_map, lhs_buffer.map(map_read));
-    try_var(rhs_map, rhs_buffer.map(map_read));
-    try_var(out_map, out_buffer.map(map_write));
-
-    try_(binary_impl(typecode, binary_op, lhs_map.buffer().data(),
-                     rhs_map.buffer().data(), out_map.buffer().data(),
-                     lhs->shape(), lhs->strides(), rhs->shape(), rhs->strides(),
-                     output->shape(), output->strides(), context));
+    try_f32_input(lhs_mem, lhs);
+    try_f32_input(rhs_mem, rhs);
+    auto out_shape = detail::get_binary_output_shape(lhs_tensor->shape(), rhs_tensor->shape());
+    try_f32_output(out_mem, output, lhs_tensor->dtype(), out_shape);
+    try_(binary_impl(binary_op, lhs_mem, rhs_mem, out_mem,
+                     lhs_tensor->shape(), lhs_tensor->strides(),
+                     rhs_tensor->shape(), rhs_tensor->strides(),
+                     output_tensor->shape(), output_tensor->strides(), context));
     return ok(output);
 }

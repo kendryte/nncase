@@ -133,4 +133,9 @@ DEFINE_DATATYPE_OF(bfloat16, bfloat16)
 template <class T> datatype_t datatype_t::from_type() {
     return detail::datatype_of<T>()();
 }
+
+inline result<typecode_t> to_typecode(const datatype_t &dtype) {
+    try_var(prim_type, dtype.as<prim_type_t>());
+    return ok(prim_type->typecode());
+}
 } // namespace nncase

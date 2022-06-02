@@ -111,10 +111,6 @@ inline constexpr size_t typecode_bytes(typecode_t typecode) {
     }
 }
 
-using uuid_t = std::array<uint8_t, 16>;
-using dims_t = itlib::small_vector<size_t, 4>;
-using strides_t = itlib::small_vector<size_t, 4>;
-
 struct padding {
     int32_t before;
     int32_t after;
@@ -124,6 +120,11 @@ struct padding {
 
     static padding zero() noexcept { return {}; }
 };
+
+using uuid_t = std::array<uint8_t, 16>;
+using dims_t = itlib::small_vector<size_t, 4>;
+using strides_t = itlib::small_vector<size_t, 4>;
+using paddings_t = itlib::small_vector<padding, 4>;
 
 template <class T> struct value_range {
     T min;
