@@ -122,6 +122,9 @@ void fused_unary::compile_graph(const std::vector<fused_unary_op> &subgraph, cod
             case unary_sign:
                 builder.emit_sign();
                 break;
+            case unary_erf:
+                builder.emit_erf();
+                break;
             case unary_atan:
                 builder.emit_atan();
                 break;
