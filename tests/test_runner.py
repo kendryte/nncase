@@ -558,15 +558,9 @@ class TestRunner(metaclass=ABCMeta):
             self.totxtfile(eval_output_paths[-1][1], result)
         return eval_output_paths
 
-    def nncase_infer(self, cfg, case_dir: str,
-                     import_options: nncase.ImportOptions,
-                     compile_options: nncase.CompileOptions,
-                     model_content: Union[List[bytes], bytes],
+    def get_infer_compile_options(self, infer_dir: str, cfg, compile_options: nncase.CompileOptions,
                      kwargs: Dict[str, str],
-                     preprocess: Dict[str, str]
-                     ) -> List[Tuple[str, str]]:
-        infer_dir = TestRunner.kwargs_to_path(
-            os.path.join(case_dir, 'infer'), kwargs)
+                     preprocess: Dict[str, str]):
         compile_options.target = kwargs['target']
         compile_options.dump_dir = infer_dir
         compile_options.dump_asm = cfg.compile_opt.dump_asm
@@ -588,6 +582,18 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.input_layout = preprocess['input_layout']
         compile_options.output_layout = preprocess['output_layout']
         compile_options.tcu_num = cfg.compile_opt.tcu_num
+        return compile_options
+
+    def nncase_infer(self, cfg, case_dir: str,
+                     import_options: nncase.ImportOptions,
+                     compile_options: nncase.CompileOptions,
+                     model_content: Union[List[bytes], bytes],
+                     kwargs: Dict[str, str],
+                     preprocess: Dict[str, str]
+                     ) -> List[Tuple[str, str]]:
+        infer_dir = TestRunner.kwargs_to_path(
+            os.path.join(case_dir, 'infer'), kwargs)
+        compile_options = self.get_infer_compile_options(infer_dir, cfg, compile_options, kwargs, preprocess)
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
 
@@ -618,7 +624,7 @@ class TestRunner(metaclass=ABCMeta):
                 data.tofile(os.path.join(case_dir, f'input_{i}_{dtype}.bin'))
                 self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
 
-            sim.set_input_tensor(i, nncase.RuntimeTensor.from_numpy(data))
+            sim.add_input_tensor(nncase.RuntimeTensor.from_numpy(data))
         sim.run()
 
         for i in range(sim.outputs_size):
