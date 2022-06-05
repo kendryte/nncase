@@ -19,6 +19,7 @@
         <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" />
         <ProjectReference Include="..\Nncase.Evaluator\Nncase.Evaluator.csproj" />
         <ProjectReference Include="..\Nncase.Importer\Nncase.Importer.csproj" />
+        <ProjectReference Include="..\Nncase.Simulator\Nncase.Simulator.csproj" />
         <ProjectReference Include="..\Nncase.Transform\Nncase.Transform.csproj" />
         <ProjectReference Include="..\..\modules\Nncase.Modules.StackVM\Nncase.Modules.StackVM.csproj" />
     </ItemGroup>

@@ -124,9 +124,13 @@ class RuntimeTensor:
             shape = tensor_const.Value.Shape.ToValueArray()
             return np.frombuffer(arr_bytes, dtype=self.toNpDataTypeMap[tensor_const.Value.ElementType]).reshape(shape)
         
-    def to_nncase(self) -> _nncase.IValue:
+    def to_nncase_value(self) -> _nncase.IValue:
         dtype = self.npToDataTypeMap[self._arr.dtype.type]
         return _nncase.Compiler.PythonHelper.TensorValueFromBytes(dtype, self._arr.tobytes(), list(self._arr.shape))
+
+    def to_nncase_tensor(self) -> _nncase.Tensor:
+        dtype = self.npToDataTypeMap[self._arr.dtype.type]
+        return _nncase.Compiler.PythonHelper.TensorFromBytes(dtype, self._arr.tobytes(), list(self._arr.shape))
 
     @ property
     def dtype(self) -> dtype:
@@ -150,6 +154,7 @@ class MemoryRange:
 class Simulator:
     def __init__(self) -> None:
         self.interpreter = _nncase.Runtime.Interop.RTInterpreter()
+        self.inputs = []
 
     def get_input_desc(self, index: int) -> MemoryRange:
         pass
@@ -169,10 +174,13 @@ class Simulator:
         self.interpreter.LoadModel(mem)
 
     def run(self) -> None:
-        pass
+        result = _nncase.Compiler.PythonHelper.RunSimulator(self.interpreter, self.inputs)
+        result
 
-    def set_input_tensor(self, index: int, tensor: RuntimeTensor) -> None:
-        pass
+    def add_input_tensor(self, tensor: RuntimeTensor) -> None:
+        t = tensor.to_nncase_tensor()
+        rt_tensor = _nncase.Runtime.Interop.RTTensor.FromTensor(t)
+        self.inputs.append(rt_tensor)
 
     def set_output_tensor(self, index: int, tensor: RuntimeTensor) -> None:
         pass
@@ -206,7 +214,7 @@ class GraphEvaluator:
     def run(self):
         inputs = Dictionary[_nncase.IR.Var, _nncase.IValue]()
         for k, v in zip(self._module.params, self._inputs):
-            inputs[k] = v.to_nncase()
+            inputs[k] = v.to_nncase_value()
         results: _nncase.IValue = _nncase.CompilerServices.Evaluate(self._module.entry.Body, inputs).AsTensors()
         self._outputs = list([RuntimeTensor(res) for res in results])
 
