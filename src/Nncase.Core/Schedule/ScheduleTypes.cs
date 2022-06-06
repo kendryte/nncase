@@ -315,5 +315,5 @@ public interface IScheduler
     /// </summary>
     /// <param name="skip_buffer_alias"></param>
     /// <returns></returns>
-    public IR.IRModel Schedule(bool skip_buffer_alias = false);
+    public IR.IRModule Schedule(bool skip_buffer_alias = false);
 }

@@ -49,7 +49,7 @@ public class UnitTestCPUTarget
     public void TestCodeGenTuple()
     {
         var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
-        var y = x + 1.0f + x;
+        var y = x + 1.0f + x + 3.0f;
         TestCodeGen(new IR.Tuple(y), new[] { x });
     }
 
