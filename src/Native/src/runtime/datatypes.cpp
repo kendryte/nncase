@@ -17,6 +17,7 @@
 
 using namespace nncase;
 
+prim_type_t datatype_t::boolean(std::in_place, dt_boolean);
 prim_type_t datatype_t::uint8(std::in_place, dt_uint8);
 prim_type_t datatype_t::uint16(std::in_place, dt_uint16);
 prim_type_t datatype_t::uint32(std::in_place, dt_uint32);

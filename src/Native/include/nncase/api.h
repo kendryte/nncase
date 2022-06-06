@@ -78,6 +78,8 @@ nncase_host_buffer_unmap(nncase::runtime::host_buffer_node *host_buffer);
 NNCASE_API int nncase_dtype_create_prime(nncase::typecode_t typecode,
                                          nncase::datatype_node **dtype);
 
+NNCASE_API int nncase_dtype_get_typecode(nncase::datatype_node *dtype);
+
 NNCASE_API int nncase_value_is_tensor(nncase::value_node *value,
                                       bool *is_tensor);
 

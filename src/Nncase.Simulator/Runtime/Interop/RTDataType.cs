@@ -29,4 +29,6 @@ public class RTDataType : RTObject
         Native.DTypeCreatePrim(typeCode, out var dtype).ThrowIfFailed();
         return new RTDataType(dtype);
     }
+
+    public TypeCode TypeCode => Native.DTypeGetTypeCode(Handle);
 }

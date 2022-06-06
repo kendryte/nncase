@@ -92,7 +92,7 @@ case: # case的配置，应该是一个多层次的
     - name: ptq
       values:
         - false
-        - true
+#        - true
 judge:
   common: &judge_common
     simarity_name:  cosine
