@@ -57,7 +57,7 @@ class nncaseConan(ConanFile):
             self.requires('magic_enum/0.7.0')
             self.requires('nlohmann_json/3.9.1')
             self.requires('opencv/4.5.1')
-            self.requires('protobuf/3.21.1')
+            self.requires('protobuf/3.17.1')
             self.requires('xtensor/0.21.5')
             self.requires('spdlog/1.8.2')
             self.requires('zlib/1.2.12')
@@ -89,6 +89,7 @@ class nncaseConan(ConanFile):
             self.options["opencv"].with_eigen = False
             self.options["opencv"].with_quirc = False
             self.options["opencv"].with_ffmpeg = False
+            self.options["opencv"].with_tiff = False
             self.options["opencv"].dnn = False
             self.options["flatbuffers"].options_from_context = False
             self.options["xtensor"].xsimd = False
