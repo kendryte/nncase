@@ -847,8 +847,8 @@ void gru(const T *CXX_RESTRICT input, const T *CXX_RESTRICT w, const T *CXX_REST
     auto gate_r = std::vector<float>(batch_size * hidden_size, 0.f);
     auto gate_h = std::vector<float>(batch_size * hidden_size, 0.f);
 
-    std::vector<uint32_t> seq_len_loop;
-    for (uint32_t l = 0; l < seq_length; l++)
+    std::vector<int> seq_len_loop;
+    for (int l = 0; l < seq_length; l++)
         seq_len_loop.push_back(l);
     if (mode == lstm_direction::kReverse)
         std::reverse(seq_len_loop.begin(), seq_len_loop.end());

@@ -53,8 +53,8 @@ result<void> reference::gru(const T *input, const T *w, const T *r, const T *b, 
     auto gate_r = std::vector<float>(batch_size * hidden_size, 0.f);
     auto gate_h = std::vector<float>(batch_size * hidden_size, 0.f);
 
-    std::vector<uint32_t> seq_len_loop;
-    for (uint32_t l = 0; l < seq_length; l++)
+    std::vector<int> seq_len_loop;
+    for (int l = 0; l < seq_length; l++)
         seq_len_loop.push_back(l);
     if (mode == lstm_direction::kReverse)
         std::reverse(seq_len_loop.begin(), seq_len_loop.end());
