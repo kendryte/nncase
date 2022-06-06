@@ -15,6 +15,7 @@
 #include <iostream>
 #include <nncase/api.h>
 #include <nncase/io_utils.h>
+#include <cstring>
 
 using namespace nncase;
 using namespace nncase::runtime;

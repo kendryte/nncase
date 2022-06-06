@@ -65,7 +65,7 @@ result<void> binary_impl(binary_op_t op, const T *lhs, const T *rhs, T *output,
         BINARY_IMPL_OP(div, std::divides<T>());
         BINARY_IMPL_OP(min, [](T a, T b) { return std::min(a, b); });
         BINARY_IMPL_OP(max, [](T a, T b) { return std::max(a, b); });
-        BINARY_IMPL_OP(pow, std::powf);
+        BINARY_IMPL_OP(pow, [](T a, T b) { return std::pow(a, b); });
         BINARY_IMPL_OP(logical_and,
                        [](T a, T b) { return static_cast<T>(a && b); });
     default:

@@ -52,7 +52,6 @@ result<value_t> nncase::kernels::stackvm::sigmoid(value_t input, value_t output,
                                                   kernel_context &context) {
     try_f32_input(input_mem, input);
     auto dtype = input_tensor->dtype();
-    try_var(typecode, to_typecode(dtype));
     try_f32_output(out_mem, output, dtype, input_tensor->shape());
     try_(sigmoid_impl(input_mem,
                         out_mem,

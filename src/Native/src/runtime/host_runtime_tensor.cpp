@@ -17,6 +17,7 @@
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/runtime_tensor.h>
+#include <cstring>
 
 using namespace nncase;
 using namespace nncase::runtime;
