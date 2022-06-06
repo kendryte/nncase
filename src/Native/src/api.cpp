@@ -206,6 +206,10 @@ int nncase_dtype_create_prime(nncase::typecode_t typecode,
     return -EINVAL;
 }
 
+int nncase_dtype_get_typecode(nncase::datatype_node *dtype) {
+    return dtype->typecode();
+}
+
 int nncase_dtype_free(nncase::datatype_node *dtype) {
     return nncase_object_free(dtype);
 }

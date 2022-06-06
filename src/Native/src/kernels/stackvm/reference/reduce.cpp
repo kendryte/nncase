@@ -134,7 +134,7 @@ result<value_t> nncase::kernels::stackvm::reduce(
     reduce_op_t reduce_op, value_t input, value_t axis, value_t init_value,
     value_t keep_dims, value_t output, kernel_context &context) {
     try_f32_input(in_mem, input);
-    try_dims(axis_value, axis);
+    try_axis(axis_value, axis, input_tensor->shape().size());
     try_to_scalar(keep_dims_value, keep_dims, bool);
     try_to_scalar(init_v, init_value, float);
     auto out_shape = infer_shape(input_tensor->shape(), axis_value, keep_dims_value);

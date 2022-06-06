@@ -34,6 +34,7 @@ class NNCASE_API datatype_t : public object_t<datatype_node> {
   public:
     using object_t::object_t;
 
+    static prim_type_t boolean;
     static prim_type_t uint8;
     static prim_type_t uint16;
     static prim_type_t uint32;
@@ -114,6 +115,7 @@ template <class T> struct datatype_of {};
         datatype_t operator()() const noexcept { return datatype_t::name; }    \
     };
 
+DEFINE_DATATYPE_OF(bool, boolean)
 DEFINE_DATATYPE_OF(uint8_t, uint8)
 DEFINE_DATATYPE_OF(uint16_t, uint16)
 DEFINE_DATATYPE_OF(uint32_t, uint32)

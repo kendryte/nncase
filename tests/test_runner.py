@@ -15,7 +15,8 @@ import copy
 import cv2
 import numpy as np
 import yaml
-
+from inference import *
+from evaluator import *
 
 class Edict:
     def __init__(self, d: Dict[str, int]) -> None:
@@ -163,8 +164,7 @@ DataFactory = {
     'generate_image_dataset': generate_image_dataset
 }
 
-
-class TestRunner(metaclass=ABCMeta):
+class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
     def __init__(self, case_name, targets=None, overwrite_configs: Union[Dict, str] = None) -> None:
         config_root = os.path.dirname(__file__)
         with open(os.path.join(config_root, 'config.yml'), encoding='utf8') as f:
@@ -400,29 +400,15 @@ class TestRunner(metaclass=ABCMeta):
         pass
 
     def run_single(self, cfg, case_dir: str, model_file: Union[List[str], str]):
+        # todo: move to run
         if not self.inputs:
             self.parse_model_input_output(model_file)
         names, args = TestRunner.split_value(cfg.preprocess_opt)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
             self.get_process_config(dict_args)
-            self.generate_data(cfg.generate_inputs, case_dir,
-                               self.inputs, self.input_paths, 'input', dict_args)
-            self.generate_data(cfg.generate_calibs, case_dir,
-                               self.calibs, self.calib_paths, 'calib', dict_args)
-            self.generate_data(cfg.generate_dump_range_data, case_dir,
-                               self.dump_range_data, self.dump_range_data_paths, 'dump_range_data', dict_args)
-
-            # write preprocess options in test_result
-            if dict_args['preprocess'] == True:
-                str_preprocess_opt = ""
-                pre_list = []
-                for key, value in dict_args.items():
-                    pre_list.append(str_preprocess_opt.join("{0}:{1}".format(key, value)))
-                with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
-                    f.write("\n----preprocess option----\n")
-                    f.write('\n'.join(pre_list[:]) + "\n")
-                    f.write("-------------------------\n")
+            self.generate_all_data(case_dir, cfg, dict_args)
+            self.write_preprocess_opt(dict_args)
 
             self.cpu_infer(case_dir, model_file, dict_args['input_type'])
             import_options, compile_options = self.get_compiler_options(dict_args, model_file)
@@ -431,6 +417,25 @@ class TestRunner(metaclass=ABCMeta):
                                compile_options, model_content, dict_args)
             self.run_inference(cfg, case_dir, import_options,
                                compile_options, model_content, dict_args)
+
+    def write_preprocess_opt(self, dict_args):
+        if dict_args['preprocess'] == True:
+            str_preprocess_opt = ""
+            pre_list = []
+            for key, value in dict_args.items():
+                pre_list.append(str_preprocess_opt.join("{0}:{1}".format(key, value)))
+            with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
+                f.write("\n----preprocess option----\n")
+                f.write('\n'.join(pre_list[:]) + "\n")
+                f.write("-------------------------\n")
+
+    def generate_all_data(self, case_dir, cfg, dict_args):
+        self.generate_data(cfg.generate_inputs, case_dir,
+                           self.inputs, self.input_paths, 'input', dict_args)
+        self.generate_data(cfg.generate_calibs, case_dir,
+                           self.calibs, self.calib_paths, 'calib', dict_args)
+        self.generate_data(cfg.generate_dump_range_data, case_dir,
+                           self.dump_range_data, self.dump_range_data_paths, 'dump_range_data', dict_args)
 
     def get_compiler_options(self, cfg, model_file):
         import_options = nncase.ImportOptions()
@@ -451,36 +456,6 @@ class TestRunner(metaclass=ABCMeta):
             e = '"'
             exec(f"compile_options.{k} = {e + v + e if isinstance(v, str) else v}")
         return import_options, compile_options
-
-    def run_evaluator(self, cfg, case_dir, import_options, compile_options, model_content, preprocess_opt):
-        names, args = TestRunner.split_value(cfg.eval)
-        for combine_args in product(*args):
-            dict_args = dict(zip(names, combine_args))
-            if dict_args['ptq'] and len(self.inputs) != 1:
-                continue
-            if cfg.compile_opt.dump_import_op_range and len(self.inputs) != 1:
-                continue
-            eval_output_paths = self.generate_evaluates(
-                cfg, case_dir, import_options,
-                compile_options, model_content, dict_args, preprocess_opt)
-            judge, result = self.compare_results(
-                self.output_paths, eval_output_paths, dict_args)
-            assert(judge), 'Fault result in eval' + result
-
-    def run_inference(self, cfg, case_dir, import_options, compile_options, model_content, preprocess_opt):
-        names, args = TestRunner.split_value(cfg.infer)
-        for combine_args in product(*args):
-            dict_args = dict(zip(names, combine_args))
-            if dict_args['ptq'] and len(self.inputs) != 1:
-                continue
-            if cfg.compile_opt.dump_import_op_range and len(self.inputs) != 1:
-                continue
-            infer_output_paths = self.nncase_infer(
-                cfg, case_dir, import_options,
-                compile_options, model_content, dict_args, preprocess_opt)
-            judge, result = self.compare_results(
-                self.output_paths, infer_output_paths, dict_args)
-            assert(judge), 'Fault result in infer' + result
 
     @staticmethod
     def split_value(kwcfg: List[Dict[str, str]]) -> Tuple[List[str], List[str]]:
@@ -511,135 +486,6 @@ class TestRunner(metaclass=ABCMeta):
             elif isinstance(v, bool):
                 path = os.path.join(path, ('' if v else 'no') + k)
         return path
-
-    def generate_evaluates(self, cfg, case_dir: str,
-                           import_options: nncase.ImportOptions,
-                           compile_options: nncase.CompileOptions,
-                           model_content: Union[List[bytes], bytes],
-                           kwargs: Dict[str, str],
-                           preprocess: Dict[str, str]
-                           ) -> List[Tuple[str, str]]:
-        eval_dir = TestRunner.kwargs_to_path(
-            os.path.join(case_dir, 'eval'), kwargs)
-        compile_options.target = kwargs['target']
-        compile_options.dump_dir = eval_dir
-        compile_options.dump_asm = cfg.compile_opt.dump_asm
-        compile_options.dump_ir = cfg.compile_opt.dump_ir
-        compiler = nncase.Compiler(compile_options)
-        self.import_model(compiler, model_content, import_options)
-
-        if cfg.compile_opt.dump_import_op_range:
-            dump_range_options = nncase.DumpRangeTensorOptions()
-            dump_range_options.set_tensor_data(np.asarray(
-                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]).tobytes())
-            dump_range_options.samples_count = cfg.generate_dump_range_data.batch_size
-            compiler.dump_range_options(dump_range_options)
-        if kwargs['ptq']:
-            ptq_options = nncase.PTQTensorOptions()
-            ptq_options.set_tensor_data(np.asarray(
-                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
-            ptq_options.samples_count = cfg.generate_calibs.batch_size
-            compiler.use_ptq(ptq_options)
-
-        evaluator = compiler.create_evaluator(3)
-        eval_output_paths = []
-        for i in range(len(self.inputs)):
-            input_tensor: nncase.RuntimeTensor = nncase.RuntimeTensor.from_numpy(
-                self.transform_input(self.data_pre_process(self.inputs[i]['data']), "float32", "CPU"))
-            input_tensor.copy_to(evaluator.get_input_tensor(i))
-        evaluator.run()
-
-        for i in range(evaluator.outputs_size):
-            result = evaluator.get_output_tensor(i).to_numpy()
-            eval_output_paths.append((
-                os.path.join(eval_dir, f'nncase_result_{i}.bin'),
-                os.path.join(eval_dir, f'nncase_result_{i}.txt')))
-            result.tofile(eval_output_paths[-1][0])
-            self.totxtfile(eval_output_paths[-1][1], result)
-        return eval_output_paths
-
-    def get_infer_compile_options(self, infer_dir: str, cfg, compile_options: nncase.CompileOptions,
-                     kwargs: Dict[str, str],
-                     preprocess: Dict[str, str]):
-        compile_options.target = kwargs['target']
-        compile_options.dump_dir = infer_dir
-        compile_options.dump_asm = cfg.compile_opt.dump_asm
-        compile_options.dump_ir = cfg.compile_opt.dump_ir
-        compile_options.dump_quant_error = cfg.compile_opt.dump_quant_error
-        compile_options.dump_import_op_range = cfg.compile_opt.dump_import_op_range
-        compile_options.is_fpga = cfg.compile_opt.is_fpga
-        compile_options.use_mse_quant_w = cfg.compile_opt.use_mse_quant_w
-        compile_options.input_type = preprocess['input_type']
-        compile_options.quant_type = cfg.compile_opt.quant_type
-        compile_options.w_quant_type = cfg.compile_opt.w_quant_type
-        compile_options.swapRB = preprocess['swapRB']
-        compile_options.input_shape = self.pre_process[3]['input_shape'] if self.pre_process[3]['input_shape'] != [
-        ] else self.pre_process[3]['model_shape']
-        compile_options.input_range = preprocess['input_range']
-        compile_options.preprocess = preprocess['preprocess']
-        compile_options.mean = preprocess['mean']
-        compile_options.std = preprocess['std']
-        compile_options.input_layout = preprocess['input_layout']
-        compile_options.output_layout = preprocess['output_layout']
-        compile_options.tcu_num = cfg.compile_opt.tcu_num
-        return compile_options
-
-    def nncase_infer(self, cfg, case_dir: str,
-                     import_options: nncase.ImportOptions,
-                     compile_options: nncase.CompileOptions,
-                     model_content: Union[List[bytes], bytes],
-                     kwargs: Dict[str, str],
-                     preprocess: Dict[str, str]
-                     ) -> List[Tuple[str, str]]:
-        infer_dir = TestRunner.kwargs_to_path(
-            os.path.join(case_dir, 'infer'), kwargs)
-        compile_options = self.get_infer_compile_options(infer_dir, cfg, compile_options, kwargs, preprocess)
-        compiler = nncase.Compiler(compile_options)
-        self.import_model(compiler, model_content, import_options)
-
-        if cfg.compile_opt.dump_import_op_range:
-            dump_range_options = nncase.DumpRangeTensorOptions()
-            dump_range_options.set_tensor_data(np.asarray(
-                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]).tobytes())
-            dump_range_options.samples_count = cfg.generate_dump_range_data.batch_size
-            compiler.dump_range_options(dump_range_options)
-        if kwargs['ptq']:
-            ptq_options = nncase.PTQTensorOptions()
-            ptq_options.set_tensor_data(np.asarray(
-                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
-            ptq_options.samples_count = cfg.generate_calibs.batch_size
-            compiler.use_ptq(ptq_options)
-
-        compiler.compile()
-        kmodel = compiler.gencode_tobytes()
-        with open(os.path.join(infer_dir, 'test.kmodel'), 'wb') as f:
-            f.write(kmodel)
-        sim = nncase.Simulator()
-        sim.load_model(kmodel)
-        infer_output_paths: List[np.ndarray] = []
-        for i in range(len(self.inputs)):
-            data = self.transform_input(self.inputs[i]['data'], preprocess['input_type'], "infer")
-            dtype = preprocess['input_type']
-            if preprocess['preprocess'] and dtype != 'float32':
-                data.tofile(os.path.join(case_dir, f'input_{i}_{dtype}.bin'))
-                self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
-
-            sim.add_input_tensor(nncase.RuntimeTensor.from_numpy(data))
-        sim.run()
-
-        for i in range(sim.outputs_size):
-            result = sim.get_output_tensor(i).to_numpy()
-            if preprocess['preprocess'] and len(result.shape) == 4:
-                if(preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
-                    result = np.transpose(result, [0, 3, 1, 2])
-                elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
-                    result = np.transpose(result, [0, 2, 3, 1])
-            infer_output_paths.append((
-                os.path.join(infer_dir, f'nncase_result_{i}.bin'),
-                os.path.join(infer_dir, f'nncase_result_{i}.txt')))
-            result.tofile(infer_output_paths[-1][0])
-            self.totxtfile(infer_output_paths[-1][1], result)
-        return infer_output_paths
 
     def on_test_start(self) -> None:
         pass

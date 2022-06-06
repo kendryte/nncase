@@ -25,36 +25,6 @@
 namespace nncase::runtime {
 inline bool is_scalar(tensor t) noexcept { return t->shape().empty(); }
 
-template <typename T>
-inline result<T> value_to_scalar([[maybe_unused]] value_t v) {
-    throw "NotImplement";
-}
-
-inline result<scalar> tensor_as_scalar([[maybe_unused]] value_t v) {
-    throw "NotImplement";
-}
-
-inline result<dims_t> value_as_dims([[maybe_unused]] value_t v) {
-    throw "NotImplement";
-}
-
-inline result<strides_t> value_as_strides([[maybe_unused]] value_t v) {
-    throw "NotImplement";
-}
-
-inline result<paddings_t> value_as_paddings([[maybe_unused]] value_t v) {
-    throw "NotImplement";
-}
-
-inline result<quant_param_t> value_as_quant_param([[maybe_unused]] value_t v) {
-    throw "NotImplement";
-}
-
-template <typename T>
-inline result<T *> value_as_array([[maybe_unused]] value_t v) {
-    throw "NotImplement";
-}
-
 template <typename T, bool IsResult, typename F>
 inline result<std::vector<T>> get_from_tuple_with_result(tuple inputs, F &&f) {
     std::vector<T> data(inputs->fields().size());
@@ -150,13 +120,12 @@ inline result<bool> float_only_check(tensor input) {
     return cmp_dt_impl(input->dtype(), datatype_t::float32);
 }
 
-inline int positive_index(int index, int rank) {
+inline int positive_index(int index, size_t rank) {
     return index < 0 ? index + rank : index;
 }
 
 #define try_alloc_output(out_mem, _out_tensor, _dt, _shape)                    \
     try_(alloc_output(_out_tensor, _dt, _shape));
-#define try_check_float(_tensor_name) try_(float_only_check(_tensor_name))
 
 #define try_input_impl(_var_name, _value_name, _value_kind)                    \
     try_var(_value_name##_tensor, _value_name.as<_value_kind>());              \
@@ -172,10 +141,10 @@ inline int positive_index(int index, int rank) {
         try_(type_only_check<_ty>(_value_name##_tensor)) auto _var_name =      \
             reinterpret_cast<const _ty *>(__##_var_name)
 
-#define try_f32_input(_var_name, _tensor_name)                                 \
-    try_input_with_ty(_var_name, _tensor_name, float)
-#define try_f32_output(_var_name, _tensor_name, _dt, _out_shape)               \
-    try_output(__##_var_name, _tensor_name, _dt, _out_shape);                  \
+#define try_f32_input(_var_name, _value_name)                                 \
+    try_input_with_ty(_var_name, _value_name, float)
+#define try_f32_output(_var_name, _value_name, _dt, _out_shape)               \
+    try_output(__##_var_name, _value_name, _dt, _out_shape);                  \
     auto _var_name = reinterpret_cast<float *>(__##_var_name)
 
 #define try_output_impl(_var_name, _value_name, _dt, _out_shape, _value_kind) \
@@ -189,19 +158,70 @@ inline int positive_index(int index, int rank) {
 #define try_tuple_output(_var_name, _value_name, _dt, _out_shape)              \
     try_output_impl(_var_name, _value_name, _dt, _out_shape, tuple)
 
-#define try_value_as(_var_name, _tensor_name, f_name)                          \
-    try_var(_var_name, value_as_##f_name(_tensor_name))
-#define try_strides(_var_name, _tensor_name)                                   \
-    try_value_as(_var_name, _tensor_name, strides)
-#define try_dims(_var_name, _tensor_name)                                      \
-    try_value_as(_var_name, _tensor_name, dims)
-#define try_paddings(_var_name, _tensor_name)                                  \
-    try_value_as(_var_name, _tensor_name, paddings)
-#define try_value_as_t(_var_name, _tensor_name, _ty, f_name)                   \
-    try_var(_var_name, value_as_##f_name<_ty>(_tensor_name))
-#define try_to_scalar(_var_name, _tensor_name, _ty)                            \
-    try_var(_var_name, value_to_scalar<_ty>(_tensor_name))
-#define try_array(_var_name, _tensor_name, _ty)                                \
-    try_value_as_t(_var_name, _tensor_name, _ty, array)
+#define try_value_as(_var_name, _value_name, f_name)                          \
+    try_var(_var_name, value_as_##f_name(_value_name))
+#define try_strides(_var_name, _value_name)                                   \
+    try_value_as(_var_name, _value_name, strides)
+#define try_dims(_var_name, _value_name)                                      \
+    try_value_as(_var_name, _value_name, dims)
+#define try_axis(_var_name, _value_name, _rank)                                      \
+    try_var(_var_name, value_as_axis(_value_name, _rank))
+#define try_paddings(_var_name, _value_name)                                  \
+    try_value_as(_var_name, _value_name, paddings)
+#define try_value_as_t(_var_name, _value_name, _ty, f_name)                   \
+    try_var(_var_name, value_as_##f_name<_ty>(_value_name))
+#define try_to_scalar(_var_name, _value_name, _ty)                            \
+    try_var(_var_name, value_to_scalar<_ty>(_value_name))
+#define try_array(_var_name, _value_name, _ty)                                \
+    try_value_as_t(_var_name, _value_name, _ty, array)
+
+template <typename T>
+inline result<T> value_to_scalar([[maybe_unused]] value_t value) {
+    try_input_with_ty(input, value, T);
+    return ok(*input);
+}
+
+inline result<scalar> tensor_as_scalar([[maybe_unused]] value_t value) {
+    throw "NotImplement";
+}
+
+template<typename T>
+inline result<itlib::small_vector<T, 4>> value_as_Ts(value_t value) {
+    try_input_with_ty(input, value, T);
+    return ok(itlib::small_vector<T, 4>(input, input + value_tensor->shape().size()));
+}
+
+inline result<dims_t> value_as_dims(value_t value) {
+    return value_as_Ts<dims_t::value_type>(value);
+}
+
+// kernel not suppport neg axis
+inline result<dims_t> value_as_axis(value_t value, size_t rank) {
+    try_input_with_ty(input, value, int32_t);
+    auto size = value_tensor->shape().size();
+    auto axis = dims_t(size);
+    for (int i = 0; i < size; ++i) {
+        axis[i] = positive_index(input[i], rank);
+    }
+    return ok(axis);
+}
+
+inline result<strides_t> value_as_strides(value_t value) {
+    return value_as_Ts<strides_t::value_type>(value);
+}
+
+inline result<paddings_t> value_as_paddings([[maybe_unused]] value_t value) {
+//    try_input_with_ty(input, value, size_t);
+throw "NotImplement";
+}
+
+inline result<quant_param_t> value_as_quant_param([[maybe_unused]] value_t value) {
+    throw "NotImplement";
+}
+
+template <typename T>
+inline result<T *> value_as_array([[maybe_unused]] value_t v) {
+    throw "NotImplement";
+}
 
 } // namespace nncase::runtime

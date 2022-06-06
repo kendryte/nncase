@@ -150,11 +150,40 @@ class MemoryRange:
     def __init__(self) -> None:
         pass
 
+class RTTensor:
+    rtTypeToNp = {
+        _nncase.Runtime.TypeCode.Boolean: np.bool8,
+        _nncase.Runtime.TypeCode.Int8: np.int8,
+        _nncase.Runtime.TypeCode.Int16: np.int16,
+        _nncase.Runtime.TypeCode.Int32: np.int32,
+        _nncase.Runtime.TypeCode.Int64: np.int64,
+        _nncase.Runtime.TypeCode.UInt8: np.uint8,
+        _nncase.Runtime.TypeCode.Float16: np.float16,
+        _nncase.Runtime.TypeCode.Float32: np.float32,
+        _nncase.Runtime.TypeCode.Float64: np.float64,
+    }
+    
+    def __init__(self, rt_tensor) -> None:
+        self.rt_tensor = rt_tensor
+        
+    def from_tensor(tensor) -> RTTensor:
+        t = tensor.to_nncase_tensor()
+        rt_tensor = _nncase.Runtime.Interop.RTTensor.FromTensor(t)
+        return RTTensor(rt_tensor)
+    
+    def to_numpy(self):
+        arr_bytes = _nncase.Compiler.PythonHelper.GetRTTensorBytes(self.rt_tensor)
+        shape = _nncase.Compiler.PythonHelper.GetRTTensorDims(self.rt_tensor)
+        return np.frombuffer(arr_bytes, dtype=self.rtTypeToNp[self.rt_tensor.ElementType.TypeCode]).reshape(shape)
+
+    def to_nncase(self):
+        return self.rt_tensor
 
 class Simulator:
     def __init__(self) -> None:
         self.interpreter = _nncase.Runtime.Interop.RTInterpreter()
         self.inputs = []
+        self.outputs = []
 
     def get_input_desc(self, index: int) -> MemoryRange:
         pass
@@ -165,8 +194,9 @@ class Simulator:
     def get_output_desc(self, index: int) -> MemoryRange:
         pass
 
-    def get_output_tensor(self, index: int) -> RuntimeTensor:
-        pass
+    def get_output_tensor(self, index: int):
+        rt_tensor = self.outputs[index]
+        return rt_tensor.to_numpy()
 
     def load_model(self, model: bytes) -> None:
         model_bytes = [i for i in model]
@@ -174,12 +204,17 @@ class Simulator:
         self.interpreter.LoadModel(mem)
 
     def run(self) -> None:
-        result = _nncase.Compiler.PythonHelper.RunSimulator(self.interpreter, self.inputs)
-        result
+        outputs = _nncase.Compiler.PythonHelper.RunSimulator(self.interpreter, self.all_nncase_input())
+        self.outputs = list(map(RTTensor, outputs))
+
+    def all_nncase_input(self):
+        return list(map(lambda x: x.to_nncase(), self.inputs))
+
+    def all_numpy_output(self):
+        return map(lambda x: x.to_numpy(), self.outputs)
 
     def add_input_tensor(self, tensor: RuntimeTensor) -> None:
-        t = tensor.to_nncase_tensor()
-        rt_tensor = _nncase.Runtime.Interop.RTTensor.FromTensor(t)
+        rt_tensor = RTTensor.from_tensor(tensor)
         self.inputs.append(rt_tensor)
 
     def set_output_tensor(self, index: int, tensor: RuntimeTensor) -> None:
@@ -191,7 +226,7 @@ class Simulator:
 
     @ property
     def outputs_size(self) -> int:
-        pass
+        return len(self.outputs)
 
 
 class GraphEvaluator:
