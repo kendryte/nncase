@@ -85,11 +85,11 @@ inline result<std::vector<dims_t>> get_strides(tuple inputs) {
                                   [](auto &input) { return input->strides(); });
 }
 
-inline result<void> alloc_output(value_t output_v, datatype_t dtype,
+inline result<void> alloc_output(value_t &output, datatype_t dtype,
                                  const dims_t &out_shape) {
     // TODO: copy back output
-    try_var(output, output_v.as<tensor>());
-    assert(output.empty());
+//    try_var(output, output_v.as<tensor>());
+//    assert(output.empty());
     if (output.empty()) {
         auto out_strides = get_default_strides(out_shape);
         try_var(out_buffer, buffer_allocator::host().allocate(
@@ -97,7 +97,8 @@ inline result<void> alloc_output(value_t output_v, datatype_t dtype,
         output =
             tensor(std::in_place, dtype, out_shape, out_strides, out_buffer);
     } else {
-        if (output->shape() != out_shape)
+        try_var(out_tensor, output.as<tensor>());
+        if (out_tensor->shape() != out_shape)
             return err(nncase_errc::shape_mismatch);
     }
     return ok();
@@ -177,9 +178,9 @@ inline int positive_index(int index, int rank) {
     try_output(__##_var_name, _tensor_name, _dt, _out_shape);                  \
     auto _var_name = reinterpret_cast<float *>(__##_var_name)
 
-#define try_output_impl(_var_name, _value_name, _dt, _out_shape, _value_kind)  \
-    try_var(_value_name##_tensor, _value_name.as<_value_kind>());              \
+#define try_output_impl(_var_name, _value_name, _dt, _out_shape, _value_kind) \
     try_alloc_output(out_mem, _value_name, _dt, _out_shape);                   \
+    try_var(_value_name##_tensor, _value_name.as<_value_kind>());              \
     try_var(_var_name, get_output_data(_value_name##_tensor))
 
 #define try_output(_var_name, _value_name, _dt, _out_shape)                    \
