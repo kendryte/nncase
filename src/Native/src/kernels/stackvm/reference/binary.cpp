@@ -77,10 +77,10 @@ result<void> binary_impl(binary_op_t op, const T *lhs, const T *rhs, T *output,
 result<value_t> kernels::stackvm::binary(binary_op_t binary_op, value_t lhs,
                                         value_t rhs, value_t output,
                                         kernel_context &context) {
-    try_f32_input(lhs_mem, lhs);
-    try_f32_input(rhs_mem, rhs);
+    try_input(lhs_mem, lhs);
+    try_input(rhs_mem, rhs);
     auto out_shape = detail::get_binary_output_shape(lhs_tensor->shape(), rhs_tensor->shape());
-    try_f32_output(out_mem, output, lhs_tensor->dtype(), out_shape);
+    try_output(out_mem, output, lhs_tensor->dtype(), out_shape);
     try_(binary_impl(binary_op, lhs_mem, rhs_mem, out_mem,
                      lhs_tensor->shape(), lhs_tensor->strides(),
                      rhs_tensor->shape(), rhs_tensor->strides(),
