@@ -68,6 +68,7 @@
 | MaxPool | ✅ |
 | Max | ✅ |
 | Mean | ✅ |
+| MeanVarianceNormalization | ✅ |
 | Min | ✅ |
 | Mod | ✅ |
 | Mul | ✅ |
