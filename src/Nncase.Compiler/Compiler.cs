@@ -19,7 +19,7 @@ namespace Nncase.Compiler;
 public class Compiler
 {
     private IRModule Module;
-    private ICompileOptions Options;
+    private CompileOptions Options;
     public static void init()
     {
         OrtKI.LoadDLL();
@@ -64,7 +64,7 @@ public class Compiler
         loggingBuilder.AddConsole();
     }
     
-    public IRModule ImportModule(Stream content, ICompileOptions options)
+    public IRModule ImportModule(Stream content, CompileOptions options)
     {
         Console.WriteLine($"Target: {options.Target}");
         var module = ImportModel(content, options);
@@ -79,7 +79,7 @@ public class Compiler
         return module;
     }
 
-    private void InferShape(IRModule module, ICompileOptions options)
+    private void InferShape(IRModule module, CompileOptions options)
     {
         Console.WriteLine("Infer Shape...");
         var pmgr = new PassManager(module, new RunPassOptions(null!, options.DumpLevel, options.DumpDir));
@@ -88,7 +88,7 @@ public class Compiler
         pmgr.Run();
     }
 
-    private IRModule ImportModel(Stream content, ICompileOptions options)
+    private IRModule ImportModel(Stream content, CompileOptions options)
     {
         Module = options.InputFormat switch
         {
@@ -100,7 +100,7 @@ public class Compiler
     }
 
 
-    private void DumpModule(IRModule module, ICompileOptions options, string prefix)
+    private void DumpModule(IRModule module, CompileOptions options, string prefix)
     {
         var dumpPath = Path.Combine(options.DumpDir, "dump", prefix);
         CompilerServices.DumpIR(module.Entry!, prefix, dumpPath);
@@ -118,7 +118,7 @@ public class Compiler
     {
     }
     
-    public void Compile(ICompileOptions options)
+    public void Compile(CompileOptions options)
     {
         Options = options;
         var t = CompilerServices.GetTarget(options.Target);

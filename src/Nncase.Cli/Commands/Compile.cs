@@ -35,7 +35,7 @@ namespace Nncase.Cli.Commands
             AddOption(new Option<int>("--dump-level", () => 0, "dump ir to .il, default is 0") { IsRequired = false });
             AddOption(new Option<string>("--dump-dir", () => ".", "dump to directory, default is .") { IsRequired = false });
 
-            Handler = CommandHandler.Create<ICompileOptions, IHost>(Run);
+            Handler = CommandHandler.Create<CompileOptions, IHost>(Run);
         }
 
         internal void ConfigureServices(IHost host)
@@ -44,14 +44,14 @@ namespace Nncase.Cli.Commands
             CompilerServices.Configure(provider);
         }
 
-        private void Run(ICompileOptions options, IHost host)
+        private void Run(CompileOptions options, IHost host)
         {
             ConfigureServices(host);
             var module = ImportModule(File.OpenRead(options.InputFile), options);
             BuildKModel(module, options);
         }
 
-        private void BuildKModel(IRModule module, ICompileOptions options)
+        private void BuildKModel(IRModule module, CompileOptions options)
         {
             var target = CompilerServices.GetTarget(options.Target);
             var modelBuilder = new ModelBuilder(target);
@@ -62,7 +62,7 @@ namespace Nncase.Cli.Commands
             }
         }
 
-        private IRModule ImportModule(Stream content, ICompileOptions options)
+        private IRModule ImportModule(Stream content, CompileOptions options)
         {
             Console.WriteLine($"Target: {options.Target}");
             var module = ImportModel(content, options);
@@ -77,7 +77,7 @@ namespace Nncase.Cli.Commands
             return module;
         }
 
-        private void InferShape(IRModule module, ICompileOptions options)
+        private void InferShape(IRModule module, CompileOptions options)
         {
             Console.WriteLine("Infer Shape...");
             var pmgr = new PassManager(module, new RunPassOptions(null, options.DumpLevel, options.DumpDir));
@@ -86,7 +86,7 @@ namespace Nncase.Cli.Commands
             //pmgr.Run();
         }
 
-        private IRModule ImportModel(Stream content, ICompileOptions options) =>
+        private IRModule ImportModel(Stream content, CompileOptions options) =>
           options.InputFormat switch
           {
               "tflite" => Importers.ImportTFLite(content),
@@ -94,7 +94,7 @@ namespace Nncase.Cli.Commands
               _ => throw new NotImplementedException($"Not Implement {options.InputFormat} Impoter!"),
           };
 
-        private void DumpModule(IRModule module, ICompileOptions options, string prefix)
+        private void DumpModule(IRModule module, CompileOptions options, string prefix)
         {
             var dumpPath = Path.Combine(options.DumpDir, "dump");
             CompilerServices.DumpIR(module.Entry!, prefix, dumpPath);

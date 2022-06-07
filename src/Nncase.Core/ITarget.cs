@@ -21,7 +21,7 @@ public interface ITarget
     /// </summary>
     string Kind { get; }
 
-    void RegisterTargetDependentPass(PassManager passManager, ICompileOptions options);
+    void RegisterTargetDependentPass(PassManager passManager, CompileOptions options);
 
     void RegisterQuantizePass(PassManager passManager);
 

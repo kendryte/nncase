@@ -15,18 +15,38 @@ namespace Nncase.Transform
     /// </summary>
     public class RunPassOptions
     {
+
+        /// <summary>
+        /// parameterless ctor.
+        /// </summary>
+        public RunPassOptions()
+        {
+            Target = null!;
+            DumpLevel = CompilerServices.CompileOptions.DumpLevel;
+            DumpDir = CompilerServices.CompileOptions.DumpDir;
+            CompileOptions = CompilerServices.CompileOptions;
+            PassName = "";
+        }
+
         /// <summary>
         /// constructor.
         /// </summary>
         /// <param name="target"> target device. </param>
         /// <param name="dumpLevel"> int level. </param>
         /// <param name="dumpDir"> dir. </param>
-        public RunPassOptions(ITarget target, int dumpLevel, string dumpDir) 
-            : this(target, dumpLevel, dumpDir, CompilerServices.GetCompileOptions())
+        public RunPassOptions(ITarget target, int dumpLevel, string dumpDir)
+            : this(target, dumpLevel, dumpDir, CompilerServices.CompileOptions)
         {
         }
 
-        public RunPassOptions(ITarget target, int dumpLevel, string dumpDir, ICompileOptions options)
+        /// <summary>
+        /// create the run pass options
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="dumpLevel"></param>
+        /// <param name="dumpDir"></param>
+        /// <param name="options"></param>
+        public RunPassOptions(ITarget target, int dumpLevel, string dumpDir, CompileOptions options)
         {
             Target = target;
             DumpLevel = dumpLevel;
@@ -35,7 +55,7 @@ namespace Nncase.Transform
             RewriteOnce = false;
             CompileOptions = options;
         }
-        
+
         /// <summary>
         /// copy construct.
         /// </summary>
@@ -77,8 +97,11 @@ namespace Nncase.Transform
         /// Default is false.
         /// </summary>
         public bool RewriteOnce { private set; get; }
-        
-        public ICompileOptions CompileOptions { private set; get; }
+
+        /// <summary>
+        /// get the compile options
+        /// </summary>
+        public CompileOptions CompileOptions { private set; get; }
 
         /// <summary>
         /// set the pass name

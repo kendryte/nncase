@@ -3,65 +3,122 @@
 
 using System;
 
-namespace Nncase
+namespace Nncase;
+
+/// <summary>
+/// CompileOptions
+/// </summary>
+public sealed class CompileOptions
 {
-    public class CompileOptions : ICompileOptions
-    {
-        public CompileOptions(bool usePtq)
-        {
-            UsePTQ = usePtq;
-        }
-
-        public string InputFile { get; set; }
-        public string InputFormat { get; set; }
-        public string Target { get; set; }
-        public int DumpLevel { get; set; }
-        public string DumpDir { get; set; }
-        public bool UsePTQ { get; set; }
-        public DataType QuantType { get; set; }
-        public QuantMode QuantMode { get; set; }
-        public string OutputFile {get; set; }
-    }
-    
     /// <summary>
-    /// Options of compile command.
+    /// CompileOptions
     /// </summary>
-    public interface ICompileOptions
+    public CompileOptions()
     {
-        /// <summary>
-        /// Gets or sets input file.
-        /// </summary>
-        public string InputFile { get; set; }
-
-        /// <summary>
-        /// Gets or sets output file.
-        /// </summary>
-        public string OutputFile { get; set; }
-
-        /// <summary>
-        /// Gets or sets the import model format.
-        /// </summary>
-        public string InputFormat { get; set; }
-
-        /// <summary>
-        /// Gets or sets target.
-        /// </summary>
-        public string Target { get; set; }
-
-        /// <summary>
-        /// Gets or sets the dump level.
-        /// </summary>
-        public int DumpLevel { get; set; }
-
-        /// <summary>
-        /// Gets or sets the dump directory.
-        /// </summary>
-        public string DumpDir { get; set; }
-
-        public bool UsePTQ { get; set; }
-        
-        public DataType QuantType { get; set; }
-        
-        public QuantMode QuantMode { get; set; }
+        InputFile = string.Empty;
+        InputFormat = string.Empty;
+        Target = string.Empty;
+        DumpLevel = -1;
+        DumpDir = string.Empty;
+        UsePTQ = false;
+        QuantType = DataTypes.Int8;
+        QuantMode = QuantMode.UnsignedMode;
+        OutputFile = string.Empty;
     }
+
+    /// <summary>
+    /// init 
+    /// </summary>
+    /// <param name="usePtq"></param>
+    public CompileOptions(bool usePtq)
+    {
+        InputFile = string.Empty;
+        InputFormat = string.Empty;
+        Target = string.Empty;
+        DumpLevel = -1;
+        DumpDir = string.Empty;
+        UsePTQ = usePtq;
+        QuantType = DataTypes.Int8;
+        QuantMode = QuantMode.UnsignedMode;
+        OutputFile = string.Empty;
+    }
+
+    /// <inheritdoc/>
+    public string InputFile { get; set; }
+
+    /// <inheritdoc/>
+    public string InputFormat { get; set; }
+
+    /// <inheritdoc/>
+    public string Target { get; set; }
+
+    /// <inheritdoc/>
+    public int DumpLevel { get; set; }
+
+    /// <inheritdoc/>
+    public string DumpDir { get; set; }
+
+    /// <inheritdoc/>
+    public bool UsePTQ { get; set; }
+
+    /// <inheritdoc/>
+    public DataType QuantType { get; set; }
+
+    /// <inheritdoc/>
+    public QuantMode QuantMode { get; set; }
+
+    /// <inheritdoc/>
+    public string OutputFile { get; set; }
 }
+
+// /// <summary>
+// /// Options of compile command.
+// /// </summary>
+// public interface CompileOptions
+// {
+//     /// <summary>
+//     /// Gets or sets input file.
+//     /// </summary>
+//     public string InputFile { get; set; }
+
+//     /// <summary>
+//     /// Gets or sets output file.
+//     /// </summary>
+//     public string OutputFile { get; set; }
+
+//     /// <summary>
+//     /// Gets or sets the import model format.
+//     /// </summary>
+//     public string InputFormat { get; set; }
+
+//     /// <summary>
+//     /// Gets or sets target.
+//     /// </summary>
+//     public string Target { get; set; }
+
+//     /// <summary>
+//     /// Gets or sets the dump level.
+//     /// </summary>
+//     public int DumpLevel { get; set; }
+
+//     /// <summary>
+//     /// Gets or sets the dump directory.
+//     /// </summary>
+//     public string DumpDir { get; set; }
+
+//     /// <summary>
+//     /// weather use ptq
+//     /// </summary>
+//     public bool UsePTQ { get; set; }
+
+//     /// <summary>
+//     /// Gets or sets quant type
+//     /// </summary>
+//     public DataType QuantType { get; set; }
+
+//     /// <summary>
+//     /// Gets or sets quant mode
+//     /// </summary>
+//     public QuantMode QuantMode { get; set; }
+// }
+

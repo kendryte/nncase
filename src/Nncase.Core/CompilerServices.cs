@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CommonServiceLocator;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
@@ -144,6 +145,12 @@ public interface ICompilerServicesProvider
     /// <param name="name">Target name.</param>
     /// <returns>Target</returns>
     ITarget GetTarget(string name);
+
+    /// <summary>
+    /// Get CompileOptions.
+    /// </summary>
+    /// <returns>CompileOptions</returns>
+    CompileOptions CompileOptions { get; }
 }
 
 internal interface ICompilerServicesProviderInternal
@@ -161,8 +168,10 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     private readonly IRewriteProvider _rewriteProvider;
     private readonly IEGraphMatchProvider _eGraphMatchProvider;
     private readonly ITargetProvider _targetProvider;
+    private readonly CompileOptions _compileOptions;
 
     public CompilerServicesProvider(
+        IOptions<CompileOptions> compileOptions,
         IEvaluateProvider evaluateProvider,
         ITypeInferenceProvider typeInferenceProvider,
         IIRPrinterProvider irprinterProvider,
@@ -173,6 +182,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         IEGraphMatchProvider eGraphMatchProvider,
         ITargetProvider targetProvider)
     {
+        _compileOptions = compileOptions.Value;
         _evaluateProvider = evaluateProvider;
         _typeInferenceProvider = typeInferenceProvider;
         _irprinterProvider = irprinterProvider;
@@ -264,6 +274,8 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     {
         return _targetProvider.GetTarget(name);
     }
+
+    public CompileOptions CompileOptions => _compileOptions;
 }
 
 /// <summary>
@@ -272,7 +284,6 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
 public static class CompilerServices
 {
     private static ICompilerServicesProvider? _provider;
-    private static readonly ICompileOptions _compileOptions;
 
     internal static IDataTypeServiceProvider DataTypeService => ((ICompilerServicesProviderInternal)Provider).DataTypeService;
 
@@ -437,6 +448,10 @@ public static class CompilerServices
     /// <param name="name">Target name.</param>
     /// <returns>Target</returns>
     public static ITarget GetTarget(string name) => Provider.GetTarget(name);
-    
-    public static ICompileOptions GetCompileOptions() => _compileOptions;
+
+    /// <summary>
+    /// Get the compile options
+    /// </summary>
+    /// <returns></returns>
+    public static CompileOptions CompileOptions => Provider.CompileOptions;
 }

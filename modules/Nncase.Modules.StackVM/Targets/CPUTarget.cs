@@ -21,7 +21,7 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public string Kind => "cpu";
 
-    public void RegisterTargetDependentPass(PassManager passManager, ICompileOptions options)
+    public void RegisterTargetDependentPass(PassManager passManager, CompileOptions options)
     {
     }
 
