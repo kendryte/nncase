@@ -60,7 +60,8 @@ class nncaseConan(ConanFile):
             self.requires('protobuf/3.17.1')
             self.requires('xtensor/0.21.5')
             self.requires('spdlog/1.8.2')
-            self.requires('libzippp/4.0')
+            self.requires('zlib/1.2.12')
+            self.requires('libzippp/5.0-1.8.0')
             self.requires('inja/3.2.0')
             self.requires('shaderc/2021.1')
             if self.options.tests:
@@ -82,10 +83,13 @@ class nncaseConan(ConanFile):
 
         if not self.options.runtime:
             self.options["opencv"].contrib = False
+            self.options["opencv"].with_ade = False
             self.options["opencv"].with_webp = False
             self.options["opencv"].with_openexr = False
             self.options["opencv"].with_eigen = False
             self.options["opencv"].with_quirc = False
+            self.options["opencv"].with_ffmpeg = False
+            self.options["opencv"].with_tiff = False
             self.options["opencv"].dnn = False
             self.options["flatbuffers"].options_from_context = False
             self.options["xtensor"].xsimd = False
