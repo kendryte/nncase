@@ -74,12 +74,12 @@ result<void> reference::gru(const T *input, const T *w, const T *r, const T *b, 
         for (auto i : seq_len_loop)
         {
             x_i = input + i * x_gate_size;
-            // clear gate_z gate_r gate_h
+            // clean gate_z gate_r gate_h
             std::fill(gate_z.begin(), gate_z.end(), 0.f);
             std::fill(gate_r.begin(), gate_r.end(), 0.f);
             std::fill(gate_h.begin(), gate_h.end(), 0.f);
 
-            // clear tmp_a tmp_b
+            // clean tmp_a tmp_b
             std::fill(tmp_a.begin(), tmp_a.end(), 0.f);
             std::fill(tmp_b.begin(), tmp_b.end(), 0.f);
             // gate_z = x_i * w_i_z + b_w_z + h_t *r_i_z + b_r_z
