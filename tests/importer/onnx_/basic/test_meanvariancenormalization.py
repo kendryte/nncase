@@ -62,7 +62,6 @@ def _make_module(in_type, in_shape, axes):
     model_def = helper.make_model(graph_def, producer_name='onnx')
     return model_def
 
-
 in_types = [
     TensorProto.FLOAT
 ]
@@ -88,7 +87,6 @@ def test_meanvariancenormalization(in_type, in_shape, axes, request):
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_onnx_helper(model_def)
         runner.run(model_file)
-
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_meanvariancenormalization.py'])
