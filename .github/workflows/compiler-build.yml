@@ -1,0 +1,160 @@
+name: compiler-build
+
+on: [push, pull_request]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-simulator:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04,windows-2022,macos-10.15]
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: seanmiddleditch/gha-setup-ninja@master
+
+      - name: Install System Requirements
+        if: runner.os == 'Macos'
+        shell: bash
+        run: |
+          brew install libomp
+
+      - name: Add msbuild to PATH
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1.10.0
+
+      - name: Setup Python
+        uses: actions/setup-python@v2.2.1
+        with:
+          python-version: 3.7
+
+      - name: Install Conan
+        shell: bash
+        run: |
+          pip install conan
+
+      - name: Configure Conan
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          conan profile new default --detect
+          conan profile update settings.compiler.libcxx=libstdc++11 default
+
+      - name: Create Build Environment
+        run: cmake -E make_directory ${{github.workspace}}/build
+
+      - name: Configure CMake
+        env:
+          CC: gcc-10
+          CXX: g++-10
+        if: runner.os == 'Linux'
+        shell: bash
+        working-directory: ${{github.workspace}}/build
+        run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
+
+      - name: Configure CMake
+        if: runner.os != 'Linux'
+        shell: bash
+        working-directory: ${{github.workspace}}/build
+        run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
+
+      - name: Build
+        shell: bash
+        working-directory: ${{github.workspace}}/build
+        run: |
+          cmake --build . --config $BUILD_TYPE
+
+      - name: Install
+        shell: bash
+        working-directory: ${{github.workspace}}/build
+        run: cmake --install . --prefix ../install
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v2.2.2
+        with:
+          name: nncase-simulator-${{matrix.os}}-x86_64
+          path: ${{github.workspace}}/install
+          if-no-files-found: error
+        
+  build-compiler:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04,windows-2022,macos-10.15]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
+
+      - name: Install System Requirements
+        if: runner.os == 'Macos'
+        shell: bash
+        run: |
+          brew install libomp
+      
+      - name: Install Vulkan SDK
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          VULKANSDK_VER: 1.2.182.0
+        run: |
+          wget https://sdk.lunarg.com/sdk/download/1.2.182.0/linux/vulkansdk-linux-x86_64-${VULKANSDK_VER}.tar.gz -O vulkansdk.tar.gz
+          tar xf vulkansdk.tar.gz
+          sudo cp -P ${VULKANSDK_VER}/x86_64/lib/libvulkan.so* /usr/local/lib/
+      
+      - name: Install Vulkan SDK
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri https://sdk.lunarg.com/sdk/download/1.2.182.0/windows/VulkanSDK-1.2.182.0-Installer.exe -O VulkanSDK-Installer.exe
+          .\VulkanSDK-Installer.exe /S
+      
+      - name: Install SwiftShader
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          wget https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-${{matrix.os}}-x86_64.zip -O swiftshader.zip
+          unzip swiftshader.zip
+          sudo cmake -E make_directory /usr/local/share/vulkan/icd.d
+          sudo cp lib/* /usr/local/share/vulkan/icd.d
+      
+      - name: Install SwiftShader
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-${{matrix.os}}-x86_64.zip -OutFile swiftshader.zip
+          Expand-Archive swiftshader.zip
+          Copy-Item swiftshader\lib\vk_swiftshader_icd.json swiftshader\bin\
+      
+      - name: Download nncase simulator Artifact
+        uses: actions/download-artifact@v2.0.9
+        with:
+          name: nncase-simulator-${{matrix.os}}-x86_64
+          path: ${{github.workspace}}/install
+
+      - name: Build
+        run: dotnet build
+      
+      - name: Test
+        working-directory: ${{github.workspace}}
+        if: runner.os == 'Windows'
+        shell: bash
+        env:
+          PATH: ${{github.workspace}}/install/bin
+        run: |
+          dotnet test --no-build --verbosity normal 
+      
+      - name: Test
+        working-directory: ${{github.workspace}}
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          LD_LIBRARY_PATH: ${{github.workspace}}/install/lib
+        run: |
+          dotnet test --no-build --verbosity normal
