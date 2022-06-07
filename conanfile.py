@@ -51,15 +51,9 @@ class nncaseConan(ConanFile):
             self.requires('pybind11/2.6.1')
 
         if not self.options.runtime:
-            self.requires('fmt/7.1.3')
             self.requires('magic_enum/0.7.0')
-            self.requires('nlohmann_json/3.9.1')
-            self.requires('xtensor/0.21.5')
             self.requires('spdlog/1.8.2')
-            self.requires('libzippp/4.0')
             self.requires('inja/3.2.0')
-            self.requires('shaderc/2021.1')
-            self.requires('range-v3/0.11.0')
             if self.options.tests:
                 self.requires('gtest/1.10.0')
 
@@ -76,15 +70,6 @@ class nncaseConan(ConanFile):
 
         if self.settings.arch not in ("x86_64",):
             self.options.halide = False
-
-        if not self.options.runtime:
-            self.options["xtensor"].xsimd = False
-            self.options["libzip"].with_bzip2 = False
-            self.options["libzip"].with_zstd = False
-            self.options["libzip"].crypto = False
-            if self.settings.os == 'Linux':
-                self.options["spirv-tools"].link_libcpp = False
-                self.options["shaderc"].link_libcpp = False
 
         if (not self.options.runtime) or self.options.vulkan_runtime:
             if self.settings.os == 'Linux':

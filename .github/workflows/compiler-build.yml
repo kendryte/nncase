@@ -53,13 +53,13 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         working-directory: ${{github.workspace}}/build
-        run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
+        run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=OFF -DPython3_ROOT_DIR=${pythonLocation}
 
       - name: Configure CMake
         if: runner.os != 'Linux'
         shell: bash
         working-directory: ${{github.workspace}}/build
-        run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
+        run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=OFF -DPython3_ROOT_DIR=${pythonLocation}
 
       - name: Build
         shell: bash
