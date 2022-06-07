@@ -30,12 +30,6 @@ result<value_t> nncase::kernels::stackvm::batch_normalization(
     return err(std::errc::not_supported);
 }
 
-result<value_t> nncase::kernels::stackvm::celu([[maybe_unused]] value_t input, [[maybe_unused]] value_t alpha,
-                                               [[maybe_unused]] value_t output,
-                                               [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
-}
-
 result<value_t> nncase::kernels::stackvm::clamp([[maybe_unused]] value_t input, [[maybe_unused]] value_t min,
                                                 [[maybe_unused]] value_t max, [[maybe_unused]] value_t output,
                                                 [[maybe_unused]] kernel_context &context) {
@@ -87,12 +81,6 @@ nncase::kernels::stackvm::hard_sigmoid([[maybe_unused]] value_t input, [[maybe_u
     return err(std::errc::not_supported);
 }
 
-result<value_t> nncase::kernels::stackvm::hard_swish([[maybe_unused]] value_t input,
-                                                     [[maybe_unused]] value_t output,
-                                                     [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
-}
-
 result<value_t> nncase::kernels::stackvm::instance_normalization(
     [[maybe_unused]] value_t input, [[maybe_unused]] value_t scale, [[maybe_unused]] value_t bias, [[maybe_unused]] value_t epsilon, [[maybe_unused]] value_t output,
     [[maybe_unused]] kernel_context &context) {
@@ -102,13 +90,6 @@ result<value_t> nncase::kernels::stackvm::instance_normalization(
 result<value_t>
 nncase::kernels::stackvm::l2_normalization([[maybe_unused]] value_t input, [[maybe_unused]] value_t output,
                                            [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
-}
-
-result<value_t> nncase::kernels::stackvm::leaky_relu([[maybe_unused]] value_t input,
-                                                     [[maybe_unused]] value_t alpha,
-                                                     [[maybe_unused]] value_t output,
-                                                     [[maybe_unused]] kernel_context &context) {
     return err(std::errc::not_supported);
 }
 
@@ -156,11 +137,6 @@ result<value_t> nncase::kernels::stackvm::normal_like(
     return err(std::errc::not_supported);
 }
 
-result<value_t> nncase::kernels::stackvm::prelu([[maybe_unused]] value_t input, [[maybe_unused]] value_t slope,
-                                                [[maybe_unused]] value_t output,
-                                                [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
-}
 
 result<value_t> nncase::kernels::stackvm::prod([[maybe_unused]] value_t input, [[maybe_unused]] value_t output,
                                                [[maybe_unused]] kernel_context &context) {
@@ -186,10 +162,6 @@ result<value_t> nncase::kernels::stackvm::range_of([[maybe_unused]] value_t inpu
     return err(std::errc::not_supported);
 }
 
-result<value_t> nncase::kernels::stackvm::relu([[maybe_unused]] value_t input, [[maybe_unused]] value_t output,
-                                               [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
-}
 
 result<value_t> nncase::kernels::stackvm::relu6([[maybe_unused]] value_t input, [[maybe_unused]] value_t output,
                                                 [[maybe_unused]] kernel_context &context) {

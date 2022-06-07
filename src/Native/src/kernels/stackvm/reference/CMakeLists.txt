@@ -1,6 +1,7 @@
 ﻿cmake_minimum_required(VERSION 3.13)
 
-set(SRCS dummy_tensor_ops.cpp
+set(SRCS activation.cpp
+         dummy_tensor_ops.cpp
          batch_to_space.cpp
          binary.cpp
          broadcast.cpp
@@ -20,7 +21,6 @@ set(SRCS dummy_tensor_ops.cpp
          reduce_arg.cpp
          reduce_window.cpp
          resize_image.cpp
-         sigmoid.cpp
          slice.cpp
          transpose.cpp
          unary.cpp)

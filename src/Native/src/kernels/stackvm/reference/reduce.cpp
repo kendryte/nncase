@@ -143,11 +143,11 @@ dims_t infer_shape(const dims_t &in_shape, const dims_t &axes, bool keep_dims) {
     auto tmp_shape = in_shape;
     for (int i = 0; i < axes.size(); ++i) {
         auto d = keep_dims ? 1 : 0;
-        tmp_shape[axes[positive_index(i, in_shape.size())]] = d;
+        tmp_shape[axes[i]] = d;
     }
     auto new_shape = dims_t();
     for (auto d : tmp_shape) {
-        if (d > 0) {
+        if (d != 0) {
             new_shape.push_back(d);
         }
     }
@@ -155,19 +155,19 @@ dims_t infer_shape(const dims_t &in_shape, const dims_t &axes, bool keep_dims) {
 }
 
 result<value_t> nncase::kernels::stackvm::reduce(
-    reduce_op_t reduce_op, value_t input, value_t axis, value_t init_value,
+    reduce_op_t reduce_op, value_t input, value_t axes, value_t init_value,
     value_t keep_dims, value_t output, kernel_context &context) {
     try_input(in_mem, input);
-    try_axis(axis_value, axis, input_tensor->shape().size());
+    try_positive_axes(axes_value, axes, input_tensor->shape().size());
     try_to_scalar(keep_dims_value, keep_dims, bool);
     try_input(init_v, init_value);
     try_typecode(typecode, input_tensor);
     auto out_shape =
-        infer_shape(input_tensor->shape(), axis_value, keep_dims_value);
+        infer_shape(input_tensor->shape(), axes_value, keep_dims_value);
     try_output(out_mem, output, input_tensor->dtype(), out_shape);
 
     try_(reduce_impl(typecode, reduce_op, init_v, in_mem, out_mem,
-                     input_tensor->shape(), axis_value, input_tensor->strides(),
+                     input_tensor->shape(), axes_value, input_tensor->strides(),
                      output_tensor->strides(), keep_dims_value, context));
     return ok(output);
 }
