@@ -34,7 +34,7 @@ jobs:
     - name: Install Conan
       shell: bash
       run: |
-        pip install conan protobuf==3.20.1
+        pip install conan
 
     - name: Configure Conan
       if: runner.os == 'Linux'
