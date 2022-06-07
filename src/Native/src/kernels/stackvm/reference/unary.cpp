@@ -54,9 +54,12 @@ result<void> unary_impl(unary_op_t op, const T *input, T *output,
     switch (op) {
         UNARY_IMPL_OP(abs, fabsf);
         UNARY_IMPL_OP(acos, acosf);
+        UNARY_IMPL_OP(acosh, acoshf);
         UNARY_IMPL_OP(asin, asinf);
+        UNARY_IMPL_OP(asinh, asinhf);
         UNARY_IMPL_OP(ceil, ceilf);
         UNARY_IMPL_OP(cos, cosf);
+        UNARY_IMPL_OP(cosh, coshf);
         UNARY_IMPL_OP(exp, expf);
         UNARY_IMPL_OP(floor, floorf);
         UNARY_IMPL_OP(log, logf);

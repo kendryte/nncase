@@ -123,7 +123,7 @@ struct padding {
 
 using uuid_t = std::array<uint8_t, 16>;
 using dims_t = itlib::small_vector<size_t, 4>;
-using axis_t = itlib::small_vector<int32_t, 4>;
+using axes_t = itlib::small_vector<int32_t, 4>;
 using strides_t = itlib::small_vector<size_t, 4>;
 using paddings_t = itlib::small_vector<padding, 4>;
 

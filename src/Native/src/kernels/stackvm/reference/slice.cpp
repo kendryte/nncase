@@ -31,7 +31,7 @@ namespace
 {
 template <class T>
 result<void> slice_impl(const T *input, T *output, const dims_t &in_shape,
-    const strides_t &in_strides, const strides_t &out_strides, const dims_t &begins, const dims_t &ends, const dims_t &strides,
+    const strides_t &in_strides, const strides_t &out_strides, const axes_t &begins, const axes_t &ends, const axes_t &strides,
     NNCASE_UNUSED kernel_context &context) noexcept
 {
     return apply(in_shape, [&](const dims_t &index) -> result<void> {
@@ -67,7 +67,7 @@ result<void> slice_impl(const T *input, T *output, const dims_t &in_shape,
         return slice_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, in_strides, out_strides, begins, ends, strides, context)
 
 result<void> slice_impl(datatype_t type, const gsl::byte *input, gsl::byte *output, const dims_t &in_shape,
-    const strides_t &in_strides, const strides_t &out_strides, const dims_t &begins, const dims_t &ends, const dims_t &strides,
+    const strides_t &in_strides, const strides_t &out_strides, const axes_t &begins, const axes_t &ends, const axes_t &strides,
     kernel_context &context) noexcept
 {
     switch (runtime::get_bytes(type))
@@ -81,8 +81,8 @@ result<void> slice_impl(datatype_t type, const gsl::byte *input, gsl::byte *outp
     }
 }
 
-dims_t infer_shape(const dims_t& in_shape, const dims_t& begins, const dims_t& ends,
-                   const dims_t& strides, const dims_t& axes) {
+dims_t infer_shape(const dims_t& in_shape, const axes_t& begins, const axes_t& ends,
+                   const axes_t& strides, const axes_t& axes) {
     auto new_shape = in_shape;
     for (int i = 0; i < axes.size(); ++i) {
         auto axis = positive_index(axes[i], in_shape.size());
@@ -103,10 +103,10 @@ result<value_t> nncase::kernels::stackvm::slice(value_t input, value_t begins,
                                                 value_t strides, value_t output,
                                                 kernel_context &context) {
     try_input(in_mem, input);
-    try_dims(begins_value, begins);
-    try_dims(ends_value, ends);
-    try_dims(axes_value, axes);
-    try_dims(strides_value, strides);
+    try_axes(begins_value, begins);
+    try_axes(ends_value, ends);
+    try_axes(axes_value, axes);
+    try_axes(strides_value, strides);
     auto out_shape = infer_shape(input_tensor->shape(), begins_value, ends_value, strides_value, axes_value);
     try_output(out_mem, output, input_tensor->dtype(), out_shape);
 
