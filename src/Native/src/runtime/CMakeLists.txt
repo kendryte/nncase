@@ -44,14 +44,14 @@ if (BUILDING_RUNTIME)
     install(EXPORT nncaseruntimeTargets
             DESTINATION lib/cmake/nncaseruntime)
     
-    configure_file(${CMAKE_CURRENT_LIST_DIR}/../../cmake/nncaseruntimeConfig.cmake.in nncaseruntimeConfig.cmake @ONLY)
+    configure_file(${CMAKE_CURRENT_LIST_DIR}/../../../../cmake/nncaseruntimeConfig.cmake.in nncaseruntimeConfig.cmake @ONLY)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nncaseruntimeConfig.cmake DESTINATION lib/cmake/nncaseruntime)
 
 else()
     add_library(simulator OBJECT ${SRCS})
     target_include_directories(simulator PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
     target_link_libraries(simulator PUBLIC gsl::gsl-lite mpark_variant::mpark_variant)
-    target_link_libraries(simulator PRIVATE kernels fmt::fmt)
+    target_link_libraries(simulator PRIVATE kernels)
     target_compile_definitions(simulator PUBLIC -DNNCASE_DLL -DNNCASE_SIMULATOR)
     if (DEFAULT_BUILTIN_RUNTIMES)
         target_compile_definitions(simulator PRIVATE -DNNCASE_DEFAULT_BUILTIN_RUNTIMES)
@@ -59,10 +59,22 @@ else()
     set_property(TARGET simulator PROPERTY POSITION_INDEPENDENT_CODE ON)
     
     add_library(nncaseruntime SHARED dummy.cpp)
-    target_link_libraries(nncaseruntime PRIVATE kernels simulator simulator_stackvm)
-    target_link_libraries(nncaseruntime PUBLIC nncasebase gsl::gsl-lite mpark_variant::mpark_variant)
+    target_link_libraries(nncaseruntime PRIVATE nncasebase kernels simulator simulator_stackvm fmt::fmt)
+    target_link_libraries(nncaseruntime PUBLIC gsl::gsl-lite mpark_variant::mpark_variant)
     set_target_properties(nncaseruntime PROPERTIES
                                         OUTPUT_NAME "Nncase.Runtime.Native")
+    install(TARGETS nncaseruntime EXPORT nncaseTargets
+        COMPONENT nncase-runtime
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin
+        INCLUDES DESTINATION include
+    )
+    install(EXPORT nncaseTargets
+        DESTINATION lib/cmake/nncase)
+
+    configure_file(${CMAKE_CURRENT_LIST_DIR}/../../../../cmake/nncaseConfig.cmake.in nncaseConfig.cmake @ONLY)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nncaseConfig.cmake DESTINATION lib/cmake/nncase)
 endif()
 
 add_subdirectory(stackvm)

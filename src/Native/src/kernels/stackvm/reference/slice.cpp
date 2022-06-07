@@ -92,7 +92,7 @@ dims_t infer_shape(const dims_t& in_shape, const dims_t& begins, const dims_t& e
         auto old = in_shape[axis];
         begin = begin >= 0 ? begin : old + begin;
         end = end >= 0 ? end : old + begin;
-        stride = stride >= 0 ? stride : -stride;
+        //stride = stride >= 0 ? stride : -stride;
         new_shape[axis] = (end - begin) / stride;
     }
     return new_shape;
