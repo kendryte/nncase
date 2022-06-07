@@ -55,7 +55,7 @@ result<void> cumsum_impl(const T *input, T *output, const dims_t &in_shape,
             outer_index_adj = outer_index;
 
         for (size_t inner_index = 0; inner_index < inner; inner_index++) {
-            float accumulator = 0;
+            T accumulator = 0;
             size_t inner_index_adj;
             if (reverse)
                 inner_index_adj = (inner - 1) - inner_index;
@@ -86,23 +86,26 @@ result<void> cumsum_impl(const T *input, T *output, const dims_t &in_shape,
     return ok();
 }
 
-template result<void> cumsum_impl<float>(const float *input, float *output,
-                                         const dims_t &in_shape, int32_t axis,
-                                         bool exclusive, bool reverse) noexcept;
+#define CUMSUM_IMPL(_ty) return cumsum_impl(IN_CAST(_ty, input), \
+    OUT_CAST(_ty, output), in_shape, axis, exclusive, reverse);
 
+result<void> cumsum_impl(typecode_t typecode, const gsl::byte *input,
+                         gsl::byte *output, const dims_t &in_shape,
+                         int32_t axis, bool exclusive, bool reverse) noexcept {
+    TYPE_SELECT(typecode, CUMSUM_IMPL)
+}
 } // namespace
 
-result<value_t> nncase::kernels::stackvm::cum_sum(value_t input, value_t axis,
-                                                  value_t exclusive,
-                                                  value_t reverse,
-                                                  value_t output,
-                                                  [[maybe_unused]] kernel_context &context) {
-    try_f32_input(input_mem, input);
-    try_f32_output(out_mem, output, input_tensor->dtype(), input_tensor->shape());
+result<value_t> nncase::kernels::stackvm::cum_sum(
+    value_t input, value_t axis, value_t exclusive, value_t reverse,
+    value_t output, [[maybe_unused]] kernel_context &context) {
+    try_input(input_mem, input);
+    try_output(out_mem, output, input_tensor->dtype(), input_tensor->shape());
     try_to_scalar(axis_value, axis, int32_t);
     try_to_scalar(exclusive_value, exclusive, bool);
     try_to_scalar(reverse_value, reverse, bool);
-    try_(cumsum_impl(input_mem, out_mem, input_tensor->shape(), axis_value,
+    try_typecode(typecode, input_tensor);
+    try_(cumsum_impl(typecode, input_mem, out_mem, input_tensor->shape(), axis_value,
                      exclusive_value, reverse_value));
     return ok(output);
 }

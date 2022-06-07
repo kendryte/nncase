@@ -175,6 +175,8 @@ inline int positive_index(int index, size_t rank) {
 #define try_array(_var_name, _value_name, _ty)                                \
     try_value_as_t(_var_name, _value_name, _ty, array)
 
+#define try_typecode(_var_name, _tensor_name) try_var(_var_name, to_typecode(_tensor_name->dtype()))
+
 template <typename T>
 inline result<T> value_to_scalar([[maybe_unused]] value_t value) {
     try_input_with_ty(input, value, T);
@@ -224,4 +226,33 @@ inline result<T *> value_as_array([[maybe_unused]] value_t v) {
     throw "NotImplement";
 }
 
+#define TYPE_SELECT(_typecode, _impl)                                                \
+    switch (_typecode) {                                                              \
+    case dt_float32:                                                           \
+        _impl(float);                                                                 \
+    case dt_int8:                                                              \
+        _impl(int8_t);                                                                 \
+    case dt_int16:                                                             \
+        _impl(int16_t);                                                                 \
+    case dt_int32:                                                             \
+        _impl(int32_t);                                                                 \
+    case dt_int64:                                                             \
+        _impl(int64_t);                                                                 \
+    case dt_uint8:                                                             \
+        _impl(uint8_t);                                                                 \
+    case dt_uint16:                                                            \
+        _impl(uint16_t);                                                                 \
+    case dt_uint32:                                                            \
+        _impl(uint32_t);                                                                 \
+    case dt_uint64:                                                            \
+        _impl(uint64_t);                                                                 \
+    case dt_float64:                                                           \
+        _impl(double);                                                                 \
+    default:                                                                   \
+        return err(std::errc::not_supported);                                  \
+    }
+
+#define IN_CAST(_ty, _name) reinterpret_cast<const _ty *>(_name)
+#define OUT_CAST(_ty, _name) reinterpret_cast<_ty *>(_name)
+#define SCALAR_CAST(_ty, _name) *reinterpret_cast<const _ty *>(_name)
 } // namespace nncase::runtime
