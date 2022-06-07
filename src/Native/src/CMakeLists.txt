@@ -8,7 +8,6 @@ set(SRCS api.cpp
 		 value.cpp)
 
 add_library(nncasebase OBJECT ${SRCS})
-target_link_libraries(nncasebase PRIVATE fmt::fmt)
 target_compile_definitions(nncasebase PUBLIC -DNNCASE_DLL -DNNCASE_SIMULATOR)
 if (DEFAULT_BUILTIN_RUNTIMES)
     target_compile_definitions(nncasebase PRIVATE -DNNCASE_DEFAULT_BUILTIN_RUNTIMES)
