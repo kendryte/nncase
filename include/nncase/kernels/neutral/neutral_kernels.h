@@ -737,7 +737,7 @@ inline void nnil_unary_method(const float *input, float *output, size_t count, g
             case nnil_erf:
             {
                 auto val = stack.pop();
-                stack.push(std::erf(val));
+                stack.push(erf(val));
                 break;
             }
             case nnil_atan:

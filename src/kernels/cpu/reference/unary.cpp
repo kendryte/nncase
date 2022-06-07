@@ -58,7 +58,7 @@ result<void> reference::unary(unary_op_t op, const float *input, float *output, 
         UNARY_IMPL(unary_round, rintf);
         UNARY_IMPL(unary_rsqrt, [](float v) { return 1.f / sqrtf(v); });
         UNARY_IMPL(unary_sign, [](float v) { return (0.f < v) - (v < 0.f); });
-        UNARY_IMPL(unary_erf, [](float v) { return std::erf(v); });
+        UNARY_IMPL(unary_erf, [](float v) { return erf(v); });
         UNARY_IMPL(unary_atan, [](float v) { return std::atan(v); });
         UNARY_IMPL(unary_sin, sinf);
         UNARY_IMPL(unary_sqrt, sqrtf);
