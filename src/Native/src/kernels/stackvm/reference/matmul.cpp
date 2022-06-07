@@ -38,7 +38,7 @@ result<void> matmul_impl(const T *input_a, const T *input_b, T *output,
 
     for (int32_t oy = 0; oy < a_rows; oy++) {
         for (int32_t ox = 0; ox < b_cols; ox++) {
-            float value = 0;
+            T value = 0;
 
             for (int32_t i = 0; i < a_cols; i++) {
                 const auto a = input_a[oy * a_cols + i];
@@ -65,16 +65,26 @@ result<dims_t> infer_shape(const dims_t &lhs_shape, const dims_t &rhs_shape) {
     auto new_shape = dims_t{lhs_shape[0], rhs_shape[1]};
     return ok(new_shape);
 }
+
+#define MATMUL_IMPL(_ty) return matmul_impl(IN_CAST(_ty, input_a), \
+    IN_CAST(_ty, input_b), OUT_CAST(_ty, output), in_a_shape, in_b_shape);
+
+result<void> matmul_impl(typecode_t typecode, const gsl::byte *input_a, const gsl::byte *input_b, gsl::byte *output,
+                         const dims_t &in_a_shape,
+                         const dims_t &in_b_shape) noexcept {
+    TYPE_SELECT(typecode, MATMUL_IMPL);
+}
 } // namespace
 
 result<value_t>
 nncase::kernels::stackvm::mat_mul(value_t lhs, value_t rhs, value_t output,
                                   [[maybe_unused]] kernel_context &context) {
-    try_f32_input(lhs_mem, lhs);
-    try_f32_input(rhs_mem, rhs);
+    try_input(lhs_mem, lhs);
+    try_input(rhs_mem, rhs);
     try_var(out_shape, infer_shape(lhs_tensor->shape(), rhs_tensor->shape()));
-    try_f32_output(out_mem, output, lhs_tensor->dtype(), out_shape);
-    try_(matmul_impl(lhs_mem, rhs_mem, out_mem, lhs_tensor->shape(),
+    try_output(out_mem, output, lhs_tensor->dtype(), out_shape);
+    try_typecode(typecode, lhs_tensor);
+    try_(matmul_impl(typecode, lhs_mem, rhs_mem, out_mem, lhs_tensor->shape(),
                      rhs_tensor->shape()));
     return ok(output);
 }
