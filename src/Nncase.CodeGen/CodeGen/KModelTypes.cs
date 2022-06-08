@@ -33,6 +33,8 @@ public struct FunctionHeader
     public uint Entrypoint;
     public uint TextSize;
     public uint Size;
+    public uint Sections;
+    public uint Reserved0;
 }
 
 [StructLayout(LayoutKind.Sequential)]

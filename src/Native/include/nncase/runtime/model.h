@@ -51,6 +51,8 @@ struct function_header {
     uint32_t entrypoint;
     uint32_t text_size;
     uint32_t size;
+    uint32_t sections;
+    uint32_t reserved0;
 };
 
 struct module_header {

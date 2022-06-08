@@ -35,7 +35,7 @@ internal class LinkableModule : ILinkableModule
                 bw.AlignPosition(_textAlignment);
                 var textBegin = bw.Position();
                 bw.Write(func.Text);
-                linkedFunctions.Add(new LinkedFunction(func.Id, func.SourceFunction, (uint)textBegin, (uint)func.Text.Length));
+                linkedFunctions.Add(new LinkedFunction(func.Id, func.SourceFunction, (uint)textBegin, (uint)func.Text.Length, Array.Empty<ILinkedSection>()));
             }
         }
 

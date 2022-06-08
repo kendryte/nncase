@@ -29,10 +29,10 @@ class runtime_function_init_context_impl
     runtime_function_init_context_impl(
         const function_header &header,
         runtime_module_init_context &module_init_context,
-        gsl::span<const gsl::byte> body) noexcept
+        gsl::span<const gsl::byte> sections) noexcept
         : header_(header),
           module_init_context_(module_init_context),
-          body_(body) {}
+          sections_(sections) {}
 
     runtime_module_init_context &module_init_context() noexcept override {
         return module_init_context_;
@@ -40,12 +40,15 @@ class runtime_function_init_context_impl
 
     const function_header &header() noexcept override { return header_; }
 
-    gsl::span<const gsl::byte> body() noexcept override { return body_; }
+    gsl::span<const gsl::byte> section(const char *name) noexcept override {
+        return find_section(name, sections_);
+    }
 
   private:
     const function_header &header_;
     runtime_module_init_context &module_init_context_;
     gsl::span<const gsl::byte> body_;
+    gsl::span<const gsl::byte> sections_;
 };
 } // namespace
 
@@ -88,7 +91,7 @@ result<void> runtime_function::initialize(
     checked_try_set(return_type_, deserialize_type(reader));
 
     runtime_function_init_context_impl init_context(
-        header_, module_init_context, reader.read_avail());
+        header_, module_init_context, read_sections(reader, header_.sections));
     return initialize_core(init_context);
 }
 

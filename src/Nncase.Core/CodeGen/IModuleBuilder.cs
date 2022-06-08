@@ -96,6 +96,11 @@ public interface ILinkedFunction
     /// Gets text length.
     /// </summary>
     uint TextLength { get; }
+
+    /// <summary>
+    /// Gets sections.
+    /// </summary>
+    IReadOnlyList<ILinkedSection> Sections { get; }
 }
 
 /// <summary>

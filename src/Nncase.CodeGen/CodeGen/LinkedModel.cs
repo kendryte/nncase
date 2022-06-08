@@ -89,6 +89,7 @@ public sealed class LinkedModel
             Parameters = (uint)func.ParameterTypes.Count,
             Entrypoint = func.TextBegin,
             TextSize = func.TextLength,
+            Sections = (uint)func.Sections.Count,
         };
 
         var headerPos = writer.Position();
@@ -100,6 +101,11 @@ public sealed class LinkedModel
         }
 
         TypeSerializer.Serialize(writer, func.ReturnType);
+
+        foreach (var section in func.Sections)
+        {
+            Serialize(writer, section);
+        }
 
         writer.AlignPosition(_minAlignmnet);
         var endPos = writer.Position();
