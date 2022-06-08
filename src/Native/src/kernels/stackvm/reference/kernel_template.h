@@ -45,8 +45,8 @@
     }
 
 #define FLOAT_UNARY_TEMPLATE(_name, _compute)                                  \
-    FLOAT_UNARY_IMPL_TEMPLATE(_name, _compute);                                \
-    FLOAT_UNARY_OP_TEMPLATE(_name);
+    FLOAT_UNARY_IMPL_TEMPLATE(_name, _compute)                                 \
+    FLOAT_UNARY_OP_TEMPLATE(_name)
 
 #define FLOAT_UNARY_WITH_MUL_IMPL_TEMPLATE(_name, _alpha_name, _compute)       \
     template <class T>                                                         \
@@ -66,24 +66,26 @@
         });                                                                    \
     }
 
-#define FLOAT_UNARY_WITH_MUL_OP_TEMPLATE(_name, _alpha_name)                  \
+#define FLOAT_UNARY_WITH_MUL_OP_TEMPLATE(_name, _alpha_name)                   \
     result<void> _name##_impl(                                                 \
         const float *input, float *output, const dims_t &input_shape,          \
         const strides_t &input_strides, const dims_t &out_shape,               \
         const strides_t &out_strides, NNCASE_UNUSED kernel_context &context);  \
-    result<value_t> nncase::kernels::stackvm::_name(                         \
-        value_t input, value_t _alpha_name, value_t output, kernel_context &context) {              \
+    result<value_t> nncase::kernels::stackvm::_name(                           \
+        value_t input, value_t _alpha_name, value_t output,                    \
+        kernel_context &context) {                                             \
         try_f32_input(input_mem, input);                                       \
-        try_to_scalar(_alpha_name##_value, _alpha_name, float);\
+        try_to_scalar(_alpha_name##_value, _alpha_name, float);                \
         auto dtype = input_tensor->dtype();                                    \
         try_f32_output(out_mem, output, dtype, input_tensor->shape());         \
-        try_(_name##_impl(input_mem, out_mem, _alpha_name##_value, input_tensor->shape(),           \
-                          input_tensor->strides(), output_tensor->shape(),     \
-                          output_tensor->strides(), context));                 \
+        try_(_name##_impl(input_mem, out_mem, _alpha_name##_value,             \
+                          input_tensor->shape(), input_tensor->strides(),      \
+                          output_tensor->shape(), output_tensor->strides(),    \
+                          context));                                           \
         return ok(output);                                                     \
     }
 
 // _alpha_name is a var used in kernel
 #define FLOAT_UNARY_WITH_MUL_TEMPLATE(_name, _alpha_name, _compute)            \
-    FLOAT_UNARY_WITH_MUL_IMPL_TEMPLATE(_name, _alpha_name, _compute);          \
-    FLOAT_UNARY_WITH_MUL_OP_TEMPLATE(_name, _alpha_name);
+    FLOAT_UNARY_WITH_MUL_IMPL_TEMPLATE(_name, _alpha_name, _compute)           \
+    FLOAT_UNARY_WITH_MUL_OP_TEMPLATE(_name, _alpha_name)
