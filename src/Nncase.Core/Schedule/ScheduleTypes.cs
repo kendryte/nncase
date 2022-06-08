@@ -285,11 +285,17 @@ public class SchedFunctionResult
     public readonly CodeGen.ModuleType ModuleType;
 
     /// <summary>
+    /// the function useage.
+    /// </summary>
+    public readonly Dictionary<Schedule.MemoryLocation, ulong> FuncUsage;
+
+    /// <summary>
     /// create SchedFunctionResult
     /// </summary>
     public SchedFunctionResult(CodeGen.ModuleType moduleType)
     {
         Allocations = new(ReferenceEqualityComparer.Instance);
+        FuncUsage = new();
         ModuleType = moduleType;
     }
 }
