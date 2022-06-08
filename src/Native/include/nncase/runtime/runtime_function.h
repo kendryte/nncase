@@ -27,7 +27,7 @@ struct runtime_module_init_context;
 struct NNCASE_API runtime_function_init_context {
     virtual runtime_module_init_context &module_init_context() noexcept = 0;
     virtual const function_header &header() noexcept = 0;
-    virtual gsl::span<const gsl::byte> body() noexcept = 0;
+    virtual gsl::span<const gsl::byte> section(const char *name) noexcept = 0;
 };
 
 class NNCASE_API runtime_function {

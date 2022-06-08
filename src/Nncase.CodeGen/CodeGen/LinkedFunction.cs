@@ -27,6 +27,7 @@ public class LinkedFunction : ILinkedFunction
         }
         TextBegin = textBegin;
         TextLength = textLength;
+        Sections = sections;
     }
 
     public uint Id { get; }
@@ -38,4 +39,6 @@ public class LinkedFunction : ILinkedFunction
     public uint TextBegin { get; }
 
     public uint TextLength { get; }
+
+    public IReadOnlyList<ILinkedSection> Sections { get; }
 }
