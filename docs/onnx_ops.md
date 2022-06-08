@@ -57,6 +57,7 @@
 | IsInf | ✅ |
 | IsNaN | ✅ |
 | LpNormalization | ✅ |
+| LpPool | ✅ |
 | LeakyRelu | ✅ |
 | Less | ✅ |
 | LessOrEqual | ✅ |
