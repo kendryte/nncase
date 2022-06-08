@@ -24,6 +24,7 @@ public:
     {
         begin_ = clock();
     }
+
     ~op_profile()
     {
         end_ = clock();
@@ -37,7 +38,8 @@ public:
             op_timing_[op_type_] += cast_time;
         }
     }
-    void print();
+
+    static void print();
 
 public:
     static std::unordered_map<std::string, double> op_timing_;
