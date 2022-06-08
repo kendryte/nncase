@@ -119,7 +119,9 @@ DEFINE_DATATYPE_OF(bool, boolean)
 DEFINE_DATATYPE_OF(uint8_t, uint8)
 DEFINE_DATATYPE_OF(uint16_t, uint16)
 DEFINE_DATATYPE_OF(uint32_t, uint32)
-DEFINE_DATATYPE_OF(size_t, uint32)
+# ifdef __APPLE__
+DEFINE_DATATYPE_OF(size_t, uint64)
+#endif
 DEFINE_DATATYPE_OF(uint64_t, uint64)
 DEFINE_DATATYPE_OF(int8_t, int8)
 DEFINE_DATATYPE_OF(int16_t, int16)
