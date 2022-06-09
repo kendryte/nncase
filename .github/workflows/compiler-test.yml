@@ -89,7 +89,7 @@ jobs:
       shell: bash
       run: |
         pip install pytest==6.2.5
-        pip intall pytest-xdist
+        pip install pytest-xdist
         mkdir test_results
 
     - name: Test

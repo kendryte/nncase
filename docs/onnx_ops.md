@@ -46,6 +46,7 @@
 | GatherND | ✅ |
 | Gemm | ✅ |
 | GlobalAveragePool | ✅ |
+| GlobalLpPool | ✅ | 
 | GlobalMaxPool | ✅ |
 | Greater | ✅ |
 | GreaterOrEqual | ✅ |

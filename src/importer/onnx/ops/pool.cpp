@@ -70,7 +70,7 @@ void onnx_importer::convert_op_GlobalMaxPool(const NodeProto &node)
 
 void onnx_importer::convert_op_LpPool(const NodeProto &node)
 {
-    [[maybe_unused]] int p_value = 0;
+    int p_value = 0;
     const auto &p_attr = get_attribute<int>(node, "p");
     if (p_attr)
     {
@@ -199,6 +199,75 @@ void onnx_importer::convert_op_LpPool(const NodeProto &node)
 
         auto op = graph_.emplace<reduce_window2d>(reduce_sum, move(input_shape), 0.f, kernel_shape[0], kernel_shape[1],
             pads[0], pads[1], strides[0], strides[1], dilations[0], dilations[1], value_range<float>::full(), false, count_include_pad);
+        op->name(op_name + "(Pool)");
+        op->input().connect(pow1->output());
+
+        auto one = graph_.emplace<constant>(1.f);
+        one->name(op_name + "(One)");
+
+        auto div = graph_.emplace<binary>(binary_div, input_type, one->output().shape(), p_const->output().shape(), value_range<float>::full());
+        div->name(op_name + "(Div)");
+        div->input_a().connect(one->output());
+        div->input_b().connect(p_const->output());
+
+        auto pow2 = graph_.emplace<binary>(binary_pow, input_type, op->output().shape(), div->output().shape(), value_range<float>::full());
+        pow2->name(op_name + "(Pow2)");
+        pow2->input_a().connect(op->output());
+        pow2->input_b().connect(div->output());
+
+        input_tensors_.emplace(&pow1->input_a(), input);
+        output_tensors_.emplace(output, &pow2->output());
+    }
+}
+
+void onnx_importer::convert_op_GlobalLpPool([[maybe_unused]] const NodeProto &node)
+{
+    int p_value = 0;
+    const auto &p_attr = get_attribute<int>(node, "p");
+    if (p_attr)
+    {
+        p_value = p_attr.value();
+    }
+
+    if (p_value == 1)
+    {
+        convert_pool<true>(node, reduce_sum, 0.f);
+    }
+    else
+    {
+        const auto &op_name { generate_name(node) };
+
+        const auto &input = node.input()[0];
+        const auto &output = node.output()[0];
+
+        auto input_shape = get_shape(input);
+
+        bool count_include_pad = false;
+        const auto &count_include_pad_attr = get_attribute<int>(node, "count_include_pad");
+        if (count_include_pad_attr)
+            count_include_pad = static_cast<bool>(count_include_pad_attr.value());
+
+        std::array<size_t, 2> dilations = { 1, 1 };
+
+        if (input_shape.size() < 4)
+            throw std::invalid_argument("Image with 4-dimensional shape is expected on the input of pooling operators.");
+
+        const auto input_type = get_datatype(input).value();
+
+        auto p_const = graph_.emplace<constant>((float)p_value);
+        p_const->name(op_name + "(P)");
+
+        auto pow1 = graph_.emplace<binary>(binary_pow, input_type, input_shape, p_const->output().shape(), value_range<float>::full());
+        pow1->name(op_name + "(Pow1)");
+        pow1->input_b().connect(p_const->output());
+
+        std::vector<padding> pads {
+            { 0, 0 },
+            { 0, 0 }
+        };
+
+        auto op = graph_.emplace<reduce_window2d>(reduce_sum, move(input_shape), 0.f, input_shape[2], input_shape[3],
+            pads[0], pads[1], 1, 1, dilations[0], dilations[1], value_range<float>::full(), false, count_include_pad);
         op->name(op_name + "(Pool)");
         op->input().connect(pow1->output());
 
