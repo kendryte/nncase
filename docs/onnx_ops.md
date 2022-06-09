@@ -44,6 +44,7 @@
 | GlobalMaxPool | ✅ |
 | Greater | ✅ |
 | GreaterOrEqual | ✅ |
+| GRU | ✅ |
 | Hardmax | ✅ |
 | HardSigmoid | ✅ |
 | HardSwish | ✅ |
