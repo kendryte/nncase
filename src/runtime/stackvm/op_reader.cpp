@@ -486,9 +486,9 @@ result<void> op_visitor::visit(gsl::span<const gsl::byte> text) noexcept
     while (!interrupted_ && !reader_.empty())
         try_(next());
 
-    #ifdef ENABLE_OP_PROFILE
-        op_profile::print();
-    #endif
+#ifdef ENABLE_OP_PROFILE
+    op_profile::print();
+#endif
 
     return ok();
 }
