@@ -66,6 +66,7 @@ void transpose_binary_motion_transform::process(transform_context &context)
     auto &old_bin = static_cast<binary &>(*context.matched_nodes[2]);
 
     auto bin = context.graph.emplace<binary>(old_bin.binary_op(), output_a.type(), output_a.shape(), output_b.shape(), old_bin.fused_activation());
+    bin->attributes(old_bin.attributes());
     bin->name(old_bin.name());
     auto tp = context.graph.emplace<transpose>(bin->output().type(), bin->output().shape(), old_tp.perm());
     tp->name(old_tp.name());
@@ -138,6 +139,7 @@ void transpose_constant_binary_motion_transform::process(transform_context &cont
     if (old_bin.input_a().connection()->owner().runtime_opcode() == op_constant)
     {
         bin = context.graph.emplace<binary>(old_bin.binary_op(), output.type(), con->output().shape(), output.shape(), old_bin.fused_activation());
+        bin->attributes(old_bin.attributes());
         bin->name(old_bin.name());
         bin->input_a().connect(con->output());
         bin->input_b().connect(output);
@@ -145,6 +147,7 @@ void transpose_constant_binary_motion_transform::process(transform_context &cont
     else
     {
         bin = context.graph.emplace<binary>(old_bin.binary_op(), output.type(), output.shape(), con->output().shape(), old_bin.fused_activation());
+        bin->attributes(old_bin.attributes());
         bin->name(old_bin.name());
         bin->input_a().connect(output);
         bin->input_b().connect(con->output());
@@ -317,6 +320,7 @@ void transpose_reduce_motion_transform::process(transform_context &context)
     }
 
     auto r = context.graph.emplace<reduce>(old_r.reduce_op(), output.type(), output.shape(), axes, old_r.init_value(), old_r.keep_dims());
+    r->attributes(old_r.attributes());
     r->name(old_r.name());
     auto tp = context.graph.emplace<transpose>(r->output().type(), r->output().shape(), perm);
     tp->name(old_tp.name());
@@ -355,6 +359,7 @@ void transpose_unary_motion_transform::process(transform_context &context)
     auto &old_u = static_cast<unary &>(*context.matched_nodes[1]);
 
     auto u = context.graph.emplace<unary>(old_u.unary_op(), output.shape());
+    u->attributes(old_u.attributes());
     u->name(old_u.name());
     auto tp = context.graph.emplace<transpose>(u->output().type(), u->output().shape(), old_tp.perm());
     tp->name(old_tp.name());
@@ -501,6 +506,7 @@ void transpose_sigmoid_motion_transform::process(transform_context &context)
 
         auto new_sigmd = context.graph.emplace<sigmoid>(old_tp.input().type(), old_tp.input().shape());
         auto new_b = context.graph.emplace<binary>(old_b.binary_op(), old_tp.input().type(), old_tp.input().shape(), new_sigmd->output().shape(), old_b.fused_activation());
+        new_b->attributes(old_b.attributes());
         auto new_tp = context.graph.emplace<transpose>(new_b->output().type(), new_b->output().shape(), old_tp.perm());
         new_sigmd->name(old_sigmd.name());
         new_b->name(old_b.name());

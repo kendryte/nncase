@@ -185,6 +185,12 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
     using namespace nncase::ir;
     using namespace nncase::ir::transforms;
 
+    // fold quant node in source model
+    {
+        transform_pass p("fold_quantize_in_source_model");
+        p.emplace<fold_quantize_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
     if (type == runtime::stackvm::stackvm_module_type)
     {
         // fold_pad_conv
