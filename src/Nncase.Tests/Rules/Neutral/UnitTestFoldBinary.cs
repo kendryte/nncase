@@ -36,7 +36,7 @@ public class UnitTestFoldBinary
             new object[] {BinaryOp.Div, new[] {3}, 2f},
             // new object[] { BinaryOp.Mod ,new[] { 3}, 2f},
             new object[] {BinaryOp.Pow, new[] {3},2f},
-        }.Select((o, i) => o.Concat(new object[] {i}).ToArray());
+        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
     [MemberData(nameof(TestFoldNopBinaryNegativeData))]
@@ -66,7 +66,7 @@ public class UnitTestFoldBinary
             new object[] {BinaryOp.Div, new[] {3}, 1f},
             // new object[] { BinaryOp.Mod ,new[] { 3}, 1f},
             new object[] {BinaryOp.Pow, new[] {3}, 1f},
-        }.Select((o, i) => o.Concat(new object[] {i}).ToArray());
+        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
     [MemberData(nameof(TestFoldNopBinaryPositiveData))]

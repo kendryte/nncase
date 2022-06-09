@@ -13,7 +13,7 @@ namespace Nncase.Importer.TFLite
         {
             var (indices, depth) = GetInputExprs(op, 0, 1);
             var (onValue, offValue) = GetInputExprs(op, 2, 3);
-            return F.NN.OneHot(OneHotMode.ProcessNeg, indices, depth, 
+            return F.NN.OneHot(OneHotMode.ProcessNeg, indices, depth,
                 F.Tensors.Concat(new Tuple(offValue, onValue), 0),
                 op.BuiltinOptionsAsOneHotOptions().Axis);
         }

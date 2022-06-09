@@ -27,7 +27,7 @@ public sealed record Where() : Op
     /// Gets x.
     /// </summary>
     public static readonly ParameterInfo X = new(typeof(Where), 1, "x");
-    
+
     /// <summary>
     /// Gets y.
     /// </summary>

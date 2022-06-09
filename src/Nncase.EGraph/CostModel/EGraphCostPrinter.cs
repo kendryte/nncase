@@ -4,19 +4,19 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using Nncase.Transform;
-using Nncase.PatternMatch;
+using System.Linq;
+using GiGraph.Dot.Entities.Clusters;
 using GiGraph.Dot.Entities.Graphs;
 using GiGraph.Dot.Entities.Nodes;
-using GiGraph.Dot.Entities.Clusters;
 using GiGraph.Dot.Extensions;
+using GiGraph.Dot.Types.Colors;
+using GiGraph.Dot.Types.Edges;
 using GiGraph.Dot.Types.Graphs;
 using GiGraph.Dot.Types.Nodes;
-using GiGraph.Dot.Types.Styling;
-using GiGraph.Dot.Types.Colors;
 using GiGraph.Dot.Types.Records;
-using GiGraph.Dot.Types.Edges;
-using System.Linq;
+using GiGraph.Dot.Types.Styling;
+using Nncase.PatternMatch;
+using Nncase.Transform;
 
 namespace Nncase.Transform
 {

@@ -64,7 +64,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>
                     return new InvalidType("Reshape input size must be divisible by shapeSize when has -1");
                 }
                 shapeValue[negIndex] = inputSize / shapeSize;
-                return input with {Shape = new Shape(shapeValue)};
+                return input with { Shape = new Shape(shapeValue) };
             }
         }
 

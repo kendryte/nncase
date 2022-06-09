@@ -408,9 +408,9 @@ namespace Nncase.IR.F
         public static Call Require(Expr predicate, Expr value, [System.Runtime.CompilerServices.CallerArgumentExpression("predicate")] string? message = null) => new Call(new Require(message!), predicate, value);
 
         public static Call RangeOf(Expr input) => new Call(new RangeOf(), input);
-        
+
         public static Call QuantParamOf(QuantMode mode, Expr range, Expr bits) => new Call(new QuantParamOf(mode), range, bits);
-        
+
         public static Call Quantize(Expr input, Expr quantParam, DataType targetType) => new Call(new Quantize(targetType), input, quantParam);
 
         public static Call DeQuantize(Expr input, Expr quantParam, DataType targetType) => new Call(new Dequantize(targetType), input, quantParam);

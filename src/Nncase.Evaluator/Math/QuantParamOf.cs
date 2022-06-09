@@ -46,7 +46,7 @@ public class QuantParamOfEvaluator : IEvaluator<QuantParamOf>, ITypeInferencer<Q
         var r = new QuantParam((int)bias, (float)scale);
         return Value.FromTensor(Tensor.FromScalar<QuantParam>(r));
     }
-    
+
     private ValueRange<float> fixupRange(ValueRange<float> range, bool symmetric = false)
     {
         if (symmetric)

@@ -41,7 +41,7 @@ public sealed record ReduceWindow2D(ReduceOp ReduceOp) : Op
     /// Gets Padding.
     /// </summary>
     public static readonly ParameterInfo Dilation = new(typeof(ReduceWindow2D), 5, "dilation", HasRank(1) & IsIntegral());
-    
+
     /// <summary>
     /// Gets CeilMode.
     /// </summary>

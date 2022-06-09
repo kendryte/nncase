@@ -27,15 +27,15 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
             ? TFResize(context, target)
             : OnnxResize(context, target);
     }
-    
+
     public IValue TFResize(IEvaluateContext context, ResizeImage target)
     {
         var input = context.GetTFArgumentValue(target, ResizeImage.Input);
-        input = tf.transpose(input, new []{0, 2, 3, 1});
+        input = tf.transpose(input, new[] { 0, 2, 3, 1 });
         var sizes = context.GetArgumentValueAsArray<int>(target, ResizeImage.NewSize);
         var halfPixelCenter = target.TransformationMode == ImageResizeTransformationMode.HalfPixel;
         var alignCorners = target.TransformationMode == ImageResizeTransformationMode.AlignCorners;
-        var size = new NDArray(new []{sizes[2], sizes[3]}, new[] {2});
+        var size = new NDArray(new[] { sizes[2], sizes[3] }, new[] { 2 });
         var output = target.ResizeMode switch
         {
             ImageResizeMode.Bilinear => tf.image.resize_bilinear(input, size, alignCorners, halfPixelCenter),
@@ -43,7 +43,7 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
                 halfPixelCenter),
             _ => throw new NotSupportedException($"TFResize Not suppoprted {target.ResizeMode}")
         };
-        return tf.transpose(output, new[] {0, 3, 1, 2}).ToValue();
+        return tf.transpose(output, new[] { 0, 3, 1, 2 }).ToValue();
     }
 
     public IValue OnnxResize(IEvaluateContext context, ResizeImage target)
@@ -54,13 +54,13 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
         var cubicCoeffA = context.GetOptionArgumentValueAsScalar<float>(target, ResizeImage.CubicCoeffA, -0.75f);
         var excludeOutside = context.GetOptionArgumentValueAsScalar<long>(target, ResizeImage.ExcludeOutside, 0);
         var extrapolationValue = context.GetOptionArgumentValueAsScalar<float>(target, ResizeImage.ExtrapolationValue, 0f);
-        return OrtKI.ResizeWithSizes(input, roi, sizes, 
-            ResizeModeHelper.ToString(target.TransformationMode), 
+        return OrtKI.ResizeWithSizes(input, roi, sizes,
+            ResizeModeHelper.ToString(target.TransformationMode),
             cubicCoeffA, excludeOutside, extrapolationValue,
             ResizeModeHelper.ToString(target.ResizeMode),
             ResizeModeHelper.ToString(target.NearestMode)).ToValue();
     }
-    
+
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, ResizeImage target)
     {

@@ -29,15 +29,15 @@ namespace Nncase.Importer
             var outShape = GetOptionIntsAttribute(op, "output_shape")
                 .Match(
                     o => Tensor.FromSpan<long>(o),
-                    () => GetOutputShape(input, weights, 
-                        strides.ToArray<long>(), 
-                        outputPadding, 
-                        pads, 
+                    () => GetOutputShape(input, weights,
+                        strides.ToArray<long>(),
+                        outputPadding,
+                        pads,
                         dilation,
                         autoPad));
-            
-            return F.NN.Conv2DTranspose(input, weights, bias, outShape, strides, 
-                pads, Tensor.FromSpan<long>(outputPadding), 
+
+            return F.NN.Conv2DTranspose(input, weights, bias, outShape, strides,
+                pads, Tensor.FromSpan<long>(outputPadding),
                 Tensor.FromSpan<long>(dilation), PadMode.Constant, group);
         }
 
@@ -48,7 +48,7 @@ namespace Nncase.Importer
                 + (weightSize - 1)
                 * dilations[offset] + 1 - Util.GetItem(paddings, offset) - Util.GetItem(paddings, offset + 2);
         }
-        
+
         Expr GetOutputShape(Expr input, Expr weights, long[] strides, long[] outPadding, Expr paddings, long[] dilations, string autoPad)
         {
             var iN = Util.ShapeIndex(input, 0);
@@ -57,7 +57,7 @@ namespace Nncase.Importer
             var oc = Util.ShapeIndex(weights, 0);
             var ic = Util.ShapeIndex(weights, 1);
             var (wH, wW) = Util.GetHW(input);
-            var outShape = new[] {iN, iC};
+            var outShape = new[] { iN, iC };
             if (autoPad is "SAME_UPPER" or "SAME_LOWER")
             {
                 outShape.Append(iH * oc);

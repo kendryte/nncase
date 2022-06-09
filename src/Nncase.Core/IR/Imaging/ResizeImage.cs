@@ -17,7 +17,7 @@ namespace Nncase.IR.Imaging
     /// </summary>
     [PatternFunctionalGenerator]
     public sealed record ResizeImage(
-        ImageResizeMode ResizeMode, 
+        ImageResizeMode ResizeMode,
         ImageResizeTransformationMode TransformationMode,
         ImageResizeNearestMode NearestMode, bool IsTFResize = false) : Op
     {
@@ -35,17 +35,17 @@ namespace Nncase.IR.Imaging
         /// Gets new_size.
         /// </summary>
         public static readonly ParameterInfo NewSize = new(typeof(ResizeImage), 2, "new_size", HasShape(new[] { 4 }));
-        
+
         /// <summary>
         /// Gets CubicCoeffA.
         /// </summary>
         public static readonly ParameterInfo CubicCoeffA = new(typeof(ResizeImage), 3, "cubic_coeff_a", IsNoneType() | IsFloatScalar());
-        
+
         /// <summary>
         /// Gets ExcludeOutside.
         /// </summary>
         public static readonly ParameterInfo ExcludeOutside = new(typeof(ResizeImage), 4, "exclude_outside", IsNoneType() | IsIntegralScalar());
-        
+
         /// <summary>
         /// Gets ExtrapolationValue.
         /// </summary>

@@ -39,7 +39,7 @@ namespace Nncase.Transform
         {
             _passes.Add(pass);
         }
-        
+
         /// <inheritdoc/>
         public IEnumerator<FunctionPass> GetEnumerator()
         {

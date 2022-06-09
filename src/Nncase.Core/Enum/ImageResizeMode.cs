@@ -25,22 +25,22 @@ public enum ImageResizeTransformationMode
     /// HalfPixel
     /// </summary>
     HalfPixel,
-    
+
     /// <summary>
     /// PytorchHalfPixel
     /// </summary>
     PytorchHalfPixel,
-    
+
     /// <summary>
     /// AlignCorners
     /// </summary>
     AlignCorners,
-    
+
     /// <summary>
     /// Asymmetric
     /// </summary>
     Asymmetric,
-    
+
     /// <summary>
     /// TFCropAndResize
     /// </summary>
@@ -53,17 +53,17 @@ public enum ImageResizeNearestMode
     /// RoundPreferFloor 
     /// </summary>
     RoundPreferFloor,
-    
+
     /// <summary>
     /// RoundPreferCeil 
     /// </summary>
     RoundPreferCeil,
-    
+
     /// <summary>
     /// Floor
     /// </summary>
     Floor,
-    
+
     /// <summary>
     /// Ceil
     /// </summary>
@@ -86,12 +86,12 @@ public static class ResizeModeHelper
     {
         return mode switch
         {
-             ImageResizeMode.NearestNeighbor => "nearest",
-             ImageResizeMode.Bilinear => "linear",
+            ImageResizeMode.NearestNeighbor => "nearest",
+            ImageResizeMode.Bilinear => "linear",
             _ => throw new NotSupportedException($"Unsupported Resize Mode {mode}"),
         };
     }
-    
+
     public static ImageResizeTransformationMode ParseImageResizeTransformationMode(string mode)
     {
         return mode switch
@@ -117,7 +117,7 @@ public static class ResizeModeHelper
             _ => throw new NotSupportedException($"Unsupported ResizeTransformationMode Mode {mode}"),
         };
     }
-    
+
     public static ImageResizeNearestMode ParseImageResizeNearestMode(string mode)
     {
         return mode switch
@@ -129,15 +129,15 @@ public static class ResizeModeHelper
             _ => throw new NotSupportedException($"Unsupported ResizeTransformationMode Mode {mode}"),
         };
     }
-    
+
     public static string ToString(ImageResizeNearestMode mode)
     {
         return mode switch
         {
-            ImageResizeNearestMode.RoundPreferFloor => "round_prefer_floor", 
-            ImageResizeNearestMode.RoundPreferCeil => "round_prefer_ceil", 
-            ImageResizeNearestMode.Floor => "floor", 
-            ImageResizeNearestMode.Ceil => "ceil", 
+            ImageResizeNearestMode.RoundPreferFloor => "round_prefer_floor",
+            ImageResizeNearestMode.RoundPreferCeil => "round_prefer_ceil",
+            ImageResizeNearestMode.Floor => "floor",
+            ImageResizeNearestMode.Ceil => "ceil",
             _ => throw new NotSupportedException($"Unsupported ResizeTransformationMode Mode {mode}"),
         };
     }

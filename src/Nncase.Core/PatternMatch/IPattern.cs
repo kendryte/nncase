@@ -24,7 +24,7 @@ public interface IPattern
     /// get the name of this pattern.
     /// </summary>
     string? Name { get; }
-    
+
     /// <summary>
     /// Match leaf.
     /// </summary>

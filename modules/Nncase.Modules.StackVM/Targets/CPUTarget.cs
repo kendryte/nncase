@@ -34,10 +34,12 @@ public class CPUTarget : ITarget
     {
     }
 
+    /// <inheritdoc/>
     public void RegisterQuantizePass(PassManager passManager)
     {
     }
 
+    /// <inheritdoc/>
     public void RegisterTargetDependentAfterQuantPass(PassManager passManager)
     {
     }

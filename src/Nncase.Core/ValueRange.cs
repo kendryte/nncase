@@ -20,9 +20,9 @@ public struct ValueRange<T> : IEquatable<ValueRange<T>>
     /// Gets full value range.
     /// </summary>
     public static ValueRange<T> Full => (Limits.MinValue, Limits.MaxValue);
-    
+
     public bool IsFull => this == Full;
-    
+
     /// <summary>
     /// Gets or sets min value.
     /// </summary>
@@ -65,7 +65,7 @@ public struct ValueRange<T> : IEquatable<ValueRange<T>>
 
     /// <inheritdoc/>
     public static bool operator !=(ValueRange<T>? lhs, ValueRange<T>? rhs) => !(lhs == rhs);
-    
+
     private static class Limits
     {
         public static T MinValue
@@ -104,12 +104,12 @@ public struct ValueRange<T> : IEquatable<ValueRange<T>>
                 {
                     return (T)(object)float.PositiveInfinity;
                 }
-                
+
                 if (typeof(T) == typeof(BFloat16))
                 {
                     return (T)(object)(BFloat16.Infinity);
                 }
-                
+
                 throw new NotSupportedException();
             }
         }

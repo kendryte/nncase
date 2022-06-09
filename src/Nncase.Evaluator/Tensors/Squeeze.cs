@@ -37,7 +37,7 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>
             var outshape = input.Shape.ToList();
             if (dims.Length == 0)
             {
-                return input with {Shape = new Shape(outshape.Where(x => x != 1).ToArray())};
+                return input with { Shape = new Shape(outshape.Where(x => x != 1).ToArray()) };
             }
             foreach (var dimValue in dims)
             {

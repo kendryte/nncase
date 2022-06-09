@@ -28,9 +28,9 @@ namespace Nncase.Importer
 
         private Expr GetRoi(NodeProto op)
         {
-            return GetOptionInputExpr(op, 1).Or(Tensor.FromSpan<float>(Array.Empty<float>(), new[] {0}));
+            return GetOptionInputExpr(op, 1).Or(Tensor.FromSpan<float>(Array.Empty<float>(), new[] { 0 }));
         }
-        
+
         private Expr ResizeV10(in NodeProto op)
         {
             var (input, scales) = GetInputExprs(op, 0, 2);
@@ -38,7 +38,7 @@ namespace Nncase.Importer
             var mode = GetResizeMode(op);
             return F.Imaging.ResizeImage(mode, input, roi, ComputeNewSizes(input, scales));
         }
-        
+
         private Expr ResizeV11(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);

@@ -21,7 +21,7 @@ namespace Nncase.Importer
             var group = GetIntAttribute(op, "group", 1);
 
             // if not present, should be inferred from input W
-            
+
             var strides = GetStrideAttribute(op);
             var pads = AutoPad(op, autoPad, input, weights, strides.ToArray<long>(), dilation);
             return F.NN.Conv2D(input, weights, bias, strides, pads, Tensor.FromSpan<long>(dilation), PadMode.Constant, group);

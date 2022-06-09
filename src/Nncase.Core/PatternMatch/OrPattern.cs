@@ -30,9 +30,9 @@ public static partial class Utility
     public static OrPattern IsAlt(string? name, Pattern condition_a, Pattern condition_b)
         => IsAltImpl(name, condition_a, condition_b);
 
-    public static OrPattern IsAlt(params Pattern[] patterns) 
+    public static OrPattern IsAlt(params Pattern[] patterns)
         => (OrPattern)(patterns
             .Aggregate(
-                (pattern, pattern1) 
+                (pattern, pattern1)
                     => IsAltImpl(null, pattern, pattern1)));
 }

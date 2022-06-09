@@ -20,7 +20,7 @@ public struct QuantParam : IEquatable<QuantParam>
     /// Get the ZeroPoint
     /// </summary>
     public int ZeroPoint;
-    
+
     /// <summary>
     /// Get the Scale
     /// </summary>
@@ -31,7 +31,7 @@ public struct QuantParam : IEquatable<QuantParam>
         ZeroPoint = zeroPoint;
         Scale = scale;
     }
-    
+
     /// <inheritdoc/>
     public bool Equals(QuantParam other)
     {

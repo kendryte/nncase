@@ -17,21 +17,21 @@ namespace Nncase.Transform;
 public abstract class QuantRule : RewriteRule<Pattern>
 {
     public RunPassOptions Option;
-    
+
     /// <summary>
     /// whole expr be matched
     /// It will fail when Root is not a call, but QuantRule should match a call
     /// </summary>
     public Expr Root;
-    
+
     public bool IsQuantType(DataType dt) => dt == DataTypes.Int8 || dt == DataTypes.UInt8;
-    
+
     public bool UsePTQ => Option.CompileOptions.UsePTQ;
-    
+
     public DataType QuantType => Option.CompileOptions.QuantType;
 
     public QuantMode QuantMode => Option.CompileOptions.QuantMode;
-    
+
     public abstract void Init();
 
 }

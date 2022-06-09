@@ -48,9 +48,9 @@ public class UnitTestIntegralPromotion
         CompilerServices.DumpIR(f, "before", Path.Combine(passOptions.PassDumpDir, "TypePromotion"));
         var post = new ShapeInferPass("TypePromotion").Run(f, passOptions);
         Assert.True(CompilerServices.InferenceType(post));
-        Assert.Equal(Value.FromTensor(3L), ((Function) post).Body.Evaluate());
+        Assert.Equal(Value.FromTensor(3L), ((Function)post).Body.Evaluate());
     }
-    
+
     public static IEnumerable<object[]> TestIntegralPromotionNegativeData =>
         new[]
         {
@@ -70,6 +70,6 @@ public class UnitTestIntegralPromotion
         CompilerServices.DumpIR(f, "before", Path.Combine(passOptions.PassDumpDir, "TypePromotion"));
         var post = new ShapeInferPass("TypePromotion").Run(f, passOptions);
         Assert.True(CompilerServices.InferenceType(post));
-        Assert.Equal(Value.FromTensor(3L), ((Function) post).Body.Evaluate());
+        Assert.Equal(Value.FromTensor(3L), ((Function)post).Body.Evaluate());
     }
 }

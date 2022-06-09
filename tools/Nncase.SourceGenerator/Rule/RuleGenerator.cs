@@ -18,7 +18,7 @@ internal class RuleGenerator : ISourceGenerator
         var grouped_classes = (from cand in receiver.Candidates
                                select cand.classSymobl.ContainingNamespace)
                                .Distinct(SymbolEqualityComparer.Default)
-                               .ToDictionary(s => s, s => new List<ClassDeclarationSyntax>(),SymbolEqualityComparer.Default);
+                               .ToDictionary(s => s, s => new List<ClassDeclarationSyntax>(), SymbolEqualityComparer.Default);
 
         foreach (var cand in receiver.Candidates)
         {
@@ -28,7 +28,7 @@ internal class RuleGenerator : ISourceGenerator
             {
                 if (parameterSymbol.Name == "result")
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(RecriverUtil.GeneratorError, Location.None,"The Parameter Name Can't Be `result`! Please Change It." ));
+                    context.ReportDiagnostic(Diagnostic.Create(RecriverUtil.GeneratorError, Location.None, "The Parameter Name Can't Be `result`! Please Change It."));
                     return;
                 }
                 string rightExpr = parameterSymbol.Type switch
@@ -46,7 +46,7 @@ internal class RuleGenerator : ISourceGenerator
                     ParseStatement($"var {parameterSymbol.Name} = {rightExpr};")
                 );
             }
-            if(cand.classSymobl.IsInheritFrom(receiver.QuantRuleSymbol))
+            if (cand.classSymobl.IsInheritFrom(receiver.QuantRuleSymbol))
             {
                 statements.Add(ParseStatement($"Option = options;"));
                 statements.Add(ParseStatement($"Root = (Expr)result.Root;"));

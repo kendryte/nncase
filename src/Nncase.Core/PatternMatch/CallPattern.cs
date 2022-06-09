@@ -58,7 +58,7 @@ public static partial class Utility
     public static CallPattern IsCall(string? name, ExprPattern target, params Pattern[] parameters) => new CallPattern(target, new VArgsPattern(parameters, null), name);
     public static CallPattern IsCall(string? name, FunctionPattern target, params Pattern[] parameters) => new CallPattern(target, new VArgsPattern(parameters, null), name);
     public static CallPattern IsCall(string? name, FunctionPattern target, VArgsPattern parameters) => new CallPattern(target, parameters, name);
-    
+
     public static CallPattern IsCall(ExprPattern target, params Pattern[] parameters) => IsCall(null, target, parameters);
     public static CallPattern IsCall<T>(string name, OpPattern<T> target, params Pattern[] parameters) where T : Op => new CallPattern(target, new VArgsPattern(parameters, null), name);
     public static CallPattern IsCall<T>(string name, OpPattern<T> target, VArgsPattern parameters) where T : Op => new CallPattern(target, parameters, name);

@@ -6,12 +6,12 @@ public enum QuantMode
     /// UnsignedMode
     /// </summary>
     UnsignedMode,
-    
+
     /// <summary>
     /// SignedSymmetricMode
     /// </summary>
     SignedSymmetricMode,
-    
+
     /// <summary>
     /// SignedAsymmetricMode
     /// </summary>

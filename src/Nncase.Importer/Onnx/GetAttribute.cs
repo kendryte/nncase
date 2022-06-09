@@ -106,13 +106,13 @@ namespace Nncase.Importer
         {
             return GetAttrOption(n, attr, AttributeType.Floats, x => x.Floats.ToArray());
         }
-        
+
         Option<string[]> GetOptionStringsAttribute(NodeProto n, string attr)
         {
-            return GetAttrOption(n, attr, AttributeType.Strings, 
+            return GetAttrOption(n, attr, AttributeType.Strings,
                 x => x.Strings.Select(x => x.ToString()).ToArray());
         }
-        
+
         Option<long> GetOptionIntAttribute(NodeProto n, string attr)
         {
             return GetAttrOption(n, attr, AttributeType.Int, x => x.I);
@@ -122,13 +122,13 @@ namespace Nncase.Importer
         {
             return GetAttrOption(n, attr, AttributeType.Float, x => x.F);
         }
-        
+
         Option<string> GetOptionStringAttribute(NodeProto n, string attr)
         {
-            return GetAttrOption(n, attr, AttributeType.String, 
+            return GetAttrOption(n, attr, AttributeType.String,
                 x => x.S.ToString());
         }
-        
+
         long[] GetIntsAttribute(NodeProto n, string attr, int[] defaultValue)
         {
             return GetAttrSafe(n, attr, AttributeType.Ints, x => x.Ints.ToArray(),

@@ -33,7 +33,7 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>
         var axis = context.GetArgumentValueAsScalar<long>(oneHot, OneHot.Axis);
         return OrtKI.OneHot(indices.ToOrtTensor(), depth, values, axis).ToValue();
     }
-    
+
     private IValue TFOneHot(IEvaluateContext context, OneHot oneHot)
     {
         var depth = context.GetArgumentValueAsScalar<int>(oneHot, OneHot.Depth);
@@ -48,7 +48,7 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>
             TF_DataType.TF_FLOAT,
             axis);
     }
-    
+
     private static IValue TF_OneHot(
         Tensorflow.Tensor indices,
         Tensorflow.Tensor depth,
@@ -79,7 +79,7 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>
                 return gen_array_ops.one_hot(indices, depth, on_value, off_value, axis: axis, name: name);
             }).ToValue();
     }
-    
+
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, OneHot target)
     {
@@ -87,7 +87,7 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>
         var values = context.CheckArgumentType<TensorType>(target, OneHot.Values);
         return Visit(context, target, indices, values);
     }
-    
+
     private IRType Visit(ITypeInferenceContext context, OneHot target, TensorType indices, TensorType values)
     {
         // indices_shape[:axis] + [depth] + indices_shape[axis:]

@@ -1,8 +1,8 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using Nncase.PatternMatch;
 using System.Numerics.Tensors;
+using Nncase.PatternMatch;
 using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Tensors;
@@ -27,37 +27,37 @@ public sealed record LSTM(LSTMDirection Direction, LSTMLayout Layout, string[] A
     /// Gets r.
     /// </summary>
     public static readonly ParameterInfo R = new(typeof(LSTM), 2, "r");
-    
+
     /// <summary>
     /// Gets b.
     /// </summary>
     public static readonly ParameterInfo B = new(typeof(LSTM), 3, "b");
-    
+
     /// <summary>
     /// Gets sequence_lens.
     /// </summary>
     public static readonly ParameterInfo SequenceLens = new(typeof(LSTM), 4, "sequence_lens");
-    
+
     /// <summary>
     /// Gets initial_h.
     /// </summary>
     public static readonly ParameterInfo InitialH = new(typeof(LSTM), 5, "initial_h");
-    
+
     /// <summary>
     /// Gets initial_c.
     /// </summary>
     public static readonly ParameterInfo InitialC = new(typeof(LSTM), 6, "initial_c");
-    
+
     /// <summary>
     /// Gets p.
     /// </summary>
     public static readonly ParameterInfo P = new(typeof(LSTM), 7, "p");
-    
+
     /// <summary>
     /// Gets activation_alpha.
     /// </summary>
     public static readonly ParameterInfo ActivationAlpha = new(typeof(LSTM), 8, "activation_alpha");
-    
+
     /// <summary>
     /// Gets activation_beta.
     /// </summary>
@@ -67,7 +67,7 @@ public sealed record LSTM(LSTMDirection Direction, LSTMLayout Layout, string[] A
     /// Gets clip.
     /// </summary>
     public static readonly ParameterInfo Clip = new(typeof(LSTM), 10, "clip");
-    
+
     /// <summary>
     /// Gets hidden_size.
     /// </summary>
@@ -77,7 +77,7 @@ public sealed record LSTM(LSTMDirection Direction, LSTMLayout Layout, string[] A
     /// Gets input_forget.
     /// </summary>
     public static readonly ParameterInfo InputForget = new(typeof(LSTM), 12, "input_forget");
-    
+
     /// <summary>
     /// Gets output_size.
     /// </summary>

@@ -53,7 +53,7 @@ namespace Nncase.IR.NN
         /// Gets Output Padding.
         /// </summary>
         public static readonly ParameterInfo OutputPadding = new(typeof(Conv2DTranspose), 6, "output_padding");
-        
+
         /// <summary>
         /// Gets Dilation.
         /// </summary>
@@ -63,7 +63,7 @@ namespace Nncase.IR.NN
         /// Gets Groups.
         /// </summary>
         public static readonly ParameterInfo Groups = new(typeof(Conv2DTranspose), 8, "groups");
-        
+
         /// <summary>
         /// Gets FusedClamp.
         /// </summary>

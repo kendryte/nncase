@@ -25,7 +25,7 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
         var input = context.CheckArgumentType<TensorType>(target, Cast.Input);
         return Visit(target, input);
     }
-    
+
     /// <inheritdoc/>
     public string Visit(IIRPrinterContext context, Cast target, bool ILmode)
     {

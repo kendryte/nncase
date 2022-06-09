@@ -21,17 +21,17 @@ namespace Nncase.Importer
             var clip = GetOptionFloatAttribute(op, "clip").Or(float.NaN);
             var direction = GetOptionStringAttribute(op, "direction").Or("forward");
             var numBirections = direction == "bidirectional" ? 2 : 1;
-            var acts = GetOptionStringsAttribute(op, "activations").Or(new[] {"sigmoid", "tanh", "tanh"});
+            var acts = GetOptionStringsAttribute(op, "activations").Or(new[] { "sigmoid", "tanh", "tanh" });
             if (numBirections == 2 && acts.Length == 3)
             {
                 acts.Concat(acts).ToArray();
             }
-            
+
             //if 0
             //X.shape = [seq_length, batch_size, input_size]
             //Y(Outputs).shape = [seq_length, num_directions, batch_size, hidden_size]
             //initial_h.shape = Y_h.shape = initial_c.shape = Y_c.shape = [num_directions, batch_size, hidden_size]
-            
+
             //If 1
             //X.shape = [batch_size, seq_length, input_size]
             //Y.shape = [batch_size, seq_length, num_directions, hidden_size]
@@ -39,10 +39,10 @@ namespace Nncase.Importer
             var layout = GetOptionIntAttribute(op, "layout").Or(0);
             var seqIndex = layout == 0 ? 0 : 1;
             var batchIndex = layout == 0 ? 1 : 0;
-            
+
             var T = GetInputDataType(op, 0);
             var (x, w) = GetInputExprs(op, 0, 1);
-            
+
             var hiddenSize = GetOptionIntAttribute(op, "hidden_size")
                     .Match(
                         x => (Expr)x,

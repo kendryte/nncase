@@ -58,7 +58,7 @@ public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>
         if (context.GetArgument(target, LSTM.OutputSize) is TensorConst outSizeConst)
         {
             var yType = InferYType(context, target, x, seqLenIndex, numDirections);
-            var result = new[] {yType, initH, initC};
+            var result = new[] { yType, initH, initC };
             return new TupleType(result[..outSizeConst.Value.ToScalar<int>()]);
         }
         else
@@ -81,6 +81,6 @@ public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>
             hiddenSize = hiddenSizeConst.Value.ToScalar<int>();
         }
         yShape[^1] = hiddenSize;
-        return x with {Shape = yShape.ToArray()};
+        return x with { Shape = yShape.ToArray() };
     }
 }

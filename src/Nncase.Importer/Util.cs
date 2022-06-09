@@ -48,14 +48,14 @@ namespace Nncase
         /// <returns></returns>
         public static Expr PadTranslate(Expr pads)
         {
-            return Transpose(Reshape(pads, new[] {-1, 2}), new[] {1, 0});
+            return Transpose(Reshape(pads, new[] { -1, 2 }), new[] { 1, 0 });
         }
-        
+
         public static TensorConst ZeroTensor()
         {
-            return new TensorConst(Tensor.FromSpan<int>(new[] {0}));
+            return new TensorConst(Tensor.FromSpan<int>(new[] { 0 }));
         }
-        
+
         /// <summary>
         /// 
         /// </summary>

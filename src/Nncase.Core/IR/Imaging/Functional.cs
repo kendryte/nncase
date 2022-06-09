@@ -32,14 +32,14 @@ public static class Imaging
     /// <param name="extrapolationValue"></param>
     /// <returns></returns>
     public static Call ResizeImage(
-        ImageResizeMode resizeMode, 
-        ImageResizeTransformationMode transformationMode, 
+        ImageResizeMode resizeMode,
+        ImageResizeTransformationMode transformationMode,
         ImageResizeNearestMode nearestMode,
-        Expr input, Expr roi, Expr newSize, Expr cubicCoeffA, 
-        Expr excludeOutside, Expr extrapolationValue, bool isTFResize = false) 
+        Expr input, Expr roi, Expr newSize, Expr cubicCoeffA,
+        Expr excludeOutside, Expr extrapolationValue, bool isTFResize = false)
         => new Call(new ResizeImage(resizeMode, transformationMode, nearestMode, isTFResize),
             input, roi, newSize, cubicCoeffA, excludeOutside, extrapolationValue);
-    
+
     /// <summary>
     /// resize image.
     /// </summary>
@@ -50,12 +50,12 @@ public static class Imaging
     /// <returns></returns>
     public static Call ResizeImage(
         ImageResizeMode resizeMode,
-        Expr input, Expr roi, Expr newSize, 
+        Expr input, Expr roi, Expr newSize,
         ImageResizeTransformationMode tranMode = ImageResizeTransformationMode.Asymmetric,
         ImageResizeNearestMode nearestMode = ImageResizeNearestMode.Floor,
-        bool isTFResize = false) 
-        => ResizeImage(resizeMode, 
-                tranMode, 
+        bool isTFResize = false)
+        => ResizeImage(resizeMode,
+                tranMode,
                 nearestMode,
             input, roi, newSize, None.Default, None.Default, None.Default, isTFResize);
 }

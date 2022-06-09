@@ -97,7 +97,7 @@ public class UnitTestFoldSlice
                 new[] {0}, new[] {-1}, new[] {3}, new[] {-3},
                 new[] {-5}, new[] {4}, new[] {2}, new[] {-2}
             }, // negative begin|end
-        }.Select((o, i) => o.Concat(new object[] {i}).ToArray());
+        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
     [MemberData(nameof(TestFoldTwoSlicePositiveData))]

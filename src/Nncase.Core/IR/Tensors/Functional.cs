@@ -86,15 +86,15 @@ public static class Tensors
     public static Call Squeeze(Expr input, Expr dims) => new Call(new Squeeze(), input, dims);
 
     public static Call Unsqueeze(Expr input, Expr dims) => new Call(new Unsqueeze(), input, dims);
-    
+
     // return a scalar
     public static Expr Rank(Expr input) => Slice(ShapeOf(ShapeOf(input)), new[] { 0 }, new[] { 1 }, 1);
 
     // sections (int or list[int])
     public static Call Split(Expr input, Expr axis, Expr sections) => new Call(new Split(), input, axis, sections);
-    
+
     public static Call Tile(Expr input, Expr repeats) => new Call(new Tile(), input, repeats);
-    
+
     public static Call Where(Expr cond, Expr x, Expr y) => new Call(new Where(), cond, x, y);
 
     /// <summary>

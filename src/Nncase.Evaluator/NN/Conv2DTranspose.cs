@@ -27,7 +27,7 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
         var groups = context.GetArgumentValueAsScalar<long>(conv, Conv2DTranspose.Groups);
         var kernelShape = weights.Shape;
         return OrtKI.ConvTranspose(input, weights, bias, "NOTSET", dilation, groups,
-            new long[] {kernelShape[2], kernelShape[3]}, outputPaddings, 
+            new long[] { kernelShape[2], kernelShape[3] }, outputPaddings,
             outputShape, pads, stride).ToValue();
     }
 

@@ -24,7 +24,7 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
         var input = context.GetOrtArgumentValue(conv, Conv2D.Input);
         var weights = context.GetOrtArgumentValue(conv, Conv2D.Weights);
         var bias = context.GetOrtArgumentValue(conv, Conv2D.Bias);
-        
+
         var stride = context.GetArgumentValueAsArray<long>(conv, Conv2D.Stride);
         var pad = context.GetInt64OrtTensorArgumentValue(conv, Conv2D.Padding);
         var dilation = context.GetArgumentValueAsArray<long>(conv, Conv2D.Dilation);

@@ -294,7 +294,7 @@ namespace Nncase.IR
         {
             return other is Shape shape && Equals(shape);
         }
-        
+
         /// <inheritdoc/>
         public static implicit operator ReadOnlySpan<int>(Shape shape) => shape._dimensions.Select(x => (int)(x.Value ?? -1)).ToArray();
 

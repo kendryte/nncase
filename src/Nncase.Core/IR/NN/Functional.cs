@@ -16,20 +16,20 @@ namespace Nncase.IR.F
     /// </summary>
     public static class NN
     {
-        public static Call Conv2D(Expr input, Expr weights, Expr bias, Expr stride, Expr padding, Expr dilation, 
-        PadMode padMode, Expr groups) => new Call(new Conv2D(padMode), input, weights, bias, 
-            stride, padding, dilation, groups, new[]{ ValueRange<float>.Full.Min, ValueRange<float>.Full.Max});
-        
-        public static Call Conv2D(Expr input, Expr weights, Expr bias, Expr stride, Expr padding, Expr dilation, 
+        public static Call Conv2D(Expr input, Expr weights, Expr bias, Expr stride, Expr padding, Expr dilation,
+        PadMode padMode, Expr groups) => new Call(new Conv2D(padMode), input, weights, bias,
+            stride, padding, dilation, groups, new[] { ValueRange<float>.Full.Min, ValueRange<float>.Full.Max });
+
+        public static Call Conv2D(Expr input, Expr weights, Expr bias, Expr stride, Expr padding, Expr dilation,
         PadMode padMode, Expr groups, Expr fusedClamp) => new Call(new Conv2D(padMode), input, weights,
             bias, stride, padding, dilation, groups, fusedClamp);
 
         public static Call Celu(Expr input, Expr alpha) => new Call(new Celu(), input, alpha);
 
         public static Call Conv2DTranspose(Expr input, Expr weights, Expr bias, Expr outShape, Expr stride, Expr padding,
-            Expr outputPadding, Expr dilation, PadMode padMode, Expr groups) => new Call(new Conv2DTranspose(padMode), 
-            input, weights, bias, outShape, stride, padding, outputPadding, dilation, groups, 
-            new[]{ ValueRange<float>.Full.Min, ValueRange<float>.Full.Max});
+            Expr outputPadding, Expr dilation, PadMode padMode, Expr groups) => new Call(new Conv2DTranspose(padMode),
+            input, weights, bias, outShape, stride, padding, outputPadding, dilation, groups,
+            new[] { ValueRange<float>.Full.Min, ValueRange<float>.Full.Max });
 
         public static Call Elu(Expr input, Expr alpha) => new Call(new Elu(), input, alpha);
 

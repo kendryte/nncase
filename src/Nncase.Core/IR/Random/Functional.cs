@@ -22,11 +22,11 @@ public static class Random
         new Call(new Normal(type), mean, scale, seed, shape);
 
     public static Call Normal(DataType type, Expr shape) => Normal(type, 0, 1, Rand.Next(1, 1000), shape);
-    
+
     public static Call Normal(Expr shape) => Normal(DataTypes.Float32, shape);
-    
-    public static Call Normal(DataType type) => Normal(type, new[]{1, 3, 5, 7});
-    
+
+    public static Call Normal(DataType type) => Normal(type, new[] { 1, 3, 5, 7 });
+
     public static Call NormalLike(DataType type, Expr input, Expr mean, Expr scale, Expr seed) =>
         new Call(new NormalLike(type), input, mean, scale, seed);
 

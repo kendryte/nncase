@@ -29,7 +29,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
 
     /// <inheritdoc/>
     public override IRType VisitLeaf(Call expr)
-    {   
+    {
         _context.CurrentCall = expr;
         var type = expr.Target switch
         {

@@ -84,7 +84,7 @@ namespace IsaGen
         LDTUPLE,
 
         LDDATATYPE,
-        LDTENSOR,    
+        LDTENSOR,
 
         NEG,
         ADD,

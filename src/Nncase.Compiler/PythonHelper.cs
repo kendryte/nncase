@@ -11,7 +11,7 @@ public static class PythonHelper
     {
         return Value.FromTensor(Tensor.FromBytes(type, span, dimensions));
     }
-    
+
     public static Tensor TensorFromBytes(DataType type, byte[] span, int[] dimensions)
     {
         return Tensor.FromBytes(type, span, dimensions);
@@ -33,7 +33,7 @@ public static class PythonHelper
             return mmOwner.Memory.Span.ToArray();
         }
     }
-    
+
     public static uint[] GetRTTensorDims(RTTensor tensor)
     {
         return tensor.Dimensions.ToArray();
@@ -50,7 +50,7 @@ public static class PythonHelper
         var result = entry.Invoke(input);
         if (result is RTTensor tensor)
         {
-            return new[] {tensor};
+            return new[] { tensor };
         }
         else if (result is RTTuple tuple)
         {

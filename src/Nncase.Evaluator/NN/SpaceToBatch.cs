@@ -36,24 +36,24 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
 
         var newPaddingsTensor = MakeOrtTensor(newPaddings);
         var p = OrtKI.Pad(input, newPaddingsTensor, OrtTensorFromScalar(0f), "constant");
-        
+
         var batchShape1 = new long[] { p.Shape[0] };
         var spatialShape1 = RangeExec(spatialSize,
-                i => new[] {p.Shape[i + 1] / blockShape[i], blockShape[i]})
+                i => new[] { p.Shape[i + 1] / blockShape[i], blockShape[i] })
             .Aggregate(new long[] { }, (x, y) => x.Concat(y).ToArray());
         var remainShape1 = RangeExec(remainShapeSize, i => (long)p.Shape[1 + spatialSize + i]);
         var reshappedShape1 = batchShape1.Concat(spatialShape1.Concat(remainShape1)).ToArray();
 
         var perm = RangeExec(spatialSize, i => i * 2 + 2)
-            .Concat(new[] {0})
+            .Concat(new[] { 0 })
             .Concat(RangeExec(spatialSize, i => i * 2 + 1))
             .Concat(RangeExec(remainShapeSize, i => i + (int)spatialSize * 2 + 1))
             .Select(x => (long)x)
             .ToArray();
 
-        var reshappedShape2 = new[] {p.Shape[0] * blockShape.Aggregate(1L, (x, y) => x * y)}
+        var reshappedShape2 = new[] { p.Shape[0] * blockShape.Aggregate(1L, (x, y) => x * y) }
             .Concat(RangeExec(spatialSize, i => p.Shape[i + 1] / blockShape[i]))
-            .Concat(RangeExec(remainShapeSize, i => (long) p.Shape[1 + spatialSize + i]))
+            .Concat(RangeExec(remainShapeSize, i => (long)p.Shape[1 + spatialSize + i]))
             .ToArray();
 
         var reshape1 = OrtKI.Reshape(p, MakeOrtTensor(reshappedShape1), 0);
@@ -61,7 +61,7 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
         var reshape2 = OrtKI.Reshape(rt, MakeOrtTensor(reshappedShape2), 0);
         return reshape2.ToValue();
     }
-    
+
     private T[] RangeExec<T>(long end, Func<int, T> f)
     {
         return EndRange(0, (int)end).Select(f).ToArray();

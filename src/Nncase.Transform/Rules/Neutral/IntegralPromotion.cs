@@ -35,11 +35,11 @@ public partial class IntegralPromotion : RewriteRule<OrPattern>
         IsAlt(
             IsBinary(
                 "bn", NeedPromotion,
-                IsWildcard("lhs") with {TypePattern = HasDataType(DataTypes.Int32)},
-                IsWildcard("rhs") with {TypePattern = HasDataType(DataTypes.Int64)}),
+                IsWildcard("lhs") with { TypePattern = HasDataType(DataTypes.Int32) },
+                IsWildcard("rhs") with { TypePattern = HasDataType(DataTypes.Int64) }),
             IsBinary("bn", NeedPromotion,
-                IsWildcard("lhs") with {TypePattern = HasDataType(DataTypes.Int64)},
-                IsWildcard("rhs") with {TypePattern = HasDataType(DataTypes.Int32)}));
+                IsWildcard("lhs") with { TypePattern = HasDataType(DataTypes.Int64) },
+                IsWildcard("rhs") with { TypePattern = HasDataType(DataTypes.Int32) }));
 
     Expr GetReplace(Binary bn, Expr lhs, Expr rhs)
     {

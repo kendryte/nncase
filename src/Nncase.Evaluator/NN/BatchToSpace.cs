@@ -33,9 +33,9 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         var targetSpatial = ZipExec(spatial, blockShape, (x, y) => x * y);
 
         var ccat1 = spatial.Concat(blockShape).ToArray();
-        var re1 = Tensor.FromSpan(ccat1, new[] {ccat1.Length / blockLen, blockLen});
-        var interLeave = OrtKI.Transpose(re1.ToOrtTensor(), new long[] {1, 0}).ToArray<int>();
-        var shape1 = new[] {-1}.Concat(interLeave).Concat(depth).ToArray();
+        var re1 = Tensor.FromSpan(ccat1, new[] { ccat1.Length / blockLen, blockLen });
+        var interLeave = OrtKI.Transpose(re1.ToOrtTensor(), new long[] { 1, 0 }).ToArray<int>();
+        var shape1 = new[] { -1 }.Concat(interLeave).Concat(depth).ToArray();
 
         var g1 = BoostRange(2, 2 * blockLen + 1, 2);
         var g2 = BoostRange(1, 2 * blockLen + 1, 2);
@@ -47,14 +47,14 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         var newShape = indices.Select(i => (long)shape1[i]).ToArray();
         var x2 = OrtKI.Reshape(input0, newShape, 0);
         var tr2 = OrtKI.Transpose(x2, perm);
-        var shape2 = new[] {-1}.Concat(targetSpatial).Concat(depth).Select(x => (long)x).ToArray();
+        var shape2 = new[] { -1 }.Concat(targetSpatial).Concat(depth).Select(x => (long)x).ToArray();
         var x3 = OrtKI.Reshape(tr2, MakeOrtTensor(shape2), 0);
-        
-        var cropTransposed = OrtKI.Transpose(crop, new long[] {1, 0});
+
+        var cropTransposed = OrtKI.Transpose(crop, new long[] { 1, 0 });
         var cropArray = cropTransposed.ToArray<int>();
         var w = cropTransposed.Shape[1];
         var cropStart = cropArray[..w];
-        var cropEnd = cropArray[w..(w+w)];
+        var cropEnd = cropArray[w..(w + w)];
         var endRange = ZipExec(targetSpatial, cropEnd, (x, y) => x - y);
         var axesConst = BoostRange(1, blockLen + 1).ToArray();
         var strideConst = Enumerable.Repeat(1, axesConst.Length).ToArray();
@@ -66,7 +66,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
     {
         return a.Zip(b).Select(x => f(x.Item1, x.Item2)).ToArray();
     }
-    
+
     private long[] GetPerm(int xLen, int blockLen)
     {
         var perm = Enumerable.Range(0, xLen + blockLen).ToArray();

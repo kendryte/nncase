@@ -65,7 +65,7 @@ public interface IEvaluateContext
         var v = GetValue(GetArgumentExpr(op, parameter));
         return v is NoneValue ? Option.None : Option.Some(v);
     }
-    
+
     /// <summary>
     /// Get argument value as Tensor{T}
     /// </summary>

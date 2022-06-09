@@ -15,7 +15,7 @@
 //     public class UnitTestEGraphCostModel : RewriteFixtrue
 //     {
 //         public UnitTestEGraphCostModel(IHost host) : base(host) { }
-        
+
 //         [Fact]
 //         public void TestConst()
 //         {

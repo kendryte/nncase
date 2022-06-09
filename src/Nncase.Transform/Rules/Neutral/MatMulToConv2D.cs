@@ -27,8 +27,8 @@ public sealed partial class MatMulToConv2D : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsMatMul(
-        IsWildcard("a") with {TypePattern = HasRank(2)},
-        IsWildcard("b") with {TypePattern = HasRank(2)});
+        IsWildcard("a") with { TypePattern = HasRank(2) },
+        IsWildcard("b") with { TypePattern = HasRank(2) });
 
     private Expr? GetReplace(Expr a, Expr b)
     {
@@ -39,20 +39,20 @@ public sealed partial class MatMulToConv2D : IRewriteRule
             throw new Exception("Matmul need aShape[1] same with bShape[0]");
         }
 
-        var if_shape = new Shape(new[] {aShape[0].FixedValue, aShape[1].FixedValue, 1, 1});
-        var w_shape = new Shape(new[] {bShape[1].FixedValue, bShape[0].FixedValue, 1, 1});
+        var if_shape = new Shape(new[] { aShape[0].FixedValue, aShape[1].FixedValue, 1, 1 });
+        var w_shape = new Shape(new[] { bShape[1].FixedValue, bShape[0].FixedValue, 1, 1 });
 
         var if_reshape = Reshape(a, if_shape);
-        var w_tp = Transpose(b, Tensor.FromSpan<int>(new[] {1, 0}));
+        var w_tp = Transpose(b, Tensor.FromSpan<int>(new[] { 1, 0 }));
         var w_reshape = Reshape(w_tp, w_shape);
 
         return Conv2D(
             if_reshape,
             w_reshape,
             Tensor.FromScalar(0.0f, aShape[1].FixedValue),
-            Tensor.FromScalar(1, new[] {2}),
-            Tensor.FromScalar(0, new[] {2, 2}),
-            new int[] {1, 1},
+            Tensor.FromScalar(1, new[] { 2 }),
+            Tensor.FromScalar(0, new[] { 2, 2 }),
+            new int[] { 1, 1 },
             PadMode.Constant,
             1);
     }

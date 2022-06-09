@@ -14,7 +14,7 @@ namespace Nncase.Importer.TFLite
             var (input, axis) = GetInputExprs(op, 0, 1);
             return Reduce(reduceOp, input, axis, initValue, op.BuiltinOptionsAsReducerOptions().KeepDims);
         }
-        
+
         private Expr VisitReduceArg(in tflite.Operator op, ReduceArgOp reduceArgOp)
         {
             var (input, axis) = GetInputExprs(op, 0, 1);

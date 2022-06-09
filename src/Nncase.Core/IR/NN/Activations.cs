@@ -1,13 +1,13 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using Nncase.PatternMatch;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.PatternMatch;
 using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.NN;
@@ -58,7 +58,7 @@ public sealed record PRelu() : Op
     /// Gets input.
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(PRelu), 0, "input");
-    
+
     /// <summary>
     /// Gets Slope.
     /// </summary>
@@ -75,7 +75,7 @@ public sealed record LeakyRelu() : Op
     /// Gets input.
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(LeakyRelu), 0, "input");
-    
+
     /// <summary>
     /// Gets Alpha.
     /// </summary>
@@ -114,7 +114,7 @@ public sealed record Selu() : Op
     /// Gets Alpha.
     /// </summary>
     public static readonly ParameterInfo Alpha = new(typeof(Selu), 1, "alpha", IsFloatScalar());
-    
+
     /// <summary>
     /// Gets Gamma.
     /// </summary>

@@ -3,16 +3,16 @@ namespace Nncase;
 public enum LSTMDirection
 {
     Forward,
-    
-    Reverse, 
-    
+
+    Reverse,
+
     Bidirectional
 }
 
 public enum LSTMLayout
 {
     Zero,
-    
+
     One
 }
 
@@ -28,7 +28,7 @@ public static class LSTMHelper
             _ => throw new ArgumentOutOfRangeException(nameof(str), str, null)
         };
     }
-    
+
     public static LSTMLayout ToLSTMLayout(long n)
     {
         return n switch

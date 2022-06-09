@@ -201,7 +201,7 @@ namespace Nncase.Tests.RewriteTest
             var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 240, 320)));
             var shape = ShapeOf(input);
             var shapePost = RunShapeInferPass("FoldShapeOf", shape);
-            Assert.Equal(new long[] {1, 3, 240, 320}, ((TensorConst)shapePost).Value.ToArray<long>());
+            Assert.Equal(new long[] { 1, 3, 240, 320 }, ((TensorConst)shapePost).Value.ToArray<long>());
         }
 
         [Fact]
@@ -210,7 +210,7 @@ namespace Nncase.Tests.RewriteTest
             var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 240, 320)));
             var exp = Expand(1, Cast(Rank(input) - 0, new Int64Type()));
             var result = RunShapeInferPass("ExpandToRank", exp);
-            Assert.Equal(new[] {1, 1, 1, 1}, result.Evaluate().AsTensor().ToArray<int>());
+            Assert.Equal(new[] { 1, 1, 1, 1 }, result.Evaluate().AsTensor().ToArray<int>());
         }
     }
 
@@ -220,7 +220,7 @@ namespace Nncase.Tests.RewriteTest
         {
             passOptions.SetDumpDir(Path.Combine(passOptions.PassDumpDir, "DataFlowRewriteAndInferIntegrateTest"));
         }
-        
+
         public T Dim1ExprToScalar<T>(Expr expr) where T : unmanaged, System.IEquatable<T> => (expr as TensorConst).Value.Cast<T>()[0];
 
         [Fact]
@@ -244,7 +244,7 @@ namespace Nncase.Tests.RewriteTest
             var padding = Util.ConcatPadding(padH, padW);
             // Assert.True(CompilerServices.InferenceType(padding));
             var paddingPost = RunShapeInferPass("padding", padding, input);
-            Assert.Equal(Tensor.FromSpan(new[] {1, 1, 1, 1}, new Shape(2, 2)), paddingPost);
+            Assert.Equal(Tensor.FromSpan(new[] { 1, 1, 1, 1 }, new Shape(2, 2)), paddingPost);
         }
 
         [Fact]
@@ -344,11 +344,11 @@ namespace Nncase.Tests.RewriteTest
             var shape = Concat(
                 new IR.Tuple(
                     ShapeOf(v),
-                    new long[]{1},
-                    new long[]{1}), 0);
+                    new long[] { 1 },
+                    new long[] { 1 }), 0);
             var afterShape = RunShapeInferPass("Shape", shape);
             Assert.True(afterShape.InferenceType());
-            Assert.Equal(new long[] {3, 1, 1}, afterShape);
+            Assert.Equal(new long[] { 3, 1, 1 }, afterShape);
             var b = Reshape(v, afterShape);
             b.InferenceType();
             Assert.Equal(new[] { 3, 1, 1 }, b.Evaluate().AsTensor().Dimensions.ToArray());

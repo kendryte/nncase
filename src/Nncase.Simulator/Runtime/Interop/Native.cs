@@ -55,7 +55,7 @@ internal static class Native
 
     [DllImport(LibraryName, EntryPoint = "nncase_dtype_get_typecode")]
     public static extern unsafe TypeCode DTypeGetTypeCode(IntPtr handle);
-    
+
     [DllImport(LibraryName, EntryPoint = "nncase_value_is_tensor")]
     public static extern unsafe ErrorCode ValueIsTensor(IntPtr value, out bool isTensor);
 

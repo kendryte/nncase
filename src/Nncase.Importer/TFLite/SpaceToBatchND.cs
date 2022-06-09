@@ -12,7 +12,7 @@ namespace Nncase.Importer.TFLite
         private Expr VisitSpaceToBatchND(in tflite.Operator op)
         {
             var (input, blockShape) = GetInputExprs(op, 0, 1);
-            var paddings = Reshape(Transpose(GetInputExprs(op, 2), new[] {1, 0}), -1);
+            var paddings = Reshape(Transpose(GetInputExprs(op, 2), new[] { 1, 0 }), -1);
             return SpaceToBatch(input, blockShape, paddings);
         }
 

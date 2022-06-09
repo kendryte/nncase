@@ -48,10 +48,10 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>
         var result = tf.Context.ExecuteOp(
             "MirrorPad",
             null!,
-            new ExecuteOpArgs(input, pads).SetAttributes(new {mode}))[0];
+            new ExecuteOpArgs(input, pads).SetAttributes(new { mode }))[0];
         return result.ToValue();
     }
-    
+
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Pad target)
     {

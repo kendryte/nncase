@@ -34,7 +34,7 @@ public class Compiler
         var provider = iHost.Services.GetRequiredService<ICompilerServicesProvider>();
         CompilerServices.Configure(provider);
     }
-    
+
     private static void ConfigureContainer(ContainerBuilder builder)
     {
         var assemblies = ApplicationParts.LoadApplicationParts(c =>

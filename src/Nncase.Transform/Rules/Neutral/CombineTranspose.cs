@@ -102,7 +102,7 @@ public sealed partial class CombineTransposePad : IRewriteRule
     public IPattern Pattern { get; } = IsPad(
         "pad",
         x => true,
-        IsTranspose(IsWildcard("input") , IsWildcard("perm")),
+        IsTranspose(IsWildcard("input"), IsWildcard("perm")),
         IsWildcard("pads"),
         IsWildcard("padValue"));
 

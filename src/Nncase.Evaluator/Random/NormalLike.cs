@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Random;
 /// Evaluator for <see cref="NormalLike"/>.
 /// </summary>
 public class NormalLikeEvaluator : IEvaluator<NormalLike>, ITypeInferencer<NormalLike>
-{ 
+{
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, NormalLike random)
     {

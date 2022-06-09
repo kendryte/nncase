@@ -17,7 +17,7 @@ namespace Nncase.Importer
         {
             return F.Tensors.Reshape(
                 v, F.Tensors.Concat(
-                    new IR.Tuple(F.Tensors.ShapeOf(v), new long [] { 1 }, new long[] { 1 }), 0));
+                    new IR.Tuple(F.Tensors.ShapeOf(v), new long[] { 1 }, new long[] { 1 }), 0));
         }
 
         private Expr VisitBatchNormalization(in NodeProto op)

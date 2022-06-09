@@ -23,7 +23,7 @@ namespace Nncase.IR
         /// <returns></returns>
         public T this[ParameterInfo parameter] { get; }
     }
-    
+
     /// <summary>
     /// Call expression.
     /// </summary>

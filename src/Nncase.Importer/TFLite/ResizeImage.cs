@@ -37,14 +37,14 @@ namespace Nncase.Importer.TFLite
                 : ImageResizeNearestMode.RoundPreferCeil;
             return NCHWToNHWC(
                 ResizeImage(
-                    resizeMode, 
-                    input, 
-                    Array.Empty<float>(), 
-                    MakeResizeSizes(input, newSize), 
+                    resizeMode,
+                    input,
+                    Array.Empty<float>(),
+                    MakeResizeSizes(input, newSize),
                     tranMode,
                     nearestMode, true));
         }
-        
+
         private ImageResizeTransformationMode GetResizeOptions(in tflite.Operator op)
         {
             if (op.BuiltinOptionsType == tflite.BuiltinOptions.ResizeBilinearOptions)

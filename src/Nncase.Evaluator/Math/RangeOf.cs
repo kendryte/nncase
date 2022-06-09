@@ -28,7 +28,7 @@ public class RangeOfEvaluator : IEvaluator<RangeOf>, ITypeInferencer<RangeOf>
             }
         }
 
-        return Value.FromTensor(new[] {min, max});
+        return Value.FromTensor(new[] { min, max });
     }
 
     /// <inheritdoc/>

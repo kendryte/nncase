@@ -13,7 +13,7 @@ namespace Nncase.Importer
         {
             return F.Tensors.Cast(Util.ShapeIndex(input, index), DataTypes.Int64);
         }
-        
+
         private Expr VisitSpaceToDepth(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);

@@ -19,7 +19,7 @@ internal sealed class Matcher
     {
         _currentScope = new MatchScope(root);
     }
-    
+
     private MatchScope _currentScope = new MatchScope();
 
     /// <summary>
