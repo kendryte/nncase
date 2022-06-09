@@ -57,6 +57,9 @@ NNCASE_API result<void> expand(tensor input, tensor shape, tensor output = nullp
 
 NNCASE_API result<void> flatten(tensor input, tensor axis, tensor output = nullptr, kernel_context &context = default_kernel_context());
 
+NNCASE_API result<void> gather_impl(datatype_t type, const gsl::byte *input, gsl::byte *output, const dims_t &in_shape, const dims_t &out_shape,
+                         const strides_t &in_strides, const strides_t &out_strides, const int64_t *indices, const dims_t &indices_shape, size_t axis, kernel_context &context) noexcept;
+
 NNCASE_API result<void> gather(tensor input, tensor axis, tensor index, tensor output = nullptr, kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void> gather_nd(tensor input, tensor batch_dims, tensor index, tensor output = nullptr, kernel_context &context = default_kernel_context());

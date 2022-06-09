@@ -1,7 +1,7 @@
 ﻿cmake_minimum_required(VERSION 3.13)
 
-set(SRCS activation.cpp
-         dummy_tensor_ops.cpp
+set(SRCS ../dummy_tensor_ops.cpp
+         activation.cpp
          batch_to_space.cpp
          binary.cpp
          broadcast.cpp

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/kernels/stackvm/tensor_ops.h>
+#include <nncase/kernels/stackvm/ops.h>
 #include <nncase/runtime/util.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
@@ -31,7 +32,7 @@ namespace
 {
 template <class T>
 result<void> gather_impl(const T *input, T *output, const dims_t &in_shape, const dims_t &out_shape,
-    const strides_t &in_strides, const strides_t &out_strides, const int32_t *indices, const dims_t &indices_shape, size_t axis,
+    const strides_t &in_strides, const strides_t &out_strides, const int64_t *indices, const dims_t &indices_shape, size_t axis,
     NNCASE_UNUSED kernel_context &context) noexcept
 {
     return apply(out_shape, [&](const dims_t &out_index) -> result<void> {
@@ -64,44 +65,10 @@ result<void> gather_impl(const T *input, T *output, const dims_t &in_shape, cons
 
 #define GATHER_IMPL(size, type) \
     case size:                  \
-        return gather_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, out_shape, in_strides, out_strides, indices, indices_shape, axis, context);
+        return ::gather_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, out_shape, in_strides, out_strides, indices, indices_shape, axis, context);
 
-result<void> gather_impl(datatype_t type, const gsl::byte *input, gsl::byte *output, const dims_t &in_shape, const dims_t &out_shape,
-    const strides_t &in_strides, const strides_t &out_strides, const int32_t *indices, const dims_t &indices_shape, size_t axis, kernel_context &context) noexcept
+result<void> nncase::kernels::stackvm::gather_impl(datatype_t type, const gsl::byte *input, gsl::byte *output, const dims_t &in_shape, const dims_t &out_shape,
+    const strides_t &in_strides, const strides_t &out_strides, const int64_t *indices, const dims_t &indices_shape, size_t axis, kernel_context &context) noexcept
 {
     TYPE_IMPL_SELECT(type, GATHER_IMPL);
-}
-
-dims_t infer_shape(const dims_t& in_shape, const dims_t& index_shape, int axis) {
-    auto in_shape_size = in_shape.size();
-    auto index_shape_size = index_shape.size();
-    auto new_shape = dims_t(in_shape_size + index_shape_size);
-    for (int i = 0; i < axis; ++i) {
-        new_shape[i] = in_shape[i];
-    }
-    for (int i = 0; i < index_shape_size; ++i) {
-        new_shape[axis + i] = index_shape[i];
-    }
-    for (int i = 0; i < in_shape_size - axis - 1; ++i) {
-        new_shape[axis + index_shape_size + i] = in_shape[i];
-    }
-    return new_shape;
-}
-
-result<value_t> nncase::kernels::stackvm::gather(value_t input, value_t axis,
-                                                 value_t index, value_t output,
-                                                 kernel_context &context) {
-    try_input(input_mem, input);
-    try_input(index_mem, index);
-    auto dtype = input_tensor->dtype();
-    try_var(typecode, to_typecode(dtype));
-    try_to_scalar(axis_value, axis, size_t);
-    auto out_shape = infer_shape(input_tensor->shape(), index_tensor->shape(), axis_value);
-    try_output(out_mem, output, dtype, out_shape);
-    auto indices = reinterpret_cast<const int32_t*>(index_mem);
-    try_(gather_impl(typecode, input_mem, out_mem,
-                        input_tensor->shape(), output_tensor->shape(),
-                     input_tensor->strides(), output_tensor->strides(),
-                     indices, index_tensor->shape(), axis_value, context));
-    return ok(output);
 }
