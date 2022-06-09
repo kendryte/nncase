@@ -77,12 +77,31 @@ public class UnitTestCPUTarget
     }
 
     [Fact]
-    public void TestTupleOutput()
+    public void TestCodegenCallParamOrder()
+    {
+        // order is true: x - 3 = 2 - 3 = -1
+        // order is false: 3 - x = 3 - 2 = 1
+        var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
+        var y = x - 3f;
+        var main = new Function("main", y, new[] { x });
+        GenerateKModelAndRunFromFn(main, new[] { 2f }, (Tensor)new[] { -1f });
+    }
+
+    [Fact]
+    public void TestSimpleTupleOutput()
     {
         var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
         var main = new Function("main", new IR.Tuple(x + 1.0f, x * 3.0f), new[] { x });
         var module = new IRModule(main);
         GenerateKModelAndRun(module, new[] { 1.0f }, new[] { (Tensor)2.0f, 3.0f });
+    }
+    
+    [Fact]
+    public void TestTupleOrder()
+    {
+        var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
+        var main = new Function("main", new IR.Tuple(x + 1.0f, x + 2f, x + 3f), new[] { x });
+        GenerateKModelAndRunFromFn(main, new[]{1f}, new[] { (Tensor)2f, 3f, 4f});
     }
 
     [Fact]
@@ -140,5 +159,15 @@ public class UnitTestCPUTarget
     private void GenerateKModelAndRun(IRModule module, Tensor input, Tensor expectedOutput, [CallerMemberName] string? name = null)
     {
         GenerateKModelAndRun(module, input, new[] { expectedOutput }, name);
+    }
+    
+    private void GenerateKModelAndRunFromFn(Function fn, Tensor input, Tensor expectedOutput, [CallerMemberName] string? name = null)
+    {
+        GenerateKModelAndRun(new IRModule(fn), input, new[] { expectedOutput }, name);
+    }
+    
+    private void GenerateKModelAndRunFromFn(Function fn, Tensor input, Tensor[] expectedOutput, [CallerMemberName] string? name = null)
+    {
+        GenerateKModelAndRun(new IRModule(fn), input, expectedOutput, name);
     }
 }

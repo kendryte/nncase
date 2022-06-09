@@ -30,12 +30,12 @@ public class RTTuple : RTValue
         {
             if (_fields == null)
             {
-                uint stridesLength = 0;
-                Native.TupleGetFields(Handle, null, ref stridesLength);
-                var fields = new IntPtr[stridesLength];
+                uint fieldsLength = 0;
+                Native.TupleGetFields(Handle, null, ref fieldsLength);
+                var fields = new IntPtr[fieldsLength];
                 fixed (IntPtr* fieldsPtr = fields)
                 {
-                    Native.TupleGetFields(Handle, fieldsPtr, ref stridesLength).ThrowIfFailed();
+                    Native.TupleGetFields(Handle, fieldsPtr, ref fieldsLength).ThrowIfFailed();
                     _fields = fields.Select(value => RTValue.FromHandle(value)).ToArray();
                 }
             }
