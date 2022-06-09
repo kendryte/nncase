@@ -113,6 +113,13 @@ result<void> op_visitor::next() noexcept
 #endif
             return visit(op_reader<tensor_gather_nd_op_t>()(reader_));
         }
+        case tensor_function_t::GRU:
+        {
+#if defined ENABLE_OP_PROFILE
+            op_profile st("tensor_gru");
+#endif
+            return visit(op_reader<tensor_gru_op_t>()(reader_));
+        }
         case tensor_function_t::HARDMAX:
         {
 #if defined ENABLE_OP_PROFILE
@@ -479,9 +486,9 @@ result<void> op_visitor::visit(gsl::span<const gsl::byte> text) noexcept
     while (!interrupted_ && !reader_.empty())
         try_(next());
 
-#ifdef ENABLE_OP_PROFILE
-    op_profile::print();
-#endif
+    #ifdef ENABLE_OP_PROFILE
+        op_profile::print();
+    #endif
 
     return ok();
 }
