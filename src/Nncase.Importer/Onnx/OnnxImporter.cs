@@ -111,18 +111,13 @@ namespace Nncase.Importer
             _graph.Node.ToList().ForEach(Visit);
 
             var outputs = _graph.Output.Select(o => _outputTensors[o.Name]).ToArray();
-
-            return MakeMainModule(outputs, createdInputs.ToArray());
+            var body = outputs.Length > 1 ? new IR.Tuple(outputs) : outputs[0]; 
+            return MakeMainModule(body, createdInputs.ToArray());
         }
 
-        private IRModule MakeMainModule(Expr[] body, IRArray<Var> parameter)
+        private IRModule MakeMainModule(Expr body, IRArray<Var> parameter)
         {
-            if (body.Length > 1)
-            {
-                throw new NotImplementedException("RuntimeNotSupportedTuple");
-            }
-            // var outputTuple = new IR.Tuple(ImmutableArray.Create(body));
-            var outputTuple = body[0];
+            var outputTuple = body;
             var mainFunc = new Function("main", outputTuple, parameter);
             var module = new IRModule();
             module.Add(mainFunc);

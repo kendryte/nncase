@@ -158,4 +158,19 @@ public class RTTuple : RTValue
         : base(handle)
     {
     }
+
+    public RTValue[] Fields()
+    {
+        unsafe
+        {
+            uint stridesLength = 0;
+            Native.TupleGetFields(Handle, null, ref stridesLength);
+            var fields = new IntPtr[stridesLength];
+            fixed (IntPtr* fieldsPtr = fields)
+            {
+                Native.TupleGetFields(Handle, fieldsPtr, ref stridesLength).ThrowIfFailed();
+                return fields.Select(value => RTValue.FromHandle(value)).ToArray();
+            }
+        }
+    }
 }

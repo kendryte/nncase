@@ -175,6 +175,11 @@ inline size_t positive_index(int index, size_t rank) {
     try_var(_var_name, value_as_##f_name<_ty>(_value_name))
 #define try_to_scalar(_var_name, _value_name, _ty)                             \
     try_var(_var_name, value_to_scalar<_ty>(_value_name))
+
+#define try_positive_scalar(_var_name, _value_name, _ty)                             \
+    try_var(__##_var_name, value_to_scalar<_ty>(_value_name)) \
+    auto _var_name = 
+
 #define try_to_axis(_var_name, _value_name, _input)                            \
     try_to_scalar(__##_var_name, _value_name, int32_t);                        \
     auto _var_name = positive_index(__##_var_name, _input->shape().size());
@@ -210,19 +215,12 @@ inline result<dims_t> value_as_dims(value_t value) {
 }
 
 inline result<axes_t> value_as_axes(value_t value) {
-    try_input_with_ty(input, value, int32_t);
-    auto size = value_tensor->shape()[0];
-    auto axis = axes_t(size);
-    for (int i = 0; i < size; ++i) {
-        axis[i] = input[i];
-    };
-
-    return ok(axis);
+    return value_as_Ts<axes_t::value_type>(value);
 }
 
 // todo:refactor
 inline result<dims_t> value_as_positive_axes(value_t value, size_t rank) {
-    try_input_with_ty(input, value, int32_t);
+    try_input_with_ty(input, value, axes_t::value_type);
     auto size = value_tensor->shape()[0];
     auto axis = dims_t(size);
     for (int i = 0; i < size; ++i) {

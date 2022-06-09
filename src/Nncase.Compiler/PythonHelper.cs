@@ -40,10 +40,15 @@ public static class PythonHelper
     public static RTTensor[] RunSimulator(RTInterpreter interp, RTValue[] input)
     {
         var entry = interp.Entry;
-        var result = (RTTensor)entry.Invoke(input);
+        var result = entry.Invoke(input);
         if (result is RTTensor tensor)
         {
             return new[] {tensor};
+        }
+        else if (result is RTTuple tuple)
+        {
+            // todo: field maybe a tuple, but not process in this
+            return tuple.Fields().Select(x => (RTTensor) x).ToArray();
         }
 
         throw new NotImplementedException();
