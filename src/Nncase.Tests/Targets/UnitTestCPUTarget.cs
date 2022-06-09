@@ -50,7 +50,8 @@ public class UnitTestCPUTarget
     {
         var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
         var y = x + 1.0f + x;
-        TestCodeGen(new IR.Tuple(y), new[] { x });
+        var z = y * 2.0f;
+        TestCodeGen(new IR.Tuple(y, z), new[] { x });
     }
 
     private void TestCodeGen(Expr body, Var[] vars, [CallerMemberName] string name = null)
@@ -76,6 +77,15 @@ public class UnitTestCPUTarget
     }
 
     [Fact]
+    public void TestTupleOutput()
+    {
+        var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
+        var main = new Function("main", new IR.Tuple(x + 1.0f, x * 3.0f), new[] { x });
+        var module = new IRModule(main);
+        GenerateKModelAndRun(module, new[] { 1.0f }, new[] { (Tensor)2.0f, 3.0f });
+    }
+
+    [Fact]
     public void TestCallFunction()
     {
         var a = new Var("a");
@@ -90,7 +100,7 @@ public class UnitTestCPUTarget
         GenerateKModelAndRun(module, new[] { 1.0f }, new[] { 3.0f });
     }
 
-    private void GenerateKModelAndRun(IRModule module, Tensor input, Tensor expectedOutput, [CallerMemberName] string? name = null)
+    private void GenerateKModelAndRun(IRModule module, Tensor input, Tensor[] expectedOutput, [CallerMemberName] string? name = null)
     {
         var target = CompilerServices.GetTarget("cpu");
         var modelBuilder = new ModelBuilder(target);
@@ -113,11 +123,22 @@ public class UnitTestCPUTarget
         var entry = interp.Entry;
 
         var rtInput = RTTensor.FromTensor(input);
-        var rtOutput = (RTTensor)entry.Invoke(rtInput);
-        var outBuffer = rtOutput.Buffer.Buffer.AsHost()!;
-        using (var mmOwner = outBuffer.Map(RTMapAccess.Read))
+        var rtOutput = entry.Invoke(rtInput);
+        var rtOutputs = rtOutput is RTTensor t ? new[] { t } : ((RTTuple)rtOutput).Fields.Cast<RTTensor>().ToArray();
+        Assert.Equal(expectedOutput.Length, rtOutputs.Length);
+
+        for (int i = 0; i < rtOutputs.Length; i++)
         {
-            Assert.Equal(expectedOutput.BytesBuffer.ToArray(), mmOwner.Memory.Span.ToArray());
+            var outBuffer = rtOutputs[i].Buffer.Buffer.AsHost()!;
+            using (var mmOwner = outBuffer.Map(RTMapAccess.Read))
+            {
+                Assert.Equal(expectedOutput[i].BytesBuffer.ToArray(), mmOwner.Memory.Span.ToArray());
+            }
         }
+    }
+
+    private void GenerateKModelAndRun(IRModule module, Tensor input, Tensor expectedOutput, [CallerMemberName] string? name = null)
+    {
+        GenerateKModelAndRun(module, input, new[] { expectedOutput }, name);
     }
 }

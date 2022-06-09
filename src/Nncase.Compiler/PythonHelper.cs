@@ -48,7 +48,7 @@ public static class PythonHelper
         else if (result is RTTuple tuple)
         {
             // todo: field maybe a tuple, but not process in this
-            return tuple.Fields().Select(x => (RTTensor) x).ToArray();
+            return tuple.Fields.Select(x => (RTTensor) x).ToArray();
         }
 
         throw new NotImplementedException();

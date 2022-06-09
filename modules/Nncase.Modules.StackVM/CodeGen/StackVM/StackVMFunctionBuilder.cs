@@ -70,7 +70,7 @@ internal class StackVMFunctionBuilder
             foreach (var inputSnippet in snippet.InputSnippets)
             {
                 // in locals
-                if (inputSnippet.UseCount > 1)
+                if (inputSnippet.OutputInLocal)
                 {
                     var localId = _snippetLocals[inputSnippet];
                     _textEmitter.Ldlocal(localId);
@@ -102,7 +102,7 @@ internal class StackVMFunctionBuilder
 
             // 2.3 Store output
             // in locals
-            if (snippet.UseCount > 1)
+            if (snippet.OutputInLocal)
             {
                 var localId = _localsAllocator.Allocate();
                 _snippetLocals.Add(snippet, localId);

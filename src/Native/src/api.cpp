@@ -315,7 +315,7 @@ int nncase_tuple_get_fields(nncase::tuple_node *tuple, nncase::value_node **fiel
         *fields_length = required_length;
         if (fields) {
             for (size_t i = 0; i < src_fields.size(); i++) {
-                fields[i] = src_fields[src_fields.size() - i - 1].get();
+                fields[i] = value_t(src_fields[i]).detach();
             }
         }
         return 0;
