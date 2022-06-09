@@ -86,13 +86,14 @@ jobs:
         pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
         pip install imageio==2.15.0
         pip install kendryte_caffe
-        pip install pytest
+        pip install pytest==6.2.5
 
     - name: Create Test Environment
       working-directory: ${{github.workspace}}
       shell: bash
       run: |
-        pip install pytest pytest-xdist
+        pip install pytest==6.2.5
+        pip install pytest-xdist
         mkdir test_results
 
     - name: Test

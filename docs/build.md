@@ -41,14 +41,14 @@ Install dependencies (MacOS)
 ```bash
 pip install tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.10.0
 pip install torch==1.9.0 torchvision==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
-pip install pytest
+pip install pytest==6.2.5
 ```
 
 Install dependencies
 ```bash
 pip install tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.10.0
 pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
-pip install pytest
+pip install pytest==6.2.5
 ```
 
 Export environment
@@ -94,7 +94,7 @@ Install dependencies
 ```cmd
 pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.10.0
 pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
-pip install pytest
+pip install pytest==6.2.5
 ```
 Run tests
 ```cmd
