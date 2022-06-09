@@ -40,11 +40,11 @@ def _make_module(in_type, in_shape, auto_pad, kernel_shape, p, pads, strides):
         out_shape[2] = (int)((in_shape[2] + pads[0] + pads[2] - kernel_shape[0]) / strides[0] + 1)
         out_shape[3] = (int)((in_shape[3] + pads[1] + pads[3] - kernel_shape[1]) / strides[1] + 1)
     elif (auto_pad == 'VALID'):
-        out_shape[2] = math.ceil((in_shape[2] - kernel_shape[0] + 1) / strides[0])
-        out_shape[3] = math.ceil((in_shape[3] - kernel_shape[1] + 1) / strides[1])
+        out_shape[2] = math.ceil(float((in_shape[2] - kernel_shape[0] + 1)) / strides[0])
+        out_shape[3] = math.ceil(float((in_shape[3] - kernel_shape[1] + 1)) / strides[1])
     elif (auto_pad == 'SAME_UPPER' or auto_pad == 'SAME_LOWER'):
-        out_shape[2] = math.ceil(in_shape[2] / strides[0])
-        out_shape[3] = math.ceil(in_shape[3] / strides[1])
+        out_shape[2] = math.ceil(float(in_shape[2]) / strides[0])
+        out_shape[3] = math.ceil(float(in_shape[3]) / strides[1])
 
     output = helper.make_tensor_value_info('output', in_type, out_shape)
     outputs.append('output')
@@ -87,7 +87,7 @@ auto_pads = [
     'NOTSET',
     'SAME_UPPER',
     'SAME_LOWER',
-    'VALID'
+    #'VALID'
 ]
 
 kernel_shapes = [
@@ -96,8 +96,7 @@ kernel_shapes = [
 
 ps = [
     1,
-    2,
-    3
+    2
 ]
 
 pads = [
@@ -124,16 +123,8 @@ def test_lppool(in_type, in_shape, auto_pad, kernel_shape, p, pad, stride, reque
      judge:
        specifics:
          - matchs:
-             target: [cpu, k510]
+             target: [cpu, k210]
              ptq: true
-           threshold: 0.97
-         - matchs:
-             target: [k210]
-             ptq: true
-           threshold: 0.97
-         - matchs:
-             target: [k510]
-             ptq: false
            threshold: 0.97
      """
     runner = OnnxTestRunner(request.node.name, overwrite_configs=overwrite_cfg)
