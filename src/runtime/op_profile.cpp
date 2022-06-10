@@ -39,6 +39,10 @@ void op_profile::print()
         std::cout << std::setw(24) << std::left << e.first << std::setw(12) << std::left << e.second
                   << std::setw(12) << std::left << e.second / total * 100 << std::endl;
     }
+
     std::cout << std::setw(24) << std::left << "total" << std::setw(12) << std::left << total
-              << std::setw(12) << std::left << total / total * 100 << std::endl;
+              << std::setw(12) << std::left << total / total * 100 << std::endl
+              << std::endl;
+
+    op_timing_.clear();
 }
