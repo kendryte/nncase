@@ -176,9 +176,8 @@ inline size_t positive_index(int index, size_t rank) {
 #define try_to_scalar(_var_name, _value_name, _ty)                             \
     try_var(_var_name, value_to_scalar<_ty>(_value_name))
 
-#define try_positive_scalar(_var_name, _value_name, _ty)                             \
-    try_var(__##_var_name, value_to_scalar<_ty>(_value_name)) \
-    auto _var_name =
+#define try_positive_scalar(_var_name, _value_name, _ty)                       \
+    try_var(__##_var_name, value_to_scalar<_ty>(_value_name)) auto _var_name =
 
 #define try_to_axis(_var_name, _value_name, _input)                            \
     try_to_scalar(__##_var_name, _value_name, int64_t);                        \
@@ -277,4 +276,16 @@ inline result<T *> value_as_array([[maybe_unused]] value_t v) {
 #define IN_CAST(_ty, _name) reinterpret_cast<const _ty *>(_name)
 #define OUT_CAST(_ty, _name) reinterpret_cast<_ty *>(_name)
 #define SCALAR_CAST(_ty, _name) *reinterpret_cast<const _ty *>(_name)
+
+inline bool is_contiguous(tensor tensor) {
+    return is_contiguous(tensor->shape(), tensor->strides());
+}
+
+#define CONTIGUOUS_KERNEL(_op, _in_tensor, ...)                                \
+    if (is_contiguous(_in_tensor)) {                                           \
+        try_(reference::_op(__VA_ARGS__))                                    \
+    } else {                                                                   \
+        try_(optimized::_op(__VA_ARGS__))                                    \
+    }
+
 } // namespace nncase::runtime

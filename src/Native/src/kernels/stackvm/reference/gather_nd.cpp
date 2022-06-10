@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/kernels/stackvm/tensor_ops.h>
+#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/util.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
@@ -31,7 +32,7 @@ namespace
 {
 template <class T>
 result<void> gather_nd_impl(const T *input, T *output, const dims_t &in_shape, const dims_t &out_shape,
-    const strides_t &in_strides, const strides_t &out_strides, const int32_t *indices, const dims_t &indices_shape, size_t batch_dims,
+    const strides_t &in_strides, const strides_t &out_strides, const int64_t *indices, const dims_t &indices_shape, size_t batch_dims,
     NNCASE_UNUSED kernel_context &context) noexcept
 {
     return apply(out_shape, [&](const dims_t &out_index) -> result<void> {
@@ -75,37 +76,8 @@ result<void> gather_nd_impl(const T *input, T *output, const dims_t &in_shape, c
     case size:                     \
         return gather_nd_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, out_shape, in_strides, out_strides, indices, indices_shape, batch_dims, context);
 
-result<void> gather_nd_impl(datatype_t type, const gsl::byte *input, gsl::byte *output, const dims_t &in_shape, const dims_t &out_shape,
-    const strides_t &in_strides, const strides_t &out_strides, const int32_t *indices, const dims_t &indices_shape, size_t batch_dims, kernel_context &context) noexcept
+result<void> nncase::kernels::stackvm::reference::gather_nd(datatype_t type, const gsl::byte *input, gsl::byte *output, const dims_t &in_shape, const dims_t &out_shape,
+    const strides_t &in_strides, const strides_t &out_strides, const int64_t *indices, const dims_t &indices_shape, size_t batch_dims, kernel_context &context) noexcept
 {
     TYPE_IMPL_SELECT(type, GATHER_ND_IMPL);
-}
-
-dims_t infer_shape(const dims_t& in_shape, const dims_t& index_shape, size_t batch_dims) {
-    auto new_shape = index_shape;
-    new_shape.pop_back();
-    for (int i = index_shape.back() + batch_dims; i < in_shape.size(); ++i) {
-        new_shape.push_back(in_shape[i]);
-    }
-    return new_shape;
-}
-
-result<value_t> nncase::kernels::stackvm::gather_nd(value_t input,
-                                                    value_t batch_dims,
-                                                    value_t index,
-                                                    value_t output,
-                                                    kernel_context &context){
-    try_input(input_mem, input);
-    try_input(index_mem, index);
-    auto dtype = input_tensor->dtype();
-    try_var(typecode, to_typecode(dtype));
-    try_to_scalar(batch_dims_value, batch_dims, size_t);
-    auto out_shape = infer_shape(input_tensor->shape(), index_tensor->shape(), batch_dims_value);
-    try_output(out_mem, output, dtype, out_shape);
-    auto indices = reinterpret_cast<const int32_t*>(index_mem);
-    try_(gather_nd_impl(typecode, input_mem, out_mem,
-                     input_tensor->shape(), output_tensor->shape(),
-                     input_tensor->strides(), output_tensor->strides(),
-                     indices, index_tensor->shape(), batch_dims_value, context));
-    return ok(output);
 }
