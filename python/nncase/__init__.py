@@ -13,7 +13,123 @@
 # limitations under the License.
 #
 """nncase."""
+
 from __future__ import annotations
+
+import re
+import subprocess
+import shutil
+import os
+from shutil import which
+
+def run_cmd(cmd):
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    retval = p.wait()
+    if retval != 0:
+        raise Exception(f"exit code: {retval} \n in command:\n{cmd}")
+    lines = p.stdout.read().splitlines()
+    return lines
+
+def check_dotnet():
+    if which("dotnet") is None:
+        return ["dotnet not found"]
+    return []
+
+def find_output(lines, string):
+    infos = [str(line)[:-1] for line in lines if str(line).find(string) != -1]
+    return infos
+
+def get_dotnet_runtime_version():
+    lines = run_cmd('dotnet --info')
+    infos = find_output(lines, "Microsoft.AspNetCore.App")
+    version = re.search(r"([1-9]\d|[1-9])(\.([1-9]\d|\d)){2}", infos[0])
+    return version.group(0)
+
+def get_pynet_init_file():
+    pip_cmd = ""
+    if which("pip") is not None:
+        pip_cmd = "pip"
+    elif which("pip3") is not None:
+        pip_cmd = "pip3"
+    else:
+        raise "pip not found"
+    lines = run_cmd(f"{pip_cmd} show pythonnet")
+    location = find_output(lines, "Location")
+    if location[0].find("not found"):
+        run_cmd(f"{pip_cmd} install --pre pythonnet")
+    # todo:check pythonnet version
+    pn_root = location[0].split(': ')[1]
+    if not os.path.exists(os.path.join(pn_root, '__init__.py')):
+        pn_root = os.path.join(pn_root, 'pythonnet')
+        if not os.path.exists(os.path.join(pn_root, '__init__.py')):
+            raise Exception('pythonnet root path search failed')
+    return pn_root
+
+def generate_runtime_config(config_path, version):
+    config = '''{
+        "runtimeOptions": {
+            "tfm": "net6.0",
+            "framework": {
+                "name": "Microsoft.NETCore.App",
+                "version": "''' + version + '''"
+            }
+        }
+    }'''
+    with open(config_path, "w") as f:
+        f.write(config)
+    return config_path
+
+def create_runtime_config(pn_root, version):
+    config_file = 'runtime_config.json'
+    config_path = os.path.join(pn_root, config_file)
+    if os.path.exists(config_path):
+        return config_path
+    return generate_runtime_config(config_path, version)
+
+def check_env():
+    env = os.environ
+    errors = []
+    if not "NNCASE_CLI" in env:
+        errors.append("NNCASE_CLI not found")
+    if not "PYTHONPATH" in env:
+        errors.append("PYTHONPATH not found")
+    if not "PYTHONNET_PYDLL" in env:
+        errors.append("PYTHONNET_PYDLL not found")
+    return errors
+
+def create_new_init_content(init_path, config_path):
+    with open(init_path) as init:
+        lines = init.readlines()
+        i = next(i for i, line in enumerate(lines) if line.find("def set_default_runtime() -> None:") != -1)
+        if lines[i+1].find(config_path) != -1:
+            return
+        set = f"""    set_runtime(clr_loader.get_coreclr(\"{config_path}\"))\n"""
+        lines.insert(i + 1, set)
+        for i in range(i + 2, i + 2 + 4):
+            lines[i] = "#" + lines[i]
+        init_content = "".join(lines)
+        return init_content
+
+def modify_pynet(pn_root):
+    config_path = create_runtime_config(pn_root, version)
+    init_path = os.path.join(pn_root, '__init__.py')
+    new_content = create_new_init_content(init_path, config_path)
+    if new_content is None:
+        return
+    with open(init_path, "w") as f:
+        f.write(new_content)
+
+init_pynet = False
+if init_pynet:
+    errors = check_dotnet()
+    errors += check_env()
+    if len(errors) > 0:
+        raise Exception("check failed:\n" + {"\n".join(errors)})
+    version = get_dotnet_runtime_version()
+    pn_root = get_pynet_init_file()
+    modify_pynet(pn_root)
+
+
 import clr
 import sys
 import os
@@ -21,7 +137,7 @@ import os
 import numpy
 from numpy import empty
 import subprocess
-import shutil
+
 
 
 def _add_dllpath():

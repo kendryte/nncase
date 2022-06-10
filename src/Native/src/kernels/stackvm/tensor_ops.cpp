@@ -79,7 +79,7 @@ result<value_t> nncase::kernels::stackvm::gather(value_t input, value_t axis,
     try_input(index_mem, index);
     auto dtype = input_tensor->dtype();
     try_var(typecode, to_typecode(dtype));
-    try_to_axis(axis_value, axis, input_tensor);
+    try_positive_axis(axis_value, axis, input_tensor->shape().size());
     auto out_shape = gather_infer_shape(input_tensor->shape(), index_tensor->shape(), axis_value);
     try_output(out_mem, output, dtype, out_shape);
     auto indices = reinterpret_cast<const int64_t *>(index_mem);

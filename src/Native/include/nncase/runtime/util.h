@@ -176,12 +176,9 @@ inline size_t positive_index(int index, size_t rank) {
 #define try_to_scalar(_var_name, _value_name, _ty)                             \
     try_var(_var_name, value_to_scalar<_ty>(_value_name))
 
-#define try_positive_scalar(_var_name, _value_name, _ty)                       \
-    try_var(__##_var_name, value_to_scalar<_ty>(_value_name)) auto _var_name =
-
-#define try_to_axis(_var_name, _value_name, _input)                            \
+#define try_positive_axis(_var_name, _value_name, _rank)                            \
     try_to_scalar(__##_var_name, _value_name, int64_t);                        \
-    auto _var_name = positive_index(__##_var_name, _input->shape().size())
+    auto _var_name = positive_index(__##_var_name, _rank)
 
 #define try_array(_var_name, _value_name, _ty)                                 \
     try_value_as_t(_var_name, _value_name, _ty, array)

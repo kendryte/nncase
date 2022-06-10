@@ -128,7 +128,7 @@ result<value_t> nncase::kernels::stackvm::reduce_arg(
     kernel_context &context) {
     try_input(in_mem, input);
     try_typecode(typecode, input_tensor);
-    try_to_axis(axis_value, axis, input_tensor);
+    try_positive_axis(axis_value, axis, input_tensor->shape().size());
     try_to_scalar(keep_dims_value, keep_dims, bool);
     try_to_scalar(select_last_index_value, select_last_index, bool);
     auto out_shape =
