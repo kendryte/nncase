@@ -198,7 +198,6 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         env:
-          PATH: ${{github.workspace}}/install/bin
           PYTHONPATH: ${{github.workspace}}/install/lib;${{github.workspace}}/install/python;${{github.workspace}}/tests
           NNCASE_CLI: ${{github.workspace}}/src/Nncase.Cli/bin/Debug/net6.0
           LD_LIBRARY_PATH: ${{github.workspace}}/install/lib
@@ -215,7 +214,6 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         env:
-          PATH: ${{github.workspace}}/install/bin
           PYTHONPATH: ${{github.workspace}}/install/lib;${{github.workspace}}/install/python;${{github.workspace}}/tests
           NNCASE_CLI: ${{github.workspace}}/src/Nncase.Cli/bin/Debug/net6.0
           LD_LIBRARY_PATH: ${{github.workspace}}/install/lib
