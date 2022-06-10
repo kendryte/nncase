@@ -2,267 +2,389 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Nncase.IR;
 
 namespace Nncase.TIR;
 
+
 /// <summary>
-/// The low level memory buffer.
-/// <example>
-///     Here's an example of how broadcast buffer can be used to define a symbolic broadcast operation,
-///   <code>
-///        m0, m1, m2 = te.var("m0"), te.var("m1"), te.var("m2")
-///        n0, n1, n2 = te.var("n0"), te.var("n1"), te.var("n2")
-///        o0, o1, o2 = te.var("o0"), te.var("o1"), te.var("o2")
-///        A = te.placeholder((m0, m1, m2), name='A')
-///        B = te.placeholder((n0, n1, n2), name='B')
-///        C = te.compute((o0, o1, o2), lambda i, j, k: A[i, j, k] + B[i, j, k], name='C')
-///        Ab = tvm.tir.decl_buffer(A.shape, A.dtype, name="Ab", buffer_type="auto_broadcast")
-///        Bb = tvm.tir.decl_buffer(B.shape, B.dtype, name="Bb", buffer_type="auto_broadcast")
-///        s = te.create_schedule(C.op)
-///        fadd = tvm.build(s, [A, B, C], target='llvm', name='bcast_add', binds={A:Ab, B:Bb})
-///        dev = tvm.cpu(0)
-///        a = tvm.nd.array(np.random.uniform(size=(2, 4, 3)).astype(A.dtype), dev)
-///        b = tvm.nd.array(np.random.uniform(size=(2, 1, 3)).astype(B.dtype), dev)
-///        c = tvm.nd.array(np.zeros((2, 4, 3), dtype=C.dtype), dev)
-///        fadd(a, b, c)
-///        tvm.testing.assert_allclose(c.numpy(), a.numpy() + b.numpy())
-///   </code>
-/// </example>
-/// <remarks>
-///     Buffer data structure reflects the DLTensor structure in dlpack.
-///     While DLTensor data structure is very general, it is usually helpful
-///     to create function that only handles specific case of data structure
-///     and make compiled function benefit from it.
-///
-///     If user pass strides and elem_offset is passed as None
-///     when constructing the function, then the function will be specialized
-///     for the DLTensor that is compact and aligned.
-///     If user pass a fully generic symbolic array to the strides,
-///     then the resulting function becomes fully generic.
-/// </remarks>
+/// the padding
 /// </summary>
-// public sealed record Buffer
-// {
-//     /// <summary>
-//     /// The pointer to the head of the data.
-//     /// <seealso cref="DataAlignment"/>
-//     /// </summary>
-//     public Var Handle;
+/// <param name="before"></param>
+/// <param name="After"></param>
+/// <param name="Interior"></param>
+public record Padding(int before, int After, int Interior = 0)
+{
+    /// <summary>
+    /// get left right padding sum.
+    /// </summary>
+    /// <returns></returns>
+    public int sum() { return before + After; }
 
-//     /// <summary>
-//     /// data type in the content of the tensor.
-//     /// </summary>
-//     public PrimType Dtype => (PrimType)((PointerType)(((TensorType)Handle.TypeAnnotation).DType)).ElemType;
+    /// <summary>
+    /// zero pad.
+    /// </summary>
+    /// <returns></returns>
+    public static Padding Zero() { return new(0, 0, 0); }
+}
 
-//     /// <summary>
-//     /// The shape of the buffer.
-//     /// </summary>
-//     public IR.Tuple Shape;
+public record Segment1D
+{
+    public System.Range Range;
+    public Padding Padding;
+    public int Start => Range.Start.Value;
+    public int End => Range.End.Value;
+    public int Index;
+    public int Length
+    {
+        get
+        {
+            if (Range.Equals(System.Range.All))
+                throw new InvalidOperationException("Range.Equals(Range.All)");
+            return Range.End.Value - Range.Start.Value;
+        }
+    }
 
-//     /// <summary>
-//     /// optional name of the buffer.
-//     /// </summary>
-//     public string Name;
+    public Segment1D(System.Range range, Padding padding, int index = 0)
+    {
+        if (range.Start.IsFromEnd)
+            throw new NotSupportedException("The Negative Start Slice");
+        if (range.End.IsFromEnd && !range.Equals(System.Range.All))
+            throw new NotSupportedException("The Negative Slice For The Tensor.");
+        Range = range;
+        Padding = padding;
+        Index = index;
+    }
 
-//     /// <summary>
-//     /// The strides of each dimension (it's elemwise, not bytes.)
-//     /// This can be an empty array, indicating array is contiguous
-//     /// </summary>
-//     public IR.Tuple Strides;
+    public static Segment1D operator /(Segment1D seg, int scale)
+    {
+        if (seg.Range.Equals(System.Range.All))
+            throw new ArgumentOutOfRangeException("The All Slice Can't Be Divide!");
+        return new(new(seg.Range.Start.Value / scale, seg.Range.End.Value / scale), seg.Padding);
+    }
 
-//     /// <summary>
-//     /// The offset in terms of number of dtype elements (including lanes).
-//     /// </summary>
-//     public Expr ElemOffset;
+    public static Segment1D operator *(Segment1D seg, int scale)
+    {
+        return new(new(seg.Range.Start.Value * scale, seg.Range.End.Value * scale), seg.Padding);
+    }
 
-//     /// <summary>
-//     /// Alignment requirement of data pointer in bytes.
-//     /// </summary>
-//     public int DataAlignment;
+    public override string ToString()
+    {
+        return $"{Range}";
+    }
 
-//     /// <summary>
-//     /// Factor of elem_offset field,
-//     ///  elem_offset is guaranteed to be multiple of offset_factor.
-//     /// </summary>
-//     public int OffsetFactor;
+    public static implicit operator Segment1D(System.Range range)
+    {
+        return new(range, Padding.Zero());
+    }
+}
 
-//     /// <summary>
-//     /// buffer type.
-//     /// </summary>
-//     public BufferMode BufferMode;
+public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
+{
 
-//     /// <summary>
-//     /// <see cref="T.DeclBuffer(IR.Tuple, DataType?, string, Var?, IR.Tuple?, Expr?, string, int, int, BufferMode)"/>.
-//     /// </summary>
-//     public Buffer(IR.Tuple shape, string name, Var data, IR.Tuple strides, Expr elem_offset, string scope, int data_alignment, int offset_factor, BufferMode buffer_mode)
-//     {
-//         Handle = data;
-//         Shape = shape;
-//         Strides = strides;
-//         Name = name;
-//         ElemOffset = elem_offset;
-//         DataAlignment = data_alignment;
-//         BufferMode = buffer_mode;
-//         OffsetFactor = offset_factor;
-//     }
+    readonly Segment1D[] _segments;
+    public Padding PadH => _segments[2].Padding;
+    public Padding PadW => _segments[3].Padding;
 
-//     /// <summary>
-//     ///  Get an access pointer to the head of buffer.
-//     ///  This is the recommended method to get buffer data
-//     ///  ptress when interacting with external functions.
-//     /// </summary>
-//     /// <example>
-//     /// <code>
-//     ///    // Get access ptr for read
-//     ///    buffer.access_ptr("r")
-//     ///    // Get access ptr for read/write with bitmask
-//     ///    buffer.access_ptr(Buffer.READ | Buffer.WRITE)
-//     ///    // Get access ptr for read/write with str flag
-//     ///    buffer.access_ptr("rw")
-//     ///    // Get access ptr for read with offset
-//     ///    buffer.access_ptr("r", offset = 100)
-//     /// </code>
-//     /// </example>
-//     /// <param name="access_mode">
-//     /// The access pattern MASK. Indicate whether the
-//     /// access will read or write to the data content.
-//     /// </param>
-//     /// <param name="content_lanes">
-//     /// The number of lanes for the data type. This value
-//     /// is greater than one for vector types.
-//     /// </param>
-//     /// <param name="offset">
-//     /// The offset of pointer. We can use it to offset by
-//     /// the number of elements from the address of ptr.
-//     /// </param>
-//     /// <returns> AccessPtr. </returns>
-//     public Call AccessPtr(AccessMode access_mode, int content_lanes = 1, Expr? offset = null)
-//     {
-//         if (content_lanes != 1)
-//         {
-//             throw new NotImplementedException();
-//         }
+    public ReadOnlySpan<Segment1D> Segments => _segments;
 
-//         Expr extent;
-//         offset ??= (Const)0;
-//         if (Shape.Count == 0)
-//         {
-//             extent = (Const)1;
-//         }
-//         else if (Strides.Count == Shape.Count)
-//         {
-//             extent = (Strides[0] * Shape[0]) - offset;
-//         }
-//         else
-//         {
-//             extent = Shape.Aggregate((Expr)1, (a, b) => a * b) - offset;
-//         }
+    public Segment1D this[int index]
+    {
+        get => _segments[index];
+        set => _segments[index] = value;
+    }
 
-//         Expr elem_offset = ElemOffset + offset;
-//         var accType = Dtype;
-//         if (content_lanes > 1)
-//         {
-//             extent = extent / (Const)content_lanes;
-//             elem_offset = ElemOffset / (Const)content_lanes;
-//         }
+    public SegmentND(IEnumerable<Segment1D> segments) : this(segments.ToArray()) { }
 
-//         return new Call(new Builtin.AccessPtr(accType, access_mode), Handle, elem_offset, extent);
-//     }
+    public SegmentND(ReadOnlySpan<Segment1D> segments)
+    {
+        _segments = new Segment1D[segments.Length];
+        segments.CopyTo(_segments);
+    }
 
-//     /// <summary>
-//     /// Iter Var subscript create BufferLoad.
-//     /// </summary>
-//     /// <param name="indices"> index. </param>
-//     /// <returns> the Bufferload Expression. </returns>
-//     /// <exception cref="InvalidOperationException"></exception>
-//     public Expr this[params IterVar[] indices]
-//     {
-//         get
-//         {
-//             return new BufferLoad(this, indices);
-//         }
-//         set
-//         {
-//             throw new InvalidOperationException("Your Should Use Like T.Store(Buf[i,j,k],value) !");
-//         }
-//     }
+    public SegmentND(params Segment1D[] segments) : this(segments.AsSpan())
+    {
+    }
 
-//     /// <summary>
-//     /// if use expr index, will create Load.
-//     /// </summary>
-//     /// <param name="index"></param>
-//     /// <returns></returns>
-//     /// <exception cref="InvalidOperationException"></exception>
-//     public Expr this[Expr index]
-//     {
-//         get
-//         {
-//             return T.Load(Handle, index);
-//         }
-//         set
-//         {
-//             throw new InvalidOperationException("Your Should Use Like T.Store(Buf[i,j,k],value) !");
-//         }
-//     }
+    /// <summary>
+    /// todo remove it
+    /// </summary>
+    public int shape_size => _segments.Aggregate(1, (acc, seg) => acc * seg.Length);
 
-//     /// <summary>
-//     /// value load.
-//     /// </summary>
-//     /// <param name="indices"></param>
-//     /// <returns></returns>
-//     public Expr VLoad(IRArray<Expr> indices)
-//     {
-//         return T.Load(Handle, LoadOffset(indices));
-//     }
+    public int Count => ((IReadOnlyCollection<Segment1D>)_segments).Count;
 
-//     /// <summary>
-//     /// value store.
-//     /// </summary>
-//     /// <param name="indices"></param>
-//     /// <param name="value"></param>
-//     /// <returns></returns>
-//     public Expr VStore(IRArray<Expr> indices, Expr value)
-//     {
-//         return T.Store(Handle, LoadOffset(indices), value);
-//     }
+    public override bool Equals(object? obj)
+    {
+        return obj is SegmentND segment &&
+               StructuralComparisons.StructuralEqualityComparer.Equals(_segments, segment._segments);
+    }
 
-//     /// <summary>
-//     /// IndicesOffset only calc the element based offset.
-//     /// NOTE it's ignore the data's lanes.
-//     /// </summary>
-//     /// <param name="indices"> expr indices. </param>
-//     /// <returns></returns>
-//     public Expr IndicesOffset(IRArray<Expr> indices)
-//     {
-//         var offset = ElemOffset;
-//         if (indices.Count != Strides.Count || indices.Count != Shape.Count)
-//         {
-//             throw new InvalidOperationException("The indices Length Not Equal Stride Or Shape!");
-//         }
+    public IEnumerator<Segment1D> GetEnumerator()
+    {
+        return ((IEnumerable<Segment1D>)_segments).GetEnumerator();
+    }
 
-//         for (int i = 0; i < indices.Count; i++)
-//         {
-//             offset = offset + (indices[i] * Strides[i]);
-//         }
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return _segments.GetEnumerator();
+    }
 
-//         return offset;
-//     }
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return $"{string.Join(",", _segments.Select(s => s.ToString()))}";
+    }
+}
 
-//     /// <summary>
-//     /// get the load value index
-//     /// NOTE we will consider about the lanes.
-//     /// </summary>
-//     /// <param name="indices"> the indices expr.</param>
-//     /// <returns>the new index expression.</returns>
-//     Expr LoadOffset(IRArray<Expr> indices)
-//     {
-//         var offset = IndicesOffset(indices);
-//         return offset;
-//     }
-// }
+
+public record SelectedRange(int Start, int End, Padding Padding)
+{
+    public SelectedRange Slice(Segment1D segment)
+    {
+        if (segment.Range.Equals(System.Range.All))
+            return this with { };
+        if (!(segment.Start >= Start && segment.End <= End))
+            throw new NotSupportedException("!(segment.Start >= Start && segment.End <= End)");
+        return new(segment.Start, segment.End, segment.Padding);
+    }
+}
+
+
+
+
+/// <summary>
+/// the buffer view interface
+/// </summary>
+/// <typeparam name="T"></typeparam>
+public interface IBufferView<T>
+  where T : class
+{
+    /// <summary>
+    /// the parent.
+    /// </summary>
+    public T Parent { get; init; }
+
+    /// <summary>
+    /// the root parent.
+    /// </summary>
+    public T RootParent { get; init; }
+
+    /// <summary>
+    /// the select slice ranges.
+    /// </summary>
+    public ReadOnlySpan<SelectedRange> SelectedRanges { get; }
+
+    /// <summary>
+    /// get current stride
+    /// </summary>
+    public ReadOnlySpan<int> Stride { get; }
+
+    /// <summary>
+    /// the shape of this buffer view
+    /// </summary>
+    public ReadOnlySpan<int> Shape { get; }
+
+    /// <summary>
+    /// get the DType
+    /// </summary>
+    public DataType DType { get; init; }
+
+    /// <summary>
+    /// check if the buffer is sliced
+    /// </summary>
+    public bool IsSubView { get; init; }
+
+    /// <summary>
+    /// support slice like the normal array.
+    /// </summary>
+    /// <param name="segments">the slice info.</param>
+    /// <returns>self sub buffer.</returns>
+    public T this[SegmentND segments] { get; }
+
+
+    /// <summary>
+    /// support slice like the normal array.
+    /// </summary>
+    /// <param name="segments">the slice info.</param>
+    /// <returns> self sub buffer. </returns>
+    public T this[params Segment1D[] segments] { get; }
+}
+
+
+/// <summary>
+/// NOTE sync with the stackvm
+/// </summary>
+public record Buffer : Expr, IBufferView<Buffer>
+{
+
+    /// <summary>
+    /// if this buffer from the constant !
+    /// </summary>
+    public Const? Const;
+
+    /// <summary>
+    /// get the memref name.
+    /// </summary>
+    public string Name;
+
+    /// <summary>
+    /// the buffer type
+    /// </summary>
+    public TensorType ElemType;
+
+    /// <summary>
+    /// get the memory loacation
+    /// </summary>
+    public Schedule.MemoryLocation MemLocation;
+
+    /// <summary>
+    /// set the cache level.
+    /// </summary>
+    public int CacheLevel;
+
+    /// <summary>
+    /// create from the IRType.
+    /// </summary>
+    /// <param name="name">the name.</param>
+    /// <param name="location">the location.</param>
+    /// <param name="elemType">prim type.</param>
+    public Buffer(string name, Schedule.MemoryLocation location, TensorType elemType)
+    {
+        Name = name;
+        ElemType = elemType;
+        MemLocation = location;
+
+        DType = ElemType switch
+        {
+            TensorType type => type.DType,
+            _ => throw new NotSupportedException(ElemType.ToString()),
+        };
+
+        _shape = ((TensorType)elemType).Shape.ToValueArray();
+        _stride = TensorUtilities.GetStrides(_shape).Select(s => s * DType.SizeInBytes).ToArray();
+        _selectedRanges = _shape.Select(s => new SelectedRange(0, s, Padding.Zero())).ToArray();
+        IsSubView = false;
+        Parent = this;
+        RootParent = this;
+    }
+
+    /// <summary>
+    /// build new memref by segmentnd.
+    /// </summary>
+    /// <param name="segments"></param>
+    /// <param name="parent"></param>
+    /// <exception cref="InvalidOperationException"></exception>
+    public Buffer(SegmentND segments, Buffer parent)
+    {
+        if (!(segments.Count == parent.SelectedRanges.Length))
+            throw new InvalidOperationException("segments.Count == SelectedRanges.Length");
+        _selectedRanges = segments.Zip(parent.SelectedRanges.ToArray()).Select(t => t.Item2.Slice(t.Item1)).ToArray();
+        _shape = _selectedRanges.Select(s => s.End - s.Start).ToArray();
+        _stride = parent.Stride.ToArray();
+        IsSubView = true;
+        Parent = parent;
+        RootParent = parent.RootParent;
+
+        Name = parent.Name;
+        ElemType = parent.ElemType;
+        DType = parent.DType;
+        MemLocation = parent.MemLocation;
+    }
+
+    /// <inheritdoc/>
+    public Buffer this[SegmentND segments] => new(segments, this);
+
+    /// <inheritdoc/>
+    public Buffer this[params Segment1D[] segments] => new(new(segments), this);
+
+    /// <summary>
+    /// get the new buffer range.
+    /// </summary>
+    /// <param name="ranges"></param>
+    /// <returns></returns>
+    public BufferRegion this[params TIR.Range[] ranges]
+    {
+        get => new(this, new(ranges.Zip(Shape.ToArray()).Select(
+            tp => tp.First.Equals(System.Range.All) ?
+                  new Range(0, tp.Second, 1) :
+                  tp.First)));
+    }
+
+    /// <inheritdoc/>
+    public Buffer Parent { get; init; }
+
+    /// <inheritdoc/>
+    public Buffer RootParent { get; init; }
+
+    /// <inheritdoc/>
+    public ReadOnlySpan<SelectedRange> SelectedRanges => _selectedRanges;
+
+    /// <inheritdoc/>
+    public ReadOnlySpan<int> Stride => _stride;
+
+    /// <inheritdoc/>
+    public ReadOnlySpan<int> Shape => _shape;
+
+    /// <inheritdoc/>
+    public DataType DType { get; init; }
+
+    /// <inheritdoc/>
+    public bool IsSubView { get; init; }
+
+
+    private SelectedRange[] _selectedRanges;
+    private int[] _stride;
+    private int[] _shape;
+
+    /// <summary>
+    /// get the Addr expr .
+    /// </summary>
+    public Expr Addr => IR.F.Buffer.DDrOf(RootParent);
+
+    /// <summary>
+    /// get current Addr
+    /// </summary>
+    public Expr CurAddr => Addr + AddrOffset;
+
+    /// <summary>
+    /// get the allocate basement.
+    /// </summary>
+    public Expr BaseMent => IR.F.Buffer.BaseMentOf(RootParent);
+
+    /// <summary>
+    /// get current buffer view Addr Offset
+    /// </summary>
+    public int AddrOffset => SelectedRanges.ToArray().Zip(Stride.ToArray()).Aggregate(0, (acc, t) => acc + t.Item1.Start * t.Item2);
+
+    /// <inheritdoc/>
+    public virtual bool Equals(Buffer? other)
+    {
+        return !(other is null) && EqualityContract == other.EqualityContract;
+    }
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        return EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
+    }
+
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return $"Buffer({Name}, {ElemType})";
+    }
+
+    /// <inheritdoc/>
+    protected override bool PrintMembers(StringBuilder builder)
+    {
+        builder.Append($"Buffer({Name}, {ElemType})");
+        return true;
+    }
+}
 
 /// <summary>
 /// the data producer.

@@ -16,5 +16,5 @@ public record BaseMentOf() : Op
     /// <summary>
     /// Get the input parameter.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(BaseMentOf), 0, "input", IsPointer());
+    public static readonly ParameterInfo Input = new(typeof(BaseMentOf), 0, "input", IsTensor());
 }

@@ -39,7 +39,7 @@ mapped_buffer &mapped_buffer::operator=(mapped_buffer &&other) noexcept {
 
 result<void> mapped_buffer::unmap() noexcept {
     if (!buffer_.empty())
-        return buffer_->unmap();
+        try_(buffer_->unmap());
     buffer_ = nullptr;
     return ok();
 }

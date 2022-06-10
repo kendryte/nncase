@@ -12,19 +12,8 @@ public class LinkedFunction : ILinkedFunction
     public LinkedFunction(uint id, Callable sourceFunction, uint textBegin, uint textLength)
     {
         Id = id;
-        switch (sourceFunction)
-        {
-            case Function func:
-                ParameterTypes = func.Parameters.Select(x => x.TypeAnnotation).ToArray();
-                ReturnType = func.Body.CheckedType ?? AnyType.Default;
-                break;
-            case TIR.PrimFunction pfunc:
-                ParameterTypes = pfunc.Parameters.Select(x => x.ElemType).ToArray();
-                ReturnType = pfunc.Body.CheckedType ?? AnyType.Default;
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
+        ParameterTypes = ((CallableType)sourceFunction.CheckedType!).Parameters.ToArray();
+        ReturnType = ((CallableType)sourceFunction.CheckedType).ReturnType;
         TextBegin = textBegin;
         TextLength = textLength;
         Sections = sections;
