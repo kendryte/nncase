@@ -93,8 +93,8 @@ def check_env():
         errors.append("NNCASE_CLI not found")
     if not "PYTHONPATH" in env:
         errors.append("PYTHONPATH not found")
-    if not "PYTHONNET_PYDLL" in env:
-        errors.append("PYTHONNET_PYDLL not found")
+    # if not "PYTHONNET_PYDLL" in env:
+    #     errors.append("PYTHONNET_PYDLL not found")
     return errors
 
 def create_new_init_content(init_path, config_path):
