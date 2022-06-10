@@ -9,7 +9,7 @@ namespace Nncase.CodeGen;
 
 public class LinkedFunction : ILinkedFunction
 {
-    public LinkedFunction(uint id, Callable sourceFunction, uint textBegin, uint textLength)
+    public LinkedFunction(uint id, Callable sourceFunction, uint textBegin, uint textLength, IReadOnlyList<ILinkedSection> sections)
     {
         Id = id;
         ParameterTypes = ((CallableType)sourceFunction.CheckedType!).Parameters.ToArray();
