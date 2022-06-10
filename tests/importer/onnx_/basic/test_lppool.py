@@ -125,7 +125,7 @@ def test_lppool(in_type, in_shape, auto_pad, kernel_shape, p, pad, stride, reque
          - matchs:
              target: [cpu, k210]
              ptq: true
-           threshold: 0.91
+           threshold: 0.9
      """
     runner = OnnxTestRunner(request.node.name, overwrite_configs=overwrite_cfg)
     model_file = runner.from_onnx_helper(model_def)
