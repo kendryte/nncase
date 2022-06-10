@@ -44,6 +44,7 @@
 | GlobalMaxPool | ✅ |
 | Greater | ✅ |
 | GreaterOrEqual | ✅ |
+| GRU | ✅ |
 | Hardmax | ✅ |
 | HardSigmoid | ✅ |
 | HardSwish | ✅ |
@@ -111,6 +112,7 @@
 | TopK | ✅ |
 | Transpose | ✅ |
 | Trilu | ✅ |
+| ThresholdedRelu | ✅ |
 | Upsample | ✅ |
 | Unsqueeze | ✅ |
 | Where | ✅ |
