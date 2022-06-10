@@ -30,7 +30,7 @@ using namespace nncase::kernels::cpu::reference;
 namespace
 {
 template <class T>
-result<void> one_hot_impl(const int32_t *indices, T *output, const dims_t &indices_shape, const dims_t &out_shape,
+result<void> one_hot_impl(const int64_t *indices, T *output, const dims_t &indices_shape, const dims_t &out_shape,
     const strides_t &out_strides, NNCASE_UNUSED size_t depth, T off_value, T on_value,
     size_t axis, runtime::stackvm::one_hot_mode_t mode, NNCASE_UNUSED kernel_context &context)
 {
@@ -46,10 +46,10 @@ result<void> one_hot_impl(const int32_t *indices, T *output, const dims_t &indic
         }
         auto indices_v = indices[offset(get_default_strides(indices_shape), indices_index)];
         T out_v;
-        auto cur_axis_index = static_cast<int32_t>(out_index[axis]);
+        auto cur_axis_index = static_cast<int64_t>(out_index[axis]);
         if (indices_v < 0 && mode == runtime::stackvm::one_hot_mode_t::process_neg)
         {
-            out_v = (indices_v + static_cast<int32_t>(out_shape[axis])) == cur_axis_index ? on_value : off_value;
+            out_v = (indices_v + static_cast<int64_t>(out_shape[axis])) == cur_axis_index ? on_value : off_value;
         }
         else
         {
@@ -67,7 +67,7 @@ result<void> one_hot_impl(const int32_t *indices, T *output, const dims_t &indic
         return one_hot_impl(indices, reinterpret_cast<type *>(output), indices_shape, out_shape, out_strides, \
             depth, reinterpret_cast<type *>(values)[0], reinterpret_cast<type *>(values)[1], axis, mode, context);
 
-result<void> one_hot_impl(datatype_t type, const int32_t *indices, gsl::byte *output, const dims_t &indices_shape, const dims_t &out_shape,
+result<void> one_hot_impl(datatype_t type, const int64_t *indices, gsl::byte *output, const dims_t &indices_shape, const dims_t &out_shape,
     const strides_t &out_strides, size_t depth, gsl::byte *values, size_t axis, runtime::stackvm::one_hot_mode_t mode, kernel_context &context) noexcept
 {
     TYPE_IMPL_SELECT(type, ONEHOT_IMPL);
@@ -86,9 +86,9 @@ nncase::kernels::stackvm::one_hot(one_hot_mode_t one_hot_mode, value_t indices,
                                   value_t output, kernel_context &context) {
     try_input(onehot_values, values);
     try_var(typecode, to_typecode(values_tensor->dtype()));
-    try_to_scalar(depth_value, depth, size_t);
-    try_to_scalar(axis_value, axis, size_t);
-    try_input_with_ty(indices_mem, indices, int32_t);
+    try_to_integer(depth_value, depth);
+    try_integer_input(indices_mem, indices);
+    try_positive_axis(axis_value, axis, indices_tensor);
     auto out_shape = infer_shape(indices_tensor->shape(), depth_value, axis_value);
     try_output(out_mem, output, typecode, out_shape);
 

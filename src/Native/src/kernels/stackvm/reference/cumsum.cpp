@@ -101,7 +101,7 @@ result<value_t> nncase::kernels::stackvm::cum_sum(
     value_t output, [[maybe_unused]] kernel_context &context) {
     try_input(input_mem, input);
     try_output(out_mem, output, input_tensor->dtype(), input_tensor->shape());
-    try_to_scalar(axis_value, axis, int32_t);
+    try_positive_axis(axis_value, axis, input_tensor);
     try_to_scalar(exclusive_value, exclusive, bool);
     try_to_scalar(reverse_value, reverse, bool);
     try_typecode(typecode, input_tensor);
