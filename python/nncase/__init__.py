@@ -119,7 +119,7 @@ def modify_pynet(pn_root):
     with open(init_path, "w") as f:
         f.write(new_content)
 
-init_pynet = False
+init_pynet = True
 if init_pynet:
     errors = check_dotnet()
     errors += check_env()
