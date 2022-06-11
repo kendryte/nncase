@@ -146,11 +146,6 @@ public interface ICompilerServicesProvider
     /// <returns>Target</returns>
     ITarget GetTarget(string name);
 
-    /// <summary>
-    /// Get CompileOptions.
-    /// </summary>
-    /// <returns>CompileOptions</returns>
-    CompileOptions CompileOptions { get; }
 }
 
 internal interface ICompilerServicesProviderInternal
@@ -168,10 +163,8 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     private readonly IRewriteProvider _rewriteProvider;
     private readonly IEGraphMatchProvider _eGraphMatchProvider;
     private readonly ITargetProvider _targetProvider;
-    private readonly CompileOptions _compileOptions;
 
     public CompilerServicesProvider(
-        IOptions<CompileOptions> compileOptions,
         IEvaluateProvider evaluateProvider,
         ITypeInferenceProvider typeInferenceProvider,
         IIRPrinterProvider irprinterProvider,
@@ -182,7 +175,6 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         IEGraphMatchProvider eGraphMatchProvider,
         ITargetProvider targetProvider)
     {
-        _compileOptions = compileOptions.Value;
         _evaluateProvider = evaluateProvider;
         _typeInferenceProvider = typeInferenceProvider;
         _irprinterProvider = irprinterProvider;
@@ -274,8 +266,6 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     {
         return _targetProvider.GetTarget(name);
     }
-
-    public CompileOptions CompileOptions => _compileOptions;
 }
 
 /// <summary>
@@ -449,9 +439,4 @@ public static class CompilerServices
     /// <returns>Target</returns>
     public static ITarget GetTarget(string name) => Provider.GetTarget(name);
 
-    /// <summary>
-    /// Get the compile options
-    /// </summary>
-    /// <returns></returns>
-    public static CompileOptions CompileOptions => Provider.CompileOptions;
 }

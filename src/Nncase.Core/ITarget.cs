@@ -33,4 +33,10 @@ public interface ITarget
     /// <param name="moduleKind">Module kind.</param>
     /// <returns>Module builder.</returns>
     IModuleBuilder CreateModuleBuilder(string moduleKind);
+
+    /// <summary>
+    /// current target compiler options.
+    /// NOTE each target maybe need custom validation the compile option.
+    /// </summary>
+    CompileOptions CompileOptions { get; }
 }
