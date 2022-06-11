@@ -15,7 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <nncase/kernels/stackvm/ref_ops.h>
+#include <nncase/kernels/stackvm/opt_ops.h>
 #include <nncase/kernels/stackvm/tensor_ops.h>
+#include <nncase/runtime/util.h>
+#include "shape_infer.h"
 
 using namespace nncase;
 using namespace nncase::kernels;
@@ -50,11 +54,6 @@ result<value_t> nncase::kernels::stackvm::conv2d_transpose(
     [[maybe_unused]] value_t fused_clamp, [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
     return err(std::errc::not_supported);
 }
-result<value_t> nncase::kernels::stackvm::elu([[maybe_unused]] value_t input, [[maybe_unused]] value_t alpha,
-                                              [[maybe_unused]] value_t output,
-                                              [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
-}
 
 result<value_t> nncase::kernels::stackvm::expand([[maybe_unused]] value_t input, [[maybe_unused]] value_t shape,
                                                  [[maybe_unused]] value_t output,
@@ -66,6 +65,48 @@ result<value_t> nncase::kernels::stackvm::flatten([[maybe_unused]] value_t input
                                                   [[maybe_unused]] value_t output,
                                                   [[maybe_unused]] kernel_context &context) {
     return err(std::errc::not_supported);
+}
+
+result<value_t> nncase::kernels::stackvm::gather(value_t input, value_t axis,
+                                                 value_t index, value_t output,
+                                                 kernel_context &context) {
+    try_input(input_mem, input);
+    try_integer_input(index_mem, index);
+    auto dtype = input_tensor->dtype();
+    try_var(typecode, to_typecode(dtype));
+    try_positive_axis(axis_value, axis, input_tensor);
+    auto out_shape = gather_infer_shape(input_tensor->shape(), index_tensor->shape(), axis_value);
+    try_output(out_mem, output, dtype, out_shape);
+//    if(is_contiguous(input_tensor->shape(), input_tensor->strides())) {
+//
+//    } else {
+        try_(reference::gather(typecode, input_mem, out_mem,
+                         input_tensor->shape(), output_tensor->shape(),
+                         input_tensor->strides(), output_tensor->strides(),
+                         index_mem, index_tensor->shape(), axis_value, context));
+//    }
+    return ok(output);
+}
+
+result<value_t> nncase::kernels::stackvm::gather_nd(value_t input,
+                                                    value_t batch_dims,
+                                                    value_t index,
+                                                    value_t output,
+                                                    kernel_context &context){
+    try_input(input_mem, input);
+    try_input(index_mem, index);
+    auto dtype = input_tensor->dtype();
+    try_var(typecode, to_typecode(dtype));
+    try_to_scalar(batch_dims_value, batch_dims, int64_t);
+    auto out_shape = gather_nd_infer_shape(input_tensor->shape(), index_tensor->shape(), batch_dims_value);
+    try_output(out_mem, output, dtype, out_shape);
+    auto indices = reinterpret_cast<const int64_t*>(index_mem);
+    CONTIGUOUS_KERNEL(gather_nd, input_tensor,
+                      typecode, input_mem, out_mem,
+                      input_tensor->shape(), output_tensor->shape(),
+                      input_tensor->strides(), output_tensor->strides(),
+                      indices, index_tensor->shape(), batch_dims_value, context);
+    return ok(output);
 }
 
 result<value_t> nncase::kernels::stackvm::get_item([[maybe_unused]] value_t input, [[maybe_unused]] value_t index,

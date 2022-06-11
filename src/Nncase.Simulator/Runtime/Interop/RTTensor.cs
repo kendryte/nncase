@@ -151,11 +151,3 @@ public class RTTensor : RTValue
         return Create(RTDataType.FromTypeCode(dtype.TypeCode), dims, strides, new RTBufferSlice { Buffer = buffer, Start = 0, SizeBytes = sizeBytes });
     }
 }
-
-public class RTTuple : RTValue
-{
-    internal RTTuple(IntPtr handle)
-        : base(handle)
-    {
-    }
-}

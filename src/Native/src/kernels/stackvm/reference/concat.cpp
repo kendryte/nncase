@@ -97,13 +97,18 @@ result<value_t> nncase::kernels::stackvm::concat(value_t input, value_t axis, va
     try_var(strides, get_strides(inputs));
     try_var(input0, inputs->fields()[0].as<tensor>());
     auto dtype = input0->dtype();
-    try_to_scalar(axis_value, axis, size_t);
+    try_positive_axis_with_rank(axis_value, axis, inputs->fields().size());
     auto out_shape = infer_shape(shapes, axis_value);
     try_output(out_mem, output, dtype, out_shape);
+    auto concat_dims = dims_t();
+    for (int i = 0; i < inputs->fields().size(); ++i) {
+        try_var(in, inputs->fields()[i].as<tensor>());
+        concat_dims.push_back(in->shape()[axis_value]);
+    }
     try_(concat_impl(dtype, inputs_mem,
                         out_mem,
                         output_tensor->shape(), strides,
-                        output_tensor->strides(), axis_value, {axis_value}, context));
+                        output_tensor->strides(), axis_value, concat_dims, context));
     return ok(output);
 }
 

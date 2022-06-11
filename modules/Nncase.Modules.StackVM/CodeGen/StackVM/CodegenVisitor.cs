@@ -37,12 +37,15 @@ internal class TextSnippet
 {
     private readonly List<TextSnippet> _inputSnippets = new List<TextSnippet>();
 
-    public TextSnippet(Symbol symbol)
+    public TextSnippet(Expr expr, Symbol symbol)
     {
+        Expr = expr;
         Symbol = symbol;
         Writer = new BinaryWriter(Text, Encoding.UTF8, leaveOpen: true);
         Emitter = new StackVMEmitter(Writer);
     }
+
+    public Expr Expr { get; }
 
     public MemoryStream Text { get; } = new MemoryStream();
 
@@ -59,6 +62,10 @@ internal class TextSnippet
     public Symbol Symbol { get; }
 
     public int UseCount { get; private set; }
+
+    public int MaxUserParameters { get; set; } = 1;
+
+    public bool OutputInLocal => UseCount > 1 || MaxUserParameters > 1;
 
     public int RefCount { get; set; }
 
@@ -114,7 +121,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     {
         if (expr is TensorConst tc)
         {
-            return Visit(tc.Value);
+            return Visit(tc, tc.Value);
         }
         else
         {
@@ -124,17 +131,19 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     public override TextSnippet VisitLeaf(Var expr)
     {
-        var snippet = BeginTextSnippet();
+        var snippet = BeginTextSnippet(expr);
         Emitter.Ldarg((ushort)_function.Parameters.IndexOf(expr));
         return snippet;
     }
 
     public override TextSnippet VisitLeaf(IR.Tuple expr)
     {
-        var snippet = BeginTextSnippet();
+        var snippet = BeginTextSnippet(expr);
         foreach (var field in expr.Fields.Reverse())
         {
-            snippet.AddInput(Visit(field));
+            var inputSnippet = Visit(field);
+            inputSnippet.MaxUserParameters = Math.Max(inputSnippet.MaxUserParameters, expr.Fields.Count);
+            snippet.AddInput(inputSnippet);
         }
 
         Emitter.LdcI4(expr.Count);
@@ -159,10 +168,12 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     public override TextSnippet VisitLeaf(Call expr)
     {
-        var snippet = BeginTextSnippet();
+        var snippet = BeginTextSnippet(expr);
         foreach (var param in expr.Parameters.Reverse())
         {
-            snippet.AddInput(Visit(param));
+            var paramSnippet = Visit(param);
+            paramSnippet.MaxUserParameters = Math.Max(paramSnippet.MaxUserParameters, expr.Parameters.Count);
+            snippet.AddInput(paramSnippet);
         }
 
         if (expr.Target is Op op)
@@ -179,12 +190,12 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return snippet;
     }
 
-    private TextSnippet Visit(Tensor tensor)
+    private TextSnippet Visit(TensorConst expr, Tensor tensor)
     {
         var buffer = WriteRdata(tensor.BytesBuffer, _alignment);
 
         // stack: dtype shape strides buffer
-        var snippet = BeginTextSnippet();
+        var snippet = BeginTextSnippet(expr);
         LeaGp(_rdataGpid, buffer);
         LdStrides(tensor.Strides);
         LdShape(tensor.Dimensions);
@@ -277,9 +288,9 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         Emitter.LdDataType();
     }
 
-    private TextSnippet BeginTextSnippet()
+    private TextSnippet BeginTextSnippet(Expr expr)
     {
-        var snippet = new TextSnippet(AddSymbol(SectionKind.Text));
+        var snippet = new TextSnippet(expr, AddSymbol(SectionKind.Text));
         _currentTextSnippet = snippet;
         _context.AddTextSnippet(snippet);
         return snippet;

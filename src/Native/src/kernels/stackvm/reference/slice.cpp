@@ -41,16 +41,17 @@ result<void> slice_impl(const T *input, T *output, const dims_t &in_shape,
             const auto stride = strides[i];
             if (stride > 0)
             {
-                if (index[i] < begins[i] || index[i] >= static_cast<size_t>(ends[i]))
+                if ((int32_t)index[i] < begins[i] || index[i] >= static_cast<size_t>(ends[i]))
                     return ok();
             }
             else
             {
-                if (static_cast<int32_t>(index[i]) <= ends[i] || index[i] > begins[i])
+                if ((int32_t)index[i] <= ends[i] ||
+                    (int32_t)index[i] > begins[i])
                     return ok();
             }
 
-            auto out_div = div((int32_t)(index[i] - begins[i]), strides[i]);
+            auto out_div = div((int32_t)(index[i] - begins[i]), (int32_t)strides[i]);
             if (out_div.rem)
                 return ok();
             out_index[i] = (size_t)out_div.quot;

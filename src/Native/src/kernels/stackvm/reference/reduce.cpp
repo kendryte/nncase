@@ -151,6 +151,10 @@ dims_t infer_shape(const dims_t &in_shape, const dims_t &axes, bool keep_dims) {
             new_shape.push_back(d);
         }
     }
+    if(new_shape.size() == 0)
+    {
+        new_shape.push_back(1);
+    }
     return new_shape;
 }
 

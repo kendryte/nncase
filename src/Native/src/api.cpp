@@ -303,4 +303,25 @@ int nncase_tensor_get_strides(nncase::tensor_node *tensor, uint32_t *strides,
     }
     return -EINVAL;
 }
+
+int nncase_tuple_get_fields(nncase::tuple_node *tuple, nncase::value_node **fields,
+                            uint32_t *fields_length) {
+    if (tuple && fields_length) {
+        auto src_fields = tuple->fields();
+        auto required_length = (uint32_t)src_fields.size();
+        if (*fields_length < required_length) {
+            *fields_length = required_length;
+            return -EOVERFLOW;
+        }
+
+        *fields_length = required_length;
+        if (fields) {
+            for (size_t i = 0; i < src_fields.size(); i++) {
+                fields[i] = value_t(src_fields[i]).detach();
+            }
+        }
+        return 0;
+    }
+    return -EINVAL;
+}
 }

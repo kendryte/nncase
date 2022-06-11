@@ -19,6 +19,7 @@
 namespace nncase {
 class object_node;
 class tensor_node;
+class tuple_node;
 class value_node;
 class type_node;
 class datatype_node;
@@ -97,4 +98,8 @@ NNCASE_API int nncase_tensor_get_dims(nncase::tensor_node *tensor,
                                       uint32_t *dims, uint32_t *dims_length);
 NNCASE_API int nncase_tensor_get_strides(nncase::tensor_node *tensor,
                                          uint32_t *dims, uint32_t *dims_length);
+
+NNCASE_API int nncase_tuple_get_fields(nncase::tuple_node *tuple,
+                                       nncase::value_node **fields,
+                                       uint32_t *fields_length);
 }
