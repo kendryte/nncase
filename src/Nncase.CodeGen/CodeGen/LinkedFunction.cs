@@ -12,6 +12,8 @@ public class LinkedFunction : ILinkedFunction
     public LinkedFunction(uint id, Callable sourceFunction, uint textBegin, uint textLength, IReadOnlyList<ILinkedSection> sections)
     {
         Id = id;
+        if (sourceFunction.CheckedType is null)
+            CompilerServices.InferenceType(sourceFunction);
         ParameterTypes = ((CallableType)sourceFunction.CheckedType!).Parameters.ToArray();
         ReturnType = ((CallableType)sourceFunction.CheckedType).ReturnType;
         TextBegin = textBegin;
