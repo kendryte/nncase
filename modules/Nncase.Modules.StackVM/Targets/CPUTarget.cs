@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using Nncase.CodeGen;
 using Nncase.CodeGen.StackVM;
 using Nncase.IR;
@@ -20,6 +21,14 @@ public class CPUTarget : ITarget
 {
     /// <inheritdoc/>
     public string Kind => "cpu";
+
+    /// <inheritdoc/>
+    public CompileOptions CompileOptions { get; }
+
+    public CPUTarget(IOptions<CompileOptions> compile_options)
+    {
+        CompileOptions = compile_options.Value;
+    }
 
     public void RegisterTargetDependentPass(PassManager passManager, CompileOptions options)
     {

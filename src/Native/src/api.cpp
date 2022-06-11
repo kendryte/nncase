@@ -267,7 +267,9 @@ int nncase_tensor_get_dims(nncase::tensor_node *tensor, uint32_t *dims,
         auto required_length = (uint32_t)shape.size();
         if (*dims_length < required_length) {
             *dims_length = required_length;
-            return -EOVERFLOW;
+            if (dims)
+                return -EOVERFLOW;
+            return 0;
         }
 
         *dims_length = required_length;
