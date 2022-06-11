@@ -6,14 +6,15 @@ set(SRCS module_builder.cpp
          ops/binary.cpp
          ops/broadcast.cpp
          ops/call.cpp
+         ops/compare.cpp
          ops/conv2d.cpp
          ops/convert.cpp
          ops/copy.cpp
          ops/cumsum.cpp
          ops/dequantize.cpp
-         ops/equal.cpp
          ops/gather.cpp
          ops/gather_nd.cpp
+         ops/gru.cpp
          ops/hardmax.cpp
          ops/matmul.cpp
          ops/onehot.cpp
@@ -29,6 +30,7 @@ set(SRCS module_builder.cpp
          ops/roi_align.cpp
          ops/slice.cpp
          ops/sigmoid.cpp
+         ops/softmax.cpp
          ops/table_lookup1d.cpp
          ops/ternary.cpp
          ops/topk.cpp

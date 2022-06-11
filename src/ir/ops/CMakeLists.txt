@@ -2,12 +2,12 @@
 
 target_sources(ir PRIVATE
     call.cpp
+    compare.cpp
     copy.cpp
     conv2d.cpp
     conv2d_transpose.cpp
     convert.cpp
     cumsum.cpp
-    equal.cpp
     fused_unary.cpp
     matmul.cpp
     transpose.cpp
@@ -42,6 +42,8 @@ target_sources(ir PRIVATE
     onehot.cpp
     roi_align.cpp
     sigmoid.cpp
+    softmax.cpp
     ternary.cpp
     topk.cpp
-    trilu.cpp)
+    trilu.cpp
+    gru.cpp)

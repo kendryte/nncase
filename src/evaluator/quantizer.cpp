@@ -368,6 +368,20 @@ fixed_mul quantizer::get_fixed_mul(float value, int32_t max_bits, uint8_t max_sh
     return { mul, static_cast<int8_t>(shift) };
 }
 
+void quantizer::set_model_output_range(ir::graph &graph)
+{
+    auto visitor = make_relay_ir_visitor([&](node &node) {
+        if (node.runtime_opcode() == op_output_node)
+        {
+            auto it = quant_ranges_.find(node.input_at(0).connection());
+            if (it != quant_ranges_.end())
+                model_output_range_ = it->second;
+            else
+                throw std::runtime_error("Can't get model output range!");
+        } });
+    visitor.visit(graph);
+}
+
 void quantizer::broadcast_output(ir::graph &graph, const std::unordered_set<node_opcode> &ops)
 {
     auto visitor = make_relay_ir_visitor([&](node &node) {
@@ -608,7 +622,7 @@ void quantizer::histogram::finish()
                 if (src_bins_[i])
                     ups2_q_dist[i] += value;
             }
-            //median
+            // median
             std::copy(ups_q_dist.begin() + src_per_bin, ups_q_dist.end() - src_per_bin, ups2_q_dist.begin() + lower_threshold + src_per_bin);
             // right outliers
             count = 0.f;

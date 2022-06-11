@@ -155,7 +155,7 @@ void fold_pad_strided_slice_transform::process(transform_context &context)
     auto p = context.graph.emplace<pad>(old_p.input().type(), output.shape(), paddings, old_p.pad_mode(), old_p.pad_value());
     p->name(old_p.name());
     auto sl = context.graph.emplace<slice>(p->output().type(), p->output().shape(), begin, end, old_slice.strides(),
-        old_slice.begin_mask(), old_slice.end_mask(), old_slice.ellipsis_mask(), old_slice.new_axis_mask());
+        old_slice.begin_mask(), old_slice.end_mask(), old_slice.ellipsis_mask(), old_slice.new_axis_mask(), old_slice.shrink_axis_mask());
     sl->name(old_slice.name());
     sl->input().connect(p->output());
 

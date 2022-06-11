@@ -28,9 +28,10 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(input_prototxt_, "input prototxt").name("--input-prototxt").optional().help("input prototxt"))
                          .add_argument(lyra::arg(output_filename_, "output file").required().help("output file"))
                          .add_argument(lyra::opt(output_arrays_, "output arrays").name("--output-arrays").optional().help("output arrays"))
-                         .add_argument(lyra::opt(quant_type_, "quant type").name("--quant-type").optional().help("post trainning quantize type, e.g uint8|int8, default is " + quant_type_))
-                         .add_argument(lyra::opt(w_quant_type_, "w quant type").name("--w-quant-type").optional().help("post trainning weights quantize type, e.g uint8|int8, default is " + w_quant_type_))
+                         .add_argument(lyra::opt(quant_type_, "quant type").name("--quant-type").optional().help("post trainning quantize type, e.g uint8|int8|int16, default is " + quant_type_))
+                         .add_argument(lyra::opt(w_quant_type_, "w quant type").name("--w-quant-type").optional().help("post trainning weights quantize type, e.g uint8|int8|int16, default is " + w_quant_type_))
                          .add_argument(lyra::opt(use_mse_quant_w_).name("--use-mse-quant-w").optional().help("use min mse algorithm to refine weights quantilization or not, default is " + std::to_string(use_mse_quant_w_)))
+                         .add_argument(lyra::opt(split_w_to_act_).name("--split-w-to-act").optional().help("split weights to act or not, default is " + std::to_string(split_w_to_act_)))
                          .add_argument(lyra::opt(dataset_, "dataset path").name("--dataset").optional().help("calibration dataset, used in post quantization"))
                          .add_argument(lyra::opt(dataset_format_, "dataset format").name("--dataset-format").optional().help("datset format: e.g. image|raw, default is " + dataset_format_))
                          .add_argument(lyra::opt(dump_range_dataset_, "dataset path").name("--dump-range-dataset").optional().help("dump import op range dataset"))
@@ -41,12 +42,14 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(cli_mean_, "normalize mean").name("--mean").optional().help("normalize mean, default is " + cli_mean_))
                          .add_argument(lyra::opt(cli_std_, "normalize std").name("--std").optional().help("normalize std, default is " + cli_std_))
                          .add_argument(lyra::opt(cli_input_range_, "input range").name("--input-range").optional().help("float range after preprocess"))
+                         .add_argument(lyra::opt(cli_output_range_, "output range").name("--output-range").optional().help("float range to quantize output"))
                          .add_argument(lyra::opt(cli_input_shape_, "input shape").name("--input-shape").optional().help("shape for input data"))
                          .add_argument(lyra::opt(letterbox_value_, "letter box value").name("--letterbox-value").optional().help("letter box pad value, default is " + std::to_string(letterbox_value_)))
                          .add_argument(lyra::opt(input_type_, "input type").name("--input-type").optional().help("input type, e.g float32|uint8|default, default is " + input_type_))
                          .add_argument(lyra::opt(output_type_, "output type").name("--output-type").optional().help("output type, e.g float32|uint8, default is " + output_type_))
                          .add_argument(lyra::opt(input_layout_, "input layout").name("--input-layout").optional().help("input layout, e.g NCHW|NHWC, default is " + input_layout_))
                          .add_argument(lyra::opt(output_layout_, "output layout").name("--output-layout").optional().help("output layout, e.g NCHW|NHWC, default is " + output_layout_))
+                         .add_argument(lyra::opt(model_layout_, "model layout").name("--model-layout").optional().help("model layout, e.g NCHW|NHWC, default is empty"))
                          .add_argument(lyra::opt(is_fpga_).name("--is-fpga").optional().help("use fpga parameters, default is " + std::to_string(is_fpga_)))
                          .add_argument(lyra::opt(dump_ir_).name("--dump-ir").optional().help("dump ir to .dot, default is " + std::to_string(dump_ir_)))
                          .add_argument(lyra::opt(dump_asm_).name("--dump-asm").optional().help("dump assembly, default is " + std::to_string(dump_asm_)))
@@ -74,6 +77,7 @@ void compile_command::run()
     parser_vector_opt(cli_std_, std_);
     parser_vector_opt(cli_input_range_, input_range_);
     parser_vector_opt(cli_input_shape_, input_shape_);
+    parser_vector_opt(cli_output_range_, output_range_);
 
     compile_options c_options;
     c_options.dump_asm = dump_asm_;
@@ -90,13 +94,16 @@ void compile_command::run()
     c_options.mean = mean_;
     c_options.std = std_;
     c_options.input_range = input_range_;
+    c_options.output_range = output_range_;
     c_options.input_shape = input_shape_;
     c_options.w_quant_type = w_quant_type_;
     c_options.benchmark_only = benchmark_only_;
     c_options.preprocess = preprocess_;
     c_options.use_mse_quant_w = use_mse_quant_w_;
+    c_options.split_w_to_act = split_w_to_act_;
     c_options.input_layout = input_layout_;
     c_options.output_layout = output_layout_;
+    c_options.model_layout = model_layout_;
     c_options.letterbox_value = letterbox_value_;
     if (c_options.preprocess)
     {

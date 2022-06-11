@@ -38,6 +38,7 @@ public:
 
     evaluate_tensor input_at(size_t index);
     evaluate_tensor output_at(size_t index);
+    uint32_t inputs_size();
 
 private:
     model_evaluate_context model_eval_;

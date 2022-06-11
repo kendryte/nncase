@@ -66,6 +66,8 @@ calibrate_method to_calibrate_method(std::string name)
         return calibrate_method::kld_m0;
     if (name == "kld_m1")
         return calibrate_method::kld_m1;
+    if (name == "kld_m2")
+        return calibrate_method::kld_m2;
     if (name == "cdf")
         return calibrate_method::cdf;
     return calibrate_method::no_clip;
@@ -210,6 +212,11 @@ public:
         {
             std::cout << "1.1 Pre-process..." << std::endl;
             input_layout_ = compile_options_.input_layout;
+            if (!compile_options_.model_layout.empty())
+            {
+                real_inlayout_ = compile_options_.model_layout;
+                real_outlayout_ = compile_options_.model_layout;
+            }
             pre_process(graph_, compile_options_);
             post_process(graph_, compile_options_);
         }
@@ -264,9 +271,12 @@ public:
                 quantizer *quant_eval_quantizer = quant_evaluator.quantizer(graph_.module_type());
 
                 std::cout << "4.5. Summarize accumulated quant error for layer output..." << std::endl;
-                std::ofstream f;
+                std::ofstream f, g;
                 if (compile_options_.dump_ir)
+                {
                     f.open(compile_options_.dump_dir / "layer_quant_error.txt");
+                    g.open(compile_options_.dump_dir / "layer_quant_range.txt");
+                }
 
                 bool has_quant_map = false;
                 for (uint32_t i = 0; i < quant_eval_quantizer->quant_buffers_insert_order().size(); i++)
@@ -286,17 +296,17 @@ public:
                         if (quant_layer_connector->owner().get_output_connectors_quant_map().size() != 0)
                         {
                             std::string layer_name = quant_layer_connector->owner().get_node_name_before_quant();
-                            std::cout << "layer name: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector->owner().get_output_connectors_quant_map()[quant_layer_connector]].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
+                            std::cout << "layer name: " << layer_name << "\ncosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector->owner().get_output_connectors_quant_map()[quant_layer_connector]].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
                             if (compile_options_.dump_ir)
                             {
-                                f << "layer name: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector->owner().get_output_connectors_quant_map()[quant_layer_connector]].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
-
+                                f << "layer name: " << layer_name << "\ncosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector->owner().get_output_connectors_quant_map()[quant_layer_connector]].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
+                                g << "layer name: " << layer_name << "\n range:\tbefore:[" << eval_quantizer->ranges()[quant_layer_connector->owner().get_output_connectors_quant_map()[quant_layer_connector]].min << "," << eval_quantizer->ranges()[quant_layer_connector->owner().get_output_connectors_quant_map()[quant_layer_connector]].max << "]\tquant:[" << quant_eval_quantizer->ranges()[quant_layer_connector].min << "," << quant_eval_quantizer->ranges()[quant_layer_connector].max << "]" << std::endl;
                                 std::ofstream f_data_before_quant;
                                 std::ofstream f_data_after_quant;
                                 auto data_dir = compile_options_.dump_dir / "layer_output_data";
                                 std::replace(layer_name.begin(), layer_name.end(), '/', '_');
-                                f_data_before_quant.open(data_dir / (layer_name + "_before_quant.csv"));
-                                f_data_after_quant.open(data_dir / (layer_name + "_after_quant.csv"));
+                                f_data_before_quant.open(data_dir / (std::to_string(i) + layer_name + "_before_quant.csv"));
+                                f_data_after_quant.open(data_dir / (std::to_string(i) + layer_name + "_after_quant.csv"));
 
                                 std::vector<float> f_data_before_quant_data_v = eval_quantizer->output_buffers()[quant_layer_connector->owner().get_output_connectors_quant_map()[quant_layer_connector]];
                                 std::vector<std::size_t> shape = { data_size, 1 };
@@ -322,17 +332,17 @@ public:
                         std::string layer_name = quant_layer_connector->owner().name();
                         if (quant_layer_connector->owner().runtime_opcode() != ir::op_pad)
                         {
-                            std::cout << "layer name: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
+                            std::cout << "layer name: " << layer_name << "\ncosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
                             if (compile_options_.dump_ir)
                             {
-                                f << "layer name: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
-
+                                f << "layer name: " << layer_name << "\ncosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
+                                g << "layer name: " << layer_name << "\n range:\tbefore:[" << eval_quantizer->ranges()[quant_layer_connector].min << "," << eval_quantizer->ranges()[quant_layer_connector].max << "]\tquant:[" << quant_eval_quantizer->ranges()[quant_layer_connector].min << "," << quant_eval_quantizer->ranges()[quant_layer_connector].max << "]" << std::endl;
                                 std::ofstream f_data_before_quant;
                                 std::ofstream f_data_after_quant;
                                 auto data_dir = compile_options_.dump_dir / "layer_output_data";
                                 std::replace(layer_name.begin(), layer_name.end(), '/', '_');
-                                f_data_before_quant.open(data_dir / (layer_name + "_before_quant.csv"));
-                                f_data_after_quant.open(data_dir / (layer_name + "_after_quant.csv"));
+                                f_data_before_quant.open(data_dir / (std::to_string(i) + layer_name + "_before_quant.csv"));
+                                f_data_after_quant.open(data_dir / (std::to_string(i) + layer_name + "_after_quant.csv"));
 
                                 std::vector<float> f_data_before_quant_data_v = eval_quantizer->output_buffers()[quant_layer_connector];
                                 std::vector<std::size_t> shape = { data_size, 1 };
@@ -350,7 +360,10 @@ public:
                     }
                 }
                 if (compile_options_.dump_ir)
+                {
                     f.close();
+                    g.close();
+                }
             }
         }
 
@@ -428,7 +441,7 @@ private:
     {
         using namespace ir::transforms;
         run_passes("post_process", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { pmgr.add_pass<post_process_transform>(
-                                                                                                                                           cmp_options.output_layout, cmp_options.output_type, real_outlayout_); });
+                                                                                                                                           cmp_options.output_layout, real_outlayout_); });
     }
 
     void optimize_target_independent(ir::graph &graph)
@@ -494,7 +507,7 @@ private:
 
     void optimize_target_dependent(ir::graph &graph, bool use_ptq)
     {
-        run_passes("target_dep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_target_dependent_passes(module_type, pmgr, use_ptq); });
+        run_passes("target_dep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_target_dependent_passes(module_type, pmgr, use_ptq, compile_options_.split_w_to_act); });
     }
 
     void optimize_target_dependent_after_quant(ir::graph &graph)
@@ -512,22 +525,24 @@ private:
         auto graph_runner = [&](ir::graph &graph) {
             ir::transforms::pass_manager pmgr(graph, *target_);
             auto quant = evaluator.quantizer(graph.module_type());
-
-            // broadcast quant ranges
+            if (compile_options_.input_type != "float32" && compile_options_.preprocess == true)
+            {
+                auto min = compile_options_.input_range[0];
+                auto max = compile_options_.input_range[1];
+                value_range<float> input_range { min, max };
+                quant->set(graph.inputs()[0]->output(), input_range);
+                quant->record(graph.inputs()[0]->output(), input_range);
+            }
             std::unordered_set<node_opcode> opcodes;
             target_->add_quantization_broadcast(opcodes);
             quant->broadcast_output(graph, opcodes);
-
-            ir::transforms::transform_pass p("process i&o node");
-
             if (compile_options_.output_type != "float32")
-                p.emplace<nncase::ir::transforms::add_output_quantize_transform>(parse_datatype_str(compile_options_.output_type));
-            pmgr.add_pass(std::move(p));
-
+                quant->set_model_output_range(graph);
             pmgr.quantizer(quant);
+
             if (compile_options_.dump_ir)
                 pmgr.dump_dir(compile_options_.dump_dir);
-            target_->register_quantize_passes(graph.module_type(), pmgr, parse_datatype_str(compile_options_.quant_type), compile_options_.w_quant_type, compile_options_.use_mse_quant_w);
+            target_->register_quantize_passes(graph.module_type(), pmgr, parse_datatype_str(compile_options_.quant_type), compile_options_.w_quant_type, compile_options_.use_mse_quant_w, parse_datatype_str(compile_options_.output_type), output_quant_params_, compile_options_.output_range);
             pmgr.run();
             dump_graph(graph, "quantize");
         };
@@ -560,9 +575,6 @@ private:
             auto calib_method = std::visit([](auto &options) { return to_calibrate_method(options.calibrate_method); }, dump_range_options_);
             evaluator.enable_ptq(*target_, calib_method);
         }
-
-        if (graph.inputs().size() != 1)
-            throw std::invalid_argument("Collect ranges only support models that have single 1 input");
 
         if (step != eval_step::after_import)
         {
@@ -700,8 +712,13 @@ private:
 
             for (size_t i = 0; i < options.samples_count; i++)
             {
-                auto input_buffer = evaluator.input_at(0).buffer();
-                std::memcpy(input_buffer.data(), options.tensor_data.data() + i * input_buffer.size_bytes(), input_buffer.size_bytes());
+                uint32_t input_offset = 0;
+                for (uint32_t j = 0; j < evaluator.inputs_size(); j++)
+                {
+                    auto input_buffer = evaluator.input_at(j).buffer();
+                    std::memcpy(input_buffer.data(), options.tensor_data.data() + input_offset + i * input_buffer.size_bytes(), input_buffer.size_bytes());
+                    input_offset += (options.samples_count * input_buffer.size_bytes());
+                }
 
                 evaluator.evaluate(step, stage, compile_options_.dump_quant_error);
                 evaluator.end_sample();
@@ -771,7 +788,18 @@ private:
         std::cout << "TOTAL"
                   << "\t" << format_size(total_usage) << std::endl;
 
-        std::ofstream file(compile_options_.dump_dir / "memory_usage.txt");
+        std::ofstream file(compile_options_.dump_dir / "kmodel_info.txt");
+        if (compile_options_.dump_dir.filename().string() == "ptq" and compile_options_.output_type != "float32")
+        {
+            file << "\nOUTPUT_QUANT_PARAM" << std::endl;
+            file << "scale:      " << output_quant_params_.scale << std::endl;
+            file << "zero_point: " << output_quant_params_.zero_point << std::endl;
+
+            std::cout << "\nOUTPUT_QUANT_PARAM" << std::endl;
+            std::cout << "scale:      " << output_quant_params_.scale << std::endl;
+            std::cout << "zero_point: " << output_quant_params_.zero_point << std::endl;
+        }
+        file << "\nMEMORY USAGES" << std::endl;
         file << "input: " << format_size(mod_builder.max_usage(mem_input)) << std::endl;
         file << "output: " << format_size(mod_builder.max_usage(mem_output)) << std::endl;
         file << "data: " << format_size(mod_builder.max_usage(mem_data)) << std::endl;
@@ -796,6 +824,7 @@ private:
     std::unique_ptr<nncase::target> target_;
     std::string real_inlayout_ = "";
     std::string real_outlayout_ = "";
+    quant_param_t output_quant_params_ = { 0, 0 };
 };
 }
 

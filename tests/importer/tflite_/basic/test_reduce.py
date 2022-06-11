@@ -20,12 +20,12 @@ import numpy as np
 from tflite_test_runner import TfliteTestRunner
 
 
-def _make_module(in_shape, axis, keep_dims):
+def _make_module(in_type, in_shape, axis, keep_dims):
     class ReduceModule(tf.Module):
         def __init__(self):
             super(ReduceModule).__init__()
 
-        @tf.function(input_signature=[tf.TensorSpec(in_shape, tf.float32)])
+        @tf.function(input_signature=[tf.TensorSpec(in_shape, in_type)])
         def __call__(self, x):
             outs = []
             outs.append(tf.reduce_min(x, axis=axis, keepdims=keep_dims))
@@ -35,6 +35,11 @@ def _make_module(in_shape, axis, keep_dims):
             return outs
     return ReduceModule()
 
+
+in_types = [
+    tf.float32,
+    tf.int32
+]
 
 in_shape_axis = [
     ([3], [0]),
@@ -62,11 +67,11 @@ keep_dims = [
     False
 ]
 
-
+@pytest.mark.parametrize('in_type', in_types)
 @pytest.mark.parametrize('in_shape,axis', in_shape_axis)
 @pytest.mark.parametrize('keep_dims', keep_dims)
-def test_reduce(in_shape, axis, keep_dims, request):
-    module = _make_module(in_shape, axis, keep_dims)
+def test_reduce(in_shape, in_type, axis, keep_dims, request):
+    module = _make_module(in_type, in_shape, axis, keep_dims)
 
     runner = TfliteTestRunner(request.node.name)
     model_file = runner.from_tensorflow(module)

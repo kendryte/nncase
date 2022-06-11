@@ -42,6 +42,9 @@
 | Gemm | ✅ |
 | GlobalAveragePool | ✅ |
 | GlobalMaxPool | ✅ |
+| Greater | ✅ |
+| GreaterOrEqual | ✅ |
+| GRU | ✅ |
 | Hardmax | ✅ |
 | HardSigmoid | ✅ |
 | HardSwish | ✅ |
@@ -49,6 +52,8 @@
 | InstanceNormalization | ✅ |
 | LpNormalization | ✅ |
 | LeakyRelu | ✅ |
+| Less | ✅ |
+| LessOrEqual | ✅ |
 | Log | ✅ |
 | LogSoftmax | ✅ |
 | LRN | ✅ |
@@ -107,6 +112,7 @@
 | TopK | ✅ |
 | Transpose | ✅ |
 | Trilu | ✅ |
+| ThresholdedRelu | ✅ |
 | Upsample | ✅ |
 | Unsqueeze | ✅ |
 | Where | ✅ |

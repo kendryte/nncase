@@ -18,20 +18,31 @@
 
 namespace nncase::ir
 {
-class NNCASE_API equal : public node
+class NNCASE_API gru : public node
 {
 public:
-    DEFINE_NODE_OPCODE(op_equal);
+    DEFINE_NODE_OPCODE(op_gru);
 
-    input_connector &input_a() { return input_at(0); }
-    input_connector &input_b() { return input_at(1); }
+    input_connector &input() { return input_at(0); }
+    input_connector &w() { return input_at(1); }
+    input_connector &r() { return input_at(2); }
+    input_connector &b() { return input_at(3); }
+    input_connector &initial_h() { return input_at(4); }
+    input_connector &initial_c() { return input_at(5); }
     output_connector &output() { return output_at(0); }
+    output_connector &output_h() { return output_at(1); }
 
-    equal(datatype_t input_type, shape_t input_a_shape, shape_t input_b_shape);
+    lstm_direction direction() const noexcept { return direction_; }
+    std::string framework() const noexcept { return framework_; }
+
+    gru(shape_t input_shape, shape_t w_shape, shape_t r_shape, shape_t b_shape, shape_t output_shape,
+        shape_t output_h_shape, lstm_direction direction, std::string framework);
 
 protected:
     bool properties_equal(node &other) const override;
 
 private:
+    lstm_direction direction_;
+    std::string framework_;
 };
 }

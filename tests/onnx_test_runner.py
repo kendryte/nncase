@@ -63,6 +63,7 @@ class OnnxTestRunner(TestRunner):
 
         model_file = os.path.join(
             os.path.dirname(model_file), 'simplified.onnx')
+        onnx_model = onnx.shape_inference.infer_shapes(onnx_model)
         onnx.save_model(onnx_model, model_file)
 
         super().run(model_file)

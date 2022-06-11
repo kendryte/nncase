@@ -78,7 +78,11 @@ mv xxx.bin k210/yolox_detect_example/input.bin
 
 ## 定点模型推理测试
 
-使用最新的[裸机sdk](https://github.com/kendryte/kendryte-standalone-sdk/tree/develop),将`yolox_detect_example`拷贝到`src`目录下,然后进行编译(请参考裸机sdk使用指南,首先配置好工具链等相关环境)
+使用git clone的develop分支的[裸机sdk](https://github.com/kendryte/kendryte-standalone-sdk/tree/develop),将`yolox_detect_example`拷贝到`src`目录下.
+
+如果您目前使用的nncase版本大于1.0.0, 请参考[这里](https://github.com/kendryte/nncase/blob/master/docs/USAGE_ZH.md#部署-nncase-runtime)更新sdk中对应的nncase runtime版本(runtime版本需要与自身所使用的nncase版本相匹配).
+
+按照如下命令编译与烧录(请参考裸机sdk使用指南,首先配置好工具链等相关环境)
 ```bash
 mkdir build && cd build
 cmake .. -DPROJ=yolox_detect_example -DTOOLCHAIN=/usr/local/opt/kendryte-toolchain/bin
@@ -87,6 +91,8 @@ kflash yolox_detect_example.bin -B kd233 -p /dev/cu.usbserial-1130 -b 2000000 -t
 ```
 
 ⚠️不同的电脑上usb端口号并不一致.
+
+⚠️使用example中提供的kmodel时无需更新runtime.
 
 可能的结果:
 ![demo](demo.jpg)

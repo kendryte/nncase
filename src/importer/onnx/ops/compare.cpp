@@ -16,7 +16,7 @@
 #include "../onnx_importer.h"
 #include <cassert>
 #include <nncase/ir/graph.h>
-#include <nncase/ir/ops/equal.h>
+#include <nncase/ir/ops/compare.h>
 
 using namespace nncase;
 using namespace nncase::importer;
@@ -24,6 +24,31 @@ using namespace nncase::ir;
 using namespace onnx;
 
 void onnx_importer::convert_op_Equal(const onnx::NodeProto &node)
+{
+    convert_op_compare(node, compare_equal);
+}
+
+void onnx_importer::convert_op_Greater(const onnx::NodeProto &node)
+{
+    convert_op_compare(node, compare_greater);
+}
+
+void onnx_importer::convert_op_GreaterOrEqual(const onnx::NodeProto &node)
+{
+    convert_op_compare(node, compare_greater_equal);
+}
+
+void onnx_importer::convert_op_Less(const onnx::NodeProto &node)
+{
+    convert_op_compare(node, compare_less);
+}
+
+void onnx_importer::convert_op_LessOrEqual(const onnx::NodeProto &node)
+{
+    convert_op_compare(node, compare_less_equal);
+}
+
+void onnx_importer::convert_op_compare(const onnx::NodeProto &node, compare_op_t compare_op)
 {
     assert(node.input().size() == 2);
     assert(node.output().size() == 1);
@@ -39,8 +64,8 @@ void onnx_importer::convert_op_Equal(const onnx::NodeProto &node)
 
     const auto &output = node.output()[0];
 
-    auto op = graph_.emplace<equal>(input_a_type, input_a_shape, input_b_shape);
-    op->name(op_name + "/equal");
+    auto op = graph_.emplace<compare>(compare_op, input_a_type, input_a_shape, input_b_shape);
+    op->name(op_name + "/" + compare_op_to_string(compare_op));
 
     input_tensors_.emplace(&op->input_a(), input_a);
     input_tensors_.emplace(&op->input_b(), input_b);

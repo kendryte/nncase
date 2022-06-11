@@ -19,11 +19,11 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-reduce::reduce(reduce_op_t reduce_op, shape_t input_shape, axis_t axis, float init_value, bool keep_dims)
+reduce::reduce(reduce_op_t reduce_op, datatype_t input_type, shape_t input_shape, axis_t axis, float init_value, bool keep_dims)
     : reduce_op_(reduce_op), axis_(normalize_reduce_axis(input_shape, axis)), init_value_(init_value), keep_dims_(keep_dims)
 {
-    add_input("input", dt_float32, input_shape);
-    add_output("output", dt_float32, get_reduced_shape(input_shape, axis_, keep_dims_));
+    add_input("input", input_type, input_shape);
+    add_output("output", input_type, get_reduced_shape(input_shape, axis_, keep_dims_));
 }
 
 bool reduce::properties_equal(node &other) const

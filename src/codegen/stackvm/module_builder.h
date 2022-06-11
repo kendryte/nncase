@@ -19,14 +19,15 @@
 #include <nncase/ir/ops/binary.h>
 #include <nncase/ir/ops/broadcast.h>
 #include <nncase/ir/ops/call.h>
+#include <nncase/ir/ops/compare.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/convert.h>
 #include <nncase/ir/ops/copy.h>
 #include <nncase/ir/ops/cumsum.h>
 #include <nncase/ir/ops/dequantize.h>
-#include <nncase/ir/ops/equal.h>
 #include <nncase/ir/ops/gather.h>
 #include <nncase/ir/ops/gather_nd.h>
+#include <nncase/ir/ops/gru.h>
 #include <nncase/ir/ops/hardmax.h>
 #include <nncase/ir/ops/matmul.h>
 #include <nncase/ir/ops/onehot.h>
@@ -42,6 +43,7 @@
 #include <nncase/ir/ops/roi_align.h>
 #include <nncase/ir/ops/sigmoid.h>
 #include <nncase/ir/ops/slice.h>
+#include <nncase/ir/ops/softmax.h>
 #include <nncase/ir/ops/table_lookup.h>
 #include <nncase/ir/ops/ternary.h>
 #include <nncase/ir/ops/topk.h>

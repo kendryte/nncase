@@ -15,7 +15,7 @@ case: # case的配置，应该是一个多层次的
         - false
     - name: input_shape
       values:
-        - [1,224,224,3]
+        - []
     - name: mean
       values:
         - [0,0,0]
@@ -30,10 +30,13 @@ case: # case的配置，应该是一个多层次的
         - uint8
     - name: input_layout
       values:
-        - NHWC
+        - NCHW
+    - name: model_layout
+      values:
+        - NCHW
     - name: output_layout
       values:
-        - NHWC
+        - NCHW
     - name: letterbox_value
       values:
         - 0.
@@ -47,7 +50,10 @@ case: # case的配置，应该是一个多层次的
     dump_import_op_range: false
     quant_type: 'uint8'
     w_quant_type: 'uint8'
+    output_type: 'float32'
+    output_range : []
     use_mse_quant_w: true
+    split_w_to_act: false
     quant_method: "no_clip"
 
   ptq_opt:
@@ -102,9 +108,13 @@ judge:
   specifics:
     - matchs:
         #target: [cpu, vulkan, k210, k510]
-        target: [cpu, k210, k510]
+        target: [cpu, k510]
         ptq: true
       threshold: 0.98
+    - matchs:
+        target: [k210]
+        ptq: true
+      threshold: 0.97
     - matchs:
         target: [k510]
         ptq: false

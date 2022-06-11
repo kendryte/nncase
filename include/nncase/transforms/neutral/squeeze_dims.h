@@ -12,21 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/op_utils.h>
-#include <nncase/ir/ops/equal.h>
-#include <xtensor/xarray.hpp>
+#pragma once
+#include "../transform.h"
 
-using namespace nncase;
-using namespace nncase::ir;
-
-equal::equal(datatype_t input_type, shape_t input_a_shape, shape_t input_b_shape)
+namespace nncase::ir::transforms
 {
-    add_input("input_a", input_type, input_a_shape);
-    add_input("input_b", input_type, input_b_shape);
-    add_output("output", dt_uint8, get_binary_output_shape(input_a_shape, input_b_shape));
-}
-
-bool equal::properties_equal([[maybe_unused]] node &other) const
+class NNCASE_API squeeze_dims_transform : public transform
 {
-    return false;
+public:
+    void process(transform_context &context) override;
+
+protected:
+    bool skip_self_contained_check() const noexcept override { return true; }
+    bool on_try_match(ir::node &node, transform_context &context) override;
+};
 }

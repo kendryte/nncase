@@ -3,15 +3,16 @@
 set(SRCS batch_to_space.cpp
          binary.cpp
          broadcast.cpp
+         compare.cpp
          concat.cpp
          convolution.cpp
          convert.cpp
          copy.cpp
          cumsum.cpp
          dequantize.cpp
-         equal.cpp
          gather.cpp
          gather_nd.cpp
+         gru.cpp
          hardmax.cpp
          lut1d.cpp
          matmul.cpp
@@ -27,6 +28,7 @@ set(SRCS batch_to_space.cpp
          resize_image.cpp
          roi_align.cpp
          sigmoid.cpp
+         softmax.cpp
          slice.cpp
          ternary.cpp
          topk.cpp

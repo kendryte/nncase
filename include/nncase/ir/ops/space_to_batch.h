@@ -28,11 +28,13 @@ public:
 
     int32_t block_size_h() const noexcept { return block_size_h_; }
     int32_t block_size_w() const noexcept { return block_size_w_; }
+    int32_t real_block_size_h() const noexcept { return real_block_size_h_; }
+    int32_t real_block_size_w() const noexcept { return real_block_size_w_; }
     padding padding_h() const noexcept { return padding_h_; }
     padding padding_w() const noexcept { return padding_w_; }
     const scalar &pad_value() const noexcept { return pad_value_; }
 
-    space_to_batch(datatype_t input_type, shape_t input_shape, int32_t block_shape_h, int32_t block_shape_w, padding padding_h, padding padding_w, scalar pad_value);
+    space_to_batch(datatype_t input_type, shape_t input_shape, int32_t block_shape_h, int32_t block_shape_w, padding padding_h, padding padding_w, scalar pad_value, int32_t real_block_size_h, int32_t real_block_size_w);
 
 protected:
     bool properties_equal(node &other) const override;
@@ -40,6 +42,8 @@ protected:
 private:
     int32_t block_size_h_;
     int32_t block_size_w_;
+    int32_t real_block_size_h_;
+    int32_t real_block_size_w_;
     padding padding_h_;
     padding padding_w_;
     scalar pad_value_;

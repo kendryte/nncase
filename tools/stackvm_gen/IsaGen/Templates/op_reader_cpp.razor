@@ -22,6 +22,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <nncase/runtime/stackvm/op_profile.h>
 #include <nncase/runtime/stackvm/op_reader.h>
 
 using namespace nncase;
@@ -40,7 +41,12 @@ result<void> op_visitor::next() noexcept
 {
     var name = inst.Name.ToLowerInvariant().Replace('.', '_');
 @:        case @inst.Fields.First(x => x.Name == "funct").ValueText:
+@:        {
+@:#if defined ENABLE_OP_PROFILE
+@:            op_profile st("@(name)");
+@:#endif
 @:            return visit(op_reader<@(name)_op_t>()(reader_));
+@:        }
 }
         default:
             break;
@@ -71,5 +77,10 @@ result<void> op_visitor::visit(gsl::span<const gsl::byte> text) noexcept
 
     while (!interrupted_ && !reader_.empty())
         try_(next());
+
+#ifdef ENABLE_OP_PROFILE
+    op_profile::print();
+#endif
+
     return ok();
 }

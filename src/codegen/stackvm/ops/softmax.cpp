@@ -19,19 +19,17 @@ using namespace nncase::codegen;
 using namespace nncase::codegen::stackvm;
 using namespace nncase::ir;
 
-void stackvm_module_builder::emit(equal &node, stackvm_op_builder &builder)
+void stackvm_module_builder::emit(softmax &node, stackvm_op_builder &builder)
 {
-    auto &input_a = allocation(node.input_a());
-    auto &input_b = allocation(node.input_b());
+    auto &input = allocation(node.input());
     auto &output = allocation(node.output());
-    builder.lea_buffer(input_a);
-    builder.lea_buffer(input_b);
+
+    builder.lea_buffer(input);
     builder.lea_buffer(output);
 
-    builder.stshape(0, input_a.shape);
-    builder.stshape(1, input_a.strides);
-    builder.stshape(2, input_b.shape);
-    builder.stshape(3, input_b.strides);
-    builder.stshape(4, output.strides);
-    builder.tensor_equal_(node.input_a().type(), 0, 1, 2, 3, 4);
+    builder.stshape(0, input.shape);
+    builder.stshape(1, input.strides);
+    builder.stshape(2, output.strides);
+
+    builder.tensor_softmax_(node.input().type(), 0, 1, 2, node.axis(), node.beta());
 }

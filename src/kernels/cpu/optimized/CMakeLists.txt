@@ -18,5 +18,7 @@ set(SRCS convolution.cpp
          onehot.cpp
          ${ARCH}/binary.cpp
          ${ARCH}/unary.cpp
-         ${ARCH}/matmul.cpp)
+         ${ARCH}/matmul.cpp
+         ${ARCH}/sigmoid.cpp
+         ${ARCH}/softmax.cpp)
 target_sources(kernels PRIVATE ${SRCS})

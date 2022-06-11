@@ -10,6 +10,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/binary.cpp
     ops/clip.cpp
     ops/batchnorm.cpp
+    ops/compare.cpp
     ops/concat.cpp
     ops/constant.cpp
     ops/constantofshape.cpp
@@ -20,7 +21,6 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/dequantizelinear.cpp
     ops/dropout.cpp
     ops/expand.cpp
-    ops/equal.cpp
     ops/gather.cpp
     ops/gather_nd.cpp
     ops/gemm.cpp
@@ -59,6 +59,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/unsqueeze.cpp
     ops/lstm.cpp
     ops/where.cpp
+    ops/gru.cpp
     )
 
 add_library(onnx_importer ${ONNX_IMPORTER_SOURCES} ${ONNX_IMPORTER_OPS_SOURCES})

@@ -168,14 +168,13 @@ bool dequantize_slice_motion_transform::on_try_match(node &node, transform_conte
 {
     if (auto deq = node_cast<dequantize>(node))
     {
-        // [[maybe_unused]] auto all_slice = deq->outputs().size();
         for (auto &out : deq->output().connections())
         {
             context.matched_nodes.emplace_back(deq);
             context.inputs.emplace_back(&deq->input());
             if (out->owner().runtime_opcode() == op_slice)
             {
-                [[maybe_unused]] auto slice_node = node_cast<slice>(out->owner());
+                auto slice_node = node_cast<slice>(out->owner());
                 context.matched_nodes.emplace_back(slice_node);
                 context.outputs.emplace_back(&slice_node->output());
             }
@@ -185,16 +184,6 @@ bool dequantize_slice_motion_transform::on_try_match(node &node, transform_conte
             }
             return true;
         }
-        // if (auto sl = try_get_direct_child<slice>(*deq))
-        // {
-        //     context.matched_nodes.emplace_back(deq);
-        //     context.matched_nodes.emplace_back(sl);
-
-        //     context.inputs.emplace_back(&deq->input());
-        //     context.outputs.emplace_back(&sl->output());
-
-        //     return true;
-        // }
     }
 
     return false;
@@ -210,7 +199,7 @@ void dequantize_slice_motion_transform::process(transform_context &context)
         auto inputs = context.outputs[i - 1]->connections();
         auto &old_slice = static_cast<slice &>(*context.matched_nodes[i]);
         auto sl = context.graph.emplace<slice>(old_deq.input().type(), old_deq.input().shape(), old_slice.begin(), old_slice.end(), old_slice.strides(),
-            old_slice.begin_mask(), old_slice.end_mask(), old_slice.ellipsis_mask(), old_slice.new_axis_mask());
+            old_slice.begin_mask(), old_slice.end_mask(), old_slice.ellipsis_mask(), old_slice.new_axis_mask(), old_slice.shrink_axis_mask());
         sl->name(old_slice.name());
         auto deq = context.graph.emplace<dequantize>(sl->output().type(), sl->output().shape(), old_deq.output().type(), old_deq.quant_param());
         deq->name(old_deq.name());
@@ -385,7 +374,7 @@ void dequantize_s2b_motion_transform::process(transform_context &context)
     auto deq = context.graph.emplace<dequantize>(output.type(), output.shape(), old_deq.output().type(), old_deq.quant_param());
     deq->name(old_deq.name());
     auto s2b = context.graph.emplace<space_to_batch>(deq->output().type(), deq->output().shape(), old_s2b.block_size_h(), old_s2b.block_size_w(),
-        old_s2b.padding_h(), old_s2b.padding_w(), old_s2b.pad_value());
+        old_s2b.padding_h(), old_s2b.padding_w(), old_s2b.pad_value(), old_s2b.real_block_size_h(), old_s2b.real_block_size_w());
     s2b->name(old_s2b.name());
 
     deq->input().connect(output);

@@ -82,11 +82,36 @@ void fold_slice_slice_transform::process(transform_context &context)
     }
 
     auto new_rp = context.graph.emplace<slice>(
-        output.type(), output.shape(), new_begin, new_end, new_strides, 0, 0, 0, 0);
+        output.type(), output.shape(), new_begin, new_end, new_strides, 0, 0, 0, 0, 0);
     new_rp->name(rp2->name() + "_F");
 
     new_rp->input().connect(output);
 
     for (auto &in : dup(inputs))
         in->connect(new_rp->output());
+}
+
+bool fold_nop_slice_transform::on_try_match(node &node, transform_context &context)
+{
+    if (auto rp1 = node_cast<slice>(node))
+    {
+        if (rp1->input().shape() == rp1->output().shape() && rp1->strides() == axis_t { 1, 1, 1, 1 })
+        {
+            context.inputs.emplace_back(&rp1->input());
+            context.outputs.emplace_back(&rp1->output());
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void fold_nop_slice_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+
+    for (auto &in : dup(inputs))
+        in->connect(output);
 }

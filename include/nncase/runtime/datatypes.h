@@ -305,6 +305,36 @@ inline std::string unary_op_to_string(unary_op_t op)
     return "unknown";
 }
 
+typedef enum _compare_op
+{
+    compare_equal,
+    compare_not_equal,
+    compare_greater,
+    compare_greater_equal,
+    compare_less,
+    compare_less_equal
+} compare_op_t;
+
+inline std::string compare_op_to_string(compare_op_t op)
+{
+    switch (op)
+    {
+    case compare_equal:
+        return "compare_equal";
+    case compare_not_equal:
+        return "compare_not_equal";
+    case compare_greater:
+        return "compare_greater";
+    case compare_greater_equal:
+        return "compare_greater_equal";
+    case compare_less:
+        return "compare_less";
+    case compare_less_equal:
+        return "compare_less_equal";
+    }
+    return "unknown";
+}
+
 typedef enum _image_resize_mode
 {
     image_resize_bilinear,

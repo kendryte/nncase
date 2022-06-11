@@ -31,7 +31,7 @@ jobs:
       if: runner.os == 'Macos'
       shell: bash
       run: |
-        brew install sunnycase/core/libomp@11.1.0
+        brew install libomp
 
     - name: Add msbuild to PATH
       if: runner.os == 'Windows'

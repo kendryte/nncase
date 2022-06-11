@@ -69,11 +69,11 @@ void onnx_importer::convert_op_LRN(const NodeProto &node)
         auto sl = graph_.emplace<slice>(input_type, input_shape,
             axis_t { 0, begin, 0, 0 },
             axis_t { static_cast<int32_t>(input_shape[0]), static_cast<int32_t>(end + 1), static_cast<int32_t>(input_shape[2]), static_cast<int32_t>(input_shape[3]) },
-            axis_t { 1, 1, 1, 1 }, 0, 0, 0, 0);
+            axis_t { 1, 1, 1, 1 }, 0, 0, 0, 0, 0);
         sl->name(op_name + ".slice_" + std::to_string(i) + "(LRN)");
         sl->input().connect(square->output());
 
-        auto r_sum = graph_.emplace<reduce>(reduce_sum, sl->output().shape(), axis_t { 1 }, 0.f, true);
+        auto r_sum = graph_.emplace<reduce>(reduce_sum, input_type, sl->output().shape(), axis_t { 1 }, 0.f, true);
         r_sum->name(op_name + ".reduce_sum_" + std::to_string(i) + "(LRN)");
         r_sum->input().connect(sl->output());
         con->input_at(i).connect(r_sum->output());

@@ -15,12 +15,13 @@
 
 import pytest
 import onnx
+import numpy as np
 from onnx import helper
 from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
-import numpy as np
 
-def _make_module(in_type, in_shape_0, in_shape_1):
+
+def _make_module(in_shape, alpha):
     inputs = []
     outputs = []
     initializers = []
@@ -28,22 +29,38 @@ def _make_module(in_type, in_shape_0, in_shape_1):
     nodes = []
 
     # input
-    input1 = helper.make_tensor_value_info('input1', in_type, in_shape_0)
-    inputs.append('input1')
-
-    input2 = helper.make_tensor_value_info('input2', in_type, in_shape_1)
-    inputs.append('input2')
+    input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
+    inputs.append('input')
 
     # output
-    x = np.random.randn(*in_shape_0)
-    y = np.random.randn(*in_shape_1)
-    output_shape = np.equal(x, y).shape
-    output = helper.make_tensor_value_info('output', TensorProto.BOOL, output_shape)
+    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, in_shape)
     outputs.append('output')
 
+    # alpha
+    if alpha is not None:
+        attributes_dict['alpha'] = alpha
+
+    tensor = helper.make_tensor(
+        'input2',
+        TensorProto.FLOAT,
+        dims=in_shape,
+        vals=(np.random.rand(*in_shape) + 2).astype(onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[TensorProto.FLOAT]).flatten().tolist()
+    )
+    # inputs.append('input2')
+    initializers.append(tensor)
+
+    # enable default alphas: None -> 1
     node = onnx.helper.make_node(
-        'Equal',
-        inputs=inputs,
+        'Mul',
+        inputs=[inputs[0], 'input2'],
+        outputs=['0'],
+    )
+    nodes.append(node)
+
+    # Celu node
+    node = onnx.helper.make_node(
+        'ThresholdedRelu',
+        inputs=['0'],
         outputs=outputs,
         **attributes_dict
     )
@@ -52,7 +69,7 @@ def _make_module(in_type, in_shape_0, in_shape_1):
     graph_def = helper.make_graph(
         nodes,
         'test-model',
-        [input1, input2],
+        [input],
         [output],
         initializer=initializers)
 
@@ -61,29 +78,24 @@ def _make_module(in_type, in_shape_0, in_shape_1):
     return model_def
 
 
-in_types = [
-    TensorProto.BOOL,
-    TensorProto.FLOAT,
-    TensorProto.INT64
-]
-
 in_shapes = [
-    [[1, 3, 16, 16], [1]],
-    [[1, 3, 16, 16], [16]],
-    [[1, 3, 16, 16], [1, 16]],
-    [[1, 3, 16, 16], [1, 16, 16]],
-    [[1, 1, 16, 16], [3, 3, 1, 16]],
+    [1, 3, 16, 16]
 ]
 
-@pytest.mark.parametrize('in_type', in_types)
+alphas = [
+    None,
+    0.5,
+    1.5
+]
+
 @pytest.mark.parametrize('in_shape', in_shapes)
-def test_equal(in_type, in_shape, request):
-    model_def = _make_module(in_type, in_shape[0], in_shape[1])
+@pytest.mark.parametrize('alpha', alphas)
+def test_threadholdrelu(in_shape, alpha, request):
+    model_def = _make_module(in_shape, alpha)
 
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
 
-
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_equal.py'])
+    pytest.main(['-vv', 'test_threadholdrelu.py'])

@@ -50,9 +50,10 @@ NNCASE_API result<void> dequantize(datatype_t in_type, datatype_t out_type, cons
     kernel_context &context = default_kernel_context()) noexcept;
 
 template <typename T>
-NNCASE_API result<void> equal(const T *input_a, const T *input_b, bool *output,
-    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
-    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides) noexcept;
+NNCASE_API result<void> compare(compare_op_t op, const T *input_a, const T *input_b, bool *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides,
+    const runtime_shape_t &in_b_shape, const runtime_shape_t &in_b_strides,
+    const runtime_shape_t &out_shape, const runtime_shape_t &out_strides) noexcept;
 
 NNCASE_API result<void> lut1d(datatype_t type, const gsl::byte *input, const gsl::byte *table, gsl::byte *output, const runtime_shape_t &shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const scalar &min, const scalar &max) noexcept;
@@ -78,7 +79,8 @@ NNCASE_API result<void> quantize(datatype_t in_type, datatype_t out_type, const 
 NNCASE_API result<void> unary(unary_op_t op, const float *input, float *output, const runtime_shape_t &shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, kernel_context &context = default_kernel_context()) noexcept;
 
-NNCASE_API result<void> reduce(reduce_op_t op, float init_value, const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
+template <typename T>
+NNCASE_API result<void> reduce(reduce_op_t op, T init_value, const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims, kernel_context &context = default_kernel_context()) noexcept;
 
 template <typename T>
@@ -131,6 +133,10 @@ template <typename T>
 NNCASE_API result<void> sigmoid(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept;
 
 template <typename T>
+NNCASE_API result<void> softmax(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    const runtime_shape_t &out_strides, int32_t axis, float beta) noexcept;
+
+template <typename T>
 NNCASE_API result<void> ternary(const float *input_a, const T *input_b, const T *input_c, T *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &in_c_shape, const runtime_shape_t &in_c_strides,
@@ -145,5 +151,8 @@ NNCASE_API result<void> topk(const T *input, T *output_values, int64_t *output_i
 
 template <typename T>
 NNCASE_API result<void> trilu(const T *input, T *output, const runtime_shape_t &in_shape, const bool upper, const int64_t k) noexcept;
+
+template <typename T>
+NNCASE_API result<void> gru(const T *input, const T *w, const T *r, const T *b, T *initial_h, T *output, T *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape, int mode) noexcept;
 
 END_NS_NNCASE_KERNELS

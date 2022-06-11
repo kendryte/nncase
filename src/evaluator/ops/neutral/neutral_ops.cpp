@@ -20,16 +20,17 @@
 #include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/broadcast.h>
 #include <nncase/ir/ops/clamp.h>
+#include <nncase/ir/ops/compare.h>
 #include <nncase/ir/ops/concat.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/conv2d_transpose.h>
 #include <nncase/ir/ops/convert.h>
 #include <nncase/ir/ops/cumsum.h>
 #include <nncase/ir/ops/dequantize.h>
-#include <nncase/ir/ops/equal.h>
 #include <nncase/ir/ops/fused_unary.h>
 #include <nncase/ir/ops/gather.h>
 #include <nncase/ir/ops/gather_nd.h>
+#include <nncase/ir/ops/gru.h>
 #include <nncase/ir/ops/hardmax.h>
 #include <nncase/ir/ops/matmul.h>
 #include <nncase/ir/ops/onehot.h>
@@ -45,6 +46,7 @@
 #include <nncase/ir/ops/roi_align.h>
 #include <nncase/ir/ops/sigmoid.h>
 #include <nncase/ir/ops/slice.h>
+#include <nncase/ir/ops/softmax.h>
 #include <nncase/ir/ops/table_lookup.h>
 #include <nncase/ir/ops/ternary.h>
 #include <nncase/ir/ops/topk.h>
@@ -107,8 +109,7 @@ void register_neutral_evaluators()
             runtime_shape_t { (size_t)rnode.block_size_h(), (size_t)rnode.block_size_w() },
             runtime_paddings_t { padding { rnode.crop_h()[0], rnode.crop_h()[1] }, padding { rnode.crop_w()[0], rnode.crop_w()[1] } },
             input.strides(), output.strides())
-            .unwrap_or_throw();
-    });
+            .unwrap_or_throw(); });
 
     register_evaluator(op_binary, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<binary &>(node);
@@ -140,8 +141,7 @@ void register_neutral_evaluators()
             break;
         default:
             std::cerr << "unsupported dtype for binary: " + std::string(datatype_names(input_type));
-        }
-    });
+        } });
 
     register_evaluator(op_broadcast, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<broadcast &>(node);
@@ -150,8 +150,7 @@ void register_neutral_evaluators()
         auto output = context.memory_at(rnode.output());
         kernels::broadcast(input.datatype(), input.buffer().data(), output.buffer().data(),
             input.shape(), input.strides(), output.shape(), output.strides())
-            .unwrap_or_throw();
-    });
+            .unwrap_or_throw(); });
 
     register_evaluator(op_concat, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<concat &>(node);
@@ -169,8 +168,7 @@ void register_neutral_evaluators()
         runtime_shape_t concat_dims { rnode.concat_dims().begin(), rnode.concat_dims().end() };
         kernels::concat(rnode.output().type(), inputs_mem, output.buffer().data(), output.shape(), inputs_strides,
             output.strides(), rnode.axis(), concat_dims)
-            .unwrap_or_throw();
-    });
+            .unwrap_or_throw(); });
 
     register_evaluator(op_conv2d, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<conv2d &>(node);
@@ -189,8 +187,7 @@ void register_neutral_evaluators()
         kernels::conv2d(input_mem.data(), weights_mem.data(), bias_mem.data(), output_mem.data(), input.shape(), input.strides(),
             weights.shape(), weights.strides(), bias.strides(), output.strides(), rnode.padding_h(), rnode.padding_w(),
             rnode.groups(), rnode.stride_h(), rnode.stride_w(), rnode.dilation_h(), rnode.dilation_w(), rnode.fused_activation())
-            .unwrap_or_throw();
-    });
+            .unwrap_or_throw(); });
 
     register_evaluator(op_conv2d_transpose, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<conv2d_transpose &>(node);
@@ -203,8 +200,7 @@ void register_neutral_evaluators()
 
         neutral::conv2d_transpose(input.data(), output.data(), weights.data(), bias.data(), to(rnode.input().shape()),
             rnode.groups(), to(rnode.output().shape()), rnode.filter_h(), rnode.filter_w(), rnode.stride_h(), rnode.stride_w(),
-            rnode.dilation_h(), rnode.dilation_w(), rnode.padding_h(), rnode.padding_w(), rnode.fused_activation());
-    });
+            rnode.dilation_h(), rnode.dilation_w(), rnode.padding_h(), rnode.padding_w(), rnode.fused_activation()); });
 
     register_evaluator(op_dequantize, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<dequantize &>(node);
@@ -222,16 +218,16 @@ void register_neutral_evaluators()
     }
             DEQUANTIZE(dt_uint8)
             DEQUANTIZE(dt_int8)
+            DEQUANTIZE(dt_int16)
             DEQUANTIZE(dt_int32)
         default:
             assert(false && "not supported type!");
 
 #undef DEQUANTIZE
-        }
-    });
+        } });
 
-    register_evaluator(op_equal, [](ir::node &node, function_evaluate_context &context) {
-        auto &rnode = static_cast<equal &>(node);
+    register_evaluator(op_compare, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<compare &>(node);
 
         auto input_a = context.memory_at(rnode.input_a());
         auto input_b = context.memory_at(rnode.input_b());
@@ -241,27 +237,32 @@ void register_neutral_evaluators()
         switch (input_type)
         {
         case dt_uint8:
-            kernels::equal(input_a.buffer().as_span<uint8_t>().data(), input_b.buffer().as_span<uint8_t>().data(),
+            kernels::compare(rnode.compare_op(), input_a.buffer().as_span<uint8_t>().data(), input_b.buffer().as_span<uint8_t>().data(),
                 output.buffer().as_span<bool>().data(), input_a.shape(), input_a.strides(),
-                input_b.shape(), input_b.strides(), output.strides())
+                input_b.shape(), input_b.strides(), output.shape(), output.strides())
                 .unwrap_or_throw();
             break;
         case dt_float32:
-            kernels::equal(input_a.buffer().as_span<float>().data(), input_b.buffer().as_span<float>().data(),
+            kernels::compare(rnode.compare_op(), input_a.buffer().as_span<float>().data(), input_b.buffer().as_span<float>().data(),
                 output.buffer().as_span<bool>().data(), input_a.shape(), input_a.strides(),
-                input_b.shape(), input_b.strides(), output.strides())
+                input_b.shape(), input_b.strides(), output.shape(), output.strides())
+                .unwrap_or_throw();
+            break;
+        case dt_int32:
+            kernels::compare(rnode.compare_op(), input_a.buffer().as_span<int32_t>().data(), input_b.buffer().as_span<int32_t>().data(),
+                output.buffer().as_span<bool>().data(), input_a.shape(), input_a.strides(),
+                input_b.shape(), input_b.strides(), output.shape(), output.strides())
                 .unwrap_or_throw();
             break;
         case dt_int64:
-            kernels::equal(input_a.buffer().as_span<int64_t>().data(), input_b.buffer().as_span<int64_t>().data(),
+            kernels::compare(rnode.compare_op(), input_a.buffer().as_span<int64_t>().data(), input_b.buffer().as_span<int64_t>().data(),
                 output.buffer().as_span<bool>().data(), input_a.shape(), input_a.strides(),
-                input_b.shape(), input_b.strides(), output.strides())
+                input_b.shape(), input_b.strides(), output.shape(), output.strides())
                 .unwrap_or_throw();
             break;
         default:
-            std::cerr << "unsupported dtype for equal: " + std::string(datatype_names(input_type));
-        }
-    });
+            std::cerr << "unsupported dtype for compare: " + std::string(datatype_names(input_type));
+        } });
 
     register_evaluator(op_fused_unary, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<fused_unary &>(node);
@@ -278,24 +279,25 @@ void register_neutral_evaluators()
         auto buf = ss.str();
         std::vector<gsl::byte> body(reinterpret_cast<gsl::byte *>(buf.data()), reinterpret_cast<gsl::byte *>(buf.data() + buf.size()));
         kernels::nnil_unary_method(input.data(), output.data(), input.size(), body)
-            .unwrap_or_throw();
-    });
+            .unwrap_or_throw(); });
 
     register_evaluator(op_matmul, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<matmul &>(node);
 
         assert(rnode.input_a().type() == dt_float32);
         assert(rnode.input_b().type() == dt_float32);
-        auto input_a = context.memory_at(rnode.input_a()).buffer().as_span<float>();
-        auto input_b = context.memory_at(rnode.input_b()).buffer().as_span<float>();
-        auto bias = context.memory_at(rnode.bias()).buffer().as_span<float>();
-        auto output = context.memory_at(rnode.output()).buffer().as_span<float>();
+        auto input_a = context.memory_at(rnode.input_a());
+        auto input_b = context.memory_at(rnode.input_b());
+        auto bias = context.memory_at(rnode.bias());
+        auto output = context.memory_at(rnode.output());
+        auto input_a_mem = input_a.buffer().as_span<float>();
+        auto input_b_mem = input_b.buffer().as_span<float>();
+        auto bias_mem = bias.buffer().as_span<float>();
+        auto output_mem = output.buffer().as_span<float>();
 
-        auto &a_shape = rnode.input_a().shape();
-        auto &b_shape = rnode.input_b().shape();
-
-        neutral::matmul(input_a.data(), input_b.data(), output.data(), bias.data(), (int32_t)a_shape[0], (int32_t)a_shape[1], (int32_t)b_shape[1], rnode.fused_activation());
-    });
+        kernels::matmul(input_a_mem.data(), input_b_mem.data(), bias_mem.data(), output_mem.data(), input_a.shape(), input_a.strides(),
+            input_b.shape(), input_b.strides(), output.shape(), output.strides(), rnode.fused_activation())
+            .unwrap_or_throw(); });
 
     register_evaluator(op_pad, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<pad &>(node);
@@ -307,8 +309,7 @@ void register_neutral_evaluators()
 
         kernels::pad(input.datatype(), input_mem.data(), output_mem.data(), input.shape(), input.strides(),
             output.strides(), to(rnode.paddings()), rnode.pad_mode(), rnode.pad_value())
-            .unwrap_or_throw();
-    });
+            .unwrap_or_throw(); });
 
     register_evaluator(op_quantize, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<quantize &>(node);
@@ -324,25 +325,33 @@ void register_neutral_evaluators()
     }
             QUANTIZE(dt_uint8)
             QUANTIZE(dt_int8)
+            QUANTIZE(dt_int16)
         default:
             assert(false && "not supported type!");
 #undef QUANTIZE
-        }
-    });
+        } });
 
     register_evaluator(op_reduce, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<reduce &>(node);
-
-        assert(rnode.input().type() == dt_float32);
         auto input = context.memory_at(rnode.input());
         auto output = context.memory_at(rnode.output());
-        auto input_mem = input.buffer().as_span<float>();
-        auto output_mem = output.buffer().as_span<float>();
 
-        kernels::reduce(rnode.reduce_op(), rnode.init_value(), input_mem.data(), output_mem.data(), input.shape(),
-            to(rnode.axis()), input.strides(), output.strides(), rnode.keep_dims())
-            .unwrap_or_throw();
-    });
+        auto input_type = rnode.input().type();
+        switch (input_type)
+        {
+        case dt_float32:
+            kernels::reduce(rnode.reduce_op(), static_cast<float>(rnode.init_value()), input.buffer().as_span<float>().data(),
+                output.buffer().as_span<float>().data(), input.shape(), to(rnode.axis()), input.strides(), output.strides(), rnode.keep_dims())
+                .unwrap_or_throw();
+            break;
+        case dt_int32:
+            kernels::reduce(rnode.reduce_op(), static_cast<int32_t>(rnode.init_value()), input.buffer().as_span<int32_t>().data(),
+                output.buffer().as_span<int32_t>().data(), input.shape(), to(rnode.axis()), input.strides(), output.strides(), rnode.keep_dims())
+                .unwrap_or_throw();
+            break;
+        default:
+            std::cerr << "unsupported dtype for reduce: " + std::string(datatype_names(input_type));
+        } });
 
     register_evaluator(op_reduce_arg, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<reduce_arg &>(node);
@@ -368,22 +377,29 @@ void register_neutral_evaluators()
             break;
         default:
             std::cerr << "unsupported dtype for reduce_arg: " + std::string(datatype_names(output_type));
-        }
-    });
+        } });
 
     register_evaluator(op_reduce_prod, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<reduce_prod &>(node);
-
-        assert(rnode.input().type() == dt_float32);
         auto input = context.memory_at(rnode.input());
         auto output = context.memory_at(rnode.output());
-        auto input_mem = input.buffer().as_span<float>();
-        auto output_mem = output.buffer().as_span<float>();
 
-        kernels::reduce_prod(input_mem.data(), output_mem.data(), input.shape(),
-            input.strides(), output.strides(), to(rnode.axis()), rnode.keep_dims())
-            .unwrap_or_throw();
-    });
+        auto input_type = rnode.input().type();
+        switch (input_type)
+        {
+        case dt_float32:
+            kernels::reduce_prod(input.buffer().as_span<float>().data(), output.buffer().as_span<float>().data(), input.shape(),
+                input.strides(), output.strides(), to(rnode.axis()), rnode.keep_dims())
+                .unwrap_or_throw();
+            break;
+        case dt_int32:
+            kernels::reduce_prod(input.buffer().as_span<int32_t>().data(), output.buffer().as_span<int32_t>().data(), input.shape(),
+                input.strides(), output.strides(), to(rnode.axis()), rnode.keep_dims())
+                .unwrap_or_throw();
+            break;
+        default:
+            std::cerr << "unsupported dtype for reduce_prod: " + std::string(datatype_names(input_type));
+        } });
 
     register_evaluator(op_reduce_window2d, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<reduce_window2d &>(node);
@@ -397,8 +413,7 @@ void register_neutral_evaluators()
         kernels::reduce_window2d(rnode.reduce_op(), input_mem.data(), rnode.init_value(), output_mem.data(),
             input.shape(), input.strides(), output.strides(), rnode.padding_h(), rnode.padding_w(), rnode.filter_h(), rnode.filter_w(),
             rnode.stride_h(), rnode.stride_w(), rnode.dilation_h(), rnode.dilation_w(), rnode.fused_activation())
-            .unwrap_or_throw();
-    });
+            .unwrap_or_throw(); });
 
     register_evaluator(op_bitcast, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<bitcast &>(node);
@@ -406,8 +421,7 @@ void register_neutral_evaluators()
         auto input = context.memory_at(rnode.input()).buffer();
         auto output = context.memory_at(rnode.output()).buffer();
 
-        std::copy(input.begin(), input.end(), output.begin());
-    });
+        std::copy(input.begin(), input.end(), output.begin()); });
 
     register_evaluator(op_resize_image, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<resize_image &>(node);
@@ -430,8 +444,7 @@ void register_neutral_evaluators()
                 input.shape(), input.strides(), output.strides(), new_size[0], new_size[1],
                 rnode.align_corners(), rnode.half_pixel_centers())
                 .unwrap_or_throw();
-        }
-    });
+        } });
 
     register_evaluator(op_roi_align, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<roi_align &>(node);
@@ -452,8 +465,7 @@ void register_neutral_evaluators()
             break;
         default:
             std::cerr << "unsupported dtype for roi_align: " + std::string(datatype_names(input_type));
-        }
-    });
+        } });
 
     register_evaluator(op_sigmoid, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<sigmoid &>(node);
@@ -471,8 +483,7 @@ void register_neutral_evaluators()
             break;
         default:
             std::cerr << "unsupported dtype for sigmoid: " + std::string(datatype_names(output_type));
-        }
-    });
+        } });
 
     register_evaluator(op_slice, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<slice &>(node);
@@ -484,8 +495,25 @@ void register_neutral_evaluators()
 
         kernels::slice(input.datatype(), input_mem.data(), output_mem.data(), input.shape(),
             input.strides(), output.strides(), to(rnode.begin()), to<int32_t>(rnode.end()), to<int32_t>(rnode.strides()))
-            .unwrap_or_throw();
-    });
+            .unwrap_or_throw(); });
+
+    register_evaluator(op_softmax, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<softmax &>(node);
+
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+
+        auto output_type = rnode.output().type();
+        switch (output_type)
+        {
+        case dt_float32:
+            kernels::softmax(input.buffer().as_span<float>().data(), output.buffer().as_span<float>().data(), input.shape(),
+                input.strides(), output.strides(), rnode.axis(), rnode.beta())
+                .unwrap_or_throw();
+            break;
+        default:
+            std::cerr << "unsupported dtype for softmax: " + std::string(datatype_names(output_type));
+        } });
 
     register_evaluator(op_ternary, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<ternary &>(node);
@@ -506,8 +534,7 @@ void register_neutral_evaluators()
             break;
         default:
             std::cerr << "unsupported dtype for ternary: " + std::string(datatype_names(output_type));
-        }
-    });
+        } });
 
     register_evaluator(op_transpose, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<transpose &>(node);
@@ -519,8 +546,7 @@ void register_neutral_evaluators()
 
         kernels::transpose(input.datatype(), input_mem.data(), output_mem.data(), input.shape(), to(rnode.perm()),
             input.strides(), output.strides())
-            .unwrap_or_throw();
-    });
+            .unwrap_or_throw(); });
 
     register_evaluator(op_unary, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<unary &>(node);
@@ -588,8 +614,7 @@ void register_neutral_evaluators()
             break;
         default:
             throw std::runtime_error("Not supported unary");
-        }
-    });
+        } });
 
     register_evaluator(op_table_lookup1d, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<table_lookup1d &>(node);
@@ -599,8 +624,7 @@ void register_neutral_evaluators()
         auto table = context.memory_at(rnode.table()).buffer().as_span<uint8_t>();
         auto output = context.memory_at(rnode.output()).buffer().as_span<uint8_t>();
 
-        kernels::neutral::table_lookup1d(input.data(), output.data(), input.size(), table.data());
-    });
+        kernels::neutral::table_lookup1d(input.data(), output.data(), input.size(), table.data()); });
 
     register_evaluator(op_clamp, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<clamp &>(node);
@@ -618,8 +642,7 @@ void register_neutral_evaluators()
         for (size_t i = 0; i < input.size(); i++)
         {
             output_ptr[i] = std::clamp(input_ptr[i], low, high);
-        }
-    });
+        } });
 
     register_evaluator(op_convert, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<convert &>(node);
@@ -631,8 +654,7 @@ void register_neutral_evaluators()
 
         kernels::convert(input.datatype(), output.datatype(), input_mem.data(), output_mem.data(), input.shape(),
             input.strides(), output.strides())
-            .unwrap_or_throw();
-    });
+            .unwrap_or_throw(); });
 
     register_evaluator(op_gather, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<gather &>(node);
@@ -645,8 +667,7 @@ void register_neutral_evaluators()
 
         kernels::gather(input.datatype(), input_mem.data(), output_mem.data(), input.shape(), output.shape(),
             input.strides(), output.strides(), reinterpret_cast<const int32_t *>(indices.buffer().data()), indices.shape(), rnode.axis())
-            .unwrap_or_throw();
-    });
+            .unwrap_or_throw(); });
 
     register_evaluator(op_gather_nd, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<gather_nd &>(node);
@@ -659,8 +680,7 @@ void register_neutral_evaluators()
 
         kernels::gather_nd(input.datatype(), input_mem.data(), output_mem.data(), input.shape(), output.shape(),
             input.strides(), output.strides(), reinterpret_cast<const int32_t *>(indices.buffer().data()), indices.shape(), rnode.batch_dims())
-            .unwrap_or_throw();
-    });
+            .unwrap_or_throw(); });
 
     register_evaluator(op_onehot, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<onehot &>(node);
@@ -677,8 +697,7 @@ void register_neutral_evaluators()
         auto off_value_mem = off_value.buffer().data();
         kernels::onehot(output.datatype(), indices_mem, output_mem, indices.shape(), output.shape(),
             output.strides(), depth_mem, off_value_mem, on_value_mem, rnode.axis(), rnode.mode())
-            .unwrap_or_throw();
-    });
+            .unwrap_or_throw(); });
 
     register_evaluator(op_cumsum, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<cumsum &>(node);
@@ -700,8 +719,7 @@ void register_neutral_evaluators()
             break;
         default:
             throw std::runtime_error("unsupported dtype for cumsum: " + std::string(datatype_names(datatype)));
-        }
-    });
+        } });
 
     register_evaluator(op_hardmax, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<hardmax &>(node);
@@ -718,8 +736,7 @@ void register_neutral_evaluators()
             break;
         default:
             throw std::runtime_error("unsupported dtype for hardmax: " + std::string(datatype_names(datatype)));
-        }
-    });
+        } });
 
     register_evaluator(op_random_normal, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<random_normal &>(node);
@@ -734,8 +751,7 @@ void register_neutral_evaluators()
             break;
         default:
             throw std::runtime_error("unsupported dtype for random_normal: " + std::string(datatype_names(datatype)));
-        }
-    });
+        } });
 
     register_evaluator(op_random_uniform, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<random_uniform &>(node);
@@ -750,8 +766,7 @@ void register_neutral_evaluators()
             break;
         default:
             throw std::runtime_error("unsupported dtype for random_uniform: " + std::string(datatype_names(datatype)));
-        }
-    });
+        } });
 
     register_evaluator(op_topk, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<topk &>(node);
@@ -772,8 +787,7 @@ void register_neutral_evaluators()
             break;
         default:
             throw std::runtime_error("unsupported dtype for topk: " + std::string(datatype_names(datatype)));
-        }
-    });
+        } });
 
     register_evaluator(op_trilu, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<trilu &>(node);
@@ -790,8 +804,21 @@ void register_neutral_evaluators()
             break;
         default:
             throw std::runtime_error("unsupported dtype for topk: " + std::string(datatype_names(datatype)));
-        }
-    });
+        } });
+
+    register_evaluator(op_gru, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<gru &>(node);
+        auto input = context.memory_at(rnode.input());
+        auto W = context.memory_at(rnode.w());
+        auto R = context.memory_at(rnode.r());
+        auto B = context.memory_at(rnode.b());
+        auto initial_h = context.memory_at(rnode.initial_h());
+        auto output = context.memory_at(rnode.output());
+        auto output_h = context.memory_at(rnode.output_h());
+        kernels::gru(input.buffer().as_span<float>().data(), W.buffer().as_span<float>().data(), R.buffer().as_span<float>().data(),
+            B.buffer().as_span<float>().data(), initial_h.buffer().as_span<float>().data(), output.buffer().as_span<float>().data(), output_h.buffer().as_span<float>().data(),
+            input.shape(), W.shape(), rnode.direction())
+            .unwrap_or_throw(); });
 }
 
 }

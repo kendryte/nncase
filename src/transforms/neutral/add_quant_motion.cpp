@@ -27,7 +27,7 @@ bool add_input_dequantize_transform::on_try_match(node &node, transform_context 
 {
     if (auto in_node = node_cast<input_node>(node))
     {
-        if (in_node->output().type() == dt_float32)
+        if (in_node->output().type() == dt_float32 && (input_type_ == dt_uint8 || input_type_ == dt_int8))
         {
             context.outputs.emplace_back(&in_node->output());
             context.matched_nodes.emplace_back(in_node);
@@ -43,7 +43,6 @@ void add_input_dequantize_transform::process(transform_context &context)
     auto old_in = node_cast<input_node>(*context.matched_nodes[0]);
 
     auto &quantizer = *context.quantizer;
-    assert(input_type_ == dt_uint8 || input_type_ == dt_int8);
     size_t bits = 8;
     auto qm = input_type_ == dt_uint8 ? quantizer::quant_mode::unsigned_mode : quantizer::quant_mode::signed_asymmetric_mode;
     auto old_range = quantizer.get(old_in->output());
@@ -66,7 +65,7 @@ bool add_output_quantize_transform::on_try_match(node &node, transform_context &
 {
     if (auto out = node_cast<output_node>(node))
     {
-        if (out->input().type() == dt_float32)
+        if (out->input().type() == dt_float32 && (output_type_ == dt_uint8 || output_type_ == dt_int8))
         {
             context.inputs.emplace_back(&out->input());
             context.matched_nodes.emplace_back(out);
@@ -82,12 +81,18 @@ void add_output_quantize_transform::process(transform_context &context)
     auto old_out = node_cast<output_node>(*context.matched_nodes[0]);
 
     auto &quantizer = *context.quantizer;
-    assert(output_type_ == dt_uint8 || output_type_ == dt_int8);
     size_t bits = 8;
     auto qm = output_type_ == dt_uint8 ? quantizer::quant_mode::unsigned_mode : quantizer::quant_mode::signed_asymmetric_mode;
-    auto old_range = quantizer.get(output.owner().output_at(0));
+    value_range<float> old_range;
+    if (output_type_ != dt_float32 && output_range_.size() != 0)
+        old_range = { output_range_[0], output_range_[1] };
+    else
+        old_range = quantizer.get_model_output_range();
+    std::cout << "old_range: " << old_range.min << "\t" << old_range.max << std::endl;
     auto params = quantizer.get_quant_param(old_range, bits, qm);
 
+    // get quant param for qint output
+    output_quant_param_ = params;
     auto q = context.graph.emplace<quantize>(dt_float32, output.shape(), output_type_, params);
     auto new_out_node = context.graph.emplace<output_node>(q->output().type(), q->output().shape());
     old_out->input().clear_connection();

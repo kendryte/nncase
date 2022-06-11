@@ -33,29 +33,51 @@ result<void> reference::matmul(const T *input_a, const T *input_b, const T *bias
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
     value_range<float> fused_activation) noexcept
 {
-    (void)in_a_strides;
-    (void)in_b_strides;
-    (void)out_shape;
-    (void)out_strides;
-    int32_t a_rows = static_cast<int32_t>(in_a_shape[0]);
-    int32_t a_cols = static_cast<int32_t>(in_a_shape[1]);
-    int32_t b_cols = static_cast<int32_t>(in_b_shape[1]);
+    size_t M = in_a_shape[in_a_shape.size() - 2];
+    size_t K = in_a_shape.back();
+    size_t N = in_b_shape.back();
 
-    for (int32_t oy = 0; oy < a_rows; oy++)
+    // batch
+    size_t batch_a = 1;
+    for (size_t i = 0; i < in_a_shape.size() - 2; i++)
+        batch_a *= in_a_shape[i];
+    size_t step_a = batch_a == 1 ? 0 : in_a_strides[0];
+
+    size_t batch_b = 1;
+    for (size_t i = 0; i < in_b_shape.size() - 2; i++)
+        batch_b *= in_b_shape[i];
+    size_t step_b = batch_b == 1 ? 0 : in_b_strides[0];
+
+    size_t batch_out = 1;
+    for (size_t i = 0; i < out_shape.size() - 2; i++)
+        batch_out *= out_shape[i];
+    size_t step_out = batch_out == 1 ? 0 : out_strides[0];
+
+    size_t batch_max = std::max(batch_a, batch_b);
+    const T *pa = input_a;
+    const T *pb = input_b;
+    T *pout = output;
+
+    for (size_t b = 0; b < batch_max; b++)
     {
-        for (int32_t ox = 0; ox < b_cols; ox++)
+        for (size_t m = 0; m < M; m++)
         {
-            float value = bias[ox];
-
-            for (int32_t i = 0; i < a_cols; i++)
+            for (size_t n = 0; n < N; n++)
             {
-                const auto a = input_a[oy * a_cols + i];
-                const auto b = input_b[i * b_cols + ox];
-                value += a * b;
-            }
+                float value = bias[n];
 
-            output[oy * b_cols + ox] = nncase::kernels::detail::apply_activation(value, fused_activation);
+                for (size_t k = 0; k < K; k++)
+                {
+                    value += pa[m * K + k] * pb[k * N + n];
+                }
+
+                pout[m * N + n] = nncase::kernels::detail::apply_activation(value, fused_activation);
+            }
         }
+
+        pa += step_a;
+        pb += step_b;
+        pout += step_out;
     }
 
     return ok();

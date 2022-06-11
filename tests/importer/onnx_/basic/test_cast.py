@@ -15,6 +15,7 @@
 
 import pytest
 import onnx
+import numpy as np
 from onnx import helper
 from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
@@ -22,23 +23,54 @@ from onnx_test_runner import OnnxTestRunner
 
 def _make_module(in_shape, in_type, out_type, op_version):
     attributes_dict = {}
+    inputs = []
+    initializers = []
+    nodes = []
 
     attributes_dict['to'] = str(out_type) if op_version == 1 else out_type
 
     input = helper.make_tensor_value_info('input', in_type, in_shape)
     output = helper.make_tensor_value_info('output', out_type, in_shape)
+    inputs.append(input)
+
+    input_name = 'input'
+    if out_type in [TensorProto.UINT8, TensorProto.INT32]:
+        tensor = helper.make_tensor(
+            'preprocess',
+            in_type,
+            dims=in_shape,
+            vals=(np.random.rand(*in_shape) * 100).astype(
+                onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[in_type]).flatten().tolist()
+        )
+        mul = helper.make_node(
+            "Constant",
+            inputs=[],
+            outputs=["mul_const"],
+            value=tensor,
+            name='mul_constant')
+        nodes.append(mul)
+        pre_node = onnx.helper.make_node(
+            'Mul',
+            inputs=[input_name, 'mul_const'],
+            outputs=['end_preprocess'],
+        )
+        nodes.append(pre_node)
+        input_name = 'end_preprocess'
+
     node = onnx.helper.make_node(
         'Cast',
-        inputs=['input'],
+        inputs=[input_name],
         outputs=['output'],
         **attributes_dict
     )
+    nodes.append(node)
+    # inputs.append(input_name)
 
     graph_def = helper.make_graph(
-        [node],
+        nodes,
         'test-cast-model',
-        [input],
-        [output]
+        inputs,
+        [output],
     )
 
     op = onnx.OperatorSetIdProto()
@@ -51,7 +83,7 @@ in_shapes_in_types_out_types = [
     ([8, 3, 12, 3], TensorProto.FLOAT16, TensorProto.FLOAT),
     ([8, 3, 12, 3], TensorProto.FLOAT, TensorProto.FLOAT16),
     ([8, 3, 12, 3], TensorProto.FLOAT, TensorProto.UINT8),
-    ([8, 3, 12, 3], TensorProto.FLOAT, TensorProto.INT32),
+    ([8, 3, 12, 3], TensorProto.FLOAT, TensorProto.INT8),
 ]
 
 op_versions = [
@@ -61,6 +93,7 @@ op_versions = [
     9,
     13
 ]
+
 
 @pytest.mark.parametrize('in_shape,in_type,out_type', in_shapes_in_types_out_types)
 @pytest.mark.parametrize('op_version', op_versions)

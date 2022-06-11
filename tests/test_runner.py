@@ -24,7 +24,7 @@ from models.preprocess.preprocess import preprocess
 
 class Edict:
     def __init__(self, d: Dict[str, int]) -> None:
-        assert(isinstance(d, dict)), "the Edict only accepct Dict for init"
+        assert (isinstance(d, dict)), "the Edict only accepct Dict for init"
         for name, value in d.items():
             if isinstance(value, (list, tuple)):
                 setattr(self, name,
@@ -69,9 +69,6 @@ class Edict:
                     old_value = getattr(self, name)
                     if old_value is None:
                         setattr(self, name, Edict(new_value))
-                    for i in range(len(new_value['preprocess_opt'])):
-                        self.case.preprocess_opt[i].values = copy.deepcopy(
-                            new_value['preprocess_opt'][i]['values'])
                     if isinstance(old_value, (Edict, dict)):
                         old_value.update(new_value)
                 elif isinstance(new_value, dict):
@@ -82,8 +79,8 @@ class Edict:
                         old_value.update(new_value)
                 elif isinstance(new_value, (list, tuple)) and name == 'specifics':
                     setattr(self, name, [])
-                    assert(hasattr(self, 'common')
-                           ), "The specifics new_value need common dict to overload !"
+                    assert (hasattr(self, 'common')
+                            ), "The specifics new_value need common dict to overload !"
                     common = getattr(self, 'common')
                     for specific in new_value:
                         import_common = copy.deepcopy(common)
@@ -105,7 +102,7 @@ def generate_random(shape: List[int], dtype: np.dtype,
     elif dtype == np.int8:
         data = np.random.randint(-128, 128, shape)
     elif dtype == np.int32:
-        data = np.random.randint(-128, 128, size=shape, dtype='int32')
+        data = np.random.randint(1, 3, size=shape, dtype='int32')
     elif dtype == np.int64:
         data = np.random.randint(-128, 128, size=shape, dtype='int64')
     elif dtype == np.bool:
@@ -130,13 +127,21 @@ def _cast_bfloat16_then_float32(values: np.array):
         values[i] = value
 
 
+def deq_output(kmodel_info, data):
+    with open(kmodel_info, 'r') as f:
+        a = f.readlines()[2:4]
+        scale = float(a[0].split(' ')[-1][:-1])
+        zero_point = int(a[1].split(' ')[-1][:-1])
+        return np.float32((data.astype(np.int) - zero_point) * scale)
+
+
 def generate_image_dataset(shape: List[int], dtype: np.dtype,
                            batch_index: int, batch_size: int,
                            case_dir: str,
                            dir_path: str) -> np.ndarray:
     """ read image from folder, return the rgb image with padding, dtype = float32, range = [0,255]. same as k210 carmera.
     """
-    assert(os.path.isdir(dir_path) or os.path.exists(dir_path))
+    assert (os.path.isdir(dir_path) or os.path.exists(dir_path))
 
     def preproc(img, input_size, transpose=True):
         # todo maybe need move this to postprocess
@@ -169,7 +174,7 @@ def generate_image_dataset(shape: List[int], dtype: np.dtype,
         transpose_flag = True
         shape = [shape[0], shape[2], shape[3], shape[1]]
     for p in img_paths[batch_index * batch_size:
-                       (batch_index + 1) * batch_size]:
+    (batch_index + 1) * batch_size]:
         img = cv2.imread(p)
         img = preproc(img, shape[1:3], transpose_flag)  # img [h,w,c] rgb,
         imgs.append(img.astype(np.float32) / 255.)
@@ -184,7 +189,7 @@ def generate_imagenet_dataset(shape: List[int], dtype: np.dtype,
     shape: [N,H,W,C]
     """
     dir_path = os.path.join(os.getenv('DATASET_DIR') if os.getenv('DATASET_DIR') else '', dir_path)
-    assert(os.path.isdir(dir_path) or os.path.exists(dir_path))
+    assert (os.path.isdir(dir_path) or os.path.exists(dir_path))
 
     img_paths = []
     if os.path.isdir(dir_path):
@@ -244,10 +249,12 @@ class TestRunner(metaclass=ABCMeta):
 
     def transform_input(self, values: np.array, type: str, stage: str):
         values = copy.deepcopy(values)
-        if(len(values.shape) == 4 and (self.pre_process[0]['preprocess'] or self.cfg.case.generate_inputs.name != "generate_random")):
+        if (len(values.shape) == 4 and (
+                self.pre_process[0]['preprocess'] or self.cfg.case.generate_inputs.name != "generate_random")):
             if stage == "CPU":
                 # onnx \ caffe
-                if ((self.model_type == "onnx" or self.model_type == "caffe") and self.inputs[0]['model_shape'][1] in [1, 3]):
+                if ((self.model_type == "onnx" or self.model_type == "caffe") and self.pre_process[5][
+                    'model_layout'] == "NCHW"):
                     values = np.transpose(values, [0, 3, 1, 2])
 
             if type == 'float32':
@@ -298,6 +305,7 @@ class TestRunner(metaclass=ABCMeta):
         # get layout
         process_layout = {}
         process_layout['input_layout'] = config['input_layout']
+        process_layout['model_layout'] = config['model_layout']
 
         self.pre_process.append(preprocess_flag)
         self.pre_process.append(process_deq)
@@ -335,7 +343,7 @@ class TestRunner(metaclass=ABCMeta):
                 # swapRB
                 if 'swapRB' in item.keys():
                     if data.shape[-1] != 3:
-                        assert("Please confirm your input channel is 3.")
+                        assert ("Please confirm your input channel is 3.")
                     if item['swapRB'] == True:
                         data = data[:, :, :, ::-1]
                         data = np.array(data)
@@ -353,8 +361,8 @@ class TestRunner(metaclass=ABCMeta):
                             in_h, in_w = data.shape[1], data.shape[2]
                             model_h, model_w = model_shape[1], model_shape[2]
                             ratio = min(model_h / in_h, model_w / in_w)
-                            resize_shape = data.shape[0], round(
-                                in_h * ratio), round(in_w * ratio), 3
+                            resize_shape = data.shape[0], int(round(
+                                in_h * ratio)), int(round(in_w * ratio)), 3
                             resize_data = cv2.resize(data[0], (resize_shape[2],
                                                                resize_shape[1]), interpolation=cv2.INTER_LINEAR)
                             dh = model_shape[1] - resize_shape[1]
@@ -362,8 +370,11 @@ class TestRunner(metaclass=ABCMeta):
                             dh /= 2
                             dw /= 2
                             resize_data = np.array(resize_data, dtype=np.float32)
-                            data = cv2.copyMakeBorder(resize_data, round(dh - 0.1), round(model_h - resize_shape[1] - round(dh - 0.1)), round(dw - 0.1), round(
-                                model_w - resize_shape[2] - round(dw - 0.1)), cv2.BORDER_CONSTANT, value=(item['letterbox_value'], item['letterbox_value'], item['letterbox_value']))
+                            data = cv2.copyMakeBorder(resize_data, int(round(dh - 0.1)),
+                                                      int(round(model_h - resize_shape[1] - round(dh - 0.1))),
+                                                      int(round(dw - 0.1)), int(round(
+                                    model_w - resize_shape[2] - round(dw - 0.1))), cv2.BORDER_CONSTANT, value=(
+                                    item['letterbox_value'], item['letterbox_value'], item['letterbox_value']))
 
                             data = np.array(data, dtype=np.float32)
                             data = np.expand_dims(data, 0)
@@ -375,9 +386,9 @@ class TestRunner(metaclass=ABCMeta):
                         if data.shape[-1] > 3:
                             k = 0
                         data[:, :, :, i] = (data[:, :, :, i] - float(item['norm']['mean'][k])) / \
-                            float(item['norm']['std'][k])
+                                           float(item['norm']['std'][k])
         else:
-            assert("Please confirm your input shape and model shape is 4D!")
+            assert ("Please confirm your input shape and model shape is 4D!")
 
         return data
 
@@ -404,6 +415,7 @@ class TestRunner(metaclass=ABCMeta):
                 else:
                     print("WARN: target[{0}] not found".format(t))
             return new_targets
+
         self.cfg.case.eval[0].update({"values": _validate_targets(
             targets if targets else self.cfg.case.eval[0].values)})
         self.cfg.case.infer[0].update({"values": _validate_targets(
@@ -435,7 +447,7 @@ class TestRunner(metaclass=ABCMeta):
             shutil.rmtree(case_dir)
         os.makedirs(case_dir)
 
-    @ abstractmethod
+    @abstractmethod
     def parse_model_input_output(self, model_path: Union[List[str], str]):
         pass
 
@@ -498,6 +510,9 @@ class TestRunner(metaclass=ABCMeta):
                 compile_options.output_layout = cfg['output_layout']
 
         for k, v in cfg.items():
+            # model_layout just use in test_runner
+            if k == "model_layout":
+                continue
             e = '"'
             exec(f"compile_options.{k} = {e + v + e if isinstance(v, str) else v}")
         return import_options, compile_options
@@ -506,31 +521,31 @@ class TestRunner(metaclass=ABCMeta):
         names, args = TestRunner.split_value(cfg.eval)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
-            if dict_args['ptq'] and len(self.inputs) != 1:
+            if dict_args['ptq'] and len(self.inputs) == 0:
                 continue
-            if cfg.compile_opt.dump_import_op_range and len(self.inputs) != 1:
+            if cfg.compile_opt.dump_import_op_range and len(self.inputs) == 0:
                 continue
             eval_output_paths = self.generate_evaluates(
                 cfg, case_dir, import_options,
                 compile_options, model_content, dict_args, preprocess_opt)
             judge, result = self.compare_results(
                 self.output_paths, eval_output_paths, dict_args)
-            assert(judge), 'Fault result in eval' + result
+            assert (judge), 'Fault result in eval' + result
 
     def run_inference(self, cfg, case_dir, import_options, compile_options, model_content, preprocess_opt):
         names, args = TestRunner.split_value(cfg.infer)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
-            if dict_args['ptq'] and len(self.inputs) != 1:
+            if dict_args['ptq'] and len(self.inputs) == 0:
                 continue
-            if cfg.compile_opt.dump_import_op_range and len(self.inputs) != 1:
+            if cfg.compile_opt.dump_import_op_range and len(self.inputs) == 0:
                 continue
             infer_output_paths = self.nncase_infer(
                 cfg, case_dir, import_options,
                 compile_options, model_content, dict_args, preprocess_opt)
             judge, result = self.compare_results(
                 self.output_paths, infer_output_paths, dict_args)
-            assert(judge), 'Fault result in infer' + result
+            assert (judge), 'Fault result in infer' + result
 
     @staticmethod
     def split_value(kwcfg: List[Dict[str, str]]) -> Tuple[List[str], List[str]]:
@@ -557,7 +572,7 @@ class TestRunner(metaclass=ABCMeta):
                 model_content.append(f.read())
             return model_content
 
-    @ staticmethod
+    @staticmethod
     def kwargs_to_path(path: str, kwargs: Dict[str, str]):
         for k, v in kwargs.items():
             if isinstance(v, str):
@@ -584,14 +599,22 @@ class TestRunner(metaclass=ABCMeta):
 
         if cfg.compile_opt.dump_import_op_range:
             dump_range_options = nncase.DumpRangeTensorOptions()
-            dump_range_options.set_tensor_data(np.asarray(
-                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]).tobytes())
+            raw_inputs = [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in
+                          self.dump_range_data]
+            byte_inputs = np.asarray(raw_inputs[0]).tobytes()
+            for i in range(1, len(raw_inputs)):
+                byte_inputs += np.asarray(raw_inputs[i]).tobytes()
+            dump_range_options.set_tensor_data(byte_inputs)
             dump_range_options.samples_count = cfg.generate_dump_range_data.batch_size
             compiler.dump_range_options(dump_range_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
-            ptq_options.set_tensor_data(np.asarray(
-                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
+            raw_inputs = [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in
+                          self.calibs]
+            byte_inputs = np.asarray(raw_inputs[0]).tobytes()
+            for i in range(1, len(raw_inputs)):
+                byte_inputs += np.asarray(raw_inputs[i]).tobytes()
+            ptq_options.set_tensor_data(byte_inputs)
             ptq_options.samples_count = cfg.generate_calibs.batch_size
             compiler.use_ptq(ptq_options)
 
@@ -651,34 +674,61 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.dump_import_op_range = cfg.compile_opt.dump_import_op_range
         compile_options.is_fpga = cfg.compile_opt.is_fpga
         compile_options.use_mse_quant_w = cfg.compile_opt.use_mse_quant_w
+        compile_options.split_w_to_act = cfg.compile_opt.split_w_to_act
         compile_options.input_type = preprocess['input_type']
+        compile_options.output_type = cfg.compile_opt.output_type
+        compile_options.output_range = cfg.compile_opt.output_range
         compile_options.quant_type = cfg.compile_opt.quant_type
         compile_options.w_quant_type = cfg.compile_opt.w_quant_type
         compile_options.swapRB = preprocess['swapRB']
-        if self.pre_process[3]['input_shape'] != []:
-            compile_options.input_shape = self.pre_process[3]['input_shape']
-        else:
-            if self.model_type == "tflite" and preprocess['input_layout'] == "NCHW":
-                compile_options.input_shape = np.array([self.pre_process[3]['model_shape'][0], self.pre_process[3]
-                                                       ['model_shape'][3], self.pre_process[3]['model_shape'][1], self.pre_process[3]['model_shape'][2]])
-            elif self.model_type != "tflite" and preprocess['input_layout'] == "NHWC":
-                compile_options.input_shape = np.array([self.pre_process[3]['model_shape'][0], self.pre_process[3]
-                                                       ['model_shape'][2], self.pre_process[3]['model_shape'][3], self.pre_process[3]['model_shape'][1]])
+        if self.pre_process[0]['preprocess']:
+            if self.pre_process[3]['input_shape'] != []:
+                compile_options.input_shape = self.pre_process[3]['input_shape']
             else:
-                compile_options.input_shape = self.pre_process[3]['model_shape']
+                if preprocess['model_layout'] == "":
+                    if self.model_type == "tflite" and preprocess['input_layout'] == "NCHW":
+                        compile_options.input_shape = np.array(
+                            [self.pre_process[3]['model_shape'][0], self.pre_process[3]
+                            ['model_shape'][3], self.pre_process[3]['model_shape'][1],
+                             self.pre_process[3]['model_shape'][2]])
+                    elif self.model_type != "tflite" and preprocess['input_layout'] == "NHWC":
+                        compile_options.input_shape = np.array(
+                            [self.pre_process[3]['model_shape'][0], self.pre_process[3]
+                            ['model_shape'][2], self.pre_process[3]['model_shape'][3],
+                             self.pre_process[3]['model_shape'][1]])
+                else:
+                    if preprocess['model_layout'] == "NHWC" and preprocess['input_layout'] == "NCHW":
+                        compile_options.input_shape = np.array(
+                            [self.pre_process[3]['model_shape'][0], self.pre_process[3]
+                            ['model_shape'][3], self.pre_process[3]['model_shape'][1],
+                             self.pre_process[3]['model_shape'][2]])
+                    elif preprocess['model_layout'] == "NCHW" and preprocess['input_layout'] == "NHWC":
+                        compile_options.input_shape = np.array(
+                            [self.pre_process[3]['model_shape'][0], self.pre_process[3]
+                            ['model_shape'][2], self.pre_process[3]['model_shape'][3],
+                             self.pre_process[3]['model_shape'][1]])
+                    else:
+                        compile_options.input_shape = self.pre_process[3]['model_shape']
+        else:
+            compile_options.input_shape = self.pre_process[3]['model_shape']
         compile_options.input_range = preprocess['input_range']
         compile_options.preprocess = preprocess['preprocess']
         compile_options.mean = preprocess['mean']
         compile_options.std = preprocess['std']
         compile_options.input_layout = preprocess['input_layout']
         compile_options.output_layout = preprocess['output_layout']
+        compile_options.model_layout = preprocess['model_layout']
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
 
         if cfg.compile_opt.dump_import_op_range:
             dump_range_options = nncase.DumpRangeTensorOptions()
-            dump_range_options.set_tensor_data(np.asarray(
-                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]).tobytes())
+            raw_inputs = [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in
+                          self.dump_range_data]
+            byte_inputs = np.asarray(raw_inputs[0]).tobytes()
+            for i in range(1, len(raw_inputs)):
+                byte_inputs += np.asarray(raw_inputs[i]).tobytes()
+            dump_range_options.set_tensor_data(byte_inputs)
             dump_range_options.samples_count = cfg.generate_dump_range_data.batch_size
             compiler.dump_range_options(dump_range_options)
         if kwargs['ptq']:
@@ -688,8 +738,13 @@ class TestRunner(metaclass=ABCMeta):
                     [sample['data'] for sample in self.calibs]).tobytes())
                 ptq_options.calibrate_method = self.cfg.case.compile_opt.quant_method
             else:
-                ptq_options.set_tensor_data(np.asarray(
-                    [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
+                raw_inputs = [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in
+                              self.calibs]
+                byte_inputs = np.asarray(raw_inputs[0]).tobytes()
+                for i in range(1, len(raw_inputs)):
+                    byte_inputs += np.asarray(raw_inputs[i]).tobytes()
+                ptq_options.set_tensor_data(byte_inputs)
+                ptq_options.calibrate_method = self.cfg.case.compile_opt.quant_method
             ptq_options.samples_count = cfg.generate_calibs.batch_size
             compiler.use_ptq(ptq_options)
 
@@ -713,7 +768,8 @@ class TestRunner(metaclass=ABCMeta):
             for in_data in self.inputs[0]['data']:
                 input_data = copy.deepcopy(in_data)
                 p.apply_async(sim_run, args=(
-                    kmodel, input_data, infer_output_paths, kwargs['target'], self.model_type, self.inputs[0]['model_shape']))
+                    kmodel, input_data, infer_output_paths, kwargs['target'], self.model_type,
+                    self.inputs[0]['model_shape']))
             p.close()
             p.join()
 
@@ -734,13 +790,20 @@ class TestRunner(metaclass=ABCMeta):
             for i in range(sim.outputs_size):
                 result = sim.get_output_tensor(i).to_numpy()
                 if preprocess['preprocess'] and len(result.shape) == 4:
-                    if(preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
+                    if (preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
                         result = np.transpose(result, [0, 3, 1, 2])
                     elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
                         result = np.transpose(result, [0, 2, 3, 1])
                 infer_output_paths.append((
                     os.path.join(infer_dir, f'nncase_result_{i}.bin'),
                     os.path.join(infer_dir, f'nncase_result_{i}.txt')))
+                if cfg.compile_opt.output_type != "float32" and infer_dir.split('/')[-1] == "ptq":
+                    result.tofile(os.path.join(
+                        infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.bin'))
+                    self.totxtfile(os.path.join(
+                        infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.txt'), result)
+                    result = deq_output(os.path.join(
+                        infer_dir, f'kmodel_info.txt'), result)
                 result.tofile(infer_output_paths[-1][0])
                 self.totxtfile(infer_output_paths[-1][1], result)
         return infer_output_paths
@@ -755,22 +818,37 @@ class TestRunner(metaclass=ABCMeta):
                 shape = []
                 if preprocess_opt['preprocess']:
                     if preprocess_opt['input_shape'] != []:
-                        assert(len(preprocess_opt['input_shape']) == 4)
+                        assert (len(preprocess_opt['input_shape']) == 4)
                         shape = copy.deepcopy(preprocess_opt['input_shape'])
                     else:
-                        if self.model_type == "tflite" and preprocess_opt['input_layout'] == "NCHW":
-                            shape = copy.deepcopy(np.array(
-                                [input['model_shape'][0], input['model_shape'][3], input['model_shape'][1], input['model_shape'][2]]))
-                        elif self.model_type != "tflite" and preprocess_opt['input_layout'] == "NHWC":
-                            shape = copy.deepcopy(np.array(
-                                [input['model_shape'][0], input['model_shape'][2], input['model_shape'][3], input['model_shape'][1]]))
+                        if preprocess_opt['model_layout'] is None:
+                            if self.model_type == "tflite" and preprocess_opt['input_layout'] == "NCHW":
+                                shape = copy.deepcopy(np.array(
+                                    [input['model_shape'][0], input['model_shape'][3], input['model_shape'][1],
+                                     input['model_shape'][2]]))
+                            elif self.model_type != "tflite" and preprocess_opt['input_layout'] == "NHWC":
+                                shape = copy.deepcopy(np.array(
+                                    [input['model_shape'][0], input['model_shape'][2], input['model_shape'][3],
+                                     input['model_shape'][1]]))
+                            else:
+                                shape = copy.deepcopy(input['model_shape'])
                         else:
-                            shape = copy.deepcopy(input['model_shape'])
+                            if preprocess_opt['model_layout'] == "NHWC" and preprocess_opt['input_layout'] == "NCHW":
+                                shape = copy.deepcopy(np.array(
+                                    [input['model_shape'][0], input['model_shape'][3], input['model_shape'][1],
+                                     input['model_shape'][2]]))
+                            elif preprocess_opt['model_layout'] == "NCHW" and preprocess_opt['input_layout'] == "NHWC":
+                                shape = copy.deepcopy(np.array(
+                                    [input['model_shape'][0], input['model_shape'][2], input['model_shape'][3],
+                                     input['model_shape'][1]]))
+                            else:
+                                shape = copy.deepcopy(input['model_shape'])
                 else:
                     shape = copy.deepcopy(input['model_shape'])
                 if shape[0] != cfg.batch_size:
                     shape[0] *= cfg.batch_size
-                if self.model_type != "tflite" and cfg.name == "generate_imagenet_dataset" and shape[1] in [1, 3]:
+                if self.model_type != "tflite" and cfg.name == "generate_imagenet_dataset" and self.pre_process[5][
+                    'model_layout'] == "NCHW":
                     shape = shape[0], shape[2], shape[3], shape[1]
                 data = DataFactory[cfg.name](shape, input['dtype'], n,
                                              cfg.batch_size, self.model_path, **cfg.kwargs)

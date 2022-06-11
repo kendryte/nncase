@@ -37,10 +37,10 @@ DEFINE_TFLITE_LOWER(LOG_SOFTMAX)
     axis_t reduce_axis;
     reduce_axis.push_back(int32_t(in_shape.size() - 1));
 
-    auto max = graph_.emplace<reduce>(reduce_max, in_shape, reduce_axis, std::numeric_limits<float>::lowest(), true);
+    auto max = graph_.emplace<reduce>(reduce_max, input_type, in_shape, reduce_axis, std::numeric_limits<float>::lowest(), true);
     auto sub = graph_.emplace<binary>(binary_sub, input_type, in_shape, max->output().shape(), value_range<float>::full());
     auto exp = graph_.emplace<unary>(unary_exp, sub->output().shape());
-    auto sum = graph_.emplace<reduce>(reduce_sum, exp->output().shape(), reduce_axis, 0.f, true);
+    auto sum = graph_.emplace<reduce>(reduce_sum, input_type, exp->output().shape(), reduce_axis, 0.f, true);
     auto log = graph_.emplace<unary>(unary_log, sum->output().shape());
     auto sub2 = graph_.emplace<binary>(binary_sub, input_type, sub->output().shape(), log->output().shape(), value_range<float>::full());
 
