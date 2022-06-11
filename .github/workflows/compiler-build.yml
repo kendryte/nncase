@@ -209,24 +209,24 @@ jobs:
 #          pytest tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
 #          pytest tests/examples --doctest-modules --junitxml=test_results/examples.xml
 
-      - name: Test
-        working-directory: ${{github.workspace}}
-        if: runner.os == 'Windows'
-        shell: bash
-        env:
-          PYTHONPATH: ${{github.workspace}}/install/lib;${{github.workspace}}/install/python;${{github.workspace}}/tests
-          NNCASE_CLI: ${{github.workspace}}/src/Nncase.Cli/bin/Debug/net6.0
-          LD_LIBRARY_PATH: ${{github.workspace}}/install/lib
-          VK_ICD_FILENAMES: ${{github.workspace}}/swiftshader/bin/vk_swiftshader_icd.json
-        run: |
-          pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/other.xml
-#          pytest tests/other --doctest-modules --junitxml=test_results/other.xml
-#          pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
-#          pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
-#          pytest tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
-#          pytest tests/examples --doctest-modules --junitxml=test_results/examples.xml
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1
-        if: always() && runner.os == 'Linux'
-        with:
-          files: test_results/*.xml
+#       - name: Test
+#         working-directory: ${{github.workspace}}
+#         if: runner.os == 'Windows'
+#         shell: bash
+#         env:
+#           PYTHONPATH: ${{github.workspace}}/install/lib;${{github.workspace}}/install/python;${{github.workspace}}/tests
+#           NNCASE_CLI: ${{github.workspace}}/src/Nncase.Cli/bin/Debug/net6.0
+#           LD_LIBRARY_PATH: ${{github.workspace}}/install/lib
+#           VK_ICD_FILENAMES: ${{github.workspace}}/swiftshader/bin/vk_swiftshader_icd.json
+#         run: |
+#           pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/other.xml
+# #          pytest tests/other --doctest-modules --junitxml=test_results/other.xml
+# #          pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
+# #          pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
+# #          pytest tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
+# #          pytest tests/examples --doctest-modules --junitxml=test_results/examples.xml
+#       - name: Publish Test Results
+#         uses: EnricoMi/publish-unit-test-result-action@v1
+#         if: always() && runner.os == 'Linux'
+#         with:
+#           files: test_results/*.xml
