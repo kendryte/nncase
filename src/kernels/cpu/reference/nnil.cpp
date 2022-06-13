@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include <nncase/kernels/cpu/reference/nnil.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/nnil.h>
@@ -97,6 +98,18 @@ result<void> reference::nnil_unary_method(const float *input, float *output, siz
             {
                 auto val = stack.pop();
                 stack.push((0 < val) - (val < 0));
+                break;
+            }
+            case nnil_erf:
+            {
+                auto val = stack.pop();
+                stack.push(erf(val));
+                break;
+            }
+            case nnil_atan:
+            {
+                auto val = stack.pop();
+                stack.push(std::atan(val));
                 break;
             }
             case nnil_sin:

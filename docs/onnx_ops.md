@@ -12,10 +12,13 @@
 | ArgMin | ✅ |
 | Asin | ✅ |
 | Asinh | ✅ |
+| Atan | ✅ |
+| Atanh | ✅ |
 | Add | ✅ |
 | AveragePool | ✅ |
 | BatchNormalization | ✅ |
 | Cast | ✅ |
+| CastLike | ✅ |
 | Ceil | ✅ |
 | Celu | ✅ |
 | Clip | ✅ |
@@ -32,8 +35,10 @@
 | Div | ✅ |
 | Dropout | ✅ |
 | Elu | ✅ |
+| Erf | ✅ |
 | Exp | ✅ |
 | Expand | ✅ |
+| EyeLike | ✅ |
 | Equal | ✅ |
 | Flatten | ✅ |
 | Floor | ✅ |
@@ -41,6 +46,7 @@
 | GatherND | ✅ |
 | Gemm | ✅ |
 | GlobalAveragePool | ✅ |
+| GlobalLpPool | ✅ | 
 | GlobalMaxPool | ✅ |
 | Greater | ✅ |
 | GreaterOrEqual | ✅ |
@@ -50,7 +56,10 @@
 | HardSwish | ✅ |
 | Identity | ✅ |
 | InstanceNormalization | ✅ |
+| IsInf | ✅ |
+| IsNaN | ✅ |
 | LpNormalization | ✅ |
+| LpPool | ✅ |
 | LeakyRelu | ✅ |
 | Less | ✅ |
 | LessOrEqual | ✅ |
@@ -61,11 +70,15 @@
 | MatMul | ✅ |
 | MaxPool | ✅ |
 | Max | ✅ |
+| Mean | ✅ |
+| MeanVarianceNormalization | ✅ |
 | Min | ✅ |
+| Mod | ✅ |
 | Mul | ✅ |
 | Neg | ✅ |
 | Not | ✅ |
 | OneHot | ✅ |
+| Or | ✅ |
 | Pad | ✅ |
 | Pow | ✅ |
 | PRelu | ✅ |
@@ -74,6 +87,7 @@
 | RandomNormalLike | ✅ |
 | RandomUniform | ✅ |
 | RandomUniformLike | ✅ |
+| Reciprocal | ✅ |
 | ReduceL1 | ✅ |
 | ReduceL2 | ✅ |
 | ReduceLogSum | ✅ |
@@ -107,7 +121,9 @@
 | Squeeze | ✅ |
 | Sub | ✅ |
 | Sum | ✅ |
+| Tan | ✅ |
 | Tanh | ✅ |
+| ThresholdedRelu | ✅ |
 | Tile | ✅ |
 | TopK | ✅ |
 | Transpose | ✅ |
@@ -116,3 +132,4 @@
 | Upsample | ✅ |
 | Unsqueeze | ✅ |
 | Where | ✅ |
+| Xor | ✅ |

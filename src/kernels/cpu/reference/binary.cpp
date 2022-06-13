@@ -76,6 +76,7 @@ result<void> reference::binary(binary_op_t op, const T *input_a, const T *input_
         BINARY_IMPL(binary_max, [](T a, T b) { return std::max(a, b); });
         BINARY_IMPL(binary_pow, powf);
         BINARY_IMPL(binary_logical_and, [](T a, T b) { return static_cast<T>(a && b); });
+        BINARY_IMPL(binary_logical_or, [](T a, T b) { return static_cast<T>(a || b); });
     default:
         std::cerr << "Unsupported binary op: " + binary_op_to_string(op) << std::endl;
         return err(std::errc::not_supported);

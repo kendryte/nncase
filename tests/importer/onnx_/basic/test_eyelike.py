@@ -20,59 +20,55 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 
 
-def _make_module(in_shape, ratio):
+def _make_module(in_shape, off_diagonal_offset):
     x = helper.make_tensor_value_info('x', TensorProto.FLOAT, in_shape)
     y = helper.make_tensor_value_info('y', TensorProto.FLOAT, in_shape)
-    z = helper.make_tensor_value_info('z', TensorProto.FLOAT, in_shape)
 
-    add = onnx.helper.make_node(
-        'Add',
-        inputs=['x', 'y'],
-        outputs=['sum'],
-    )
-
-    dropout = onnx.helper.make_node(
-        'Dropout',
-        inputs=['sum'],
-        outputs=['z'],
-        ratio=ratio,
+    eyelike = onnx.helper.make_node(
+        'EyeLike',
+        inputs=['x'],
+        outputs=['y'],
+        k=off_diagonal_offset
     )
 
     graph_def = helper.make_graph(
-        [add, dropout],
+        [eyelike],
         'test-model',
-        [x, y],
-        [z]
+        [x],
+        [y]
     )
 
     op = onnx.OperatorSetIdProto()
-    op.version = 10
+    op.version = 9
     model_def = helper.make_model(graph_def, producer_name='kendryte', opset_imports=[op])
 
     return model_def
 
 
 in_shapes = [
-    [1, 3, 60, 72],
-    [1, 3, 224, 224]
+    [3, 5],
+    [5, 5],
+    [5, 3]
 ]
 
-ratios = [
-    0.0,
-    0.1,
-    0.5
+off_diagonal_offsets = [
+    0,
+    -1,
+    1,
+    -2,
+    2,
+    -3,
+    3
 ]
-
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('ratio', ratios)
-def test_dropout(in_shape, ratio, request):
-    model_def = _make_module(in_shape, ratio)
-
+@pytest.mark.parametrize('off_diagonal_offset', off_diagonal_offsets)
+def test_eyelike(in_shape, off_diagonal_offset, request):
+    model_def = _make_module(in_shape, off_diagonal_offset)
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_dropout.py'])
+    pytest.main(['-vv', 'test_eyelike.py'])

@@ -600,6 +600,12 @@ void register_neutral_evaluators()
         case unary_sign:
             unary([](auto a) { return (0 < a) - (a < 0); });
             break;
+        case unary_erf:
+            unary([](auto a) { return erf(a); });
+            break;
+        case unary_atan:
+            unary([](auto a) { return std::atan(a); });
+            break;
         case unary_sin:
             unary([](auto a) { return sinf(a); });
             break;

@@ -253,6 +253,8 @@ typedef enum _unary_op
     unary_round,
     unary_rsqrt,
     unary_sign,
+    unary_erf,
+    unary_atan,
     unary_sin,
     unary_sqrt,
     unary_square,
@@ -289,6 +291,10 @@ inline std::string unary_op_to_string(unary_op_t op)
         return "unary_rsqrt";
     case unary_sign:
         return "unary_sign";
+    case unary_erf:
+        return "unary_erf";
+    case unary_atan:
+        return "unary_atan";
     case unary_sin:
         return "unary_sin";
     case unary_sqrt:

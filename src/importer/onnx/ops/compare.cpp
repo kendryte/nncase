@@ -48,6 +48,56 @@ void onnx_importer::convert_op_LessOrEqual(const onnx::NodeProto &node)
     convert_op_compare(node, compare_less_equal);
 }
 
+void onnx_importer::convert_op_IsInf(const onnx::NodeProto &node)
+{
+    assert(node.input().size() == 1);
+    assert(node.output().size() == 1);
+
+    const auto &op_name { generate_name(node) };
+    const auto &input = node.input()[0];
+    auto input_type = get_datatype(input).value();
+    auto input_shape = get_shape(input);
+
+    const auto &output = node.output()[0];
+    assert((int)input_type == 9);
+
+    auto inf = graph_.emplace<constant>(std::numeric_limits<float>::infinity());
+    inf->name(op_name + ".inf(IsInf)");
+
+    auto comp = graph_.emplace<compare>(compare_equal, input_type, input_shape, inf->output().shape());
+    comp->name(op_name + "/" + compare_op_to_string(compare_equal));
+
+    comp->input_b().connect(inf->output());
+
+    input_tensors_.emplace(&comp->input_a(), input);
+    output_tensors_.emplace(output, &comp->output());
+}
+
+void onnx_importer::convert_op_IsNaN(const onnx::NodeProto &node)
+{
+    assert(node.input().size() == 1);
+    assert(node.output().size() == 1);
+
+    const auto &op_name { generate_name(node) };
+    const auto &input = node.input()[0];
+    auto input_type = get_datatype(input).value();
+    auto input_shape = get_shape(input);
+
+    const auto &output = node.output()[0];
+    assert((int)input_type == 9);
+
+    auto nan = graph_.emplace<constant>(std::numeric_limits<float>::quiet_NaN());
+    nan->name(op_name + ".nan(IsNaN)");
+
+    auto comp = graph_.emplace<compare>(compare_equal, input_type, input_shape, nan->output().shape());
+    comp->name(op_name + "/" + compare_op_to_string(compare_equal));
+
+    comp->input_b().connect(nan->output());
+
+    input_tensors_.emplace(&comp->input_a(), input);
+    output_tensors_.emplace(output, &comp->output());
+}
+
 void onnx_importer::convert_op_compare(const onnx::NodeProto &node, compare_op_t compare_op)
 {
     assert(node.input().size() == 2);
