@@ -44,23 +44,23 @@ DEFINE_TFLITE_LOWER(L2_NORMALIZATION)
     auto sum = graph_.emplace<reduce>(reduce_sum, input_type, square->output().shape(), reduce_axis, 0.f, true);
     auto epsilon = graph_.emplace<constant>(1e-10f);
     auto max = graph_.emplace<binary>(binary_max, input_type, sum->output().shape(), epsilon->output().shape(), value_range<float>::full());
-    auto rsqrt = graph_.emplace<unary>(unary_rsqrt, max->output().shape());
-    auto mul = graph_.emplace<binary>(binary_mul, input_type, in_shape, rsqrt->output().shape(), value_range<float>::full());
+    auto sqrt = graph_.emplace<unary>(unary_sqrt, max->output().shape());
+    auto div = graph_.emplace<binary>(binary_div, input_type, in_shape, sqrt->output().shape(), value_range<float>::full());
 
     square->name(get_tensor(op.outputs(), 0).name()->string_view());
     sum->name(get_tensor(op.outputs(), 0).name()->string_view());
     epsilon->name(get_tensor(op.outputs(), 0).name()->string_view());
     max->name(get_tensor(op.outputs(), 0).name()->string_view());
-    rsqrt->name(get_tensor(op.outputs(), 0).name()->string_view());
-    mul->name(get_tensor(op.outputs(), 0).name()->string_view());
+    sqrt->name(get_tensor(op.outputs(), 0).name()->string_view());
+    div->name(get_tensor(op.outputs(), 0).name()->string_view());
 
     sum->input().connect(square->output());
     max->input_a().connect(sum->output());
     max->input_b().connect(epsilon->output());
-    rsqrt->input().connect(max->output());
-    mul->input_b().connect(rsqrt->output());
+    sqrt->input().connect(max->output());
+    div->input_b().connect(sqrt->output());
 
     link_input_tensor(&square->input(), op.inputs()->Get(0));
-    link_input_tensor(&mul->input_a(), op.inputs()->Get(0));
-    link_output_tensor(op.outputs()->Get(0), &mul->output());
+    link_input_tensor(&div->input_a(), op.inputs()->Get(0));
+    link_output_tensor(op.outputs()->Get(0), &div->output());
 }
