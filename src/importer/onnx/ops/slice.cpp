@@ -111,10 +111,12 @@ void onnx_importer::convert_op_Slice(const NodeProto &node)
             auto min = (-1) * max - 1;
 
             // check starts
-            begins[i] = starts[idx] < min ? min : starts[idx] > max ? max : starts[idx];
+            begins[i] = starts[idx] < min ? min : starts[idx] > max ? max
+                                                                    : starts[idx];
 
             // check stops
-            ends[i] = stops[idx] < min ? min : stops[idx] > max ? max : stops[idx];
+            ends[i] = stops[idx] < min ? min : stops[idx] > max ? max
+                                                                : stops[idx];
 
             // check steps
             if (!steps.empty())
