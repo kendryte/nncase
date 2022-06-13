@@ -12,21 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/cpu/optimized/tensor_compute.h>
+
+#include <cstring>
 #include <nncase/kernels/kernel_utils.h>
+#include <nncase/kernels/stackvm/opt_ops.h>
 #include <nncase/runtime/runtime_op_utility.h>
+#include <memory.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::kernels;
-using namespace nncase::kernels::cpu;
-using namespace nncase::kernels::cpu::optimized;
+using namespace nncase::kernels::stackvm;
+using namespace nncase::kernels::stackvm::optimized;
 
 namespace
 {
 template <class T>
-result<void> gather_impl(const T *input, T *output, const runtime_shape_t &in_shape, NNCASE_UNUSED const runtime_shape_t &out_shape,
-    NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, size_t axis,
+static result<void> gather_impl(const T *input, T *output, const dims_t &in_shape, [[maybe_unused]] const dims_t &out_shape,
+    [[maybe_unused]] const strides_t &in_strides, [[maybe_unused]] const strides_t &out_strides, const int64_t *indices, const dims_t &indices_shape, size_t axis,
     NNCASE_UNUSED kernel_context &context) noexcept
 {
     size_t outer_count = std::accumulate(in_shape.begin(), in_shape.begin() + axis, 1, std::multiplies<size_t> {});
@@ -57,8 +60,8 @@ result<void> gather_impl(const T *input, T *output, const runtime_shape_t &in_sh
     case size:                  \
         return gather_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, out_shape, in_strides, out_strides, indices, indices_shape, axis, context);
 
-result<void> optimized::gather(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, size_t axis, kernel_context &context) noexcept
+result<void> optimized::gather(datatype_t type, const gsl::byte *input, gsl::byte *output, const dims_t &in_shape, const dims_t &out_shape,
+    const strides_t &in_strides, const strides_t &out_strides, const int64_t *indices, const dims_t &indices_shape, size_t axis, kernel_context &context) noexcept
 {
     TYPE_IMPL_SELECT(type, GATHER_IMPL);
 }

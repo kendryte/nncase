@@ -77,14 +77,12 @@ result<value_t> nncase::kernels::stackvm::gather(value_t input, value_t axis,
     try_positive_axis(axis_value, axis, input_tensor);
     auto out_shape = gather_infer_shape(input_tensor->shape(), index_tensor->shape(), axis_value);
     try_output(out_mem, output, dtype, out_shape);
-//    if(is_contiguous(input_tensor->shape(), input_tensor->strides())) {
-//
-//    } else {
-        try_(reference::gather(typecode, input_mem, out_mem,
-                         input_tensor->shape(), output_tensor->shape(),
-                         input_tensor->strides(), output_tensor->strides(),
-                         index_mem, index_tensor->shape(), axis_value, context));
-//    }
+    CONTIGUOUS_KERNEL(gather, input_tensor, 
+                      typecode, input_mem, out_mem,
+                      input_tensor->shape(), output_tensor->shape(),
+                      input_tensor->strides(), output_tensor->strides(),
+                      index_mem, index_tensor->shape(), axis_value, context);
+
     return ok(output);
 }
 

@@ -6,7 +6,7 @@ set(SRCS
 #         slice.cpp
 #         dequantize.cpp
 #         resize_image.cpp
-#         gather.cpp
+         gather.cpp
          gather_nd.cpp
 #         quantize.cpp
 #         onehot.cpp
