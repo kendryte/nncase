@@ -9,11 +9,13 @@ namespace Nncase.CodeGen;
 
 public class LinkedFunction : ILinkedFunction
 {
-    public LinkedFunction(uint id, Function sourceFunction, uint textBegin, uint textLength, IReadOnlyList<ILinkedSection> sections)
+    public LinkedFunction(uint id, Callable sourceFunction, uint textBegin, uint textLength, IReadOnlyList<ILinkedSection> sections)
     {
         Id = id;
-        ParameterTypes = sourceFunction.Parameters.Select(x => x.TypeAnnotation).ToArray();
-        ReturnType = sourceFunction.Body.CheckedType ?? AnyType.Default;
+        if (sourceFunction.CheckedType is null)
+            CompilerServices.InferenceType(sourceFunction);
+        ParameterTypes = ((CallableType)sourceFunction.CheckedType!).Parameters.ToArray();
+        ReturnType = ((CallableType)sourceFunction.CheckedType).ReturnType;
         TextBegin = textBegin;
         TextLength = textLength;
         Sections = sections;

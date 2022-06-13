@@ -313,11 +313,12 @@ public static class T
     /// </code>
     /// </summary>
     /// <param name="name"></param>
+    /// <param name="module_kind"></param>
     /// <param name="parameters"></param>
     /// <returns></returns>
-    public static SequentialBuilder<PrimFunction> PrimFunc(string name, params Buffer[] parameters)
+    public static SequentialBuilder<PrimFunction> PrimFunc(string name, string module_kind, params Buffer[] parameters)
     {
-        return new(new PrimFunction(name, new(), new IRArray<Buffer>(parameters)));
+        return new(new PrimFunction(name, module_kind, new(), new IRArray<Buffer>(parameters)));
     }
 
     /// <summary>

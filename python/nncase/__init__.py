@@ -392,7 +392,7 @@ class Module():
 
 class Compiler:
     _module: Module = None
-    _compile_options: CliCompileOptions = None
+    _compile_options: ClCompileOptions = None
     _compiler: _nncase.Compiler.Compiler
 
     def __init__(self, compile_options: CompileOptions) -> None:
@@ -400,8 +400,8 @@ class Compiler:
         self._compiler = _nncase.Compiler.Compiler()
         self._compiler.init()
 
-    def __process_compile_options(self, compile_options: CompileOptions) -> CliCompileOptions:
-        self._compile_options: CliCompileOptions = _nncase.CompileOptions(False)
+    def __process_compile_options(self, compile_options: CompileOptions) -> ClCompileOptions:
+        self._compile_options: ClCompileOptions = _nncase.CompileOptions(False)
         self._compile_options.Target = compile_options.target
         self._compile_options.DumpLevel = 3 if compile_options.dump_ir == True else 0
         self._compile_options.DumpDir = compile_options.dump_dir
@@ -454,7 +454,7 @@ class DumpRangeTensorOptions:
         pass
 
 
-class CliCompileOptions():
+class ClCompileOptions():
     InputFile: str
     InputFormat: str
     Target: str

@@ -294,4 +294,7 @@ inline bool is_contiguous(tensor tensor) {
         try_(optimized::_op(__VA_ARGS__))                                      \
     }
 
+#define IN_CAST(_ty, _name) reinterpret_cast<const _ty *>(_name)
+#define OUT_CAST(_ty, _name) reinterpret_cast<_ty *>(_name)
+#define SCALAR_CAST(_ty, _name) *reinterpret_cast<const _ty *>(_name)
 } // namespace nncase::runtime

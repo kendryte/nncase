@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CommonServiceLocator;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
@@ -144,6 +145,7 @@ public interface ICompilerServicesProvider
     /// <param name="name">Target name.</param>
     /// <returns>Target</returns>
     ITarget GetTarget(string name);
+
 }
 
 internal interface ICompilerServicesProviderInternal
@@ -272,7 +274,6 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
 public static class CompilerServices
 {
     private static ICompilerServicesProvider? _provider;
-    private static readonly ICompileOptions _compileOptions;
 
     internal static IDataTypeServiceProvider DataTypeService => ((ICompilerServicesProviderInternal)Provider).DataTypeService;
 
@@ -437,6 +438,5 @@ public static class CompilerServices
     /// <param name="name">Target name.</param>
     /// <returns>Target</returns>
     public static ITarget GetTarget(string name) => Provider.GetTarget(name);
-    
-    public static ICompileOptions GetCompileOptions() => _compileOptions;
+
 }

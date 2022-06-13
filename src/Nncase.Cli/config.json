@@ -4,5 +4,9 @@
       "Default": "Information",
       "Microsoft.Hosting.Lifetime": "Warning"
     }
+  },
+  "Testing": {
+    "LogDir": "tests_output",
+    "LogLevel": 4
   }
 }

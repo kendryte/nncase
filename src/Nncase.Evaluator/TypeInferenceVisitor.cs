@@ -377,7 +377,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     /// <inheritdoc/>
     public override IRType VisitLeaf(Nncase.TIR.Buffer expr)
     {
-        IRType type = TensorType.Pointer(expr.ElemType.DType);
+        IRType type = expr.ElemType;
         SetCheckedType(expr, type);
         return type;
     }
@@ -386,7 +386,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     {
         try
         {
-            VerifySubField(expr, expr.Buffer, TypePatternUtility.IsPointer());
+            VerifySubField(expr, expr.Buffer, TypePatternUtility.IsTensor());
             foreach (var r in expr.Region)
             {
                 VerifySubField(expr, r.Start, TypePatternUtility.IsIntegralScalar());
@@ -399,7 +399,8 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
             SetCheckedType(expr, e.ReasonType);
             return e.ReasonType;
         }
-        IRType type = TensorType.Pointer(expr.Buffer.DType);
+        // todo need infer the sub region shape/stride
+        IRType type = expr.Buffer.ElemType;
         SetCheckedType(expr, type);
         return type;
     }
