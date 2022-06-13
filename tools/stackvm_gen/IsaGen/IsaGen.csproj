@@ -25,7 +25,6 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Templates\codegen_cs.razor" />
-    <EmbeddedResource Include="Templates\dummy_kernel_cpp.razor" />
     <EmbeddedResource Include="Templates\op_writer_cpp.razor" />
     <EmbeddedResource Include="Templates\op_reader_cpp.razor" />
     <EmbeddedResource Include="Templates\emitter_cs.razor" />

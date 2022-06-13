@@ -69,6 +69,7 @@ result<void> unary_impl(unary_op_t op, const T *input, T *output,
         UNARY_IMPL_OP(rsqrt, [](float v) { return 1.f / sqrtf(v); });
         UNARY_IMPL_OP(sign, [](float v) { return (0.f < v) - (v < 0.f); });
         UNARY_IMPL_OP(sin, sinf);
+        UNARY_IMPL_OP(sinh, sinhf);
         UNARY_IMPL_OP(sqrt, sqrtf);
         UNARY_IMPL_OP(square, [](float v) { return v * v; });
         UNARY_IMPL_OP(tanh, tanhf);

@@ -141,6 +141,9 @@ inline size_t positive_index(int index, size_t rank) {
         try_(type_only_check<_ty>(_value_name##_tensor)) auto _var_name =      \
             reinterpret_cast<const _ty *>(__##_var_name)
 
+#define try_integer_input(_var_name, _value_name)                              \
+    try_input_with_ty(_var_name, _value_name, int64_t)
+
 #define try_f32_input(_var_name, _value_name)                                  \
     try_input_with_ty(_var_name, _value_name, float)
 #define try_f32_output(_var_name, _value_name, _dt, _out_shape)                \
@@ -176,13 +179,15 @@ inline size_t positive_index(int index, size_t rank) {
 #define try_to_scalar(_var_name, _value_name, _ty)                             \
     try_var(_var_name, value_to_scalar<_ty>(_value_name))
 
-#define try_positive_scalar(_var_name, _value_name, _ty)                             \
-    try_var(__##_var_name, value_to_scalar<_ty>(_value_name)) \
-    auto _var_name =
+#define try_to_integer(_var_name, _value_name)                                 \
+    try_to_scalar(_var_name, _value_name, int64_t)
 
-#define try_to_axis(_var_name, _value_name, _input)                            \
+#define try_positive_axis_with_rank(_var_name, _value_name, _rank)             \
     try_to_scalar(__##_var_name, _value_name, int64_t);                        \
-    auto _var_name = positive_index(__##_var_name, _input->shape().size())
+    auto _var_name = positive_index(__##_var_name, _rank)
+
+#define try_positive_axis(_var_name, _value_name, _input_tensor)                      \
+    try_positive_axis_with_rank(_var_name, _value_name, _input_tensor->shape().size())
 
 #define try_array(_var_name, _value_name, _ty)                                 \
     try_value_as_t(_var_name, _value_name, _ty, array)
@@ -277,4 +282,16 @@ inline result<T *> value_as_array([[maybe_unused]] value_t v) {
 #define IN_CAST(_ty, _name) reinterpret_cast<const _ty *>(_name)
 #define OUT_CAST(_ty, _name) reinterpret_cast<_ty *>(_name)
 #define SCALAR_CAST(_ty, _name) *reinterpret_cast<const _ty *>(_name)
+
+inline bool is_contiguous(tensor tensor) {
+    return is_contiguous(tensor->shape(), tensor->strides());
+}
+
+#define CONTIGUOUS_KERNEL(_op, _in_tensor, ...)                                \
+    if (is_contiguous(_in_tensor)) {                                           \
+        try_(reference::_op(__VA_ARGS__))                                      \
+    } else {                                                                   \
+        try_(optimized::_op(__VA_ARGS__))                                      \
+    }
+
 } // namespace nncase::runtime

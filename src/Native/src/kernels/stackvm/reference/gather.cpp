@@ -12,14 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/stackvm/tensor_ops.h>
-#include <nncase/kernels/stackvm/ops.h>
-#include <nncase/runtime/util.h>
-#include <nncase/runtime/allocator.h>
-#include <nncase/runtime/host_buffer.h>
 #include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
+#include <nncase/kernels/stackvm/ref_ops.h>
+#include <nncase/kernels/stackvm/tensor_ops.h>
+#include <nncase/runtime/allocator.h>
+#include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
+#include <nncase/runtime/util.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -67,7 +67,7 @@ result<void> gather_impl(const T *input, T *output, const dims_t &in_shape, cons
     case size:                  \
         return ::gather_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, out_shape, in_strides, out_strides, indices, indices_shape, axis, context);
 
-result<void> nncase::kernels::stackvm::gather_impl(datatype_t type, const gsl::byte *input, gsl::byte *output, const dims_t &in_shape, const dims_t &out_shape,
+result<void> nncase::kernels::stackvm::reference::gather(datatype_t type, const gsl::byte *input, gsl::byte *output, const dims_t &in_shape, const dims_t &out_shape,
     const strides_t &in_strides, const strides_t &out_strides, const int64_t *indices, const dims_t &indices_shape, size_t axis, kernel_context &context) noexcept
 {
     TYPE_IMPL_SELECT(type, GATHER_IMPL);

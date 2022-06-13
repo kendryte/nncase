@@ -34,7 +34,7 @@ def _make_module(num, init):
 
 in_shapes = [
     [1],
-    [1, 3, 224, 224]
+    [1, 3, 24, 24]
 ]
 
 inits = [

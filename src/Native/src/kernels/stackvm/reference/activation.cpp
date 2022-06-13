@@ -32,6 +32,7 @@ using namespace nncase::kernels::stackvm;
 FLOAT_UNARY_TEMPLATE(relu, std::max((float)0, x))
 FLOAT_UNARY_TEMPLATE(sigmoid, 1 / (1 + exp(-x)))
 FLOAT_UNARY_TEMPLATE(hard_swish, x * std::max(0.f, std::min((float)1.f, (float)(1.f/6 * x + 0.5))))
+FLOAT_UNARY_WITH_MUL_TEMPLATE(elu, alpha, x < 0 ? alpha * (exp(x) - 1) : x)
 FLOAT_UNARY_WITH_MUL_TEMPLATE(prelu, slope, x < 0 ? slope * x : x)
 FLOAT_UNARY_WITH_MUL_TEMPLATE(celu, alpha,
                               std::max((float)0, x) +
