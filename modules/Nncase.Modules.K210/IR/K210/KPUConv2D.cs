@@ -12,10 +12,10 @@ using static Nncase.IR.TypePatternUtility;
 namespace Nncase.IR.K210;
 
 /// <summary>
-/// Fake KPU Conv2D.
+/// KPU Conv2D.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record class FakeKPUConv2D(bool IsDepthwise, KPUFilterType FilterType, KPUPoolType PoolType, Tensor<float> Bias, FakeKPUActivationParameters Activation) : Op
+public sealed record class KPUConv2D(bool IsDepthwise, KPUFilterType FilterType, KPUPoolType PoolType, Tensor<KPUBatchNormSegment> BatchNorms, KPUActivationParameters Activation) : Op
 {
     /// <summary>
     /// Gets input.

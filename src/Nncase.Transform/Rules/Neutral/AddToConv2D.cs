@@ -18,7 +18,7 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Transform.Rules.Neutral;
 
 /// <summary>
-/// Transform <see cref="Add"/> to <see cref="Conv2D"/>.
+/// Transform <see cref="IR.F.Math.Add(Expr, Expr)"/> to <see cref="IR.NN.Conv2D"/>.
 /// </summary>
 [RuleGenerator]
 public sealed partial class AddToConv2D : IRewriteRule

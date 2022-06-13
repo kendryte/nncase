@@ -51,7 +51,7 @@ public enum KPUPoolType
     Max_2_S1 = 9,
 }
 
-public struct KPUBatchNormSegment
+public record struct KPUBatchNormSegment
 {
     public int Mul { get; set; }
 
@@ -60,7 +60,7 @@ public struct KPUBatchNormSegment
     public int Add { get; set; }
 }
 
-public struct KPUActivationSegment
+public record struct KPUActivationSegment
 {
     public long StartX { get; set; }
 
@@ -71,7 +71,23 @@ public struct KPUActivationSegment
     public int Add { get; set; }
 }
 
-public class FakeActivationParameters
+public record KPUActivationParameters
 {
+    public KPUActivationSegment[] Segments { get; set; }
+}
 
+public record struct FakeKPUActivationSegment
+{
+    public float StartX { get; set; }
+
+    public float Mul { get; set; }
+
+    public float Add { get; set; }
+}
+
+public record FakeKPUActivationParameters
+{
+    public FakeKPUActivationSegment[] Segments { get; set; }
+
+    public ValueRange<float> Clamp { get; set; }
 }
