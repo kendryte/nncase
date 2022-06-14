@@ -32,5 +32,8 @@ result<void> gather_nd(datatype_t type, const gsl::byte *input, gsl::byte *outpu
 result<void> gather(datatype_t type, const gsl::byte *input, gsl::byte *output, const dims_t &in_shape, const dims_t &out_shape,
     const strides_t &in_strides, const strides_t &out_strides, const int64_t *indices, const dims_t &indices_shape, size_t axis, kernel_context &context) noexcept;
 
+result<void> concat(datatype_t type, gsl::span<const gsl::byte *const> inputs, gsl::byte *output, const dims_t &out_shape,
+    gsl::span<const strides_t> in_strides, const strides_t &out_strides, size_t axis, const dims_t &concat_dims, kernel_context &context) noexcept;
+
 } // namespace optimized
 END_NS_NNCASE_KERNELS_MODULE

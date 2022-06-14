@@ -44,4 +44,12 @@ dims_t gather_nd_infer_shape(const dims_t& in_shape, const dims_t& index_shape, 
     return new_shape;
 }
 
+dims_t concat_infer_shape(std::vector<dims_t> shapes, int axis) {
+    auto new_shape = shapes[0];
+    new_shape[axis] = std::accumulate(shapes.begin(), shapes.end(), 0,
+                                      [&](auto sum, auto in_shape) -> int {
+        return sum + in_shape[axis];
+    });
+    return new_shape;
+}
 END_NS_NNCASE_KERNELS_MODULE
