@@ -145,5 +145,10 @@ namespace Nncase.IR
             (true, true) => lhs.FixedValue / rhs.FixedValue,
             (_, _) => Dimension.Unknown,
         };
+
+        public bool HasFixedValue(Predicate<int> predicate)
+        {
+            return Value.HasValue && predicate(Value.Value);
+        }
     }
 }
