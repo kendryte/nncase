@@ -16,13 +16,11 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/constantofshape.cpp
     ops/conv.cpp
     ops/cast.cpp
-    ops/castlike.cpp
     ops/cumsum.cpp
     ops/depthtospace.cpp
     ops/dequantizelinear.cpp
     ops/dropout.cpp
     ops/expand.cpp
-    ops/eyelike.cpp
     ops/gather.cpp
     ops/gather_nd.cpp
     ops/gemm.cpp
@@ -33,8 +31,6 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/lpnorm.cpp
     ops/lrn.cpp
     ops/matmul.cpp
-    ops/mean.cpp
-    ops/meanvariancenormalization.cpp
     ops/onehot.cpp
     ops/pad.cpp
     ops/pool.cpp
