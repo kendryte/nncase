@@ -21,12 +21,19 @@ import subprocess
 import shutil
 import os
 from shutil import which
+import platform
 
+def os_join(root, name):
+    if platform.system().lower() == 'windows':
+        return root + "//" + name
+    else:
+        return os.path.join(root, name)
+    
 def run_cmd(cmd):
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     retval = p.wait()
     if retval != 0:
-        raise Exception(f"exit code: {retval} \n in command:\n{cmd}")
+        raise Exception(f"exit code: {retval} \n in command:\n{cmd} \n error msg:{p.stdout.readlines()}")
     lines = p.stdout.read().splitlines()
     return lines
 
@@ -59,9 +66,9 @@ def get_pynet_init_file():
         run_cmd(f"{pip_cmd} install --pre pythonnet")
     # todo:check pythonnet version
     pn_root = location[0].split(': ')[1]
-    if not os.path.exists(os.path.join(pn_root, '__init__.py')):
-        pn_root = os.path.join(pn_root, 'pythonnet')
-        if not os.path.exists(os.path.join(pn_root, '__init__.py')):
+    if not os.path.exists(os_join(pn_root, '__init__.py')):
+        pn_root = os_join(pn_root + os.sep, 'pythonnet')
+        if not os.path.exists(os_join(pn_root, '__init__.py')):
             raise Exception('pythonnet root path search failed')
     return pn_root
 
@@ -81,7 +88,7 @@ def generate_runtime_config(config_path, version):
 
 def create_runtime_config(pn_root, version):
     config_file = 'runtime_config.json'
-    config_path = os.path.join(pn_root, config_file)
+    config_path = os_join(pn_root, config_file)
     if os.path.exists(config_path):
         return config_path
     return generate_runtime_config(config_path, version)
