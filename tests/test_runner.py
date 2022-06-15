@@ -403,9 +403,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         # todo: move to run
         if not self.inputs:
             self.parse_model_input_output(model_file)
-        names, args = TestRunner.split_value(cfg.preprocess_opt)
-        for combine_args in product(*args):
-            dict_args = dict(zip(names, combine_args))
+        for dict_args in self.make_args(cfg.preprocess_opt):
             self.get_process_config(dict_args)
             self.generate_all_data(case_dir, cfg, dict_args)
             self.write_preprocess_opt(dict_args)
@@ -413,10 +411,48 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             self.cpu_infer(case_dir, model_file, dict_args['input_type'])
             import_options, compile_options = self.get_compiler_options(dict_args, model_file)
             model_content = self.read_model_file(model_file)
-            self.run_evaluator(cfg, case_dir, import_options,
-                               compile_options, model_content, dict_args)
-            self.run_inference(cfg, case_dir, import_options,
-                               compile_options, model_content, dict_args)
+            for eval_args in self.dispatch(cfg, cfg.eval):
+                eval_output_paths = self.run_evaluator(eval_args, cfg, case_dir, import_options,
+                                                       compile_options, model_content, dict_args)
+                self.check_result(eval_output_paths, eval_args, 'eval')
+
+            for infer_args in self.dispatch(cfg, cfg.infer):
+                infer_output_paths = self.run_inference(infer_args, cfg, case_dir, import_options,
+                                   compile_options, model_content, dict_args)
+                self.check_result(infer_output_paths, infer_args, 'infer')
+
+    def check_result(self, nncase_output_paths, dict_args, stage):
+        judge, result = self.compare_results(
+            self.output_paths, nncase_output_paths, dict_args)
+        assert(judge), f"Fault result in {stage} + {result}"
+
+    def make_args(self, cfg_detail):
+        names, args = self.split_value(cfg_detail)
+        for combine_args in product(*args):
+            yield dict(zip(names, combine_args))
+
+    def dispatch(self, full_cfg, sub_cfg):
+        for dict_args in self.make_args(sub_cfg):
+            if dict_args['ptq'] and len(self.inputs) != 1:
+                continue
+            if full_cfg.compile_opt.dump_import_op_range and len(self.inputs) != 1:
+                continue
+            yield dict_args
+
+    def set_quant_opt(self, cfg, kwargs, preprocess, compiler):
+        if cfg.compile_opt.dump_import_op_range:
+            dump_range_options = nncase.DumpRangeTensorOptions()
+            dump_range_options.set_tensor_data(np.asarray(
+                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]).tobytes())
+            dump_range_options.samples_count = cfg.generate_dump_range_data.batch_size
+            compiler.dump_range_options(dump_range_options)
+        if kwargs['ptq']:
+            ptq_options = nncase.PTQTensorOptions()
+            ptq_options.set_tensor_data(np.asarray(
+                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
+            ptq_options.samples_count = cfg.generate_calibs.batch_size
+            compiler.use_ptq(ptq_options)
+
 
     def write_preprocess_opt(self, dict_args):
         if dict_args['preprocess'] == True:

@@ -4,20 +4,11 @@ import nncase
 import numpy as np
 
 class Inference:
-    def run_inference(self, cfg, case_dir, import_options, compile_options, model_content, preprocess_opt):
-        names, args = self.split_value(cfg.infer)
-        for combine_args in product(*args):
-            dict_args = dict(zip(names, combine_args))
-            if dict_args['ptq'] and len(self.inputs) != 1:
-                continue
-            if cfg.compile_opt.dump_import_op_range and len(self.inputs) != 1:
-                continue
-            infer_output_paths = self.nncase_infer(
-                cfg, case_dir, import_options,
-                compile_options, model_content, dict_args, preprocess_opt)
-            judge, result = self.compare_results(
-                self.output_paths, infer_output_paths, dict_args)
-            assert(judge), 'Fault result in infer' + result
+    def run_inference(self, dict_args, cfg, case_dir, import_options, compile_options, model_content, preprocess_opt):
+        infer_output_paths = self.nncase_infer(
+            cfg, case_dir, import_options,
+            compile_options, model_content, dict_args, preprocess_opt)
+        return infer_output_paths
 
     def nncase_infer(self, cfg, case_dir: str,
                      import_options: nncase.ImportOptions,
@@ -31,7 +22,7 @@ class Inference:
         compile_options = self.get_infer_compile_options(infer_dir, cfg, compile_options, kwargs, preprocess)
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
-        self.set_infer_quant_opt(cfg, kwargs, preprocess, compiler)
+        self.set_quant_opt(cfg, kwargs, preprocess, compiler)
         compiler.compile()
         kmodel = compiler.gencode_tobytes()
         with open(os.path.join(infer_dir, 'test.kmodel'), 'wb') as f:
@@ -69,20 +60,6 @@ class Inference:
         compile_options.output_layout = preprocess['output_layout']
         compile_options.tcu_num = cfg.compile_opt.tcu_num
         return compile_options
-
-    def set_infer_quant_opt(self, cfg, kwargs, preprocess, compiler):
-        if cfg.compile_opt.dump_import_op_range:
-            dump_range_options = nncase.DumpRangeTensorOptions()
-            dump_range_options.set_tensor_data(np.asarray(
-                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]).tobytes())
-            dump_range_options.samples_count = cfg.generate_dump_range_data.batch_size
-            compiler.dump_range_options(dump_range_options)
-        if kwargs['ptq']:
-            ptq_options = nncase.PTQTensorOptions()
-            ptq_options.set_tensor_data(np.asarray(
-                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
-            ptq_options.samples_count = cfg.generate_calibs.batch_size
-            compiler.use_ptq(ptq_options)
 
     def set_infer_input(self, preprocess, case_dir, sim):
         for i in range(len(self.inputs)):
