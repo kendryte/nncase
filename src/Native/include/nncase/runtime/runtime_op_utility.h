@@ -51,25 +51,15 @@ inline size_t get_bytes(const datatype_t &type, const TShape &shape,
 }
 
 namespace detail {
-template <class shape_type, class strides_type>
-inline void adapt_strides(const shape_type &shape, strides_type &strides,
-                          std::nullptr_t,
-                          typename strides_type::size_type i) noexcept {
-    if (shape[i] == 1) {
-        strides[i] = 0;
-    }
-}
-
 template <class shape_type, class strides_type, class bs_ptr>
 inline std::size_t compute_strides(const shape_type &shape,
-                                   strides_type &strides, bs_ptr bs) {
+                                   strides_type &strides, [[maybe_unused]] bs_ptr bs) {
     using strides_value_type = typename std::decay_t<strides_type>::value_type;
     strides_value_type data_size = 1;
     for (std::size_t i = shape.size(); i != 0; --i) {
         strides[i - 1] = data_size;
         data_size =
             strides[i - 1] * static_cast<strides_value_type>(shape[i - 1]);
-        adapt_strides(shape, strides, bs, i - 1);
     }
     return static_cast<std::size_t>(data_size);
 }

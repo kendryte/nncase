@@ -34,7 +34,7 @@ def _make_module(dim0, dim1):
 in_shapes = [
     [3, 4],
     [3, 4, 5],
-    [2, 3, 224, 224]
+    [2, 3, 24, 24]
 ]
 
 axes = [

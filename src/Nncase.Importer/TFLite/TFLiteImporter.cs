@@ -40,6 +40,7 @@ namespace Nncase.Importer.TFLite
         private readonly tflite.Model _model;
         private readonly tflite.SubGraph _subGraph;
         private readonly Dictionary<int, Expr> _outputTensors = new Dictionary<int, Expr>();
+        private SortedSet<string> _opsInModel = new SortedSet<string>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TFLiteImporter"/> class.
@@ -129,6 +130,7 @@ namespace Nncase.Importer.TFLite
             var builtinCode = (tflite.BuiltinOperator)Math.Max(
                 opcode.DeprecatedBuiltinCode,
                 (int)opcode.BuiltinCode);
+            _opsInModel.Add(builtinCode.ToString());
 
             var output = builtinCode switch
             {
@@ -285,7 +287,7 @@ namespace Nncase.Importer.TFLite
 
                 // tflite.BuiltinOperator.SPACE_TO_DEPTH,
                 // tflite.BuiltinOperator.SPARSE_TO_DENSE,
-                // tflite.BuiltinOperator.SPLIT,
+                tflite.BuiltinOperator.SPLIT => VisitSplit(op),
                 // tflite.BuiltinOperator.SPLIT_V,
                 tflite.BuiltinOperator.SQRT => VisitUnary(op, UnaryOp.Sqrt),
                 tflite.BuiltinOperator.SQUARE => VisitUnary(op, UnaryOp.Square),

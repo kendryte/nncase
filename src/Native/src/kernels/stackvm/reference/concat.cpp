@@ -91,18 +91,17 @@ dims_t infer_shape(std::vector<dims_t> shapes, int axis) {
 
 result<value_t> nncase::kernels::stackvm::concat(value_t input, value_t axis, value_t output,
                                                  kernel_context &context) {
-    try_var(inputs, input.as<tuple>());
     try_tuple_input(inputs_mem, input);
-    try_var(shapes, get_shapes(inputs));
-    try_var(strides, get_strides(inputs));
-    try_var(input0, inputs->fields()[0].as<tensor>());
+    try_var(shapes, get_shapes(input_tuple));
+    try_var(strides, get_strides(input_tuple));
+    try_var(input0, input_tuple->fields()[0].as<tensor>());
     auto dtype = input0->dtype();
-    try_positive_axis_with_rank(axis_value, axis, inputs->fields().size());
+    try_positive_axis_with_rank(axis_value, axis, input_tuple->fields().size());
     auto out_shape = infer_shape(shapes, axis_value);
     try_output(out_mem, output, dtype, out_shape);
     auto concat_dims = dims_t();
-    for (int i = 0; i < inputs->fields().size(); ++i) {
-        try_var(in, inputs->fields()[i].as<tensor>());
+    for (int i = 0; i < input_tuple->fields().size(); ++i) {
+        try_var(in, input_tuple->fields()[i].as<tensor>());
         concat_dims.push_back(in->shape()[axis_value]);
     }
     try_(concat_impl(dtype, inputs_mem,

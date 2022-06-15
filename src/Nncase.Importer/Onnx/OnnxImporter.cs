@@ -41,7 +41,8 @@ namespace Nncase.Importer
         private readonly Dictionary<string, long> _opSetMap;
         private Dictionary<string, Expr> _outputTensors;
         private Dictionary<string, TensorProto> _constTensors;
-
+        private SortedSet<string> _opsInModel = new SortedSet<string>();
+        
         public OnnxImporter(byte[] onnxModel)
         {
             _opSetMap = new Dictionary<string, long>();
@@ -109,7 +110,6 @@ namespace Nncase.Importer
 
             _outputTensors = createdInputs.ToDictionary(n => n.Name, n => (Expr) n);
             _graph.Node.ToList().ForEach(Visit);
-
             var outputs = _graph.Output.Select(o => _outputTensors[o.Name]).ToArray();
             var body = outputs.Length > 1 ? new IR.Tuple(outputs) : outputs[0]; 
             return MakeMainModule(body, createdInputs.ToArray());
@@ -229,6 +229,8 @@ namespace Nncase.Importer
 
         private void Visit(NodeProto op)
         {
+            Console.WriteLine(op.OpType);
+            _opsInModel.Add(op.OpType);
             var output = op.OpType switch
             {
                 "Abs" => VisitUnary(op, UnaryOp.Abs),

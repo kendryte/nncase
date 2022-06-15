@@ -25,6 +25,15 @@
 namespace nncase::runtime {
 inline bool is_scalar(tensor t) noexcept { return t->shape().empty(); }
 
+template <typename F>
+inline result<void> tuple_for_each_with_i(tuple inputs, F &&f) {
+    for (int i = 0; i < inputs->fields().size(); ++i) {
+        try_(f(inputs->fields()[i], i));
+    }
+    return ok();
+}
+
+// todo:not process nest tuple
 template <typename T, bool IsResult, typename F>
 inline result<std::vector<T>> get_from_tuple_with_result(tuple inputs, F &&f) {
     std::vector<T> data(inputs->fields().size());
@@ -55,11 +64,15 @@ inline result<std::vector<dims_t>> get_strides(tuple inputs) {
                                   [](auto &input) { return input->strides(); });
 }
 
+template <bool IsTuple, typename ShapeT = dims_t>
 inline result<void> alloc_output(value_t &output, datatype_t dtype,
-                                 const dims_t &out_shape) {
+                                 const ShapeT &out_shape);
+
+template <>
+inline result<void> alloc_output<false, dims_t>(value_t &output,
+                                                datatype_t dtype,
+                                                const dims_t &out_shape) {
     // TODO: copy back output
-    //    try_var(output, output_v.as<tensor>());
-    //    assert(output.empty());
     if (output.empty()) {
         auto out_strides = get_default_strides(out_shape);
         try_var(out_buffer, buffer_allocator::host().allocate(
@@ -67,9 +80,39 @@ inline result<void> alloc_output(value_t &output, datatype_t dtype,
         output =
             tensor(std::in_place, dtype, out_shape, out_strides, out_buffer);
     } else {
-        try_var(out_tensor, output.as<tensor>());
-        if (out_tensor->shape() != out_shape)
-            return err(nncase_errc::shape_mismatch);
+        try_var(
+            out_tensor,
+            output.as<tensor>()) if (out_tensor->shape() !=
+                                     out_shape) return err(nncase_errc::
+                                                               shape_mismatch);
+    }
+    return ok();
+}
+
+template <>
+inline result<void>
+alloc_output<true, std::vector<dims_t>>(value_t &outputs, datatype_t dtype,
+                                        const std::vector<dims_t> &out_shapes) {
+    if (outputs.empty()) {
+        auto size = out_shapes.size();
+        std::vector<value_t> fields(size);
+        for (int i = 0; i < size; ++i) {
+            auto output = value_t();
+            try_(alloc_output<false>(output, dtype, out_shapes[i]));
+            fields[i] = output;
+        }
+        outputs = tuple(std::in_place, std::move(fields));
+    } else {
+        try_var(output_tuple, outputs.as<tuple>());
+        try_(tuple_for_each_with_i(
+            output_tuple, [&](auto &output, auto i) -> result<void> {
+                try_var(out_tensor, output.template as<tensor>());
+                if (out_tensor->shape() != out_shapes[i]) {
+                    return err(nncase_errc::shape_mismatch);
+                } else {
+                    return ok();
+                }
+            }));
     }
     return ok();
 }
@@ -84,6 +127,11 @@ inline result<gsl::byte *> get_output_data(tensor output) {
     try_var(output_buffer, get_host_buffer(output));
     try_var(output_map, output_buffer.map(map_write));
     return ok(output_map.buffer().data());
+}
+
+inline result<std::vector<gsl::byte *>> get_output_data(tuple outputs) {
+    return get_from_tuple_with_result<gsl::byte *, true>(
+        outputs, [](tensor &input) { return get_output_data(input); });
 }
 
 inline result<gsl::byte *> get_input_data(tensor input) {
@@ -124,12 +172,12 @@ inline size_t positive_index(int index, size_t rank) {
     return index < 0 ? index + rank : index;
 }
 
-#define try_alloc_output(out_mem, _out_tensor, _dt, _shape)                    \
-    try_(alloc_output(_out_tensor, _dt, _shape));
+#define try_alloc_output(_out_tensor, _dt, _shape, _is_tuple)                  \
+    try_(alloc_output<_is_tuple>(_out_tensor, _dt, _shape));
 
 #define try_input_impl(_var_name, _value_name, _value_kind)                    \
-    try_var(_value_name##_tensor, _value_name.as<_value_kind>());              \
-    try_var(_var_name, get_input_data(_value_name##_tensor))
+    try_var(_value_name##_##_value_kind, _value_name.as<_value_kind>());       \
+    try_var(_var_name, get_input_data(_value_name##_##_value_kind))
 
 #define try_input(_var_name, _value_name)                                      \
     try_input_impl(_var_name, _value_name, tensor)
@@ -137,9 +185,9 @@ inline size_t positive_index(int index, size_t rank) {
     try_input_impl(_var_name, _value_name, tuple)
 
 #define try_input_with_ty(_var_name, _value_name, _ty)                         \
-    try_input(__##_var_name, _value_name)                                      \
-        try_(type_only_check<_ty>(_value_name##_tensor)) auto _var_name =      \
-            reinterpret_cast<const _ty *>(__##_var_name)
+    try_input(__##_var_name, _value_name);                                     \
+    try_(type_only_check<_ty>(_value_name##_tensor));                          \
+    auto _var_name = reinterpret_cast<const _ty *>(__##_var_name)
 
 #define try_integer_input(_var_name, _value_name)                              \
     try_input_with_ty(_var_name, _value_name, int64_t)
@@ -150,16 +198,18 @@ inline size_t positive_index(int index, size_t rank) {
     try_output(__##_var_name, _value_name, _dt, _out_shape);                   \
     auto _var_name = reinterpret_cast<float *>(__##_var_name)
 
-#define try_output_impl(_var_name, _value_name, _dt, _out_shape, _value_kind)  \
-    try_alloc_output(out_mem, _value_name, _dt, _out_shape);                   \
-    try_var(_value_name##_tensor, _value_name.as<_value_kind>());              \
-    try_var(_var_name, get_output_data(_value_name##_tensor))
+// todo:when _value_kind is tuple, _value_name_tensor is a bad name
+#define try_output_impl(_var_name, _value_name, _dt, _out_shape, _value_kind,  \
+                        _is_tuple)                                             \
+    try_alloc_output(_value_name, _dt, _out_shape, _is_tuple);                 \
+    try_var(_value_name##_##_value_kind, _value_name.as<_value_kind>());       \
+    try_var(_var_name, get_output_data(_value_name##_##_value_kind))
 
 #define try_output(_var_name, _value_name, _dt, _out_shape)                    \
-    try_output_impl(_var_name, _value_name, _dt, _out_shape, tensor)
+    try_output_impl(_var_name, _value_name, _dt, _out_shape, tensor, false)
 
-#define try_tuple_output(_var_name, _value_name, _dt, _out_shape)              \
-    try_output_impl(_var_name, _value_name, _dt, _out_shape, tuple)
+#define try_tuple_output(_var_name, _value_name, _dt, _out_shapes)             \
+    try_output_impl(_var_name, _value_name, _dt, _out_shapes, tuple, true)
 
 #define try_value_as(_var_name, _value_name, f_name)                           \
     try_var(_var_name, value_as_##f_name(_value_name))
@@ -186,8 +236,9 @@ inline size_t positive_index(int index, size_t rank) {
     try_to_scalar(__##_var_name, _value_name, int64_t);                        \
     auto _var_name = positive_index(__##_var_name, _rank)
 
-#define try_positive_axis(_var_name, _value_name, _input_tensor)                      \
-    try_positive_axis_with_rank(_var_name, _value_name, _input_tensor->shape().size())
+#define try_positive_axis(_var_name, _value_name, _input_tensor)               \
+    try_positive_axis_with_rank(_var_name, _value_name,                        \
+                                _input_tensor->shape().size())
 
 #define try_array(_var_name, _value_name, _ty)                                 \
     try_value_as_t(_var_name, _value_name, _ty, array)
@@ -195,24 +246,66 @@ inline size_t positive_index(int index, size_t rank) {
 #define try_typecode(_var_name, _tensor_name)                                  \
     try_var(_var_name, to_typecode(_tensor_name->dtype()))
 
+#define try_ref(op, ...) try_(reference::op(__VA_ARGS__))
+
+#define finish return ok(output)
+#define tuple_finish return ok(output_tuple)
+
 template <typename T>
 inline result<T> value_to_scalar([[maybe_unused]] value_t value) {
-    try_input_with_ty(input, value, T);
-    return ok(*input);
+    try_input(input, value);
+    // todo: maybe this is a bad way?
+#define RETURN_RESULT(_in_type)                                                \
+    if (cmp_type<_in_type>(value_tensor->dtype())) {                           \
+        return ok((T)(*reinterpret_cast<const _in_type *>(input)));            \
+    }
+    RETURN_RESULT(float);
+    RETURN_RESULT(int32_t);
+    RETURN_RESULT(int64_t);
+    RETURN_RESULT(uint32_t);
+    RETURN_RESULT(uint64_t);
+    return err(nncase_errc::datatype_mismatch);
+#undef RETURN_RESULT
 }
 
 inline result<scalar> tensor_as_scalar([[maybe_unused]] value_t value) {
     throw "NotImplement";
 }
 
+template <typename TI, typename TO>
+itlib::small_vector<TO, 4> to_vec(const gsl::byte *input, size_t size) {
+    auto in_ptr = reinterpret_cast<const TI *>(input);
+    auto vec = itlib::small_vector<TO, 4>(size);
+    for (int i = 0; i < size; ++i) {
+        vec[i] = (TO)in_ptr[i];
+    }
+    return vec;
+}
+
 template <typename T>
 inline result<itlib::small_vector<T, 4>> value_as_Ts(value_t value) {
-    try_input_with_ty(input, value, T);
-    if (value_tensor->shape().size() > 1) {
+    try_input(input, value);
+    auto rank = value_tensor->shape().size();
+    if (rank > 1) {
+        // only used for rank 1
         return Err(nncase_errc::shape_mismatch);
     }
-    return ok(
-        itlib::small_vector<T, 4>(input, input + value_tensor->shape()[0]));
+    auto size = value_tensor->shape()[0];
+#define RETURN_RESULT(_in_type)                                                \
+    if (cmp_type<_in_type>(value_tensor->dtype())) {                           \
+        return ok(to_vec<_in_type, T>(input, size));                           \
+    }
+
+    static_assert(std::is_same_v<T, int32_t> || std::is_same_v<T, uint32_t> ||
+                      std::is_same_v<T, int64_t> ||
+                      std::is_same_v<T, int64_t> || std::is_same_v<T, size_t>,
+                  "not suppported type");
+    RETURN_RESULT(int32_t);
+    RETURN_RESULT(uint32_t);
+    RETURN_RESULT(int64_t);
+    RETURN_RESULT(uint64_t);
+#undef RETURN_RESULT
+    return err(nncase_errc::datatype_mismatch);
 }
 
 inline result<dims_t> value_as_dims(value_t value) {
@@ -287,6 +380,7 @@ inline bool is_contiguous(tensor tensor) {
     return is_contiguous(tensor->shape(), tensor->strides());
 }
 
+// kernel dispatch for single input
 #define CONTIGUOUS_KERNEL(_op, _in_tensor, ...)                                \
     if (is_contiguous(_in_tensor)) {                                           \
         try_(reference::_op(__VA_ARGS__))                                      \

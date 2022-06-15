@@ -44,4 +44,29 @@ dims_t gather_nd_infer_shape(const dims_t& in_shape, const dims_t& index_shape, 
     return new_shape;
 }
 
+dims_t slice_infer_shape(const axes_t& begins, const axes_t& ends,
+                   const axes_t& strides) {
+    auto new_shape = dims_t();
+    for (size_t i = 0; i < strides.size(); i++)
+    {
+        auto stride = strides[i];
+        auto begin_val = begins[i];
+        auto end_val = ends[i];
+        auto dim = (int)std::ceil(((float)std::abs(end_val - begin_val) / (float)std::abs(stride)));
+        new_shape.push_back(dim);
+    }
+
+    return new_shape.size() ? new_shape : dims_t { 1 };
+}
+
+std::vector<dims_t> split_shape_infer(const dims_t& in_shape, size_t axis, const dims_t& sections)
+{
+    auto result = std::vector<dims_t>();
+    for (int i = 0; i < sections.size(); ++i) {
+        auto shape = in_shape;
+        shape[axis] = sections[i];
+        result.push_back(shape);
+    }
+    return result;
+}
 END_NS_NNCASE_KERNELS_MODULE

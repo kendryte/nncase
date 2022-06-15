@@ -110,12 +110,13 @@ gather(datatype_t type, const gsl::byte *input, gsl::byte *output,
        const int64_t *indices, const dims_t &indices_shape, size_t axis,
        kernel_context &context) noexcept;
 
-result<void>
-gather_nd(datatype_t type, const gsl::byte *input, gsl::byte *output,
-               const dims_t &in_shape, const dims_t &out_shape,
-               const strides_t &in_strides, const strides_t &out_strides,
-               const int64_t *indices, const dims_t &indices_shape,
-               size_t batch_dims, kernel_context &context) noexcept;
+NNCASE_API
+result<void> gather_nd(datatype_t type, const gsl::byte *input,
+                       gsl::byte *output, const dims_t &in_shape,
+                       const dims_t &out_shape, const strides_t &in_strides,
+                       const strides_t &out_strides, const int64_t *indices,
+                       const dims_t &indices_shape, size_t batch_dims,
+                       kernel_context &context) noexcept;
 
 NNCASE_API result<void>
 get_item(tensor input, tensor index, tensor output = nullptr,
@@ -289,13 +290,16 @@ size_of(tensor input, tensor output = nullptr,
         kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void>
-slice(tensor input, tensor begins, tensor ends, tensor axes, tensor strides,
-      tensor output = nullptr,
-      kernel_context &context = default_kernel_context());
+slice(datatype_t type, const gsl::byte *input, gsl::byte *output,
+      const dims_t &in_shape, const strides_t &in_strides,
+      const strides_t &out_strides, const axes_t &begins, const axes_t &ends,
+      const axes_t &strides, kernel_context &context) noexcept;
 
-NNCASE_API result<void>
-softmax(tensor input, tensor axis, tensor output = nullptr,
-        kernel_context &context = default_kernel_context());
+NNCASE_API result<void> softmax(const float *input, float *output,
+                                const dims_t &in_shape,
+                                const dims_t &in_strides,
+                                const dims_t &out_strides, int64_t axis,
+                                float beta) noexcept;
 
 NNCASE_API result<void>
 softplus(tensor input, tensor output = nullptr,
@@ -310,9 +314,11 @@ space_to_batch(tensor input, tensor block_shape, tensor paddings,
                tensor output = nullptr,
                kernel_context &context = default_kernel_context());
 
-NNCASE_API result<void>
-split(tensor input, tensor axis, tensor sections, tensor output = nullptr,
-      kernel_context &context = default_kernel_context());
+NNCASE_API
+result<void> split(datatype_t type, const gsl::byte *input,
+                   gsl::span<gsl::byte *> output, const dims_t &in_shape,
+                   const strides_t& in_strides, gsl::span<strides_t> out_strides,
+                   size_t axis, const dims_t &sections, kernel_context &context) noexcept;
 
 NNCASE_API result<void>
 squeeze(tensor input, tensor dim, tensor output = nullptr,

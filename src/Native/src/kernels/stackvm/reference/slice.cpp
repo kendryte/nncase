@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/stackvm/tensor_ops.h>
+#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/util.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
@@ -67,54 +67,9 @@ result<void> slice_impl(const T *input, T *output, const dims_t &in_shape,
     case size:                 \
         return slice_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, in_strides, out_strides, begins, ends, strides, context)
 
-result<void> slice_impl(datatype_t type, const gsl::byte *input, gsl::byte *output, const dims_t &in_shape,
+result<void> nncase::kernels::stackvm::reference::slice(datatype_t type, const gsl::byte *input, gsl::byte *output, const dims_t &in_shape,
     const strides_t &in_strides, const strides_t &out_strides, const axes_t &begins, const axes_t &ends, const axes_t &strides,
     kernel_context &context) noexcept
 {
-    switch (runtime::get_bytes(type))
-    {
-        SLICE_IMPL(1, uint8_t);
-        SLICE_IMPL(2, uint16_t);
-        SLICE_IMPL(4, uint32_t);
-        SLICE_IMPL(8, uint64_t);
-    default:
-        return err(std::errc::not_supported);
-    }
-}
-
-dims_t infer_shape(const dims_t& in_shape, const axes_t& begins, const axes_t& ends,
-                   const axes_t& strides, const axes_t& axes) {
-    auto new_shape = in_shape;
-    for (int i = 0; i < axes.size(); ++i) {
-        auto axis = positive_index(axes[i], in_shape.size());
-        auto begin = begins[i];
-        auto end = ends[i];
-        auto stride = strides[i];
-        auto old = in_shape[axis];
-        begin = begin >= 0 ? begin : old + begin;
-        end = end >= 0 ? end : old + begin;
-        //stride = stride >= 0 ? stride : -stride;
-        new_shape[axis] = (end - begin) / stride;
-    }
-    return new_shape;
-}
-
-result<value_t> nncase::kernels::stackvm::slice(value_t input, value_t begins,
-                                                value_t ends, value_t axes,
-                                                value_t strides, value_t output,
-                                                kernel_context &context) {
-    try_input(in_mem, input);
-    try_axes(begins_value, begins);
-    try_axes(ends_value, ends);
-    try_axes(axes_value, axes);
-    try_axes(strides_value, strides);
-    auto out_shape = infer_shape(input_tensor->shape(), begins_value, ends_value, strides_value, axes_value);
-    try_output(out_mem, output, input_tensor->dtype(), out_shape);
-
-    try_(slice_impl(input_tensor->dtype(), in_mem, out_mem,
-                    input_tensor->shape(), input_tensor->strides(),
-                    output_tensor->strides(), begins_value, ends_value,
-                    strides_value, context));
-
-    return ok(output);
+    TYPE_IMPL_SELECT(type, SLICE_IMPL);
 }
