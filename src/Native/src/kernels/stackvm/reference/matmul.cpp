@@ -59,10 +59,19 @@ template result<void> matmul_impl<float>(const float *input_a,
                                          const dims_t &in_b_shape) noexcept;
 
 result<dims_t> infer_shape(const dims_t &lhs_shape, const dims_t &rhs_shape) {
-    if (lhs_shape.size() != 2 || rhs_shape.size() != 2) {
+    if(lhs_shape.back() != rhs_shape[rhs_shape.size() - 2]){
         return err(nncase_errc::shape_mismatch);
     }
-    auto new_shape = dims_t{lhs_shape[0], rhs_shape[1]};
+    if (lhs_shape.size() == 2 || rhs_shape.size() == 2) {
+        auto new_shape = dims_t{lhs_shape[0], rhs_shape[1]};
+        return ok(new_shape);
+    }
+    if(lhs_shape.size() < rhs_shape.size())
+    {
+        return err(nncase_errc::shape_mismatch);
+    }
+    auto new_shape = dims_t(lhs_shape.begin(), lhs_shape.begin() + lhs_shape.size() - 1);
+    new_shape.push_back(rhs_shape.back());
     return ok(new_shape);
 }
 
