@@ -41,7 +41,8 @@ auto squeeze_transpose_shape(shape_t old_shape, axis_t old_axis)
     shape_t new_shape { 1, 1, 1, 1 };
     int squeeze_times = old_shape.size() - 4;
     int squeeze_time = 0;
-    for (auto i = 0, j = 0; j < 4; i++, j++)
+    int i = 0;
+    for (auto j = 0; j < 4; i++, j++)
     {
         if (old_axis[i] + 1 == old_axis[i + 1] && squeeze_times != 0)
         {
@@ -52,6 +53,10 @@ auto squeeze_transpose_shape(shape_t old_shape, axis_t old_axis)
         }
         new_axis[j] = old_axis[i] - squeeze_time;
         new_shape[j] = old_shape[i];
+    }
+    for (; i < old_shape.size(); i++)
+    {
+        new_shape.push_back(old_shape[i]);
     }
 
     return std::make_tuple(new_axis, new_shape);
@@ -115,6 +120,14 @@ bool squeeze_dims_transform::on_try_match(node &node, transform_context &context
                 if (std::find(context.inputs.begin(), context.inputs.end(), it) == context.inputs.end())
                     context.inputs.emplace_back(it);
             }
+        }
+
+        // can't squeeze some tp
+        if (auto tp = node_cast<transpose>(node))
+        {
+            auto [_, new_shape] = squeeze_transpose_shape(tp->input().shape(), tp->perm());
+            if (new_shape.size() > 4)
+                return false;
         }
 
         for (auto &it : node.outputs())
