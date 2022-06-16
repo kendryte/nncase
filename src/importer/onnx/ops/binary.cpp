@@ -74,11 +74,26 @@ void onnx_importer::convert_binary(const onnx::NodeProto &node, const binary_op_
     auto input_a_shape = get_shape(input_a);
     const auto input_type = get_datatype(input_a).value();
     auto input_b_shape = get_shape(input_b);
+    const auto input_b_type = get_datatype(input_b).value();
+    convert *cvt = nullptr;
+    if (input_type != input_b_type)
+    {
+        cvt = graph_.emplace<convert>(input_b_type, input_b_shape, input_type);
+        cvt->name(op_name + "(Convert)");
+    }
     auto op = graph_.emplace<binary>(binary_op, input_type, input_a_shape, input_b_shape, value_range<float>::full());
     op->name(op_name + '(' + binary_op_to_string(binary_op) + ')');
 
     input_tensors_.emplace(&op->input_a(), input_a);
-    input_tensors_.emplace(&op->input_b(), input_b);
+    if (cvt)
+    {
+        input_tensors_.emplace(&cvt->input(), input_b);
+        op->input_b().connect(cvt->output());
+    }
+    else
+    {
+        input_tensors_.emplace(&op->input_b(), input_b);
+    }
     output_tensors_.emplace(output, &op->output());
 }
 

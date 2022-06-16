@@ -21,6 +21,7 @@ set(SRCS runtime_module.cpp
          ops/tensor.dequantize.cpp
          ops/tensor.gather.cpp
          ops/tensor.gather_nd.cpp
+         ops/tensor.gru.cpp
          ops/tensor.hardmax.cpp
          ops/tensor.lut1d.cpp
          ops/tensor.matmul.cpp

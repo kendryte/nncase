@@ -45,4 +45,5 @@ target_sources(ir PRIVATE
     softmax.cpp
     ternary.cpp
     topk.cpp
-    trilu.cpp)
+    trilu.cpp
+    gru.cpp)

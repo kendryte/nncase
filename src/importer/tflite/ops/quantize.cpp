@@ -27,30 +27,12 @@ DEFINE_TFLITE_LOWER(QUANTIZE)
     auto &input = get_tensor(op.inputs(), 0);
     auto &output = get_tensor(op.outputs(), 0);
 
-    [[maybe_unused]] dequantize *deq;
-
-    auto tp1 = graph_.emplace<transpose>(to_data_type(input.type()), get_shape(input.shape()), axis_t { 0, 3, 1, 2 });
-    tp1->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/pre_trans");
-    auto mid_output = &tp1->output();
-    if (input.type() != tflite::TensorType_FLOAT32)
-    {
-        deq = graph_.emplace<dequantize>(tp1->output().type(), tp1->output().shape(), dt_float32,
-            to_quant_param(input.quantization()));
-        deq->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/deq");
-        mid_output = &deq->output();
-        deq->input().connect(tp1->output());
-    }
-
-    auto q = graph_.emplace<quantize>(dt_float32, mid_output->shape(), to_data_type(output.type()),
+    auto q = graph_.emplace<quantize>(to_data_type(input.type()), get_shape(input.shape()), to_data_type(output.type()),
         to_quant_param(output.quantization()));
     q->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/q");
-    auto tp2 = graph_.emplace<transpose>(q->output().type(), q->output().shape(), axis_t { 0, 2, 3, 1 });
-    tp2->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/trans");
 
-    q->input().connect(*mid_output);
-    tp2->input().connect(q->output());
-    link_input_tensor(&tp1->input(), op.inputs()->Get(0));
-    link_output_tensor(op.outputs()->Get(0), &tp2->output());
+    link_input_tensor(&q->input(), op.inputs()->Get(0));
+    link_output_tensor(op.outputs()->Get(0), &q->output());
 }
 
 DEFINE_TFLITE_LOWER(FAKE_QUANT)
@@ -71,34 +53,12 @@ DEFINE_TFLITE_LOWER(DEQUANTIZE)
     auto &input = get_tensor(op.inputs(), 0);
     auto &output = get_tensor(op.outputs(), 0);
 
-    [[maybe_unused]] dequantize *deq;
-    [[maybe_unused]] quantize *q;
-
-    auto tp1 = graph_.emplace<transpose>(to_data_type(input.type()), get_shape(input.shape()), axis_t { 0, 3, 1, 2 });
-    tp1->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/pre_trans");
-    auto mid_output = &tp1->output();
-    //    auto mid_input = &tp1->output();
-    if (input.type() != tflite::TensorType_FLOAT32)
+    if (op.outputs()->size() != 0)
     {
-        deq = graph_.emplace<dequantize>(tp1->output().type(), tp1->output().shape(), dt_float32,
+        auto deq = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), to_data_type(output.type()),
             to_quant_param(input.quantization()));
         deq->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/deq");
-        mid_output = &deq->output();
-        deq->input().connect(tp1->output());
+        link_input_tensor(&deq->input(), op.inputs()->Get(0));
+        link_output_tensor(op.outputs()->Get(0), &deq->output());
     }
-
-    if (output.type() != tflite::TensorType_FLOAT32)
-    {
-        q = graph_.emplace<quantize>(dt_float32, mid_output->shape(), to_data_type(output.type()),
-            to_quant_param(output.quantization()));
-        q->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/q");
-        mid_output = &q->output();
-        q->input().connect(tp1->output());
-    }
-    auto tp2 = graph_.emplace<transpose>(mid_output->type(), mid_output->shape(), axis_t { 0, 2, 3, 1 });
-    tp2->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/trans");
-
-    tp2->input().connect(*mid_output);
-    link_input_tensor(&tp1->input(), op.inputs()->Get(0));
-    link_output_tensor(op.outputs()->Get(0), &tp2->output());
 }
