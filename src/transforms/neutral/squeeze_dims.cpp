@@ -54,7 +54,7 @@ auto squeeze_transpose_shape(shape_t old_shape, axis_t old_axis)
         new_axis[j] = old_axis[i] - squeeze_time;
         new_shape[j] = old_shape[i];
     }
-    for(; i<old_shape.size(); i++)
+    for (; i < old_shape.size(); i++)
     {
         new_shape.push_back(old_shape[i]);
     }
@@ -121,12 +121,12 @@ bool squeeze_dims_transform::on_try_match(node &node, transform_context &context
                     context.inputs.emplace_back(it);
             }
         }
-        
+
         // can't squeeze some tp
-        if(auto tp = node_cast<transpose>(node))
+        if (auto tp = node_cast<transpose>(node))
         {
             auto [_, new_shape] = squeeze_transpose_shape(tp->input().shape(), tp->perm());
-            if(new_shape.size()>4)
+            if (new_shape.size() > 4)
                 return false;
         }
 
