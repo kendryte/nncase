@@ -229,7 +229,7 @@ namespace Nncase.Importer
 
         private void Visit(NodeProto op)
         {
-            Console.WriteLine(op.OpType);
+            // Console.WriteLine(op.OpType);
             _opsInModel.Add(op.OpType);
             var output = op.OpType switch
             {

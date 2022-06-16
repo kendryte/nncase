@@ -287,7 +287,7 @@ namespace Nncase.Importer.TFLite
 
                 // tflite.BuiltinOperator.SPACE_TO_DEPTH,
                 // tflite.BuiltinOperator.SPARSE_TO_DENSE,
-                tflite.BuiltinOperator.SPLIT => VisitSplit(op),
+                // tflite.BuiltinOperator.SPLIT => VisitSplit(op),
                 // tflite.BuiltinOperator.SPLIT_V,
                 tflite.BuiltinOperator.SQRT => VisitUnary(op, UnaryOp.Sqrt),
                 tflite.BuiltinOperator.SQUARE => VisitUnary(op, UnaryOp.Square),
