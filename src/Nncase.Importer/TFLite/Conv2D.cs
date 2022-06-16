@@ -61,10 +61,9 @@ namespace Nncase.Importer.TFLite
             }
 
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
-            return F.Tensors.NCHWToNHWC(F.Math.Clamp(
+            return F.Tensors.NCHWToNHWC(
                 F.NN.Conv2D(input, weights, bias, stride, padding, dilation,
-                    PadMode.Constant, Util.ShapeIndex(weights, 0)),
-                clamp.Min, clamp.Max));
+                    PadMode.Constant, Util.ShapeIndex(weights, 0), new[] {clamp.Min, clamp.Max}));
         }
 
         private static ValueRange<float> ToFloatClampRange(tflite.ActivationFunctionType func) => func switch

@@ -76,7 +76,8 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>
         }
 
         InvalidType? invalidType = null;
-        var axisValue = ((TensorConst)context.GetArgument(target, Concat.Axis)).Value.ToScalar<int>();
+        var axisV = ((TensorConst)context.GetArgument(target, Concat.Axis)).Value.ToScalar<int>();
+        var axisValue = Util.PositiveIndex(axisV, input0.Shape.Rank);
         var shapeValue = Enumerable.Range(0, input0.Shape.Rank).Select(i =>
         {
             if (i == axisValue)

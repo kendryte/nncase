@@ -1,6 +1,7 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using OrtKISharp;
@@ -30,26 +31,39 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>
 
     private IRType Visit(TensorType lhs, TensorType rhs)
     {
-        if (lhs.Shape.Rank != 2)
+        if (lhs.Shape.IsUnranked || rhs.Shape.IsUnranked)
         {
-            return new InvalidType("MatMul lhs shape rank is not 2");
+            return new TensorType(lhs.DType, Shape.Unranked);
         }
-
-        if (rhs.Shape.Rank != 2)
-        {
-            return new InvalidType("MatMul rhs shape rank is not 2");
-        }
-
+        
         if (lhs.Shape[1].IsUnknown || rhs.Shape[0].IsUnknown)
         {
-            return new InvalidType("MatMul lhs or rhs shape is unknown");
+            return new TensorType(lhs.DType, Shape.Unranked);
         }
 
-        if (lhs.Shape[1] != rhs.Shape[0])
+        if (lhs.DType != rhs.DType)
         {
-            return new InvalidType("MatMul lhs shape[1] != rhs shape[0]");
+            return new InvalidType("MatMul lhs and rhs have different DType");
         }
 
-        return new TensorType(lhs.DType, new[] { lhs.Shape[0], rhs.Shape[1] });
+        if (lhs.Shape[^1] != rhs.Shape[^2])
+        {
+            return new InvalidType("MatMul lhs and rhs have not compatiable shape");
+        }
+
+        if (lhs.Shape.Count == 2 && rhs.Shape.Count == 2)
+        {
+            return new TensorType(lhs.DType, new[] {lhs.Shape[0], rhs.Shape[1]});
+        }
+
+        if (lhs.Shape.Count < rhs.Shape.Count)
+        {
+            return new InvalidType("MatMul lhs rank < rhs rank");
+        }
+
+        // batch and channel
+        var front = lhs.Shape.ToArray()[..(lhs.Shape.Count - 2)];
+        var end = new[] {lhs.Shape[^2], rhs.Shape[^1]};
+        return new TensorType(lhs.DType, front.Concat(end).ToArray());
     }
 }

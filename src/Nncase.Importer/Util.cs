@@ -16,6 +16,15 @@ namespace Nncase
     {
         public static Expr ShapeIndex(in Expr input, int index)
         {
+            Expr i;
+            if (input.CheckedType != null)
+            {
+                i = index < 0 ? index + input.CheckedShape.Size : index;
+            }
+            else
+            {
+                i = Rank(input) + index;
+            }
             return GetItem(F.Tensors.ShapeOf(input), index);
         }
 

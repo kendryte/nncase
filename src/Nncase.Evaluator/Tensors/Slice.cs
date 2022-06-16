@@ -42,12 +42,13 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>
             context.GetArgument(target, Slice.Axes) is TensorConst axes_con &&
             context.GetArgument(target, Slice.Strides) is TensorConst strides_con)
         {
+            // end in onnx may be the maximum value of int64
+            // when use int, result value is -1
             var outShape = input.Shape.ToArray();
-            var ts_begins = begins_con.Value.Cast<int>();
-            var ts_ends = ends_con.Value.Cast<int>();
-            var ts_strides = strides_con.Value.Cast<int>();
+            var ts_begins = begins_con.Value.Cast<long>();
+            var ts_ends = ends_con.Value.Cast<long>();
+            var ts_strides = strides_con.Value.Cast<long>();
 
-            // foreach (var axisV in axes_con.ToTensor<int>())
             var axesTensor = axes_con.Value.Cast<int>();
             for (int i = 0; i < axesTensor.Length; i++)
             {
@@ -56,19 +57,16 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>
                     ? axisV + input.Shape.Rank
                     : axisV;
                 var begin = ts_begins[i];
-                var end = ts_ends[i];
+                var end = System.Math.Min(ts_ends[i], input.Shape[axisV].FixedValue);
                 var stride = ts_strides[i];
-                if (input.Shape[axis].IsFixed)
+                if (input.Shape[axisV].IsFixed)
                 {
-                    var old = input.Shape[axis].FixedValue;
-                    begin = begin >= 0 ? begin : old + begin;
-                    end = end >= 0 ? end : old + begin;
-                    stride = stride >= 0 ? stride : -stride;
-                    outShape[axis] = (end - begin) / stride;
+                    outShape[axisV] =
+                        (int) System.Math.Ceiling((float) System.Math.Abs(end - begin) / System.Math.Abs(stride));
                 }
                 else
                 {
-                    outShape[axis] = Dimension.Unknown;
+                    outShape[axisV] = Dimension.Unknown;
                 }
             }
 

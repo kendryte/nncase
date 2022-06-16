@@ -37,7 +37,8 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>
             axisV = axisV < 0 ? axisV + input.Shape.Rank : axisV;
 
             // input_shape[:axis] + index_shape + input_shape[axis + 1:]
-            var newShape = input.Shape.InsertAndClone(axisV, index.Shape);
+            var inShape = input.Shape.ToArray();
+            var newShape = inShape[..axisV].Concat(index.Shape).Concat(inShape[(axisV + 1)..]).ToArray();
             return new TensorType(input.DType, newShape);
         }
         else
