@@ -13,13 +13,14 @@ using FlatBuffers;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
+using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Importer.TFLite
 {
     /// <summary>
     /// TFLite importer.
     /// </summary>
-    public sealed partial class TFLiteImporter
+    public sealed partial class TFLiteImporter : BaseImporter
     {
         private static readonly Dictionary<tflite.TensorType, DataType> _typeMap = new()
         {
@@ -40,7 +41,6 @@ namespace Nncase.Importer.TFLite
         private readonly tflite.Model _model;
         private readonly tflite.SubGraph _subGraph;
         private readonly Dictionary<int, Expr> _outputTensors = new Dictionary<int, Expr>();
-        private SortedSet<string> _opsInModel = new SortedSet<string>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TFLiteImporter"/> class.
@@ -57,13 +57,8 @@ namespace Nncase.Importer.TFLite
             _subGraph = _model.Subgraphs(0)!.Value;
         }
 
-        /// <summary>
-        /// Import an IR module from tflite model.
-        /// </summary>
-        /// <returns>Imported IR module.</returns>
-        public IRModule Import()
+        public override IEnumerable<Var> CreateInputs()
         {
-            // 1. Create inputs
             var inputsCount = _subGraph.InputsLength;
             var created_inputs = new Var[inputsCount];
             for (int i = 0; i < inputsCount; i++)
@@ -75,25 +70,26 @@ namespace Nncase.Importer.TFLite
                 _outputTensors.Add(inputId, input);
             }
 
-            // 2. Convert ops
+            return created_inputs;
+        }
+
+        public override void ConvertOp()
+        {
             for (int i = 0; i < _subGraph.OperatorsLength; i++)
             {
                 var op = _subGraph.Operators(i)!.Value;
                 Visit(op);
             }
-
-            // 3. Create outputs
-            var outputs = (from o in _subGraph.GetOutputsBytes().AsValueEnumerable()
-                           select _outputTensors[o]).ToArray();
-            var outputTuple = new IR.Tuple(ImmutableArray.Create(outputs));
-            var mainFunc = new Function("main", outputTuple, created_inputs);
-
-            var module = new IRModule();
-            module.Add(mainFunc);
-            module.Entry = mainFunc;
-            return module;
         }
 
+        public override Expr CreateOutputs()
+        {
+            var outputs = (from o in _subGraph.GetOutputsBytes().AsValueEnumerable()
+                select _outputTensors[o]).ToArray();
+           var outputTuple = new IR.Tuple(ImmutableArray.Create(outputs));
+           return outputTuple;
+        }
+        
         /// <summary>
         /// Create IR type from tflite shape and tensor type.
         /// </summary>
@@ -287,7 +283,7 @@ namespace Nncase.Importer.TFLite
 
                 // tflite.BuiltinOperator.SPACE_TO_DEPTH,
                 // tflite.BuiltinOperator.SPARSE_TO_DENSE,
-                // tflite.BuiltinOperator.SPLIT => VisitSplit(op),
+                tflite.BuiltinOperator.SPLIT => VisitSplit(op),
                 // tflite.BuiltinOperator.SPLIT_V,
                 tflite.BuiltinOperator.SQRT => VisitUnary(op, UnaryOp.Sqrt),
                 tflite.BuiltinOperator.SQUARE => VisitUnary(op, UnaryOp.Square),
@@ -315,26 +311,9 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.WHERE,
                 // tflite.BuiltinOperator.WHILE,
                 // tflite.BuiltinOperator.ZEROS_LIKE,
-                _ => throw new NotSupportedException($"Unsupported tflite operator: {builtinCode}."),
+                _ => UnSupportedOp(builtinCode.ToString()),
             };
-
-            if (output is Expr expr)
-            {
-                Debug.Assert(op.OutputsLength == 1, "Op outputs length should be 1.");
-                _outputTensors.Add(op.Outputs(0), expr);
-            }
-            else if (output is IReadOnlyList<Expr> exprs)
-            {
-                Debug.Assert(op.OutputsLength == exprs.Count, $"Op outputs length should be {op.OutputsLength}.");
-                for (int i = 0; i < op.OutputsLength; i++)
-                {
-                    _outputTensors.Add(op.Outputs(i), exprs[i]);
-                }
-            }
-            else
-            {
-                throw new InvalidOperationException("Visit result is not expression(s).");
-            }
+            AddToOutputs(_outputTensors, op.GetOutputsArray(), output);
         }
 
         private Expr GetInputExprs(in tflite.Operator op, int index)

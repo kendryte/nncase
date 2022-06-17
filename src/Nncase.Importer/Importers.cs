@@ -38,18 +38,5 @@ namespace Nncase
             var importer = new OnnxImporter(model);
             return importer.Import();
         }
-
-        /// <summary>
-        /// Import tflite model.
-        /// </summary>
-        /// <param name="tfliteFileName">tflite model file name.</param>
-        /// <returns>Imported IR module.</returns>
-        public static IRModule ImportTFLite(string tfliteFileName)
-        {
-            using (var model = File.OpenRead(tfliteFileName))
-            {
-                return ImportTFLite(model);
-            }
-        }
     }
 }
