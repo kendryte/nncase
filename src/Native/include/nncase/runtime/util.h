@@ -25,6 +25,29 @@
 namespace nncase::runtime {
 inline bool is_scalar(tensor t) noexcept { return t->shape().empty(); }
 
+inline result<bool> cmp_dt_impl(datatype_t lhs, datatype_t rhs) {
+    try_var(l, to_typecode(lhs));
+    try_var(r, to_typecode(rhs));
+    return ok(l == r);
+}
+
+inline bool cmp_dt(datatype_t lhs, datatype_t rhs) {
+    auto result = cmp_dt_impl(lhs, rhs);
+    return result.is_ok() && result.unwrap();
+}
+
+template <typename T> inline bool cmp_type(datatype_t dt) {
+    return cmp_dt(datatype_t::from_type<T>(), dt);
+}
+
+template <typename T> inline result<bool> type_only_check(tensor input) {
+    return cmp_dt_impl(input->dtype(), datatype_t::from_type<T>());
+}
+
+inline result<bool> float_only_check(tensor input) {
+    return cmp_dt_impl(input->dtype(), datatype_t::float32);
+}
+
 template <typename F>
 inline result<void> tuple_for_each_with_i(tuple inputs, F &&f) {
     for (int i = 0; i < inputs->fields().size(); ++i) {
@@ -134,38 +157,34 @@ inline result<std::vector<gsl::byte *>> get_output_data(tuple outputs) {
         outputs, [](tensor &input) { return get_output_data(input); });
 }
 
+#ifndef NODEBUG
+// used for insert into some where for check nan value in DEBUG mode
+inline void nan_debug(const float *in, int size)
+{
+    auto f = *in;
+    if(f != f) {
+        for (int i = 1; i < size; ++i) {
+            auto fv = *(in + i);
+            if(fv != fv) {
+                [[maybe_unused]] auto a = 1;
+            }
+        }
+    }
+}
+#else
+inline void nan_debug(const float *in) {}
+#endif
+
 inline result<gsl::byte *> get_input_data(tensor input) {
     try_var(input_buffer, get_host_buffer(input));
     try_var(input_map, input_buffer.map(map_read));
-    return ok(input_map.buffer().data());
+    auto d = input_map.buffer().data();
+    return ok(d);
 }
 
 inline result<std::vector<gsl::byte *>> get_input_data(tuple inputs) {
     return get_from_tuple_with_result<gsl::byte *, true>(
         inputs, [](tensor &input) { return get_input_data(input); });
-}
-
-inline result<bool> cmp_dt_impl(datatype_t lhs, datatype_t rhs) {
-    try_var(l, to_typecode(lhs));
-    try_var(r, to_typecode(rhs));
-    return ok(l == r);
-}
-
-inline bool cmp_dt(datatype_t lhs, datatype_t rhs) {
-    auto result = cmp_dt_impl(lhs, rhs);
-    return result.is_ok() && result.unwrap();
-}
-
-template <typename T> inline bool cmp_type(datatype_t dt) {
-    return cmp_dt(datatype_t::from_type<T>(), dt);
-}
-
-template <typename T> inline result<bool> type_only_check(tensor input) {
-    return cmp_dt_impl(input->dtype(), datatype_t::from_type<T>());
-}
-
-inline result<bool> float_only_check(tensor input) {
-    return cmp_dt_impl(input->dtype(), datatype_t::float32);
 }
 
 inline size_t positive_index(int index, size_t rank) {
@@ -259,6 +278,7 @@ inline result<T> value_to_scalar([[maybe_unused]] value_t value) {
     if (cmp_type<_in_type>(value_tensor->dtype())) {                           \
         return ok((T)(*reinterpret_cast<const _in_type *>(input)));            \
     }
+    RETURN_RESULT(bool);
     RETURN_RESULT(float);
     RETURN_RESULT(int32_t);
     RETURN_RESULT(int64_t);

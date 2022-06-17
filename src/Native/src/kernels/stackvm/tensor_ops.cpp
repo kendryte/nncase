@@ -244,14 +244,16 @@ result<value_t> nncase::kernels::stackvm::reshape(
     value_t input, value_t shape,
     value_t output, [[maybe_unused]] kernel_context &context) {
     try_var(in_tensor, input.as<tensor>());
-    try_dims(shape_value, shape);
+    // dim maybe neg
+    try_axes(shape_value, shape);
+    auto new_shape = reshape_shape_infer(in_tensor->shape(), shape_value);
     if (!is_contiguous(in_tensor)) {
         // todo: not impl for not contiguous
         return err(nncase_errc::shape_mismatch);
     }
     auto node =
-        new tensor_node(in_tensor->dtype(), shape_value,
-                        get_default_strides(shape_value), in_tensor->buffer());
+        new tensor_node(in_tensor->dtype(), new_shape,
+                        get_default_strides(new_shape), in_tensor->buffer());
     output = tensor(node);
     return ok(output);
 }

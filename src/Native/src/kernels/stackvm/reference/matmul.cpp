@@ -29,7 +29,7 @@ using namespace nncase::kernels::cpu::reference;
 
 namespace {
 template <typename T>
-result<void> matmul_impl(const T *input_a, const T *input_b, T *output,
+result<void> matmul_unit_impl(const T *input_a, const T *input_b, T *output,
                          const dims_t &in_a_shape,
                          const dims_t &in_b_shape) noexcept {
     int32_t a_rows = static_cast<int32_t>(in_a_shape[0]);
@@ -53,6 +53,60 @@ result<void> matmul_impl(const T *input_a, const T *input_b, T *output,
     return ok();
 }
 
+dims_t to_4d(dims_t in_a_shape)
+{
+    auto size = 4 - in_a_shape.size();
+    for (int i = 0; i < size; ++i) {
+        in_a_shape.insert(in_a_shape.begin(), 1);
+    }
+    return in_a_shape;
+}
+
+template <typename T>
+result<void> matmul_impl(const T *input_a, const T *input_b, T *output,
+                         const dims_t &in_a_shape,
+                         const dims_t &in_b_shape) noexcept {
+    // todo: support in_b_shape.size() > 2
+    if (in_a_shape.size() < 3 ||
+        (in_a_shape.size() == 3 && in_a_shape[0] == 1) ||
+        (in_a_shape.size() == 4 && in_a_shape[0] == 1 && in_a_shape[1] == 1)) {
+        return matmul_unit_impl(input_a, input_b, output, in_a_shape,
+                                in_b_shape);
+    }
+    if(in_b_shape.size() == 4 && in_b_shape[0] != 1) {
+        [[maybe_unused]] auto a = 1;
+    }
+    if(in_a_shape.size() == 4 && in_a_shape[0] != 1) {
+        [[maybe_unused]] auto a = 1;
+    }
+    auto new_a_shape = to_4d(in_a_shape);
+    auto new_b_shape = to_4d(in_b_shape);
+    auto a_unit_size = new_a_shape[2] * new_a_shape[3];
+    auto b_unit_size = new_b_shape[2] * new_b_shape[3];
+    auto out_unit_size = new_a_shape[2] * new_b_shape[3];
+
+    auto batches = std::max(new_a_shape[0], new_b_shape[0]);
+    auto channels = std::max(new_a_shape[1], new_b_shape[1]);
+    auto ab_size = a_unit_size * new_a_shape[1];
+    auto bb_size = b_unit_size * new_b_shape[1];
+    auto ob_size = out_unit_size * channels;
+    for (int n = 0; n < batches; ++n) {
+        auto an = new_a_shape[0] == 1 ? 0 : n;
+        auto bn = new_b_shape[0] == 1 ? 0 : n;
+        for (int c = 0; c < channels; ++c) {
+            auto ac = new_a_shape[1] == 1 ? 0 : c;
+            auto bc = new_b_shape[1] == 1 ? 0 : c;
+            try_(matmul_unit_impl(
+                input_a + an * ab_size + ac * a_unit_size,
+                input_b + bn * bb_size + bc * b_unit_size,
+                output + n * ob_size + c * out_unit_size,
+                dims_t{new_a_shape[2], new_a_shape[3]},
+                dims_t{new_b_shape[2], new_b_shape[3]}));
+        }
+    }
+    return ok();
+}
+
 template result<void> matmul_impl<float>(const float *input_a,
                                          const float *input_b, float *output,
                                          const dims_t &in_a_shape,
@@ -62,7 +116,7 @@ result<dims_t> infer_shape(const dims_t &lhs_shape, const dims_t &rhs_shape) {
     if(lhs_shape.back() != rhs_shape[rhs_shape.size() - 2]){
         return err(nncase_errc::shape_mismatch);
     }
-    if (lhs_shape.size() == 2 || rhs_shape.size() == 2) {
+    if (lhs_shape.size() == 2 && rhs_shape.size() == 2) {
         auto new_shape = dims_t{lhs_shape[0], rhs_shape[1]};
         return ok(new_shape);
     }
@@ -70,7 +124,7 @@ result<dims_t> infer_shape(const dims_t &lhs_shape, const dims_t &rhs_shape) {
     {
         return err(nncase_errc::shape_mismatch);
     }
-    auto new_shape = dims_t(lhs_shape.begin(), lhs_shape.begin() + lhs_shape.size() - 1);
+    auto new_shape = dims_t(lhs_shape.begin(), lhs_shape.begin() + (lhs_shape.size() - 1));
     new_shape.push_back(rhs_shape.back());
     return ok(new_shape);
 }
