@@ -21,7 +21,7 @@ public abstract class BaseImporter
         ConvertOp();
         SupportedCheck(this.GetType().Name.Split("Importer")[0]);
         var outputs = CreateOutputs();
-        DumpOpsInModel();
+        // DumpOpsInModel();
         return CreateModule(inputs.ToArray(), outputs);
     }
 
@@ -55,10 +55,10 @@ public abstract class BaseImporter
             throw new InvalidOperationException("Visit result is not expression(s).");
         }
     }
-    public void DumpOpsInModel()
+    public void DumpOpsInModel(string path)
     {
         // todo: fix this
-        using (var sr = new StreamWriter("/home/homura/Code/nncase/tests/importer/onnx_/basic/ops.txt"))
+        using (var sr = new StreamWriter(path))
         {
             foreach (var op in _opsInModel)
             {
