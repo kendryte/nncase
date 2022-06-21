@@ -5,6 +5,9 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using OrtKISharp;
+using Tensorflow;
+using Tensorflow.NumPy;
+using static Tensorflow.Binding;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -16,9 +19,9 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Transpose tr)
     {
-        var input = context.GetOrtArgumentValue(tr, Transpose.Input);
-        var perm = context.GetArgumentValueAsArray<long>(tr, Transpose.Perm);
-        return OrtKI.Transpose(input, perm).ToValue();
+        var input = context.GetTFArgumentValue(tr, Transpose.Input);
+        var perm = context.GetArgumentValueAsArray<int>(tr, Transpose.Perm);
+        return tf.transpose(input, perm).ToValue();
     }
 
     /// <inheritdoc/>

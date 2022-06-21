@@ -253,7 +253,8 @@ public static class TypeInference
     public static IRType ReduceType(TensorType input, Expr keepDims, Expr axis)
     {
         if (keepDims is TensorConst keepDimsValue &&
-            axis is TensorConst axisValue)
+            axis is TensorConst axisValue && 
+            input.Shape.IsRanked)
         {
             var axes = axisValue.Value.Cast<int>();
             var outShape = input.Shape.ToValueArray();

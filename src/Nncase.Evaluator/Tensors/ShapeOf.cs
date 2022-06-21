@@ -19,8 +19,8 @@ public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ShapeOf shape)
     {
-        var input = context.GetOrtArgumentValue(shape, ShapeOf.Input);
-        return OrtKI.Shape(input).ToValue();
+        var input = context.GetArgumentExpr(shape, ShapeOf.Input);
+        return Value.FromTensor(Tensor.FromSpan<int>(input.CheckedShape.ToValueArray()));
     }
 
     /// <inheritdoc/>
