@@ -240,9 +240,9 @@ result<value_t> nncase::kernels::stackvm::require(
     return err(std::errc::not_supported);
 }
 
-result<value_t> nncase::kernels::stackvm::reshape(
-    value_t input, value_t shape,
-    value_t output, [[maybe_unused]] kernel_context &context) {
+result<value_t>
+nncase::kernels::stackvm::reshape(value_t input, value_t shape, value_t output,
+                                  [[maybe_unused]] kernel_context &context) {
     try_var(in_tensor, input.as<tensor>());
     // dim maybe neg
     try_axes(shape_value, shape);
@@ -280,8 +280,7 @@ result<value_t> nncase::kernels::stackvm::selu(
 }
 
 result<value_t>
-nncase::kernels::stackvm::shape_of(value_t input,
-                                   value_t output,
+nncase::kernels::stackvm::shape_of(value_t input, value_t output,
                                    [[maybe_unused]] kernel_context &context) {
     try_var(in_tensor, input.as<tensor>());
     auto r = in_tensor->shape().size();
@@ -406,22 +405,22 @@ result<value_t> nncase::kernels::stackvm::space_to_batch(
     return err(std::errc::not_supported);
 }
 
-result<value_t> nncase::kernels::stackvm::split(
-    value_t input, value_t axis,
-    value_t sections, value_t output,
-    kernel_context &context) {
+result<value_t> nncase::kernels::stackvm::split(value_t input, value_t axis,
+                                                value_t sections,
+                                                value_t output,
+                                                kernel_context &context) {
     try_input(in_mem, input);
     try_positive_axis(axis_value, axis, input_tensor);
     try_dims(sections_value, sections);
     auto shapes =
         split_shape_infer(input_tensor->shape(), axis_value, sections_value);
     try_tuple_output(outputs, output, input_tensor->dtype(), shapes);
-    try_var(out_strides, get_from_tuple<strides_t>(output_tuple, [](auto &&input) {
-        return input->strides();
-    }));
+    try_var(out_strides,
+            get_from_tuple<strides_t>(
+                output_tuple, [](auto &&input) { return input->strides(); }));
     try_ref(split, input_tensor->dtype(), in_mem, outputs,
-                     input_tensor->shape(), input_tensor->strides(),
-                     out_strides, axis_value, sections_value, context);
+            input_tensor->shape(), input_tensor->strides(), out_strides,
+            axis_value, sections_value, context);
     finish;
 }
 
@@ -431,10 +430,20 @@ result<value_t> nncase::kernels::stackvm::squeeze(
     return err(std::errc::not_supported);
 }
 
-result<value_t> nncase::kernels::stackvm::stack(
-    [[maybe_unused]] value_t inputs, [[maybe_unused]] value_t axis,
-    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
+result<value_t> nncase::kernels::stackvm::stack(value_t inputs, value_t axis,
+                                                value_t output,
+                                                kernel_context &context) {
+    try_tuple_input(inputs_value, inputs);
+    try_tuple_field0(input0, inputs_tuple);
+    try_positive_axis(axis_value, axis, input0);
+    auto out_shape = stack_infer_shape(
+        input0->shape(), inputs_tuple->fields().size(), axis_value);
+    try_output(out_mem, output, input0->dtype(), out_shape);
+    try_var(strides, get_strides(inputs_tuple));
+    try_(reference::stack(input0->dtype(), inputs_value, out_mem, out_shape,
+                          strides, output_tensor->strides(),
+                          axis_value, context));
+    finish;
 }
 
 result<value_t> nncase::kernels::stackvm::tile(

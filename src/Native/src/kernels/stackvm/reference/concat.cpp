@@ -94,7 +94,7 @@ result<value_t> nncase::kernels::stackvm::concat(value_t input, value_t axis, va
     try_tuple_input(inputs_mem, input);
     try_var(shapes, get_shapes(input_tuple));
     try_var(strides, get_strides(input_tuple));
-    try_var(input0, input_tuple->fields()[0].as<tensor>());
+    try_tuple_field0(input0, input_tuple);
     auto dtype = input0->dtype();
     try_positive_axis_with_rank(axis_value, axis, input0->shape().size());
     auto out_shape = infer_shape(shapes, axis_value);

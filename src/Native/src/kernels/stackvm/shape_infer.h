@@ -23,6 +23,7 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <nncase/tensor.h>
 #include <nncase/value.h>
+#include <numeric>
 
 BEGIN_NS_NNCASE_KERNELS_MODULE(stackvm)
 
@@ -69,4 +70,34 @@ std::vector<dims_t> split_shape_infer(const dims_t& in_shape, size_t axis, const
     }
     return result;
 }
+
+dims_t reshape_shape_infer(const dims_t &in_shape, const axes_t &new_shape)
+{
+    auto neg_index = -1;
+    auto sum = 1;
+    for (int i = 0; i < new_shape.size(); ++i) {
+        if(new_shape[i] != -1) {
+            sum *= new_shape[i];
+        } else {
+            neg_index = i;
+        }
+    }
+    if(neg_index == -1)
+    {
+        return dims_t(new_shape.begin(), new_shape.end());
+    }
+    else
+    {
+        auto result_shape = new_shape;
+        auto in_size = std::accumulate(in_shape.begin(), in_shape.end(), 1, std::multiplies<int64_t>{});
+        result_shape[neg_index] = in_size / sum;
+        return dims_t(result_shape.begin(), result_shape.end());
+    }
+}
+
+dims_t stack_infer_shape(dims_t shape0, int input_count, int axis) {
+    shape0.insert(shape0.begin() + axis, input_count);
+    return shape0;
+}
+
 END_NS_NNCASE_KERNELS_MODULE

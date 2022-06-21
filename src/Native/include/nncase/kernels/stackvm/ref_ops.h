@@ -317,16 +317,21 @@ space_to_batch(tensor input, tensor block_shape, tensor paddings,
 NNCASE_API
 result<void> split(datatype_t type, const gsl::byte *input,
                    gsl::span<gsl::byte *> output, const dims_t &in_shape,
-                   const strides_t& in_strides, gsl::span<strides_t> out_strides,
-                   size_t axis, const dims_t &sections, kernel_context &context) noexcept;
+                   const strides_t &in_strides,
+                   gsl::span<strides_t> out_strides, size_t axis,
+                   const dims_t &sections, kernel_context &context) noexcept;
 
 NNCASE_API result<void>
 squeeze(tensor input, tensor dim, tensor output = nullptr,
         kernel_context &context = default_kernel_context());
 
-NNCASE_API result<void>
-stack(tensor inputs, tensor axis, tensor output = nullptr,
-      kernel_context &context = default_kernel_context());
+NNCASE_API
+result<void> stack(datatype_t type,
+                        gsl::span<const gsl::byte *const> inputs,
+                        gsl::byte *output, const dims_t &out_shape,
+                        gsl::span<const dims_t> in_strides,
+                        const strides_t &out_strides, size_t axis,
+                        kernel_context &context) noexcept;
 
 NNCASE_API result<void>
 tile(tensor input, tensor repeats, tensor output = nullptr,

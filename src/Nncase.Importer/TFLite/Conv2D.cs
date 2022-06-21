@@ -28,10 +28,10 @@ namespace Nncase.Importer.TFLite
             var dilation = Tensor.FromSpan<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
-            return F.Tensors.NCHWToNHWC(F.Math.Clamp(
+            return F.Tensors.NCHWToNHWC(
                 F.NN.Conv2D(input, weights, bias, stride, padding, dilation,
-                    PadMode.Constant, 1),
-                clamp.Min, clamp.Max));
+                    PadMode.Constant, 1,
+                    new[]{clamp.Min, clamp.Max}));
         }
 
         private Expr VisitDepthwiseConv2D(in tflite.Operator op)

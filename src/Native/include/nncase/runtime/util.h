@@ -23,6 +23,10 @@
 #include <nncase/runtime/runtime_op_utility.h>
 
 namespace nncase::runtime {
+#define IN_CAST(_ty, _name) reinterpret_cast<const _ty *>(_name)
+#define OUT_CAST(_ty, _name) reinterpret_cast<_ty *>(_name)
+#define SCALAR_CAST(_ty, _name) *reinterpret_cast<const _ty *>(_name)
+
 inline bool is_scalar(tensor t) noexcept { return t->shape().empty(); }
 
 inline result<bool> cmp_dt_impl(datatype_t lhs, datatype_t rhs) {
@@ -203,6 +207,9 @@ inline size_t positive_index(int index, size_t rank) {
 #define try_tuple_input(_var_name, _value_name)                                \
     try_input_impl(_var_name, _value_name, tuple)
 
+#define try_tuple_field0(_input0_name, _tuple_name) \
+    try_var(_input0_name, _tuple_name->fields()[0].as<tensor>());
+
 #define try_input_with_ty(_var_name, _value_name, _ty)                         \
     try_input(__##_var_name, _value_name);                                     \
     try_(type_only_check<_ty>(_value_name##_tensor));                          \
@@ -258,9 +265,6 @@ inline size_t positive_index(int index, size_t rank) {
 #define try_positive_axis(_var_name, _value_name, _input_tensor)               \
     try_positive_axis_with_rank(_var_name, _value_name,                        \
                                 _input_tensor->shape().size())
-
-#define try_array(_var_name, _value_name, _ty)                                 \
-    try_value_as_t(_var_name, _value_name, _ty, array)
 
 #define try_typecode(_var_name, _tensor_name)                                  \
     try_var(_var_name, to_typecode(_tensor_name->dtype()))
@@ -351,18 +355,32 @@ inline result<strides_t> value_as_strides(value_t value) {
     return value_as_Ts<strides_t::value_type>(value);
 }
 
+inline size_t compute_size(tensor t) {
+    return compute_size(t->shape(), t->strides());
+}
+
 inline result<paddings_t> value_as_paddings([[maybe_unused]] value_t value) {
-    //    try_input_with_ty(input, value, size_t);
-    throw "NotImplement";
+    try_input(input, value);
+    auto size = compute_size(value_tensor);
+    auto dims = size / 2;
+    auto pads = paddings_t(dims);
+    auto dt = value_tensor->dtype();
+    for(int i = 0; i < dims; ++i) {
+        if (cmp_type<int32_t>(dt)) {
+            pads[i].before = *(IN_CAST(int32_t, input) + 2 * i);
+            pads[i].after = *(IN_CAST(int32_t, input) + 2 * i + 1);
+        } else if(cmp_type<int64_t>(dt)) {
+            pads[i].before = *(IN_CAST(int64_t, input) + 2 * i);
+            pads[i].after = *(IN_CAST(int64_t, input) + 2 * i + 1);
+        } else {
+            return err(nncase_errc::datatype_mismatch);
+        }
+    }
+    return ok(pads);
 }
 
 inline result<quant_param_t>
 value_as_quant_param([[maybe_unused]] value_t value) {
-    throw "NotImplement";
-}
-
-template <typename T>
-inline result<T *> value_as_array([[maybe_unused]] value_t v) {
     throw "NotImplement";
 }
 
@@ -391,10 +409,6 @@ inline result<T *> value_as_array([[maybe_unused]] value_t v) {
     default:                                                                   \
         return err(std::errc::not_supported);                                  \
     }
-
-#define IN_CAST(_ty, _name) reinterpret_cast<const _ty *>(_name)
-#define OUT_CAST(_ty, _name) reinterpret_cast<_ty *>(_name)
-#define SCALAR_CAST(_ty, _name) *reinterpret_cast<const _ty *>(_name)
 
 inline bool is_contiguous(tensor tensor) {
     return is_contiguous(tensor->shape(), tensor->strides());

@@ -24,6 +24,7 @@ set(SRCS ../tensor_ops.cpp
          split.cpp
          slice.cpp
          softmax.cpp
+         stack.cpp
          transpose.cpp
          unary.cpp)
 target_sources(kernels PRIVATE ${SRCS})

@@ -111,6 +111,7 @@ conv2d_impl(const float *input, const float *weights, const float *bias,
 dims_t infer_shape(const dims_t& in_shape, const dims_t& weights_shape, const dims_t& stride,
                    const dims_t& dilation, const paddings_t& paddings) {
     auto new_shape = in_shape;
+    new_shape[1] = weights_shape[0];
     new_shape[2] = kernels::detail::get_windowed_output_size(in_shape[2], weights_shape[2], stride[0], dilation[0], paddings[0]);
     new_shape[3] = kernels::detail::get_windowed_output_size(in_shape[3], weights_shape[3], stride[1], dilation[1], paddings[1]);
     return new_shape;
@@ -118,10 +119,13 @@ dims_t infer_shape(const dims_t& in_shape, const dims_t& weights_shape, const di
 } // namespace
 
 result<value_t> nncase::kernels::stackvm::conv2d(
-    [[maybe_unused]] pad_mode_t pad_mode, value_t input, value_t weights, value_t bias,
+    pad_mode_t pad_mode, value_t input, value_t weights, value_t bias,
     value_t stride, value_t padding, value_t dilation, value_t groups,
     value_t fused_clamp, value_t output, kernel_context &context) {
-
+    if(pad_mode != pad_mode_t::constant)
+    {
+        return err(nncase_errc::runtime_not_found);
+    }
     try_f32_input(input_mem, input);
     try_f32_input(weights_mem, weights);
     try_f32_input(bias_mem, bias);
@@ -130,7 +134,7 @@ result<value_t> nncase::kernels::stackvm::conv2d(
     try_to_scalar(groups_value, groups, int32_t);
     try_strides(strides, stride);
     try_strides(dilations, dilation);
-    try_array(fused_clamp_value, fused_clamp, float);
+    try_f32_input(fused_clamp_value, fused_clamp);
     auto out_shape = infer_shape(input_tensor->shape(), weights_tensor->shape(), strides_value, dilations, pads);
     try_f32_output(out_mem, output, input_tensor->dtype(), out_shape);
     try_(conv2d_impl(
@@ -140,7 +144,5 @@ result<value_t> nncase::kernels::stackvm::conv2d(
         strides[1], dilations[0], dilations[1],
         value_range<float>{fused_clamp_value[0], fused_clamp_value[1]},
         context));
-    // todo: some param not be used
-    return err(nncase_errc::runtime_not_found);
     return ok(output);
 }
