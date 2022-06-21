@@ -415,9 +415,7 @@ result<value_t> nncase::kernels::stackvm::split(value_t input, value_t axis,
     auto shapes =
         split_shape_infer(input_tensor->shape(), axis_value, sections_value);
     try_tuple_output(outputs, output, input_tensor->dtype(), shapes);
-    try_var(out_strides,
-            get_from_tuple<strides_t>(
-                output_tuple, [](auto &&input) { return input->strides(); }));
+    try_var(out_strides, get_strides(output_tuple));
     try_ref(split, input_tensor->dtype(), in_mem, outputs,
             input_tensor->shape(), input_tensor->strides(), out_strides,
             axis_value, sections_value, context);
