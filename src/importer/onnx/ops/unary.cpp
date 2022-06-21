@@ -129,6 +129,11 @@ void onnx_importer::convert_op_Sqrt(const onnx::NodeProto &node)
     convert_unary(node, unary_sqrt);
 }
 
+void onnx_importer::convert_op_Rsqrt(const onnx::NodeProto &node)
+{
+    convert_unary(node, unary_rsqrt);
+}
+
 void onnx_importer::convert_op_Tanh(const onnx::NodeProto &node)
 {
     convert_unary(node, unary_tanh);

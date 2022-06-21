@@ -63,22 +63,7 @@ DEFINE_TFLITE_LOWER(ROUND)
 
 DEFINE_TFLITE_LOWER(RSQRT)
 {
-    auto &input = get_tensor(op.inputs(), 0);
-
-    auto one = graph_.emplace<constant>(1.f);
-    auto sqrt = graph_.emplace<unary>(unary_sqrt, get_shape(input.shape()));
-    auto div = graph_.emplace<binary>(binary_div, to_data_type(input.type()), one->output().shape(), sqrt->output().shape(), value_range<float>::full());
-
-    auto name = std::string(get_tensor(op.outputs(), 0).name()->string_view());
-    one->name(name);
-    sqrt->name(name);
-    div->name(name);
-
-    div->input_a().connect(one->output());
-    div->input_b().connect(sqrt->output());
-
-    link_input_tensor(&sqrt->input(), op.inputs()->Get(0));
-    link_output_tensor(op.outputs()->Get(0), &div->output());
+    convert_unary(op, unary_rsqrt);
 }
 
 DEFINE_TFLITE_LOWER(SIN)

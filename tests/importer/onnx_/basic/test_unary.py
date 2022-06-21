@@ -39,6 +39,7 @@ def _make_module():
             outs.append(torch.sin(x))
             outs.append(torch.sqrt(x + 2))
             outs.append(torch.tanh(x))
+            outs.append(torch.rsqrt(x + 2))
             return outs
 
     return UnaryModule()
