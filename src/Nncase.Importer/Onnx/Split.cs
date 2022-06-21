@@ -5,6 +5,7 @@ using System;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Onnx;
+using static Nncase.Util;
 using F = Nncase.IR.F;
 
 namespace Nncase.Importer
@@ -37,13 +38,6 @@ namespace Nncase.Importer
             var split = GetOptionInputExpr(op, 1)
                 .Or(ComputeSplit(input, op.Output.Count, axis));
             return F.Tensors.Split(input, axis, split);
-        }
-
-        private Expr ComputeSplit(Expr input, int outputSize, long axis)
-        {
-            return F.Tensors.Expand(
-                Util.ShapeIndex(input, (int) axis) / outputSize,
-                new[] {outputSize});
         }
     }
 }

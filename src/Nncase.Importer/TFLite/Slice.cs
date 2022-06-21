@@ -27,15 +27,36 @@ namespace Nncase.Importer.TFLite
             var (input, begin) = GetInputExprs(op, 0, 1);
             var (end, strides) = GetInputExprs(op, 2, 3);
             var options = op.BuiltinOptionsAsStridedSliceOptions();
-            if (options.BeginMask != 0 || options.EndMask != 0 || options.EllipsisMask != 0
-                || options.NewAxisMask != 0)
-            {
-                throw new NotSupportedException("Unsupported StrideSlice no 0 mask");
-            }
-
             var tensor = GetInputTensor(op, 0);
             var axes = Tensor.FromSpan<int>(Enumerable.Range(0, tensor.ShapeLength).ToArray());
-            return F.Tensors.Slice(input, begin, end, axes, strides);
+            if ((options.NewAxisMask + options.ShrinkAxisMask + options.EllipsisMask) != 0)
+            {
+                throw new NotImplementedException("AxisMask and Ellipisis mask not impl in StrideSlice Importer");
+            }
+            var maskBegin = WithMask(begin, options.BeginMask, 0);
+            var maskEnd = WithMask(end, options.EndMask, Int32.MaxValue);
+            return F.Tensors.Slice(input, maskBegin, maskEnd, axes, strides);
+        }
+
+        private Expr WithMask(Expr data, int mask, int defaultValue)
+        {
+            if (mask == 0)
+            {
+                return data;
+            }
+            if (data is TensorConst constValue)
+            {
+                var arr = constValue.Value.ToArray<int>();
+                for (int i = 0; i < arr.Length; i++)
+                {
+                    arr[i] = ((mask >> i) & 1) != 0
+                        ? defaultValue
+                        : arr[i];
+                }
+                return arr;
+            }
+
+            throw new NotSupportedException("StrideSlice not supported mask != 0 && dynamic data");
         }
     }
 }

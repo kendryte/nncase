@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using NetFabric.Hyperlinq;
 using Nncase.IR.Math;
 using Nncase.TIR;
 
@@ -40,7 +41,7 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
     public override string Visit(Const expr)
     {
         if (_names.TryGetValue(expr, out var name)) { return name; }
-
+        
         if (expr.CheckedType is TensorType ttype && ttype.IsScalar)
         {
             name = $"const({expr} : {(expr.CheckedType is null ? string.Empty : VisitType(expr.CheckedType))})";
@@ -206,6 +207,10 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
         if (type is not null)
         {
             Scope.Append($": // {VisitType(type)}{end}");
+        }
+        else
+        {
+            Scope.Append("\n");
         }
     }
 }

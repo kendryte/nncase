@@ -57,16 +57,16 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>
                     ? axisV + input.Shape.Rank
                     : axisV;
                 var begin = ts_begins[i];
-                var end = System.Math.Min(ts_ends[i], input.Shape[axisV].FixedValue);
+                var end = System.Math.Min(ts_ends[i], input.Shape[axis].FixedValue);
                 var stride = ts_strides[i];
-                if (input.Shape[axisV].IsFixed)
+                if (input.Shape[axis].IsFixed)
                 {
-                    outShape[axisV] =
+                    outShape[axis] =
                         (int) System.Math.Ceiling((float) System.Math.Abs(end - begin) / System.Math.Abs(stride));
                 }
                 else
                 {
-                    outShape[axisV] = Dimension.Unknown;
+                    outShape[axis] = Dimension.Unknown;
                 }
             }
 

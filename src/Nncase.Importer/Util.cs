@@ -14,6 +14,8 @@ namespace Nncase
 {
     public static class Util
     {
+        public static Expr DynamicShapeIndex(in Expr input, Expr index) => GetItem(F.Tensors.ShapeOf(input), index);
+
         public static Expr ShapeIndex(in Expr input, int index)
         {
             Expr i;
@@ -23,14 +25,15 @@ namespace Nncase
             }
             else
             {
-                i = Rank(input) + index;
+                i = index;
             }
-            return GetItem(F.Tensors.ShapeOf(input), index);
+
+            return DynamicShapeIndex(input, i);
         }
 
         public static Expr GetItem(in Expr input, Expr index)
         {
-            return F.Tensors.Squeeze(F.Tensors.Slice(input, index, index + 1, 1), 0L);
+            return F.Tensors.Squeeze(F.Tensors.Slice(input, index, index + 1, 1), new[] {0L});
         }
 
         public static (Expr, Expr) GetHW(in Expr input)
@@ -98,8 +101,12 @@ namespace Nncase
         // todo:refactor and set private this
         public static Expr[] GetWindowedPadding(Expr inputSize, Expr filter, Expr stride, Expr dilation, bool same, bool lower = false)
         {
-            var outputSize = GetWindowedOutputSize(inputSize, filter, stride, dilation, same, false);
-            return GetWindowedPaddingValue(inputSize, outputSize, filter, stride, dilation, lower);
+            var i32InputSize = Cast(inputSize, DataTypes.Int32);
+            var i32Filter = Cast(filter, DataTypes.Int32);
+            var i32Stride = Cast(stride, DataTypes.Int32);
+            var i32Dilation = Cast(dilation, DataTypes.Int32);
+            var outputSize = GetWindowedOutputSize(i32InputSize, i32Filter, i32Stride, i32Dilation, same, false);
+            return GetWindowedPaddingValue(i32InputSize, outputSize, i32Filter, i32Stride, i32Dilation, lower);
         }
 
         // lower used for onnx when auto_pad attr is SAME_LOWER
@@ -110,6 +117,14 @@ namespace Nncase
             var padH = GetWindowedPadding(inH, fH, (int)stride[0], (int)dilation[0], same, lower);
             var padW = GetWindowedPadding(inW, fW, (int)stride[1], (int)dilation[1], same, lower);
             return ConcatPadding(padH, padW);
+        }
+        
+        public static Expr ComputeSplit(Expr input, long outputSize, long axis)
+        {
+            return F.Tensors.Expand(
+                // Util.DynamicShapeIndex(input, Cast(axis, DataTypes.Int32)) / outputSize,
+                Util.ShapeIndex(input, (int)axis) / outputSize,
+                Stack(new Tuple(outputSize), 0));
         }
     }
 }

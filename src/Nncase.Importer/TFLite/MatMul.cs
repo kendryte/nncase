@@ -13,8 +13,8 @@ namespace Nncase.Importer.TFLite
         {
             var (input, other) = GetInputExprs(op, 0, 1);
             return F.Tensors.MatMul(
-                F.Tensors.Transpose(input, new[] { 1, 0 }),
-                other);
+                input, 
+                F.Tensors.Transpose(other, new[] { 1, 0 }));
         }
     }
 }

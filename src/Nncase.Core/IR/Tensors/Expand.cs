@@ -8,6 +8,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Tensors;
 
@@ -25,5 +26,5 @@ public sealed record Expand() : Op
     /// <summary>
     /// Gets shape.
     /// </summary>
-    public static readonly ParameterInfo Shape = new(typeof(Expand), 1, "shape");
+    public static readonly ParameterInfo Shape = new(typeof(Expand), 1, "shape", HasRank(1));
 }

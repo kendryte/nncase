@@ -11,7 +11,7 @@ namespace Nncase.Importer;
 
 public sealed partial class OnnxImporter
 {
-    protected static readonly Dictionary<TensorProto.Types.DataType, DataType> _typeMap = new()
+    private static readonly Dictionary<TensorProto.Types.DataType, DataType> _typeMap = new()
     {
         {TensorProto.Types.DataType.Bool, DataTypes.Boolean},
         {TensorProto.Types.DataType.Float16, DataTypes.Float16},
@@ -27,12 +27,12 @@ public sealed partial class OnnxImporter
         {TensorProto.Types.DataType.Uint8, DataTypes.UInt8},
     };
 
-    protected bool EmptyTensor(TensorProto tensor)
+    private bool EmptyTensor(TensorProto tensor)
     {
         return tensor.Dims.Count == 1 && tensor.Dims[0] == 0;
     }
 
-    protected Tensor GetTensor(TensorProto tensor)
+    private Tensor GetTensor(TensorProto tensor)
     {
         var shape = GetShape(tensor).ToValueArray();
         var type = GetDataType(tensor);
@@ -88,7 +88,7 @@ public sealed partial class OnnxImporter
         return new TensorType(GetDataType(v), GetShape(v));
     }
 
-    protected Expr GetInputExpr(NodeProto n, int index)
+    private Expr GetInputExpr(NodeProto n, int index)
     {
         // todo:is null?
         var id = n.Input[index];
@@ -104,7 +104,7 @@ public sealed partial class OnnxImporter
                 () => throw new InvalidDataException($"Cannot load tensor data (tensor:{id})."));
     }
 
-    protected DataType GetInputDataType(NodeProto n, int index)
+    private DataType GetInputDataType(NodeProto n, int index)
     {
         var id = n.Input[index];
         return _graph.Input.Concat(_graph.ValueInfo)
@@ -113,17 +113,17 @@ public sealed partial class OnnxImporter
                 () => throw new InvalidDataException($"Cannot load tensor data (tensor:{id})."));
     }
 
-    protected Expr GetSingleInputExpr(NodeProto n)
+    private Expr GetSingleInputExpr(NodeProto n)
     {
         return GetInputExpr(n, 0);
     }
 
-    protected (Expr, Expr) GetInputExprs(NodeProto n, int index0, int index1)
+    private (Expr, Expr) GetInputExprs(NodeProto n, int index0, int index1)
     {
         return (GetInputExpr(n, index0), GetInputExpr(n, index1));
     }
 
-    protected Option<Expr> GetOptionInputExpr(NodeProto n, int index)
+    private Option<Expr> GetOptionInputExpr(NodeProto n, int index)
     {
         if (n.Input.Count <= index)
         {
@@ -148,17 +148,17 @@ public sealed partial class OnnxImporter
                 () => throw new InvalidDataException($"Cannot load tensor data (tensor:{id})."));
     }
 
-    protected Expr GetOptionInputExpr(NodeProto n, int index, Expr defaultExpr)
+    private Expr GetOptionInputExpr(NodeProto n, int index, Expr defaultExpr)
     {
         return GetOptionInputExpr(n, index).Or(defaultExpr);
     }
 
-    protected (Option<Expr>, Option<Expr>) GetOptionInputExprs(NodeProto n, int index0, int index1)
+    private (Option<Expr>, Option<Expr>) GetOptionInputExprs(NodeProto n, int index0, int index1)
     {
         return (GetOptionInputExpr(n, index0), GetOptionInputExpr(n, index1));
     }
 
-    protected Expr ToNncasePadFormat(Expr pads)
+    private Expr ToNncasePadFormat(Expr pads)
     {
         return Transpose(Reshape(pads, new[] {-1, 2}), new[] {1, 0});
     }
