@@ -7,9 +7,9 @@ using Nncase.IR;
 
 namespace Nncase.CodeGen.StackVM;
 
-internal class LinkableFunction
+internal class StackVMLinkableFunction : ILinkableFunction
 {
-    public LinkableFunction(uint id, Function sourceFunction, IEnumerable<FunctionRef> functionRefs, ushort maxLocals, byte[] text)
+    public StackVMLinkableFunction(uint id, Function sourceFunction, IEnumerable<FunctionRef> functionRefs, ushort maxLocals, byte[] text)
     {
         Id = id;
         SourceFunction = sourceFunction;
@@ -27,4 +27,6 @@ internal class LinkableFunction
     public ushort MaxLocals { get; }
 
     public byte[] Text { get; }
+
+    public IReadOnlyList<ILinkedSection> Sections => Array.Empty<ILinkedSection>();
 }

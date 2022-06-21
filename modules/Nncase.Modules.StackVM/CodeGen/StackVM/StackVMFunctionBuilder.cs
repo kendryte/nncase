@@ -14,46 +14,32 @@ namespace Nncase.CodeGen.StackVM;
 /// <summary>
 /// StackVM function builder.
 /// </summary>
-internal class StackVMFunctionBuilder
+internal class StackVMFunctionBuilder : FunctionBuilder
 {
-    private readonly uint _id;
     private readonly CodeGenContext _context;
-    private readonly Dictionary<Symbol, long> _symbolAddrs = new Dictionary<Symbol, long>();
-    private readonly MemoryStream _textContent = new MemoryStream();
-    private readonly BinaryWriter _textWriter;
     private readonly StackVMEmitter _textEmitter;
     private readonly LocalsAllocator _localsAllocator = new LocalsAllocator();
     private readonly Dictionary<TextSnippet, ushort> _snippetLocals = new Dictionary<TextSnippet, ushort>();
-    private readonly List<SymbolRef> _symbolRefs = new List<SymbolRef>();
-    private readonly List<FunctionRef> _functionRefs = new List<FunctionRef>();
 
-    public StackVMFunctionBuilder(uint id, BinaryWriter rdataWriter)
+    public StackVMFunctionBuilder(uint id, SectionManager sectionManager)
+        : base(id, sectionManager)
     {
-        _id = id;
-        _context = new CodeGenContext(rdataWriter);
-        _textWriter = new BinaryWriter(_textContent, Encoding.UTF8, leaveOpen: true);
-        _textEmitter = new StackVMEmitter(_textWriter);
+        _context = new CodeGenContext(sectionManager.GetWriter(WellknownSectionNames.Rdata));
+        _textEmitter = new StackVMEmitter(TextWriter);
     }
 
-    public LinkableFunction Build(Function function)
+    protected override ILinkableFunction CreateLinkableFunction(uint id, Callable callable, IReadOnlyList<FunctionRef> functionRefs, byte[] text)
     {
-        // 1. Compile
-        Compile(function);
-
-        // 2. Write text
-        WriteText();
-
-        // 3. Fix addrs
-        FixAddrs();
-        return new LinkableFunction(_id, function, _functionRefs, _localsAllocator.MaxCount, _textContent.ToArray());
+        return new StackVMLinkableFunction(id, (Function)callable, functionRefs, _localsAllocator.MaxCount, text);
     }
 
-    private void Compile(Function function)
+    protected override void Compile(Callable callable)
     {
+        var function = (Function)callable;
         new CodeGenVisitor(function, _context).Visit(function.Body);
     }
 
-    private void WriteText()
+    protected override void WriteText()
     {
         // 1. Assign ref counts
         foreach (var snippet in _context.TextSnippets)
@@ -64,7 +50,7 @@ internal class StackVMFunctionBuilder
         // 2. Gen code
         foreach (var snippet in _context.TextSnippets)
         {
-            _symbolAddrs.Add(snippet.Symbol, _textEmitter.Position);
+            SymbolAddrs.Add(snippet.Symbol, _textEmitter.Position);
 
             // 2.1 Load inputs
             foreach (var inputSnippet in snippet.InputSnippets)
@@ -89,16 +75,16 @@ internal class StackVMFunctionBuilder
             var bodyPosition = _textEmitter.Position;
             foreach (var refer in snippet.SymbolRefs)
             {
-                _symbolRefs.Add(refer with { Position = refer.Position + bodyPosition });
+                SymbolRefs.Add(refer with { Position = refer.Position + bodyPosition });
             }
 
             foreach (var refer in snippet.FunctionRefs)
             {
-                _functionRefs.Add(refer with { Position = refer.Position + bodyPosition });
+                FunctionRefs.Add(refer with { Position = refer.Position + bodyPosition });
             }
 
             snippet.Writer.Flush();
-            _textWriter.Write(snippet.Text.ToArray());
+            TextWriter.Write(snippet.Text.ToArray());
 
             // 2.3 Store output
             // in locals
@@ -108,23 +94,6 @@ internal class StackVMFunctionBuilder
                 _snippetLocals.Add(snippet, localId);
                 _textEmitter.Stlocal(localId);
             }
-        }
-
-        _textWriter.Flush();
-    }
-
-    private void FixAddrs()
-    {
-        foreach (var refer in _symbolRefs)
-        {
-            _textWriter.Position(refer.Position);
-            var symbolAddr = refer.Symbol.Position;
-            if (refer.Symbol.Section == SectionKind.Text)
-            {
-                symbolAddr += _symbolAddrs[refer.Symbol];
-            }
-
-            _textWriter.WriteByLength(symbolAddr + refer.Offset, refer.Length);
         }
     }
 

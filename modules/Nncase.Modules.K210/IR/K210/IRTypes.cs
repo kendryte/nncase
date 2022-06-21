@@ -71,9 +71,9 @@ public record struct KPUActivationSegment
     public int Add { get; set; }
 }
 
-public record KPUActivationParameters
+public class KPUActivationParameters
 {
-    public KPUActivationSegment[] Segments { get; set; }
+    public KPUActivationSegment[] Segments { get; } = new KPUActivationSegment[16];
 }
 
 public record struct FakeKPUActivationSegment
@@ -85,9 +85,9 @@ public record struct FakeKPUActivationSegment
     public float Add { get; set; }
 }
 
-public record FakeKPUActivationParameters
+public record class FakeKPUActivationParameters
 {
-    public FakeKPUActivationSegment[] Segments { get; set; }
+    public FakeKPUActivationSegment[] Segments { get; set; } = new FakeKPUActivationSegment[0];
 
     public ValueRange<float> Clamp { get; set; }
 }

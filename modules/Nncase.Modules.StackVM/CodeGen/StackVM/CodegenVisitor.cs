@@ -10,29 +10,6 @@ using Nncase.IR;
 
 namespace Nncase.CodeGen.StackVM;
 
-internal enum SectionKind
-{
-    Text,
-    Rdata
-}
-
-internal enum FunctionIdComponent
-{
-    ModuleId,
-    FunctionId,
-}
-
-internal class Symbol
-{
-    public SectionKind Section { get; set; }
-
-    public long Position { get; set; }
-}
-
-internal record SymbolRef(long Position, int Length, Symbol Symbol, int Offset);
-
-internal record FunctionRef(long Position, int Length, Callable Callable, FunctionIdComponent Component, int Offset);
-
 internal class TextSnippet
 {
     private readonly List<TextSnippet> _inputSnippets = new List<TextSnippet>();
@@ -208,7 +185,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     {
         if (!_context.DataTypes.TryGetValue(dataType, out var symbol))
         {
-            symbol = AddSymbol(SectionKind.Rdata);
+            symbol = AddSymbol(WellknownSectionNames.Rdata);
 
             TypeSerializer.Serialize(_context.RdataWriter, dataType);
             _context.DataTypes.Add(dataType, symbol);
@@ -220,15 +197,15 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     private Symbol WriteRdata(ReadOnlySpan<byte> data, int alignment)
     {
         _context.RdataWriter.AlignPosition(alignment);
-        var symbol = AddSymbol(SectionKind.Rdata);
+        var symbol = AddSymbol(WellknownSectionNames.Rdata);
         _context.RdataWriter.Write(data);
         return symbol;
     }
 
-    private Symbol AddSymbol(SectionKind kind)
+    private Symbol AddSymbol(string sectionName)
     {
-        var position = kind == SectionKind.Text ? 0 : _context.RdataWriter.Position();
-        return new Symbol { Section = kind, Position = position };
+        var position = sectionName == WellknownSectionNames.Text ? 0 : _context.RdataWriter.Position();
+        return new Symbol(sectionName, position);
     }
 
     private SymbolRef AddSymbolRef(Symbol symbol, int positionOffset, int length, int offset = 0)
@@ -290,7 +267,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private TextSnippet BeginTextSnippet(Expr expr)
     {
-        var snippet = new TextSnippet(expr, AddSymbol(SectionKind.Text));
+        var snippet = new TextSnippet(expr, AddSymbol(WellknownSectionNames.Text));
         _currentTextSnippet = snippet;
         _context.AddTextSnippet(snippet);
         return snippet;

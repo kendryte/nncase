@@ -24,7 +24,7 @@ namespace Nncase.Importer.TFLite
             var outputTensor = GetOutputTensor(op, 0);
             var param = outputTensor.Quantization ?? throw new InvalidDataException(
                 "Quantize Parameter not found in tflite DeQuantize importer");
-            return F.Math.DeQuantize(input, new QuantParam((int)param.ZeroPoint(0), param.Scale(0)), GetDataType(outputTensor.Type));
+            return F.Math.Dequantize(input, new QuantParam((int)param.ZeroPoint(0), param.Scale(0)), GetDataType(outputTensor.Type));
         }
     }
 }

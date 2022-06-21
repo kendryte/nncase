@@ -25,8 +25,4 @@
     <AdditionalFiles Include="$(SolutionDir)/tools/stylecop.json" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Runtime\K210\" />
-  </ItemGroup>
-
 </Project>

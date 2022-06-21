@@ -35,5 +35,28 @@ internal static class KPUUtility
         }
     }
 
+    public static int GetKPUPadding(KPUFilterType filterType)
+    {
+        return filterType switch
+        {
+            KPUFilterType.Filter_1x1 => 0,
+            KPUFilterType.Filter_3x3 => 1,
+            _ => throw new ArgumentOutOfRangeException(nameof(filterType)),
+        };
+    }
 
+    public static int[] GetPrePadding(ReadOnlySpan<int> paddings)
+    {
+        return new[] { paddings[0] > 0 ? paddings[0] : 0, paddings[1] > 0 ? paddings[1] : 0 };
+    }
+
+    public static int[] GetPostPadding(ReadOnlySpan<int> paddings)
+    {
+        return new[] { paddings[0] < 0 ? paddings[0] : 0, paddings[1] < 0 ? paddings[1] : 0 };
+    }
+
+    public static FakeKPUActivationParameters ClampToActivation(float[] clamp)
+    {
+        return new FakeKPUActivationParameters { Clamp = new ValueRange<float> { Min = clamp[0], Max = clamp[1] } };
+    }
 }

@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.CodeGen;
-using Nncase.CodeGen.K210;
 using Nncase.IR;
 using Nncase.Transform;
 
@@ -41,7 +40,8 @@ public class K210Target : ITarget
     {
         if (moduleKind == Callable.StackVMModuleKind)
         {
-            return new StackVMModuleBuilder();
+            throw new NotImplementedException();
+            //return new StackVMModuleBuilder();
         }
         else
         {

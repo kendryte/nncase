@@ -15,7 +15,7 @@ namespace Nncase.IR.K210;
 /// Fake KPU Conv2D.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record class FakeKPUConv2D(bool IsDepthwise, KPUFilterType FilterType, KPUPoolType PoolType, Tensor<float> Bias, FakeKPUActivationParameters Activation) : Op
+public sealed record class FakeKPUConv2D(bool IsDepthwise, KPUFilterType FilterType, KPUPoolType PoolType, Tensor<float> Bias, ValueRange<float> FusedClamp) : Op
 {
     /// <summary>
     /// Gets input.
@@ -26,4 +26,14 @@ public sealed record class FakeKPUConv2D(bool IsDepthwise, KPUFilterType FilterT
     /// Gets Weights.
     /// </summary>
     public static readonly ParameterInfo Weights = new(typeof(FakeKPUConv2D), 1, "weights", HasRank(4));
+
+    /// <summary>
+    /// Gets input quantParam.
+    /// </summary>
+    public static readonly ParameterInfo InputQuantParam = new(typeof(FakeKPUConv2D), 2, "inputQuantParam");
+
+    /// <summary>
+    /// Gets output quantParam.
+    /// </summary>
+    public static readonly ParameterInfo OutputQuantParam = new(typeof(FakeKPUConv2D), 3, "outputQuantParam");
 }

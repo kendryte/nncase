@@ -6,22 +6,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Nncase.Runtime.StackVM;
 
-namespace Nncase.CodeGen.StackVM;
+namespace Nncase.CodeGen;
 
-internal class LinkableModule : ILinkableModule
+public abstract class LinkableModule : ILinkableModule
 {
     private const int _textAlignment = 8;
 
-    private readonly byte[] _rdata;
-    private readonly IReadOnlyList<LinkableFunction> _functions;
+    private readonly IReadOnlyList<ILinkableFunction> _functions;
 
-    public LinkableModule(byte[] rdata, IReadOnlyList<LinkableFunction> functions)
+    public LinkableModule(IReadOnlyList<ILinkableFunction> functions, SectionManager sectionManager)
     {
-        _rdata = rdata;
         _functions = functions;
+        SectionManager = sectionManager;
     }
+
+    public SectionManager SectionManager { get; }
 
     public ILinkedModule Link(ILinkContext linkContext)
     {
@@ -35,14 +35,16 @@ internal class LinkableModule : ILinkableModule
                 bw.AlignPosition(_textAlignment);
                 var textBegin = bw.Position();
                 bw.Write(func.Text);
-                linkedFunctions.Add(new LinkedFunction(func.Id, func.SourceFunction, (uint)textBegin, (uint)func.Text.Length, Array.Empty<ILinkedSection>()));
+                linkedFunctions.Add(new LinkedFunction(func.Id, func.SourceFunction, (uint)textBegin, (uint)func.Text.Length, func.Sections));
             }
         }
 
-        return new LinkedModule(linkedFunctions, text.ToArray(), _rdata);
+        return CreateLinkedModule(linkedFunctions, text.ToArray());
     }
 
-    private void FixFunctionRefs(LinkableFunction func, ILinkContext linkContext)
+    protected abstract ILinkedModule CreateLinkedModule(IReadOnlyList<LinkedFunction> linkedFunctions, byte[] text);
+
+    private void FixFunctionRefs(ILinkableFunction func, ILinkContext linkContext)
     {
         using var writer = new BinaryWriter(new MemoryStream(func.Text));
         foreach (var funcRef in func.FunctionRefs)

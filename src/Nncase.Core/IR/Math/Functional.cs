@@ -413,6 +413,10 @@ namespace Nncase.IR.F
 
         public static Call Quantize(Expr input, Expr quantParam, DataType targetType) => new Call(new Quantize(targetType), input, quantParam);
 
-        public static Call DeQuantize(Expr input, Expr quantParam, DataType targetType) => new Call(new Dequantize(targetType), input, quantParam);
+        public static Call Dequantize(Expr input, Expr quantParam, DataType targetType) => new Call(new Dequantize(targetType), input, quantParam);
+
+        public static Call FakeQuantize(Expr input, Expr quantParam, DataType targetType) => new Call(new FakeQuantize(targetType), input, quantParam);
+
+        public static Call FakeDequantize(Expr input, Expr quantParam, DataType targetType) => new Call(new FakeDequantize(targetType), input, quantParam);
     }
 }

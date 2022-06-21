@@ -15,15 +15,25 @@ namespace Nncase.IR.K210;
 /// KPU Conv2D.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record class KPUConv2D(bool IsDepthwise, KPUFilterType FilterType, KPUPoolType PoolType, Tensor<KPUBatchNormSegment> BatchNorms, KPUActivationParameters Activation) : Op
+public sealed record class KPUConv2D(bool IsDepthwise, KPUFilterType FilterType, KPUPoolType PoolType, KPUActivationParameters Activation) : Op
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(FakeKPUConv2D), 0, "input", HasRank(4));
+    public static readonly ParameterInfo Input = new(typeof(KPUConv2D), 0, "input", HasRank(4));
 
     /// <summary>
     /// Gets Weights.
     /// </summary>
-    public static readonly ParameterInfo Weights = new(typeof(FakeKPUConv2D), 1, "weights", HasRank(4));
+    public static readonly ParameterInfo Weights = new(typeof(KPUConv2D), 1, "weights", HasRank(4));
+
+    /// <summary>
+    /// Gets batch norms.
+    /// </summary>
+    public static readonly ParameterInfo BatchNorms = new(typeof(KPUConv2D), 2, "batchNorms", HasRank(1));
+
+    /// <summary>
+    /// Gets activation.
+    /// </summary>
+    public static readonly ParameterInfo OutputQuantParam = new(typeof(KPUConv2D), 3, "outputQuantParam");
 }

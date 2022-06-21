@@ -14,32 +14,20 @@ namespace Nncase.CodeGen.StackVM;
 /// <summary>
 /// StackVM module builder.
 /// </summary>
-public class StackVMModuleBuilder : IModuleBuilder
+public class StackVMModuleBuilder : ModuleBuilder
 {
-    private readonly MemoryStream _rdataContent = new MemoryStream();
-    private readonly BinaryWriter _rdataWriter;
+    /// <inheritdoc/>
+    public override string ModuleKind => StackVMRTModule.Kind;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="StackVMModuleBuilder"/> class.
-    /// </summary>
-    public StackVMModuleBuilder()
+    /// <inheritdoc/>
+    protected override ILinkableModule CreateLinkableModule(IReadOnlyList<ILinkableFunction> linkableFunctions)
     {
-        _rdataWriter = new BinaryWriter(_rdataContent, Encoding.UTF8, leaveOpen: true);
+        return new StackVMLinkableModule(linkableFunctions, SectionManager);
     }
 
     /// <inheritdoc/>
-    public string ModuleKind => StackVMRTModule.Kind;
-
-    /// <inheritdoc/>
-    public ILinkableModule Build(IReadOnlyList<Callable> functions)
+    protected override FunctionBuilder CreateFunctionBuilder(uint id)
     {
-        var linkableFunctions = Compile(functions.Cast<Function>());
-        _rdataWriter.Flush();
-        return new LinkableModule(_rdataContent.ToArray(), linkableFunctions);
-    }
-
-    private LinkableFunction[] Compile(IEnumerable<Function> functions)
-    {
-        return functions.Select((f, i) => new StackVMFunctionBuilder((uint)i, _rdataWriter).Build(f)).ToArray();
+        return new StackVMFunctionBuilder(id, SectionManager);
     }
 }
