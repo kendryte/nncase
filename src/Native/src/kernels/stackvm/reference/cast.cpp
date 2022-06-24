@@ -68,6 +68,7 @@ result<void> cast_f32_to_fp16_impl(const float *input, half *output, const dims_
 #define CAST_IMPL_LV1(input_t)            \
     if (cmp_type<input_t>(in_type))   \
     {                                        \
+        CAST_IMPL_LV2(input_t, bool);  \
         CAST_IMPL_LV2(input_t, uint8_t);  \
         CAST_IMPL_LV2(input_t, uint16_t); \
         CAST_IMPL_LV2(input_t, uint32_t); \
@@ -88,6 +89,7 @@ result<void> cast_impl(datatype_t in_type, datatype_t out_type, const gsl::byte 
     if (cmp_dt(in_type, dt_float32) && cmp_dt(out_type, dt_float16))
         return cast_f32_to_fp16_impl(reinterpret_cast<const float *>(input), reinterpret_cast<half *>(output),
             in_shape, in_strides, out_strides, context);
+    CAST_IMPL_LV1(bool);
     CAST_IMPL_LV1(uint8_t);
     CAST_IMPL_LV1(uint16_t);
     CAST_IMPL_LV1(uint32_t);

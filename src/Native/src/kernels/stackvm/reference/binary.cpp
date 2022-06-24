@@ -94,6 +94,11 @@ result<value_t> kernels::stackvm::binary(binary_op_t binary_op, value_t lhs,
                                          kernel_context &context) {
     try_input(lhs_mem, lhs);
     try_input(rhs_mem, rhs);
+    if(!cmp_dt(lhs_tensor, rhs_tensor))
+    {
+        return err(nncase_errc::datatype_mismatch);
+    }
+
     try_typecode(typecode, lhs_tensor);
     auto out_shape = detail::get_binary_output_shape(lhs_tensor->shape(),
                                                      rhs_tensor->shape());

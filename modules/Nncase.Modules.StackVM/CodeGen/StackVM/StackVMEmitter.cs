@@ -16,18 +16,20 @@ public sealed partial class StackVMEmitter
 {
     private static readonly Dictionary<Type, byte> _typeCodes = new()
     {
-        { typeof(sbyte), 0 },
-        { typeof(short), 1 },
-        { typeof(int), 2 },
-        { typeof(long), 3 },
-        { typeof(byte), 4 },
-        { typeof(ushort), 5 },
-        { typeof(uint), 6 },
-        { typeof(ulong), 7 },
-        { typeof(Half), 8 },
-        { typeof(float), 9 },
-        { typeof(double), 10 },
-        { typeof(BFloat16), 11 },
+        { typeof(bool), 0 },
+        { typeof(char), 1 },
+        { typeof(sbyte), 2 },
+        { typeof(short), 3 },
+        { typeof(int), 4 },
+        { typeof(long), 5 },
+        { typeof(byte), 6 },
+        { typeof(ushort), 7 },
+        { typeof(uint), 8 },
+        { typeof(ulong), 9 },
+        { typeof(Half), 10 },
+        { typeof(float), 11 },
+        { typeof(double), 12 },
+        { typeof(BFloat16), 13 },
     };
 
     /// <summary>

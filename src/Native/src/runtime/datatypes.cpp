@@ -33,6 +33,8 @@ prim_type_t datatype_t::bfloat16(std::in_place, dt_bfloat16);
 
 result<prim_type_t> datatype_t::from_typecode(typecode_t typecode) {
     switch (typecode) {
+    case dt_boolean:
+        return ok(datatype_t::boolean);
     case dt_uint8:
         return ok(datatype_t::uint8);
     case dt_uint16:

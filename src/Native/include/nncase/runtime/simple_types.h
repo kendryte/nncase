@@ -88,6 +88,7 @@ struct scalar {
 
 inline constexpr size_t typecode_bytes(typecode_t typecode) {
     switch (typecode) {
+    case dt_boolean:
     case dt_uint8:
     case dt_int8:
         return 1;
