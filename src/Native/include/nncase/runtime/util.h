@@ -35,6 +35,11 @@ inline result<bool> cmp_dt_impl(datatype_t lhs, datatype_t rhs) {
     return ok(l == r);
 }
 
+inline bool cmp_dt(tensor lhs, tensor rhs) {
+    auto result = cmp_dt_impl(lhs->dtype(), rhs->dtype());
+    return result.is_ok() && result.unwrap();
+}
+
 inline bool cmp_dt(datatype_t lhs, datatype_t rhs) {
     auto result = cmp_dt_impl(lhs, rhs);
     return result.is_ok() && result.unwrap();
@@ -163,13 +168,12 @@ inline result<std::vector<gsl::byte *>> get_output_data(tuple outputs) {
 
 #ifndef NODEBUG
 // used for insert into some where for check nan value in DEBUG mode
-inline void nan_debug(const float *in, int size)
-{
+inline void nan_debug(const float *in, int size) {
     auto f = *in;
-    if(f != f) {
+    if (f != f) {
         for (int i = 1; i < size; ++i) {
             auto fv = *(in + i);
-            if(fv != fv) {
+            if (fv != fv) {
                 [[maybe_unused]] auto a = 1;
             }
         }
@@ -207,7 +211,7 @@ inline size_t positive_index(int index, size_t rank) {
 #define try_tuple_input(_var_name, _value_name)                                \
     try_input_impl(_var_name, _value_name, tuple)
 
-#define try_tuple_field0(_input0_name, _tuple_name) \
+#define try_tuple_field0(_input0_name, _tuple_name)                            \
     try_var(_input0_name, _tuple_name->fields()[0].as<tensor>());
 
 #define try_input_with_ty(_var_name, _value_name, _ty)                         \
@@ -273,6 +277,11 @@ inline size_t positive_index(int index, size_t rank) {
 
 #define finish return ok(output)
 #define tuple_finish return ok(output_tuple)
+
+#define not_impl_no_contiguous(tensor)                                         \
+    if (!is_contiguous(tensor)) {                                              \
+        return err(nncase_errc::shape_mismatch);                               \
+    }
 
 template <typename T>
 inline result<T> value_to_scalar([[maybe_unused]] value_t value) {
@@ -342,11 +351,19 @@ inline result<axes_t> value_as_axes(value_t value) {
 
 // todo:refactor
 inline result<dims_t> value_as_positive_axes(value_t value, size_t rank) {
-    try_input_with_ty(input, value, axes_t::value_type);
+    try_input(input, value);
     auto size = value_tensor->shape()[0];
     auto axis = dims_t(size);
     for (int i = 0; i < size; ++i) {
-        axis[i] = positive_index(input[i], rank);
+        if (cmp_type<int32_t>(value_tensor->dtype())) {
+            axis[i] = (dims_t::value_type)positive_index(
+                IN_CAST(int32_t, input)[i], rank);
+        } else if (cmp_type<int64_t>(value_tensor->dtype())) {
+            axis[i] = (dims_t::value_type)positive_index(
+                IN_CAST(int64_t, input)[i], rank);
+        } else {
+            return err(nncase_errc::datatype_mismatch);
+        }
     }
     return ok(axis);
 }
@@ -365,11 +382,11 @@ inline result<paddings_t> value_as_paddings([[maybe_unused]] value_t value) {
     auto dims = size / 2;
     auto pads = paddings_t(dims);
     auto dt = value_tensor->dtype();
-    for(int i = 0; i < dims; ++i) {
+    for (int i = 0; i < dims; ++i) {
         if (cmp_type<int32_t>(dt)) {
             pads[i].before = *(IN_CAST(int32_t, input) + 2 * i);
             pads[i].after = *(IN_CAST(int32_t, input) + 2 * i + 1);
-        } else if(cmp_type<int64_t>(dt)) {
+        } else if (cmp_type<int64_t>(dt)) {
             pads[i].before = *(IN_CAST(int64_t, input) + 2 * i);
             pads[i].after = *(IN_CAST(int64_t, input) + 2 * i + 1);
         } else {
@@ -425,4 +442,27 @@ inline bool is_contiguous(tensor tensor) {
 #define IN_CAST(_ty, _name) reinterpret_cast<const _ty *>(_name)
 #define OUT_CAST(_ty, _name) reinterpret_cast<_ty *>(_name)
 #define SCALAR_CAST(_ty, _name) *reinterpret_cast<const _ty *>(_name)
+
+template <typename F>
+inline result<void> integer_cast(datatype_t type, const gsl::byte *input,
+                                 F &&f) {
+    if (cmp_type<int32_t>(type)) {
+        try_(f(IN_CAST(int32_t, input)));
+    } else if (cmp_type<int64_t>(type)) {
+        try_(f(IN_CAST(int64_t, input)));
+    } else {
+        return err(nncase_errc::datatype_mismatch);
+    }
+    return ok();
+}
+
+inline tensor tensor_reshape(tensor in_tensor, const dims_t &new_shape) {
+    auto strides = get_default_strides(new_shape);
+    // used for debug
+//    [[maybe_unused]] auto new_sizes = get_bytes(in_tensor->dtype(), new_shape, strides);
+//    [[maybe_unused]] auto origin_sizes = in_tensor->buffer().size_bytes();
+    auto node = new tensor_node(in_tensor->dtype(), new_shape,
+                    strides, in_tensor->buffer());
+    return tensor(node);
+}
 } // namespace nncase::runtime

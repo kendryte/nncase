@@ -29,8 +29,8 @@ using namespace nncase::kernels::cpu::reference;
 
 namespace
 {
-template <class T>
-result<void> one_hot_impl(const int64_t *indices, T *output, const dims_t &indices_shape, const dims_t &out_shape,
+template <class T, class IndicesT>
+result<void> one_hot_impl(const IndicesT *indices, T *output, const dims_t &indices_shape, const dims_t &out_shape,
     const strides_t &out_strides, NNCASE_UNUSED size_t depth, T off_value, T on_value,
     size_t axis, runtime::stackvm::one_hot_mode_t mode, NNCASE_UNUSED kernel_context &context)
 {
@@ -64,10 +64,10 @@ result<void> one_hot_impl(const int64_t *indices, T *output, const dims_t &indic
 
 #define ONEHOT_IMPL(size, type)                                                                              \
     case size:                                                                                               \
-        return one_hot_impl(indices, reinterpret_cast<type *>(output), indices_shape, out_shape, out_strides, \
-            depth, reinterpret_cast<type *>(values)[0], reinterpret_cast<type *>(values)[1], axis, mode, context);
+        return integer_cast(indices_type, indices, [&](auto &&indices_value) { return one_hot_impl(indices_value, reinterpret_cast<type *>(output), indices_shape, out_shape, out_strides, \
+            depth, reinterpret_cast<type *>(values)[0], reinterpret_cast<type *>(values)[1], axis, mode, context); });
 
-result<void> one_hot_impl(datatype_t type, const int64_t *indices, gsl::byte *output, const dims_t &indices_shape, const dims_t &out_shape,
+result<void> one_hot_impl(datatype_t type, datatype_t indices_type, const gsl::byte *indices, gsl::byte *output, const dims_t &indices_shape, const dims_t &out_shape,
     const strides_t &out_strides, size_t depth, gsl::byte *values, size_t axis, runtime::stackvm::one_hot_mode_t mode, kernel_context &context) noexcept
 {
     TYPE_IMPL_SELECT(type, ONEHOT_IMPL);
@@ -87,12 +87,12 @@ nncase::kernels::stackvm::one_hot(one_hot_mode_t one_hot_mode, value_t indices,
     try_input(onehot_values, values);
     try_var(typecode, to_typecode(values_tensor->dtype()));
     try_to_integer(depth_value, depth);
-    try_integer_input(indices_mem, indices);
+    try_input(indices_mem, indices);
     try_positive_axis(axis_value, axis, indices_tensor);
     auto out_shape = infer_shape(indices_tensor->shape(), depth_value, axis_value);
     try_output(out_mem, output, typecode, out_shape);
 
-    try_(one_hot_impl(typecode, indices_mem, out_mem, indices_tensor->shape(),
+    try_(one_hot_impl(typecode, indices_tensor->dtype(), indices_mem, out_mem, indices_tensor->shape(),
                       output_tensor->shape(), output_tensor->strides(),
                       depth_value, onehot_values,
                       axis_value, one_hot_mode, context));

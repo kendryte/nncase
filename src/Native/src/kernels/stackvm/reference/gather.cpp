@@ -28,47 +28,57 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::reference;
 
-namespace
-{
-template <class T>
-result<void> gather_impl(const T *input, T *output, const dims_t &in_shape, const dims_t &out_shape,
-    const strides_t &in_strides, const strides_t &out_strides, const int64_t *indices, const dims_t &indices_shape, size_t axis,
-    NNCASE_UNUSED kernel_context &context) noexcept
-{
+namespace {
+template <class T, class IndicesT>
+result<void> gather_impl(const T *input, T *output, const dims_t &in_shape,
+                         const dims_t &out_shape, const strides_t &in_strides,
+                         const strides_t &out_strides, const IndicesT *indices,
+                         const dims_t &indices_shape, size_t axis,
+                         NNCASE_UNUSED kernel_context &context) noexcept {
     return apply(out_shape, [&](const dims_t &out_index) -> result<void> {
         // select batch
         // [out_index.begin(), out_index.begin() + axis]
         dims_t in_index(in_shape.size());
         size_t i_index = 0;
-        for (; i_index < static_cast<size_t>(axis); ++i_index)
-        {
+        for (; i_index < static_cast<size_t>(axis); ++i_index) {
             in_index[i_index] = out_index[i_index];
         }
 
         // which index to be used in indices
-        dims_t indices_index(out_index.begin() + axis, out_index.begin() + axis + indices_shape.size());
-        auto indices_offset = offset(get_default_strides(indices_shape), indices_index);
+        dims_t indices_index(out_index.begin() + axis,
+                             out_index.begin() + axis + indices_shape.size());
+        auto indices_offset =
+            offset(get_default_strides(indices_shape), indices_index);
         // select sub block in dim axis
         in_index[i_index] = indices[indices_offset];
         ++i_index;
 
         // select position in sub block
-        for (auto o_index = axis + indices_shape.size(); o_index < out_index.size(); ++o_index, ++i_index)
-        {
+        for (auto o_index = axis + indices_shape.size();
+             o_index < out_index.size(); ++o_index, ++i_index) {
             in_index[i_index] = out_index[o_index];
         }
-        output[offset(out_strides, out_index)] = input[offset(in_strides, in_index)];
+        output[offset(out_strides, out_index)] =
+            input[offset(in_strides, in_index)];
         return ok();
     });
 }
-}
+} // namespace
 
-#define GATHER_IMPL(size, type) \
-    case size:                  \
-        return ::gather_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, out_shape, in_strides, out_strides, indices, indices_shape, axis, context);
+#define GATHER_IMPL(size, type)                                                \
+    case size:                                                                 \
+        return integer_cast(indices_type, indices, [&](auto &&indices_value){ return gather_impl(reinterpret_cast<const type *>(input),            \
+                             reinterpret_cast<type *>(output), in_shape,       \
+                             out_shape, in_strides, out_strides,               \
+                             indices_value,              \
+                             indices_shape, axis, context);});
 
-result<void> nncase::kernels::stackvm::reference::gather(datatype_t type, const gsl::byte *input, gsl::byte *output, const dims_t &in_shape, const dims_t &out_shape,
-    const strides_t &in_strides, const strides_t &out_strides, const int64_t *indices, const dims_t &indices_shape, size_t axis, kernel_context &context) noexcept
-{
+result<void> nncase::kernels::stackvm::reference::gather(
+    datatype_t type, const gsl::byte *input, gsl::byte *output,
+    const dims_t &in_shape, const dims_t &out_shape,
+    const strides_t &in_strides, const strides_t &out_strides,
+    datatype_t indices_type, const gsl::byte *indices,
+    const dims_t &indices_shape, size_t axis,
+    kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, GATHER_IMPL);
 }

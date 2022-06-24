@@ -60,9 +60,12 @@ clamp(tensor input, tensor min, tensor max, tensor output = nullptr,
       kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void>
-compare(runtime::stackvm::compare_op_t compare_op, tensor lhs, tensor rhs,
-        tensor output = nullptr,
-        kernel_context &context = default_kernel_context());
+compare_impl(typecode_t typecode, nncase::runtime::stackvm::compare_op_t op, const gsl::byte *lhs,
+             const gsl::byte *rhs, gsl::byte *output, const dims_t &lhs_shape,
+             const strides_t &lhs_strides, const dims_t &rhs_shape,
+             const strides_t &rhs_strides, const dims_t &out_shape,
+             const strides_t &out_strides,
+             NNCASE_UNUSED kernel_context &context) noexcept;
 
 NNCASE_API result<void>
 concat(tensor input, tensor axis, tensor output = nullptr,
@@ -107,16 +110,17 @@ NNCASE_API result<void>
 gather(datatype_t type, const gsl::byte *input, gsl::byte *output,
        const dims_t &in_shape, const dims_t &out_shape,
        const strides_t &in_strides, const strides_t &out_strides,
-       const int64_t *indices, const dims_t &indices_shape, size_t axis,
+       datatype_t indices_type, const gsl::byte *indices,
+       const dims_t &indices_shape, size_t axis,
        kernel_context &context) noexcept;
 
 NNCASE_API
 result<void> gather_nd(datatype_t type, const gsl::byte *input,
                        gsl::byte *output, const dims_t &in_shape,
                        const dims_t &out_shape, const strides_t &in_strides,
-                       const strides_t &out_strides, const int64_t *indices,
-                       const dims_t &indices_shape, size_t batch_dims,
-                       kernel_context &context) noexcept;
+                       const strides_t &out_strides, datatype_t indices_type,
+                       const gsl::byte *indices, const dims_t &indices_shape,
+                       size_t batch_dims, kernel_context &context) noexcept;
 
 NNCASE_API result<void>
 get_item(tensor input, tensor index, tensor output = nullptr,
@@ -326,12 +330,11 @@ squeeze(tensor input, tensor dim, tensor output = nullptr,
         kernel_context &context = default_kernel_context());
 
 NNCASE_API
-result<void> stack(datatype_t type,
-                        gsl::span<const gsl::byte *const> inputs,
-                        gsl::byte *output, const dims_t &out_shape,
-                        gsl::span<const dims_t> in_strides,
-                        const strides_t &out_strides, size_t axis,
-                        kernel_context &context) noexcept;
+result<void> stack(datatype_t type, gsl::span<const gsl::byte *const> inputs,
+                   gsl::byte *output, const dims_t &out_shape,
+                   gsl::span<const dims_t> in_strides,
+                   const strides_t &out_strides, size_t axis,
+                   kernel_context &context) noexcept;
 
 NNCASE_API result<void>
 tile(tensor input, tensor repeats, tensor output = nullptr,
