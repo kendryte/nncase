@@ -40,6 +40,11 @@ namespace Nncase.IO
             return ret;
         }
 
+        /// <summary>
+        /// remain data length
+        /// </summary>
+        public uint RemainBits => ((uint)_data.Length * 8) + (uint)_avail;
+
         byte read_bits_le8(ulong bits)
         {
             Debug.Assert(bits <= 8);
