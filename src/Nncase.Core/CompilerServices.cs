@@ -93,7 +93,7 @@ public interface ICompilerServicesProvider
     /// <param name="expr">Expression.</param>
     /// <param name="varsValues">Optional vars' values.</param>
     /// <returns>Evaluate result.</returns>
-    Cost EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null);
+    Cost? EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null);
 
     /// <summary>
     /// Evaluate cost of operator.
@@ -101,25 +101,27 @@ public interface ICompilerServicesProvider
     /// <param name="op">Target operator.</param>
     /// <param name="context">Evaluate context.</param>
     /// <returns>Evaluate result.</returns>
-    Cost EvaluateOpCost(Op op, ICostEvaluateContext context);
+    Cost? EvaluateOpCost(Op op, ICostEvaluateContext context);
 
     /// <summary>
     /// Match expression.
     /// </summary>
     /// <param name="expr">Expression to match.</param>
     /// <param name="pattern">Match pattern.</param>
+    /// <param name="options">Match options.</param>
     /// <param name="result">Match result.</param>
     /// <returns>Match success.</returns>
-    bool TryMatch(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result);
+    bool TryMatch(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result);
 
     /// <summary>
     /// Match expression as root.
     /// </summary>
     /// <param name="expr">Expression to match.</param>
     /// <param name="pattern">Match pattern.</param>
+    /// <param name="options">Match options.</param>
     /// <param name="result">Match result.</param>
     /// <returns>Match success.</returns>
-    bool TryMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result);
+    bool TryMatchRoot(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result);
 
     /// <summary>
     /// Rewrite expression.
@@ -228,15 +230,15 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     public string Print(Expr expr) => _irprinterProvider.Print(expr);
 
     /// <inheritdoc/>
-    public bool TryMatch(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result)
+    public bool TryMatch(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
     {
-        return _matchProvider.TryMatch(expr, pattern, out result);
+        return _matchProvider.TryMatch(expr, pattern, options, out result);
     }
 
     /// <inheritdoc/>
-    public bool TryMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result)
+    public bool TryMatchRoot(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
     {
-        return _matchProvider.TryMatchRoot(expr, pattern, out result);
+        return _matchProvider.TryMatchRoot(expr, pattern, options, out result);
     }
 
     /// <inheritdoc/>
@@ -338,7 +340,7 @@ public static class CompilerServices
     /// <param name="expr">Expression.</param>
     /// <param name="varsValues">Optional vars' values.</param>
     /// <returns>Evaluate result.</returns>
-    public static Cost EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null)
+    public static Cost? EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null)
     {
         return Provider.EvaluateCost(expr, varsValues);
     }
@@ -349,7 +351,7 @@ public static class CompilerServices
     /// <param name="op">Target operator.</param>
     /// <param name="context">Evaluate context.</param>
     /// <returns>Evaluate result.</returns>
-    public static Cost EvaluateOpCost(Op op, ICostEvaluateContext context)
+    public static Cost? EvaluateOpCost(Op op, ICostEvaluateContext context)
     {
         return Provider.EvaluateOpCost(op, context);
     }
@@ -363,7 +365,20 @@ public static class CompilerServices
     /// <returns>Match success.</returns>
     public static bool TryMatch(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result)
     {
-        return Provider.TryMatch(expr, pattern, out result);
+        return Provider.TryMatch(expr, pattern, new MatchOptions(), out result);
+    }
+
+    /// <summary>
+    /// Match expression.
+    /// </summary>
+    /// <param name="expr">Expression to match.</param>
+    /// <param name="pattern">Match pattern.</param>
+    /// <param name="options">Match options.</param>
+    /// <param name="result">Match result.</param>
+    /// <returns>Match success.</returns>
+    public static bool TryMatch(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
+    {
+        return Provider.TryMatch(expr, pattern, options, out result);
     }
 
     /// <summary>
@@ -375,7 +390,20 @@ public static class CompilerServices
     /// <returns>Match success.</returns>
     public static bool TryMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result)
     {
-        return Provider.TryMatchRoot(expr, pattern, out result);
+        return Provider.TryMatchRoot(expr, pattern, new MatchOptions(), out result);
+    }
+
+    /// <summary>
+    /// Match expression as root.
+    /// </summary>
+    /// <param name="expr">Expression to match.</param>
+    /// <param name="pattern">Match pattern.</param>
+    /// <param name="options">Match options.</param>
+    /// <param name="result">Match result.</param>
+    /// <returns>Match success.</returns>
+    public static bool TryMatchRoot(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
+    {
+        return Provider.TryMatchRoot(expr, pattern, options, out result);
     }
 
     /// <summary>

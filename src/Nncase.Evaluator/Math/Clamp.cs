@@ -37,15 +37,24 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEv
             return new InvalidType(
                 $"clamp type is not equal, input:{input.DType}, min:${input.DType}, max:${input.DType}");
         }
+
         return Visit(input, min, max);
     }
 
     /// <inheritdoc/>
-    public Cost Visit(ICostEvaluateContext context, Clamp target)
+    public Cost? Visit(ICostEvaluateContext context, Clamp target)
     {
-        var returnType = context.GetReturnType<TensorType>();
-        var arithm = returnType.Shape.Prod().FixedValue;
-        return new(arithm, arithm * returnType.DType.SizeInBytes);
+        var inputType = context.GetArgumentType<TensorType>(target, Clamp.Input);
+        var minType = context.GetArgumentType<TensorType>(target, Clamp.Min);
+        var maxType = context.GetArgumentType<TensorType>(target, Clamp.Max);
+        var outputType = context.GetReturnType<TensorType>();
+
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(minType) + CostUtility.GetMemoryAccess(maxType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, 2),
+        };
     }
 
     private IRType Visit(TensorType input, TensorType min, TensorType max)

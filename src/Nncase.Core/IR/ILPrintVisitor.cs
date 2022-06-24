@@ -66,7 +66,7 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
 
         // 1. Function signature
         Scope.IndWrite($"{name} = fn({string.Join(", ", expr.Parameters.Select(Visit))})");
-        AppendCheckedType(expr.CheckedType, " {\n");
+        AppendCheckedType(expr.CheckedType, " {");
 
         // 2. Function body
         using (Scope.IndentUp()) { var body = Visit(expr.Body); }
@@ -130,7 +130,7 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
 
         // 1. For Loop signature
         Scope.Append($"For {expr.Mode}({Visit(expr.LoopVar)} in Range({Visit(expr.Dom.Start)}, {Visit(expr.Dom.Stop)}, {Visit(expr.Dom.Step)})");
-        AppendCheckedType(expr.CheckedType, " {\n");
+        AppendCheckedType(expr.CheckedType, " {");
 
         // 2. For Body
         using (Scope.IndentUp())
@@ -154,7 +154,7 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
 
         // 1. Sequential signature
         Scope.Append($"Sequential");
-        AppendCheckedType(expr.CheckedType, " {\n");
+        AppendCheckedType(expr.CheckedType, " {", hasNewLine: true);
 
         // 2. For Body
         using (Scope.IndentUp())
@@ -202,11 +202,18 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
         return name;
     }
 
-    private void AppendCheckedType(IRType? type, string end = "\n")
+    private void AppendCheckedType(IRType? type, string end = "", bool hasNewLine = true)
     {
         if (type is not null)
         {
-            Scope.Append($": // {VisitType(type)}{end}");
+            if (hasNewLine)
+            {
+                Scope.AppendLine($": // {VisitType(type)}{end}");
+            }
+            else
+            {
+                Scope.Append($": // {VisitType(type)}{end}");
+            }
         }
         else
         {

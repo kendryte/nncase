@@ -21,7 +21,8 @@ public static class ArrayUtility
     /// <param name="source">Jagged array.</param>
     /// <returns>2D array.</returns>
     /// <exception cref="InvalidOperationException">The given jagged array is not rectangular.</exception>
-    public static T[,] To2D<T>(this T[][] source)
+    public static unsafe T[,] To2D<T>(this T[][] source)
+        where T : unmanaged
     {
         var innerLength = source[0].Length;
         var dataOut = new T[source.Length, innerLength];
@@ -33,7 +34,7 @@ public static class ArrayUtility
                 throw new InvalidOperationException("The given jagged array is not rectangular.");
             }
 
-            Array.Copy(source[i], 0, dataOut, i * innerLength, innerLength);
+            Buffer.BlockCopy(source[i], 0, dataOut, i * innerLength * sizeof(T), innerLength * sizeof(T));
         }
 
         return dataOut;

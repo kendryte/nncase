@@ -9,15 +9,15 @@ using System.Threading.Tasks;
 
 namespace Nncase.Runtime.K210;
 
-internal class K210RTModule
+internal class KPURTModule
 {
     /// <summary>
-    /// K210 module kind.
+    /// KPU module kind.
     /// </summary>
-    public static readonly string Kind = "k210";
+    public static readonly string Kind = "kpu";
 
     /// <summary>
-    /// K210 module version.
+    /// KPU module version.
     /// </summary>
     public static readonly uint Version = 1;
 }

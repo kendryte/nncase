@@ -10,9 +10,9 @@ using Nncase.Runtime.K210;
 
 namespace Nncase.CodeGen.K210;
 
-internal class K210LinkedModule : ILinkedModule
+internal class KPULinkedModule : ILinkedModule
 {
-    public K210LinkedModule(IReadOnlyList<LinkedFunction> functions, byte[] text, byte[]? rdata)
+    public KPULinkedModule(IReadOnlyList<LinkedFunction> functions, byte[] text, byte[]? rdata)
     {
         Functions = functions;
         Sections = new[]
@@ -22,9 +22,9 @@ internal class K210LinkedModule : ILinkedModule
         };
     }
 
-    public string ModuleKind => K210RTModule.Kind;
+    public string ModuleKind => KPURTModule.Kind;
 
-    public uint Version => K210RTModule.Version;
+    public uint Version => KPURTModule.Version;
 
     public IReadOnlyList<ILinkedFunction> Functions { get; }
 

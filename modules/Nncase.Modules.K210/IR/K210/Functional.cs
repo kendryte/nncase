@@ -18,8 +18,8 @@ namespace Nncase.IR.F;
 /// </summary>
 public static class K210
 {
-    public static Call FakeKPUConv2D(bool isDepthwise, KPUFilterType filterType, KPUPoolType poolType, Tensor<float> bias, ValueRange<float> fusedClamp, Expr input, Expr weights, Expr inputQuantParam, Expr outputQuantParam) =>
-        new Call(new FakeKPUConv2D(isDepthwise, filterType, poolType, bias, fusedClamp), input, weights, inputQuantParam, outputQuantParam);
+    public static Call FakeKPUConv2D(bool isDepthwise, KPUFilterType filterType, KPUPoolType poolType, Tensor<float> bias, ValueRange<float> fusedClamp, Expr input, Expr weights) =>
+        new Call(new FakeKPUConv2D(isDepthwise, filterType, poolType, bias, fusedClamp), input, weights);
 
     public static Call FakeKPUUpload(Expr input) =>
         new Call(new FakeKPUUpload(), input);

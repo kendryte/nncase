@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.PatternMatch;
 
 namespace Nncase.Transform
 {
@@ -102,6 +103,8 @@ namespace Nncase.Transform
         /// get the compile options
         /// </summary>
         public CompileOptions CompileOptions { private set; get; }
+
+        public MatchOptions MatchOptions { get; set; } = new MatchOptions();
 
         /// <summary>
         /// set the pass name

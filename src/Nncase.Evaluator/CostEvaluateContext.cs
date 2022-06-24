@@ -14,10 +14,10 @@ namespace Nncase.Evaluator;
 /// </summary>
 internal sealed class CostEvaluateContext : ICostEvaluateContext
 {
-    private readonly Dictionary<Expr, Cost> _exprMemo;
+    private readonly Dictionary<Expr, Cost?> _exprMemo;
     private Call? _currentCall;
 
-    public CostEvaluateContext(Dictionary<Expr, Cost> exprMemo)
+    public CostEvaluateContext(Dictionary<Expr, Cost?> exprMemo)
     {
         _exprMemo = exprMemo;
     }
@@ -28,7 +28,7 @@ internal sealed class CostEvaluateContext : ICostEvaluateContext
         set => _currentCall = value;
     }
 
-    public Cost GetArgumentCost(Op op, ParameterInfo parameter)
+    public Cost? GetArgumentCost(Op op, ParameterInfo parameter)
     {
         return GetCost(GetArgumentExpr(op, parameter));
     }
@@ -57,7 +57,7 @@ internal sealed class CostEvaluateContext : ICostEvaluateContext
         }
     }
 
-    private Cost GetCost(Expr expr)
+    private Cost? GetCost(Expr expr)
     {
         return _exprMemo[expr];
     }

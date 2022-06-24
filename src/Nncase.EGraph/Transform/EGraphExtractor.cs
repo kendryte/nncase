@@ -37,7 +37,7 @@ internal class EGraphExtractor
                 Var var => VisitLeaf(minCostEnode, var),
                 TensorConst con => VisitLeaf(minCostEnode, con),
                 TupleConst con => VisitLeaf(minCostEnode, con),
-                Function func => VisitLeaf(minCostEnode, func),
+                Function func => Visit(minCostEnode, func),
                 Call call => Visit(minCostEnode, call),
                 IR.Tuple tuple => Visit(minCostEnode, tuple),
                 Op op => VisitLeaf(minCostEnode, op),
@@ -54,17 +54,23 @@ internal class EGraphExtractor
         return expr;
     }
 
+    private Function Visit(ENode enode, Function func)
+    {
+        var body = Visit(enode.Children[0]);
+        return func with { Body = body };
+    }
+
     private IR.Tuple Visit(ENode enode, IR.Tuple tuple)
     {
         var fields = enode.Children.Select(Visit);
-        return new(fields);
+        return tuple with { Fields = new(fields) };
     }
 
     private Call Visit(ENode enode, Call call)
     {
         var target = Visit(enode.Children[0]);
         var parameters = enode.Children.Skip(1).Select(Visit);
-        return new(target, parameters.ToArray());
+        return call with { Target = target, Parameters = new(parameters) };
     }
 }
 

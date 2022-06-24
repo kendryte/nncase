@@ -26,14 +26,4 @@ public sealed record class FakeKPUConv2D(bool IsDepthwise, KPUFilterType FilterT
     /// Gets Weights.
     /// </summary>
     public static readonly ParameterInfo Weights = new(typeof(FakeKPUConv2D), 1, "weights", HasRank(4));
-
-    /// <summary>
-    /// Gets input quantParam.
-    /// </summary>
-    public static readonly ParameterInfo InputQuantParam = new(typeof(FakeKPUConv2D), 2, "inputQuantParam");
-
-    /// <summary>
-    /// Gets output quantParam.
-    /// </summary>
-    public static readonly ParameterInfo OutputQuantParam = new(typeof(FakeKPUConv2D), 3, "outputQuantParam");
 }

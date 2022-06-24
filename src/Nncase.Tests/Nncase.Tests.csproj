@@ -29,6 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
+     <ProjectReference Include="..\..\modules\Nncase.Modules.K210\Nncase.Modules.K210.csproj" />
      <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" /> 
     <ProjectReference Include="..\Nncase.Graph\Nncase.Graph.csproj" />
     <ProjectReference Include="..\Nncase.Transform\Nncase.Transform.csproj" />

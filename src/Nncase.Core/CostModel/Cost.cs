@@ -6,22 +6,40 @@ using Nncase.IR;
 
 namespace Nncase.CostModel;
 
+public static class CostFactorNames
+{
+    public static readonly string MemoryLoad = "MemoryLoad";
+
+    public static readonly string MemoryStore = "MemoryStore";
+
+    public static readonly string CPUCycles = "CPUCycles";
+}
+
 /// <summary>
 /// Cost.
 /// </summary>
-/// <param name="Arith">Arithmetic cost.</param>
-/// <param name="Memory">Memory cost.</param>
-public sealed record Cost(double Arith = 0, double Memory = 0) : IComparable<Cost>
+public sealed record Cost : IComparable<Cost>, IEquatable<Cost>
 {
     /// <summary>
     /// Zero cost.
     /// </summary>
-    public static readonly Cost Zero = new(0, 0);
+    public static readonly Cost Zero = new();
+
+    /// <summary>
+    /// Gets or sets factors.
+    /// </summary>
+    public Dictionary<string, double> Factors { get; set; } = new();
 
     /// <summary>
     /// Gets score.
     /// </summary>
-    public double Score => (Arith * 2) + Memory;
+    public double Score => Factors.Sum(x => x.Value);
+
+    public double this[string name]
+    {
+        get => Factors[name];
+        set => Factors[name] = value;
+    }
 
     /// <summary>
     /// Whether lhs is greater than rhs.
@@ -45,7 +63,23 @@ public sealed record Cost(double Arith = 0, double Memory = 0) : IComparable<Cos
     /// <param name="lhs">Lhs.</param>
     /// <param name="rhs">Rhs.</param>
     /// <returns>Added result.</returns>
-    public static Cost operator +(Cost lhs, Cost rhs) => new(lhs.Arith + rhs.Arith, lhs.Memory + rhs.Memory);
+    public static Cost operator +(Cost lhs, Cost rhs)
+    {
+        var newCost = new Cost() with { Factors = new(lhs.Factors) };
+        foreach (var factor in rhs.Factors)
+        {
+            if (newCost.Factors.TryGetValue(factor.Key, out var oldValue))
+            {
+                newCost.Factors[factor.Key] = oldValue + factor.Value;
+            }
+            else
+            {
+                newCost.Factors.Add(factor.Key, factor.Value);
+            }
+        }
+
+        return newCost;
+    }
 
     /// <summary>
     /// Multiply cost with a scale.
@@ -53,12 +87,51 @@ public sealed record Cost(double Arith = 0, double Memory = 0) : IComparable<Cos
     /// <param name="lhs">Lhs.</param>
     /// <param name="scale">Scale.</param>
     /// <returns>Added result.</returns>
-    public static Cost operator *(Cost lhs, double scale) => new(lhs.Arith * scale, lhs.Memory * scale);
+    public static Cost operator *(Cost lhs, double scale)
+    {
+        var newCost = new Cost();
+        foreach (var factor in lhs.Factors)
+        {
+            newCost.Factors.Add(factor.Key, factor.Value * scale);
+        }
+
+        return newCost;
+    }
 
     /// <inheritdoc/>
     public int CompareTo(Cost? other)
     {
         return (int)(Score - other?.Score ?? 0);
+    }
+
+    public bool Equals(Cost? other)
+    {
+        if (other == null)
+        {
+            return false;
+        }
+
+        if (Factors.Count != other.Factors.Count)
+        {
+            return false;
+        }
+
+        foreach (var factor in Factors)
+        {
+            if (other.Factors.TryGetValue(factor.Key, out var otherValue))
+            {
+                if (factor.Value != otherValue)
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 
@@ -72,8 +145,97 @@ public static class CostExtensions
     /// </summary>
     /// <param name="costs">Source.</param>
     /// <returns>Result.</returns>
-    public static Cost Sum(this IEnumerable<Cost> costs)
+    public static Cost? Sum(this IEnumerable<Cost?> costs)
     {
-        return costs.Aggregate(Cost.Zero, (x, y) => x + y);
+        return costs.Aggregate((Cost?)Cost.Zero, (x, y) => y == null ? null : x + y);
+    }
+}
+
+public static class CostUtility
+{
+    public static double GetMemoryAccess(IRType type)
+    {
+        return type switch
+        {
+            TensorType t => t.Shape.Sum(x => x.IsFixed ? x.FixedValue : 1) * t.DType.SizeInBytes,
+            TupleType t => t.Fields.Sum(GetMemoryAccess),
+            _ => 0,
+        };
+    }
+
+    public static double GetFakeMemoryAccess(IRType type, int bits)
+    {
+        return type switch
+        {
+            TensorType t => Math.Ceiling(t.Shape.Sum(x => x.IsFixed ? x.FixedValue : 1) * t.DType.SizeInBytes * bits / 8.0),
+            TupleType t => t.Fields.Sum(x => GetFakeMemoryAccess(x, bits)),
+            _ => 0,
+        };
+    }
+
+    public static double GetCPUCycles(IRType type, double cyclesPerElement = 1)
+    {
+        return type switch
+        {
+            TensorType t => t.Shape.Sum(x => x.IsFixed ? x.FixedValue : 1) * cyclesPerElement,
+            TupleType t => t.Fields.Sum(GetMemoryAccess),
+            _ => 0,
+        };
+    }
+
+    public static double GetCPUCyclesOfUnary(UnaryOp unaryOp)
+    {
+        // TODO: Arch dependent
+        return unaryOp switch
+        {
+            UnaryOp.Abs => 1,
+            UnaryOp.Acos => 8,
+            UnaryOp.Acosh => 8,
+            UnaryOp.Asin => 8,
+            UnaryOp.Asinh => 8,
+            UnaryOp.Ceil => 1,
+            UnaryOp.Cos => 8,
+            UnaryOp.Cosh => 8,
+            UnaryOp.Exp => 8,
+            UnaryOp.Floor => 1,
+            UnaryOp.Log => 8,
+            UnaryOp.Neg => 1,
+            UnaryOp.Round => 1,
+            UnaryOp.Rsqrt => 4,
+            UnaryOp.Sin => 8,
+            UnaryOp.Sinh => 8,
+            UnaryOp.Sign => 1,
+            UnaryOp.Sqrt => 8,
+            UnaryOp.Square => 2,
+            UnaryOp.Tanh => 8,
+            UnaryOp.BitwiseNot => 1,
+            UnaryOp.LogicalNot => 1,
+            _ => 1,
+        };
+    }
+
+    public static double GetCPUCyclesOfBinary(BinaryOp binaryOp)
+    {
+        // TODO: Arch dependent
+        return binaryOp switch
+        {
+            BinaryOp.Add => 1,
+            BinaryOp.Sub => 1,
+            BinaryOp.Mul => 2,
+            BinaryOp.Div => 8,
+            BinaryOp.Mod => 8,
+            BinaryOp.Min => 1,
+            BinaryOp.Max => 1,
+            BinaryOp.Pow => 8,
+            BinaryOp.BitwiseAnd => 1,
+            BinaryOp.BitwiseOr => 1,
+            BinaryOp.BitwiseXor => 1,
+            BinaryOp.LogicalAnd => 1,
+            BinaryOp.LogicalOr => 1,
+            BinaryOp.LogicalXor => 1,
+            BinaryOp.LeftShift => 1,
+            BinaryOp.RightShift => 1,
+            _ => 1,
+        };
     }
 }

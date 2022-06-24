@@ -15,20 +15,20 @@ namespace Nncase.CodeGen.K210;
 /// <summary>
 /// K210 module builder.
 /// </summary>
-public class K210ModuleBuilder : ModuleBuilder
+public class KPUModuleBuilder : ModuleBuilder
 {
     /// <inheritdoc/>
-    public override string ModuleKind => K210RTModule.Kind;
+    public override string ModuleKind => KPURTModule.Kind;
 
     /// <inheritdoc/>
     protected override FunctionBuilder CreateFunctionBuilder(uint id)
     {
-        return new K210FunctionBuilder(id, SectionManager);
+        return new KPUFunctionBuilder(id, SectionManager);
     }
 
     /// <inheritdoc/>
     protected override ILinkableModule CreateLinkableModule(IReadOnlyList<ILinkableFunction> linkableFunctions)
     {
-        return new K210LinkableModule(linkableFunctions, SectionManager);
+        return new KPULinkableModule(linkableFunctions, SectionManager);
     }
 }

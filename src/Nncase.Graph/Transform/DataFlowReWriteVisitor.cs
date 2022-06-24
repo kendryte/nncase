@@ -16,6 +16,8 @@ internal sealed class DataFlowRewriteVisitor : ExprMutator
 {
     private readonly IRewriteRule _rule;
     private readonly RunPassOptions _options;
+    private readonly HashSet<Expr> _dontInheritExprs = new HashSet<Expr>(ReferenceEqualityComparer.Instance);
+
     public DataFlowRewriteVisitor(IRewriteRule rule, RunPassOptions options)
     {
         _rule = rule;
@@ -24,15 +26,27 @@ internal sealed class DataFlowRewriteVisitor : ExprMutator
 
     public override Expr DefaultMutateLeaf(Expr expr)
     {
-        if (CompilerServices.TryMatchRoot(expr, _rule.Pattern, out var match))
+        if (CompilerServices.TryMatchRoot(expr, _rule.Pattern, _options.MatchOptions, out var match))
         {
             var replace = _rule.GetReplace(match, _options);
             if (replace != null)
             {
+                _dontInheritExprs.Add(replace);
                 return replace;
             }
         }
 
         return expr;
+    }
+
+    public override Expr Visit(Expr expr)
+    {
+        var newExpr = base.Visit(expr);
+        if (!_dontInheritExprs.Contains(expr))
+        {
+            _options.MatchOptions.InheritSuppressPatterns(expr, newExpr);
+        }
+
+        return newExpr;
     }
 }

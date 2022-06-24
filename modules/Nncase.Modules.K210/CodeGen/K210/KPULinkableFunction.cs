@@ -7,9 +7,9 @@ using Nncase.IR;
 
 namespace Nncase.CodeGen.K210;
 
-internal class K210LinkableFunction : ILinkableFunction
+internal class KPULinkableFunction : ILinkableFunction
 {
-    public K210LinkableFunction(uint id, Function sourceFunction, IEnumerable<FunctionRef> functionRefs, byte[] text)
+    public KPULinkableFunction(uint id, Function sourceFunction, IEnumerable<FunctionRef> functionRefs, byte[] text)
     {
         Id = id;
         SourceFunction = sourceFunction;

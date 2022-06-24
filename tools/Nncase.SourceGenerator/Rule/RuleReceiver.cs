@@ -29,6 +29,7 @@ internal class RuleReceiver : ISyntaxContextReceiver
     public INamedTypeSymbol? ExprSymobl;
     public INamedTypeSymbol? TensorSymobl;
     public INamedTypeSymbol? IMatchResultSymobl;
+    public INamedTypeSymbol? RunPassOptionsSymobl;
     public INamedTypeSymbol? IRewriteRuleSymbol;
     public INamedTypeSymbol? QuantRuleSymbol;
 
@@ -39,6 +40,7 @@ internal class RuleReceiver : ISyntaxContextReceiver
         ExprSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Expr");
         TensorSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Tensor");
         IMatchResultSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.PatternMatch.IMatchResult");
+        RunPassOptionsSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Transform.RunPassOptions");
 
         var compilation = ctx.SemanticModel.Compilation;
         if (ctx.Node is ClassDeclarationSyntax classDeclaration)
@@ -60,6 +62,7 @@ internal class RuleReceiver : ISyntaxContextReceiver
                   && m.ReturnType.IsInheritFrom(ExprSymobl!)
                   && (m.Parameters.All(
                       p => SymbolEqualityComparer.Default.Equals(p.Type, IMatchResultSymobl)
+                           || SymbolEqualityComparer.Default.Equals(p.Type, RunPassOptionsSymobl)
                            || p.Type.IsInheritFrom(ExprSymobl) // Expr/ Const / Tuple ...
                            || p.Type.IsInheritFrom(TensorSymobl) // Tensor<?>
                            || (p.Type is INamedTypeSymbol { IsGenericType: true, Name: "IReadOnlyList" } gentype && gentype.TypeArguments[0].IsInheritFrom(ExprSymobl)) // IReadOnlyList<Expr>

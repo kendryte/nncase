@@ -18,6 +18,8 @@ public class MathModule : Module
         builder.RegisterType<CompareEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<CumSumEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<DequantizeEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<FakeDequantizeEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<FakeQuantizeEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<MatMulEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<QuantizeEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<QuantParamOfEvaluator>().AsImplementedInterfaces();

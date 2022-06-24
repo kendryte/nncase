@@ -97,6 +97,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
         // }
     }
 
+    /// <inheritdoc/>
     public override IValue VisitLeaf(Call expr)
     {
         _context.CurrentCall = expr;
@@ -116,6 +117,11 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
     public override IValue VisitLeaf(None expr)
     {
         return Value.None;
+    }
+
+    public override IValue VisitLeaf(Marker expr)
+    {
+        return Visit(expr.Target);
     }
 
     public override IValue VisitLeaf(Op expr)

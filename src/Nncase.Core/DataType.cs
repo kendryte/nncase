@@ -124,6 +124,12 @@ public abstract record PrimType : DataType
     /// Gets typecode.
     /// </summary>
     public abstract Runtime.TypeCode TypeCode { get; }
+
+    ///<inheritdoc/>
+    public sealed override string ToString()
+    {
+        return ShortName;
+    }
 }
 
 /// <summary>

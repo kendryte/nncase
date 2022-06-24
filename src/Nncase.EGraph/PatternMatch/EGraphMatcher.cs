@@ -80,7 +80,7 @@ internal sealed class EGraphMatcher
             var scopes = Visit(matchScopes, pattern, node);
             if (scopes.Count > 0)
             {
-                newScopes.AddRange(newScopes);
+                newScopes.AddRange(scopes);
             }
         }
 

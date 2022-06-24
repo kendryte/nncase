@@ -19,7 +19,7 @@ public interface ICostEvaluateProvider
     /// <param name="expr">Expression.</param>
     /// <param name="varsValues">Optional vars' values.</param>
     /// <returns>Evaluate result.</returns>
-    Cost EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null);
+    Cost? EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null);
 
     /// <summary>
     /// Evaluate cost of operator.
@@ -27,5 +27,5 @@ public interface ICostEvaluateProvider
     /// <param name="op">Target operator.</param>
     /// <param name="context">Evaluate context.</param>
     /// <returns>Evaluate result.</returns>
-    Cost EvaluateOpCost(Op op, ICostEvaluateContext context);
+    Cost? EvaluateOpCost(Op op, ICostEvaluateContext context);
 }

@@ -118,6 +118,6 @@ public static class DataTypes
     {
         PointerType pointerType => $"({GetDisplayName(pointerType.ElemType)}*)",
         PrimType primType => primType.ShortName,
-        _ => throw new ArgumentOutOfRangeException(),
+        _ => dataType.ToString(),
     };
 }

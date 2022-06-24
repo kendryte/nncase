@@ -177,5 +177,7 @@ public partial class EGraphPrinter
         }
 
         public override string Visit(Var expr) => expr.GetType().Name + " " + expr.Name;
+
+        public override string Visit(Marker expr) => expr.GetType().Name + " " + expr.Name;
     }
 }

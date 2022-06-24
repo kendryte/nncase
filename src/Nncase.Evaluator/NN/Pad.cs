@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
 using OrtKISharp;
@@ -17,7 +18,7 @@ using static Tensorflow.Binding;
 /// <summary>
 /// Evaluator for <see cref="Pad"/>.
 /// </summary>
-public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>
+public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluator<Pad>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Pad pad)
@@ -59,5 +60,18 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>
         var paddings = context.GetArgument(target, Pad.Pads);
         var padValue = context.GetArgument(target, Pad.Value);
         return TypeInference.PadType(input, paddings, padValue);
+    }
+
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, Pad target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, Pad.Input);
+        var outputType = context.GetReturnType<TensorType>();
+
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+        };
     }
 }

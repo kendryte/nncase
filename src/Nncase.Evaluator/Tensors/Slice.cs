@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
@@ -15,7 +16,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Slice"/>.
 /// </summary>
-public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>
+public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEvaluator<Slice>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Slice sl)
@@ -33,6 +34,18 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>
     {
         var input = context.CheckArgumentType<TensorType>(target, Slice.Input);
         return Visit(context, target, input);
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, Slice target)
+    {
+        var outputType = context.GetReturnType<TensorType>();
+
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+        };
     }
 
     private IRType Visit(ITypeInferenceContext context, Slice target, TensorType input)
@@ -73,6 +86,6 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>
             return input with { Shape = new Shape(outShape) };
         }
 
-        return new InvalidType("Can't Infer Shape With Dynamic Input!");
+        return input with { Shape = Shape.Unranked };
     }
 }

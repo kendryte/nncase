@@ -26,19 +26,15 @@ internal class RuleGenerator : ISourceGenerator
             var statements = new List<StatementSyntax>();
             foreach (var parameterSymbol in cand.methodSymbol.Parameters)
             {
-                if (parameterSymbol.Name == "result")
-                {
-                    context.ReportDiagnostic(Diagnostic.Create(RecriverUtil.GeneratorError, Location.None, "The Parameter Name Can't Be `result`! Please Change It."));
-                    return;
-                }
                 string rightExpr = parameterSymbol.Type switch
                 {
-                    INamedTypeSymbol { IsGenericType: true, IsReferenceType: true } x when x.IsInheritFrom(receiver.TensorSymobl) && x.Name == "Tensor" => $"((Nncase.IR.TensorConst)result[\"{parameterSymbol.Name}\"]).Value.Cast<{x.TypeArguments[0].ToDisplayString()}>()",
-                    IArrayTypeSymbol { ElementType: { IsUnmanagedType: true, IsValueType: true } e } x => $"((Nncase.IR.TensorConst)result[\"{parameterSymbol.Name}\"]).Value.ToArray<{e.ToDisplayString()}>()",
-                    { IsUnmanagedType: true, IsValueType: true } x => $"((Nncase.IR.TensorConst)result[\"{parameterSymbol.Name}\"]).Value.ToScalar<{x.ToDisplayString()}>()",
-                    { IsReferenceType: true } x when x.IsInheritFrom(receiver.ExprSymobl) => $"({parameterSymbol.Type.ToDisplayString()})result[\"{parameterSymbol.Name}\"]",
-                    ITypeSymbol x when SymbolEqualityComparer.Default.Equals(x, receiver.IMatchResultSymobl) => $"result",
-                    INamedTypeSymbol { IsGenericType: true, Name: "IReadOnlyList" } x when x.TypeArguments[0].IsInheritFrom(receiver.ExprSymobl) => $"((System.Collections.Generic.IReadOnlyList<Nncase.IR.Expr>)result[\"{parameterSymbol.Name}\"])",
+                    INamedTypeSymbol { IsGenericType: true, IsReferenceType: true } x when x.IsInheritFrom(receiver.TensorSymobl) && x.Name == "Tensor" => $"((Nncase.IR.TensorConst)__result[\"{parameterSymbol.Name}\"]).Value.Cast<{x.TypeArguments[0].ToDisplayString()}>()",
+                    IArrayTypeSymbol { ElementType: { IsUnmanagedType: true, IsValueType: true } e } x => $"((Nncase.IR.TensorConst)__result[\"{parameterSymbol.Name}\"]).Value.ToArray<{e.ToDisplayString()}>()",
+                    { IsUnmanagedType: true, IsValueType: true } x => $"((Nncase.IR.TensorConst)__result[\"{parameterSymbol.Name}\"]).Value.ToScalar<{x.ToDisplayString()}>()",
+                    { IsReferenceType: true } x when x.IsInheritFrom(receiver.ExprSymobl) => $"({parameterSymbol.Type.ToDisplayString()})__result[\"{parameterSymbol.Name}\"]",
+                    ITypeSymbol x when SymbolEqualityComparer.Default.Equals(x, receiver.IMatchResultSymobl) => $"__result",
+                    ITypeSymbol x when SymbolEqualityComparer.Default.Equals(x, receiver.RunPassOptionsSymobl) => $"__options",
+                    INamedTypeSymbol { IsGenericType: true, Name: "IReadOnlyList" } x when x.TypeArguments[0].IsInheritFrom(receiver.ExprSymobl) => $"((System.Collections.Generic.IReadOnlyList<Nncase.IR.Expr>)__result[\"{parameterSymbol.Name}\"])",
                     _ => throw new NotSupportedException($"Convert {parameterSymbol.Name} {parameterSymbol.Type.ToDisplayString()} For IRewriteRule Impl!")
                 };
 
@@ -49,7 +45,7 @@ internal class RuleGenerator : ISourceGenerator
             if (cand.classSymobl.IsInheritFrom(receiver.QuantRuleSymbol))
             {
                 statements.Add(ParseStatement($"Option = options;"));
-                statements.Add(ParseStatement($"Root = (Expr)result.Root;"));
+                statements.Add(ParseStatement($"Root = (Expr)__result.Root;"));
                 statements.Add(ParseStatement($"Init();"));
             }
             statements.Add(
@@ -62,7 +58,7 @@ internal class RuleGenerator : ISourceGenerator
 
             // 2. consturct wrapper method.
             var method = MethodDeclaration(ParseTypeName("Nncase.IR.Expr?"), Identifier("GetReplace"))
-                        .WithParameterList(ParseParameterList("(IMatchResult result, RunPassOptions options)"))
+                        .WithParameterList(ParseParameterList("(IMatchResult __result, RunPassOptions __options)"))
                         .WithModifiers(modifiers)
                         .WithBody(Block(statements));
 

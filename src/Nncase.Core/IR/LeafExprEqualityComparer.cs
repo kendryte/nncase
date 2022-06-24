@@ -45,6 +45,7 @@ public class LeafExprEqualityComparer : IEqualityComparer<Expr>
             (Tuple tx, Tuple ty) => tx.Count == ty.Count,
             (Call tx, Call ty) => tx.Parameters.Count == ty.Parameters.Count,
             (Op tx, Op ty) => tx.Equals(ty),
+            (Marker tx, Marker ty) => tx.Name == ty.Name,
             _ => throw new InvalidOperationException("Invalid expression type."),
         };
     }
@@ -60,6 +61,7 @@ public class LeafExprEqualityComparer : IEqualityComparer<Expr>
             Tuple x => x.Count.GetHashCode(),
             Call x => x.Parameters.Count.GetHashCode(),
             Op x => x.GetHashCode(),
+            Marker x => x.Name.GetHashCode(),
             _ => throw new InvalidOperationException("Invalid expression type."),
         };
     }

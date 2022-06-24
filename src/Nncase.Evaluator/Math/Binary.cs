@@ -52,9 +52,16 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Binary target)
     {
-        var returnType = context.GetReturnType<TensorType>();
-        var arithm = returnType.Shape.Prod().FixedValue;
-        return new(arithm, arithm * returnType.DType.SizeInBytes);
+        var lhsType = context.GetArgumentType<TensorType>(target, Binary.Lhs);
+        var rhsType = context.GetArgumentType<TensorType>(target, Binary.Rhs);
+        var outputType = context.GetReturnType<TensorType>();
+
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(lhsType) + CostUtility.GetMemoryAccess(rhsType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, CostUtility.GetCPUCyclesOfBinary(target.BinaryOp)),
+        };
     }
 
     /// <inheritdoc/>

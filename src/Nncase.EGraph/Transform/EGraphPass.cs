@@ -14,7 +14,7 @@ namespace Nncase.Transform;
 /// <summary>
 /// EGraph pass.
 /// </summary>
-public class EGraphPass : FunctionPass
+public class EGraphPass : RulesPass
 {
     private readonly List<IRewriteRule> _rules = new();
 
@@ -27,36 +27,14 @@ public class EGraphPass : FunctionPass
     {
     }
 
-    /// <summary>
-    /// Gets rules.
-    /// </summary>
-    public IReadOnlyList<IRewriteRule> Rules => _rules;
-
-    /// <summary>
-    /// add the pattern rule.
-    /// </summary>
-    /// <param name="rule">Rule.</param>
-    public void Add(IRewriteRule rule) => _rules.Add(rule);
-
-    /// <summary>
-    /// add the pattern rules.
-    /// </summary>
-    /// <param name="rules">Rules.</param>
-    public void Add(params IRewriteRule[] rules) => _rules.AddRange(rules);
-
-    /// <summary>
-    /// <see cref="Add(IRewriteRule[])"/>.
-    /// </summary>
-    /// <param name="rules">Rules.</param>
-    public void Add(IEnumerable<IRewriteRule> rules) => _rules.AddRange(rules);
-
     /// <inheritdoc/>
     protected override Callable RunCore(Callable function, RunPassOptions options)
     {
         options.SetPassName(Name);
         var graph = new EGraph();
-        graph.Add(function);
+        var root = graph.Add(function);
         EGraphRewriter.Rewrite(graph, Rules, options);
-        return function;
+        var post = graph.Extract(root, options);
+        return (Callable)post;
     }
 }

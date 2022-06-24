@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using OrtKISharp;
@@ -11,7 +12,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="RangeOf"/>.
 /// </summary>
-public class RangeOfEvaluator : IEvaluator<RangeOf>, ITypeInferencer<RangeOf>
+public class RangeOfEvaluator : IEvaluator<RangeOf>, ITypeInferencer<RangeOf>, ICostEvaluator<RangeOf>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, RangeOf target)
@@ -36,5 +37,19 @@ public class RangeOfEvaluator : IEvaluator<RangeOf>, ITypeInferencer<RangeOf>
     {
         var input = context.CheckArgumentType<TensorType>(target, RangeOf.Input);
         return input with { Shape = new Shape(2) };
+    }
+
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, RangeOf target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, RangeOf.Input);
+        var outputType = context.GetReturnType<TensorType>();
+
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(inputType, 2),
+        };
     }
 }

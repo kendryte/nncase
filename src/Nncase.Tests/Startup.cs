@@ -41,7 +41,8 @@ namespace Nncase.Tests
                 .AddEvaluator()
                 .AddGraph()
                 .AddEGraph()
-                .AddStackVM();
+                .AddStackVM()
+                .AddK210();
             });
             builder.RegisterAssemblyModules(assemblies);
         }

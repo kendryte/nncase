@@ -155,6 +155,23 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
+        public override Expr VisitLeaf(Marker expr)
+        {
+            var nexpr = MutateLeaf(expr);
+            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!IsMutated)
+            {
+                return expr;
+            }
+
+            return expr with
+            {
+                Target = Visit(expr.Target),
+                Attribute = Visit(expr.Attribute),
+            };
+        }
+
+        /// <inheritdoc/>
         public override Expr VisitLeaf(TIR.IterVar expr)
         {
             var nexpr = MutateLeaf(expr);
@@ -390,6 +407,13 @@ namespace Nncase.IR
         /// <param name="expr"></param>
         /// <returns></returns>
         public virtual Expr MutateLeaf(None expr) => DefaultMutateLeaf(expr);
+
+        /// <summary>
+        /// mutate the marker.
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public virtual Expr MutateLeaf(Marker expr) => DefaultMutateLeaf(expr);
 
         /// <summary>
         /// mutate the itervar.

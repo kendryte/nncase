@@ -159,6 +159,21 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
+        public override TExprResult Visit(Marker expr)
+        {
+            if (!_exprMemo.TryGetValue(expr, out var result))
+            {
+                Visit(expr.Target);
+                Visit(expr.Attribute);
+
+                result = VisitLeaf(expr);
+                _exprMemo.Add(expr, result);
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc/>
         public sealed override TExprResult Visit(TIR.IterVar expr)
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
@@ -391,6 +406,13 @@ namespace Nncase.IR
         /// <param name="expr">None expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult VisitLeaf(None expr) => DefaultVisitLeaf(expr);
+
+        /// <summary>
+        /// Visit leaf marker expression.
+        /// </summary>
+        /// <param name="expr">None expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult VisitLeaf(Marker expr) => DefaultVisitLeaf(expr);
 
         /// <summary>
         /// Visit leaf IterVar expression.

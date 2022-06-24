@@ -32,6 +32,7 @@ namespace Nncase.IR
                 Tuple tuple => Visit(tuple),
                 Op op => Visit(op),
                 None none => Visit(none),
+                Marker marker => Visit(marker),
                 TIR.IterVar itvar => Visit(itvar),
                 TIR.Sequential seq => Visit(seq),
                 TIR.For @for => Visit(@for),
@@ -102,6 +103,13 @@ namespace Nncase.IR
         /// <param name="expr">None expr.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult Visit(None expr) => DefaultVisit(expr);
+
+        /// <summary>
+        /// Visit marker expression
+        /// </summary>
+        /// <param name="expr">Marker expr.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult Visit(Marker expr) => DefaultVisit(expr);
 
         /// <summary>
         /// Visit IterVar expression.

@@ -34,9 +34,14 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Transpose target)
     {
-        var returnType = context.GetReturnType<TensorType>();
-        var arithm = returnType.Shape.Prod().FixedValue;
-        return new(arithm, arithm * returnType.DType.SizeInBytes);
+        var inputType = context.GetArgumentType<TensorType>(target, Transpose.Input);
+        var outputType = context.GetReturnType<TensorType>();
+
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+        };
     }
 
     private IRType Visit(ITypeInferenceContext context, Transpose target, TensorType input)

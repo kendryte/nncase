@@ -9,15 +9,15 @@ using System.Threading.Tasks;
 
 namespace Nncase.CodeGen.K210;
 
-internal class K210LinkableModule : LinkableModule
+internal class KPULinkableModule : LinkableModule
 {
-    public K210LinkableModule(IReadOnlyList<ILinkableFunction> functions, SectionManager sectionManager)
+    public KPULinkableModule(IReadOnlyList<ILinkableFunction> functions, SectionManager sectionManager)
         : base(functions, sectionManager)
     {
     }
 
     protected override ILinkedModule CreateLinkedModule(IReadOnlyList<LinkedFunction> linkedFunctions, byte[] text)
     {
-        return new K210LinkedModule(linkedFunctions, text, SectionManager.GetContent(WellknownSectionNames.Rdata));
+        return new KPULinkedModule(linkedFunctions, text, SectionManager.GetContent(WellknownSectionNames.Rdata));
     }
 }

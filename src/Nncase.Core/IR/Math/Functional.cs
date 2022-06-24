@@ -418,5 +418,7 @@ namespace Nncase.IR.F
         public static Call FakeQuantize(Expr input, Expr quantParam, DataType targetType) => new Call(new FakeQuantize(targetType), input, quantParam);
 
         public static Call FakeDequantize(Expr input, Expr quantParam, DataType targetType) => new Call(new FakeDequantize(targetType), input, quantParam);
+
+        public static Marker RangeOfMarker(Expr target, Expr range) => new Marker(WellknownMarkerNames.RangeOf, target, range);
     }
 }

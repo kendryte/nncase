@@ -15,29 +15,32 @@ namespace Nncase.PatternMatch;
 
 internal sealed class Matcher
 {
-    private Matcher(Expr root)
+    private MatchScope _currentScope = new MatchScope();
+    private MatchOptions _options;
+
+    private Matcher(Expr root, MatchOptions options)
     {
         _currentScope = new MatchScope(root);
+        _options = options;
     }
-
-    private MatchScope _currentScope = new MatchScope();
 
     /// <summary>
     /// Match expression as root.
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <param name="pattern">Pattern.</param>
+    /// <param name="options">Match options.</param>
     /// <param name="result">Match result.</param>
     /// <returns>Match success.</returns>
-    public static bool TryMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result)
+    public static bool TryMatchRoot(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
     {
-        if (!pattern.MatchLeaf(expr))
+        if (options.IsSuppressedPattern(expr, pattern) || !pattern.MatchLeaf(expr))
         {
             result = null;
             return false;
         }
 
-        var matcher = new Matcher(expr);
+        var matcher = new Matcher(expr, options);
         matcher.Visit(pattern, expr);
         return matcher._currentScope.TryGetMatchResult(out result);
     }
@@ -47,16 +50,17 @@ internal sealed class Matcher
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <param name="pattern">Pattern.</param>
+    /// <param name="options">Match options.</param>
     /// <param name="result">Match result.</param>
     /// <returns>Match success.</returns>
-    public static bool TryMatch(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result)
+    public static bool TryMatch(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
     {
         var candidates = new List<Expr>();
-        new MatchVisitor(candidates, pattern).Visit(expr);
+        new MatchVisitor(candidates, pattern, options).Visit(expr);
 
         foreach (var candidate in candidates)
         {
-            if (TryMatchRoot(candidate, pattern, out result))
+            if (TryMatchRoot(candidate, pattern, options, out result))
             {
                 return true;
             }
@@ -96,7 +100,8 @@ internal sealed class Matcher
         }
         else
         {
-            if (pattern.MatchLeaf(expr))
+            if (!_options.IsSuppressedPattern(expr, pattern)
+                && pattern.MatchLeaf(expr))
             {
                 _currentScope.AddMatch(pattern, expr);
             }
@@ -120,7 +125,8 @@ internal sealed class Matcher
         }
         else
         {
-            if (pattern.MatchLeaf(expr)
+            if (!_options.IsSuppressedPattern(expr, pattern)
+                && pattern.MatchLeaf(expr)
                 && Visit(pattern.Body, expr.Body)
                 && Visit(pattern.Parameters, expr.Parameters))
             {
@@ -146,7 +152,8 @@ internal sealed class Matcher
         }
         else
         {
-            if (pattern.MatchLeaf(expr)
+            if (!_options.IsSuppressedPattern(expr, pattern)
+                && pattern.MatchLeaf(expr)
                 && Visit(pattern.Target, expr.Target)
                 && Visit(pattern.Parameters, expr.Parameters))
             {
@@ -172,7 +179,8 @@ internal sealed class Matcher
         }
         else
         {
-            if (pattern.MatchLeaf(expr)
+            if (!_options.IsSuppressedPattern(expr, pattern)
+                && pattern.MatchLeaf(expr)
                 && Visit(pattern.Fields, expr.Fields))
             {
                 _currentScope.AddMatch(pattern, expr);
@@ -197,7 +205,8 @@ internal sealed class Matcher
         }
         else
         {
-            if (pattern.MatchLeaf(expr))
+            if (!_options.IsSuppressedPattern(expr, pattern)
+                && pattern.MatchLeaf(expr))
             {
                 // Preserve context
                 var oldScope = _currentScope;
@@ -262,16 +271,18 @@ internal sealed class Matcher
     {
         private readonly List<Expr> _candidates;
         private readonly IPattern _rootPattern;
+        private readonly MatchOptions _options;
 
-        public MatchVisitor(List<Expr> candidates, IPattern rootPattern)
+        public MatchVisitor(List<Expr> candidates, IPattern rootPattern, MatchOptions options)
         {
             _candidates = candidates;
             _rootPattern = rootPattern;
+            _options = options;
         }
 
         public override Expr DefaultVisitLeaf(Expr expr)
         {
-            if (_rootPattern.MatchLeaf(expr))
+            if (!_options.IsSuppressedPattern(expr, _rootPattern) && _rootPattern.MatchLeaf(expr))
             {
                 _candidates.Add(expr);
             }

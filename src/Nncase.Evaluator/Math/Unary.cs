@@ -57,9 +57,15 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Unary target)
     {
-        var returnType = context.GetReturnType<TensorType>();
-        var arithm = returnType.Shape.Prod().FixedValue;
-        return new(arithm, arithm * returnType.DType.SizeInBytes);
+        var inputType = context.GetArgumentType<TensorType>(target, Unary.Input);
+        var outputType = context.GetReturnType<TensorType>();
+
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, CostUtility.GetCPUCyclesOfUnary(target.UnaryOp)),
+        };
     }
 
     private IRType Visit(TensorType input)

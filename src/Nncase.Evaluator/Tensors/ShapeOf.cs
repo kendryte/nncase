@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
@@ -14,7 +15,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="ShapeOf"/>.
 /// </summary>
-public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>
+public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>, ICostEvaluator<ShapeOf>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ShapeOf shape)
@@ -28,6 +29,17 @@ public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>
     {
         var input = context.CheckArgumentType<TensorType>(target, ShapeOf.Input);
         return Visit(context, target, input);
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, ShapeOf target)
+    {
+        var outputType = context.GetReturnType<TensorType>();
+
+        return new()
+        {
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+        };
     }
 
     private IRType Visit(ITypeInferenceContext context, ShapeOf target, TensorType input)

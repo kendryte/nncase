@@ -35,7 +35,12 @@ namespace Nncase.Transform
         /// <param name="callable">Target function.</param>
         /// <param name="options">Options.</param>
         public Callable Run(Callable callable, RunPassOptions options)
-            => RunCore(callable, options);
+        {
+            OnPassStart(callable, options);
+            var post = RunCore(callable, options);
+            OnPassEnd(post, options);
+            return post;
+        }
 
         /// <summary>
         /// Run pass implementation for derived class.

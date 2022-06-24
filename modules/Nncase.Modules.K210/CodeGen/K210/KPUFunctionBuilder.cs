@@ -14,9 +14,9 @@ namespace Nncase.CodeGen.K210;
 /// <summary>
 /// K210 function builder.
 /// </summary>
-internal class K210FunctionBuilder : FunctionBuilder
+internal class KPUFunctionBuilder : FunctionBuilder
 {
-    public K210FunctionBuilder(uint id, SectionManager sectionManager)
+    public KPUFunctionBuilder(uint id, SectionManager sectionManager)
         : base(id, sectionManager)
     {
     }
@@ -27,7 +27,7 @@ internal class K210FunctionBuilder : FunctionBuilder
 
     protected override ILinkableFunction CreateLinkableFunction(uint id, Callable callable, IReadOnlyList<FunctionRef> functionRefs, byte[] text)
     {
-        return new K210LinkableFunction(id, (Function)callable, functionRefs, text);
+        return new KPULinkableFunction(id, (Function)callable, functionRefs, text);
     }
 
     protected override void WriteText()

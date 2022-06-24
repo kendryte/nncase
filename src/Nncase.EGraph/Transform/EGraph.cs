@@ -150,6 +150,7 @@ public sealed partial class EGraph : IEGraph
             {
                 originalClass = originalClass.Find();
                 _nodes.Remove(enode);
+                _exprMemo.Remove(enode.Expr);
             }
             else
             {
@@ -236,6 +237,12 @@ public sealed partial class EGraph : IEGraph
         public override EClass VisitLeaf(Var expr)
         {
             return _graph.AddENode(expr, Array.Empty<EClass>());
+        }
+
+        public override EClass VisitLeaf(Marker expr)
+        {
+            var children = new[] { ExpressionMemo[expr.Target], ExpressionMemo[expr.Attribute] };
+            return _graph.AddENode(expr, children);
         }
     }
 }

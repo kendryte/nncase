@@ -7,8 +7,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.CodeGen;
+using Nncase.CodeGen.K210;
+using Nncase.CodeGen.StackVM;
 using Nncase.IR;
+using Nncase.Runtime.K210;
 using Nncase.Transform;
+using Nncase.Transform.Rules.K210;
 
 namespace Nncase.Targets;
 
@@ -23,6 +27,13 @@ public class K210Target : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentPass(PassManager passManager, ICompileOptions options)
     {
+        if (options.UsePTQ)
+        {
+            passManager.Add(new EGraphPass("lowering_kpu")
+            {
+                new LowerConv2D(),
+            });
+        }
     }
 
     /// <inheritdoc/>
@@ -38,10 +49,13 @@ public class K210Target : ITarget
     /// <inheritdoc/>
     public IModuleBuilder CreateModuleBuilder(string moduleKind)
     {
-        if (moduleKind == Callable.StackVMModuleKind)
+        if (moduleKind == KPURTModule.Kind)
         {
-            throw new NotImplementedException();
-            //return new StackVMModuleBuilder();
+            return new KPUModuleBuilder();
+        }
+        else if (moduleKind == Callable.StackVMModuleKind)
+        {
+            return new StackVMModuleBuilder();
         }
         else
         {

@@ -22,18 +22,20 @@ public interface IMatchProvider
     /// </summary>
     /// <param name="expr">Expression to match.</param>
     /// <param name="pattern">Match pattern.</param>
+    /// <param name="options">Match options.</param>
     /// <param name="result">Match result.</param>
     /// <returns>Match success.</returns>
-    bool TryMatch(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result);
+    bool TryMatch(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result);
 
     /// <summary>
     /// Match expression as root.
     /// </summary>
     /// <param name="expr">Expression to match.</param>
     /// <param name="pattern">Match pattern.</param>
+    /// <param name="options">Match options.</param>
     /// <param name="result">Match result.</param>
     /// <returns>Match success.</returns>
-    bool TryMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result);
+    bool TryMatchRoot(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result);
 }
 
 /// <summary>

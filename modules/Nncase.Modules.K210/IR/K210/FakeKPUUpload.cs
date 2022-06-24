@@ -20,5 +20,5 @@ public sealed record class FakeKPUUpload : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(FakeKPUDownload), 0, "input", HasRank(4));
+    public static readonly ParameterInfo Input = new(typeof(FakeKPUUpload), 0, "input", HasRank(4));
 }

@@ -8,32 +8,52 @@ using System.Threading.Tasks;
 using Nncase.CodeGen;
 using Nncase.IR;
 using Nncase.Runtime.Interop;
+using Nncase.Transform;
 using Xunit;
 
 namespace Nncase.Tests.Targets;
 
 public class UnitTestK210Target
 {
-    [Fact]
-    public void TestCreateCPUTarget()
+    public UnitTestK210Target()
     {
-        var target = CompilerServices.GetTarget("cpu");
+        CompileOptions = new CompileOptions(true);
+    }
+
+    public ICompileOptions CompileOptions { get; }
+
+    [Fact]
+    public void TestCreateK210Target()
+    {
+        var target = CompilerServices.GetTarget("k210");
         Assert.NotNull(target);
     }
 
     [Fact]
     public void TestCreateStackVMModuleBuilder()
     {
-        var target = CompilerServices.GetTarget("cpu");
+        var target = CompilerServices.GetTarget("k210");
         var moduleBuilder = target.CreateModuleBuilder("stackvm");
         Assert.NotNull(moduleBuilder);
     }
 
     [Fact]
-    public void TestSimpleCodeGen()
+    public void TestCreateKPUModuleBuilder()
     {
-        var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
-        var y = x + 1.0f;
+        var target = CompilerServices.GetTarget("k210");
+        var moduleBuilder = target.CreateModuleBuilder("kpu");
+        Assert.NotNull(moduleBuilder);
+    }
+
+    [Fact]
+    public void TestSimpleConv2D()
+    {
+        var inChannels = 64;
+        var outChannels = 8;
+        var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1, inChannels, 4, 4 }));
+        var w = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { outChannels, inChannels, 1, 1 }).Evaluate().AsTensor();
+        var b = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { outChannels }).Evaluate().AsTensor();
+        var y = IR.F.NN.Conv2D(x, w, b, new[] { 1, 1 }, new[,] { { 0, 0 }, { 0, 0 } }, new[] { 1, 1 }, PadMode.Constant, 1);
         TestCodeGen(y, new[] { x });
     }
 
@@ -58,10 +78,19 @@ public class UnitTestK210Target
     {
         var main = new Function("main", body, vars);
         var module = new IRModule(main);
-        var target = CompilerServices.GetTarget("cpu");
+        var target = CompilerServices.GetTarget("k210");
+        var dumpDir = "k210_" + name;
+        var passOptions = new RunPassOptions(target, 2, dumpDir, CompileOptions);
+        Directory.Delete(dumpDir, true);
+
+        // 1. Optimize target dependent
+        var pmgr = new PassManager(module, passOptions);
+        target.RegisterTargetDependentPass(pmgr, CompileOptions);
+        pmgr.Run();
+
         var modelBuilder = new ModelBuilder(target);
         var linkedModel = modelBuilder.Build(module);
-        using var output = File.Open($"{name}.kmodel", FileMode.Create);
+        using var output = File.Open($"k210_{name}/test.kmodel", FileMode.Create);
         linkedModel.Serialize(output);
         Assert.NotEqual(0, output.Length);
     }

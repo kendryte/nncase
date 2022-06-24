@@ -29,7 +29,7 @@ public sealed partial class LowerConv2D : IRewriteRule
         "conv2d",
         PadMode.Constant,
         IsWildcard("input") with { TypePattern = HasFixedShape() },
-        IsWildcard("weights") with { TypePattern = HasFixedShape() },
+        IsTensorConst("weights"),
         IsTensorConst("bias"),
         IsTensorConst("strides"),
         IsTensorConst("paddings"),
@@ -69,17 +69,22 @@ public sealed partial class LowerConv2D : IRewriteRule
             if (KPUUtility.IsSupportedShape(prePad.CheckedShape))
             {
                 var inQuantParam = IR.F.Math.QuantParamOf(QuantMode.UnsignedMode, IR.F.Math.RangeOf(prePad), 8);
-                var outQuantParam = IR.F.Math.QuantParamOf(QuantMode.UnsignedMode, IR.F.Math.RangeOf(conv2d), 8);
                 var quant = IR.F.Math.FakeQuantize(prePad, inQuantParam, DataTypes.UInt8);
 
                 var kpuUpload = IR.F.K210.FakeKPUUpload(quant);
-                var kpuConv = IR.F.K210.FakeKPUConv2D(isDepthwise, filterType, KPUPoolType.Bypass, bias, (fusedClamp[0], fusedClamp[1]), kpuUpload, weights, inQuantParam, outQuantParam);
-                var kpuDownload = IR.F.K210.FakeKPUDownload(kpuConv);
 
+                var inRangeMarker = IR.F.Math.RangeOfMarker(kpuUpload, IR.F.Math.RangeOf(kpuUpload));
+                var kpuConv = IR.F.K210.FakeKPUConv2D(isDepthwise, filterType, KPUPoolType.Bypass, bias, (fusedClamp[0], fusedClamp[1]), inRangeMarker, weights);
+                var outRangeMarker = IR.F.Math.RangeOfMarker(kpuConv, IR.F.Math.RangeOf(kpuConv));
+
+                var kpuDownload = IR.F.K210.FakeKPUDownload(outRangeMarker);
+
+                var outQuantParam = IR.F.Math.QuantParamOf(QuantMode.UnsignedMode, IR.F.Math.RangeOf(kpuDownload), 8);
                 var dequant = IR.F.Math.FakeDequantize(kpuDownload, outQuantParam, inDType);
                 var postPaddings = new[] { zeroPaddings, zeroPaddings, KPUUtility.GetPostPadding(padH), KPUUtility.GetPostPadding(padW) }.To2D();
                 var postPad = NN.Pad(dequant, postPaddings, PadMode.Constant, zeroOfDType);
                 var slice = Tensors.Slice(postPad, new[] { 0, 0, 0, 0 }, Tensors.ShapeOf(postPad), new[] { 0, 1, 2, 3 }, new[] { 1, 1, strides[0], strides[1] });
+
                 return slice;
             }
         }

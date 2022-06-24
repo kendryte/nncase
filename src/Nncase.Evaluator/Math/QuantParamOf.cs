@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using OrtKISharp;
@@ -11,7 +12,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="QuantParamOf"/>.
 /// </summary>
-public class QuantParamOfEvaluator : IEvaluator<QuantParamOf>, ITypeInferencer<QuantParamOf>
+public class QuantParamOfEvaluator : IEvaluator<QuantParamOf>, ITypeInferencer<QuantParamOf>, ICostEvaluator<QuantParamOf>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, QuantParamOf target)
@@ -79,5 +80,19 @@ public class QuantParamOfEvaluator : IEvaluator<QuantParamOf>, ITypeInferencer<Q
     {
         var input = context.CheckArgumentType<TensorType>(target, QuantParamOf.Range);
         return new TensorType(new QuantParamType(), Shape.Scalar);
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, QuantParamOf target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, QuantParamOf.Range);
+        var outputType = context.GetReturnType<TensorType>();
+
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = 2,
+        };
     }
 }
