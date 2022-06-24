@@ -19,25 +19,29 @@ using namespace nncase::codegen;
 using namespace nncase::codegen::stackvm;
 using namespace nncase::ir;
 
-void stackvm_module_builder::emit(gru &node, stackvm_op_builder &builder)
+void stackvm_module_builder::emit(tflite_detection_postprocess &node, stackvm_op_builder &builder)
 {
-    auto &input = allocation(node.input());
-    auto &w = allocation(node.w());
-    auto &r = allocation(node.r());
-    auto &b = allocation(node.b());
-    auto &initial_h = allocation(node.initial_h());
-    auto &output = allocation(node.output());
-    auto &output_h = allocation(node.output_h());
-    builder.lea_buffer(input);
-    builder.lea_buffer(w);
-    builder.lea_buffer(r);
-    builder.lea_buffer(b);
-    builder.lea_buffer(initial_h);
-    builder.lea_buffer(output);
-    builder.lea_buffer(output_h);
+    auto &box = allocation(node.boxes());
+    auto &score = allocation(node.scores());
+    auto &anchor = allocation(node.anchors());
+    auto &output_0 = allocation(node.output_0());
+    auto &output_1 = allocation(node.output_1());
+    auto &output_2 = allocation(node.output_2());
+    auto &output_3 = allocation(node.output_3());
 
-    builder.stshape(0, input.shape);
-    builder.stshape(1, w.shape);
+    builder.lea_buffer(box);
+    builder.lea_buffer(score);
+    builder.lea_buffer(anchor);
+    builder.lea_buffer(output_0);
+    builder.lea_buffer(output_1);
+    builder.lea_buffer(output_2);
+    builder.lea_buffer(output_3);
 
-    builder.tensor_gru_(0, 1, node.direction());
+    builder.stshape(0, box.shape);
+    builder.stshape(1, score.shape);
+    builder.stshape(2, anchor.shape);
+
+    builder.tensor_tflite_detection_postprocess_(0, 1, 2, node.max_detections(), node.max_classes_per_detection(), node.detections_per_class(),
+        node.use_regular_non_max_suppression(), node.nms_score_threshold(), node.nms_iou_threshold(),
+        node.num_classes(), node.y_scale(), node.x_scale(), node.h_scale(), node.w_scale());
 }

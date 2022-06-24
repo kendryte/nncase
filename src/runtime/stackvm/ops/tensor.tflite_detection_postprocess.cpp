@@ -21,21 +21,24 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-result<void> stackvm_runtime_function::visit(const tensor_gru_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(const tensor_tflite_detection_postprocess_op_t &op) noexcept
 {
-    try_var(output_h, pop_addr());
-    try_var(output, pop_addr());
-    try_var(initial_h, pop_addr());
-    try_var(b, pop_addr());
-    try_var(r, pop_addr());
-    try_var(w, pop_addr());
-    try_var(input, pop_addr());
+    try_var(output_3, pop_addr());
+    try_var(output_2, pop_addr());
+    try_var(output_1, pop_addr());
+    try_var(output_0, pop_addr());
+    try_var(anchor, pop_addr());
+    try_var(score, pop_addr());
+    try_var(box, pop_addr());
 
-    try_var(in_shape, module().shape_reg(op.input_shape_src));
-    try_var(w_shape, module().shape_reg(op.w_shape_src));
+    try_var(box_shape, module().shape_reg(op.box_shape_src));
+    try_var(score_shape, module().shape_reg(op.score_shape_src));
+    try_var(anchor_shape, module().shape_reg(op.anchor_shape_src));
 
-    return kernels::gru(reinterpret_cast<const float *>(input), reinterpret_cast<const float *>(w),
-        reinterpret_cast<const float *>(r), reinterpret_cast<const float *>(b),
-        reinterpret_cast<float *>(initial_h), reinterpret_cast<float *>(output),
-        reinterpret_cast<float *>(output_h), in_shape, w_shape, op.direction);
+    return kernels::tflite_detection_postprocess(reinterpret_cast<const float *>(box), reinterpret_cast<const float *>(score),
+        reinterpret_cast<const float *>(anchor), reinterpret_cast<float *>(output_0),
+        reinterpret_cast<float *>(output_1), reinterpret_cast<float *>(output_2),
+        reinterpret_cast<float *>(output_3), box_shape, score_shape, anchor_shape, op.max_detections, op.max_classes_per_detection, op.detections_per_class,
+        op.use_regular_non_max_suppression, op.nms_score_threshold, op.nms_iou_threshold,
+        op.num_classes, op.y_scale, op.x_scale, op.h_scale, op.w_scale);
 }

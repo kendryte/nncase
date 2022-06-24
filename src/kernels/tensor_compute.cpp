@@ -475,3 +475,23 @@ result<void> kernels::gru(const T *input, const T *w, const T *r, const T *b, T 
 {
     return cpu::reference::gru(input, w, r, b, initial_h, output, output_h, input_shape, w_shape, mode);
 }
+
+template result<void> kernels::tflite_detection_postprocess<float>(const float *boxes, const float *scores, const float *anchors, float *output_0,  float *output_1,  float *output_2, float *output_3, 
+    const runtime_shape_t &boxes_shape, const runtime_shape_t &scores_shape, const runtime_shape_t &anchors_shape,
+    const int32_t max_detections, const int32_t max_classes_per_detection, const int32_t detections_per_class,
+    const bool use_regular_non_max_suppression, const float nms_score_threshold, const float nms_iou_threshold,
+    const int32_t num_classes,const float y_scale, const float x_scale,const float h_scale,const float w_scale) noexcept;
+
+template <typename T>
+result<void> kernels::tflite_detection_postprocess(const T *boxes, const T *scores, const T *anchors, T *output_0,  T *output_1,  T *output_2, T *output_3, 
+    const runtime_shape_t &boxes_shape, const runtime_shape_t &scores_shape, const runtime_shape_t &anchors_shape,
+    const int32_t max_detections, const int32_t max_classes_per_detection, const int32_t detections_per_class,
+    const bool use_regular_non_max_suppression, const float nms_score_threshold, const float nms_iou_threshold,
+    const int32_t num_classes,const float y_scale, const float x_scale,const float h_scale,const float w_scale) noexcept
+{
+    return cpu::reference::tflite_detection_postprocess( boxes, scores, anchors, output_0, output_1, output_2, output_3, 
+        boxes_shape, scores_shape, anchors_shape,
+        max_detections, max_classes_per_detection, detections_per_class,
+        use_regular_non_max_suppression, nms_score_threshold, nms_iou_threshold,
+        num_classes, y_scale, x_scale, h_scale, w_scale);
+}
