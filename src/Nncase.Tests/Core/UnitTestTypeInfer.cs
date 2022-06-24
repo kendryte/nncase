@@ -231,7 +231,8 @@ public class UnitTestTypeInfer : IHostFixtrue
     public static IEnumerable<object[]> TestMatMulData =>
         new[]
         {
-            new object[] {new[] {1, 10, 128}, new[] {128, 128}, new[] {1, 10, 128}},
+            new object[] {new[] {3, 10, 128}, new[] {128, 128}, new[] {3, 10, 128}},
+            new object[] {new[] {10, 128}, new[] {2, 128, 128}, new[] {2, 10, 128}},
         };
 
     [Theory]

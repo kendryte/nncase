@@ -56,13 +56,11 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>
             return new TensorType(lhs.DType, new[] {lhs.Shape[0], rhs.Shape[1]});
         }
 
-        if (lhs.Shape.Count < rhs.Shape.Count)
-        {
-            return new InvalidType("MatMul lhs rank < rhs rank");
-        }
-
+        var bigShape = lhs.Shape.Rank > rhs.Shape.Rank
+            ? lhs.Shape
+            : rhs.Shape;
         // batch and channel
-        var front = lhs.Shape.ToArray()[..(lhs.Shape.Count - 2)];
+        var front = bigShape.ToArray()[..(bigShape.Count - 2)];
         var end = new[] {lhs.Shape[^2], rhs.Shape[^1]};
         return new TensorType(lhs.DType, front.Concat(end).ToArray());
     }

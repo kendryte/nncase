@@ -66,19 +66,6 @@ template <typename T>
 result<void> matmul_impl(const T *input_a, const T *input_b, T *output,
                          const dims_t &in_a_shape,
                          const dims_t &in_b_shape) noexcept {
-    // todo: support in_b_shape.size() > 2
-    if (in_a_shape.size() < 3 ||
-        (in_a_shape.size() == 3 && in_a_shape[0] == 1) ||
-        (in_a_shape.size() == 4 && in_a_shape[0] == 1 && in_a_shape[1] == 1)) {
-        return matmul_unit_impl(input_a, input_b, output, in_a_shape,
-                                in_b_shape);
-    }
-    if(in_b_shape.size() == 4 && in_b_shape[0] != 1) {
-        [[maybe_unused]] auto a = 1;
-    }
-    if(in_a_shape.size() == 4 && in_a_shape[0] != 1) {
-        [[maybe_unused]] auto a = 1;
-    }
     auto new_a_shape = to_4d(in_a_shape);
     auto new_b_shape = to_4d(in_b_shape);
     auto a_unit_size = new_a_shape[2] * new_a_shape[3];
@@ -113,18 +100,15 @@ template result<void> matmul_impl<float>(const float *input_a,
                                          const dims_t &in_b_shape) noexcept;
 
 result<dims_t> infer_shape(const dims_t &lhs_shape, const dims_t &rhs_shape) {
-    if(lhs_shape.back() != rhs_shape[rhs_shape.size() - 2]){
-        return err(nncase_errc::shape_mismatch);
-    }
     if (lhs_shape.size() == 2 && rhs_shape.size() == 2) {
         auto new_shape = dims_t{lhs_shape[0], rhs_shape[1]};
         return ok(new_shape);
     }
-    if(lhs_shape.size() < rhs_shape.size())
-    {
-        return err(nncase_errc::shape_mismatch);
-    }
-    auto new_shape = dims_t(lhs_shape.begin(), lhs_shape.begin() + (lhs_shape.size() - 1));
+    auto big_shape = lhs_shape.size() > rhs_shape.size()
+        ? lhs_shape
+        : rhs_shape;
+    auto new_shape = dims_t(big_shape.begin(), big_shape.begin() + (big_shape.size() - 2));
+    new_shape.push_back(lhs_shape[lhs_shape.size() - 2]);
     new_shape.push_back(rhs_shape.back());
     return ok(new_shape);
 }
