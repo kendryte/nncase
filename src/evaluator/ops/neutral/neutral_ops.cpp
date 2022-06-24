@@ -41,6 +41,7 @@
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/reduce_arg.h>
 #include <nncase/ir/ops/reduce_prod.h>
+#include <nncase/ir/ops/tflite_detection_postprocess.h>
 #include <nncase/ir/ops/reduce_window2d.h>
 #include <nncase/ir/ops/resize_image.h>
 #include <nncase/ir/ops/roi_align.h>
@@ -819,6 +820,23 @@ void register_neutral_evaluators()
             B.buffer().as_span<float>().data(), initial_h.buffer().as_span<float>().data(), output.buffer().as_span<float>().data(), output_h.buffer().as_span<float>().data(),
             input.shape(), W.shape(), rnode.direction())
             .unwrap_or_throw(); });
+
+    register_evaluator(op_tflite_detection_postprocess, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<tflite_detection_postprocess &>(node);
+        auto box = context.memory_at(rnode.boxes());
+        auto score = context.memory_at(rnode.scores());
+        auto anchor = context.memory_at(rnode.anchors());
+        auto output_0 = context.memory_at(rnode.output_0());
+        auto output_1 = context.memory_at(rnode.output_1());
+        auto output_2 = context.memory_at(rnode.output_2());
+        auto output_3 = context.memory_at(rnode.output_3());
+        kernels::tflite_detection_postprocess(box.buffer().as_span<float>().data(), score.buffer().as_span<float>().data(), anchor.buffer().as_span<float>().data(),
+            output_0.buffer().as_span<float>().data(), output_1.buffer().as_span<float>().data(), output_2.buffer().as_span<float>().data(), output_3.buffer().as_span<float>().data(),
+            box.shape(), score.shape(), anchor.shape(), rnode.max_detections(), rnode.max_classes_per_detection(), 
+            rnode.detections_per_class(), rnode.use_regular_non_max_suppression(), rnode.nms_score_threshold(), rnode.nms_iou_threshold(),
+            rnode.num_classes(), rnode.y_scale(), rnode.x_scale(), rnode.h_scale(), rnode.w_scale())
+            .unwrap_or_throw(); });
+    
 }
 
 }
