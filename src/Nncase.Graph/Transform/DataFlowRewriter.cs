@@ -24,10 +24,10 @@ internal class DataflowRewriter
         var post = expr;
         var last = post;
         int count = 0;
+        OnRewriteStart(expr, options, count);
         do
         {
             bool isMutated = false;
-            OnRewriteStart(last, options, count);
             foreach (var rule in rules)
             {
                 var visitor = new DataFlowRewriteVisitor(rule, options);

@@ -254,7 +254,7 @@ public static class TypeInference
     {
         if (keepDims is TensorConst keepDimsValue &&
             axis is TensorConst axisValue && 
-            input.Shape.IsRanked)
+            input.Shape.IsFixed)
         {
             var axes = axisValue.Value.Cast<int>();
             var outShape = input.Shape.ToValueArray();
@@ -267,7 +267,6 @@ public static class TypeInference
                 }
                 else
                 {
-
                     // todo: test
                     outShape[ax] = 0;
                 }

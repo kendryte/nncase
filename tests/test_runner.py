@@ -99,6 +99,10 @@ def generate_random(shape: List[int], dtype: np.dtype,
         data = np.random.randint(-128, 128, shape)
     elif dtype == np.bool:
         data = np.random.rand(*shape) > 0.5
+    elif dtype == np.int32:
+        data = np.random.randint(1, 3, size=shape, dtype='int32')
+    elif dtype == np.int64:
+        data = np.random.randint(1, 128, size=shape, dtype='int64')
     else:
         data = np.random.rand(*shape)
     data = data.astype(dtype=dtype)

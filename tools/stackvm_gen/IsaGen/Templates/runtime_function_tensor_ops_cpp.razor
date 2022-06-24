@@ -24,7 +24,7 @@
  */
 #include "../runtime_function.h"
 #include <nncase/kernels/stackvm/tensor_ops.h>
-
+#include <nncase/debug.h>
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
@@ -38,6 +38,7 @@ foreach(var input in inst.Inputs)
 @:    try_var(@input.CppName, pop_value());
 }
 @:    try_var(output, kernels::stackvm::@(name)(@string.Join(", ", inst.Fields.Where(x => !x.IsOpCode && x.CppName != "tensor_funct").Select(x => $"op.{x.CppName}").Concat(inst.Inputs.Select(x => $"{x.CppName}").Concat(new[]{"nullptr", "module().kernel_context()"})))));
+@:    print_out_shape(output);
 @:    return stack_.push(std::move(output));
 @:}
 }

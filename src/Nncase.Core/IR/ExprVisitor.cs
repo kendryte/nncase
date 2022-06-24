@@ -18,7 +18,21 @@ namespace Nncase.IR
     {
         private readonly Dictionary<Expr, TExprResult> _exprMemo = new Dictionary<Expr, TExprResult>(ReferenceEqualityComparer.Instance);
         private readonly Dictionary<IRType, TTypeResult> _typeMemo = new Dictionary<IRType, TTypeResult>();
+        private readonly Dictionary<string, Action<Expr>> _callbacksAfterCall = new();
+        
+        protected void RegisterCallback(string name, Action<Expr> callback)
+        {
+            _callbacksAfterCall[name] = callback; 
+        }
 
+        private void CallbacksAfterCall(Expr expr)
+        {
+            foreach (var (name, callback) in _callbacksAfterCall)
+            {
+                callback(expr);
+            }
+        }
+        
         /// <summary>
         /// Gets expression visit result memo.
         /// </summary>
@@ -38,7 +52,8 @@ namespace Nncase.IR
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
-
+            
+            CallbacksAfterCall(expr);
             return result;
         }
 

@@ -100,4 +100,13 @@ dims_t stack_infer_shape(dims_t shape0, int input_count, int axis) {
     return shape0;
 }
 
+dims_t unsqueeze_infer_shape(const dims_t& in_shape, const dims_t& axes) {
+    auto size = in_shape.size() + axes.size();
+    auto new_shape = dims_t(size);
+    for (auto i = 0, j = 0; i < size; i++) {
+        new_shape[i] = std::find(axes.begin(), axes.end(), i) == axes.end() ? in_shape[j++] : 1;
+    }
+    return new_shape;
+}
+
 END_NS_NNCASE_KERNELS_MODULE

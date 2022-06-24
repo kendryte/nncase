@@ -23,6 +23,8 @@ import os
 from shutil import which
 import platform
 
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+
 def os_join(root, name):
     if platform.system().lower() == 'windows':
         return root + "//" + name
@@ -373,7 +375,7 @@ class GraphEvaluator:
         inputs = Dictionary[_nncase.IR.Var, _nncase.IValue]()
         for k, v in zip(self._module.params, self._inputs):
             inputs[k] = v.to_nncase_value()
-        results: _nncase.IValue = _nncase.CompilerServices.Evaluate(self._module.entry.Body, inputs).AsTensors()
+        results: _nncase.IValue = _nncase.Compiler.PythonHelper.Evaluate(self._module.entry.Body, inputs).AsTensors()
         self._outputs = list([RuntimeTensor(res) for res in results])
 
     @ property

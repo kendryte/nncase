@@ -6,6 +6,7 @@ set(SRCS ../tensor_ops.cpp
          binary.cpp
          broadcast.cpp
          cast.cpp
+         compare.cpp
          concat.cpp
          convolution.cpp
          cumsum.cpp

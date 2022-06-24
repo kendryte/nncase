@@ -1,4 +1,6 @@
 using System.Runtime.InteropServices;
+using Nncase.Evaluator;
+using Nncase.IR;
 using Nncase.Runtime.Interop;
 
 namespace Nncase.Compiler;
@@ -35,6 +37,11 @@ public static class PythonHelper
     public static uint[] GetRTTensorDims(RTTensor tensor)
     {
         return tensor.Dimensions.ToArray();
+    }
+    
+    public static IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null)
+    {
+        return DumpManager.RunWithDump(() => expr.Evaluate(varsValues));
     }
     
     public static RTTensor[] RunSimulator(RTInterpreter interp, RTValue[] input)

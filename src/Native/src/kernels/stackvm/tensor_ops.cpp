@@ -40,13 +40,6 @@ result<value_t> nncase::kernels::stackvm::clamp(
     return err(std::errc::not_supported);
 }
 
-result<value_t> nncase::kernels::stackvm::compare(
-    [[maybe_unused]] compare_op_t compare_op, [[maybe_unused]] value_t lhs,
-    [[maybe_unused]] value_t rhs, [[maybe_unused]] value_t output,
-    [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
-}
-
 result<value_t> nncase::kernels::stackvm::conv2d_transpose(
     [[maybe_unused]] pad_mode_t pad_mode, [[maybe_unused]] value_t input,
     [[maybe_unused]] value_t weights, [[maybe_unused]] value_t bias,
@@ -74,7 +67,7 @@ result<value_t> nncase::kernels::stackvm::gather(value_t input, value_t axis,
                                                  value_t index, value_t output,
                                                  kernel_context &context) {
     try_input(input_mem, input);
-    try_integer_input(index_mem, index);
+    try_input(index_mem, index);
     auto dtype = input_tensor->dtype();
     try_var(typecode, to_typecode(dtype));
     try_positive_axis(axis_value, axis, input_tensor);
@@ -86,8 +79,9 @@ result<value_t> nncase::kernels::stackvm::gather(value_t input, value_t axis,
     //    } else {
     try_(reference::gather(typecode, input_mem, out_mem, input_tensor->shape(),
                            output_tensor->shape(), input_tensor->strides(),
-                           output_tensor->strides(), index_mem,
-                           index_tensor->shape(), axis_value, context));
+                           output_tensor->strides(), index_tensor->dtype(),
+                           index_mem, index_tensor->shape(), axis_value,
+                           context));
     //    }
     return ok(output);
 }
@@ -105,12 +99,11 @@ result<value_t> nncase::kernels::stackvm::gather_nd(value_t input,
     auto out_shape = gather_nd_infer_shape(
         input_tensor->shape(), index_tensor->shape(), batch_dims_value);
     try_output(out_mem, output, dtype, out_shape);
-    auto indices = reinterpret_cast<const int64_t *>(index_mem);
     CONTIGUOUS_KERNEL(gather_nd, input_tensor, typecode, input_mem, out_mem,
                       input_tensor->shape(), output_tensor->shape(),
                       input_tensor->strides(), output_tensor->strides(),
-                      indices, index_tensor->shape(), batch_dims_value,
-                      context);
+                      index_tensor->dtype(), index_mem, index_tensor->shape(),
+                      batch_dims_value, context);
     return ok(output);
 }
 
@@ -119,7 +112,7 @@ result<value_t> nncase::kernels::stackvm::get_item(
     [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
     // todo: not finish
     try_var(tuples, input.as<tuple>());
-    try_to_scalar(index_value, index, int32_t);
+    try_to_integer(index_value, index);
     auto target = tuples->fields()[index_value];
     output = target;
     finish;
@@ -247,10 +240,7 @@ nncase::kernels::stackvm::reshape(value_t input, value_t shape, value_t output,
     // dim maybe neg
     try_axes(shape_value, shape);
     auto new_shape = reshape_shape_infer(in_tensor->shape(), shape_value);
-    if (!is_contiguous(in_tensor)) {
-        // todo: not impl for not contiguous
-        return err(nncase_errc::shape_mismatch);
-    }
+    not_impl_no_contiguous(in_tensor);
     auto node =
         new tensor_node(in_tensor->dtype(), new_shape,
                         get_default_strides(new_shape), in_tensor->buffer());
@@ -439,8 +429,8 @@ result<value_t> nncase::kernels::stackvm::stack(value_t inputs, value_t axis,
     try_output(out_mem, output, input0->dtype(), out_shape);
     try_var(strides, get_strides(inputs_tuple));
     try_(reference::stack(input0->dtype(), inputs_value, out_mem, out_shape,
-                          strides, output_tensor->strides(),
-                          axis_value, context));
+                          strides, output_tensor->strides(), axis_value,
+                          context));
     finish;
 }
 
@@ -466,10 +456,16 @@ result<value_t> nncase::kernels::stackvm::uniform_like(
     return err(std::errc::not_supported);
 }
 
-result<value_t> nncase::kernels::stackvm::unsqueeze(
-    [[maybe_unused]] value_t input, [[maybe_unused]] value_t dim,
-    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
+result<value_t>
+nncase::kernels::stackvm::unsqueeze(value_t input, value_t dim, value_t output,
+                                    [[maybe_unused]] kernel_context &context) {
+    try_var(in_tensor, input.as<tensor>());
+    auto in_shape = in_tensor->shape();
+    not_impl_no_contiguous(in_tensor);
+    try_positive_axes(axes, dim, in_shape.size());
+    auto new_shape = unsqueeze_infer_shape(in_shape, axes);
+    output = tensor_reshape(in_tensor, new_shape);
+    finish;
 }
 
 result<value_t> nncase::kernels::stackvm::where(
