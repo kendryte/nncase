@@ -7,7 +7,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using tflite;
 using F = Nncase.IR.F;
+using static Nncase.IR.F.NN;
 
 namespace Nncase.Importer.TFLite
 {
@@ -15,10 +17,16 @@ namespace Nncase.Importer.TFLite
     {
         private static Expr Activate(Expr input, tflite.ActivationFunctionType activation)
         {
+            var v = ToFloatValueRange(activation);
             return activation switch
             {
                 tflite.ActivationFunctionType.NONE => input,
-                _ => F.Math.Clamp(input, ToFloatValueRange(activation)),
+                tflite.ActivationFunctionType.RELU => Relu(input),
+                // ActivationFunctionType.RELU_N1_TO_1 => expr,
+                ActivationFunctionType.RELU6 => Relu6(input),
+                ActivationFunctionType.TANH => F.Math.Tanh(input),
+                // ActivationFunctionType.SIGN_BIT => expr,
+                _ => throw new NotImplementedException(activation.ToString())
             };
         }
 

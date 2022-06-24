@@ -84,7 +84,7 @@ public abstract class BaseImporter
     
     protected Expr UnSupportedOp(string opType)
     {
-        _unsupportedOp.Append(opType);
+        _unsupportedOp.Add(opType);
         return None.Default;
     }
 

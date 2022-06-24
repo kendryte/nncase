@@ -29,9 +29,11 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
         var pad = context.GetInt64OrtTensorArgumentValue(conv, Conv2D.Padding);
         var dilation = context.GetArgumentValueAsArray<long>(conv, Conv2D.Dilation);
         var groups = context.GetArgumentValueAsScalar<long>(conv, Conv2D.Groups);
+        var fusedClamp = context.GetArgumentValueAsArray<float>(conv, Conv2D.FusedClamp);
         var kernelShape = weights.Shape;
-        return OrtKI.Conv(input, weights, bias, "NOTSET", dilation, groups,
-            new long[] {kernelShape[2], kernelShape[3]}, ToOnnxPadFormat(pad), stride).ToValue();
+        var result = OrtKI.Conv(input, weights, bias, "NOTSET", dilation, groups,
+            new long[] { kernelShape[2], kernelShape[3] }, ToOnnxPadFormat(pad), stride);
+        return OrtKI.Clip(result, fusedClamp[0], fusedClamp[1]).ToValue();
     }
 
     /// <inheritdoc/>

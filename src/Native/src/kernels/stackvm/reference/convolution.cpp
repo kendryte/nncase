@@ -131,7 +131,7 @@ result<value_t> nncase::kernels::stackvm::conv2d(
     try_f32_input(bias_mem, bias);
     try_strides(strides_value, stride);
     try_paddings(pads, padding);
-    try_to_scalar(groups_value, groups, int32_t);
+    try_to_integer(groups_value, groups);
     try_strides(strides, stride);
     try_strides(dilations, dilation);
     try_f32_input(fused_clamp_value, fused_clamp);
