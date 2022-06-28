@@ -140,6 +140,7 @@ public sealed partial class OnnxImporter : BaseImporter
             "RandomNormalLike" => VisitRandomNormalLike(op),
             "RandomUniform" => VisitRandomUniform(op),
             "RandomUniformLike" => VisitRandomUniformLike(op),
+            "Range" => VisitRange(op),
             "ReduceL1" => VisitReduceL1(op),
             "ReduceL2" => VisitReduceL2(op),
             "ReduceLogSum" => VisitReduceLogSum(op),

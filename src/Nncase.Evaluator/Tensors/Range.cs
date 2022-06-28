@@ -24,27 +24,32 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Range target)
     {
-        if (context.GetArgument(target, Range.Begin) is TensorConst beginValue
-            && context.GetArgument(target, Range.End) is TensorConst endValue
-            && context.GetArgument(target, Range.Step) is TensorConst stepValue)
+        var begin = context.GetArgument(target, Range.Begin);
+        var end = context.GetArgument(target, Range.End);
+        var step = context.GetArgument(target, Range.Step);
+        if (!(begin.CheckedDataType == end.CheckedDataType &&
+            end.CheckedDataType == step.CheckedDataType))
         {
-            if (beginValue.CheckedDataType == endValue.CheckedDataType &&
-                endValue.CheckedDataType == stepValue.CheckedDataType)
-            {
-                return new TensorType(
-                    DataTypes.Int64,
-                    new Shape((beginValue.Value.ToScalar<int>() + endValue.Value.ToScalar<int>()) /
-                              stepValue.Value.ToScalar<int>()));
-            }
-            else
-            {
-                return new InvalidType($"Range Begin End Step must be same type, " +
-                                       $"but get begin:{beginValue.CheckedDataType}," +
-                                       $"end:{endValue.CheckedDataType}," +
-                                       $"step:{stepValue.CheckedDataType}");
-            }
+            return new InvalidType($"Range Begin End Step must be same type, " +
+                                   $"but get begin:{begin.CheckedDataType}," +
+                                   $"end:{end.CheckedDataType}," +
+                                   $"step:{step.CheckedDataType}");
         }
 
-        return new InvalidType("Range begin, end, step should be constant");
+        var dType = begin.CheckedDataType;
+        if ( begin is TensorConst beginValue
+             && end is TensorConst endValue
+             && step is TensorConst stepValue)
+        {
+
+                return new TensorType(
+                    dType,
+                    new Shape((beginValue.Value.ToScalar<int>() + endValue.Value.ToScalar<int>()) /
+                              stepValue.Value.ToScalar<int>()));
+        }
+        else
+        {
+            return new TensorType(dType, new Shape(Dimension.Unknown));
+        }
     }
 }

@@ -74,6 +74,7 @@ result<value_t> nncase::kernels::stackvm::gather(value_t input, value_t axis,
     auto out_shape = gather_infer_shape(input_tensor->shape(),
                                         index_tensor->shape(), axis_value);
     try_output(out_mem, output, dtype, out_shape);
+
     //    if(is_contiguous(input_tensor->shape(), input_tensor->strides())) {
     //
     //    } else {
@@ -195,6 +196,7 @@ result<value_t>
 nncase::kernels::stackvm::prod([[maybe_unused]] value_t input,
                                [[maybe_unused]] value_t output,
                                [[maybe_unused]] kernel_context &context) {
+
     return err(std::errc::not_supported);
 }
 
@@ -209,7 +211,29 @@ result<value_t> nncase::kernels::stackvm::range(
     [[maybe_unused]] value_t begin, [[maybe_unused]] value_t end,
     [[maybe_unused]] value_t step, [[maybe_unused]] value_t output,
     [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
+#define GET_VALUE(_dtype, _in_type)                                            \
+    if (cmp_type<_in_type>(_dtype)) {                                          \
+        try_input_with_ty(begin_value, begin, _in_type);                       \
+        try_input_with_ty(end_value, end, _in_type);                           \
+        try_input_with_ty(step_value, step, _in_type);                         \
+        auto count =                                                           \
+            (dims_t::value_type)((*end_value - *begin_value) / *step_value);   \
+        try_output(out_mem, output, _dtype, dims_t{count});                    \
+        auto _out_ptr = OUT_CAST(_in_type, out_mem);                            \
+        for (int i = 0; i < count; ++i) {                                      \
+            auto v = *begin_value + i * *step_value;                           \
+            *(_out_ptr + i) = v;                                                                       \
+        }                                                                      \
+    }
+
+    try_var(data_tensor, begin.as<tensor>());
+    auto dt = data_tensor->dtype();
+    GET_VALUE(dt, int32_t);
+    GET_VALUE(dt, uint32_t);
+    GET_VALUE(dt, int64_t);
+    GET_VALUE(dt, uint64_t);
+    GET_VALUE(dt, float);
+    finish;
 }
 
 result<value_t>
@@ -277,7 +301,7 @@ nncase::kernels::stackvm::shape_of(value_t input, value_t output,
     try_output(out_mem, output, dt_int64, dims_t{r});
     auto out = reinterpret_cast<int64_t *>(out_mem);
     for (int i = 0; i < r; ++i) {
-        *out = in_tensor->shape()[i];
+        out[i] = in_tensor->shape()[i];
     }
     return ok(output);
 }
@@ -462,7 +486,7 @@ nncase::kernels::stackvm::unsqueeze(value_t input, value_t dim, value_t output,
     try_var(in_tensor, input.as<tensor>());
     auto in_shape = in_tensor->shape();
     not_impl_no_contiguous(in_tensor);
-    try_positive_axes(axes, dim, in_shape.size());
+    try_axes(axes, dim);
     auto new_shape = unsqueeze_infer_shape(in_shape, axes);
     output = tensor_reshape(in_tensor, new_shape);
     finish;
