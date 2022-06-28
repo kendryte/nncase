@@ -42,8 +42,9 @@ public static class Tensors
 
     public static Call MatMul(Expr input, Expr other) => new Call(new MatMul(), input, other);
 
-    public static Call Prod(Expr input) => new Call(new Prod(), input);
-
+    // todo:remove prod
+    public static Call Prod(Expr input) => Reduce(ReduceOp.Prod, input, new[]{ 0 }, 1, false);
+    
     public static Call Range(Expr begin, Expr end, Expr step) => new Call(new Range(), begin, end, step);
 
     public static Call Reduce(ReduceOp reduceOp, Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(reduceOp), input, axis, initValue, keepDims);

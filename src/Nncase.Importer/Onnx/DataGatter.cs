@@ -69,7 +69,9 @@ public sealed partial class OnnxImporter
 
     public Shape GetShape(ValueInfoProto v)
     {
-        var shape = v.Type.TensorType.Shape.Dim.Select(x => x.DimValue);
+        var shape = v.Type.TensorType.Shape.Dim
+            .Select(x => (int)x.DimValue)
+            .Select(x => x <= 0 ? Dimension.Unknown : x).ToArray();
         return new Shape(shape);
     }
 

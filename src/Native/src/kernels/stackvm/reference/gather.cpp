@@ -35,6 +35,11 @@ result<void> gather_impl(const T *input, T *output, const dims_t &in_shape,
                          const strides_t &out_strides, const IndicesT *indices,
                          const dims_t &indices_shape, size_t axis,
                          NNCASE_UNUSED kernel_context &context) noexcept {
+    // scalar
+    if(out_shape.size() == 0) {
+        *output = input[indices[0]];
+        return ok();
+    }
     return apply(out_shape, [&](const dims_t &out_index) -> result<void> {
         // select batch
         // [out_index.begin(), out_index.begin() + axis]

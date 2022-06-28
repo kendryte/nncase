@@ -14,7 +14,34 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.CoreTest;
 
-public class UnitTestTypeInfer : IHostFixtrue
+public class UnitTypeInferBase : IHostFixtrue
+{
+    public UnitTypeInferBase(IHost host) : base(host)
+    {
+    }
+    
+    public void CheckInferShape(Expr expr, params int[] shapeDimensions)
+    {
+        CheckInferShape(expr, new Shape(shapeDimensions));
+    }
+
+    public void CheckInferShape(Expr expr, Shape expectShape)
+    {
+        Assert.True(CompilerServices.InferenceType(expr));
+        Assert.Equal(expectShape, expr.CheckedShape);
+    }
+
+    public void CheckInferType(Expr expr, DataType dt, Shape shape)
+    {
+        Assert.True(CompilerServices.InferenceType(expr));
+        Assert.Equal(new TensorType(dt, shape), expr.CheckedType);
+    }
+    
+    public Var var(Shape shape, DataType dt) => new Var(new TensorType(dt, shape));
+    public Var var(Shape shape) => var(shape, DataTypes.Float32);
+
+}
+public class UnitTestTypeInfer : UnitTypeInferBase
 {
 
     public UnitTestTypeInfer(IHost host) : base(host)
@@ -95,24 +122,6 @@ public class UnitTestTypeInfer : IHostFixtrue
         CompilerServices.InferenceType(ss);
         Assert.Equal(new Shape(2, 3), ss.CheckedShape);
     }
-
-    void CheckInferShape(Expr expr, params int[] shapeDimensions)
-    {
-        CheckInferShape(expr, new Shape(shapeDimensions));
-    }
-
-    void CheckInferShape(Expr expr, Shape expectShape)
-    {
-        Assert.True(CompilerServices.InferenceType(expr));
-        Assert.Equal(expectShape, expr.CheckedShape);
-    }
-
-    void CheckInferType(Expr expr, DataType dt, Shape shape)
-    {
-        Assert.True(CompilerServices.InferenceType(expr));
-        Assert.Equal(new TensorType(dt, shape), expr.CheckedType);
-    }
-
 
     [Fact]
     public void TestReduceArgTypeInfer()
@@ -200,10 +209,7 @@ public class UnitTestTypeInfer : IHostFixtrue
         Assert.True(CompilerServices.InferenceType(resize3));
         Assert.True(HasShape(new[] {32, 48}).MatchLeaf(resize3.CheckedType!));
     }
-
-    public Var var(Shape shape, DataType dt) => new Var(new TensorType(dt, shape));
-    public Var var(Shape shape) => var(shape, DataTypes.Float32);
-
+    
     [Fact]
     public void TestGather0()
     {
@@ -220,7 +226,6 @@ public class UnitTestTypeInfer : IHostFixtrue
         var ones = Tensor.FromSpan<long>(new[] {1L});
         var begins = ones;
         var ends = Tensor.FromSpan<long>(new[] {9223372036854775807});
-        ;
         var axes = ones;
         var steps = ones;
         var s = Slice(input, begins, ends, axes, ones);
@@ -251,5 +256,36 @@ public class UnitTestTypeInfer : IHostFixtrue
         var v2 = var(new[] {1, 3, 16});
         var cat = Concat(new Tuple(v1, v2), -1);
         CheckInferShape(cat, new[] {1, 3, 32});
+    }
+}
+
+public class UnitTestDynamicTypeInfer : UnitTypeInferBase
+{
+    public UnitTestDynamicTypeInfer(IHost host) : base(host)
+    {
+    }
+    
+    public void CheckInferShape(Expr expr, params Dimension[] shapeDimensions)
+    {
+        CheckInferShape(expr, new Shape(shapeDimensions));
+    }
+    
+    [Fact]
+    public void TestRange()
+    {
+        var begin = var(Shape.Scalar);
+        var end = var(Shape.Scalar);
+        var step = var(Shape.Scalar);
+        var r = Range(begin, end, step);
+        CheckInferShape(r, Dimension.Unknown);
+    }
+
+    [Fact]
+    public void TestConcat()
+    {
+        var in0 = var(Shape.Unranked);
+        var in1 = var(Shape.Unranked);
+        var cat = Concat(new IR.Tuple(in0, in1), 0);
+        CheckInferShape(cat, Shape.Unranked);
     }
 }

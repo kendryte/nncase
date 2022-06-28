@@ -29,8 +29,14 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>
         return Visit(context, target, input, axis, index);
     }
 
-    private IRType Visit(ITypeInferenceContext context, Gather target, TensorType input, TensorType axis, TensorType index)
+    private IRType Visit(ITypeInferenceContext context, Gather target, TensorType input, TensorType axis,
+        TensorType index)
     {
+        if (input.Shape.IsUnranked)
+        {
+            return input with {Shape = Shape.Unranked};
+        }
+
         if (context.GetArgument(target, Gather.Axis) is TensorConst axisValue)
         {
             var axisV = axisValue.Value.ToScalar<int>();

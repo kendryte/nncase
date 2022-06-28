@@ -5,6 +5,7 @@ import shutil
 import struct
 from abc import ABCMeta, abstractmethod
 from itertools import product
+from functools import reduce
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union
 
@@ -472,10 +473,10 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
     def generate_all_data(self, case_dir, cfg, dict_args):
         self.generate_data(cfg.generate_inputs, case_dir,
                            self.inputs, self.input_paths, 'input', dict_args)
-        self.generate_data(cfg.generate_calibs, case_dir,
-                           self.calibs, self.calib_paths, 'calib', dict_args)
-        self.generate_data(cfg.generate_dump_range_data, case_dir,
-                           self.dump_range_data, self.dump_range_data_paths, 'dump_range_data', dict_args)
+        # self.generate_data(cfg.generate_calibs, case_dir,
+        #                    self.calibs, self.calib_paths, 'calib', dict_args)
+        # self.generate_data(cfg.generate_dump_range_data, case_dir,
+        #                    self.dump_range_data, self.dump_range_data_paths, 'dump_range_data', dict_args)
 
     def get_compiler_options(self, cfg, model_file):
         import_options = nncase.ImportOptions()
@@ -535,10 +536,13 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             i = 0
             for input in inputs:
                 shape = []
+                # todo:process var
                 if preprocess_opt['preprocess'] and preprocess_opt['input_shape'] != [] and len(preprocess_opt['input_shape']) == 4:
                     shape = copy.deepcopy(preprocess_opt['input_shape'])
                 else:
                     shape = copy.deepcopy(input['model_shape'])
+                if reduce(lambda x, y: x * y, shape) == 0:
+                    shape = [(i if i != 0 else d) for i, d in zip(shape, [1, 3, 256, 256])]
                 if shape[0] != cfg.batch_size:
                     shape[0] *= cfg.batch_size
                 data = DataFactory[cfg.name](shape, input['dtype'], n, cfg.batch_size, **cfg.kwargs)

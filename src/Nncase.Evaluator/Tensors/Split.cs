@@ -41,7 +41,12 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>
         {
             var axis_v = Util.PositiveIndex(axis_con.Value.ToScalar<int>(), input.Shape.Rank);
             var sections_v = sections_con.Value.Cast<int>();
-
+         
+            if (input.Shape.IsUnranked)
+            {
+                return new TupleType(Enumerable.Repeat((IRType)(input with { Shape = Shape.Unranked }), sections_v.Length));
+            }
+            
             var inshape = input.Shape.ToArray();
             if (inshape[axis_v] == Dimension.Unknown)
             {

@@ -252,16 +252,21 @@ public static class TypeInference
     /// </summary>
     public static IRType ReduceType(TensorType input, Expr keepDims, Expr axis)
     {
-        if (keepDims is TensorConst keepDimsValue &&
-            axis is TensorConst axisValue && 
-            input.Shape.IsFixed)
+        if (input.Shape.IsUnranked)
+        {
+            return input with {Shape = Shape.Unranked};
+        }
+
+        if (keepDims is TensorConst keepDimsV &&
+            axis is TensorConst axisValue)
         {
             var axes = axisValue.Value.Cast<int>();
-            var outShape = input.Shape.ToValueArray();
+            var keepDimsValue = keepDimsV.Value.ToScalar<int>();
+            var outShape = input.Shape.ToArray();
             foreach (var a in axes)
             {
                 var ax = Util.PositiveIndex(a, input);
-                if (keepDimsValue.Value.ToScalar<int>() == 1)
+                if (keepDimsValue == 1)
                 {
                     outShape[ax] = 1;
                 }
@@ -272,10 +277,10 @@ public static class TypeInference
                 }
             }
 
-            return input with { Shape = new Shape(outShape.Where(x => x != 0)) };
+            return input with {Shape = new Shape(outShape.Where(x => x != 0))};
         }
 
-        return new InvalidType("Can't Infer Shape With Dynamic Input!");
+        return new InvalidType("Can't Infer Shape With Dynamic Axis and KeepDims!");
     }
 
     /// <summary>
@@ -287,7 +292,7 @@ public static class TypeInference
         {
             if (input.Shape.IsUnranked)
             {
-                return new InvalidType("Transpose input should not be Unranked");
+                return input with {Shape = Shape.Unranked};
             }
 
             var permt = permValue.Value.Cast<int>();

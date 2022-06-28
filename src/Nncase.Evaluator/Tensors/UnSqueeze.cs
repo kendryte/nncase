@@ -36,15 +36,16 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
             var outShape = input.Shape.ToList();
             foreach (var dimVal in dimsValue)
             {
-                var dimV = Util.PositiveIndex(dimVal, input);
-                outShape.Insert(dimV, 1);
-                // if (dimV < 0)
-                // {
-                //     for (int i = dimV; i < 0; i++)
-                //     {
-                //         outShape.Insert(0, 1);
-                //     }
-                // }
+                if (dimVal > 0)
+                {
+                    outShape.Insert(dimVal, 1);
+                }
+                else
+                {
+                    // count == 3, dimVal == -4
+                    var index = System.Math.Max(outShape.Count + dimVal, 0);
+                    outShape.Insert(index, 1);
+                }
             }
 
             return input with { Shape = new Shape(outShape) };

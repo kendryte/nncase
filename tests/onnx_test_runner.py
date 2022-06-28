@@ -49,6 +49,11 @@ class OnnxTestRunner(TestRunner):
         if not self.inputs:
             self.parse_model_input_output(model_file)
 
+        model_file = self.do_preprocess(model_file)
+
+        super().run(model_file)
+
+    def do_preprocess(self, model_file):
         # preprocess model
         old_onnx_model = onnx.load(model_file)
         onnx_model = self.preprocess_model(old_onnx_model)
@@ -60,12 +65,10 @@ class OnnxTestRunner(TestRunner):
             old_onnx_model, convert_version=False, simplify=False)
         onnx_model = onnx_model or self.preprocess_model(
             old_onnx_model, fix_bn=False, convert_version=False, simplify=False)
-
         model_file = os.path.join(
             os.path.dirname(model_file), 'simplified.onnx')
         onnx.save_model(onnx_model, model_file)
-
-        super().run(model_file)
+        return model_file
 
     def preprocess_model(self, onnx_model, fix_bn=True, convert_version=True, simplify=True, import_test=True):
         args = {'fix_bn': fix_bn, 'convert_version': convert_version,
@@ -115,10 +118,9 @@ class OnnxTestRunner(TestRunner):
             input_dict = {}
             input_dict['name'] = e.name
             input_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
-            input_dict['shape'] = [(i.dim_value if i.dim_value != 0 else d) for i, d in zip(
-                onnx_type.shape.dim, [1, 3, 224, 224])]
-            input_dict['model_shape'] = [(i.dim_value if i.dim_value != 0 else d) for i, d in zip(
-                onnx_type.shape.dim, [1, 3, 224, 224])]
+            shape = [i.dim_value for i in onnx_type.shape.dim]
+            input_dict['shape'] = shape
+            input_dict['model_shape'] = shape
             self.inputs.append(input_dict)
             self.calibs.append(copy.deepcopy(input_dict))
             self.dump_range_data.append(copy.deepcopy(input_dict))

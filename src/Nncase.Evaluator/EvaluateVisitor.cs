@@ -157,7 +157,25 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
         if (expr.CheckedType is not AnyType && result.Type != expr.CheckedType)
         {
             throw new ArgumentException(
-              $"The Var {expr.Name} Require {expr.CheckedType} But Give {result.Type}");
+                $"The Var {expr.Name} Require {expr.CheckedType} But Give {result.Type}");
+        }
+
+        if (expr.CheckedType is not AnyType)
+        {
+            if (result.Type is TensorType resultType)
+            {
+                if (expr.CheckedShape.IsUnranked)
+                {
+                    return result;
+                }
+                var s = expr.CheckedShape.Zip(resultType.Shape).ToArray();
+                var matchedShape = s.Aggregate(true, (b, dims) => b && (dims.First.IsUnknown || dims.First == dims.Second));
+                if (expr.CheckedDataType != resultType.DType || !matchedShape)
+                {
+                    throw new ArgumentException(
+                        $"The Var {expr.Name} Require {expr.CheckedType} But Give {result.Type}");                    
+                }
+            }
         }
 
         return result;

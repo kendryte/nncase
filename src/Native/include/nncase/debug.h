@@ -15,8 +15,7 @@ inline void incr_a() {
     append = false;
 }
 
-inline std::string dump_root =
-    "";
+inline std::string dump_root = "";
 inline static std::string dump_path() {
     auto p = dump_root + std::to_string(get_a());
     return p;
@@ -54,16 +53,41 @@ template <typename F> inline void dump(F &&f, std::string path = dump_path()) {
     stream.close();
 }
 
-inline void dump_output_impl(nncase::value_t value, std::string path = dump_path(),
-                        bool incr = false) {
+template <typename T>
+inline void dump_data(std::ostream &stream, const T *data,
+                      nncase::tensor value_tensor) {
+    std::cout << "out_shape:";
+    for (auto d : value_tensor->shape()) {
+        std::cout << d << " ";
+    }
+    std::cout << std::endl;
+    stream << "data type:"
+           << std::to_string(to_typecode(value_tensor->dtype()).unwrap())
+           << std::endl;
+    stream << "out_shape:";
+    if (value_tensor->shape().size() == 0) {
+        stream << "scalar\n";
+    } else {
+        for (auto d : value_tensor->shape()) {
+            stream << d << " ";
+        }
+        stream << std::endl;
+    }
+    auto sum = 1;
+    for (auto s : value_tensor->shape()) {
+        sum *= s;
+    }
+    for (int i = 0; i < sum; ++i) {
+        stream << std::to_string(data[i]) << "\n";
+    }
+}
+inline void dump_output_impl(nncase::value_t value,
+                             std::string path = dump_path(),
+                             bool incr = false) {
     dump(
         value,
         [](auto &stream, auto &&value_tensor) {
-            auto sum = 1;
-            for (auto s : value_tensor->shape()) {
-                sum *= s;
-            }
-            auto *out = value_tensor->to_host()
+            auto *data = value_tensor->to_host()
                             .unwrap()
                             ->buffer()
                             .as_host()
@@ -75,23 +99,7 @@ inline void dump_output_impl(nncase::value_t value, std::string path = dump_path
 
 #define RETURN_RESULT(_in_type)                                                \
     if (nncase::runtime::cmp_type<_in_type>(value_tensor->dtype())) {          \
-        std::cout << "out_shape:";                                             \
-        for (auto d : value_tensor->shape()) {                                 \
-            std::cout << d << " ";                                             \
-        }                                                                      \
-        std::cout << std::endl;                                                \
-        stream << "data type:"                                                 \
-               << std::to_string(to_typecode(value_tensor->dtype()).unwrap())  \
-               << std::endl;                                                   \
-        stream << "out_shape:";                                                \
-        for (auto d : value_tensor->shape()) {                                 \
-            stream << d << " ";                                                \
-        }                                                                      \
-        stream << std::endl;                                                   \
-        for (int i = 0; i < sum; ++i) {                                        \
-            stream << std::to_string(reinterpret_cast<_in_type *>(out)[i])     \
-                   << "\n";                                                    \
-        }                                                                      \
+        dump_data(stream, IN_CAST(_in_type, data), value_tensor);                    \
     }
             RETURN_RESULT(bool);
             RETURN_RESULT(int32_t);
@@ -111,6 +119,5 @@ inline void dump_output(nncase::value_t value) {
     dump_output_impl(value, dump_path(), true);
 }
 #else
-inline void dump_output([[maybe_unused]] nncase::value_t value) {
-}
+inline void dump_output([[maybe_unused]] nncase::value_t value) {}
 #endif

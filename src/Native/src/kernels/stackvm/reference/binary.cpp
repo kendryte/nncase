@@ -34,6 +34,10 @@ result<void> binary_impl(TOp &&op, const T *lhs, const T *rhs, T *output,
                          const dims_t &rhs_shape, const strides_t &rhs_strides,
                          const dims_t &out_shape, const strides_t &out_strides,
                          NNCASE_UNUSED kernel_context &context) noexcept {
+    if(is_scalar(out_shape)) {
+        output[0] = op(lhs[0], rhs[0]);
+        return ok();
+    }
     return apply(out_shape, [&](const dims_t &index) -> result<void> {
         const auto lhs_index =
             kernels::detail::get_reduced_offset(index, lhs_shape);

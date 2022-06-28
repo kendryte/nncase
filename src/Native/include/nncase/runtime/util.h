@@ -465,4 +465,8 @@ inline tensor tensor_reshape(tensor in_tensor, const dims_t &new_shape) {
                     strides, in_tensor->buffer());
     return tensor(node);
 }
+
+inline bool is_scalar(const dims_t& shape) {
+    return shape.size() == 0;
+}
 } // namespace nncase::runtime

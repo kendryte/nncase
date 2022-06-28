@@ -32,17 +32,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>
         return Visit(context, target, inputs, axis);
     }
 
-    // internal static torch.Tensor ExpandDim(torch.Tensor tensor)
-    // {
-    //     if (!tensor.shape.Any())
-    //     {
-    //         return tensor.view(new long[] { 1 });
-    //     }
-    //
-    //     return tensor;
-    // }
-
-    private IRType Visit(ITypeInferenceContext context, Concat target, TupleType inputs, TensorType axis)
+    private IRType? CheckType(TupleType inputs)
     {
         bool? allScalar = null;
         DataType? allDType = null;
@@ -61,6 +51,10 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>
                 }
             }
 
+            if (type.Shape.IsUnranked)
+            {
+                return new TensorType(type.DType, Shape.Unranked);
+            }
             allScalar = (allScalar ?? type.IsScalar) & type.IsScalar;
             allDType ??= type.DType;
             if (allDType != type.DType)
@@ -68,13 +62,22 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>
                 return new InvalidType($"The ConCat Item[{i}] Must Be {allDType} But Get {type.DType.GetDisplayName()}");
             }
         }
-
-        var input0 = (TensorType)inputs[0];
         if (allScalar == true && allDType is not null)
         {
             return new TensorType(allDType, new[] { inputs.Count });
         }
 
+        return null;
+    }
+
+    private IRType Visit(ITypeInferenceContext context, Concat target, TupleType inputs, TensorType axis)
+    {
+        var result = CheckType(inputs);
+        if (result != null)
+        {
+            return result;
+        }
+        var input0 = (TensorType)inputs[0];
         InvalidType? invalidType = null;
         var axisV = ((TensorConst)context.GetArgument(target, Concat.Axis)).Value.ToScalar<int>();
         var axisValue = Util.PositiveIndex(axisV, input0.Shape.Rank);
@@ -84,13 +87,27 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>
             {
                 return AxisDim(inputs, axisValue);
             }
-
             // if all input shape[dim] is not same, return invalid
             else
             {
-                var allAxisDimIsSame = inputs.Fields.Aggregate(
-                    true,
-                    (prod, next) => prod && ((TensorType)next).Shape[i].IsFixed);
+                var allAxisDimIsSame = true;
+                foreach (var inType in inputs.Fields)
+                {
+                    if (((TensorType) inType).Shape.IsUnranked)
+                    {
+                        continue;
+                    }
+                    var d = ((TensorType) inType).Shape[i];
+                    if (d.IsUnknown)
+                    {
+                        return Dimension.Unknown;
+                    }
+
+                    if (d.FixedValue != ((TensorType) inputs[0]).Shape[i])
+                    {
+                        allAxisDimIsSame = false;
+                    }
+                }
                 if (allAxisDimIsSame)
                 {
                     return ((TensorType)inputs[0]).Shape[i];

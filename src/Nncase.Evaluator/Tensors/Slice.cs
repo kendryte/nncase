@@ -48,44 +48,79 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         };
     }
 
+    
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="axisConst"></param>
+    /// <param name="input"></param>
+    /// <param name="f">(index in axis, axis, inDim) -> outDim</param>
+    /// <returns></returns>
+    private Shape ApplyAxis(TensorConst axisConst, TensorType input, Func<int, int, int, Dimension> f)
+    {
+        if (input.Shape.IsUnranked)
+        {
+            return Shape.Unranked;
+        }
+
+        var outShape = input.Shape.ToArray();
+        var axesTensor = axisConst.Value.Cast<int>();
+        for (int i = 0; i < axesTensor.Length; i++)
+        {
+            var axisV = axesTensor[i];
+            var axis = axisV < 0
+                ? axisV + input.Shape.Rank
+                : axisV;
+            outShape[axis] = input.Shape[axis].IsFixed 
+                ? f(i, axis, input.Shape[axis].FixedValue) 
+                : Dimension.Unknown;
+        }
+
+        return outShape;
+    }
+    
     private IRType Visit(ITypeInferenceContext context, Slice target, TensorType input)
     {
-        if (context.GetArgument(target, Slice.Begins) is TensorConst begins_con &&
-            context.GetArgument(target, Slice.Ends) is TensorConst ends_con &&
-            context.GetArgument(target, Slice.Axes) is TensorConst axes_con &&
-            context.GetArgument(target, Slice.Strides) is TensorConst strides_con)
+        Shape outShape;
+        if (context.GetArgument(target, Slice.Axes) is TensorConst axes_con)
         {
-            // end in onnx may be the maximum value of int64
-            // when use int, result value is -1
-            var outShape = input.Shape.ToArray();
-            var ts_begins = begins_con.Value.Cast<long>();
-            var ts_ends = ends_con.Value.Cast<long>();
-            var ts_strides = strides_con.Value.Cast<long>();
-
-            var axesTensor = axes_con.Value.Cast<int>();
-            for (int i = 0; i < axesTensor.Length; i++)
+            if (input.Shape.IsRanked)
             {
-                var axisV = axesTensor[i];
-                var axis = axisV < 0
-                    ? axisV + input.Shape.Rank
-                    : axisV;
-                var begin = ts_begins[i];
-                var end = System.Math.Min(ts_ends[i], input.Shape[axis].FixedValue);
-                var stride = ts_strides[i];
-                if (input.Shape[axis].IsFixed)
+                if (context.GetArgument(target, Slice.Begins) is TensorConst begins_con &&
+                    context.GetArgument(target, Slice.Ends) is TensorConst ends_con &&
+                    context.GetArgument(target, Slice.Strides) is TensorConst strides_con)
                 {
-                    outShape[axis] =
-                        (int) System.Math.Ceiling((float) System.Math.Abs(end - begin) / System.Math.Abs(stride));
+                    // end in onnx may be the maximum value of int64
+                    // when use int, result value is -1
+                    var ts_begins = begins_con.Value.Cast<long>();
+                    var ts_ends = ends_con.Value.Cast<long>();
+                    var ts_strides = strides_con.Value.Cast<long>();
+
+                    outShape = ApplyAxis(axes_con, input, (i, axis, inDim) =>
+                    {
+                        var begin = ts_begins[i];
+                        var end = System.Math.Min(ts_ends[i], inDim);
+                        var stride = ts_strides[i];
+                        return (int) System.Math.Ceiling((float) System.Math.Abs(end - begin) /
+                                                         System.Math.Abs(stride));
+                    });
+                    return input with {Shape = outShape};
                 }
                 else
                 {
-                    outShape[axis] = Dimension.Unknown;
+                    outShape = ApplyAxis(axes_con, input, (i, axis, inDim) => Dimension.Unknown);
                 }
             }
-
-            return input with { Shape = new Shape(outShape) };
+            else
+            {
+                outShape = Shape.Unranked;
+            }
+        }
+        else
+        {
+            return new InvalidType("Can't Infer Shape With Dynamic Axis!");
         }
 
-        return input with { Shape = Shape.Unranked };
+        return input with {Shape = outShape};
     }
 }
