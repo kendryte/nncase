@@ -34,10 +34,11 @@ namespace Nncase.Transform
         /// </summary>
         /// <param name="callable">Target function.</param>
         /// <param name="options">Options.</param>
-        public Callable Run(Callable callable, RunPassOptions options)
+        public async Task<Callable> RunAsync(Callable callable, RunPassOptions options)
         {
+            options.SetPassName(Name);
             OnPassStart(callable, options);
-            var post = RunCore(callable, options);
+            var post = await RunCoreAsync(callable, options);
             OnPassEnd(post, options);
             return post;
         }
@@ -47,7 +48,7 @@ namespace Nncase.Transform
         /// </summary>
         /// <param name="callable">Target function.</param>
         /// <param name="options">Options.</param>
-        protected abstract Callable RunCore(Callable callable, RunPassOptions options);
+        protected abstract Task<Callable> RunCoreAsync(Callable callable, RunPassOptions options);
 
         /// <summary>
         /// the callback function you can custom process func with run pass options.

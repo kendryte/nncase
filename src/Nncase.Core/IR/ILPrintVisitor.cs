@@ -121,6 +121,18 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
     }
 
     /// <inheritdoc/>
+    public override string Visit(Marker expr)
+    {
+        if (_names.TryGetValue(expr, out var name)) { return name; }
+        var target = Visit(expr.Target);
+        var attr = Visit(expr.Attribute);
+        name = AllocateTempVar(expr);
+        Scope.IndWrite($"{name} = {target}@({expr.Name} = {attr})");
+        AppendCheckedType(expr.CheckedType);
+        return name;
+    }
+
+    /// <inheritdoc/>
     public override string Visit(For expr)
     {
         if (_names.TryGetValue(expr, out var name)) { return name; }

@@ -26,20 +26,11 @@ internal sealed class EvaluateContext : IEvaluateContext
         set => _currentCall = value;
     }
 
-    public Expr GetArgumentExpr(Op op, ParameterInfo parameter)
+    public IValue GetArgumentValue(Op op, ParameterInfo parameter)
     {
-        if (op.GetType() == parameter.OwnerType)
-        {
-            return CurrentCall.Parameters[parameter.Index];
-        }
-        else
-        {
-            throw new ArgumentOutOfRangeException($"Operator {op} doesn't have parameter: {parameter.Name}.");
-        }
-    }
-
-    public IValue GetValue(Expr expr)
-    {
+        var expr = op.GetType() == parameter.OwnerType
+            ? CurrentCall.Parameters[parameter.Index]
+            : throw new ArgumentOutOfRangeException($"Operator {op} doesn't have parameter: {parameter.Name}.");
         return _exprMemo[expr];
     }
 }
@@ -67,11 +58,6 @@ public static class EvaluateContextExtensions
     {
         var tensor = context.GetArgumentValue(op, parameter).AsTensor().Cast<long>();
         return tensor.Shape.IsScalar ? tensor.ScalarToOrtTensor() : tensor.ToOrtTensor();
-    }
-
-    public static OrtKISharp.Tensor GetOrtValue(this IEvaluateContext context, Expr expr)
-    {
-        return context.GetValue(expr).AsTensor().ToOrtTensor();
     }
 
     public static Tensorflow.Tensor GetTFArgumentValue(this IEvaluateContext context, Op op, ParameterInfo parameter)

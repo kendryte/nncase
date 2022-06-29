@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics.Tensors;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using NetFabric.Hyperlinq;
 using Nncase.Evaluator;
@@ -185,31 +186,31 @@ namespace Nncase.Tests.RewriteTest
         // }
 
         [Fact]
-        public void TestFoldExpand()
+        public async Task TestFoldExpand()
         {
             var weights = new Var("weights", new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
             var t = Util.ShapeIndex(weights, 0);
             t.InferenceType();
             var expand = Expand(0f, Cast(Util.ShapeIndex(weights, 0), DataTypes.Int64));
-            var s = RunShapeInferPass("", expand, weights);
+            var s = await RunShapeInferPass("", expand, weights);
             Assert.True(s is Const);
         }
 
         [Fact]
-        public void TestFoldShapeOf()
+        public async Task TestFoldShapeOf()
         {
             var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 240, 320)));
             var shape = ShapeOf(input);
-            var shapePost = RunShapeInferPass("FoldShapeOf", shape);
+            var shapePost = await RunShapeInferPass("FoldShapeOf", shape);
             Assert.Equal(new long[] { 1, 3, 240, 320 }, ((TensorConst)shapePost).Value.ToArray<long>());
         }
 
         [Fact]
-        public void TestExpandToRank()
+        public async Task TestExpandToRank()
         {
             var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 240, 320)));
             var exp = Expand(1, Cast(Rank(input) - 0, new Int64Type()));
-            var result = RunShapeInferPass("ExpandToRank", exp);
+            var result = await RunShapeInferPass("ExpandToRank", exp);
             Assert.Equal(new[] { 1, 1, 1, 1 }, result.Evaluate().AsTensor().ToArray<int>());
         }
     }
@@ -224,15 +225,15 @@ namespace Nncase.Tests.RewriteTest
         public T Dim1ExprToScalar<T>(Expr expr) where T : unmanaged, System.IEquatable<T> => (expr as TensorConst).Value.Cast<T>()[0];
 
         [Fact]
-        public void TestPaddingCompute()
+        public async Task TestPaddingCompute()
         {
             passOptions.SetPassName("TestPaddingCompute");
             var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 33, 65)));
             var weights = Tensor.FromSpan<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
             var (inH, inW) = Util.GetHW(input);
             var (fH, fW) = Util.GetHW(weights);
-            var inHPost = RunShapeInferPass("inH", inH);
-            var inWPost = RunShapeInferPass("inW", inW);
+            var inHPost = await RunShapeInferPass("inH", inH);
+            var inWPost = await RunShapeInferPass("inW", inW);
             Assert.Equal(33, ((TensorConst)inHPost).Value.ToScalar<int>());
             Assert.Equal(65, ((TensorConst)inWPost).Value.ToScalar<int>());
             var strideH = 1;
@@ -243,12 +244,12 @@ namespace Nncase.Tests.RewriteTest
             var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, true);
             var padding = Util.ConcatPadding(padH, padW);
             // Assert.True(CompilerServices.InferenceType(padding));
-            var paddingPost = RunShapeInferPass("padding", padding, input);
+            var paddingPost = await RunShapeInferPass("padding", padding, input);
             Assert.Equal(Tensor.FromSpan(new[] { 1, 1, 1, 1 }, new Shape(2, 2)), paddingPost);
         }
 
         [Fact]
-        public void TestYolo20MinStructure()
+        public async Task TestYolo20MinStructure()
         {
             passOptions.SetPassName("TestYolo20MinStructure");
             var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(new[] { 1, 240, 320, 3 })));
@@ -271,7 +272,7 @@ namespace Nncase.Tests.RewriteTest
                 PadMode.Constant, 1);
             var convAfterTranspose = NCHWToNHWC(Clamp(conv, 0, 1));
 
-            var postConvAfterTranspose = RunShapeInferPass("convAfterTranspose", convAfterTranspose);
+            var postConvAfterTranspose = await RunShapeInferPass("convAfterTranspose", convAfterTranspose);
             Assert.True(CompilerServices.InferenceType(postConvAfterTranspose));
             Assert.Equal(new Shape(1, 240, 320, 16), postConvAfterTranspose.CheckedShape);
 
@@ -286,26 +287,26 @@ namespace Nncase.Tests.RewriteTest
             var rPadW = Util.GetWindowedPadding(rInW, 2, 2, dilationW, true);
             var rPadding = Util.ConcatPadding(rPadH, rPadW);
             var reduce = NCHWToNHWC(ReduceWindow2D(ReduceOp.Max, NHWCToNCHW(max), initValue, doubleV, doubleV, rPadding, dilation, false, false));
-            var post = RunShapeInferPass("reduce", reduce);
+            var post = await RunShapeInferPass("reduce", reduce);
             Assert.True(CompilerServices.InferenceType(post));
             Assert.Equal(new Shape(1, 120, 160, 16), post.CheckedShape);
         }
 
         [Fact]
-        public void SliceForShapeIndex()
+        public async Task SliceForShapeIndex()
         {
             passOptions.SetPassName("SliceForShapeIndex");
             var input = new Var(new TensorType(DataTypes.Float32, new Shape(1, 7, 7, 75)));
             var slice = Util.ShapeIndex(input, 1);
             CompilerServices.InferenceType(slice);
-            var post = RunShapeInferPass("slice", slice);
+            var post = await RunShapeInferPass("slice", slice);
             Assert.True(CompilerServices.InferenceType(post));
             Assert.True(post is Const);
             Assert.Equal(Shape.Scalar, post.CheckedShape);
         }
 
         [Fact]
-        public void SoftMaxImporterProcess()
+        public async Task SoftMaxImporterProcess()
         {
             var input = new Var(new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
             var axis = -1;
@@ -314,18 +315,18 @@ namespace Nncase.Tests.RewriteTest
                 ? axis + Rank(input)
                 : Tensor.FromSpan<int>(new[] { axis });
             axisExprBefore.InferenceType();
-            var axisExpr = RunShapeInferPass("Axis", axisExprBefore, input);
+            var axisExpr = await RunShapeInferPass("Axis", axisExprBefore, input);
             Assert.Equal(3, ((TensorConst)axisExpr).Value.Cast<int>()[0]);
             var firstSliceBefore = Slice(inShape, new[] { 0 }, axisExpr, 1);
             firstSliceBefore.InferenceType();
-            var firstSlice = RunShapeInferPass("firstSlice", firstSliceBefore, input);
+            var firstSlice = await RunShapeInferPass("firstSlice", firstSliceBefore, input);
             Assert.Equal(new[] { 1, 3, 224 }, ((TensorConst)firstSlice).Value.ToArray<int>());
             var firstSizeBefore = Prod(firstSlice);
             firstSizeBefore.InferenceType();
-            var firstSize = RunShapeInferPass("firstSize", firstSizeBefore, input);
+            var firstSize = await RunShapeInferPass("firstSize", firstSizeBefore, input);
             Assert.Equal(1 * 3 * 224, ((TensorConst)firstSize).Value.ToScalar<int>());
             var secondBefore = Prod(Slice(inShape, axisExpr, Rank(input), 1));
-            var secondSize = RunShapeInferPass("secondSize", secondBefore, input);
+            var secondSize = await RunShapeInferPass("secondSize", secondBefore, input);
             Assert.Equal(224, ((TensorConst)secondSize).Value.ToScalar<int>());
             var beforeShape = Concat(new Tuple(firstSize, secondSize), 0);
             var afterShape = ShapeOf(input);
@@ -338,7 +339,7 @@ namespace Nncase.Tests.RewriteTest
         }
 
         [Fact]
-        public void TestReshapeToByChannel()
+        public async Task TestReshapeToByChannel()
         {
             var v = Tensor.FromSpan<int>(new[] { 1, 2, 3 });
             var shape = Concat(
@@ -346,7 +347,7 @@ namespace Nncase.Tests.RewriteTest
                     ShapeOf(v),
                     new long[] { 1 },
                     new long[] { 1 }), 0);
-            var afterShape = RunShapeInferPass("Shape", shape);
+            var afterShape = await RunShapeInferPass("Shape", shape);
             Assert.True(afterShape.InferenceType());
             Assert.Equal(new long[] { 3, 1, 1 }, afterShape);
             var b = Reshape(v, afterShape);
@@ -354,7 +355,7 @@ namespace Nncase.Tests.RewriteTest
             Assert.Equal(new[] { 3, 1, 1 }, b.Evaluate().AsTensor().Dimensions.ToArray());
 
             var a = OnnxImporter.ReshapeToByChannel(v);
-            var after = RunShapeInferPass("ReshapeToByChannel", a);
+            var after = await RunShapeInferPass("ReshapeToByChannel", a);
             Assert.True(after.InferenceType());
             Assert.Equal(new[] { 3, 1, 1 }, after.Evaluate().AsTensor().Dimensions.ToArray());
         }

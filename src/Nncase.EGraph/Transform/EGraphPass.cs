@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -28,13 +29,64 @@ public class EGraphPass : RulesPass
     }
 
     /// <inheritdoc/>
-    protected override Callable RunCore(Callable function, RunPassOptions options)
+    protected override async Task<Callable> RunCoreAsync(Callable function, RunPassOptions options)
     {
-        options.SetPassName(Name);
         var graph = new EGraph();
         var root = graph.Add(function);
         EGraphRewriter.Rewrite(graph, Rules, options);
+        OnPostRewriteStart(graph, options);
+        await OnPostRewrite(graph, options);
+        OnPostRewriteEnd(graph, options);
         var post = graph.Extract(root, options);
         return (Callable)post;
+    }
+
+    protected virtual Task OnPostRewrite(EGraph graph, RunPassOptions options)
+    {
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// the callback function you can custom process func with run pass options.
+    /// </summary>
+    /// <param name="callable"> func without run pass.</param>
+    /// <param name="options">Options.</param>
+    protected virtual void OnPostRewriteStart(EGraph eGraph, RunPassOptions options)
+    {
+        switch (options.DumpLevel)
+        {
+            case >= 2:
+                EGraphPrinter.DumpEgraphAsDot(
+                    eGraph,
+                    null,
+                    Path.Combine(options.DumpDir, options.PassName, "PostRewriteStart", $"V{eGraph.Version}"));
+                break;
+            case >= 1:
+                break;
+            default:
+                break;
+        }
+    }
+
+    /// <summary>
+    /// the callback function you can custom process func with run pass options.
+    /// </summary>
+    /// <param name="callable"> func with rewrited. </param>
+    /// <param name="options">Options.</param>
+    protected virtual void OnPostRewriteEnd(EGraph eGraph, RunPassOptions options)
+    {
+        switch (options.DumpLevel)
+        {
+            case >= 2:
+                EGraphPrinter.DumpEgraphAsDot(
+                    eGraph,
+                    null,
+                    Path.Combine(options.DumpDir, options.PassName, "PostRewriteEnd", $"V{eGraph.Version}"));
+                break;
+            case >= 1:
+                break;
+            default:
+                break;
+        }
     }
 }

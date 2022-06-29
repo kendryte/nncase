@@ -49,13 +49,13 @@ namespace Nncase.Transform
         /// <summary>
         /// Run passes and update the module funciton.
         /// </summary>
-        public void Run()
+        public async Task RunAsync()
         {
             foreach (var i in Enumerable.Range(0, _module.Callables.Count))
             {
                 foreach (var pass in _passes)
                 {
-                    _module.Update(i, pass.Run(_module.Callables[i], _options));
+                    _module.Update(i, await pass.RunAsync(_module.Callables[i], _options));
                 }
             }
         }

@@ -32,7 +32,7 @@ namespace Nncase.Transform
         }
 
         /// <inheritdoc/>
-        protected override Callable RunCore(Callable callable, RunPassOptions options)
+        protected override Task<Callable> RunCoreAsync(Callable callable, RunPassOptions options)
         {
             var pass_options = options.SetPassName(Name);
             var post = callable;
@@ -63,7 +63,7 @@ namespace Nncase.Transform
             } while (true);
 
             OnPassEnd(post, pass_options);
-            return post;
+            return Task.FromResult(post);
         }
 
         void OnMutated(Callable callable, string prefix, RunPassOptions options)

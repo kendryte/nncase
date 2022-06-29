@@ -1,5 +1,6 @@
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Autofac;
 using Autofac.Extras.CommonServiceLocator;
 using CommonServiceLocator;
@@ -73,7 +74,7 @@ namespace Nncase.Tests
 
         private static readonly DataflowPass _simplifyPass = new("SimplifyAll");
 
-        internal static Expr Simplify(Expr expr, string member)
+        internal static async Task<Expr> Simplify(Expr expr, string member)
         {
             if (_simplifyPass.Rules.Count == 0)
             {
@@ -93,13 +94,13 @@ namespace Nncase.Tests
             }
             options = new RunPassOptions(null, 2, dumpPath);
 
-            return ((Function)_simplifyPass.Run(f, options)).Body;
+            return ((Function)await _simplifyPass.RunAsync(f, options)).Body;
         }
 
-        public static void AssertExprEqual(Expr lhs, Expr rhs, [CallerMemberName] string member = null)
+        public static async Task AssertExprEqual(Expr lhs, Expr rhs, [CallerMemberName] string member = null)
         {
-            var simpled_lhs = Simplify(lhs, member);
-            var simpled_rhs = Simplify(rhs, member);
+            var simpled_lhs = await Simplify(lhs, member);
+            var simpled_rhs = await Simplify(rhs, member);
             var res = Equals(simpled_lhs, simpled_rhs);
             if (!res)
             {

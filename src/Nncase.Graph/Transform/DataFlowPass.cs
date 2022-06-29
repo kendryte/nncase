@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.PatternMatch;
 
@@ -27,8 +28,8 @@ public class DataflowPass : RulesPass
     }
 
     /// <inheritdoc/>
-    protected override Callable RunCore(Callable function, RunPassOptions options)
+    protected override Task<Callable> RunCoreAsync(Callable function, RunPassOptions options)
     {
-        return (Callable)CompilerServices.Rewrite(function, Rules, options);
+        return Task.FromResult((Callable)CompilerServices.Rewrite(function, Rules, options));
     }
 }

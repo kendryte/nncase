@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Nncase.Evaluator;
 using Nncase.IR;
@@ -49,13 +50,13 @@ namespace Nncase.Tests.RewriteTest
             passOptions = new RunPassOptions(null, 3, dumpDir);
         }
 
-        public Expr RunShapeInferPass(string name, Expr expr, params Var[] parameters)
+        public async Task<Expr> RunShapeInferPass(string name, Expr expr, params Var[] parameters)
         {
             expr.InferenceType();
             var f = new Function(expr, parameters);
             var result = CompilerServices.InferenceType(f);
             CompilerServices.DumpIR(f, "before", Path.Combine(passOptions.PassDumpDir, $"ShapeInfer_{name}"));
-            return ((Function)new ShapeInferPass($"ShapeInfer_{name}").Run(f, passOptions)).Body;
+            return ((Function)await new ShapeInferPass($"ShapeInfer_{name}").RunAsync(f, passOptions)).Body;
         }
 
         public Expr ApplyFoldConstCallRewrite(Expr expr) =>

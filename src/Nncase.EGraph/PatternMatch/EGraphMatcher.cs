@@ -14,7 +14,7 @@ using Nncase.Transform;
 
 namespace Nncase.PatternMatch;
 
-internal sealed class EGraphMatcher
+public sealed class EGraphMatcher
 {
     /// <summary>
     /// Match enodes as root.

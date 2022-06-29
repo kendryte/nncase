@@ -70,7 +70,7 @@ namespace Nncase.IR.F
         /// <typeparam name="T">Data type.</typeparam>
         /// <returns>Result expression.</returns>
         public static Call Clamp<T>(Expr input, ValueRange<T> range)
-            where T : unmanaged, IEquatable<T>
+            where T : unmanaged, IEquatable<T>, IComparable<T>
         {
             return new Call(new Clamp(), input, Tensor.FromScalar(range.Min), Tensor.FromScalar(range.Max));
         }

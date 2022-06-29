@@ -10,6 +10,7 @@ using Nncase.CodeGen;
 using Nncase.CodeGen.K210;
 using Nncase.CodeGen.StackVM;
 using Nncase.IR;
+using Nncase.Quantization;
 using Nncase.Runtime.K210;
 using Nncase.Transform;
 using Nncase.Transform.Rules.K210;
@@ -29,7 +30,7 @@ public class K210Target : ITarget
     {
         if (options.UsePTQ)
         {
-            passManager.Add(new EGraphPass("lowering_kpu")
+            passManager.Add(new EGraphPassWithQuantize("lowering_kpu", options.QuantizeOptions!)
             {
                 new LowerConv2D(),
             });

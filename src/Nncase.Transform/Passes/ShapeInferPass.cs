@@ -29,7 +29,7 @@ public sealed class ShapeInferPass : DataflowPass
     }
 
     /// <inheritdoc/>
-    protected override Callable RunCore(Callable pre, RunPassOptions options)
+    protected override Task<Callable> RunCoreAsync(Callable pre, RunPassOptions options)
     {
         Function post;
         int count = 0;
@@ -53,6 +53,6 @@ public sealed class ShapeInferPass : DataflowPass
             pre = post;
         }
 
-        return post;
+        return Task.FromResult<Callable>(post);
     }
 }

@@ -38,7 +38,7 @@ public class UnitTestIntegralPromotion
 
     [Theory]
     [MemberData(nameof(TestIntegralPromotionPositiveData))]
-    public void TestIntegralPromotionPositive(DataType aType, DataType bType)
+    public async Task TestIntegralPromotionPositive(DataType aType, DataType bType)
     {
         var expr = Tensors.Cast(1, aType) + Tensors.Cast(2, bType);
         expr.InferenceType();
@@ -46,7 +46,7 @@ public class UnitTestIntegralPromotion
         var result = CompilerServices.InferenceType(f);
         Assert.False(result);
         CompilerServices.DumpIR(f, "before", Path.Combine(passOptions.PassDumpDir, "TypePromotion"));
-        var post = new ShapeInferPass("TypePromotion").Run(f, passOptions);
+        var post = await new ShapeInferPass("TypePromotion").RunAsync(f, passOptions);
         Assert.True(CompilerServices.InferenceType(post));
         Assert.Equal(Value.FromTensor(3L), ((Function)post).Body.Evaluate());
     }
@@ -60,7 +60,7 @@ public class UnitTestIntegralPromotion
 
     [Theory]
     [MemberData(nameof(TestIntegralPromotionNegativeData))]
-    public void TestIntegralPromotionNegative(DataType aType, DataType bType)
+    public async Task TestIntegralPromotionNegative(DataType aType, DataType bType)
     {
         var expr = Tensors.Cast(1, aType) + Tensors.Cast(2, bType);
         expr.InferenceType();
@@ -68,7 +68,7 @@ public class UnitTestIntegralPromotion
         var result = CompilerServices.InferenceType(f);
         Assert.True(result);
         CompilerServices.DumpIR(f, "before", Path.Combine(passOptions.PassDumpDir, "TypePromotion"));
-        var post = new ShapeInferPass("TypePromotion").Run(f, passOptions);
+        var post = await new ShapeInferPass("TypePromotion").RunAsync(f, passOptions);
         Assert.True(CompilerServices.InferenceType(post));
         Assert.Equal(Value.FromTensor(3L), ((Function)post).Body.Evaluate());
     }

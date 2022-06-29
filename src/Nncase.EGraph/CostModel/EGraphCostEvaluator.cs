@@ -17,11 +17,28 @@ internal sealed class EGraphCostEvaluator
     private readonly EClass _root;
     private readonly Dictionary<ENode, Cost> _costs = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<EClass, Cost> _eclassCosts = new();
+    private readonly HashSet<EClass> _allEclasses = new();
     private bool _changed;
 
     public EGraphCostEvaluator(EClass root)
     {
         _root = root;
+        PopulateAllEclasses(_root);
+    }
+
+    private void PopulateAllEclasses(EClass eClass)
+    {
+        if (!_allEclasses.Contains(eClass))
+        {
+            _allEclasses.Add(eClass);
+            foreach (var node in eClass.Nodes)
+            {
+                foreach (var child in node.Children)
+                {
+                    PopulateAllEclasses(child);
+                }
+            }
+        }
     }
 
     public EGraphCostModel Evaluate()
@@ -29,14 +46,27 @@ internal sealed class EGraphCostEvaluator
         while (true)
         {
             _changed = false;
-            Visit(_root);
+            TryEvaluateAll();
             if (!_changed)
             {
                 break;
             }
         }
 
+        if (!_eclassCosts.ContainsKey(_root))
+        {
+            throw new InvalidOperationException("Cannot evaluate cost for root.");
+        }
+
         return new(_costs);
+    }
+
+    private void TryEvaluateAll()
+    {
+        foreach (var eclass in _allEclasses)
+        {
+            Visit(eclass);
+        }
     }
 
     private Cost? Visit(EClass eclass)
@@ -212,8 +242,7 @@ internal sealed class EGraphCostEvaluator
         var costs = new Cost[enode.Children.Count];
         for (int i = 0; i < costs.Length; i++)
         {
-            var childCost = Visit(enode.Children[i]);
-            if (childCost != null)
+            if (_eclassCosts.TryGetValue(enode.Children[i], out var childCost))
             {
                 costs[i] = childCost;
             }

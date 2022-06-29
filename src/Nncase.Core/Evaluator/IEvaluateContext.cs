@@ -22,47 +22,16 @@ public interface IEvaluateContext
     Call CurrentCall { get; }
 
     /// <summary>
-    /// Get argument expression.
-    /// </summary>
-    /// <param name="op">Operator.</param>
-    /// <param name="parameter">Parameter.</param>
-    /// <returns>The argument expression.</returns>
-    Expr GetArgumentExpr(Op op, ParameterInfo parameter);
-
-    /// <summary>
-    /// Get expression value.
-    /// </summary>
-    /// <param name="expr">Expression.</param>
-    /// <returns>The value.</returns>
-    IValue GetValue(Expr expr);
-
-    /// <summary>
-    /// Get argument expression.
-    /// </summary>
-    /// <typeparam name="T">Argument type.</typeparam>
-    /// <param name="op">Operator.</param>
-    /// <param name="parameter">Parameter.</param>
-    /// <returns>The argument expression.</returns>
-    public T GetArgumentExpr<T>(Op op, ParameterInfo parameter)
-     where T : Expr
-    {
-        return (T)GetArgumentExpr(op, parameter);
-    }
-
-    /// <summary>
     /// Get argument value.
     /// </summary>
     /// <param name="op">Operator.</param>
     /// <param name="parameter">Parameter.</param>
     /// <returns>The argument value.</returns>
-    public IValue GetArgumentValue(Op op, ParameterInfo parameter)
-    {
-        return GetValue(GetArgumentExpr(op, parameter));
-    }
+    public IValue GetArgumentValue(Op op, ParameterInfo parameter);
 
     public Option<IValue> GetOptionalArgumentValue(Op op, ParameterInfo parameter)
     {
-        var v = GetValue(GetArgumentExpr(op, parameter));
+        var v = GetArgumentValue(op, parameter);
         return v is NoneValue ? Option.None : Option.Some(v);
     }
 

@@ -85,7 +85,7 @@ public class Compiler
         var pmgr = new PassManager(module, new RunPassOptions(null!, options.DumpLevel, options.DumpDir));
         var constFold = new ShapeInferPass();
         pmgr.Add(constFold);
-        pmgr.Run();
+        pmgr.RunAsync().Wait();
     }
 
     private IRModule ImportModel(Stream content, CompileOptions options)
@@ -111,7 +111,7 @@ public class Compiler
         // todo:dump dir
         var pmgr = new PassManager(Module, new RunPassOptions(CompilerServices.GetTarget(Options.Target), 0, "null", Options));
         register(pmgr);
-        pmgr.Run();
+        pmgr.RunAsync().Wait();
     }
 
     public void TargetIndependentPass()
