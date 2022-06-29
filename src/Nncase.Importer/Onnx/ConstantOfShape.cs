@@ -14,8 +14,7 @@ namespace Nncase.Importer
     {
         private Expr VisitConstantOfShape(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
-            var shape = new Shape();
+            var shape = GetInputExpr(op, 0);
             var tensorValue = GetAttr(op, "value", AttributeType.Tensor, x => x.T);
             if (tensorValue)
             {
@@ -24,7 +23,7 @@ namespace Nncase.Importer
                 var type = GetDataType(tensor);
                 if (type == DataTypes.Float32)
                 {
-                    return Tensor.FromScalar(tensorConst.ToScalar<float>(), shape);
+                    return F.Tensors.ConstantOfShape(shape, tensorConst.ToScalar<float>());
                 }
                 else
                 {
@@ -33,7 +32,7 @@ namespace Nncase.Importer
             }
             else
             {
-                return Tensor.FromScalar(0.0f, shape);
+                return F.Tensors.ConstantOfShape(shape, Tensor.FromSpan<float>(new[] {0f}));
             }
         }
     }

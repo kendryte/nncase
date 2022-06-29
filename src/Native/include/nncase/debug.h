@@ -114,10 +114,6 @@ inline void dump_output_impl(nncase::value_t value,
     }
 }
 
-#ifndef NODEBUG
-inline void dump_output(nncase::value_t value) {
-    dump_output_impl(value, dump_path(), true);
+inline void dump_output([[maybe_unused]] nncase::value_t value) {
+    // dump_output_impl(value, dump_path(), true);
 }
-#else
-inline void dump_output([[maybe_unused]] nncase::value_t value) {}
-#endif

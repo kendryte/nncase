@@ -29,11 +29,16 @@ public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>
     public IRType Visit(ITypeInferenceContext context, Tile target)
     {
         var input = context.CheckArgumentType<TensorType>(target, Tile.Input);
-        return Visit(context, target, input);
+        var repeat = context.CheckArgumentType<TensorType>(target, Tile.Repeats);
+        return Visit(context, target, input, repeat);
     }
 
-    private IRType Visit(ITypeInferenceContext context, Tile target, TensorType input)
+    private IRType Visit(ITypeInferenceContext context, Tile target, TensorType input, TensorType repeat)
     {
+        if (input.Shape.IsUnranked)
+        {
+            return input;
+        }
         if (context.GetArgument(target, Tile.Repeats) is TensorConst repeats && input.Shape.IsFixed)
         {
             var shape = OrtKI.Mul(input.Shape.ToValueArray(), repeats.Value.ToArray<int>());

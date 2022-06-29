@@ -31,6 +31,10 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>
 
     private IRType Visit(ITypeInferenceContext context, Squeeze target, TensorType input)
     {
+        if (input.Shape.IsUnranked)
+        {
+            return input;
+        }
         if (context.GetArgument(target, Squeeze.Dim) is TensorConst dim_con)
         {
             var dims = dim_con.Value.Cast<int>();

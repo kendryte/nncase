@@ -21,7 +21,7 @@ namespace Nncase.IR.NN
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Conv2D), 0, "input", HasRank(4));
+        public static readonly ParameterInfo Input = new(typeof(Conv2D), 0, "input");
 
         /// <summary>
         /// Gets Weights.

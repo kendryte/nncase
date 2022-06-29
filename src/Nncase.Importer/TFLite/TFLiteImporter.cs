@@ -12,7 +12,10 @@ using System.Threading.Tasks;
 using FlatBuffers;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.IR.F;
+using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Math = System.Math;
 using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Importer.TFLite
@@ -65,7 +68,7 @@ namespace Nncase.Importer.TFLite
             {
                 var inputId = _subGraph.Inputs(i);
                 var tensor = _subGraph.Tensors(inputId)!.Value;
-                var input = new Var(tensor.Name, GetIRType(tensor.GetShapeBytes(), tensor.Type));
+                var input = new Var(tensor.Name, GetIRType(tensor));
                 created_inputs[i] = input;
                 _outputTensors.Add(inputId, input);
             }
@@ -96,10 +99,11 @@ namespace Nncase.Importer.TFLite
         /// <param name="shape">Shape.</param>
         /// <param name="type">Tensor type.</param>
         /// <returns>Created IR type.</returns>
-        private static TensorType GetIRType(Span<int> shape, tflite.TensorType type)
+        private static TensorType GetIRType(tflite.Tensor tensor)
         {
-            var dataType = GetDataType(type);
-            if (shape.IsEmpty)
+            var shape = GetShapeArray(tensor);
+            var dataType = GetDataType(tensor.Type);
+            if (shape.Length == 0)
             {
                 return TensorType.Scalar(dataType);
             }
@@ -127,6 +131,7 @@ namespace Nncase.Importer.TFLite
                 opcode.DeprecatedBuiltinCode,
                 (int)opcode.BuiltinCode);
             _opsInModel.Add(builtinCode.ToString());
+            Console.WriteLine(builtinCode.ToString());
 
             var output = builtinCode switch
             {
@@ -139,7 +144,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.ASSIGN_VARIABLE,
                 tflite.BuiltinOperator.AVERAGE_POOL_2D => VisitReduceWindow2D(op, ReduceOp.Mean, 0f),
 
-                // tflite.BuiltinOperator.BATCH_MATMUL,
+                tflite.BuiltinOperator.BATCH_MATMUL => VisitMatMul(op, false),
                 tflite.BuiltinOperator.BATCH_TO_SPACE_ND => VisitBatchToSpaceND(op),
 
                 // tflite.BuiltinOperator.BIDIRECTIONAL_SEQUENCE_LSTM,
@@ -179,7 +184,7 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.EXPAND_DIMS => VisitExpandDims(op),
 
                 // tflite.BuiltinOperator.FAKE_QUANT,
-                // tflite.BuiltinOperator.FILL,
+                tflite.BuiltinOperator.FILL => VisitFill(op),
                 tflite.BuiltinOperator.FLOOR => VisitUnary(op, UnaryOp.Ceil),
 
                 tflite.BuiltinOperator.FLOOR_DIV => VisitFloorDiv(op),
@@ -204,7 +209,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.L2_POOL_2D,
                 tflite.BuiltinOperator.LEAKY_RELU => VisitLeakyRelu(op),
 
-                // tflite.BuiltinOperator.LESS,
+                tflite.BuiltinOperator.LESS => VisitCompare(op, CompareOp.LowerThan),
                 // tflite.BuiltinOperator.LESS_EQUAL,
                 // tflite.BuiltinOperator.LOCAL_RESPONSE_NORMALIZATION,
                 tflite.BuiltinOperator.LOG => VisitUnary(op, UnaryOp.Log),
@@ -244,7 +249,7 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.PRELU => VisitPRelu(op),
                 tflite.BuiltinOperator.QUANTIZE => VisitQuantize(op),
 
-                // tflite.BuiltinOperator.RANGE,
+                tflite.BuiltinOperator.RANGE => VisitRange(op),
                 // tflite.BuiltinOperator.RANK,
                 // tflite.BuiltinOperator.READ_VARIABLE,
                 // tflite.BuiltinOperator.REAL,
@@ -253,7 +258,7 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.REDUCE_MAX => VisitReduce(op, ReduceOp.Max, float.MinValue),
                 tflite.BuiltinOperator.REDUCE_MIN => VisitReduce(op, ReduceOp.Min, float.MaxValue),
 
-                // tflite.BuiltinOperator.REDUCE_PROD,
+                tflite.BuiltinOperator.REDUCE_PROD => VisitReduce(op, ReduceOp.Prod, 1f),
                 tflite.BuiltinOperator.RELU => VisitRelu(op),
                 tflite.BuiltinOperator.RELU6 => VisitRelu6(op),
 
@@ -298,7 +303,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.SVDF,
                 tflite.BuiltinOperator.TANH => VisitUnary(op, UnaryOp.Tanh),
 
-                // tflite.BuiltinOperator.TILE,
+                tflite.BuiltinOperator.TILE => VisitTile(op),
                 // tflite.BuiltinOperator.TOPK_V2,
                 tflite.BuiltinOperator.TRANSPOSE => VisitTranspose(op),
                 tflite.BuiltinOperator.TRANSPOSE_CONV => VisitConv2DTranspose(op),
@@ -308,12 +313,24 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.UNIQUE,
                 // tflite.BuiltinOperator.UNPACK,
                 // tflite.BuiltinOperator.VAR_HANDLE,
-                // tflite.BuiltinOperator.WHERE,
+                tflite.BuiltinOperator.WHERE => VisitWhere(op),
                 // tflite.BuiltinOperator.WHILE,
                 // tflite.BuiltinOperator.ZEROS_LIKE,
                 _ => UnSupportedOp(builtinCode.ToString()),
             };
             AddToOutputs(_outputTensors, op.GetOutputsArray(), output);
+        }
+
+        private static Dimension[] GetShapeArray(tflite.Tensor tensor)
+        {
+            if (tensor.ShapeSignatureLength == 0)
+            {
+                
+                return tensor.GetShapeArray().Select(x => new Dimension(x)).ToArray();
+            }
+            return Enumerable.Range(0, tensor.ShapeSignatureLength).Select(i =>
+                tensor.ShapeSignature(i) == -1 ? Dimension.Unknown : tensor.Shape(i)
+            ).ToArray();
         }
 
         private Expr GetInputExprs(in tflite.Operator op, int index)
@@ -326,13 +343,17 @@ namespace Nncase.Importer.TFLite
             }
             else
             {
+                if (id > _subGraph.TensorsLength)
+                {
+                    throw new InvalidDataException($"Cannot find tensor (id:{id}).");
+                }
                 // Maybe constant
                 var tensor = _subGraph.Tensors(id) ?? throw new InvalidDataException($"Cannot find tensor (id:{id}).");
                 var buffer = _model.Buffers((int)tensor.Buffer) ?? throw new InvalidDataException($"Cannot find buffer (id:{tensor.Buffer}).");
                 var data = buffer.GetDataBytes();
                 if (!data.IsEmpty)
                 {
-                    var con = Tensor.FromBytes(GetDataType(tensor.Type), data.ToArray(), tensor.GetShapeBytes());
+                    var con = Tensor.FromBytes(GetIRType(tensor), data.ToArray());
                     _outputTensors.Add(id, con);
                     return con;
                 }
@@ -365,8 +386,7 @@ namespace Nncase.Importer.TFLite
 
         private Shape GetTensorShape(in tflite.Tensor tensor)
         {
-            var tensorCopy = tensor;
-            return Enumerable.Range(0, tensor.ShapeLength).Select(i => tensorCopy.Shape(i)).ToArray();
+            return GetShapeArray(tensor);
         }
     }
 }

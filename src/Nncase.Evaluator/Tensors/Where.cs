@@ -29,7 +29,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Where target)
     {
-        var x = context.CheckArgumentType<TensorType>(target, Where.X);
-        return x;
+        var cond = context.CheckArgumentType<TensorType>(target, Where.Cond);
+        return cond with {DType = DataTypes.Int64};
     }
 }

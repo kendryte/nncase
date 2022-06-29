@@ -157,6 +157,10 @@ public static class TypeInference
     /// </summary>
     public static IRType Conv2DType(TensorType input, TensorType weights, Expr stride, Expr padding, Expr dilation, Expr groups)
     {
+        if (input.Shape.IsUnranked)
+        {
+            return input;
+        }
         var outShape = input.Shape.ToList();
         outShape[1] = weights.Shape[0];
         if (
@@ -254,7 +258,7 @@ public static class TypeInference
     {
         if (input.Shape.IsUnranked)
         {
-            return input with {Shape = Shape.Unranked};
+            return input;
         }
 
         if (keepDims is TensorConst keepDimsV &&
@@ -292,7 +296,7 @@ public static class TypeInference
         {
             if (input.Shape.IsUnranked)
             {
-                return input with {Shape = Shape.Unranked};
+                return input;
             }
 
             var permt = permValue.Value.Cast<int>();

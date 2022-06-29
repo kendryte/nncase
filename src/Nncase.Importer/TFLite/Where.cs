@@ -9,13 +9,12 @@ namespace Nncase.Importer.TFLite
 {
     public partial class TFLiteImporter
     {
-        private Expr VisitShape(in tflite.Operator op)
+        private Expr VisitWhere(in tflite.Operator op)
         {
-            var input = GetInputExprs(op, 0);
-            // DType of ShapeOf in TF is int32
-            // but in onnx it's int64
-            // TF op expect a int32 result and compute with other i32 data
-            return Cast(ShapeOf(input), DataTypes.Int32);
+            var cond = GetInputExprs(op, 0);
+            var x = op.InputsLength >= 2 ? GetInputExprs(op, 1) : cond;
+            var y = op.InputsLength >= 3 ? GetInputExprs(op, 2) : cond;
+            return Where(cond, x, y);
         }
     }
 }

@@ -3,17 +3,16 @@
 
 using System.IO;
 using Nncase.IR;
-using static Nncase.IR.F.Tensors;
+using F = Nncase.IR.F;
 
 namespace Nncase.Importer.TFLite
 {
     public partial class TFLiteImporter
     {
-        private Expr VisitCast(in tflite.Operator op)
+        private Expr VisitCompare(in tflite.Operator op, CompareOp compareOp)
         {
-            var input = GetInputExprs(op, 0);
-            var output = GetOutputTensor(op, 0);
-            return Cast(input, GetDataType(output.Type));
+            var (x, y) = GetInputExprs(op, 0, 1);
+            return F.Math.Compare(compareOp, x, y);
         }
     }
 }

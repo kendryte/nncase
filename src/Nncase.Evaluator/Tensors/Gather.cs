@@ -34,7 +34,7 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>
     {
         if (input.Shape.IsUnranked)
         {
-            return input with {Shape = Shape.Unranked};
+            return input;
         }
 
         if (context.GetArgument(target, Gather.Axis) is TensorConst axisValue)

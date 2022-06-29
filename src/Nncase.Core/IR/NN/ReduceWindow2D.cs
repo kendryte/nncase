@@ -15,7 +15,7 @@ public sealed record ReduceWindow2D(ReduceOp ReduceOp) : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(ReduceWindow2D), 0, "input", HasRank(4));
+    public static readonly ParameterInfo Input = new(typeof(ReduceWindow2D), 0, "input");
 
     /// <summary>
     /// Get initial value.

@@ -33,6 +33,10 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>
 
     private IRType Visit(ITypeInferenceContext context, Reshape target, TensorType input)
     {
+        if (input.Shape.IsUnranked)
+        {
+            return input;
+        }
         if (context.GetArgument(target, Reshape.Shape) is TensorConst shapeConst &&
             input.Shape.IsFixed)
         {

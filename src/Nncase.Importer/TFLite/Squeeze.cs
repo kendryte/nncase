@@ -14,22 +14,8 @@ namespace Nncase.Importer.TFLite
         {
             var input = GetInputExprs(op, 0);
             var options = op.BuiltinOptionsAsSqueezeOptions();
-            var dims = options.GetSqueezeDimsArray().ToList();
-            var tmp = input;
-            while (dims.Any())
-            {
-                var dim = dims.First();
-                tmp = F.Tensors.Squeeze(tmp, dim);
-                dims.ForEach(d =>
-                {
-                    if (d >= dim)
-                    {
-                        d -= 1;
-                    }
-                });
-            }
-
-            return tmp;
+            var dims = options.GetSqueezeDimsArray();
+            return F.Tensors.Squeeze(input, dims);
         }
 
         private Expr VisitExpandDims(in tflite.Operator op)

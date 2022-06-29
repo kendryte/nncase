@@ -17,6 +17,7 @@ public class TensorsModule : Module
         builder.RegisterType<BroadcastEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<CastEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<ConcatEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<ConstantOfShapeEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<ExpandEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<FlattenEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<GatherEvaluator>().AsImplementedInterfaces();

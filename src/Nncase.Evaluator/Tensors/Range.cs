@@ -27,21 +27,19 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>
         var begin = context.GetArgument(target, Range.Begin);
         var end = context.GetArgument(target, Range.End);
         var step = context.GetArgument(target, Range.Step);
-        if (!(begin.CheckedDataType == end.CheckedDataType &&
-            end.CheckedDataType == step.CheckedDataType))
-        {
-            return new InvalidType($"Range Begin End Step must be same type, " +
-                                   $"but get begin:{begin.CheckedDataType}," +
-                                   $"end:{end.CheckedDataType}," +
-                                   $"step:{step.CheckedDataType}");
-        }
-
-        var dType = begin.CheckedDataType;
         if ( begin is TensorConst beginValue
              && end is TensorConst endValue
              && step is TensorConst stepValue)
         {
-
+            var dType = begin.CheckedDataType;
+            if (!(begin.CheckedDataType == end.CheckedDataType &&
+                  end.CheckedDataType == step.CheckedDataType))
+            {
+                return new InvalidType($"Range Begin End Step must be same type, " +
+                                       $"but get begin:{begin.CheckedDataType}," +
+                                       $"end:{end.CheckedDataType}," +
+                                       $"step:{step.CheckedDataType}");
+            }
                 return new TensorType(
                     dType,
                     new Shape((beginValue.Value.ToScalar<int>() + endValue.Value.ToScalar<int>()) /
@@ -49,7 +47,20 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>
         }
         else
         {
-            return new TensorType(dType, new Shape(Dimension.Unknown));
+            DataType dt;
+            if (begin.CheckedType is TensorType beginCheckedType)
+            {
+                dt = beginCheckedType.DType;
+            }
+            else if(end.CheckedType is TensorType endCheckedType)
+            {
+                dt = endCheckedType.DType;
+            }
+            else
+            {
+                return new InvalidType("DataType is unknown");
+            }
+            return new TensorType(dt, new Shape(Dimension.Unknown));
         }
     }
 }
