@@ -21,7 +21,7 @@ public class UnitTestK210Target
         CompileOptions = new CompileOptions(true);
     }
 
-    public ICompileOptions CompileOptions { get; }
+    public CompileOptions CompileOptions { get; }
 
     [Fact]
     public void TestCreateK210Target()

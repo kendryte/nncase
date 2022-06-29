@@ -20,8 +20,8 @@ public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>, I
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ShapeOf shape)
     {
-        var input = context.GetArgumentExpr(shape, ShapeOf.Input);
-        return Value.FromTensor(Tensor.FromSpan<int>(input.CheckedShape.ToValueArray()));
+        var input = context.GetArgumentValueAsTensor(shape, ShapeOf.Input);
+        return Value.FromTensor(Tensor.FromSpan(input.Dimensions));
     }
 
     /// <inheritdoc/>

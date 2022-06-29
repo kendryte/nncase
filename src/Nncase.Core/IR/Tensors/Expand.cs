@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.PatternMatch;
 using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Tensors;

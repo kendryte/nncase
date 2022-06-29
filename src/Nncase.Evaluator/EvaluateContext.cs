@@ -26,6 +26,8 @@ internal sealed class EvaluateContext : IEvaluateContext
         set => _currentCall = value;
     }
 
+    public IValue GetValue(Expr expr) => _exprMemo[expr];
+
     public IValue GetArgumentValue(Op op, ParameterInfo parameter)
     {
         var expr = op.GetType() == parameter.OwnerType

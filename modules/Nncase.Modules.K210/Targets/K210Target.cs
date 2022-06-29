@@ -25,8 +25,10 @@ public class K210Target : ITarget
     /// <inheritdoc/>
     public string Kind => "k210";
 
+    public CompileOptions CompileOptions => new();
+
     /// <inheritdoc/>
-    public void RegisterTargetDependentPass(PassManager passManager, ICompileOptions options)
+    public void RegisterTargetDependentPass(PassManager passManager, CompileOptions options)
     {
         if (options.UsePTQ)
         {

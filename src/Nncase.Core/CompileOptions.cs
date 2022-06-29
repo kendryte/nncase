@@ -70,6 +70,8 @@ public sealed class CompileOptions
 
     /// <inheritdoc/>
     public string OutputFile { get; set; }
+
+    public QuantizeOptions? QuantizeOptions { get; set; }
 }
 
 // /// <summary>
