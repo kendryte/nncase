@@ -158,7 +158,6 @@ namespace IsaGen
         DEQUANTIZE,
         GATHER,
         GATHER_ND,
-        GRU,
         HARDMAX,
         LOGISTIC,
         LUT1D,
@@ -183,8 +182,9 @@ namespace IsaGen
         TOPK,
         TRANSPOSE,
         TRILU,
-        TFLITE_DETECTION_POSTPROCESS,
         UNARY,
+        GRU,
+        TFLITE_DETECTION_POSTPROCESS,
     }
 
     [BitLength(8)]
@@ -1510,27 +1510,6 @@ namespace IsaGen
             public byte Batchdims { get; set; }
         }
 
-        [DisplayName("TENSOR.GRU")]
-        [Category("Tensor Instructions")]
-        [Description("Gru")]
-        public class GruInstruction : TensorInstruction
-        {
-            public override TensorFunction Function => TensorFunction.GRU;
-
-            [DisplayName("input_shape_src")]
-            [Description("Input shape register")]
-            public byte RshapeSrc1 { get; set; }
-
-            [DisplayName("w_shape_src")]
-            [Description("W shape register")]
-            public byte RshapeSrc2 { get; set; }
-
-            [DisplayName("direction")]
-            [Description("direction register")]
-            public byte Direction { get; set; }
-
-        }
-
         [DisplayName("TENSOR.HARDMAX")]
         [Category("Tensor Instructions")]
         [Description("Hardmax")]
@@ -2219,6 +2198,81 @@ namespace IsaGen
             public long K { get; set; }
         }
 
+        [DisplayName("TENSOR.UNARY")]
+        [Category("Tensor Instructions")]
+        [Description("Unary")]
+        public class UnaryInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.UNARY;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source1 shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
+            [DisplayName("unary_op")]
+            [Description("Unary operator")]
+            public UnaryOp UnaryOp { get; set; }
+        }
+
+        [DisplayName("TENSOR.TRANSPOSE")]
+        [Category("Tensor Instructions")]
+        [Description("Transpose")]
+        public class TransposeInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.TRANSPOSE;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
+            [DisplayName("rshape_perm")]
+            [Description("Perm shape register")]
+            public byte RshapePerm { get; set; }
+        }
+        [DisplayName("TENSOR.GRU")]
+        [Category("Tensor Instructions")]
+        [Description("Gru")]
+        public class GruInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.GRU;
+
+            [DisplayName("input_shape_src")]
+            [Description("Input shape register")]
+            public byte RshapeSrc1 { get; set; }
+
+            [DisplayName("w_shape_src")]
+            [Description("W shape register")]
+            public byte RshapeSrc2 { get; set; }
+
+            [DisplayName("direction")]
+            [Description("direction register")]
+            public byte Direction { get; set; }
+
+        }
         [DisplayName("TENSOR.TFLITE_DETECTION_POSTPROCESS")]
         [Category("Tensor Instructions")]
         [Description("Tflite_Detection_Postprocess")]
@@ -2281,62 +2335,6 @@ namespace IsaGen
             [DisplayName("w_scale")]
             [Description("w_scale register")]
             public float WScale { get; set; }
-        }
-
-        [DisplayName("TENSOR.UNARY")]
-        [Category("Tensor Instructions")]
-        [Description("Unary")]
-        public class UnaryInstruction : TensorInstruction
-        {
-            public override TensorFunction Function => TensorFunction.UNARY;
-
-            [DisplayName("datatype")]
-            [Description("Datatype")]
-            public DataType DataType { get; set; }
-
-            [DisplayName("rshape_src")]
-            [Description("Source1 shape register")]
-            public byte RshapeSrc { get; set; }
-
-            [DisplayName("rstride_src")]
-            [Description("Source stride register")]
-            public byte RstrideSrc { get; set; }
-
-            [DisplayName("rstride_dest")]
-            [Description("Dest stride register")]
-            public byte RstrideDest { get; set; }
-
-            [DisplayName("unary_op")]
-            [Description("Unary operator")]
-            public UnaryOp UnaryOp { get; set; }
-        }
-
-        [DisplayName("TENSOR.TRANSPOSE")]
-        [Category("Tensor Instructions")]
-        [Description("Transpose")]
-        public class TransposeInstruction : TensorInstruction
-        {
-            public override TensorFunction Function => TensorFunction.TRANSPOSE;
-
-            [DisplayName("datatype")]
-            [Description("Datatype")]
-            public DataType DataType { get; set; }
-
-            [DisplayName("rshape_src")]
-            [Description("Source shape register")]
-            public byte RshapeSrc { get; set; }
-
-            [DisplayName("rstride_src")]
-            [Description("Source stride register")]
-            public byte RstrideSrc { get; set; }
-
-            [DisplayName("rstride_dest")]
-            [Description("Dest stride register")]
-            public byte RstrideDest { get; set; }
-
-            [DisplayName("rshape_perm")]
-            [Description("Perm shape register")]
-            public byte RshapePerm { get; set; }
         }
     }
 }
