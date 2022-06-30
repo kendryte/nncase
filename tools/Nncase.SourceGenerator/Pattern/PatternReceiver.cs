@@ -29,8 +29,11 @@ internal class PatternReceiver : ISyntaxContextReceiver
               && op!.GetAttributes().Any(attr => attr!.AttributeClass!.Name == "PatternFunctionalGeneratorAttribute")
                )
             {
-                var attrParams = (from p in recordDeclaration.ParameterList!.Parameters
-                                  select ctx.SemanticModel.GetDeclaredSymbol(p)!).ToArray();
+
+                IParameterSymbol[] attrParams = recordDeclaration.ParameterList is null ? 
+                        new IParameterSymbol[] { } :
+                        (from p in recordDeclaration.ParameterList.Parameters
+                         select ctx.SemanticModel.GetDeclaredSymbol(p)!).ToArray();
                 var exprParams = op.GetMembers()
                     .OfType<IFieldSymbol>()
                     .Where(f => f.Type.Name == "ParameterInfo")
