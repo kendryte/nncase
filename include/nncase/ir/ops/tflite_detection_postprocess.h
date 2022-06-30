@@ -26,10 +26,10 @@ public:
     input_connector &boxes() { return input_at(0); }
     input_connector &scores() { return input_at(1); }
     input_connector &anchors() { return input_at(2); }
-    output_connector &output_0() { return output_at(0); }
-    output_connector &output_1() { return output_at(1); }
-    output_connector &output_2() { return output_at(2); }
-    output_connector &output_3() { return output_at(3); }
+    output_connector &output_locations() { return output_at(0); }
+    output_connector &output_classes() { return output_at(1); }
+    output_connector &output_scores() { return output_at(2); }
+    output_connector &output_num_detections() { return output_at(3); }
 
     int32_t max_detections() const noexcept { return max_detections_;}
     int32_t max_classes_per_detection() const noexcept { return max_classes_per_detection_;}

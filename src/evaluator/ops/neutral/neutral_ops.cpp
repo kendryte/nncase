@@ -826,12 +826,12 @@ void register_neutral_evaluators()
         auto box = context.memory_at(rnode.boxes());
         auto score = context.memory_at(rnode.scores());
         auto anchor = context.memory_at(rnode.anchors());
-        auto output_0 = context.memory_at(rnode.output_0());
-        auto output_1 = context.memory_at(rnode.output_1());
-        auto output_2 = context.memory_at(rnode.output_2());
-        auto output_3 = context.memory_at(rnode.output_3());
+        auto output_locations = context.memory_at(rnode.output_locations());
+        auto output_classes = context.memory_at(rnode.output_classes());
+        auto output_scores = context.memory_at(rnode.output_scores());
+        auto output_num_detections = context.memory_at(rnode.output_num_detections());
         kernels::tflite_detection_postprocess(box.buffer().as_span<float>().data(), score.buffer().as_span<float>().data(), anchor.buffer().as_span<float>().data(),
-            output_0.buffer().as_span<float>().data(), output_1.buffer().as_span<float>().data(), output_2.buffer().as_span<float>().data(), output_3.buffer().as_span<float>().data(),
+            output_locations.buffer().as_span<float>().data(), output_classes.buffer().as_span<float>().data(), output_scores.buffer().as_span<float>().data(), output_num_detections.buffer().as_span<float>().data(),
             box.shape(), score.shape(), anchor.shape(), rnode.max_detections(), rnode.max_classes_per_detection(), 
             rnode.detections_per_class(), rnode.use_regular_non_max_suppression(), rnode.nms_score_threshold(), rnode.nms_iou_threshold(),
             rnode.num_classes(), rnode.y_scale(), rnode.x_scale(), rnode.h_scale(), rnode.w_scale())

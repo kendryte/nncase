@@ -24,18 +24,18 @@ void stackvm_module_builder::emit(tflite_detection_postprocess &node, stackvm_op
     auto &box = allocation(node.boxes());
     auto &score = allocation(node.scores());
     auto &anchor = allocation(node.anchors());
-    auto &output_0 = allocation(node.output_0());
-    auto &output_1 = allocation(node.output_1());
-    auto &output_2 = allocation(node.output_2());
-    auto &output_3 = allocation(node.output_3());
+    auto &output_locations = allocation(node.output_locations());
+    auto &output_classes = allocation(node.output_classes());
+    auto &output_scores = allocation(node.output_scores());
+    auto &output_num_detections = allocation(node.output_num_detections());
 
     builder.lea_buffer(box);
     builder.lea_buffer(score);
     builder.lea_buffer(anchor);
-    builder.lea_buffer(output_0);
-    builder.lea_buffer(output_1);
-    builder.lea_buffer(output_2);
-    builder.lea_buffer(output_3);
+    builder.lea_buffer(output_locations);
+    builder.lea_buffer(output_classes);
+    builder.lea_buffer(output_scores);
+    builder.lea_buffer(output_num_detections);
 
     builder.stshape(0, box.shape);
     builder.stshape(1, score.shape);

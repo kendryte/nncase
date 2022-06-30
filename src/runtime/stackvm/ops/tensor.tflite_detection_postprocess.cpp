@@ -23,10 +23,10 @@ using namespace nncase::runtime::stackvm;
 
 result<void> stackvm_runtime_function::visit(const tensor_tflite_detection_postprocess_op_t &op) noexcept
 {
-    try_var(output_3, pop_addr());
-    try_var(output_2, pop_addr());
-    try_var(output_1, pop_addr());
-    try_var(output_0, pop_addr());
+    try_var(output_num_detections, pop_addr());
+    try_var(output_scores, pop_addr());
+    try_var(output_classes, pop_addr());
+    try_var(output_locations, pop_addr());
     try_var(anchor, pop_addr());
     try_var(score, pop_addr());
     try_var(box, pop_addr());
@@ -36,9 +36,9 @@ result<void> stackvm_runtime_function::visit(const tensor_tflite_detection_postp
     try_var(anchor_shape, module().shape_reg(op.anchor_shape_src));
 
     return kernels::tflite_detection_postprocess(reinterpret_cast<const float *>(box), reinterpret_cast<const float *>(score),
-        reinterpret_cast<const float *>(anchor), reinterpret_cast<float *>(output_0),
-        reinterpret_cast<float *>(output_1), reinterpret_cast<float *>(output_2),
-        reinterpret_cast<float *>(output_3), box_shape, score_shape, anchor_shape, op.max_detections, op.max_classes_per_detection, op.detections_per_class,
+        reinterpret_cast<const float *>(anchor), reinterpret_cast<float *>(output_locations),
+        reinterpret_cast<float *>(output_classes), reinterpret_cast<float *>(output_scores),
+        reinterpret_cast<float *>(output_num_detections), box_shape, score_shape, anchor_shape, op.max_detections, op.max_classes_per_detection, op.detections_per_class,
         op.use_regular_non_max_suppression, op.nms_score_threshold, op.nms_iou_threshold,
         op.num_classes, op.y_scale, op.x_scale, op.h_scale, op.w_scale);
 }

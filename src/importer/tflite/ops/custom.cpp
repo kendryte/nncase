@@ -51,10 +51,10 @@ DEFINE_TFLITE_LOWER(CUSTOM)
         auto &input_anchors = get_tensor(op.inputs(), 2);
         
         // get_shape(output_x.shape()): get error shape, ignore it in this step. fix it in independent transform
-        NNCASE_UNUSED auto &output_0 = get_tensor(op.outputs(), 0); //detection_boxes   (1, num_detected_boxes, 4)
-        NNCASE_UNUSED auto &output_1 = get_tensor(op.outputs(), 1); //detection_classes (1, num_detected_boxes)
-        NNCASE_UNUSED auto &output_2 = get_tensor(op.outputs(), 2); //detection_scores  (1, num_detected_boxes)
-        NNCASE_UNUSED auto &output_3 = get_tensor(op.outputs(), 3); //num_detections    (1)
+        auto &output_locations = get_tensor(op.outputs(), 0); //detection_boxes   (1, num_detected_boxes, 4)
+        auto &output_classes = get_tensor(op.outputs(), 1); //detection_classes (1, num_detected_boxes)
+        auto &output_scores = get_tensor(op.outputs(), 2); //detection_scores  (1, num_detected_boxes)
+        auto &output_num_detections = get_tensor(op.outputs(), 3); //num_detections    (1)
 
         auto custom_options = op.custom_options();
 
@@ -79,17 +79,17 @@ DEFINE_TFLITE_LOWER(CUSTOM)
         auto w = m["w_scale"].AsFloat();
 
         auto node = graph_.emplace<tflite_detection_postprocess>(get_shape(input_decoded_boxes.shape()),get_shape(input_scores.shape()),get_shape(input_anchors.shape()),
-            get_shape(output_0.shape()),get_shape(output_1.shape()),get_shape(output_2.shape()),get_shape(output_3.shape()),
+            get_shape(output_locations.shape()),get_shape(output_classes.shape()),get_shape(output_scores.shape()),get_shape(output_num_detections.shape()),
             max_detections, max_classes_per_detection, detections_per_class, use_regular_non_max_suppression, non_max_suppression_score_threshold, 
             intersection_over_union_threshold, num_classes, y, x, h, w);
 
         link_input_tensor(&node->boxes(), op.inputs()->Get(0));
         link_input_tensor(&node->scores(), op.inputs()->Get(1));
         link_input_tensor(&node->anchors(), op.inputs()->Get(2));
-        link_output_tensor(op.outputs()->Get(0), &node->output_0());
-        link_output_tensor(op.outputs()->Get(1), &node->output_1());
-        link_output_tensor(op.outputs()->Get(2), &node->output_2());
-        link_output_tensor(op.outputs()->Get(3), &node->output_3());
+        link_output_tensor(op.outputs()->Get(0), &node->output_locations());
+        link_output_tensor(op.outputs()->Get(1), &node->output_classes());
+        link_output_tensor(op.outputs()->Get(2), &node->output_scores());
+        link_output_tensor(op.outputs()->Get(3), &node->output_num_detections());
 
     }
     else

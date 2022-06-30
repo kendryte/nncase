@@ -156,7 +156,7 @@ template <typename T>
 NNCASE_API result<void> gru(const T *input, const T *w, const T *r, const T *b, T *initial_h, T *output, T *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape, int mode) noexcept;
 
 template <typename T>
-NNCASE_API result<void> tflite_detection_postprocess(const T *boxes, const T *scores, const T *anchors, T *output_0,  T *output_1,  T *output_2, T *output_3, 
+NNCASE_API result<void> tflite_detection_postprocess(const T *boxes, const T *scores, const T *anchors, T *output_locations,  T *output_classes,  T *output_scores, T *output_num_detections, 
     const runtime_shape_t &boxes_shape, const runtime_shape_t &scores_shape, const runtime_shape_t &anchors_shape,
     const int32_t max_detections, const int32_t max_classes_per_detection, const int32_t detections_per_class,
     const bool use_regular_non_max_suppression, const float nms_score_threshold, const float nms_iou_threshold,

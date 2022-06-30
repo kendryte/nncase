@@ -41,10 +41,10 @@ tflite_detection_postprocess::tflite_detection_postprocess(
     add_input("boxes", dt_float32, boxes_shape);
     add_input("scores", dt_float32, scores_shape);
     add_input("anchors", dt_float32, anchors_shape);
-    add_output("output_0", dt_float32, output_shape_0);
-    add_output("output_1", dt_float32, output_shape_1);
-    add_output("output_2", dt_float32, output_shape_2);
-    add_output("output_3", dt_float32, output_shape_3);
+    add_output("output_locations", dt_float32, output_shape_0);
+    add_output("output_classes", dt_float32, output_shape_1);
+    add_output("output_scores", dt_float32, output_shape_2);
+    add_output("output_num_detections", dt_float32, output_shape_3);
 }
 
 bool tflite_detection_postprocess::properties_equal(node &other) const
