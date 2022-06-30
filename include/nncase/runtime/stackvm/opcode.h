@@ -161,8 +161,8 @@ enum class tensor_function_t
     TOPK = 0x0024,
     TRANSPOSE = 0x0025,
     TRILU = 0x0026,
-    TFLITE_DETECTION_POSTPROCESS = 0x0027,
-    UNARY = 0x0028,
+    UNARY = 0x0027,
+    TFLITE_DETECTION_POSTPROCESS = 0x0028,
 };
 
 // Instructions
