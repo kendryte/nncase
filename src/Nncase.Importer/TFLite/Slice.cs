@@ -62,7 +62,7 @@ namespace Nncase.Importer.TFLite
                     }
 
                     newBegin.Add(((beginMask >> i) & 1) != 0 ? 0 : beginItem);
-                    newEnd.Add(((endMask >> i) & 1) != 0 ? 0 : endItem);
+                    newEnd.Add(((endMask >> i) & 1) != 0 ? Int32.MaxValue : endItem);
                 }
 
                 var result = F.Tensors.Slice(input, newBegin.ToArray(), newEnd.ToArray(), axes, strides);
