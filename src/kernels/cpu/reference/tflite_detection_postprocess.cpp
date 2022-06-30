@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <iostream>
+#include <chrono>
 #include <nncase/kernels/cpu/reference/tensor_compute.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -22,15 +23,15 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::reference;
 
-template result<void> reference::tflite_detection_postprocess<float>(const float *boxes, const float *scores, const float *anchors, float *output_0, float *output_1, float *output_2, float *output_3,
+template result<void> reference::tflite_detection_postprocess<float>(const float *boxes, const float *scores, const float *anchors, float *output_locations, float *output_classes, float *output_scores, float *output_num_detections,
     const runtime_shape_t &boxes_shape, const runtime_shape_t &scores_shape, const runtime_shape_t &anchors_shape,
     const int32_t max_detections, const int32_t max_classes_per_detection, const int32_t detections_per_class,
     const bool use_regular_non_max_suppression, const float nms_score_threshold, const float nms_iou_threshold,
     const int32_t num_classes, const float y_scale, const float x_scale, const float h_scale, const float w_scale) noexcept;
 
 template <typename T>
-result<void> reference::tflite_detection_postprocess(const T *boxes, const T *scores, const T *anchors, T *output_0, T *output_1, T *output_2, T *output_3,
-    const runtime_shape_t &boxes_shape, const runtime_shape_t &scores_shape, NNCASE_UNUSED const runtime_shape_t &anchors_shape,
+result<void> reference::tflite_detection_postprocess(const T *boxes, const T *scores, const T *anchors, T *output_locations, T *output_classes, T *output_scores, T *output_num_detections,
+    const runtime_shape_t &boxes_shape, const runtime_shape_t &scores_shape, const runtime_shape_t &anchors_shape,
     const int32_t max_detections, const int32_t max_classes_per_detection, const int32_t detections_per_class,
     const bool use_regular_non_max_suppression, const float nms_score_threshold, const float nms_iou_threshold,
     const int32_t num_classes, const float y_scale, const float x_scale, const float h_scale, const float w_scale) noexcept
@@ -55,7 +56,7 @@ result<void> reference::tflite_detection_postprocess(const T *boxes, const T *sc
         float score;
     };
 
-    auto compute_iou = [&](const std::vector<BoxCornerEncoding> box, const int i, const int j)
+    auto compute_iou = [&](const std::vector<BoxCornerEncoding> &box, const int &i, const int &j)
     {
         auto &box_i = box[i];
         auto &box_j = box[j];
@@ -71,19 +72,18 @@ result<void> reference::tflite_detection_postprocess(const T *boxes, const T *sc
         return intersection_area / (area_i + area_j - intersection_area);
     };
 
-    const auto num_boxes = (int)boxes_shape[1];
+    const auto num_boxes = (int)anchors_shape[0];
     const auto num_classes_with_background = (int)scores_shape[2]; // num_classes + background
     const auto num_detections_per_class = std::min(detections_per_class, max_detections);
     int label_offset = num_classes_with_background - num_classes;
     // DecodeCenterSizeBoxes： get decoded_boxes
     std::vector<BoxCornerEncoding> decoded_boxes(boxes_shape[1]);
     {
-
         CenterSizeEncoding box_center_size;
         CenterSizeEncoding scale_values { y_scale, x_scale, h_scale, w_scale };
         CenterSizeEncoding anchor;
 
-        for (size_t index = 0; index < num_boxes; index++)
+        for (int index = 0; index < num_boxes; index++)
         {
             const auto box_encoding_index = index * boxes_shape[2];
             box_center_size = *reinterpret_cast<const CenterSizeEncoding *>(boxes + box_encoding_index);
@@ -131,7 +131,7 @@ result<void> reference::tflite_detection_postprocess(const T *boxes, const T *sc
                     std::vector<float> keep_scores;
                     // select detection box score above score threshold
                     {
-                        for (int i = 0; i < class_scores.size(); i++)
+                        for (size_t i = 0; i < class_scores.size(); i++)
                         {
                             if (class_scores[i] >= nms_score_threshold)
                             {
@@ -159,7 +159,7 @@ result<void> reference::tflite_detection_postprocess(const T *boxes, const T *sc
                     std::vector<uint8_t> active_box_candidate(num_scores_kept, 1);
                     for (int i = 0; i < num_scores_kept; ++i)
                     {
-                        if (num_active_candidate == 0 || selected.size() >= output_size)
+                        if (num_active_candidate == 0 || (int)selected.size() >= output_size)
                             break;
                         if (active_box_candidate[i] == 1)
                         {
@@ -195,7 +195,7 @@ result<void> reference::tflite_detection_postprocess(const T *boxes, const T *sc
                 {
                     continue;
                 }
-                for (int i = 0; i < selected.size(); ++i)
+                for (size_t i = 0; i < selected.size(); ++i)
                 {
                     box_info_after_regular_nms[sorted_indices_size + i].score = class_scores[selected[i]];
                     box_info_after_regular_nms[sorted_indices_size + i].index = (selected[i] * num_classes_with_background + col + label_offset);
@@ -222,23 +222,23 @@ result<void> reference::tflite_detection_postprocess(const T *boxes, const T *sc
                     const int class_index = box_info_after_regular_nms[output_box_index].index - anchor_index * num_classes_with_background - label_offset;
                     const float selected_score = box_info_after_regular_nms[output_box_index].score;
                     // detection_boxes
-                    reinterpret_cast<BoxCornerEncoding *>(output_0)[output_box_index] = decoded_boxes[anchor_index];
+                    reinterpret_cast<BoxCornerEncoding *>(output_locations)[output_box_index] = decoded_boxes[anchor_index];
                     // detection_classes
-                    output_1[output_box_index] = class_index;
+                    output_classes[output_box_index] = class_index;
                     // detection_scores
-                    output_2[output_box_index] = selected_score;
+                    output_scores[output_box_index] = selected_score;
                 }
                 else
                 {
                     // detection_boxes
-                    reinterpret_cast<BoxCornerEncoding *>(output_0)[output_box_index] = { 0.0f, 0.0f, 0.0f, 0.0f };
+                    reinterpret_cast<BoxCornerEncoding *>(output_locations)[output_box_index] = { 0.0f, 0.0f, 0.0f, 0.0f };
                     // detection_classes
-                    output_1[output_box_index] = 0.0f;
+                    output_classes[output_box_index] = 0.0f;
                     // detection_scores
-                    output_2[output_box_index] = 0.0f;
+                    output_scores[output_box_index] = 0.0f;
                 }
             }
-            output_3[0] = sorted_indices_size;
+            output_num_detections[0] = sorted_indices_size;
             box_info_after_regular_nms.clear();
         }
         else
@@ -267,10 +267,10 @@ result<void> reference::tflite_detection_postprocess(const T *boxes, const T *sc
                         int max_index = 0;
                         for (int i = 1; i < size; ++i)
                         {
-                            const T curr_value = input_data[i];
-                            if (curr_value > max_value)
+                            // const T curr_value = input_data[i];
+                            if (input_data[i] > max_value)
                             {
-                                max_value = curr_value;
+                                max_value = input_data[i];
                                 max_index = i;
                             }
                         }
@@ -297,7 +297,7 @@ result<void> reference::tflite_detection_postprocess(const T *boxes, const T *sc
                 std::vector<float> keep_scores;
                 // select detection box score above score threshold
                 {
-                    for (int i = 0; i < max_scores.size(); i++)
+                    for (size_t i = 0; i < max_scores.size(); i++)
                     {
                         if (max_scores[i] >= nms_score_threshold)
                         {
@@ -318,14 +318,13 @@ result<void> reference::tflite_detection_postprocess(const T *boxes, const T *sc
                         [&keep_scores](const int i, const int j)
                         { return keep_scores[i] > keep_scores[j]; });
                 }
-
                 const int output_size = std::min(num_scores_kept, max_detections);
                 selected.clear();
                 int num_active_candidate = num_scores_kept;
                 std::vector<uint8_t> active_box_candidate(num_scores_kept, 1);
                 for (int i = 0; i < num_scores_kept; ++i)
                 {
-                    if (num_active_candidate == 0 || selected.size() >= output_size)
+                    if (num_active_candidate == 0 || (int)selected.size() >= output_size)
                         break;
                     if (active_box_candidate[i] == 1)
                     {
@@ -341,11 +340,10 @@ result<void> reference::tflite_detection_postprocess(const T *boxes, const T *sc
                     {
                         if (active_box_candidate[j] == 1)
                         {
-
+                            
                             float iou = compute_iou(
                                 decoded_boxes, keep_indices[sorted_indices[i]],
                                 keep_indices[sorted_indices[j]]);
-
                             if (iou > nms_iou_threshold)
                             {
                                 active_box_candidate[j] = 0;
@@ -368,15 +366,15 @@ result<void> reference::tflite_detection_postprocess(const T *boxes, const T *sc
                 {
                     int box_offset = max_categories_per_anchor * output_box_index + col;
                     // detection_boxes
-                    reinterpret_cast<BoxCornerEncoding *>(output_0)[box_offset] = reinterpret_cast<BoxCornerEncoding *>(output_0)[selected_index];
+                    reinterpret_cast<BoxCornerEncoding *>(output_locations)[box_offset] = decoded_boxes[selected_index];
                     // detection_classes
-                    output_1[box_offset] = class_indices[col];
+                    output_classes[box_offset] = class_indices[col];
                     // detection_scores
-                    output_2[box_offset] = box_scores[class_indices[col]];
+                    output_scores[box_offset] = box_scores[class_indices[col]];
                 }
                 output_box_index++;
             }
-            output_3[0] = output_box_index;
+            output_num_detections[0] = output_box_index;
         }
     }
 
