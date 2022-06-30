@@ -42,6 +42,10 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>
             {
                 if (input is TensorType ttype)
                 {
+                    if (ttype.Shape.IsUnranked)
+                    {
+                        return ttype;
+                    }
                     ttypes[i] = ttype;
                 }
                 else

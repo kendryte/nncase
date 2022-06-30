@@ -51,7 +51,7 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>
                 }
                 else
                 {
-                    return new InvalidType("The Shape[dim] is not 1!");
+                    return input with {Shape = Shape.Unranked};
                 }
             }
 

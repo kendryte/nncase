@@ -28,6 +28,10 @@ namespace Nncase.IR
         /// <exception cref="InvalidOperationException"></exception>
         public T Check<T>(T ValueType, string FieldName) where T : IRType
         {
+            if (ValueType is TensorType tensorValueType && tensorValueType.Shape.IsUnranked)
+            {
+                return ValueType;
+            }
             if (ValueType == null || !MatchLeaf(ValueType))
             {
                 var cur = ValueType is null ? "None" : CompilerServices.Print(ValueType);

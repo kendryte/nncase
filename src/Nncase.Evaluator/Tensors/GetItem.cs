@@ -49,6 +49,10 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
         switch (Input)
         {
             case TensorType tensorType:
+                if (tensorType.Shape.IsUnranked)
+                {
+                    return Input;
+                }
                 ret = new TensorType(tensorType.DType, new Shape(tensorType.Shape.Skip(System.Math.Max(Index.Shape.Rank, 1))));
                 break;
             case TupleType tupleType:

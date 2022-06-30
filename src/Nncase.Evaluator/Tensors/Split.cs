@@ -81,6 +81,6 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>
             }
         }
 
-        return new InvalidType("The Sections And Axis Must Be Const!");
+        return input with {Shape = Shape.Unranked};
     }
 }

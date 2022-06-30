@@ -68,11 +68,14 @@ public class Compiler
     {
         Console.WriteLine($"Target: {options.Target}");
         var module = ImportModel(content, options);
+        Console.WriteLine("Infer Shape...");
+        var inferSucc = CompilerServices.InferenceType(module.Entry!);
         DumpModule(module, options, "ir_import");
-        if (!CompilerServices.InferenceType(module.Entry!))
+        if (!inferSucc)
         {
-            InferShape(module, options);
+            throw new InvalidOperationException("InferShape Failed For This Model!");
         }
+        InferShape(module, options);
 
         DumpModule(module, options, "ir_infertype");
         Console.WriteLine("ImportModule successful!");
@@ -81,7 +84,6 @@ public class Compiler
 
     private void InferShape(IRModule module, CompileOptions options)
     {
-        Console.WriteLine("Infer Shape...");
         var pmgr = new PassManager(module, new RunPassOptions(null!, options.DumpLevel, options.DumpDir));
         var constFold = new ShapeInferPass();
         pmgr.Add(constFold);
@@ -130,7 +132,6 @@ public class Compiler
 
     public byte[] Gencode()
     {
-        // todo:collect functions
         var target = CompilerServices.GetTarget(Options.Target);
         var moduleBuilder = new ModelBuilder(target);
         var linkedModel = moduleBuilder.Build(Module);

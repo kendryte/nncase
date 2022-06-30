@@ -36,12 +36,17 @@ internal class DataflowRewriter
                 if (visitor.IsMutated)
                 {
                     isMutated = true;
-                    CompilerServices.InferenceType(post);
                     break;
                 }
             }
 
+            var inferSuccess = CompilerServices.InferenceType(post);
             OnRewriteEnd(post, options, count++);
+            if (isMutated && !inferSuccess)
+            {
+                // throw new InvalidOperationException("Can't InferShape For This Model!");
+            }
+            
             if (!isMutated || options.RewriteOnce)
             {
                 break;

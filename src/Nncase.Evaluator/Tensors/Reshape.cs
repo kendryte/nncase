@@ -55,7 +55,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>
                 if (inputSize != shapeSize)
                 {
                     return new InvalidType("Reshape input shape size and param shape size must be same," +
-                                           $" shape:{shapeValue.ToArray().Aggregate("", (s, i) => s + i + " ")}, input shape${input.Shape}");
+                                           $" shape:{shapeValue.ToArray().Aggregate("", (s, i) => s + i + " ")}, input shape${string.Join(",", input.Shape)}");
                 }
                 return input with { Shape = new Shape(shapeValue) };
             }

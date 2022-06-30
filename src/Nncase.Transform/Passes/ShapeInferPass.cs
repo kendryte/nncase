@@ -40,14 +40,7 @@ public sealed class ShapeInferPass : DataflowPass
             post = (Function)CompilerServices.Rewrite(pre, Rules, new_options.SetPassName($"{Name}/Run_{count}"));
             if (post == pre)
             {
-                if (!CompilerServices.InferenceType(post))
-                {
-                    throw new InvalidOperationException("Can't InferShape For This Model!");
-                }
-                else
-                {
-                    break;
-                }
+                break;
             }
 
             pre = post;
