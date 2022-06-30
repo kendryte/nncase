@@ -21,6 +21,7 @@
 #include <nncase/transforms/neutral/binary_motion.h>
 #include <nncase/transforms/neutral/bitcast_motion.h>
 #include <nncase/transforms/neutral/dequantize_motion.h>
+#include <nncase/transforms/neutral/fix_output_shape.h>
 #include <nncase/transforms/neutral/fix_tflite_error_shape.h>
 #include <nncase/transforms/neutral/fold_bitcast.h>
 #include <nncase/transforms/neutral/fold_constant.h>
@@ -185,12 +186,20 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
     using namespace nncase::ir;
     using namespace nncase::ir::transforms;
 
+    // fix tflite_detection_postprocess shape error in tflite
+    {
+        transform_pass p("fix_shape_tdp");
+        p.emplace<tflite_detection_postprocess_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+
     // fold quant node in source model
     {
         transform_pass p("fold_quantize_in_source_model");
         p.emplace<fold_quantize_transform>();
         pass_mgr.add_pass(std::move(p));
     }
+
     if (type == runtime::stackvm::stackvm_module_type)
     {
         // fold_pad_conv

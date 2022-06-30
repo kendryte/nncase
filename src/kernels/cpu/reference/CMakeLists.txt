@@ -34,5 +34,6 @@ set(SRCS batch_to_space.cpp
          topk.cpp
          transpose.cpp
          trilu.cpp
+         tflite_detection_postprocess.cpp
          unary.cpp)
 target_sources(kernels PRIVATE ${SRCS})

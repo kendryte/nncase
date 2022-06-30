@@ -158,7 +158,6 @@ namespace IsaGen
         DEQUANTIZE,
         GATHER,
         GATHER_ND,
-        GRU,
         HARDMAX,
         LOGISTIC,
         LUT1D,
@@ -184,6 +183,8 @@ namespace IsaGen
         TRANSPOSE,
         TRILU,
         UNARY,
+        GRU,
+        TFLITE_DETECTION_POSTPROCESS,
     }
 
     [BitLength(8)]
@@ -1509,27 +1510,6 @@ namespace IsaGen
             public byte Batchdims { get; set; }
         }
 
-        [DisplayName("TENSOR.GRU")]
-        [Category("Tensor Instructions")]
-        [Description("Gru")]
-        public class GruInstruction : TensorInstruction
-        {
-            public override TensorFunction Function => TensorFunction.GRU;
-
-            [DisplayName("input_shape_src")]
-            [Description("Input shape register")]
-            public byte RshapeSrc1 { get; set; }
-
-            [DisplayName("w_shape_src")]
-            [Description("W shape register")]
-            public byte RshapeSrc2 { get; set; }
-
-            [DisplayName("direction")]
-            [Description("direction register")]
-            public byte Direction { get; set; }
-
-        }
-
         [DisplayName("TENSOR.HARDMAX")]
         [Category("Tensor Instructions")]
         [Description("Hardmax")]
@@ -2272,6 +2252,89 @@ namespace IsaGen
             [DisplayName("rshape_perm")]
             [Description("Perm shape register")]
             public byte RshapePerm { get; set; }
+        }
+        [DisplayName("TENSOR.GRU")]
+        [Category("Tensor Instructions")]
+        [Description("Gru")]
+        public class GruInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.GRU;
+
+            [DisplayName("input_shape_src")]
+            [Description("Input shape register")]
+            public byte RshapeSrc1 { get; set; }
+
+            [DisplayName("w_shape_src")]
+            [Description("W shape register")]
+            public byte RshapeSrc2 { get; set; }
+
+            [DisplayName("direction")]
+            [Description("direction register")]
+            public byte Direction { get; set; }
+
+        }
+        [DisplayName("TENSOR.TFLITE_DETECTION_POSTPROCESS")]
+        [Category("Tensor Instructions")]
+        [Description("Tflite_Detection_Postprocess")]
+        public class TfliteDetectionPostprocessInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.TFLITE_DETECTION_POSTPROCESS;
+
+            [DisplayName("box_shape_src")]
+            [Description("Box shape register")]
+            public byte RshapeSrc1 { get; set; }
+
+            [DisplayName("score_shape_src")]
+            [Description("Score shape register")]
+            public byte RshapeSrc2 { get; set; }
+
+            [DisplayName("anchor_shape_src")]
+            [Description("Anchor shape register")]
+            public byte RshapeSrc3 { get; set; }
+
+            [DisplayName("max_detections")]
+            [Description("max_detections register")]
+            public int MaxDetections { get; set; }
+
+            [DisplayName("max_classes_per_detection")]
+            [Description("max_classes_per_detection register")]
+            public int MaxClassesPerDetection { get; set; }
+
+            [DisplayName("detections_per_class")]
+            [Description("detections_per_class register")]
+            public int DetectionsPerClass { get; set; }
+
+            [DisplayName("use_regular_non_max_suppression")]
+            [Description("use_regular_non_max_suppression register")]
+            public bool UseRegularNonMaxSuppression { get; set; }
+
+            [DisplayName("nms_score_threshold")]
+            [Description("nms_score_threshold register")]
+            public float NmsScoreThreshold { get; set; }
+
+            [DisplayName("nms_iou_threshold")]
+            [Description("nms_iou_threshold register")]
+            public float NmsIouThreshold { get; set; }
+
+            [DisplayName("num_classes")]
+            [Description("num_classes register")]
+            public int NumClasses { get; set; }
+
+            [DisplayName("y_scale")]
+            [Description("y_scale register")]
+            public float YScale { get; set; }
+
+            [DisplayName("x_scale")]
+            [Description("x_scale register")]
+            public float XScale { get; set; }
+
+            [DisplayName("h_scale")]
+            [Description("h_scale register")]
+            public float HScale { get; set; }
+
+            [DisplayName("w_scale")]
+            [Description("w_scale register")]
+            public float WScale { get; set; }
         }
     }
 }

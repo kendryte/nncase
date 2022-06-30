@@ -46,6 +46,7 @@
 #include <nncase/ir/ops/softmax.h>
 #include <nncase/ir/ops/table_lookup.h>
 #include <nncase/ir/ops/ternary.h>
+#include <nncase/ir/ops/tflite_detection_postprocess.h>
 #include <nncase/ir/ops/topk.h>
 #include <nncase/ir/ops/transpose.h>
 #include <nncase/ir/ops/trilu.h>
