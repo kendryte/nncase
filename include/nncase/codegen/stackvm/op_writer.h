@@ -1485,7 +1485,7 @@ struct op_writer<nncase::runtime::stackvm::tensor_tflite_detection_postprocess_o
         writer.write(op.w_scale);
     }
 };
-    
+
 class NNCASE_API op_builder
 {
 public:
