@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <iostream>
 #include <chrono>
+#include <iostream>
 #include <nncase/kernels/cpu/reference/tensor_compute.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -56,8 +56,7 @@ result<void> reference::tflite_detection_postprocess(const T *boxes, const T *sc
         float score;
     };
 
-    auto compute_iou = [&](const std::vector<BoxCornerEncoding> &box, const int &i, const int &j)
-    {
+    auto compute_iou = [&](const std::vector<BoxCornerEncoding> &box, const int &i, const int &j) {
         auto &box_i = box[i];
         auto &box_j = box[j];
         const float area_i = (box_i.ymax - box_i.ymin) * (box_i.xmax - box_i.xmin);
@@ -149,8 +148,7 @@ result<void> reference::tflite_detection_postprocess(const T *boxes, const T *sc
                         std::iota(sorted_indices.begin(), sorted_indices.begin() + num_scores_kept, 0);
                         std::stable_sort(
                             sorted_indices.begin(), sorted_indices.begin() + num_scores_kept,
-                            [&keep_scores](const int i, const int j)
-                            { return keep_scores[i] > keep_scores[j]; });
+                            [&keep_scores](const int i, const int j) { return keep_scores[i] > keep_scores[j]; });
                     }
 
                     const int output_size = std::min(num_scores_kept, max_detections);
@@ -205,8 +203,7 @@ result<void> reference::tflite_detection_postprocess(const T *boxes, const T *sc
                 // sorted by scores.
                 std::inplace_merge(box_info_after_regular_nms.begin(), box_info_after_regular_nms.begin() + sorted_indices_size,
                     box_info_after_regular_nms.begin() + sorted_indices_size + selected.size(),
-                    [](const BoxInfo &a, const BoxInfo &b)
-                    { return a.score >= b.score; });
+                    [](const BoxInfo &a, const BoxInfo &b) { return a.score >= b.score; });
 
                 sorted_indices_size = std::min(sorted_indices_size + static_cast<int>(selected.size()), max_detections);
             }
@@ -261,8 +258,7 @@ result<void> reference::tflite_detection_postprocess(const T *boxes, const T *sc
                 // DecreasingPartialArgSort
                 if (num_categories_per_anchor == 1)
                 {
-                    auto arg_max_vector = [&](const T *input_data, int size)
-                    {
+                    auto arg_max_vector = [&](const T *input_data, int size) {
                         T max_value = input_data[0];
                         int max_index = 0;
                         for (int i = 1; i < size; ++i)
@@ -283,8 +279,7 @@ result<void> reference::tflite_detection_postprocess(const T *boxes, const T *sc
                     std::iota(class_indices, class_indices + num_classes, 0);
                     std::partial_sort(
                         class_indices, class_indices + num_categories_per_anchor, class_indices + num_classes,
-                        [&box_scores](const int i, const int j)
-                        { return box_scores[i] > box_scores[j]; });
+                        [&box_scores](const int i, const int j) { return box_scores[i] > box_scores[j]; });
                 }
                 // end DecreasingPartialArgSort
 
@@ -315,8 +310,7 @@ result<void> reference::tflite_detection_postprocess(const T *boxes, const T *sc
                     std::iota(sorted_indices.begin(), sorted_indices.begin() + num_scores_kept, 0);
                     std::stable_sort(
                         sorted_indices.begin(), sorted_indices.begin() + num_scores_kept,
-                        [&keep_scores](const int i, const int j)
-                        { return keep_scores[i] > keep_scores[j]; });
+                        [&keep_scores](const int i, const int j) { return keep_scores[i] > keep_scores[j]; });
                 }
                 const int output_size = std::min(num_scores_kept, max_detections);
                 selected.clear();
@@ -340,7 +334,7 @@ result<void> reference::tflite_detection_postprocess(const T *boxes, const T *sc
                     {
                         if (active_box_candidate[j] == 1)
                         {
-                            
+
                             float iou = compute_iou(
                                 decoded_boxes, keep_indices[sorted_indices[i]],
                                 keep_indices[sorted_indices[j]]);

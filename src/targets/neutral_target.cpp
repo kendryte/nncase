@@ -21,6 +21,7 @@
 #include <nncase/transforms/neutral/binary_motion.h>
 #include <nncase/transforms/neutral/bitcast_motion.h>
 #include <nncase/transforms/neutral/dequantize_motion.h>
+#include <nncase/transforms/neutral/fix_output_shape.h>
 #include <nncase/transforms/neutral/fix_tflite_error_shape.h>
 #include <nncase/transforms/neutral/fold_bitcast.h>
 #include <nncase/transforms/neutral/fold_constant.h>
@@ -45,7 +46,6 @@
 #include <nncase/transforms/neutral/split_to_slice.h>
 #include <nncase/transforms/neutral/take_to_slice.h>
 #include <nncase/transforms/neutral/transpose_motion.h>
-#include <nncase/transforms/neutral/fix_output_shape.h>
 #include <nncase/transforms/pass.h>
 
 using namespace nncase;
@@ -188,7 +188,7 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
 
     // fix tflite_detection_postprocess shape error in tflite
     {
-         transform_pass p("fix_shape_tdp");
+        transform_pass p("fix_shape_tdp");
         p.emplace<tflite_detection_postprocess_transform>();
         pass_mgr.add_pass(std::move(p));
     }

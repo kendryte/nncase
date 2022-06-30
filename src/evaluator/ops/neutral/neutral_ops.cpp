@@ -41,7 +41,6 @@
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/reduce_arg.h>
 #include <nncase/ir/ops/reduce_prod.h>
-#include <nncase/ir/ops/tflite_detection_postprocess.h>
 #include <nncase/ir/ops/reduce_window2d.h>
 #include <nncase/ir/ops/resize_image.h>
 #include <nncase/ir/ops/roi_align.h>
@@ -50,6 +49,7 @@
 #include <nncase/ir/ops/softmax.h>
 #include <nncase/ir/ops/table_lookup.h>
 #include <nncase/ir/ops/ternary.h>
+#include <nncase/ir/ops/tflite_detection_postprocess.h>
 #include <nncase/ir/ops/topk.h>
 #include <nncase/ir/ops/transpose.h>
 #include <nncase/ir/ops/trilu.h>
@@ -836,7 +836,6 @@ void register_neutral_evaluators()
             rnode.detections_per_class(), rnode.use_regular_non_max_suppression(), rnode.nms_score_threshold(), rnode.nms_iou_threshold(),
             rnode.num_classes(), rnode.y_scale(), rnode.x_scale(), rnode.h_scale(), rnode.w_scale())
             .unwrap_or_throw(); });
-    
 }
 
 }

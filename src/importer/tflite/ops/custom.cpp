@@ -44,12 +44,12 @@ DEFINE_TFLITE_LOWER(CUSTOM)
         node->name(output.name()->string_view());
         link_output_tensor(op.outputs()->Get(0), &node->output());
     }
-    else if(custom_code == "TFLite_Detection_PostProcess")
+    else if (custom_code == "TFLite_Detection_PostProcess")
     {
         auto &input_decoded_boxes = get_tensor(op.inputs(), 0);
         auto &input_scores = get_tensor(op.inputs(), 1);
         auto &input_anchors = get_tensor(op.inputs(), 2);
-        
+
         // get_shape(output_x.shape()): get error shape, ignore it in this step. fix it in independent transform
         auto &output_locations = get_tensor(op.outputs(), 0); //detection_boxes   (1, num_detected_boxes, 4)
         auto &output_classes = get_tensor(op.outputs(), 1); //detection_classes (1, num_detected_boxes)
@@ -78,9 +78,9 @@ DEFINE_TFLITE_LOWER(CUSTOM)
         auto h = m["h_scale"].AsFloat();
         auto w = m["w_scale"].AsFloat();
 
-        auto node = graph_.emplace<tflite_detection_postprocess>(get_shape(input_decoded_boxes.shape()),get_shape(input_scores.shape()),get_shape(input_anchors.shape()),
-            get_shape(output_locations.shape()),get_shape(output_classes.shape()),get_shape(output_scores.shape()),get_shape(output_num_detections.shape()),
-            max_detections, max_classes_per_detection, detections_per_class, use_regular_non_max_suppression, non_max_suppression_score_threshold, 
+        auto node = graph_.emplace<tflite_detection_postprocess>(get_shape(input_decoded_boxes.shape()), get_shape(input_scores.shape()), get_shape(input_anchors.shape()),
+            get_shape(output_locations.shape()), get_shape(output_classes.shape()), get_shape(output_scores.shape()), get_shape(output_num_detections.shape()),
+            max_detections, max_classes_per_detection, detections_per_class, use_regular_non_max_suppression, non_max_suppression_score_threshold,
             intersection_over_union_threshold, num_classes, y, x, h, w);
 
         link_input_tensor(&node->boxes(), op.inputs()->Get(0));
@@ -90,7 +90,6 @@ DEFINE_TFLITE_LOWER(CUSTOM)
         link_output_tensor(op.outputs()->Get(1), &node->output_classes());
         link_output_tensor(op.outputs()->Get(2), &node->output_scores());
         link_output_tensor(op.outputs()->Get(3), &node->output_num_detections());
-
     }
     else
     {
