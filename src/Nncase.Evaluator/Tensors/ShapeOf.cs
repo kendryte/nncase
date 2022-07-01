@@ -17,7 +17,6 @@ namespace Nncase.Evaluator.Tensors;
 /// </summary>
 public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>, ICostEvaluator<ShapeOf>
 {
-    /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ShapeOf shape)
     {
         var input = context.GetArgumentValueAsTensor(shape, ShapeOf.Input);
@@ -45,6 +44,11 @@ public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>, I
 
     private IRType Visit(ITypeInferenceContext context, ShapeOf target, TensorType input)
     {
-        return new TensorType(DataTypes.Int64, new Shape(input.Shape.Rank));
+        var inExpr = context.GetArgument(target, ShapeOf.Input);
+        if (inExpr is TensorConst || input.Shape.IsRanked)
+        {
+            return new TensorType(DataTypes.Int64, new Shape(input.Shape.Rank));
+        }
+        return new TensorType(DataTypes.Int64, Shape.Unranked);
     }
 }
