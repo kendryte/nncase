@@ -60,16 +60,20 @@ clamp(tensor input, tensor min, tensor max, tensor output = nullptr,
       kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void>
-compare_impl(typecode_t typecode, nncase::runtime::stackvm::compare_op_t op, const gsl::byte *lhs,
-             const gsl::byte *rhs, gsl::byte *output, const dims_t &lhs_shape,
-             const strides_t &lhs_strides, const dims_t &rhs_shape,
-             const strides_t &rhs_strides, const dims_t &out_shape,
-             const strides_t &out_strides,
+compare_impl(typecode_t typecode, nncase::runtime::stackvm::compare_op_t op,
+             const gsl::byte *lhs, const gsl::byte *rhs, gsl::byte *output,
+             const dims_t &lhs_shape, const strides_t &lhs_strides,
+             const dims_t &rhs_shape, const strides_t &rhs_strides,
+             const dims_t &out_shape, const strides_t &out_strides,
              NNCASE_UNUSED kernel_context &context) noexcept;
 
 NNCASE_API result<void>
 concat(tensor input, tensor axis, tensor output = nullptr,
        kernel_context &context = default_kernel_context());
+
+NNCASE_API result<void> constant_of_shape(datatype_t dt, const gsl::byte *value,
+                                          gsl::byte *output,
+                                          const dims_t &shape);
 
 NNCASE_API result<void>
 conv2d(runtime::stackvm::pad_mode_t pad_mode, tensor input, tensor weights,
@@ -336,9 +340,11 @@ result<void> stack(datatype_t type, gsl::span<const gsl::byte *const> inputs,
                    const strides_t &out_strides, size_t axis,
                    kernel_context &context) noexcept;
 
-NNCASE_API result<void>
-tile(tensor input, tensor repeats, tensor output = nullptr,
-     kernel_context &context = default_kernel_context());
+NNCASE_API result<void> tile(
+    datatype_t dt, const gsl::byte *input, gsl::byte *output,
+    const dims_t &in_shape, const dims_t &out_shape,
+    const strides_t &in_strides, const strides_t &out_strides,
+    const dims_t &repeats);
 
 NNCASE_API result<void>
 transpose(tensor input, tensor perm, tensor output = nullptr,
@@ -364,7 +370,10 @@ unsqueeze(tensor input, tensor dim, tensor output = nullptr,
           kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void>
-where(tensor cond, tensor x, tensor y, tensor output = nullptr,
-      kernel_context &context = default_kernel_context());
+where(datatype_t dt, const bool *cond, const gsl::byte *x, const gsl::byte *y,
+      gsl::byte *output, const dims_t &cond_shape, const dims_t &x_shape,
+      const dims_t &y_shape, const dims_t &out_shape, const strides_t &cond_strides,
+      const strides_t &x_strides, const strides_t &y_strides,
+      const strides_t &out_strides);
 } // namespace reference
 END_NS_NNCASE_KERNELS_MODULE

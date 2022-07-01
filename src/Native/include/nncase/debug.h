@@ -115,5 +115,5 @@ inline void dump_output_impl(nncase::value_t value,
 }
 
 inline void dump_output([[maybe_unused]] nncase::value_t value) {
-    // dump_output_impl(value, dump_path(), true);
+     // dump_output_impl(value, dump_path(), true);
 }

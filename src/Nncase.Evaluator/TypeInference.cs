@@ -30,7 +30,8 @@ public static class TypeInference
     /// <param name="parameter">Parameter.</param>
     /// <param name="reason">Reason text if not satisfied.</param>
     /// <returns>The desired type.</returns>
-    public static T CheckArgumentType<T>(this ITypeInferenceContext context, Op op, ParameterInfo parameter, string? reason = null)
+    public static T CheckArgumentType<T>(this ITypeInferenceContext context, Op op, ParameterInfo parameter,
+        string? reason = null)
         where T : IRType
     {
         T WrapperException(T t)
@@ -44,12 +45,14 @@ public static class TypeInference
                 throw new TypeInferenceInterruptException(new InvalidType(e.Message));
             }
         }
+
         return context.GetArgumentType(op, parameter) switch
         {
             T t => WrapperException(t),
             AnyType a => throw new TypeInferenceInterruptException(a),
             InvalidType iv => throw new TypeInferenceInterruptException(iv),
-            var x => throw new TypeInferenceInterruptException(new InvalidType(reason ?? $"{op.GetType().Name}.{parameter.Name} Must Be {typeof(T).Name} But Give {x.GetType().Name}.")),
+            var x => throw new TypeInferenceInterruptException(new InvalidType(reason ??
+                                                                               $"{op.GetType().Name}.{parameter.Name} Must Be {typeof(T).Name} But Give {x.GetType().Name}.")),
         };
     }
 
@@ -85,9 +88,15 @@ public static class TypeInference
         var dataType = inputs[0].DType;
         if (inputs.Any(x => x.DType != dataType))
         {
-            return new InvalidType($"Inputs of broadcast must have same datatype: {string.Join(",", inputs.Select(x => x.DType.GetDisplayName()))}");
+            return new InvalidType(
+                $"Inputs of broadcast must have same datatype: {string.Join(",", inputs.Select(x => x.DType.GetDisplayName()))}");
         }
 
+        return BroadcastType(dataType, inputs);
+    }
+
+    public static IRType BroadcastType(DataType dataType, params TensorType[] inputs)
+    {
         // If any input is invalid, result is invalid
         if (inputs.Any(x => x.Shape.IsInvalid))
         {
@@ -155,12 +164,14 @@ public static class TypeInference
     /// <summary>
     /// Conv2D Type Infer.
     /// </summary>
-    public static IRType Conv2DType(TensorType input, TensorType weights, Expr stride, Expr padding, Expr dilation, Expr groups)
+    public static IRType Conv2DType(TensorType input, TensorType weights, Expr stride, Expr padding, Expr dilation,
+        Expr groups)
     {
         if (input.Shape.IsUnranked)
         {
             return input;
         }
+
         var outShape = input.Shape.ToList();
         outShape[1] = weights.Shape[0];
         if (
@@ -188,7 +199,7 @@ public static class TypeInference
             outShape[2] = outShape[3] = Dimension.Unknown;
         }
 
-        return input with { Shape = new Shape(outShape) };
+        return input with {Shape = new Shape(outShape)};
     }
 
     /// <summary>
@@ -242,10 +253,16 @@ public static class TypeInference
             var ts_padding = paddingValue.Value.Cast<int>();
             var padh = ts_padding[0, 0] + ts_padding[0, 1];
             var padw = ts_padding[1, 0] + ts_padding[1, 1];
-            outShape[2] = input.Shape[2].IsUnknown ? Dimension.Unknown : GetWindowedOutputSize(input.Shape[2].FixedValue + padh, ts_filter[0], ts_stride[0], 1, false, ceilModeV);
-            outShape[3] = input.Shape[3].IsUnknown ? Dimension.Unknown : GetWindowedOutputSize(input.Shape[3].FixedValue + padw, ts_filter[1], ts_stride[1], 1, false, ceilModeV);
+            outShape[2] = input.Shape[2].IsUnknown
+                ? Dimension.Unknown
+                : GetWindowedOutputSize(input.Shape[2].FixedValue + padh, ts_filter[0], ts_stride[0], 1, false,
+                    ceilModeV);
+            outShape[3] = input.Shape[3].IsUnknown
+                ? Dimension.Unknown
+                : GetWindowedOutputSize(input.Shape[3].FixedValue + padw, ts_filter[1], ts_stride[1], 1, false,
+                    ceilModeV);
 
-            return input with { Shape = new Shape(outShape) };
+            return input with {Shape = new Shape(outShape)};
         }
 
         return new InvalidType("Can't Infer Shape With Dynamic Input!");
@@ -307,10 +324,10 @@ public static class TypeInference
                 outShape[i] = inShape[permt[i]];
             }
 
-            return input with { Shape = outShape };
+            return input with {Shape = outShape};
         }
 
-        return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Rank)) };
+        return input with {Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Rank))};
     }
 
     /// <summary>
@@ -348,9 +365,10 @@ public static class TypeInference
                     break;
             }
         }
+
         if (inputbbox is not null && out_shape.Length == 4) // for roi amount.
             out_shape[0] = out_shape[0] * inputbbox.Shape[0].FixedValue;
-        return input with { Shape = new Shape(out_shape) };
+        return input with {Shape = new Shape(out_shape)};
     }
 
     /// <summary>

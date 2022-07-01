@@ -8,6 +8,7 @@ set(SRCS ../tensor_ops.cpp
          cast.cpp
          compare.cpp
          concat.cpp
+         constant_of_shape.cpp
          convolution.cpp
          cumsum.cpp
          dequantize.cpp
@@ -26,6 +27,8 @@ set(SRCS ../tensor_ops.cpp
          slice.cpp
          softmax.cpp
          stack.cpp
+         tile.cpp
          transpose.cpp
-         unary.cpp)
+         unary.cpp
+         where.cpp)
 target_sources(kernels PRIVATE ${SRCS})

@@ -30,6 +30,8 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>
     public IRType Visit(ITypeInferenceContext context, Where target)
     {
         var cond = context.CheckArgumentType<TensorType>(target, Where.Cond);
-        return cond with {DType = DataTypes.Int64};
+        var x = context.CheckArgumentType<TensorType>(target, Where.X);
+        var y = context.CheckArgumentType<TensorType>(target, Where.Y);
+        return TypeInference.BroadcastType(x.DType, cond, x, y);
     }
 }

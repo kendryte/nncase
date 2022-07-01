@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "nncase/kernels/kernel_utils.h"
 #include <nncase/kernels/kernel_context.h>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/error.h>
@@ -29,8 +30,7 @@ BEGIN_NS_NNCASE_KERNELS_MODULE(stackvm)
 
 dims_t gather_infer_shape(const dims_t &in_shape, const dims_t &index_shape,
                           int axis) {
-    if(in_shape.size() == 1 && index_shape.size() == 0)
-    {
+    if (in_shape.size() == 1 && index_shape.size() == 0) {
         // scalar
         return dims_t();
     }
@@ -107,24 +107,42 @@ dims_t stack_infer_shape(dims_t shape0, int input_count, int axis) {
     return shape0;
 }
 
-dims_t unsqueeze_infer_shape(const dims_t& in_shape, const axes_t & axes) {
-    if(in_shape.size() == 0 && axes.size() == 1)
-    {
+dims_t unsqueeze_infer_shape(const dims_t &in_shape, const axes_t &axes) {
+    if (in_shape.size() == 0 && axes.size() == 1) {
         return dims_t{1};
     }
     auto new_shape = in_shape.size() == 0 ? dims_t{1} : in_shape;
     for (auto i = 0; i < axes.size(); i++) {
-        if(axes[i] >= 0)
-        {
+        if (axes[i] >= 0) {
             new_shape.insert(new_shape.begin() + axes[i], 1);
-        }
-        else
-        {
+        } else {
             auto index = std::max((int)new_shape.size() + (int)axes[i], 0);
             new_shape.insert(new_shape.begin() + index, 1);
         }
     }
     return new_shape;
+}
+
+dims_t squeeze_infer_shape(const dims_t &in_shape, const axes_t &axes) {
+    auto out_shpae = in_shape;
+    for (int i = axes.size(); i >= 0; --i) {
+        out_shpae.erase(out_shpae.begin() + i);
+    }
+    return out_shpae;
+}
+
+dims_t where_infer_shape(const dims_t &cond_shape, const dims_t &x_shape,
+                         const dims_t &y_shape) {
+    return kernels::detail::get_binary_output_shape(
+        kernels::detail::get_binary_output_shape(cond_shape, x_shape), y_shape);
+}
+
+dims_t tile_infer_shape(const dims_t &in_shape, const dims_t &repeats) {
+    auto out_shape = dims_t(in_shape.size());
+    for (int i = 0; i < out_shape.size(); ++i) {
+        out_shape[i] = in_shape[i] * repeats[i];
+    }
+    return out_shape;
 }
 
 END_NS_NNCASE_KERNELS_MODULE

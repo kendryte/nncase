@@ -38,7 +38,7 @@ foreach(var input in inst.Inputs)
 @:    try_var(@input.CppName, pop_value());
 }
 @:    try_var(output, kernels::stackvm::@(name)(@string.Join(", ", inst.Fields.Where(x => !x.IsOpCode && x.CppName != "tensor_funct").Select(x => $"op.{x.CppName}").Concat(inst.Inputs.Select(x => $"{x.CppName}").Concat(new[]{"nullptr", "module().kernel_context()"})))));
-@:    print_out_shape(output);
+@:    dump_output(output);
 @:    return stack_.push(std::move(output));
 @:}
 }

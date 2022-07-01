@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "shape_infer.h"
+#include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/opt_ops.h>
 #include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/kernels/stackvm/tensor_ops.h>
@@ -38,6 +39,17 @@ result<value_t> nncase::kernels::stackvm::clamp(
     [[maybe_unused]] value_t max, [[maybe_unused]] value_t output,
     [[maybe_unused]] kernel_context &context) {
     return err(std::errc::not_supported);
+}
+
+result<value_t> nncase::kernels::stackvm::constant_of_shape(
+    value_t shape, value_t value, value_t output,
+    [[maybe_unused]] kernel_context &context) {
+    try_dims(out_shape, shape);
+    try_input(value_mem, value);
+    try_output(out_mem, output, value_tensor->dtype(), out_shape);
+    try_(reference::constant_of_shape(value_tensor->dtype(), value_mem, out_mem,
+                                      out_shape));
+    finish;
 }
 
 result<value_t> nncase::kernels::stackvm::conv2d_transpose(
@@ -219,10 +231,10 @@ result<value_t> nncase::kernels::stackvm::range(
         auto count =                                                           \
             (dims_t::value_type)((*end_value - *begin_value) / *step_value);   \
         try_output(out_mem, output, _dtype, dims_t{count});                    \
-        auto _out_ptr = OUT_CAST(_in_type, out_mem);                            \
+        auto _out_ptr = OUT_CAST(_in_type, out_mem);                           \
         for (int i = 0; i < count; ++i) {                                      \
             auto v = *begin_value + i * *step_value;                           \
-            *(_out_ptr + i) = v;                                                                       \
+            *(_out_ptr + i) = v;                                               \
         }                                                                      \
     }
 
@@ -265,11 +277,8 @@ nncase::kernels::stackvm::reshape(value_t input, value_t shape, value_t output,
     try_axes(shape_value, shape);
     auto new_shape = reshape_shape_infer(in_tensor->shape(), shape_value);
     not_impl_no_contiguous(in_tensor);
-    auto node =
-        new tensor_node(in_tensor->dtype(), new_shape,
-                        get_default_strides(new_shape), in_tensor->buffer());
-    output = tensor(node);
-    return ok(output);
+    output = tensor_reshape(in_tensor, new_shape);
+    finish;
 }
 
 result<value_t> nncase::kernels::stackvm::reverse_sequence(
@@ -439,7 +448,13 @@ result<value_t> nncase::kernels::stackvm::split(value_t input, value_t axis,
 result<value_t> nncase::kernels::stackvm::squeeze(
     [[maybe_unused]] value_t input, [[maybe_unused]] value_t dim,
     [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
+    try_var(in_tensor, input.as<tensor>());
+    auto in_shape = in_tensor->shape();
+    not_impl_no_contiguous(in_tensor);
+    try_axes(axes, dim);
+    auto new_shape = squeeze_infer_shape(in_shape, axes);
+    output = tensor_reshape(in_tensor, new_shape);
+    finish;
 }
 
 result<value_t> nncase::kernels::stackvm::stack(value_t inputs, value_t axis,
@@ -461,7 +476,15 @@ result<value_t> nncase::kernels::stackvm::stack(value_t inputs, value_t axis,
 result<value_t> nncase::kernels::stackvm::tile(
     [[maybe_unused]] value_t input, [[maybe_unused]] value_t repeats,
     [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
+    try_input(in_mem, input);
+    try_dims(repeats_value, repeats);
+    auto ty = input_tensor->dtype();
+    auto out_shape = tile_infer_shape(input_tensor->shape(), repeats_value);
+    try_output(out_mem, output, ty, out_shape);
+    try_(reference::tile(ty, in_mem, out_mem, input_tensor->shape(), out_shape,
+                         input_tensor->strides(), output_tensor->strides(),
+                         repeats_value));
+    finish;
 }
 
 result<value_t> nncase::kernels::stackvm::uniform(
@@ -496,5 +519,15 @@ result<value_t> nncase::kernels::stackvm::where(
     [[maybe_unused]] value_t cond, [[maybe_unused]] value_t x,
     [[maybe_unused]] value_t y, [[maybe_unused]] value_t output,
     [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
+    try_input_with_ty(cond_mem, cond, bool);
+    try_input(x_mem, x);
+    try_input(y_mem, y);
+    auto out_shape = where_infer_shape(cond_tensor->shape(), x_tensor->shape(), y_tensor->shape());
+    auto dt = x_tensor->dtype();
+    try_output(out_mem, output, dt, out_shape);
+    try_(reference::where(
+        dt, cond_mem, x_mem, y_mem, out_mem, cond_tensor->shape(),
+        x_tensor->shape(), y_tensor->shape(), out_shape, cond_tensor->strides(),
+        x_tensor->strides(), y_tensor->strides(), output_tensor->strides()));
+    finish;
 }
