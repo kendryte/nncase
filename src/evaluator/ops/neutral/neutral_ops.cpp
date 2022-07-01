@@ -49,6 +49,7 @@
 #include <nncase/ir/ops/softmax.h>
 #include <nncase/ir/ops/table_lookup.h>
 #include <nncase/ir/ops/ternary.h>
+#include <nncase/ir/ops/tflite_detection_postprocess.h>
 #include <nncase/ir/ops/topk.h>
 #include <nncase/ir/ops/transpose.h>
 #include <nncase/ir/ops/trilu.h>
@@ -818,6 +819,22 @@ void register_neutral_evaluators()
         kernels::gru(input.buffer().as_span<float>().data(), W.buffer().as_span<float>().data(), R.buffer().as_span<float>().data(),
             B.buffer().as_span<float>().data(), initial_h.buffer().as_span<float>().data(), output.buffer().as_span<float>().data(), output_h.buffer().as_span<float>().data(),
             input.shape(), W.shape(), rnode.direction())
+            .unwrap_or_throw(); });
+
+    register_evaluator(op_tflite_detection_postprocess, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<tflite_detection_postprocess &>(node);
+        auto box = context.memory_at(rnode.boxes());
+        auto score = context.memory_at(rnode.scores());
+        auto anchor = context.memory_at(rnode.anchors());
+        auto output_locations = context.memory_at(rnode.output_locations());
+        auto output_classes = context.memory_at(rnode.output_classes());
+        auto output_scores = context.memory_at(rnode.output_scores());
+        auto output_num_detections = context.memory_at(rnode.output_num_detections());
+        kernels::tflite_detection_postprocess(box.buffer().as_span<float>().data(), score.buffer().as_span<float>().data(), anchor.buffer().as_span<float>().data(),
+            output_locations.buffer().as_span<float>().data(), output_classes.buffer().as_span<float>().data(), output_scores.buffer().as_span<float>().data(), output_num_detections.buffer().as_span<float>().data(),
+            box.shape(), score.shape(), anchor.shape(), rnode.max_detections(), rnode.max_classes_per_detection(), 
+            rnode.detections_per_class(), rnode.use_regular_non_max_suppression(), rnode.nms_score_threshold(), rnode.nms_iou_threshold(),
+            rnode.num_classes(), rnode.y_scale(), rnode.x_scale(), rnode.h_scale(), rnode.w_scale())
             .unwrap_or_throw(); });
 }
 

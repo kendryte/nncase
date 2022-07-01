@@ -48,4 +48,5 @@ target_sources(transforms PRIVATE
     merge_binary_before_conv.cpp
     fold_matmul_add.cpp
     squeeze_dims.cpp
+    fix_output_shape.cpp
     )

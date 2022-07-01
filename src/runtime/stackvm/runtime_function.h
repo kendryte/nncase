@@ -171,6 +171,7 @@ protected:
     result<void> visit(const tensor_topk_op_t &op) noexcept override;
     result<void> visit(const tensor_transpose_op_t &op) noexcept override;
     result<void> visit(const tensor_trilu_op_t &op) noexcept override;
+    result<void> visit(const tensor_tflite_detection_postprocess_op_t &op) noexcept override;
     result<void> visit(const tensor_unary_op_t &op) noexcept override;
 
 private:
