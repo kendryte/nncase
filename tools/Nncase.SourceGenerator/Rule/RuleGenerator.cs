@@ -44,7 +44,7 @@ internal class RuleGenerator : ISourceGenerator
             }
             if (cand.classSymobl.IsInheritFrom(receiver.QuantRuleSymbol))
             {
-                statements.Add(ParseStatement($"Option = options;"));
+                statements.Add(ParseStatement($"Option = __options;"));
                 statements.Add(ParseStatement($"Root = (Expr)__result.Root;"));
                 statements.Add(ParseStatement($"Init();"));
             }

@@ -11,6 +11,24 @@ namespace Nncase;
 /// </summary>
 public sealed class CompileOptions
 {
+
+    /// <summary>
+    /// copy ctor
+    /// </summary>
+    public CompileOptions(CompileOptions other)
+    {
+        InputFile = other.InputFile;
+        InputFormat = other.InputFormat;
+        Target = other.Target;
+        DumpLevel = other.DumpLevel;
+        DumpDir = other.DumpDir;
+        UsePTQ = other.UsePTQ;
+        QuantType = other.QuantType;
+        QuantMode = other.QuantMode;
+        OutputFile = other.OutputFile;
+
+    }
+
     /// <summary>
     /// CompileOptions
     /// </summary>
