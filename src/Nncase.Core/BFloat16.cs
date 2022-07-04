@@ -13,7 +13,7 @@ namespace Nncase;
 /// <summary>
 /// BFloat16.
 /// </summary>
-public struct BFloat16 : IEquatable<BFloat16>
+public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
 {
     /// <summary>
     /// bfloat16 representation bits.
@@ -142,5 +142,11 @@ public struct BFloat16 : IEquatable<BFloat16>
     public override string ToString()
     {
         return ((float)this).ToString();
+    }
+
+    /// <inheritdoc/>
+    public int CompareTo(BFloat16 other)
+    {
+        return ((float)this).CompareTo(other);
     }
 }

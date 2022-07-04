@@ -15,7 +15,7 @@ namespace Nncase.IR.K210;
 /// KPU Conv2D.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record class KPUConv2D(bool IsDepthwise, KPUFilterType FilterType, KPUPoolType PoolType, KPUActivationParameters Activation) : Op
+public sealed partial record class KPUConv2D(bool IsDepthwise, KPUFilterType FilterType, KPUPoolType PoolType, KPUActivationParameters Activation) : Op
 {
     /// <summary>
     /// Gets input.

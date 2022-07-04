@@ -21,7 +21,7 @@ namespace Nncase.Importer.TFLite
             var splits = op.BuiltinOptionsAsSplitOptions().NumSplits;
             var a = ((TensorConst) axis).Value.ToScalar<int>();
             var s = ComputeSplit(input, splits, a);
-            s.InferenceType();
+            //s.InferenceType();
             var output = GetOutputTensor(op, 0);
             return F.Tensors.Split(input, axis, s);
         }
