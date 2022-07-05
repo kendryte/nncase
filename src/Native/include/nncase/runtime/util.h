@@ -318,8 +318,7 @@ itlib::small_vector<TO, 4> to_vec(const gsl::byte *input, size_t size) {
 template <typename T>
 inline result<itlib::small_vector<T, 4>> value_as_Ts(value_t value) {
     try_input(input, value);
-    auto rank = value_tensor->shape().size();
-    assert(rank == 1);
+    assert(value_tensor->shape().size() == 1);
     auto size = value_tensor->shape()[0];
 #define RETURN_RESULT(_in_type)                                                \
     if (cmp_type<_in_type>(value_tensor->dtype())) {                           \
