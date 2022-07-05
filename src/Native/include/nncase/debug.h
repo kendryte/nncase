@@ -136,10 +136,10 @@ inline void dump_output_impl(nncase::value_t value,
 }
 
 inline void dump_output([[maybe_unused]] nncase::value_t value) {
-    dump_output_impl(value, dump_path(), true);
+//    dump_output_impl(value, dump_path(), true);
 }
 
 inline void dump_input([[maybe_unused]] nncase::value_t value,
-                       std::string name) {
-    dump_output_impl(value, dump_path() + name, false);
+                       [[maybe_unused]] std::string name) {
+//    dump_output_impl(value, dump_path() + name, false);
 }

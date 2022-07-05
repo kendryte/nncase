@@ -18,6 +18,7 @@
 #include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/kernels/stackvm/tensor_ops.h>
 #include <nncase/runtime/util.h>
+#include <cstring>
 
 using namespace nncase;
 using namespace nncase::kernels;
