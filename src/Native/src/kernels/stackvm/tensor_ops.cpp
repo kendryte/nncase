@@ -522,12 +522,45 @@ result<value_t> nncase::kernels::stackvm::where(
     try_input_with_ty(cond_mem, cond, bool);
     try_input(x_mem, x);
     try_input(y_mem, y);
-    auto out_shape = where_infer_shape(cond_tensor->shape(), x_tensor->shape(), y_tensor->shape());
     auto dt = x_tensor->dtype();
+    if(x_tensor->shape()[0] == 0 && y_tensor->shape()[0] == 0 && cmp_type<float>(x_tensor->dtype()))
+    {
+        // todo: not finish other rank
+        assert(cond_tensor->shape().size() == 1);
+        dt = dt_int64;
+        auto size = compute_size(cond_tensor->shape());
+        std::vector<int64_t> result;
+        auto cond_mem_ptr = IN_CAST(bool, cond_mem);
+        for (int i = 0; i < size; ++i) {
+            if(cond_mem_ptr[i]) {
+                result.push_back(i);
+            }
+        }
+        auto out_shape = dims_t{result.size(), cond_tensor->shape().size()};
+        try_output(out_mem, output, dt, out_shape);
+        memcpy(OUT_CAST(int64_t, out_mem), result.data(), result.size() * sizeof(int64_t));
+        finish;
+    }
+    auto out_shape = where_infer_shape(cond_tensor->shape(), x_tensor->shape(),
+                                       y_tensor->shape());
     try_output(out_mem, output, dt, out_shape);
     try_(reference::where(
         dt, cond_mem, x_mem, y_mem, out_mem, cond_tensor->shape(),
         x_tensor->shape(), y_tensor->shape(), out_shape, cond_tensor->strides(),
         x_tensor->strides(), y_tensor->strides(), output_tensor->strides()));
     finish;
+}
+
+result<value_t> nncase::kernels::stackvm::fake_dequantize(
+    [[maybe_unused]] typecode_t target_type, [[maybe_unused]] value_t input,
+    [[maybe_unused]] value_t dequant_param, [[maybe_unused]] value_t output,
+    [[maybe_unused]] kernel_context &context) {
+    return err(std::errc::not_supported);
+}
+
+result<value_t> nncase::kernels::stackvm::fake_quantize(
+    [[maybe_unused]] typecode_t target_type, [[maybe_unused]] value_t input,
+    [[maybe_unused]] value_t quant_param, [[maybe_unused]] value_t output,
+    [[maybe_unused]] kernel_context &context) {
+    return err(std::errc::not_supported);
 }

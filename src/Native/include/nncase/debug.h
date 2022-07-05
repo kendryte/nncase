@@ -4,6 +4,7 @@
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/util.h>
 #include <nncase/tensor.h>
+#include <nncase/type.h>
 #include <nncase/value.h>
 
 inline int a = 1;
@@ -14,10 +15,16 @@ inline void incr_a() {
     a++;
     append = false;
 }
-
-inline std::string dump_root = "";
+inline std::string currentOp;
+#include <filesystem>
+namespace fs = std::filesystem;
+inline std::string dump_root =
+    "tests_output/test_fastspeech/infer/cpu/noptq/Runtime/";
 inline static std::string dump_path() {
-    auto p = dump_root + std::to_string(get_a());
+    auto p = dump_root + std::to_string(get_a()) + currentOp;
+    if (!fs::exists(dump_root)) {
+        fs::create_directory(dump_root);
+    }
     return p;
 }
 
@@ -53,28 +60,40 @@ template <typename F> inline void dump(F &&f, std::string path = dump_path()) {
     stream.close();
 }
 
-template <typename T>
-inline void dump_data(std::ostream &stream, const T *data,
-                      nncase::tensor value_tensor) {
-    std::cout << "out_shape:";
-    for (auto d : value_tensor->shape()) {
-        std::cout << d << " ";
-    }
-    std::cout << std::endl;
-    stream << "data type:"
-           << std::to_string(to_typecode(value_tensor->dtype()).unwrap())
-           << std::endl;
-    stream << "out_shape:";
-    if (value_tensor->shape().size() == 0) {
+inline std::string to_str(const nncase::dims_t &shape) {
+    std::stringstream stream;
+    if (shape.size() == 0) {
         stream << "scalar\n";
     } else {
-        for (auto d : value_tensor->shape()) {
-            stream << d << " ";
+        for (auto d : shape) {
+            stream << std::to_string(d) << " ";
         }
         stream << std::endl;
     }
+    return stream.str();
+}
+
+inline void write_shape(const nncase::dims_t &shape) {
+    auto path = dump_root + "9999shape";
+    auto f = fs::exists(path) ? std::ofstream(path, std::ios::app) : std::ofstream(path);
+    f << currentOp << " :" << to_str(shape);
+    f.close();
+}
+
+template <typename T>
+inline void dump_data(std::ostream &stream, const T *data,
+                      nncase::tensor value_tensor) {
+    //    std::cout << "out_shape:";
+    //    for (auto d : value_tensor->shape()) {
+    //        std::cout << d << " ";
+    //    }
+    stream << "data type:"
+           << std::to_string(to_typecode(value_tensor->dtype()).unwrap())
+           << std::endl;
+    auto shape = value_tensor->shape();
+    stream << "out_shape:" << to_str(shape);
     auto sum = 1;
-    for (auto s : value_tensor->shape()) {
+    for (auto s : shape) {
         sum *= s;
     }
     for (int i = 0; i < sum; ++i) {
@@ -86,20 +105,22 @@ inline void dump_output_impl(nncase::value_t value,
                              bool incr = false) {
     dump(
         value,
-        [](auto &stream, auto &&value_tensor) {
+        [incr](auto &stream, auto &&value_tensor) {
             auto *data = value_tensor->to_host()
-                            .unwrap()
-                            ->buffer()
-                            .as_host()
-                            .unwrap()
-                            .map(nncase::runtime::map_read)
-                            .unwrap()
-                            .buffer()
-                            .data();
-
+                             .unwrap()
+                             ->buffer()
+                             .as_host()
+                             .unwrap()
+                             .map(nncase::runtime::map_read)
+                             .unwrap()
+                             .buffer()
+                             .data();
+        if(incr) {
+            write_shape(value_tensor->shape());
+        }
 #define RETURN_RESULT(_in_type)                                                \
     if (nncase::runtime::cmp_type<_in_type>(value_tensor->dtype())) {          \
-        dump_data(stream, IN_CAST(_in_type, data), value_tensor);                    \
+        dump_data(stream, IN_CAST(_in_type, data), value_tensor);              \
     }
             RETURN_RESULT(bool);
             RETURN_RESULT(int32_t);
@@ -115,5 +136,10 @@ inline void dump_output_impl(nncase::value_t value,
 }
 
 inline void dump_output([[maybe_unused]] nncase::value_t value) {
-     // dump_output_impl(value, dump_path(), true);
+    dump_output_impl(value, dump_path(), true);
+}
+
+inline void dump_input([[maybe_unused]] nncase::value_t value,
+                       std::string name) {
+    dump_output_impl(value, dump_path() + name, false);
 }

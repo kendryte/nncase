@@ -107,4 +107,6 @@ public static class Tensors
     /// <param name="index">index.</param>
     /// <returns>call.</returns>
     public static Call GetItem(Expr input, Expr index) => new Call(new GetItem(), input, index);
+
+    public static Call StackScalar(Expr scalar) => Stack(new Tuple(scalar), 0);
 }
