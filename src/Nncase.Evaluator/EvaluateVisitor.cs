@@ -15,9 +15,27 @@ public class DumpManager
 {
     public static bool OpenDump { get; private set; } = false;
 
-    public static T RunWithDump<T>(Func<T> f)
+    public static bool Append = false;
+    
+    public static int Count = 1;
+
+    public static string Dir;
+
+    public static void RunWithDump(string dir, Action f)
     {
+        RunWithDump<int>(dir, () =>
+        {
+            f();
+            return -1;
+        });
+    }
+    
+    public static T RunWithDump<T>(string dir, Func<T> f)
+    {
+        Dir = dir;
+        Count = 1;
         OpenDump = true;
+        Append = false;
         var result = f();
         OpenDump = false;
         return result;
@@ -27,9 +45,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
 {
     private readonly EvaluateContext _context;
     private readonly IReadOnlyDictionary<Var, IValue> _varsValues;
-
-    private int count = 1;
-
+    
     private void DumpExpr(TensorValue tensorValue, StreamWriter writer)
     {
         var tensor = tensorValue.AsTensor();
@@ -55,22 +71,54 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
             writer.WriteLine($"Unsupported data type{dt}");
         }
     }
+
+    private static string GetEvaluatorDumpDir()
+    {
+        var root = Path.Join(CompilerServices.CompileOptions.DumpDir, DumpManager.Dir);
+        if (!Directory.Exists(root))
+        {
+            Directory.CreateDirectory(root);
+        }
+
+        return root;
+    }
+
+    private void DumpCallInfo(Expr expr)
+    {
+        if (expr is Call call)
+        {
+            var root = GetEvaluatorDumpDir();
+            var target = call.Target.GetType().Name.ToLower();
+            var paramsInfo = ((Op) call.Target).Parameters.ToArray();
+            for (int i = 0; i < call.Parameters.Count; i++)
+            {
+                using (var sr = new StreamWriter(Path.Join(root, DumpManager.Count.ToString() + target + $"_param_{i}_{paramsInfo[i].Name}")))
+                {
+                    var param = call.Parameters[i];
+                    if (param is not IR.Tuple)
+                    {
+                        var p = _context.GetValue(param).AsTensor();
+                        DumpExpr(p, sr);
+                    }
+                    else
+                    {
+                        // todo: not impl
+                    }
+                }
+            }
+        }
+    }
     
     private void DumpCall(Expr expr)
     {
-        if (expr is Call)
+        if (expr is Call call)
         {
             // tensor / tensors
-            var root = "";
-            using (var sr = new StreamWriter(root + count))
+            var root = GetEvaluatorDumpDir();
+
+            var target = call.Target.GetType().Name.ToLower();
+            using (var sr = new StreamWriter(Path.Join(root, DumpManager.Count.ToString() + target)))
             {
-                var call = (Call)expr;
-                var target = call.Target.GetType().Name.ToLower();
-                // todo:dump in last??
-                using (var order = new StreamWriter(root + "order", true))
-                {
-                    order.WriteLine(target);
-                }
                 sr.WriteLine(target);
                 sr.WriteLine(call.CheckedType);
                 var result = _context.GetValue(call).AsTensors();
@@ -79,7 +127,12 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
                     DumpExpr(tensor, sr);
                 }
             }
-            ++count;
+            using (var order = new StreamWriter(Path.Join(root, "order"), DumpManager.Append))
+            {
+                order.WriteLine(target);
+            }
+            DumpManager.Append = true;
+            ++DumpManager.Count;
         }
         else
         {
@@ -91,10 +144,11 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
     {
         _context = new EvaluateContext(ExpressionMemo);
         _varsValues = varsValues;
-        // if (DumpManager.OpenDump)
-        // {
-        //     RegisterCallback("DumpResult", DumpCall);
-        // }
+        if (DumpManager.OpenDump)
+        {
+            RegisterBeforeCallback("DumpResult", DumpCallInfo);
+            RegisterAfterCallback("DumpResult", DumpCall);
+        }
     }
 
     /// <inheritdoc/>
@@ -154,12 +208,6 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
             throw new ArgumentException($"Must Set Input For Var {expr.Name}!");
         }
 
-        if (expr.CheckedType is not AnyType && result.Type != expr.CheckedType)
-        {
-            throw new ArgumentException(
-                $"The Var {expr.Name} Require {expr.CheckedType} But Give {result.Type}");
-        }
-
         if (expr.CheckedType is not AnyType)
         {
             if (result.Type is TensorType resultType)
@@ -168,12 +216,18 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
                 {
                     return result;
                 }
+
+                if (expr.CheckedDataType != resultType.DType)
+                {
+                    throw new ArgumentException($"DataType mismatch. The Var {expr.Name} Require {expr.CheckedDataType} But Give {resultType.DType}");
+                }
+                
                 var s = expr.CheckedShape.Zip(resultType.Shape).ToArray();
-                var matchedShape = s.Aggregate(true, (b, dims) => b && (dims.First.IsUnknown || dims.First == dims.Second));
-                if (expr.CheckedDataType != resultType.DType || !matchedShape)
+                var matchedShape = s.Aggregate(true, (b, dims) => b && (dims.First.IsUnknown || dims.Second.IsUnknown || dims.First == dims.Second));
+                if(!matchedShape)
                 {
                     throw new ArgumentException(
-                        $"The Var {expr.Name} Require {expr.CheckedType} But Give {result.Type}");                    
+                        $"Shape mismatch. The Var {expr.Name} Require {expr.CheckedShape} But Give {resultType.Shape}");                    
                 }
             }
         }

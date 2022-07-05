@@ -407,7 +407,7 @@ class Compiler:
     def __init__(self, compile_options: CompileOptions) -> None:
         self.__process_compile_options(compile_options)
         self._compiler = _nncase.Compiler.Compiler()
-        self._compiler.init()
+        self._compiler.init(self._compile_options)
 
     def __process_compile_options(self, compile_options: CompileOptions) -> ClCompileOptions:
         self._compile_options: ClCompileOptions = _nncase.CompileOptions(False)

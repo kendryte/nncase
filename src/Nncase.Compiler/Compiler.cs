@@ -20,7 +20,7 @@ public class Compiler
 {
     private IRModule Module;
     private CompileOptions Options;
-    public static void init()
+    public static void init(CompileOptions options)
     {
         OrtKI.LoadDLL();
         var host = Host.CreateDefaultBuilder();
@@ -66,6 +66,7 @@ public class Compiler
     
     public IRModule ImportModule(Stream content, CompileOptions options)
     {
+        CompilerServices.CompileOptions = options;
         Console.WriteLine($"Target: {options.Target}");
         var module = ImportModel(content, options);
         Console.WriteLine("Infer Shape...");
@@ -75,8 +76,9 @@ public class Compiler
         {
             throw new InvalidOperationException("InferShape Failed For This Model!");
         }
-        InferShape(module, options);
 
+        DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module, options));
+        
         DumpModule(module, options, "ir_infertype");
         Console.WriteLine("ImportModule successful!");
         return module;

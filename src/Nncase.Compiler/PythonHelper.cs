@@ -41,7 +41,7 @@ public static class PythonHelper
     
     public static IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null)
     {
-        return DumpManager.RunWithDump(() => expr.Evaluate(varsValues));
+        return DumpManager.RunWithDump("Evaluator", () => expr.Evaluate(varsValues));
     }
     
     public static RTTensor[] RunSimulator(RTInterpreter interp, RTValue[] input)

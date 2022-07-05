@@ -19,12 +19,26 @@ namespace Nncase.IR
         private readonly Dictionary<Expr, TExprResult> _exprMemo = new Dictionary<Expr, TExprResult>(ReferenceEqualityComparer.Instance);
         private readonly Dictionary<IRType, TTypeResult> _typeMemo = new Dictionary<IRType, TTypeResult>();
         private readonly Dictionary<string, Action<Expr>> _callbacksAfterCall = new();
+        private readonly Dictionary<string, Action<Expr>> _callbacksBeforeCall = new();
         
-        protected void RegisterCallback(string name, Action<Expr> callback)
+        protected void RegisterAfterCallback(string name, Action<Expr> callback)
         {
             _callbacksAfterCall[name] = callback; 
         }
 
+        protected void RegisterBeforeCallback(string name, Action<Expr> callback)
+        {
+            _callbacksBeforeCall[name] = callback; 
+        }
+        
+        private void CallbacksBeforeCall(Expr expr)
+        {
+            foreach (var (name, callback) in _callbacksBeforeCall)
+            {
+                callback(expr);
+            }
+        }
+        
         private void CallbacksAfterCall(Expr expr)
         {
             foreach (var (name, callback) in _callbacksAfterCall)
@@ -48,12 +62,13 @@ namespace Nncase.IR
                 {
                     Visit(param);
                 }
-
+                
+                CallbacksBeforeCall(expr);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
+                CallbacksAfterCall(expr);
             }
             
-            CallbacksAfterCall(expr);
             return result;
         }
 

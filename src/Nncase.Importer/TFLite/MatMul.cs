@@ -3,6 +3,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using tflite;
@@ -19,6 +20,14 @@ namespace Nncase.Importer.TFLite
             var (input, other) = GetInputExprs(op, 0, 1);
             var inTensor = GetInputTensor(op, 0);
             var otherTensor = GetInputTensor(op, 1);
+            
+            if (inTensor.Type != TensorType.FLOAT32 || otherTensor.Type != TensorType.FLOAT32)
+            {
+                throw new NotImplementedException();
+            }
+
+            var lhs = input;
+            var rhs = other;
             if (isFullyConnected)
             {
                 var options = op.BuiltinOptionsAsFullyConnectedOptions();
@@ -32,38 +41,41 @@ namespace Nncase.Importer.TFLite
                 {
                     throw new NotImplementedException();
                 }
-
+                var perm = GetPerm(op, 1);
+                rhs = Transpose(rhs, perm);
             }
-
-            if (inTensor.Type != TensorType.FLOAT32 || otherTensor.Type != TensorType.FLOAT32)
+            else
             {
-                throw new NotImplementedException();
-            }
+                var batchMatMulOptions = op.BuiltinOptionsAsBatchMatMulOptions();
+                if (batchMatMulOptions.AdjX)
+                {
+                    var perm = GetPerm(op, 0);
+                    lhs = Transpose(lhs, perm);
+                }
 
-            // var lhs = input;
-            // if (inTensor.ShapeLength != 2)
-            // {
-            //     if (otherTensor.ShapeLength != 2)
-            //     {
-            //         throw new NotSupportedException();
-            //     }
-            //
-            //     lhs = Reshape(lhs, new[] { -1, otherTensor.Shape(1) });
-            // }
-            //
-            // if (otherTensor.ShapeLength > 2)
-            // {
-            //     throw new NotSupportedException("rhs rank > 2");
-            // }
-            // todo:fused clamp
-            var lhs = input;
-            var rhs = Transpose(other, new[] { 1, 0 });
+                if (batchMatMulOptions.AdjY)
+                {
+                    var perm = GetPerm(op, 1);
+                    rhs = Transpose(rhs, perm);
+                }
+            }
+            
             var bias = op.InputsLength == 3 && op.Inputs(2) != -1
                 ? GetInputExprs(op, 2)
                 : Expand(Cast(0, GetDataType(GetInputTensor(op, 0).Type)), new[]{otherTensor.Shape(0)}).Evaluate().AsTensor();
             return MatMul(
                 lhs,
                  rhs) + bias;
+        }
+
+        private int[] GetPerm(tflite.Operator op, int index)
+        {
+            var r = GetShapeArray(GetInputTensor(op, index)).Length;
+            var perm = Enumerable.Range(0, r).ToArray();
+            var tmp = perm[^1];
+            perm[^1] = perm[^2];
+            perm[^2] = tmp;
+            return perm;
         }
     }
 }
