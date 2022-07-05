@@ -33,7 +33,11 @@ namespace Nncase
 
         public static Expr GetItem(in Expr input, Expr index)
         {
-            return F.Tensors.Squeeze(F.Tensors.Slice(input, index, index + 1, 1), new[] {0L});
+            return F.Tensors.Squeeze(
+                F.Tensors.Slice(input, 
+                StackScalar(index), 
+                StackScalar(index + 1),
+                1), new[] { 0L});
         }
 
         public static (Expr, Expr) GetHW(in Expr input)

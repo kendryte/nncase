@@ -319,10 +319,7 @@ template <typename T>
 inline result<itlib::small_vector<T, 4>> value_as_Ts(value_t value) {
     try_input(input, value);
     auto rank = value_tensor->shape().size();
-    if (rank > 1) {
-        // only used for rank 1
-        return Err(nncase_errc::shape_mismatch);
-    }
+    assert(rank == 1);
     auto size = value_tensor->shape()[0];
 #define RETURN_RESULT(_in_type)                                                \
     if (cmp_type<_in_type>(value_tensor->dtype())) {                           \
@@ -352,6 +349,7 @@ inline result<axes_t> value_as_axes(value_t value) {
 // todo:refactor
 inline result<dims_t> value_as_positive_axes(value_t value, size_t rank) {
     try_input(input, value);
+    assert(value_tensor->shape().size() == 1);
     auto size = value_tensor->shape()[0];
     auto axis = dims_t(size);
     for (int i = 0; i < size; ++i) {

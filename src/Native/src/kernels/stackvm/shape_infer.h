@@ -124,11 +124,23 @@ dims_t unsqueeze_infer_shape(const dims_t &in_shape, const axes_t &axes) {
 }
 
 dims_t squeeze_infer_shape(const dims_t &in_shape, const axes_t &axes) {
-    auto out_shpae = in_shape;
-    for (int i = axes.size(); i >= 0; --i) {
-        out_shpae.erase(out_shpae.begin() + i);
+    auto result_rank = in_shape.size() - axes.size();
+    if(result_rank == 0)
+    {
+        return dims_t();
     }
-    return out_shpae;
+    auto tmp_out_shpae = in_shape;
+    auto max = std::numeric_limits<int>::max();
+    for (int i = 0; i < axes.size(); ++i) {
+        tmp_out_shpae[i] = max;
+    }
+    auto out_shape = dims_t();
+    for (auto d : tmp_out_shpae) {
+        if(d != max) {
+            out_shape.push_back(d);
+        }
+    }
+    return out_shape;
 }
 
 dims_t where_infer_shape(const dims_t &cond_shape, const dims_t &x_shape,

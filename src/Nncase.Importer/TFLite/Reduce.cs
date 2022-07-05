@@ -12,7 +12,7 @@ namespace Nncase.Importer.TFLite
         private Expr VisitReduce(in tflite.Operator op, ReduceOp reduceOp, float initValue)
         {
             var (input, axis) = GetInputExprs(op, 0, 1);
-            return Reduce(reduceOp, input, axis, initValue, op.BuiltinOptionsAsReducerOptions().KeepDims);
+            return Reduce(reduceOp, input, ProcAxis(axis), initValue, op.BuiltinOptionsAsReducerOptions().KeepDims);
         }
 
         private Expr VisitReduceArg(in tflite.Operator op, ReduceArgOp reduceArgOp)
@@ -26,8 +26,18 @@ namespace Nncase.Importer.TFLite
             };
 
             return Cast(
-                ReduceArg(reduceArgOp, input, axis, false, false),
+                ReduceArg(reduceArgOp, input, ProcAxis(axis), false, false),
                 GetDataType(outType));
+        }
+
+        private Expr ProcAxis(Expr axis)
+        {
+            if (axis is TensorConst axisValue)
+            {
+                // scalar to array 
+                return axisValue.Value.ToArray<int>();
+            }
+            return axis;
         }
     }
 }

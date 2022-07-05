@@ -39,6 +39,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>
     public IRType Visit(ITypeInferenceContext context, Reduce target)
     {
         var input = context.CheckArgumentType<TensorType>(target, Reduce.Input);
+        context.CheckArgumentType<TensorType>(target, Reduce.Axis);
         return Visit(context, target, input);
     }
 

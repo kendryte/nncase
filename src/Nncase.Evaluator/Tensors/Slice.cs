@@ -33,6 +33,10 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     public IRType Visit(ITypeInferenceContext context, Slice target)
     {
         var input = context.CheckArgumentType<TensorType>(target, Slice.Input);
+        context.CheckArgumentType<TensorType>(target, Slice.Begins);
+        context.CheckArgumentType<TensorType>(target, Slice.Ends);
+        context.CheckArgumentType<TensorType>(target, Slice.Axes);
+        context.CheckArgumentType<TensorType>(target, Slice.Strides);
         return Visit(context, target, input);
     }
 

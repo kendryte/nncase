@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.PatternMatch;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Tensors;
 
@@ -26,10 +27,10 @@ public sealed record Gather() : Op
     /// <summary>
     /// Gets axis.
     /// </summary>
-    public static readonly ParameterInfo Axis = new(typeof(Gather), 1, "axis");
+    public static readonly ParameterInfo Axis = new(typeof(Gather), 1, "axis", IsIntegralScalar());
 
     /// <summary>
     /// Gets index.
     /// </summary>
-    public static readonly ParameterInfo Index = new(typeof(Gather), 2, "index");
+    public static readonly ParameterInfo Index = new(typeof(Gather), 2, "index", IsIntegral());
 }

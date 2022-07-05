@@ -4,7 +4,8 @@
 using System.IO;
 using System.Linq;
 using Nncase.IR;
-using F = Nncase.IR.F;
+using Nncase.IR.Tensors;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Importer.TFLite
 {
@@ -15,13 +16,13 @@ namespace Nncase.Importer.TFLite
             var input = GetInputExprs(op, 0);
             var options = op.BuiltinOptionsAsSqueezeOptions();
             var dims = options.GetSqueezeDimsArray();
-            return F.Tensors.Squeeze(input, dims);
+            return Squeeze(input, dims);
         }
 
         private Expr VisitExpandDims(in tflite.Operator op)
         {
             var (input, dim) = GetInputExprs(op, 0, 1);
-            return F.Tensors.Unsqueeze(input, dim);
+            return Unsqueeze(input, Unsqueeze(dim, new[]{0}));
         }
     }
 }

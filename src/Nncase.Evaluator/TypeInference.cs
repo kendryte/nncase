@@ -327,7 +327,7 @@ public static class TypeInference
             return input with {Shape = outShape};
         }
 
-        return input with {Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Rank))};
+        return input with {Shape = Shape.Unranked};
     }
 
     /// <summary>

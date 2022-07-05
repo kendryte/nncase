@@ -131,7 +131,6 @@ namespace Nncase.Importer.TFLite
                 opcode.DeprecatedBuiltinCode,
                 (int)opcode.BuiltinCode);
             _opsInModel.Add(builtinCode.ToString());
-            Console.WriteLine(builtinCode.ToString());
 
             var output = builtinCode switch
             {
@@ -194,8 +193,8 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.GATHER => VisitGather(op),
                 tflite.BuiltinOperator.GATHER_ND => VisitGatherND(op),
 
-                // tflite.BuiltinOperator.GREATER,
-                // tflite.BuiltinOperator.GREATER_EQUAL,
+                tflite.BuiltinOperator.GREATER => VisitCompare(op, CompareOp.GreaterThan),
+                tflite.BuiltinOperator.GREATER_EQUAL => VisitCompare(op, CompareOp.GreaterOrEqual),
                 // tflite.BuiltinOperator.HARD_SWISH,
                 // tflite.BuiltinOperator.HASHTABLE,
                 // tflite.BuiltinOperator.HASHTABLE_FIND,
@@ -325,7 +324,6 @@ namespace Nncase.Importer.TFLite
         {
             if (tensor.ShapeSignatureLength == 0)
             {
-                
                 return tensor.GetShapeArray().Select(x => new Dimension(x)).ToArray();
             }
             return Enumerable.Range(0, tensor.ShapeSignatureLength).Select(i =>
