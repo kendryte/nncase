@@ -69,44 +69,44 @@ public class UnitTestDLLCall
         return tb.CreateType();
     }
 
-    [Fact]
-    public void TestSimpleAdd()
-    {
+//     [Fact]
+//     public void TestSimpleAdd()
+//     {
 
-        var arch = RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "arm64" : "x86_64";
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            return;
-        }
-        var path = Testing.GetDumpDirPath("DLLCallTest/TestSimpleAdd");
-        var src_path = Path.Combine(path, "main.c");
-        var lib_path = Path.Combine(path, "main.dylib");
-        using (var file = File.Open(src_path, FileMode.OpenOrCreate, FileAccess.Write))
-        {
-            using (var writer = new StreamWriter(file))
-            {
-                writer.Write(@"
-float fadd(float a, float b)
-{
-  return a + b;
-}");
-            }
-        }
-        var p = Process.Start("clang", $"{src_path} -fPIC -shared -arch {arch} -o {lib_path}");
+//         var arch = RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "arm64" : "x86_64";
+//         if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+//         {
+//             return;
+//         }
+//         var path = Testing.GetDumpDirPath("DLLCallTest/TestSimpleAdd");
+//         var src_path = Path.Combine(path, "main.c");
+//         var lib_path = Path.Combine(path, "main.dylib");
+//         using (var file = File.Open(src_path, FileMode.OpenOrCreate, FileAccess.Write))
+//         {
+//             using (var writer = new StreamWriter(file))
+//             {
+//                 writer.Write(@"
+// float fadd(float a, float b)
+// {
+//   return a + b;
+// }");
+//             }
+//         }
+//         var p = Process.Start("clang", $"{src_path} -fPIC -shared -arch {arch} -o {lib_path}");
 
-        var lib_ptr = NativeLibrary.Load(lib_path);
-        var func_ptr = NativeLibrary.GetExport(lib_ptr, "fadd");
+//         var lib_ptr = NativeLibrary.Load(lib_path);
+//         var func_ptr = NativeLibrary.GetExport(lib_ptr, "fadd");
 
-        var ctype = typeof(CustomType);
-        var mtype = ctype.GetNestedType("declf");
-        var func = Marshal.GetDelegateForFunctionPointer(func_ptr, mtype);
-        var r = func.DynamicInvoke(1, 2);
-        Assert.Equal(3.0f, r);
+//         var ctype = typeof(CustomType);
+//         var mtype = ctype.GetNestedType("declf");
+//         var func = Marshal.GetDelegateForFunctionPointer(func_ptr, mtype);
+//         var r = func.DynamicInvoke(1, 2);
+//         Assert.Equal(3.0f, r);
 
-        var dy_dele = GetDynamicDeleType();
-        var func2 = Marshal.GetDelegateForFunctionPointer(func_ptr, dy_dele);
-        var r2 = func2.DynamicInvoke(2, 3);
-        Assert.Equal(5.0f, r2);
-    }
+//         var dy_dele = GetDynamicDeleType();
+//         var func2 = Marshal.GetDelegateForFunctionPointer(func_ptr, dy_dele);
+//         var r2 = func2.DynamicInvoke(2, 3);
+//         Assert.Equal(5.0f, r2);
+//     }
 }
 
