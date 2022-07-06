@@ -262,8 +262,10 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     public void TestUnsqueeze()
     {
         var v1 = var(new[] {3});
-        var us = Unsqueeze(v1, new[] {-1});
-        CheckInferShape(us, new[]{3, 1});
+        var us1 = Unsqueeze(v1, new[] {-1});
+        CheckInferShape(us1, new[]{3, 1});
+        var us2 = Unsqueeze(v1, new[] {0});
+        CheckInferShape(us2, new[]{1, 3});
     }
 }
 
