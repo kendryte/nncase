@@ -52,14 +52,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
         writer.WriteLine(tensor.Shape.ToString());
         // todo:other type
         var dt = tensor.ElementType;
-        if (dt == DataTypes.Float32)
-        {
-            foreach (var v in tensor.ToArray<float>())
-            {
-                writer.WriteLine(v);
-            }
-        }
-        else if (dt == DataTypes.Int8 || dt == DataTypes.Int32 || dt == DataTypes.Int64)
+        if (dt == DataTypes.Int8 || dt == DataTypes.Int32 || dt == DataTypes.Int64)
         {
             foreach (var v in tensor.ToArray<long>())
             {
@@ -68,7 +61,10 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
         }
         else
         {
-            writer.WriteLine($"Unsupported data type{dt}");
+            foreach (var v in tensor.ToArray<float>())
+            {
+                writer.WriteLine(v);
+            }
         }
     }
 
@@ -95,14 +91,10 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
                 using (var sr = new StreamWriter(Path.Join(root, DumpManager.Count.ToString() + target + $"_param_{i}_{paramsInfo[i].Name}")))
                 {
                     var param = call.Parameters[i];
-                    if (param is not IR.Tuple)
+                    var ps = _context.GetValue(param).AsTensors();
+                    foreach (var p in ps)
                     {
-                        var p = _context.GetValue(param).AsTensor();
                         DumpExpr(p, sr);
-                    }
-                    else
-                    {
-                        // todo: not impl
                     }
                 }
             }

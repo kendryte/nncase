@@ -112,14 +112,22 @@ class OnnxTestRunner(TestRunner):
         input_names = list(set(input_all) - set(input_initializer))
         input_tensors = [node for node in onnx_model.graph.input if node.name in input_names]
 
+        def to_dim_value(d, default_d):
+            if d.dim_value == 0:
+                return self.shape_vars.get(d.dim_param, default_d)
+            else:
+                return d.dim_value
+
+        def translate_shape(shape, default_shape):
+            return [to_dim_value(d, def_d) for d, def_d in zip(shape, default_shape)]
+
         # input
         for _, e in enumerate(input_tensors):
             onnx_type = e.type.tensor_type
             input_dict = {}
             input_dict['name'] = e.name
             input_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
-            shape = [i.dim_value for i in onnx_type.shape.dim]
-            input_dict['shape'] = shape
+            shape = translate_shape(onnx_type.shape.dim, self.default_shape)
             input_dict['model_shape'] = shape
             self.inputs.append(input_dict)
             self.calibs.append(copy.deepcopy(input_dict))
@@ -131,7 +139,8 @@ class OnnxTestRunner(TestRunner):
             onnx_type = e.type.tensor_type
             output_dict['name'] = e.name
             output_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
-            output_dict['model_shape'] = [i.dim_value for i in onnx_type.shape.dim]
+            # todo:fix this
+            output_dict['model_shape'] = translate_shape(onnx_type.shape.dim, self.default_shape)
             print(output_dict)
             self.outputs.append(output_dict)
 

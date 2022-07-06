@@ -26,15 +26,14 @@ using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
 using namespace nncase::kernels::cpu::reference;
 using namespace nncase::kernels::stackvm;
-
-namespace
-{
+#include <nncase/debug.h>
+namespace {
 template <class TOp, class T>
-result<void> compare_impl(TOp &&op, const T *input_a, const T *input_b, bool *output,
-                          const dims_t &in_a_shape, const dims_t &in_a_strides,
-                          const dims_t &in_b_shape, const dims_t &in_b_strides,
-                          const dims_t &out_shape, const dims_t &out_strides) noexcept
-{
+result<void> compare_impl(TOp &&op, const T *input_a, const T *input_b,
+                          bool *output, const dims_t &in_a_shape,
+                          const dims_t &in_a_strides, const dims_t &in_b_shape,
+                          const dims_t &in_b_strides, const dims_t &out_shape,
+                          const dims_t &out_strides) noexcept {
     return apply(out_shape, [&](const dims_t &index) -> result<void> {
         const auto in_a_index = kernels::detail::get_reduced_offset(index, in_a_shape);
         const auto in_b_index = kernels::detail::get_reduced_offset(index, in_b_shape);
@@ -44,21 +43,20 @@ result<void> compare_impl(TOp &&op, const T *input_a, const T *input_b, bool *ou
         return ok();
     });
 }
-}
+} // namespace
 
-#define COMPARE_IMPL_OP(op, funct)                                              \
-    case compare_op_t::op:                                                      \
-        return compare_impl(funct, lhs, rhs, output, lhs_shape, lhs_strides,    \
-                           rhs_shape, rhs_strides, out_shape, out_strides)
+#define COMPARE_IMPL_OP(op, funct)                                             \
+    case compare_op_t::op:                                                     \
+        return compare_impl(funct, lhs, rhs, output, lhs_shape, lhs_strides,   \
+                            rhs_shape, rhs_strides, out_shape, out_strides)
 
 template <typename T>
-result<void> compare_impl(compare_op_t op, const T *lhs, const T *rhs, bool *output,
-                                const dims_t &lhs_shape, const dims_t &lhs_strides,
-                                const dims_t &rhs_shape, const dims_t &rhs_strides,
-                                const dims_t &out_shape, const dims_t &out_strides) noexcept
-{
-    switch (op)
-    {
+result<void> compare_impl(compare_op_t op, const T *lhs, const T *rhs,
+                          bool *output, const dims_t &lhs_shape,
+                          const dims_t &lhs_strides, const dims_t &rhs_shape,
+                          const dims_t &rhs_strides, const dims_t &out_shape,
+                          const dims_t &out_strides) noexcept {
+    switch (op) {
         COMPARE_IMPL_OP(equal, std::equal_to<T>());
         COMPARE_IMPL_OP(not_equal, std::not_equal_to<T>());
         COMPARE_IMPL_OP(greater_than, std::greater<T>());
@@ -70,29 +68,29 @@ result<void> compare_impl(compare_op_t op, const T *lhs, const T *rhs, bool *out
     }
 }
 
-#define COMPARE_IMPL(_ty)                                                       \
-    return compare_impl(op, IN_CAST(_ty, lhs), IN_CAST(_ty, rhs),                      \
-                OUT_CAST(bool, output), lhs_shape, lhs_strides, rhs_shape,      \
-                rhs_strides, out_shape, out_strides);
+#define COMPARE_IMPL(_ty)                                                      \
+    return compare_impl(op, IN_CAST(_ty, lhs), IN_CAST(_ty, rhs),              \
+                        OUT_CAST(bool, output), lhs_shape, lhs_strides,        \
+                        rhs_shape, rhs_strides, out_shape, out_strides);
 
 result<void> compare_impl(typecode_t typecode, compare_op_t op,
-                         const gsl::byte *lhs, const gsl::byte *rhs,
-                         gsl::byte *output, const dims_t &lhs_shape,
-                         const strides_t &lhs_strides, const dims_t &rhs_shape,
-                         const strides_t &rhs_strides, const dims_t &out_shape,
-                         const strides_t &out_strides,
-                         NNCASE_UNUSED kernel_context &context) noexcept {
+                          const gsl::byte *lhs, const gsl::byte *rhs,
+                          gsl::byte *output, const dims_t &lhs_shape,
+                          const strides_t &lhs_strides, const dims_t &rhs_shape,
+                          const strides_t &rhs_strides, const dims_t &out_shape,
+                          const strides_t &out_strides,
+                          NNCASE_UNUSED kernel_context &context) noexcept {
     TYPE_SELECT(typecode, COMPARE_IMPL);
 }
 
 #include <nncase/debug.h>
-result<value_t> kernels::stackvm::compare(compare_op_t compare_op, value_t lhs,
-                                         value_t rhs, value_t output,
-                                         [[maybe_unused]] kernel_context &context) {
+result<value_t>
+kernels::stackvm::compare(compare_op_t compare_op, value_t lhs, value_t rhs,
+                          value_t output,
+                          [[maybe_unused]] kernel_context &context) {
     try_input(lhs_mem, lhs);
     try_input(rhs_mem, rhs);
-    if(!cmp_dt(lhs_tensor, rhs_tensor))
-    {
+    if (!cmp_dt(lhs_tensor, rhs_tensor)) {
         return err(nncase_errc::datatype_mismatch);
     }
 

@@ -43,12 +43,21 @@ class TfliteTestRunner(TestRunner):
     def parse_model_input_output(self, model_path: str):
         interp = tf.lite.Interpreter(model_path=model_path)
 
+        def translate_shape(shape, default_shape):
+            return [(i if i > 0 else d) for i, d in zip(shape, default_shape)]
+
         for item in interp.get_input_details():
             input_dict = {}
             input_dict['index'] = item['index']
             input_dict['name'] = item['name']
             input_dict['dtype'] = item['dtype']
-            input_dict['model_shape'] = item['shape']
+            if item['shape_signature'].size == 0:
+                shape = item['shape']
+            else:
+                shape = item['shape_signature']
+            # todo: tflite not support set shape var for model with dynamic shape
+            # don't have model with shape var to debug this feature
+            input_dict['model_shape'] = translate_shape(shape, self.default_shape)
             self.inputs.append(input_dict)
             self.calibs.append(copy.deepcopy(input_dict))
             self.dump_range_data.append(copy.deepcopy(input_dict))
@@ -65,6 +74,7 @@ class TfliteTestRunner(TestRunner):
         interp = tf.lite.Interpreter(model_path=model_file)
         interp.allocate_tensors()
         for input in self.inputs:
+            print(input['index'])
             interp.set_tensor(input["index"], self.data_pre_process(input['data']))
 
         interp.invoke()

@@ -20,7 +20,8 @@ inline std::string currentOp;
 #include <filesystem>
 namespace fs = std::filesystem;
 inline std::string dump_root =
-    "tests_output/test_fastspeech/infer/cpu/noptq/Runtime/";
+//    "tests_output/test_transformer_decoder/infer/cpu/noptq/Runtime/";
+    "tests_output/outputs/";
 inline static std::string dump_path() {
     auto p = dump_root + std::to_string(get_a()) + currentOp;
     if (!fs::exists(dump_root)) {

@@ -257,6 +257,14 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         var cat = Concat(new Tuple(v1, v2), -1);
         CheckInferShape(cat, new[] {1, 3, 32});
     }
+
+    [Fact]
+    public void TestUnsqueeze()
+    {
+        var v1 = var(new[] {3});
+        var us = Unsqueeze(v1, new[] {-1});
+        CheckInferShape(us, new[]{3, 1});
+    }
 }
 
 public class UnitTestDynamicTypeInfer : UnitTypeInferBase

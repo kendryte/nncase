@@ -47,9 +47,10 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
                 }
                 else
                 {
+                    outShape.Insert(outShape.Count + dimVal + 1, 1);
                     // count == 3, dimVal == -4
-                    var index = System.Math.Max(outShape.Count + dimVal, 0);
-                    outShape.Insert(index, 1);
+                    // var index = System.Math.Max(outShape.Count + dimVal, 0);
+                    // outShape.Insert(index, 1);
                 }
             }
 

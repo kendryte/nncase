@@ -116,8 +116,7 @@ dims_t unsqueeze_infer_shape(const dims_t &in_shape, const axes_t &axes) {
         if (axes[i] >= 0) {
             new_shape.insert(new_shape.begin() + axes[i], 1);
         } else {
-            auto index = std::max((int)new_shape.size() + (int)axes[i], 0);
-            new_shape.insert(new_shape.begin() + index, 1);
+            new_shape.insert(new_shape.end() + axes[i] + 1, 1);
         }
     }
     return new_shape;

@@ -44,8 +44,10 @@ binary(runtime::stackvm::binary_op_t binary_op, tensor lhs, tensor rhs,
        kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void>
-broadcast(tensor input, tensor shape, tensor output = nullptr,
-          kernel_context &context = default_kernel_context());
+broadcast(typecode_t typecode, const gsl::byte *input, gsl::byte *output,
+          const dims_t &input_shape, const strides_t &input_strides,
+          const dims_t &out_shape, const strides_t &out_strides,
+          kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
 cast(typecode_t new_type, tensor input, tensor output = nullptr,
@@ -340,11 +342,12 @@ result<void> stack(datatype_t type, gsl::span<const gsl::byte *const> inputs,
                    const strides_t &out_strides, size_t axis,
                    kernel_context &context) noexcept;
 
-NNCASE_API result<void> tile(
-    datatype_t dt, const gsl::byte *input, gsl::byte *output,
-    const dims_t &in_shape, const dims_t &out_shape,
-    const strides_t &in_strides, const strides_t &out_strides,
-    const dims_t &repeats);
+NNCASE_API result<void> tile(datatype_t dt, const gsl::byte *input,
+                             gsl::byte *output, const dims_t &in_shape,
+                             const dims_t &out_shape,
+                             const strides_t &in_strides,
+                             const strides_t &out_strides,
+                             const dims_t &repeats);
 
 NNCASE_API result<void>
 transpose(tensor input, tensor perm, tensor output = nullptr,
@@ -372,8 +375,8 @@ unsqueeze(tensor input, tensor dim, tensor output = nullptr,
 NNCASE_API result<void>
 where(datatype_t dt, const bool *cond, const gsl::byte *x, const gsl::byte *y,
       gsl::byte *output, const dims_t &cond_shape, const dims_t &x_shape,
-      const dims_t &y_shape, const dims_t &out_shape, const strides_t &cond_strides,
-      const strides_t &x_strides, const strides_t &y_strides,
-      const strides_t &out_strides);
+      const dims_t &y_shape, const dims_t &out_shape,
+      const strides_t &cond_strides, const strides_t &x_strides,
+      const strides_t &y_strides, const strides_t &out_strides);
 } // namespace reference
 END_NS_NNCASE_KERNELS_MODULE

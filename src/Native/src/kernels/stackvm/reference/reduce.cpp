@@ -165,18 +165,13 @@ result<value_t> nncase::kernels::stackvm::reduce(
     reduce_op_t reduce_op, value_t input, value_t axes, value_t init_value,
     value_t keep_dims, value_t output, kernel_context &context) {
     try_input(in_mem, input);
-    std::cout << " reduce try input" << std::endl;
     try_positive_axes(axes_value, axes, input_tensor->shape().size());
-    std::cout << "reduce try axes" << std::endl;
-    std::cout << "reduce try scalar" << std::endl;
     try_to_scalar(keep_dims_value, keep_dims, bool);
     try_input(init_v, init_value);
     try_typecode(typecode, input_tensor);
-    std::cout << "reduce try infer" << std::endl;
     auto out_shape =
         infer_shape(input_tensor->shape(), axes_value, keep_dims_value);
     try_output(out_mem, output, input_tensor->dtype(), out_shape);
-    std::cout << "reduce try kernel" << std::endl;
 
     try_(reduce_impl(typecode, reduce_op, init_v, in_mem, out_mem,
                      input_tensor->shape(), axes_value, input_tensor->strides(),

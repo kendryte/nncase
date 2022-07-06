@@ -92,6 +92,8 @@ result<void> unary_impl(typecode_t dtype, unary_op_t op, const gsl::byte *input,
                          kernel_context &context) noexcept {
     switch (dtype) {
         UNARY_IMPL_DTYPE(dt_float32, float)
+        // Not in onnx, input is bool
+        UNARY_IMPL_DTYPE(dt_boolean, bool)
     default:
         return err(nncase_errc::datatype_mismatch);
     }

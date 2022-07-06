@@ -12,15 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/stackvm/tensor_ops.h>
+#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/util.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/kernels/kernel_utils.h>
-
-
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -45,10 +43,11 @@ result<void> broadcast_impl(const T *input, T *output,
 
 #define BROADCAST_IMPL(size, type) \
     case size:                     \
-        return broadcast_impl(input, output, input_shape, input_strides, out_shape, out_strides, context);
+        return broadcast_impl(IN_CAST(type, input), OUT_CAST(type, output), input_shape, input_strides, out_shape, out_strides, context);
 
-template <class T>
-result<void> broadcast_impl(typecode_t typecode, const T *input, T *output,
+} // namespace
+
+result<void> nncase::kernels::stackvm::reference::broadcast(typecode_t typecode, const gsl::byte *input, gsl::byte *output,
                          const dims_t &input_shape, const strides_t &input_strides,
                          const dims_t &out_shape, const strides_t &out_strides,
                          NNCASE_UNUSED kernel_context &context) noexcept {
@@ -62,18 +61,5 @@ result<void> broadcast_impl(typecode_t typecode, const T *input, T *output,
     }
 }
 
-} // namespace
 
-result<value_t> kernels::stackvm::broadcast(value_t input, value_t shape,
-                                           value_t output, kernel_context &context) {
-    try_input(input_mem, input);
-    auto dtype = input_tensor->dtype();
-    try_var(typecode, to_typecode(dtype));
-    try_dims(out_shape, shape);
-    try_output(out_mem, output, dtype, out_shape);
-    try_(broadcast_impl(typecode, input_mem,
-                     out_mem,
-                     input_tensor->shape(), input_tensor->strides(),
-                     output_tensor->shape(), output_tensor->strides(), context));
-    return ok(output);
-}
+

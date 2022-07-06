@@ -98,12 +98,13 @@ def generate_random(shape: List[int], dtype: np.dtype,
         data = np.random.randint(0, 256, shape)
     elif dtype == np.int8:
         data = np.random.randint(-128, 128, shape)
-    elif dtype == np.bool:
+    elif dtype == np.bool or dtype == np.bool_:
         data = np.random.rand(*shape) > 0.5
     elif dtype == np.int32:
-        data = np.random.randint(1, 3, size=shape, dtype='int32')
+        data = np.random.randint(1, 5, size=shape, dtype='int32')
     elif dtype == np.int64:
-        data = np.random.randint(1, 128, size=shape, dtype='int64')
+        data = np.random.randint(1, 5, size=shape, dtype='int64')
+        # data = np.random.randint(1, 128, size=shape, dtype='int64')
     else:
         data = np.random.rand(*shape)
     data = data.astype(dtype=dtype)
@@ -196,6 +197,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         self.pre_process: List[Dict] = []
 
         self.num_pattern = re.compile("(\d+)")
+        self.default_shape = [1, 1, 256, 256]
 
     def transform_input(self, values: np.array, type: str, stage: str) -> np.ndarray:
         values = copy.deepcopy(values)
@@ -426,6 +428,15 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                                    compile_options, model_content, dict_args)
                 self.check_result(infer_output_paths, infer_args, 'infer')
 
+    def translate_shape(self, shape):
+        if reduce(lambda x, y: x * y, shape) == 0:
+            return [(i if i != 0 else d) for i, d in zip(shape, [3, 4, 256, 256])]
+        else:
+            return shape
+
+    def set_shape_var(self, dict: Dict[str, int]):
+        self.shape_vars = dict
+
     def check_result(self, nncase_output_paths, dict_args, stage):
         judge, result = self.compare_results(
             self.output_paths, nncase_output_paths, dict_args)
@@ -535,16 +546,13 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         for n in range(cfg.numbers):
             i = 0
             for input in inputs:
-                shape = []
-                # todo:process var
-                if preprocess_opt['preprocess'] and preprocess_opt['input_shape'] != [] and len(preprocess_opt['input_shape']) == 4:
-                    shape = copy.deepcopy(preprocess_opt['input_shape'])
-                else:
-                    shape = copy.deepcopy(input['model_shape'])
-                if reduce(lambda x, y: x * y, shape) == 0:
-                    shape = [(i if i != 0 else d) for i, d in zip(shape, [1, 3, 256, 256])]
-                if shape[0] != cfg.batch_size:
-                    shape[0] *= cfg.batch_size
+                shape = copy.deepcopy(input['model_shape'])
+                # if preprocess_opt['preprocess'] and preprocess_opt['input_shape'] != [] and len(preprocess_opt['input_shape']) == 4:
+                #     shape = copy.deepcopy(preprocess_opt['input_shape'])
+                # else:
+                #     shape = copy.deepcopy(input['model_shape'])
+                # if shape[0] != cfg.batch_size:
+                #     shape[0] *= cfg.batch_size
                 data = DataFactory[cfg.name](shape, input['dtype'], n, cfg.batch_size, **cfg.kwargs)
 
                 path_list.append(

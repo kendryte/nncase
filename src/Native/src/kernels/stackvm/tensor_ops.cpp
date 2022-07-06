@@ -35,6 +35,20 @@ result<value_t> nncase::kernels::stackvm::batch_normalization(
     return err(std::errc::not_supported);
 }
 
+result<value_t> kernels::stackvm::broadcast(value_t input, value_t shape,
+                                            value_t output, kernel_context &context) {
+    try_input(input_mem, input);
+    auto dtype = input_tensor->dtype();
+    try_var(typecode, to_typecode(dtype));
+    try_dims(out_shape, shape);
+    try_output(out_mem, output, dtype, out_shape);
+    try_(reference::broadcast(typecode, input_mem,
+                        out_mem,
+                        input_tensor->shape(), input_tensor->strides(),
+                        output_tensor->shape(), output_tensor->strides(), context));
+    return ok(output);
+}
+
 result<value_t> nncase::kernels::stackvm::clamp(
     [[maybe_unused]] value_t input, [[maybe_unused]] value_t min,
     [[maybe_unused]] value_t max, [[maybe_unused]] value_t output,
@@ -65,9 +79,18 @@ result<value_t> nncase::kernels::stackvm::conv2d_transpose(
 }
 
 result<value_t> nncase::kernels::stackvm::expand(
-    [[maybe_unused]] value_t input, [[maybe_unused]] value_t shape,
-    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
+    value_t input, value_t shape,
+    value_t output, [[maybe_unused]] kernel_context &context) {
+    try_input(input_mem, input);
+    auto dtype = input_tensor->dtype();
+    try_var(typecode, to_typecode(dtype));
+    try_dims(out_shape, shape);
+    try_output(out_mem, output, dtype, out_shape);
+    try_(reference::broadcast(typecode, input_mem,
+                              out_mem,
+                              input_tensor->shape(), input_tensor->strides(),
+                              output_tensor->shape(), output_tensor->strides(), context));
+    return ok(output);
 }
 
 result<value_t> nncase::kernels::stackvm::flatten(
