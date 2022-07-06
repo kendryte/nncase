@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -25,22 +26,79 @@ internal class UsingComparer : IEqualityComparer<UsingDirectiveSyntax>
     }
 }
 
-[Generator]
-public class PatternGenerator : ISourceGenerator
+internal class GenerateCandidate
 {
-    public void Initialize(GeneratorInitializationContext context) => context.RegisterForSyntaxNotifications(() => new PatternReceiver());
+    public INamedTypeSymbol Op;
+    public IParameterSymbol[] AttrParams;
+    public ISymbol[] ExprParams;
+    public UsingDirectiveSyntax[] UsingSyntaxs;
 
-
-
-    public void Execute(GeneratorExecutionContext context)
+    public GenerateCandidate(INamedTypeSymbol syb, IParameterSymbol[] attrParams, ISymbol[] exprParams, UsingDirectiveSyntax[] usings)
     {
-        if (context.SyntaxContextReceiver is not PatternReceiver receiver)
-            return;
+        Op = syb;
+        AttrParams = attrParams;
+        ExprParams = exprParams;
+        UsingSyntaxs = usings;
+    }
+}
 
-        if (!receiver.Candidates.Any())
-            return;
+[Generator]
+public class PatternGenerator : IIncrementalGenerator
+{
+    //public void Initialize(GeneratorInitializationContext context) => context.RegisterForSyntaxNotifications(() => new PatternReceiver());
 
-        var groupedCandidates = receiver.Candidates.GroupBy(cand => cand.Op.ContainingNamespace, SymbolEqualityComparer.Default).Select(g => (g.Key, g.ToArray()));
+    public void Initialize(IncrementalGeneratorInitializationContext context)
+    {
+
+        // Do a simple filter for enums
+        IncrementalValuesProvider<GenerateCandidate> candidates = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                predicate: static (node, _) => IsSyntaxTargetForGeneration(node), // select recored with base type named op
+                transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx)) // sect the enum with the [EnumExtensions] attribute
+            .Where(static m => m is not null)!; // filter out attributed enums that we don't care about
+
+        // Combine the selected enums with the `Compilation`
+        IncrementalValueProvider<(Compilation, ImmutableArray<GenerateCandidate>)> compilationAndEnums
+            = context.CompilationProvider.Combine(candidates.Collect());
+
+        // Generate the source using the compilation and enums
+        context.RegisterSourceOutput(compilationAndEnums,
+            static (spc, source) => Execute(source.Item1, source.Item2, spc));
+    }
+
+    static bool IsSyntaxTargetForGeneration(SyntaxNode node)
+    {
+        return (node is RecordDeclarationSyntax { BaseList: BaseListSyntax baseList } record && record.AttributeLists.Count == 1 && baseList.Types.Count == 1);
+    }
+
+    static GenerateCandidate? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
+    {
+        var recordDeclaration = (RecordDeclarationSyntax)context.Node;
+        var op = context.SemanticModel.GetDeclaredSymbol(recordDeclaration);
+
+        if (op!.BaseType is { Name: "Op" }
+          && op!.GetAttributes().Any(attr => attr!.AttributeClass!.Name == "PatternFunctionalGeneratorAttribute")
+           )
+        {
+            IParameterSymbol[] attrParams = recordDeclaration.ParameterList is null ?
+                    new IParameterSymbol[] { } :
+                    (from p in recordDeclaration.ParameterList.Parameters
+                     select context.SemanticModel.GetDeclaredSymbol(p)!).ToArray();
+            var exprParams = op.GetMembers()
+                .OfType<IFieldSymbol>()
+                .Where(f => f.Type.Name == "ParameterInfo")
+                .ToArray();
+            var unitRoot = context.Node.SyntaxTree.GetCompilationUnitRoot();
+            var usings = unitRoot.Usings.ToList();
+            usings.Add(UsingDirective(ParseName(op.ContainingNamespace.ToDisplayString())));
+            return new(op, attrParams, exprParams, usings.ToArray());
+        }
+        return null;
+    }
+
+    static void Execute(Compilation compilation, ImmutableArray<GenerateCandidate> receiveCandidates, SourceProductionContext context)
+    {
+        var groupedCandidates = receiveCandidates.GroupBy(cand => cand.Op.ContainingNamespace, SymbolEqualityComparer.Default).Select(g => (g.Key, g.ToArray()));
 
         List<NamespaceDeclarationSyntax> namespaces = new();
         foreach (var (old_namespace, candidates) in groupedCandidates)
@@ -136,10 +194,9 @@ new VArgsPattern( new [] {{ {inputs} }}, null ),
                 .AddMembers(classes.ToArray());
             namespaces.Add(namespcae);
         }
-        var compilationUnit = CompilationUnit().
-                AddMembers(namespaces.ToArray()).
-                //AddUsings(usings.ToArray()).
-                NormalizeWhitespace();
-        context.AddSource("Ops.Pattern", SyntaxTree(compilationUnit, encoding: Encoding.UTF8).GetText());
+        var generatedFiles = CompilationUnit().
+                AddMembers(namespaces.ToArray());
+        compilation.AddSyntaxTrees(SyntaxTree(generatedFiles, encoding: Encoding.UTF8));
+        //context.AddSource("Ops.Pattern", .GetText());
     }
 }
