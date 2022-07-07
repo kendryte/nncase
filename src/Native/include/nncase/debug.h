@@ -1,6 +1,7 @@
 #pragma once
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/util.h>
 #include <nncase/tensor.h>
