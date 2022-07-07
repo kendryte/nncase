@@ -15,7 +15,7 @@ public static class GeneratorUtil
     public static NamespaceDeclarationSyntax MakeNameSpace(string name) => SyntaxFactory.NamespaceDeclaration(default, default(SyntaxTokenList), SyntaxFactory.Token(SyntaxKind.NamespaceKeyword).WithTrailingTrivia(ElasticSpace), ParseName(name), SyntaxFactory.Token(SyntaxKind.OpenBraceToken).WithLeadingTrivia(ElasticLineFeed).WithTrailingTrivia(ElasticLineFeed), default, default, default, SyntaxFactory.Token(SyntaxKind.CloseBraceToken).WithTrailingTrivia(ElasticLineFeed), default);
 
     public static ClassDeclarationSyntax MakeClass(string identifier) => SyntaxFactory.ClassDeclaration(default, default(SyntaxTokenList), SyntaxFactory.Token(SyntaxKind.ClassKeyword).WithTrailingTrivia(ElasticSpace), Identifier(identifier), default, default, default, SyntaxFactory.Token(SyntaxKind.OpenBraceToken).
-        WithTrailingTrivia(ElasticLineFeed), default, 
+        WithTrailingTrivia(ElasticLineFeed), default,
       SyntaxFactory.Token(SyntaxKind.CloseBraceToken).
         WithLeadingTrivia(ElasticTab).
         WithTrailingTrivia(ElasticLineFeed), default)
@@ -26,11 +26,13 @@ public static class GeneratorUtil
 
     public static BlockSyntax MakeBlock(IEnumerable<StatementSyntax> statements) => SyntaxFactory.Block(
          SyntaxFactory.Token(SyntaxKind.OpenBraceToken).
-            WithTrailingTrivia(ElasticLineFeed), 
+            WithTrailingTrivia(ElasticLineFeed),
          List(statements),
          SyntaxFactory.Token(SyntaxKind.CloseBraceToken).
             WithTrailingTrivia(ElasticLineFeed)
         );
+
+    public static SyntaxTrivia MakeWarningTrivid(SyntaxKind keyword) => Trivia(PragmaWarningDirectiveTrivia(Token(keyword), true).NormalizeWhitespace());
 }
 
 public static class RecriverUtil

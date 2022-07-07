@@ -102,8 +102,8 @@ public class PatternGenerator : IIncrementalGenerator
 
             var pattern_name_params = new List<ParameterSyntax>()
                 {
-                    Parameter(Identifier("target_name")).WithType(ParseTypeName("string?")),
-                    Parameter(Identifier("call_name")).WithType(ParseTypeName("string?")),
+                    Parameter(Identifier("target_name")).WithType(ParseTypeName("string?").WithTrailingTrivia(ElasticSpace)),
+                    Parameter(Identifier("call_name")).WithType(ParseTypeName("string?").WithTrailingTrivia(ElasticSpace)),
                 };
             foreach (var cand in candidates)
             {
@@ -209,7 +209,10 @@ new VArgsPattern( new [] {{ {inputs} }}, null ),
             namespaces.Add(namespcae);
         }
         var compilationUnit = CompilationUnit().
-                AddMembers(namespaces.ToArray());
+                WithMembers(new SyntaxList<MemberDeclarationSyntax>(namespaces)).
+                WithLeadingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.DisableKeyword)).
+                WithTrailingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.RestoreKeyword));
+
         context.AddSource("Ops.Pattern", SyntaxTree(compilationUnit, encoding: Encoding.UTF8).GetText());
         //compilation.AddSyntaxTrees(SyntaxTree(compilationUnit, encoding: Encoding.UTF8));
     }

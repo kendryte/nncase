@@ -341,13 +341,15 @@ internal class EvaluatorGenerator : IIncrementalGenerator
             }
             // 4. generate the namespaces
             namespaceDeclarations.Add(
-                GeneratorUtil.MakeNameSpace(Namespace.ToDisplayString()).
+                GeneratorUtil.MakeNameSpace(Namespace!.ToDisplayString()).
                     AddMembers(classDeclarations.ToArray()));
         }
 
         // 4. generate the file
         var compilationUnit = CompilationUnit().
-                AddMembers(namespaceDeclarations.ToArray());
+                WithMembers(new(namespaceDeclarations)).
+                WithLeadingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.DisableKeyword)).
+                WithTrailingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.RestoreKeyword));
         return compilationUnit;
     }
 

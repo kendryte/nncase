@@ -186,14 +186,14 @@ internal sealed class RuleGenerator : IIncrementalGenerator
         var namespaces = (from kv in grouped_classes
                           select GeneratorUtil.MakeNameSpace(kv.Key.ToDisplayString())
                                 .AddMembers(kv.Value.ToArray()));
-
         var compilationUnit = CompilationUnit().
-                AddMembers(namespaces.ToArray()).
-                AddUsings(
+                WithUsings(new(new[]{
                   GeneratorUtil.MakeUsing("Nncase"),
                   GeneratorUtil.MakeUsing("Nncase.IR"),
-                  GeneratorUtil.MakeUsing("Nncase.PatternMatch")
-                );
+                  GeneratorUtil.MakeUsing("Nncase.PatternMatch")})).
+                WithMembers(new(namespaces)).
+                WithLeadingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.DisableKeyword)).
+                WithTrailingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.RestoreKeyword));
         context.AddSource("Generated.Rules", SyntaxTree(compilationUnit, encoding: Encoding.UTF8).GetText());
         //compilation.AddSyntaxTrees(SyntaxTree(compilationUnit, encoding: Encoding.UTF8));
     }
