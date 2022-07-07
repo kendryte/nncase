@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.TIR;
-using Nncase.TIR.Builtin;
 using Xunit;
 
 namespace Nncase.Tests.TIRTest;

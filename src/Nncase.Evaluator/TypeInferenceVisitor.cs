@@ -214,8 +214,8 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     {
         try
         {
-            VerifySubField(expr, expr.Dom.Start, TypePatternUtility.IsIntegralScalar());
-            VerifySubField(expr, expr.Dom.Stop, TypePatternUtility.IsIntegralScalar());
+            VerifySubField(expr, expr.Domain.Start, TypePatternUtility.IsIntegralScalar());
+            VerifySubField(expr, expr.Domain.Stop, TypePatternUtility.IsIntegralScalar());
             VerifySubField(expr, expr.LoopVar, TypePatternUtility.IsIntegralScalar());
             VerifySubField(expr, expr.Body, TypePatternUtility.IsUnit());
         }

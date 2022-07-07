@@ -1,7 +1,6 @@
 using Nncase.IR;
 using Nncase.TIR;
 using Xunit;
-using Nncase.TIR.F;
 using static Nncase.IR.F.Math;
 using System;
 

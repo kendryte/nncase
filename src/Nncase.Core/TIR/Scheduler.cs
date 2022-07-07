@@ -96,7 +96,7 @@ public class Scheduler
     public For[] Split(For loop, params Expr[] factors)
     {
         // step 1. check the arguments
-        if (loop.Dom.Start != (Const)0) { throw new NotImplementedException("Loop Not Start With Zero"); }
+        if (loop.Domain.Start != (Const)0) { throw new NotImplementedException("Loop Not Start With Zero"); }
         Expr tolLength = 1;
         foreach (var factor in factors) { tolLength = tolLength * factor; } // TODO add assert total == (loop.Dom.Max - loop.Dom.Min)
 
@@ -118,7 +118,7 @@ public class Scheduler
         for (int i = factors.Length - 1; i >= 0; i--)
         {
             var @for = new For(newloopVars[i], (0, factors[i]), LoopMode.Serial, nbody);
-            nbody = new Sequential() { @for };
+            nbody = T.Sequential(@for);
             nFor[i] = @for;
         }
 

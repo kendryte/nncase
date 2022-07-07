@@ -3,6 +3,14 @@
     "SourceGenerator": {
       "commandName": "DebugRoslynComponent",
       "targetProject": "..\\..\\src\\Nncase.Core\\Nncase.Core.csproj"
+    },
+    "Core": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\Nncase.Core\\Nncase.Core.csproj"
+    },
+    "Graph": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\Nncase.Graph\\Nncase.Graph.csproj"
     }
   }
 }

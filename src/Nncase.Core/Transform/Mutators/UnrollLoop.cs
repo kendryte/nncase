@@ -34,15 +34,15 @@ internal sealed class UnRollLoop : ExprMutator
 
     Expr unroll(TIR.For expr)
     {
-        if (expr.Dom.Start is not TensorConst || expr.Dom.Stop is not TensorConst || expr.Dom.Step is not TensorConst)
+        if (expr.Domain.Start is not TensorConst || expr.Domain.Stop is not TensorConst || expr.Domain.Step is not TensorConst)
             return expr;
         if (expr.Mode != LoopMode.Unrolled)
             return expr;
         Dictionary<Var, Expr> vmap = new(ReferenceEqualityComparer.Instance);
         List<Expr> unrolled = new();
-        int start = ((TensorConst)expr.Dom.Start).Value.ToScalar<int>();
-        int stop = ((TensorConst)expr.Dom.Stop).Value.ToScalar<int>();
-        int step = ((TensorConst)expr.Dom.Step).Value.ToScalar<int>();
+        int start = ((TensorConst)expr.Domain.Start).Value.ToScalar<int>();
+        int stop = ((TensorConst)expr.Domain.Stop).Value.ToScalar<int>();
+        int step = ((TensorConst)expr.Domain.Step).Value.ToScalar<int>();
         for (int i = start; i < stop; i += step)
         {
             vmap[expr.LoopVar] = i;
@@ -56,6 +56,6 @@ internal sealed class UnRollLoop : ExprMutator
 
             unrolled.Add(body);
         }
-        return new Sequential(unrolled);
+        return new Sequential(new IRArray<Expr>(unrolled));
     }
 }

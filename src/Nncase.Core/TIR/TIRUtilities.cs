@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 
 namespace Nncase.TIR;
 
-
 /// <summary>
 /// tir helper
 /// </summary>

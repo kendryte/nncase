@@ -11,19 +11,17 @@ using Nncase.IR;
 
 namespace Nncase.TIR;
 
-
 /// <summary>
 /// TIRExtensions
 /// </summary>
 public static class TIRExtensions
 {
-
     /// <summary>
     /// convert IEnumerable to tir Sequential.
     /// </summary>
     /// <param name="enumerable"> instance.</param>
     /// <returns> Sequential. </returns>
-    public static Sequential ToSequential(this IEnumerable<Expr> enumerable) => new Sequential(new IRArrayList<Expr>(enumerable));
+    public static Sequential ToSequential(this IEnumerable<Expr> enumerable) => new Sequential(new IRArray<Expr>(enumerable));
 
     /// <summary>
     /// get the total elements bytes count.

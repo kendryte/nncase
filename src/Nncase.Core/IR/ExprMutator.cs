@@ -217,7 +217,7 @@ namespace Nncase.IR
             return expr with
             {
                 LoopVar = (Var)Visit(expr.LoopVar),
-                Dom = MutateLeaf(expr.Dom),
+                Domain = MutateLeaf(expr.Domain),
                 Body = (TIR.Sequential)Visit(expr.Body),
             };
         }

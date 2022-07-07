@@ -249,7 +249,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 
         // 1. For Loop signature
         var loop_var = Visit(expr.LoopVar);
-        Scope.Append($"T.{expr.Mode}(out var {loop_var}, ({Visit(expr.Dom.Start)}, {Visit(expr.Dom.Stop)}, {Visit(expr.Dom.Step)}), out var f{loop_var}).Body");
+        Scope.Append($"T.{expr.Mode}(out var {loop_var}, ({Visit(expr.Domain.Start)}, {Visit(expr.Domain.Stop)}, {Visit(expr.Domain.Step)}), out var f{loop_var}).Body");
 
         // 2. For Body
         Scope.Append(VisitTypeSequential(expr.Body, VisitType(expr.CheckedType!)).Serialize());

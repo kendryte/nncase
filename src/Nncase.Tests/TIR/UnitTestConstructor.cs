@@ -22,31 +22,31 @@ public class UnitTestConstructor
         var x = Var.Scalar("x", DataTypes.Float32);
         Assert.IsType<Var>(x);
 
-        var r = new Reduction(
-          null, new Expr[] { 1 },
-          new[] { new IterVar((0, 1), IterationMode.CommReduce, new Var(TensorType.Scalar(DataTypes.Int32))) },
-          null, 0);
-        Assert.Null(r.Combiner);
-        Assert.Equal(0, r.ValueIndex);
+        //var r = new Reduction(
+        //  null, new Expr[] { 1 },
+        //  new[] { new IterVar((0, 1), IterationMode.CommReduce, new Var(TensorType.Scalar(DataTypes.Int32))) },
+        //  null, 0);
+        //Assert.Null(r.Combiner);
+        //Assert.Equal(0, r.ValueIndex);
 
-        var lhs = Var.Scalar("x", DataTypes.Float32) > (Const)1;
-        var rhs = Equal(Var.Scalar("x", DataTypes.Float32), (Const)1);
-        var s = Select((Const)1, lhs, rhs);
-        var buffer_var = Var.Handle("x", DataTypes.Float32);
-        var ld = TIR.T.Load(buffer_var, 1);
-        Assert.Equal(ld[Load.Handle], buffer_var);
+        //var lhs = Var.Scalar("x", DataTypes.Float32) > (Const)1;
+        //var rhs = Equal(Var.Scalar("x", DataTypes.Float32), (Const)1);
+        //var s = Select((Const)1, lhs, rhs);
+        //var buffer_var = Var.Handle("x", DataTypes.Float32);
+        //var ld = TIR.T.Load(buffer_var, 1);
+        //Assert.Equal(ld[Load.Handle], buffer_var);
 
-        var ramp = TIR.T.Ramp(1, 2, 3);
-        Assert.Equal((Const)1, ramp[Ramp.Offset]);
-        Assert.Equal((Const)2, ramp[Ramp.Stride]);
+        //var ramp = TIR.T.Ramp(1, 2, 3);
+        //Assert.Equal((Const)1, ramp[Ramp.Offset]);
+        //Assert.Equal((Const)2, ramp[Ramp.Stride]);
 
 
-        var bc = new Broadcast(1000, 10);
-        Assert.Equal((Const)1000, bc.Value);
+        //var bc = new Broadcast(1000, 10);
+        //Assert.Equal((Const)1000, bc.Value);
 
-        var sf = new Shuffle(new Expr[] { x }, new Expr[] { 2 });
-        Assert.Equal(sf.Vectors[0], x);
-        Assert.Equal((Const)2, sf.Indices[0]);
+        //var sf = new Shuffle(new Expr[] { x }, new Expr[] { 2 });
+        //Assert.Equal(sf.Vectors[0], x);
+        //Assert.Equal((Const)2, sf.Indices[0]);
 
         // var lt = new Let(x, 10.0f, x);
         // Assert.Equal(lt.Var, x);

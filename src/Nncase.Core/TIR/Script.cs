@@ -4,6 +4,7 @@
 
 using System.Runtime.CompilerServices;
 using Nncase.IR;
+using Nncase.TIR.Builders;
 
 namespace Nncase.TIR;
 
@@ -100,136 +101,38 @@ public static class T
     };
 
     /// <summary>
-    /// build the sequential
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public interface ISequentialBuilder<T>
-    {
-        /// <summary>
-        /// Add the expr items to body
-        /// </summary>
-        /// <param name="exprs"></param>
-        /// <returns></returns>
-        public T Body(params Expr[] exprs);
-    }
-
-    /// <summary>
-    /// the body expr builer
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public class SequentialBuilder<T> : ISequentialBuilder<T>
-      where T : ISequentialExpr
-    {
-        /// <summary>
-        /// expr 
-        /// </summary>
-        public T ParentExpr;
-
-        /// <summary>
-        /// ctor
-        /// </summary>
-        /// <param name="expr"></param>
-        public SequentialBuilder(T expr)
-        {
-            ParentExpr = expr;
-        }
-
-        /// <summary>
-        /// Add the expr items to body
-        /// </summary>
-        /// <param name="exprs"></param>
-        /// <returns></returns>
-        public T Body(params Expr[] exprs)
-        {
-            TIR.Sequential.Flatten(exprs).ForEach(e => ParentExpr.Body.Add(e));
-            return ParentExpr;
-        }
-    }
-
-    /// <summary>
     /// build for loop.
     /// </summary>
     /// <param name="loopVar">out index var.</param>
-    /// <param name="Dom">ranges.</param>
+    /// <param name="domain">ranges.</param>
     /// <param name="mode">loop mode.</param>
     /// <param name="loop">loop instance.</param>
     /// <param name="var_name">loop var name.</param>
     /// <returns> for builder. </returns>
-    public static SequentialBuilder<For> ForLoop(out Var loopVar, Range Dom, LoopMode mode, out For loop, [CallerArgumentExpression("loopVar")] string var_name = "v")
+    public static ISequentialBuilder<For> ForLoop(out Var loopVar, Range domain, LoopMode mode, [CallerArgumentExpression("loopVar")] string var_name = "v")
     {
-        loopVar = new Var(var_name.StartsWith("var ") ? var_name[4..] : var_name, TensorType.Scalar(DataTypes.Int32));
-        loop = new For(loopVar, Dom, mode);
-        return new SequentialBuilder<For>(loop);
+        var newLoopVar = loopVar = new Var(var_name.StartsWith("var ") ? var_name[4..] : var_name, TensorType.Scalar(DataTypes.Int32));
+        return new SequentialBuilder<For>(body => new For(newLoopVar, domain, mode, body));
     }
 
     /// <summary>
     /// get the Serial For
     /// </summary>
     /// <param name="loopVar">out index var.</param>
-    /// <param name="Dom">ranges.</param>
-    /// <param name="loop">loop instance.</param>
+    /// <param name="domain">ranges.</param>
     /// <param name="var_name">loop var name.</param>
     /// <returns> the for loop </returns>
-    public static SequentialBuilder<For> Serial(out Var loopVar, Range Dom, out For loop, [CallerArgumentExpression("loopVar")] string var_name = "v") => ForLoop(out loopVar, Dom, LoopMode.Serial, out loop, var_name);
-
-    /// <summary>
-    /// serial
-    /// </summary>
-    /// <param name="loopVar">out index var.</param>
-    /// <param name="Dom">ranges.</param>
-    /// <param name="var_name">loop var name.</param>
-    /// <returns></returns>
-    public static SequentialBuilder<For> Serial(out Var loopVar, Range Dom, [CallerArgumentExpression("loopVar")] string var_name = "v") => Serial(out loopVar, Dom, out _, var_name);
+    public static ISequentialBuilder<For> Serial(out Var loopVar, Range domain, [CallerArgumentExpression("loopVar")] string var_name = "v") => ForLoop(out loopVar, domain, LoopMode.Serial, var_name);
 
     /// <summary>
     /// make unroll for loop
     /// </summary>
     /// <param name="loopVar">out index var.</param>
-    /// <param name="Dom">ranges.</param>
+    /// <param name="domain">ranges.</param>
     /// <param name="loop">ranges.</param>
     /// <param name="var_name">loop var name.</param>
     /// <returns></returns>
-    public static SequentialBuilder<For> Unrolled(out Var loopVar, Range Dom, out For loop, [CallerArgumentExpression("loopVar")] string var_name = "v") => ForLoop(out loopVar, Dom, LoopMode.Unrolled, out loop, var_name);
-
-    /// <summary>
-    /// GridWrapper for collect the for item.
-    /// </summary>
-    public class NestBodyExprBuilder<T> : ISequentialBuilder<T>
-     where T : Expr, ISequentialExpr
-    {
-        /// <summary>
-        /// contain the exprs
-        /// </summary>
-        public T[] Exprs;
-
-        /// <summary>
-        /// ctor
-        /// <remarks>
-        /// NOTE We will auto add exprs to nest list!
-        /// </remarks>
-        /// </summary>
-        /// <param name="exprs"></param>
-        public NestBodyExprBuilder(params T[] exprs)
-        {
-            foreach (var i in Enumerable.Range(0, exprs.Count() - 1).Reverse())
-            {
-                exprs[i].Body.Add(exprs[i + 1]);
-            }
-            Exprs = exprs;
-        }
-
-        /// <summary>
-        /// Wrapper Body method
-        /// </summary>
-        /// <param name="exprs"></param>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public T Body(params Expr[] exprs)
-        {
-            Sequential.Flatten(exprs).ForEach(item => Exprs.Last().Body.Add(item));
-            return Exprs.First();
-        }
-    }
+    public static ISequentialBuilder<For> Unrolled(out Var loopVar, Range domain, [CallerArgumentExpression("loopVar")] string var_name = "v") => ForLoop(out loopVar, domain, LoopMode.Unrolled, var_name);
 
     /// <summary>
     ///   for i, j in T.grid(16, 16):
@@ -241,26 +144,11 @@ public static class T
     /// <param name="j">inner index var.</param>
     /// <param name="ends">end exprs.</param>
     /// <returns>the inner for loop.</returns>
-    public static NestBodyExprBuilder<For> Grid(out Var i, out Var j, (Expr i, Expr j) ends)
+    public static ISequentialBuilder<For> Grid(out Var i, out Var j, (Expr i, Expr j) ends)
     {
-        var builder_i = T.Serial(out i, (0, ends.i), out var for_i);
-        var builder_j = T.Serial(out j, (0, ends.j), out var for_j);
-        return new NestBodyExprBuilder<For>(for_i, for_j);
-    }
-
-    /// <summary>
-    /// get grid with loops.
-    /// </summary>
-    /// <param name="i"></param>
-    /// <param name="j"></param>
-    /// <param name="ends"></param>
-    /// <param name="loops"></param>
-    /// <returns></returns>
-    public static NestBodyExprBuilder<For> Grid(out Var i, out Var j, (Expr i, Expr j) ends, out (For i, For j) loops)
-    {
-        T.Serial(out i, (0, ends.i), out loops.i);
-        T.Serial(out j, (0, ends.j), out loops.j);
-        return new NestBodyExprBuilder<For>(loops.i, loops.j);
+        var builder_i = T.Serial(out i, (0, ends.i));
+        var builder_j = T.Serial(out j, (0, ends.j));
+        return new NestBodyExprBuilder<For>(builder_i, builder_j);
     }
 
     /// <summary>
@@ -269,11 +157,12 @@ public static class T
     /// <param name="loopMode"></param>
     /// <param name="ranges"></param>
     /// <returns></returns>
-    public static NestBodyExprBuilder<For> Grid(LoopMode loopMode, params Range[] ranges)
+    public static ISequentialBuilder<For> Grid(out Var[] loopVars, LoopMode loopMode, params Range[] ranges)
     {
         string[] names = { "i", "j", "k", "l" };
+        var newLoopVars = loopVars = new Var[ranges.Length];
         return new NestBodyExprBuilder<For>(ranges.Select((rg, i) =>
-             T.ForLoop(out var _, rg, loopMode, out var _, names[i % 4] + (i / 4 == 0 ? "" : (i / 4).ToString())).Body()
+             T.ForLoop(out newLoopVars[i], rg, loopMode, names[i % 4] + (i / 4 == 0 ? string.Empty : (i / 4).ToString())).Body()
         ).ToArray());
     }
 
@@ -297,6 +186,16 @@ public static class T
         return new Block(name);
     }
 
+    public static Sequential Sequential(params Expr[] fields)
+    {
+        return new Sequential(new IRArray<Expr>(fields));
+    }
+
+    public static ISequentialBuilder<Sequential> Sequential()
+    {
+        return new SequentialBuilder<Sequential>(body => body);
+    }
+
     /// <summary>
     /// The script for build funciont with Sequential body.
     /// <code>
@@ -316,9 +215,9 @@ public static class T
     /// <param name="module_kind"></param>
     /// <param name="parameters"></param>
     /// <returns></returns>
-    public static SequentialBuilder<PrimFunction> PrimFunc(string name, string module_kind, params Buffer[] parameters)
+    public static ISequentialBuilder<PrimFunction> PrimFunc(string name, string module_kind, params Buffer[] parameters)
     {
-        return new(new PrimFunction(name, module_kind, new(), new IRArray<Buffer>(parameters)));
+        return new SequentialBuilder<PrimFunction>(body => new PrimFunction(name, module_kind, body, new IRArray<Buffer>(parameters)));
     }
 
     /// <summary>
@@ -333,82 +232,13 @@ public static class T
     }
 
     /// <summary>
-    /// builfer the if then else block
-    /// </summary>
-    public class IfThenElseBuilder
-    {
-        readonly Sequential ThenBranch;
-        readonly Sequential ElseBranch;
-        readonly Expr Condition;
-
-        /// <summary>
-        /// ctor.
-        /// </summary>
-        /// <param name="condition"></param>
-        public IfThenElseBuilder(Expr condition)
-        {
-            ThenBranch = new();
-            ElseBranch = new();
-            Condition = condition;
-        }
-
-        /// <summary>
-        /// then block
-        /// </summary>
-        /// <param name="exprs"> statements. </param>
-        /// <returns> IfThenElseBuilder. </returns>
-        public IfThenElseBuilder Then(params Expr[] exprs)
-        {
-            foreach (var item in exprs)
-            {
-                ThenBranch.Add(item);
-            }
-
-            return this;
-        }
-
-        /// <summary>
-        /// else block
-        /// </summary>
-        /// <param name="exprs"> statements. </param>
-        /// <returns> IfThenElseBuilder. </returns>
-        public IfThenElseBuilder Else(params Expr[] exprs)
-        {
-            foreach (var item in exprs)
-            {
-                ElseBranch.Add(item);
-            }
-
-            return this;
-        }
-
-        /// <summary>
-        /// get the expr.
-        /// </summary>
-        /// <returns>IfThenElse.</returns>
-        public IfThenElse ToExpr()
-        {
-            return new IfThenElse(Condition, ThenBranch, ElseBranch);
-        }
-
-        /// <summary>
-        /// cast to expr.
-        /// </summary>
-        /// <param name="builder"></param>
-        public static implicit operator Expr(IfThenElseBuilder builder)
-        {
-            return builder.ToExpr();
-        }
-    }
-
-    /// <summary>
     /// rethen the IfThenElseBuilder.
     /// </summary>
     /// <param name="condition"></param>
     /// <returns></returns>
-    public static IfThenElseBuilder If(Expr condition)
+    public static IIfThenElseBuilder If(Expr condition)
     {
-        return new(condition);
+        return new IfThenElseBuilder(condition);
     }
 
     /// <summary>
@@ -422,7 +252,10 @@ public static class T
     public static Buffer Buffer(TensorType type, Schedule.MemoryLocation location, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
     {
         if (name.StartsWith("var "))
+        {
             name = name[4..];
+        }
+
         buffer = new Buffer(name, location, type);
         return buffer;
     }
@@ -437,10 +270,13 @@ public static class T
     public static Buffer ConstBuffer(Const expr, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
     {
         if (name.StartsWith("var "))
+        {
             name = name[4..];
+        }
+
         buffer = new Buffer(name, Schedule.MemoryLocation.Rdata, (TensorType)expr.ValueType)
         {
-            Const = expr
+            Const = expr,
         };
         return buffer;
     }
@@ -459,20 +295,24 @@ public static class T
             buffer = null;
             return Nop();
         }
+
         if (name.StartsWith("var "))
+        {
             name = name[4..];
+        }
+
         buffer = new Buffer(name, Schedule.MemoryLocation.Rdata, (TensorType)expr.ValueType)
         {
-            Const = expr
+            Const = expr,
         };
         return buffer;
     }
 
-    public static SequentialBuilder<For> ForSegment(out (Expr b, Expr e) seg, Expr low, Expr chunck, Expr high)
+    public static ISequentialBuilder<For> ForSegment(out (Expr b, Expr e) seg, Expr low, Expr chunck, Expr high)
     {
         var count = IR.F.Tensors.Cast((high - low) / IR.F.Tensors.Cast(chunck, DataTypes.Float32), DataTypes.Int32);
         var forloop = T.Serial(out var i, (0, count));
-        seg = ((i * chunck), IR.F.Math.Min(((i + 1) * chunck), high));
+        seg = (i * chunck, IR.F.Math.Min((i + 1) * chunck, high));
         return forloop;
     }
 
@@ -483,11 +323,10 @@ public static class T
     /// <param name="expression">the expression.</param>
     /// <param name="name">the var name.</param>
     /// <returns>let builder.</returns>
-    public static SequentialBuilder<Let> Let(out Var v, Expr expression, [CallerArgumentExpression("v")] string name = "")
+    public static ISequentialBuilder<Let> Let(out Var v, Expr expression, [CallerArgumentExpression("v")] string name = "")
     {
-        v = new Var(name.StartsWith("var ") ? name[4..] : name);
-        var let = new Let(v, expression, new());
-        return new(let);
+        var newV = v = new Var(name.StartsWith("var ") ? name[4..] : name);
+        return new SequentialBuilder<Let>(body => new Let(newV, expression, body));
     }
 
     /// <summary>

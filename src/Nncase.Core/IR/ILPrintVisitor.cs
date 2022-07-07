@@ -136,7 +136,7 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
         Scope.Push();
 
         // 1. For Loop signature
-        Scope.Append($"For {expr.Mode}({Visit(expr.LoopVar)} in Range({Visit(expr.Dom.Start)}, {Visit(expr.Dom.Stop)}, {Visit(expr.Dom.Step)})");
+        Scope.Append($"For {expr.Mode}({Visit(expr.LoopVar)} in Range({Visit(expr.Domain.Start)}, {Visit(expr.Domain.Stop)}, {Visit(expr.Domain.Step)})");
         AppendCheckedType(expr.CheckedType, " {");
 
         // 2. For Body

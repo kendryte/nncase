@@ -31,7 +31,7 @@ internal class LowerBlockInit : ExprMutator
         };
     }
 
-    Expr Lowering(Sequential init, IRArrayList<IterVar> iterVars)
+    Expr Lowering(Sequential init, IRArray<IterVar> iterVars)
     {
         List<Expr> conds = new();
         foreach (var iterVar in iterVars)

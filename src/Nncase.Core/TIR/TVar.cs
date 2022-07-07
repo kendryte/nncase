@@ -3,6 +3,7 @@
 
 using System;
 using Nncase.IR;
+
 namespace Nncase.TIR;
 
 /// <summary>
