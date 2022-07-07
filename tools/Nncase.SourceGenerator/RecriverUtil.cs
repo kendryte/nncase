@@ -2,9 +2,36 @@
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Nncase.SourceGenerator;
+
+public static class GeneratorUtil
+{
+    public static UsingDirectiveSyntax MakeUsing(string name) => UsingDirective(default, Token(SyntaxKind.UsingKeyword).WithTrailingTrivia(ElasticSpace), default, default, ParseName(name), SyntaxFactory.Token(SyntaxKind.SemicolonToken)).WithTrailingTrivia(ElasticLineFeed);
+
+    public static NamespaceDeclarationSyntax MakeNameSpace(string name) => SyntaxFactory.NamespaceDeclaration(default, default(SyntaxTokenList), SyntaxFactory.Token(SyntaxKind.NamespaceKeyword).WithTrailingTrivia(ElasticSpace), ParseName(name), SyntaxFactory.Token(SyntaxKind.OpenBraceToken).WithLeadingTrivia(ElasticLineFeed).WithTrailingTrivia(ElasticLineFeed), default, default, default, SyntaxFactory.Token(SyntaxKind.CloseBraceToken).WithTrailingTrivia(ElasticLineFeed), default);
+
+    public static ClassDeclarationSyntax MakeClass(string identifier) => SyntaxFactory.ClassDeclaration(default, default(SyntaxTokenList), SyntaxFactory.Token(SyntaxKind.ClassKeyword).WithTrailingTrivia(ElasticSpace), Identifier(identifier), default, default, default, SyntaxFactory.Token(SyntaxKind.OpenBraceToken).
+        WithTrailingTrivia(ElasticLineFeed), default, 
+      SyntaxFactory.Token(SyntaxKind.CloseBraceToken).
+        WithLeadingTrivia(ElasticTab).
+        WithTrailingTrivia(ElasticLineFeed), default)
+      .WithTrailingTrivia(ElasticLineFeed);
+
+    public static MethodDeclarationSyntax MakeMethod(TypeSyntax returnType, string identifier) =>
+        SyntaxFactory.MethodDeclaration(default, default(SyntaxTokenList), returnType, default, SyntaxFactory.Identifier(identifier), default, SyntaxFactory.ParameterList(), default, default, default, default);
+
+    public static BlockSyntax MakeBlock(IEnumerable<StatementSyntax> statements) => SyntaxFactory.Block(
+         SyntaxFactory.Token(SyntaxKind.OpenBraceToken).
+            WithTrailingTrivia(ElasticLineFeed), 
+         List(statements),
+         SyntaxFactory.Token(SyntaxKind.CloseBraceToken).
+            WithTrailingTrivia(ElasticLineFeed)
+        );
+}
 
 public static class RecriverUtil
 {

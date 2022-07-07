@@ -57,13 +57,8 @@ public class PatternGenerator : IIncrementalGenerator
                 transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx)) // sect the enum with the [EnumExtensions] attribute
             .Where(static m => m is not null)!; // filter out attributed enums that we don't care about
 
-        // Combine the selected enums with the `Compilation`
-        IncrementalValueProvider<(Compilation, ImmutableArray<GenerateCandidate>)> compilationAndEnums
-            = context.CompilationProvider.Combine(candidates.Collect());
-
         // Generate the source using the compilation and enums
-        context.RegisterSourceOutput(compilationAndEnums,
-            static (spc, source) => Execute(source.Item1, source.Item2, spc));
+        context.RegisterSourceOutput(candidates.Collect(), static (spc, source) => Execute(spc, source));
     }
 
     static bool IsSyntaxTargetForGeneration(SyntaxNode node)
@@ -96,7 +91,7 @@ public class PatternGenerator : IIncrementalGenerator
         return null;
     }
 
-    static void Execute(Compilation compilation, ImmutableArray<GenerateCandidate> receiveCandidates, SourceProductionContext context)
+    static void Execute(SourceProductionContext context, ImmutableArray<GenerateCandidate> receiveCandidates)
     {
         var groupedCandidates = receiveCandidates.GroupBy(cand => cand.Op.ContainingNamespace, SymbolEqualityComparer.Default).Select(g => (g.Key, g.ToArray()));
 
@@ -123,9 +118,15 @@ public class PatternGenerator : IIncrementalGenerator
                                              where p is not null
                                              select p)
                                      .Concat(from p in cand.AttrParams
-                                             select Parameter(Identifier(p.Name)).WithType(ParseTypeName(p.Type.ToDisplayString())))
+                                             select Parameter(Identifier(p.Name)).
+                                                    WithType(
+                                                        ParseTypeName(p.Type.ToDisplayString()).
+                                                            WithTrailingTrivia(ElasticSpace)))
                                      .Concat(from f in cand.ExprParams
-                                             select Parameter(Identifier(f.Name.ToLower())).WithType(ParseTypeName("Pattern")));
+                                             select Parameter(Identifier(f.Name.ToLower())).
+                                                        WithType(
+                                                            ParseTypeName("Pattern").
+                                                                WithTrailingTrivia(ElasticSpace)));
                         var statements = new List<StatementSyntax>();
                         {
                             // 1.2 build condition
@@ -136,13 +137,19 @@ public class PatternGenerator : IIncrementalGenerator
                             statements.Add(ParseStatement(@$"return new(
 new OpPattern<{cand.Op.ToDisplayString()}>(x => {condition}, {(name_params[0] != null ? "target_name" : "null")}), 
 new VArgsPattern (new[]{{ {inputs} }}, null),
-{(name_params[1] != null ? "call_name" : "null")});"));
+{(name_params[1] != null ? "call_name" : "null")});").
+                                           WithLeadingTrivia(ElasticTab).
+                                           WithTrailingTrivia(ElasticLineFeed));
                         }
                         // 1.4. build method body
-                        var method = MethodDeclaration(ParseTypeName("CallPattern"), "Is" + cand.Op.Name)
+                        var method = GeneratorUtil.MakeMethod(ParseTypeName("CallPattern").WithTrailingTrivia(ElasticSpace), "Is" + cand.Op.Name)
                                      .WithParameterList(ParameterList(SeparatedList(method_params)))
-                                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)))
-                                    .WithBody(Block(statements));
+                                     .WithModifiers(TokenList(
+                                         Token(SyntaxKind.PublicKeyword)
+                                            .WithTrailingTrivia(ElasticSpace),
+                                         Token(SyntaxKind.StaticKeyword)
+                                            .WithTrailingTrivia(ElasticSpace)))
+                                    .WithBody(GeneratorUtil.MakeBlock(statements));
                         members.Add(method);
                     }
                     { // 2. build funciton with condition
@@ -151,10 +158,10 @@ new VArgsPattern (new[]{{ {inputs} }}, null),
                                              where p is not null
                                              select p)
                                      .Concat(new[] {Parameter(Identifier("condition"))
-                                             .WithType(ParseTypeName($"Func<{cand.Op.ToDisplayString()},bool>"))})
+                                             .WithType(ParseTypeName($"Func<{cand.Op.ToDisplayString()},bool>").WithTrailingTrivia(ElasticSpace)) })
                                      .Concat(from f in cand.ExprParams
                                              select Parameter(Identifier(f.Name.ToLower()))
-                                             .WithType(ParseTypeName("Pattern")));
+                                             .WithType(ParseTypeName("Pattern").WithTrailingTrivia(ElasticSpace)));
                         var statements = new List<StatementSyntax>();
                         {
                             // 1.2 build condition
@@ -163,13 +170,20 @@ new VArgsPattern (new[]{{ {inputs} }}, null),
                             statements.Add(ParseStatement(@$"return new(
 new OpPattern<{cand.Op.ToDisplayString()}>(condition, {(name_params[0] != null ? "target_name" : "null")}),
 new VArgsPattern( new [] {{ {inputs} }}, null ),
-{(name_params[1] != null ? "call_name" : "null")});"));
+{(name_params[1] != null ? "call_name" : "null")});").
+                                           WithLeadingTrivia(ElasticTab).
+                                           WithTrailingTrivia(ElasticLineFeed));
                         }
                         // 1.4. build method body
-                        var method = MethodDeclaration(ParseTypeName("CallPattern"), "Is" + cand.Op.Name)
+                        var method = GeneratorUtil.MakeMethod(ParseTypeName("CallPattern").WithTrailingTrivia(ElasticSpace), "Is" + cand.Op.Name)
                                      .WithParameterList(ParameterList(SeparatedList(method_params)))
-                                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)))
-                                    .WithBody(Block(statements));
+                                     .WithModifiers(
+                                        TokenList(
+                                            Token(SyntaxKind.PublicKeyword).
+                                                WithTrailingTrivia(ElasticSpace),
+                                            Token(SyntaxKind.StaticKeyword).
+                                                WithTrailingTrivia(ElasticSpace)))
+                                    .WithBody(GeneratorUtil.MakeBlock(statements));
                         members.Add(method);
                     }
                 }
@@ -179,24 +193,24 @@ new VArgsPattern( new [] {{ {inputs} }}, null ),
             {
                 var class_name = old_namespace.MetadataName.Split('.').Last();
 
-                var @class = ClassDeclaration(Identifier(class_name))
+                var @class = GeneratorUtil.MakeClass(class_name)
                                .WithModifiers(TokenList(
-                                   Token(SyntaxKind.PublicKeyword),
-                                   Token(SyntaxKind.StaticKeyword),
-                                   Token(SyntaxKind.PartialKeyword)))
-                               .AddMembers(members.ToArray());
+                                   Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(ElasticSpace),
+                                   Token(SyntaxKind.StaticKeyword).WithTrailingTrivia(ElasticSpace),
+                                   Token(SyntaxKind.PartialKeyword).WithTrailingTrivia(ElasticSpace)))
+                    .AddMembers(members.ToArray());
                 classes.Add(@class);
             }
             //5. build namespace
             var arr = old_namespace.ToDisplayString().Split('.');
             arr[arr.Length - 1] = "F";
-            var @namespcae = NamespaceDeclaration(ParseName(string.Join(".", arr).Replace("IR", "PatternMatch")))
+            var @namespcae = GeneratorUtil.MakeNameSpace(string.Join(".", arr).Replace("IR", "PatternMatch"))
                 .AddMembers(classes.ToArray());
             namespaces.Add(namespcae);
         }
-        var generatedFiles = CompilationUnit().
+        var compilationUnit = CompilationUnit().
                 AddMembers(namespaces.ToArray());
-        compilation.AddSyntaxTrees(SyntaxTree(generatedFiles, encoding: Encoding.UTF8));
-        //context.AddSource("Ops.Pattern", .GetText());
+        context.AddSource("Ops.Pattern", SyntaxTree(compilationUnit, encoding: Encoding.UTF8).GetText());
+        //compilation.AddSyntaxTrees(SyntaxTree(compilationUnit, encoding: Encoding.UTF8));
     }
 }

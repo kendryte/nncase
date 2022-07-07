@@ -1,16 +1,8 @@
 {
   "profiles": {
-    "Evalutor": {
+    "SourceGenerator": {
       "commandName": "DebugRoslynComponent",
-      "targetProject": "..\\Nncase.Evaluator\\Nncase.Evaluator.csproj"
-    },
-    "Core": {
-      "commandName": "DebugRoslynComponent",
-      "targetProject": "..\\Nncase.Core\\Nncase.Core.csproj"
-    },
-    "Graph": {
-      "commandName": "DebugRoslynComponent",
-      "targetProject": "..\\Nncase.Graph\\Nncase.Graph.csproj"
+      "targetProject": "..\\..\\src\\Nncase.Core\\Nncase.Core.csproj"
     }
   }
 }
