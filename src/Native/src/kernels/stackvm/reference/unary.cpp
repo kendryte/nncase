@@ -35,7 +35,7 @@ result<void> unary_impl(TOp &&op, const T *input, T *output,
                          NNCASE_UNUSED kernel_context &context) noexcept {
     return apply(out_shape, [&](const dims_t &index) -> result<void> {
         const auto v = input[offset(input_strides, index)];
-        output[offset(out_strides, index)] = op(v);
+        output[offset(out_strides, index)] = (T)op(v);
         return ok();
     });
 }
