@@ -139,6 +139,11 @@ void onnx_importer::convert_op_Tanh(const onnx::NodeProto &node)
     convert_unary(node, unary_tanh);
 }
 
+void onnx_importer::convert_op_Erf(const onnx::NodeProto &node)
+{
+    convert_unary(node, unary_erf);
+}
+
 void onnx_importer::convert_unary(const onnx::NodeProto &node, const unary_op_t unary_op)
 {
     assert(node.input().size() == 1);
