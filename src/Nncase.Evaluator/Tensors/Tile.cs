@@ -21,7 +21,7 @@ public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>
     public IValue Visit(IEvaluateContext context, Tile tile)
     {
         var input = context.GetOrtArgumentValue(tile, Tile.Input);
-        var repeats = context.GetOrtArgumentValue(tile, Tile.Repeats);
+        var repeats = context.GetInt64OrtTensorArgumentValue(tile, Tile.Repeats);
         return OrtKI.Tile(input, repeats).ToValue();
     }
 
