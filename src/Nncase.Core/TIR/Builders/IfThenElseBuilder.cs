@@ -10,7 +10,7 @@ namespace Nncase.TIR.Builders;
 /// <summary>
 /// builfer the if then else block.
 /// </summary>
-public interface IIfThenElseBuilder
+public interface IIfThenElseBuilder : IExprBuilder<IfThenElse>
 {
     /// <summary>
     /// then block.
@@ -25,12 +25,6 @@ public interface IIfThenElseBuilder
     /// <param name="exprs"> statements. </param>
     /// <returns> IfThenElseBuilder. </returns>
     IIfThenElseBuilder Else(params object[] exprOrBuilders);
-
-    /// <summary>
-    /// Build <see cref="IfThenElse"/>.
-    /// </summary>
-    /// <returns>IfThenElse.</returns>
-    IfThenElse Build();
 }
 
 internal class IfThenElseBuilder : IIfThenElseBuilder

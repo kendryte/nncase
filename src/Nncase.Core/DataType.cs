@@ -69,6 +69,16 @@ public abstract record DataType
     }
 
     /// <summary>
+    /// Get data type from type code.
+    /// </summary>
+    /// <param name="typeCode">Type code.</param>
+    /// <returns>Data type.</returns>
+    public static PrimType FromTypeCode(Runtime.TypeCode typeCode)
+    {
+        return CompilerServices.DataTypeService.GetPrimTypeFromTypeCode(typeCode);
+    }
+
+    /// <summary>
     /// Get data type from CLR type.
     /// </summary>
     /// <typeparam name="T">CLR type.</typeparam>

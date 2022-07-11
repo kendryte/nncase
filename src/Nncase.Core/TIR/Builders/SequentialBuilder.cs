@@ -10,11 +10,18 @@ using Nncase.IR;
 
 namespace Nncase.TIR.Builders;
 
+public interface IExprBuilder<out T>
+    where T : Expr
+{
+    T Build();
+}
+
 /// <summary>
 /// Build the sequential.
 /// </summary>
 /// <typeparam name="T">Result type.</typeparam>
-public interface ISequentialBuilder<out T>
+public interface ISequentialBuilder<out T> : IExprBuilder<T>
+    where T : Expr
 {
     /// <summary>
     /// Add the expr items to body.
@@ -22,11 +29,10 @@ public interface ISequentialBuilder<out T>
     /// <param name="exprOrBuilders">Expressions.</param>
     /// <returns>Result.</returns>
     ISequentialBuilder<T> Body(params object[] exprOrBuilders);
-
-    T Build();
 }
 
 internal class SequentialBuilder<T> : ISequentialBuilder<T>
+    where T : Expr
 {
     private readonly Func<Sequential, T> _creator;
     private readonly List<object> _body = new();

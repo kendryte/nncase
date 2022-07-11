@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
 
 namespace Nncase.Runtime.Interop;
 
@@ -149,5 +150,21 @@ public class RTTensor : RTValue
         var dims = MemoryMarshal.Cast<int, uint>(tensor.Dimensions);
         var strides = MemoryMarshal.Cast<int, uint>(tensor.Strides);
         return Create(RTDataType.FromTypeCode(dtype.TypeCode), dims, strides, new RTBufferSlice { Buffer = buffer, Start = 0, SizeBytes = sizeBytes });
+    }
+
+    /// <summary>
+    /// To <see cref="Tensor"/>.
+    /// </summary>
+    /// <returns>Copied tensor.</returns>
+    public Tensor ToTensor()
+    {
+        var dtype = DataType.FromTypeCode(ElementType.TypeCode);
+        var dims = MemoryMarshal.Cast<uint, int>(Dimensions);
+        var strides = MemoryMarshal.Cast<uint, int>(Strides);
+        var hostBuffer = Buffer.Buffer.AsHost()!;
+        using (var owner = hostBuffer.Map(RTMapAccess.Read))
+        {
+            return Tensor.FromBytes(new TensorType(dtype, new(dims)), owner.Memory.Span);
+        }
     }
 }

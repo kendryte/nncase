@@ -10,7 +10,7 @@ namespace Nncase.TIR.Builders;
 /// <summary>
 /// builfer the block.
 /// </summary>
-public interface IBlockBuilder
+public interface IBlockBuilder : IExprBuilder<Block>
 {
     /// <summary>
     /// else block.
@@ -45,12 +45,6 @@ public interface IBlockBuilder
     /// <returns></returns>
     /// <exception cref="NotSupportedException"></exception>
     IBlockBuilder Remap(out IterVar vi, For fi, char iterType);
-
-    /// <summary>
-    /// Build <see cref="Block"/>.
-    /// </summary>
-    /// <returns>Block.</returns>
-    Block Build();
 }
 
 internal class BlockBuilder : IBlockBuilder

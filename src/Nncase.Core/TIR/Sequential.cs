@@ -49,7 +49,7 @@ public sealed record Sequential(IRArray<Expr> Fields = default) : Expr, IReadOnl
             case Expr expr:
                 exprs.Add(expr);
                 break;
-            case ISequentialBuilder<Expr> builder:
+            case IExprBuilder<Expr> builder:
                 Flatten(exprs, builder.Build());
                 break;
             default:

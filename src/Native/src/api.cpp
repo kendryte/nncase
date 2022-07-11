@@ -26,7 +26,7 @@ namespace {
     {                                                                          \
         auto v = (x);                                                          \
         if (!v.is_ok())                                                        \
-            return v.unwrap_err().value();                                     \
+            return -v.unwrap_err().value();                                    \
     }
 
 #define c_try_var(name, x)                                                     \
@@ -36,7 +36,7 @@ namespace {
         if (v.is_ok())                                                         \
             name = std::move(v.unwrap());                                      \
         else                                                                   \
-            return v.unwrap_err().value();                                     \
+            return -v.unwrap_err().value();                                    \
     }
 
 #define c_try_set(name, x)                                                     \
@@ -45,7 +45,7 @@ namespace {
         if (v.is_ok())                                                         \
             name = std::move(v.unwrap());                                      \
         else                                                                   \
-            return v.unwrap_err().value();                                     \
+            return -v.unwrap_err().value();                                    \
     }
 
 result<dims_t> to_dims(const uint32_t *dims, uint32_t length) {
@@ -304,7 +304,8 @@ int nncase_tensor_get_strides(nncase::tensor_node *tensor, uint32_t *strides,
     return -EINVAL;
 }
 
-int nncase_tuple_get_fields(nncase::tuple_node *tuple, nncase::value_node **fields,
+int nncase_tuple_get_fields(nncase::tuple_node *tuple,
+                            nncase::value_node **fields,
                             uint32_t *fields_length) {
     if (tuple && fields_length) {
         auto src_fields = tuple->fields();

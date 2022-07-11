@@ -14,6 +14,8 @@ internal interface IDataTypeServiceProvider
 {
     PrimType GetPrimTypeFromType(Type type);
 
+    PrimType GetPrimTypeFromTypeCode(Runtime.TypeCode typeCode);
+
     ValueType GetValueTypeFromType(Type type);
 
     DataType GetDataTypeFromType(Type type);
@@ -24,12 +26,14 @@ internal interface IDataTypeServiceProvider
 internal class DataTypeServiceProvider : IDataTypeServiceProvider
 {
     private readonly Dictionary<Type, PrimType> _primTypes = new();
+    private readonly Dictionary<Runtime.TypeCode, PrimType> _typeCodeToPrimTypes = new();
     private readonly Dictionary<Type, ValueType> _valueTypes = new();
     private readonly IComponentContext _componentContext;
 
     public DataTypeServiceProvider(PrimType[] primTypes, ValueType[] valueTypes, IComponentContext componentContext)
     {
         _primTypes = primTypes.ToDictionary(x => x.CLRType);
+        _typeCodeToPrimTypes = primTypes.Where(x => x.TypeCode < Runtime.TypeCode.ValueType).ToDictionary(x => x.TypeCode);
         _valueTypes = valueTypes.ToDictionary(x => x.CLRType);
         _componentContext = componentContext;
     }
@@ -65,6 +69,11 @@ internal class DataTypeServiceProvider : IDataTypeServiceProvider
     public PrimType GetPrimTypeFromType(Type type)
     {
         return _primTypes[type];
+    }
+
+    public PrimType GetPrimTypeFromTypeCode(Runtime.TypeCode typeCode)
+    {
+        return _typeCodeToPrimTypes[typeCode];
     }
 
     public ValueType GetValueTypeFromType(Type type)
