@@ -57,11 +57,11 @@ public sealed partial class OnnxImporter
                 TensorProto.Types.DataType.Int32 => Tensor.FromSpan<int>(tensor.Int32Data.ToArray(), shape),
                 TensorProto.Types.DataType.Int64 => Tensor.FromSpan<long>(tensor.Int64Data.ToArray(), shape),
 
-                //TensorProto.Types.DataType.Int8 => Tensor.FromSpan(),
+                TensorProto.Types.DataType.Int8 => Tensor.FromSpan<sbyte>(tensor.Int32Data.Select(x => (sbyte)x).ToArray(), shape),
                 //TensorProto.Types.DataType.String => Tensor.FromSpan(),
                 //TensorProto.Types.DataType.Uint32 => Tensor.FromSpan(),
                 //TensorProto.Types.DataType.Uint64 => Tensor.FromSpan<ulong>(tensor.Uint64Data.ToArray(), shape),
-                //TensorProto.Types.DataType.Uint8 => Tensor.FromSpan(),
+                TensorProto.Types.DataType.Uint8 => Tensor.FromSpan<byte>(tensor.Int32Data.Select(x => (byte)x).ToArray(), shape),
                 _ => throw new NotSupportedException($"Not supported onnx constant data type{dt}"),
             };
         }
@@ -120,6 +120,14 @@ public sealed partial class OnnxImporter
         return GetInputExpr(n, 0);
     }
 
+    private DataType GetOutputType(NodeProto n)
+    {
+        var outName = n.Output[0];
+        return _graph.Output.Concat(_graph.ValueInfo).Find(node => node.Name == outName)
+            .Match(n => GetDataType(n),
+                () => throw new InvalidOperationException($"Can't find Output for node:{n.Name}"));
+    }
+    
     private (Expr, Expr) GetInputExprs(NodeProto n, int index0, int index1)
     {
         return (GetInputExpr(n, index0), GetInputExpr(n, index1));

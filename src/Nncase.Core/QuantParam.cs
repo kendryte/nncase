@@ -42,17 +42,13 @@ public struct QuantParam : IEquatable<QuantParam>
 /// <summary>
 /// Prim type of <see cref="QuantizeParam"/>.
 /// </summary>
-public sealed record QuantParamType : PrimType
+public sealed record QuantParamType : ValueType
 {
     /// <inheritdoc/>
     public override Type CLRType => typeof(QuantParam);
 
     /// <inheritdoc/>
     public unsafe override int SizeInBytes => sizeof(QuantParam);
-
-    public override PrimTypeAttributes Attributes { get; }
-
-    public override string FullName => "QuantParam";
-    public override string ShortName => "qp";
-    public override TypeCode TypeCode => TypeCode.ValueType;
+    
+    override public Guid Uuid { get; }
 }

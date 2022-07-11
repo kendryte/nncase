@@ -100,7 +100,7 @@ public sealed partial class OnnxImporter : BaseImporter
             "CumSum" => VisitCumSum(op),
             "DepthToSpace" => VisitDepthToSpace(op),
 
-            // "DequantizeLinear" => VisitDequantizeLinear(op),
+            "DequantizeLinear" => VisitDequantizeLinear(op),
             "Div" => VisitBinary(op, BinaryOp.Div),
             "Dropout" => VisitDropout(op),
             "Elu" => VisitElu(op),
@@ -137,7 +137,7 @@ public sealed partial class OnnxImporter : BaseImporter
             "Pow" => VisitBinary(op, BinaryOp.Pow),
             "PRelu" => VisitPRelu(op),
 
-            // "QuantizeLinear" => VisitQuantizeLinear(op),
+            "QuantizeLinear" => VisitQuantizeLinear(op),
             "RandomNormal" => VisitRandomNormal(op),
             "RandomNormalLike" => VisitRandomNormalLike(op),
             "RandomUniform" => VisitRandomUniform(op),

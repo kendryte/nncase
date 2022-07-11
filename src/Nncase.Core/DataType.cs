@@ -65,7 +65,7 @@ public abstract record DataType
             throw new ArgumentException("Unsupported CLR type.");
         }
 
-        return CompilerServices.DataTypeService.GetPrimTypeFromType(t);
+        return CompilerServices.DataTypeService.GetDataTypeFromType(t);
     }
 
     /// <summary>

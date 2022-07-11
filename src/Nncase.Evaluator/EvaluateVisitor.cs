@@ -59,12 +59,16 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
                 writer.WriteLine(v);
             }
         }
-        else
+        else if (dt is PrimType)
         {
             foreach (var v in tensor.ToArray<float>())
             {
                 writer.WriteLine(v);
             }
+        }
+        else
+        {
+            writer.WriteLine($"{dt} NotImpl");
         }
     }
 

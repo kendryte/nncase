@@ -211,6 +211,10 @@ inline size_t positive_index(int index, size_t rank) {
 #define try_tuple_input(_var_name, _value_name)                                \
     try_input_impl(_var_name, _value_name, tuple)
 
+#define try_input_with_value_type(_var_name, _value_name, _ty)                 \
+    try_input(__##_var_name, _value_name);                                     \
+    auto *_var_name = IN_CAST(_ty, __##_var_name);
+
 #define try_tuple_field0(_input0_name, _tuple_name)                            \
     try_var(_input0_name, _tuple_name->fields()[0].as<tensor>());
 
@@ -456,14 +460,13 @@ inline result<void> integer_cast(datatype_t type, const gsl::byte *input,
 inline tensor tensor_reshape(tensor in_tensor, const dims_t &new_shape) {
     auto strides = get_default_strides(new_shape);
     // used for debug
-//    [[maybe_unused]] auto new_sizes = get_bytes(in_tensor->dtype(), new_shape, strides);
-//    [[maybe_unused]] auto origin_sizes = in_tensor->buffer().size_bytes();
-    auto node = new tensor_node(in_tensor->dtype(), new_shape,
-                    strides, in_tensor->buffer());
+    //    [[maybe_unused]] auto new_sizes = get_bytes(in_tensor->dtype(),
+    //    new_shape, strides);
+    //    [[maybe_unused]] auto origin_sizes = in_tensor->buffer().size_bytes();
+    auto node = new tensor_node(in_tensor->dtype(), new_shape, strides,
+                                in_tensor->buffer());
     return tensor(node);
 }
 
-inline bool is_scalar(const dims_t& shape) {
-    return shape.size() == 0;
-}
+inline bool is_scalar(const dims_t &shape) { return shape.size() == 0; }
 } // namespace nncase::runtime

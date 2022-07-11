@@ -40,12 +40,16 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
     /// <inheritdoc/>
     public override string Visit(Const expr)
     {
-        if (_names.TryGetValue(expr, out var name)) { return name; }
-        
-        var valueStr = expr.CheckedType is not null && expr.CheckedShape.Size < 8
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        var valueStr = expr.CheckedType is not null && (expr.CheckedDataType is PrimType) && expr.CheckedShape.Size < 8
             ? "[" + string.Join(",", ((TensorConst) expr).Value.ToArray<int>()) + "]"
             : "";
         name = $"const({(expr.CheckedType is null ? string.Empty : VisitType(expr.CheckedType))} : {valueStr})";
+
         _names.Add(expr, name);
         return name;
     }
@@ -195,6 +199,7 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
     {
         PrimType ptype => ptype.GetDisplayName() + (type.Shape.IsScalar ? "" : type.Shape.ToString()),
         PointerType { ElemType: PrimType etype } ptype => $"*{etype.GetDisplayName()}",
+        ValueType => $"ValueType:{type.DType.ToString()}",
         _ => throw new NotSupportedException(type.DType.GetType().Name),
     };
 

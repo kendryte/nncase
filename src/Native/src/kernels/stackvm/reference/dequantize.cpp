@@ -67,11 +67,11 @@ result<value_t> nncase::kernels::stackvm::dequantize(typecode_t target_type,
                                                      kernel_context &context) {
     try_input(input_mem, input);
     try_output(out_mem, output, target_type, input_tensor->shape());
-    try_var(deq_param, value_as_quant_param(dequant_param));
+    try_input_with_value_type(deq_param, dequant_param, quant_param_t);
 
     try_(dequantize_impl(input_tensor->dtype(), output_tensor->dtype(), input_mem,
                          out_mem, input_tensor->shape(), input_tensor->strides(),
-                         output_tensor->strides(), deq_param.scale,
-                         (float)deq_param.zero_point, context));
+                         output_tensor->strides(), deq_param->scale,
+                         (float)deq_param->zero_point, context));
     return ok(output);
 }

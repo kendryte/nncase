@@ -14,17 +14,23 @@ internal interface IDataTypeServiceProvider
 {
     PrimType GetPrimTypeFromType(Type type);
 
+    ValueType GetValueTypeFromType(Type type);
+
+    DataType GetDataTypeFromType(Type type);
+    
     ISpanConverter GetConverter(Type fromType, Type toType);
 }
 
 internal class DataTypeServiceProvider : IDataTypeServiceProvider
 {
     private readonly Dictionary<Type, PrimType> _primTypes = new();
+    private readonly Dictionary<Type, ValueType> _valueTypes = new();
     private readonly IComponentContext _componentContext;
 
-    public DataTypeServiceProvider(PrimType[] primTypes, IComponentContext componentContext)
+    public DataTypeServiceProvider(PrimType[] primTypes, ValueType[] valueTypes, IComponentContext componentContext)
     {
         _primTypes = primTypes.ToDictionary(x => x.CLRType);
+        _valueTypes = valueTypes.ToDictionary(x => x.CLRType);
         _componentContext = componentContext;
     }
 
@@ -42,9 +48,28 @@ internal class DataTypeServiceProvider : IDataTypeServiceProvider
         }
     }
 
+    public DataType GetDataTypeFromType(Type type)
+    {
+        if (_primTypes.TryGetValue(type, out var primType))
+        {
+            return primType;
+        }
+        else if (_valueTypes.TryGetValue(type, out var valueType))
+        {
+            return valueType;
+        }
+
+        throw new NotSupportedException($"Unsupported Type {type} in GetDataTypefromType");
+    }
+    
     public PrimType GetPrimTypeFromType(Type type)
     {
         return _primTypes[type];
+    }
+
+    public ValueType GetValueTypeFromType(Type type)
+    {
+        return _valueTypes[type];
     }
 
     private class PointerSpanConverter<TElem, TTo> : ISpanConverter<Pointer<TElem>, TTo>

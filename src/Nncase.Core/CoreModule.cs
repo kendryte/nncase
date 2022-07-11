@@ -33,6 +33,6 @@ public class CoreModule : Module
         builder.RegisterType<Float32Type>().As<PrimType>().SingleInstance();
         builder.RegisterType<Float64Type>().As<PrimType>().SingleInstance();
         builder.RegisterType<BFloat16Type>().As<PrimType>().SingleInstance();
-        builder.RegisterType<QuantParamType>().As<PrimType>().SingleInstance();
+        builder.RegisterType<QuantParamType>().As<ValueType>().SingleInstance();
     }
 }
