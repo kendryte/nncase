@@ -1,5 +1,9 @@
 namespace Nncase;
 
+
+/// <summary>
+/// the quan mode.
+/// </summary>
 public enum QuantMode
 {
     /// <summary>

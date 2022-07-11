@@ -9,7 +9,13 @@ using System.Threading.Tasks;
 
 namespace Nncase.Quantization;
 
+/// <summary>
+/// quantize options
+/// </summary>
 public class QuantizeOptions
 {
+    /// <summary>
+    /// CalibrationDataset
+    /// </summary>
     public ICalibrationDatasetProvider? CalibrationDataset { get; set; }
 }

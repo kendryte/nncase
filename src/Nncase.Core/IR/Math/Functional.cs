@@ -419,6 +419,12 @@ namespace Nncase.IR.F
 
         public static Call FakeDequantize(Expr input, Expr quantParam, DataType targetType) => new Call(new FakeDequantize(targetType), input, quantParam);
 
+        /// <summary>
+        /// attach the rangeof on the target, when run the egraph pass, will replace the rangeof expression with the constant.
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="range"></param>
+        /// <returns> new marker expression. </returns>
         public static Marker RangeOfMarker(Expr target, Expr range) => new Marker(WellknownMarkerNames.RangeOf, target, range);
     }
 }

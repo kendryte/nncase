@@ -84,6 +84,7 @@ internal partial class Quantizer
 
     private void AssignRanges(IDictionary<ENode, ValueRange<float>> ranges)
     {
+        // note union the constant in the rangeof eclass, when extact the graph will replace the rangeof expression with the constant ValueRange.
         foreach (var range in ranges)
         {
             var value = new[] { range.Value.Min, range.Value.Max };
@@ -95,6 +96,9 @@ internal partial class Quantizer
         _graph.Rebuild();
     }
 
+    /// <summary>
+    /// collec all rangeof enode.
+    /// </summary>
     private void MarkRangeOfs()
     {
         if (EGraphMatcher.TryMatchRoot(_graph.Nodes, IsRangeOf(IsWildcard()), out var matches))

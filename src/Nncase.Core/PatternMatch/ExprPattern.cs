@@ -62,7 +62,6 @@ public static partial class Utility
     /// <returns></returns>
     public static ExprPattern IsWildcard() => IsWildcard(null);
 
-
     /// <summary>
     /// fast utitlty for build optional none pattern.
     /// </summary>

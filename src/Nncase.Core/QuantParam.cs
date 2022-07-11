@@ -26,6 +26,11 @@ public struct QuantParam : IEquatable<QuantParam>
     /// </summary>
     public float Scale;
 
+    /// <summary>
+    /// ctor
+    /// </summary>
+    /// <param name="zeroPoint"></param>
+    /// <param name="scale"></param>
     public QuantParam(int zeroPoint, float scale)
     {
         ZeroPoint = zeroPoint;
@@ -40,7 +45,7 @@ public struct QuantParam : IEquatable<QuantParam>
 }
 
 /// <summary>
-/// Prim type of <see cref="QuantizeParam"/>.
+/// Prim type of <see cref="QuantParam"/>.
 /// </summary>
 public sealed record QuantParamType : ValueType
 {
@@ -50,5 +55,6 @@ public sealed record QuantParamType : ValueType
     /// <inheritdoc/>
     public unsafe override int SizeInBytes => sizeof(QuantParam);
     
+    /// <inheritdoc/>
     override public Guid Uuid { get; }
 }

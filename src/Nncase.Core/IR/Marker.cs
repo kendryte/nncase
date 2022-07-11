@@ -9,11 +9,23 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR;
 
+/// <summary>
+/// The marker expression, it's can attach the attribute on the target.
+/// </summary>
+/// <param name="Name"> Name will belong to <see cref="WellknownMarkerNames"/> </param>
+/// <param name="Target"> expr target. </param>
+/// <param name="Attribute"> expr attribute. </param>
 public sealed record Marker(string Name, Expr Target, Expr Attribute) : Expr
 {
 }
 
+/// <summary>
+/// staic marker name collection
+/// </summary>
 public static class WellknownMarkerNames
 {
+    /// <summary>
+    /// attribute <seealso cref="IR.Math.RangeOf"/>
+    /// </summary>
     public static readonly string RangeOf = "RangeOf";
 }
