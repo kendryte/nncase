@@ -19,7 +19,7 @@ public class QuantizeEvaluator : IEvaluator<Quantize>, ITypeInferencer<Quantize>
         var input = context.GetOrtArgumentValue(target, Quantize.Input);
         var quantParam = context.GetArgumentValueAsScalar<QuantParam>(target, Quantize.QuantParam);
         var zeroPoint = Tensor.FromScalar(quantParam.ZeroPoint).CastTo(target.TargetType);
-        return OrtKI.QuantizeLinear(input, 1 / quantParam.Scale, zeroPoint.ToOrtTensor(), 0).ToValue();
+        return OrtKI.QuantizeLinear(input, quantParam.Scale, zeroPoint.ToOrtTensor(), 0).ToValue();
     }
 
     /// <inheritdoc/>

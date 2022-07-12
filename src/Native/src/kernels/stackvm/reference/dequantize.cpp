@@ -36,7 +36,7 @@ dequantize_impl(const TQint *input, TFloat *output, const dims_t &in_shape,
                 NNCASE_UNUSED kernel_context &context) noexcept {
     return apply(in_shape, [&](const dims_t &index) -> result<void> {
         auto value = (float)input[offset(in_strides, index)];
-        value = value * scale + bias;
+        value = (value - bias) * scale;
         output[offset(out_strides, index)] = (TFloat)value;
         return ok();
     });

@@ -20,7 +20,7 @@ namespace Nncase.Importer
             {
                 return Quantize(input, new QuantParam(
                         biasConst.Value.ToScalar<int>(),
-                        1 / scaleConst.Value.ToScalar<float>()),
+                        scaleConst.Value.ToScalar<float>()),
                     GetOutputType(op));
             }
 
@@ -36,7 +36,7 @@ namespace Nncase.Importer
                 var scaleV = scaleConst.Value.ToScalar<float>();
                 var biasV = biasConst.Value.ToScalar<int>();
                 return Dequantize(input, new QuantParam(
-                        (int)(-biasV * scaleV),
+                        biasV,
                         scaleV),
                     GetOutputType(op));
             }

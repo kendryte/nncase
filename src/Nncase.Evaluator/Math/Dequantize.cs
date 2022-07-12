@@ -19,7 +19,7 @@ public class DequantizeEvaluator : IEvaluator<Dequantize>, ITypeInferencer<Dequa
     {
         var input = context.GetOrtArgumentValue(target, Dequantize.Input);
         var dequantParam = context.GetArgumentValueAsScalar<QuantParam>(target, Dequantize.DequantParam);
-        var zeroPoint = Tensor.FromScalar(-dequantParam.ZeroPoint / dequantParam.Scale).CastTo(input.DataType.ToDataType());
+        var zeroPoint = Tensor.FromScalar(dequantParam.ZeroPoint).CastTo(input.DataType.ToDataType());
         return OrtKI.DequantizeLinear(input, dequantParam.Scale, zeroPoint.ToOrtTensor(), 0).ToValue();
     }
 

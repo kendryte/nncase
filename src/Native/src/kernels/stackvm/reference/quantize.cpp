@@ -35,7 +35,7 @@ result<void> quantize_impl(const TFloat *input, TQint *output, const dims_t &in_
 {
     return apply(in_shape, [&](const dims_t &index) -> result<void> {
         auto value = (float)input[offset(in_strides, index)];
-        value = value * scale + bias;
+        value = value / scale + bias;
         auto qvalue = (int32_t)lrintf(value);
         qvalue = kernels::detail::clamp(qvalue, (int32_t)std::numeric_limits<TQint>::lowest(), (int32_t)std::numeric_limits<TQint>::max());
         output[offset(out_strides, index)] = (TQint)qvalue;
