@@ -24,12 +24,8 @@ using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Tests.EvaluatorTest;
 
-public class UnitTestEvaluator : IHostFixtrue
+public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
 {
-    public UnitTestEvaluator(IHost host) : base(host)
-    {
-    }
-
     [Fact]
     public void TestEvalFuncCall()
     {

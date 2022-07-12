@@ -15,15 +15,8 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestMatMulToConv2D
+public class UnitTestMatMulToConv2D : TestFixture.UnitTestFixtrue
 {
-    private readonly RunPassOptions passOptions;
-
-    public UnitTestMatMulToConv2D()
-    {
-        passOptions = new RunPassOptions(null, 3, Testing.GetDumpDirPath(this.GetType()));
-    }
-
     public static IEnumerable<object[]> TestMatMulToConv2DPositiveData =>
         new[]
         {

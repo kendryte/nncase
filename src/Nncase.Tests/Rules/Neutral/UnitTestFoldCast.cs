@@ -13,14 +13,8 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFoldCast
+public class UnitTestFoldCast: TestFixture.UnitTestFixtrue
 {
-    private readonly RunPassOptions passOptions;
-
-    public UnitTestFoldCast()
-    {
-        passOptions = new RunPassOptions(null, 3, Testing.GetDumpDirPath(this.GetType()));
-    }
 
     public static IEnumerable<object[]> TestFoldTwoCastsPositiveData =>
         new[]

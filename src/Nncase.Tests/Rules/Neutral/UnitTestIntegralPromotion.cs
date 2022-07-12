@@ -20,15 +20,8 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestIntegralPromotion
+public class UnitTestIntegralPromotion : TestFixture.UnitTestFixtrue
 {
-    private readonly RunPassOptions passOptions;
-
-    public UnitTestIntegralPromotion()
-    {
-        passOptions = new RunPassOptions(null, 3, Testing.GetDumpDirPath(this.GetType()));
-    }
-
     public static IEnumerable<object[]> TestIntegralPromotionPositiveData =>
         new[]
         {

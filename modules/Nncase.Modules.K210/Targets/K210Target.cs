@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Nncase.CodeGen;
 using Nncase.CodeGen.K210;
 using Nncase.CodeGen.StackVM;
@@ -25,7 +26,10 @@ public class K210Target : ITarget
     /// <inheritdoc/>
     public string Kind => "k210";
 
-    public CompileOptions CompileOptions => new();
+    /// <inheritdoc/>
+    public void ParseTargetDependentOptions(IConfigurationSection configure)
+    {
+    }
 
     /// <inheritdoc/>
     public void RegisterTargetDependentPass(PassManager passManager, CompileOptions options)
@@ -40,17 +44,17 @@ public class K210Target : ITarget
     }
 
     /// <inheritdoc/>
-    public void RegisterQuantizePass(PassManager passManager)
+    public void RegisterQuantizePass(PassManager passManager, CompileOptions options)
     {
     }
 
     /// <inheritdoc/>
-    public void RegisterTargetDependentAfterQuantPass(PassManager passManager)
+    public void RegisterTargetDependentAfterQuantPass(PassManager passManager, CompileOptions options)
     {
     }
 
     /// <inheritdoc/>
-    public IModuleBuilder CreateModuleBuilder(string moduleKind)
+    public IModuleBuilder CreateModuleBuilder(string moduleKind, CompileOptions options)
     {
         if (moduleKind == KPURTModule.Kind)
         {

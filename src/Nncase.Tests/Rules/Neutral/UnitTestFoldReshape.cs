@@ -14,15 +14,8 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFoldReshape
+public class UnitTestFoldReshape : TestFixture.UnitTestFixtrue
 {
-
-    private readonly RunPassOptions passOptions;
-
-    public UnitTestFoldReshape()
-    {
-        passOptions = new RunPassOptions(null, 3, Testing.GetDumpDirPath(this.GetType()));
-    }
 
     public static IEnumerable<object[]> TestFoldNopReshapePositiveData =>
         new[]

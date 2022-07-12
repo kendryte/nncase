@@ -12,58 +12,65 @@ using Microsoft.Extensions.Logging;
 using Nncase.Evaluator;
 using Nncase.Hosting;
 using Nncase.IR;
+using Nncase.TestFixture;
 using Nncase.Transform;
+using Tomlyn.Extensions.Configuration;
 using Xunit;
 
-namespace Nncase.Tests
+namespace Nncase.Tests;
+
+public class Startup
 {
-    public class TestingConfiguration
+    public IConfigurationRoot Configuration { get; set; }
+
+    public void ConfigureHost(IHostBuilder hostBuilder) =>
+        hostBuilder
+            .ConfigureAppConfiguration(ConfigureAppConfiguration)
+            .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+            .ConfigureContainer<ContainerBuilder>(ConfigureContainer)
+            .ConfigureServices(ConfigureServices);
+
+    private static void ConfigureContainer(ContainerBuilder builder)
     {
-        public string LogDir { get; set; }
+        var assemblies = ApplicationParts.LoadApplicationParts(c =>
+        {
+            c.AddCore()
+            .AddEvaluator()
+            .AddGraph()
+            .AddEGraph()
+            .AddStackVM()
+            .AddK210()
+            .AddTestFixture();
+        });
+        builder.RegisterAssemblyModules(assemblies);
     }
 
-    public class Startup
+    private void ConfigureAppConfiguration(HostBuilderContext context, IConfigurationBuilder builder)
     {
-        public IConfigurationRoot Configuration { get; set; }
+        builder.Sources.Clear(); // CreateDefaultBuilder adds default configuration sources like appsettings.json. Here we can remove them
+        builder.AddTomlFile("testsettings.toml", true, false);
+        Configuration = builder.Build();
+    }
 
-        public void ConfigureHost(IHostBuilder hostBuilder) =>
-            hostBuilder
-                .ConfigureAppConfiguration(ConfigureAppConfiguration)
-                .UseServiceProviderFactory(new AutofacServiceProviderFactory())
-                .ConfigureContainer<ContainerBuilder>(ConfigureContainer)
-                .ConfigureServices(ConfigureServices);
-
-        private static void ConfigureContainer(ContainerBuilder builder)
+    private void ConfigureServices(HostBuilderContext context, IServiceCollection services)
+    {
+        services.Configure<CompileOptions>(options =>
         {
-            var assemblies = ApplicationParts.LoadApplicationParts(c =>
+            Configuration.GetSection("CompileOptions").Bind(options);
+            options.QuantType = Configuration["CompileOptions:QuantType"] switch
             {
-                c.AddCore()
-                .AddEvaluator()
-                .AddGraph()
-                .AddEGraph()
-                .AddStackVM()
-                .AddK210();
-            });
-            builder.RegisterAssemblyModules(assemblies);
-        }
+                "Int8" => DataTypes.Int8,
+                "UInt8" => DataTypes.UInt8,
+                _ => throw new System.ArgumentOutOfRangeException(),
+            };
+        });
+    }
 
-        private void ConfigureAppConfiguration(HostBuilderContext context, IConfigurationBuilder builder)
-        {
-            builder.SetBasePath(Path.GetDirectoryName(Testing.GetTestingFilePath()))
-                          .AddJsonFile("config.json", true, false);
-            Configuration = builder.Build();
-        }
+    public void Configure(ICompilerServicesProvider provider, ITestingProvider testing_provider)
+    {
+        Environment.SetEnvironmentVariable("NNCASE_TARGET_PATH", "");
 
-        private void ConfigureServices(HostBuilderContext context, IServiceCollection services)
-        {
-            services.Configure<TestingConfiguration>(options => Configuration.GetSection("Testing").Bind(options));
-        }
-
-        public void Configure(ICompilerServicesProvider provider)
-        {
-            Environment.SetEnvironmentVariable("NNCASE_TARGET_PATH", "");
-
-            CompilerServices.Configure(provider);
-        }
+        CompilerServices.Configure(provider);
+        TestFixture.Testing.Configure(testing_provider);
     }
 }

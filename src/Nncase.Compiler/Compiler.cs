@@ -63,7 +63,7 @@ public class Compiler
     {
         loggingBuilder.AddConsole();
     }
-    
+
     public IRModule ImportModule(Stream content, CompileOptions options)
     {
         CompilerServices.CompileOptions = options;
@@ -80,7 +80,7 @@ public class Compiler
         }
 
         DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module, options));
-        
+
         DumpModule(module, options, "ir_infertype");
         Console.WriteLine("ImportModule successful!");
         return module;
@@ -123,21 +123,21 @@ public class Compiler
     public void TargetIndependentPass()
     {
     }
-    
+
     public void Compile(CompileOptions options)
     {
         Options = options;
         var t = CompilerServices.GetTarget(options.Target);
         TargetIndependentPass();
         RunPass(p => t.RegisterTargetDependentPass(p, options));
-        RunPass(p => t.RegisterTargetDependentAfterQuantPass(p));
+        RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, options));
         Console.WriteLine("Compile successful");
     }
 
     public byte[] Gencode()
     {
         var target = CompilerServices.GetTarget(Options.Target);
-        var moduleBuilder = new ModelBuilder(target);
+        var moduleBuilder = new ModelBuilder(target, Options);
         var linkedModel = moduleBuilder.Build(Module);
         using var output = new MemoryStream();
         linkedModel.Serialize(output);

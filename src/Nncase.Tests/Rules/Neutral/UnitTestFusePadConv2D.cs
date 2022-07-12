@@ -16,15 +16,8 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFusePadConv2D
+public class UnitTestFusePadConv2D : TestFixture.UnitTestFixtrue
 {
-    private readonly RunPassOptions passOptions;
-
-    public UnitTestFusePadConv2D()
-    {
-        passOptions = new RunPassOptions(null, 3, Testing.GetDumpDirPath(this.GetType()));
-    }
-
     public static IEnumerable<object[]> TestFusePadConv2DPositiveData =>
         new[]
         {

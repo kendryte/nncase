@@ -18,14 +18,8 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFoldBinary
+public class UnitTestFoldBinary: TestFixture.UnitTestFixtrue
 {
-    private readonly RunPassOptions passOptions;
-
-    public UnitTestFoldBinary()
-    {
-        passOptions = new RunPassOptions(null, 3, Testing.GetDumpDirPath(this.GetType()));
-    }
 
     public static IEnumerable<object[]> TestFoldNopBinaryNegativeData =>
         new[]

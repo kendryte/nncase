@@ -18,15 +18,8 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestSimplifyBinary
+public class UnitTestSimplifyBinary: TestFixture.UnitTestFixtrue
 {
-    private readonly RunPassOptions passOptions;
-
-    public UnitTestSimplifyBinary()
-    {
-        passOptions = new RunPassOptions(null, 3, Testing.GetDumpDirPath(this.GetType()));
-    }
-
     public static IEnumerable<object[]> TestReassociateMulPositiveData =>
         new[]
         {

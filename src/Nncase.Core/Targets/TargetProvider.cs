@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 
 namespace Nncase.Targets;
 
@@ -13,9 +14,13 @@ internal class TargetProvider : ITargetProvider
 {
     private readonly Dictionary<string, ITarget> _targets;
 
-    public TargetProvider(ITarget[] targets)
+    public TargetProvider(ITarget[] targets, IConfiguration configure)
     {
         _targets = targets.ToDictionary(x => x.Kind);
+        foreach (var target in _targets.Values)
+        {
+            target.ParseTargetDependentOptions(configure.GetSection(target.Kind));
+        }
     }
 
     public ITarget GetTarget(string name)

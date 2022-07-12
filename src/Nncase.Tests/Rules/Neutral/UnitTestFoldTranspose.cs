@@ -14,14 +14,8 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFoldTranspose
+public class UnitTestFoldTranspose : TestFixture.UnitTestFixtrue
 {
-    private readonly RunPassOptions passOptions;
-
-    public UnitTestFoldTranspose()
-    {
-        passOptions = new RunPassOptions(null, 3, Testing.GetDumpDirPath(this.GetType()));
-    }
 
     public static IEnumerable<object[]> TestFoldNopTransposePositiveData =>
         new[]

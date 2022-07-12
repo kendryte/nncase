@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Microsoft.Extensions.Configuration;
 using Nncase.CodeGen;
 using Nncase.Transform;
 
@@ -21,22 +22,38 @@ public interface ITarget
     /// </summary>
     string Kind { get; }
 
+    /// <summary>
+    /// Parse Target Dependent Options 
+    /// </summary>
+    /// <param name="configure"></param>
+    void ParseTargetDependentOptions(IConfigurationSection configure);
+
+    /// <summary>
+    /// Register Target Dependent Pass
+    /// </summary>
+    /// <param name="passManager">pass manager.</param>
+    /// <param name="options">compile options.</param>
     void RegisterTargetDependentPass(PassManager passManager, CompileOptions options);
 
-    void RegisterQuantizePass(PassManager passManager);
+    /// <summary>
+    /// Register Quantize Pass
+    /// </summary>
+    /// <param name="passManager">pass manager.</param>
+    /// <param name="options">compile options.</param>
+    void RegisterQuantizePass(PassManager passManager, CompileOptions options);
 
-    void RegisterTargetDependentAfterQuantPass(PassManager passManager);
+    /// <summary>
+    /// Register Target Dependent After Quant Pass
+    /// </summary>
+    /// <param name="passManager"></param>
+    /// <param name="options">compile options.</param>
+    void RegisterTargetDependentAfterQuantPass(PassManager passManager, CompileOptions options);
 
     /// <summary>
     /// Create module builder.
     /// </summary>
     /// <param name="moduleKind">Module kind.</param>
+    /// <param name="options">compile options.</param>
     /// <returns>Module builder.</returns>
-    IModuleBuilder CreateModuleBuilder(string moduleKind);
-
-    /// <summary>
-    /// current target compiler options.
-    /// NOTE each target maybe need custom validation the compile option.
-    /// </summary>
-    CompileOptions CompileOptions { get; }
+    IModuleBuilder CreateModuleBuilder(string moduleKind, CompileOptions options);
 }

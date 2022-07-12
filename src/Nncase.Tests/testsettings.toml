@@ -1,0 +1,10 @@
+[CompileOptions]
+  InputFile = ""
+  OutputFile = ""
+  InputFormat = ""
+  Target = "cpu"
+  DumpLevel = 4
+  DumpDir = ""
+  UsePTQ = false
+  QuantType= "Int8"
+  QuantMode= "UnsignedMode"

@@ -14,14 +14,51 @@ using Nncase.Transform;
 
 namespace Nncase.TestFixture;
 
+public interface ITestingProvider
+{
+    /// <summary>
+    /// get the nncase `tests_ouput` path
+    /// <remarks>
+    /// you can set the subPath for get the `xxx/tests_output/subPath`
+    /// </remarks>
+    /// </summary>
+    /// <param name="subDir">sub directory.</param>
+    /// <returns> full path string. </returns>
+    public string GetDumpDirPath(string subDir);
+}
+
+internal sealed class TestingProvider : ITestingProvider
+{
+    private readonly IDumpDirPathProvider _dumpDirPathProvider;
+
+    public TestingProvider(IDumpDirPathProvider dumpDirPathProvider)
+    {
+        _dumpDirPathProvider = dumpDirPathProvider;
+    }
+
+    /// <inheritdoc/>
+    public string GetDumpDirPath(string subDir) => _dumpDirPathProvider.GetDumpDirPath(subDir);
+}
+
 public static class Testing
 {
-    public static readonly Random RandGenerator = new System.Random(123);
-    
-    public static string GetTestingFilePath([CallerFilePath] string? path = null)
+    private static ITestingProvider? _provider;
+
+    private static ITestingProvider Provider => _provider ?? throw new InvalidOperationException("Testing services provider must be set.");
+
+    /// <summary>
+    /// Configure testing services.
+    /// </summary>
+    /// <param name="provider">Service provider.</param>
+    public static void Configure(ITestingProvider provider)
     {
-        return path!;
+        _provider = provider;
     }
+
+    /// <summary>
+    /// the fixed rand generator, maybe need impl by each module.
+    /// </summary>
+    public static readonly Random RandGenerator = new System.Random(123);
 
     /// <summary>
     /// get the nncase `tests_ouput` path
@@ -31,19 +68,7 @@ public static class Testing
     /// </summary>
     /// <param name="subDir">sub directory.</param>
     /// <returns> full path string. </returns>
-    public static string GetDumpDirPath(string subDir = "")
-    {
-        var path = Path.GetFullPath(Path.Combine(GetTestingFilePath(), "..", "..", "..", "tests_output"));
-        if (subDir.Length != 0)
-        {
-            path = Path.Combine(path, subDir);
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-            }
-        }
-        return path;
-    }
+    public static string GetDumpDirPath(string subDir = "") => Provider.GetDumpDirPath(subDir);
 
     /// <summary>
     /// give the unittest class name, then return the dumpdir path
@@ -56,12 +81,29 @@ public static class Testing
         var namespace_name = type.Namespace!.Split(".")[^1];
         if (!namespace_name.EndsWith("Test") || !type.Name.StartsWith("UnitTest"))
         {
-            throw new System.ArgumentOutOfRangeException("We Need NameSpace is `xxxTest`, Class is `UnitTestxxx`");
+            throw new System.ArgumentOutOfRangeException($"We Need NameSpace is `xxxTest`, Class is `UnitTestxxx`, But given namespace is {namespace_name}, class is {type.Name}");
         }
         return GetDumpDirPath(Path.Combine(namespace_name, type.Name));
     }
 
-    public static ValueRange<float> fixup_range(ValueRange<float> range, bool symmetric = false)
+    /// <summary>
+    /// Get the caller file path.
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    public static string GetCallerFilePath([CallerFilePath] string path = "")
+    {
+        return path;
+    }
+
+
+    /// <summary>
+    /// fixup the seq rand tensor into gived range.
+    /// </summary>
+    /// <param name="range"></param>
+    /// <param name="symmetric"></param>
+    /// <returns></returns>
+    public static ValueRange<float> FixupRange(ValueRange<float> range, bool symmetric = false)
     {
         if (symmetric)
         {
@@ -89,34 +131,56 @@ public static class Testing
 
         return range;
     }
-    
 
+    /// <summary>
+    /// create the rand value by gived datatype.
+    /// </summary>
+    /// <param name="dataType"></param>
+    /// <param name="shape"></param>
+    /// <returns></returns>
     public static Tensor Rand(DataType dataType, params int[] shape)
     {
         return (Tensor)typeof(Testing).GetMethod("Rand", new[] { typeof(int[]) })!.MakeGenericMethod(dataType.CLRType).Invoke(null, new object[] { shape })!;
     }
 
+    /// <summary>
+    /// create the rand value by gived datatype.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="shape"></param>
+    /// <returns></returns>
     public static Tensor<T> Rand<T>(params int[] shape)
         where T : unmanaged, IEquatable<T>
     {
         return Tensor.FromBytes<T>(Enumerable.Range(0, (int)TensorUtilities.GetProduct(shape)).Select(i =>
-        {            
+        {
             var bytes = new byte[Marshal.SizeOf(typeof(T))];
             RandGenerator.NextBytes(bytes);
             return bytes;
-    }).SelectMany(i => i).ToArray(), shape);
+        }).SelectMany(i => i).ToArray(), shape);
     }
-    
 
+    /// <summary>
+    /// create the seq value by gived datatype.
+    /// </summary>
+    /// <param name="dataType"></param>
+    /// <param name="shape"></param>
+    /// <returns></returns>
     public static Tensor Seq(DataType dataType, params int[] shape)
     {
         return (Tensor)typeof(Testing).GetMethod("Seq", new[] { typeof(int[]) })!.MakeGenericMethod(dataType.CLRType).Invoke(null, new object[] { shape })!;
     }
 
+    /// <summary>
+    /// create the seq value by gived datatype.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="shape"></param>
+    /// <returns></returns>
     public static Tensor<T> Seq<T>(params int[] shape)
         where T : unmanaged, IEquatable<T>
     {
-        return Tensor.FromArray(Enumerable.Range(0, (int) TensorUtilities.GetProduct(shape)).ToArray())
+        return Tensor.FromArray(Enumerable.Range(0, (int)TensorUtilities.GetProduct(shape)).ToArray())
             .Cast<T>(CastMode.Default).Reshape(shape);
     }
 
@@ -136,6 +200,14 @@ public static class Testing
                 .Reshape(t.Shape);
     }
 
+    /// <summary>
+    /// check all value close.
+    /// </summary>
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    /// <param name="tol"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
     public static int AllClose(Tensor a, Tensor b, float tol = .003f)
     {
         if (a.Shape != b.Shape)
@@ -163,7 +235,7 @@ public class UnitTestFixtrue
     public UnitTestFixtrue()
     {
         string DumpDirPath = Testing.GetDumpDirPath(this.GetType());
-        passOptions = new RunPassOptions(null!, 3, DumpDirPath);
+        passOptions = new RunPassOptions(CompilerServices.GetTarget(CompilerServices.CompileOptions.Target), CompilerServices.CompileOptions.DumpLevel, DumpDirPath);
     }
 
 }

@@ -25,7 +25,7 @@ public class UnitTestCPUTarget
     public void TestCreateStackVMModuleBuilder()
     {
         var target = CompilerServices.GetTarget("cpu");
-        var moduleBuilder = target.CreateModuleBuilder("stackvm");
+        var moduleBuilder = target.CreateModuleBuilder("stackvm", CompilerServices.CompileOptions);
         Assert.NotNull(moduleBuilder);
     }
 
@@ -95,13 +95,13 @@ public class UnitTestCPUTarget
         var module = new IRModule(main);
         GenerateKModelAndRun(module, new[] { 1.0f }, new[] { (Tensor)2.0f, 3.0f });
     }
-    
+
     [Fact]
     public void TestTupleOrder()
     {
         var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
         var main = new Function("main", new IR.Tuple(x + 1.0f, x + 2f, x + 3f), new[] { x });
-        GenerateKModelAndRunFromFn(main, new[]{1f}, new[] { (Tensor)2f, 3f, 4f});
+        GenerateKModelAndRunFromFn(main, new[] { 1f }, new[] { (Tensor)2f, 3f, 4f });
     }
 
     [Fact]
@@ -160,12 +160,12 @@ public class UnitTestCPUTarget
     {
         GenerateKModelAndRun(module, input, new[] { expectedOutput }, name);
     }
-    
+
     private void GenerateKModelAndRunFromFn(Function fn, Tensor input, Tensor expectedOutput, [CallerMemberName] string? name = null)
     {
         GenerateKModelAndRun(new IRModule(fn), input, new[] { expectedOutput }, name);
     }
-    
+
     private void GenerateKModelAndRunFromFn(Function fn, Tensor input, Tensor[] expectedOutput, [CallerMemberName] string? name = null)
     {
         GenerateKModelAndRun(new IRModule(fn), input, expectedOutput, name);

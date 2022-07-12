@@ -23,14 +23,8 @@ using Tuple = System.Tuple;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestCombineUnary
+public class UnitTestCombineUnary: TestFixture.UnitTestFixtrue
 {
-    private readonly RunPassOptions passOptions;
-
-    public UnitTestCombineUnary()
-    {
-        passOptions = new RunPassOptions(null, 3, Testing.GetDumpDirPath(this.GetType()));
-    }
 
     // TODO: CombinePadUnary
     public static IEnumerable<object[]> TestCombinePadUnaryPositiveData =>

@@ -34,7 +34,7 @@ public class UnitTestK210Target
     public void TestCreateStackVMModuleBuilder()
     {
         var target = CompilerServices.GetTarget("k210");
-        var moduleBuilder = target.CreateModuleBuilder("stackvm");
+        var moduleBuilder = target.CreateModuleBuilder("stackvm", CompilerServices.CompileOptions);
         Assert.NotNull(moduleBuilder);
     }
 
@@ -42,7 +42,7 @@ public class UnitTestK210Target
     public void TestCreateKPUModuleBuilder()
     {
         var target = CompilerServices.GetTarget("k210");
-        var moduleBuilder = target.CreateModuleBuilder("kpu");
+        var moduleBuilder = target.CreateModuleBuilder("kpu", CompilerServices.CompileOptions);
         Assert.NotNull(moduleBuilder);
     }
 

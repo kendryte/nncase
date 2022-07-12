@@ -23,9 +23,9 @@ namespace Nncase.Transform
         public RunPassOptions(ITarget target)
         {
             Target = target;
-            DumpLevel = target.CompileOptions.DumpLevel;
-            DumpDir = target.CompileOptions.DumpDir;
-            CompileOptions = target.CompileOptions;
+            DumpLevel = CompilerServices.CompileOptions.DumpLevel;
+            DumpDir = CompilerServices.CompileOptions.DumpDir;
+            CompileOptions = CompilerServices.CompileOptions;
             PassName = "";
         }
 
@@ -36,7 +36,7 @@ namespace Nncase.Transform
         /// <param name="dumpLevel"> int level. </param>
         /// <param name="dumpDir"> dir. </param>
         public RunPassOptions(ITarget target, int dumpLevel, string dumpDir)
-            : this(target, dumpLevel, dumpDir, target is null ? new() : target.CompileOptions)
+            : this(target, dumpLevel, dumpDir, CompilerServices.CompileOptions)
         {
         }
 

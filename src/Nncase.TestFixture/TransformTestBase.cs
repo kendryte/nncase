@@ -6,9 +6,9 @@ using Nncase.IR;
 using Nncase.Transform;
 using Nncase.Transform.Rules.Neutral;
 using Xunit;
-using Random = Nncase.IR.F.Random;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
+using Random = Nncase.IR.F.Random;
 
 namespace Nncase.TestFixture;
 
@@ -22,17 +22,17 @@ public partial class TransformTestBase
         compileOptions = new CompileOptions(false);
         compileOptions.QuantMode = QuantMode.UnsignedMode;
         compileOptions.QuantType = DataTypes.Int8;
-        passOptions = new RunPassOptions(null, 3, Testing.GetDumpDirPath(this.GetType()), compileOptions);
+        passOptions = new RunPassOptions(CompilerServices.GetTarget(CompilerServices.CompileOptions.Target), 3, Testing.GetDumpDirPath(this.GetType()), compileOptions);
         passOptions = passOptions.SetRewriteOnce(true);
     }
-    
-    
-    public virtual Expr TestMatched<T>(Expr pre) where T: IRewriteRule, new()
+
+
+    public virtual Expr TestMatched<T>(Expr pre) where T : IRewriteRule, new()
     {
         return TestMatchedCore(pre, new T());
     }
 
-    public void CondMatch<T>(bool cond, Expr expr) where T: IRewriteRule, new()
+    public void CondMatch<T>(bool cond, Expr expr) where T : IRewriteRule, new()
     {
         if (cond)
         {
@@ -55,11 +55,11 @@ public partial class TransformTestBase
         Assert.NotEqual(pre, post);
         var v1 = pre.Evaluate();
         var v2 = post.Evaluate();
-        
+
         Comparator.Compare(v1, v2);
         return post;
     }
-    
+
     public void TestNotMatch(Expr pre, params IRewriteRule[] rules)
     {
         pre.InferenceType();
@@ -77,7 +77,7 @@ public partial class TransformTestBase
         TestMatched<T>(Binary(op, lhs, rhs));
         TestMatched<T>(Binary(op, rhs, lhs));
     }
-    
+
     public Expr RewriteOnceFalse(Func<Expr> f)
     {
         passOptions = passOptions.SetRewriteOnce(false);
@@ -90,12 +90,12 @@ public partial class TransformTestBase
     {
         return CompilerServices.Rewrite(pre, rules, passOptions);
     }
-    
+
     public Expr Rewrite<T>(Expr pre) where T : IRewriteRule, new()
     {
         return Rewrite(pre, new IRewriteRule[] { new T() });
     }
-    
+
     public Expr RewriteWithSeq(Expr expr, IEnumerable<IRewriteRule> rules) =>
         rules.Aggregate(expr, (expr1, rule) => Rewrite(expr1, new[] { rule }));
 
@@ -108,7 +108,7 @@ public partial class TransformTestBase
         return f;
     }
 
-    public Expr FoldNop(Expr expr) => RewriteOnceFalse(() => Rewrite(expr, new IRewriteRule[] 
+    public Expr FoldNop(Expr expr) => RewriteOnceFalse(() => Rewrite(expr, new IRewriteRule[]
     {
         new FoldNopCast(),
         new FoldNopReshape()
@@ -130,11 +130,11 @@ public partial class TransformTestBase
             var ex = TestMatched<T>(expr1);
             return ex;
         }));
-    
+
     public Expr RewriteMultiTimes<T>(Expr expr, int count) where T : IRewriteRule, new() =>
         Enumerable.Range(0, count).Aggregate(expr, ((expr1, i) =>
         {
             var ex = Rewrite<T>(expr1);
             return ex;
         }));
-}  
+}

@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.2.0" />
+    <PackageReference Include="Tomlyn.Extensions.Configuration" Version="1.0.5" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="Xunit.DependencyInjection" Version="8.3.0" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
@@ -30,8 +31,8 @@
   </ItemGroup>
 
   <ItemGroup>
-     <ProjectReference Include="..\..\modules\Nncase.Modules.K210\Nncase.Modules.K210.csproj" />
-     <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" /> 
+    <ProjectReference Include="..\..\modules\Nncase.Modules.K210\Nncase.Modules.K210.csproj" />
+    <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" /> 
     <ProjectReference Include="..\Nncase.Graph\Nncase.Graph.csproj" />
     <ProjectReference Include="..\Nncase.Transform\Nncase.Transform.csproj" />
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
@@ -40,7 +41,13 @@
     <ProjectReference Include="..\Nncase.CodeGen\Nncase.CodeGen.csproj" />
     <ProjectReference Include="..\Nncase.IO\Nncase.IO.csproj" />
     <ProjectReference Include="..\Nncase.Simulator\Nncase.Simulator.csproj" />
+    <ProjectReference Include="..\Nncase.TestFixture\Nncase.TestFixture.csproj" />
     <ProjectReference Include="..\..\modules\Nncase.Modules.StackVM\Nncase.Modules.StackVM.csproj" />
     <!--<ProjectReference Include="..\..\targets\Nncase.Targets.CSource\Nncase.Targets.CSource.csproj" />-->
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="testsettings.toml" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

@@ -12,9 +12,8 @@ namespace Nncase.Tests.TIRTest;
 /// <summary>
 /// test the tir construct define
 /// </summary>
-public class UnitTestConstructor
+public class UnitTestConstructor : TestFixture.UnitTestFixtrue
 {
-    string DumpDirPath = Testing.GetDumpDirPath("TIR/ConstructorTest");
 
     [Fact]
     public void TestExprConstructor()

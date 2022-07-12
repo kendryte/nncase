@@ -15,12 +15,6 @@ namespace Nncase.Tests.CoreTest;
 
 public class UnitTestExpression
 {
-    public TestingConfiguration Config;
-    public UnitTestExpression(IOptions<TestingConfiguration> configuration)
-    {
-        Config = configuration.Value;
-    }
-
     [Fact]
     public void TestConstEqual()
     {
