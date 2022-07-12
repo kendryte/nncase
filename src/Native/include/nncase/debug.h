@@ -28,7 +28,7 @@ inline static void set_dump_root(std::string root) {
 
 inline static fs::path dump_path() {
     auto p = dump_root / (std::to_string(get_a()) + currentOp);
-    if (!fs::exists(dump_root)) {
+    if (!fs::exists(dump_root) && dump_root != "") {
         fs::create_directory(dump_root);
     }
     return p;

@@ -178,7 +178,7 @@ bool exist_directory(const fs::path &path)
 
 void output_data(runtime_tensor &data, std::string name, std::string dir_name = "op_test")
 {
-    if (!exist_directory(dir_name))
+    if (!exist_directory(dir_name) && dir_name != "")
     {
         fs::create_directory(dir_name);
     }
@@ -203,7 +203,9 @@ void make_output_root_dir(std::string root = output_root)
     {
         fs::remove_all(root);
     }
-    fs::create_directory(root);
+    if (root != "") {
+      fs::create_directory(root);
+    }
 }
 
 std::string get_index_dir_path(size_t index)

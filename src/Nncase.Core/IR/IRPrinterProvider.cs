@@ -39,6 +39,8 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
         string ext = expr is Function ? "il" : "script";
         string name = expr is Callable c ? c.Name : expr.GetType().Name;
         string file_path = Path.Combine(dumpPath, $"{nprefix}{name}.{ext}");
+        if (dumpPath == string.Empty)
+            throw new ArgumentNullException("The dumpPath Is Empty!");
         Directory.CreateDirectory(dumpPath);
 
         using var dumpFile = File.Open(file_path, FileMode.Create);
