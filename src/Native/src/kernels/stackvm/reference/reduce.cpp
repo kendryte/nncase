@@ -37,10 +37,8 @@ result<void> reduce_impl(TReducer &&reducer, TPostProcess &&post_process,
                          T init_value, const T *input, T *output,
                          const dims_t &in_shape, const dims_t &axis,
                          const strides_t &in_strides, const dims_t &out_shape,
-                         const strides_t &out_strides_origin, bool keep_dims,
+                         const strides_t &out_strides, bool keep_dims,
                          NNCASE_UNUSED kernel_context &context) noexcept {
-    auto out_strides =
-        out_strides_origin.size() == 0 ? dims_t{1} : out_strides_origin;
     try_(apply(out_shape, [&](const dims_t &index) -> result<void> {
         output[offset(out_strides, index)] = init_value;
         return ok();

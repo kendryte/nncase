@@ -53,6 +53,11 @@ public sealed class RTInterpreter : IDisposable
         }
     }
 
+    public void SetDumpRoot(String path)
+    {
+        Native.InterpSetDumpRoot(_handle, path);
+    }
+
     /// <summary>
     /// Load kmodel.
     /// </summary>

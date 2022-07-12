@@ -47,6 +47,8 @@ NNCASE_API int nncase_interp_free(nncase::runtime::interpreter *interp);
 NNCASE_API int nncase_interp_load_model(nncase::runtime::interpreter *interp,
                                         void *model_buffer, uint32_t model_size,
                                         bool copy_buffer);
+NNCASE_API int nncase_interp_set_dump_root(nncase::runtime::interpreter *interp,
+                                           const char *path);
 NNCASE_API int
 nncase_interp_get_entry_func(nncase::runtime::interpreter *interp,
                              nncase::runtime::runtime_function **func);

@@ -17,6 +17,7 @@
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
+#include <nncase/debug.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -97,6 +98,17 @@ int nncase_interp_load_model(nncase::runtime::interpreter *interp,
         c_try(interp->load_model(
             {reinterpret_cast<const gsl::byte *>(model_buffer), model_size},
             copy_buffer));
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_interp_set_dump_root(nncase::runtime::interpreter *interp,
+                                const char *path) {
+    if(interp && path) {
+        c_try(interp->options().set("dump_root", path));
+        set_dump_root(path);
+        // todo:set dump level
         return 0;
     }
     return -EINVAL;

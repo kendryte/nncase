@@ -67,9 +67,11 @@ public class Compiler
     public IRModule ImportModule(Stream content, CompileOptions options)
     {
         CompilerServices.CompileOptions = options;
+        Options = options;
         Console.WriteLine($"Target: {options.Target}");
         var module = ImportModel(content, options);
         Console.WriteLine("Infer Shape...");
+        InferShape(module, options);
         var inferSucc = CompilerServices.InferenceType(module.Entry!);
         DumpModule(module, options, "ir_import");
         if (!inferSucc)

@@ -46,6 +46,7 @@ public static class PythonHelper
     
     public static RTTensor[] RunSimulator(RTInterpreter interp, RTValue[] input)
     {
+        interp.SetDumpRoot(CompilerServices.CompileOptions.DumpDir);
         var entry = interp.Entry;
         var result = entry.Invoke(input);
         if (result is RTTensor tensor)

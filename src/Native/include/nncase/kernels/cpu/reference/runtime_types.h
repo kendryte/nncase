@@ -66,6 +66,11 @@ result<void> apply_impl(Callable &&callable, TShape index_prefix, TIt index_begi
 template <class TShape, class Callable>
 result<void> apply(const TShape &shape, Callable &&callable) noexcept
 {
+    if(shape.size() == 0)
+    {
+        return callable(shape);
+    }
+
     return detail::apply_impl(std::forward<Callable>(callable), TShape(), shape.cbegin(), shape.cend());
 }
 

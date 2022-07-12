@@ -53,6 +53,10 @@ template <class TShape>
 size_t offset(const TShape &strides, const TShape &index)
 {
     assert(strides.size() == index.size());
+    if(strides.size() == 0)
+    {
+        return 0;
+    }
     return kernels::element_offset<size_t>(strides, index.begin(), index.end());
 }
 
@@ -167,9 +171,6 @@ TShape get_reduced_shape(const TShape &in_shape, const TShape &axis, bool keep_d
                 shape.push_back(1);
         }
     }
-
-    if (shape.empty())
-        shape.push_back(1);
     return shape;
 }
 
@@ -191,6 +192,10 @@ size_t get_reduce_block_size(const TShape &in_shape, const TShape &axis)
 template <class TShape>
 TShape get_reduced_offset(const TShape &in_offset, const TShape &axis, bool keep_dims)
 {
+    if(in_offset.size() == 0)
+    {
+        return in_offset;
+    }
     TShape off;
     off.reserve(in_offset.size() - (keep_dims ? 0 : axis.size()));
     for (size_t i = 0; i < in_offset.size(); i++)
@@ -206,8 +211,6 @@ TShape get_reduced_offset(const TShape &in_offset, const TShape &axis, bool keep
         }
     }
 
-    if (off.empty())
-        off.push_back(0);
     return off;
 }
 

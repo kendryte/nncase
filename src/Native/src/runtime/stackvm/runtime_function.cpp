@@ -15,6 +15,7 @@
 #include "runtime_function.h"
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/runtime_op_utility.h>
+#include <nncase/runtime/interpreter.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -39,6 +40,7 @@ stackvm_runtime_function::invoke_core(gsl::span<value_t> parameters,
         try_(frame->push_back_arg(std::move(arg)));
     }
 
+//    module().interp().options().get<std::string>("dump_path");
     try_(visit(text_));
 
     checked_try_var(ret, stack_.pop());

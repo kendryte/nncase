@@ -24,26 +24,32 @@
 #include <nncase/tensor.h>
 #include <nncase/type.h>
 #include <unordered_map>
+#include <variant>
 
 BEGIN_NS_NNCASE_RUNTIME
 
 class NNCASE_API options_dict {
   public:
+    template <class T> result<T> get_scalar_opt(const char *name) {
+        try_var(value, get<scalar>(name));
+        return value.template as<T>();
+    }
+
     template <class T> result<T> get(const char *name) {
         auto it = values_.find(name);
         if (it != values_.end())
-            return ok(it->second.as<T>());
+            return ok(std::get<T>(it->second));
         else
             return err(std::errc::result_out_of_range);
     }
 
     template <class T> result<void> set(const char *name, T value) {
-        values_[name] = scalar(value);
+        values_[name] = value;
         return ok();
     }
 
   private:
-    std::unordered_map<const char *, scalar> values_;
+    std::unordered_map<const char *, std::variant<scalar, std::string>> values_;
 };
 
 struct tensor_desc {

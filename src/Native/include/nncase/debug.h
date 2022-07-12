@@ -19,11 +19,15 @@ inline void incr_a() {
 inline std::string currentOp;
 #include <filesystem>
 namespace fs = std::filesystem;
-inline std::string dump_root =
-//    "tests_output/test_transformer_decoder/infer/cpu/noptq/Runtime/";
-    "tests_output/outputs/";
+inline fs::path dump_root = "";
+inline static void set_dump_root(std::string root) {
+    // todo:maybe should change path in pytest
+    fs::path p(root);
+    dump_root = p / "Runtime";
+}
+
 inline static std::string dump_path() {
-    auto p = dump_root + std::to_string(get_a()) + currentOp;
+    auto p = dump_root / (std::to_string(get_a()) + currentOp);
     if (!fs::exists(dump_root)) {
         fs::create_directory(dump_root);
     }
@@ -76,7 +80,7 @@ inline std::string to_str(const nncase::dims_t &shape) {
 }
 
 inline void write_shape(const nncase::dims_t &shape) {
-    auto path = dump_root + "9999shape";
+    auto path = dump_root / "9999shape";
     auto f = fs::exists(path) ? std::ofstream(path, std::ios::app) : std::ofstream(path);
     f << currentOp << " :" << to_str(shape);
     f.close();
@@ -138,10 +142,10 @@ inline void dump_output_impl(nncase::value_t value,
 }
 
 inline void dump_output([[maybe_unused]] nncase::value_t value) {
-//    dump_output_impl(value, dump_path(), true);
+    dump_output_impl(value, dump_path(), true);
 }
 
 inline void dump_input([[maybe_unused]] nncase::value_t value,
                        [[maybe_unused]] std::string name) {
-//    dump_output_impl(value, dump_path() + name, false);
+    dump_output_impl(value, dump_path() + name, false);
 }
