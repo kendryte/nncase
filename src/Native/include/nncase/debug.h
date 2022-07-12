@@ -26,7 +26,7 @@ inline static void set_dump_root(std::string root) {
     dump_root = p / "Runtime";
 }
 
-inline static std::string dump_path() {
+inline static fs::path dump_path() {
     auto p = dump_root / (std::to_string(get_a()) + currentOp);
     if (!fs::exists(dump_root)) {
         fs::create_directory(dump_root);
@@ -34,13 +34,13 @@ inline static std::string dump_path() {
     return p;
 }
 
-inline std::ofstream get_stream(std::string path = dump_path()) {
+inline std::ofstream get_stream(const fs::path &path = dump_path()) {
     return append ? std::ofstream(path, std::ios_base::app)
                   : std::ofstream(path);
 }
 
 template <typename F>
-inline void dump(nncase::value_t value, F &&f, std::string path = dump_path()) {
+inline void dump(nncase::value_t value, F &&f, const fs::path &path = dump_path()) {
     auto stream = get_stream(path);
     if (value.is_a<nncase::tensor>()) {
         auto value_tensor = value.as<nncase::tensor>().unwrap();
@@ -59,7 +59,7 @@ inline void dump(nncase::value_t value, F &&f, std::string path = dump_path()) {
     }
 }
 
-template <typename F> inline void dump(F &&f, std::string path = dump_path()) {
+template <typename F> inline void dump(F &&f, const fs::path &path = dump_path()) {
     auto stream = get_stream(path);
     f(stream);
     append = true;
@@ -107,7 +107,7 @@ inline void dump_data(std::ostream &stream, const T *data,
     }
 }
 inline void dump_output_impl(nncase::value_t value,
-                             std::string path = dump_path(),
+                             const fs::path &path = dump_path(),
                              bool incr = false) {
     dump(
         value,
@@ -147,5 +147,5 @@ inline void dump_output([[maybe_unused]] nncase::value_t value) {
 
 inline void dump_input([[maybe_unused]] nncase::value_t value,
                        [[maybe_unused]] std::string name) {
-    dump_output_impl(value, dump_path() + name, false);
+    dump_output_impl(value, dump_path() / name, false);
 }
