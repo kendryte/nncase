@@ -50,6 +50,8 @@ def find_output(lines, string):
 
 def get_dotnet_runtime_version():
     lines = run_cmd('dotnet --info')
+    # after reverse, from high version to low version
+    lines.reverse()
     infos = find_output(lines, "Microsoft.AspNetCore.App")
     version = re.search(r"([1-9]\d|[1-9])(\.([1-9]\d|\d)){2}", infos[0])
     return version.group(0)
@@ -106,18 +108,34 @@ def check_env():
     #     errors.append("PYTHONNET_PYDLL not found")
     return errors
 
+def find_first_str_in_lines(lines, str):
+    return next(i for i, line in enumerate(lines) if line.find(str) != -1)
+
 def create_new_init_content(init_path, config_path):
+    str = "def set_default_runtime() -> None:"
     with open(init_path) as init:
         lines = init.readlines()
-        i = next(i for i, line in enumerate(lines) if line.find("def set_default_runtime() -> None:") != -1)
-        if lines[i+1].find(config_path) != -1:
-            return
-        set = f"""    set_runtime(clr_loader.get_coreclr(\"{config_path}\"))\n"""
-        lines.insert(i + 1, set)
-        for i in range(i + 2, i + 2 + 4):
-            lines[i] = "#" + lines[i]
-        init_content = "".join(lines)
-        return init_content
+        i = find_first_str_in_lines(lines, str)
+        if i == -1:
+            #3.0.0.rc2
+            def replace(lines, be_replaced_str, str):
+                i = find_first_str_in_lines(lines, be_replaced_str)
+                if i != -1:
+                    lines[i] = lines[i].replace(be_replaced_str, str)
+            replace(lines, 'spec = "mono"', 'spec = "coreclr')
+            replace(lines, 'return clr_loader.get_coreclr(**params)',
+            f'''return clr_loader.get_coreclr(\"{config_path}\")''')
+        else:
+            if lines[i+1].find(config_path) != -1:
+                return
+            # 3.0.0.a2
+            set = f"""    set_runtime(clr_loader.get_coreclr(\"{config_path}\"))\n"""
+            lines.insert(i + 1, set)
+            for i in range(i + 2, i + 2 + 4):
+                lines[i] = "#" + lines[i]
+            init_content = "".join(lines)
+            return init_content
+
 
 def modify_pynet(pn_root):
     config_path = create_runtime_config(pn_root, version)
