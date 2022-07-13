@@ -42,5 +42,5 @@ public static partial class Utility
     /// </summary>
     /// <param name="name">name.</param>
     /// <returns>the var pattern.</returns>
-    public static VarPattern IsVar(string? name = null) => new VarPattern(name) with { TypePattern = IsAnyType() };
+    public static VarPattern IsVar(string? name = null) => new VarPattern(name) with { TypePattern = IsIRType() };
 }

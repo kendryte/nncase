@@ -36,10 +36,10 @@ namespace Nncase.Transform
         /// <param name="options">Options.</param>
         public async Task<Callable> RunAsync(Callable callable, RunPassOptions options)
         {
-            options.SetPassName(Name);
-            OnPassStart(callable, options);
-            var post = await RunCoreAsync(callable, options);
-            OnPassEnd(post, options);
+            var new_options = options.SetPassName(Name);
+            OnPassStart(callable, new_options);
+            var post = await RunCoreAsync(callable, new_options);
+            OnPassEnd(post, new_options);
             return post;
         }
 

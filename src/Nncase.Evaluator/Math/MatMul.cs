@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Linq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using OrtKISharp;
@@ -11,7 +12,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="MatMul"/>.
 /// </summary>
-public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>
+public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, MatMul matMul)
@@ -29,14 +30,35 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>
         return Visit(lhs, rhs);
     }
 
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, MatMul target)
+    {
+        var lhs = context.GetArgumentType<TensorType>(target, MatMul.Lhs);
+        var rhs = context.GetArgumentType<TensorType>(target, MatMul.Rhs);
+        var outputType = context.GetReturnType<TensorType>();
+
+        if (lhs.Shape[^1].IsFixed && lhs.Shape[^2].IsFixed && rhs.Shape[^1].IsFixed && rhs.Shape[^2].IsFixed)
+        {
+            var macPerElement = lhs.Shape[^1].FixedValue;
+            return new()
+            {
+                [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(lhs) + CostUtility.GetMemoryAccess(rhs),
+                [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+                [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement),
+            };
+        }
+
+        return null;
+    }
+
     private IRType Visit(TensorType lhs, TensorType rhs)
     {
         if (lhs.Shape.IsUnranked || rhs.Shape.IsUnranked)
         {
             return new TensorType(lhs.DType, Shape.Unranked);
         }
-        
-        if (lhs.Shape[1].IsUnknown || rhs.Shape[0].IsUnknown)
+
+        if (lhs.Shape[^1].IsUnknown || rhs.Shape[^2].IsUnknown)
         {
             return new TensorType(lhs.DType, Shape.Unranked);
         }
@@ -53,7 +75,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>
 
         if (lhs.Shape.Count == 2 && rhs.Shape.Count == 2)
         {
-            return new TensorType(lhs.DType, new[] {lhs.Shape[0], rhs.Shape[1]});
+            return new TensorType(lhs.DType, new[] { lhs.Shape[0], rhs.Shape[1] });
         }
 
         var bigShape = lhs.Shape.Rank > rhs.Shape.Rank
@@ -61,7 +83,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>
             : rhs.Shape;
         // batch and channel
         var front = bigShape.ToArray()[..(bigShape.Count - 2)];
-        var end = new[] {lhs.Shape[^2], rhs.Shape[^1]};
+        var end = new[] { lhs.Shape[^2], rhs.Shape[^1] };
         return new TensorType(lhs.DType, front.Concat(end).ToArray());
     }
 }
