@@ -109,7 +109,11 @@ def check_env():
     return errors
 
 def find_first_str_in_lines(lines, str):
-    return next(i for i, line in enumerate(lines) if line.find(str) != -1)
+    indexs = [i for i, line in enumerate(lines) if line.find(str) != -1]
+    if len(indexs) == 0:
+        return -1
+    else:
+        return indexs[0]
 
 def create_new_init_content(init_path, config_path):
     str = "def set_default_runtime() -> None:"
