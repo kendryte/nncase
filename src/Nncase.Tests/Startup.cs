@@ -72,5 +72,7 @@ public class Startup
 
         CompilerServices.Configure(provider);
         TestFixture.Testing.Configure(testing_provider);
+        if (CompilerServices.CompileOptions.DumpDir == "")
+            CompilerServices.CompileOptions.DumpDir = TestFixture.Testing.GetDumpDirPath();
     }
 }
