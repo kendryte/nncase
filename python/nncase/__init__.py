@@ -121,14 +121,15 @@ def create_new_init_content(init_path, config_path):
         lines = init.readlines()
         i = find_first_str_in_lines(lines, str)
         if i == -1:
-            #3.0.0.rc2
+            #3.0.0.rc
             def replace(lines, be_replaced_str, str):
                 i = find_first_str_in_lines(lines, be_replaced_str)
                 if i != -1:
                     lines[i] = lines[i].replace(be_replaced_str, str)
-            replace(lines, 'spec = "mono"', 'spec = "coreclr')
+            replace(lines, 'spec = "mono"', 'spec = "coreclr"')
             replace(lines, 'return clr_loader.get_coreclr(**params)',
             f'''return clr_loader.get_coreclr(\"{config_path}\")''')
+            return "".join(lines)
         else:
             if lines[i+1].find(config_path) != -1:
                 return
