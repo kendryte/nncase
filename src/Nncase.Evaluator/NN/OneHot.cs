@@ -20,7 +20,7 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, OneHot oneHot)
     {
-        return oneHot.OneHotMode == OneHotMode.Normal
+        return oneHot.OneHotMode == OneHotMode.ProcessNeg
             ? OnnxOneHot(context, oneHot)
             : TFOneHot(context, oneHot);
     }
