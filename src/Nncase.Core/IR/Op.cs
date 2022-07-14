@@ -102,4 +102,28 @@ public abstract record Op() : Expr
     {
         return _hashcode ??= EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
     }
+
+    /// <summary>
+    /// display the Op property for dump ir.
+    /// </summary>
+    /// <returns> property string. </returns>
+    public virtual string DisplayProperty()
+    {
+        return "";
+    }
+}
+
+/// <summary>
+/// Custom Op
+/// </summary>
+/// <param name="RegisteredName"></param>
+public abstract record CustomOp(string RegisteredName) : Op
+{
+
+    /// <summary>
+    /// Serialize Fields Value.
+    /// will used in stackvm runtime.
+    /// </summary>
+    /// <returns></returns>
+    public virtual byte[] SerializeFields() { return new byte[] { }; }
 }

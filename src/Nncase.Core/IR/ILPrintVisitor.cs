@@ -30,9 +30,10 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
     {
         if (_names.TryGetValue(expr, out var name)) { return name; }
         var target = Visit(expr.Target);
+        var property = expr.Target is Op op && op.DisplayProperty() is string prop && prop != "" ? (prop + ", ") : "";
         var args = expr.Parameters.Select(Visit).ToArray();
         name = AllocateTempVar(expr);
-        Scope.IndWrite($"{name} = {target}({string.Join(", ", args)})");
+        Scope.IndWrite($"{name} = {target}({property}{string.Join(", ", args)})");
         AppendCheckedType(expr.CheckedType);
         return name;
     }
@@ -196,7 +197,7 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
     {
         PrimType ptype => ptype.GetDisplayName() + (type.Shape.IsScalar ? "" : type.Shape.ToString()),
         PointerType { ElemType: PrimType etype } ptype => $"*{etype.GetDisplayName()}",
-        ValueType => $"ValueType:{type.DType.ToString()}",
+        ValueType => $"{type.DType.ToString()}",
         _ => throw new NotSupportedException(type.DType.GetType().Name),
     };
 

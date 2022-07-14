@@ -33,12 +33,21 @@ using namespace nncase::runtime::stackvm;
     var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:
 @:result<void> stackvm_runtime_function::visit([[maybe_unused]] const tensor_@(name)_op_t &op) noexcept {
+if(inst.CSharpName == "CustomCall"){
+@:    std::vector<value_t> inputs;
+@:    for (size_t i = 0; i < op.input_size; i++) {
+@:      try_var(input, pop_value());
+@:      inputs.push_back(input);
+@:    }
+@:    try_var(output, kernels::stackvm::custom_call(op.registered_name, op.fields, inputs, nullptr, module().kernel_context()));
+}else{
 foreach(var input in inst.Inputs)
 {
 @:    try_var(@input.CppName, pop_value());
 @:    dump_input(@input.CppName, "@input.CppName");
 }
 @:    try_var(output, kernels::stackvm::@(name)(@string.Join(", ", inst.Fields.Where(x => !x.IsOpCode && x.CppName != "tensor_funct").Select(x => $"op.{x.CppName}").Concat(inst.Inputs.Select(x => $"{x.CppName}").Concat(new[]{"nullptr", "module().kernel_context()"})))));
+}
 @:    dump_output(output);
 @:    return stack_.push(std::move(output));
 @:}

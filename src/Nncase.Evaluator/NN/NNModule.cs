@@ -47,5 +47,7 @@ public class NNModule : Module
         builder.RegisterType<OneHotEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<PadEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<SpaceToBatchEvaluator>().AsImplementedInterfaces();
+
+        builder.RegisterType<CustomCallEvaluator>().AsImplementedInterfaces();
     }
 }

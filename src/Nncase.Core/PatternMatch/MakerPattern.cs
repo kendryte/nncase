@@ -10,11 +10,11 @@ namespace Nncase.PatternMatch;
 /// <summary>
 /// Pattern for <see cref="Marker"/>.
 /// </summary>
-/// <param name="MarkerName">marker name.</param>
+/// <param name="NameCondition">marker name condition.</param>
 /// <param name="Target">Target pattern.</param>
 /// <param name="Attribute">Attribute pattern.</param>
 /// <param name="Name"> name. </param>
-public sealed record MarkerPattern(string MarkerName, Pattern Target, Pattern Attribute, string? Name) : Pattern<Marker>(Name)
+public sealed record MarkerPattern(Func<string, bool> NameCondition, Pattern Target, Pattern Attribute, string? Name) : Pattern<Marker>(Name)
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="MarkerPattern"/> class.
@@ -22,13 +22,32 @@ public sealed record MarkerPattern(string MarkerName, Pattern Target, Pattern At
     /// <param name="marker"><see cref="Marker"/> expression.</param>
     /// <param name="name">name.</param>
     public MarkerPattern(Marker marker, string? name)
-        : this(marker.Name, marker.Target, marker.Attribute, name)
+        : this(s => s == marker.Name, marker.Target, marker.Attribute, name)
     {
     }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="expr"></param>
+    /// <returns></returns>
+    protected override bool MatchLeafCore(Marker expr) => NameCondition(expr.Name);
+
 }
 
 public static partial class Utility
 {
+
+    /// <summary>
+    /// is marker
+    /// </summary>
+    /// <param name="name">name.</param>
+    /// <param name="name_condition"> mark name condition. </param>
+    /// <param name="target">target.</param>
+    /// <param name="attribute">attribute.</param>
+    /// <returns> MarkerPattern. </returns>
+    public static MarkerPattern IsMarker(string? name, Func<string, bool> name_condition, Pattern target, Pattern attribute) => new MarkerPattern(name_condition, target, attribute, name);
+
     /// <summary>
     /// is maker.
     /// </summary>
@@ -37,7 +56,7 @@ public static partial class Utility
     /// <param name="target">target.</param>
     /// <param name="attribute">attribute.</param>
     /// <returns> MarkerPattern. </returns>
-    public static MarkerPattern IsMarker(string? name, string marker_name, Pattern target, Pattern attribute) => new MarkerPattern(marker_name, target, attribute, name);
+    public static MarkerPattern IsMarker(string? name, string marker_name, Pattern target, Pattern attribute) => IsMarker(name, s => s == marker_name, target, attribute);
 
     /// <summary>
     /// is maker without name.

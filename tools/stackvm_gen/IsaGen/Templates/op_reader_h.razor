@@ -67,6 +67,12 @@ foreach (var field in inst.Fields)
 @:    @(name)_op_t operator()(NNCASE_UNUSED span_reader &reader) const
 @:    {
 @:        @(name)_op_t op;
+if(inst.CSharpName == "CustomCall"){
+@:        op.registered_name = reader.read_string();
+@:        op.input_size = reader.read_unaligned<int32_t>();
+@:        op.field_size = reader.read_unaligned<int32_t>();
+@:        op.fields = reader.read_span(op.field_size);
+}else{
 foreach (var field in inst.Fields)
 {
     if (field.IsEnum)
@@ -85,6 +91,7 @@ foreach (var field in inst.Fields)
     {
 @:        op.@field.CppName = reader.read_unaligned<@field.CppType>();
     }
+}
 }
 @:        return op;
 @:    }
