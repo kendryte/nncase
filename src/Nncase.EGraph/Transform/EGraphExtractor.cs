@@ -97,7 +97,7 @@ public static class EGraphExtractExtensions
     public static Expr Extract(this EGraph eGraph, EClass root, RunPassOptions options)
     {
         var costModel = new EGraphCostEvaluator(root).Evaluate();
-        if (options.DumpLevel > 1)
+        if (options.DumpLevel > 3)
         {
             // TODO: dump graph
             // EGraphPrinter.DumpEgraphAsDot(eGraph, new EGraphCosts(eGraph, costs), entry.Find(), Path.Combine(options.PassDumpDir, "Costs", $"V{eGraph.Version}"));

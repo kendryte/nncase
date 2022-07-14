@@ -43,9 +43,9 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
         if (_names.TryGetValue(expr, out var name)) { return name; }
 
         var valueStr = expr.CheckedType is not null && expr.CheckedShape.Size < 8 && expr is TensorConst tc
-            ? tc.Value.GetArrayString(false)
+            ? " : " + tc.Value.GetArrayString(false)
             : string.Empty;
-        name = $"const({(expr.CheckedType is null ? string.Empty : VisitType(expr.CheckedType))} : {valueStr})";
+        name = $"const({(expr.CheckedType is null ? string.Empty : VisitType(expr.CheckedType))}{valueStr})";
 
         _names.Add(expr, name);
         return name;

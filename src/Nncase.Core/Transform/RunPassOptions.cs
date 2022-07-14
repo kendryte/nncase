@@ -102,7 +102,7 @@ namespace Nncase.Transform
         /// <summary>
         /// get the compile options
         /// </summary>
-        public CompileOptions CompileOptions { private set; get; }
+        public CompileOptions CompileOptions { set; get; }
 
         public MatchOptions MatchOptions { get; set; } = new MatchOptions();
 

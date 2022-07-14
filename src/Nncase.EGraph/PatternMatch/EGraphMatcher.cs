@@ -14,6 +14,9 @@ using Nncase.Transform;
 
 namespace Nncase.PatternMatch;
 
+/// <summary>
+/// egraph matcher
+/// </summary>
 public sealed class EGraphMatcher
 {
     /// <summary>
@@ -63,6 +66,7 @@ public sealed class EGraphMatcher
             (ConstPattern constPat, Const con) => VisitLeaf(matchScopes, constPat, enode, con),
             (FunctionPattern functionPat, Function func) => Visit(matchScopes, functionPat, enode, func),
             (CallPattern callPat, Call call) => Visit(matchScopes, callPat, enode, call),
+            (MarkerPattern mkPat, Marker mk) => Visit(matchScopes, mkPat, enode, mk),
             (TuplePattern tuplePat, IR.Tuple tuple) => Visit(matchScopes, tuplePat, enode, tuple),
             (IOpPattern opPat, Op op) => VisitLeaf(matchScopes, opPat, enode, op),
             (OrPattern orPat, _) => Visit(matchScopes, orPat, enode, enode.Expr),
@@ -130,6 +134,26 @@ public sealed class EGraphMatcher
         {
             var newScopes = Visit(context.Candidates, pattern.Target, enode.Children[0]);
             newScopes = Visit(newScopes, pattern.Parameters, enode.Children.Skip(1));
+
+            if (newScopes.Count > 0)
+            {
+                context.NewScopes.AddRange(newScopes);
+                context.MatchCandidates(pattern, expr);
+            }
+        }
+
+        return context.NewScopes;
+    }
+    
+    private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, MarkerPattern pattern, ENode enode, Marker expr)
+    {
+        var context = new MatchContext(matchScopes, pattern, expr);
+
+        if (context.HasCandidates
+            && pattern.MatchLeaf(expr))
+        {
+            var newScopes = Visit(context.Candidates, pattern.Target, enode.Children[0]);
+            newScopes = Visit(newScopes, pattern.Attribute, enode.Children[1]);
 
             if (newScopes.Count > 0)
             {

@@ -82,6 +82,7 @@ internal sealed class Matcher
             (CallPattern callPat, Call call) => Visit(callPat, call),
             (TuplePattern tuplePat, IR.Tuple tuple) => Visit(tuplePat, tuple),
             (IOpPattern opPat, Op op) => VisitLeaf(opPat, op),
+            (MarkerPattern mkPat, Marker mk) => Visit(mkPat, mk),
             (OrPattern orPat, _) => Visit(orPat, expr),
             (ExprPattern exprPattern, _) => VisitLeaf(exprPattern, expr),
             _ => false,
@@ -156,6 +157,33 @@ internal sealed class Matcher
                 && pattern.MatchLeaf(expr)
                 && Visit(pattern.Target, expr.Target)
                 && Visit(pattern.Parameters, expr.Parameters))
+            {
+                _currentScope.AddMatch(pattern, expr);
+            }
+            else
+            {
+                _currentScope.IsMatch = false;
+            }
+        }
+
+        return _currentScope.IsMatch;
+    }
+
+    private bool Visit(MarkerPattern pattern, Marker expr)
+    {
+        if (_currentScope.TryGetMemo(pattern, out var oldExpr))
+        {
+            if (!ReferenceEquals(oldExpr, expr))
+            {
+                _currentScope.IsMatch = false;
+            }
+        }
+        else
+        {
+            if (!_options.IsSuppressedPattern(expr, pattern)
+                && pattern.MatchLeaf(expr)
+                && Visit(pattern.Target, expr.Target)
+                && Visit(pattern.Attribute, expr.Attribute))
             {
                 _currentScope.AddMatch(pattern, expr);
             }

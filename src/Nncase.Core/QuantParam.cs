@@ -54,7 +54,13 @@ public sealed record QuantParamType : ValueType
 
     /// <inheritdoc/>
     public unsafe override int SizeInBytes => sizeof(QuantParam);
-    
+
     /// <inheritdoc/>
     override public Guid Uuid { get; }
+
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return "QuatParm";
+    }
 }
