@@ -111,7 +111,7 @@ public sealed partial class OnnxImporter : BaseImporter
             "Gather" => VisitGather(op),
             "GatherND" => VisitGatherND(op),
             "Gemm" => VisitGemm(op),
-            "GlobalAveragePool" => VisitReduceWindow2D(op, ReduceOp.Mean, float.MinValue, true),
+            "GlobalAveragePool" => VisitReduceWindow2D(op, ReduceOp.Mean, 0f, true),
             "GlobalMaxPool" => VisitReduceWindow2D(op, ReduceOp.Max, float.MinValue, true),
             "Hardmax" => VisitHardmax(op),
             "HardSigmoid" => VisitHardSigmoid(op),

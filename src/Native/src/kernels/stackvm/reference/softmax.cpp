@@ -30,7 +30,7 @@ namespace {
 template <typename T>
 result<void> softmax_impl(
     const T *input, T *output, const dims_t &in_shape, const dims_t &in_strides,
-    const dims_t &out_strides, int64_t axis, float beta) noexcept {
+    const dims_t &out_strides, int64_t axis, float beta, bool needLog = false) noexcept {
     size_t positive_axis = axis < 0 ? in_shape.size() + axis : axis;
     dims_t axes{positive_axis};
 
@@ -94,7 +94,9 @@ result<void> softmax_impl(
         auto out_idx = offset(out_strides, index);
         auto &out = output[out_idx];
         out /= in;
-
+        if(needLog) {
+            out = std::log(out);
+        }
         return ok();
     }));
 
@@ -105,7 +107,7 @@ result<void> nncase::kernels::stackvm::reference::softmax(const float *input, fl
                      const dims_t &in_shape,
                      const dims_t &in_strides,
                      const dims_t &out_strides, int64_t axis,
-                     float beta) noexcept
+                     float beta, bool needLog) noexcept
 {
-    return softmax_impl(input, output, in_shape, in_strides, out_strides, axis, beta);
+    return softmax_impl(input, output, in_shape, in_strides, out_strides, axis, beta, needLog);
 }

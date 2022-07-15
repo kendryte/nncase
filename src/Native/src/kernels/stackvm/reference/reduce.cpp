@@ -14,7 +14,7 @@
  */
 #include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/tensor_ops.h>
+#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -131,48 +131,11 @@ reduce_prod<float>(const float *input, float *output, const dims_t &in_shape,
         }                                                                      \
     }
 
-result<void> reduce_impl(typecode_t typecode, reduce_op_t op,
+result<void> nncase::kernels::stackvm::reference::reduce(typecode_t typecode, reduce_op_t op,
                          const gsl::byte *init_value, const gsl::byte *input,
                          gsl::byte *output, const dims_t &in_shape,
                          const dims_t &axis, const strides_t &in_strides,
                          const strides_t &out_strides, bool keep_dims,
                          kernel_context &context) noexcept {
     TYPE_SELECT(typecode, REDUCE_FULL_IMPL);
-}
-
-dims_t infer_shape(const dims_t &in_shape, const dims_t &axes, bool keep_dims) {
-    auto tmp_shape = in_shape;
-    for (int i = 0; i < axes.size(); ++i) {
-        auto d = keep_dims ? 1 : 0;
-        tmp_shape[axes[i]] = d;
-    }
-    auto new_shape = dims_t();
-    for (auto d : tmp_shape) {
-        if (d != 0) {
-            new_shape.push_back(d);
-        }
-    }
-    //    if(new_shape.size() == 0)
-    //    {
-    //        new_shape.push_back(1);
-    //    }
-    return new_shape;
-}
-#include <iostream>
-result<value_t> nncase::kernels::stackvm::reduce(
-    reduce_op_t reduce_op, value_t input, value_t axes, value_t init_value,
-    value_t keep_dims, value_t output, kernel_context &context) {
-    try_input(in_mem, input);
-    try_positive_axes(axes_value, axes, input_tensor->shape().size());
-    try_to_scalar(keep_dims_value, keep_dims, bool);
-    try_input(init_v, init_value);
-    try_typecode(typecode, input_tensor);
-    auto out_shape =
-        infer_shape(input_tensor->shape(), axes_value, keep_dims_value);
-    try_output(out_mem, output, input_tensor->dtype(), out_shape);
-
-    try_(reduce_impl(typecode, reduce_op, init_v, in_mem, out_mem,
-                     input_tensor->shape(), axes_value, input_tensor->strides(),
-                     output_tensor->strides(), keep_dims_value, context));
-    return ok(output);
 }

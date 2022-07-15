@@ -14,7 +14,7 @@
  */
 #include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/tensor_ops.h>
+#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -71,7 +71,7 @@ result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output,
                            out_shape, in_strides, out_strides, axis,           \
                            concat_dims, context)
 
-result<void> concat_impl(datatype_t type,
+result<void> nncase::kernels::stackvm::reference::concat(datatype_t type,
                          gsl::span<const gsl::byte *const> inputs,
                          gsl::byte *output, const dims_t &out_shape,
                          gsl::span<const dims_t> in_strides,
@@ -86,39 +86,4 @@ result<void> concat_impl(datatype_t type,
     default:
         return err(std::errc::not_supported);
     }
-}
-
-dims_t infer_shape(std::vector<dims_t> shapes, int axis) {
-    auto new_shape = shapes[0];
-    new_shape[axis] = std::accumulate(
-        shapes.begin(), shapes.end(), 0,
-        [&](auto sum, auto in_shape) -> int { return sum + in_shape[axis]; });
-    return new_shape;
-}
-
-result<value_t> nncase::kernels::stackvm::concat(value_t input, value_t axis,
-                                                 value_t output,
-                                                 kernel_context &context) {
-    try_tuple_input(inputs_mem, input);
-    try_var(shapes, get_shapes(input_tuple));
-    try_var(strides, get_strides(input_tuple));
-    try_tuple_field0(input0, input_tuple);
-    auto dtype = input0->dtype();
-    try_positive_axis_with_rank(axis_value, axis, input0->shape().size());
-    auto out_shape = infer_shape(shapes, axis_value);
-    try_output(out_mem, output, dtype, out_shape);
-    auto concat_dims = dims_t();
-    if (input0->shape().size() != 0) {
-        for (int i = 0; i < input_tuple->fields().size(); ++i) {
-            try_var(in, input_tuple->fields()[i].as<tensor>());
-            concat_dims.push_back(in->shape()[axis_value]);
-        }
-    } else {
-        concat_dims = dims_t(input_tuple->fields().size(), 1);
-    }
-
-    try_(concat_impl(dtype, inputs_mem, out_mem, output_tensor->shape(),
-                     strides, output_tensor->strides(), axis_value, concat_dims,
-                     context));
-    return ok(output);
 }

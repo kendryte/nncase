@@ -14,7 +14,7 @@
  */
 #include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/tensor_ops.h>
+#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/util.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
@@ -84,8 +84,9 @@ result<void> unary_impl(unary_op_t op, const T *input, T *output,
                            reinterpret_cast<type *>(output), input_shape,        \
                            input_strides, out_shape,     \
                            out_strides, context);
+} // namespace
 
-result<void> unary_impl(typecode_t dtype, unary_op_t op, const gsl::byte *input,
+result<void> nncase::kernels::stackvm::reference::unary(typecode_t dtype, unary_op_t op, const gsl::byte *input,
                          gsl::byte *output,
                          const dims_t &input_shape, const strides_t &input_strides,
                          const dims_t &out_shape, const strides_t &out_strides,
@@ -97,20 +98,4 @@ result<void> unary_impl(typecode_t dtype, unary_op_t op, const gsl::byte *input,
     default:
         return err(nncase_errc::datatype_mismatch);
     }
-}
-} // namespace
-
-result<value_t> kernels::stackvm::unary(unary_op_t unary_op, value_t input,
-                                       value_t output,
-                                        kernel_context &context) {
-    try_input(input_mem, input);
-    try_var(typoecode, to_typecode(input_tensor->dtype()));
-    auto dtype = input_tensor->dtype();
-    try_output(out_mem, output, dtype, input_tensor->shape());
-
-    try_(unary_impl(typoecode, unary_op, input_mem,
-                        out_mem,
-                        input_tensor->shape(), input_tensor->strides(),
-                        output_tensor->shape(), output_tensor->strides(), context));
-    return ok(output);
 }

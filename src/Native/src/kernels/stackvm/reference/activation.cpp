@@ -30,6 +30,8 @@ using namespace nncase::kernels::cpu::reference;
 using namespace nncase::kernels::stackvm;
 
 FLOAT_UNARY_TEMPLATE(relu, std::max((float)0, x))
+FLOAT_UNARY_TEMPLATE(softsign, x / (1 + std::abs(x)))
+FLOAT_UNARY_TEMPLATE(softplus, std::log(1 + std::exp(x)))
 FLOAT_UNARY_TEMPLATE(sigmoid, 1 / (1 + exp(-x)))
 FLOAT_UNARY_TEMPLATE(hard_swish, x * std::max(0.f, std::min((float)1.f, (float)(1.f/6 * x + 0.5))))
 FLOAT_UNARY_WITH_MUL_TEMPLATE(elu, alpha, x < 0 ? alpha * (exp(x) - 1) : x)
@@ -39,3 +41,8 @@ FLOAT_UNARY_WITH_MUL_TEMPLATE(celu, alpha,
                                   std::min((float)0,
                                            (float)(alpha *(exp(x / alpha) - 1))))
 FLOAT_UNARY_WITH_MUL_TEMPLATE(leaky_relu, alpha, x < 0 ? alpha * x : x)
+
+FLOAT_ACTIVATION_TEMPLATE(selu, x <= 0 ? gamma * (alpha * std::exp(x) - alpha) : x * gamma, alpha, gamma)
+FLOAT_ACTIVATION_TEMPLATE(hard_sigmoid,
+                          std::max((float)0, std::min((float)1, x * alpha + beta)),
+                          alpha, beta)

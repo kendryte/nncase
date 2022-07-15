@@ -88,13 +88,13 @@ result<void> reduce_arg_impl(TReducer &&reducer, T init_value, const T *input,
         case reduce_arg_op_t::arg_min:                                         \
             return reduce_arg_impl([](_ty a, _ty b) { return a < b; },         \
                                    std::numeric_limits<_ty>::max(), IN_CAST(_ty, input),     \
-                                   OUT_CAST(_ty, output), in_shape, out_shape, in_strides,    \
+                                   OUT_CAST(int64_t, output), in_shape, out_shape, in_strides,    \
                                    out_strides, axes, keep_dims,               \
                                    select_last_idx, context);                  \
         case reduce_arg_op_t::arg_max:                                         \
             return reduce_arg_impl([](_ty a, _ty b) { return a > b; },         \
                                    std::numeric_limits<_ty>::min(), IN_CAST(_ty, input),     \
-                                   OUT_CAST(_ty, output), in_shape, out_shape, in_strides,    \
+                                   OUT_CAST(int64_t, output), in_shape, out_shape, in_strides,    \
                                    out_strides, axes, keep_dims,               \
                                    select_last_idx, context);                  \
         default:                                                               \
@@ -133,7 +133,7 @@ result<value_t> nncase::kernels::stackvm::reduce_arg(
     try_to_scalar(select_last_index_value, select_last_index, bool);
     auto out_shape =
         infer_shape(input_tensor->shape(), axis_value, keep_dims_value);
-    try_output(out_mem, output, input_tensor->dtype(), out_shape);
+    try_output(out_mem, output, dt_int64, out_shape);
     auto axes = dims_t{axis_value};
     try_(reduce_arg_impl(typecode, reduce_arg_op, in_mem, out_mem,
                          input_tensor->shape(), input_tensor->strides(),

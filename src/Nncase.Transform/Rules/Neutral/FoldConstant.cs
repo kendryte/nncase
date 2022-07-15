@@ -48,6 +48,6 @@ public partial class FoldShapeOf : RewriteRule<CallPattern>
 
     Const GetReplace(Expr wc)
     {
-        return Const.FromShape(wc.CheckedShape);
+        return Const.FromTensor(wc.CheckedShape.ToValueArray().Select(x => (long)x).ToArray());
     }
 }

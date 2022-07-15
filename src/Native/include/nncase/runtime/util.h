@@ -23,12 +23,15 @@
 #include <nncase/runtime/runtime_op_utility.h>
 
 namespace nncase::runtime {
+// cast macro
 #define IN_CAST(_ty, _name) reinterpret_cast<const _ty *>(_name)
 #define OUT_CAST(_ty, _name) reinterpret_cast<_ty *>(_name)
 #define SCALAR_CAST(_ty, _name) *reinterpret_cast<const _ty *>(_name)
+#define IN_BYTE_CAST(_var) IN_CAST(gsl::byte, _var)
+#define OUT_BYTE_CAST(_var) OUT_CAST(gsl::byte, _var)
 
-inline bool is_scalar(tensor t) noexcept { return t->shape().empty(); }
-
+// compare type
+// for typecode, datatype_t, tensor(tensor->dtype())
 inline result<bool> cmp_dt_impl(datatype_t lhs, datatype_t rhs) {
     try_var(l, to_typecode(lhs));
     try_var(r, to_typecode(rhs));
@@ -57,6 +60,7 @@ inline result<bool> float_only_check(tensor input) {
     return cmp_dt_impl(input->dtype(), datatype_t::float32);
 }
 
+// tuple helper
 template <typename F>
 inline result<void> tuple_for_each_with_i(tuple inputs, F &&f) {
     for (int i = 0; i < inputs->fields().size(); ++i) {
@@ -96,6 +100,7 @@ inline result<std::vector<dims_t>> get_strides(tuple inputs) {
                                   [](auto &input) { return input->strides(); });
 }
 
+// get input and output
 template <bool IsTuple, typename ShapeT = dims_t>
 inline result<void> alloc_output(value_t &output, datatype_t dtype,
                                  const ShapeT &out_shape);
@@ -166,23 +171,6 @@ inline result<std::vector<gsl::byte *>> get_output_data(tuple outputs) {
         outputs, [](tensor &input) { return get_output_data(input); });
 }
 
-#ifndef NODEBUG
-// used for insert into some where for check nan value in DEBUG mode
-inline void nan_debug(const float *in, int size) {
-    auto f = *in;
-    if (f != f) {
-        for (int i = 1; i < size; ++i) {
-            auto fv = *(in + i);
-            if (fv != fv) {
-                [[maybe_unused]] auto a = 1;
-            }
-        }
-    }
-}
-#else
-inline void nan_debug(const float *in) {}
-#endif
-
 inline result<gsl::byte *> get_input_data(tensor input) {
     try_var(input_buffer, get_host_buffer(input));
     try_var(input_map, input_buffer.map(map_read));
@@ -195,10 +183,11 @@ inline result<std::vector<gsl::byte *>> get_input_data(tuple inputs) {
         inputs, [](tensor &input) { return get_input_data(input); });
 }
 
-inline size_t positive_index(int index, size_t rank) {
-    return index < 0 ? index + rank : index;
-}
-
+// some macro about get value for tensor_ops.cpp
+// implicit define tensor/tuple for try_input[xxx] and try_output[xxx]
+// e.g. try_input(in_mem, input) ->
+// 1. in_mem: const gsl::byte*
+// 2. input_tensor: tensor
 #define try_alloc_output(_out_tensor, _dt, _shape, _is_tuple)                  \
     try_(alloc_output<_is_tuple>(_out_tensor, _dt, _shape));
 
@@ -228,8 +217,8 @@ inline size_t positive_index(int index, size_t rank) {
 
 #define try_f32_input(_var_name, _value_name)                                  \
     try_input_with_ty(_var_name, _value_name, float)
-#define try_f32_output(_var_name, _value_name, _dt, _out_shape)                \
-    try_output(__##_var_name, _value_name, _dt, _out_shape);                   \
+#define try_f32_output(_var_name, _value_name, _out_shape)                     \
+    try_output(__##_var_name, _value_name, dt_float32, _out_shape);            \
     auto _var_name = reinterpret_cast<float *>(__##_var_name)
 
 // todo:when _value_kind is tuple, _value_name_tensor is a bad name
@@ -241,6 +230,9 @@ inline size_t positive_index(int index, size_t rank) {
 
 #define try_output(_var_name, _value_name, _dt, _out_shape)                    \
     try_output_impl(_var_name, _value_name, _dt, _out_shape, tensor, false)
+
+#define try_output_like_input(_var_name, _value_name, _tensor)                 \
+    try_output(_var_name, _value_name, (_tensor)->dtype(), (_tensor)->shape())
 
 #define try_tuple_output(_var_name, _value_name, _dt, _out_shapes)             \
     try_output_impl(_var_name, _value_name, _dt, _out_shapes, tuple, true)
@@ -263,6 +255,9 @@ inline size_t positive_index(int index, size_t rank) {
 #define try_to_scalar(_var_name, _value_name, _ty)                             \
     try_var(_var_name, value_to_scalar<_ty>(_value_name))
 
+#define try_float_scalar(_var_name, _value_name)                               \
+    try_to_scalar(_var_name, _value_name, float)
+
 #define try_to_integer(_var_name, _value_name)                                 \
     try_to_scalar(_var_name, _value_name, int64_t)
 
@@ -279,13 +274,37 @@ inline size_t positive_index(int index, size_t rank) {
 
 #define try_ref(op, ...) try_(reference::op(__VA_ARGS__))
 
+// implicit set var name
+#define try_out_mem(_value_name, _dt, _out_shape)                              \
+    try_output(_value_name##_mem, _value_name, _dt, _out_shape)
+#define try_f32_out_mem(_value_name, _out_shape)                          \
+    try_f32_output(_value_name##_mem, _value_name, _out_shape)
+
+#define try_in_mem(_value_name) try_input(_value_name##_mem, _value_name)
+#define try_f32_in_mem(_value_name)                                            \
+    try_f32_input(_value_name##_mem, _value_name)
+
+#define try_float_scalar_v(_value_name) try_to_scalar_v(_value_name, float)
+
+#define try_to_scalar_v(_value_name, _ty)                                      \
+    try_to_scalar(_value_name##_value, _value_name, _ty)
+
+// other cast macro
+#define to_tensor(_tensor_name, _value)                                        \
+    try_var(_tensor_name, _value.as<tensor>());
 #define finish return ok(output)
 #define tuple_finish return ok(output_tuple)
 
-#define not_impl_no_contiguous(tensor)                                         \
-    if (!is_contiguous(tensor)) {                                              \
-        return err(nncase_errc::shape_mismatch);                               \
+// get data from value
+template <typename TI, typename TO>
+itlib::small_vector<TO, 4> to_vec(const gsl::byte *input, size_t size) {
+    auto in_ptr = reinterpret_cast<const TI *>(input);
+    auto vec = itlib::small_vector<TO, 4>(size);
+    for (int i = 0; i < size; ++i) {
+        vec[i] = (TO)in_ptr[i];
     }
+    return vec;
+}
 
 template <typename T>
 inline result<T> value_to_scalar([[maybe_unused]] value_t value) {
@@ -303,20 +322,6 @@ inline result<T> value_to_scalar([[maybe_unused]] value_t value) {
     RETURN_RESULT(uint64_t);
     return err(nncase_errc::datatype_mismatch);
 #undef RETURN_RESULT
-}
-
-inline result<scalar> tensor_as_scalar([[maybe_unused]] value_t value) {
-    throw "NotImplement";
-}
-
-template <typename TI, typename TO>
-itlib::small_vector<TO, 4> to_vec(const gsl::byte *input, size_t size) {
-    auto in_ptr = reinterpret_cast<const TI *>(input);
-    auto vec = itlib::small_vector<TO, 4>(size);
-    for (int i = 0; i < size; ++i) {
-        vec[i] = (TO)in_ptr[i];
-    }
-    return vec;
 }
 
 template <typename T>
@@ -349,7 +354,11 @@ inline result<axes_t> value_as_axes(value_t value) {
     return value_as_Ts<axes_t::value_type>(value);
 }
 
-// todo:refactor
+inline size_t positive_index(int index, size_t rank) {
+    return index < 0 ? index + rank : index;
+}
+
+// todo:refactor, same as axes but should positive
 inline result<dims_t> value_as_positive_axes(value_t value, size_t rank) {
     try_input(input, value);
     assert(value_tensor->shape().size() == 1);
@@ -397,10 +406,15 @@ inline result<paddings_t> value_as_paddings([[maybe_unused]] value_t value) {
     return ok(pads);
 }
 
-inline result<quant_param_t>
-value_as_quant_param([[maybe_unused]] value_t value) {
-    throw "NotImplement";
+// kernel util
+inline bool is_contiguous(tensor tensor) {
+    return is_contiguous(tensor->shape(), tensor->strides());
 }
+
+#define not_impl_no_contiguous(tensor)                                         \
+    if (!is_contiguous(tensor)) {                                              \
+        return err(nncase_errc::shape_mismatch);                               \
+    }
 
 #define TYPE_SELECT(_typecode, _impl)                                          \
     switch (_typecode) {                                                       \
@@ -428,10 +442,6 @@ value_as_quant_param([[maybe_unused]] value_t value) {
         return err(std::errc::not_supported);                                  \
     }
 
-inline bool is_contiguous(tensor tensor) {
-    return is_contiguous(tensor->shape(), tensor->strides());
-}
-
 // kernel dispatch for single input
 #define CONTIGUOUS_KERNEL(_op, _in_tensor, ...)                                \
     if (is_contiguous(_in_tensor)) {                                           \
@@ -440,9 +450,16 @@ inline bool is_contiguous(tensor tensor) {
         try_(optimized::_op(__VA_ARGS__))                                      \
     }
 
-#define IN_CAST(_ty, _name) reinterpret_cast<const _ty *>(_name)
-#define OUT_CAST(_ty, _name) reinterpret_cast<_ty *>(_name)
-#define SCALAR_CAST(_ty, _name) *reinterpret_cast<const _ty *>(_name)
+// used for op only do reshape
+inline tensor tensor_reshape(tensor in_tensor, const dims_t &new_shape) {
+    auto strides = get_default_strides(new_shape);
+    auto node = new tensor_node(in_tensor->dtype(), new_shape, strides,
+                                in_tensor->buffer());
+    return tensor(node);
+}
+
+inline bool is_scalar(tensor t) noexcept { return t->shape().empty(); }
+inline bool is_scalar(const dims_t &t) noexcept { return t.empty(); }
 
 template <typename F>
 inline result<void> integer_cast(datatype_t type, const gsl::byte *input,
@@ -457,16 +474,4 @@ inline result<void> integer_cast(datatype_t type, const gsl::byte *input,
     return ok();
 }
 
-inline tensor tensor_reshape(tensor in_tensor, const dims_t &new_shape) {
-    auto strides = get_default_strides(new_shape);
-    // used for debug
-    //    [[maybe_unused]] auto new_sizes = get_bytes(in_tensor->dtype(),
-    //    new_shape, strides);
-    //    [[maybe_unused]] auto origin_sizes = in_tensor->buffer().size_bytes();
-    auto node = new tensor_node(in_tensor->dtype(), new_shape, strides,
-                                in_tensor->buffer());
-    return tensor(node);
-}
-
-inline bool is_scalar(const dims_t &shape) { return shape.size() == 0; }
 } // namespace nncase::runtime

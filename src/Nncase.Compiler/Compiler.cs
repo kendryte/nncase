@@ -19,7 +19,6 @@ namespace Nncase.Compiler;
 public class Compiler
 {
     private IRModule Module;
-    private CompileOptions Options;
     public static void init(CompileOptions options)
     {
         OrtKI.LoadDLL();
@@ -63,25 +62,22 @@ public class Compiler
     {
         loggingBuilder.AddConsole();
     }
-
+    
     public IRModule ImportModule(Stream content, CompileOptions options)
     {
         CompilerServices.CompileOptions = options;
-        Options = options;
         Console.WriteLine($"Target: {options.Target}");
         var module = ImportModel(content, options);
-        Console.WriteLine("Infer Shape...");
-        InferShape(module, options);
-        var inferSucc = CompilerServices.InferenceType(module.Entry!);
         DumpModule(module, options, "ir_import");
+        Console.WriteLine("Infer Shape...");
+        DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module, options));
+        var inferSucc = CompilerServices.InferenceType(module.Entry!);
+        DumpModule(module, options, "ir_infertype");
         if (!inferSucc)
         {
             throw new InvalidOperationException("InferShape Failed For This Model!");
         }
 
-        DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module, options));
-
-        DumpModule(module, options, "ir_infertype");
         Console.WriteLine("ImportModule successful!");
         return module;
     }
@@ -115,7 +111,7 @@ public class Compiler
     private void RunPass(Action<PassManager> register)
     {
         // todo:dump dir
-        var pmgr = new PassManager(Module, new RunPassOptions(CompilerServices.GetTarget(Options.Target), 0, "null", Options));
+        var pmgr = new PassManager(Module, new RunPassOptions(CompilerServices.GetCompileTarget, 0, "null", CompilerServices.CompileOptions));
         register(pmgr);
         pmgr.RunAsync().Wait();
     }
@@ -123,11 +119,11 @@ public class Compiler
     public void TargetIndependentPass()
     {
     }
-
+    
     public void Compile(CompileOptions options)
     {
-        Options = options;
-        var t = CompilerServices.GetTarget(options.Target);
+        CompilerServices.CompileOptions = options;
+        var t = CompilerServices.GetCompileTarget;
         TargetIndependentPass();
         RunPass(p => t.RegisterTargetDependentPass(p, options));
         RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, options));
@@ -136,8 +132,8 @@ public class Compiler
 
     public byte[] Gencode()
     {
-        var target = CompilerServices.GetTarget(Options.Target);
-        var moduleBuilder = new ModelBuilder(target, Options);
+        var target = CompilerServices.GetCompileTarget;
+        var moduleBuilder = new ModelBuilder(target, CompilerServices.CompileOptions);
         var linkedModel = moduleBuilder.Build(Module);
         using var output = new MemoryStream();
         linkedModel.Serialize(output);

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/tensor_ops.h>
+#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/util.h>
@@ -23,9 +23,8 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
 
-namespace {
 result<void>
-conv2d_impl(const float *input, const float *weights, const float *bias,
+nncase::kernels::stackvm::reference::conv2d(const float *input, const float *weights, const float *bias,
             float *output, const dims_t &in_shape, const strides_t &in_strides,
             const dims_t &w_shape, const dims_t &w_strides,
             const dims_t &bias_strides, const strides_t &out_strides,
@@ -108,41 +107,3 @@ conv2d_impl(const float *input, const float *weights, const float *bias,
     return ok();
 }
 
-dims_t infer_shape(const dims_t& in_shape, const dims_t& weights_shape, const dims_t& stride,
-                   const dims_t& dilation, const paddings_t& paddings) {
-    auto new_shape = in_shape;
-    new_shape[1] = weights_shape[0];
-    new_shape[2] = kernels::detail::get_windowed_output_size(in_shape[2], weights_shape[2], stride[0], dilation[0], paddings[0]);
-    new_shape[3] = kernels::detail::get_windowed_output_size(in_shape[3], weights_shape[3], stride[1], dilation[1], paddings[1]);
-    return new_shape;
-}
-} // namespace
-
-result<value_t> nncase::kernels::stackvm::conv2d(
-    pad_mode_t pad_mode, value_t input, value_t weights, value_t bias,
-    value_t stride, value_t padding, value_t dilation, value_t groups,
-    value_t fused_clamp, value_t output, kernel_context &context) {
-    if(pad_mode != pad_mode_t::constant)
-    {
-        return err(nncase_errc::runtime_not_found);
-    }
-    try_f32_input(input_mem, input);
-    try_f32_input(weights_mem, weights);
-    try_f32_input(bias_mem, bias);
-    try_strides(strides_value, stride);
-    try_paddings(pads, padding);
-    try_to_integer(groups_value, groups);
-    try_strides(strides, stride);
-    try_strides(dilations, dilation);
-    try_f32_input(fused_clamp_value, fused_clamp);
-    auto out_shape = infer_shape(input_tensor->shape(), weights_tensor->shape(), strides_value, dilations, pads);
-    try_f32_output(out_mem, output, input_tensor->dtype(), out_shape);
-    try_(conv2d_impl(
-        input_mem, weights_mem, bias_mem, out_mem, input_tensor->shape(),
-        input_tensor->strides(), weights_tensor->shape(), weights_tensor->strides(), bias_tensor->strides(),
-        output_tensor->strides(), pads[0], pads[1], groups_value, strides[0],
-        strides[1], dilations[0], dilations[1],
-        value_range<float>{fused_clamp_value[0], fused_clamp_value[1]},
-        context));
-    return ok(output);
-}

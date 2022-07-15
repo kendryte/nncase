@@ -32,9 +32,4 @@ public sealed record UniformLike(DataType Type) : Op
     /// Gets seed.
     /// </summary>
     public static readonly ParameterInfo Seed = new(typeof(UniformLike), 3, "seed", IsFloatScalar());
-
-    /// <summary>
-    /// Gets shape.
-    /// </summary>
-    public static readonly ParameterInfo Shape = new(typeof(UniformLike), 4, "shape", IsIntegral() & HasRank(1));
 }

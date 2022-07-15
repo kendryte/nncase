@@ -27,7 +27,8 @@ inline static void set_dump_root(std::string root) {
 }
 
 inline static fs::path dump_path() {
-    auto p = dump_root / (std::to_string(get_a()) + currentOp);
+    auto file_name = (std::to_string(get_a()) + currentOp);
+    auto p = dump_root / file_name;
     if (!fs::exists(dump_root) && dump_root != "") {
         fs::create_directory(dump_root);
     }
@@ -142,10 +143,10 @@ inline void dump_output_impl(nncase::value_t value,
 }
 
 inline void dump_output([[maybe_unused]] nncase::value_t value) {
-    dump_output_impl(value, dump_path(), true);
+//    dump_output_impl(value, dump_path(), true);
 }
 
 inline void dump_input([[maybe_unused]] nncase::value_t value,
                        [[maybe_unused]] std::string name) {
-    dump_output_impl(value, fs::path(dump_path().string() + name), false);
+//    dump_output_impl(value, fs::path(dump_path().string() + name), false);
 }

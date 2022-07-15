@@ -82,7 +82,6 @@ dims_t infer_shape(const dims_t& indices_shape, size_t depth, size_t axis) {
 result<value_t>
 nncase::kernels::stackvm::one_hot(one_hot_mode_t one_hot_mode, value_t indices,
                                   value_t depth, value_t values, value_t axis,
-                                  [[maybe_unused]] value_t on_value, [[maybe_unused]] value_t off_value,
                                   value_t output, kernel_context &context) {
     try_input(onehot_values, values);
     try_var(typecode, to_typecode(values_tensor->dtype()));

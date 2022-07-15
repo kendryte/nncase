@@ -80,7 +80,7 @@ result<value_t> nncase::kernels::stackvm::hardmax(value_t input, value_t axis,
                                                   value_t output,
                                                   [[maybe_unused]] kernel_context &context) {
     try_f32_input(input_mem, input);
-    try_f32_output(out_mem, output, input_tensor->dtype(), input_tensor->shape());
+    try_f32_output(out_mem, output, input_tensor->shape());
     try_positive_axis(axis_value, axis, input_tensor);
     try_(hardmax_impl(input_mem, input_tensor->shape(), input_tensor->strides(),
                       out_mem, axis_value));

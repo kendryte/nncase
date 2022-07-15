@@ -119,7 +119,7 @@ result<void> interior_pad_impl(const T *input, T *output, NNCASE_UNUSED const di
 }
 
 result<void> pad_impl(datatype_t type, const gsl::byte *input, gsl::byte *output, const dims_t &in_shape,
-    const strides_t &in_strides, const strides_t &out_strides, const paddings_t &paddings, pad_mode_t mode, const scalar &pad_value, kernel_context &context) noexcept
+    const strides_t &in_strides, const strides_t &out_strides, const paddings_t &paddings, pad_mode_t mode, const gsl::byte *pad_value, kernel_context &context) noexcept
 {
     auto unit = runtime::get_bytes(type);
     if (std::all_of(paddings.begin(), paddings.end(), [](const padding &p) { return p.interior == 0; }))
@@ -129,15 +129,15 @@ result<void> pad_impl(datatype_t type, const gsl::byte *input, gsl::byte *output
         {
         case 1:
             return pad_impl(reinterpret_cast<const uint8_t *>(input), reinterpret_cast<uint8_t *>(output), in_shape, out_shape,
-                in_strides, out_strides, paddings, mode, pad_value.as<uint8_t>(), context);
+                in_strides, out_strides, paddings, mode, *IN_CAST(uint8_t, pad_value), context);
 
         case 2:
             return pad_impl(reinterpret_cast<const uint16_t *>(input), reinterpret_cast<uint16_t *>(output), in_shape, out_shape,
-                in_strides, out_strides, paddings, mode, pad_value.as<uint16_t>(), context);
+                in_strides, out_strides, paddings, mode, *IN_CAST(uint16_t, pad_value), context);
 
         case 4:
             return pad_impl(reinterpret_cast<const uint32_t *>(input), reinterpret_cast<uint32_t *>(output), in_shape, out_shape,
-                in_strides, out_strides, paddings, mode, pad_value.as<uint32_t>(), context);
+                in_strides, out_strides, paddings, mode, *IN_CAST(uint32_t, pad_value), context);
         default:
             return err(std::errc::not_supported);
         }
@@ -164,20 +164,20 @@ result<void> pad_impl(datatype_t type, const gsl::byte *input, gsl::byte *output
         case 1:
         {
             NNCASE_UNUSED auto ret = interior_pad_impl(reinterpret_cast<const uint8_t *>(input), reinterpret_cast<uint8_t *>(v.data()), in_shape, out_shape,
-                in_strides, strides, padding_cfg, pad_value.as<uint8_t>(), context);
+                in_strides, strides, padding_cfg, *IN_CAST(uint8_t, pad_value), context);
             break;
         }
 
         case 2:
         {
             NNCASE_UNUSED auto ret = interior_pad_impl(reinterpret_cast<const uint16_t *>(input), reinterpret_cast<uint16_t *>(v.data()), in_shape, out_shape,
-                in_strides, strides, padding_cfg, pad_value.as<uint16_t>(), context);
+                in_strides, strides, padding_cfg, *IN_CAST(uint16_t, pad_value), context);
             break;
         }
         case 4:
         {
             NNCASE_UNUSED auto ret = interior_pad_impl(reinterpret_cast<const uint32_t *>(input), reinterpret_cast<uint32_t *>(v.data()), in_shape, out_shape,
-                in_strides, strides, padding_cfg, pad_value.as<uint32_t>(), context);
+                in_strides, strides, padding_cfg, *IN_CAST(uint32_t, pad_value), context);
             break;
         }
         default:
@@ -196,15 +196,15 @@ result<void> pad_impl(datatype_t type, const gsl::byte *input, gsl::byte *output
         {
         case 1:
             return pad_impl(reinterpret_cast<const uint8_t *>(v.data()), reinterpret_cast<uint8_t *>(output), out_shape, out_shape2,
-                strides, out_strides, padding_cfg, mode, pad_value.as<uint8_t>(), context);
+                strides, out_strides, padding_cfg, mode, *IN_CAST(uint8_t, pad_value), context);
 
         case 2:
             return pad_impl(reinterpret_cast<const uint16_t *>(v.data()), reinterpret_cast<uint16_t *>(output), out_shape, out_shape2,
-                strides, out_strides, padding_cfg, mode, pad_value.as<uint16_t>(), context);
+                strides, out_strides, padding_cfg, mode, *IN_CAST(uint16_t, pad_value), context);
 
         case 4:
             return pad_impl(reinterpret_cast<const uint32_t *>(v.data()), reinterpret_cast<uint32_t *>(output), out_shape, out_shape2,
-                strides, out_strides, padding_cfg, mode, pad_value.as<uint32_t>(), context);
+                strides, out_strides, padding_cfg, mode, *IN_CAST(uint32_t, pad_value), context);
         default:
             return err(std::errc::not_supported);
         }
@@ -219,7 +219,7 @@ dims_t infer_shape(const dims_t& in_shape, const paddings_t& pads) {
     }
     return new_shape;
 }
-
+#include <iostream>
 result<value_t> nncase::kernels::stackvm::pad(pad_mode_t pad_mode,
                                               value_t input, value_t pads,
                                               value_t value, value_t output,
@@ -227,10 +227,13 @@ result<value_t> nncase::kernels::stackvm::pad(pad_mode_t pad_mode,
     try_input(input_mem, input);
     try_paddings(paddings, pads);
     auto out_shape = infer_shape(input_tensor->shape(), paddings);
-    try_output(out_mem, output, input_tensor->dtype(), input_tensor->shape());
+    try_output(out_mem, output, input_tensor->dtype(), out_shape);
+    std::cout << "end output" << std::endl;
 
-    try_var(pad_value, tensor_as_scalar(value));
+    try_input(pad_value, value);
     try_(pad_impl(input_tensor->dtype(), input_mem, out_mem, input_tensor->shape(), input_tensor->strides(), output_tensor->strides(),
                   paddings, pad_mode, pad_value, context));
+    std::cout << "end pad" << std::endl;
+
     return ok(output);
 }

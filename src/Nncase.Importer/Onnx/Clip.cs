@@ -4,6 +4,7 @@
 using Nncase.IR;
 using Onnx;
 using F = Nncase.IR.F;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Importer
 {
@@ -12,8 +13,9 @@ namespace Nncase.Importer
         private Expr VisitClip(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);
-            var min = GetFloatAttribute(op, "min", float.MinValue);
-            var max = GetFloatAttribute(op, "max", float.MaxValue);
+            var dt = GetInputDataType(op, 0);
+            var min = GetOptionInputExpr(op, 1).Match(min => Squeeze(min, new[]{0}), Cast(float.MinValue, dt));
+            var max = GetOptionInputExpr(op, 2).Match(max => Squeeze(max, new[]{0}), Cast(float.MaxValue, dt));
             return F.Math.Clamp(input, min, max);
         }
     }

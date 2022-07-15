@@ -14,7 +14,7 @@
  */
 #include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/tensor_ops.h>
+#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -34,7 +34,7 @@ result<void> binary_impl(TOp &&op, const T *lhs, const T *rhs, T *output,
                          const dims_t &rhs_shape, const strides_t &rhs_strides,
                          const dims_t &out_shape, const strides_t &out_strides,
                          NNCASE_UNUSED kernel_context &context) noexcept {
-    if(is_scalar(out_shape)) {
+    if (is_scalar(out_shape)) {
         output[0] = op(lhs[0], rhs[0]);
         return ok();
     }
@@ -78,38 +78,21 @@ result<void> binary_impl(binary_op_t op, const T *lhs, const T *rhs, T *output,
 }
 
 #define BINARY_IMPL(_ty)                                                       \
-    return binary_impl(op, IN_CAST(_ty, lhs), IN_CAST(_ty, rhs),                      \
-                OUT_CAST(_ty, output), lhs_shape, lhs_strides, rhs_shape,      \
-                rhs_strides, out_shape, out_strides, context);
-
-result<void> binary_impl(typecode_t typecode, binary_op_t op,
-                         const gsl::byte *lhs, const gsl::byte *rhs,
-                         gsl::byte *output, const dims_t &lhs_shape,
-                         const strides_t &lhs_strides, const dims_t &rhs_shape,
-                         const strides_t &rhs_strides, const dims_t &out_shape,
-                         const strides_t &out_strides,
-                         NNCASE_UNUSED kernel_context &context) noexcept {
-    TYPE_SELECT(typecode, BINARY_IMPL);
-}
+    return binary_impl(op, IN_CAST(_ty, lhs), IN_CAST(_ty, rhs),               \
+                       OUT_CAST(_ty, output), lhs_shape, lhs_strides,          \
+                       rhs_shape, rhs_strides, out_shape, out_strides,         \
+                       context);
 } // namespace
 
-result<value_t> kernels::stackvm::binary(binary_op_t binary_op, value_t lhs,
-                                         value_t rhs, value_t output,
-                                         kernel_context &context) {
-    try_input(lhs_mem, lhs);
-    try_input(rhs_mem, rhs);
-    if(!cmp_dt(lhs_tensor, rhs_tensor))
-    {
-        return err(nncase_errc::datatype_mismatch);
+result<void> nncase::kernels::stackvm::reference::binary(
+    typecode_t typecode, binary_op_t op, const gsl::byte *lhs,
+    const gsl::byte *rhs, gsl::byte *output, const dims_t &lhs_shape,
+    const strides_t &lhs_strides, const dims_t &rhs_shape,
+    const strides_t &rhs_strides, const dims_t &out_shape,
+    const strides_t &out_strides,
+    NNCASE_UNUSED kernel_context &context) noexcept {
+    if (typecode == dt_boolean) {
+        BINARY_IMPL(bool);
     }
-
-    try_typecode(typecode, lhs_tensor);
-    auto out_shape = detail::get_binary_output_shape(lhs_tensor->shape(),
-                                                     rhs_tensor->shape());
-    try_output(out_mem, output, lhs_tensor->dtype(), out_shape);
-    try_(binary_impl(
-        typecode, binary_op, lhs_mem, rhs_mem, out_mem, lhs_tensor->shape(),
-        lhs_tensor->strides(), rhs_tensor->shape(), rhs_tensor->strides(),
-        output_tensor->shape(), output_tensor->strides(), context));
-    return ok(output);
+    TYPE_SELECT(typecode, BINARY_IMPL);
 }

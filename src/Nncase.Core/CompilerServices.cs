@@ -491,4 +491,8 @@ public static class CompilerServices
         get { return Provider.CompileOptions; }
         set { Provider.CompileOptions = value; }
     }
+
+    public static string CompileTarget => CompileOptions.Target;
+
+    public static ITarget GetCompileTarget => GetTarget(CompileTarget);
 }

@@ -46,58 +46,7 @@ namespace Nncase.Cli.Commands
 
         private void Run(CompileOptions options, IHost host)
         {
-            ConfigureServices(host);
-            var module = ImportModule(File.OpenRead(options.InputFile), options);
-            BuildKModel(module, options);
-        }
-
-        private void BuildKModel(IRModule module, CompileOptions options)
-        {
-            var target = CompilerServices.GetTarget(options.Target);
-            var modelBuilder = new ModelBuilder(target);
-            using (var output = new FileStream(options.OutputFile, FileMode.Create, FileAccess.ReadWrite))
-            {
-                var model = modelBuilder.Build(module);
-                model.Serialize(output);
-            }
-        }
-
-        private IRModule ImportModule(Stream content, CompileOptions options)
-        {
-            Console.WriteLine($"Target: {options.Target}");
-            var module = ImportModel(content, options);
-            DumpModule(module, options, "ir_import");
-            if (!CompilerServices.InferenceType(module.Entry))
-            {
-                InferShape(module, options);
-            }
-
-            DumpModule(module, options, "ir_infertype");
-            Console.WriteLine("ImportModule successful!");
-            return module;
-        }
-
-        private void InferShape(IRModule module, CompileOptions options)
-        {
-            Console.WriteLine("Infer Shape...");
-            var pmgr = new PassManager(module, new RunPassOptions(null, options.DumpLevel, options.DumpDir));
-            //var constFold = new ShapeInferPass();
-            //pmgr.Add(constFold);
-            //pmgr.Run();
-        }
-
-        private IRModule ImportModel(Stream content, CompileOptions options) =>
-          options.InputFormat switch
-          {
-              "tflite" => Importers.ImportTFLite(content),
-              "onnx" => Importers.ImportOnnx(content),
-              _ => throw new NotImplementedException($"Not Implement {options.InputFormat} Impoter!"),
-          };
-
-        private void DumpModule(IRModule module, CompileOptions options, string prefix)
-        {
-            var dumpPath = Path.Combine(options.DumpDir, "dump");
-            CompilerServices.DumpIR(module.Entry!, prefix, dumpPath);
+            new Compiler.Compiler().Compile(options);
         }
     }
 }

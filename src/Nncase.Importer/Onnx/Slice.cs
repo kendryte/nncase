@@ -39,7 +39,7 @@ namespace Nncase.Importer
             return F.Tensors.Slice(input, starts, ends, axes, steps);
         }
 
-        private Call ExpandOneToRank(Expr input, long value, int rankOffset = 0)
+        private Call ExpandOneToRank(Expr input, long value, long rankOffset = 0)
         {
             return F.Tensors.Expand(value, F.Tensors.Cast(F.Tensors.Rank(input) - rankOffset, new Int64Type()));
         }

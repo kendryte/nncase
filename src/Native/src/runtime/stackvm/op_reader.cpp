@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 #include <nncase/runtime/stackvm/op_reader.h>
+#include <nncase/debug.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -26,6 +27,11 @@ result<void> op_visitor::next() noexcept
     if (opcode == opcode_t::TENSOR)
     {
         auto tensor_funct = static_cast<tensor_function_t>(reader_.peek_unaligned_with_offset<uint16_t>(1));
+        auto func_str =  to_string(tensor_funct);
+        currentOp = func_str;
+        dump([&](auto &stream){
+            stream << func_str << std::endl;
+        });
         switch (tensor_funct)
         {
         case tensor_function_t::batch_normalization:

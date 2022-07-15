@@ -38,7 +38,7 @@ template <class TBinaryOp, class TWindowOp>
 result<void> reduce_window2d_impl(const float *input, float init_value, float *output, const dims_t &in_shape,
     const strides_t &in_strides, const strides_t &out_strides, const padding &padding_h, const padding &padding_w,
     int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
-    value_range<float> fused_activation, TBinaryOp &&binary_op, TWindowOp &&window_op, NNCASE_UNUSED kernel_context &context) noexcept
+    value_range<float> fused_activation, TBinaryOp &&binary_op, TWindowOp &&window_op, bool count_include_pad, NNCASE_UNUSED kernel_context &context) noexcept
 {
     const auto out_h = kernels::detail::get_windowed_output_size(in_shape[2], filter_h, stride_h, dilation_h, padding_h);
     const auto out_w = kernels::detail::get_windowed_output_size(in_shape[3], filter_w, stride_w, dilation_w, padding_w);
@@ -74,7 +74,9 @@ result<void> reduce_window2d_impl(const float *input, float init_value, float *o
                             kernel_count++;
                         }
                     }
-
+                    if(count_include_pad) {
+                        kernel_count += padding_w.sum();
+                    }
                     output[offset(out_strides, { batch, oc, oy, ox })] = kernels::detail::apply_activation(window_op(value, kernel_count), fused_activation);
                 }
             }
@@ -87,16 +89,16 @@ result<void> reduce_window2d_impl(const float *input, float init_value, float *o
 
 #define REDUCE_WINDOW2D_IMPL(op, reducer, post_process) \
     case op:                                            \
-        return reduce_window2d_impl(input, init_value, output, in_shape, in_strides, out_strides, padding_h, padding_w, filter_h, filter_w, stride_h, stride_w, dilation_h, dilation_w, fused_activation, reducer, post_process, context)
+        return reduce_window2d_impl(input, init_value, output, in_shape, in_strides, out_strides, padding_h, padding_w, filter_h, filter_w, stride_h, stride_w, dilation_h, dilation_w, fused_activation, reducer, post_process, count_include_pad, context)
 
 #define REDUCE_WINDOW2D_IMPL_NO_POST(op, reducer) \
     case op:                                      \
-        return reduce_window2d_impl(input, init_value, output, in_shape, in_strides, out_strides, padding_h, padding_w, filter_h, filter_w, stride_h, stride_w, dilation_h, dilation_w, fused_activation, reducer, identity_window(), context)
+        return reduce_window2d_impl(input, init_value, output, in_shape, in_strides, out_strides, padding_h, padding_w, filter_h, filter_w, stride_h, stride_w, dilation_h, dilation_w, fused_activation, reducer, identity_window(), count_include_pad, context)
 
 result<void> reduce_window2d_impl(reduce_op_t op, const float *input, float init_value, float *output, const dims_t &in_shape,
     const strides_t &in_strides, const strides_t &out_strides, const padding &padding_h, const padding &padding_w,
     int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation,
-    kernel_context &context) noexcept
+    bool count_include_pad, kernel_context &context) noexcept
 {
     switch (op)
     {
@@ -127,16 +129,14 @@ result<value_t> nncase::kernels::stackvm::reduce_window2d(
     try_dims(strides_value, stride);
     try_dims(dilations_value, dilation);
     try_paddings(pads, padding);
+    try_to_scalar(count_include_pad_value, count_include_pad, bool);
     auto out_shape = infer_shape(input_tensor->shape(), filter_value,
                                  strides_value, dilations_value, pads);
-    try_f32_output(out_mem, output, input_tensor->dtype(),
-                     out_shape);
+    try_f32_output(out_mem, output, out_shape);
     try_(reduce_window2d_impl(
         reduce_op, input_mem, init_v, out_mem, input_tensor->shape(),
         input_tensor->strides(), output_tensor->strides(), pads[0], pads[1],
         filter_value[0], filter_value[1], strides_value[0], strides_value[1],
-        dilations_value[0], dilations_value[1], value_range<float>::full(), context));
-    // todo: some param not be used
-    return err(nncase_errc::runtime_not_found);
+        dilations_value[0], dilations_value[1], value_range<float>::full(), count_include_pad_value, context));
     return ok(output);
 }

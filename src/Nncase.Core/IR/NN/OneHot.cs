@@ -36,14 +36,4 @@ public sealed record OneHot(OneHotMode OneHotMode) : Op
     /// Gets axis.
     /// </summary>
     public static readonly ParameterInfo Axis = new(typeof(OneHot), 3, "axis");
-
-    /// <summary>
-    /// Gets on_value.
-    /// </summary>
-    public static readonly ParameterInfo OnValue = new(typeof(OneHot), 4, "on_value");
-
-    /// <summary>
-    /// Gets off_value.
-    /// </summary>
-    public static readonly ParameterInfo OffValue = new(typeof(OneHot), 5, "off_value");
 }

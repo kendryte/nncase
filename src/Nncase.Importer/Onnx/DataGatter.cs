@@ -170,6 +170,6 @@ public sealed partial class OnnxImporter
 
     private Expr ToNncasePadFormat(Expr pads)
     {
-        return Transpose(Reshape(pads, new[] {-1, 2}), new[] {1, 0});
+        return Transpose(Reshape(pads, new[] {2, -1}), new[] {1, 0});
     }
 }

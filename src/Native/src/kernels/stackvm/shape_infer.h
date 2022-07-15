@@ -28,7 +28,24 @@
 
 BEGIN_NS_NNCASE_KERNELS_MODULE(stackvm)
 
-dims_t gather_infer_shape(const dims_t &in_shape, const dims_t &index_shape,
+inline dims_t conv2d_infer_shape(const dims_t& in_shape, const dims_t& weights_shape, const dims_t& stride,
+                   const dims_t& dilation, const paddings_t& paddings) {
+    auto new_shape = in_shape;
+    new_shape[1] = weights_shape[0];
+    new_shape[2] = kernels::detail::get_windowed_output_size(in_shape[2], weights_shape[2], stride[0], dilation[0], paddings[0]);
+    new_shape[3] = kernels::detail::get_windowed_output_size(in_shape[3], weights_shape[3], stride[1], dilation[1], paddings[1]);
+    return new_shape;
+}
+
+inline dims_t concat_infer_shape(std::vector<dims_t> shapes, int axis) {
+    auto new_shape = shapes[0];
+    new_shape[axis] = std::accumulate(
+        shapes.begin(), shapes.end(), 0,
+        [&](auto sum, auto in_shape) -> int { return sum + in_shape[axis]; });
+    return new_shape;
+}
+
+inline dims_t gather_infer_shape(const dims_t &in_shape, const dims_t &index_shape,
                           int axis) {
     if (in_shape.size() == 1 && index_shape.size() == 0) {
         // scalar
@@ -42,7 +59,7 @@ dims_t gather_infer_shape(const dims_t &in_shape, const dims_t &index_shape,
     return new_shape;
 }
 
-dims_t gather_nd_infer_shape(const dims_t &in_shape, const dims_t &index_shape,
+inline dims_t gather_nd_infer_shape(const dims_t &in_shape, const dims_t &index_shape,
                              size_t batch_dims) {
     auto new_shape = index_shape;
     new_shape.pop_back();
@@ -55,7 +72,7 @@ dims_t gather_nd_infer_shape(const dims_t &in_shape, const dims_t &index_shape,
     return new_shape;
 }
 
-dims_t slice_infer_shape(const dims_t &in_shape, const axes_t &begins,
+inline dims_t slice_infer_shape(const dims_t &in_shape, const axes_t &begins,
                          const axes_t &ends, const axes_t &strides) {
     auto new_shape = dims_t();
     for (size_t i = 0; i < strides.size(); i++) {
@@ -70,7 +87,7 @@ dims_t slice_infer_shape(const dims_t &in_shape, const axes_t &begins,
     return new_shape.size() ? new_shape : dims_t{1};
 }
 
-std::vector<dims_t> split_shape_infer(const dims_t &in_shape, size_t axis,
+inline std::vector<dims_t> split_shape_infer(const dims_t &in_shape, size_t axis,
                                       const dims_t &sections) {
     auto result = std::vector<dims_t>();
     for (int i = 0; i < sections.size(); ++i) {
@@ -81,7 +98,7 @@ std::vector<dims_t> split_shape_infer(const dims_t &in_shape, size_t axis,
     return result;
 }
 
-dims_t reshape_shape_infer(const dims_t &in_shape, const axes_t &new_shape) {
+inline dims_t reshape_shape_infer(const dims_t &in_shape, const axes_t &new_shape) {
     auto neg_index = -1;
     auto sum = 1;
     for (int i = 0; i < new_shape.size(); ++i) {
@@ -102,12 +119,12 @@ dims_t reshape_shape_infer(const dims_t &in_shape, const axes_t &new_shape) {
     }
 }
 
-dims_t stack_infer_shape(dims_t shape0, int input_count, int axis) {
+inline dims_t stack_infer_shape(dims_t shape0, int input_count, int axis) {
     shape0.insert(shape0.begin() + axis, input_count);
     return shape0;
 }
 
-dims_t unsqueeze_infer_shape(const dims_t &in_shape, const axes_t &axes) {
+inline dims_t unsqueeze_infer_shape(const dims_t &in_shape, const axes_t &axes) {
     if (in_shape.size() == 0 && axes.size() == 1) {
         return dims_t{1};
     }
@@ -122,7 +139,13 @@ dims_t unsqueeze_infer_shape(const dims_t &in_shape, const axes_t &axes) {
     return new_shape;
 }
 
-dims_t squeeze_infer_shape(const dims_t &in_shape, const axes_t &axes) {
+inline dims_t flatten_infer_shape(const dims_t &in_shape, size_t axis) {
+    auto first = (size_t)std::accumulate(in_shape.begin(), in_shape.begin() + axis, 1, std::multiplies<size_t>());
+    auto second = (size_t)std::accumulate(in_shape.begin() + axis, in_shape.end(), 1, std::multiplies<size_t>());
+    return dims_t{first, second};
+}
+
+inline dims_t squeeze_infer_shape(const dims_t &in_shape, const axes_t &axes) {
     auto result_rank = in_shape.size() - axes.size();
     if(result_rank == 0)
     {
@@ -142,13 +165,13 @@ dims_t squeeze_infer_shape(const dims_t &in_shape, const axes_t &axes) {
     return out_shape;
 }
 
-dims_t where_infer_shape(const dims_t &cond_shape, const dims_t &x_shape,
+inline dims_t where_infer_shape(const dims_t &cond_shape, const dims_t &x_shape,
                          const dims_t &y_shape) {
     return kernels::detail::get_binary_output_shape(
         kernels::detail::get_binary_output_shape(cond_shape, x_shape), y_shape);
 }
 
-dims_t tile_infer_shape(const dims_t &in_shape, const dims_t &repeats) {
+inline dims_t tile_infer_shape(const dims_t &in_shape, const dims_t &repeats) {
     auto out_shape = dims_t(in_shape.size());
     for (int i = 0; i < out_shape.size(); ++i) {
         out_shape[i] = in_shape[i] * repeats[i];
@@ -156,4 +179,18 @@ dims_t tile_infer_shape(const dims_t &in_shape, const dims_t &repeats) {
     return out_shape;
 }
 
+inline dims_t reduce_infer_shape(const dims_t &in_shape, const dims_t &axes, bool keep_dims) {
+    auto tmp_shape = in_shape;
+    for (int i = 0; i < axes.size(); ++i) {
+        auto d = keep_dims ? 1 : 0;
+        tmp_shape[axes[i]] = d;
+    }
+    auto new_shape = dims_t();
+    for (auto d : tmp_shape) {
+        if (d != 0) {
+            new_shape.push_back(d);
+        }
+    }
+    return new_shape;
+}
 END_NS_NNCASE_KERNELS_MODULE
