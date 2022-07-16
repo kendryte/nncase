@@ -9,13 +9,14 @@ namespace Nncase.CodeGen.StackVM;
 
 internal class StackVMLinkableFunction : ILinkableFunction
 {
-    public StackVMLinkableFunction(uint id, Function sourceFunction, IEnumerable<FunctionRef> functionRefs, ushort maxLocals, byte[] text)
+    public StackVMLinkableFunction(uint id, Function sourceFunction, IEnumerable<FunctionRef> functionRefs, ushort maxLocals, byte[] text, IReadOnlySet<ModuleType> custom_call_modules)
     {
         Id = id;
         SourceFunction = sourceFunction;
         FunctionRefs = functionRefs;
         MaxLocals = maxLocals;
         Text = text;
+        CustomCallModules = custom_call_modules;
     }
 
     public uint Id { get; }
@@ -29,4 +30,6 @@ internal class StackVMLinkableFunction : ILinkableFunction
     public byte[] Text { get; }
 
     public IReadOnlyList<ILinkedSection> Sections => Array.Empty<ILinkedSection>();
+
+    public IReadOnlySet<ModuleType> CustomCallModules { get; init; }
 }

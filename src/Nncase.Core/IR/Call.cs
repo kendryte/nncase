@@ -50,7 +50,7 @@ namespace Nncase.IR
         {
             get
             {
-                var type = Target is NN.CustomCall call ? call.CustomOp.GetType() : Target.GetType();
+                var type = Target.GetType();
                 if (type == parameter.OwnerType)
                 {
                     return Parameters[parameter.Index];

@@ -92,6 +92,6 @@ namespace Nncase.IR.F
         /// <param name="op">the csharp op.</param>
         /// <param name="args"></param>
         /// <returns></returns>
-        public static Call CustomCall(CustomOp op, params Expr[] args) => new Call(new CustomCall(op), args);
+        public static Call CustomCall(CustomOp op, params Expr[] args) => new Call(op, args);
     }
 }

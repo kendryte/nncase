@@ -36,11 +36,7 @@ BEGIN_NS_NNCASE_KERNELS_MODULE(stackvm)
 {
     var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:
-if(inst.CSharpName == "CustomCall"){
-@:NNCASE_API result<value_t> custom_call(const std::string & registered_name, gsl::span<const gsl::byte> fields, const std::vector<value_t> &inputs, value_t output = nullptr, kernel_context &context = default_kernel_context());
-}else{
 @:NNCASE_API result<value_t> @(name)(@string.Join(", ", inst.Fields.Where(x => !x.IsOpCode && x.CppName != "tensor_funct").Select(x => $"{(x.IsEnum && x.CppType != "typecode_t" ? "runtime::stackvm::" + x.CppType : x.CppType)} {x.CppName}").Concat(inst.Inputs.Select(x => $"{x.CppType} {x.CppName}").Concat(new[]{"value_t output = nullptr", "kernel_context &context = default_kernel_context()"}))));
-}
 }
 
 END_NS_NNCASE_KERNELS_MODULE

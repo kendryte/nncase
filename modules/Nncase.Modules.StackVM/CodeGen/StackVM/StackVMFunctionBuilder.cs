@@ -30,7 +30,7 @@ internal class StackVMFunctionBuilder : FunctionBuilder
 
     protected override ILinkableFunction CreateLinkableFunction(uint id, Callable callable, IReadOnlyList<FunctionRef> functionRefs, byte[] text)
     {
-        return new StackVMLinkableFunction(id, (Function)callable, functionRefs, _localsAllocator.MaxCount, text);
+        return new StackVMLinkableFunction(id, (Function)callable, functionRefs, _localsAllocator.MaxCount, text,_context.CustomCallModules);
     }
 
     protected override void Compile(Callable callable)

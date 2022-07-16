@@ -107,6 +107,15 @@ public sealed partial class StackVMEmitter
         _writer.Write(value);
     }
 
+    private void Write(ReadOnlySpan<byte> value)
+    {
+        _writer.Write(value.Length);
+        foreach (var b in value)
+        {
+            _writer.Write(b);
+        }
+    }
+
     private void Write(string value)
     {
         _writer.Write(Encoding.UTF8.GetBytes(value));

@@ -1,11 +1,13 @@
 ﻿cmake_minimum_required (VERSION 3.13)
 
-set(SRCS api.cpp
-         object.cpp
-		 shape.cpp
-		 tensor.cpp
-		 type.cpp
-		 value.cpp)
+set(SRCS 
+        api.cpp
+        object.cpp
+        shape.cpp
+        tensor.cpp
+        type.cpp
+        value.cpp
+        debug.cpp)
 
 add_library(nncasebase OBJECT ${SRCS})
 target_compile_definitions(nncasebase PUBLIC -DNNCASE_DLL -DNNCASE_SIMULATOR)

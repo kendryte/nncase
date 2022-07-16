@@ -121,6 +121,11 @@ public abstract record CustomOp(string RegisteredName) : Op
 {
 
     /// <summary>
+    /// Get the Current Custom module type.
+    /// </summary>
+    public abstract CodeGen.ModuleType ModuleType { get; }
+
+    /// <summary>
     /// Serialize Fields Value.
     /// will used in stackvm runtime.
     /// </summary>

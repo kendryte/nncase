@@ -33,6 +33,12 @@ class NNCASE_API runtime_module {
     static result<std::unique_ptr<runtime_module>>
     create(const module_kind_t &kind);
 
+    using custom_call_type = result<value_t> (*)(gsl::span<const gsl::byte>,
+                                                 const std::vector<value_t> &);
+    static result<
+        std::vector<std::pair<std::string, runtime_module::custom_call_type>>>
+    collect(const module_kind_t &kind);
+
     runtime_module() = default;
     runtime_module(const runtime_module &) = delete;
     virtual ~runtime_module() = default;

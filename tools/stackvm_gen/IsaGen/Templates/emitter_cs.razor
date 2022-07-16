@@ -54,7 +54,6 @@ foreach (var field in inst.Fields)
 @:        ///<summary>@(inst.Description).</summary>
 @:        public void @(inst.CSharpName)(@string.Join(", ", inst.Fields.Where(x => x.Value == null).Select(x => $"{x.CSharpType} {x.CSharpName}")))
 @:        {
-if (inst.CSharpName != "CustomCall"){
 foreach (var field in inst.Fields)
 {
     var value = field.Value.HasValue ? field.Value.ToString() : field.CSharpName;
@@ -66,16 +65,6 @@ foreach (var field in inst.Fields)
     {
 @:            _emitter.Write(@value);
     }
-}
-}else{
-@:            var bytes = customOp.SerializeFields();
-@:            _emitter.Write(customOp.RegisteredName);
-@:            _emitter.Write(customOp.Parameters.Count());
-@:            _emitter.Write(bytes.Length);
-@:            foreach (var b in customOp.SerializeFields())
-@:            {
-@:                _emitter.Write(b);
-@:            }
 }
 @:        }
 }
