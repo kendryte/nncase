@@ -60,6 +60,7 @@ public sealed class CompileOptions
         QuantType = DataTypes.Int8;
         QuantMode = QuantMode.UnsignedMode;
         OutputFile = string.Empty;
+        QuantizeOptions = QuantizeOptions;
     }
 
     /// <inheritdoc/>

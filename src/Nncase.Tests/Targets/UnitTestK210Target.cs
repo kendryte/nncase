@@ -69,7 +69,7 @@ public class UnitTestK210Target
             Directory.Delete(dumpDir, true);
 
         // 1. Optimize target dependent
-        CompileOptions.QuantizeOptions = new QuantizeOptions { CalibrationDataset = new RandomCalibrationDatasetProvider(vars) };
+        CompileOptions.QuantizeOptions = new QuantizeOptions { CalibrationDataset = new RandomCalibrationDatasetProvider(vars), CalibrationMethod = CalibMethod.Kld };
         var pmgr = new PassManager(module, passOptions);
         target.RegisterTargetDependentPass(pmgr, CompileOptions);
         await pmgr.RunAsync();
