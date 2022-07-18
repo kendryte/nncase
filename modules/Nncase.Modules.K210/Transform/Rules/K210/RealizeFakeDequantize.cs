@@ -22,21 +22,21 @@ using static Nncase.PatternMatch.F.Math;
 namespace Nncase.Transform.Rules.K210;
 
 /// <summary>
-/// Lower <see cref="IR.K210.FakeQuantize"/> to <see cref="IR.K210.Quantize"/>.
+/// Lower <see cref="IR.K210.FakeDeQuantize"/> to <see cref="IR.K210.DeQuantize"/>.
 /// </summary>
 [RuleGenerator]
-public sealed partial class RealizeFakeQuantize : IRewriteRule
+public sealed partial class RealizeFakeDequantize : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsFakeQuantize(
-           "quant",
-           "quant_call",
-           op => true,
-           IsWildcard("input") with { TypePattern = HasFixedShape() },
-           IsTensorConst("quantParam")) with
-           {
-               TypePattern = HasFixedShape(),
-           };
+    public IPattern Pattern { get; } = IsFakeDequantize(
+            "quant",
+            "quant_call",
+            op => true,
+            IsWildcard("input") with { TypePattern = HasFixedShape() },
+            IsTensorConst("quantParam")) with
+        {
+            TypePattern = HasFixedShape(),
+        };
 
     private Expr? GetReplace(FakeQuantize quant, Call quant_call, Expr input, Expr quantParam)
     {

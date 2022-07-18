@@ -7,37 +7,38 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using Nncase.IR.F;
+using Nncase.IR.K210;
+using Nncase.IR.Math;
+using static  Nncase.PatternMatch.F.K210;
 using Nncase.PatternMatch;
+using Nncase.Utilities;
+using Tensorflow.Keras;
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.Utility;
-
+using Math = Nncase.IR.F.Math;
+using static Nncase.PatternMatch.F.Math;
 namespace Nncase.Transform.Rules.K210;
 
 /// <summary>
-/// Lower <see cref="IR.K210.FakeKPUConv2D"/> to <see cref="IR.K210.KPUConv2D"/>.
+/// Lower <see cref="IR.K210.FakeKPUDownload"/> to <see cref="IR.K210.KPUDownload"/>.
 /// </summary>
 [RuleGenerator]
-public sealed partial class FoldKPUConv2D : IRewriteRule
+public sealed partial class RealizeFakeKPUDownload : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsConv2D(
-            null,
-            "conv2d",
-            PadMode.Constant,
+    public IPattern Pattern { get; } = IsFakeKPUDownload(
+            "quant",
+            "quant_call",
+            op => true,
             IsWildcard("input") with { TypePattern = HasFixedShape() },
-            IsTensorConst("weights"),
-            IsTensorConst("bias"),
-            IsTensorConst("strides"),
-            IsTensorConst("paddings"),
-            new[] { 1, 1 },
-            IsTensorConst("groups"),
-            IsTensorConst("fusedClamp")) with
+            IsTensorConst("quantParam")) with
         {
             TypePattern = HasFixedShape(),
         };
 
-    private Expr? GetReplace(Expr conv2d, Expr input, Expr weights, Tensor<float> bias, int[] strides, Tensor<int> paddings, int groups, float[] fusedClamp)
+    private Expr? GetReplace(FakeQuantize quant, Call quant_call, Expr input, Expr quantParam)
     {
         return null;
     }
