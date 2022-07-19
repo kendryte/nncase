@@ -32,10 +32,10 @@ if(ENABLE_OPENMP)
 endif()
 if(MSVC)
   target_compile_options(kernels PRIVATE /Zc:preprocessor)  
-  if(APPLE)
-    target_compile_options(kernels PRIVATE -Wno-gnu-zero-variadic-macro-arguments)  
-  endif(APPLE)
 endif(MSVC)
+if(APPLE)
+  target_compile_options(kernels PRIVATE -Wno-gnu-zero-variadic-macro-arguments)  
+endif(APPLE)
 
 
 add_subdirectory(stackvm)
