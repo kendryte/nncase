@@ -30,5 +30,9 @@ if(ENABLE_OPENMP)
     target_link_libraries(kernels PRIVATE OpenMP::OpenMP_CXX)
     target_compile_definitions(kernels PRIVATE "-DNNCASE_OPENMP")
 endif()
+if(APPLE)
+  target_compile_options(kernels PRIVATE -Wno-gnu-zero-variadic-macro-arguments)  
+endif(APPLE)
+
 
 add_subdirectory(stackvm)
