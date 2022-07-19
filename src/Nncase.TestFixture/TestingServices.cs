@@ -225,6 +225,43 @@ public static class Testing
         }
         return err_count;
     }
+
+    /// <summary>
+    /// dump value.
+    /// </summary>
+    /// <param name="v"></param>
+    /// <param name="writer"></param>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
+    public static void DumpValue(IValue v, StreamWriter writer)
+    {
+        switch (v)
+        {
+            case TensorValue t:
+                writer.WriteLine(t.AsTensor().GetArrayString());
+                break;
+            case TupleValue tp:
+                foreach (var f in tp)
+                {
+                    DumpValue(f, writer);
+                }
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        };
+    }
+
+    /// <summary>
+    /// dump value
+    /// </summary>
+    /// <param name="v"></param>
+    /// <param name="path"></param>
+    public static void DumpValue(IValue v, string path)
+    {
+        using (var sw = new StreamWriter(File.Open(path, FileMode.Create, FileAccess.Write)))
+        {
+            DumpValue(v, sw);
+        }
+    }
 }
 
 

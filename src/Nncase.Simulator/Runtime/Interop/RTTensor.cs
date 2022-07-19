@@ -31,6 +31,18 @@ public abstract class RTValue : RTObject
             throw;
         }
     }
+
+    /// <summary>
+    /// convert RT Value To IValue
+    /// </summary>
+    /// <returns></returns>
+    public IValue ToValue() => this switch
+    {
+        RTTensor rTTensor => new TensorValue(rTTensor.ToTensor()),
+        RTTuple rTTuple => new TupleValue(rTTuple.Fields.Select(f => f.ToValue()).ToArray()),
+        _ => throw new ArgumentOutOfRangeException(),
+    };
+
 }
 
 /// <summary>
