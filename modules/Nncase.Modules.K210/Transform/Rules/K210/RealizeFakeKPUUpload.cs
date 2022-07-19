@@ -34,7 +34,7 @@ public sealed partial class RealizeFakeKPUUpload : IRewriteRule
             op => true,
             IsWildcard("input")) with { TypePattern = HasFixedShape() };
 
-    private Expr? GetReplace(Expr upload, Expr upload_call, Expr input)
+    private Expr? GetReplace(Expr upload, Call upload_call, Expr input)
     {
         return null;
     }

@@ -89,7 +89,7 @@ public sealed partial class RealizeFakeKPUConv2D : IRewriteRule
                 return slice;
             }
         }
-        
+
         return null;
     }
 }

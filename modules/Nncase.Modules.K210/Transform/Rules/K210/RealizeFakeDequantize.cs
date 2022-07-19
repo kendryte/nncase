@@ -40,6 +40,7 @@ public sealed partial class RealizeFakeDequantize : IRewriteRule
 
     private Expr? GetReplace(FakeQuantize dequant, Call dequant_call, Expr input, Expr quantParam)
     {
-        return null;
+        var outQuantParam = Math.QuantParamOf(QuantMode.UnsignedMode, Math.RangeOf(quantParam), 8);
+        return Math.Dequantize(input, outQuantParam, DataTypes.UInt8);
     }
 }

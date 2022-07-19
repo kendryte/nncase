@@ -29,13 +29,14 @@ public sealed partial class RealizeFakeKPUDownload : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsFakeKPUDownload(
-            "download",
-            "download_call",
-            op => true,
-            IsWildcard("input")) with { TypePattern = HasFixedShape() };
+        "Download",
+        "Download_call",
+        op => true,
+        IsWildcard("input") with {TypePattern = HasFixedShape() });
+            
 
-    private Expr? GetReplace(Expr download, Expr download_call, Expr input)
+    private Expr? GetReplace(Expr Download, Call Download_call, Expr input)
     {
-        return null;
+        return IR.F.K210.KPUDownload(input);
     }
 }

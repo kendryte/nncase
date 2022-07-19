@@ -31,7 +31,7 @@ public sealed partial class RealizeFakeQuantize : IRewriteRule
     public IPattern Pattern { get; } = IsFakeQuantize(
            "quant",
            "quant_call",
-           op => true,
+           op => true, 
            IsWildcard("input") with { TypePattern = HasFixedShape() },
            IsTensorConst("quantParam")) with
            {

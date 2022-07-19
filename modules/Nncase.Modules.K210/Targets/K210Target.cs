@@ -54,7 +54,7 @@ public class K210Target : ITarget
                 new RealizeFakeKPUUpload(),
                 // new RealizeFakeKPUConv2D(),
                 new RealizeFakeKPUDownload(),
-                new RealizeFakeDequantize()
+                new RealizeFakeDequantize(),
             });
         }
     }
