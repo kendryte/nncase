@@ -31,10 +31,9 @@ public sealed partial class RealizeFakeKPUUpload : IRewriteRule
     public IPattern Pattern { get; } = IsFakeKPUUpload(
             null,
             "upload_call",
-            op => true,
             IsWildcard("input"));
 
-    private Expr? GetReplace(Expr input)
+    private Expr? GetReplace(Call upload_call, Expr input)
     {
         return IR.F.K210.KPUUpload(input);
     }

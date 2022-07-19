@@ -126,6 +126,7 @@ public class Compiler
         var t = CompilerServices.GetCompileTarget;
         TargetIndependentPass();
         RunPass(p => t.RegisterTargetDependentPass(p, options));
+        RunPass(p => t.RegisterQuantizePass(p, options));
         RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, options));
         Console.WriteLine("Compile successful");
     }

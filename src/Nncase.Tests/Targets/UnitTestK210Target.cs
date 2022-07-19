@@ -69,20 +69,15 @@ public class UnitTestK210Target
             Directory.Delete(dumpDir, true);
 
         // 1. Optimize target dependent
-        {
-            CompileOptions.QuantizeOptions = new QuantizeOptions
-                {CalibrationDataset = new RandomCalibrationDatasetProvider(vars), CalibrationMethod = CalibMethod.Kld};
-            var pmgr = new PassManager(module, passOptions);
-            target.RegisterTargetDependentPass(pmgr, CompileOptions);
-            await pmgr.RunAsync();
-        }
+        CompileOptions.QuantizeOptions = new QuantizeOptions{CalibrationDataset = new RandomCalibrationDatasetProvider(vars), CalibrationMethod = CalibMethod.Kld};
+        var pmgr = new PassManager(module, passOptions);
+        target.RegisterTargetDependentPass(pmgr, CompileOptions);
+        await pmgr.RunAsync();
 
         // 2. Fake lowering
-        {
-            var pmgr = new PassManager(module, passOptions);
-            target.RegisterQuantizePass(pmgr, CompileOptions);
-            await pmgr.RunAsync();
-        }
+        pmgr = new PassManager(module, passOptions);
+        target.RegisterQuantizePass(pmgr, CompileOptions);
+        await pmgr.RunAsync();
         //var modelBuilder = new ModelBuilder(target);
         //var linkedModel = modelBuilder.Build(module);
         //using var output = File.Open($"k210_{name}/test.kmodel", FileMode.Create);

@@ -29,11 +29,12 @@ public sealed partial class RealizeFakeKPUDownload : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsFakeKPUDownload(
+            null,
             "download_call",
             op => true,
             IsRangeOfMarker(IsWildcard("input"), IsConst("input_range")));
 
-    private Expr? GetReplace(Expr download_call, Expr input, Expr input_range)
+    private Expr? GetReplace(Call download_call, Expr input, Expr input_range)
     {
         return IR.F.K210.KPUDownload(input);
     }
