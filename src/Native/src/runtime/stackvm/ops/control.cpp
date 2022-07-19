@@ -89,9 +89,10 @@ stackvm_runtime_function::visit(NNCASE_UNUSED const cuscall_op_t &op) noexcept {
     }
     auto table = module().custom_call_table();
     auto it = table.find(op.registered_name);
-    if (it != table.end())
+    if (it == table.end())
         return err(nncase_errc::stackvm_unknow_custom_call);
-    try_var(retval, it->second(op.fields_span, params));
+    try_var(retval,
+            it->second(op.fields_span, params, module().kernel_context()));
     return stack_.push(retval);
 }
 
