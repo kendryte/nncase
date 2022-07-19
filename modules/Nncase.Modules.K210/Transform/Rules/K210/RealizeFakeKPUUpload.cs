@@ -29,12 +29,12 @@ public sealed partial class RealizeFakeKPUUpload : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsFakeKPUUpload(
-            "upload",
+            null,
             "upload_call",
             op => true,
-            IsWildcard("input")) with { TypePattern = HasFixedShape() };
+            IsWildcard("input"));
 
-    private Expr? GetReplace(Expr upload, Call upload_call, Expr input)
+    private Expr? GetReplace(Expr input)
     {
         return IR.F.K210.KPUUpload(input);
     }

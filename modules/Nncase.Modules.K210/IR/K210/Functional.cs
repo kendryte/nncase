@@ -31,8 +31,8 @@ public static class K210
         new Call(new KPUConv2D(isDepthwise, filterType, poolType, Activation), input);
 
     public static Call KPUUpload(Expr input) =>
-        new Call(new FakeKPUUpload(), input);
+        new Call(new KPUUpload(), input);
 
     public static Call KPUDownload(Expr input) =>
-        new Call(new FakeKPUDownload(), input);
+        new Call(new KPUDownload(), input);
 }

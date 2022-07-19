@@ -15,6 +15,7 @@ using Nncase.Quantization;
 using Nncase.Runtime.K210;
 using Nncase.Transform;
 using Nncase.Transform.Rules.K210;
+using Nncase.Transform.Rules.Neutral;
 
 namespace Nncase.Targets;
 
@@ -41,6 +42,10 @@ public class K210Target : ITarget
                 new LowerConv2D(),
             });
         }
+        // passManager.Add(new DataflowPass("constant_fold")
+        // {
+        //     new FoldConstCall(),
+        // });
     }
 
     /// <inheritdoc/>

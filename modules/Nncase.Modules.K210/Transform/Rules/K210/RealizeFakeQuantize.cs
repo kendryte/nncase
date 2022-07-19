@@ -20,6 +20,7 @@ using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.Utility;
 using Math = Nncase.IR.F.Math;
 namespace Nncase.Transform.Rules.K210;
+using static Nncase.Quantization.Utility;
 
 /// <summary>
 /// Lower <see cref="IR.K210.FakeQuantize"/> to <see cref="IR.K210.Quantize"/>.
@@ -29,15 +30,17 @@ public sealed partial class RealizeFakeQuantize : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsFakeQuantize(
-           "quant",
+           null,
            "quant_call",
            op => true,
-           IsQuantParamOf(op => true, IsConst("range"), IsConst("bits")) with { TypePattern = HasFixedShape() },
-           IsTensorConst("quantParam"));
+           IsWildcard("input"),
+           IsQuantParamOf("quantparam", op => true, IsConst("range"), IsConst("bits")) with { TypePattern = HasFixedShape() });
 
-    private Expr? GetReplace(FakeQuantize quant, Call quant_call, Expr range, Expr bits, Expr quantParam)
+    private Expr? GetReplace(Call quant_call, Expr input, Expr quantparam, Tensor<float> range, int bits)
     {
         // For k210, mode is Unsigned, bits is 8.
-        return IR.F.Math.Quantize(range, quantParam, DataTypes.UInt8);
+        var qm = QuantMode.UnsignedMode;
+        var qp = GetQuantParam((range[0], range[1]), bits, qm);
+        return IR.F.Math.Quantize(input, qp, DataTypes.UInt8);
     }
 }

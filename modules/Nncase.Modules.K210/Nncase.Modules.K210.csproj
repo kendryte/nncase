@@ -21,6 +21,7 @@
     <ProjectReference Include="..\..\src\Nncase.CodeGen\Nncase.CodeGen.csproj" />
     <ProjectReference Include="..\..\src\Nncase.EGraph\Nncase.EGraph.csproj" />
     <ProjectReference Include="..\..\src\Nncase.Graph\Nncase.Graph.csproj" />
+    <ProjectReference Include="..\..\src\Nncase.Transform\Nncase.Transform.csproj" />
     <ProjectReference Include="..\..\src\Nncase.Quantization\Nncase.Quantization.csproj" />
     <ProjectReference Include="..\Nncase.Modules.StackVM\Nncase.Modules.StackVM.csproj" />
   </ItemGroup>

@@ -28,20 +28,18 @@ public sealed partial class RealizeFakeKPUConv2D : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsFakeKPUConv2D(
-            "fake_conv2d",
+            null,
+            "fake_conv2d_call",
             op => true,
-            IsRangeOfMarker(IsWildcard("input"), IsConst("input_range")) with { TypePattern = HasFixedShape() },
-            IsTensorConst("weights")) with
-        {
-            TypePattern = HasFixedShape(),
-        };
+            IsRangeOfMarker(IsWildcard("input"), IsConst("input_range")),
+            IsTensorConst("weights"));
 
-    private Expr? GetReplace(Expr fake_conv2d, Expr input, Tensor<float> input_range, Expr weights)
+    private Expr? GetReplace(Expr fake_conv2d_call, Expr input, Tensor<float> input_range, Expr weights)
     {
         var inDType = input.CheckedDataType;
         var inShape = input.CheckedShape;
         var wShape = weights.CheckedShape;
-        var outShape = fake_conv2d.CheckedShape;
+        var outShape = fake_conv2d_call.CheckedShape;
         var inChannels = inShape[1].FixedValue;
         var outChannels = outShape[1].FixedValue;
         var filterH = wShape[2].FixedValue;
@@ -58,42 +56,5 @@ public sealed partial class RealizeFakeKPUConv2D : IRewriteRule
             return kpuConv;
         }
         return null;
-        // if ((groups == 1 || groups == inChannels)
-        //     && KPUUtility.IsSupportedShape(inShape)
-        //     && KPUUtility.IsSupportedShape(outShape)
-        //     && KPUUtility.TryGetFilterType(filterH, filterW, out var filterType))
-        // {
-        //     var zeroOfDType = ((Tensor)0f).CastTo(inDType);
-        //     var zeroPaddings = new[] { 0, 0 };
-        //     var isDepthwise = inChannels == outChannels && outChannels == groups;
-        //     var kpuPad = KPUUtility.GetKPUPadding(filterType);
-        //     var padH = new[] { paddings[0, 0] - kpuPad, paddings[0, 1] - kpuPad };
-        //     var padW = new[] { paddings[1, 0] - kpuPad, paddings[1, 1] - kpuPad };
-
-        //     var prePaddings = new[] { zeroPaddings, zeroPaddings, KPUUtility.GetPrePadding(padH), KPUUtility.GetPrePadding(padW) }.To2D();
-        //     var prePad = NN.Pad(input, prePaddings, PadMode.Constant, zeroOfDType);
-        //     CompilerServices.InferenceType(prePad);
-        //     if (KPUUtility.IsSupportedShape(prePad.CheckedShape))
-        //     {
-        //         var inQuantParam = IR.F.Math.QuantParamOf(QuantMode.UnsignedMode, IR.F.Math.RangeOf(prePad), 8);
-        //         var quant = IR.F.Math.Quantize(prePad, inQuantParam, DataTypes.UInt8);
-
-        //         var kpuUpload = IR.F.K210.KPUUpload(quant);
-
-        //         var kpuConv = IR.F.K210.KPUConv2D(isDepthwise, filterType, KPUPoolType.Bypass, new KPUActivationParameters(),kpuUpload);
-
-        //         var kpuDownload = IR.F.K210.KPUDownload(kpuConv);
-
-        //         var outQuantParam = IR.F.Math.QuantParamOf(QuantMode.UnsignedMode, IR.F.Math.RangeOf(kpuDownload), 8);
-        //         var dequant = IR.F.Math.Dequantize(kpuDownload, outQuantParam, inDType);
-        //         var postPaddings = new[] { zeroPaddings, zeroPaddings, KPUUtility.GetPostPadding(padH), KPUUtility.GetPostPadding(padW) }.To2D();
-        //         var postPad = NN.Pad(dequant, postPaddings, PadMode.Constant, zeroOfDType);
-        //         var slice = Tensors.Slice(postPad, new[] { 0, 0, 0, 0 }, Tensors.ShapeOf(postPad), new[] { 0, 1, 2, 3 }, new[] { 1, 1, strides[0], strides[1] });
-
-        //         return slice;
-        //     }
-        // }
-        
-        // return null;
     }
 }
