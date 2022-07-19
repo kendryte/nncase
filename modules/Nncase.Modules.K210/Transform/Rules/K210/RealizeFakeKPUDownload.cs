@@ -15,10 +15,10 @@ using Nncase.PatternMatch;
 using Nncase.Utilities;
 using Tensorflow.Keras;
 using static Nncase.IR.TypePatternUtility;
+using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.Utility;
 using Math = Nncase.IR.F.Math;
-using static Nncase.PatternMatch.F.Math;
 namespace Nncase.Transform.Rules.K210;
 
 /// <summary>
@@ -29,13 +29,12 @@ public sealed partial class RealizeFakeKPUDownload : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsFakeKPUDownload(
-        "Download",
-        "Download_call",
-        op => true,
-        IsWildcard("input") with {TypePattern = HasFixedShape() });
-            
+            "download",
+            "download_call",
+            op => true,
+            IsRangeOfMarker(IsWildcard("input"), IsConst("input_range"))) with { TypePattern = HasFixedShape() };
 
-    private Expr? GetReplace(Expr Download, Call Download_call, Expr input)
+    private Expr? GetReplace(Expr download, Expr download_call, Expr input, Expr input_range)
     {
         return IR.F.K210.KPUDownload(input);
     }

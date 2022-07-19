@@ -15,10 +15,10 @@ using Nncase.PatternMatch;
 using Nncase.Utilities;
 using Tensorflow.Keras;
 using static Nncase.IR.TypePatternUtility;
+using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.Utility;
 using Math = Nncase.IR.F.Math;
-using static Nncase.PatternMatch.F.Math;
 namespace Nncase.Transform.Rules.K210;
 
 /// <summary>
@@ -32,15 +32,12 @@ public sealed partial class RealizeFakeDequantize : IRewriteRule
             "dequant",
             "dequant_call",
             op => true,
-            IsWildcard("input") with { TypePattern = HasFixedShape() },
-            IsTensorConst("quantParam")) with
-        {
-            TypePattern = HasFixedShape(),
-        };
+            IsQuantParamOf(op => true, IsConst("range"), IsConst("bits")) with { TypePattern = HasFixedShape() },
+            IsTensorConst("quantParam"));
 
-    private Expr? GetReplace(FakeQuantize dequant, Call dequant_call, Expr input, Expr quantParam)
+    private Expr? GetReplace(FakeQuantize dequant, Call dequant_call, Expr range, Expr bits, Expr quantParam)
     {
-        var outQuantParam = Math.QuantParamOf(QuantMode.UnsignedMode, Math.RangeOf(quantParam), 8);
-        return Math.Dequantize(input, outQuantParam, DataTypes.UInt8);
+        // For k210, mode is Unsigned, bits is 8.
+        return IR.F.Math.Dequantize(range, quantParam, DataTypes.UInt8);
     }
 }
