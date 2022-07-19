@@ -46,6 +46,17 @@ public class K210Target : ITarget
     /// <inheritdoc/>
     public void RegisterQuantizePass(PassManager passManager, CompileOptions options)
     {
+        if (options.UsePTQ)
+        {
+            passManager.Add(new DataflowPass("lowering_fake_kpu")
+            {
+                new RealizeFakeQuantize(),
+                new RealizeFakeKPUUpload(),
+                // new RealizeFakeKPUConv2D(),
+                new RealizeFakeKPUDownload(),
+                new RealizeFakeDequantize()
+            });
+        }
     }
 
     /// <inheritdoc/>

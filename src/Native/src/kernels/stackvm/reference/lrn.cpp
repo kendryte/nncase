@@ -43,8 +43,8 @@ result<void> lrn_impl(const float *input, float alpha, float beta, float bias,
 } // namespace
 
 result<void> nncase::kernels::stackvm::reference::lrn(
-    const float *input, float alpha, float beta, float bias, int size,
-    float *output, const dims_t &in_shape, const strides_t &in_strides,
-    const strides_t &out_strides) {
+    [[maybe_unused]]const float *input, [[maybe_unused]]float alpha, [[maybe_unused]]float beta, [[maybe_unused]]float bias, [[maybe_unused]]int size,
+    [[maybe_unused]]float *output, [[maybe_unused]]const dims_t &in_shape, [[maybe_unused]]const strides_t &in_strides,
+    [[maybe_unused]]const strides_t &out_strides) {
     return ok();
 }

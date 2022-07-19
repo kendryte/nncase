@@ -29,8 +29,8 @@ public sealed partial class RealizeFakeDequantize : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsFakeDequantize(
-            "quant",
-            "quant_call",
+            "dequant",
+            "dequant_call",
             op => true,
             IsWildcard("input") with { TypePattern = HasFixedShape() },
             IsTensorConst("quantParam")) with
@@ -38,7 +38,7 @@ public sealed partial class RealizeFakeDequantize : IRewriteRule
             TypePattern = HasFixedShape(),
         };
 
-    private Expr? GetReplace(FakeQuantize quant, Call quant_call, Expr input, Expr quantParam)
+    private Expr? GetReplace(FakeQuantize dequant, Call dequant_call, Expr input, Expr quantParam)
     {
         return null;
     }

@@ -29,16 +29,12 @@ public sealed partial class RealizeFakeKPUDownload : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsFakeKPUDownload(
-            "quant",
-            "quant_call",
+            "download",
+            "download_call",
             op => true,
-            IsWildcard("input") with { TypePattern = HasFixedShape() },
-            IsTensorConst("quantParam")) with
-        {
-            TypePattern = HasFixedShape(),
-        };
+            IsWildcard("input")) with { TypePattern = HasFixedShape() };
 
-    private Expr? GetReplace(FakeQuantize quant, Call quant_call, Expr input, Expr quantParam)
+    private Expr? GetReplace(Expr download, Expr download_call, Expr input)
     {
         return null;
     }

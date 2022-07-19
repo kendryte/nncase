@@ -29,16 +29,12 @@ public sealed partial class RealizeFakeKPUUpload : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsFakeKPUUpload(
-            null,
-            "quant_call",
+            "upload",
+            "upload_call",
             op => true,
-            IsWildcard("input") with { TypePattern = HasFixedShape() },
-            IsTensorConst("quantParam"))  with
-        {
-            TypePattern = HasFixedShape(),
-        };
+            IsWildcard("input")) with { TypePattern = HasFixedShape() };
 
-    private Expr? GetReplace(FakeQuantize quant, Call quant_call, Expr input, Expr quantParam)
+    private Expr? GetReplace(Expr upload, Expr upload_call, Expr input)
     {
         return null;
     }
