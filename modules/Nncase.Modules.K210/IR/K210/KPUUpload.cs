@@ -9,7 +9,7 @@ using static Nncase.IR.TypePatternUtility;
 namespace Nncase.IR.K210;
 
 /// <summary>
-/// Fake KPU Upload.
+/// KPU Upload.
 /// </summary>
 [PatternFunctionalGenerator]
 public sealed record class KPUUpload : Op
