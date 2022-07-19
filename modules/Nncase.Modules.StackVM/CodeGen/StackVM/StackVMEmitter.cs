@@ -132,7 +132,12 @@ public sealed partial class StackVMEmitter
         _writer.Write((byte)0);
     }
 
-    private void Write(DataType value)
+    /// <summary>
+    /// write data type.
+    /// </summary>
+    /// <param name="value"></param>
+    /// <exception cref="ArgumentException"></exception>
+    public void Write(DataType value)
     {
         // TODO: Support generic datatype.
         switch (value)
