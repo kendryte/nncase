@@ -57,7 +57,12 @@ class TfliteTestRunner(TestRunner):
                 shape = item['shape_signature']
             # todo: tflite not support set shape var for model with dynamic shape
             # don't have model with shape var to debug this feature
-            input_dict['model_shape'] = translate_shape(shape, self.default_shape)
+            if len(shape) <= 4:
+                input_dict['model_shape'] = translate_shape(shape, self.default_shape)
+            else:
+                if -1 in shape:
+                    raise "tflite test_runner not supported dynamic shape which rank > 4"
+                input_dict['model_shape'] = shape
             self.inputs.append(input_dict)
             self.calibs.append(copy.deepcopy(input_dict))
             self.dump_range_data.append(copy.deepcopy(input_dict))

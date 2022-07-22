@@ -197,7 +197,9 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         self.pre_process: List[Dict] = []
 
         self.num_pattern = re.compile("(\d+)")
-        self.default_shape = [1, 1, 256, 256]
+        # [n, c, h, w].zip default_shape => [(n, 1), (c, 1), (h, 48), (w, 48)]
+        self.default_shape = [1, 1, 48, 48, 24, 24]
+        self.shape_vars = {}
 
     def transform_input(self, values: np.array, type: str, stage: str) -> np.ndarray:
         values = copy.deepcopy(values)
