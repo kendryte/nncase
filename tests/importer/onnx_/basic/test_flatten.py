@@ -57,4 +57,4 @@ def test_flatten(in_shape, axis, request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_flatten.py'])
+    pytest.main(['-vv', 'test_flatten.py', '-s'])
