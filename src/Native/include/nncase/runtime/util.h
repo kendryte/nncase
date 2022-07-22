@@ -289,6 +289,12 @@ inline result<std::vector<gsl::byte *>> get_input_data(tuple inputs) {
 #define try_to_scalar_v(_value_name, _ty)                                      \
     try_to_scalar(_value_name##_value, _value_name, _ty)
 
+#define try_integer_v(_value_name) \
+    try_to_integer(_value_name##_value, _value_name)
+
+#define try_dims_v(_value_name) \
+    try_dims(_value_name##_value, _value_name)
+
 // other cast macro
 #define to_tensor(_tensor_name, _value)                                        \
     try_var(_tensor_name, _value.as<tensor>());
@@ -474,4 +480,63 @@ inline result<void> integer_cast(datatype_t type, const gsl::byte *input,
     return ok();
 }
 
+// used for slice args
+inline std::tuple<axes_t, axes_t, axes_t>
+slice_fill(const dims_t &in_shape, axes_t &begins_value, axes_t &ends_value,
+           axes_t &strides_value, axes_t axes_value) {
+    auto ndim = in_shape.size();
+    axes_t begin_values(ndim, 0);
+    axes_t end_values(in_shape.begin(), in_shape.end());
+    axes_t strides_values(ndim, 1);
+    for (auto i = 0; i < ndim; ++i) {
+        const auto it = std::find_if(axes_value.begin(), axes_value.end(),
+                                     [i, ndim](const auto axis) {
+                                         return positive_index(axis, ndim) == i;
+                                     });
+        if (it != axes_value.end()) {
+            auto idx = std::distance(axes_value.begin(), it);
+            auto max = static_cast<int>(in_shape[i]);
+            auto min = (-1) * max - 1;
+
+            // check starts
+            begin_values[i] = begins_value[idx] < min   ? min
+                              : begins_value[idx] > max ? max
+                                                        : begins_value[idx];
+
+            // check stops
+            end_values[i] = ends_value[idx] < min   ? min
+                            : ends_value[idx] > max ? max
+                                                    : ends_value[idx];
+
+            // check steps
+            if (!strides_value.empty()) {
+                assert(strides_value[idx] != 0);
+                strides_values[i] = strides_value[idx];
+            }
+
+            // fixup begin_values
+            if ((strides_values[i] > 0 && end_values[i] > begin_values[i]) ||
+                (strides_values[i] < 0 && end_values[i] < begin_values[i])) {
+                begin_values[i] =
+                    begin_values[i] == min ? min + 1 : begin_values[i];
+                begin_values[i] =
+                    begin_values[i] == max ? max - 1 : begin_values[i];
+            }
+            if (begin_values[i] < 0)
+                begin_values[i] += max;
+            if (end_values[i] < 0)
+                end_values[i] += max;
+        }
+    }
+    return std::tuple(begin_values, end_values, strides_values);
+}
+
+inline dims_t to_4d(dims_t in_a_shape)
+{
+    auto size = 4 - in_a_shape.size();
+    for (int i = 0; i < size; ++i) {
+        in_a_shape.insert(in_a_shape.begin(), 1);
+    }
+    return in_a_shape;
+}
 } // namespace nncase::runtime

@@ -53,15 +53,6 @@ result<void> matmul_unit_impl(const T *input_a, const T *input_b, T *output,
     return ok();
 }
 
-dims_t to_4d(dims_t in_a_shape)
-{
-    auto size = 4 - in_a_shape.size();
-    for (int i = 0; i < size; ++i) {
-        in_a_shape.insert(in_a_shape.begin(), 1);
-    }
-    return in_a_shape;
-}
-
 template <typename T>
 result<void> matmul_impl(const T *input_a, const T *input_b, T *output,
                          const dims_t &in_a_shape,

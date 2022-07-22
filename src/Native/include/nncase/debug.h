@@ -143,10 +143,18 @@ inline void dump_output_impl(nncase::value_t value,
 }
 
 inline void dump_output([[maybe_unused]] nncase::value_t value) {
-//    dump_output_impl(value, dump_path(), true);
+    dump_output_impl(value, dump_path(), true);
 }
 
 inline void dump_input([[maybe_unused]] nncase::value_t value,
                        [[maybe_unused]] std::string name) {
-//    dump_output_impl(value, fs::path(dump_path().string() + name), false);
+    dump_output_impl(value, fs::path(dump_path().string() + name), false);
+}
+
+inline void print_dims(const nncase::dims_t & dims, const std::string &name) {
+    std::cout << name << ":";
+    for(auto dim : dims) {
+        std::cout << dim << " ";
+    }
+    std::cout << std::endl;
 }

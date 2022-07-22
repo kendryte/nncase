@@ -14,23 +14,28 @@ set(SRCS ../tensor_ops.cpp
          convolution.cpp
          cumsum.cpp
          dequantize.cpp
+         expand.cpp
          gather.cpp
          gather_nd.cpp
          hardmax.cpp
          instance_norm.cpp
          lrn.cpp
+         lstm.cpp
          matmul.cpp
          onehot.cpp
          pad.cpp
+         prelu.cpp
          quantize.cpp
          random.cpp
          reduce.cpp
          reduce_arg.cpp
          reduce_window.cpp
          resize_image.cpp
+         reverse_sequence.cpp
          split.cpp
          slice.cpp
          softmax.cpp
+         space_to_batch.cpp
          stack.cpp
          tile.cpp
          transpose.cpp

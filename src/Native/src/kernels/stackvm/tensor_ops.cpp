@@ -167,7 +167,8 @@ result<value_t> nncase::kernels::stackvm::conv2d_transpose(
     pad_mode_t pad_mode, value_t input, value_t weights, value_t bias,
     value_t output_shape, value_t stride, value_t padding,
     [[maybe_unused]] value_t output_padding, value_t dilation, value_t groups,
-    value_t fused_clamp, value_t output, kernel_context &context) {
+    value_t fused_clamp, value_t output,
+    [[maybe_unused]] kernel_context &context) {
     if (pad_mode != pad_mode_t::constant) {
         return err(nncase_errc::runtime_not_found);
     }
@@ -182,14 +183,12 @@ result<value_t> nncase::kernels::stackvm::conv2d_transpose(
     try_f32_input(fused_clamp_value, fused_clamp);
     try_dims(out_shape, output_shape);
     try_f32_output(out_mem, output, out_shape);
-    try_(reference::conv2d(
-        input_mem, weights_mem, bias_mem, out_mem, input_tensor->shape(),
-        input_tensor->strides(), weights_tensor->shape(),
-        weights_tensor->strides(), bias_tensor->strides(),
-        output_tensor->strides(), pads[0], pads[1], groups_value, strides[0],
-        strides[1], dilations[0], dilations[1],
-        value_range<float>{fused_clamp_value[0], fused_clamp_value[1]},
-        context));
+    try_(reference::conv2d_transpose(
+        input_mem, out_mem, weights_mem, bias_mem, input_tensor->shape(),
+        groups_value, output_tensor->shape(), weights_tensor->shape()[2],
+        weights_tensor->shape()[3], strides[0], strides[1], dilations[0],
+        dilations[1], pads[0], pads[1],
+        value_range<float>{fused_clamp_value[0], fused_clamp_value[1]}));
     return ok(output);
 }
 
@@ -199,12 +198,13 @@ nncase::kernels::stackvm::expand(value_t input, value_t shape, value_t output,
     try_input(input_mem, input);
     auto dtype = input_tensor->dtype();
     try_var(typecode, to_typecode(dtype));
-    try_dims(out_shape, shape);
+    try_dims(expand_shape, shape);
+    auto out_shape =
+        detail::get_binary_output_shape(input_tensor->shape(), expand_shape);
     try_output(out_mem, output, dtype, out_shape);
-    try_(reference::broadcast(typecode, input_mem, out_mem,
-                              input_tensor->shape(), input_tensor->strides(),
-                              output_tensor->shape(), output_tensor->strides(),
-                              context));
+    try_(reference::expand(typecode, input_mem, out_mem, input_tensor->shape(),
+                           input_tensor->strides(), output_tensor->shape(),
+                           output_tensor->strides(), context));
     return ok(output);
 }
 
@@ -326,27 +326,45 @@ nncase::kernels::stackvm::lrn(value_t input, value_t alpha, value_t beta,
     try_to_integer(size_value, size);
     auto out_shape = input_tensor->shape();
     try_f32_out_mem(output, out_shape);
-    try_(reference::lrn(input_mem, alpha_value, beta_value, bias_value, size_value,
-                        output_mem, input_tensor->shape(),
+    try_(reference::lrn(input_mem, alpha_value, beta_value, bias_value,
+                        size_value, output_mem, input_tensor->shape(),
                         input_tensor->strides(),
                         runtime::get_default_strides(out_shape)));
     finish;
 }
 
 result<value_t> nncase::kernels::stackvm::lstm(
-    [[maybe_unused]] lstmdirection_t direction,
-    [[maybe_unused]] lstmlayout_t layout,
-    [[maybe_unused]] std::vector<std::string> activations,
-    [[maybe_unused]] value_t x, [[maybe_unused]] value_t w,
-    [[maybe_unused]] value_t r, [[maybe_unused]] value_t b,
-    [[maybe_unused]] value_t sequence_lens, [[maybe_unused]] value_t initial_h,
-    [[maybe_unused]] value_t initial_c, [[maybe_unused]] value_t p,
+    lstmdirection_t direction, [[maybe_unused]] lstmlayout_t layout,
+    [[maybe_unused]] std::vector<std::string> activations, value_t x, value_t w,
+    value_t r, value_t b, value_t sequence_lens, value_t initial_h,
+    value_t initial_c, [[maybe_unused]] value_t p,
     [[maybe_unused]] value_t activation_alpha,
     [[maybe_unused]] value_t activation_beta, [[maybe_unused]] value_t clip,
-    [[maybe_unused]] value_t hidden_size, [[maybe_unused]] value_t input_forget,
-    [[maybe_unused]] value_t output_size, [[maybe_unused]] value_t output,
+    value_t hidden_size, [[maybe_unused]] value_t input_forget,
+    value_t output_size, value_t output,
     [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
+    try_f32_in_mem(x);
+    try_f32_in_mem(w);
+    try_f32_in_mem(r);
+    try_f32_in_mem(b);
+    try_dims_v(sequence_lens);
+    try_f32_in_mem(initial_h);
+    try_f32_in_mem(initial_c);
+    // todo:p
+    //    try_f32_in_mem(p);
+    try_integer_v(hidden_size);
+    try_integer_v(output_size);
+    auto output_shapes = lstm_infer_shape(
+        x_tensor->shape(), initial_h_tensor->shape(), initial_c_tensor->shape(),
+        direction, layout, hidden_size_value, output_size_value);
+    try_tuple_output(out_tuple, output, dt_float32, output_shapes);
+    try_(reference::lstm(
+        x_mem, w_mem, r_mem, b_mem, initial_h_mem, initial_c_mem,
+        OUT_CAST(float, out_tuple[0]), OUT_CAST(float, out_tuple[1]),
+        OUT_CAST(float, out_tuple[2]), x_tensor->shape(),
+        initial_h_tensor->shape(), initial_c_tensor->shape(), output_shapes[0],
+        w_tensor->shape(), r_tensor->shape(), direction));
+    finish;
 }
 
 result<value_t>
@@ -375,6 +393,37 @@ result<value_t> nncase::kernels::stackvm::normal_like(
     try_(reference::random_normal(type, out_mem, out_shape, mean_value,
                                   scale_value, seed_value));
     finish;
+}
+
+result<value_t>
+nncase::kernels::stackvm::pad(runtime::stackvm::pad_mode_t pad_mode,
+                              value_t input, value_t pads, value_t value,
+                              value_t output, kernel_context &context) {
+    try_input(input_mem, input);
+    try_paddings(paddings, pads);
+    auto out_shape = pad_infer_shape(input_tensor->shape(), paddings);
+    try_output(out_mem, output, input_tensor->dtype(), out_shape);
+
+    try_input(pad_value, value);
+    try_(reference::pad(input_tensor->dtype(), input_mem, out_mem,
+                        input_tensor->shape(), input_tensor->strides(),
+                        output_tensor->strides(), paddings, pad_mode, pad_value,
+                        context));
+
+    return ok(output);
+}
+
+result<value_t> kernels::stackvm::prelu(value_t input, value_t slope,
+                                        value_t output,
+                                        kernel_context &context) {
+    try_f32_in_mem(input);
+    try_f32_in_mem(slope);
+    try_f32_output(out_mem, output, input_tensor->shape());
+    try_(reference::prelu(input_mem, slope_mem, out_mem, input_tensor->shape(),
+                          input_tensor->strides(), slope_tensor->shape(),
+                          slope_tensor->strides(), output_tensor->shape(),
+                          output_tensor->strides(), context));
+    return ok(output);
 }
 
 result<value_t>
@@ -474,10 +523,19 @@ nncase::kernels::stackvm::reshape(value_t input, value_t shape, value_t output,
 }
 
 result<value_t> nncase::kernels::stackvm::reverse_sequence(
-    [[maybe_unused]] value_t input, [[maybe_unused]] value_t seq_lens,
-    [[maybe_unused]] value_t batch_axis, [[maybe_unused]] value_t time_axis,
-    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
+    value_t input, value_t seq_lens, value_t batch_axis, value_t time_axis,
+    value_t output, [[maybe_unused]] kernel_context &context) {
+    try_in_mem(input);
+    try_integer_v(batch_axis);
+    try_integer_v(time_axis);
+    try_dims(seq_lens_value, seq_lens);
+    auto out_shape = input_tensor->shape();
+    try_out_mem(output, input_tensor->dtype(), out_shape);
+    try_(reference::reverse_sequence(
+        input_tensor->dtype(), input_mem, output_mem, input_tensor->shape(),
+        seq_lens_value, batch_axis_value, time_axis_value,
+        input_tensor->strides(), output_tensor->strides()));
+    finish;
 }
 
 result<value_t> nncase::kernels::stackvm::select(
@@ -508,56 +566,6 @@ nncase::kernels::stackvm::size_of([[maybe_unused]] value_t input,
     try_output(out_mem, output, dt_int64, dims_t{});
     *OUT_CAST(int64_t, out_mem) = compute_size(in_tensor);
     finish;
-}
-
-inline std::tuple<axes_t, axes_t, axes_t>
-slice_fill(const dims_t &in_shape, axes_t &begins_value, axes_t &ends_value,
-           axes_t &strides_value, axes_t axes_value) {
-    auto ndim = in_shape.size();
-    axes_t begin_values(ndim, 0);
-    axes_t end_values(in_shape.begin(), in_shape.end());
-    axes_t strides_values(ndim, 1);
-    for (auto i = 0; i < ndim; ++i) {
-        const auto it = std::find_if(axes_value.begin(), axes_value.end(),
-                                     [i, ndim](const auto axis) {
-                                         return positive_index(axis, ndim) == i;
-                                     });
-        if (it != axes_value.end()) {
-            auto idx = std::distance(axes_value.begin(), it);
-            auto max = static_cast<int>(in_shape[i]);
-            auto min = (-1) * max - 1;
-
-            // check starts
-            begin_values[i] = begins_value[idx] < min   ? min
-                              : begins_value[idx] > max ? max
-                                                        : begins_value[idx];
-
-            // check stops
-            end_values[i] = ends_value[idx] < min   ? min
-                            : ends_value[idx] > max ? max
-                                                    : ends_value[idx];
-
-            // check steps
-            if (!strides_value.empty()) {
-                assert(strides_value[idx] != 0);
-                strides_values[i] = strides_value[idx];
-            }
-
-            // fixup begin_values
-            if ((strides_values[i] > 0 && end_values[i] > begin_values[i]) ||
-                (strides_values[i] < 0 && end_values[i] < begin_values[i])) {
-                begin_values[i] =
-                    begin_values[i] == min ? min + 1 : begin_values[i];
-                begin_values[i] =
-                    begin_values[i] == max ? max - 1 : begin_values[i];
-            }
-            if (begin_values[i] < 0)
-                begin_values[i] += max;
-            if (end_values[i] < 0)
-                end_values[i] += max;
-        }
-    }
-    return std::tuple(begin_values, end_values, strides_values);
 }
 
 result<value_t> nncase::kernels::stackvm::slice(value_t input, value_t begins,
@@ -598,7 +606,18 @@ result<value_t> nncase::kernels::stackvm::space_to_batch(
     [[maybe_unused]] value_t input, [[maybe_unused]] value_t block_shape,
     [[maybe_unused]] value_t paddings, [[maybe_unused]] value_t output,
     [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
+    try_in_mem(input);
+    try_paddings(paddings_value, paddings);
+    try_dims_v(block_shape);
+    auto out_shape = space_to_batch_shape_infer(
+        input_tensor->shape(), block_shape_value, paddings_value);
+    try_out_mem(output, input_tensor->dtype(), out_shape);
+
+    try_(reference::space_to_batch(input_tensor->dtype(), input_mem, output_mem,
+                                   input_tensor->shape(), block_shape_value,
+                                   paddings_value, input_tensor->strides(),
+                                   out_shape, output_tensor->strides()));
+    finish;
 }
 
 result<value_t> nncase::kernels::stackvm::split(value_t input, value_t axis,
@@ -646,9 +665,9 @@ result<value_t> nncase::kernels::stackvm::stack(value_t inputs, value_t axis,
     finish;
 }
 
-result<value_t> nncase::kernels::stackvm::tile(
-    [[maybe_unused]] value_t input, [[maybe_unused]] value_t repeats,
-    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
+result<value_t>
+nncase::kernels::stackvm::tile(value_t input, value_t repeats, value_t output,
+                               [[maybe_unused]] kernel_context &context) {
     try_input(in_mem, input);
     try_dims(repeats_value, repeats);
     auto ty = input_tensor->dtype();
@@ -658,6 +677,21 @@ result<value_t> nncase::kernels::stackvm::tile(
                          input_tensor->strides(), output_tensor->strides(),
                          repeats_value));
     finish;
+}
+
+result<value_t> nncase::kernels::stackvm::transpose(value_t input, value_t perm,
+                                                    value_t output,
+                                                    kernel_context &context) {
+    try_input(input_mem, input);
+    auto dt = input_tensor->dtype();
+    try_dims(perm_value, perm);
+    auto out_shape = transpose_infer_shape(input_tensor->shape(), perm_value);
+    try_output(out_mem, output, dt, out_shape);
+
+    try_(reference::transpose(dt, input_mem, out_mem, input_tensor->shape(),
+                              perm_value, input_tensor->strides(),
+                              output_tensor->strides(), context));
+    return ok(output);
 }
 
 result<value_t>

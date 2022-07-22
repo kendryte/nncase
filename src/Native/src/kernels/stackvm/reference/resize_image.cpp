@@ -205,13 +205,11 @@ result<value_t> nncase::kernels::stackvm::resize_image(
     auto ty = input_tensor->dtype();
     try_var(tycode, to_typecode(ty));
     try_dims(new_size_value, new_size);
-    auto out_shape = infer_shape(input_tensor->shape(), new_size_value);
-    try_output(out_mem, output, input_tensor->dtype(), out_shape);
+    try_output(out_mem, output, input_tensor->dtype(), new_size_value);
 
     bool align_corner = false;
     bool half_pixel = false;
-    // todo: some args are not supported
-    if (transformation_mode == image_resize_transformation_mode_t::half_pixel) {
+    if (transformation_mode == image_resize_transformation_mode_t::half_pixel || transformation_mode == image_resize_transformation_mode_t::pytorch_half_pixel) {
         half_pixel = true;
     } else if (transformation_mode ==
                image_resize_transformation_mode_t::align_corners) {
@@ -225,12 +223,11 @@ result<value_t> nncase::kernels::stackvm::resize_image(
     } else if (resize_mode == image_resize_mode_t::nearest_neighbor) {
         try_(resize_nearest_neighbor(
             tycode, in_mem, out_mem, input_tensor->shape(),
-            input_tensor->strides(), output_tensor->strides(), out_shape[2],
-            out_shape[3], align_corner, half_pixel, context));
+            input_tensor->strides(), output_tensor->strides(), new_size_value[2],
+            new_size_value[3], align_corner, half_pixel, context));
     } else {
         return err(nncase_errc::runtime_not_found);
     }
     // todo: some param not be used
-    return err(nncase_errc::runtime_not_found);
     return ok(output);
 }

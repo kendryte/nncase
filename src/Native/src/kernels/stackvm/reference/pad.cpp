@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/stackvm/tensor_ops.h>
+#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/util.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
@@ -118,7 +118,7 @@ result<void> interior_pad_impl(const T *input, T *output, NNCASE_UNUSED const di
 
 }
 
-result<void> pad_impl(datatype_t type, const gsl::byte *input, gsl::byte *output, const dims_t &in_shape,
+result<void> nncase::kernels::stackvm::reference::pad(datatype_t type, const gsl::byte *input, gsl::byte *output, const dims_t &in_shape,
     const strides_t &in_strides, const strides_t &out_strides, const paddings_t &paddings, pad_mode_t mode, const gsl::byte *pad_value, kernel_context &context) noexcept
 {
     auto unit = runtime::get_bytes(type);
@@ -209,31 +209,4 @@ result<void> pad_impl(datatype_t type, const gsl::byte *input, gsl::byte *output
             return err(std::errc::not_supported);
         }
     }
-}
-
-dims_t infer_shape(const dims_t& in_shape, const paddings_t& pads) {
-    auto d = pads.size();
-    auto new_shape = in_shape;
-    for (int i = 0; i < d; ++i) {
-        new_shape[in_shape.size() - d + i] += pads[i].sum();
-    }
-    return new_shape;
-}
-#include <iostream>
-result<value_t> nncase::kernels::stackvm::pad(pad_mode_t pad_mode,
-                                              value_t input, value_t pads,
-                                              value_t value, value_t output,
-                                              kernel_context &context) {
-    try_input(input_mem, input);
-    try_paddings(paddings, pads);
-    auto out_shape = infer_shape(input_tensor->shape(), paddings);
-    try_output(out_mem, output, input_tensor->dtype(), out_shape);
-    std::cout << "end output" << std::endl;
-
-    try_input(pad_value, value);
-    try_(pad_impl(input_tensor->dtype(), input_mem, out_mem, input_tensor->shape(), input_tensor->strides(), output_tensor->strides(),
-                  paddings, pad_mode, pad_value, context));
-    std::cout << "end pad" << std::endl;
-
-    return ok(output);
 }
