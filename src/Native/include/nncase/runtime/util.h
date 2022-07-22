@@ -160,10 +160,15 @@ inline result<host_buffer_slice> get_host_buffer(tensor tensor) {
     return ok(tensor_buffer);
 }
 
-inline result<gsl::byte *> get_output_data(tensor output) {
+inline result<gsl::span<gsl::byte>> get_output_span(tensor output) {
     try_var(output_buffer, get_host_buffer(output));
     try_var(output_map, output_buffer.map(map_write));
-    return ok(output_map.buffer().data());
+    return ok(output_map.buffer());
+}
+
+inline result<gsl::byte *> get_output_data(tensor output) {
+    try_var(output_buffer, get_output_span(output));
+    return ok(output_buffer.data());
 }
 
 inline result<std::vector<gsl::byte *>> get_output_data(tuple outputs) {
@@ -171,11 +176,32 @@ inline result<std::vector<gsl::byte *>> get_output_data(tuple outputs) {
         outputs, [](tensor &input) { return get_output_data(input); });
 }
 
-inline result<gsl::byte *> get_input_data(tensor input) {
+#ifndef NODEBUG
+// used for insert into some where for check nan value in DEBUG mode
+inline void nan_debug(const float *in, int size) {
+    auto f = *in;
+    if (f != f) {
+        for (int i = 1; i < size; ++i) {
+            auto fv = *(in + i);
+            if (fv != fv) {
+                [[maybe_unused]] auto a = 1;
+            }
+        }
+    }
+}
+#else
+inline void nan_debug(const float *in) {}
+#endif
+
+inline result<gsl::span<gsl::byte>> get_input_span(tensor input) {
     try_var(input_buffer, get_host_buffer(input));
     try_var(input_map, input_buffer.map(map_read));
-    auto d = input_map.buffer().data();
-    return ok(d);
+    return ok(input_map.buffer());
+}
+
+inline result<gsl::byte *> get_input_data(tensor input) {
+    try_var(input_buffer, get_input_span(input));
+    return ok(input_buffer.data());
 }
 
 inline result<std::vector<gsl::byte *>> get_input_data(tuple inputs) {

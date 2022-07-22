@@ -8,6 +8,11 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Nncase.Quantization;
+public enum CalibMethod
+{
+    NoClip,
+    Kld
+};
 
 /// <summary>
 /// quantize options
@@ -18,4 +23,8 @@ public class QuantizeOptions
     /// CalibrationDataset
     /// </summary>
     public ICalibrationDatasetProvider? CalibrationDataset { get; set; }
+    /// <summary>
+    /// CalibMethod
+    /// </summary>
+    public CalibMethod CalibrationMethod { get; set; }
 }

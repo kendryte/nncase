@@ -8,6 +8,7 @@ struct runtime_registration
 {
     model_target_t id;
     runtime_activator_t activator;
+    rt_module_collector_t collector;
 };
 
 runtime_registration builtin_runtimes[] =

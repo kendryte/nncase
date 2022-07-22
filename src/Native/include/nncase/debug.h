@@ -1,47 +1,25 @@
 #pragma once
-#include <fstream>
+#include <filesystem>
 #include <iostream>
-#include <sstream>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/util.h>
 #include <nncase/tensor.h>
 #include <nncase/type.h>
 #include <nncase/value.h>
+#include <sstream>
+#include <fstream>
 
-inline int a = 1;
-inline bool append = false;
+extern bool append;
+extern std::string currentOp;
+extern std::filesystem::path dump_root;
 
-inline int get_a() { return a; }
-inline void incr_a() {
-    a++;
-    append = false;
-}
-inline std::string currentOp;
-#include <filesystem>
-namespace fs = std::filesystem;
-inline fs::path dump_root = "";
-inline static void set_dump_root(std::string root) {
-    // todo:maybe should change path in pytest
-    fs::path p(root);
-    dump_root = p / "Runtime";
-}
-
-inline static fs::path dump_path() {
-    auto file_name = (std::to_string(get_a()) + currentOp);
-    auto p = dump_root / file_name;
-    if (!fs::exists(dump_root) && dump_root != "") {
-        fs::create_directory(dump_root);
-    }
-    return p;
-}
-
-inline std::ofstream get_stream(const fs::path &path = dump_path()) {
-    return append ? std::ofstream(path, std::ios_base::app)
-                  : std::ofstream(path);
-}
+NNCASE_API void set_dump_root(std::string root);
+std::filesystem::path dump_path();
+std::ofstream get_stream(const std::filesystem::path &path = dump_path());
 
 template <typename F>
-inline void dump(nncase::value_t value, F &&f, const fs::path &path = dump_path()) {
+void dump(nncase::value_t value, F &&f,
+          const std::filesystem::path &path = dump_path()) {
     auto stream = get_stream(path);
     if (value.is_a<nncase::tensor>()) {
         auto value_tensor = value.as<nncase::tensor>().unwrap();
@@ -60,36 +38,19 @@ inline void dump(nncase::value_t value, F &&f, const fs::path &path = dump_path(
     }
 }
 
-template <typename F> inline void dump(F &&f, const fs::path &path = dump_path()) {
+template <typename F>
+void dump(F &&f, const std::filesystem::path &path = dump_path()) {
     auto stream = get_stream(path);
-    f(stream);
     append = true;
     stream.close();
 }
 
-inline std::string to_str(const nncase::dims_t &shape) {
-    std::stringstream stream;
-    if (shape.size() == 0) {
-        stream << "scalar\n";
-    } else {
-        for (auto d : shape) {
-            stream << std::to_string(d) << " ";
-        }
-        stream << std::endl;
-    }
-    return stream.str();
-}
-
-inline void write_shape(const nncase::dims_t &shape) {
-    auto path = dump_root / "9999shape";
-    auto f = fs::exists(path) ? std::ofstream(path, std::ios::app) : std::ofstream(path);
-    f << currentOp << " :" << to_str(shape);
-    f.close();
-}
+std::string to_str(const nncase::dims_t &shape);
+void write_shape(const nncase::dims_t &shape);
 
 template <typename T>
-inline void dump_data(std::ostream &stream, const T *data,
-                      nncase::tensor value_tensor) {
+void dump_data(std::ostream &stream, const T *data,
+               nncase::tensor value_tensor) {
     //    std::cout << "out_shape:";
     //    for (auto d : value_tensor->shape()) {
     //        std::cout << d << " ";
@@ -107,49 +68,15 @@ inline void dump_data(std::ostream &stream, const T *data,
         stream << std::to_string(data[i]) << "\n";
     }
 }
-inline void dump_output_impl(nncase::value_t value,
-                             const fs::path &path = dump_path(),
-                             bool incr = false) {
-    dump(
-        value,
-        [incr](auto &stream, auto &&value_tensor) {
-            auto *data = value_tensor->to_host()
-                             .unwrap()
-                             ->buffer()
-                             .as_host()
-                             .unwrap()
-                             .map(nncase::runtime::map_read)
-                             .unwrap()
-                             .buffer()
-                             .data();
-        if(incr) {
-            write_shape(value_tensor->shape());
-        }
-#define RETURN_RESULT(_in_type)                                                \
-    if (nncase::runtime::cmp_type<_in_type>(value_tensor->dtype())) {          \
-        dump_data(stream, IN_CAST(_in_type, data), value_tensor);              \
-    }
-            RETURN_RESULT(bool);
-            RETURN_RESULT(int32_t);
-            RETURN_RESULT(uint32_t);
-            RETURN_RESULT(int64_t);
-            RETURN_RESULT(uint64_t);
-            RETURN_RESULT(float);
-        },
-        path);
-    if (incr) {
-        incr_a();
-    }
-}
 
-inline void dump_output([[maybe_unused]] nncase::value_t value) {
-    dump_output_impl(value, dump_path(), true);
-}
+void dump_output_impl(nncase::value_t value,
+                      const std::filesystem::path &path = dump_path(),
+                      bool incr = false);
 
-inline void dump_input([[maybe_unused]] nncase::value_t value,
-                       [[maybe_unused]] std::string name) {
-    dump_output_impl(value, fs::path(dump_path().string() + name), false);
-}
+void dump_output(NNCASE_UNUSED nncase::value_t value);
+
+void dump_input(NNCASE_UNUSED nncase::value_t value,
+                NNCASE_UNUSED std::string name);
 
 inline void print_dims(const nncase::dims_t & dims, const std::string &name) {
     std::cout << name << ":";

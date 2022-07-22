@@ -19,6 +19,7 @@ internal partial class Quantizer
 {
     private readonly EGraph _graph;
     private readonly List<ENode> _rangeOfs = new List<ENode>();
+    private readonly List<ENode> _childenOfRangeOfs = new List<ENode>();
 
     public Quantizer(EGraph graph)
     {
@@ -28,6 +29,8 @@ internal partial class Quantizer
 
     public async Task RunAsync(QuantizeOptions options)
     {
+        int srcBinSize = 8192;
+        int dstBinSize = 256;
         if (options.CalibrationDataset == null)
         {
             throw new ArgumentNullException(nameof(options.CalibrationDataset));
@@ -36,29 +39,47 @@ internal partial class Quantizer
         // 1. Get ranges
         var ranges = await GetRangesAsync(options.CalibrationDataset);
 
-        // 2. Get histograms
-        // var histograms = await GetHistogramsAsync(options.CalibrationDataset);
+        if (options.CalibrationMethod != CalibMethod.NoClip)
+        {
+            // 2. Get histograms
+            var histograms = await GetHistogramsAsync(options.CalibrationDataset, ranges, srcBinSize, dstBinSize);
 
-        // 3. Select best ranges
+            // 3. Select best ranges
+            var optRanges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, options.CalibrationMethod);
 
-        // 4. Assign ranges
-        AssignRanges(ranges);
+            // 4. Assign ranges
+            AssignRanges(optRanges);
+        }
+        else
+        {
+            AssignRanges(ranges);
+        }
     }
 
-    private async Task RunPassAsync(ICalibrationDatasetProvider calibrationDataset, Action<IReadOnlyDictionary<ENode, Tensor>> func)
+    private async Task RunPassAsync(ICalibrationDatasetProvider calibrationDataset, Action<IReadOnlyDictionary<ENode, Tensor>, IReadOnlyDictionary<ENode, Tensor>> func)
     {
         await foreach (var sample in calibrationDataset.Samples)
         {
             var evaluator = new CalibrationEvaluator(sample, _rangeOfs);
             var values = evaluator.Evaluate();
-            func(values);
+            foreach (var _rangeOf in _rangeOfs)
+            {
+                for (int i = 0; i < _rangeOf.Children.Count; i++)
+                {
+                    _childenOfRangeOfs.Add(_rangeOf.Children[1].Nodes[0]);
+                }
+            }
+            var childrenEvaluator = new CalibrationEvaluator(sample, _childenOfRangeOfs);
+            var childrenValues = childrenEvaluator.Evaluate();
+            // values are children op range values(only two scalars for each value: Min and Max), childrenValues are children op tensor values.
+            func(values, childrenValues);
         }
     }
 
     private async Task<IDictionary<ENode, ValueRange<float>>> GetRangesAsync(ICalibrationDatasetProvider calibrationDataset)
     {
         var ranges = new Dictionary<ENode, ValueRange<float>>();
-        await RunPassAsync(calibrationDataset, values =>
+        await RunPassAsync(calibrationDataset, (values, childrenValues) =>
         {
             foreach (var value in values)
             {
@@ -77,9 +98,82 @@ internal partial class Quantizer
         return ranges;
     }
 
-    private Task<QuantizeHistogram> GetHistogramsAsync(ICalibrationDatasetProvider calibrationDataset)
+    private async Task<IDictionary<ENode, QuantizeHistogram<float>>> GetHistogramsAsync(ICalibrationDatasetProvider calibrationDataset, IDictionary<ENode, ValueRange<float>> ranges, int srcBinSize, int dstBinSize)
     {
-        throw new NotImplementedException();
+        var histograms = new Dictionary<ENode, QuantizeHistogram<float>>();
+        await RunPassAsync(calibrationDataset, (values, childrenValues) =>
+        {
+            var valuesList = values.ToList();
+            var childrenValuesList = childrenValues.ToList();
+            for (int i = 0; i < valuesList.Count; i++)
+            {
+                var r = ranges[valuesList[i].Key].Max - ranges[valuesList[i].Key].Min;
+                var srcBinInterval = r / srcBinSize;
+                if (!histograms.TryGetValue(valuesList[i].Key, out var oldHistogram))
+                {
+                    List<float> initSrcBin = new List<float>(new float[srcBinSize]);
+                    List<float> initDstBin = new List<float>(new float[dstBinSize]);
+                    QuantizeHistogram<float> histogram = new QuantizeHistogram<float>(initSrcBin, initDstBin);
+                    histograms.Add(valuesList[i].Key, histogram);
+                }
+                var childrenTensor = childrenValuesList[i].Value.Cast<float>();
+                var childrenBuffer = childrenTensor.Buffer;
+
+                foreach (var buf in childrenBuffer)
+                {
+                    var r_index = (buf - ranges[valuesList[i].Key].Min) / srcBinInterval;
+                    var index = (int)Math.Clamp((float)r_index, (float)(0), (float)(srcBinSize) - 1);
+                    histograms[valuesList[i].Key].SrcBin[index]++;
+                }
+            }
+        });
+        return histograms;
+    }
+
+    private IDictionary<ENode, ValueRange<float>> GetOptRanges(IDictionary<ENode, QuantizeHistogram<float>> histograms, IDictionary<ENode, ValueRange<float>> ranges, int srcBinSize, int dstBinSize, CalibMethod calibrationMethod)
+    {
+        var optRanges = new Dictionary<ENode, ValueRange<float>>();
+        if (calibrationMethod == CalibMethod.Kld)
+        {
+            foreach (KeyValuePair<ENode, QuantizeHistogram<float>> histogram in histograms)
+            {
+                histogram.Value.SrcBin = Smooth(histogram.Value.SrcBin);
+                var minKld = float.MaxValue;
+                var r = ranges[histogram.Key].Max - ranges[histogram.Key].Min;
+                var srcBinInterval = r / srcBinSize;
+                var betterThreshold = new Tuple<int, int>(0, srcBinSize);
+                var zeroThreshold = (int)Math.Clamp((0 - ranges[histogram.Key].Min) / srcBinInterval, 0, srcBinSize - 1);
+                // range max first
+                int lowerThreshold = 0;
+                var srcBin = histogram.Value.SrcBin;
+                for (int upperThreshold = srcBinSize; upperThreshold >= dstBinSize && upperThreshold >= zeroThreshold; upperThreshold -= dstBinSize)
+                {
+                    GetKldOptRanges(lowerThreshold, upperThreshold, dstBinSize, ref srcBin, ref minKld, ref betterThreshold);
+                    // betterThreshold = thresholdWithMinKldWithSmoothSrcBin.Item1;
+                    // minKld = thresholdWithMinKldWithSmoothSrcBin.Item2;
+                    // srcBin = thresholdWithMinKldWithSmoothSrcBin.Item3;
+                }
+                // range min
+                minKld = float.MaxValue;
+                int upperThreshold2 = betterThreshold.Item2;
+                for (int lowerThreshold2 = 0; lowerThreshold2 <= zeroThreshold && lowerThreshold2 <= upperThreshold2 - dstBinSize; lowerThreshold2 += dstBinSize)
+                {
+                    GetKldOptRanges(lowerThreshold2, upperThreshold2, dstBinSize, ref srcBin, ref minKld, ref betterThreshold);
+                    // betterThreshold = thresholdWithMinKldWithSmoothSrcBin.Item1;
+                    // minKld = thresholdWithMinKldWithSmoothSrcBin.Item2;
+                    // srcBin = thresholdWithMinKldWithSmoothSrcBin.Item3;
+                }
+
+                var optMin = (betterThreshold.Item1 - 0.5f) * srcBinInterval + ranges[histogram.Key].Min;
+                var optMax = (betterThreshold.Item2 + 0.5f) * srcBinInterval + ranges[histogram.Key].Min;
+                optRanges.Add(histogram.Key, new ValueRange<float>(optMin, optMax));
+            }
+            return optRanges;
+        }
+        else
+        {
+            throw new ArgumentException("Invalid calibration method.");
+        }
     }
 
     private void AssignRanges(IDictionary<ENode, ValueRange<float>> ranges)

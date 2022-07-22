@@ -88,7 +88,7 @@ public partial class EGraphPrinter
                     var label = $"{child.Find().Id}";
                     if (OpMaps.ContainsKey(child))
                     {
-                        label = OpMaps[child];
+                        label = $"({label.ToString()}) " + OpMaps[child];
                     }
 
                     args.Add(new DotRecordTextField(label, $"P{i}"));

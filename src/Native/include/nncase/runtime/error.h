@@ -18,8 +18,7 @@
 
 BEGIN_NS_NNCASE_RUNTIME
 
-enum class nncase_errc
-{
+enum class nncase_errc {
     invalid_model_indentifier = 0x01,
     invalid_model_checksum = 0x02,
     invalid_model_version = 0x03,
@@ -31,6 +30,8 @@ enum class nncase_errc
     stackvm_illegal_target = 0x0101,
     stackvm_stack_overflow = 0x0102,
     stackvm_stack_underflow = 0x0103,
+    stackvm_unknow_custom_call = 0x0104,
+    stackvm_duplicate_custom_call = 0x0105,
     nnil_illegal_instruction = 0x0200,
 };
 

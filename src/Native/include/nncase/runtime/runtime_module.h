@@ -16,6 +16,7 @@
 #include "model.h"
 #include "result.h"
 #include "runtime_function.h"
+#include <nncase/kernels/kernel_context.h>
 
 BEGIN_NS_NNCASE_RUNTIME
 
@@ -32,6 +33,14 @@ class NNCASE_API runtime_module {
   public:
     static result<std::unique_ptr<runtime_module>>
     create(const module_kind_t &kind);
+
+    using custom_call_type = result<value_t> (*)(
+        gsl::span<const gsl::byte>, const std::vector<value_t> &,
+        const kernels::kernel_context &);
+
+    static result<
+        std::vector<std::pair<std::string, runtime_module::custom_call_type>>>
+    collect(const module_kind_t &kind);
 
     runtime_module() = default;
     runtime_module(const runtime_module &) = delete;

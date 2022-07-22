@@ -56,6 +56,7 @@ internal class TextSnippet
 internal class CodeGenContext
 {
     private readonly List<TextSnippet> _textSnippets = new List<TextSnippet>();
+    private readonly HashSet<ModuleType> _custom_call_modules = new();
 
     public CodeGenContext(BinaryWriter rdataWriter)
     {
@@ -68,9 +69,16 @@ internal class CodeGenContext
 
     public IReadOnlyList<TextSnippet> TextSnippets => _textSnippets;
 
+    public IReadOnlySet<ModuleType> CustomCallModules => _custom_call_modules;
+
     public void AddTextSnippet(TextSnippet textSnippet)
     {
         _textSnippets.Add(textSnippet);
+    }
+
+    public void AddCustomCallModule(ModuleType moduleType)
+    {
+        _custom_call_modules.Add(moduleType);
     }
 }
 
@@ -153,7 +161,12 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
             snippet.AddInput(paramSnippet);
         }
 
-        if (expr.Target is Op op)
+        if (expr.Target is CustomOp custom_op)
+        {
+            _context.AddCustomCallModule(custom_op.ModuleType);
+            Emitter.CusCall(custom_op.RegisteredName, custom_op.SerializeFields(), checked((ushort)expr.Parameters.Count));
+        }
+        else if (expr.Target is Op op)
         {
             EmitTensorCall(op);
         }

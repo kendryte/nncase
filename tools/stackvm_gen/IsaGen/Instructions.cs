@@ -131,6 +131,7 @@ namespace IsaGen
         CALL,
         ECALL,
         EXTCALL,
+        CUSCALL,
         THROW,
         BREAK,
 
@@ -967,6 +968,26 @@ namespace IsaGen
     public class ExtCallInstruction : Instruction
     {
         public override OpCode OpCode => OpCode.EXTCALL;
+
+        [DisplayName("args")]
+        [Description("Arguments count")]
+        public ushort ArgsCount { get; set; }
+    }
+    
+    [DisplayName("CUSCALL")]
+    [Category("Control and Status Instructions")]
+    [Description("Custom Call an User customed method")]
+    public class CusCallInstruction : Instruction
+    {
+        public override OpCode OpCode => OpCode.CUSCALL;
+
+        [DisplayName("registered_name")]
+        [Description("Global Registered Name")]
+        public string RegisteredName { get; set; }
+
+        [DisplayName("fields_span")]
+        [Description("Fields Span")]
+        public byte[] FieldsSpan { get; set; }
 
         [DisplayName("args")]
         [Description("Arguments count")]

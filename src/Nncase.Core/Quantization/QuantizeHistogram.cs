@@ -9,6 +9,14 @@ using System.Threading.Tasks;
 
 namespace Nncase.Quantization;
 
-public class QuantizeHistogram
+public class QuantizeHistogram<T>
 {
+    public List<T> SrcBin { get; set; }
+    public List<T> DstBin { get; set; }
+
+    public QuantizeHistogram(List<T> srcBin, List<T> dstBin)
+    {
+        SrcBin = srcBin;
+        DstBin = dstBin;
+    }
 }

@@ -8,7 +8,7 @@ public static class Comparator
     {
         return data1.Zip(data2).Aggregate(0f, (f, tuple) => f + tuple.Item1 * tuple.Item2);
     }
-    
+
     public static float CosSimilarity(IValue a, IValue b)
     {
         return CosSimilarity(a.AsTensor(), b.AsTensor());
@@ -24,13 +24,20 @@ public static class Comparator
         return (float)(sum / (v1 * v2));
     }
 
-    public static void Compare(IValue pre, IValue post)
+    public static bool Compare(TensorValue pre, TensorValue post, float thresh)
     {
         var v1 = pre.AsTensor();
         var v2 = post.AsTensor();
         Assert.Equal(v1.Shape, v2.Shape);
         Assert.Equal(v1.ElementType, v2.ElementType);
         var cosSim = CosSimilarity(v1, v2);
-        Assert.True(cosSim > 0.99f, "cosSim:" + cosSim);
+        Assert.True(cosSim > thresh, "cosSim:" + cosSim);
+        return true;
     }
+
+    public static bool Compare(IValue pre, IValue post, float thresh = 0.99f) => (pre, post) switch
+    {
+        (TensorValue a, TensorValue b) => Compare(a, b, thresh),
+        (_, _) => throw new ArgumentOutOfRangeException()
+    };
 }

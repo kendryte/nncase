@@ -81,6 +81,22 @@ stackvm_runtime_function::visit(NNCASE_UNUSED const extcall_op_t &op) noexcept {
 }
 
 result<void>
+stackvm_runtime_function::visit(NNCASE_UNUSED const cuscall_op_t &op) noexcept {
+    std::vector<value_t> params(op.args);
+    for (size_t i = 0; i < op.args; i++) {
+        try_var(arg, pop_object<value_t>());
+        params[i] = std::move(arg);
+    }
+    auto table = module().custom_call_table();
+    auto it = table.find(op.registered_name);
+    if (it == table.end())
+        return err(nncase_errc::stackvm_unknow_custom_call);
+    try_var(retval,
+            it->second(op.fields_span, params, module().kernel_context()));
+    return stack_.push(retval);
+}
+
+result<void>
 stackvm_runtime_function::visit(NNCASE_UNUSED const throw_op_t &op) noexcept {
     return err(std::errc::not_supported);
 }
