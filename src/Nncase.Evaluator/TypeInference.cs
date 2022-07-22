@@ -304,6 +304,17 @@ public static class TypeInference
         return new InvalidType("Can't Infer Shape With Dynamic Axis and KeepDims!");
     }
 
+    public static Shape ApplyPerm(Shape inShape, int[] perm)
+    {
+        var outShape = inShape.ToArray();
+        foreach (var i in Enumerable.Range(0, inShape.Rank))
+        {
+            outShape[i] = inShape[perm[i]];
+        }
+
+        return outShape;
+    }
+    
     /// <summary>
     /// Transpose Type Infer.
     /// </summary>
@@ -316,14 +327,8 @@ public static class TypeInference
                 return input;
             }
 
-            var permt = permValue.Value.Cast<int>();
-            var inShape = input.Shape;
-            var outShape = inShape.ToArray();
-            foreach (var i in Enumerable.Range(0, inShape.Rank))
-            {
-                outShape[i] = inShape[permt[i]];
-            }
-
+            var permt = permValue.Value.ToArray<int>();
+            var outShape = ApplyPerm(input.Shape, permt);
             return input with {Shape = outShape};
         }
 

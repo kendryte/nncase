@@ -8,6 +8,7 @@ using Nncase.IR;
 using Nncase.IR.Tensors;
 using Onnx;
 using F = Nncase.IR.F;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Importer
 {
@@ -26,22 +27,25 @@ namespace Nncase.Importer
             var axesExpr = GetAxesAttribute(op, input);
             var starts = GetTensorIntsAttribute(op, "starts");
             var ends = GetTensorIntsAttribute(op, "ends");
-            return F.Tensors.Slice(input, starts, ends, axesExpr,
-                F.Tensors.Expand(1L, Tensor.FromSpan<long>(new long[] { ends.Length })));
+            return Slice(input, starts, ends, axesExpr,
+                Expand(1L, Tensor.FromSpan<long>(new long[] { ends.Length })));
         }
 
         private Expr SliceV10(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);
             var (starts, ends) = GetInputExprs(op, 1, 2);
+            // not supported none step when starts is dynamic
+            // steps.size should eq starts.size 
+            starts.InferenceType();
             var axes = GetOptionInputExpr(op, 3).Or(ComputeDefaultAxes(input));
-            var steps = GetOptionInputExpr(op, 4).Or(ExpandOneToRank(input, 1));
-            return F.Tensors.Slice(input, starts, ends, axes, steps);
+            var steps = GetOptionInputExpr(op, 4).Or(Expand(1, new[]{starts.CheckedShape.Size}));
+            return Slice(input, starts, ends, axes, steps);
         }
 
         private Call ExpandOneToRank(Expr input, long value, long rankOffset = 0)
         {
-            return F.Tensors.Expand(value, F.Tensors.Cast(F.Tensors.Rank(input) - rankOffset, new Int64Type()));
+            return Expand(value, Cast(Rank(input) - rankOffset, new Int64Type()));
         }
     }
 }

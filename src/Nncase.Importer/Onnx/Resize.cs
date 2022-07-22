@@ -7,6 +7,7 @@ using Nncase.IR;
 using Nncase.IR.Tensors;
 using Onnx;
 using F = Nncase.IR.F;
+using static Nncase.IR.F.Tensors;
 using static Nncase.ResizeModeHelper;
 
 namespace Nncase.Importer
@@ -62,16 +63,27 @@ namespace Nncase.Importer
 
         private Expr ComputeNewSizes(Expr input, Expr scales)
         {
-            return F.Tensors.ShapeOf(input) * scales;
+            return Reshape(
+                Cast(Cast(ShapeOf(input), DataTypes.Float32) * Unsqueeze(scales, new[] {0}), DataTypes.Int64),
+                new[] {-1});
         }
 
         private Expr GetNewSize(NodeProto op)
         {
             // Only one of 'scales' and 'sizes' can be specified.
             // 2:scales, 3:sizes
-            return GetOptionInputExpr(op, 2).Match(
-                scales => ComputeNewSizes(GetInputExpr(op, 0), scales),
-                GetOptionInputExpr(op, 3).ValueUnsafe());
+            var scales = GetOptionInputExpr(op, 2);
+            if (scales.IsSome)
+            {
+                var scalesValue = scales.ValueUnsafe();
+                scalesValue.InferenceType();
+                if (scalesValue.CheckedShape[0] != 0 && !scalesValue.CheckedShape.IsScalar)
+                {
+                    return ComputeNewSizes(GetInputExpr(op, 0), scalesValue);
+                }
+            }
+            var sizes = GetOptionInputExpr(op, 3).ValueUnsafe();
+            return sizes;
         }
     }
 }

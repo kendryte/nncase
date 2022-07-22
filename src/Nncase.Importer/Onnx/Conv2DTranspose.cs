@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using LanguageExt.UnsafeValueAccess;
@@ -23,7 +24,7 @@ namespace Nncase.Importer
             var dilation = GetDilationsAttribute(op);
             var group = GetIntAttribute(op, "group", 1);
             var autoPad = GetStringAttribute(op, "auto_pad", "NOTSET");
-            var outputPadding = GetIntsAttribute(op, "output_paddings", new[] { 0, 0, 0, 0 });
+            var outputPadding = GetIntsAttribute(op, "output_padding", new[] { 0, 0 });
             var pads = AutoPad(op, autoPad, input, weights, strides.ToArray<long>(), dilation.ToArray<long>());
 
             var outShape = GetOptionIntsAttribute(op, "output_shape")
@@ -34,7 +35,7 @@ namespace Nncase.Importer
                         outputPadding,
                         pads,
                         dilation,
-                        autoPad));
+                        autoPad, group));
 
             return F.NN.Conv2DTranspose(input, weights, bias, outShape, strides,
                 pads, Tensor.FromSpan<long>(outputPadding),
@@ -45,28 +46,30 @@ namespace Nncase.Importer
         {
             return strides[offset] * (inputSize - 1)
                 + outPaddings[offset]
-                + (weightSize - 1)
-                * dilations[offset] + 1 - Util.GetItem(paddings, offset) - Util.GetItem(paddings, offset + 2);
+                + ((weightSize - 1)
+                * dilations[offset] + 1) - paddings[offset][0] - paddings[offset][1];
         }
 
-        Expr GetOutputShape(Expr input, Expr weights, long[] strides, long[] outPadding, Expr paddings, long[] dilations, string autoPad)
+        Expr GetOutputShape(Expr input, Expr weights, long[] strides, long[] outPadding, Expr paddings, long[] dilations, string autoPad, long group)
         {
             var iN = Util.ShapeIndex(input, 0);
             var iC = Util.ShapeIndex(input, 1);
             var (iH, iW) = Util.GetHW(input);
-            var oc = Util.ShapeIndex(weights, 0);
-            var ic = Util.ShapeIndex(weights, 1);
-            var (wH, wW) = Util.GetHW(input);
-            var outShape = new[] { iN, iC };
+            var oc = Util.ShapeIndex(weights, 1) * group;
+            // var ic = Util.ShapeIndex(weights, 1);
+            var (wH, wW) = Util.GetHW(weights);
+            var outShape = new List<Expr>();
+            outShape.Add(iN);
+            outShape.Add(oc);
             if (autoPad is "SAME_UPPER" or "SAME_LOWER")
             {
-                outShape.Append(iH * oc);
-                outShape.Append(iW * ic);
+                outShape.Add(iH * strides[0]);
+                outShape.Add(iW * strides[1]);
             }
             else
             {
-                outShape.Append(ComputeOutSize(iH, wH, strides, outPadding, paddings, dilations, 0));
-                outShape.Append(ComputeOutSize(iW, wW, strides, outPadding, paddings, dilations, 1));
+                outShape.Add(ComputeOutSize(iH, wH, strides, outPadding, paddings, dilations, 0));
+                outShape.Add(ComputeOutSize(iW, wW, strides, outPadding, paddings, dilations, 1));
             }
             return F.Tensors.Stack(new IR.Tuple(outShape), 0);
         }

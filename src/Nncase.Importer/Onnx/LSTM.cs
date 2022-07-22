@@ -40,9 +40,11 @@ namespace Nncase.Importer
             var seqIndex = layout == 0 ? 0 : 1;
             var batchIndex = layout == 0 ? 1 : 0;
 
-            var T = GetInputDataType(op, 0);
+            // var T = GetInputDataType(op, 0);
             var (x, w) = GetInputExprs(op, 0, 1);
-
+            x.InferenceType();
+            var T = x.CheckedDataType;
+            
             var hiddenSize = GetOptionIntAttribute(op, "hidden_size")
                     .Match(
                         x => (Expr)x,

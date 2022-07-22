@@ -12,7 +12,7 @@ namespace Nncase.Importer.TFLite
         private Expr VisitSpaceToBatchND(in tflite.Operator op)
         {
             var (input, blockShape) = GetInputExprs(op, 0, 1);
-            var paddings = Reshape(Transpose(GetInputExprs(op, 2), new[] { 1, 0 }), -1);
+            var paddings = GetInputExprs(op, 2);
             return SpaceToBatch(input, blockShape, paddings);
         }
 
@@ -20,7 +20,7 @@ namespace Nncase.Importer.TFLite
         {
             var (input, blockShape) = GetInputExprs(op, 0, 1);
             var crops = GetInputExprs(op, 2);
-            return BatchToSpace(input, blockShape, crops);
+            return NCHWToNHWC(BatchToSpace(NHWCToNCHW(input), blockShape, crops));
         }
     }
 }

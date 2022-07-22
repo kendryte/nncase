@@ -21,7 +21,13 @@ public abstract class BaseImporter
         ConvertOp();
         SupportedCheck(this.GetType().Name.Split("Importer")[0]);
         var outputs = CreateOutputs();
-        // DumpOpsInModel();
+        // todo:refactor
+        var dumpDir = CompilerServices.CompileOptions.DumpDir;
+        if (!Directory.Exists(dumpDir))
+        {
+            Directory.CreateDirectory(dumpDir);
+        }
+        DumpOpsInModel(Path.Join(dumpDir, "OpsInModel.txt"));
         return CreateModule(inputs.ToArray(), outputs);
     }
 
