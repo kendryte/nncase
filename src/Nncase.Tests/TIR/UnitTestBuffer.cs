@@ -16,10 +16,10 @@ public class UnitTestTBuffer
         // var m = T.SizeVar("m");
         // var n = T.SizeVar("n");
         // var l = T.SizeVar("l");
-
+        //
         // var Ab = T.DeclBuffer((m, n), DataTypes.Float32);
         // var Bb = T.DeclBuffer((n, l), DataTypes.Float32);
-
+        //
         // Assert.IsType<Buffer>(Ab);
         // Assert.Equal(Ab.Dtype, DataTypes.Float32);
         // Assert.Equal(Ab.Shape[0], m);

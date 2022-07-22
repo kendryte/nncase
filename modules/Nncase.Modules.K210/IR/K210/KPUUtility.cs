@@ -54,7 +54,7 @@ internal static class KPUUtility
     {
         return new[] { paddings[0] < 0 ? paddings[0] : 0, paddings[1] < 0 ? paddings[1] : 0 };
     }
-    
+
     public static bool IsDepthWise(Expr input, Expr weights, int groups)
     {
         return IsDepthWise(
@@ -66,5 +66,15 @@ internal static class KPUUtility
     public static FakeKPUActivationParameters ClampToActivation(float[] clamp)
     {
         return new FakeKPUActivationParameters { Clamp = new ValueRange<float> { Min = clamp[0], Max = clamp[1] } };
+    }
+
+    public static KPUActivationParameters Activation()
+    {
+        return new KPUActivationParameters();
+    }
+
+    public static KPUBatchNormParameters BatchNorm()
+    {
+        return new KPUBatchNormParameters();
     }
 }

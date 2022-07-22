@@ -6,6 +6,7 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.K210;
 using OrtKISharp;
+using Nncase.Evaluator.K210;
 using static Nncase.Evaluator.EvaluatorUtil;
 
 namespace Nncase.Evaluator.K210;
@@ -28,7 +29,8 @@ public class KPUConv2DEvaluator : IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv
         var dilation = new long[] { 1, 1 };
         var groups = 1L;
         var kernelShape = weights.Shape;
-        return OrtKI.Conv(input, weights, null!, "NOTSET", dilation, groups, new long[] { kernelShape[2], kernelShape[3] }, pad, stride).ToValue();
+        return null;
+        // return kernel.KPUConv2D(input.Handle, weights.Handle, ortArgumentValue, argumentValue, "NOTSET", dilation, groups, new long[] { kernelShape[2], kernelShape[3] }, pad, stride);
     }
 
     /// <inheritdoc/>
@@ -36,7 +38,9 @@ public class KPUConv2DEvaluator : IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv
     {
         var input = context.CheckArgumentType<TensorType>(target, KPUConv2D.Input);
         var weights = context.CheckArgumentType<TensorType>(target, KPUConv2D.Weights);
-        return Visit(context, target, input, weights);
+        var ortArgumentValue = context.CheckArgumentType<TensorType>(target, KPUConv2D.BatchNorms);
+        var argumentValue = context.CheckArgumentType<TensorType>(target, KPUConv2D.OutputQuantParam);
+        return Visit(context, target, input, weights, ortArgumentValue, argumentValue);
     }
 
 
@@ -63,7 +67,7 @@ public class KPUConv2DEvaluator : IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv
         return null;
     }
 
-    private IRType Visit(ITypeInferenceContext context, KPUConv2D target, TensorType input, TensorType weights)
+    private IRType Visit(ITypeInferenceContext context, KPUConv2D target, TensorType input, TensorType weights, TensorType ortArgumentValue, TensorType argumentValue)
     {
         var stride = new[] { 1, 1 };
         var pad = Tensor.FromScalar(KPUUtility.GetKPUPadding(target.FilterType), new[] { 2, 2 });
@@ -71,6 +75,4 @@ public class KPUConv2DEvaluator : IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv
         var groups = 1;
         return TypeInference.Conv2DType(input, weights, stride, pad, dilation, groups);
     }
-
-
 }

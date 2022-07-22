@@ -52,8 +52,11 @@ public sealed partial class RealizeFakeKPUConv2D : IRewriteRule
             && KPUUtility.TryGetFilterType(filterH, filterW, out var filterType))
         {
             var isDepthwise = inChannels == outChannels && outChannels == groups;
-            return IR.F.K210.KPUConv2D(isDepthwise, filterType, KPUPoolType.Bypass, new KPUActivationParameters(), input, weights, input, weights);
+            var batchnorms = KPUUtility.BatchNorm().Segments;
+            var action = KPUUtility.Activation().Segments;
+            return IR.F.K210.KPUConv2D(isDepthwise, filterType, KPUPoolType.Bypass, KPUUtility.Activation(), input, weights, batchnorms, action);
         }
+
         return null;
     }
 }

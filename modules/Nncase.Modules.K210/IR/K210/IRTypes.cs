@@ -74,6 +74,12 @@ public record struct KPUActivationSegment
 public class KPUActivationParameters
 {
     public KPUActivationSegment[] Segments { get; } = new KPUActivationSegment[16];
+    
+}
+
+public class KPUBatchNormParameters
+{
+    public KPUBatchNormSegment[] Segments { get; } = Array.Empty<KPUBatchNormSegment>();
 }
 
 public record struct FakeKPUActivationSegment
@@ -87,7 +93,7 @@ public record struct FakeKPUActivationSegment
 
 public record class FakeKPUActivationParameters
 {
-    public FakeKPUActivationSegment[] Segments { get; set; } = new FakeKPUActivationSegment[0];
+    public FakeKPUActivationSegment[] Segments { get; set; } = Array.Empty<FakeKPUActivationSegment>();
 
     public ValueRange<float> Clamp { get; set; }
 }

@@ -19,5 +19,8 @@ public class K210Module : Module
         builder.RegisterType<FakeKPUConv2DEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<FakeKPUDownloadEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<FakeKPUUploadEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<KPUConv2DEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<KPUDownloadEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<KPUUploadEvaluator>().AsImplementedInterfaces();
     }
 }
