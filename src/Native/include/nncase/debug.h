@@ -41,6 +41,7 @@ void dump(nncase::value_t value, F &&f,
 template <typename F>
 void dump(F &&f, const std::filesystem::path &path = dump_path()) {
     auto stream = get_stream(path);
+    f(stream);
     append = true;
     stream.close();
 }
