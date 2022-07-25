@@ -122,7 +122,6 @@ public sealed partial class Emitter
 
     private void Write(DataType value)
     {
-        // TODO: Support generic datatype.
         switch (value)
         {
             case PrimType t:

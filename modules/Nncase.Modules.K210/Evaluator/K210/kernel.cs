@@ -11,6 +11,7 @@ public static class kernel
         Tensor argumentValue, string auto_pad,
         long[] dilations, long group, long[] kernel_shape, long[] pads, long[] strides)
     {
+        
     }
 
     // private static void KPUUpload(Tensor src, Tensor dest, long[] in_shape, long[] dma_ch)

@@ -44,6 +44,8 @@ internal partial class Quantizer
             {
                 sum += pExpand[j];
             }
+
+
             ret[i - boxPts / 2] = sum / boxPts;
         }
 
@@ -71,6 +73,7 @@ static List<float> smoothDistribution(List<float> p, float eps = 0.0001f)
             nNonZeros++;
         }
     }
+
     if (nNonZeros == 0)
     {
         // The discrete probability distribution is malformed. All entries are 0.

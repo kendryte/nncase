@@ -78,11 +78,11 @@ public class UnitTestK210Target
         pmgr = new PassManager(module, passOptions);
         target.RegisterQuantizePass(pmgr, CompileOptions);
         await pmgr.RunAsync();
-        //var modelBuilder = new ModelBuilder(target);
-        //var linkedModel = modelBuilder.Build(module);
-        //using var output = File.Open($"k210_{name}/test.kmodel", FileMode.Create);
-        //linkedModel.Serialize(output);
-        //Assert.NotEqual(0, output.Length);
+        var modelBuilder = new ModelBuilder(target);
+        var linkedModel = modelBuilder.Build(module);
+        using var output = File.Open($"k210_{name}/test.kmodel", FileMode.Create);
+        linkedModel.Serialize(output);
+        Assert.NotEqual(0, output.Length);
     }
 
     private void GenerateKModelAndRun(IRModule module, Tensor input, Tensor[] expectedOutput, [CallerMemberName] string? name = null)
