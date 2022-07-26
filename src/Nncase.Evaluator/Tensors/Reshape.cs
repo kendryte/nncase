@@ -71,7 +71,9 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>
                 return input with { Shape = new Shape(shapeValue) };
             }
         }
-
-        return input with { Shape = Shape.Unranked };
+        
+        var targetType = context.CheckArgumentType<TensorType>(target, Reshape.Shape);
+        var outShape = ReshapeTo(targetType);
+        return input with {Shape = outShape};
     }
 }

@@ -58,17 +58,17 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             return new TensorType(lhs.DType, Shape.Unranked);
         }
 
-        if (lhs.Shape[^1].IsUnknown || rhs.Shape[^2].IsUnknown)
-        {
-            return new TensorType(lhs.DType, Shape.Unranked);
-        }
+        // if (lhs.Shape[^1].IsUnknown || rhs.Shape[^2].IsUnknown)
+        // {
+        //     return new TensorType(lhs.DType, Shape.Unranked);
+        // }
 
         if (lhs.DType != rhs.DType)
         {
             return new InvalidType("MatMul lhs and rhs have different DType");
         }
 
-        if (lhs.Shape[^1] != rhs.Shape[^2])
+        if (lhs.Shape[^1] != rhs.Shape[^2] && lhs.Shape[^1] != Dimension.Unknown && rhs.Shape[^2] != Dimension.Unknown)
         {
             return new InvalidType("MatMul lhs and rhs have not compatiable shape");
         }

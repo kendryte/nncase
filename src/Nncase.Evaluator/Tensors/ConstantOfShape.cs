@@ -26,16 +26,17 @@ public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInfere
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, ConstantOfShape target)
     {
-        var shape = context.GetArgument(target, ConstantOfShape.Shape);
         var value = context.CheckArgumentType<TensorType>(target, ConstantOfShape.Value);
+        var shape = context.CheckArgumentType<TensorType>(target, ConstantOfShape.Shape);
         var type = value.DType;
-        if (shape is TensorConst shapeValue)
+        if (context.GetArgument(target, ConstantOfShape.Shape) is TensorConst shapeValue)
         {
             return new TensorType(type, shapeValue.Value.ToArray<int>());
         }
         else
         {
-            return new TensorType(type, Shape.Unranked);
+            var outShape = TypeInference.ReshapeTo(shape);
+            return new TensorType(type, outShape);
         }
     }
 }

@@ -382,4 +382,11 @@ public static class TypeInference
     /// <param name="x"></param>
     /// <returns></returns>
     public static bool IsMinus1(int x) => x == -1;
+    
+    public static Shape ReshapeTo(TensorType tensorType)
+    {
+        var shape = tensorType.Shape;
+        Debug.Assert(shape.Count != 0);
+        return shape.IsRanked ? Shape.Unknown(shape[0].FixedValue) : Shape.Unranked;
+    }
 }

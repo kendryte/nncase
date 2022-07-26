@@ -36,14 +36,15 @@ public class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>
     private IRType Visit(ITypeInferenceContext context, Expand target, TensorType input)
     {
         var shape = context.GetArgument(target, Expand.Shape);
-        return shape switch
+        if (shape is TensorConst constShape)
         {
-            TensorConst constShape => new TensorType(input.DType, new Shape(constShape.Value.Cast<int>())),
-            Call call => call.CheckedType is TensorType
-                ? new TensorType(call.CheckedDataType, Shape.Unranked)
-                : new InvalidType(((InvalidType)call.CheckedType).Reason),
-            Var var => new TensorType(var.CheckedDataType, Shape.Unranked),
-            _ => throw new InvalidDataException("invalid shape")
-        };
+            return input with {Shape = new Shape(constShape.Value.Cast<int>())};
+        }
+        else
+        {
+            var targetType = context.CheckArgumentType<TensorType>(target, Expand.Shape);
+            var outShape = TypeInference.ReshapeTo(targetType);
+            return input with {Shape = outShape};
+        }
     }
 }
