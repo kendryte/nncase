@@ -219,10 +219,11 @@ public partial class StackVMEmitter
     }
 
     ///<summary>Call an external method.</summary>
-    public void ExtCall(ushort args)
+    public void ExtCall(ushort args, bool isPrimFunc)
     {
         Write((byte)97);
         Write(args);
+        Write(isPrimFunc);
     }
 
     ///<summary>Load an argument to stack.</summary>

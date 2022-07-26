@@ -51,12 +51,21 @@ namespace Nncase.Transform
         /// </summary>
         public async Task RunAsync()
         {
-            foreach (var i in Enumerable.Range(0, _module.Callables.Count))
+            int i = 0;
+            while (i < _module.Functions.Count)
             {
                 foreach (var pass in _passes)
                 {
-                    _module.Update(i, await pass.RunAsync(_module.Callables[i], _options));
+                    var post = await pass.RunAsync(_module.Functions[i], _options);
+                    if (post is PrimFunctionWrapper wrapper)
+                    {
+                        _module.Add(wrapper.Target);
+                    }
+
+                    _module.Update(i, post);
                 }
+
+                i++;
             }
         }
 

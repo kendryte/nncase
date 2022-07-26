@@ -36,7 +36,7 @@ public abstract class FunctionBuilder
 
     protected List<FunctionRef> FunctionRefs { get; } = new List<FunctionRef>();
 
-    public ILinkableFunction Build(Callable callable)
+    public ILinkableFunction Build(BaseFunction callable)
     {
         // 1. Compile
         Compile(callable);
@@ -50,11 +50,11 @@ public abstract class FunctionBuilder
         return CreateLinkableFunction(Id, callable, FunctionRefs, _textContent.ToArray());
     }
 
-    protected abstract void Compile(Callable callable);
+    protected abstract void Compile(BaseFunction callable);
 
     protected abstract void WriteText();
 
-    protected abstract ILinkableFunction CreateLinkableFunction(uint id, Callable callable, IReadOnlyList<FunctionRef> functionRefs, byte[] text);
+    protected abstract ILinkableFunction CreateLinkableFunction(uint id, BaseFunction callable, IReadOnlyList<FunctionRef> functionRefs, byte[] text);
 
     private void FixAddrs()
     {

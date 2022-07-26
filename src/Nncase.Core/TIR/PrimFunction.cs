@@ -15,7 +15,7 @@ namespace Nncase.TIR;
 /// <summary>
 /// PrimFunction expression.
 /// </summary>
-public sealed record PrimFunction(string Name, string ModuleKind, Sequential Body, IRArray<Buffer> Parameters) : Callable(Name, ModuleKind), IFunction
+public sealed record PrimFunction(string Name, string ModuleKind, Sequential Body, IRArray<Buffer> Parameters) : BaseFunction(Name, ModuleKind)
 {
     private static int _globalFuncIndex = 0;
 
@@ -39,5 +39,5 @@ public sealed record PrimFunction(string Name, string ModuleKind, Sequential Bod
     {
     }
 
-    IEnumerable<IRType?> IFunction.ParameterTypes => Parameters.Select(x => x.CheckedType);
+    public override IEnumerable<IRType?> ParameterTypes => Parameters.Select(x => x.CheckedType);
 }

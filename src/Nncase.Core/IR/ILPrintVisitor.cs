@@ -75,6 +75,28 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
     }
 
     /// <inheritdoc/>
+    public override string Visit(PrimFunctionWrapper expr)
+    {
+        if (_names.TryGetValue(expr, out var name)) { return name; }
+
+        name = $"%{expr.Name}";
+        _names.Add(expr, name);
+        Scope.Push();
+
+        // 1. Function signature
+        Scope.IndWrite($"{name} = fn({string.Join(", ", expr.ParameterTypes.Select(VisitType))})");
+        AppendCheckedType(expr.CheckedType, " {");
+
+        // 2. Function body
+        Scope.IndWrite(CompilerServices.Print(expr.Target));
+
+        // 3. Function closing
+        Scope.IndWriteLine("}");
+        Scope.IndWrite(Scope.Pop());
+        return name;
+    }
+
+    /// <inheritdoc/>
     public override string Visit(Op expr)
     {
         return expr switch

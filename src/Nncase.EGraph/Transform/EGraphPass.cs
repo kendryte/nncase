@@ -29,7 +29,7 @@ public class EGraphPass : RulesPass
     }
 
     /// <inheritdoc/>
-    protected override async Task<Callable> RunCoreAsync(Callable function, RunPassOptions options)
+    protected override async Task<BaseFunction> RunCoreAsync(BaseFunction function, RunPassOptions options)
     {
         var graph = new EGraph();
         var root = graph.Add(function);
@@ -38,7 +38,7 @@ public class EGraphPass : RulesPass
         await OnPostRewrite(graph, options);
         OnPostRewriteEnd(graph, options);
         var post = graph.Extract(root, options);
-        return (Callable)post;
+        return (BaseFunction)post;
     }
 
     protected virtual Task OnPostRewrite(EGraph graph, RunPassOptions options)

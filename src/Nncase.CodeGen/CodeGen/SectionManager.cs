@@ -41,7 +41,7 @@ public class Symbol
 
 public record SymbolRef(long Position, int Length, Symbol Symbol, int Offset);
 
-public record FunctionRef(long Position, int Length, Callable Callable, FunctionIdComponent Component, int Offset);
+public record FunctionRef(long Position, int Length, BaseFunction Callable, FunctionIdComponent Component, int Offset);
 
 public class SectionManager
 {

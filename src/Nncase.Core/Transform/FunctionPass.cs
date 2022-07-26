@@ -34,7 +34,7 @@ namespace Nncase.Transform
         /// </summary>
         /// <param name="callable">Target function.</param>
         /// <param name="options">Options.</param>
-        public async Task<Callable> RunAsync(Callable callable, RunPassOptions options)
+        public async Task<BaseFunction> RunAsync(BaseFunction callable, RunPassOptions options)
         {
             var new_options = options.SetPassName(Name);
             OnPassStart(callable, new_options);
@@ -48,14 +48,14 @@ namespace Nncase.Transform
         /// </summary>
         /// <param name="callable">Target function.</param>
         /// <param name="options">Options.</param>
-        protected abstract Task<Callable> RunCoreAsync(Callable callable, RunPassOptions options);
+        protected abstract Task<BaseFunction> RunCoreAsync(BaseFunction callable, RunPassOptions options);
 
         /// <summary>
         /// the callback function you can custom process func with run pass options.
         /// </summary>
         /// <param name="callable"> func without run pass.</param>
         /// <param name="options"></param>
-        protected virtual void OnPassStart(Callable callable, RunPassOptions options)
+        protected virtual void OnPassStart(BaseFunction callable, RunPassOptions options)
         {
             switch (options.DumpLevel)
             {
@@ -74,7 +74,7 @@ namespace Nncase.Transform
         /// </summary>
         /// <param name="callable"> func with rewrited. </param>
         /// <param name="options"></param>
-        protected virtual void OnPassEnd(Callable callable, RunPassOptions options)
+        protected virtual void OnPassEnd(BaseFunction callable, RunPassOptions options)
         {
             switch (options.DumpLevel)
             {

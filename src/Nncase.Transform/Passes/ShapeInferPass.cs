@@ -29,15 +29,15 @@ public sealed class ShapeInferPass : DataflowPass
     }
 
     /// <inheritdoc/>
-    protected override Task<Callable> RunCoreAsync(Callable pre, RunPassOptions options)
+    protected override Task<BaseFunction> RunCoreAsync(BaseFunction pre, RunPassOptions options)
     {
-        Function post;
+        BaseFunction post;
         int count = 0;
         RunPassOptions new_options = new(options);
         new_options.SetDumpDir(options.PassDumpDir);
         while (true)
         {
-            post = (Function)CompilerServices.Rewrite(pre, Rules, new_options.SetPassName($"{Name}/Run_{count}"));
+            post = (BaseFunction)CompilerServices.Rewrite(pre, Rules, new_options.SetPassName($"{Name}/Run_{count}"));
             if (post == pre)
             {
                 break;
@@ -46,6 +46,6 @@ public sealed class ShapeInferPass : DataflowPass
             pre = post;
         }
 
-        return Task.FromResult<Callable>(post);
+        return Task.FromResult<BaseFunction>(post);
     }
 }

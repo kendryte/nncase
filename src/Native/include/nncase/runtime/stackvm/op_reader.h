@@ -116,6 +116,7 @@ struct op_reader<extcall_op_t>
         extcall_op_t op;
         op.opcode = static_cast<opcode_t>(reader.read_unaligned<uint8_t>());
         op.args = reader.read_unaligned<uint16_t>();
+        op.is_prim_func = reader.read_unaligned<bool>();
         return op;
     }
 };

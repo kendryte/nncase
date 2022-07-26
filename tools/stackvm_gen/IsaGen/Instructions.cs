@@ -972,6 +972,10 @@ namespace IsaGen
         [DisplayName("args")]
         [Description("Arguments count")]
         public ushort ArgsCount { get; set; }
+
+        [DisplayName("isPrimFunc")]
+        [Description("Is prim function")]
+        public bool IsPrimFunc { get; set; }
     }
     
     [DisplayName("CUSCALL")]

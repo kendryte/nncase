@@ -103,6 +103,19 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
+        public override TExprResult Visit(PrimFunctionWrapper expr)
+        {
+            if (!_exprMemo.TryGetValue(expr, out var result))
+            {
+                Visit(expr.Target);
+                result = VisitLeaf(expr);
+                _exprMemo.Add(expr, result);
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc/>
         public override TExprResult Visit(TIR.PrimFunction expr)
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
@@ -386,6 +399,13 @@ namespace Nncase.IR
         /// <param name="expr">Function expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult VisitLeaf(Function expr) => DefaultVisitLeaf(expr);
+
+        /// <summary>
+        /// Visit leaf prim function wrapper expression.
+        /// </summary>
+        /// <param name="expr">Function expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult VisitLeaf(PrimFunctionWrapper expr) => DefaultVisitLeaf(expr);
 
         /// <summary>
         /// Visit leaf prim function expression.

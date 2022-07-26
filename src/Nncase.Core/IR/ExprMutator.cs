@@ -83,6 +83,22 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
+        public override Expr VisitLeaf(PrimFunctionWrapper expr)
+        {
+            var nexpr = MutateLeaf(expr);
+            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!IsMutated)
+            {
+                return expr;
+            }
+
+            return expr with
+            {
+                Target = (TIR.PrimFunction)Visit(expr.Target),
+            };
+        }
+
+        /// <inheritdoc/>
         public override Expr VisitLeaf(TIR.PrimFunction expr)
         {
             var nexpr = MutateLeaf(expr);
@@ -372,6 +388,13 @@ namespace Nncase.IR
         /// <param name="expr"></param>
         /// <returns></returns>
         public virtual Expr MutateLeaf(Function expr) => DefaultMutateLeaf(expr);
+
+        /// <summary>
+        /// mutate the prim function wrapper.
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public virtual Expr MutateLeaf(PrimFunctionWrapper expr) => DefaultMutateLeaf(expr);
 
         /// <summary>
         /// mutate the prim function.

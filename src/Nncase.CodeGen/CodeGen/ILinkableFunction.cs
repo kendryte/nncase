@@ -11,7 +11,7 @@ public interface ILinkableFunction
 {
     public uint Id { get; }
 
-    public Function SourceFunction { get; }
+    public BaseFunction SourceFunction { get; }
 
     public IEnumerable<FunctionRef> FunctionRefs { get; }
 

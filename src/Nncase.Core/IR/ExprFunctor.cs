@@ -33,6 +33,7 @@ namespace Nncase.IR
                 Op op => Visit(op),
                 None none => Visit(none),
                 Marker marker => Visit(marker),
+                PrimFunctionWrapper wrapper => Visit(wrapper),
                 TIR.IterVar itvar => Visit(itvar),
                 TIR.Sequential seq => Visit(seq),
                 TIR.For @for => Visit(@for),
@@ -68,6 +69,13 @@ namespace Nncase.IR
         /// <param name="expr">Variable expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult Visit(Function expr) => DefaultVisit(expr);
+
+        /// <summary>
+        /// Visit prim function wrapper expression.
+        /// </summary>
+        /// <param name="expr">PrimFunctionWrapper expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult Visit(PrimFunctionWrapper expr) => DefaultVisit(expr);
 
         /// <summary>
         /// Visit prim function expression.

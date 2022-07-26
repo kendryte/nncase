@@ -34,6 +34,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         var type = expr.Target switch
         {
             Function func => ((CallableType)Visit(func)).ReturnType,
+            PrimFunctionWrapper func => ((CallableType)Visit(func)).ReturnType,
             Op op => CompilerServices.InferenceOp(op, _context),
             PrimFunction primfunc => ((CallableType)Visit(primfunc)).ReturnType,
             _ => new InvalidType("Target of call expression should be either a function or an op."),
@@ -66,7 +67,15 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         }
 
         var paramTypes = expr.Parameters.Select(Visit).ToArray();
-        var type = new CallableType(expr.Body is Sequential seq ? (seq.Count == 0 ? TupleType.Void : Visit(seq.Last())) : Visit(expr.Body), ImmutableArray.Create(paramTypes));
+        var type = new CallableType(Visit(expr.Body), ImmutableArray.Create(paramTypes));
+        SetCheckedType(expr, type);
+        return type;
+    }
+
+    /// <inheritdoc/>
+    public override IRType VisitLeaf(PrimFunctionWrapper expr)
+    {
+        var type = new CallableType(expr.ReturnType!, new(expr.ParameterTypes!));
         SetCheckedType(expr, type);
         return type;
     }
@@ -86,7 +95,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         }
 
         var paramTypes = expr.Parameters.Select(Visit).ToArray();
-        var type = new CallableType(expr.Body is Sequential seq ? (seq.Count == 0 ? TupleType.Void : Visit(seq.Last())) : Visit(expr.Body), ImmutableArray.Create(paramTypes));
+        var type = new CallableType(Visit(expr.Body), ImmutableArray.Create(paramTypes));
         SetCheckedType(expr, type);
         return type;
     }

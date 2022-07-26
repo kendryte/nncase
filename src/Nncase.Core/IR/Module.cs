@@ -15,7 +15,7 @@ namespace Nncase.IR
     /// </summary>
     public sealed class IRModule
     {
-        private List<Callable> _callables;
+        private List<BaseFunction> _functions;
 
         /// <summary>
         /// the index of the entry function.
@@ -26,10 +26,10 @@ namespace Nncase.IR
         /// Initializes a new instance of the <see cref="IRModule"/> class.
         /// </summary>
         /// <param name="main"> main func.</param>
-        public IRModule(Callable main)
+        public IRModule(BaseFunction main)
         {
-            _callables = new();
-            _callables.Add(main);
+            _functions = new();
+            _functions.Add(main);
             _entryIndex = 0;
         }
 
@@ -38,21 +38,21 @@ namespace Nncase.IR
         /// </summary>
         public IRModule()
         {
-            _callables = new();
+            _functions = new();
             _entryIndex = -1;
         }
 
         /// <summary>
         /// Gets functions.
         /// </summary>
-        public IReadOnlyList<Callable> Callables => _callables;
+        public IReadOnlyList<BaseFunction> Functions => _functions;
 
         /// <summary>
         /// Gets or sets entry function.
         /// </summary>
-        public Callable? Entry
+        public BaseFunction? Entry
         {
-            get => _entryIndex == -1 ? null : Callables[_entryIndex];
+            get => _entryIndex == -1 ? null : Functions[_entryIndex];
             set
             {
                 if (value is null)
@@ -61,11 +61,11 @@ namespace Nncase.IR
                 }
                 else
                 {
-                    _entryIndex = _callables.IndexOf(value);
+                    _entryIndex = _functions.IndexOf(value);
                     if (_entryIndex == -1)
                     {
-                        _callables.Add(value);
-                        _entryIndex = _callables.Count - 1;
+                        _functions.Add(value);
+                        _entryIndex = _functions.Count - 1;
                     }
                 }
             }
@@ -75,9 +75,9 @@ namespace Nncase.IR
         /// Add function.
         /// </summary>
         /// <param name="function">Callable to add.</param>
-        public void Add(Callable function)
+        public void Add(BaseFunction function)
         {
-            _callables.Add(function);
+            _functions.Add(function);
         }
 
         /// <summary>
@@ -85,10 +85,10 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="i">function index.</param>
         /// <param name="function">the entry function defination.</param>
-        public void Update(int i, Callable function)
+        public void Update(int i, BaseFunction function)
         {
-            _callables.RemoveAt(i);
-            _callables.Add(function);
+            _functions.RemoveAt(i);
+            _functions.Add(function);
         }
     }
 }

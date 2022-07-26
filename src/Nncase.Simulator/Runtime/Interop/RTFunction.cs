@@ -46,6 +46,7 @@ public sealed class RTFunction
         fixed (IntPtr* paramsHandlesPtr = paramsHandles)
         {
             Native.FuncInvoke(_handle, paramsHandlesPtr, (uint)paramsHandles.Length, out var result).ThrowIfFailed();
+            GC.KeepAlive(this);
             return RTValue.FromHandle(result);
         }
     }

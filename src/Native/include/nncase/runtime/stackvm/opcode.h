@@ -375,6 +375,7 @@ struct ecall_op_t : public op_base_t
 struct extcall_op_t : public op_base_t
 {
     uint16_t args;
+    bool is_prim_func;
 };
 
 struct cuscall_op_t : public op_base_t

@@ -32,7 +32,7 @@ namespace Nncase.Transform
         }
 
         /// <inheritdoc/>
-        protected override Task<Callable> RunCoreAsync(Callable callable, RunPassOptions options)
+        protected override Task<BaseFunction> RunCoreAsync(BaseFunction callable, RunPassOptions options)
         {
             var pass_options = options.SetPassName(Name);
             var post = callable;
@@ -47,7 +47,7 @@ namespace Nncase.Transform
                 {
                     var mutator = creator();
                     last = post;
-                    post = (Callable)mutator.Visit(last);
+                    post = (BaseFunction)mutator.Visit(last);
                     if (mutator.IsMutated)
                     {
                         isMutated = true;
@@ -66,12 +66,12 @@ namespace Nncase.Transform
             return Task.FromResult(post);
         }
 
-        void OnMutated(Callable callable, string prefix, RunPassOptions options)
+        void OnMutated(BaseFunction callable, string prefix, RunPassOptions options)
         {
             switch (options.DumpLevel)
             {
                 case >= 2:
-                    CompilerServices.DumpIR(callable, prefix, options.PassDumpDir);
+                    CompilerServices.DumpIR((Expr)callable, prefix, options.PassDumpDir);
                     break;
                 case >= 1:
                     break;

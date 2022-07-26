@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <cstring>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/runtime_tensor.h>
-#include <cstring>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -74,6 +74,15 @@ result<buffer_t> attach_buffer(gsl::span<gsl::byte> data,
     }
 }
 } // namespace
+
+result<tensor> runtime::detail::create(datatype_t datatype, dims_t shape,
+                                       hrt::memory_pool_t pool) noexcept {
+    auto strides = get_default_strides(shape);
+    auto size_bytes = compute_size(shape, strides) * get_bytes(datatype);
+    checked_try_var(buffer, allocate_buffer(size_bytes, pool));
+    return ok(tensor(std::in_place, datatype, std::move(shape),
+                     std::move(strides), buffer));
+}
 
 result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
                                    strides_t strides,

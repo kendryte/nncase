@@ -50,18 +50,6 @@ public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region) : Expr
     /// <returns></returns>
     public (Expr Before, Expr After) Padding(int dim) => (IR.F.Math.Max(-Region[dim].Start, 0), IR.F.Math.Max(Region[dim].Stop - Buffer.Shape[dim], 0));
 
-    /// <inheritdoc/>
-    public bool Equals(BufferRegion? other)
-    {
-        return other is BufferRegion bufferRegion && EqualityContract == bufferRegion.EqualityContract;
-    }
-
-    /// <inheritdoc/>
-    public override int GetHashCode()
-    {
-        return EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
-    }
-
     /// <summary>
     /// 获得新的buffer region.
     /// </summary>

@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 #include "../runtime_function.h"
+#include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
+#include <nncase/runtime/runtime_tensor.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -76,8 +78,27 @@ stackvm_runtime_function::visit(NNCASE_UNUSED const extcall_op_t &op) noexcept {
         params[i] = std::move(arg);
     }
 
-    try_var(retval, func->invoke(params));
-    return stack_.push(retval);
+    if (op.is_prim_func) {
+        std::vector<value_t> outputs;
+        for (size_t i = op.args; i < func->parameters_size(); i++) {
+            try_var(type, func->parameter_type(i));
+            try_var(ttype, type.as<tensor_type>());
+            auto &shape = ttype->shape();
+            CHECK_WITH_ERR(shape.is_fixed(), std::errc::invalid_argument);
+            dims_t dims;
+            for (auto &d : shape)
+                dims.push_back(d.fixed_value());
+            try_var(t, runtime::detail::create(ttype->dtype(), dims));
+            outputs.emplace_back(t);
+            params.emplace_back(t);
+        }
+
+        try_var(retval, func->invoke(params));
+        return stack_.push(tuple(std::in_place, std::move(outputs)));
+    } else {
+        try_var(retval, func->invoke(params));
+        return stack_.push(retval);
+    }
 }
 
 result<void>

@@ -136,7 +136,7 @@ namespace Nncase.IR
 
         public T this[int index] => ((IReadOnlyList<T>)_array)[index];
 
-        public T this[ParameterInfo info] => this[info.Index];
+        public ReadOnlySpan<T> this[Range range] => _array.AsSpan()[range];
 
         T IList<T>.this[int index] { get => ((IList<T>)_array)[index]; set => ((IList<T>)_array)[index] = value; }
 
