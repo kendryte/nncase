@@ -22,21 +22,28 @@ namespace Nncase
         /// Import tflite model.
         /// </summary>
         /// <param name="tflite">tflite model stream.</param>
+        /// <param name="options">compile options.</param>
         /// <returns>Imported IR module.</returns>
-        public static IRModule ImportTFLite(Stream tflite)
+        public static IRModule ImportTFLite(Stream tflite, CompileOptions options)
         {
             var model = new byte[tflite.Length];
             tflite.Read(model);
             var importer = new TFLiteImporter(model);
-            return importer.Import();
+            return importer.Import(options);
         }
 
-        public static IRModule ImportOnnx(Stream onnx)
+        /// <summary>
+        /// Import onnx model.
+        /// </summary>
+        /// <param name="onnx">onnx model contents.</param>
+        /// <param name="options">options.</param>
+        /// <returns>Imported IR module.</returns>
+        public static IRModule ImportOnnx(Stream onnx, CompileOptions options)
         {
             var model = new byte[onnx.Length];
             onnx.Read(model);
             var importer = new OnnxImporter(model);
-            return importer.Import();
+            return importer.Import(options);
         }
     }
 }

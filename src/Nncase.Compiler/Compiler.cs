@@ -62,7 +62,7 @@ public class Compiler
     {
         loggingBuilder.AddConsole();
     }
-    
+
     public IRModule ImportModule(Stream content, CompileOptions options)
     {
         CompilerServices.CompileOptions = options;
@@ -95,8 +95,8 @@ public class Compiler
         CompilerServices.CompileOptions = options;
         Module = options.InputFormat switch
         {
-            "tflite" => Importers.ImportTFLite(content),
-            "onnx" => Importers.ImportOnnx(content),
+            "tflite" => Importers.ImportTFLite(content, options),
+            "onnx" => Importers.ImportOnnx(content, options),
             _ => throw new NotImplementedException($"Not Implement {options.InputFormat} Impoter!"),
         };
         return Module;
@@ -120,7 +120,7 @@ public class Compiler
     public void TargetIndependentPass()
     {
     }
-    
+
     public void Compile(CompileOptions options)
     {
         CompilerServices.CompileOptions = options;
