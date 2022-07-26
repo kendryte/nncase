@@ -155,7 +155,7 @@ inline dims_t flatten_infer_shape(const dims_t &in_shape, size_t axis) {
     return dims_t{first, second};
 }
 
-inline dims_t squeeze_infer_shape(const dims_t &in_shape, const axes_t &axes) {
+inline dims_t squeeze_infer_shape(const dims_t &in_shape, const dims_t &axes) {
     auto result_rank = in_shape.size() - axes.size();
     if (result_rank == 0) {
         return dims_t();

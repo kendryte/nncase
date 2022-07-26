@@ -265,7 +265,7 @@ public static class TypeInference
             return input with {Shape = new Shape(outShape)};
         }
 
-        return new InvalidType("Can't Infer Shape With Dynamic Input!");
+        return input with {Shape = Shape.Unknown(4)};
     }
 
     /// <summary>

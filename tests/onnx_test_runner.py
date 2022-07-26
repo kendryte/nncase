@@ -141,7 +141,6 @@ class OnnxTestRunner(TestRunner):
             output_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
             # todo:fix this
             output_dict['model_shape'] = translate_shape(onnx_type.shape.dim, self.default_shape)
-            print(output_dict)
             self.outputs.append(output_dict)
 
     def cpu_infer(self, case_dir: str, model_file: bytes, type: str):

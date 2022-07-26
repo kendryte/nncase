@@ -92,6 +92,7 @@ public class Compiler
 
     private IRModule ImportModel(Stream content, CompileOptions options)
     {
+        CompilerServices.CompileOptions = options;
         Module = options.InputFormat switch
         {
             "tflite" => Importers.ImportTFLite(content),

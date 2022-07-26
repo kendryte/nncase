@@ -127,6 +127,16 @@ namespace Nncase.IR
         public static Shape Unranked { get; } = new Shape(ShapeKind.Unranked, new List<Dimension>());
 
         /// <summary>
+        /// Gets a shape with rank unknwon dimension
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <returns></returns>
+        public static Shape Unknown(int rank)
+        {
+            return new Shape(ShapeKind.HasUnknownDimension, Enumerable.Repeat(Dimension.Unknown, rank));
+        }
+
+        /// <summary>
         /// Gets a scalar shape.
         /// </summary>
         public static Shape Scalar { get; } = new Shape(ShapeKind.Fixed, new List<Dimension>());

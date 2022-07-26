@@ -52,11 +52,12 @@ inline offset_type element_offset(const S &strides, It first, It last) noexcept
 template <class TShape>
 size_t offset(const TShape &strides, const TShape &index)
 {
-    assert(strides.size() == index.size());
-    if(strides.size() == 0)
+    // scalar
+    if(strides.size() == 0 || index.size() == 0)
     {
         return 0;
     }
+    assert(strides.size() == index.size());
     return kernels::element_offset<size_t>(strides, index.begin(), index.end());
 }
 

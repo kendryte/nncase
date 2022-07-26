@@ -643,7 +643,7 @@ nncase::kernels::stackvm::squeeze(value_t input, value_t dim, value_t output,
     try_var(in_tensor, input.as<tensor>());
     auto in_shape = in_tensor->shape();
     not_impl_no_contiguous(in_tensor);
-    try_axes(axes, dim);
+    try_positive_axes(axes, dim, in_tensor->shape().size());
     auto new_shape = squeeze_infer_shape(in_shape, axes);
     output = tensor_reshape(in_tensor, new_shape);
     finish;

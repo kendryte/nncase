@@ -23,10 +23,10 @@ class Evaluator:
         compile_options.dump_dir = eval_dir
         compile_options.dump_asm = cfg.compile_opt.dump_asm
         compile_options.dump_ir = cfg.compile_opt.dump_ir
-        compiler = nncase.Compiler(compile_options)
-        self.import_model(compiler, model_content, import_options)
-        self.set_quant_opt(cfg, kwargs, compiler, preprocess)
-        evaluator = compiler.create_evaluator(3)
+        self.compiler.set_compile_options(compile_options)
+        self.import_model(self.compiler, model_content, import_options)
+        self.set_quant_opt(cfg, kwargs, self.compiler, preprocess)
+        evaluator = self.compiler.create_evaluator(3)
         self.set_inputs(evaluator)
         evaluator.run()
         eval_output_paths = self.dump_outputs(eval_dir, evaluator)

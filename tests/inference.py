@@ -20,11 +20,11 @@ class Inference:
         infer_dir = self.kwargs_to_path(
             os.path.join(case_dir, 'infer'), kwargs)
         compile_options = self.get_infer_compile_options(infer_dir, cfg, compile_options, kwargs, preprocess)
-        compiler = nncase.Compiler(compile_options)
-        self.import_model(compiler, model_content, import_options)
-        self.set_quant_opt(cfg, kwargs, preprocess, compiler)
-        compiler.compile()
-        kmodel = compiler.gencode_tobytes()
+        self.compiler.set_compile_options(compile_options)
+        self.import_model(self.compiler, model_content, import_options)
+        self.set_quant_opt(cfg, kwargs, preprocess, self.compiler)
+        self.compiler.compile()
+        kmodel = self.compiler.gencode_tobytes()
         with open(os.path.join(infer_dir, 'test.kmodel'), 'wb') as f:
             f.write(kmodel)
             # todo:refactor

@@ -61,4 +61,18 @@ public static class PythonHelper
 
         throw new NotImplementedException();
     }
+
+    public static bool TargetExist(String target)
+    {
+        try
+        {
+            CompilerServices.GetTarget(target);
+            return true;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return false;
+        }
+    }
 }
