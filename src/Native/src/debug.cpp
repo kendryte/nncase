@@ -14,10 +14,11 @@ static void incr_a() {
 }
 
 void set_dump_root(std::string root) {
-    // todo:maybe should change path in pytest
     dump_root.clear();
     fs::path p(root);
     dump_root = (p / "Runtime");
+    // reset number for each dir
+    a = 1;
 }
 
 fs::path dump_path() {
