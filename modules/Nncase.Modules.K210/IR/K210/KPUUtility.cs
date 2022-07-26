@@ -45,6 +45,16 @@ internal static class KPUUtility
         };
     }
 
+    public static int GetKPUFilter(KPUFilterType filterType)
+    {
+        return filterType switch
+        {
+            KPUFilterType.Filter_1x1 => 1,
+            KPUFilterType.Filter_3x3 => 3,
+            _ => throw new ArgumentOutOfRangeException(nameof(filterType)),
+        };
+    }
+
     public static int[] GetPrePadding(ReadOnlySpan<int> paddings)
     {
         return new[] { paddings[0] > 0 ? paddings[0] : 0, paddings[1] > 0 ? paddings[1] : 0 };
