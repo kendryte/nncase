@@ -60,5 +60,8 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEv
     private IRType Visit(TensorType input, TensorType min, TensorType max)
     {
         return input;
+        // return input;
+        // return IR.F.Math.Max(IR.F.Math.Min(input, max), min);
+        // return IR.F.Math.Clamp(typeof(Expr)(input), typeof(Expr)(min), typeof(Expr)(max));
     }
 }

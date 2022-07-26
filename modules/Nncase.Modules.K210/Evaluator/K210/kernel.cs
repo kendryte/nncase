@@ -1,16 +1,19 @@
 ﻿using System;
 using Nncase.CostModel;
+using Nncase.Evaluator.Math;
 using Nncase.IR;
 using Nncase.IR.K210;
+using Nncase.IR.Math;
 
 namespace Nncase.Evaluator.K210;
 
 public static class kernel
 {
     public static void KPUConv2D(Tensor input, Tensor weights, int in_h, int in_w, int inChannels,
-        int outChannels, int padValue, int argx, int shiftx, int argw, int shiftw, int argadd,
-        int filterSize, bool isDepthwise, Tensor ortArgumentValue, Tensor argumentValue)
+        int outChannels, char padValue, int argx, int shiftx, int argw, int shiftw, int argadd,
+        int filterSize, bool isDepthwise, KPUActivationParameters ortArgumentValue, KPUBatchNormParameters argumentValue)
     {
+        // var out_it = workspace;
         var channelSize = in_h * in_w;
         var pad = filterSize == 1 ? 0 : 1;
         var group = isDepthwise ? outChannels : 1;
@@ -19,55 +22,69 @@ public static class kernel
         
         for (int og = 0; og < group; og++)
         {
-            var w_group_p = weights.Rank + (og * g_oc * g_ic * System.Math.Pow(filterSize, 2));
+            // var w_group_p = weights.Rank + (og * g_oc * g_ic * System.Math.Pow(filterSize, 2));
 
             for (int oc = 0; oc < g_oc; oc++)
             {
-                var w_oc_p = w_group_p + (oc * g_ic * System.Math.Pow(filterSize, 2));
+                // var w_oc_p = w_group_p + (oc * g_ic * System.Math.Pow(filterSize, 2));
 
                 for (int oy = 0; oy < in_h; oy++)
                 {
                     for (int ox = 0; ox < in_w; ox++)
                     {
-                        int in_y_origin = oy - pad;
-                        int in_x_origin = ox - pad;
-                        int value = 0;
-                        int sum_x = 0,sum_w = 0;
+                        Int32 in_y_origin = oy - pad;
+                        Int32 in_x_origin = ox - pad;
+                        Int64 value = 0;
+                        Int64 sum_x = 0,sum_w = 0;
 
                         for (int ic = 0; ic < g_ic; ic++)
                         {
-                            var in_c_p = input.Rank + (((og * g_ic) + ic) * in_h * in_w);
-                            var w_ic_p = w_oc_p + (ic * System.Math.Pow(filterSize, 2));
+                            // var in_c_p = input.Rank + (((og * g_ic) + ic) * in_h * in_w);
+                            // var w_ic_p = w_oc_p + (ic * System.Math.Pow(filterSize, 2));
 
                             for (int ky = 0; ky < filterSize; ky++)
                             {
                                 for (int kx = 0; kx < filterSize; kx++)
                                 {
-                                    int in_y = in_y_origin + ky;
-                                    int in_x = in_x_origin + kx;
+                                    Int32 in_y = in_y_origin + ky;
+                                    Int32 in_x = in_x_origin + kx;
 
-                                    int x;
+                                    uint x;
                                     if (in_x < 0 || in_x >= in_w || in_y < 0 || in_y >= in_h)
                                     {
-                                        x = padValue;
+                                        x =  padValue;
                                     }
                                     else
                                     {
-                                        x = in_c_p[in_x * in_y * in_w];
+                                        x = (uint) input[in_y * in_w + in_x];
                                     }
 
-                                    int w = w_ic_p[ky * filterSize + kx];
+                                    uint w = (uint)weights[ky * filterSize + kx];
                                     sum_x += x;
-                                    sum_w += w;
-                                    value += x * w;
+                                    sum_w += (int)w;
+                                    value += (int)(x * w);
                                 }
                             }
 
                         }
                         var alu_out = value + (argx * sum_x >> shiftx) + (argw * sum_w >> shiftw) + argadd * g_ic;
-                        
-                        //out_it++ = alu_out;
                     }
+                }
+            }
+        }
+
+        // bn act
+        {
+            for (int oc = 0; oc < outChannels; oc++)
+            {
+                var bn = argumentValue.Segments[oc];
+                for (int i = 0; i < channelSize; i++)
+                {
+                    var value = bn.Mul >> bn.Shift + bn.Add;
+                    var seg = ortArgumentValue.Segments[value];
+                    var actValue = KPUUtility.carryShift((value - seg.StartX) * seg.Mul, seg.Shift) + seg.Add;
+                    // IR.F.Math.Clamp(actValue, 0, 255);
+                    IR.F.Math.Clamp(actValue, 0, 255);
                 }
             }
         }
@@ -87,19 +104,19 @@ public static class kernel
     //     }
     // }
 
-    private static void KPUDownload(Expr input)
-    {
-    }
+    // private static void KPUDownload(Expr input)
+    // {
+    // }
 
-    private static void FakeKPUConv2D(Expr input, Expr Weights)
-    {
-    }
+    // private static void FakeKPUConv2D(Expr input, Expr Weights)
+    // {
+    // }
 
-    public static void KPUConv2D(IntPtr inputHandle, IntPtr weightsHandle,
-        OrtKISharp.Tensor ortArgumentValue, OrtKISharp.Tensor argumentValue,
-        string autoPad, long[] dilations, long groups, long[] kernelShape,
-        long[] pads, long[] strides)
-    {
-        throw new NotImplementedException();
-    }
+    // public static void KPUConv2D(IntPtr inputHandle, IntPtr weightsHandle,
+    //     OrtKISharp.Tensor ortArgumentValue, OrtKISharp.Tensor argumentValue,
+    //     string autoPad, long[] dilations, long groups, long[] kernelShape,
+    //     long[] pads, long[] strides)
+    // {
+    //     throw new NotImplementedException();
+    // }
 }

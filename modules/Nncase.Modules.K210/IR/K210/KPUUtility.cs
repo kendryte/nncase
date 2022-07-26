@@ -87,4 +87,39 @@ internal static class KPUUtility
     {
         return new KPUBatchNormParameters();
     }
+
+    public static long carryShift(long value, Int32 shift)
+    {
+        if (shift > 0)
+        {
+            var integral = value >> shift;
+            var fractional = value & (((1) <<shift)-1);
+            var sign = value < 0 ? -1 : 1;
+            var half = (((1) << 1) - 1) << (shift - 1);
+            if (fractional<half)
+            {
+                return integral;
+            }
+            else if(fractional>half)
+            {
+                return integral + sign;
+            }
+            else
+            {
+                if ((integral & 1)!=0)
+                    return integral + sign;
+                // even
+                else
+                    return integral;
+            }
+
+            return value;
+        }
+        else if(shift<0)
+        {
+            value = value << (-shift);
+        }
+
+        return value;
+    }
 }

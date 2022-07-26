@@ -7,6 +7,7 @@ using Nncase.IR;
 using Nncase.IR.K210;
 using OrtKISharp;
 using Nncase.Evaluator.K210;
+using Nncase.IR.Math;
 using static Nncase.Evaluator.EvaluatorUtil;
 
 namespace Nncase.Evaluator.K210;
@@ -23,6 +24,10 @@ public class KPUConv2DEvaluator : IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv
         var weights = context.GetOrtArgumentValue(conv, KPUConv2D.Weights);
         var ortArgumentValue = context.GetOrtArgumentValue(conv, KPUConv2D.BatchNorms);
         var argumentValue = context.GetOrtArgumentValue(conv, KPUConv2D.OutputQuantParam);
+        var inShape = input.Shape;
+        var outShape = conv.CheckedShape;
+        var outChannels = outShape[1].FixedValue;
+        var quant = context.GetArgumentValue(conv, Quantize.Input);
 
         var stride = new long[] { 1, 1 };
         var pad = Enumerable.Repeat((long)KPUUtility.GetKPUPadding(conv.FilterType), 4).ToArray();
@@ -30,6 +35,7 @@ public class KPUConv2DEvaluator : IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv
         var groups = 1L;
         var kernelShape = weights.Shape;
         return null;
+        // return kernel.KPUConv2D(input, weights, inShape[2],inShape[3],inShape[1],outChannels,pad,);
         // return kernel.KPUConv2D(input.Handle, weights.Handle, ortArgumentValue, argumentValue, "NOTSET", dilation, groups, new long[] { kernelShape[2], kernelShape[3] }, pad, stride);
     }
 
