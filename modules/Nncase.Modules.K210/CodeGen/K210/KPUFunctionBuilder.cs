@@ -21,11 +21,11 @@ internal class KPUFunctionBuilder : FunctionBuilder
     {
     }
 
-    protected override void Compile(Callable callable)
+    protected override void Compile(BaseFunction callable)
     {
     }
 
-    protected override ILinkableFunction CreateLinkableFunction(uint id, Callable callable, IReadOnlyList<FunctionRef> functionRefs, byte[] text)
+    protected override ILinkableFunction CreateLinkableFunction(uint id, BaseFunction callable, IReadOnlyList<FunctionRef> functionRefs, byte[] text)
     {
         return new KPULinkableFunction(id, (Function)callable, functionRefs, text);
     }
