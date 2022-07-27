@@ -144,7 +144,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     public override TextSnippet Visit(PrimFunctionWrapper expr)
     {
         var snippet = BeginTextSnippet(expr);
-        for (int i = 0; i < expr.ParametersCount; i++)
+        for (int i = expr.ParametersCount - 1; i >= 0; i--)
         {
             Emitter.Ldarg((ushort)i);
         }
