@@ -48,7 +48,7 @@ internal class CalibrationEvaluator
                 }
             }
 
-            if (_values.Count == oldValues)
+            if (_awareEnodes.Count() > 0 && _values.Count == oldValues)
             {
                 throw new InvalidOperationException("Endless evaluation found.");
             }
