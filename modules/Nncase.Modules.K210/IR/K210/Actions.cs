@@ -3,6 +3,8 @@ using Nncase.PatternMatch;
 using Nncase.PatternMatch;
 using static Nncase.IR.TypePatternUtility;
 
+namespace Nncase.IR.K210;
+
 [PatternFunctionalGenerator]
 public sealed record Activation() : Op
 {

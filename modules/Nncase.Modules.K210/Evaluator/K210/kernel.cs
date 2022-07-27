@@ -15,7 +15,7 @@ public static class kernel
     // {
     //     throw new NotImplementedException();
     // }
-    public static void KPUConv2D(Tensorflow.Tensor input, Tensorflow.Tensor weights, int in_h, int in_w, int inChannels,
+    public static IValue KPUConv2D(Tensorflow.Tensor input, Tensorflow.Tensor weights, int in_h, int in_w, int inChannels,
         int outChannels, int padValue, int argx, int shiftx, int argw, int shiftw, int argadd,
         int filterSize, bool isDepthwise, KPUActivationParameters ortArgumentValue, KPUBatchNormParameters argumentValue)
     {
@@ -94,6 +94,7 @@ public static class kernel
                 }
             }
         }
+        return null;
     }
 
     // private static void KPUUpload(Tensor src, Tensor dest, long[] in_shape, long[] dma_ch)

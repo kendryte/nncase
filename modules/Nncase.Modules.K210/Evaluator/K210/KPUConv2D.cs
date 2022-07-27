@@ -45,7 +45,7 @@ public class KPUConv2DEvaluator : IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv
         // return null;
         return kernel.KPUConv2D(input, weights, inShape[2].FixedValue,inShape[3].FixedValue,inChannels,
             outChannels,pad,0,0,0,0,0,fliter,
-            isDepthwise,argumentValue,ortArgumentValue);
+            isDepthwise,new KPUActivationParameters(),new KPUBatchNormParameters());
         // return kernel.KPUConv2D(input.Handle, weights.Handle, ortArgumentValue, argumentValue, "NOTSET", dilation, groups, new long[] { kernelShape[2], kernelShape[3] }, pad, stride);
     }
 
