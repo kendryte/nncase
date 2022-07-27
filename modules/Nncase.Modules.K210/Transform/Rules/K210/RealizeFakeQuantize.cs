@@ -34,7 +34,9 @@ public sealed partial class RealizeFakeQuantize : IRewriteRule
            "quant_call",
            op => true,
            IsWildcard("input"),
-           IsQuantParamOf("quantparam", op => true, IsConst("range"), IsConst("bits")) with { TypePattern = HasFixedShape() });
+           IsQuantParamOf("quantparam", op => true, 
+               IsConst("range"), IsConst("bits")) 
+               with { TypePattern = HasFixedShape() });
 
     private Expr? GetReplace(Call quant_call, Expr input, Expr quantparam, Tensor<float> range, int bits)
     {
