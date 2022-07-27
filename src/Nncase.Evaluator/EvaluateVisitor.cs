@@ -217,7 +217,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
                 {
                     throw new ArgumentException($"DataType mismatch. The Var {expr.Name} Require {expr.CheckedDataType} But Give {resultType.DType}");
                 }
-                
+
                 var s = expr.CheckedShape.Zip(resultType.Shape).ToArray();
                 var matchedShape = s.Aggregate(true, (b, dims) => b && (dims.First.IsUnknown || dims.Second.IsUnknown || dims.First == dims.Second));
                 if(!matchedShape)

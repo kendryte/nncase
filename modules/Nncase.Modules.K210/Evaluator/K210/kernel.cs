@@ -9,8 +9,14 @@ namespace Nncase.Evaluator.K210;
 
 public static class kernel
 {
-    public static void KPUConv2D(Tensor input, Tensor weights, int in_h, int in_w, int inChannels,
-        int outChannels, char padValue, int argx, int shiftx, int argw, int shiftw, int argadd,
+    // public static IValue KPUConv2D(OrtKISharp.Tensor input, OrtKISharp.Tensor weights, int inH, int inW, int inChannels,
+    // int outChannels, long[] padValue, IValue argX, IValue shiftX, IValue argW, IValue shiftW, IValue argAdd,
+    // OrtKISharp.Tensor argumentValue, OrtKISharp.Tensor ortArgumentValue)
+    // {
+    //     throw new NotImplementedException();
+    // }
+    public static void KPUConv2D(Tensorflow.Tensor input, Tensorflow.Tensor weights, int in_h, int in_w, int inChannels,
+        int outChannels, int padValue, int argx, int shiftx, int argw, int shiftw, int argadd,
         int filterSize, bool isDepthwise, KPUActivationParameters ortArgumentValue, KPUBatchNormParameters argumentValue)
     {
         // var out_it = workspace;
@@ -52,11 +58,11 @@ public static class kernel
                                     uint x;
                                     if (in_x < 0 || in_x >= in_w || in_y < 0 || in_y >= in_h)
                                     {
-                                        x =  padValue;
+                                        x = (uint) padValue;
                                     }
                                     else
                                     {
-                                        x = (uint) input[in_y * in_w + in_x];
+                                        x = (uint)input[in_y * in_w + in_x];
                                     }
 
                                     uint w = (uint)weights[ky * filterSize + kx];
@@ -116,6 +122,15 @@ public static class kernel
     //     OrtKISharp.Tensor ortArgumentValue, OrtKISharp.Tensor argumentValue,
     //     string autoPad, long[] dilations, long groups, long[] kernelShape,
     //     long[] pads, long[] strides)
+    // {
+    //     throw new NotImplementedException();
+    // }
+
+    // public static IValue KPUConv2D(Tensorflow.Tensor input, Tensorflow.Tensor weights,
+    //     Dimension inH, Dimension inW, Dimension inChannels, int outChannels, long padValue,
+    //     Tensorflow.Tensor argx, Tensorflow.Tensor shiftx, Tensorflow.Tensor argw, 
+    //     Tensorflow.Tensor shiftw, Tensorflow.Tensor argadd, int filterSize,
+    //     bool isDepthwise, Tensorflow.Tensor ortArgumentValue, Tensorflow.Tensor argumentValue)
     // {
     //     throw new NotImplementedException();
     // }

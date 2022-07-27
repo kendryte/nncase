@@ -5,7 +5,6 @@ using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.K210;
-using OrtKISharp;
 using Nncase.Evaluator.K210;
 using Nncase.IR.Math;
 using static Nncase.Evaluator.EvaluatorUtil;
@@ -20,22 +19,33 @@ public class KPUConv2DEvaluator : IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, KPUConv2D conv)
     {
-        var input = context.GetOrtArgumentValue(conv, KPUConv2D.Input);
-        var weights = context.GetOrtArgumentValue(conv, KPUConv2D.Weights);
-        var ortArgumentValue = context.GetOrtArgumentValue(conv, KPUConv2D.BatchNorms);
-        var argumentValue = context.GetOrtArgumentValue(conv, KPUConv2D.OutputQuantParam);
-        var inShape = input.Shape;
+        var input = context.GetTFArgumentValue(conv, KPUConv2D.Input);
+        var weights = context.GetTFArgumentValue(conv, KPUConv2D.Weights);
+        var ortArgumentValue = context.GetTFArgumentValue(conv, KPUConv2D.BatchNorms);
+        var argumentValue = context.GetTFArgumentValue(conv, KPUConv2D.OutputQuantParam);
+        var inShape = conv.CheckedShape;
         var outShape = conv.CheckedShape;
+        var inChannels = inShape[1].FixedValue;
         var outChannels = outShape[1].FixedValue;
-        var quant = context.GetArgumentValue(conv, Quantize.Input);
-
-        var stride = new long[] { 1, 1 };
-        var pad = Enumerable.Repeat((long)KPUUtility.GetKPUPadding(conv.FilterType), 4).ToArray();
-        var dilation = new long[] { 1, 1 };
+        // var quant = context.GetArgumentValue(conv, KPUConv2D.QuantArgs);
+        // var argX = context.GetArgumentValue(conv, KPUConv2D.ArgX);
+        var argX = context.GetTFArgumentValue(conv, KPUConv2D.ArgX);
+        var argW = context.GetTFArgumentValue(conv, KPUConv2D.ArgW);
+        var shiftX = context.GetTFArgumentValue(conv, KPUConv2D.ShiftX);
+        var shiftW = context.GetTFArgumentValue(conv, KPUConv2D.ShiftW);
+        var argAdd = context.GetTFArgumentValue(conv, KPUConv2D.ArgAdd);
         var groups = 1L;
-        var kernelShape = weights.Shape;
-        return null;
-        // return kernel.KPUConv2D(input, weights, inShape[2],inShape[3],inShape[1],outChannels,pad,);
+        var stride = new long[] { 1, 1 };
+        var pad = KPUUtility.GetKPUPadding(conv.FilterType);
+        var fliter = KPUUtility.GetKPUFilter(conv.FilterType);
+        // var isDepthwise = Enumerable.Repeat((bool)KPUUtility.IsDepthWise(conv.IsDepthwise), 4).ToArray();
+        var isDepthwise = inChannels == outChannels && outChannels == groups;
+        // var dilation = new long[] { 1, 1 };
+        // var kernelShape = weights.Shape;
+        // return null;
+        return kernel.KPUConv2D(input, weights, inShape[2].FixedValue,inShape[3].FixedValue,inChannels,
+            outChannels,pad,0,0,0,0,0,fliter,
+            isDepthwise,argumentValue,ortArgumentValue);
         // return kernel.KPUConv2D(input.Handle, weights.Handle, ortArgumentValue, argumentValue, "NOTSET", dilation, groups, new long[] { kernelShape[2], kernelShape[3] }, pad, stride);
     }
 

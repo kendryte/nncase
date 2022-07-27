@@ -133,7 +133,8 @@ namespace Nncase.IR
         /// <param name="rank"></param>
         /// <returns></returns>
         public static TypePattern HasRank(int rank) => HasRank(r => r == rank, $"Rank = {rank}");
-
+        
+        // public static TypePattern ValdiAct() => HasRank(2) & HasDataType(DataTypes.BFloat16);
         /// <summary>
         /// is tensor
         /// </summary>

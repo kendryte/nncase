@@ -45,6 +45,7 @@ public sealed class ParameterInfo
     public bool CheckType(IRType type) => Pattern.MatchLeaf(type);
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="ParameterInfo"/> class.
     /// ctor.
     /// </summary>
     /// <param name="ownerType">this op type.</param>
@@ -58,14 +59,15 @@ public sealed class ParameterInfo
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="ParameterInfo"/> class.
     /// ctor.
     /// </summary>
     /// <param name="ownerType">this op type.</param>
     /// <param name="index">param index.</param>
     /// <param name="name">param name.</param>
     /// <param name="pattern">the param condition.</param>
-    public ParameterInfo(Type ownerType, int index, string name, TypePattern pattern) :
-      this(ownerType, index, name)
+    public ParameterInfo(Type ownerType, int index, string name, TypePattern pattern)
+        : this(ownerType, index, name)
     {
         Pattern = pattern;
     }
