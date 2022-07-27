@@ -32,7 +32,8 @@ public sealed partial class RealizeFakeKPUDownload : IRewriteRule
             null,
             "download_call",
             op => true,
-            IsRangeOfMarker(IsWildcard("input"), IsConst("input_range")));
+            IsRangeOfMarker(IsWildcard("input"), 
+                IsConst("input_range")));
 
     private Expr? GetReplace(Call download_call, Expr input, Expr input_range)
     {

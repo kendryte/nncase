@@ -31,8 +31,8 @@ public sealed partial class RealizeFakeKPUConv2D : IRewriteRule
             null,
             "fake_conv2d_call",
             op => true,
-            IsRangeOfMarker(IsWildcard("input"), IsConst("input_range")),
-            IsTensorConst("weights"));
+            IsRangeOfMarker(IsWildcard("input"),
+                IsConst("input_range")), IsTensorConst("weights"));
 
     private Expr? GetReplace(Call fake_conv2d_call, Expr input, Tensor<float> input_range, Expr weights)
     {

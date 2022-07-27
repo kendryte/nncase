@@ -8,6 +8,7 @@ using Nncase.IR.K210;
 using Nncase.Evaluator.K210;
 using Nncase.IR.Math;
 using static Nncase.Evaluator.EvaluatorUtil;
+using static OrtKISharp.Tensor;
 
 namespace Nncase.Evaluator.K210;
 
@@ -27,17 +28,17 @@ public class KPUConv2DEvaluator : IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv
         var outShape = conv.CheckedShape;
         var inChannels = inShape[1].FixedValue;
         var outChannels = outShape[1].FixedValue;
-        var argX = context.GetTFArgumentValue(conv, KPUConv2D.ArgX);
-        var argW = context.GetTFArgumentValue(conv, KPUConv2D.ArgW);
-        var shiftX = context.GetTFArgumentValue(conv, KPUConv2D.ShiftX);
-        var shiftW = context.GetTFArgumentValue(conv, KPUConv2D.ShiftW);
-        var argAdd = context.GetTFArgumentValue(conv, KPUConv2D.ArgAdd);
+        var argX = context.GetOrtArgumentValue(conv, KPUConv2D.ArgX).Mem;
+        var argW = context.GetOrtArgumentValue(conv, KPUConv2D.ArgW).Mem;
+        var shiftX = context.GetOrtArgumentValue(conv, KPUConv2D.ShiftX).Mem;
+        var shiftW = context.GetOrtArgumentValue(conv, KPUConv2D.ShiftW).Mem;
+        var argAdd = context.GetOrtArgumentValue(conv, KPUConv2D.ArgAdd).Mem;
         var groups = 1L;
         var pad = KPUUtility.GetKPUPadding(conv.FilterType);
         var fliter = KPUUtility.GetKPUFilter(conv.FilterType);
         var isDepthwise = inChannels == outChannels && outChannels == groups;
         return kernel.KPUConv2D(input, weights, inShape[2].FixedValue, inShape[3].FixedValue, inChannels,
-            outChannels, pad, 0, 0, 0, 0, 0, fliter,
+            outChannels, pad, (int)argX, (int)shiftX, (int)argW, (int)shiftW, (int)argAdd, fliter,
             isDepthwise, KPUUtility.Activation(), KPUUtility.BatchNorm());
     }
 
