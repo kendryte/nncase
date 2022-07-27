@@ -27,26 +27,18 @@ public class KPUConv2DEvaluator : IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv
         var outShape = conv.CheckedShape;
         var inChannels = inShape[1].FixedValue;
         var outChannels = outShape[1].FixedValue;
-        // var quant = context.GetArgumentValue(conv, KPUConv2D.QuantArgs);
-        // var argX = context.GetArgumentValue(conv, KPUConv2D.ArgX);
         var argX = context.GetTFArgumentValue(conv, KPUConv2D.ArgX);
         var argW = context.GetTFArgumentValue(conv, KPUConv2D.ArgW);
         var shiftX = context.GetTFArgumentValue(conv, KPUConv2D.ShiftX);
         var shiftW = context.GetTFArgumentValue(conv, KPUConv2D.ShiftW);
         var argAdd = context.GetTFArgumentValue(conv, KPUConv2D.ArgAdd);
         var groups = 1L;
-        var stride = new long[] { 1, 1 };
         var pad = KPUUtility.GetKPUPadding(conv.FilterType);
         var fliter = KPUUtility.GetKPUFilter(conv.FilterType);
-        // var isDepthwise = Enumerable.Repeat((bool)KPUUtility.IsDepthWise(conv.IsDepthwise), 4).ToArray();
         var isDepthwise = inChannels == outChannels && outChannels == groups;
-        // var dilation = new long[] { 1, 1 };
-        // var kernelShape = weights.Shape;
-        // return null;
-        return kernel.KPUConv2D(input, weights, inShape[2].FixedValue,inShape[3].FixedValue,inChannels,
-            outChannels,pad,0,0,0,0,0,fliter,
-            isDepthwise,new KPUActivationParameters(),new KPUBatchNormParameters());
-        // return kernel.KPUConv2D(input.Handle, weights.Handle, ortArgumentValue, argumentValue, "NOTSET", dilation, groups, new long[] { kernelShape[2], kernelShape[3] }, pad, stride);
+        return kernel.KPUConv2D(input, weights, inShape[2].FixedValue, inShape[3].FixedValue, inChannels,
+            outChannels, pad, 0, 0, 0, 0, 0, fliter,
+            isDepthwise, KPUUtility.Activation(), KPUUtility.BatchNorm());
     }
 
     /// <inheritdoc/>

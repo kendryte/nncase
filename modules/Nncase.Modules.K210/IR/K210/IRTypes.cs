@@ -74,7 +74,6 @@ public record struct KPUActivationSegment
 public class KPUActivationParameters
 {
     public KPUActivationSegment[] Segments { get; } = new KPUActivationSegment[16];
-    
 }
 
 public class KPUBatchNormParameters
