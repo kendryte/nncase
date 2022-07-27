@@ -32,7 +32,9 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
             var indices = new int[tensor.Rank];
             var indexTensor = Index.AsTensor().Cast<int>();
             indexTensor.Buffer.CopyTo(indices);
-            var linearIndex = TensorUtilities.GetIndex(tensor.Strides, indices);
+            var indicesValue = indices.Select((x, i) => (x < 0 ? x + tensor.Shape[i] : x).FixedValue).ToArray();
+            var linearIndex =
+                TensorUtilities.GetIndex(tensor.Strides, indicesValue);
             var returnDims = tensor.Dimensions.AsValueEnumerable().Skip(indexTensor.Length).ToArray();
             var elementsCount = (int)TensorUtilities.GetProduct(returnDims);
 

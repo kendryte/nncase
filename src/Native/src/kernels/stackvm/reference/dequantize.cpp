@@ -14,7 +14,7 @@
  */
 #include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/tensor_ops.h>
+#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -49,7 +49,7 @@ dequantize_impl(const TQint *input, TFloat *output, const dims_t &in_shape,
                            reinterpret_cast<float_t *>(output), in_shape,      \
                            in_strides, out_strides, scale, bias, context)
 
-result<void> dequantize_impl(datatype_t in_type, datatype_t out_type,
+result<void> nncase::kernels::stackvm::reference::dequantize(datatype_t in_type, datatype_t out_type,
                              const gsl::byte *input, gsl::byte *output,
                              const dims_t &in_shape,
                              const strides_t &in_strides,
@@ -58,20 +58,4 @@ result<void> dequantize_impl(datatype_t in_type, datatype_t out_type,
     DEQUANTIZE_IMPL(uint8_t, float);
     DEQUANTIZE_IMPL(int8_t, float);
     return err(std::errc::not_supported);
-}
-
-result<value_t> nncase::kernels::stackvm::dequantize(typecode_t target_type,
-                                                     value_t input,
-                                                     value_t dequant_param,
-                                                     value_t output,
-                                                     kernel_context &context) {
-    try_input(input_mem, input);
-    try_output(out_mem, output, target_type, input_tensor->shape());
-    try_input_with_value_type(deq_param, dequant_param, quant_param_t);
-
-    try_(dequantize_impl(input_tensor->dtype(), output_tensor->dtype(), input_mem,
-                         out_mem, input_tensor->shape(), input_tensor->strides(),
-                         output_tensor->strides(), deq_param->scale,
-                         (float)deq_param->zero_point, context));
-    return ok(output);
 }

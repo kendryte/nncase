@@ -386,7 +386,7 @@ public static class TypeInference
     public static Shape ReshapeTo(TensorType tensorType)
     {
         var shape = tensorType.Shape;
-        if (shape.IsRanked)
+        if (shape.IsRanked && shape[0].IsFixed)
         {
             Debug.Assert(shape.Count != 0);
             return Shape.Unknown(shape[0].FixedValue);

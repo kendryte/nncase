@@ -324,6 +324,10 @@ inline result<std::vector<gsl::byte *>> get_input_data(tuple inputs) {
 // other cast macro
 #define to_tensor(_tensor_name, _value)                                        \
     try_var(_tensor_name, _value.as<tensor>());
+
+#define to_tensor_t(_value) \
+    to_tensor(_value##_tensor, _value)
+
 #define finish return ok(output)
 #define tuple_finish return ok(output_tuple)
 

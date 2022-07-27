@@ -110,9 +110,10 @@ cum_sum(tensor input, tensor axis, tensor exclusive, tensor reverse,
         kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void>
-dequantize(typecode_t target_type, tensor input, tensor dequant_param,
-           tensor output = nullptr,
-           kernel_context &context = default_kernel_context());
+dequantize(datatype_t in_type, datatype_t out_type, const gsl::byte *input,
+           gsl::byte *output, const dims_t &in_shape,
+           const strides_t &in_strides, const strides_t &out_strides,
+           float scale, float bias, kernel_context &context) noexcept;
 
 NNCASE_API result<void> elu(tensor input, tensor alpha, tensor output = nullptr,
                             kernel_context &context = default_kernel_context());
@@ -211,10 +212,11 @@ normal_like(typecode_t type, tensor input, tensor mean, tensor scale,
             kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void>
-one_hot(runtime::stackvm::one_hot_mode_t one_hot_mode, tensor indices,
-        tensor depth, tensor values, tensor axis, tensor on_value,
-        tensor off_value, tensor output = nullptr,
-        kernel_context &context = default_kernel_context());
+one_hot(datatype_t type, datatype_t indices_type, const gsl::byte *indices,
+        gsl::byte *output, const dims_t &indices_shape, const dims_t &out_shape,
+        const strides_t &out_strides, size_t depth, gsl::byte *values,
+        size_t axis, runtime::stackvm::one_hot_mode_t mode,
+        kernel_context &context) noexcept;
 
 NNCASE_API result<void>
 pad(datatype_t type, const gsl::byte *input, gsl::byte *output,
@@ -239,10 +241,11 @@ quant_param_of(runtime::stackvm::quant_mode_t quant_mode, tensor range,
                tensor bits, tensor output = nullptr,
                kernel_context &context = default_kernel_context());
 
-NNCASE_API result<void>
-quantize(typecode_t target_type, tensor input, tensor quant_param,
-         tensor output = nullptr,
-         kernel_context &context = default_kernel_context());
+NNCASE_API result<void> quantize(
+    datatype_t in_type, datatype_t out_type, const gsl::byte *input,
+    gsl::byte *output, const dims_t &in_shape, const strides_t &in_strides,
+    const strides_t &out_strides, float scale, float bias,
+    kernel_context &context) noexcept;
 
 NNCASE_API result<void> random_normal(typecode_t type, gsl::byte *output,
                                       const dims_t &out_shape, float mean,
@@ -297,14 +300,22 @@ NNCASE_API result<void>
 reshape(tensor input, tensor shape, tensor output = nullptr,
         kernel_context &context = default_kernel_context());
 
-NNCASE_API result<void> resize_image(
-    runtime::stackvm::image_resize_mode_t resize_mode,
-    runtime::stackvm::image_resize_transformation_mode_t transformation_mode,
-    runtime::stackvm::image_resize_nearest_mode_t nearest_mode,
-    bool is_tfresize, tensor input, tensor roi, tensor new_size,
-    tensor cubic_coeff_a, tensor exclude_outside, tensor extrapolation_value,
-    tensor output = nullptr,
-    kernel_context &context = default_kernel_context());
+NNCASE_API result<void> resize_bilinear(typecode_t type, const gsl::byte *input,
+                             gsl::byte *output, const dims_t &in_shape,
+                             const strides_t &in_strides,
+                             const strides_t &out_strides, int32_t out_h,
+                             int32_t out_w, bool align_corners,
+                             bool half_pixel_centers,
+                             kernel_context &context) noexcept;
+
+NNCASE_API result<void> resize_nearest_neighbor(typecode_t type, const gsl::byte *input,
+                                     gsl::byte *output, const dims_t &in_shape,
+                                     const strides_t &in_strides,
+                                     const strides_t &out_strides,
+                                     int32_t out_h, int32_t out_w,
+                                     bool align_corners,
+                                     bool half_pixel_centers,
+                                     kernel_context &context) noexcept;
 
 NNCASE_API result<void> reverse_sequence(
     datatype_t dt, const gsl::byte *input, gsl::byte *output,

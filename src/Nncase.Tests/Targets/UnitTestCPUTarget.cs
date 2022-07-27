@@ -7,8 +7,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.CodeGen;
 using Nncase.IR;
+using Nncase.IR.Tensors;
 using Nncase.Runtime.Interop;
 using Xunit;
+using static Nncase.IR.F.Tensors;
+using GetItem = Nncase.IR.Tensors.GetItem;
 
 namespace Nncase.Tests.Targets;
 
@@ -102,6 +105,25 @@ public class UnitTestCPUTarget
         var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
         var main = new Function("main", new IR.Tuple(x + 1.0f, x + 2f, x + 3f), new[] { x });
         GenerateKModelAndRunFromFn(main, new[] { 1f }, new[] { (Tensor)2f, 3f, 4f });
+    }
+
+    public static IEnumerable<object[]> TestGetItemData =>
+        new[]
+        {
+            new object[] { new[] { 0, 1 } },
+            new object[] { new[] { 0, -1 } },
+        };
+
+    [Theory]
+    [MemberData(nameof(TestGetItemData))]
+    public void TestGetItem(int[] index)
+    {
+        var input = Tensor.FromSpan(new[] {1, 2, 3, 4, 5, 6}, new[] {1, 2, 3});
+        var x = new Var("x", new TensorType(DataTypes.Int32, new[] {1, 2, 3}));
+        var second = GetItem(x, index);
+        var main = new Function("main", second, new[]{x});
+        var dict = new Dictionary<Var, IValue>(){{x, Value.FromTensor(input)}};
+        GenerateKModelAndRunFromFn(main, input, second.Evaluate(dict).AsTensor());
     }
 
     [Fact]

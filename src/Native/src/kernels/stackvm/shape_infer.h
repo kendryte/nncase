@@ -258,4 +258,10 @@ inline dims_t space_to_batch_shape_infer(const dims_t &in_shape, const dims_t &b
     return out_shape;
 }
 
+inline dims_t onehot_infer_shape(const dims_t& indices_shape, size_t depth, size_t axis) {
+    auto new_shape = indices_shape;
+    new_shape.insert(new_shape.begin() + axis, depth);
+    return new_shape;
+}
+
 END_NS_NNCASE_KERNELS_MODULE

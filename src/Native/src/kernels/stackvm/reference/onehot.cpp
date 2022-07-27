@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/stackvm/tensor_ops.h>
+#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/util.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
@@ -67,33 +67,8 @@ result<void> one_hot_impl(const IndicesT *indices, T *output, const dims_t &indi
         return integer_cast(indices_type, indices, [&](auto &&indices_value) { return one_hot_impl(indices_value, reinterpret_cast<type *>(output), indices_shape, out_shape, out_strides, \
             depth, reinterpret_cast<type *>(values)[0], reinterpret_cast<type *>(values)[1], axis, mode, context); });
 
-result<void> one_hot_impl(datatype_t type, datatype_t indices_type, const gsl::byte *indices, gsl::byte *output, const dims_t &indices_shape, const dims_t &out_shape,
+result<void> nncase::kernels::stackvm::reference::one_hot(datatype_t type, datatype_t indices_type, const gsl::byte *indices, gsl::byte *output, const dims_t &indices_shape, const dims_t &out_shape,
     const strides_t &out_strides, size_t depth, gsl::byte *values, size_t axis, runtime::stackvm::one_hot_mode_t mode, kernel_context &context) noexcept
 {
     TYPE_IMPL_SELECT(type, ONEHOT_IMPL);
-}
-
-dims_t infer_shape(const dims_t& indices_shape, size_t depth, size_t axis) {
-    auto new_shape = indices_shape;
-    new_shape.insert(new_shape.begin() + axis, depth);
-    return new_shape;
-}
-
-result<value_t>
-nncase::kernels::stackvm::one_hot(one_hot_mode_t one_hot_mode, value_t indices,
-                                  value_t depth, value_t values, value_t axis,
-                                  value_t output, kernel_context &context) {
-    try_input(onehot_values, values);
-    try_var(typecode, to_typecode(values_tensor->dtype()));
-    try_to_integer(depth_value, depth);
-    try_input(indices_mem, indices);
-    try_positive_axis(axis_value, axis, indices_tensor);
-    auto out_shape = infer_shape(indices_tensor->shape(), depth_value, axis_value);
-    try_output(out_mem, output, typecode, out_shape);
-
-    try_(one_hot_impl(typecode, indices_tensor->dtype(), indices_mem, out_mem, indices_tensor->shape(),
-                      output_tensor->shape(), output_tensor->strides(),
-                      depth_value, onehot_values,
-                      axis_value, one_hot_mode, context));
-    return ok(output);
 }

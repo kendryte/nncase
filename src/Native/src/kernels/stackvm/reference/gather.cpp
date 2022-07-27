@@ -36,7 +36,7 @@ result<void> gather_impl(const T *input, T *output, const dims_t &in_shape,
                          const dims_t &indices_shape, size_t axis,
                          NNCASE_UNUSED kernel_context &context) noexcept {
     // scalar
-    if(out_shape.size() == 0) {
+    if (out_shape.size() == 0) {
         *output = input[indices[0]];
         return ok();
     }
@@ -72,11 +72,12 @@ result<void> gather_impl(const T *input, T *output, const dims_t &in_shape,
 
 #define GATHER_IMPL(size, type)                                                \
     case size:                                                                 \
-        return integer_cast(indices_type, indices, [&](auto &&indices_value){ return gather_impl(reinterpret_cast<const type *>(input),            \
-                             reinterpret_cast<type *>(output), in_shape,       \
-                             out_shape, in_strides, out_strides,               \
-                             indices_value,              \
-                             indices_shape, axis, context);});
+        return integer_cast(indices_type, indices, [&](auto &&indices_value) { \
+            return gather_impl(reinterpret_cast<const type *>(input),          \
+                               reinterpret_cast<type *>(output), in_shape,     \
+                               out_shape, in_strides, out_strides,             \
+                               indices_value, indices_shape, axis, context);   \
+        });
 
 result<void> nncase::kernels::stackvm::reference::gather(
     datatype_t type, const gsl::byte *input, gsl::byte *output,
