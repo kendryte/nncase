@@ -60,7 +60,7 @@ public class UnitTestK210Target
 
     private async Task TestCodeGen(Expr body, Var[] vars, [CallerMemberName] string name = null)
     {
-        var main = new Function("main", body, vars);
+        var main = new Function("main", body, vars) with {ModuleKind = "stackvm"};
         var module = new IRModule(main);
         var target = CompilerServices.GetTarget("k210");
         var dumpDir = "k210_" + name;
@@ -69,7 +69,8 @@ public class UnitTestK210Target
             Directory.Delete(dumpDir, true);
 
         // 1. Optimize target dependent
-        CompileOptions.QuantizeOptions = new QuantizeOptions{CalibrationDataset = new RandomCalibrationDatasetProvider(vars), CalibrationMethod = CalibMethod.Kld};
+        CompileOptions.QuantizeOptions = new QuantizeOptions{CalibrationDataset = 
+            new RandomCalibrationDatasetProvider(vars), CalibrationMethod = CalibMethod.Kld};
         var pmgr = new PassManager(module, passOptions);
         target.RegisterTargetDependentPass(pmgr, CompileOptions);
         await pmgr.RunAsync();
@@ -80,11 +81,13 @@ public class UnitTestK210Target
         await pmgr.RunAsync();
         
         // 3. builder
-        // var modelBuilder = new ModelBuilder(target);
-        // var linkedModel = modelBuilder.Build(module);
-        // using var output = File.Open($"k210_{name}/test.kmodel", FileMode.Create);
-        // linkedModel.Serialize(output);
-        // Assert.NotEqual(0, output.Length);
+        var modelBuilder = new ModelBuilder(target);
+        var linkedModel = modelBuilder.Build(module);
+        using (var output = File.Open($"k210_{name}/test.kmodel", FileMode.Create))
+        {
+            linkedModel.Serialize(output);
+            Assert.NotEqual(0, output.Length);
+        }
     }
 
     private void GenerateKModelAndRun(IRModule module, Tensor input, Tensor[] expectedOutput, [CallerMemberName] string? name = null)

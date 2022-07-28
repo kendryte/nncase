@@ -134,7 +134,14 @@ namespace Nncase.IR
         /// <returns></returns>
         public static TypePattern HasRank(int rank) => HasRank(r => r == rank, $"Rank = {rank}");
         
-        // public static TypePattern ValdiAct() => HasRank(2) & HasDataType(DataTypes.BFloat16);
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public static TypePattern ValdiAct() => HasRank(2) & HasDataType(DataTypes.BFloat16);
+        
+        public static TypePattern ValidBias() => HasRank(1) & (HasDataType(DataTypes.UInt8) | HasDataType(DataTypes.Int8));
+        
         /// <summary>
         /// is tensor
         /// </summary>

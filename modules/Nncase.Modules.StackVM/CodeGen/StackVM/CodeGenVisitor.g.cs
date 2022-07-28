@@ -235,6 +235,8 @@ internal partial class CodeGenVisitor
             case IR.Imaging.ResizeImage top:
                 Emitter.T.ResizeImage(top.ResizeMode, top.TransformationMode, top.NearestMode, top.IsTFResize);
                 break;
+            // case IR.KPUUpload top:
+            //     
             default:
                 throw new ArgumentException($"Unsupported op: {op}");
         }
