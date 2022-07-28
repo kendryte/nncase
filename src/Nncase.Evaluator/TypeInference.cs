@@ -169,7 +169,7 @@ public static class TypeInference
     {
         if (input.Shape.IsUnranked)
         {
-            return input;
+            return input with {Shape = Shape.Unknown(4)};
         }
 
         var outShape = input.Shape.ToList();
