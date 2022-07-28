@@ -17,13 +17,12 @@
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/runtime_op_utility.h>
-#include <nncase/kernels/cpu/reference/runtime_types.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm::reference;
-using namespace nncase::kernels::cpu::reference;
+using namespace nncase::kernels::stackvm;
 
 namespace {
 // softmax(x) = exp(x - reduce_max(x)) / reduce_sum(exp(x - reduce_max(x)))

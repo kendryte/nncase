@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include "../shape_infer.h"
-#include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
@@ -44,7 +43,7 @@ reverse_sequence_impl([[maybe_unused]] datatype_t dt, const T *input, T *output,
                       int64_t batch_axis, int64_t time_axis,
                       const strides_t &in_strides, const strides_t &out_strides,
                       NNCASE_UNUSED kernel_context &context) noexcept {
-    return cpu::reference::apply(in_shape,[&](auto &&out_index) -> result<void> {
+    return apply(in_shape,[&](auto &&out_index) -> result<void> {
         auto in_index = out_index;
         auto current_batch = out_index[batch_axis];
         auto reverse_size = sequence_lens[current_batch];

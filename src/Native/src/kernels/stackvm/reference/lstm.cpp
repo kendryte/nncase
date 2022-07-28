@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include <cstring>
-#include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
@@ -25,7 +24,6 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
-using namespace nncase::kernels::cpu::reference;
 using namespace nncase::kernels::stackvm;
 #include <iostream>
 result<void> nncase::kernels::stackvm::reference::lstm(const float *input, const float *w_xc, const float *w_rc, [[maybe_unused]] const float *bias,

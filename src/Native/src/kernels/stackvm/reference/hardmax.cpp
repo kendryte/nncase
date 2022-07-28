@@ -11,13 +11,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */#include <nncase/kernels/stackvm/tensor_ops.h>
+ */
+#include <nncase/kernels/stackvm/tensor_ops.h>
 #include <nncase/runtime/util.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 #include <limits>
-
-#include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <unordered_map>
@@ -27,8 +26,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
-using namespace nncase::kernels::cpu;
-using namespace nncase::kernels::cpu::reference;
+using namespace nncase::kernels::stackvm;
 
 template <typename T>
 result<void> hardmax_impl(const T *input, const dims_t &in_shape, const strides_t &in_strides,
@@ -42,14 +40,14 @@ result<void> hardmax_impl(const T *input, const dims_t &in_shape, const strides_
     auto max_shape = kernels::detail::get_reduced_shape(in_shape, axes, keep_dims);
     auto max_stride = get_default_strides(max_shape);
     std::unique_ptr<T[]> ptr(new T[compute_size(max_shape)]);
-    try_(reference::apply(max_shape, [&](const dims_t &index) -> result<void> {
+    try_(kernels::stackvm::apply(max_shape, [&](const dims_t &index) -> result<void> {
         ptr[offset(max_stride, index)] = init_value;
         return ok();
     }));
 
     // collact all max indices
     std::unordered_map<size_t, size_t> out_map;
-    try_(reference::apply(in_shape, [&](const dims_t &index) -> result<void> {
+    try_(apply(in_shape, [&](const dims_t &index) -> result<void> {
         size_t src_idx = offset(in_strides, index);
         const auto src = input[src_idx];
         auto out_idx = offset(max_stride, kernels::detail::get_reduced_offset(index, axes, keep_dims));
@@ -72,9 +70,6 @@ result<void> hardmax_impl(const T *input, const dims_t &in_shape, const strides_
 
     return ok();
 }
-
-template result<void> hardmax_impl<float>(const float *input, const dims_t &in_shape, const strides_t &in_strides,
-                                          float *output, int32_t axis) noexcept;
 
 result<value_t> nncase::kernels::stackvm::hardmax(value_t input, value_t axis,
                                                   value_t output,

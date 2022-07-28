@@ -30,7 +30,6 @@ result<void> op_visitor::next() noexcept
         auto func_str =  to_string(tensor_funct);
         currentOp = func_str;
         dump([&](auto &stream){
-            std::cout << currentOp << std::endl;
             stream << func_str << std::endl;
         });
         switch (tensor_funct)

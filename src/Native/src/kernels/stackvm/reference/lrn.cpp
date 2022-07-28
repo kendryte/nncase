@@ -14,7 +14,6 @@
  */
 #include "../shape_infer.h"
 #include <iostream>
-#include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_context.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/ref_ops.h>
@@ -23,9 +22,9 @@
 
 using namespace nncase;
 using namespace nncase::kernels;
-using namespace nncase::kernels::cpu::reference;
 using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels::stackvm::reference;
+using namespace nncase::kernels::stackvm;
 
 namespace {
 result<void> lrn_impl(const float *input, float alpha, float beta, float bias,
@@ -50,7 +49,7 @@ result<void> nncase::kernels::stackvm::reference::lrn(
     std::vector<dims_t> tmpShapes;
     std::vector<dims_t> tmpStrides;
     auto concat_size = 0;
-    auto square_data = std::make_unique<float[]>(detail::compute_size(in_shape));
+    auto square_data = std::make_unique<float[]>(kernels::detail::compute_size(in_shape));
     try_(reference::unary(dt_float32, runtime::stackvm::unary_op_t::square, IN_BYTE_CAST(input), OUT_BYTE_CAST(output), in_shape, in_strides, in_shape, in_strides));
     for (int i = 0; i < in_shape[1]; ++i) {
         auto beginV =
@@ -66,14 +65,14 @@ result<void> nncase::kernels::stackvm::reference::lrn(
         auto strides = axes_t {1, 1, 1, 1};
         auto tmp_out_shape = slice_infer_shape(in_shape, begins, ends, strides);
         auto tmp_out_strides = runtime::get_default_strides(tmp_out_shape);
-        auto slice_out = std::make_unique<float[]>(detail::compute_size(tmp_out_shape));
+        auto slice_out = std::make_unique<float[]>(kernels::detail::compute_size(tmp_out_shape));
         try_(slice(dt_float32, IN_BYTE_CAST(square_data.get()),
                    OUT_CAST(gsl::byte, slice_out.get()), in_shape, in_strides, out_strides, begins, ends, strides, default_kernel_context()));
 
         auto keep_dims = true;
         auto axes = dims_t {1};
         auto reduce_shape = reduce_infer_shape(tmp_out_shape, axes, keep_dims);
-        auto reduce_size = detail::compute_size(reduce_shape);
+        auto reduce_size = kernels::detail::compute_size(reduce_shape);
         concat_size += reduce_size;
         tmpData.push_back(std::make_unique<float[]>(reduce_size));
         tmpShapes.push_back(reduce_shape);

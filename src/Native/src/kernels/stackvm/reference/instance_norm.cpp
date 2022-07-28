@@ -14,7 +14,6 @@
  */
 #include "kernel_template.h"
 #include <iostream>
-#include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_context.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/ref_ops.h>
@@ -22,9 +21,9 @@
 
 using namespace nncase;
 using namespace nncase::kernels;
-using namespace nncase::kernels::cpu::reference;
 using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels::stackvm::reference;
+using namespace nncase::kernels::stackvm;
 
 namespace {
 result<void> instance_norm_impl(const float *input, const float *scale,
@@ -53,7 +52,7 @@ result<void> nncase::kernels::stackvm::reference::instance_norm(
     for (int i = 2; i < in_shape.size(); ++i) {
         axes.push_back(i);
     }
-    auto in_size = detail::compute_size(in_shape);
+    auto in_size = kernels::detail::compute_size(in_shape);
     auto channels = in_shape[0] * in_shape[1];
     auto mean = std::make_unique<float[]>(channels);
     auto var = std::make_unique<float[]>(channels);
@@ -76,7 +75,7 @@ result<void> nncase::kernels::stackvm::reference::instance_norm(
     // mean -> reduce_mean(input)
     try_(run_reduce(input, mean.get(), in_shape, in_strides));
     // x - mean
-    auto sub_out_shape = detail::get_binary_output_shape(in_shape, tmp_out_shape);
+    auto sub_out_shape = kernels::detail::get_binary_output_shape(in_shape, tmp_out_shape);
     auto sub_out_strides = runtime::get_default_strides(sub_out_shape);
     try_(reference::binary(
         dt_float32, runtime::stackvm::binary_op_t::sub, IN_CAST(gsl::byte, input), IN_CAST(gsl::byte, mean.get()),

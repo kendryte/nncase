@@ -16,7 +16,6 @@
 #include <nncase/runtime/util.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
-#include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/kernels/kernel_utils.h>
 
@@ -24,7 +23,6 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
-using namespace nncase::kernels::cpu::reference;
 using namespace nncase::kernels::stackvm;
 
 namespace {

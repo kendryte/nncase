@@ -14,13 +14,12 @@
  */
 #include "kernel_template.h"
 #include <iostream>
-#include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/runtime_op_utility.h>
 
 using namespace nncase;
-using namespace nncase::kernels::cpu::reference;
+using namespace nncase::kernels::stackvm;
 
 result<void> nncase::kernels::stackvm::reference::batchnorm(
     const float *input, const float *scale, const float *bias,

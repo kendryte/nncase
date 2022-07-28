@@ -17,6 +17,7 @@
  */
 #pragma once
 #include <nncase/kernels/kernel_context.h>
+#include <nncase/kernels/apply.h>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/result.h>

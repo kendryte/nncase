@@ -55,7 +55,7 @@ result<value_t> kernels::stackvm::binary(binary_op_t binary_op, value_t lhs,
     }
 
     try_typecode(typecode, lhs_tensor);
-    auto out_shape = detail::get_binary_output_shape(lhs_tensor->shape(),
+    auto out_shape = kernels::detail::get_binary_output_shape(lhs_tensor->shape(),
                                                      rhs_tensor->shape());
     try_output(out_mem, output, lhs_tensor->dtype(), out_shape);
     try_(reference::binary(
@@ -201,7 +201,7 @@ nncase::kernels::stackvm::expand(value_t input, value_t shape, value_t output,
     try_var(typecode, to_typecode(dtype));
     try_dims(expand_shape, shape);
     auto out_shape =
-        detail::get_binary_output_shape(input_tensor->shape(), expand_shape);
+        kernels::detail::get_binary_output_shape(input_tensor->shape(), expand_shape);
     try_output(out_mem, output, dtype, out_shape);
     try_(reference::expand(typecode, input_mem, out_mem, input_tensor->shape(),
                            input_tensor->strides(), output_tensor->shape(),

@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include "../shape_infer.h"
-#include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
@@ -27,7 +26,6 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
-using namespace nncase::kernels::cpu::reference;
 
 namespace {
 
@@ -71,7 +69,7 @@ space_to_batch_impl(datatype_t dt, const T *input, T *output,
     auto pad_output = std::make_unique<float[]>(compute_size(pad_out_shape));
     auto pad_out_strides = get_default_strides(pad_out_shape);
     int64_t pad_value = 0;
-    try_(reference::pad(dt, IN_BYTE_CAST(input),
+    try_(kernels::stackvm::reference::pad(dt, IN_BYTE_CAST(input),
                         OUT_BYTE_CAST(pad_output.get()), in_shape, in_strides,
                         pad_out_strides, new_paddings,
                         nncase::runtime::stackvm::pad_mode_t::constant,
@@ -102,7 +100,7 @@ space_to_batch_impl(datatype_t dt, const T *input, T *output,
     auto perm_dims = dims_t(perm.begin(), perm.end());
     auto tr_out_shape = transpose_infer_shape(reshapeed_shape1_dims, perm_dims);
     auto tr_out_stride = get_default_strides(tr_out_shape);
-    try_(reference::transpose(dt, IN_BYTE_CAST(pad_output.get()), OUT_BYTE_CAST(output), reshapeed_shape1_dims, perm_dims, get_default_strides(reshapeed_shape1_dims), tr_out_stride));
+    try_(kernels::stackvm::reference::transpose(dt, IN_BYTE_CAST(pad_output.get()), OUT_BYTE_CAST(output), reshapeed_shape1_dims, perm_dims, get_default_strides(reshapeed_shape1_dims), tr_out_stride));
     return ok();
 }
 } // namespace
