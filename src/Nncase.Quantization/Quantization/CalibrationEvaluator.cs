@@ -19,15 +19,26 @@ internal class CalibrationEvaluator
     private readonly IEnumerable<ENode> _awareEnodes;
     private readonly Dictionary<ENode, IValue> _values = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<EClass, IValue> _eclassValues = new();
+    private readonly RunPassOptions _passOptions;
+    private StreamWriter _dumpWriter;
 
-    public CalibrationEvaluator(IReadOnlyDictionary<Var, IValue> inputs, IEnumerable<ENode> awareEnodes)
+    public CalibrationEvaluator(IReadOnlyDictionary<Var, IValue> inputs, IEnumerable<ENode> awareEnodes, RunPassOptions passOptions)
     {
         _inputs = inputs;
         _awareEnodes = awareEnodes;
+        _passOptions = passOptions;
+        _dumpWriter = StreamWriter.Null;
     }
 
     public IReadOnlyDictionary<ENode, Tensor> Evaluate()
     {
+        if (_passOptions.DumpLevel >= 4)
+        {
+            if (!Directory.Exists(_passOptions.PassDumpDir))
+                Directory.CreateDirectory(_passOptions.PassDumpDir);
+            _dumpWriter = new StreamWriter(File.Open(Path.Combine(_passOptions.PassDumpDir, "calibration_evaluator.il"), FileMode.Create, FileAccess.Write));
+        }
+
         bool completed;
         var awareTensors = new Dictionary<ENode, Tensor>();
 
@@ -54,6 +65,7 @@ internal class CalibrationEvaluator
             }
         }
         while (!completed);
+        _dumpWriter.Flush();
         return awareTensors;
     }
 
@@ -92,9 +104,29 @@ internal class CalibrationEvaluator
         };
     }
 
+    private bool shapeChecker(Shape current, Shape target)
+    {
+        if (current.Count != target.Count)
+            return false;
+        return current.Zip(target).All(p => p.Item2.IsUnknown ? true : p.Item2.FixedValue == p.Item1.FixedValue);
+    }
+
+    private bool typeChecker(IRType cur_type, IRType target_type) => (cur_type, target_type) switch
+    {
+        (TensorType a, TensorType b) => a.DType == b.DType && shapeChecker(a.Shape, b.Shape),
+        (TupleType a, TupleType b) => a.Zip(b).All(p => typeChecker(p.Item1, p.Item2)),
+        (_, _) => true,
+    };
+
     private IValue? Visit(ENode enode, Var var)
     {
-        return VisitLeaf(enode, () => _inputs[var]);
+        return VisitLeaf(enode, () =>
+        {
+            var value = _inputs[var];
+            if (!new TypePattern(cur => typeChecker(cur, var.CheckedType!), "Var Type Checker").MatchLeaf(value.Type))
+                throw new InvalidOperationException("Feed Value Is Invalid!");
+            return value;
+        });
     }
 
     private IValue Visit(ENode enode, TensorConst tc)
@@ -119,7 +151,7 @@ internal class CalibrationEvaluator
 
     private IValue? Visit(ENode enode, IR.Tuple tuple)
     {
-        return Visit(enode, values => Value.FromTensors(values.Cast<Tensor>().ToArray()));
+        return Visit(enode, values => new TupleValue(values));
     }
 
     private IValue? Visit(ENode enode, Marker marker)
@@ -137,7 +169,11 @@ internal class CalibrationEvaluator
                 if (targetEnode.Expr is Op op)
                 {
                     var context = new EGraphOpEvaluateContext(call, costs.Skip(1).ToArray());
+                    if (_passOptions.DumpLevel >= 4)
+                        _dumpWriter.Write($"{op.GetType().Name}({string.Join(",", context.Arguments.Select(v => v.ToString()))})");
                     value = CompilerServices.EvaluateOp(op, context);
+                    if (_passOptions.DumpLevel >= 4)
+                        _dumpWriter.WriteLine($" => {value.ToString()}");
                 }
                 else
                 {
@@ -196,12 +232,12 @@ internal class CalibrationEvaluator
 
     private sealed class EGraphOpEvaluateContext : IEvaluateContext
     {
-        private readonly IValue[] _arguments;
+        public readonly IValue[] Arguments;
 
         public EGraphOpEvaluateContext(Call currentCall, IValue[] arguments)
         {
             CurrentCall = currentCall;
-            _arguments = arguments;
+            Arguments = arguments;
         }
 
         public Call CurrentCall { get; }
@@ -211,7 +247,7 @@ internal class CalibrationEvaluator
             var index = op.GetType() == parameter.OwnerType
                 ? parameter.Index
                 : throw new ArgumentOutOfRangeException($"Operator {op} doesn't have parameter: {parameter.Name}.");
-            return _arguments[index];
+            return Arguments[index];
         }
     }
 }

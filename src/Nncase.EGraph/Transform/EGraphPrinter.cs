@@ -80,6 +80,7 @@ public partial class EGraphPrinter
             {
                 string exprId = enode.Expr.GetHashCode().ToString();
 
+                // todo need use html label https://gitlab.com/graphviz/graphviz/-/issues/1624
                 var args = new List<DotRecordTextField> {
                       new DotRecordTextField(visitor.Visit(enode.Expr), "Type"), };
 

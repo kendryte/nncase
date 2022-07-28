@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using NetFabric.Hyperlinq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 
@@ -16,14 +17,23 @@ namespace Nncase.Evaluator.Tensors;
 /// </summary>
 [EvaluatorGenerator]
 [TypeInferGenerator]
-public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<GetItem>, IOpPrinter<GetItem>
+public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<GetItem>, IOpPrinter<GetItem>, ICostEvaluator<GetItem>
 {
     public string Visit(IIRPrinterContext context, GetItem target, bool ILmode)
     {
         return $"{context.GetArgument(target, GetItem.Input)}[{context.GetArgument(target, GetItem.Index)}]";
     }
 
-    private Tensor Visit(IValue Input, IValue Index)
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, GetItem target)
+    {
+        return new()
+        {
+            [CostFactorNames.CPUCycles] = 1,
+        };
+    }
+
+    IValue Visit(IValue Input, IValue Index)
     {
         if (Input.Type is TensorType ttype)
         {
@@ -39,10 +49,10 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
             var elementsCount = (int)TensorUtilities.GetProduct(returnDims);
 
             var src = tensor.BytesBuffer.Slice(elementSize * linearIndex, elementSize * elementsCount);
-            return Tensor.FromBytes(new TensorType(ttype.DType, returnDims), src);
+            return Value.FromTensor(Tensor.FromBytes(new TensorType(ttype.DType, returnDims), src));
         }
 
-        return Input.AsTensors()[Index.AsTensor().ToScalar<int>()];
+        return Input[Index.AsTensor().ToScalar<int>()];
     }
 
     private IRType Visit(ITypeInferenceContext context, GetItem target, IRType Input, TensorType Index)

@@ -35,8 +35,6 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
     {
         return new()
         {
-            [CostFactorNames.MemoryLoad] = 0,
-            [CostFactorNames.MemoryStore] = 0,
             [CostFactorNames.CPUCycles] = 1,
         };
     }

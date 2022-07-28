@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.PatternMatch;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Tensors;
 
@@ -26,5 +27,5 @@ public sealed record Broadcast() : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Shape = new(typeof(Broadcast), 1, "shape");
+    public static readonly ParameterInfo Shape = new(typeof(Broadcast), 1, "shape", HasRank(1) & HasDataType(DataTypes.Int64));
 }

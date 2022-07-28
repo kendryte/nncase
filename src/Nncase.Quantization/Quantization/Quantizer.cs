@@ -20,10 +20,12 @@ internal partial class Quantizer
     private readonly EGraph _graph;
     private readonly List<ENode> _rangeOfs = new List<ENode>();
     private readonly List<ENode> _childenOfRangeOfs = new List<ENode>();
+    private readonly RunPassOptions _passOptions;
 
-    public Quantizer(EGraph graph)
+    public Quantizer(EGraph graph, RunPassOptions passOptions)
     {
         _graph = graph;
+        _passOptions = passOptions;
         MarkRangeOfs();
     }
 
@@ -60,7 +62,7 @@ internal partial class Quantizer
     {
         await foreach (var sample in calibrationDataset.Samples)
         {
-            var evaluator = new CalibrationEvaluator(sample, _rangeOfs);
+            var evaluator = new CalibrationEvaluator(sample, _rangeOfs, _passOptions.SetPassName(_passOptions.PassName + "/ep1"));
             var values = evaluator.Evaluate();
             foreach (var _rangeOf in _rangeOfs)
             {
@@ -69,7 +71,7 @@ internal partial class Quantizer
                     _childenOfRangeOfs.Add(_rangeOf.Children[1].Nodes[0]);
                 }
             }
-            var childrenEvaluator = new CalibrationEvaluator(sample, _childenOfRangeOfs);
+            var childrenEvaluator = new CalibrationEvaluator(sample, _childenOfRangeOfs, _passOptions.SetPassName(_passOptions.PassName + "/ep2"));
             var childrenValues = childrenEvaluator.Evaluate();
             // values are children op range values(only two scalars for each value: Min and Max), childrenValues are children op tensor values.
             func(values, childrenValues);

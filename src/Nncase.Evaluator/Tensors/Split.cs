@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
@@ -15,7 +16,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Split"/>.
 /// </summary>
-public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>
+public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEvaluator<Split>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Split target)
@@ -34,6 +35,16 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>
         return Visit(context, target, input);
     }
 
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, Split target)
+    {
+        var ret = context.GetReturnType<TupleType>();
+        return new()
+        {
+            [CostFactorNames.CPUCycles] = 1,
+        };
+    }
+
     private IRType Visit(ITypeInferenceContext context, Split target, TensorType input)
     {
         if (context.GetArgument(target, Split.Axis) is TensorConst axis_con &&
@@ -41,12 +52,12 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>
         {
             var axis_v = Util.PositiveIndex(axis_con.Value.ToScalar<int>(), input.Shape.Rank);
             var sections_v = sections_con.Value.Cast<int>();
-         
+
             if (input.Shape.IsUnranked)
             {
                 return new TupleType(Enumerable.Repeat((IRType)(input with { Shape = Shape.Unranked }), sections_v.Length));
             }
-            
+
             var inshape = input.Shape.ToArray();
             if (inshape[axis_v] == Dimension.Unknown)
             {
@@ -81,6 +92,6 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>
             }
         }
 
-        return input with {Shape = Shape.Unranked};
+        return input with { Shape = Shape.Unranked };
     }
 }
