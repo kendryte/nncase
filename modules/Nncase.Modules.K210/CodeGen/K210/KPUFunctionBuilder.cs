@@ -34,8 +34,8 @@ internal class KPUFunctionBuilder : FunctionBuilder
 
     protected override void Compile(Callable callable)
     {
-        var function = (Function)callable;
-        new CodeGenVisitor(function, _context).Visit(function.Body);
+        // var function = (Function)callable;
+        // new CodeGenVisitor(function, _context).Visit(function.Body);
         
         /*var lower_module = new IRModule();
         var functions = (Function) callable;

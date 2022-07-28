@@ -106,7 +106,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     public override TextSnippet VisitLeaf(Var expr)
     {
         var snippet = BeginTextSnippet(expr);
-        Emitter.Ldarg((ushort) _function.Parameters.IndexOf(expr));
+        Emitter.Ldarg((ushort)_function.Parameters.IndexOf(expr));
         return snippet;
     }
 

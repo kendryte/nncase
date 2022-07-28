@@ -25,7 +25,7 @@ public static class kernel
         var group = isDepthwise ? outChannels : 1;
         var g_ic = isDepthwise ? 1 : inChannels / group;
         var g_oc = isDepthwise ? 1 : outChannels / group;
-        
+
         for (int og = 0; og < group; og++)
         {
             // var w_group_p = weights.Rank + (og * g_oc * g_ic * System.Math.Pow(filterSize, 2));
@@ -71,8 +71,8 @@ public static class kernel
                                     value += (int)(x * w);
                                 }
                             }
-
                         }
+
                         var alu_out = value + (argx * sum_x >> shiftx) + (argw * sum_w >> shiftw) + argadd * g_ic;
                     }
                 }
@@ -94,45 +94,16 @@ public static class kernel
                 }
             }
         }
+
         return null;
     }
 
-    // private static void KPUUpload(Tensor src, Tensor dest, long[] in_shape, long[] dma_ch)
-    // {
-    //     if (in_shape[3] % 64 == 0)
-    //     {
-    //         var SizeBytes = in_shape.Length;
-    //         
-    //
-    //     }
-    //     else
-    //     {
-    //         // var 
-    //     }
-    // }
+    private static void KPUDownload(Expr input)
+    {
+    }
 
-    // private static void KPUDownload(Expr input)
-    // {
-    // }
+    private static void FakeKPUConv2D(Expr input, Expr Weights)
+    {
+    }
 
-    // private static void FakeKPUConv2D(Expr input, Expr Weights)
-    // {
-    // }
-
-    // public static void KPUConv2D(IntPtr inputHandle, IntPtr weightsHandle,
-    //     OrtKISharp.Tensor ortArgumentValue, OrtKISharp.Tensor argumentValue,
-    //     string autoPad, long[] dilations, long groups, long[] kernelShape,
-    //     long[] pads, long[] strides)
-    // {
-    //     throw new NotImplementedException();
-    // }
-
-    // public static IValue KPUConv2D(Tensorflow.Tensor input, Tensorflow.Tensor weights,
-    //     Dimension inH, Dimension inW, Dimension inChannels, int outChannels, long padValue,
-    //     Tensorflow.Tensor argx, Tensorflow.Tensor shiftx, Tensorflow.Tensor argw, 
-    //     Tensorflow.Tensor shiftw, Tensorflow.Tensor argadd, int filterSize,
-    //     bool isDepthwise, Tensorflow.Tensor ortArgumentValue, Tensorflow.Tensor argumentValue)
-    // {
-    //     throw new NotImplementedException();
-    // }
 }
