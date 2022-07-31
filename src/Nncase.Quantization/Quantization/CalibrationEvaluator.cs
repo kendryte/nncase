@@ -36,7 +36,9 @@ internal class CalibrationEvaluator
         {
             if (!Directory.Exists(_passOptions.PassDumpDir))
                 Directory.CreateDirectory(_passOptions.PassDumpDir);
-            _dumpWriter = new StreamWriter(File.Open(Path.Combine(_passOptions.PassDumpDir, "calibration_evaluator.il"), FileMode.Create, FileAccess.Write));
+            var fileStream = File.Open(Path.Combine(_passOptions.PassDumpDir, "calibration_evaluator.il"), FileMode.Create, FileAccess.Write);
+            _dumpWriter = new StreamWriter(fileStream);
+            _dumpWriter.AutoFlush = true;
         }
 
         bool completed;
@@ -65,7 +67,7 @@ internal class CalibrationEvaluator
             }
         }
         while (!completed);
-        _dumpWriter.Flush();
+        _dumpWriter.Close();
         return awareTensors;
     }
 

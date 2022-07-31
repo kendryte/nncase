@@ -89,6 +89,15 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     }
 
     [Fact]
+    public void TestSlice2()
+    {
+        var input_a = new Var("input_a", new TensorType(DataTypes.Float32, new[] { Dimension.Unknown, Dimension.Unknown, Dimension.Unknown }));
+        var repeats = IR.F.Tensors.Slice(IR.F.Tensors.ShapeOf(input_a), new[] { -2 }, new[] { -1 }, 1);
+        Assert.True(CompilerServices.InferenceType(repeats));
+        Assert.True(repeats.CheckedShape.Rank == 1);
+    }
+
+    [Fact]
     public void TestSliceShapeOp()
     {
         var begin = new[] { 1 };

@@ -59,10 +59,6 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
             }
 
             var inshape = input.Shape.ToArray();
-            if (inshape[axis_v] == Dimension.Unknown)
-            {
-                return new InvalidType("The Input Shape Axis Can Not Be Unknown!");
-            }
 
             // split
             if (sections_v.Length == 1)
@@ -79,7 +75,7 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
             }
             else
             {
-                if (sections_v.Sum() != inshape[axis_v].FixedValue)
+                if (inshape[axis_v].IsFixed && sections_v.Sum() != inshape[axis_v].FixedValue)
                 {
                     return new InvalidType("The Sections Sum Must Equal To Shape[Axis]!");
                 }

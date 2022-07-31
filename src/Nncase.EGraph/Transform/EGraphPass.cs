@@ -49,13 +49,13 @@ public class EGraphPass : RulesPass
     /// <summary>
     /// the callback function you can custom process func with run pass options.
     /// </summary>
-    /// <param name="callable"> func without run pass.</param>
+    /// <param name="eGraph"> egraph without run pass.</param>
     /// <param name="options">Options.</param>
     protected virtual void OnPostRewriteStart(EGraph eGraph, RunPassOptions options)
     {
         switch (options.DumpLevel)
         {
-            case >= 2:
+            case >= 4:
                 EGraphPrinter.DumpEgraphAsDot(
                     eGraph,
                     null,
@@ -71,13 +71,13 @@ public class EGraphPass : RulesPass
     /// <summary>
     /// the callback function you can custom process func with run pass options.
     /// </summary>
-    /// <param name="callable"> func with rewrited. </param>
+    /// <param name="eGraph"> egraph with rewrited. </param>
     /// <param name="options">Options.</param>
     protected virtual void OnPostRewriteEnd(EGraph eGraph, RunPassOptions options)
     {
         switch (options.DumpLevel)
         {
-            case >= 2:
+            case >= 4:
                 EGraphPrinter.DumpEgraphAsDot(
                     eGraph,
                     null,
