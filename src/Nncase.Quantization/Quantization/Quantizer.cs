@@ -20,10 +20,12 @@ internal partial class Quantizer
     private readonly EGraph _graph;
     private readonly List<ENode> _rangeOfs = new List<ENode>();
     private readonly List<ENode> _childrenOfRangeOfs = new List<ENode>();
+    private readonly RunPassOptions _passOptions;
 
-    public Quantizer(EGraph graph)
+    public Quantizer(EGraph graph, RunPassOptions passOptions)
     {
         _graph = graph;
+        _passOptions = passOptions;
         MarkRangeOfs();
     }
 
@@ -55,16 +57,16 @@ internal partial class Quantizer
             AssignRanges(ranges);
         }
         // 3. Choose better quant method using cosine, and bind info with ir.
-        var info = options.Target.BindQuantMethodCosine(options.CompileOptions.QuantizeOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs);
+        var info = options.Target.BindQuantMethodCosine(options.CompileOptions.QuantizeOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs, _passOptions);
     }
 
     private async Task RunPassAsync(ICalibrationDatasetProvider calibrationDataset, Action<IReadOnlyDictionary<ENode, Tensor>, IReadOnlyDictionary<ENode, Tensor>> func)
     {
         await foreach (var sample in calibrationDataset.Samples)
         {
-            var evaluator = new CalibrationEvaluator(sample, _rangeOfs);
+            var evaluator = new CalibrationEvaluator(sample, _rangeOfs, _passOptions.SetPassName(_passOptions.PassName + "/ep1"));
             var values = evaluator.Evaluate();
-            var childrenEvaluator = new CalibrationEvaluator(sample, _childrenOfRangeOfs);
+            var childrenEvaluator = new CalibrationEvaluator(sample, _childrenOfRangeOfs, _passOptions.SetPassName(_passOptions.PassName + "/ep2"));
             var childrenValues = childrenEvaluator.Evaluate();
             // values are children op range values(only two scalars for each value: Min and Max), childrenValues are children op tensor values.
             func(values, childrenValues);

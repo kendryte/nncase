@@ -35,7 +35,7 @@ public class CPUTarget : ITarget
     }
 
     /// <inheritdoc/>
-    public Dictionary<ENode, List<Tuple<List<DataType>, float>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs)
+    public Dictionary<ENode, List<Tuple<List<DataType>, float>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassOptions runPassOptions)
     {
         return null;
     }

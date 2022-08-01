@@ -1,6 +1,7 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
 using OrtKISharp;
@@ -10,7 +11,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="LogSoftmax"/>.
 /// </summary>
-public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSoftmax>
+public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSoftmax>, ICostEvaluator<Softmax>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, LogSoftmax logSoftMax)
@@ -25,6 +26,19 @@ public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSo
     {
         var input = context.CheckArgumentType<TensorType>(target, LogSoftmax.Input);
         return Visit(input);
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, Softmax target)
+    {
+        var ret = context.GetReturnType<TensorType>();
+        var macPerElement = 4;
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, macPerElement),
+        };
     }
 
     private IRType Visit(TensorType input)

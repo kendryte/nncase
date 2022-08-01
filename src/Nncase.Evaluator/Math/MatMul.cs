@@ -37,18 +37,13 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var rhs = context.GetArgumentType<TensorType>(target, MatMul.Rhs);
         var outputType = context.GetReturnType<TensorType>();
 
-        if (lhs.Shape[^1].IsFixed && lhs.Shape[^2].IsFixed && rhs.Shape[^1].IsFixed && rhs.Shape[^2].IsFixed)
+        var macPerElement = lhs.Shape[^1].IsFixed ? lhs.Shape[^1].FixedValue : 1;
+        return new()
         {
-            var macPerElement = lhs.Shape[^1].FixedValue;
-            return new()
-            {
-                [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(lhs) + CostUtility.GetMemoryAccess(rhs),
-                [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
-                [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement),
-            };
-        }
-
-        return null;
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(lhs) + CostUtility.GetMemoryAccess(rhs),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement),
+        };
     }
 
     private IRType Visit(TensorType lhs, TensorType rhs)

@@ -14,15 +14,20 @@ public abstract class BaseImporter
 {
     protected SortedSet<string> _opsInModel = new SortedSet<string>();
     protected SortedSet<string> _unsupportedOp = new SortedSet<string>();
-    
-    public IRModule Import()
+
+    /// <summary>
+    /// import the model.
+    /// </summary>
+    /// <param name="compileOptions"></param>
+    /// <returns>IRModule.</returns>
+    public IRModule Import(CompileOptions? compileOptions = null)
     {
         var inputs = CreateInputs().ToArray();
         ConvertOp();
         SupportedCheck(this.GetType().Name.Split("Importer")[0]);
         var outputs = CreateOutputs();
         // todo:refactor
-        var dumpDir = CompilerServices.CompileOptions.DumpDir;
+        var dumpDir = compileOptions?.DumpDir ?? CompilerServices.CompileOptions.DumpDir;
         if (!Directory.Exists(dumpDir))
         {
             Directory.CreateDirectory(dumpDir);
@@ -74,9 +79,9 @@ public abstract class BaseImporter
     }
 
     public abstract IEnumerable<Var> CreateInputs();
-    
+
     public abstract void ConvertOp();
-    
+
     public abstract Expr CreateOutputs();
 
     private IRModule CreateModule(Var[] inputs, Expr body)
@@ -87,7 +92,7 @@ public abstract class BaseImporter
         module.Entry = mainFunc;
         return module;
     }
-    
+
     protected Expr UnSupportedOp(string opType)
     {
         _unsupportedOp.Add(opType);

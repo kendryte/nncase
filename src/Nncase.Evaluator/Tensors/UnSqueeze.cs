@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Linq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using OrtKISharp;
@@ -11,7 +12,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Unsqueeze"/>.
 /// </summary>
-public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsqueeze>
+public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsqueeze>, ICostEvaluator<Unsqueeze>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Unsqueeze unSqueeze)
@@ -27,6 +28,15 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
         var input = context.CheckArgumentType<TensorType>(target, Unsqueeze.Input);
         var dim = context.CheckArgumentType<TensorType>(target, Unsqueeze.Dim);
         return Visit(context, target, input);
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, Unsqueeze target)
+    {
+        return new()
+        {
+            [CostFactorNames.CPUCycles] = 1,
+        };
     }
 
     private IRType Visit(ITypeInferenceContext context, Unsqueeze target, TensorType input)

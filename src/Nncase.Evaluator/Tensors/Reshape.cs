@@ -4,17 +4,18 @@
 using System;
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using OrtKISharp;
-using Range = Nncase.IR.Tensors.Range;
 using static Nncase.Evaluator.TypeInference;
+using Range = Nncase.IR.Tensors.Range;
 namespace Nncase.Evaluator.Tensors;
 
 /// <summary>
 /// Evaluator for <see cref="Range"/>.
 /// </summary>
-public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>
+public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, ICostEvaluator<Reshape>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Reshape reshape)
@@ -29,6 +30,15 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>
     {
         var input = context.CheckArgumentType<TensorType>(target, Reshape.Input);
         return Visit(context, target, input);
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, Reshape target)
+    {
+        return new()
+        {
+            [CostFactorNames.CPUCycles] = 1
+        };
     }
 
     private IRType Visit(ITypeInferenceContext context, Reshape target, TensorType input)
@@ -71,9 +81,17 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>
                 return input with { Shape = new Shape(shapeValue) };
             }
         }
-        
+
         var targetType = context.CheckArgumentType<TensorType>(target, Reshape.Shape);
         var outShape = ReshapeTo(targetType);
-        return input with {Shape = outShape};
+        return input with { Shape = outShape };
+    }
+
+    Cost? ICostEvaluator<Reshape>.Visit(ICostEvaluateContext context, Reshape target)
+    {
+        return new()
+        {
+            [CostFactorNames.CPUCycles] = 1
+        };
     }
 }

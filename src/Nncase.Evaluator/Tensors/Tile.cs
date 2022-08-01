@@ -41,7 +41,7 @@ public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>
         }
         if (context.GetArgument(target, Tile.Repeats) is TensorConst repeats && input.Shape.IsFixed)
         {
-            var shape = OrtKI.Mul(input.Shape.ToValueArray(), repeats.Value.ToArray<int>());
+            var shape = input.Shape.ToValueArray().Zip(repeats.Value.ToArray<int>()).Select(p => p.Item1 * p.Item2);
             return input with { Shape = new Shape(shape.ToArray<int>()) };
         }
         return new TensorType(input.DType,

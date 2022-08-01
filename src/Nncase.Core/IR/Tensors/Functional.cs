@@ -29,7 +29,7 @@ public static class Tensors
     public static Call Cast(Expr input, DataType newType) => new Call(new Cast(newType), input);
 
     public static Call Concat(Expr input, Expr axis) => new Call(new Concat(), input, axis);
-    
+
     public static Call ConstantOfShape(Expr shape, Expr value) => new Call(new ConstantOfShape(), shape, value);
 
     public static Call CumSum(Expr input, Expr axis, Expr exclusive, Expr reverse) => new Call(new CumSum(), input, axis, exclusive, reverse);
@@ -45,8 +45,8 @@ public static class Tensors
     public static Call MatMul(Expr input, Expr other) => new Call(new MatMul(), input, other);
 
     // todo:remove prod
-    public static Call Prod(Expr input) => Reduce(ReduceOp.Prod, input, new[]{ 0 }, 1, false);
-    
+    public static Call Prod(Expr input) => Reduce(ReduceOp.Prod, input, new[] { 0 }, 1, false);
+
     public static Call Range(Expr begin, Expr end, Expr step) => new Call(new Range(), begin, end, step);
 
     public static Call Reduce(ReduceOp reduceOp, Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(reduceOp), input, axis, initValue, keepDims);
@@ -74,6 +74,8 @@ public static class Tensors
 
     public static Call Slice(Expr input, Expr begins, Expr ends, int rank)
     {
+        if (rank < 1)
+            throw new ArgumentOutOfRangeException();
         var axes = Tensor.FromRange(0, rank);
         var strides = Tensor.FromScalar(1, rank);
         return new Call(new Slice(), input, begins, ends, axes, strides);

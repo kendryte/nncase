@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
@@ -15,7 +16,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Stack"/>.
 /// </summary>
-public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>
+public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEvaluator<Stack>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Stack stack)
@@ -30,6 +31,20 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>
     {
         var inputs = context.CheckArgumentType<TupleType>(target, Stack.Inputs);
         return Visit(context, target, inputs);
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, Stack target)
+    {
+        var input = context.GetArgumentType<TupleType>(target, Stack.Inputs);
+        var ret = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, 1),
+        };
+
     }
 
     private IRType Visit(ITypeInferenceContext context, Stack target, TupleType inputs)
