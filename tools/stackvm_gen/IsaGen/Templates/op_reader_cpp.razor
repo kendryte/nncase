@@ -34,6 +34,7 @@ result<void> op_visitor::next() noexcept
     if (opcode == opcode_t::TENSOR)
     {
         auto tensor_funct = static_cast<tensor_function_t>(reader_.peek_unaligned_with_offset<uint16_t>(1));
+        _dump_manager.dump_op(tensor_funct);
         switch (tensor_funct)
         {
 @foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.CppName))

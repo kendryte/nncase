@@ -35,6 +35,7 @@ public class ApplicationParts
     private static IEnumerable<Assembly> LoadApplicationParts(string basePath)
     {
         return Directory.GetFiles(basePath, _appPartsDllPattern, SearchOption.AllDirectories)
+            .Where(x => !Path.GetDirectoryName(x)!.EndsWith("ref"))
             .Select(Assembly.LoadFrom);
     }
 

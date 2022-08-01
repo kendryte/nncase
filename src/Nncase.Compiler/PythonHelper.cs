@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.Runtime.Interop;
+using Nncase.Utilities;
 
 namespace Nncase.Compiler;
 

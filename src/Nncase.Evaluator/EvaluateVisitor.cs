@@ -11,140 +11,19 @@ using Nncase.IR;
 
 namespace Nncase.Evaluator;
 
-public class DumpManager
-{
-    public static bool OpenDump { get; private set; } = false;
 
-    public static bool Append = false;
-    
-    public static int Count = 1;
-
-    public static string Dir;
-
-    public static void RunWithDump(string dir, Action f)
-    {
-        RunWithDump<int>(dir, () =>
-        {
-            f();
-            return -1;
-        });
-    }
-    
-    public static T RunWithDump<T>(string dir, Func<T> f)
-    {
-        Dir = dir;
-        Count = 1;
-        OpenDump = true;
-        Append = false;
-        var result = f();
-        OpenDump = false;
-        return result;
-    }
-}
 internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
 {
     private readonly EvaluateContext _context;
     private readonly IReadOnlyDictionary<Var, IValue> _varsValues;
-    
-    private void DumpExpr(TensorValue tensorValue, StreamWriter writer)
-    {
-        var tensor = tensorValue.AsTensor();
-        writer.WriteLine(tensor.Shape.ToString());
-        // todo:other type
-        var dt = tensor.ElementType;
-        if (dt == DataTypes.Int8 || dt == DataTypes.Int32 || dt == DataTypes.Int64)
-        {
-            foreach (var v in tensor.ToArray<long>())
-            {
-                writer.WriteLine(v);
-            }
-        }
-        else if (dt is PrimType)
-        {
-            foreach (var v in tensor.ToArray<float>())
-            {
-                writer.WriteLine(v);
-            }
-        }
-        else
-        {
-            writer.WriteLine($"{dt} NotImpl");
-        }
-    }
+    private readonly EvaluatorDumpManager _dumpManager;
 
-    private static string GetEvaluatorDumpDir()
-    {
-        var root = Path.Join(CompilerServices.CompileOptions.DumpDir, DumpManager.Dir);
-        if (!Directory.Exists(root))
-        {
-            Directory.CreateDirectory(root);
-        }
-
-        return root;
-    }
-
-    private void DumpCallInfo(Expr expr)
-    {
-        if (expr is Call call)
-        {
-            var root = GetEvaluatorDumpDir();
-            var target = call.Target.GetType().Name.ToLower();
-            var paramsInfo = ((Op) call.Target).Parameters.ToArray();
-            for (int i = 0; i < call.Parameters.Count; i++)
-            {
-                using (var sr = new StreamWriter(Path.Join(root, DumpManager.Count.ToString() + target + $"_param_{i}_{paramsInfo[i].Name}")))
-                {
-                    var param = call.Parameters[i];
-                    var ps = _context.GetValue(param).AsTensors();
-                    foreach (var p in ps)
-                    {
-                        DumpExpr(p, sr);
-                    }
-                }
-            }
-        }
-    }
-    
-    private void DumpCall(Expr expr)
-    {
-        if (expr is Call call)
-        {
-            // tensor / tensors
-            var root = GetEvaluatorDumpDir();
-
-            var target = call.Target.GetType().Name.ToLower();
-            using (var sr = new StreamWriter(Path.Join(root, DumpManager.Count.ToString() + target)))
-            {
-                sr.WriteLine(target);
-                sr.WriteLine(call.CheckedType);
-                var result = _context.GetValue(call).AsTensors();
-                foreach (var tensor in result)
-                {
-                    DumpExpr(tensor, sr);
-                }
-            }
-            using (var order = new StreamWriter(Path.Join(root, "order"), DumpManager.Append))
-            {
-                order.WriteLine(target);
-            }
-            DumpManager.Append = true;
-            ++DumpManager.Count;
-        }
-        else
-        {
-            throw new NotSupportedException("only support Call");
-        }
-    }
-    
     public EvaluateVisitor(IReadOnlyDictionary<Var, IValue> varsValues)
     {
         _context = new EvaluateContext(ExpressionMemo);
         _varsValues = varsValues;
-        if (DumpManager.OpenDump)
-        {
-            RegisterBeforeCallback("DumpResult", DumpCallInfo);
-            RegisterAfterCallback("DumpResult", DumpCall);
-        }
+        _dumpManager = new EvaluatorDumpManager(expr => _context.GetValue(expr).AsTensors());
+        _dumpManager.RegisterDumpCallbacks(RegisterBeforeCallback, RegisterAfterCallback);
     }
 
     /// <inheritdoc/>

@@ -12,6 +12,7 @@ using Nncase.Hosting;
 using Nncase.IR;
 using Nncase.Transform;
 using Nncase.Transform.Passes;
+using Nncase.Utilities;
 using OrtKISharp;
 
 namespace Nncase.Compiler;

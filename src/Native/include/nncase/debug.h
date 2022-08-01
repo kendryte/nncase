@@ -1,5 +1,6 @@
 #pragma once
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/util.h>
@@ -7,20 +8,56 @@
 #include <nncase/type.h>
 #include <nncase/value.h>
 #include <sstream>
-#include <fstream>
+#include <nncase/runtime/stackvm/opcode.h>
 
-extern bool append;
-extern std::string currentOp;
-extern std::filesystem::path dump_root;
+class dump_manager {
+    bool append;
+    int count = 1;
+    std::string currentOp;
+    std::filesystem::path dump_root;
+
+  public:
+    void set_current_op(const std::string& op) { currentOp = op; }
+
+    std::string get_current_op() { return currentOp; }
+
+    std::filesystem::path dump_path();
+
+    std::filesystem::path get_dump_root() { return dump_root; }
+
+    std::ofstream get_stream() { return get_stream(dump_path()); }
+
+    std::ofstream get_stream(const std::filesystem::path &path);
+
+    int get_count() { return count; }
+
+    void incr_count() {
+        count++;
+        append = false;
+    }
+
+    void set_append(bool app) { append = app; }
+
+    void set_dump_root(std::string root);
+
+    void dump_op(nncase::runtime::stackvm::tensor_function_t tensor_funct);
+};
+
+extern dump_manager _dump_manager;
 
 NNCASE_API void set_dump_root(std::string root);
 std::filesystem::path dump_path();
-std::ofstream get_stream(const std::filesystem::path &path = dump_path());
+std::string to_str(const nncase::dims_t &shape);
+void write_shape(const nncase::dims_t &shape);
+inline void print_dims(const nncase::dims_t &dims, const std::string &name) {
+    std::cout << name << ":";
+    std::cout << to_str(dims) << std::endl;
+}
 
 template <typename F>
 void dump(nncase::value_t value, F &&f,
           const std::filesystem::path &path = dump_path()) {
-    auto stream = get_stream(path);
+    auto stream = _dump_manager.get_stream(path);
     if (value.is_a<nncase::tensor>()) {
         auto value_tensor = value.as<nncase::tensor>().unwrap();
         f(stream, value_tensor);
@@ -39,15 +76,12 @@ void dump(nncase::value_t value, F &&f,
 }
 
 template <typename F>
-void dump(F &&f, const std::filesystem::path &path = dump_path()) {
-    auto stream = get_stream(path);
+void dump_append(F &&f, const std::filesystem::path &path = dump_path()) {
+    auto stream = _dump_manager.get_stream(path);
     f(stream);
-    append = true;
+    _dump_manager.set_append(true);
     stream.close();
 }
-
-std::string to_str(const nncase::dims_t &shape);
-void write_shape(const nncase::dims_t &shape);
 
 template <typename T>
 void dump_data(std::ostream &stream, const T *data,
@@ -78,11 +112,3 @@ void dump_output(NNCASE_UNUSED nncase::value_t value);
 
 void dump_input(NNCASE_UNUSED nncase::value_t value,
                 NNCASE_UNUSED std::string name);
-
-inline void print_dims(const nncase::dims_t & dims, const std::string &name) {
-    std::cout << name << ":";
-    for(auto dim : dims) {
-        std::cout << dim << " ";
-    }
-    std::cout << std::endl;
-}
