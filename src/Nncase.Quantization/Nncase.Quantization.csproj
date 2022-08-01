@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
     <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
   </ItemGroup>
 
     <ItemGroup>

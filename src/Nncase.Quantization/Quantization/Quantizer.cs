@@ -33,21 +33,22 @@ internal partial class Quantizer
     {
         int srcBinSize = 8192;
         int dstBinSize = 256;
-        if (options.CompileOptions.QuantizeOptions.CalibrationDataset == null)
+        var quantOptions = options.CompileOptions.QuantizeOptions!;
+        if (quantOptions.CalibrationDataset == null)
         {
-            throw new ArgumentNullException(nameof(options.CompileOptions.QuantizeOptions.CalibrationDataset));
+            throw new ArgumentNullException(nameof(quantOptions.CalibrationDataset));
         }
 
         // 1.0 Get ranges
-        var ranges = await GetRangesAsync(options.CompileOptions.QuantizeOptions.CalibrationDataset);
+        var ranges = await GetRangesAsync(quantOptions.CalibrationDataset);
 
-        if (options.CompileOptions.QuantizeOptions.CalibrationMethod != CalibMethod.NoClip)
+        if (quantOptions.CalibrationMethod != CalibMethod.NoClip)
         {
             // 1.1. Get histograms
-            var histograms = await GetHistogramsAsync(options.CompileOptions.QuantizeOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
+            var histograms = await GetHistogramsAsync(quantOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
 
             // 1.2. Select best ranges
-            var optRanges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, options.CompileOptions.QuantizeOptions.CalibrationMethod);
+            var optRanges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, quantOptions.CalibrationMethod);
 
             // 1.3. Assign ranges
             AssignRanges(optRanges);
@@ -57,7 +58,10 @@ internal partial class Quantizer
             AssignRanges(ranges);
         }
         // 3. Choose better quant method using cosine, and bind info with ir.
-        var info = options.Target.BindQuantMethodCosine(options.CompileOptions.QuantizeOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs, _passOptions);
+        if (quantOptions.BindQuantMethod)
+        {
+            var info = await options.Target.BindQuantMethodCosine(quantOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs, _passOptions);
+        }
     }
 
     private async Task RunPassAsync(ICalibrationDatasetProvider calibrationDataset, Action<IReadOnlyDictionary<ENode, Tensor>, IReadOnlyDictionary<ENode, Tensor>> func)

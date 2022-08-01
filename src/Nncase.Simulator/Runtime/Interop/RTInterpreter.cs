@@ -53,9 +53,15 @@ public sealed class RTInterpreter : IDisposable
         }
     }
 
-    public void SetDumpRoot(String path)
+    /// <summary>
+    /// set the runtim dump root dir
+    /// </summary>
+    /// <param name="root">root dir.</param>
+    public void SetDumpRoot(string root)
     {
-        Native.InterpSetDumpRoot(_handle, path);
+        if (!Directory.Exists(root))
+            Directory.CreateDirectory(root);
+        Native.InterpSetDumpRoot(_handle, root);
     }
 
     /// <summary>

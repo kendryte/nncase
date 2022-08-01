@@ -8,6 +8,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Nncase.Quantization;
+
+/// <summary>
+/// Calibration Method
+/// </summary>
 public enum CalibMethod
 {
     NoClip,
@@ -27,4 +31,9 @@ public class QuantizeOptions
     /// CalibMethod
     /// </summary>
     public CalibMethod CalibrationMethod { get; set; }
+
+    /// <summary>
+    /// Enable the Auto bind quant method.
+    /// </summary>
+    public bool BindQuantMethod { get; set; }
 }
