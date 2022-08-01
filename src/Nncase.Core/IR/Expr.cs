@@ -45,6 +45,11 @@ public abstract partial record Expr
         _ => throw new InvalidOperationException("Expr don't have a valid tensor type"),
     };
 
+    /// <summary>
+    /// quant config with cosine.
+    /// </summary>
+    public List<Tuple<List<DataType>, float>> enodequantconfigwithcosine = null;
+
     /// <inheritdoc/>
     public virtual bool Equals(Expr? other)
     {

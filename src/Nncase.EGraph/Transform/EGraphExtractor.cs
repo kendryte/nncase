@@ -46,7 +46,18 @@ internal class EGraphExtractor
             };
             _eclassMemo.Add(eclass, expr);
         }
-
+        if (expr.enodequantconfigwithcosine != null)
+        {
+            System.Console.WriteLine(expr + "  " + expr.CheckedType);
+            for (int i = 0; i < expr.enodequantconfigwithcosine.Count; i++)
+            {
+                for (int j = 0; j < expr.enodequantconfigwithcosine[i].Item1.Count; j++)
+                {
+                    System.Console.Write(expr.enodequantconfigwithcosine[i].Item1[j] + "  ");
+                }
+                System.Console.WriteLine(expr.enodequantconfigwithcosine[i].Item2);
+            }
+        }
         return expr;
     }
 

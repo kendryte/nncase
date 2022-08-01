@@ -19,7 +19,7 @@ internal partial class Quantizer
 {
     private readonly EGraph _graph;
     private readonly List<ENode> _rangeOfs = new List<ENode>();
-    private readonly List<ENode> _childenOfRangeOfs = new List<ENode>();
+    private readonly List<ENode> _childrenOfRangeOfs = new List<ENode>();
 
     public Quantizer(EGraph graph)
     {
@@ -27,33 +27,35 @@ internal partial class Quantizer
         MarkRangeOfs();
     }
 
-    public async Task RunAsync(QuantizeOptions options)
+    public async Task RunAsync(RunPassOptions options)
     {
         int srcBinSize = 8192;
         int dstBinSize = 256;
-        if (options.CalibrationDataset == null)
+        if (options.CompileOptions.QuantizeOptions.CalibrationDataset == null)
         {
-            throw new ArgumentNullException(nameof(options.CalibrationDataset));
+            throw new ArgumentNullException(nameof(options.CompileOptions.QuantizeOptions.CalibrationDataset));
         }
 
-        // 1. Get ranges
-        var ranges = await GetRangesAsync(options.CalibrationDataset);
+        // 1.0 Get ranges
+        var ranges = await GetRangesAsync(options.CompileOptions.QuantizeOptions.CalibrationDataset);
 
-        if (options.CalibrationMethod != CalibMethod.NoClip)
+        if (options.CompileOptions.QuantizeOptions.CalibrationMethod != CalibMethod.NoClip)
         {
-            // 2. Get histograms
-            var histograms = await GetHistogramsAsync(options.CalibrationDataset, ranges, srcBinSize, dstBinSize);
+            // 1.1. Get histograms
+            var histograms = await GetHistogramsAsync(options.CompileOptions.QuantizeOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
 
-            // 3. Select best ranges
-            var optRanges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, options.CalibrationMethod);
+            // 1.2. Select best ranges
+            var optRanges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, options.CompileOptions.QuantizeOptions.CalibrationMethod);
 
-            // 4. Assign ranges
+            // 1.3. Assign ranges
             AssignRanges(optRanges);
         }
         else
-        {
+        {   // 2. Assign ranges
             AssignRanges(ranges);
         }
+        // 3. Choose better quant method using cosine, and bind info with ir.
+        var info = options.Target.BindQuantMethodCosine(options.CompileOptions.QuantizeOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs);
     }
 
     private async Task RunPassAsync(ICalibrationDatasetProvider calibrationDataset, Action<IReadOnlyDictionary<ENode, Tensor>, IReadOnlyDictionary<ENode, Tensor>> func)
@@ -62,14 +64,7 @@ internal partial class Quantizer
         {
             var evaluator = new CalibrationEvaluator(sample, _rangeOfs);
             var values = evaluator.Evaluate();
-            foreach (var _rangeOf in _rangeOfs)
-            {
-                for (int i = 0; i < _rangeOf.Children.Count; i++)
-                {
-                    _childenOfRangeOfs.Add(_rangeOf.Children[1].Nodes[0]);
-                }
-            }
-            var childrenEvaluator = new CalibrationEvaluator(sample, _childenOfRangeOfs);
+            var childrenEvaluator = new CalibrationEvaluator(sample, _childrenOfRangeOfs);
             var childrenValues = childrenEvaluator.Evaluate();
             // values are children op range values(only two scalars for each value: Min and Max), childrenValues are children op tensor values.
             func(values, childrenValues);
@@ -199,7 +194,9 @@ internal partial class Quantizer
         {
             foreach (var match in matches)
             {
-                _rangeOfs.Add((ENode)match.Root);
+                var _rangeOf = (ENode)match.Root;
+                _rangeOfs.Add(_rangeOf);
+                _childrenOfRangeOfs.Add(_rangeOf.Children[1].Nodes[0]);
             }
         }
     }

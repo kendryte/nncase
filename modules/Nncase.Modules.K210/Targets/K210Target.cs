@@ -44,6 +44,12 @@ public class K210Target : ITarget
     }
 
     /// <inheritdoc/>
+    public Dictionary<ENode, List<Tuple<List<DataType>, float>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs)
+    {
+        return null;
+    }
+
+    /// <inheritdoc/>
     public void RegisterQuantizePass(PassManager passManager, CompileOptions options)
     {
     }

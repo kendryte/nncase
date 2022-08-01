@@ -13,7 +13,7 @@ using Nncase.Transform;
 
 namespace Nncase.Quantization;
 
-internal class CalibrationEvaluator
+public class CalibrationEvaluator
 {
     private readonly IReadOnlyDictionary<Var, IValue> _inputs;
     private readonly IEnumerable<ENode> _awareEnodes;

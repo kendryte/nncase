@@ -38,6 +38,6 @@ public class EGraphPassWithQuantize : EGraphPass
     protected override async Task OnPostRewrite(EGraph graph, RunPassOptions options)
     {
         var quantizer = new Quantizer(graph);
-        await quantizer.RunAsync(_quantizeOptions);
+        await quantizer.RunAsync(options);
     }
 }
