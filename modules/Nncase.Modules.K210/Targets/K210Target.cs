@@ -44,7 +44,7 @@ public class K210Target : ITarget
     }
 
     /// <inheritdoc/>
-    public Dictionary<ENode, List<Tuple<List<DataType>, float>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassOptions runPassOptions)
+    public Task<Dictionary<ENode, List<Tuple<List<DataType>, float>>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassOptions runPassOptions)
     {
         return null;
     }
