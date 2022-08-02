@@ -64,5 +64,8 @@ public record Function(string Name, Expr Body, IRArray<Var> Parameters) : BaseFu
     {
     }
 
+    /// <summary>
+    /// get all parameter checked types.
+    /// </summary>
     public override IEnumerable<IRType?> ParameterTypes => Parameters.Select(x => x.CheckedType);
 }

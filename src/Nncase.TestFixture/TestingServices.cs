@@ -8,7 +8,6 @@ using Autofac.Extras.CommonServiceLocator;
 using CommonServiceLocator;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-// using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nncase.Transform;
 
@@ -262,17 +261,50 @@ public static class Testing
             DumpValue(v, sw);
         }
     }
+
+
+    /// <summary>
+    /// build kmodel
+    /// </summary>
+    /// <param name="name">the dumped kmodel name.</param>
+    /// <param name="module"></param>
+    /// <param name="compileOptions"></param>
+    /// <returns>kmodel bytes.</returns>
+    public static byte[] BuildKModel(string name, IR.IRModule module, CompileOptions compileOptions)
+    {
+        CodeGen.ModelBuilder modelBuilder = new CodeGen.ModelBuilder(CompilerServices.GetTarget(compileOptions.Target), compileOptions);
+        CodeGen.LinkedModel linkedModel = modelBuilder.Build(module);
+        var kmodel_path = Path.Combine(compileOptions.DumpDir, $"{name}.kmodel");
+        using (var output = System.IO.File.Open(kmodel_path, System.IO.FileMode.Create))
+        {
+            linkedModel.Serialize(output);
+        }
+        return File.ReadAllBytes(kmodel_path);
+    }
+
+    public static IValue RunKModel(byte[] kmodel, string dump_path, Tensor[] input_tensors)
+    {
+        using (var interp = new Nncase.Runtime.Interop.RTInterpreter())
+        {
+            interp.SetDumpRoot(dump_path);
+            interp.LoadModel(kmodel);
+            var entry = interp.Entry!;
+
+            var rtInputs = input_tensors.Select(Nncase.Runtime.Interop.RTTensor.FromTensor).ToArray();
+            return entry.Invoke(rtInputs).ToValue();
+        }
+    }
 }
 
 
 public class UnitTestFixtrue
 {
-    protected RunPassOptions passOptions;
-
-    public UnitTestFixtrue()
+    public CompileOptions GetCompileOptions([CallerMemberName] string member_name = "")
     {
-        string DumpDirPath = Testing.GetDumpDirPath(this.GetType());
-        passOptions = new RunPassOptions(CompilerServices.GetTarget(CompilerServices.CompileOptions.Target), CompilerServices.CompileOptions.DumpLevel, DumpDirPath);
+        string DumpDirPath = Path.Combine(Testing.GetDumpDirPath(this.GetType()), member_name);
+        CompileOptions compileOptions = new(CompilerServices.CompileOptions);
+        compileOptions.DumpDir = DumpDirPath;
+        return compileOptions;
     }
 
 }

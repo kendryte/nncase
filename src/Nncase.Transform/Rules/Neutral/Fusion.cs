@@ -8,16 +8,21 @@ using static Nncase.Utilities.ReplaceUtility;
 namespace Nncase.Transform.Rules.Neutral;
 
 [RuleGenerator]
-public partial class SingleInputFusion<T, BeginT, EndT> : RewriteRule<Pattern> 
+public partial class SingleInputFusion<T, BeginT, EndT> : RewriteRule<Pattern>
     where T : Op
     where BeginT : Op
     where EndT : Op
 {
     /// <inheritdoc/>
-    public override Pattern Pattern { get; } = IsWildcardCall<EndT>("st", null!, 
-        IsWildcardCall<T>(null!, null!,(
+    public override Pattern Pattern { get; } = IsWildcardCall<EndT>("st", null!,
+        IsWildcardCall<T>(null!, null!, (
             IsWildcardCall<BeginT>(null!, null!, IsWildcard("input")))));
-    
+
+    /// <summary>
+    /// the fusion name
+    /// </summary>
+    public virtual string Name { get; } = "SingleInputFusion";
+
     // replace input with var
     private Call? GetReplace(Call st, Expr input)
     {
@@ -27,21 +32,28 @@ public partial class SingleInputFusion<T, BeginT, EndT> : RewriteRule<Pattern>
         }
         var arg = new Var("input0", input.CheckedType!);
         var body = ReplaceTarget(st, input, arg);
-        return new Call(new Fusion(null, ModuleType.Create("510"), body, arg), input);
+        return new Call(new Fusion(Name, ModuleType.Create("k510"), body, arg), input);
     }
 }
 
 [RuleGenerator]
-public partial class DoubleInputFusion<T, BeginT, EndT> : RewriteRule<Pattern> 
+public partial class DoubleInputFusion<T, BeginT, EndT> : RewriteRule<Pattern>
     where T : Op
     where BeginT : Op
     where EndT : Op
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsWildcardCall<EndT>("st", null!,
-        IsWildcardCall<T>(null!, null!, 
-            IsWildcardCall<BeginT>(null!, null!, IsWildcard("lhs")), 
+        IsWildcardCall<T>(null!, null!,
+            IsWildcardCall<BeginT>(null!, null!, IsWildcard("lhs")),
             IsWildcardCall<BeginT>(null!, null!, IsWildcard("rhs"))));
+
+
+    /// <summary>
+    /// the fusion name
+    /// </summary>
+    public virtual string Name { get; } = "SingleInputFusion";
+
 
     // replace input with var
     private Call GetReplace(Call st, Expr lhs, Expr rhs)
@@ -54,7 +66,7 @@ public partial class DoubleInputFusion<T, BeginT, EndT> : RewriteRule<Pattern>
         var arg1 = new Var("input1", rhs.CheckedType!);
         var tmpBody = ReplaceTarget(st, lhs, arg0);
         var body = ReplaceTarget(tmpBody, rhs, arg1);
-        return new Call(new Fusion(null, ModuleType.Create("510"), body, arg0, arg1), lhs, rhs);
+        return new Call(new Fusion(Name, ModuleType.Create("k510"), body, arg0, arg1), lhs, rhs);
     }
 }
 
@@ -70,14 +82,15 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
         ParamsWithArg(CalleePattern)
         );
 
-    public static Pattern CalleePattern => 
+    /// <inheritdoc/>
+    public static Pattern CalleePattern =>
         IsCall(
         "callee",
         IsFusion("calleeFuse",
             IsWildcard(),
             WildcardVArgsPattern),
         WildcardVArgsPattern);
-    
+
     // caller(callee, args..)
     private Call GetReplace(Call callee, Call caller, Function calleeFuse, Function callerFuse)
     {
@@ -89,11 +102,11 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
         var index = caller.Parameters.ToList().FindIndex(x => x == callee);
         // get param var name from args index for rename
         var beReplacedVar = callerFuse.Parameters[index];
-        
+
         // replace calleeFuse first param with callerParam which be removed
         var (calleeFuseBody, calleeFirstVar) = RenameFirstVar(calleeFuse, beReplacedVar.Name);
         var (newCalleeFuseBody, newCalleeParams) = RenameRestVar(calleeFuse.Parameters, calleeFuseBody, caller.Parameters.Count);
-        
+
         // merge two body
         //     input1 input2 input3
         //        \     |      /
@@ -104,13 +117,13 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
         // eliminate store load
         // fusion: load -> op1 -> op2 -> ... -> store
         var newBody = EliminateRedundancy(newBodyWithRedundancy);
-        
+
         var newParams = Merge(callerFuse.Parameters.ToArray(), index, calleeFirstVar, newCalleeParams);
         var newInputs = Merge(caller.Parameters, index, callee.Parameters[0], callee.Parameters.ToArray()[1..]);
-        return new Call(new Fusion(null, ModuleType.Create("510"), newBody, newParams), newInputs);
+        return new Call(new Fusion("FuseTwoFusion", ModuleType.Create("k510"), newBody, newParams), newInputs);
     }
 
-    
+
     /// <summary>
     /// e.g. load -> conv -> [store -> load] -> act -> store =>
     ///      load -> conv -> act -> store
@@ -124,11 +137,11 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
     }
 
     public T[] Merge<T>(IRArray<T> callerExprList, int index, T firstInCallee,
-        IRArray<Expr> newCalleeExprList) where T: Expr =>
+        IRArray<Expr> newCalleeExprList) where T : Expr =>
         Merge<T>(callerExprList.ToArray(), index, firstInCallee, newCalleeExprList.ToArray());
 
     public T[] Merge<T>(T[] callerExprList, int index, T expr, Expr[] newCalleeExprList)
-        where T: Expr
+        where T : Expr
     {
         var newCallerExprList = ReplacePos(callerExprList, expr, index);
         return newCallerExprList.Concat(newCalleeExprList).Select(x => (T)x).ToArray();
@@ -180,8 +193,8 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
         var newVarRange = Enumerable.Range(1, calleeFuseParams.Count - 1);
         var newInputCountBase = callerParamCount;
         // replace other param
-        var newCalleeParams =newVarRange 
-            .Select(i => calleeFuseParams[i] with {Name = "input" + (newInputCountBase - 1 + i)})
+        var newCalleeParams = newVarRange
+            .Select(i => calleeFuseParams[i] with { Name = "input" + (newInputCountBase - 1 + i) })
             .ToArray();
         // rename var in callee
         var newCalleeFuseBody = newVarRange
@@ -189,7 +202,7 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
                 ReplaceTarget(
                     expr,
                     calleeFuseParams[i],
-                    newCalleeParams[i-1]));
+                    newCalleeParams[i - 1]));
         return (newCalleeFuseBody, newCalleeParams);
     }
 }

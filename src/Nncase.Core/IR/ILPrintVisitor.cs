@@ -18,7 +18,7 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
 {
     private readonly ScopeWriter Scope;
     private readonly Dictionary<Expr, string> _names = new Dictionary<Expr, string>(ReferenceEqualityComparer.Instance);
-    
+
     private int _localId = 0;
 
     public ILPrintVisitor(TextWriter textWriter)
@@ -64,8 +64,9 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
 
         // 1. Function signature
         Scope.IndWrite($"{name} = fn({string.Join(", ", expr.Parameters.Select(Visit))})");
-        AppendCheckedType(expr.CheckedType, " {");
-
+        AppendCheckedType(expr.CheckedType);
+        Scope.IndWriteLine("{");
+        
         // 2. Function body
         using (Scope.IndentUp()) { var body = Visit(expr.Body); }
 
