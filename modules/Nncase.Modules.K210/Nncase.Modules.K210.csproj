@@ -30,4 +30,8 @@
     <AdditionalFiles Include="$(SolutionDir)/tools/stylecop.json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Simulator" />
+  </ItemGroup>
+
 </Project>
