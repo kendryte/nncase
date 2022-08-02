@@ -41,6 +41,8 @@ class dump_manager {
     void set_dump_root(std::string root);
 
     void dump_op(nncase::runtime::stackvm::tensor_function_t tensor_funct);
+
+    void dump_op(const std::string &op);
 };
 
 extern dump_manager _dump_manager;

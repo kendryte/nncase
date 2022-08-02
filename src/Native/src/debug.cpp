@@ -18,7 +18,11 @@ void set_dump_root(std::string root) {
 }
 
 void dump_manager::dump_op(nncase::runtime::stackvm::tensor_function_t tensor_funct) {
-    auto func_str =  to_string(tensor_funct);
+    auto func_str = to_string(tensor_funct);
+    dump_op(func_str);
+}
+
+void dump_manager::dump_op(const std::string &func_str) {
     set_current_op(func_str);
     dump_append([&](auto &stream) { stream << func_str << std::endl; });
 }
@@ -54,7 +58,7 @@ std::string to_str(const nncase::dims_t &shape) {
 }
 
 void write_shape(const nncase::dims_t &shape) {
-    auto path = fs::path(_dump_manager.get_dump_root()) / "9999shape";
+    auto path = fs::path(_dump_manager.get_dump_root()) / "0000out_shape_list";
     auto f = fs::exists(path) ? std::ofstream(path, std::ios::app)
                               : std::ofstream(path);
     f << _dump_manager.get_current_op() << " :" << to_str(shape);

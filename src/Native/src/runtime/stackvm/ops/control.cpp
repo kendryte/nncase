@@ -16,6 +16,7 @@
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_tensor.h>
+#include <nncase/debug.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -104,16 +105,20 @@ stackvm_runtime_function::visit(NNCASE_UNUSED const extcall_op_t &op) noexcept {
 result<void>
 stackvm_runtime_function::visit(NNCASE_UNUSED const cuscall_op_t &op) noexcept {
     std::vector<value_t> params(op.args);
+    _dump_manager.dump_op(op.registered_name);
     for (size_t i = 0; i < op.args; i++) {
         try_var(arg, pop_object<value_t>());
+        dump_input(arg, "arg_" + std::to_string(i));
         params[i] = std::move(arg);
     }
+
     auto table = module().custom_call_table();
     auto it = table.find(op.registered_name);
     if (it == table.end())
         return err(nncase_errc::stackvm_unknow_custom_call);
     try_var(retval,
             it->second(op.fields_span, params, module().kernel_context()));
+    dump_output(retval);
     return stack_.push(retval);
 }
 
