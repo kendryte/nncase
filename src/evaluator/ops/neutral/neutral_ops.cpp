@@ -47,6 +47,7 @@
 #include <nncase/ir/ops/sigmoid.h>
 #include <nncase/ir/ops/slice.h>
 #include <nncase/ir/ops/softmax.h>
+#include <nncase/ir/ops/space_to_batch.h>
 #include <nncase/ir/ops/table_lookup.h>
 #include <nncase/ir/ops/ternary.h>
 #include <nncase/ir/ops/tflite_detection_postprocess.h>
@@ -515,6 +516,19 @@ void register_neutral_evaluators()
         default:
             std::cerr << "unsupported dtype for softmax: " + std::string(datatype_names(output_type));
         } });
+
+    register_evaluator(op_space_to_batch, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<space_to_batch &>(node);
+
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+
+        kernels::space_to_batch(input.datatype(), input.buffer().data(), output.buffer().data(), input.shape(),
+            runtime_shape_t { (size_t)rnode.block_size_h(), (size_t)rnode.block_size_w() },
+            runtime_paddings_t { rnode.padding_h(), rnode.padding_w() },
+            input.strides(), output.strides())
+            .unwrap_or_throw();
+    });
 
     register_evaluator(op_ternary, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<ternary &>(node);
