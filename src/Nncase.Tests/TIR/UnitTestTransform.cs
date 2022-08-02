@@ -1,20 +1,21 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Nncase.IR;
-using Nncase.TIR;
-using Nncase.Transform;
-using Xunit;
-using static Nncase.IR.F.Math;
-using static Nncase.IR.F.Tensors;
-
-namespace Nncase.Tests.TIRTest;
-
+// using System;
+// using System.Collections.Generic;
+// using System.IO;
+// using System.Linq;
+// using Nncase.IR;
+// using Nncase.TestFixture;
+// using Nncase.TIR;
+// using Nncase.Transform;
+// using Xunit;
+// using static Nncase.IR.F.Math;
+// using static Nncase.IR.F.Tensors;
+//
+// namespace Nncase.Tests.TIRTest;
+//
 // public class UnitTestTransform
 // {
 //     string DumpDirPath = Testing.GetDumpDirPath("TIR/TransformTest");
-
+//
 //     private static IEnumerable<object[]> Data =>
 //       new List<object[]>
 //       {
@@ -22,34 +23,34 @@ namespace Nncase.Tests.TIRTest;
 //             new object[] { new FlattenBufferCase() },
 //             new object[] { new LowerBlockInitCase() },
 //       };
-
-//     [Theory]
-//     [MemberData(nameof(DataOne))]
-//     public void RunOne(ITransfromCase Case) => RunCore(Case);
-
-
-//     protected void RunCore(ITransfromCase Case)
-//     {
-//         var dumpDirPath = Path.Combine(DumpDirPath, Case.GetType().Name);
-//         var options = new RunPassOptions(null, 2, dumpDirPath);
-
-//         var entry = Case.GetEntry();
-//         var inferResult = entry.InferenceType();
-//         entry.DumpExprAsIL("pre", dumpDirPath);
-//         Assert.True(inferResult);
-
-//         var post_entry = Case.Pass.Run(entry, options);
-//         post_entry.DumpExprAsIL("post", dumpDirPath);
-//     }
-
+//
+//      [Theory]
+//      [MemberData(nameof(DataOne))]
+//      public void RunOne(ITransfromCase Case) => RunCore(Case);
+//
+//
+//      protected void RunCore(ITransfromCase Case)
+//      {
+//          var dumpDirPath = Path.Combine(DumpDirPath, Case.GetType().Name);
+//          var options = new RunPassOptions(null, 2, dumpDirPath);
+//
+//          var entry = Case.GetEntry();
+//          var inferResult = entry.InferenceType();
+//          entry.DumpExprAsIL("pre", dumpDirPath);
+//          Assert.True(inferResult);
+//
+//          var post_entry = Case.Pass.Run(entry, options);
+//          post_entry.DumpExprAsIL("post", dumpDirPath);
+//      }
+//
 //     [Theory]
 //     [MemberData(nameof(DataAll))]
 //     public void RunAll(ITransfromCase Case) => RunCore(Case);
-
+//
 //     public static IEnumerable<object[]> DataOne => Data.Take(1);
 //     public static IEnumerable<object[]> DataAll => Data.Skip(1);
 // }
-
+//
 // public class LowerBlockInitCase : ConvertBlocksToOpaqueCase
 // {
 //     public LowerBlockInitCase()
@@ -59,8 +60,8 @@ namespace Nncase.Tests.TIRTest;
 //         );
 //     }
 // }
-
-
+//
+//
 // public class FlattenBufferCase : ConvertBlocksToOpaqueCase
 // {
 //     public FlattenBufferCase()
@@ -70,7 +71,7 @@ namespace Nncase.Tests.TIRTest;
 //         Pass.Add(new Transform.Mutator.FlattenBuffer());
 //     }
 // }
-
+//
 // public class ConvertBlocksToOpaqueCase : ITransfromCase
 // {
 //     public ConvertBlocksToOpaqueCase()
@@ -101,12 +102,12 @@ namespace Nncase.Tests.TIRTest;
 //         return func;
 //     }
 // }
-
-public abstract class ITransfromCase
-{
-    public TIRPass Pass = new("TIRPass");
-    public virtual Function GetEntry()
-    {
-        throw new NotImplementedException("GetEntry");
-    }
-}
+//
+// public abstract class ITransfromCase
+// {
+//     public TIRPass Pass = new("TIRPass");
+//     public virtual Function GetEntry()
+//     {
+//         throw new NotImplementedException("GetEntry");
+//     }
+// }

@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Nncase.Tests.Targets;
 
-public class UnitTestCPUTarget
+public class UnitTestCpuTarget
 {
     [Fact]
     public void TestCreateCPUTarget()

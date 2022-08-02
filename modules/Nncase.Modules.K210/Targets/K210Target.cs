@@ -42,6 +42,7 @@ public class K210Target : ITarget
                 new LowerConv2D(),
             });
         }
+
         // passManager.Add(new DataflowPass("constant_fold")
         // {
         //     new FoldConstCall(),
@@ -56,9 +57,10 @@ public class K210Target : ITarget
             passManager.Add(new DataflowPass("lowering_fake_kpu")
             {
                 new RealizeFakeQuantize(),
-                new RealizeFakeKPUUpload(),
-                new RealizeFakeKPUConv2D(),
-                new RealizeFakeKPUDownload(),
+
+                // new RealizeFakeKPUUpload(),
+                // new RealizeFakeKPUConv2D(),
+                // new RealizeFakeKPUDownload(),
                 new RealizeFakeDequantize(),
             });
         }
