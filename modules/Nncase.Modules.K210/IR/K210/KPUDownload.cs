@@ -8,7 +8,6 @@ using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.K210;
 
-
 /// <summary>
 /// KPU Download.
 /// </summary>
