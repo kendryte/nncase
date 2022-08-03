@@ -59,4 +59,16 @@ public sealed partial class RealizeFakeKPUConv2D : IRewriteRule
 
         return null;
     }
+
+    public KPUActivationParameters quantizeAct()
+    {
+        KPUActivationParameters act = null;
+        return act;
+    }
+
+    public KPUBatchNormParameters quantizeBn()
+    {
+        KPUBatchNormParameters bn = null;
+        return bn;
+    }
 }

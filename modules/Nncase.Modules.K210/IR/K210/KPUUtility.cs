@@ -67,16 +67,8 @@ internal static class KPUUtility
 
     public static bool IsDepthWise(Expr conv2d, Expr input, int groups)
     {
-        var inShape = input.CheckedShape;
-        var inChannels = inShape[1].FixedValue;
-        var outShape = conv2d.CheckedShape;
-        var outChannels = outShape[1].FixedValue;
-        return inChannels == outChannels && outChannels == groups;
-
-        // return IsDepthWise(
-        //     input.CheckedShape[1].FixedValue,
-        //     weights.CheckedShape[0].FixedValue,
-        //     groups);
+        return input.CheckedShape[1].FixedValue == conv2d.CheckedShape[1].FixedValue
+               && conv2d.CheckedShape[1].FixedValue == groups;
     }
 
     public static FakeKPUActivationParameters ClampToActivation(float[] clamp)
