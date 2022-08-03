@@ -65,12 +65,18 @@ internal static class KPUUtility
         return new[] { paddings[0] < 0 ? paddings[0] : 0, paddings[1] < 0 ? paddings[1] : 0 };
     }
 
-    public static bool IsDepthWise(Expr input, Expr weights, int groups)
+    public static bool IsDepthWise(Expr conv2d, Expr input, int groups)
     {
-        return IsDepthWise(
-            input.CheckedShape[1].FixedValue,
-            weights.CheckedShape[0].FixedValue,
-            groups);
+        var inShape = input.CheckedShape;
+        var inChannels = inShape[1].FixedValue;
+        var outShape = conv2d.CheckedShape;
+        var outChannels = outShape[1].FixedValue;
+        return inChannels == outChannels && outChannels == groups;
+
+        // return IsDepthWise(
+        //     input.CheckedShape[1].FixedValue,
+        //     weights.CheckedShape[0].FixedValue,
+        //     groups);
     }
 
     public static FakeKPUActivationParameters ClampToActivation(float[] clamp)
