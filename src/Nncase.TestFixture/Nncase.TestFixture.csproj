@@ -10,6 +10,7 @@
         <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
         <ProjectReference Include="..\Nncase.CodeGen\Nncase.CodeGen.csproj" />
         <ProjectReference Include="..\Nncase.Simulator\Nncase.Simulator.csproj" />
+        <PackageReference Include="LanguageExt.Core" Version="4.0.3" />
         <PackageReference Include="xunit.assert" Version="2.4.1" />
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.2.0" />
         <PackageReference Include="Autofac.Extras.CommonServiceLocator" Version="6.0.1" />

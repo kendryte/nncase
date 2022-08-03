@@ -1,5 +1,7 @@
-#include <nncase/runtime/stackvm/opcode.h>
+#include "nncase/runtime/util.h"
 #include <nncase/debug.h>
+#include <nncase/runtime/result.h>
+#include <nncase/runtime/stackvm/opcode.h>
 
 namespace fs = std::filesystem;
 
@@ -13,11 +15,10 @@ void dump_manager::set_dump_root(std::string root) {
     count = 1;
 }
 
-void set_dump_root(std::string root) {
-    _dump_manager.set_dump_root(root);
-}
+void set_dump_root(std::string root) { _dump_manager.set_dump_root(root); }
 
-void dump_manager::dump_op(nncase::runtime::stackvm::tensor_function_t tensor_funct) {
+void dump_manager::dump_op(
+    nncase::runtime::stackvm::tensor_function_t tensor_funct) {
     auto func_str = to_string(tensor_funct);
     dump_op(func_str);
 }
@@ -35,9 +36,7 @@ fs::path dump_manager::dump_path() {
     return p;
 }
 
-fs::path dump_path() {
-    return _dump_manager.dump_path();
-}
+fs::path dump_path() { return _dump_manager.dump_path(); }
 
 std::ofstream dump_manager::get_stream(const fs::path &path) {
     return append ? std::ofstream(path, std::ios_base::app)
@@ -57,7 +56,7 @@ std::string to_str(const nncase::dims_t &shape) {
     return stream.str();
 }
 
-void write_shape(const nncase::dims_t &shape) {
+void write_out_shape(const nncase::dims_t &shape) {
     auto path = fs::path(_dump_manager.get_dump_root()) / "0000out_shape_list";
     auto f = fs::exists(path) ? std::ofstream(path, std::ios::app)
                               : std::ofstream(path);
@@ -65,8 +64,7 @@ void write_shape(const nncase::dims_t &shape) {
     f.close();
 }
 
-const gsl::byte* force_get_data(nncase::tensor tensor)
-{
+const gsl::byte *force_get_data(nncase::tensor tensor) {
     return tensor->to_host()
         .unwrap()
         ->buffer()
@@ -82,6 +80,7 @@ void dump_output_impl(nncase::value_t value, const fs::path &path, bool incr) {
 #define RETURN_RESULT(_in_type)                                                \
     if (nncase::runtime::cmp_type<_in_type>(value_tensor->dtype())) {          \
         dump_data(stream, IN_CAST(_in_type, data), value_tensor);              \
+        return;                                                                \
     }
 
     dump(
@@ -89,20 +88,23 @@ void dump_output_impl(nncase::value_t value, const fs::path &path, bool incr) {
         [incr](auto &stream, auto &&value_tensor) {
             auto *data = force_get_data(value_tensor);
             if (incr) {
-                write_shape(value_tensor->shape());
+                write_out_shape(value_tensor->shape());
             }
 
-            RETURN_RESULT(bool);
-            RETURN_RESULT(int32_t);
-            RETURN_RESULT(uint32_t);
-            RETURN_RESULT(int64_t);
-            RETURN_RESULT(uint64_t);
-            RETURN_RESULT(float);
+            RETURN_RESULT_SELECT(RETURN_RESULT);
+
+            if (value_tensor->dtype()->typecode() == nncase::dt_float16) {
+                dump_data(stream, IN_CAST(nncase::half, data), value_tensor);
+                return;
+            }
+//            std::cout << "unsupported type:"
+//                      << (int)value_tensor->dtype()->typecode() << std::endl;
         },
         path);
     if (incr) {
         _dump_manager.incr_count();
     }
+#undef RETURN_RESULT
 }
 
 void dump_output(NNCASE_UNUSED nncase::value_t value) {
