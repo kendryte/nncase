@@ -30,10 +30,10 @@ public class QuantizeOptions
     /// <summary>
     /// CalibMethod
     /// </summary>
-    public CalibMethod CalibrationMethod { get; set; }
+    public CalibMethod CalibrationMethod { get; set; } = CalibMethod.NoClip;
 
     /// <summary>
     /// Enable the Auto bind quant method.
     /// </summary>
-    public bool BindQuantMethod { get; set; }
+    public bool BindQuantMethod { get; set; } = false;
 }

@@ -102,6 +102,7 @@ public class CalibrationEvaluator
             IR.Tuple tuple => Visit(enode, tuple),
             Op op => Visit(enode, op),
             Marker marker => Visit(enode, marker),
+            None none => Visit(enode, none),
             _ => throw new ArgumentException("Unsupported expression type."),
         };
     }
@@ -161,8 +162,14 @@ public class CalibrationEvaluator
         return Visit(enode, costs => costs[0]);
     }
 
+    private IValue? Visit(ENode enode, None none)
+    {
+        return NoneValue.Default;
+    }
+
     private IValue? Visit(ENode enode, Call call)
     {
+        System.Console.WriteLine($"Visit({enode}, {call.Target.GetType().Name})");
         return Visit(enode, costs =>
         {
             IValue? value = null;
