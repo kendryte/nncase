@@ -29,7 +29,7 @@ public class UnitTestFoldCast: TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldTwoCastsPositiveData))]
     public void TestFoldTwoCastsPositive(DataType preType, DataType middleType, DataType PostType)
     {
-        var caseOptions = passOptions.IndentDir($"{preType.GetDisplayName()}_{middleType.GetDisplayName()}_{PostType.GetDisplayName()}");
+        var caseOptions = GetPassOptions();
         var a = Random.Normal(preType, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Tensors.Cast(Tensors.Cast(a, middleType), PostType);
         var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoCasts() }, caseOptions);
@@ -51,7 +51,7 @@ public class UnitTestFoldCast: TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldTwoCastsNegativeData))]
     public void TestFoldTwoCastsNegative(DataType preType, DataType middleType, DataType PostType)
     {
-        var caseOptions = passOptions.IndentDir($"{preType.GetDisplayName()}_{middleType.GetDisplayName()}_{PostType.GetDisplayName()}");
+        var caseOptions = GetPassOptions();
         var a = Random.Normal(preType, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Tensors.Cast(Tensors.Cast(a, middleType), PostType);
         var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoCasts() }, caseOptions);
@@ -78,7 +78,7 @@ public class UnitTestFoldCast: TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopCastPositiveData))]
     public void TestFoldNopCastPositive(DataType preType, DataType postType)
     {
-        var caseOptions = passOptions.IndentDir($"{preType.GetDisplayName()}_{postType.GetDisplayName()}");
+        var caseOptions = GetPassOptions();
         var a = Random.Normal(preType, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Tensors.Cast(a, postType);
         var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopCast() }, caseOptions);
@@ -106,7 +106,7 @@ public class UnitTestFoldCast: TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopCastNegativeData))]
     public void TestFoldNopCastNegative(DataType preType, DataType postType)
     {
-        var caseOptions = passOptions.IndentDir($"{preType.GetDisplayName()}_{postType.GetDisplayName()}");
+        var caseOptions = GetPassOptions();
         var a = Random.Normal(preType, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Tensors.Cast(a, postType);
         var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopCast() }, caseOptions);

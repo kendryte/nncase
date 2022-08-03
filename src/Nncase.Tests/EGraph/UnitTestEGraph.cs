@@ -182,7 +182,7 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
         // but after rebuid, (x*2) is not in worklist, 
         // so it's eclass in hashcon will not be update
         // should fix it.
-        passOptions.SetPassName("EGraphTest/TestRebuildCanonicalizeEclass");
+        var passOptions = GetPassOptions();
         var g = new EGraph();
         Var x = "x";
         var e1 = g.Add(x * 2);
@@ -203,7 +203,7 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestRebuildUpdateUsed()
     {
-        passOptions.SetPassName("EGraphTest/TestRebuildUpdateUsed");
+        var passOptions = GetPassOptions();
         var g = new EGraph();
         Var x = "x";
         var e1 = g.Add(x * 2);

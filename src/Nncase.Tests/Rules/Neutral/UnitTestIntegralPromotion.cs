@@ -33,6 +33,7 @@ public class UnitTestIntegralPromotion : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestIntegralPromotionPositiveData))]
     public async Task TestIntegralPromotionPositive(DataType aType, DataType bType)
     {
+        var passOptions = GetPassOptions();
         var expr = Tensors.Cast(1, aType) + Tensors.Cast(2, bType);
         expr.InferenceType();
         var f = new Function(expr);
@@ -55,6 +56,7 @@ public class UnitTestIntegralPromotion : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestIntegralPromotionNegativeData))]
     public async Task TestIntegralPromotionNegative(DataType aType, DataType bType)
     {
+        var passOptions = GetPassOptions();
         var expr = Tensors.Cast(1, aType) + Tensors.Cast(2, bType);
         expr.InferenceType();
         var f = new Function(expr);

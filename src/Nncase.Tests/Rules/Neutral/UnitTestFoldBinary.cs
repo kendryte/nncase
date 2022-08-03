@@ -36,7 +36,7 @@ public class UnitTestFoldBinary: TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopBinaryNegativeData))]
     public void TestFoldNopBinaryNegative(BinaryOp binaryOp, int[] aShape, float bValue, int index)
     {
-        var caseOptions = passOptions.IndentDir($"Negative_case_{index}");
+        var caseOptions = GetPassOptions();
         var a = new Var();
         var Normal = new Dictionary<Var, IValue>();
         Normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
@@ -66,7 +66,7 @@ public class UnitTestFoldBinary: TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopBinaryPositiveData))]
     public void TestFoldNopBinaryPositive(BinaryOp binaryOp, int[] aShape, float bValue, int index)
     {
-        var caseOptions = passOptions.IndentDir($"Positive_case_{index}");
+        var caseOptions = GetPassOptions();
         var a = new Var();
         var Normal = new Dictionary<Var, IValue>();
         Normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());

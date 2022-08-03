@@ -307,4 +307,9 @@ public class UnitTestFixtrue
         return compileOptions;
     }
 
+    public RunPassOptions GetPassOptions([CallerMemberName] string member_name = "")
+    {
+        var options = GetCompileOptions();
+        return new RunPassOptions(options);
+    }
 }

@@ -30,7 +30,7 @@ public class UnitTestFusePadConv2D : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFusePadConv2DPositiveData))]
     public void TestFusePadConv2DPositive(int[] shape, int[,] pads1, int[,] pads2, int[] wShape, int index)
     {
-        var caseOptions = passOptions.IndentDir($"case_{index}");
+        var caseOptions = GetPassOptions();
         var a = new Var();
         var w = Random.Normal(DataTypes.Float32, 0, 1, 0, wShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { wShape[0] });
@@ -70,7 +70,7 @@ public class UnitTestFusePadConv2D : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFusePadConv2DNegativeData))]
     public void TestFusePadConv2DNegative(int[] shape, int[,] pads1, int[,] pads2, int[] wShape, int index)
     {
-        var caseOptions = passOptions.IndentDir($"case_{index}");
+        var caseOptions = GetPassOptions();
         var a = new Var();
         var w = Random.Normal(DataTypes.Float32, 0, 1, 0, wShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { wShape[0] });

@@ -17,7 +17,7 @@ public class UnitTestAddToConv2D: TestFixture.UnitTestFixtrue
     [Fact]
     public void TestElementwiseAdd()
     {
-        var caseOptions = passOptions.IndentDir("TestElementwiseAdd");
+        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = a + b;
@@ -30,7 +30,7 @@ public class UnitTestAddToConv2D: TestFixture.UnitTestFixtrue
     [Fact]
     public void TestNegElementwiseAdd()
     {
-        var caseOptions = passOptions.IndentDir("TestNegElementwiseAdd");
+        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 1, 8, 8 });
         var rootPre = a + b;

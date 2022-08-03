@@ -28,7 +28,7 @@ public class UnitTestFoldTranspose : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopTransposePositiveData))]
     public void TestFoldNopTransposePositive(int[] shape, int[] perm)
     {
-        var caseOptions = passOptions.IndentDir($"FoldNop_{string.Join("_", shape)}_{string.Join("_", perm)}");
+        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Transpose(a, perm);
         var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopTranspose() }, caseOptions);
@@ -50,7 +50,7 @@ public class UnitTestFoldTranspose : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldTwoTransposesPositiveData))]
     public void TestFoldTwoTransposesPositive(int[] shape, int[] perm1, int[] perm2)
     {
-        var caseOptions = passOptions.IndentDir($"FoldTwo_{string.Join("_", shape)}_{string.Join("_", perm1)}_{string.Join("_", perm2)}");
+        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Transpose(Tensors.Transpose(a, perm1), perm2);
         var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoTransposes() }, caseOptions);
@@ -70,7 +70,7 @@ public class UnitTestFoldTranspose : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestTransposeToReshapePositiveData))]
     public void TestTransposeToReshapePositive(int[] shape, int[] perm)
     {
-        var caseOptions = passOptions.IndentDir($"FoldTToR_{string.Join("_", shape)}_{string.Join("_", perm)}");
+        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Transpose(a, perm);
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]

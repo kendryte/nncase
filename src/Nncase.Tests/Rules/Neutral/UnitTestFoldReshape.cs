@@ -28,7 +28,7 @@ public class UnitTestFoldReshape : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopReshapePositiveData))]
     public void TestFoldNopReshapePositive(int[] shape, int[] newShape)
     {
-        var caseOptions = passOptions.IndentDir(string.Join("_", shape) + "_" + string.Join("_", newShape));
+        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Reshape(a, newShape);
         var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopReshape() }, caseOptions);
@@ -48,7 +48,7 @@ public class UnitTestFoldReshape : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopReshapeNegativeData))]
     public void TestFoldNopReshapeNegative(int[] shape, int[] newShape)
     {
-        var caseOptions = passOptions.IndentDir(string.Join("_", shape) + "_" + string.Join("_", newShape));
+        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Reshape(a, newShape);
         var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopReshape() }, caseOptions);
@@ -68,10 +68,10 @@ public class UnitTestFoldReshape : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldTwoReshapesPositiveData))]
     public void TestFoldTwoReshapesPositive(int[] shape, int[] newShape1, int[] newShape2)
     {
-        var caseOptions = passOptions.IndentDir(string.Join("_", shape) + "_" + string.Join("_", newShape1) + "_" + string.Join("_", newShape2));
+        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Reshape(Tensors.Reshape(a, newShape1), newShape2);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoReshapes() }, passOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoReshapes() }, caseOptions);
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));

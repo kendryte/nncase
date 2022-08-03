@@ -30,7 +30,7 @@ public class UnitTestSimplifyBinary: TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestReassociateMulPositiveData))]
     public void TestReassociateMulPositive(int[] aShape, int index)
     {
-        var caseOptions = passOptions.IndentDir($"TestReassociateMulPositive_case_{index}");
+        var caseOptions = GetPassOptions();
         var a = new Var();
         var b = new Var();
         var c = new Var();
@@ -59,7 +59,7 @@ public class UnitTestSimplifyBinary: TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestReassociateDivPositiveData))]
     public void TestReassociateDivPositive(int[] aShape, int index)
     {
-        var caseOptions = passOptions.IndentDir($"TestReassociateDivPositive_case_{index}");
+        var caseOptions = GetPassOptions();
         var a = new Var();
         var b = new Var();
         var c = Random.Normal(DataTypes.Float32, 0, 1, 0, aShape); // Can't get Var's datatype. Pattern will not pass 
@@ -87,7 +87,7 @@ public class UnitTestSimplifyBinary: TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestXDivXPositiveData))]
     public void TestXDivXPositive(int[] aShape, int index)
     {
-        var caseOptions = passOptions.IndentDir($"TestXDivXPositive_case_{index}");
+        var caseOptions = GetPassOptions();
         var a = new Var();
         var Normal = new Dictionary<Var, IValue>();
         Normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
@@ -111,7 +111,7 @@ public class UnitTestSimplifyBinary: TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestCommutateMulPositiveData))]
     public void TestCommutateMulPositive(int[] aShape, int index)
     {
-        var caseOptions = passOptions.IndentDir($"TestCommutateMulPositive_case_{index}");
+        var caseOptions = GetPassOptions();
         caseOptions = caseOptions.SetRewriteOnce(true);
         var a = new Var();
         var b = new Var();
