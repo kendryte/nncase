@@ -5,8 +5,9 @@ using System;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.Utilities;
 using OrtKISharp;
-using SMath = System.Math;
+
 namespace Nncase.Evaluator.Math;
 
 /// <summary>
@@ -21,58 +22,7 @@ public class QuantParamOfEvaluator : IEvaluator<QuantParamOf>, ITypeInferencer<Q
         var bits = context.GetArgumentValueAsScalar<int>(target, QuantParamOf.Bits);
         var min = rawRange[0];
         var max = rawRange[1];
-        var range = fixupRange((min, max), target.QuantMode == QuantMode.SignedSymmetricMode);
-        double QMax = 255;
-        double QMin = 0;
-        switch (target.QuantMode)
-        {
-            case QuantMode.UnsignedMode:
-                QMin = 0;
-                QMax = (1 << bits) - 1;
-                break;
-            case QuantMode.SignedSymmetricMode:
-                QMin = -(1 << (bits - 1)) + 1;
-                QMax = (1 << (bits - 1)) - 1;
-                break;
-            case QuantMode.SignedAsymmetricMode:
-                QMin = -(1 << (bits - 1));
-                QMax = (1 << (bits - 1)) - 1;
-                break;
-            default:
-                throw new ArgumentOutOfRangeException("Invalid QuantMode");
-        }
-
-        var scale = (range.Max - range.Min) / (QMax - QMin);
-        var bias = SMath.Round((range.Min * (QMin - QMax)) / (range.Max - range.Min)) + QMin;
-        var r = new QuantParam((int)bias, (float)scale);
-        return Value.FromTensor(Tensor.FromScalar<QuantParam>(r));
-    }
-
-    private ValueRange<float> fixupRange(ValueRange<float> range, bool symmetric = false)
-    {
-        if (symmetric)
-        {
-            var r = SMath.Max(SMath.Max(SMath.Abs(range.Min), SMath.Abs(range.Max)), 0.01f);
-            return (-r, r);
-        }
-        else
-        {
-            range.Max = SMath.Max(0, range.Max);
-            range.Min = SMath.Min(0, range.Min);
-            var r = range.Max - range.Min;
-            if (r == 0)
-            {
-                r = 0.1f;
-            }
-            else if (r < 0.01f)
-            {
-                r = 0.01f;
-            }
-
-            range.Max = range.Min + r;
-        }
-
-        return range;
+        return Value.FromTensor(Tensor.FromScalar(QuantUtility.GetQuantParam((min, max), bits, target.QuantMode)));
     }
 
     /// <inheritdoc/>

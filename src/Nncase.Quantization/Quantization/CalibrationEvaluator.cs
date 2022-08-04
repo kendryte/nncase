@@ -169,7 +169,6 @@ public class CalibrationEvaluator
 
     private IValue? Visit(ENode enode, Call call)
     {
-        System.Console.WriteLine($"Visit({enode}, {call.Target.GetType().Name})");
         return Visit(enode, costs =>
         {
             IValue? value = null;

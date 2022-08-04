@@ -24,7 +24,7 @@ public static class Comparator
         return (float)(sum / (v1 * v2));
     }
 
-    public static bool Compare(TensorValue pre, TensorValue post, float thresh)
+    public static bool TensorValueCompare(TensorValue pre, TensorValue post, float thresh)
     {
         var v1 = pre.AsTensor();
         var v2 = post.AsTensor();
@@ -37,7 +37,7 @@ public static class Comparator
 
     public static bool Compare(IValue pre, IValue post, float thresh = 0.99f) => (pre, post) switch
     {
-        (TensorValue a, TensorValue b) => Compare(a, b, thresh),
+        (TensorValue a, TensorValue b) => TensorValueCompare(a, b, thresh),
         (_, _) => throw new ArgumentOutOfRangeException()
     };
 }

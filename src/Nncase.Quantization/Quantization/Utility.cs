@@ -36,69 +36,6 @@ public static class Utility
 
         return dot / (float)(Math.Sqrt(mag1) * Math.Sqrt(mag2));
     }
-    public static ValueRange<float> FixupRange(ValueRange<float> range, bool symmetric = false)
-    {
-        if (symmetric)
-        {
-
-            var r = Math.Max(Math.Max(Math.Abs(range.Min), Math.Abs(range.Max)), 0.01f);
-            return new(-r, r);
-        }
-        else
-        {
-            if (range.Max < 0)
-                range.Max = 0;
-            if (range.Min > 0)
-                range.Min = 0;
-
-            var r = range.Max - range.Min;
-            if (r == 0)
-                r = 0.1f;
-            // else if (r < 0.01f)
-            //     r = 0.01f;
-            range.Max = range.Min + r;
-        }
-
-        return range;
-    }
-
-    /// <summary>
-    /// Get the Quant Param from the value range.
-    /// </summary>
-    /// <param name="range"> range. </param>
-    /// <param name="bits"> bits. </param>
-    /// <param name="qm"> quant mode. </param>
-    /// <returns></returns>
-    /// <exception cref="ArgumentOutOfRangeException"></exception>
-    public static QuantParam GetQuantParam(ValueRange<float> range, int bits, QuantMode qm)
-    {
-        if (qm == QuantMode.SignedSymmetricMode)
-            range = FixupRange(range, true);
-        else
-            range = FixupRange(range);
-        double Q_max = 255;
-        double Q_min = 0;
-        switch (qm)
-        {
-            case QuantMode.UnsignedMode:
-                Q_min = 0;
-                Q_max = (1 << bits) - 1;
-                break;
-            case QuantMode.SignedSymmetricMode:
-                Q_min = -(1 << (bits - 1)) + 1;
-                Q_max = (1 << (bits - 1)) - 1;
-                break;
-            case QuantMode.SignedAsymmetricMode:
-                Q_min = -(1 << (bits - 1));
-                Q_max = (1 << (bits - 1)) - 1;
-                break;
-            default:
-                throw new ArgumentOutOfRangeException("Invalid quant mode");
-        }
-        var scale = (range.Max - range.Min) / (Q_max - Q_min);
-        var bias = Math.Round((range.Min * (Q_min - Q_max)) / (range.Max - range.Min)) + Q_min;
-        return new(checked((int)(bias)), checked((float)scale));
-    }
 
     /// <summary>
     /// 
