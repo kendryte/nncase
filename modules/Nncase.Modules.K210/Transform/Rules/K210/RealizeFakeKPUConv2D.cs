@@ -9,7 +9,8 @@ using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.K210;
-using static  Nncase.PatternMatch.F.K210;
+using Nncase.IR.Math;
+using static Nncase.PatternMatch.F.K210;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
 using Tensorflow.Keras;
@@ -17,6 +18,7 @@ using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.Utility;
+using Math = System.Math;
 
 namespace Nncase.Transform.Rules.K210;
 
@@ -32,7 +34,11 @@ public sealed partial class RealizeFakeKPUConv2D : IRewriteRule
             "fake_conv2d_call",
             op => true,
             IsRangeOfMarker(IsWildcard("input"),
-                IsConst("input_range")), IsTensorConst("weights"));
+                IsConst("input_range")),
+            IsTensorConst("weights")
+            // IsTensorConst("activation"),
+            // IsTensorConst("batchNorms")
+            );
 
     private Expr? GetReplace(Call fake_conv2d_call, Expr input, Tensor<float> input_range, Expr weights)
     {
@@ -54,21 +60,38 @@ public sealed partial class RealizeFakeKPUConv2D : IRewriteRule
             var isDepthwise = inChannels == outChannels && outChannels == groups;
             var batchnorms = KPUUtility.BatchNorm().Segments;
             var action = KPUUtility.Activation().Segments;
-            return IR.F.K210.KPUConv2D(isDepthwise, filterType, KPUPoolType.Bypass, KPUUtility.Activation(), input, weights, batchnorms, action);
+            return IR.F.K210.KPUConv2D(isDepthwise, filterType, KPUPoolType.Bypass, KPUUtility.Activation(), input, weights, input, input);
         }
 
         return null;
     }
 
-    public KPUActivationParameters quantizeAct()
+    public static KPUActivationParameters quantizeAct(Quantize quantize, float actScale, QuantParam yQuantParam, QuantParam zQuantParam, ValueRange<float> activation )
     {
-        KPUActivationParameters act = null;
+        // var xfMin = IR.F.Math.Clamp((0 - yQuantParam.ZeroPoint) * yQuantParam.Scale, activation.Min, activation.Max);
+        // var xfMax = IR.F.Math.Clamp((255 - yQuantParam.ZeroPoint) * yQuantParam.Scale, activation.Min, activation.Max);
+        var xfMin = Math.Min(Math.Max((0 - yQuantParam.ZeroPoint) * yQuantParam.Scale, activation.Min), activation.Max);
+        var xfMax = Math.Min(Math.Max((255 - yQuantParam.ZeroPoint) * yQuantParam.Scale, activation.Min), activation.Max);
+
+        var zqScale = actScale / zQuantParam.Scale;
+
+        var samplesCount = 2048;
+        var sampleStep = (xfMax - xfMin) / (samplesCount - 1);
+        float[] samplesX = new float[samplesCount];
+        float[] samplesY = new float[samplesCount];
+        for (var i = 0; i < samplesCount; i++)
+        {
+            samplesX[i] = xfMin + i * sampleStep;
+            samplesY[i] = xfMin + i * sampleStep;
+        }
+        
+        KPUActivationParameters act = new KPUActivationParameters();
         return act;
     }
 
-    public KPUBatchNormParameters quantizeBn()
+    public static KPUBatchNormParameters quantizeBn()
     {
-        KPUBatchNormParameters bn = null;
+        KPUBatchNormParameters bn = new KPUBatchNormParameters();
         return bn;
     }
 }
