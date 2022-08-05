@@ -195,6 +195,9 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
     auto weight_shape = get_shape(weight);
     auto weight_type = get_datatype(weight).value();
 
+    const auto maybe_output_type = get_datatype(output);
+    const auto deduced_output_shape = maybe_output_type.has_value() ? get_shape(output) : std::optional<shape_t> { };
+
     // group
     const auto &group_attr = get_attribute<int>(node, "group");
     size_t group = group_attr ? group_attr.value() : 1;
@@ -255,7 +258,7 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
     std::string pad_mode = auto_pad_attr ? auto_pad_attr.value() : "NOTSET";
 
     // output_shape
-    auto output_shape { generate_output_shape(input_shape, weight_shape, paddings, dilations, strides, output_paddings) };
+    auto output_shape { deduced_output_shape.value_or(generate_output_shape(input_shape, weight_shape, paddings, dilations, strides, output_paddings)) };
     const auto &output_shape_attr = get_attribute<std::vector<int>>(node, "output_shape");
     if (output_shape_attr)
     {
