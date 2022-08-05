@@ -138,7 +138,14 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     public override TextSnippet Visit(Function expr)
     {
-        return Visit(expr.Body);
+        if (ReferenceEquals(expr, _function))
+        {
+            return Visit(expr.Body);
+        }
+        else
+        {
+            return null!;
+        }
     }
 
     public override TextSnippet Visit(PrimFunctionWrapper expr)
