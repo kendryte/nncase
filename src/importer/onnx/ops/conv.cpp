@@ -31,15 +31,21 @@ using namespace onnx;
 
 namespace
 {
-    shape_t generate_output_shape(const shape_t &input, const shape_t &kernel, const std::array<padding, 2> &pads, const std::array<size_t, 2> &dilations, const std::array<size_t, 2> &strides)
+    shape_t generate_output_shape(const shape_t &input, const shape_t &kernel, const std::array<padding, 2> &pads, const std::array<size_t, 2> &dilations, const std::array<size_t, 2> &strides, const std::array<int32_t, 2>& output_paddings)
     {
-        return
+        shape_t result{input};
+
+        for (size_t i = 0; i < input.size(); ++i)
         {
-            input[0],
-            kernel[0],
-            get_windowed_output_size(input[2] + pads[0].sum(), kernel[2], strides[0], dilations[0], false),
-            get_windowed_output_size(input[3] + pads[1].sum(), kernel[3], strides[1], dilations[1], false)
-        };
+            const auto stride = i >= 2 ? strides[i - 2] : 1;
+            const auto output_padding = i >= 2 ? output_paddings[i - 2] : 0;
+            const auto dilation = i >= 2 ? dilations[i - 2] : 1;
+            const auto padding = i >= 2 ? (pads[i - 2].before + pads[i - 2].after) : 0;
+
+            result[i] = stride * (input[i] - 1) + output_padding + ((kernel[i] - 1) * dilation + 1) - padding;
+        }
+
+        return result;
     }
 }
 
@@ -249,7 +255,7 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
     std::string pad_mode = auto_pad_attr ? auto_pad_attr.value() : "NOTSET";
 
     // output_shape
-    auto output_shape { generate_output_shape(input_shape, weight_shape, paddings, dilations, strides) };
+    auto output_shape { generate_output_shape(input_shape, weight_shape, paddings, dilations, strides, output_paddings) };
     const auto &output_shape_attr = get_attribute<std::vector<int>>(node, "output_shape");
     if (output_shape_attr)
     {
