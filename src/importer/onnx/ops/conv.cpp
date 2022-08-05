@@ -31,22 +31,22 @@ using namespace onnx;
 
 namespace
 {
-    shape_t generate_output_shape(const shape_t &input, const shape_t &kernel, const std::array<padding, 2> &pads, const std::array<size_t, 2> &dilations, const std::array<size_t, 2> &strides, const std::array<int32_t, 2>& output_paddings)
+shape_t generate_output_shape(const shape_t &input, const shape_t &kernel, const std::array<padding, 2> &pads, const std::array<size_t, 2> &dilations, const std::array<size_t, 2> &strides, const std::array<int32_t, 2> &output_paddings)
+{
+    shape_t result { input };
+
+    for (size_t i = 0; i < input.size(); ++i)
     {
-        shape_t result{input};
+        const auto stride = i >= 2 ? strides[i - 2] : 1;
+        const auto output_padding = i >= 2 ? output_paddings[i - 2] : 0;
+        const auto dilation = i >= 2 ? dilations[i - 2] : 1;
+        const auto padding = i >= 2 ? (pads[i - 2].before + pads[i - 2].after) : 0;
 
-        for (size_t i = 0; i < input.size(); ++i)
-        {
-            const auto stride = i >= 2 ? strides[i - 2] : 1;
-            const auto output_padding = i >= 2 ? output_paddings[i - 2] : 0;
-            const auto dilation = i >= 2 ? dilations[i - 2] : 1;
-            const auto padding = i >= 2 ? (pads[i - 2].before + pads[i - 2].after) : 0;
-
-            result[i] = stride * (input[i] - 1) + output_padding + ((kernel[i] - 1) * dilation + 1) - padding;
-        }
-
-        return result;
+        result[i] = stride * (input[i] - 1) + output_padding + ((kernel[i] - 1) * dilation + 1) - padding;
     }
+
+    return result;
+}
 }
 
 void onnx_importer::convert_op_Conv(const NodeProto &node)
@@ -196,7 +196,7 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
     auto weight_type = get_datatype(weight).value();
 
     const auto maybe_output_type = get_datatype(output);
-    const auto deduced_output_shape = maybe_output_type.has_value() ? get_shape(output) : std::optional<shape_t> { };
+    const auto deduced_output_shape = maybe_output_type.has_value() ? get_shape(output) : std::optional<shape_t> {};
 
     // group
     const auto &group_attr = get_attribute<int>(node, "group");
