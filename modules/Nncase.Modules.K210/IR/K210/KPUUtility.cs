@@ -120,4 +120,25 @@ internal static class KPUUtility
 
         return value;
     }
+    
+    public static ActParam GetDefaultConvActParam(int oc, TensorConst bias)
+    {
+        var actParam = new ActParam(oc);
+        var biasData = bias.Value.ToArray<float>();
+        actParam.Bl = ActParam.Add(actParam.Bl, biasData);
+        actParam.Br = ActParam.Add(actParam.Br, biasData);
+        return actParam;
+    }
+
+    public static Tensor GetDefaultConvActParam(Expr weights, TensorConst bias)
+    {
+        var c = weights.CheckedShape[0].FixedValue;
+        return GetDefaultConvActParam(c, bias).ToActData();
+    }
+
+    public static Tensor GetFakeConvActParam(Expr weights, TensorConst bias)
+    {
+        var c = weights.CheckedShape[0].FixedValue;
+        return GetDefaultConvActParam(c, bias).ToFakeActData();
+    }
 }

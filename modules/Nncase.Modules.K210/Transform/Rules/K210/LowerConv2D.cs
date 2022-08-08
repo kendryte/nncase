@@ -58,7 +58,7 @@ public sealed partial class LowerConv2D : IRewriteRule
         {
             var zeroOfDType = ((Tensor)0f).CastTo(inDType);
             var zeroPaddings = new[] { 0, 0 };
-            var isDepthwise = inChannels == outChannels && outChannels == groups;
+            var isDepthwise = KPUUtility.IsDepthWise(conv2d, input, groups);
             var kpuPad = KPUUtility.GetKPUPadding(filterType);
             var padH = new[] { paddings[0, 0] - kpuPad, paddings[0, 1] - kpuPad };
             var padW = new[] { paddings[1, 0] - kpuPad, paddings[1, 1] - kpuPad };

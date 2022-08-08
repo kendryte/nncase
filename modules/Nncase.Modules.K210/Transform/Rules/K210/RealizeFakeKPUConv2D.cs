@@ -36,8 +36,8 @@ public sealed partial class RealizeFakeKPUConv2D : IRewriteRule
             IsRangeOfMarker(IsWildcard("input"),
                 IsConst("input_range")),
             IsTensorConst("weights")
-            // IsTensorConst("activation"),
-            // IsTensorConst("batchNorms")
+            // IsTensorConst("batchNorms"),
+            // IsTensorConst("activation")
             );
 
     private Expr? GetReplace(Call fake_conv2d_call, Expr input, Tensor<float> input_range, Expr weights)
@@ -58,8 +58,8 @@ public sealed partial class RealizeFakeKPUConv2D : IRewriteRule
             && KPUUtility.TryGetFilterType(filterH, filterW, out var filterType))
         {
             var isDepthwise = inChannels == outChannels && outChannels == groups;
-            var batchnorms = KPUUtility.BatchNorm().Segments;
-            var action = KPUUtility.Activation().Segments;
+            // var batchnorms = KPUUtility.BatchNorm().Segments;
+            // var action = KPUUtility.Activation().Segments;
             return IR.F.K210.KPUConv2D(isDepthwise, filterType, KPUPoolType.Bypass, KPUUtility.Activation(), input, weights, input, input);
         }
 

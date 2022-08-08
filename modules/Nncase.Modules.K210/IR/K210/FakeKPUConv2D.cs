@@ -26,4 +26,16 @@ public sealed record class FakeKPUConv2D(bool IsDepthwise, KPUFilterType FilterT
     /// Gets Weights.
     /// </summary>
     public static readonly ParameterInfo Weights = new(typeof(FakeKPUConv2D), 1, "weights", HasRank(4));
+    
+    /*
+    /// <summary>
+    /// Gets batch norms.
+    /// </summary>
+    public static readonly ParameterInfo BatchNorms = new(typeof(KPUConv2D), 2, "batchNorms", ValidFakeBatchNorms());
+
+    /// <summary>
+    /// Gets activation.
+    /// </summary>
+    public static readonly ParameterInfo OutputQuantParam = new(typeof(KPUConv2D), 3, "outputQuantParam",ValidFakeAct());
+*/
 }

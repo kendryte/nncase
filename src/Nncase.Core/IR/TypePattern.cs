@@ -134,6 +134,10 @@ namespace Nncase.IR
         /// <returns></returns>
         public static TypePattern HasRank(int rank) => HasRank(r => r == rank, $"Rank = {rank}");
         
+        public static TypePattern ValidFakeBatchNorms() => IsIRType();
+        
+        public static TypePattern ValidFakeAct() => HasRank(2) & HasDataType(DataTypes.Float32);
+        
         /// <summary>
         /// 
         /// </summary>
