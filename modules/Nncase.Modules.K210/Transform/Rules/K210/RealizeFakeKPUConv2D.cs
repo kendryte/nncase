@@ -84,7 +84,7 @@ public sealed partial class RealizeFakeKPUConv2D : IRewriteRule
             samplesX[i] = xfMin + i * sampleStep;
             samplesY[i] = xfMin + i * sampleStep;
         }
-        
+
         KPUActivationParameters act = new KPUActivationParameters();
         return act;
     }
