@@ -12,7 +12,6 @@ public class ActParam
 
     public bool BiasOnly => Kl.All(x => x == 1f) && Kr.All(x => x == 1f);
 
-
     public ActParam(int c)
     {
         var zeros = Enumerable.Repeat(0, c).Select(x => (float)x);

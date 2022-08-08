@@ -120,7 +120,7 @@ internal static class KPUUtility
 
         return value;
     }
-    
+
     public static ActParam GetDefaultConvActParam(int oc, TensorConst bias)
     {
         var actParam = new ActParam(oc);

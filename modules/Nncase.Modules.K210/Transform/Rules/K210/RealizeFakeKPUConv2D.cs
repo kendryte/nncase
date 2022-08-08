@@ -35,12 +35,13 @@ public sealed partial class RealizeFakeKPUConv2D : IRewriteRule
             op => true,
             IsRangeOfMarker(IsWildcard("input"),
                 IsConst("input_range")),
-            IsTensorConst("weights")
+            IsTensorConst("weights"),
+            IsTensorConst("bias")
             // IsTensorConst("batchNorms"),
             // IsTensorConst("activation")
             );
 
-    private Expr? GetReplace(Call fake_conv2d_call, Expr input, Tensor<float> input_range, Expr weights)
+    private Expr? GetReplace(Call fake_conv2d_call, Expr input, Tensor<float> input_range, Expr weights, TensorConst bias)
     {
         var inDType = input.CheckedDataType;
         var inShape = input.CheckedShape;
@@ -60,13 +61,15 @@ public sealed partial class RealizeFakeKPUConv2D : IRewriteRule
             var isDepthwise = inChannels == outChannels && outChannels == groups;
             // var batchnorms = KPUUtility.BatchNorm().Segments;
             // var action = KPUUtility.Activation().Segments;
-            return IR.F.K210.KPUConv2D(isDepthwise, filterType, KPUPoolType.Bypass, KPUUtility.Activation(), input, weights, input, input);
+            var batchnorms = None.Default;
+            var act = KPUUtility.GetFakeConvActParam(weights, bias);
+            return IR.F.K210.KPUConv2D(isDepthwise, filterType, KPUPoolType.Bypass, KPUUtility.Activation(), input, weights, batchnorms, act);
         }
 
         return null;
     }
 
-    public static KPUActivationParameters quantizeAct(Quantize quantize, float actScale, QuantParam yQuantParam, QuantParam zQuantParam, ValueRange<float> activation )
+    /*public static KPUActivationParameters quantizeAct(Quantize quantize, float actScale, QuantParam yQuantParam, QuantParam zQuantParam, ValueRange<float> activation )
     {
         // var xfMin = IR.F.Math.Clamp((0 - yQuantParam.ZeroPoint) * yQuantParam.Scale, activation.Min, activation.Max);
         // var xfMax = IR.F.Math.Clamp((255 - yQuantParam.ZeroPoint) * yQuantParam.Scale, activation.Min, activation.Max);
@@ -93,5 +96,5 @@ public sealed partial class RealizeFakeKPUConv2D : IRewriteRule
     {
         KPUBatchNormParameters bn = new KPUBatchNormParameters();
         return bn;
-    }
+    }*/
 }
