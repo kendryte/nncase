@@ -32,7 +32,7 @@ public partial class SingleInputFusion<T, BeginT, EndT> : RewriteRule<Pattern>
         }
         var arg = new Var("input0", input.CheckedType!);
         var body = ReplaceTarget(st, input, arg);
-        return new Call(new Fusion(Name, ModuleType.Create("k510"), body, arg), input);
+        return new Call(new Fusion(Name, "k510", body, new[] { arg }), input);
     }
 }
 
@@ -66,7 +66,7 @@ public partial class DoubleInputFusion<T, BeginT, EndT> : RewriteRule<Pattern>
         var arg1 = new Var("input1", rhs.CheckedType!);
         var tmpBody = ReplaceTarget(st, lhs, arg0);
         var body = ReplaceTarget(tmpBody, rhs, arg1);
-        return new Call(new Fusion(Name, ModuleType.Create("k510"), body, arg0, arg1), lhs, rhs);
+        return new Call(new Fusion(Name, "k510", body, new[] { arg0, arg1 }), lhs, rhs);
     }
 }
 
@@ -120,7 +120,7 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
 
         var newParams = Merge(callerFuse.Parameters.ToArray(), index, calleeFirstVar, newCalleeParams);
         var newInputs = Merge(caller.Parameters, index, callee.Parameters[0], callee.Parameters.ToArray()[1..]);
-        return new Call(new Fusion("FuseTwoFusion", ModuleType.Create("k510"), newBody, newParams), newInputs);
+        return new Call(new Fusion("FuseTwoFusion", "k510", newBody, newParams), newInputs);
     }
 
 

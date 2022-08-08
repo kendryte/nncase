@@ -42,5 +42,6 @@ public sealed record PrimFunctionWrapper(string Name, PrimFunction Target, int P
         }
     }
 
+    /// <inheritdoc/>
     public override IEnumerable<IRType?> ParameterTypes => Target.Parameters.Take(ParametersCount).Select(x => x.CheckedType);
 }

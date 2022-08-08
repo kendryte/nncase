@@ -14,11 +14,11 @@ namespace Nncase.Transform
     /// <summary>
     /// Pass manager.
     /// </summary>
-    public class PassManager : IEnumerable<FunctionPass>
+    public class PassManager : IEnumerable<BasePass>
     {
         private readonly IRModule _module;
         private readonly RunPassOptions _options;
-        private readonly List<FunctionPass> _passes = new List<FunctionPass>();
+        private readonly List<BasePass> _passes = new List<BasePass>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PassManager"/> class.
@@ -35,37 +35,58 @@ namespace Nncase.Transform
         /// Add function pass.
         /// </summary>
         /// <param name="pass">Pass.</param>
-        public void Add(FunctionPass pass)
+        public void Add(BasePass pass)
         {
             _passes.Add(pass);
         }
 
         /// <inheritdoc/>
-        public IEnumerator<FunctionPass> GetEnumerator()
+        public IEnumerator<BasePass> GetEnumerator()
         {
-            return ((IEnumerable<FunctionPass>)_passes).GetEnumerator();
+            return ((IEnumerable<BasePass>)_passes).GetEnumerator();
         }
 
         /// <summary>
-        /// Run passes and update the module funciton.
+        /// Run passes and update the module.
         /// </summary>
         public async Task RunAsync()
+        {
+            var passes = _passes;
+            while (passes.Count() > 0)
+            {
+                var type = _passes.First().GetType();
+                var candiate = passes.TakeWhile(item => item.GetType().TypeHandle.Equals(type.TypeHandle));
+                passes.Skip(candiate.Count());
+                if (type == typeof(FunctionPass))
+                    await runFunctionAsync(candiate);
+                else if (type == typeof(ModulePass))
+                    await runModuleAsync(candiate);
+            }
+        }
+
+        private async Task runFunctionAsync(IEnumerable<BasePass> passes)
         {
             int i = 0;
             while (i < _module.Functions.Count)
             {
-                foreach (var pass in _passes)
+                foreach (var pass in passes)
                 {
-                    var post = await pass.RunAsync(_module.Functions[i], _options);
+                    var post = await ((FunctionPass)pass).RunAsync(_module.Functions[i], _options);
                     if (post is PrimFunctionWrapper wrapper)
                     {
                         _module.Add(wrapper.Target);
                     }
-
                     _module.Update(i, post);
                 }
-
                 i++;
+            }
+        }
+
+        private async Task runModuleAsync(IEnumerable<BasePass> passes)
+        {
+            foreach (var pass in passes)
+            {
+                await ((ModulePass)pass).RunAsync(_module, _options);
             }
         }
 

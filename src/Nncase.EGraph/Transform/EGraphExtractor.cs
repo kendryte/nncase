@@ -42,6 +42,7 @@ internal class EGraphExtractor
                 IR.Tuple tuple => Visit(minCostEnode, tuple),
                 Op op => VisitLeaf(minCostEnode, op),
                 Marker marker => Visit(minCostEnode, marker),
+                None none => Visit(minCostEnode, none),
                 _ => throw new ArgumentException("Unsupported expression type."),
             };
             _eclassMemo.Add(eclass, expr);
@@ -71,6 +72,11 @@ internal class EGraphExtractor
         var target = Visit(enode.Children[0]);
         var attr = Visit(enode.Children[1]);
         return marker with { Target = target, Attribute = attr };
+    }
+
+    private None Visit(ENode enode, None none)
+    {
+        return none;
     }
 
     private Function Visit(ENode enode, Function func)
