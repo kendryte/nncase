@@ -36,9 +36,28 @@ public static class Comparator
         return true;
     }
 
+    public static bool TupleValueCompare(TupleValue a, TupleValue b, float thresh = 0.99f)
+    {
+        if (a.Count != b.Count)
+        {
+            return false;
+        }
+
+        foreach (var (t1, t2) in a.AsTensors().Zip(b.AsTensors()))
+        {
+            if (!TensorValueCompare(t1, t2, thresh))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    
     public static bool Compare(IValue pre, IValue post, float thresh = 0.99f) => (pre, post) switch
     {
         (TensorValue a, TensorValue b) => TensorValueCompare(a, b, thresh),
+        (TupleValue a, TupleValue b) => TupleValueCompare(a, b, thresh),
         (_, _) => throw new ArgumentOutOfRangeException()
     };
 
@@ -136,12 +155,18 @@ public class LazyCompartor
     
     public void FailedAssert()
     {
-        foreach (var (count, value) in error)
+        if (error.Count == 0)
         {
-            var reason = value.Match(cos => $"CosSim:{cos}", s => s);
-            Console.WriteLine($"count:{count} error, reason: ${reason}");
+            return;
         }
-
-        Assert.True(false);
+        var errList = error.Select(v =>
+        {
+            var count = v.Key;
+            var value = v.Value;
+            var reason = value.Match(cos => $"CosSim:{cos}", s => s);
+            return $"count:{count} error, reason: ${reason}";
+        });
+        var errInfo = string.Join("\n", errList);
+        Assert.True(false, errInfo);
     }
 }

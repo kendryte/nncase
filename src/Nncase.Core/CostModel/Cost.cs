@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 
 namespace Nncase.CostModel;
@@ -163,6 +164,11 @@ public static class CostUtility
         };
     }
 
+    public static double GetMemoryAccess(params IRType[] types)
+    {
+        return types.Aggregate((double)0, (sum, type) => sum + GetMemoryAccess(type));
+    }
+
     public static double GetFakeMemoryAccess(IRType type, int bits)
     {
         return type switch
@@ -236,6 +242,47 @@ public static class CostUtility
             BinaryOp.LeftShift => 1,
             BinaryOp.RightShift => 1,
             _ => 1,
+        };
+    }
+
+    // todo:GetCPUCyclesOfMath
+    public static double GetCPUCyclesOfMax()
+    {
+        return 1;
+    }
+    
+    public static double GetCPUCyclesOfCompare()
+    {
+        return 1;
+    }
+
+    // cost for op similar to reshape, e.g. squeeze
+    public static Cost GetReshapeCost()
+    {
+        return new()
+        {
+            [CostFactorNames.CPUCycles] = 1,
+        };
+    }
+
+    public static Cost GetActivationCost(TensorType ret, double macPerElement)
+    {
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, macPerElement),
+        };
+    }
+
+    // cost for op similar to broadcast
+    public static Cost GetBroadcastCost(TensorType input, TensorType ret)
+    {
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.CPUCycles] = 1,
         };
     }
 }

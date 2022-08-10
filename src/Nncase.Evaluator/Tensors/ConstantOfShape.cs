@@ -3,6 +3,7 @@
 
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using OrtKISharp;
@@ -12,7 +13,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="ConstantOfShape"/>.
 /// </summary>
-public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInferencer<ConstantOfShape>
+public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInferencer<ConstantOfShape>, ICostEvaluator<ConstantOfShape>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ConstantOfShape target)
@@ -38,5 +39,16 @@ public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInfere
             var outShape = TypeInference.ReshapeTo(shape);
             return new TensorType(type, outShape);
         }
+    }
+
+    public Cost? Visit(ICostEvaluateContext context, ConstantOfShape target)
+    {
+        var input = context.GetArgumentType<TensorType>(target, ConstantOfShape.Shape);
+        var ret = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret)
+        };
     }
 }

@@ -68,10 +68,6 @@ public abstract class BaseImporter
     }
     public void DumpOpsInModel(string path)
     {
-        if (CompilerServices.CompileOptions.DumpLevel < 4)
-        {
-            return;
-        }
         using (var sr = new StreamWriter(path))
         {
             foreach (var op in _opsInModel)

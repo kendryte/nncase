@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
@@ -15,7 +16,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Where"/>.
 /// </summary>
-public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>
+public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEvaluator<Where>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Where where)
@@ -55,5 +56,19 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>
     private bool IsTFWhere(TensorType x, TensorType y)
     {
         return x.Shape[0] == 0 && y.Shape[0] == 0 && x.DType == DataTypes.Float32;
+    }
+
+    public Cost? Visit(ICostEvaluateContext context, Where target)
+    {
+        var cond = context.GetArgumentType<TensorType>(target, Where.Cond);
+        var x = context.GetArgumentType<TensorType>(target, Where.X);
+        var y = context.GetArgumentType<TensorType>(target, Where.Y);
+        var ret = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(cond, x, y),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(cond, CostUtility.GetCPUCyclesOfCompare()),
+        };
     }
 }

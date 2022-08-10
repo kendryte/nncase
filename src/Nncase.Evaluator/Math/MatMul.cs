@@ -1,6 +1,7 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
@@ -37,6 +38,10 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var rhs = context.GetArgumentType<TensorType>(target, MatMul.Rhs);
         var outputType = context.GetReturnType<TensorType>();
 
+        if (lhs.Shape.IsUnranked)
+        {
+            Console.WriteLine("unrank");
+        }
         var macPerElement = lhs.Shape[^1].IsFixed ? lhs.Shape[^1].FixedValue : 1;
         return new()
         {

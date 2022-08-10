@@ -28,12 +28,7 @@ public sealed partial class BroadcastEvaluator : IEvaluator<Broadcast>, ITypeInf
     {
         var input = context.GetArgumentType<TensorType>(target, Broadcast.Input);
         var ret = context.GetReturnType<TensorType>();
-        return new()
-        {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
-            [CostFactorNames.CPUCycles] = 1,
-        };
+        return CostUtility.GetBroadcastCost(input, ret);
     }
 
     IRType Visit(TensorType Input, TensorType Shape, ITypeInferenceContext context, Broadcast op)

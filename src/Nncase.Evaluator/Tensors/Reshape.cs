@@ -35,10 +35,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
     /// <inheritdoc/>
     public Cost? Visit(ICostEvaluateContext context, Reshape target)
     {
-        return new()
-        {
-            [CostFactorNames.CPUCycles] = 1
-        };
+        return CostUtility.GetReshapeCost();
     }
 
     private IRType Visit(ITypeInferenceContext context, Reshape target, TensorType input)

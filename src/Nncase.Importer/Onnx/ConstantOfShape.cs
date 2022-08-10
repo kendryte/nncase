@@ -4,8 +4,10 @@
 using System;
 using LanguageExt.UnsafeValueAccess;
 using Nncase.IR;
+using Nncase.IR.Tensors;
 using Onnx;
 using F = Nncase.IR.F;
+using static Nncase.IR.F.Tensors;
 using static Onnx.AttributeProto.Types;
 
 namespace Nncase.Importer
@@ -21,14 +23,7 @@ namespace Nncase.Importer
                 var tensor = tensorValue.ValueUnsafe();
                 var tensorConst = GetTensor(tensor);
                 var type = GetDataType(tensor);
-                if (type == DataTypes.Float32)
-                {
-                    return F.Tensors.ConstantOfShape(shape, tensorConst.ToScalar<float>());
-                }
-                else
-                {
-                    throw new NotSupportedException($"Not Supported type {type} in ConstantOfShape");
-                }
+                return ConstantOfShape(shape, GetTensor(tensor));
             }
             else
             {

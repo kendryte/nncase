@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
@@ -34,5 +35,12 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
             return Input with { Shape = new Shape(constShape.Value.Cast<int>()) };
         else
             return Input with { Shape = TypeInference.ReshapeTo(Shape) };
+    }
+
+    public Cost? Visit(ICostEvaluateContext context, Expand target)
+    {
+        var input = context.GetArgumentType<TensorType>(target, Expand.Input);
+        var ret = context.GetReturnType<TensorType>();
+        return CostUtility.GetBroadcastCost(input, ret);
     }
 }

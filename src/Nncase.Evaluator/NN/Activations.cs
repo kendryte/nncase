@@ -97,7 +97,7 @@ public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRe
 /// <summary>
 /// Evaluator for <see cref="Relu"/>.
 /// </summary>
-public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>
+public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>, ICostEvaluator<Relu>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Relu relu)
@@ -116,6 +116,12 @@ public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>
     private IRType Visit(TensorType input)
     {
         return input;
+    }
+
+    public Cost? Visit(ICostEvaluateContext context, Relu target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, Relu.Input);
+        return CostUtility.GetActivationCost(inputType, CostUtility.GetCPUCyclesOfMax());
     }
 }
 
@@ -170,12 +176,7 @@ public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>, I
     {
         var ret = context.GetReturnType<TensorType>();
         var macPerElement = 3;
-        return new()
-        {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, macPerElement),
-        };
+        return CostUtility.GetActivationCost(ret, macPerElement);
     }
 
     private IRType Visit(TensorType input)
