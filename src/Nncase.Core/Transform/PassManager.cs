@@ -51,16 +51,27 @@ namespace Nncase.Transform
         /// </summary>
         public async Task RunAsync()
         {
-            var passes = _passes;
+            var passes = _passes.AsEnumerable();
             while (passes.Count() > 0)
             {
                 var type = _passes.First().GetType();
-                var candiate = passes.TakeWhile(item => item.GetType().TypeHandle.Equals(type.TypeHandle));
-                passes.Skip(candiate.Count());
-                if (type == typeof(FunctionPass))
+                Type base_type;
+                if (type.IsSubclassOf(typeof(FunctionPass)))
+                    base_type = typeof(FunctionPass);
+                else if (type.IsSubclassOf(typeof(ModulePass)))
+                    base_type = typeof(ModulePass);
+                else
+                    throw new ArgumentOutOfRangeException();
+
+                var candiate = passes.TakeWhile(item => item.GetType().IsSubclassOf(base_type));
+                passes = passes.Skip(candiate.Count());
+
+                if (type.IsSubclassOf(typeof(FunctionPass)))
                     await runFunctionAsync(candiate);
-                else if (type == typeof(ModulePass))
+                else if (type.IsSubclassOf(typeof(ModulePass)))
                     await runModuleAsync(candiate);
+                else
+                    throw new ArgumentOutOfRangeException();
             }
         }
 

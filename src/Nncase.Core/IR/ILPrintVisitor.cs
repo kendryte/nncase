@@ -44,9 +44,13 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
     {
         if (_names.TryGetValue(expr, out var name)) { return name; }
 
-        var valueStr = expr.CheckedType is not null && expr.CheckedShape.Size < 8 && expr is TensorConst tc
-            ? " : " + tc.Value.GetArrayString(false)
-            : string.Empty;
+        string valueStr = expr switch
+        {
+            TensorConst tc => tc.Value.Shape.Size < 8 ? tc.Value.GetArrayString(false) : string.Empty,
+            TupleConst tpc => string.Empty,
+            _ => throw new ArgumentOutOfRangeException(),
+        };
+        valueStr = valueStr != string.Empty ? " : " + valueStr : string.Empty;
         name = $"const({(expr.CheckedType is null ? string.Empty : VisitType(expr.CheckedType))}{valueStr})";
 
         _names.Add(expr, name);
@@ -66,7 +70,7 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
         Scope.IndWrite($"{name} = fn({string.Join(", ", expr.Parameters.Select(Visit))})");
         AppendCheckedType(expr.CheckedType);
         Scope.IndWriteLine("{");
-        
+
         // 2. Function body
         using (Scope.IndentUp()) { var body = Visit(expr.Body); }
 

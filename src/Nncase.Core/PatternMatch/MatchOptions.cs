@@ -60,6 +60,11 @@ public class MatchOptions
         patterns.Add(pattern);
     }
 
+    /// <summary>
+    /// when the soure expr has been changed, need inherit is suppress attribute into new expr.
+    /// </summary>
+    /// <param name="source"></param>
+    /// <param name="dest"></param>
     public void InheritSuppressPatterns(Expr source, Expr dest)
     {
         if (SuppressedPatterns.TryGetValue(source, out var srcPatterns))
