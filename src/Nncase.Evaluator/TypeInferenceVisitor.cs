@@ -430,6 +430,6 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     private void SetCheckedType(Expr expr, IRType type)
     {
         expr.CheckedType = type;
-        IsFullyInferenced &= type is not (AnyType or InvalidType);
+        IsFullyInferenced &= type is not InvalidType;
     }
 }

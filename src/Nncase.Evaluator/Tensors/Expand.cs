@@ -16,7 +16,8 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Expand"/>.
 /// </summary>
-public class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>
+[TypeInferGenerator]
+public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Expand expand)
@@ -26,25 +27,12 @@ public class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>
         return OrtKI.Expand(input, shape).ToValue();
     }
 
-    /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, Expand target)
+    private IRType Visit(ITypeInferenceContext context, Expand target, TensorType Input, TensorType Shape)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Expand.Input);
-        return Visit(context, target, input);
-    }
-
-    private IRType Visit(ITypeInferenceContext context, Expand target, TensorType input)
-    {
-        var shape = context.GetArgument(target, Expand.Shape);
-        if (shape is TensorConst constShape)
-        {
-            return input with {Shape = new Shape(constShape.Value.Cast<int>())};
-        }
+        var shape_expr = context.GetArgument(target, Expand.Shape);
+        if (shape_expr is TensorConst constShape)
+            return Input with { Shape = new Shape(constShape.Value.Cast<int>()) };
         else
-        {
-            var targetType = context.CheckArgumentType<TensorType>(target, Expand.Shape);
-            var outShape = TypeInference.ReshapeTo(targetType);
-            return input with {Shape = outShape};
-        }
+            return Input with { Shape = TypeInference.ReshapeTo(Shape) };
     }
 }

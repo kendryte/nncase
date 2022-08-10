@@ -190,7 +190,7 @@ namespace Nncase.Tests.RewriteTest
             var weights = new Var("weights", new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
             var t = Util.ShapeIndex(weights, 0);
             t.InferenceType();
-            var expand = Expand(0f, Cast(Util.ShapeIndex(weights, 0), DataTypes.Int64));
+            var expand = Expand(0f, Unsqueeze(Cast(Util.ShapeIndex(weights, 0), DataTypes.Int64), new[] { 0 }));
             var s = await RunShapeInferPass("", caseOptions, expand, weights);
             Assert.True(s is Const);
         }
