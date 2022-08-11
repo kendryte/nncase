@@ -18,6 +18,7 @@
 #include <nncase/ir/visitor.h>
 #include <nncase/runtime/stackvm/runtime_module.h>
 #include <unordered_set>
+#include <queue>
 
 using namespace nncase;
 using namespace nncase::ir;
@@ -184,6 +185,46 @@ private:
         } while (changed);
     }
 
+    bool check_circle(std::list<region>::iterator &ita,  std::list<region>::iterator &itb)
+    {
+        std::queue<std::list<region>::iterator> tmp_queue;
+        tmp_queue.push(itb);
+        
+        while(!tmp_queue.empty())
+        {
+            auto tmp = tmp_queue.front();
+            for(auto it: tmp->region_inputs)
+            {   
+
+                for(auto mid = regions_.begin(); mid != regions_.end(); mid++)
+                {
+                    if(mid == ita || mid==itb)
+                        continue;
+                    if(mid->outputs.contains(it->connection()))
+                    {
+                        if(mid->module_type == ita->module_type || (mid->module_type != ita->module_type && mid->is_all_noaction))
+                        {
+                            for(auto k : mid->region_inputs)
+                            {
+                                if(ita->outputs.contains(k->connection()) )
+                                {
+                                    return false;
+                                }
+                            }
+                            tmp_queue.push(mid);
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+            tmp_queue.pop();
+        }
+        return true;
+    }
+
     bool merge_child_region()
     {
         bool ever_changed = false;
@@ -203,8 +244,9 @@ private:
                         continue;
 
                     // itb's inputs all connect to ita's output
-                    if ((ita->module_type == itb->module_type || itb->is_all_noaction)
-                        && std::all_of(itb->region_inputs.begin(), itb->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); }))
+                    if ((ita->module_type == itb->module_type || itb->is_all_noaction )
+                        && std::any_of(itb->region_inputs.begin(), itb->region_inputs.end(),[&](input_connector *in) { return ita->outputs.contains(in->connection()); }) 
+                        && check_circle(ita, itb))
                         to_be_merge.emplace_back(itb);
                 }
 
