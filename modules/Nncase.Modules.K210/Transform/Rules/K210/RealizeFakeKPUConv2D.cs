@@ -35,13 +35,13 @@ public sealed partial class RealizeFakeKPUConv2D : IRewriteRule
             op => true,
             IsRangeOfMarker(IsWildcard("input"),
                 IsConst("input_range")),
-            IsTensorConst("weights"),
-            IsTensorConst("bias")
+            IsTensorConst("weights")
+            // IsTensorConst("bias")
             // IsTensorConst("batchNorms"),
             // IsTensorConst("activation")
             );
 
-    private Expr? GetReplace(Call fake_conv2d_call, Expr input, Tensor<float> input_range, Expr weights, TensorConst bias)
+    private Expr? GetReplace(Call fake_conv2d_call, Expr input, Tensor<float> input_range, Expr weights)
     {
         var inDType = input.CheckedDataType;
         var inShape = input.CheckedShape;
@@ -59,10 +59,10 @@ public sealed partial class RealizeFakeKPUConv2D : IRewriteRule
             && KPUUtility.TryGetFilterType(filterH, filterW, out var filterType))
         {
             var isDepthwise = inChannels == outChannels && outChannels == groups;
-            // var batchnorms = KPUUtility.BatchNorm().Segments;
-            // var action = KPUUtility.Activation().Segments;
             var batchnorms = None.Default;
-            var act = KPUUtility.GetFakeConvActParam(weights, bias);
+            var act = None.Default;
+            // var bias = (TensorConst)IR.F.Random.Normal(DataTypes.Float32, new[] {16}).Evaluate().AsTensor();
+            // var act = KPUUtility.GetDefaultConvActParam(weights, bias);
             return IR.F.K210.KPUConv2D(isDepthwise, filterType, KPUPoolType.Bypass, KPUUtility.Activation(), input, weights, batchnorms, act);
         }
 

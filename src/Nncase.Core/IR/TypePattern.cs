@@ -133,19 +133,23 @@ namespace Nncase.IR
         /// <param name="rank"></param>
         /// <returns></returns>
         public static TypePattern HasRank(int rank) => HasRank(r => r == rank, $"Rank = {rank}");
-        
+
         public static TypePattern ValidFakeBatchNorms() => IsIRType();
-        
+
+        public static TypePattern ValidFakeInput() => HasRank(4) & HasDataType(DataTypes.Float32);
+
+        public static TypePattern ValidFakeFusedClamp() => HasShape(new Shape(2)) & HasDataType(DataTypes.Float32);
+
         public static TypePattern ValidFakeAct() => HasRank(2) & HasDataType(DataTypes.Float32);
-        
+
         /// <summary>
         /// 
         /// </summary>
         /// <returns></returns>
         public static TypePattern ValdiAct() => HasRank(2) & HasDataType(DataTypes.BFloat16);
-        
+
         public static TypePattern ValidBias() => HasRank(1) & (HasDataType(DataTypes.UInt8) | HasDataType(DataTypes.Int8));
-        
+
         /// <summary>
         /// is tensor
         /// </summary>

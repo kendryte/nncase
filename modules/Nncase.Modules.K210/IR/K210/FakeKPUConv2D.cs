@@ -27,11 +27,14 @@ public sealed record class FakeKPUConv2D(bool IsDepthwise, KPUFilterType FilterT
     /// Gets Weights.
     /// </summary>
     public static readonly ParameterInfo Weights = new(typeof(FakeKPUConv2D), 1, "weights", HasRank(4));
+
     
     /// <summary>
     /// Gets Bias.
     /// </summary>
-    public static readonly ParameterInfo bias = new(typeof(FakeKPUConv2D), 2, "bias", HasRank(1));
+
+    // public static readonly ParameterInfo bias = new(typeof(FakeKPUConv2D), 2, "bias", HasRank(1));
+
     /*
     /// <summary>
     /// Gets batch norms.

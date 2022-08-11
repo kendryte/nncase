@@ -4,6 +4,9 @@ using ParameterInfo = Nncase.IR.ParameterInfo;
 using NetFabric.Hyperlinq;
 using System.Reflection;
 using static Nncase.IR.F.Tensors;
+using static Nncase.Transform.Utility;
+using Nncase.Utilities;
+using static Nncase.IR.F.Math;
 
 namespace Nncase.Transform;
 
