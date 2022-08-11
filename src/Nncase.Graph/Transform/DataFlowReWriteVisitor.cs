@@ -24,6 +24,16 @@ internal sealed class DataFlowRewriteVisitor : ExprMutator
         _options = options;
     }
 
+    /// <summary>
+    /// the rule dataflow rewrite can't mutate fusion.
+    /// </summary>
+    /// <param name="fusion"></param>
+    /// <returns></returns>
+    public override Expr MutateLeaf(Fusion fusion)
+    {
+        return fusion;
+    }
+
     public override Expr DefaultMutateLeaf(Expr expr)
     {
         if (CompilerServices.TryMatchRoot(expr, _rule.Pattern, _options.MatchOptions, out var match))

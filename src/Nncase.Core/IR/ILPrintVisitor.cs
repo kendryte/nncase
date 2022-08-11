@@ -80,6 +80,28 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
         return name;
     }
 
+    public override string Visit(Fusion expr)
+    {
+        if (_names.TryGetValue(expr, out var name)) { return name; }
+
+        name = $"%{expr.Name}";
+        _names.Add(expr, name);
+        Scope.Push();
+
+        // 1. Function signature
+        Scope.IndWrite($"{name} = fusion<{expr.ModuleKind}>({string.Join(", ", expr.Parameters.Select(Visit))})");
+        AppendCheckedType(expr.CheckedType);
+        Scope.IndWriteLine("{");
+
+        // 2. Function body
+        using (Scope.IndentUp()) { var body = Visit(expr.Body); }
+
+        // 3. Function closing
+        Scope.IndWriteLine("}");
+        Scope.IndWrite(Scope.Pop());
+        return name;
+    }
+
     /// <inheritdoc/>
     public override string Visit(PrimFunctionWrapper expr)
     {

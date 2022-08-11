@@ -28,6 +28,7 @@ namespace Nncase.IR
                 Var var => Visit(var),
                 Const con => Visit(con),
                 Function func => Visit(func),
+                Fusion fusion => Visit(fusion),
                 Call call => Visit(call),
                 Tuple tuple => Visit(tuple),
                 Op op => Visit(op),
@@ -69,6 +70,13 @@ namespace Nncase.IR
         /// <param name="expr">Variable expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult Visit(Function expr) => DefaultVisit(expr);
+
+        /// <summary>
+        /// Visit fusion expression
+        /// </summary>
+        /// <param name="expr">Fusion Expression</param>
+        /// <returns></returns>
+        public virtual TExprResult Visit(Fusion expr) => DefaultVisit(expr);
 
         /// <summary>
         /// Visit prim function wrapper expression.

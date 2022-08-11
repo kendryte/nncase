@@ -33,10 +33,10 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         _context.CurrentCall = expr;
         var type = expr.Target switch
         {
+            Fusion fusion => ((CallableType)Visit(fusion)).ReturnType,
+            PrimFunctionWrapper wrap => ((CallableType)Visit(wrap)).ReturnType,
             Function func => ((CallableType)Visit(func)).ReturnType,
-            PrimFunctionWrapper func => ((CallableType)Visit(func)).ReturnType,
             Op op => CompilerServices.InferenceOp(op, _context),
-            PrimFunction primfunc => ((CallableType)Visit(primfunc)).ReturnType,
             _ => new InvalidType("Target of call expression should be either a function or an op."),
         };
         _context.CurrentCall = null;
@@ -54,6 +54,26 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
 
     /// <inheritdoc/>
     public override IRType VisitLeaf(Function expr)
+    {
+        try
+        {
+            foreach (var p in expr.Parameters) { VerifySubField(expr, p); }
+            VerifySubField(expr, expr.Body);
+        }
+        catch (TypeInferenceInterruptException e)
+        {
+            SetCheckedType(expr, e.ReasonType);
+            return e.ReasonType;
+        }
+
+        var paramTypes = expr.Parameters.Select(Visit).ToArray();
+        var type = new CallableType(Visit(expr.Body), ImmutableArray.Create(paramTypes));
+        SetCheckedType(expr, type);
+        return type;
+    }
+
+    /// <inheritdoc/>
+    public override IRType VisitLeaf(Fusion expr)
     {
         try
         {
