@@ -301,7 +301,7 @@ public static class TypeInference
             return input with {Shape = new Shape(outShape.Where(x => x != 0))};
         }
 
-        return new InvalidType("Can't Infer Shape With Dynamic Axis and KeepDims!");
+        return input with {Shape = Shape.Unranked};
     }
 
     public static Shape ApplyPerm(Shape inShape, int[] perm)

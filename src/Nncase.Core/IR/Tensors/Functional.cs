@@ -34,7 +34,14 @@ public static class Tensors
 
     public static Call CumSum(Expr input, Expr axis, Expr exclusive, Expr reverse) => new Call(new CumSum(), input, axis, exclusive, reverse);
 
-    public static Call Expand(Expr input, Expr shape) => new Call(new Expand(), input, shape);
+    public static Call Expand(Expr input, Expr shape)
+    {
+        if (shape.InferenceType() && shape.CheckedShape.IsScalar)
+        {
+            shape = Unsqueeze(shape, new[] {0});
+        }
+        return new Call(new Expand(), input, shape);
+    }
 
     public static Call Flatten(Expr input, Expr axis) => new Call(new Flatten(), input, axis);
 

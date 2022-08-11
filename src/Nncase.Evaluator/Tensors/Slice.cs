@@ -122,7 +122,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         }
         else
         {
-            return new InvalidType("Can't Infer Shape With Dynamic Axis!");
+            return input with {Shape = Shape.Unknown(input.Shape.Rank)};
         }
 
         return input with {Shape = outShape};
