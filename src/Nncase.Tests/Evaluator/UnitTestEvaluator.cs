@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -13,6 +15,8 @@ using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Nncase.TestFixture;
+using Nncase.Utilities;
 using OrtKISharp;
 using Xunit;
 using static Nncase.IR.F.Math;
@@ -21,11 +25,33 @@ using static Nncase.IR.F.Tensors;
 using static OrtKISharp.TensorHelper;
 using RangeOf = Nncase.IR.Math.RangeOf;
 using Tuple = Nncase.IR.Tuple;
+using static Nncase.Utilities.DumpUtility;
 
 namespace Nncase.Tests.EvaluatorTest;
 
 public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
 {
+    // [Fact]
+    public void TestMatmul()
+    {
+        var root =
+            "/home/homura/Code/k510-gnne-compiler/tests_output/k230/K230TargetTest/UnitTestDynamicModel/TestLiteTransformerEncoder/";
+        var origin = root + "origin_kmodel_";
+        var k230 = root + "k230_kmodel_";
+        var cosRoot = PathJoinByCreate(root, "matmul_cos");
+        var e = new RuntimeDataExtractor();
+        for (int i = 0; i < 5; i++)
+        {
+            var originData = e.GetTensors(origin + i + "/Runtime/");
+            var k230Data = e.GetTensors(k230 + i + "/Runtime/");
+
+            var resultRoot = PathJoinByCreate(cosRoot, i.ToString());
+            DetailComparator.GenerateFullCompareInfo(originData, k230Data, resultRoot);
+            var cosByTensor = Comparator.CosSimilarity(originData, k230Data);
+            WriteResult(Path.Join(cosRoot, $"!cos"), cosByTensor);
+        }
+    }
+
     [Fact]
     public void TestEvalFuncCall()
     {

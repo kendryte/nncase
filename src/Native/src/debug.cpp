@@ -57,7 +57,7 @@ std::string to_str(const nncase::dims_t &shape) {
 }
 
 void write_out_shape(const nncase::dims_t &shape) {
-    auto path = fs::path(_dump_manager.get_dump_root()) / "0000out_shape_list";
+    auto path = fs::path(_dump_manager.get_dump_root()) / "!out_shape_list";
     auto f = fs::exists(path) ? std::ofstream(path, std::ios::app)
                               : std::ofstream(path);
     f << _dump_manager.get_current_op() << " :" << to_str(shape);

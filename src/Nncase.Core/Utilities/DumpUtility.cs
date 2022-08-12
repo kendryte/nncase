@@ -133,3 +133,62 @@ public static class ValueDumper
         return root;
     }
 }
+
+public static class DumpUtility
+{
+    public static void WriteResult(string path, string data, string prefix = "")
+    {
+        using (var stream = new StreamWriter(path))
+        {
+            stream.WriteLine(prefix);
+            stream.Write(data);
+        }
+    }
+    
+    public static void WriteResult<T>(string path, T[] data, string prefix = "")
+    {
+        WriteResult(path, SerializeByColumn(data), prefix);
+    }
+    
+    public static string SerializeByColumn<T>(T[] f)
+    {
+        return string.Join("\n", f);
+    }
+    
+    public static string SerializeByRow<T>(T[] f)
+    {
+        return string.Join(" ", f);
+    }
+
+    public static string SerializeShape(int[] shape)
+    {
+        return $"Shape:[{SerializeByRow(shape)}]";
+    }
+
+    public static string PathJoinByCreate(string root, params string[] paths)
+    {
+        var path = Path.Join(new[]{root}.Concat(paths).ToArray());
+        Directory.CreateDirectory(path);
+        return path;
+    }
+}
+
+public class Counter
+{
+    public Counter(int count = 0)
+    {
+        Count = count;
+    }
+    
+    private int Count;
+    
+    public T Run<T>(Func<int, T> f)
+    {
+        return f(Count++);
+    }
+    
+    public void Run(Action<int> f)
+    {
+        f(Count++);
+    }
+}

@@ -1,7 +1,48 @@
+using System.Diagnostics;
 using NetFabric.Hyperlinq;
+using Nncase.IR;
+using Nncase.Utilities;
 using Xunit;
-
+using static Nncase.TestFixture.TensorUtil;
+using static Nncase.Utilities.DumpUtility;
 namespace Nncase.TestFixture;
+
+public static class TensorUtil
+{
+    public static int GetChannelAxis(Shape shape)
+    {
+        return GetChannelAxis(shape.ToValueArray());
+    }
+
+    public static int GetChannelAxis(int[] shape)
+    {
+        return 1 - (4 - shape.Length);
+    }
+    
+    private static Tensor SliceTensor(Tensor tensor, int start, int length, int channelAxis = 1)
+    {
+        var s = tensor.ElementType.SizeInBytes;
+        return Tensor.FromBytes(tensor.ElementType,
+            tensor.BytesBuffer.Slice(start * s, length * s), tensor.Dimensions[(channelAxis + 1)..]);
+    }
+    
+    public static (int, int) GetShapeInfo(int[] shape, int channelAxis = 1)
+    {
+        var i = channelAxis + 1;
+        var channels = shape[..i].Aggregate(1, (a, b) => a * b);
+        var size = shape[i..].Aggregate(1, (a, b) => a * b);
+        return (channels, size);
+    }
+    
+    public static Tensor[] SliceByChannel(Tensor tensor)
+    {
+        var channelAxis = GetChannelAxis(tensor.Shape);
+        var (channels, size) = GetShapeInfo(tensor.Dimensions.ToArray(), channelAxis);
+        return Enumerable.Range(0, channels).Select(i =>
+                SliceTensor(tensor, size * i, size, channelAxis))
+            .ToArray();
+    }
+}
 
 public static class Comparator
 {
@@ -13,6 +54,16 @@ public static class Comparator
     public static float CosSimilarity(IValue a, IValue b)
     {
         return CosSimilarity(a.AsTensor(), b.AsTensor());
+    }
+
+    public static float[] CosSimilarity(Tensor[] a, Tensor[] b)
+    {
+        return a.Zip(b).Select(CosSimilarity).ToArray();
+    }
+
+    public static float CosSimilarity((Tensor, Tensor) t)
+    {
+        return CosSimilarity(t.Item1, t.Item2);
     }
 
     public static float CosSimilarity(Tensor a, Tensor b)
@@ -61,45 +112,17 @@ public static class Comparator
         (_, _) => throw new ArgumentOutOfRangeException()
     };
 
+    
     public static float[] CompareByChannel(IValue pre, IValue post, int channelAxis = 1, float thresh = 0.99f) =>
         CompareByChannel(pre.AsTensor(), post.AsTensor(), channelAxis, thresh);
 
     public static float[] CompareByChannel(Tensor pre, Tensor post, int channelAxis = 1, float thresh = 0.99f)
     {
-        var v1 = SliceByChannel(pre, channelAxis);
-        var v2 = SliceByChannel(post, channelAxis);
+        // todo:broadcast type???
+        var v1 = SliceByChannel(pre);
+        var v2 = SliceByChannel(post);
+        // Debug.Assert(v1.Length == v2.Length);
         return v1.Zip(v2).Select(data => CosSimilarity(data.Item1, data.Item2)).ToArray();
-    }
-
-    public record Deviation(float v1, float v2, int[] index)
-    {
-        public float devi => Math.Abs(v1 - v2);
-        // todo: v2 is 0.0000
-        public float ratio => (v1 == 0 && v2 == 0) || (Math.Abs(v1) < 1e-9 && v2 == 0) ? 1 : Math.Abs(Math.Max(v1, v2) / Math.Min(v1, v2));
-    }
-    
-    public static Deviation[] Deviations(Tensor pre, Tensor post)
-    {
-        var v1 = pre.ToArray<float>();
-        var v2 = post.ToArray<float>();
-        return v1.Zip(v2).Select((data, i) => new Deviation(data.Item1, data.Item2, new[] {i})).ToArray();
-    }
-
-    private static Tensor SliceTensor(Tensor tensor, int start, int length, int channelAxis = 1)
-    {
-        var s = tensor.ElementType.SizeInBytes;
-        return Tensor.FromBytes(tensor.ElementType,
-            tensor.BytesBuffer.Slice(start * s, length * s), tensor.Dimensions[(channelAxis + 1)..]);
-    }
-
-    public static Tensor[] SliceByChannel(Tensor tensor, int channelAxis = 1)
-    {
-        var i = channelAxis + 1;
-        var channels = tensor.Dimensions[..i].ToArray().Aggregate(1, (a, b) => a * b);;
-        var size = tensor.Dimensions[i..].ToArray().Aggregate(1, (a, b) => a * b);;
-        return Enumerable.Range(0, channels).Select(i =>
-                SliceTensor(tensor, size * i, size, channelAxis))
-            .ToArray();
     }
 }
 
@@ -168,5 +191,155 @@ public class LazyCompartor
         });
         var errInfo = string.Join("\n", errList);
         Assert.True(false, errInfo);
+    }
+}
+
+public static class DetailComparator
+{
+    public static void DumpCompareDetailAnalysis(CompareResultByChannel[] resultByChannels, string path, int i)
+    {
+        var shape = resultByChannels.Length != 0
+            ? SerializeShape(resultByChannels.Head().Shape)
+            : "data all ok and not shape info";
+        WriteResult(Path.Join(path, $"Analysis{i}"), resultByChannels, $"{shape}");
+    }
+
+    // for single file
+    public static void CompareDetailAnalysis(IEnumerable<DetailCompareResult> data, float thresh = 0.99f)
+    {
+        var result = data.Select(dataByTensor => CompareDetailAnalysis(dataByTensor, thresh)).ToArray();
+    }
+
+    public static CompareResultByChannel[] CompareDetailAnalysis(DetailCompareResult dataByTensor, float thresh = 0.99f)
+    {
+         return dataByTensor.Enumerable().Where(result => result.IsOk(thresh)).ToArray();
+    }
+
+    public static IEnumerable<DetailCompareResult> CompareDetail(Tensor[] a, Tensor[] b)
+    {
+        Debug.Assert(a.Length == b.Length);
+        return a.Zip(b).Select((t) => CompareDetail(t.Item1, t.Item2, GetChannelAxis(t.Item1.Shape)));
+    }
+    
+    public static DetailCompareResult CompareDetail(Tensor a, Tensor b, int channelAxis = 1)
+    {
+        var cos = Comparator.CompareByChannel(a, b, channelAxis);
+        var LossInfo = CompareForAccuracyLoss(a, b);
+        return new DetailCompareResult(cos, LossInfo);
+    }
+
+    public static AccuracyLossInfo[] CompareForAccuracyLoss(Tensor pre, Tensor post)
+    {
+        var v1 = pre.ToArray<float>();
+        var v2 = post.ToArray<float>();
+        var preShape = pre.Shape.ToValueArray();
+        var index = new int[preShape.Length];
+        return v1.Zip(v2).Select(data =>
+        {
+            index[^1] += 1;
+            for (int i = preShape.Length - 1; i >= 0; i--)
+            {
+                if (index[i] > preShape[i])
+                {
+                    index[i] = 0;
+                    index[i - 1] += 1;
+                }
+            }
+            Console.WriteLine(string.Join(",", index.Select(x => x.ToString())));
+            return new AccuracyLossInfo(data.Item1, data.Item2, index.ToArray(), pre, post);
+        }).ToArray();
+    }
+
+    public static void DumpCompareDetail(DetailCompareResult compareResult, string resultRoot, int count)
+    {
+        var (cosByChannel, LossInfo) = compareResult;
+        // todo: insert separator for channel or other
+        WriteResult(Path.Join(resultRoot, $"cos_{count}"), cosByChannel);
+
+        using (var stream = new StreamWriter(Path.Join(resultRoot, count.ToString())))
+        {
+            var tensorShape = LossInfo[0].v1Tensor.Shape.ToValueArray();
+            var (channels, size) = TensorUtil.GetShapeInfo(tensorShape, TensorUtil.GetChannelAxis(tensorShape));
+            stream.WriteLine(SerializeShape(tensorShape));
+            for (int i = 0; i < channels; i++)
+            {
+                stream.WriteLine(cosByChannel[i]);
+                for (int j = 0; j < size; j++)
+                {
+                    stream.WriteLine(LossInfo[i * size + j]);
+                }
+            }
+        }
+    }
+    
+    public static void GenerateFullCompareInfo(Tensor[] a, Tensor[] b, string resultRoot)
+    {
+        if (a.Length != b.Length)
+        {
+            throw new InvalidOperationException($"tensor a and b should same length but a:{a.Length} b:{b.Length}");
+        }
+        GenerateFullCompareInfo(a.Zip(b), resultRoot);
+    }
+    
+    public static void GenerateFullCompareInfo(IEnumerable<(Tensor, Tensor)> data, string resultRoot)
+    {
+        var counter = new Counter(1);
+        foreach (var (originD, k230D) in data)
+        {
+            counter.Run(count =>
+            {
+                var result = DetailComparator.CompareDetail(originD, k230D);
+                DetailComparator.DumpCompareDetail(result, resultRoot, count);
+                var analysisResult = DetailComparator.CompareDetailAnalysis(result);
+                DetailComparator.DumpCompareDetailAnalysis(analysisResult, resultRoot, count);
+                return analysisResult;
+            });
+        }
+    }
+}
+
+public record DetailCompareResult(float[] CosList, AccuracyLossInfo[] AccuracyLossInfos)
+{
+    public int[] Shape => AccuracyLossInfos.Head().Shape;
+    
+    public IEnumerable<CompareResultByChannel> Enumerable()
+    {
+        var tensorShape = Shape;
+        var (channels, size) = GetShapeInfo(tensorShape, GetChannelAxis(tensorShape));
+        return System.Linq.Enumerable.Range(0, channels).Select(c => new CompareResultByChannel(CosList[c], AccuracyLossInfos[(c * size)..((c + 1) * size)]));
+    }
+}
+    
+public record CompareResultByChannel(float cos, AccuracyLossInfo[] LossInfo)
+{
+    public int[] Shape => LossInfo.Head().Shape;
+
+    public bool IsOk(float thresh)
+    {
+        return cos < thresh || ErrDiv.Length != 0;
+    }
+
+    public AccuracyLossInfo[] ErrDiv => LossInfo.Where(deviation =>
+        (deviation.Ratio > 1.3 || deviation.Ratio < 0.7) && deviation.Loss > 0.01).ToArray();
+
+    public override string ToString()
+    {
+        var err = ErrDiv;
+        var percent = (float) err.Length / new Shape(Shape).Prod().FixedValue;
+        return $"CompareResultByChannel Cos:{cos} \nLossCount/InputSize: {percent}\nLoss:\n{SerializeByColumn(err)}";
+    }
+}
+
+public record AccuracyLossInfo(float v1, float v2, int[] index, Tensor v1Tensor, Tensor v2Tensor)
+{
+    public int[] Shape => v1Tensor.Shape.ToValueArray();
+    public float Loss => Math.Abs(v1 - v2);
+    // todo: v2 is 0.0000
+    public float Ratio => (v1 == 0 && v2 == 0) || (Math.Abs(v1) < 1e-9 && v2 == 0) ? 1 : Math.Abs(v1 / v2);
+
+    public override string ToString()
+    {
+        return
+            $"AccuracyLossInfo v1 = {v1}, v2 = {v2}, index =[{string.Join(",", index.Select(x => x.ToString()))}], devi = {Loss}, ratio = {Ratio}";
     }
 }
