@@ -39,9 +39,6 @@ public static class K210
     public static Call Activation(Expr input, Expr act,  Expr fusedClamp) =>
         new Call(new Activation(), input, act, fusedClamp);
 
-    // public static Call Conv2DTranspose(bool isDepthwise, KPUFilterType filterType, KPUPoolType poolType, Tensor<float> bias, ValueRange<float> fusedClamp, Expr input, Expr weights) =>
-    //     new Call(new Conv2DTranspose(isDepthwise, filterType, poolType, bias, fusedClamp), input, weights);
-    
-    //public static Call FakeKPUConv2D(Expr input, Expr weights, Expr batchnorms, Expr act, Expr padding, Expr stride, Expr dilation, Expr groups) => new Call(new FakeKPUConv2D(bool isDepthwise, KPUFilterType filterType, KPUPoolType poolType, Tensor<float> bias, ValueRange<float> fusedClamp, Expr input, Expr weights), input, weights, batchnorms, act, padding, stride, dilation, groups);
-
+    public static Call Conv2DTranspose(Expr input, Expr weights, Expr batchnorms, Expr act, Expr outputShape, Expr padding, Expr outputPadding, Expr stride, Expr dilation, Expr groups, Expr fusedClamp) => 
+        new Call(new Conv2DTranspose(new PadMode()), input, weights, batchnorms, act, outputShape, padding, outputPadding, stride, dilation, groups, fusedClamp);
 }

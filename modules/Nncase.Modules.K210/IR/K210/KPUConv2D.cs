@@ -46,7 +46,7 @@ public sealed partial record class KPUConv2D(bool IsDepthwise, KPUFilterType Fil
     /// </summary>
     public static readonly ParameterInfo OutputQuantParam = new(typeof(KPUConv2D), 3, "outputQuantParam",HasRank(4));
 
-    /// <summary>
+    /*/// <summary>
     /// Gets argX
     /// </summary>
     public static readonly ParameterInfo ArgX = new(typeof(KPUConv2D), 4, "argX",HasRank(2));
@@ -77,4 +77,5 @@ public sealed partial record class KPUConv2D(bool IsDepthwise, KPUFilterType Fil
     /// </summary>
     public static readonly ParameterInfo Padding = new(typeof(KPUConv2D), 9, "Padding",IsIntegral());
     */
+    
 }

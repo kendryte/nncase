@@ -13,11 +13,11 @@
 // using static Nncase.PatternMatch.F.NN;
 // using static Nncase.PatternMatch.Utility;
 //
-// namespace Nncase.Transform.Mutators;
-//
-// public class Conv2dTransposeTransform
+// namespace Nncase.Transform.Rules;
+// [RuleGenerator]
+// public sealed partial class Conv2dTransposeTransform : RewriteRule<Pattern>
 // {
-//     public IPattern Pattern { get; } = 
+//     public override IPattern Pattern { get; } = 
 //         IsConv2DTranspose("conv2dTranspose", _ => true,
 //         IsWildcard("input"),
 //         IsTensorConst("weights"),
@@ -40,10 +40,8 @@
 //             return null;
 //         }
 //         var act = KPUUtility.GetDefaultConvActParam(weights, bias);
-//         return withLoadStore(
-//             i => IR.NN.Conv2DTranspose(i, LoadW(weights, GetValueRange("weights_range")), None.Default,
-//                 act, outShape, padding,
-//                 stride, dilation, groups, ToBF16(fusedClamp))
-//         )(input);
+//         return IR.F.K210.Conv2DTranspose(input, weights,  None.Default,
+//                 act, outShape, padding,outPadding,
+//                 stride, dilation, groups, fusedClamp);
 //     }
 // }
