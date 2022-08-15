@@ -191,6 +191,11 @@ public static class T
         return new Sequential(new IRArray<Expr>(fields));
     }
 
+    public static Sequential Sequential(params object[] fields)
+    {
+        return TIR.Sequential.Flatten(fields);
+    }
+
     public static ISequentialBuilder<Sequential> Sequential()
     {
         return new SequentialBuilder<Sequential>(body => body);
