@@ -22,10 +22,9 @@ import numpy as np
 import random
 
 
-def _make_module(in_shape_0, condition, axis=None):
+def _make_module(in_shape_0, condition_shape, axis=None):
     inputs = []
     outputs = []
-    initializers = []
     attributes_dict = {}
     nodes = []
 
@@ -33,20 +32,36 @@ def _make_module(in_shape_0, condition, axis=None):
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape_0)
     inputs.append('input')
 
-    conditions = helper.make_tensor_value_info('conditions', TensorProto.BOOL, condition)
-    inputs.append('conditions')
-
+    # output
     x = np.random.rand(*in_shape_0).astype(np.float32)
-    condition = np.random.rand(*condition) > .5
+    condition = np.array(np.random.rand(*condition_shape) > .5).astype(np.bool_)
+    if(condition.sum() == 0):
+        print(condition.sum())
+        condition[-1] = True
+
     output_shape = np.compress(condition, x, axis=axis).shape
     output = helper.make_tensor_value_info('output', TensorProto.FLOAT, output_shape)
     outputs.append('output')
-    # output
-    attributes_dict['axis'] = axis
-    # Cosh
-    node = onnx.helper.make_node(
+
+    condi_data = helper.make_tensor(
+        'condi_Constant',
+        TensorProto.BOOL,
+        dims=condition_shape,
+        vals=condition.astype(np.bool).flatten()
+    )
+    weights_constant = helper.make_node(
+        "Constant",
+        inputs=[],
+        outputs=["condi"],
+        value=condi_data,
+        name="condition")
+
+    nodes.append(weights_constant)
+    if axis != None:
+        attributes_dict['axis'] = axis
+    node = helper.make_node(
         'Compress',
-        inputs=inputs,
+        inputs=['input', 'condi'],
         outputs=outputs,
         **attributes_dict
     )
@@ -55,9 +70,8 @@ def _make_module(in_shape_0, condition, axis=None):
     graph_def = helper.make_graph(
         nodes,
         'test-model',
-        [input, conditions],
+        [input],
         [output],
-        initializer=initializers
     )
     model_def = helper.make_model(graph_def, producer_name='kendryte')
 
@@ -65,42 +79,45 @@ def _make_module(in_shape_0, condition, axis=None):
 
 
 in_shapes_0 = [
-    # [1],
-    # [16],
-    # [1, 16],
-    # [16, 16],
-    [1, 16, 16],
-
-
-    # [3, 16, 16],
-    # [1, 3, 16, 16]
+    [1],
+    [16],
+    [1, 16],
+    [16, 16],
+    [1, 15, 16],
+    [1, 3, 3, 3]
 ]
 
 condition = [
-    # [1],
-    [16],
-    # [6],
+    [1],
+    [3],
+    [6],
 
 ]
 
 axes = [
-    # -1,
+    None,
+    -1,
+    0,
     1,
-    # 1,
-    # 2,
-    # 3
+    2,
+    3
 ]
 
 
-@ pytest.mark.parametrize('in_shape_0', in_shapes_0)
-@ pytest.mark.parametrize('condition', condition)
-@ pytest.mark.parametrize('axes', axes)
+@pytest.mark.parametrize('in_shape_0', in_shapes_0)
+@pytest.mark.parametrize('condition', condition)
+@pytest.mark.parametrize('axes', axes)
 def test_compress(in_shape_0, condition, axes, request):
-    model_def = _make_module(in_shape_0, condition, axes)
+    size = 1
+    for x in in_shape_0:
+        size *= x
+    if((axes != None and axes < len(in_shape_0) and condition[0] <= in_shape_0[axes])
+            or (axes == None and condition[0] <= size)):
+        model_def = _make_module(in_shape_0, condition, axes)
 
-    runner = OnnxTestRunner(request.node.name)
-    model_file = runner.from_onnx_helper(model_def)
-    runner.run(model_file)
+        runner = OnnxTestRunner(request.node.name)
+        model_file = runner.from_onnx_helper(model_def)
+        runner.run(model_file)
 
 
 if __name__ == "__main__":

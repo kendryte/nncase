@@ -26,6 +26,7 @@
 #include <nncase/ir/ops/conv2d_transpose.h>
 #include <nncase/ir/ops/convert.h>
 #include <nncase/ir/ops/cumsum.h>
+#include <nncase/ir/ops/compress.h>
 #include <nncase/ir/ops/dequantize.h>
 #include <nncase/ir/ops/fused_unary.h>
 #include <nncase/ir/ops/gather.h>
@@ -835,6 +836,15 @@ void register_neutral_evaluators()
             box.shape(), score.shape(), anchor.shape(), rnode.max_detections(), rnode.max_classes_per_detection(), 
             rnode.detections_per_class(), rnode.use_regular_non_max_suppression(), rnode.nms_score_threshold(), rnode.nms_iou_threshold(),
             rnode.num_classes(), rnode.y_scale(), rnode.x_scale(), rnode.h_scale(), rnode.w_scale())
+            .unwrap_or_throw(); });
+
+    register_evaluator(op_compress, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<compress &>(node);
+        auto input = context.memory_at(rnode.input());
+        auto condition = context.memory_at(rnode.condition());
+        auto output = context.memory_at(rnode.output());
+        kernels::compress(input.buffer().as_span<float>().data(), condition.buffer().as_span<uint8_t>().data(), output.buffer().as_span<float>().data(),
+            input.shape(), condition.shape(), output.shape(), rnode.axis())
             .unwrap_or_throw(); });
 }
 
