@@ -27,7 +27,7 @@ public sealed partial class KPUConv2D : IRewriteRule
         null,
         "conv2d_call",
         op => true,
-        IsRangeOfMarker(IsWildcard("input"),
+        IsRangeOfMarker(IsWildcard("input")with { TypePattern = HasFixedShape() },
             IsConst("input_range")),
         IsTensorConst("weights"),
         IsTensorConst("BatchNorms"),
