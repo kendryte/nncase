@@ -37,6 +37,7 @@ public sealed partial class RealizeFakeKPUDownload : IRewriteRule
 
     private Expr? GetReplace(Call download_call, Expr input, Expr input_range)
     {
-        return IR.F.K210.KPUDownload(input);
+         return new Call(IR.F.K210.KPUDownload(input));
+        //return IR.F.K210.KPUDownload(input);
     }
 }

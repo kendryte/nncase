@@ -6,7 +6,7 @@ using static Nncase.IR.TypePatternUtility;
 namespace Nncase.IR.K210;
 
 [PatternFunctionalGenerator]
-public sealed record Activation() : Op
+public sealed record Activation : Op
 {
     /// <summary>
     /// Gets input. [n c h w], bf24

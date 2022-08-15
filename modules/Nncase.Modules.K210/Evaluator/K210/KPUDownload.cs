@@ -9,7 +9,7 @@ namespace Nncase.Evaluator.K210;
 /// <summary>
 /// Evaluator for <see cref="KPUDownload"/>.
 /// </summary>
-internal sealed class KPUDownloadEvaluator : IEvaluator<KPUDownload>, ITypeInferencer<KPUDownload>, ICostEvaluator<KPUDownload>
+internal sealed class KPUDownloadEvaluator : IEvaluator<KPUDownload>, ITypeInferencer<KPUDownload>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, KPUDownload target)
@@ -23,19 +23,6 @@ internal sealed class KPUDownloadEvaluator : IEvaluator<KPUDownload>, ITypeInfer
     {
         var input = context.CheckArgumentType<TensorType>(target, KPUDownload.Input);
         return Visit(target, input);
-    }
-
-    /// <inheritdoc/>
-    public Cost Visit(ICostEvaluateContext context, KPUDownload target)
-    {
-        var inputType = context.GetArgumentType<TensorType>(target, KPUDownload.Input);
-        var outputType = context.GetReturnType<TensorType>();
-
-        return new()
-        {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
-        };
     }
 
     private IRType Visit(KPUDownload target, TensorType input)

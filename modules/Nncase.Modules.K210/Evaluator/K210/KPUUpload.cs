@@ -19,7 +19,7 @@ namespace Nncase.Evaluator.K210;
 /// <summary>
 /// Evaluator for <see cref="KPUUpload"/>.
 /// </summary>
-internal sealed class KPUUploadEvaluator : IEvaluator<KPUUpload>, ITypeInferencer<KPUUpload>, ICostEvaluator<KPUUpload>
+internal sealed class KPUUploadEvaluator : IEvaluator<KPUUpload>, ITypeInferencer<KPUUpload>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, KPUUpload target)
@@ -33,19 +33,6 @@ internal sealed class KPUUploadEvaluator : IEvaluator<KPUUpload>, ITypeInference
     {
         var input = context.CheckArgumentType<TensorType>(target, KPUUpload.Input);
         return Visit(target, input);
-    }
-
-    /// <inheritdoc/>
-    public Cost Visit(ICostEvaluateContext context, KPUUpload target)
-    {
-        var inputType = context.GetArgumentType<TensorType>(target, KPUUpload.Input);
-        var outputType = context.GetReturnType<TensorType>();
-
-        return new()
-        {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
-        };
     }
 
     private IRType Visit(KPUUpload target, TensorType input)
