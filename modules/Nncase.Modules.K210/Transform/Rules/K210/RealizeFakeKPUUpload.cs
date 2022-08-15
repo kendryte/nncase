@@ -35,8 +35,8 @@ public sealed partial class RealizeFakeKPUUpload : IRewriteRule
 
     private Expr? GetReplace(Call upload_call, Expr input)
     {
-         var kpuUpload = IR.F.K210.KPUUpload(input);
+         //var kpuUpload = IR.F.K210.KPUUpload(input);
         // return Call Fusion(Expr kpuUpload)
-        return new Call(kpuUpload);
+        return new Call(new KPUUpload(),input);
     }
 }
