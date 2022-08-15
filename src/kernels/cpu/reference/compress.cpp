@@ -23,17 +23,17 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::reference;
 
-template result<void> reference:: compress<float>(const float *input, const uint8_t *condition,float *output,  
-                                                const runtime_shape_t &input_shape,const runtime_shape_t &condition_shape,
-                                                const runtime_shape_t &output_shape, const int axis) noexcept;
+template result<void> reference::compress<float>(const float *input, const uint8_t *condition, float *output,
+    const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape,
+    const runtime_shape_t &output_shape, const int axis) noexcept;
 
 template <class T>
-result<void> reference:: compress(const T *input, const uint8_t *condition,  T *output,const runtime_shape_t &input_shape,const runtime_shape_t &condition_shape,
+result<void> reference::compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape,
     NNCASE_UNUSED const runtime_shape_t &output_shape, const int axis) noexcept
 {
-   if (axis == input_shape.size()) 
+    if (axis == input_shape.size())
     {
-        for (auto i = 0; i < condition_shape[0]; i++) 
+        for (auto i = 0; i < condition_shape[0]; i++)
         {
             if ((float)*(condition + i) == 0)
             {
@@ -41,21 +41,21 @@ result<void> reference:: compress(const T *input, const uint8_t *condition,  T *
             }
             *output++ = *(input + i);
         }
-    } 
-    else 
+    }
+    else
     {
         int select_slice = 1;
-        for (auto i = axis + 1; i < input_shape.size(); i++) 
+        for (auto i = axis + 1; i < input_shape.size(); i++)
         {
             select_slice *= input_shape[i];
         }
-        for (auto j = 0; j < kernels::detail::compute_size(input_shape); j++) 
+        for (auto j = 0; j < kernels::detail::compute_size(input_shape); j++)
         {
-            auto i = j % (select_slice*input_shape[axis]);
-            auto cond_index = i /select_slice;
-            if (select_slice != 1 &&(cond_index>=condition_shape[0] ||condition[cond_index] == 0 ))
+            auto i = j % (select_slice * input_shape[axis]);
+            auto cond_index = i / select_slice;
+            if (select_slice != 1 && (cond_index >= condition_shape[0] || condition[cond_index] == 0))
                 continue;
-            if(select_slice == 1 && (i %input_shape[axis]>=condition_shape[0] ||condition[cond_index%input_shape[axis]%condition_shape[0]] == 0 ))
+            if (select_slice == 1 && (i % input_shape[axis] >= condition_shape[0] || condition[cond_index % input_shape[axis] % condition_shape[0]] == 0))
                 continue;
             *output++ = *(input + j);
         }

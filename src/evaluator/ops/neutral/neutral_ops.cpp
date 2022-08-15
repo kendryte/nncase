@@ -21,12 +21,12 @@
 #include <nncase/ir/ops/broadcast.h>
 #include <nncase/ir/ops/clamp.h>
 #include <nncase/ir/ops/compare.h>
+#include <nncase/ir/ops/compress.h>
 #include <nncase/ir/ops/concat.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/conv2d_transpose.h>
 #include <nncase/ir/ops/convert.h>
 #include <nncase/ir/ops/cumsum.h>
-#include <nncase/ir/ops/compress.h>
 #include <nncase/ir/ops/dequantize.h>
 #include <nncase/ir/ops/fused_unary.h>
 #include <nncase/ir/ops/gather.h>

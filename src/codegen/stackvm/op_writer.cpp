@@ -682,4 +682,3 @@ void op_builder::tensor_compress_(uint8_t input_shape_src, uint8_t condition_sha
 {
     op_writer<tensor_compress_op_t>()(tensor_compress_op_t(input_shape_src, condition_shape_src, output_shape_src, axis), writer_);
 }
-
