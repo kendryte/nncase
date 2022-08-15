@@ -38,7 +38,6 @@ void onnx_importer::convert_op_Compress(const NodeProto &node)
     const auto out_shape = get_shape(output);
 
     auto onnx_axis = get_attribute<int>(node, "axis").value_or((int)in_shape.size());
-    ;
 
     auto onnx_compress = graph_.emplace<compress>(in_type, in_shape, condition_shape, out_shape, onnx_axis);
     onnx_compress->name(op_name);
