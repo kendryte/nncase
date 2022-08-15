@@ -30,10 +30,10 @@ public sealed partial class KPUConv2D : IRewriteRule
         IsRangeOfMarker(IsWildcard("input")with { TypePattern = HasFixedShape() },
             IsConst("input_range")),
         IsTensorConst("weights"),
-        IsTensorConst("BatchNorms"),
+        IsTensorConst("batchNorms"),
         IsTensorConst("outputquantparam"));
 
-    private Expr? GetReplace(Call upload_call, Expr input, Expr weights)
+    private Expr? GetReplace(Call upload_call, Expr input, Expr weights, Expr batchNorms, Expr outputquantparam)
     {
         return input;
     }

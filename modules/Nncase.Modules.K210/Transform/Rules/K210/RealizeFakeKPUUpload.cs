@@ -37,6 +37,6 @@ public sealed partial class RealizeFakeKPUUpload : IRewriteRule
     {
          //var kpuUpload = IR.F.K210.KPUUpload(input);
         // return Call Fusion(Expr kpuUpload)
-        return new Call(new KPUUpload(),input);
+        return new Call(new KPUUpload(), input);
     }
 }
