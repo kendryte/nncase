@@ -48,7 +48,7 @@ public abstract partial record Expr
     /// <summary>
     /// quant config with cosine.
     /// </summary>
-    public List<Tuple<List<DataType>, float>> enodequantconfigwithcosine = null;
+    public List<Tuple<List<DataType>, float>> enodeQuantConfigWithCosine = null;
 
     /// <inheritdoc/>
     public virtual bool Equals(Expr? other)
