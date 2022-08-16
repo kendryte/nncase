@@ -31,9 +31,9 @@ template <class T>
 result<void> reference::compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape,
     NNCASE_UNUSED const runtime_shape_t &output_shape, const int axis) noexcept
 {
-    if (axis == input_shape.size())
+    if (axis == (int)input_shape.size())
     {
-        for (auto i = 0; i < condition_shape[0]; i++)
+        for (auto i = 0; i < (int)condition_shape[0]; i++)
         {
             if ((float)*(condition + i) == 0)
             {
@@ -45,11 +45,11 @@ result<void> reference::compress(const T *input, const uint8_t *condition, T *ou
     else
     {
         int select_slice = 1;
-        for (auto i = axis + 1; i < input_shape.size(); i++)
+        for (auto i = axis + 1; i < (int)input_shape.size(); i++)
         {
             select_slice *= input_shape[i];
         }
-        for (auto j = 0; j < kernels::detail::compute_size(input_shape); j++)
+        for (auto j = 0; j < (int)kernels::detail::compute_size(input_shape); j++)
         {
             auto i = j % (select_slice * input_shape[axis]);
             auto cond_index = i / select_slice;

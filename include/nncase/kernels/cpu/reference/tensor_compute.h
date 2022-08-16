@@ -160,6 +160,6 @@ NNCASE_API result<void> tflite_detection_postprocess(const T *boxes, const T *sc
     const int32_t num_classes, const float y_scale, const float x_scale, const float h_scale, const float w_scale) noexcept;
 
 template <typename T>
-NNCASE_API result<void> compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const runtime_shape_t &output_shape, const int axis) noexcept;
+NNCASE_API result<void> compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, NNCASE_UNUSED const runtime_shape_t &output_shape, const int axis) noexcept;
 
 END_NS_NNCASE_KERNELS_CPU_REF
