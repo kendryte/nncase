@@ -1499,7 +1499,7 @@ struct op_writer<nncase::runtime::stackvm::tensor_layer_normalization_op_t>
         writer.write(op.epsilon);
     }
 };
-    
+
 class NNCASE_API op_builder
 {
 public:
