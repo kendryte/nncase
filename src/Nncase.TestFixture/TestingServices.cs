@@ -269,8 +269,8 @@ public static class Testing
     /// <param name="name">the dumped kmodel name.</param>
     /// <param name="module"></param>
     /// <param name="compileOptions"></param>
-    /// <returns>kmodel bytes.</returns>
-    public static byte[] BuildKModel(string name, IR.IRModule module, CompileOptions compileOptions)
+    /// <returns>kmodel_path and kmodel bytes.</returns>
+    public static (string, byte[]) BuildKModel(string name, IR.IRModule module, CompileOptions compileOptions)
     {
         CodeGen.ModelBuilder modelBuilder = new CodeGen.ModelBuilder(CompilerServices.GetTarget(compileOptions.Target), compileOptions);
         CodeGen.LinkedModel linkedModel = modelBuilder.Build(module);
@@ -279,8 +279,66 @@ public static class Testing
         {
             linkedModel.Serialize(output);
         }
-        return File.ReadAllBytes(kmodel_path);
+        return (kmodel_path, File.ReadAllBytes(kmodel_path));
     }
+
+    /// <summary>
+    /// dump kmodel args and bin for cli interp.
+    /// </summary>
+    /// <param name="kmodel_path"></param>
+    /// <param name="input_tensors"></param>
+    /// <param name="caseOptions"></param>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
+    public static void DumpInterpModel(string kmodel_path, Tensor[] input_tensors, Transform.RunPassOptions caseOptions)
+    {
+        string input_pool_path = Path.Combine(caseOptions.DumpDir, "input_pool.bin");
+        var output_pool_path = Path.Combine(caseOptions.DumpDir, "output_pool.bin");
+        using (var args_writer = new System.IO.StreamWriter(
+          System.IO.File.Open(
+            System.IO.Path.Join(caseOptions.DumpDir, "args.txt"),
+            System.IO.FileMode.Create),
+          System.Text.Encoding.ASCII))
+        {
+            args_writer.WriteLine(kmodel_path);
+            args_writer.WriteLine(input_pool_path);
+            args_writer.WriteLine(output_pool_path);
+
+            uint start = 0;
+            uint size = 0;
+            args_writer.WriteLine(input_tensors.Length);
+            using (var pool_writer = new BinaryWriter(File.OpenWrite(input_pool_path)))
+            {
+                foreach (var in_tensor in input_tensors)
+                {
+                    pool_writer.Write(in_tensor.BytesBuffer);
+                    size = checked((uint)in_tensor.BytesBuffer.Length);
+                    byte dt_code = in_tensor.ElementType switch
+                    {
+                        var x when x == DataTypes.Boolean => 0x00,
+                        var x when x == DataTypes.Int8 => 0x02,
+                        var x when x == DataTypes.Int16 => 0x03,
+                        var x when x == DataTypes.Int32 => 0x04,
+                        var x when x == DataTypes.Int64 => 0x05,
+                        var x when x == DataTypes.UInt8 => 0x06,
+                        var x when x == DataTypes.UInt16 => 0x07,
+                        var x when x == DataTypes.UInt32 => 0x08,
+                        var x when x == DataTypes.UInt64 => 0x09,
+                        var x when x == DataTypes.Float16 => 0x0A,
+                        var x when x == DataTypes.Float32 => 0x0B,
+                        var x when x == DataTypes.Float64 => 0x0C,
+                        var x when x == DataTypes.BFloat16 => 0x0D,
+                        _ => throw new ArgumentOutOfRangeException(),
+                    };
+                    args_writer.WriteLine($"{dt_code}");
+                    args_writer.WriteLine(in_tensor.Shape.Count);
+                    args_writer.WriteLine($"{string.Join(' ', in_tensor.Shape)}");
+                    args_writer.WriteLine($"{start} {size}");
+                    start += size;
+                }
+            }
+        }
+    }
+
 
     public static IValue RunKModel(byte[] kmodel, string dump_path, Tensor[] input_tensors)
     {

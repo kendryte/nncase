@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 #include "../runtime_function.h"
+#include <nncase/debug.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_tensor.h>
-#include <nncase/debug.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -95,6 +95,9 @@ stackvm_runtime_function::visit(NNCASE_UNUSED const extcall_op_t &op) noexcept {
         }
 
         try_var(retval, func->invoke(params));
+        if (outputs.size() == 1) {
+            return stack_.push(outputs[0]);
+        }
         return stack_.push(tuple(std::in_place, std::move(outputs)));
     } else {
         try_var(retval, func->invoke(params));

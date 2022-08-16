@@ -90,15 +90,18 @@ void dump_output_impl(nncase::value_t value, const fs::path &path, bool incr) {
             if (incr) {
                 write_out_shape(value_tensor->shape());
             }
-
+            if (value_tensor->dtype().template is_a<nncase::value_type_t>()) {
+                return;
+            }
             RETURN_RESULT_SELECT(RETURN_RESULT);
 
             if (value_tensor->dtype()->typecode() == nncase::dt_float16) {
                 dump_data(stream, IN_CAST(nncase::half, data), value_tensor);
                 return;
             }
-//            std::cout << "unsupported type:"
-//                      << (int)value_tensor->dtype()->typecode() << std::endl;
+            //            std::cout << "unsupported type:"
+            //                      << (int)value_tensor->dtype()->typecode() <<
+            //                      std::endl;
         },
         path);
     if (incr) {

@@ -50,6 +50,12 @@ public abstract class ModulePass : BasePass
     /// <param name="options"></param>
     protected virtual void OnPassStart(IRModule module, RunPassOptions options)
     {
+        if (options.DumpLevel < 3)
+            return;
+        foreach (var (func, i) in module.Functions.Select((func, i) => (func, i)))
+        {
+            CompilerServices.DumpIR(func, $"fn_{i}_{func.Name}", Path.Combine(options.PassDumpDir, "Start"));
+        }
     }
 
     /// <summary>
@@ -59,5 +65,12 @@ public abstract class ModulePass : BasePass
     /// <param name="options"></param>
     protected virtual void OnPassEnd(IRModule module, RunPassOptions options)
     {
+        if (options.DumpLevel < 3)
+            return;
+
+        foreach (var (func, i) in module.Functions.Select((func, i) => (func, i)))
+        {
+            CompilerServices.DumpIR(func, $"fn_{i}_{func.Name}", Path.Combine(options.PassDumpDir, "End"));
+        }
     }
 }

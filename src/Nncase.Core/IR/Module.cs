@@ -87,8 +87,7 @@ namespace Nncase.IR
         /// <param name="function">the entry function defination.</param>
         public void Update(int i, BaseFunction function)
         {
-            _functions.RemoveAt(i);
-            _functions.Add(function);
+            _functions[i] = function;
         }
     }
 }

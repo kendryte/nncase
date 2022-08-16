@@ -26,12 +26,18 @@ internal sealed class DataFlowRewriteVisitor : ExprMutator
 
     /// <summary>
     /// the rule dataflow rewrite can't mutate fusion.
+    /// NOTE this only prevent the visit into fusion, can't detect visit like `call { fusion }`, you have to manual SuppressPattern in the rule.
     /// </summary>
     /// <param name="fusion"></param>
     /// <returns></returns>
-    public override Expr MutateLeaf(Fusion fusion)
+    public override Expr Visit(Fusion fusion)
     {
-        return fusion;
+        if (!ExpressionMemo.TryGetValue(fusion, out var result))
+        {
+            result = fusion;
+            ExpressionMemo.Add(fusion, result);
+        }
+        return result;
     }
 
     public override Expr DefaultMutateLeaf(Expr expr)

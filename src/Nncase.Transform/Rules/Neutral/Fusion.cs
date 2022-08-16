@@ -23,16 +23,17 @@ public partial class SingleInputFusion<T, BeginT, EndT> : RewriteRule<Pattern>
     /// </summary>
     public virtual string Name { get; } = "SingleInputFusion";
 
+    private int count = 0;
+
     // replace input with var
     private Call? GetReplace(Call st, Expr input)
     {
-        if ((st.Attribute & CallAttr.Fusion) != 0)
-        {
-            return null;
-        }
         var arg = new Var("input0", input.CheckedType!);
         var body = ReplaceTarget(st, input, arg);
-        return new Call(new Fusion(Name, "k510", body, new[] { arg }), input);
+        var fusion = new Call(new Fusion($"{Name}_{count++}", "k510", body, new[] { arg }), input);
+        return fusion;
+        // options.SuppressPattern(st, Pattern);
+        // return fusion;
     }
 }
 
@@ -54,19 +55,19 @@ public partial class DoubleInputFusion<T, BeginT, EndT> : RewriteRule<Pattern>
     /// </summary>
     public virtual string Name { get; } = "SingleInputFusion";
 
+    private int count = 0;
 
     // replace input with var
     private Call GetReplace(Call st, Expr lhs, Expr rhs)
     {
-        if ((st.Attribute & CallAttr.Fusion) != 0)
-        {
-            return null;
-        }
         var arg0 = new Var("input0", lhs.CheckedType!);
         var arg1 = new Var("input1", rhs.CheckedType!);
         var tmpBody = ReplaceTarget(st, lhs, arg0);
         var body = ReplaceTarget(tmpBody, rhs, arg1);
-        return new Call(new Fusion(Name, "k510", body, new[] { arg0, arg1 }), lhs, rhs);
+        var fusion = new Call(new Fusion($"{Name}_{count++}", "k510", body, new[] { arg0, arg1 }), lhs, rhs);
+        return fusion;
+        // options.SuppressPattern(st, Pattern);
+        // return fusion;
     }
 }
 

@@ -150,15 +150,20 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     public override TextSnippet Visit(PrimFunctionWrapper expr)
     {
-        var snippet = BeginTextSnippet(expr);
-        for (int i = expr.ParametersCount - 1; i >= 0; i--)
+        if (ReferenceEquals(expr, _function))
         {
-            Emitter.Ldarg((ushort)i);
-        }
+            var snippet = BeginTextSnippet(expr);
+            for (int i = expr.ParametersCount - 1; i >= 0; i--)
+            {
+                Emitter.Ldarg((ushort)i);
+            }
 
-        LdFunctionId(expr.Target);
-        Emitter.ExtCall(checked((ushort)expr.ParameterTypes.Count()), true);
-        return snippet;
+            LdFunctionId(expr.Target);
+            Emitter.ExtCall(checked((ushort)expr.ParameterTypes.Count()), true);
+            return snippet;
+        }
+        else
+            return null!;
     }
 
     public override TextSnippet VisitLeaf(Op expr)
@@ -185,12 +190,18 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         {
             EmitTensorCall(op);
         }
-        else
+        else if (expr.Target is PrimFunctionWrapper wrapper)
         {
-            var target = (BaseFunction)expr.Target;
-            LdFunctionId(target);
-            Emitter.ExtCall(checked((ushort)expr.Parameters.Count), false);
+            LdFunctionId(wrapper.Target);
+            Emitter.ExtCall(checked((ushort)wrapper.ParameterTypes.Count()), true);
         }
+        else if (expr.Target is Function func)
+        {
+            LdFunctionId(func);
+            Emitter.ExtCall(checked((ushort)func.Parameters.Count), false);
+        }
+        else
+            throw new NotSupportedException(expr.Target.GetType().Name);
 
         return snippet;
     }
