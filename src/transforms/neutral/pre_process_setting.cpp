@@ -64,11 +64,21 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
                 auto Q_min = 0;
                 auto scale = (range.max - range.min) / (Q_max - Q_min);
                 auto bias = std::round((range.max * Q_min - range.min * Q_max) / (range.max - range.min));
-                quant_param_t deq_params { static_cast<int32_t>(bias), scale };
-                auto deq_input = graph.emplace<dequantize>(mid_ptr->type(), mid_ptr->shape(), dt_float32, deq_params);
-                deq_input->name("dequantize_input");
-                deq_input->input().connect(*mid_ptr);
-                mid_ptr = &deq_input->output();
+                if(scale == 1 && bias == 0)
+                {
+                    auto cvt_input = graph.emplace<convert>(mid_ptr->type(), mid_ptr->shape(), dt_float32);
+                    cvt_input->name("cvt_input");
+                    cvt_input->input().connect(*mid_ptr);
+                    mid_ptr = &cvt_input->output();
+                }
+                else
+                {
+                    quant_param_t deq_params { static_cast<int32_t>(bias), scale };
+                    auto deq_input = graph.emplace<dequantize>(mid_ptr->type(), mid_ptr->shape(), dt_float32, deq_params);
+                    deq_input->name("dequantize_input");
+                    deq_input->input().connect(*mid_ptr);
+                    mid_ptr = &deq_input->output();
+                }
             }
 
             if (input_layout_ == "NHWC")
