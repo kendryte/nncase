@@ -31,5 +31,5 @@ result<void> stackvm_runtime_function::visit(const tensor_compress_op_t &op) noe
     try_var(output_shape, module().shape_reg(op.output_shape_src));
 
     return kernels::compress(reinterpret_cast<const float *>(input), reinterpret_cast<const uint8_t *>(condition),
-            reinterpret_cast<float *>(output), input_shape, condition_shape, output_shape, op.axis);
+        reinterpret_cast<float *>(output), input_shape, condition_shape, output_shape, op.axis);
 }
