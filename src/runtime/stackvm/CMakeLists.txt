@@ -40,6 +40,7 @@ set(SRCS runtime_module.cpp
         ops/tensor.sigmoid.cpp
         ops/tensor.slice.cpp
         ops/tensor.softmax.cpp
+        ops/tensor.space_to_batch.cpp
         ops/tersor.ternary.cpp
         ops/tensor.topk.cpp
         ops/tensor.transpose.cpp

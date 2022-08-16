@@ -163,6 +163,12 @@ NNCASE_API result<void> tflite_detection_postprocess(const T *boxes, const T *sc
     const int32_t num_classes, const float y_scale, const float x_scale, const float h_scale, const float w_scale) noexcept;
 
 template <typename T>
+NNCASE_API result<void> space_to_batch(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &block_shape, const runtime_paddings_t &crops, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
+    kernel_context &context = default_kernel_context()) noexcept;
+
+template <typename T>
 NNCASE_API result<void> compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const runtime_shape_t &output_shape, const int axis) noexcept;
+
 
 END_NS_NNCASE_KERNELS

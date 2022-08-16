@@ -1757,6 +1757,24 @@ struct tensor_softmax_op_t
     }
 };
 
+struct tensor_space_to_batch_op_t
+{
+    opcode_t opcode;
+    tensor_function_t funct;
+    datatype_t datatype;
+    uint8_t rshape_src;
+    uint8_t rstride_src;
+    uint8_t rstride_dest;
+    uint8_t rshape_block;
+    uint8_t rpad_crops;
+
+    tensor_space_to_batch_op_t(default_init_t) noexcept { }
+    explicit tensor_space_to_batch_op_t(datatype_t datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest, uint8_t rshape_block, uint8_t rpad_crops) noexcept
+        : opcode(opcode_t::TENSOR), funct(tensor_function_t::SPACE_TO_BATCH), datatype(datatype), rshape_src(rshape_src), rstride_src(rstride_src), rstride_dest(rstride_dest), rshape_block(rshape_block), rpad_crops(rpad_crops)
+    {
+    }
+};
+
 struct tensor_ternary_op_t
 {
     opcode_t opcode;

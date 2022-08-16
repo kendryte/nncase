@@ -32,6 +32,7 @@ set(SRCS module_builder.cpp
         ops/slice.cpp
         ops/sigmoid.cpp
         ops/softmax.cpp
+        ops/space_to_batch.cpp
         ops/table_lookup1d.cpp
         ops/ternary.cpp
         ops/topk.cpp

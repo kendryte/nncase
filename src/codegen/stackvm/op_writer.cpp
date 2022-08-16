@@ -643,6 +643,11 @@ void op_builder::tensor_softmax_(datatype_t datatype, uint8_t rshape_src, uint8_
     op_writer<tensor_softmax_op_t>()(tensor_softmax_op_t(datatype, rshape_src, rstride_src, rstride_dest, axis, beta), writer_);
 }
 
+void op_builder::tensor_space_to_batch_(datatype_t datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest, uint8_t rshape_block, uint8_t rpad_crops)
+{
+    op_writer<tensor_space_to_batch_op_t>()(tensor_space_to_batch_op_t(datatype, rshape_src, rstride_src, rstride_dest, rshape_block, rpad_crops), writer_);
+}
+
 void op_builder::tensor_ternary_(datatype_t datatype, uint8_t rshape_src1, uint8_t rstride_src1, uint8_t rshape_src2, uint8_t rstride_src2, uint8_t rshape_src3, uint8_t rstride_src3, uint8_t rstride_dest)
 {
     op_writer<tensor_ternary_op_t>()(tensor_ternary_op_t(datatype, rshape_src1, rstride_src1, rshape_src2, rstride_src2, rshape_src3, rstride_src3, rstride_dest), writer_);

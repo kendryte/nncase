@@ -2084,6 +2084,38 @@ namespace IsaGen
             public float Beta { get; set; }
         }
 
+        [DisplayName("TENSOR.SPACE_TO_BATCH")]
+        [Category("Tensor Instructions")]
+        [Description("SpaceToBatch")]
+        public class SpaceToBatchInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.SPACE_TO_BATCH;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
+            [DisplayName("rshape_block")]
+            [Description("Block shape register")]
+            public byte RshapeBlock { get; set; }
+
+            [DisplayName("rpad_crops")]
+            [Description("Crops paddings register")]
+            public byte RpadCrops { get; set; }
+        }
+
         [DisplayName("TENSOR.TERNARY")]
         [Category("Tensor Instructions")]
         [Description("Ternary")]

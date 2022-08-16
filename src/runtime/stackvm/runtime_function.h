@@ -168,6 +168,7 @@ protected:
     result<void> visit(const tensor_sigmoid_op_t &op) noexcept override;
     result<void> visit(const tensor_slice_op_t &op) noexcept override;
     result<void> visit(const tensor_softmax_op_t &op) noexcept override;
+    result<void> visit(const tensor_space_to_batch_op_t &op) noexcept override;
     result<void> visit(const tensor_ternary_op_t &op) noexcept override;
     result<void> visit(const tensor_topk_op_t &op) noexcept override;
     result<void> visit(const tensor_transpose_op_t &op) noexcept override;
