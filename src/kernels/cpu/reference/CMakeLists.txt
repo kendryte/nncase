@@ -30,6 +30,7 @@ set(SRCS batch_to_space.cpp
          sigmoid.cpp
          softmax.cpp
          slice.cpp
+         space_to_batch.cpp
          ternary.cpp
          topk.cpp
          transpose.cpp

@@ -92,7 +92,7 @@ result<void> reference::reduce_arg(reduce_arg_op_t op, const float *input, T *ou
         return reduce_arg_impl([](float a, float b) { return a < b; }, std::numeric_limits<float>::max(),
             input, output, in_shape, out_shape, in_strides, out_strides, axes, keep_dims, select_last_idx, context);
     case reduce_arg_max:
-        return reduce_arg_impl([](float a, float b) { return a > b; }, std::numeric_limits<float>::min(),
+        return reduce_arg_impl([](float a, float b) { return a > b; }, std::numeric_limits<float>::lowest(),
             input, output, in_shape, out_shape, in_strides, out_strides, axes, keep_dims, select_last_idx, context);
     default:
         return err(std::errc::not_supported);

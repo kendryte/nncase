@@ -232,6 +232,13 @@ result<void> op_visitor::next() noexcept
 #endif
             return visit(op_reader<tensor_softmax_op_t>()(reader_));
         }
+        case tensor_function_t::SPACE_TO_BATCH:
+        {
+#if defined ENABLE_OP_PROFILE
+            op_profile st("tensor_space_to_batch");
+#endif
+            return visit(op_reader<tensor_space_to_batch_op_t>()(reader_));
+        }
         case tensor_function_t::TERNARY:
         {
 #if defined ENABLE_OP_PROFILE

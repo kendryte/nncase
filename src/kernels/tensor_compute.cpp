@@ -496,6 +496,12 @@ result<void> kernels::tflite_detection_postprocess(const T *boxes, const T *scor
         num_classes, y_scale, x_scale, h_scale, w_scale);
 }
 
+result<void> kernels::space_to_batch(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &block_shape, const runtime_paddings_t &crops, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, kernel_context &context) noexcept
+{
+    return cpu::reference::space_to_batch(type, input, output, in_shape, block_shape, crops, in_strides, out_strides, context);
+}
+
 template result<void> kernels::layernorm<float>(const float *input, float *output, float *scale, float *bias, const runtime_shape_t &in_shape, int32_t axis, float epsilon) noexcept;
 
 template <typename T>

@@ -159,6 +159,9 @@ NNCASE_API result<void> tflite_detection_postprocess(const T *boxes, const T *sc
     const bool use_regular_non_max_suppression, const float nms_score_threshold, const float nms_iou_threshold,
     const int32_t num_classes, const float y_scale, const float x_scale, const float h_scale, const float w_scale) noexcept;
 
+NNCASE_API result<void> space_to_batch(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &block_shape, const runtime_paddings_t &paddings, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, kernel_context &context) noexcept;
+
 template <typename T>
 NNCASE_API result<void> layernorm(const T *input, T *output, T *scale, T *bias, const runtime_shape_t &in_shape, int32_t axis, float epsilon) noexcept;
 

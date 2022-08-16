@@ -316,7 +316,7 @@ class TestRunner(metaclass=ABCMeta):
 
     def data_pre_process(self, data):
         data = copy.deepcopy(data)
-        if self.pre_process[3]['input_type'] == "float32":
+        if self.pre_process[0]['preprocess'] and self.pre_process[3]['input_type'] == "float32":
             data = np.asarray(data, dtype=np.float32)
         if self.pre_process[0]['preprocess'] and len(data.shape) == 4:
             if self.pre_process[-1]['input_layout'] == 'NCHW':

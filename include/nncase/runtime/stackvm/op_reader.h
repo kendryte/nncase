@@ -1615,6 +1615,24 @@ struct op_reader<tensor_softmax_op_t>
 };
 
 template <>
+struct op_reader<tensor_space_to_batch_op_t>
+{
+    tensor_space_to_batch_op_t operator()(span_reader &reader) const
+    {
+        tensor_space_to_batch_op_t op(default_init);
+        op.opcode = static_cast<opcode_t>(reader.read_unaligned<uint8_t>());
+        op.funct = static_cast<tensor_function_t>(reader.read_unaligned<uint16_t>());
+        op.datatype = static_cast<datatype_t>(reader.read_unaligned<uint8_t>());
+        op.rshape_src = reader.read_unaligned<uint8_t>();
+        op.rstride_src = reader.read_unaligned<uint8_t>();
+        op.rstride_dest = reader.read_unaligned<uint8_t>();
+        op.rshape_block = reader.read_unaligned<uint8_t>();
+        op.rpad_crops = reader.read_unaligned<uint8_t>();
+        return op;
+    }
+};
+
+template <>
 struct op_reader<tensor_ternary_op_t>
 {
     tensor_ternary_op_t operator()(span_reader &reader) const
@@ -1899,6 +1917,7 @@ public:
     virtual result<void> visit(NNCASE_UNUSED const tensor_sigmoid_op_t &op) noexcept { return ok(); }
     virtual result<void> visit(NNCASE_UNUSED const tensor_slice_op_t &op) noexcept { return ok(); }
     virtual result<void> visit(NNCASE_UNUSED const tensor_softmax_op_t &op) noexcept { return ok(); }
+    virtual result<void> visit(NNCASE_UNUSED const tensor_space_to_batch_op_t &op) noexcept { return ok(); }
     virtual result<void> visit(NNCASE_UNUSED const tensor_ternary_op_t &op) noexcept { return ok(); }
     virtual result<void> visit(NNCASE_UNUSED const tensor_topk_op_t &op) noexcept { return ok(); }
     virtual result<void> visit(NNCASE_UNUSED const tensor_trilu_op_t &op) noexcept { return ok(); }
