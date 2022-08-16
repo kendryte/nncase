@@ -510,3 +510,4 @@ result<void> kernels::compress(const T *input, const uint8_t *condition, T *outp
     const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const runtime_shape_t &output_shape, const int axis) noexcept
 {
     return cpu::reference::compress(input, condition, output, input_shape, condition_shape, output_shape, axis);
+}
