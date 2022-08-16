@@ -31,7 +31,7 @@ public interface ITarget
     /// <param name="rangeOfs">rangeOf nodes.</param>
     /// <param name="childrenOfRangeOfs">rangeOf nodes children.</param>
     /// <param name="runPassOptions">options.</param>
-    Task<Dictionary<ENode, List<Tuple<List<DataType>, float>>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassOptions runPassOptions);
+    Task<Dictionary<ENode, List<Tuple<List<DataType>, List<QuantParam>, float>>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassOptions runPassOptions);
 
     /// <summary>
     /// Parse Target Dependent Options 

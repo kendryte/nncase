@@ -46,9 +46,14 @@ public abstract partial record Expr
     };
 
     /// <summary>
-    /// quant config with cosine.
+    /// quant config with cosine, List<DataType> represents data types for each input might be quantized, List<QuantParam> represents quant params for each input.
     /// </summary>
-    public List<Tuple<List<DataType>, float>> enodeQuantConfigWithCosine = null;
+    public List<Tuple<List<DataType>, List<QuantParam>, float>> EnodeQuantConfigWithCosine = null;
+
+    /// <summary>
+    /// used by fake ir, represents that whether this op permit int 16 quant.
+    /// </summary>
+    public bool PermitInt16Quant = false;
 
     /// <inheritdoc/>
     public virtual bool Equals(Expr? other)

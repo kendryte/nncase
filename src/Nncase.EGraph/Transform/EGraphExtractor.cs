@@ -49,20 +49,20 @@ internal class EGraphExtractor
             };
             _eclassMemo.Add(eclass, expr);
         }
-        if (expr.enodeQuantConfigWithCosine != null)
+        if (expr.EnodeQuantConfigWithCosine != null)
         {
             var pattern = IsCall(IsWildcard(), IsWildcard());
             var isCall = pattern.MatchLeaf(expr);
             if (isCall == true)
             {
                 System.Console.WriteLine(expr + "  " + expr.CheckedType);
-                for (int i = 0; i < expr.enodeQuantConfigWithCosine.Count; i++)
+                for (int i = 0; i < expr.EnodeQuantConfigWithCosine.Count; i++)
                 {
-                    for (int j = 0; j < expr.enodeQuantConfigWithCosine[i].Item1.Count; j++)
+                    for (int j = 0; j < expr.EnodeQuantConfigWithCosine[i].Item1.Count; j++)
                     {
-                        System.Console.Write(expr.enodeQuantConfigWithCosine[i].Item1[j] + "  ");
+                        System.Console.Write(expr.EnodeQuantConfigWithCosine[i].Item1[j] + "  ");
                     }
-                    System.Console.WriteLine(expr.enodeQuantConfigWithCosine[i].Item2);
+                    System.Console.WriteLine(expr.EnodeQuantConfigWithCosine[i].Item3);
                 }
             }
         }
