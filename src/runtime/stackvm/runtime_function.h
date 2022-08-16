@@ -173,6 +173,7 @@ protected:
     result<void> visit(const tensor_trilu_op_t &op) noexcept override;
     result<void> visit(const tensor_tflite_detection_postprocess_op_t &op) noexcept override;
     result<void> visit(const tensor_unary_op_t &op) noexcept override;
+    result<void> visit(const tensor_layer_normalization_op_t &op) noexcept override;
 
 private:
     uintptr_t pc() const noexcept;

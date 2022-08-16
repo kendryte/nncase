@@ -495,3 +495,11 @@ result<void> kernels::tflite_detection_postprocess(const T *boxes, const T *scor
         use_regular_non_max_suppression, nms_score_threshold, nms_iou_threshold,
         num_classes, y_scale, x_scale, h_scale, w_scale);
 }
+
+template result<void> kernels::layernorm<float>(const float *input, float *output, float *scale, float *bias, const runtime_shape_t &in_shape, int32_t axis, float epsilon) noexcept;
+
+template <typename T>
+result<void> kernels::layernorm(const T *input, T *output, T *scale, T *bias, const runtime_shape_t &in_shape, int32_t axis, float epsilon) noexcept
+{
+    return cpu::reference::layernorm(input, output, scale, bias, in_shape, axis, epsilon);
+}

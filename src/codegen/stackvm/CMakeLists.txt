@@ -37,7 +37,8 @@ set(SRCS module_builder.cpp
         ops/transpose.cpp
         ops/trilu.cpp
         ops/tflite_detection_postprocess.cpp
-        ops/unary.cpp)
+        ops/unary.cpp
+        ops/layernorm.cpp)
 
 add_library(codegen_stackvm OBJECT ${SRCS})
 target_link_libraries(codegen_stackvm PUBLIC ir schedule)

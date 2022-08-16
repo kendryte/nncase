@@ -185,6 +185,7 @@ namespace IsaGen
         UNARY,
         GRU,
         TFLITE_DETECTION_POSTPROCESS,
+        LAYER_NORMALIZATION,
     }
 
     [BitLength(8)]
@@ -2335,6 +2336,29 @@ namespace IsaGen
             [DisplayName("w_scale")]
             [Description("w_scale register")]
             public float WScale { get; set; }
+        }
+
+        [DisplayName("TENSOR.LAYER_NORMALIZATION")]
+        [Category("Tensor Instructions")]
+        [Description("LAYER_NORMALIZATION")]
+        public class LayerNormInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.LAYER_NORMALIZATION;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+            
+            [DisplayName("input_shape")]
+            [Description("input_shape")]
+            public byte input_shape { get; set; }
+            [DisplayName("axis")]
+            [Description("axis")]
+            public int axis { get; set; }
+
+            [DisplayName("epsilon")]
+            [Description("epsilon")]
+            public float epsilon { get; set; }
         }
     }
 }
