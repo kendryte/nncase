@@ -57,7 +57,15 @@ public class CalibrationEvaluator
                 }
                 else
                 {
-                    awareTensors[enode] = value.AsTensor();
+                    if (value != Value.None)
+                    {
+                        awareTensors[enode] = value.AsTensor();
+                    }
+                    else
+                    {
+                        awareTensors[enode] = Enumerable.Repeat(0, 0).Select(x => (float)x).ToArray();
+                        _values.Add(enode, Value.None);
+                    }
                 }
             }
 
