@@ -16,7 +16,6 @@
 #include "nncase/ir/ops/layernorm.h"
 #include "../onnx_importer.h"
 #include "nncase/ir/ir_types.h"
-#include <bits/stdint-intn.h>
 #include <cassert>
 #include <nncase/ir/graph.h>
 #include <nncase/ir/ops/constant.h>
