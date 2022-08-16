@@ -29,10 +29,8 @@ template result<void> reference::compress<float>(const float *input, const uint8
 
 template <class T>
 result<void> reference::compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape,
-    const runtime_shape_t &output_shape, const int axis) noexcept
+    NNCASE_UNUSED const runtime_shape_t &output_shape, const int axis) noexcept
 {
-    size_t output_size = 0;
-    size_t output_size_of_shape = kernels::detail::compute_size(output_shape);
     if (axis == (int)input_shape.size())
     {
         for (auto i = 0; i < (int)condition_shape[0]; i++)
@@ -42,7 +40,6 @@ result<void> reference::compress(const T *input, const uint8_t *condition, T *ou
                 continue;
             }
             *output++ = input[i];
-            output_size++;
         }
     }
     else
@@ -61,9 +58,7 @@ result<void> reference::compress(const T *input, const uint8_t *condition, T *ou
             if (select_slice == 1 && (i % input_shape[axis] >= condition_shape[0] || condition[cond_index % input_shape[axis] % condition_shape[0]] == 0))
                 continue;
             *output++ = input[j];
-            output_size++;
         }
     }
-    assert(output_size == output_size_of_shape);
     return ok();
 }
