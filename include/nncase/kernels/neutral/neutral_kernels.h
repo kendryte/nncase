@@ -1313,7 +1313,7 @@ void tflite_detection_postprocess(const T *CXX_RESTRICT boxes, const T *CXX_REST
 }
 
 template <class T>
-void compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const runtime_shape_t &output_shape, const int axis)
+void compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const int axis)
 {
     if (axis == (int)input_shape.size())
     {
