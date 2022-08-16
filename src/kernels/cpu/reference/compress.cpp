@@ -32,6 +32,7 @@ result<void> reference::compress(const T *input, const uint8_t *condition, T *ou
     const runtime_shape_t &output_shape, const int axis) noexcept
 {
     size_t output_size = 0;
+    size_t output_size_of_shape = kernels::detail::compute_size(output_shape);
     if (axis == (int)input_shape.size())
     {
         for (auto i = 0; i < (int)condition_shape[0]; i++)
@@ -63,6 +64,6 @@ result<void> reference::compress(const T *input, const uint8_t *condition, T *ou
             output_size++;
         }
     }
-    assert(output_size == kernels::detail::compute_size(output_shape));
+    assert(output_size == output_size_of_shape);
     return ok();
 }
