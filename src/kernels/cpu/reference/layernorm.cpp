@@ -33,7 +33,7 @@ result<void> reference::layernorm(const T *input, T *output, T *scale, T *bias, 
     auto inner_size = 1;
     for (auto i = 0; i < axis; i++)
         outer_size *= in_shape[i];
-    for (auto i = axis; i < in_shape.size(); i++)
+    for (auto i = axis; i < static_cast<int>(in_shape.size()); i++)
         inner_size *= in_shape[i];
 
     for (int32_t batch = 0; batch < outer_size; batch++)
