@@ -31,9 +31,10 @@ public sealed partial class KPUConv2D : IRewriteRule
             IsConst("input_range")),
         IsTensorConst("weights"),
         IsTensorConst("batchNorms"),
-        IsTensorConst("outputquantparam"));
+        IsTensorConst("outputquantparam"),
+        IsTensorConst("fusedClamp"));
 
-    private Expr? GetReplace(Call upload_call, Expr input, Expr weights, Expr batchNorms, Expr outputquantparam)
+    private Expr? GetReplace(Call upload_call, Expr input, Expr weights, Expr batchNorms, Expr outputquantparam, Expr fusedClamp)
     {
         return input;
     }

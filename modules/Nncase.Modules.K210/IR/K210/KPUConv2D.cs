@@ -45,6 +45,11 @@ public sealed partial record class KPUConv2D(bool IsDepthwise, KPUFilterType Fil
     /// Gets activation.
     /// </summary>
     public static readonly ParameterInfo OutputQuantParam = new(typeof(KPUConv2D), 3, "outputQuantParam",HasRank(4));
+    
+    /// <summary>
+    /// Gets FusedClamp.
+    /// </summary>
+    public static readonly ParameterInfo FusedClamp = new(typeof(KPUConv2D), 4, "fused_clamp", HasShape(new Shape(2)) & HasDataType(DataTypes.BFloat16));
 
     /*/// <summary>
     /// Gets argX

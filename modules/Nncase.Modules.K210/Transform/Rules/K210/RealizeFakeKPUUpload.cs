@@ -13,6 +13,7 @@ using Nncase.IR.Math;
 using static  Nncase.PatternMatch.F.K210;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
+using Tensorflow.Contexts;
 using Tensorflow.Keras;
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.NN;
@@ -35,7 +36,10 @@ public sealed partial class RealizeFakeKPUUpload : IRewriteRule
 
     private Expr? GetReplace(Call upload_call, Expr input)
     {
-         //var kpuUpload = IR.F.K210.KPUUpload(input);
-        return new Call(new KPUUpload(), input);
+        // return IR.F.K210.KPUUpload(input);
+
+        var func = new Function(
+            new Call(new IR.K210.KPUUpload(), input));
+        return func;
     }
 }

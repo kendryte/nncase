@@ -60,7 +60,7 @@ public class UnitTestK210Target
 
     private async Task TestCodeGen(Expr body, Var[] vars, [CallerMemberName] string name = null)
     {
-        var main = new Function("main", body, vars) with {ModuleKind = "stackvm"};
+        var main = new Function("main", body, vars);
         var module = new IRModule(main);
         var target = CompilerServices.GetTarget("k210");
         var dumpDir = "k210_" + name;

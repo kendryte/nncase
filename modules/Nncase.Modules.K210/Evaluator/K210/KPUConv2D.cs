@@ -18,12 +18,14 @@ public class KPUConv2DEvaluator:IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv2D
         var weights = context.GetOrtArgumentValue(target, KPUConv2D.Weights);
         var batchNorms = context.GetOrtArgumentValue(target, KPUConv2D.BatchNorms).ToValue();
         var activition = context.GetOrtArgumentValue(target, KPUConv2D.OutputQuantParam).ToTensor();
+        var fusedClamp = context.GetOrtArgumentValue(target, KPUConv2D.FusedClamp).ToTensor();
+
         var stride = new long[] { 1, 1 };
         var pad = Enumerable.Repeat((long)KPUUtility.GetKPUPadding(target.FilterType), 4).ToArray();
         var dilation = new long[] { 1, 1 };
-        var clamp = new long[] {1, 1};
+        //var clamp = new long[] {1, 1};
         var groups = 1L;
-        var kernelShape = weights.Shape;
+        //var kernelShape = weights.Shape;
         var result = OrtKI.Conv(
             input.ToType(OrtDataType.Float), weights.ToType(OrtDataType.Float), EvaluatorUtil.DefaultBias(batchNorms, weights.Shape[0]).ToType(OrtDataType.Float),
             "NOTSET", dilation.ToArray(),
@@ -32,8 +34,7 @@ public class KPUConv2DEvaluator:IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv2D
         {
             result = result + batchNorms.AsTensor().ToOrtTensor();
         }
-
-        return result.ToValue();
+        return EvaluatorUtil.Act(result.ToTensor(), activition, fusedClamp);
     }
 
     /// <inheritdoc/>

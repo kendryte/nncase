@@ -63,11 +63,13 @@ public sealed partial class RealizeFakeKPUConv2D : IRewriteRule
             var isDepthwise = inChannels == outChannels && outChannels == groups;
             var batchnorms = None.Default;
             var act = None.Default;
-            // FakeKPUConv2D conv = null;
-            // var bias = conv.Bias.ToScalar();
-            // var bias = (TensorConst)IR.F.Random.Normal(DataTypes.Float32, new[] {16}).Evaluate().AsTensor();
-            // var act = KPUUtility.GetDefaultConvActParam(weights, bias);
-             return new Call(new IR.K210.KPUConv2D(isDepthwise, filterType, KPUPoolType.Bypass, KPUUtility.Activation()),input, weights, batchnorms, act);
+             //FakeKPUConv2D conv = null;
+             //var bias = conv.Bias.ToScalar();
+             //var bias = (TensorConst)IR.F.Random.Normal(DataTypes.Float32, new[] {16}).Evaluate().AsTensor();
+             //var act = KPUUtility.GetDefaultConvActParam(weights, bias);
+             //return new Call(new IR.K210.KPUConv2D(isDepthwise, filterType, KPUPoolType.Bypass, KPUUtility.Activation()),input, weights, batchnorms, act);
+            return new Function(IR.F.K210.KPUConv2D(isDepthwise, filterType, KPUPoolType.Bypass, KPUUtility.Activation(), input,
+                weights, batchnorms, act));
         }
 
         return null;

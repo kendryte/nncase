@@ -48,6 +48,14 @@ public static class Value
     {
         return new TensorValue(tensor);
     }
+    
+    /// <summary>
+    /// Create constant from a tensor.
+    /// </summary>
+    /// <param name="tensor">Tensor.</param>
+    /// <returns>Created constant expression.</returns>
+    // public static IValue FromTensor(Tensor tensor)
+    //     => new(tensor);
 
     /// <summary>
     /// Create value form tensors.

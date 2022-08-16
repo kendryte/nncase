@@ -30,7 +30,7 @@ public static class EvaluatorUtil
         }
     }
 
-    public static Const Act(Tensor input, Tensor act, Tensor fusedClamp)
+    public static IValue Act(Tensor input, Tensor act, Tensor fusedClamp)
     {
         var inShape = input.Shape.ToValueArray();
         var batchSize = ComputeSize(input.Shape.ToValueArray()[1..]);
@@ -53,7 +53,7 @@ public static class EvaluatorUtil
             }
         }
 
-        return Const.FromTensor(Tensor.FromSpan<BFloat16>(output, input.Shape));
+        return Value.FromTensor(Tensor.FromSpan<BFloat16>(output, input.Shape));
     }
 
     public static Const FakeAct(Tensor input, Tensor act, Tensor fusedClamp)
