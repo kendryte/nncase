@@ -2387,10 +2387,6 @@ namespace IsaGen
             [Description("Condition shape register")]
             public byte RshapeSrc2 { get; set; }
 
-            [DisplayName("output_shape_src")]
-            [Description("Output shape register")]
-            public byte RshapeSrc3 { get; set; }
-
             [DisplayName("axis")]
             [Description("axis register")]
             public float axis { get; set; }

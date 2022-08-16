@@ -23,15 +23,11 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::reference;
 
-template result<void> reference::compress<float>(const float *input, const uint8_t *condition, float *output,
-    const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape,
-    const runtime_shape_t &output_shape, const int axis) noexcept;
+template result<void> reference::compress<float>(const float *input, const uint8_t *condition, float *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const int axis) noexcept;
 
 template <class T>
-result<void> reference::compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape,
-    const runtime_shape_t &output_shape, const int axis) noexcept
+result<void> reference::compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const int axis) noexcept
 {
-    size_t output_size = 0;
     if (axis == (int)input_shape.size())
     {
         for (auto i = 0; i < (int)condition_shape[0]; i++)
@@ -41,7 +37,6 @@ result<void> reference::compress(const T *input, const uint8_t *condition, T *ou
                 continue;
             }
             *output++ = input[i];
-            output_size++;
         }
     }
     else
@@ -60,11 +55,7 @@ result<void> reference::compress(const T *input, const uint8_t *condition, T *ou
             if (select_slice == 1 && (i % input_shape[axis] >= condition_shape[0] || condition[cond_index % input_shape[axis] % condition_shape[0]] == 0))
                 continue;
             *output++ = input[j];
-            output_size++;
         }
     }
-    if (output_size == kernels::detail::compute_size(output_shape))
-    {
-        return ok();
-    }
+    return ok();
 }

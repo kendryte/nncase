@@ -858,7 +858,7 @@ void register_neutral_evaluators()
         auto condition = context.memory_at(rnode.condition());
         auto output = context.memory_at(rnode.output());
         kernels::compress(input.buffer().as_span<float>().data(), condition.buffer().as_span<uint8_t>().data(), output.buffer().as_span<float>().data(),
-            input.shape(), condition.shape(), output.shape(), rnode.axis())
+            input.shape(), condition.shape(), rnode.axis())
             .unwrap_or_throw(); });
 }
 

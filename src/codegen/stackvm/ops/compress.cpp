@@ -30,6 +30,5 @@ void stackvm_module_builder::emit(compress &node, stackvm_op_builder &builder)
 
     builder.stshape(0, input.shape);
     builder.stshape(1, condition.shape);
-    builder.stshape(2, output.shape);
-    builder.tensor_compress_(0, 1, 2, node.axis());
+    builder.tensor_compress_(0, 1, node.axis());
 }

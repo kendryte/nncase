@@ -502,12 +502,10 @@ result<void> kernels::space_to_batch(datatype_t type, const gsl::byte *input, gs
     return cpu::reference::space_to_batch(type, input, output, in_shape, block_shape, crops, in_strides, out_strides, context);
 }
 
-template result<void> kernels::compress<float>(const float *input, const uint8_t *condition, float *output,
-    const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const runtime_shape_t &output_shape, const int axis) noexcept;
+template result<void> kernels::compress<float>(const float *input, const uint8_t *condition, float *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const int axis) noexcept;
 
 template <typename T>
-result<void> kernels::compress(const T *input, const uint8_t *condition, T *output,
-    const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const runtime_shape_t &output_shape, const int axis) noexcept
+result<void> kernels::compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const int axis) noexcept
 {
-    return cpu::reference::compress(input, condition, output, input_shape, condition_shape, output_shape, axis);
+    return cpu::reference::compress(input, condition, output, input_shape, condition_shape, axis);
 }
