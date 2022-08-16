@@ -9,6 +9,8 @@ using System.Text;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.PatternMatch;
+using static Nncase.PatternMatch.F.Math;
+using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Transform;
 
@@ -49,14 +51,19 @@ internal class EGraphExtractor
         }
         if (expr.enodeQuantConfigWithCosine != null)
         {
-            System.Console.WriteLine(expr + "  " + expr.CheckedType);
-            for (int i = 0; i < expr.enodeQuantConfigWithCosine.Count; i++)
+            var pattern = IsCall(IsWildcard(), IsWildcard());
+            var isCall = pattern.MatchLeaf(expr);
+            if (isCall == true)
             {
-                for (int j = 0; j < expr.enodeQuantConfigWithCosine[i].Item1.Count; j++)
+                System.Console.WriteLine(expr + "  " + expr.CheckedType);
+                for (int i = 0; i < expr.enodeQuantConfigWithCosine.Count; i++)
                 {
-                    System.Console.Write(expr.enodeQuantConfigWithCosine[i].Item1[j] + "  ");
+                    for (int j = 0; j < expr.enodeQuantConfigWithCosine[i].Item1.Count; j++)
+                    {
+                        System.Console.Write(expr.enodeQuantConfigWithCosine[i].Item1[j] + "  ");
+                    }
+                    System.Console.WriteLine(expr.enodeQuantConfigWithCosine[i].Item2);
                 }
-                System.Console.WriteLine(expr.enodeQuantConfigWithCosine[i].Item2);
             }
         }
         return expr;
