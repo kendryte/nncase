@@ -63,6 +63,6 @@ result<void> reference::compress(const T *input, const uint8_t *condition, T *ou
             output_size++;
         }
     }
-    assert( output_size == kernels::detail::compute_size(output_shape));
+    assert(output_size == kernels::detail::compute_size(output_shape));
     return ok();
 }

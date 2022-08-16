@@ -1349,7 +1349,7 @@ void compress(const T *input, const uint8_t *condition, T *output,
             output_size++;
         }
     }
-    assert( output_size == kernels::detail::compute_size(output_shape));
+    assert(output_size == kernels::detail::compute_size(output_shape));
 }
 
 }
