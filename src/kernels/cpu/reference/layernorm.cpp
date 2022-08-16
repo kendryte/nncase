@@ -42,29 +42,29 @@ result<void> reference::layernorm(const T *input, T *output, T *scale, T *bias, 
         auto dest = output + batch * inner_size;
 
         float mean1 = 0.f;
-        for (size_t i = 0; i < inner_size; i++)
+        for (auto i = 0; i < inner_size; i++)
             mean1 += src[i] / inner_size;
 
         std::vector<float> sub(inner_size, 0.f);
-        for (size_t i = 0; i < inner_size; i++)
+        for (auto i = 0; i < inner_size; i++)
             sub[i] = src[i] - mean1;
 
         std::vector<float> pow(inner_size, 0.f);
-        for (size_t i = 0; i < inner_size; i++)
+        for (auto i = 0; i < inner_size; i++)
             pow[i] = sub[i] * sub[i];
 
         float mean2 = 0.f;
-        for (size_t i = 0; i < inner_size; i++)
+        for (auto i = 0; i < inner_size; i++)
             mean2 += pow[i] / inner_size;
 
         float add = mean2 + epsilon;
         float sqrt = std::sqrt(add);
 
         std::vector<float> div(inner_size, 0.f);
-        for (size_t i = 0; i < inner_size; i++)
+        for (auto i = 0; i < inner_size; i++)
             div[i] = sub[i] / sqrt;
 
-        for (size_t i = 0; i < inner_size; i++)
+        for (auto i = 0; i < inner_size; i++)
             dest[i] = div[i] * scale[i] + bias[i];
     }
 
