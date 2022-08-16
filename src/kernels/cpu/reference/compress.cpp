@@ -40,7 +40,7 @@ result<void> reference::compress(const T *input, const uint8_t *condition, T *ou
             {
                 continue;
             }
-            *output++ = *(input + i);
+            *output++ = input[i];
             output_size++;
         }
     }
@@ -59,7 +59,7 @@ result<void> reference::compress(const T *input, const uint8_t *condition, T *ou
                 continue;
             if (select_slice == 1 && (i % input_shape[axis] >= condition_shape[0] || condition[cond_index % input_shape[axis] % condition_shape[0]] == 0))
                 continue;
-            *output++ = *(input + j);
+            *output++ = input[j];
             output_size++;
         }
     }
