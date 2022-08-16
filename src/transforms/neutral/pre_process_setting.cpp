@@ -64,7 +64,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
                 auto Q_min = 0;
                 auto scale = (range.max - range.min) / (Q_max - Q_min);
                 auto bias = std::round((range.max * Q_min - range.min * Q_max) / (range.max - range.min));
-                if(scale == 1 && bias == 0)
+                if (scale == 1 && bias == 0)
                 {
                     auto cvt_input = graph.emplace<convert>(mid_ptr->type(), mid_ptr->shape(), dt_float32);
                     cvt_input->name("cvt_input");
