@@ -1315,8 +1315,9 @@ void tflite_detection_postprocess(const T *CXX_RESTRICT boxes, const T *CXX_REST
 template <class T>
 void compress(const T *input, const uint8_t *condition, T *output,
     const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape,
-    NNCASE_UNUSED const runtime_shape_t &output_shape, const int axis)
+    const runtime_shape_t &output_shape, const int axis)
 {
+    size_t output_size = 0;
     if (axis == (int)input_shape.size())
     {
         for (auto i = 0; i < (int)condition_shape[0]; i++)
@@ -1326,6 +1327,7 @@ void compress(const T *input, const uint8_t *condition, T *output,
                 continue;
             }
             *output++ = *(input + i);
+            output_size++;
         }
     }
     else
@@ -1344,8 +1346,10 @@ void compress(const T *input, const uint8_t *condition, T *output,
             if (select_slice == 1 && (i % input_shape[axis] >= condition_shape[0] || condition[cond_index % input_shape[axis] % condition_shape[0]] == 0))
                 continue;
             *output++ = *(input + j);
+            output_size++;
         }
     }
+    assert(output_size == kernels::detail::compute_size(output_shape));
 }
 
 }
