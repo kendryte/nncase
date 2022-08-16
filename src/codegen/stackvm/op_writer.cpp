@@ -682,4 +682,3 @@ void op_builder::tensor_layer_normalization_(datatype_t datatype, uint8_t input_
 {
     op_writer<tensor_layer_normalization_op_t>()(tensor_layer_normalization_op_t(datatype, input_shape, axis, epsilon), writer_);
 }
-
