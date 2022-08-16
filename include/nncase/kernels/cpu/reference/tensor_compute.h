@@ -163,6 +163,6 @@ NNCASE_API result<void> space_to_batch(datatype_t type, const gsl::byte *input, 
     const runtime_shape_t &block_shape, const runtime_paddings_t &paddings, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, kernel_context &context) noexcept;
 
 template <typename T>
-NNCASE_API result<void> compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, NNCASE_UNUSED const runtime_shape_t &output_shape, const int axis) noexcept;
+NNCASE_API result<void> compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const runtime_shape_t &output_shape, const int axis) noexcept;
 
 END_NS_NNCASE_KERNELS_CPU_REF
