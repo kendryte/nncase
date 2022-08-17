@@ -44,14 +44,14 @@ public class K210Target : ITarget
             });
         }
 
-        passManager.Add(new DataflowPass("constant_fold")
-        {
-            new FoldConstCall(),
-            new FoldKPUUpload(),
-            new FuseKPUConv2D(),
-            new FuseKPUDownload(),
-            new FoldNopClamp()
-        });
+        // passManager.Add(new DataflowPass("constant_fold")
+        // {
+        //     new FoldConstCall(),
+        //     // new FoldKPUUpload(),
+        //     // new FuseKPUConv2D(),
+        //     // new FuseKPUDownload(),
+        //     // new FoldNopClamp()
+        // });
     }
 
     /// <inheritdoc/>
