@@ -40,11 +40,26 @@ def _make_module(in_shape, axis, epsilon):
                               vals=np.random.randn(*in_shape[actual_axis:],).astype(np.float32).flatten().tolist())
     initializers.append(bias)
 
-    node = onnx.helper.make_node('LayerNormalization',
-                                 inputs=['input', 'scale', 'bias'],
-                                 outputs=['output'],
-                                 axis=axis,
-                                 epsilon=epsilon)
+    if axis is None and epsilon is None:
+        node = onnx.helper.make_node('LayerNormalization',
+                                     inputs=['input', 'scale', 'bias'],
+                                     outputs=['output'])
+    elif axis is None:
+        node = onnx.helper.make_node('LayerNormalization',
+                                     inputs=['input', 'scale', 'bias'],
+                                     outputs=['output'],
+                                     epsilon=epsilon)
+    elif epsilon is None:
+        node = onnx.helper.make_node('LayerNormalization',
+                                     inputs=['input', 'scale', 'bias'],
+                                     outputs=['output'],
+                                     axis=axis)
+    else:
+        node = onnx.helper.make_node('LayerNormalization',
+                                     inputs=['input', 'scale', 'bias'],
+                                     outputs=['output'],
+                                     axis=axis,
+                                     epsilon=epsilon)
 
     graph_def = helper.make_graph([node], 'test-model', [input], [output], initializer=initializers)
     model_def = helper.make_model(graph_def, producer_name='kendryte')
