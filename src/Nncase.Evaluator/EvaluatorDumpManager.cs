@@ -18,7 +18,7 @@ public class EvaluatorDumpManager : DumpManager
     
     public void DumpCallArgs(Call call)
     {
-        var target = call.Target.GetType().Name.ToLower();
+        var target = DumpUtility.SnakeName(call.Target.GetType().Name);
         var paramsInfo = ((Op) call.Target).Parameters.ToArray();
 
         call.ParametersForeach((param, paramInfo) =>

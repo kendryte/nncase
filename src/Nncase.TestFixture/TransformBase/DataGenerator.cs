@@ -1,3 +1,5 @@
+using Microsoft.Toolkit.HighPerformance;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Random = Nncase.IR.F.Random;
 using static Nncase.IR.F.Math;
@@ -176,19 +178,42 @@ public static class DataGenerator
     // data[1]
     // ...
     // data[n]
-    private static (DataType, int[], string[]) ParseDumpFile(string[] content)
+    private static (DataType dt, int[] shape, string[] data, int endIndex) ParseDumpFile(string[] content, int baseIndex)
     {
-        var dtIndex = 0;
-        var shapeIndex = 1;
+        var dtIndex = baseIndex;
+        var shapeIndex = baseIndex + 1;
+        var data = content[(shapeIndex + 1)..];
+        var end = data.Find(d => d.StartsWith("type")).Match(x => data.ToList().IndexOf(x), () => data.Length);
+        var endIndexInContent = end + shapeIndex + 1;
+        return (ParseDataType(content[dtIndex]), ParseShape(content[shapeIndex]), data[..end], endIndexInContent);
+    }
+    
+    private static (DataType dt, int[] shape, string[] data) ParseDumpFile(string[] content)
+    {
+        int baseIndex = 0;
+        // result
         if (!content[0].StartsWith("type"))
         {
-            dtIndex += 1;
-            shapeIndex += 1;
+            baseIndex = 1;
         }
 
-        return (ParseDataType(content[dtIndex]), ParseShape(content[shapeIndex]), content[(shapeIndex + 1)..]);
+        if (content[1] == "tuple")
+        {
+            baseIndex = 2;
+        }
+
+        while (true)
+        {
+            var (dt, shape, data, endIndex) = ParseDumpFile(content, baseIndex);
+            baseIndex = endIndex;
+            if (endIndex == content.Length)
+            {
+                return (dt, shape, data);
+            }
+        }
     }
 
+    // format
     // shape: x x x x
     private static int[] ParseShape(string shapeStr)
     {

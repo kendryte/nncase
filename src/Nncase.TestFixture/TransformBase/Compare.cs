@@ -16,7 +16,7 @@ public static class TensorUtil
 
     public static int GetChannelAxis(int[] shape)
     {
-        return 1 - (4 - shape.Length);
+        return Math.Max(0, 1 - (4 - shape.Length));
     }
     
     private static Tensor SliceTensor(Tensor tensor, int start, int length, int channelAxis = 1)
@@ -286,15 +286,18 @@ public static class DetailComparator
         var counter = new Counter(1);
         foreach (var (originD, k230D) in data)
         {
-            counter.Run(count =>
-            {
-                var result = DetailComparator.CompareDetail(originD, k230D);
-                DetailComparator.DumpCompareDetail(result, resultRoot, count);
-                var analysisResult = DetailComparator.CompareDetailAnalysis(result);
-                DetailComparator.DumpCompareDetailAnalysis(analysisResult, resultRoot, count);
-                return analysisResult;
-            });
+            counter.Run(count => GenerateFullCompareInfo(resultRoot, originD, k230D, count));
         }
+    }
+
+    private static CompareResultByChannel[] GenerateFullCompareInfo(string resultRoot, Tensor originD, Tensor k230D,
+        int count)
+    {
+        var result = DetailComparator.CompareDetail(originD, k230D);
+        DetailComparator.DumpCompareDetail(result, resultRoot, count);
+        var analysisResult = DetailComparator.CompareDetailAnalysis(result);
+        DetailComparator.DumpCompareDetailAnalysis(analysisResult, resultRoot, count);
+        return analysisResult;
     }
 }
 
@@ -316,15 +319,16 @@ public record CompareResultByChannel(float cos, AccuracyLossInfo[] LossInfo)
 
     public bool IsOk(float thresh)
     {
-        return cos < thresh || ErrDiv.Length != 0;
+        return cos < thresh || Losses.Length != 0;
     }
 
-    public AccuracyLossInfo[] ErrDiv => LossInfo.Where(deviation =>
+    // todo: more analysis strategy
+    public AccuracyLossInfo[] Losses => LossInfo.Where(deviation =>
         (deviation.Ratio > 1.3 || deviation.Ratio < 0.7) && deviation.Loss > 0.01).ToArray();
 
     public override string ToString()
     {
-        var err = ErrDiv;
+        var err = Losses;
         var percent = (float) err.Length / new Shape(Shape).Prod().FixedValue;
         return $"CompareResultByChannel Cos:{cos} \nLossCount/InputSize: {percent}\nLoss:\n{SerializeByColumn(err)}";
     }

@@ -66,7 +66,7 @@ void dump(nncase::value_t value, F &&f,
         f(stream, value_tensor);
         stream.close();
     } else if (value.is_a<nncase::tuple>()) {
-        stream << "tuple" << "\n";
+//        stream << "tuple" << "\n";
         stream.close();
         auto value_tuple = value.as<nncase::tuple>().unwrap();
         for (auto &field : value_tuple->fields()) {

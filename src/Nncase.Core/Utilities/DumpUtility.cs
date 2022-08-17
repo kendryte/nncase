@@ -1,3 +1,4 @@
+using System.Text;
 using Nncase.IR;
 
 namespace Nncase.Utilities;
@@ -50,7 +51,7 @@ public class DumpManager
 
     protected void DumpCallParam(string target, ParameterInfo info, Action<StreamWriter> f)
     {
-        var path = Path.Join(GetMaybeDumpDir(), CountStr + target + $"_param_{info.Name}");
+        var path = Path.Join(GetMaybeDumpDir(), CountStr + target + $"${info.Name}");
         using (var sr = new StreamWriter(path))
         {
             f(sr);
@@ -59,7 +60,7 @@ public class DumpManager
     
     protected void DumpCall(string target, Action<StreamWriter> f)
     {
-        var path = Path.Join(GetMaybeDumpDir(), CountStr + target);
+        var path = Path.Join(GetMaybeDumpDir(), $"{CountStr}${target}");
         using (var sr = new StreamWriter(path))
         {
             f(sr);
@@ -75,7 +76,7 @@ public static class ValueDumper
     public static void DumpTensor(TensorValue tensorValue, StreamWriter writer)
     {
         var tensor = tensorValue.AsTensor();
-        writer.WriteLine(tensor.Shape.ToString());
+        writer.WriteLine(DumpUtility.SerializeShape(tensor.Shape));
         // todo:other type
         var dt = tensor.ElementType;
         if (dt == DataTypes.Int8 || dt == DataTypes.Int32 || dt == DataTypes.Int64)
@@ -162,14 +163,41 @@ public static class DumpUtility
 
     public static string SerializeShape(int[] shape)
     {
-        return $"Shape:[{SerializeByRow(shape)}]";
+        return $"shape:[{SerializeByRow(shape)}]";
     }
+
+    public static string SerializeShape(Shape shape) => SerializeShape(shape.ToValueArray());
 
     public static string PathJoinByCreate(string root, params string[] paths)
     {
         var path = Path.Join(new[]{root}.Concat(paths).ToArray());
         Directory.CreateDirectory(path);
         return path;
+    }
+    
+    public static string SnakeName(string name)
+    {
+        var sb = new StringBuilder();
+        bool lastCapital = true;
+        bool lastIsLetter = true;
+        foreach (var c in name)
+        {
+            var isLetter = char.IsLetter(c);
+            var isCaptial = isLetter ? char.IsUpper(c) : false;
+            if (!lastCapital && isCaptial && sb.Length != 0)
+            {
+                if (lastIsLetter || c != 'D')
+                    sb.Append('_');
+            }
+            sb.Append(char.ToLowerInvariant(c));
+
+            if (!lastIsLetter && c == 'D')
+                sb.Append('_');
+
+            lastCapital = isCaptial;
+            lastIsLetter = isLetter;
+        }
+        return sb.ToString().Trim('_');
     }
 }
 

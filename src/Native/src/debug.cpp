@@ -29,7 +29,7 @@ void dump_manager::dump_op(const std::string &func_str) {
 }
 
 fs::path dump_manager::dump_path() {
-    auto p = dump_root / (std::to_string(get_count()) + currentOp);
+    auto p = dump_root / (std::to_string(get_count()) + "$" + currentOp);
     if (!fs::exists(dump_root) && dump_root != "") {
         fs::create_directory(dump_root);
     }
@@ -116,5 +116,5 @@ void dump_output(NNCASE_UNUSED nncase::value_t value) {
 
 void dump_input(NNCASE_UNUSED nncase::value_t value,
                 NNCASE_UNUSED std::string name) {
-    dump_output_impl(value, fs::path(dump_path().string() + name), false);
+    dump_output_impl(value, fs::path(dump_path().string() + "$" + name), false);
 }
