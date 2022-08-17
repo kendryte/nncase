@@ -42,7 +42,8 @@ internal sealed class DataFlowRewriteVisitor : ExprMutator
 
     public override Expr DefaultMutateLeaf(Expr expr)
     {
-        if (CompilerServices.TryMatchRoot(expr, _rule.Pattern, _options.MatchOptions, out var match))
+        if ((_rule.IsMultiBranchSafe() || (!_rule.IsMultiBranchSafe() && !IsMutated))
+          && CompilerServices.TryMatchRoot(expr, _rule.Pattern, _options.MatchOptions, out var match))
         {
             var replace = _rule.GetReplace(match, _options);
             if (replace != null)

@@ -106,6 +106,12 @@ public class TemplateRule : IRewriteRule
     public IPattern Pattern { get; }
 
     /// <inheritdoc/>
+    public bool IsMultiBranchSafe { get; init; } = false;
+
+    /// <inheritdoc/>
+    bool IRewriteRule.IsMultiBranchSafe() => IsMultiBranchSafe;
+
+    /// <inheritdoc/>
     public Expr? GetReplace(IMatchResult result, RunPassOptions options)
     {
         var converter = new ExprGeneratorVisitor(result);

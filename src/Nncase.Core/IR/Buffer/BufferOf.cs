@@ -11,7 +11,7 @@ namespace Nncase.IR.Buffer;
 /// <summary>
 /// get the buffer from the input.
 /// </summary>
-public record BufferOf() : Op
+public record BufferOf(Schedule.MemoryLocation MemoryLocation) : Op
 {
     /// <summary>
     /// Get the input parameter.

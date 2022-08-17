@@ -18,7 +18,7 @@ namespace Nncase.Evaluator.Tensors;
 /// Evaluator for <see cref="Expand"/>.
 /// </summary>
 [TypeInferGenerator]
-public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>
+public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>, ICostEvaluator<Expand>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Expand expand)

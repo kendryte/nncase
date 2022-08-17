@@ -23,6 +23,11 @@ namespace Nncase.Transform.Rules.Neutral;
 [RuleGenerator]
 public partial class FoldConstCall : RewriteRule<CallPattern>
 {
+    public FoldConstCall()
+    {
+        IsMultiBranchSafe = true;
+    }
+    
     /// <inheritdoc/>
     public override CallPattern Pattern { get; } = IsCall(
         "call",
@@ -43,6 +48,10 @@ public partial class FoldConstCall : RewriteRule<CallPattern>
 [RuleGenerator]
 public partial class FoldShapeOf : RewriteRule<CallPattern>
 {
+    public FoldShapeOf()
+    {
+        IsMultiBranchSafe = true;
+    }
     /// <inheritdoc/>
     public override CallPattern Pattern { get; } = IsShapeOf(IsWildcard("wc") with { TypePattern = HasFixedShape() });
 

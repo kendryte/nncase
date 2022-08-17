@@ -33,4 +33,9 @@ public interface IRewriteRule
     /// <param name="result">Match result.</param>
     /// <returns>Replace expression or null if nothing changed.</returns>
     Expr? GetReplace(IMatchResult result, RunPassOptions options);
+
+    /// <summary>
+    /// check this pattern can be modify in multi branch
+    /// </summary>
+    bool IsMultiBranchSafe() { return false; }
 }

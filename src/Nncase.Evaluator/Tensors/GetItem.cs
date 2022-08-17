@@ -65,7 +65,15 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
                 {
                     return Input;
                 }
-                ret = new TensorType(tensorType.DType, new Shape(tensorType.Shape.Skip(System.Math.Max(Index.Shape.Rank, 1))));
+                ret = new TensorType(tensorType.DType,
+                       Index.Shape switch
+                       {
+                           { IsScalar: true } => new Shape(tensorType.Shape.Skip(1)),
+                           { IsFixed: true } => Index.Shape[0].FixedValue == tensorType.Shape.Rank ? 
+                                                Shape.Scalar :
+                                                new Shape(tensorType.Shape.Skip(Index.Shape[0].FixedValue)),
+                           _ => Shape.Unranked,
+                       });
                 break;
             case TupleType tupleType:
                 if (context.GetArgument(target, GetItem.Index) is TensorConst @const)
