@@ -20,7 +20,7 @@ using Math = System.Math;
 
 namespace Nncase.Transform.Rules;
 [RuleGenerator]
-public sealed partial class KPUConv2D : IRewriteRule
+public sealed partial class FuseKPUConv2D : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsKPUConv2D(
@@ -36,6 +36,6 @@ public sealed partial class KPUConv2D : IRewriteRule
 
     private Expr? GetReplace(Call upload_call, Expr input, Expr weights, Expr batchNorms, Expr outputquantparam, Expr fusedClamp)
     {
-        return input;
+        return null;
     }
 }

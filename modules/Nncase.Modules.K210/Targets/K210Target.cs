@@ -14,6 +14,7 @@ using Nncase.IR;
 using Nncase.Quantization;
 using Nncase.Runtime.K210;
 using Nncase.Transform;
+using Nncase.Transform.Rules;
 using Nncase.Transform.Rules.K210;
 using Nncase.Transform.Rules.Neutral;
 
@@ -43,10 +44,14 @@ public class K210Target : ITarget
             });
         }
 
-        // passManager.Add(new DataflowPass("constant_fold")
-        // {
-        //     new FoldConstCall(),
-        // });
+        passManager.Add(new DataflowPass("constant_fold")
+        {
+            new FoldConstCall(),
+            new FoldKPUUpload(),
+            new FuseKPUConv2D(),
+            new FuseKPUDownload(),
+            new FoldNopClamp()
+        });
     }
 
     /// <inheritdoc/>

@@ -25,7 +25,7 @@ namespace Nncase.Transform.Rules;
 /// Lower <see cref="IR.K210.KPUUpload"/> to <see cref="IR.K210.FoldKPUUpload"/>.
 /// </summary>
 [RuleGenerator]
-public sealed partial class FoldKPUDownload : IRewriteRule
+public sealed partial class FuseKPUDownload : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsKPUDownload(
