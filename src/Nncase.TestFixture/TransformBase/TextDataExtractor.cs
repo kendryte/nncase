@@ -34,7 +34,7 @@ public class TextDataExtractor
     }
 
     // now only can be used for runtime, evaluator dump format not be modified
-    public Tensor[] ExtractTensors(string dir, Func<string, bool> Extractor)
+    public IValue[] ExtractValues(string dir, Func<string, bool> Extractor)
     {
         var fs = GetFilesByOrdered(dir);
         return fs
@@ -55,14 +55,14 @@ public class TextDataExtractor
     public bool IsResultFile(string file) => file.Count(c => c == Separator) == 1;
     public bool IsParamFile(string file) => file.Count(c => c == Separator) == 2;
 
-    public Tensor[] GetComputeResults(string dir) => ExtractTensors(dir, IsResultFile);
+    public IValue[] GetComputeResults(string dir) => ExtractValues(dir, IsResultFile);
 
-    public Tensor[] GetParams(string dir, int count) => ExtractTensors(dir,
+    public IValue[] GetParams(string dir, int count) => ExtractValues(dir,
         file => IsParamFile(file) && GetCount(file) == count);
 
-    public Tensor[] GetTensors(string dir)
+    public IValue[] GetValues(string dir)
     {
-        return ExtractTensors(dir, _ => true);
+        return ExtractValues(dir, _ => true);
     }
 
     // used for transformer
@@ -72,11 +72,11 @@ public class TextDataExtractor
         return lower.Contains("mat") && lower.EndsWith("mul");
     }
 
-    public Tensor[] OpExtract(string dir, string opName)
-        => ExtractTensors(dir, file => GetOpName(file) == opName);
+    public IValue[] OpExtract(string dir, string opName)
+        => ExtractValues(dir, file => GetOpName(file) == opName);
 
     public Tensor[] MatmulExtract(string dir)
     {
-        return ExtractTensors(dir, DynamicMatmulOnlyExtract);
+        return ExtractValues(dir, DynamicMatmulOnlyExtract).Select(x => x.AsTensor()).ToArray();
     }
 }

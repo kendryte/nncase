@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
@@ -108,13 +109,21 @@ public static class DataGenerator
     }
 
 
-    public static Tensor FromTextFile(string path)
+    public static IValue FromTextFile(string path)
     {
         using (var stream = new StreamReader(path))
         {
             var content = stream.ReadToEnd().Trim().Split("\n");
-            var (dt, shape, data) = ParseDumpFile(content);
-            return ParseTensor(dt, shape, data);
+            var data = ParseDumpFile(content);
+            if (content[1] == "tuple")
+            {
+                return Value.FromTensors(data.Select(ParseTensor).ToArray());
+            }
+            else
+            {
+                Debug.Assert(data.Length == 1);
+                return Value.FromTensor(ParseTensor(data.Head()));
+            }
         }
     }
 
@@ -133,29 +142,33 @@ public static class DataGenerator
             return float.Parse(s);
         }
     }
-    
-    private static Tensor ParseTensor(DataType dt, Shape shape, string[] data) => dt switch
+
+    private static Tensor ParseTensor(DumpData dumpData)
     {
-        PointerType pointerType => throw new NotImplementedException(),
-        BooleanType booleanType => throw new NotImplementedException(),
-        Float16Type float16Type => Tensor.FromSpan(data.Select(x => (Half)ParseFloat(x)).ToArray(), shape),
-        Float32Type float32Type => Tensor.FromSpan(data.Select(x => ParseFloat(x)).ToArray(), shape),
-        Float64Type float64Type => Tensor.FromSpan(data.Select(x => double.Parse(x)).ToArray(), shape),
-        Int16Type int16Type => Tensor.FromSpan(data.Select(x => short.Parse(x)).ToArray(), shape),
-        Int32Type int32Type => Tensor.FromSpan(data.Select(x => int.Parse(x)).ToArray(), shape),
-        Int64Type int64Type => Tensor.FromSpan(data.Select(x => long.Parse(x)).ToArray(), shape),
-        Int8Type int8Type => Tensor.FromSpan(data.Select(x => sbyte.Parse(x)).ToArray(), shape),
-        BFloat16Type bFloat16Type => throw new NotImplementedException(),
-        UInt16Type uInt16Type => Tensor.FromSpan(data.Select(x => ushort.Parse(x)).ToArray(), shape),
-        UInt32Type uInt32Type => Tensor.FromSpan(data.Select(x => uint.Parse(x)).ToArray(), shape),
-        UInt64Type uInt64Type => Tensor.FromSpan(data.Select(x => ulong.Parse(x)).ToArray(), shape),
-        UInt8Type uInt8Type => Tensor.FromSpan(data.Select(x => byte.Parse(x)).ToArray(), shape),
-        Utf8CharType utf8CharType => throw new NotImplementedException(),
-        PrimType primType => throw new NotImplementedException(),
-        QuantParamType quantParamType => throw new NotImplementedException(),
-        ValueType valueType => throw new NotImplementedException(),
-        _ => throw new ArgumentOutOfRangeException(nameof(dt))
-    };
+        var (dt, shape, data) = dumpData;
+        return dt switch
+        {
+            PointerType pointerType => throw new NotImplementedException(),
+            BooleanType booleanType => Tensor.FromSpan(data.Select(x => (int.Parse(x) >= 1)).ToArray(), shape),
+            Float16Type float16Type => Tensor.FromSpan(data.Select(x => (Half) ParseFloat(x)).ToArray(), shape),
+            Float32Type float32Type => Tensor.FromSpan(data.Select(x => ParseFloat(x)).ToArray(), shape),
+            Float64Type float64Type => Tensor.FromSpan(data.Select(x => double.Parse(x)).ToArray(), shape),
+            Int16Type int16Type => Tensor.FromSpan(data.Select(x => short.Parse(x)).ToArray(), shape),
+            Int32Type int32Type => Tensor.FromSpan(data.Select(x => int.Parse(x)).ToArray(), shape),
+            Int64Type int64Type => Tensor.FromSpan(data.Select(x => long.Parse(x)).ToArray(), shape),
+            Int8Type int8Type => Tensor.FromSpan(data.Select(x => sbyte.Parse(x)).ToArray(), shape),
+            BFloat16Type bFloat16Type => throw new NotImplementedException(),
+            UInt16Type uInt16Type => Tensor.FromSpan(data.Select(x => ushort.Parse(x)).ToArray(), shape),
+            UInt32Type uInt32Type => Tensor.FromSpan(data.Select(x => uint.Parse(x)).ToArray(), shape),
+            UInt64Type uInt64Type => Tensor.FromSpan(data.Select(x => ulong.Parse(x)).ToArray(), shape),
+            UInt8Type uInt8Type => Tensor.FromSpan(data.Select(x => byte.Parse(x)).ToArray(), shape),
+            Utf8CharType utf8CharType => throw new NotImplementedException(),
+            PrimType primType => throw new NotImplementedException(),
+            QuantParamType quantParamType => throw new NotImplementedException(),
+            ValueType valueType => throw new NotImplementedException(),
+            _ => throw new ArgumentOutOfRangeException(nameof(dt))
+        };
+    }
 
 
     // todo: support tuple parse
@@ -187,8 +200,12 @@ public static class DataGenerator
         var endIndexInContent = end + shapeIndex + 1;
         return (ParseDataType(content[dtIndex]), ParseShape(content[shapeIndex]), data[..end], endIndexInContent);
     }
+
+    private record DumpData(DataType dt, int[] shape, string[] data)
+    {
+    }
     
-    private static (DataType dt, int[] shape, string[] data) ParseDumpFile(string[] content)
+    private static DumpData[] ParseDumpFile(string[] content)
     {
         int baseIndex = 0;
         // result
@@ -202,13 +219,15 @@ public static class DataGenerator
             baseIndex = 2;
         }
 
+        var result = new List<DumpData>();
         while (true)
         {
             var (dt, shape, data, endIndex) = ParseDumpFile(content, baseIndex);
             baseIndex = endIndex;
+            result.Add(new DumpData(dt, shape, data));
             if (endIndex == content.Length)
             {
-                return (dt, shape, data);
+                return result.ToArray();
             }
         }
     }
