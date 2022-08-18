@@ -31,7 +31,7 @@ public sealed record class FakeKPUConv2D(bool IsDepthwise, KPUFilterType FilterT
     /// <summary>
     /// Gets FusedActivation
     /// </summary>
-    public static readonly ParameterInfo FusedActivation = new(typeof(FakeKPUConv2D), 2, "fused_activation");
+    //public static readonly ParameterInfo FusedActivation = new(typeof(FakeKPUConv2D), 2, "fused_activation");
     /// <summary>
     /// Gets Bias.
     /// </summary>

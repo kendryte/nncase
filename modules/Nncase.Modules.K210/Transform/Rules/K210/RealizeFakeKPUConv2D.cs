@@ -38,6 +38,7 @@ public sealed partial class RealizeFakeKPUConv2D : IRewriteRule
                     with { TypePattern = HasFixedShape() },
                 IsConst("input_range")),
             IsTensorConst("weights")
+            //IsTensorConst()
             // IsTensorConst("bias")
             // IsTensorConst("batchNorms"),
             // IsTensorConst("activation")

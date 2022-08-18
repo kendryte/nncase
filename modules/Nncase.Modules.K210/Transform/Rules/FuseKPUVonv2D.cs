@@ -32,6 +32,8 @@ public sealed partial class FuseKPUConv2D : IRewriteRule
         IsTensorConst("weights"),
         IsTensorConst("batchNorms"),
         IsTensorConst("outputquantparam"),
+        IsTensorConst(),
+        IsTensorConst(),
         IsTensorConst());
 
     private Expr? GetReplace(Call upload_call, Expr input, Expr weights, Expr batchNorms, Expr outputquantparam)
