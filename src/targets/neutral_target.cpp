@@ -96,7 +96,7 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     // pass.emplace<dequantize_transpose_motion_transform>();
     pass.emplace<dequantize_bitcast_motion_transform>();
     pass.emplace<dequantize_reshape_motion_transform>();
-    pass.emplace<dequantize_slice_motion_transform>();
+    // pass.emplace<dequantize_slice_motion_transform>();
     // pass.emplace<dequantize_pad_motion_transform>();
     pass.emplace<quantize_pad_motion_transform>();
     //    pass.emplace<quantize_transbin_motion_transform>();
