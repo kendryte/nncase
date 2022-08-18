@@ -194,10 +194,10 @@ private:
         {
             for (auto mid = regions_.begin(); mid != regions_.end(); mid++)
             {
-                if(mid == ita || mid == itb)
+                if (mid == ita || mid == itb)
                     continue;
                 if (mid->outputs.contains(it->connection()) && mid->module_type != ita->module_type && !mid->is_all_noaction
-                 && std::any_of(mid->region_inputs.begin(), mid->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); }))
+                    && std::any_of(mid->region_inputs.begin(), mid->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); }))
                 {
                     return false;
                 }
