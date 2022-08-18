@@ -28,11 +28,13 @@ public sealed record class FakeKPUConv2D(bool IsDepthwise, KPUFilterType FilterT
     /// </summary>
     public static readonly ParameterInfo Weights = new(typeof(FakeKPUConv2D), 1, "weights", HasRank(4));
 
-    
+    /// <summary>
+    /// Gets FusedActivation
+    /// </summary>
+    public static readonly ParameterInfo FusedActivation = new(typeof(FakeKPUConv2D), 2, "fused_activation");
     /// <summary>
     /// Gets Bias.
     /// </summary>
-
     // public static readonly ParameterInfo bias = new(typeof(FakeKPUConv2D), 2, "bias", HasRank(1));
 
     /*

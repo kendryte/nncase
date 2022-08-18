@@ -45,12 +45,36 @@ public sealed partial record class KPUConv2D(bool IsDepthwise, KPUFilterType Fil
     /// Gets activation.
     /// </summary>
     public static readonly ParameterInfo OutputQuantParam = new(typeof(KPUConv2D), 3, "outputQuantParam",HasRank(4));
-    
+
     /// <summary>
     /// Gets FusedClamp.
     /// </summary>
     public static readonly ParameterInfo FusedClamp = new(typeof(KPUConv2D), 4, "fused_clamp", HasShape(new Shape(2)) & HasDataType(DataTypes.BFloat16));
 
+    /// <summary>
+    /// Gets IsDepthwise.
+    /// </summary>
+    // public static readonly ParameterInfo IsDepthwise = new(typeof(KPUConv2D), 5, "is_depthwise");
+
+    /// <summary>
+    /// Gets FilterType.
+    /// </summary>
+    // public static readonly ParameterInfo FilterType = new(typeof(KPUConv2D), 6, "filter_type");
+
+    /// <summary>
+    /// Gets PadValue.
+    /// </summary>
+    public static readonly ParameterInfo PadValue = new(typeof(KPUConv2D), 7, "pad_value");
+
+    /// <summary>
+    /// Gets PoolType.
+    /// </summary>
+    // public static readonly ParameterInfo PoolType = new(typeof(KPUConv2D), 8, "pool_type");
+
+    /// <summary>
+    /// Gets QuantArgs.
+    /// </summary>
+    public static readonly ParameterInfo QuantArgs = new(typeof(KPUConv2D), 9, "quant_args");
     /*/// <summary>
     /// Gets argX
     /// </summary>
@@ -82,5 +106,5 @@ public sealed partial record class KPUConv2D(bool IsDepthwise, KPUFilterType Fil
     /// </summary>
     public static readonly ParameterInfo Padding = new(typeof(KPUConv2D), 9, "Padding",IsIntegral());
     */
-    
+
 }
