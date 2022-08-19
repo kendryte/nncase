@@ -29,6 +29,22 @@ namespace Nncase.IR
     /// </summary>
     public sealed record Call(Expr Target, IRArray<Expr> Parameters) : Expr, IParameterList<Expr>
     {
+        /// <summary>
+        /// used by fake ir, represents that whether this op permit int 16 quant.
+        /// </summary>
+        public bool PermitInt16Quant = false;
+
+        /// <summary>
+        /// quant config with cosine, List of DataType represents data types for each input might be quantized, List of QuantParam represents quant params for each input.
+        /// may be deleted in the future since there is EnodeBestQuantConfigWithCosine, reserve it now for debug and for unexpected usage when EnodeBestQuantConfigWithCosine is not enough.
+        /// </summary>
+        public List<Tuple<List<DataType>, List<QuantParam>, float>> EnodeQuantConfigWithCosine = null;
+
+        /// <summary>
+        /// quant config with cosine, List of DataType represents data types for each input might be quantized, List of QuantParam represents quant params for each input.
+        /// </summary>
+        public Tuple<List<DataType>, List<QuantParam>, float> EnodeBestQuantConfigWithCosine = null;
+
         public CallAttr Attribute = CallAttr.None;
         /// <summary>
         /// Initializes a new instance of the <see cref="Call"/> class.

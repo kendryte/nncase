@@ -49,23 +49,29 @@ internal class EGraphExtractor
             };
             _eclassMemo.Add(eclass, expr);
         }
-        if (expr.EnodeQuantConfigWithCosine != null)
+        var callPattern = IsCall(IsWildcard(), IsWildcard());
+        var isCallExpr = callPattern.MatchLeaf(expr);
+        if (isCallExpr == true)
         {
-            var pattern = IsCall(IsWildcard(), IsWildcard());
-            var isCall = pattern.MatchLeaf(expr);
-            if (isCall == true)
+            if (((Call)(expr)).EnodeQuantConfigWithCosine != null)
             {
-                System.Console.WriteLine(expr + "  " + expr.CheckedType);
-                for (int i = 0; i < expr.EnodeQuantConfigWithCosine.Count; i++)
+                var pattern = IsCall(IsWildcard(), IsWildcard());
+                var isCall = pattern.MatchLeaf(expr);
+                if (isCall == true)
                 {
-                    for (int j = 0; j < expr.EnodeQuantConfigWithCosine[i].Item1.Count; j++)
+                    System.Console.WriteLine(expr + "  " + expr.CheckedType);
+                    for (int i = 0; i < ((Call)(expr)).EnodeQuantConfigWithCosine.Count; i++)
                     {
-                        System.Console.Write(expr.EnodeQuantConfigWithCosine[i].Item1[j] + "  ");
+                        for (int j = 0; j < ((Call)(expr)).EnodeQuantConfigWithCosine[i].Item1.Count; j++)
+                        {
+                            System.Console.Write(((Call)(expr)).EnodeQuantConfigWithCosine[i].Item1[j] + "  ");
+                        }
+                        System.Console.WriteLine(((Call)(expr)).EnodeQuantConfigWithCosine[i].Item3);
                     }
-                    System.Console.WriteLine(expr.EnodeQuantConfigWithCosine[i].Item3);
                 }
             }
         }
+
         return expr;
     }
 

@@ -45,22 +45,6 @@ public abstract partial record Expr
         _ => throw new InvalidOperationException("Expr don't have a valid tensor type"),
     };
 
-    /// <summary>
-    /// quant config with cosine, List<DataType> represents data types for each input might be quantized, List<QuantParam> represents quant params for each input.
-    /// may be deleted in the future since there is EnodeBestQuantConfigWithCosine, reserve it now for debug and for unexpected usage when EnodeBestQuantConfigWithCosine is not enough.
-    /// </summary>
-    public List<Tuple<List<DataType>, List<QuantParam>, float>> EnodeQuantConfigWithCosine = null;
-
-    /// <summary>
-    /// quant config with cosine, List<DataType> represents data types for each input might be quantized, List<QuantParam> represents quant params for each input.
-    /// </summary>
-    public Tuple<List<DataType>, List<QuantParam>, float> EnodeBestQuantConfigWithCosine = null;
-
-    /// <summary>
-    /// used by fake ir, represents that whether this op permit int 16 quant.
-    /// </summary>
-    public bool PermitInt16Quant = false;
-
     /// <inheritdoc/>
     public virtual bool Equals(Expr? other)
     {
