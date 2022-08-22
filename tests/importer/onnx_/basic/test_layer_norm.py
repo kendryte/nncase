@@ -13,6 +13,7 @@
 # limitations under the License.
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
+from importlib import import_module
 import pytest
 import onnx
 from onnx import helper
@@ -62,7 +63,9 @@ def _make_module(in_shape, axis, epsilon):
                                      epsilon=epsilon)
 
     graph_def = helper.make_graph([node], 'test-model', [input], [output], initializer=initializers)
-    model_def = helper.make_model(graph_def, producer_name='kendryte')
+    op = onnx.OperatorSetIdProto()
+    op.version = 17
+    model_def = helper.make_model(graph_def, producer_name='onnx', opset_imports=[op])
 
     return model_def
 
