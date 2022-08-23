@@ -17,7 +17,7 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     public IValue Visit(IEvaluateContext context, Cast cast)
     {
         var input = context.GetArgumentValue(cast, Cast.Input).AsTensor();
-        return Value.FromTensor(input.CastTo(cast.NewType));
+        return Value.FromTensor(input.CastTo(cast.NewType, cast.CastMode));
     }
 
     /// <inheritdoc/>

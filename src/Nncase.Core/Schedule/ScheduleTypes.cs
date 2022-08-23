@@ -277,7 +277,7 @@ public class SchedFunctionResult
     /// <summary>
     /// the buffer allocation
     /// </summary>
-    public readonly Dictionary<TIR.Buffer, BufferAllocation> Allocations;
+    public readonly Dictionary<TIR.PhysicalBuffer, BufferAllocation> Allocations;
 
     /// <summary>
     /// the function module type

@@ -23,20 +23,20 @@ public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region) : Expr
     /// </summary>
     /// <param name="buffer">The buffer to generate full BufferRegion.</param>
     /// <returns>The BufferRegion which covers all region of the given buffer.</returns>
-    public static BufferRegion All(Buffer buffer) => new BufferRegion(buffer, new(buffer.Shape.ToArray().Select(extent => new Range(0, extent, 1))));
+    // public static BufferRegion All(PhysicalBuffer buffer) => new BufferRegion(buffer, new(buffer.Dimensions.Select(extent => new Range(0, extent, 1))));
 
     /// <summary>
     /// Get the Addr Offset.
     /// NOTE We clamp the region expr with {0,shape[dim]}
     /// </summary>
-    public Expr AddrOffset => Region.Zip(Buffer.Stride.ToArray())
+    public Expr AddrOffset => Region.Zip(Buffer.Strides)
       .Select((p, i) => (p, i))
-      .Aggregate((Expr)0, (acc, t) => acc + IR.F.Math.MinMax(t.p.First.Start, 0, Buffer.Shape[t.i]) * t.p.Second);
+      .Aggregate((Expr)0, (acc, t) => acc + IR.F.Math.MinMax(t.p.First.Start, 0, Buffer.Dimensions[t.i]) * t.p.Second);
 
     /// <summary>
     /// Get the Current Offset.
     /// </summary>
-    public Expr CurAddr => Buffer.Addr + AddrOffset;
+    public Expr CurAddr => IR.F.Buffer.DDrOf(Buffer) + AddrOffset;
 
     /// <summary>
     /// Get the RegionSize.
@@ -48,7 +48,7 @@ public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region) : Expr
     /// </summary>
     /// <param name="dim"></param>
     /// <returns></returns>
-    public (Expr Before, Expr After) Padding(int dim) => (IR.F.Math.Max(-Region[dim].Start, 0), IR.F.Math.Max(Region[dim].Stop - Buffer.Shape[dim], 0));
+    // public (Expr Before, Expr After) Padding(int dim) => (IR.F.Math.Max(-Region[dim].Start, 0), IR.F.Math.Max(Region[dim].Stop - Buffer.Dimensions[dim], 0));
 
     /// <summary>
     /// 获得新的buffer region.
