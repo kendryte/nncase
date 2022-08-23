@@ -4,6 +4,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Nncase.IR;
@@ -153,9 +154,6 @@ public record SelectedRange(int Start, int End, Padding Padding)
     }
 }
 
-
-
-
 /// <summary>
 /// the buffer view interface
 /// </summary>
@@ -186,7 +184,7 @@ public interface IBufferView<T>
     /// <summary>
     /// the shape of this buffer view
     /// </summary>
-    public ReadOnlySpan<int> Shape { get; }
+    public ReadOnlySpan<int> Dimensions { get; }
 
     /// <summary>
     /// get the DType
@@ -214,154 +212,102 @@ public interface IBufferView<T>
     public T this[params Segment1D[] segments] { get; }
 }
 
-
 /// <summary>
-/// NOTE sync with the stackvm
+/// buffer
 /// </summary>
-public record Buffer : Expr, IBufferView<Buffer>
+/// <param name="Name"></param>
+/// <param name="ElemType"></param>
+/// <param name="MemLocation"></param>
+public abstract record Buffer(string Name, DataType ElemType, Schedule.MemoryLocation MemLocation) : Expr
 {
-
     /// <summary>
     /// if this buffer from the constant !
     /// </summary>
-    public Const? Const;
+    public TensorConst? Const;
 
     /// <summary>
-    /// get the memref name.
+    /// Gets rank of the tensor: number of dimensions.
     /// </summary>
-    public string Name;
+    public abstract int Rank { get; }
 
     /// <summary>
-    /// the buffer type
+    /// the strides
     /// </summary>
-    public TensorType ElemType;
+    public abstract IRArray<Expr> Strides { get; }
 
     /// <summary>
-    /// get the memory loacation
+    /// the shape
     /// </summary>
-    public Schedule.MemoryLocation MemLocation;
+    public abstract IRArray<Expr> Dimensions { get; }
+}
 
-    /// <summary>
-    /// set the cache level.
-    /// </summary>
-    public int CacheLevel;
-
+/// <summary>
+/// the logical buffer
+/// </summary>
+/// <param name="Name"></param>
+/// <param name="ElemType"></param>
+/// <param name="MemLocation"></param>
+public record LogicalBuffer(string Name, DataType ElemType, Schedule.MemoryLocation MemLocation) : Buffer(Name, ElemType, MemLocation)
+{
     /// <summary>
     /// create from the IRType.
     /// </summary>
     /// <param name="name">the name.</param>
     /// <param name="location">the location.</param>
     /// <param name="elemType">prim type.</param>
-    public Buffer(string name, Schedule.MemoryLocation location, TensorType elemType)
+    /// <param name="dimensions">the shape.</param>
+    /// <param name="strides">the strides.</param>
+    public LogicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, IRArray<Expr> dimensions, IRArray<Expr> strides) :
+      this(name, elemType, location)
     {
-        Name = name;
-        ElemType = elemType;
-        MemLocation = location;
-
-        DType = ElemType switch
-        {
-            TensorType type => type.DType,
-            _ => throw new NotSupportedException(ElemType.ToString()),
-        };
-
-        _shape = ((TensorType)elemType).Shape.ToValueArray();
-        _stride = TensorUtilities.GetStrides(_shape).Select(s => s * DType.SizeInBytes).ToArray();
-        _selectedRanges = _shape.Select(s => new SelectedRange(0, s, Padding.Zero())).ToArray();
-        IsSubView = false;
-        Parent = this;
-        RootParent = this;
+        Dimensions = dimensions;
+        Strides = strides;
     }
 
     /// <summary>
-    /// build new memref by segmentnd.
+    /// <see cref="LogicalBuffer"/>
     /// </summary>
-    /// <param name="segments"></param>
-    /// <param name="parent"></param>
-    /// <exception cref="InvalidOperationException"></exception>
-    public Buffer(SegmentND segments, Buffer parent)
+    /// <param name="name"></param>
+    /// <param name="location"></param>
+    /// <param name="tensor"></param>
+    public LogicalBuffer(string name, Schedule.MemoryLocation location, TensorConst tensor) : this(name, tensor.Value.ElementType, location,
+     ImmutableArray.Create<Expr>(tensor.Value.Dimensions), ImmutableArray.Create<Expr>(tensor.Value.Strides))
     {
-        if (!(segments.Count == parent.SelectedRanges.Length))
-            throw new InvalidOperationException("segments.Count == SelectedRanges.Length");
-        _selectedRanges = segments.Zip(parent.SelectedRanges.ToArray()).Select(t => t.Item2.Slice(t.Item1)).ToArray();
-        _shape = _selectedRanges.Select(s => s.End - s.Start).ToArray();
-        _stride = parent.Stride.ToArray();
-        IsSubView = true;
-        Parent = parent;
-        RootParent = parent.RootParent;
-
-        Name = parent.Name;
-        ElemType = parent.ElemType;
-        DType = parent.DType;
-        MemLocation = parent.MemLocation;
+        Const = tensor;
     }
 
-    /// <inheritdoc/>
-    public Buffer this[SegmentND segments] => new(segments, this);
-
-    /// <inheritdoc/>
-    public Buffer this[params Segment1D[] segments] => new(new(segments), this);
+    /// <summary>
+    /// <seealso cref="LogicalBuffer"/>
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="location"></param>
+    /// <param name="elemType"></param>
+    /// <param name="dimensions"></param>
+    public LogicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, IRArray<Expr> dimensions) :
+      this(name, elemType, location, dimensions, TensorUtilities.GetStrides(dimensions).ToImmutableArray())
+    { }
 
     /// <summary>
-    /// get the new buffer range.
+    /// get the total length.
     /// </summary>
-    /// <param name="ranges"></param>
-    /// <returns></returns>
-    public BufferRegion this[params TIR.Range[] ranges]
-    {
-        get => new(this, new(ranges.Zip(Shape.ToArray()).Select(
-            tp => tp.First.Equals(System.Range.All) ?
-                  new Range(0, tp.Second, 1) :
-                  tp.First)));
-    }
-
-    /// <inheritdoc/>
-    public Buffer Parent { get; init; }
-
-    /// <inheritdoc/>
-    public Buffer RootParent { get; init; }
-
-    /// <inheritdoc/>
-    public ReadOnlySpan<SelectedRange> SelectedRanges => _selectedRanges;
-
-    /// <inheritdoc/>
-    public ReadOnlySpan<int> Stride => _stride;
-
-    /// <inheritdoc/>
-    public ReadOnlySpan<int> Shape => _shape;
-
-    /// <inheritdoc/>
-    public DataType DType { get; init; }
-
-    /// <inheritdoc/>
-    public bool IsSubView { get; init; }
-
-
-    private SelectedRange[] _selectedRanges;
-    private int[] _stride;
-    private int[] _shape;
+    public Expr Length => TensorUtilities.GetProduct(Dimensions);
 
     /// <summary>
-    /// get the Addr expr .
+    /// the strides
     /// </summary>
-    public Expr Addr => IR.F.Buffer.DDrOf(RootParent);
+    public override IRArray<Expr> Strides { get; }
 
     /// <summary>
-    /// get current Addr
+    /// the shape
     /// </summary>
-    public Expr CurAddr => Addr + AddrOffset;
-
-    /// <summary>
-    /// get the allocate basement.
-    /// </summary>
-    public Expr BaseMent => IR.F.Buffer.BaseMentOf(RootParent);
-
-    /// <summary>
-    /// get current buffer view Addr Offset
-    /// </summary>
-    public int AddrOffset => SelectedRanges.ToArray().Zip(Stride.ToArray()).Aggregate(0, (acc, t) => acc + t.Item1.Start * t.Item2);
+    public override IRArray<Expr> Dimensions { get; }
 
     /// <inheritdoc/>
-    public virtual bool Equals(Buffer? other)
+    public override int Rank => Dimensions.Count;
+
+
+    /// <inheritdoc/>
+    public virtual bool Equals(LogicalBuffer? other)
     {
         return !(other is null) && EqualityContract == other.EqualityContract;
     }
@@ -375,37 +321,132 @@ public record Buffer : Expr, IBufferView<Buffer>
     /// <inheritdoc/>
     public override string ToString()
     {
-        return $"Buffer({Name}, {ElemType})";
+        return $"LogicalBuffer({Name}, {ElemType})";
     }
 
     /// <inheritdoc/>
     protected override bool PrintMembers(StringBuilder builder)
     {
-        builder.Append($"Buffer({Name}, {ElemType})");
+        builder.Append($"LogicalBuffer({Name}, {ElemType})");
         return true;
     }
 }
 
+
 /// <summary>
-/// the data producer.
+/// the physicall buffer
 /// </summary>
-public interface DataProducer
+/// <param name="Name"></param>
+/// <param name="ElemType"></param>
+/// <param name="MemLocation"></param>
+public record PhysicalBuffer(string Name, DataType ElemType, Schedule.MemoryLocation MemLocation) : Buffer(Name, ElemType, MemLocation)
 {
-    /// <summary>
-    /// get shape.
-    /// </summary>
-    /// <returns> shapes. </returns>
-    public IRArray<Expr> GetShape();
 
     /// <summary>
-    /// Get the data type of the result.
+    /// ctor for physical buffer
     /// </summary>
-    /// <returns>The data type.</returns>
-    public DataType GetDataType();
+    /// <param name="name"></param>
+    /// <param name="location"></param>
+    /// <param name="elemType"></param>
+    /// <param name="dimensions"></param>
+    /// <param name="stirdes"></param>
+    public PhysicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, IEnumerable<int> dimensions, IEnumerable<int> stirdes) :
+      this(name, elemType, location)
+    {
+        _dimensions = dimensions.ToArray();
+        _strides = stirdes.ToArray();
+        Dimensions = new(_dimensions.Select(i => (Expr)i));
+        Strides = new(_strides.Select(i => (Expr)i));
+    }
 
     /// <summary>
-    /// Get the name hint of the data producer.
+    /// <see cref="PhysicalBuffer"/>
     /// </summary>
-    /// <returns> name string. </returns>
-    public string GetNameHint();
+    /// <param name="name"></param>
+    /// <param name="elemType"></param>
+    /// <param name="location"></param>
+    /// <param name="dimensions"></param>
+    public PhysicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, IEnumerable<int> dimensions) :
+      this(name, elemType, location, dimensions, TensorUtilities.GetStrides(dimensions.ToArray()))
+    {
+    }
+
+    /// <summary>
+    /// <see cref="PhysicalBuffer"/>
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="location"></param>
+    /// <param name="tensor"></param>
+    public PhysicalBuffer(string name, Schedule.MemoryLocation location, TensorConst tensor) : this(name, tensor.Value.ElementType, location, tensor.Value.Dimensions.ToArray(), tensor.Value.Strides.ToArray())
+    {
+        Const = tensor;
+    }
+
+    private readonly int[] _dimensions;
+
+    private readonly int[] _strides;
+
+    /// <summary>
+    /// Gets dimensions.
+    /// </summary>
+    public override IRArray<Expr> Dimensions { get; }
+
+    /// <summary>
+    /// Gets strides.
+    /// </summary>
+    public override IRArray<Expr> Strides { get; }
+
+    /// <summary>
+    /// get fixed dimensions
+    /// </summary>
+    public ReadOnlySpan<int> FixedDimensions => _dimensions;
+
+    /// <summary>
+    /// get fixed strides
+    /// </summary>
+    public ReadOnlySpan<int> FixedStrides => _strides;
+
+
+    /// <summary>
+    /// Gets shape.
+    /// </summary>
+    public Shape Shape => new Shape(_dimensions);
+
+    /// <inheritdoc/>
+    public override int Rank => _dimensions.Rank;
+
+    /// <summary>
+    /// Gets total length.
+    /// </summary>
+    public int Length => (int)TensorUtilities.GetProduct(_dimensions);
+
+    /// <inheritdoc/>
+    public virtual bool Equals(PhysicalBuffer? other)
+    {
+        return !(other is null) && EqualityContract == other.EqualityContract;
+    }
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        return EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
+    }
+
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return $"PhysicalBuffer({Name}, {ElemType})";
+    }
+
+    /// <inheritdoc/>
+    protected override bool PrintMembers(StringBuilder builder)
+    {
+        builder.Append($"PhysicalBuffer({Name}, {ElemType})");
+        return true;
+    }
+
+    /// <summary>
+    /// get total bytes size
+    /// </summary>
+    public int SizeInBytes => _dimensions[0] * _strides[0] * ElemType.SizeInBytes;
 }

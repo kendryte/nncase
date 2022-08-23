@@ -15,6 +15,6 @@ namespace Nncase.TIR;
 /// </summary>
 /// <param name="Buffer">The buffer to be loaded.</param>
 /// <param name="Indices">The buffer indices.</param>
-public sealed record BufferLoad(Buffer Buffer, IRArray<Expr> Indices) : Expr
+public sealed record BufferLoad(PhysicalBuffer Buffer, IRArray<Expr> Indices) : Expr
 {
 }

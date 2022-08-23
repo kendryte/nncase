@@ -33,6 +33,11 @@ public enum CastMode
     /// Check overflow.
     /// </summary>
     CheckOverflow,
+
+    /// <summary>
+    /// reinterpret type
+    /// </summary>
+    Reinterpret,
 }
 
 /// <summary>
@@ -382,6 +387,12 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     public abstract Tensor<T> Cast<T>(CastMode castMode = CastMode.Default)
         where T : unmanaged, IEquatable<T>;
 
+    /// <summary>
+    /// <see cref="Cast{T}(CastMode)"/>
+    /// </summary>
+    /// <param name="type"></param>
+    /// <param name="castMode"></param>
+    /// <returns></returns>
     public Tensor CastTo(DataType type, CastMode castMode = CastMode.Default)
     {
         var tensor = (Tensor)_tensorCastFunc.MakeGenericMethod(type.CLRType).Invoke(this, new object[] { castMode })!;

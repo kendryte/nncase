@@ -429,7 +429,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     }
 
     /// <inheritdoc/>
-    public override IPrintSymbol Visit(TIR.Buffer expr)
+    public override IPrintSymbol Visit(TIR.PhysicalBuffer expr)
     {
         if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
         Scope.Push();

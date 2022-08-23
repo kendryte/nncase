@@ -340,7 +340,7 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
-        public override TExprResult Visit(TIR.Buffer expr)
+        public override TExprResult Visit(TIR.PhysicalBuffer expr)
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
@@ -393,7 +393,7 @@ namespace Nncase.IR
                 TIR.BufferStore bufstore => VisitLeaf(bufstore),
                 TIR.IfThenElse ift => VisitLeaf(ift),
                 TIR.Let let => VisitLeaf(let),
-                TIR.Buffer memref => VisitLeaf(memref),
+                TIR.PhysicalBuffer memref => VisitLeaf(memref),
                 _ => DefaultVisitLeaf(expr),
             };
         }
@@ -536,7 +536,7 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="expr">MemRef expression.</param>
         /// <returns>Result.</returns>
-        public virtual TExprResult VisitLeaf(TIR.Buffer expr) => DefaultVisitLeaf(expr);
+        public virtual TExprResult VisitLeaf(TIR.PhysicalBuffer expr) => DefaultVisitLeaf(expr);
 
         /// <summary>
         /// Visit leaf buffer region expression.

@@ -26,7 +26,7 @@ public static class Tensors
 
     public static Call Broadcast(Expr input, Expr shape) => new Call(new Broadcast(), input, shape);
 
-    public static Call Cast(Expr input, DataType newType) => new Call(new Cast(newType), input);
+    public static Call Cast(Expr input, DataType newType, CastMode castMode = CastMode.Default) => new Call(new Cast(newType, castMode), input);
 
     public static Call Concat(Expr input, Expr axis) => new Call(new Concat(), input, axis);
 
@@ -38,7 +38,7 @@ public static class Tensors
     {
         if (shape.InferenceType() && shape.CheckedShape.IsScalar)
         {
-            shape = Unsqueeze(shape, new[] {0});
+            shape = Unsqueeze(shape, new[] { 0 });
         }
         return new Call(new Expand(), input, shape);
     }

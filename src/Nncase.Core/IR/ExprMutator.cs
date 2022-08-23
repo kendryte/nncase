@@ -128,7 +128,7 @@ namespace Nncase.IR
             return expr with
             {
                 Body = (TIR.Sequential)Visit(expr.Body),
-                Parameters = new(expr.Parameters.Select(x => (TIR.Buffer)Visit(x))),
+                Parameters = new(expr.Parameters.Select(x => (TIR.PhysicalBuffer)Visit(x))),
             };
         }
 
@@ -349,7 +349,7 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
-        public override Expr VisitLeaf(TIR.Buffer expr)
+        public override Expr VisitLeaf(TIR.PhysicalBuffer expr)
         {
 
             var nexpr = MutateLeaf(expr);
@@ -523,7 +523,7 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="expr">new memref.</param>
         /// <returns>new expr.</returns>
-        public virtual Expr MutateLeaf(TIR.Buffer expr) => DefaultMutateLeaf(expr);
+        public virtual Expr MutateLeaf(TIR.PhysicalBuffer expr) => DefaultMutateLeaf(expr);
 
         /// <summary>
         /// mutate the buffer region

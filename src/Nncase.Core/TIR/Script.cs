@@ -157,7 +157,7 @@ public static class T
     /// <param name="loopMode"></param>
     /// <param name="ranges"></param>
     /// <returns></returns>
-    public static ISequentialBuilder<For> Grid(out Var[] loopVars, LoopMode loopMode, params Range[] ranges)
+    public static ISequentialBuilder<For> Grid(out Var[] loopVars, LoopMode loopMode, params TIR.Range[] ranges)
     {
         string[] names = { "i", "j", "k", "l" };
         var newLoopVars = loopVars = new Var[ranges.Length];
@@ -220,9 +220,9 @@ public static class T
     /// <param name="module_kind"></param>
     /// <param name="parameters"></param>
     /// <returns></returns>
-    public static ISequentialBuilder<PrimFunction> PrimFunc(string name, string module_kind, params Buffer[] parameters)
+    public static ISequentialBuilder<PrimFunction> PrimFunc(string name, string module_kind, params PhysicalBuffer[] parameters)
     {
-        return new SequentialBuilder<PrimFunction>(body => new PrimFunction(name, module_kind, body, new IRArray<Buffer>(parameters)));
+        return new SequentialBuilder<PrimFunction>(body => new PrimFunction(name, module_kind, body, new IRArray<PhysicalBuffer>(parameters)));
     }
 
     /// <summary>
@@ -249,19 +249,40 @@ public static class T
     /// <summary>
     /// create the memRef by tensortype.
     /// </summary>
-    /// <param name="type"></param>
+    /// <param name="elem_type"></param>
+    /// <param name="dimensions"></param>
     /// <param name="buffer"></param>
     /// <param name="name"></param>
     /// <param name="location"></param>
     /// <returns></returns>
-    public static Buffer Buffer(TensorType type, Schedule.MemoryLocation location, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    public static LogicalBuffer Buffer(DataType elem_type, Schedule.MemoryLocation location, IEnumerable<Expr> dimensions, out LogicalBuffer buffer, [CallerArgumentExpression("buffer")] string name = "")
     {
         if (name.StartsWith("var "))
         {
             name = name[4..];
         }
 
-        buffer = new Buffer(name, location, type);
+        buffer = new LogicalBuffer(name, elem_type, location, new(dimensions));
+        return buffer;
+    }
+
+    /// <summary>
+    /// ctor for physical buffer
+    /// </summary>
+    /// <param name="elem_type"></param>
+    /// <param name="location"></param>
+    /// <param name="dimensions"></param>
+    /// <param name="buffer"></param>
+    /// <param name="name"></param>
+    /// <returns></returns>
+    public static PhysicalBuffer PhysicalBuffer(DataType elem_type, Schedule.MemoryLocation location, IEnumerable<int> dimensions, out PhysicalBuffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    {
+        if (name.StartsWith("var "))
+        {
+            name = name[4..];
+        }
+
+        buffer = new PhysicalBuffer(name, elem_type, location, dimensions);
         return buffer;
     }
 
@@ -272,17 +293,14 @@ public static class T
     /// <param name="buffer"></param>
     /// <param name="name"></param>
     /// <returns></returns>
-    public static Buffer ConstBuffer(Const expr, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    public static PhysicalBuffer ConstBuffer(Const expr, out PhysicalBuffer buffer, [CallerArgumentExpression("buffer")] string name = "")
     {
         if (name.StartsWith("var "))
         {
             name = name[4..];
         }
 
-        buffer = new Buffer(name, Schedule.MemoryLocation.Rdata, (TensorType)expr.ValueType)
-        {
-            Const = expr,
-        };
+        buffer = new PhysicalBuffer(name, Schedule.MemoryLocation.Rdata, ((TensorConst)expr));
         return buffer;
     }
 
@@ -293,25 +311,25 @@ public static class T
     /// <param name="buffer"></param>
     /// <param name="name"></param>
     /// <returns></returns>
-    public static Expr MayBeConst(Const? expr, out Buffer? buffer, [CallerArgumentExpression("buffer")] string name = "")
-    {
-        if (expr is null)
-        {
-            buffer = null;
-            return Nop();
-        }
+    // public static Expr MayBeConst(Const? expr, out Buffer? buffer, [CallerArgumentExpression("buffer")] string name = "")
+    // {
+    //     if (expr is null)
+    //     {
+    //         buffer = null;
+    //         return Nop();
+    //     }
 
-        if (name.StartsWith("var "))
-        {
-            name = name[4..];
-        }
+    //     if (name.StartsWith("var "))
+    //     {
+    //         name = name[4..];
+    //     }
 
-        buffer = new Buffer(name, Schedule.MemoryLocation.Rdata, (TensorType)expr.ValueType)
-        {
-            Const = expr,
-        };
-        return buffer;
-    }
+    //     buffer = new Buffer(name, Schedule.MemoryLocation.Rdata, (TensorType)expr.ValueType)
+    //     {
+    //         Const = expr,
+    //     };
+    //     return buffer;
+    // }
 
     public static ISequentialBuilder<For> ForSegment(out (Expr b, Expr e) seg, Expr low, Expr chunck, Expr high)
     {
