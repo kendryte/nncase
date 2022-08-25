@@ -60,6 +60,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/lstm.cpp
     ops/where.cpp
     ops/gru.cpp
+    ops/compress.cpp
     )
 
 add_library(onnx_importer ${ONNX_IMPORTER_SOURCES} ${ONNX_IMPORTER_OPS_SOURCES})

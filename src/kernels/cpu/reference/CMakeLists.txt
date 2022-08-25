@@ -4,6 +4,7 @@ set(SRCS batch_to_space.cpp
          binary.cpp
          broadcast.cpp
          compare.cpp
+         compress.cpp
          concat.cpp
          convolution.cpp
          convert.cpp
