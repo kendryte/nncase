@@ -8,28 +8,28 @@ import queue
 import logging
 import telnetlib
 import time
-
+import argparse
 
 class TelnetClient():
     def __init__(self,):
         self.tn = telnetlib.Telnet()
 
-    def login(self,host_ip,username,password):
+    def login(self, ip, username, password):
         try:
-            self.tn.open(host_ip, port=23)
+            self.tn.open(ip, port=23)
         except:
-            logging.warning('%s网络连接失败'%host_ip)
+            logging.info('telnet %s failed' % ip)
             return False
 
-        self.tn.read_until(b'login: ',timeout=10)
+        self.tn.read_until(b'login: ', timeout=10)
         self.tn.write(username.encode('ascii') + b'\n')
 
         command_result = self.tn.read_very_eager().decode('ascii')
         if 'Login incorrect' not in command_result:
-            logging.warning('%s登录成功'%host_ip)
+            logging.info('%s login succeed' % ip)
             return True
         else:
-            logging.warning('%s登录失败，用户名或密码错误'%host_ip)
+            logging.error('%s login failed' % ip)
             return False
 
     def execute(self,command):
@@ -39,12 +39,7 @@ class TelnetClient():
     def logout(self):
         self.tn.write(b"exit\n")
 
-def Consumer(nfsroot, q):
-    kpu_target = os.getenv('KPU_TARGET', 'k510')
-    kpu_target_ip = os.getenv('KPU_TARGET_IP')
-    kpu_target_username = os.getenv('KPU_TARGET_USERNAME', 'root')
-    kpu_target_password = os.getenv('KPU_TARGET_PASSWORD', '')
-
+def Consumer(kpu_target, kpu_ip, kpu_username, kpu_password, nfsroot, q):
     while True:
         cmd = './'
         msg_dict = q.get()
@@ -77,7 +72,7 @@ def Consumer(nfsroot, q):
 
         # telnet to target devcie to nncase infer
         telnet_client = TelnetClient()
-        telnet_client.login(kpu_target_ip, kpu_target_username, kpu_target_password)
+        telnet_client.login(kpu_ip, kpu_username, kpu_password)
         telnet_client.execute(f'cd /mnt/nfsroot/{kpu_target}')
         telnet_client.execute('sync')
         telnet_client.execute(cmd)
@@ -119,16 +114,23 @@ def Producer(q, conn):
     q.put(msg_dict)
 
 def main():
-    nfsroot = '/home/share/nfsroot'
+    parser = argparse.ArgumentParser(prog="kendryte_CI_server_app")
+    parser.add_argument("--kpu_target", help='target, such as k510', type=str, default='k510')
+    parser.add_argument("--kpu_ip", help='kpu deivce ip address', type=str, default='192.168.1.5')
+    parser.add_argument("--kpu_username", help='kpu device usernmae', type=str, default='root')
+    parser.add_argument("--kpu_password", help='kpu device password', type=str, default='')
+    parser.add_argument("--nfsroot", help='nfsroot on pc', type=str, default='/home/share/nfsroot')
+    parser.add_argument("--port", help='nfsroot on pc', type=int, default=51000)
+    args = parser.parse_args()
     size = 32
     q = queue.Queue(maxsize=size)
 
     # start comsumer thread
-    t_consumer = threading.Thread(target=Consumer, args=(nfsroot, q))
+    t_consumer = threading.Thread(target=Consumer, args=(args.kpu_target, args.kpu_ip, args.kpu_username, args.kpu_password, args.nfsroot, q))
     t_consumer.start()
 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(('localhost', 51000))
+    server_socket.bind(('localhost', args.port))
     server_socket.listen(size)
     while True:
         conn, addr = server_socket.accept()

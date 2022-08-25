@@ -20,7 +20,6 @@ from PIL import Image
 from compare_util import compare
 from dataset_utils import *
 from models.preprocess.preprocess import preprocess
-from telnet_client import *
 import time
 import socket
 import base64
