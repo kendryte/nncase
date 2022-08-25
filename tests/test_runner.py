@@ -22,6 +22,9 @@ from dataset_utils import *
 from models.preprocess.preprocess import preprocess
 from telnet_client import *
 import time
+import socket
+import base64
+import json
 
 class Edict:
     def __init__(self, d: Dict[str, int]) -> None:
@@ -776,19 +779,20 @@ class TestRunner(metaclass=ABCMeta):
 
         else:
             kpu_target = os.getenv('KPU_TARGET')
-            kpu_target_ip = os.getenv('KPU_TARGET_IP')
-            kpu_target_username = os.getenv('KPU_TARGET_USERNAME', 'root')
-            kpu_target_password = os.getenv('KPU_TARGET_PASSWORD', '')
-
             if self.in_ci and kwargs['target'] == kpu_target:
                 # run in kpu_target
                 t_start = time.time()
-                cmds = './nncase_test_ci '
-                kmodel = 'test.kmodel'
-                cmds = cmds + kmodel
-                nfs_dir = '/home/share/nfsroot/nncase_test_ci/'
-                shutil.copy(os.path.join(infer_dir, kmodel), os.path.join(nfs_dir, kmodel))
 
+                client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                client_socket.connect(('localhost', 51000))
+
+                # send
+                send_dict = {}
+                with open('/home/zhangyang/workspace/k510-gnne-compiler/out/bin/nncase_test_ci', 'rb') as f:
+                    send_dict['app'] = base64.b64encode(f.read()).decode('utf-8')
+
+                send_dict['kmodel'] = base64.b64encode(kmodel).decode('utf-8')
+                inputs = []
                 for i in range(len(self.inputs)):
                     input_bin = os.path.join(case_dir, f'input_0_{i}.bin')
                     data = self.transform_input(
@@ -798,25 +802,37 @@ class TestRunner(metaclass=ABCMeta):
                         input_bin = os.path.join(case_dir, f'input_{i}_{dtype}.bin')
                         data.tofile(input_bin)
                         self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
+                    inputs.append(base64.b64encode(data).decode('utf-8'))
 
-                    shutil.copy(input_bin, os.path.join(nfs_dir, f'input_0_{i}.bin'))
-                    cmds = cmds + f' input_0_{i}.bin'
+                send_dict['inputs'] = inputs
+                send_dict['output_num'] = len(self.outputs)
 
-                telnet_client = TelnetClient()
+                send_payload = json.dumps(send_dict).encode('utf-8')
 
-                telnet_client.login(kpu_target_ip, kpu_target_username, kpu_target_password)
+                send_header = str(len(send_payload)).encode('utf-8')
+                client_socket.sendall(send_header)
 
-                telnet_client.execute('cd /mnt/nfsroot/nncase_test_ci/ && sync')
-                # telnet_client.execute('sync')
+                reply = client_socket.recv(1024)
+                client_socket.sendall(send_payload)
 
-                telnet_client.execute(cmds)
-                telnet_client.execute('sync')
+                # recv
+                recv_header = client_socket.recv(1024)
+                recv_payload_size = int(recv_header.decode('utf-8'))
+                client_socket.sendall("client start recv payload".encode())
 
-                telnet_client.logout()
-                print('k510 crb duration: {0} s'.format(time.time()  - t_start))
+                recv_size = 0
+                in_data = bytes()
+                while recv_size < recv_payload_size:
+                    data = client_socket.recv(4096)
+                    in_data += data
+                    recv_size += len(data)
+
+                client_socket.close()
+
+                recv_dict = json.loads(in_data.decode('utf-8'))
 
                 for i in range(len(self.outputs)):
-                    result = np.fromfile(os.path.join(nfs_dir, f'nncase_result_{i}.bin'), dtype=self.outputs[i]['dtype'])
+                    result = np.frombuffer(base64.b64decode(recv_dict['outputs'][i]), dtype=self.outputs[i]['dtype'])
                     result = result.reshape(self.outputs[i]['model_shape'])
                     if preprocess['preprocess'] and len(result.shape) == 4:
                         if (preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
@@ -836,6 +852,7 @@ class TestRunner(metaclass=ABCMeta):
                     result.tofile(infer_output_paths[-1][0])
                     self.totxtfile(infer_output_paths[-1][1], result)
 
+                print('k510 crb duration: {0} s'.format(time.time()  - t_start))
             else:
                 # run in simulator
                 t_start = time.time()
@@ -851,7 +868,6 @@ class TestRunner(metaclass=ABCMeta):
 
                     sim.set_input_tensor(i, nncase.RuntimeTensor.from_numpy(data))
                 sim.run()
-                print('simulator duration: {0} s'.format(time.time()  - t_start))
 
                 for i in range(sim.outputs_size):
                     result = sim.get_output_tensor(i).to_numpy()
@@ -872,6 +888,8 @@ class TestRunner(metaclass=ABCMeta):
                             infer_dir, f'kmodel_info.txt'), result)
                     result.tofile(infer_output_paths[-1][0])
                     self.totxtfile(infer_output_paths[-1][1], result)
+
+                print('simulator duration: {0} s'.format(time.time()  - t_start))
         return infer_output_paths
 
     def on_test_start(self) -> None:
