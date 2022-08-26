@@ -10,6 +10,16 @@ using System.Threading.Tasks;
 namespace Nncase.Quantization;
 
 /// <summary>
+/// Model Quant Mode
+/// </summary>
+public enum ModelQuantMode
+{
+    NoQuant,
+    UsePTQ,
+    UseQAT
+};
+
+/// <summary>
 /// Calibration Method
 /// </summary>
 public enum CalibMethod

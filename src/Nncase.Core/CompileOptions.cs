@@ -22,7 +22,7 @@ public sealed class CompileOptions
         Target = other.Target;
         DumpLevel = other.DumpLevel;
         DumpDir = other.DumpDir;
-        UsePTQ = other.UsePTQ;
+        ModelQuantMode = other.ModelQuantMode;
         QuantType = other.QuantType;
         QuantMode = other.QuantMode;
         OutputFile = other.OutputFile;
@@ -39,7 +39,7 @@ public sealed class CompileOptions
         Target = string.Empty;
         DumpLevel = -1;
         DumpDir = string.Empty;
-        UsePTQ = false;
+        ModelQuantMode = ModelQuantMode.NoQuant;
         QuantType = DataTypes.Int8;
         QuantMode = QuantMode.UnsignedMode;
         OutputFile = string.Empty;
@@ -48,15 +48,15 @@ public sealed class CompileOptions
     /// <summary>
     /// init 
     /// </summary>
-    /// <param name="usePtq"></param>
-    public CompileOptions(bool usePtq)
+    /// <param name="modelQuantMode"></param>
+    public CompileOptions(ModelQuantMode modelQuantMode)
     {
         InputFile = string.Empty;
         InputFormat = string.Empty;
         Target = string.Empty;
         DumpLevel = -1;
         DumpDir = string.Empty;
-        UsePTQ = usePtq;
+        ModelQuantMode = modelQuantMode;
         QuantType = DataTypes.Int8;
         QuantMode = QuantMode.UnsignedMode;
         OutputFile = string.Empty;
@@ -79,9 +79,6 @@ public sealed class CompileOptions
     public string DumpDir { get; set; }
 
     /// <inheritdoc/>
-    public bool UsePTQ { get; set; }
-
-    /// <inheritdoc/>
     public DataType QuantType { get; set; }
 
     /// <inheritdoc/>
@@ -90,6 +87,10 @@ public sealed class CompileOptions
     /// <inheritdoc/>
     public string OutputFile { get; set; }
 
+    /// <inheritdoc/>
+    public ModelQuantMode ModelQuantMode { get; set; }
+
+    /// <inheritdoc/>
     public QuantizeOptions? QuantizeOptions { get; set; }
 }
 

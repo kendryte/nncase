@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.PatternMatch;
+using Nncase.Quantization;
 
 namespace Nncase.Transform;
 
@@ -40,9 +41,10 @@ public abstract class QuantRule : RewriteRule<Pattern>
     public bool IsQuantType(DataType dt) => dt == DataTypes.Int8 || dt == DataTypes.UInt8;
 
     /// <summary>
-    /// Get UsePTQ
+    /// Get ModelQuantMode
     /// </summary>
-    public bool UsePTQ => Option.CompileOptions.UsePTQ;
+
+    public ModelQuantMode ModelQuantMode => Option.CompileOptions.ModelQuantMode;
 
     /// <summary>
     /// Get QuantType
