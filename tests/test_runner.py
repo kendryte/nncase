@@ -20,9 +20,7 @@ from PIL import Image
 from compare_util import compare
 from dataset_utils import *
 from models.preprocess.preprocess import preprocess
-import time
 import socket
-import base64
 import json
 
 class Edict:
@@ -778,20 +776,41 @@ class TestRunner(metaclass=ABCMeta):
 
         else:
             kpu_target = os.getenv('KPU_TARGET')
+            port = int(os.getenv('PORT'))
+            app_full_name = os.getenv('NNCASE_TEST_CI')
             if self.in_ci and kwargs['target'] == kpu_target:
-                # run in kpu_target
-                t_start = time.time()
-
+                # connect server
                 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                client_socket.connect(('localhost', 51000))
+                client_socket.connect(('localhost', port))
 
-                # send
-                send_dict = {}
-                with open('/home/zhangyang/workspace/k510-gnne-compiler/out/bin/nncase_test_ci', 'rb') as f:
-                    send_dict['app'] = base64.b64encode(f.read()).decode('utf-8')
+                # send file_num
+                file_num_dict = {}
+                file_num_dict['app'] = 1
+                file_num_dict['kmodel']= 1
+                file_num_dict['inputs'] = len(self.inputs)
+                file_num_dict['outputs'] = len(self.outputs)
+                client_socket.sendall(json.dumps(file_num_dict).encode('utf-8'))
+                dummy = client_socket.recv(1024)
 
-                send_dict['kmodel'] = base64.b64encode(kmodel).decode('utf-8')
-                inputs = []
+                # send app
+                file_dict = {}
+                file_dict['file_name'] = os.path.basename(app_full_name)
+                file_dict['file_size'] = os.path.getsize(app_full_name)
+                client_socket.sendall(json.dumps(file_dict).encode('utf-8'))
+                dummy = client_socket.recv(1024)
+                with open(app_full_name, 'rb') as f:
+                    client_socket.sendall(f.read())
+                dummy = client_socket.recv(1024)
+
+                # send kmodel
+                file_dict['file_name'] = 'test.kmodel'
+                file_dict['file_size'] = len(kmodel)
+                client_socket.sendall(json.dumps(file_dict).encode('utf-8'))
+                dummy = client_socket.recv(1024)
+                client_socket.sendall(kmodel)
+                dummy = client_socket.recv(1024)
+
+                # send inputs
                 for i in range(len(self.inputs)):
                     input_bin = os.path.join(case_dir, f'input_0_{i}.bin')
                     data = self.transform_input(
@@ -801,37 +820,28 @@ class TestRunner(metaclass=ABCMeta):
                         input_bin = os.path.join(case_dir, f'input_{i}_{dtype}.bin')
                         data.tofile(input_bin)
                         self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
-                    inputs.append(base64.b64encode(data).decode('utf-8'))
 
-                send_dict['inputs'] = inputs
-                send_dict['output_num'] = len(self.outputs)
+                    file_dict['file_name'] = f'input_0_{i}.bin'
+                    file_dict['file_size'] = os.path.getsize(input_bin)
+                    client_socket.sendall(json.dumps(file_dict).encode('utf-8'))
+                    dummy = client_socket.recv(1024)
+                    client_socket.sendall(data.tobytes())
+                    dummy = client_socket.recv(1024)
 
-                send_payload = json.dumps(send_dict).encode('utf-8')
-
-                send_header = str(len(send_payload)).encode('utf-8')
-                client_socket.sendall(send_header)
-
-                reply = client_socket.recv(1024)
-                client_socket.sendall(send_payload)
-
-                # recv
-                recv_header = client_socket.recv(1024)
-                recv_payload_size = int(recv_header.decode('utf-8'))
-                client_socket.sendall("client start recv payload".encode())
-
-                recv_size = 0
-                in_data = bytes()
-                while recv_size < recv_payload_size:
-                    data = client_socket.recv(4096)
-                    in_data += data
-                    recv_size += len(data)
-
-                client_socket.close()
-
-                recv_dict = json.loads(in_data.decode('utf-8'))
-
+                # recv outputs
                 for i in range(len(self.outputs)):
-                    result = np.frombuffer(base64.b64decode(recv_dict['outputs'][i]), dtype=self.outputs[i]['dtype'])
+                    header = client_socket.recv(1024)
+                    file_size = int(header.decode('utf-8'))
+                    client_socket.sendall(f"pls send nncase_result_{i}.bin".encode())
+
+                    recv_size = 0
+                    buffer = bytearray(file_size)
+                    while recv_size < file_size:
+                        slice = client_socket.recv(4096)
+                        buffer[recv_size:] = slice
+                        recv_size += len(slice)
+
+                    result = np.frombuffer(buffer, dtype=self.outputs[i]['dtype'])
                     result = result.reshape(self.outputs[i]['model_shape'])
                     if preprocess['preprocess'] and len(result.shape) == 4:
                         if (preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
@@ -850,11 +860,11 @@ class TestRunner(metaclass=ABCMeta):
                             infer_dir, f'kmodel_info.txt'), result)
                     result.tofile(infer_output_paths[-1][0])
                     self.totxtfile(infer_output_paths[-1][1], result)
+                    client_socket.sendall(f"recv nncase_result_{i}.bin succeed".encode())
 
-                print('k510 crb duration: {0} s'.format(time.time()  - t_start))
+                client_socket.close()
             else:
                 # run in simulator
-                t_start = time.time()
                 sim = nncase.Simulator()
                 sim.load_model(kmodel)
                 for i in range(len(self.inputs)):
@@ -887,8 +897,6 @@ class TestRunner(metaclass=ABCMeta):
                             infer_dir, f'kmodel_info.txt'), result)
                     result.tofile(infer_output_paths[-1][0])
                     self.totxtfile(infer_output_paths[-1][1], result)
-
-                print('simulator duration: {0} s'.format(time.time()  - t_start))
         return infer_output_paths
 
     def on_test_start(self) -> None:
