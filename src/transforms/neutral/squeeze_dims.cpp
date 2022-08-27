@@ -35,8 +35,63 @@ shape_t squeeze_shape(shape_t old_shape)
     return new_shape;
 }
 
+auto squeeze_binary_shape(shape_t old_a_shape, shape_t old_b_shape)
+{
+    auto a_size = old_a_shape.size();
+    auto b_size = old_b_shape.size();
+    auto squeeze_times = std::max(a_size-4, b_size-4);
+    if(squeeze_times <= 0)
+        return std::tuple(old_a_shape, old_b_shape);
+    shape_t new_a_shape, new_b_shape;
+
+    if ( a_size == b_size )
+    {
+        size_t tmp = 1;
+        for(size_t i = 0; i<a_size; i++)
+        {
+            if(old_a_shape[i] == old_b_shape[i] )
+            {
+                if(i<a_size-1  && old_a_shape[i+1] == old_b_shape[i+1])
+                {
+                    tmp*=old_a_shape[i];
+                    squeeze_times--;
+                }
+                else
+                {
+                    new_a_shape.push_back(old_a_shape[i]);
+                    new_a_shape.push_back(old_b_shape[i]);
+                }
+            }
+            else if(tmp != 1)
+            {
+                new_a_shape.push_back(tmp);
+                new_a_shape.push_back(tmp);
+                tmp = 1;
+            }
+            else
+            {
+                new_a_shape.push_back(old_a_shape[i]);
+                new_a_shape.push_back(old_b_shape[i]);
+            }
+            if(squeeze_times == 0)
+                break;
+        }
+    }
+    else
+    {
+        if(a_size == 1)
+            new_a_shape = squeeze_shape(old_a_shape);
+        if(b_size == 1)
+            new_b_shape = squeeze_shape(old_b_shape);
+    }
+    return std::make_tuple(new_a_shape, new_b_shape);
+}
+
 auto squeeze_transpose_shape(shape_t old_shape, axis_t old_axis)
 {
+    if(old_shape.size()<=4)
+        return std::make_tuple(old_axis, old_shape);
+
     axis_t new_axis { 0, 0, 0, 0 };
     shape_t new_shape { 1, 1, 1, 1 };
     int squeeze_times = old_shape.size() - 4;
@@ -44,13 +99,14 @@ auto squeeze_transpose_shape(shape_t old_shape, axis_t old_axis)
     int i = 0;
     for (auto j = 0; j < 4; i++, j++)
     {
-        if (old_axis[i] + 1 == old_axis[i + 1] && squeeze_times != 0)
+        if (old_axis[i] + 1 == old_axis[i + 1])
         {
             new_shape[j] = old_shape[i] * old_shape[i + 1];
             squeeze_times--;
             squeeze_time++;
             i++;
         }
+        std::cout<<old_axis[i]<<'-'<<squeeze_time<<std::endl;
         new_axis[j] = old_axis[i] - squeeze_time;
         new_shape[j] = old_shape[i];
     }
@@ -59,6 +115,8 @@ auto squeeze_transpose_shape(shape_t old_shape, axis_t old_axis)
         new_shape.push_back(old_shape[i]);
     }
 
+    if(squeeze_times != 0)
+        throw std::runtime_error("Can't squeeze transpose with "+std::to_string( (int)old_shape.size())+"-D.");
     return std::make_tuple(new_axis, new_shape);
 }
 
@@ -100,7 +158,7 @@ bool check_op(node_opcode op)
 
 bool squeeze_dims_transform::on_try_match(node &node, transform_context &context)
 {
-    if (check_op(node.runtime_opcode()))
+    if (check_op(node.runtime_opcode()) )
     {
         bool need_squeeze = false;
         for (auto &it : node.inputs())
@@ -160,13 +218,14 @@ void squeeze_dims_transform::process(transform_context &context)
         auto &old_binary = static_cast<binary &>(*context.matched_nodes[0]);
 
         bitcast *in_a_bitc, *in_b_bitc, *out_bitc;
+        auto [new_a_shape, new_b_shape] = squeeze_binary_shape(output_a.shape(), output_b.shape());
         if (output_a.shape().size() > 4)
-            in_a_bitc = context.graph.emplace<bitcast>(output_a.type(), output_a.shape(), squeeze_shape(output_a.shape()));
+            in_a_bitc = context.graph.emplace<bitcast>(output_a.type(), output_a.shape(), new_a_shape);
         else
             in_a_bitc = context.graph.emplace<bitcast>(output_a.type(), output_a.shape(), output_a.shape());
 
         if (output_b.shape().size() > 4)
-            in_b_bitc = context.graph.emplace<bitcast>(output_b.type(), output_b.shape(), squeeze_shape(output_b.shape()));
+            in_b_bitc = context.graph.emplace<bitcast>(output_b.type(), output_b.shape(), new_b_shape);
         else
             in_b_bitc = context.graph.emplace<bitcast>(output_b.type(), output_b.shape(), output_b.shape());
 

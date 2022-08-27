@@ -547,6 +547,12 @@ void register_neutral_evaluators()
                 input_b.shape(), input_b.strides(), input_c.shape(), input_c.strides(), output.strides())
                 .unwrap_or_throw();
             break;
+        case dt_int64:
+            kernels::ternary(input_a.buffer().as_span<float>().data(), input_b.buffer().as_span<int64_t>().data(),
+                input_c.buffer().as_span<int64_t>().data(), output.buffer().as_span<int64_t>().data(), input_a.shape(), input_a.strides(),
+                input_b.shape(), input_b.strides(), input_c.shape(), input_c.strides(), output.strides())
+                .unwrap_or_throw();
+            break;
         default:
             std::cerr << "unsupported dtype for ternary: " + std::string(datatype_names(output_type));
         } });
