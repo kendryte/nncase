@@ -47,4 +47,6 @@ target_sources(ir PRIVATE
     topk.cpp
     trilu.cpp
     gru.cpp
-    tflite_detection_postprocess.cpp)
+    tflite_detection_postprocess.cpp
+    gather_elements.cpp
+    )
