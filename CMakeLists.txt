@@ -109,6 +109,8 @@ if (BUILDING_RUNTIME)
         DESTINATION include
         COMPONENT nncase-headers
         FILES_MATCHING
+        PATTERN "*.def"
+        PATTERN "*.h"
         PATTERN "*version.h"
         PATTERN "CMakeFiles" EXCLUDE
         )
@@ -201,6 +203,7 @@ else()
         PATTERN "*.td"
         PATTERN "*.inc"
         PATTERN "LICENSE.TXT"
+        PATTERN "*.h"
         )
         
     install(DIRECTORY ${NNCASE_INCLUDE_DIR}/nncase
@@ -214,6 +217,7 @@ else()
         PATTERN "*.inc"
         PATTERN "CMakeFiles" EXCLUDE
         PATTERN "config.h" EXCLUDE
+        PATTERN "*.h"
         )
     
     install(DIRECTORY python/nncase
