@@ -507,5 +507,6 @@ template result<void> kernels::layernorm<float>(const float *input, float *outpu
 template <typename T>
 result<void> kernels::layernorm(const T *input, T *output, T *scale, T *bias, const runtime_shape_t &in_shape, int32_t axis, float epsilon) noexcept
 {
-    return cpu::reference::layernorm(input, output, scale, bias, in_shape, axis, epsilon);
+    // return cpu::reference::layernorm(input, output, scale, bias, in_shape, axis, epsilon);
+    return cpu::optimized::layernorm(input, output, scale, bias, in_shape, axis, epsilon);
 }
