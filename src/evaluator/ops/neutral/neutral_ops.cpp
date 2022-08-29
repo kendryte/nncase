@@ -864,8 +864,8 @@ void register_neutral_evaluators()
         auto indices = context.memory_at(rnode.indices());
         auto output = context.memory_at(rnode.output());
         auto input_datatype = rnode.input().type();
-        auto indices_datatype = rnode.indices().type();
-        assert(indices_datatype == dt_int32);
+        // auto indices_datatype = rnode.indices().type();
+        // assert(indices_datatype == dt_int32);
         switch (input_datatype)
         {
         case dt_float32:
