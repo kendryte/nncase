@@ -44,7 +44,7 @@ namespace Nncase.IR
                 TIR.IfThenElse ift => Visit(ift),
                 TIR.PrimFunction primfunc => Visit(primfunc),
                 TIR.Let let => Visit(let),
-                TIR.PhysicalBuffer memref => Visit(memref),
+                TIR.Buffer buffer => Visit(buffer),
                 TIR.BufferRegion region => Visit(region),
                 _ => DefaultVisit(expr),
             };
@@ -188,7 +188,7 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="expr">MemRef expression.</param>
         /// <returns>Result.</returns>
-        public virtual TExprResult Visit(TIR.PhysicalBuffer expr) => DefaultVisit(expr);
+        public virtual TExprResult Visit(TIR.Buffer expr) => DefaultVisit(expr);
 
         /// <summary>
         /// Visit buffer region expression.

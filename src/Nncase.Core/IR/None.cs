@@ -19,7 +19,7 @@ public record None : Expr
     /// <summary>
     /// The default None expression instance.
     /// </summary>
-    public static None Default => new();
+    public static None Default = new();
 
     private None()
     {

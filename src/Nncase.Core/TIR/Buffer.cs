@@ -247,7 +247,7 @@ public abstract record Buffer(string Name, DataType ElemType, Schedule.MemoryLoc
 /// <param name="Name"></param>
 /// <param name="ElemType"></param>
 /// <param name="MemLocation"></param>
-public record LogicalBuffer(string Name, DataType ElemType, Schedule.MemoryLocation MemLocation) : Buffer(Name, ElemType, MemLocation)
+public sealed record LogicalBuffer(string Name, DataType ElemType, Schedule.MemoryLocation MemLocation) : Buffer(Name, ElemType, MemLocation)
 {
     /// <summary>
     /// create from the IRType.
@@ -307,7 +307,7 @@ public record LogicalBuffer(string Name, DataType ElemType, Schedule.MemoryLocat
 
 
     /// <inheritdoc/>
-    public virtual bool Equals(LogicalBuffer? other)
+    public bool Equals(LogicalBuffer? other)
     {
         return !(other is null) && EqualityContract == other.EqualityContract;
     }
@@ -339,7 +339,7 @@ public record LogicalBuffer(string Name, DataType ElemType, Schedule.MemoryLocat
 /// <param name="Name"></param>
 /// <param name="ElemType"></param>
 /// <param name="MemLocation"></param>
-public record PhysicalBuffer(string Name, DataType ElemType, Schedule.MemoryLocation MemLocation) : Buffer(Name, ElemType, MemLocation)
+public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.MemoryLocation MemLocation) : Buffer(Name, ElemType, MemLocation)
 {
 
     /// <summary>
@@ -421,7 +421,7 @@ public record PhysicalBuffer(string Name, DataType ElemType, Schedule.MemoryLoca
     public int Length => (int)TensorUtilities.GetProduct(_dimensions);
 
     /// <inheritdoc/>
-    public virtual bool Equals(PhysicalBuffer? other)
+    public bool Equals(PhysicalBuffer? other)
     {
         return !(other is null) && EqualityContract == other.EqualityContract;
     }

@@ -290,6 +290,11 @@ public class SchedFunctionResult
     public readonly Dictionary<Schedule.MemoryLocation, ulong> FuncUsage;
 
     /// <summary>
+    /// the flag marker the schedule status.
+    /// </summary>
+    public bool IsScheduled;
+
+    /// <summary>
     /// create SchedFunctionResult
     /// </summary>
     public SchedFunctionResult(CodeGen.ModuleType moduleType)
@@ -297,6 +302,7 @@ public class SchedFunctionResult
         Allocations = new(ReferenceEqualityComparer.Instance);
         FuncUsage = new();
         ModuleType = moduleType;
+        IsScheduled = false;
     }
 }
 
