@@ -39,21 +39,21 @@ auto squeeze_binary_shape(shape_t old_a_shape, shape_t old_b_shape)
 {
     auto a_size = old_a_shape.size();
     auto b_size = old_b_shape.size();
-    auto squeeze_times = std::max(a_size-4, b_size-4);
-    if(squeeze_times <= 0)
+    auto squeeze_times = std::max(a_size - 4, b_size - 4);
+    if (squeeze_times <= 0)
         return std::tuple(old_a_shape, old_b_shape);
     shape_t new_a_shape, new_b_shape;
 
-    if ( a_size == b_size )
+    if (a_size == b_size)
     {
         size_t tmp = 1;
-        for(size_t i = 0; i<a_size; i++)
+        for (size_t i = 0; i < a_size; i++)
         {
-            if(old_a_shape[i] == old_b_shape[i] )
+            if (old_a_shape[i] == old_b_shape[i])
             {
-                if(i<a_size-1  && old_a_shape[i+1] == old_b_shape[i+1])
+                if (i < a_size - 1 && old_a_shape[i + 1] == old_b_shape[i + 1])
                 {
-                    tmp*=old_a_shape[i];
+                    tmp *= old_a_shape[i];
                     squeeze_times--;
                 }
                 else
@@ -62,7 +62,7 @@ auto squeeze_binary_shape(shape_t old_a_shape, shape_t old_b_shape)
                     new_a_shape.push_back(old_b_shape[i]);
                 }
             }
-            else if(tmp != 1)
+            else if (tmp != 1)
             {
                 new_a_shape.push_back(tmp);
                 new_a_shape.push_back(tmp);
@@ -73,15 +73,15 @@ auto squeeze_binary_shape(shape_t old_a_shape, shape_t old_b_shape)
                 new_a_shape.push_back(old_a_shape[i]);
                 new_a_shape.push_back(old_b_shape[i]);
             }
-            if(squeeze_times == 0)
+            if (squeeze_times == 0)
                 break;
         }
     }
     else
     {
-        if(a_size == 1)
+        if (a_size == 1)
             new_a_shape = squeeze_shape(old_a_shape);
-        if(b_size == 1)
+        if (b_size == 1)
             new_b_shape = squeeze_shape(old_b_shape);
     }
     return std::make_tuple(new_a_shape, new_b_shape);
@@ -89,7 +89,7 @@ auto squeeze_binary_shape(shape_t old_a_shape, shape_t old_b_shape)
 
 auto squeeze_transpose_shape(shape_t old_shape, axis_t old_axis)
 {
-    if(old_shape.size()<=4)
+    if (old_shape.size() <= 4)
         return std::make_tuple(old_axis, old_shape);
 
     axis_t new_axis { 0, 0, 0, 0 };
@@ -106,7 +106,7 @@ auto squeeze_transpose_shape(shape_t old_shape, axis_t old_axis)
             squeeze_time++;
             i++;
         }
-        std::cout<<old_axis[i]<<'-'<<squeeze_time<<std::endl;
+        std::cout << old_axis[i] << '-' << squeeze_time << std::endl;
         new_axis[j] = old_axis[i] - squeeze_time;
         new_shape[j] = old_shape[i];
     }
@@ -115,8 +115,8 @@ auto squeeze_transpose_shape(shape_t old_shape, axis_t old_axis)
         new_shape.push_back(old_shape[i]);
     }
 
-    if(squeeze_times != 0)
-        throw std::runtime_error("Can't squeeze transpose with "+std::to_string( (int)old_shape.size())+"-D.");
+    if (squeeze_times != 0)
+        throw std::runtime_error("Can't squeeze transpose with " + std::to_string((int)old_shape.size()) + "-D.");
     return std::make_tuple(new_axis, new_shape);
 }
 
@@ -158,7 +158,7 @@ bool check_op(node_opcode op)
 
 bool squeeze_dims_transform::on_try_match(node &node, transform_context &context)
 {
-    if (check_op(node.runtime_opcode()) )
+    if (check_op(node.runtime_opcode()))
     {
         bool need_squeeze = false;
         for (auto &it : node.inputs())

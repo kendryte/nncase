@@ -869,15 +869,14 @@ void register_neutral_evaluators()
         switch (input_datatype)
         {
         case dt_float32:
-            kernels::gather_elements(input.buffer().as_span<float>().data(),input.buffer().as_span<int>().data(), output.buffer().as_span<float>().data(),
+            kernels::gather_elements(input.buffer().as_span<float>().data(), input.buffer().as_span<int>().data(), output.buffer().as_span<float>().data(),
                 input.shape(), indices.shape(), rnode.axis())
                 .unwrap_or_throw();
             break;
         default:
             throw std::runtime_error("unsupported dtype for gather_elements: " + std::string(datatype_names(input_datatype)));
-        } 
-        });
-
+        }
+    });
 }
 
 }

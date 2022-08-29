@@ -46,5 +46,4 @@ void onnx_importer::convert_op_GatherElements(const NodeProto &node)
     link_input_tensor(&ga->input(), input);
     link_input_tensor(&ga->indices(), indices);
     link_output_tensor(output, &ga->output());
-
 }

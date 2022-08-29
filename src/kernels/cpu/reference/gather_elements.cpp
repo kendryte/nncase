@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <iostream>
 #include <nncase/kernels/cpu/reference/tensor_compute.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
-#include <iostream>
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::kernels;
@@ -26,17 +26,17 @@ using namespace std;
 template result<void> reference::gather_elements(const float *input, const int *indices, float *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &indices_shape, const int axis) noexcept;
 
-void get_index(const int *indices, const std::vector<int> &per_axis_size, std::vector<int>&index, size_t i, int axis, int idx)
+void get_index(const int *indices, const std::vector<int> &per_axis_size, std::vector<int> &index, size_t i, int axis, int idx)
 {
-    if(idx != per_axis_size.size())
-    {   
-        auto new_idx = i/per_axis_size[idx];
+    if (idx != per_axis_size.size())
+    {
+        auto new_idx = i / per_axis_size[idx];
         index.push_back(new_idx);
-        get_index(indices, per_axis_size, index, i-new_idx*per_axis_size[idx], axis, idx+1);
+        get_index(indices, per_axis_size, index, i - new_idx * per_axis_size[idx], axis, idx + 1);
     }
 }
 
-template <typename TI,typename TK>
+template <typename TI, typename TK>
 result<void> reference::gather_elements(const TI *input, const TK *indices, TI *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &indices_shape, const int axis) noexcept
 {
@@ -48,35 +48,34 @@ result<void> reference::gather_elements(const TI *input, const TK *indices, TI *
     std::vector<int> input_per_axis_size(indices_shape.size(), 1);
 
     // compute size per axis
-    for(int idx = indices_shape.size()-2; idx>=0; idx--)
+    for (int idx = indices_shape.size() - 2; idx >= 0; idx--)
     {
-        per_axis_size[idx] = indices_shape[idx+1]* per_axis_size[idx+1];
-        input_per_axis_size[idx] = in_shape[idx+1]*input_per_axis_size[idx+1];
+        per_axis_size[idx] = indices_shape[idx + 1] * per_axis_size[idx + 1];
+        input_per_axis_size[idx] = in_shape[idx + 1] * input_per_axis_size[idx + 1];
     }
-    
-    for(size_t i =0; i<compute_size(indices_shape); i++)
+
+    for (size_t i = 0; i < compute_size(indices_shape); i++)
     {
         std::vector<int> index;
         get_index(indices, per_axis_size, index, i, axis, 0);
-        
+
         // compute indices offset to update index
         int indice_index = 0;
-        for(size_t t = 0; t<index.size();t++)
+        for (size_t t = 0; t < index.size(); t++)
         {
-            indice_index += per_axis_size[t]*index[t];
+            indice_index += per_axis_size[t] * index[t];
         }
         // process index value if negative value
-        index[axis]=indices[indice_index]<0?indices[indice_index]+in_shape[axis]:indices[indice_index];
+        index[axis] = indices[indice_index] < 0 ? indices[indice_index] + in_shape[axis] : indices[indice_index];
 
         // compute input offset
         int input_index = 0;
-        for(size_t t = 0; t<index.size();t++)
+        for (size_t t = 0; t < index.size(); t++)
         {
-            input_index += input_per_axis_size[t]*index[t];
+            input_index += input_per_axis_size[t] * index[t];
         }
         output[i] = input[input_index];
     }
 
     return ok();
 }
-

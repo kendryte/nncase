@@ -1312,20 +1312,17 @@ void tflite_detection_postprocess(const T *CXX_RESTRICT boxes, const T *CXX_REST
     }
 }
 
-
-
 template <class T, class TI, class TShape>
 void gather_elements(const T *CXX_RESTRICT input, const TI *CXX_RESTRICT indices, T *CXX_RESTRICT output, const TShape &in_shape, const TShape &indices_shape, const int axis)
 {
-    auto get_index=[&](const int *indices, const runtime_shape_t &stride, std::vector<int>&index, size_t i, int axis, int idx)
-    {
-        if(idx == stride.size())
+    auto get_index = [&](const int *indices, const runtime_shape_t &stride, std::vector<int> &index, size_t i, int axis, int idx) {
+        if (idx == stride.size())
             return 0;
         else
-        {   
-            auto new_idx = i/stride[idx];
+        {
+            auto new_idx = i / stride[idx];
             index.push_back(new_idx);
-            return get_index(indices, stride, index, i-new_idx*stride[idx], axis, idx+1);
+            return get_index(indices, stride, index, i - new_idx * stride[idx], axis, idx + 1);
         }
     };
     // indices_shape == output_shape
@@ -1333,12 +1330,12 @@ void gather_elements(const T *CXX_RESTRICT input, const TI *CXX_RESTRICT indices
     //   out[i][j][k] = input[i][index[i][j][k]][k] if axis = 1,
     //   out[i][j][k] = input[i][j][index[i][j][k]] if axis = 2,
     [[maybe_unused]] auto in_size = compute_size(in_shape);
-     [[maybe_unused]]  runtime_shape_t input_index(compute_size(indices_shape));
-     [[maybe_unused]]  auto stride = nncase::runtime::get_default_strides(indices_shape);
-    for(size_t i =0; i<compute_size(indices_shape); i++)
+    [[maybe_unused]] runtime_shape_t input_index(compute_size(indices_shape));
+    [[maybe_unused]] auto stride = nncase::runtime::get_default_strides(indices_shape);
+    for (size_t i = 0; i < compute_size(indices_shape); i++)
     {
-         [[maybe_unused]]  std::vector<int> index;
-        
+        [[maybe_unused]] std::vector<int> index;
+
         output[i] = input[get_index(indices, stride, index, i, axis, 0)];
         // index+=i*stride[i];
     }
