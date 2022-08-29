@@ -778,7 +778,7 @@ class TestRunner(metaclass=ABCMeta):
             kpu_target = os.getenv('KPU_TARGET')
             port = os.getenv('PORT')
             app_full_name = os.getenv('NNCASE_TEST_CI')
-            if self.in_ci and kwargs['target'] == kpu_target and port is not None and app_full_name is not None:
+            if self.in_ci and kwargs['target'] == kpu_target and port is not None and app_full_name is not None and len(self.inputs) > 0 and len(self.outputs) > 0:
                 # connect server
                 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 client_socket.connect(('localhost', int(port)))

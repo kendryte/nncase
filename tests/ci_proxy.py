@@ -106,7 +106,7 @@ def Consumer(kpu_target, kpu_ip, kpu_username, kpu_password, nfsroot, q):
         conn.close()
 
 def main():
-    parser = argparse.ArgumentParser(prog="kendryte_ci_server")
+    parser = argparse.ArgumentParser(prog="kendryte_ci_proxy")
     parser.add_argument("--kpu_target", help='kpu device target', type=str, default='k510')
     parser.add_argument("--kpu_ip", help='kpu deivce ip address', type=str, default='10.100.105.216')
     parser.add_argument("--kpu_username", help='kpu device usernmae', type=str, default='root')
