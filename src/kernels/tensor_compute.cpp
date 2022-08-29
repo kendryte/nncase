@@ -510,9 +510,9 @@ result<void> kernels::space_to_batch(datatype_t type, const gsl::byte *input, gs
 template result<void> kernels::gather_elements(const float *input, const int *indices, float *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &indices_shape, const int axis) noexcept;
 
-template <typename TI,typename TK>
+template <typename TI, typename TK>
 result<void> kernels::gather_elements(const TI *input, const TK *indices, TI *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &indices_shape, const int axis) noexcept
 {
-    return cpu::reference::gather_elements(input, indices, output, in_shape,indices_shape, axis);
+    return cpu::reference::gather_elements(input, indices, output, in_shape, indices_shape, axis);
 }

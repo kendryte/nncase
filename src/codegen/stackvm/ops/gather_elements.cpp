@@ -31,5 +31,5 @@ void stackvm_module_builder::emit(gather_elements &node, stackvm_op_builder &bui
     builder.stshape(0, input.shape);
     builder.stshape(1, indices.shape);
 
-    builder.tensor_gather_elements_( 0, 1, node.axis());
+    builder.tensor_gather_elements_(0, 1, node.axis());
 }

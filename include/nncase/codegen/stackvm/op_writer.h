@@ -1514,7 +1514,7 @@ struct op_writer<nncase::runtime::stackvm::tensor_gather_elements_op_t>
         writer.write(op.axis);
     }
 };
-    
+
 class NNCASE_API op_builder
 {
 public:

@@ -36,20 +36,20 @@ void onnx_importer::convert_op_Expand(const NodeProto &node)
 
     auto shape_vec = get_constant_value<int64_t>(node.input()[1]);
     shape_t shape { shape_vec.begin(), shape_vec.end() };
-    constant *con=nullptr;
+    constant *con = nullptr;
     if (input_type == dt_int64)
     {
         auto ones = xt::ones<int64_t>(shape);
         std::vector<int64_t> ones_vec { ones.begin(), ones.end() };
         con = graph_.emplace<constant>(input_type, shape, ones_vec);
     }
-    else if(input_type == dt_float32)
+    else if (input_type == dt_float32)
     {
         auto ones = xt::ones<float>(shape);
         std::vector<float> ones_vec { ones.begin(), ones.end() };
         con = graph_.emplace<constant>(input_type, shape, ones_vec);
     }
-    else if(input_type == dt_uint8)
+    else if (input_type == dt_uint8)
     {
         auto ones = xt::ones<uint8_t>(shape);
         std::vector<uint8_t> ones_vec { ones.begin(), ones.end() };
