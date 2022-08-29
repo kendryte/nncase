@@ -105,7 +105,7 @@ dims_t infer_shape(const dims_t &origin_in_shape, const dims_t &block_shape,
     auto batch = in_shape[0] / compute_size(block_shape);
     auto out_shape = dims_t{batch};
     auto m = block_shape.size();
-    for (int i = 0; i < m; ++i) {
+    for (size_t i = 0; i < m; ++i) {
         auto d = in_shape[i + 1] * block_shape[0] - crops[i].sum();
         out_shape.push_back(d);
     }

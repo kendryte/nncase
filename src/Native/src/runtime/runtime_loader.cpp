@@ -99,12 +99,12 @@ FindRuntimeMethod(collector, COLLECTOR)
 #define NNCASE_NO_LOADABLE_RUNTIME
 
 #define FindRuntimeMethod(snake_name)                                          \
-    result<rt_module_##snake_name> find_runtime_##snake_name(                  \
+    result<rt_module_##snake_name##_t> find_runtime_##snake_name(                  \
         const module_kind_t &kind) {                                           \
         auto builtin_runtime = builtin_runtimes;                               \
-        while (builtin_runtime->##snake_name) {                                \
+        while (builtin_runtime->snake_name) {                                \
             if (!strcmp(kind.data(), builtin_runtime->id.data())) {            \
-                return ok(builtin_runtime->##snake_name);                      \
+                return ok(builtin_runtime->snake_name);                      \
             }                                                                  \
         }                                                                      \
         return err(nncase_errc::runtime_not_found);                            \

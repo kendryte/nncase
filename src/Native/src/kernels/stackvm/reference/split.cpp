@@ -32,12 +32,12 @@ result<void> split_impl(const T *input, gsl::span<gsl::byte *> outputs,
                         const gsl::span<strides_t> out_strides, size_t axis,
                         const dims_t &sections,
                         NNCASE_UNUSED kernel_context &context) noexcept {
-    for (int i = 0; i < outputs.size(); ++i) {
+    for (size_t i = 0; i < outputs.size(); ++i) {
         auto out_shape = in_shape;
         out_shape[axis] = sections[i];
         auto output = reinterpret_cast<T *>(outputs[i]);
         size_t sections_sum = 0;
-        for (int j = 0; j < i; ++j) {
+        for (size_t j = 0; j < i; ++j) {
             sections_sum += sections[j];
         }
         try_(kernels::stackvm::apply(out_shape, [&](const dims_t &out_index) -> result<void> {

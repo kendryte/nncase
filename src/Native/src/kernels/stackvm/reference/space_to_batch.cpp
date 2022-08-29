@@ -31,7 +31,7 @@ namespace {
 
 std::vector<size_t> concat(const std::vector<std::vector<size_t>>& containers) {
     std::vector<size_t> result;
-    for (int i = 0; i < containers.size(); ++i) {
+    for (size_t i = 0; i < containers.size(); ++i) {
         result.insert(result.end(), containers[i].begin(), containers[i].end());
     }
     return result;
@@ -61,7 +61,7 @@ space_to_batch_impl(datatype_t dt, const T *input, T *output,
     auto spatial_size = block_shape.size();
     auto remain_shape_size = in_shape.size() - spatial_size - 1;
     auto new_paddings = paddings_t((1 + spatial_size + remain_shape_size));
-    for (int i = 0; i < spatial_size; ++i) {
+    for (size_t i = 0; i < spatial_size; ++i) {
         new_paddings[1 + i] = paddings[i];
     }
     auto pad_out_shape =

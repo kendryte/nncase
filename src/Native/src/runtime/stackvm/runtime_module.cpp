@@ -44,7 +44,7 @@ result<void> stackvm_runtime_module::initialize_before_functions(
         auto kind = reader.read<module_kind_t>();
         try_var(table, runtime_module::collect(kind));
         for (auto &&p : table) {
-            if (custom_call_table_.contains(p.first)) {
+            if (custom_call_table_.find(p.first) != custom_call_table_.end()) {
                 return err(nncase_errc::stackvm_duplicate_custom_call);
             }
             custom_call_table_.insert(p);

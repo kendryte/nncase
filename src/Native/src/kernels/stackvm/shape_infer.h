@@ -95,7 +95,7 @@ inline dims_t slice_infer_shape(const dims_t &in_shape, const axes_t &begins,
 inline std::vector<dims_t>
 split_shape_infer(const dims_t &in_shape, size_t axis, const dims_t &sections) {
     auto result = std::vector<dims_t>();
-    for (int i = 0; i < sections.size(); ++i) {
+    for (size_t i = 0; i < sections.size(); ++i) {
         auto shape = in_shape;
         shape[axis] = sections[i];
         result.push_back(shape);
@@ -107,7 +107,7 @@ inline dims_t reshape_shape_infer(const dims_t &in_shape,
                                   const axes_t &new_shape) {
     auto neg_index = -1;
     auto sum = 1;
-    for (int i = 0; i < new_shape.size(); ++i) {
+    for (size_t i = 0; i < new_shape.size(); ++i) {
         if (new_shape[i] != -1) {
             sum *= new_shape[i];
         } else {
@@ -136,7 +136,7 @@ inline dims_t unsqueeze_infer_shape(const dims_t &in_shape,
         return dims_t{1};
     }
     auto new_shape = in_shape.size() == 0 ? dims_t{1} : in_shape;
-    for (auto i = 0; i < axes.size(); i++) {
+    for (size_t i = 0; i < axes.size(); i++) {
         if (axes[i] >= 0) {
             new_shape.insert(new_shape.begin() + axes[i], 1);
         } else {
@@ -162,8 +162,8 @@ inline dims_t squeeze_infer_shape(const dims_t &in_shape, const dims_t &axes) {
     }
     // todo:error
     auto tmp_out_shpae = in_shape;
-    auto max = std::numeric_limits<int>::max();
-    for (int i = 0; i < axes.size(); ++i) {
+    auto max = std::numeric_limits<size_t>::max();
+    for (size_t i = 0; i < axes.size(); ++i) {
         tmp_out_shpae[axes[i]] = max;
     }
     auto out_shape = dims_t();
@@ -183,7 +183,7 @@ inline dims_t where_infer_shape(const dims_t &cond_shape, const dims_t &x_shape,
 
 inline dims_t tile_infer_shape(const dims_t &in_shape, const dims_t &repeats) {
     auto out_shape = dims_t(in_shape.size());
-    for (int i = 0; i < out_shape.size(); ++i) {
+    for (size_t i = 0; i < out_shape.size(); ++i) {
         out_shape[i] = in_shape[i] * repeats[i];
     }
     return out_shape;
@@ -192,7 +192,7 @@ inline dims_t tile_infer_shape(const dims_t &in_shape, const dims_t &repeats) {
 inline dims_t reduce_infer_shape(const dims_t &in_shape, const dims_t &axes,
                                  bool keep_dims) {
     auto tmp_shape = in_shape;
-    for (int i = 0; i < axes.size(); ++i) {
+    for (size_t i = 0; i < axes.size(); ++i) {
         auto d = keep_dims ? 1 : 0;
         tmp_shape[axes[i]] = d;
     }
@@ -227,7 +227,7 @@ inline std::vector<dims_t> lstm_infer_shape(const dims_t &x_shape,
 
 inline dims_t transpose_infer_shape(const dims_t &in_shape, const dims_t &perm) {
     auto new_shape = in_shape;
-    for (int i = 0; i < in_shape.size(); ++i) {
+    for (size_t i = 0; i < in_shape.size(); ++i) {
         new_shape[i] = in_shape[perm[i]];
     }
     return new_shape;
@@ -236,7 +236,7 @@ inline dims_t transpose_infer_shape(const dims_t &in_shape, const dims_t &perm) 
 inline dims_t pad_infer_shape(const dims_t& in_shape, const paddings_t& pads) {
     auto d = pads.size();
     auto new_shape = in_shape;
-    for (int i = 0; i < d; ++i) {
+    for (size_t i = 0; i < d; ++i) {
         new_shape[in_shape.size() - d + i] += pads[i].sum();
     }
     return new_shape;
@@ -246,7 +246,7 @@ inline dims_t space_to_batch_shape_infer(const dims_t &in_shape, const dims_t &b
     auto batch = in_shape[0] * detail::compute_size(block_shape);
     auto out_shape = dims_t { batch };
     auto m = block_shape.size();
-    for (int i = 0; i < m; ++i) {
+    for (size_t i = 0; i < m; ++i) {
         auto d = (in_shape[i + 1] + paddings[i].sum()) / block_shape[i];
         out_shape.push_back(d);
     }

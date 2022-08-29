@@ -70,6 +70,7 @@ include(cmake/dependencies.cmake)
 
 if (BUILDING_RUNTIME)
     set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/Native/include)
+    set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/Native/include)
     set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/Native/include)
     set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
     set_property(GLOBAL PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -94,14 +95,14 @@ if (BUILDING_RUNTIME)
     add_subdirectory(src/Native/include/nncase)
     add_subdirectory(src/Native/src/kernels)
     add_subdirectory(src/Native/src/runtime)
-    add_subdirectory(src/Native/src/functional)
+#    add_subdirectory(src/Native/src/functional)
     if(BUILD_BENCHMARK)
-        add_subdirectory(benchmark)
+#        add_subdirectory(benchmark)
     endif()
     
     # Python binding
     if(BUILD_PYTHON_BINDING)
-        add_subdirectory(python/nncaseruntime/native)
+#        add_subdirectory(python/nncaseruntime/native)
     endif()
 
     install(DIRECTORY ${NNCASE_INCLUDE_DIR}/nncase

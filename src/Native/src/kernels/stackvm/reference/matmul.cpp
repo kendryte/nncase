@@ -65,10 +65,10 @@ result<void> matmul_impl(const T *input_a, const T *input_b, T *output,
     auto ab_size = a_unit_size * new_a_shape[1];
     auto bb_size = b_unit_size * new_b_shape[1];
     auto ob_size = out_unit_size * channels;
-    for (int n = 0; n < batches; ++n) {
+    for (size_t n = 0; n < batches; ++n) {
         auto an = new_a_shape[0] == 1 ? 0 : n;
         auto bn = new_b_shape[0] == 1 ? 0 : n;
-        for (int c = 0; c < channels; ++c) {
+        for (size_t c = 0; c < channels; ++c) {
             auto ac = new_a_shape[1] == 1 ? 0 : c;
             auto bc = new_b_shape[1] == 1 ? 0 : c;
             try_(matmul_unit_impl(
