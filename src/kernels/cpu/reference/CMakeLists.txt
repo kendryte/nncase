@@ -11,6 +11,7 @@ set(SRCS batch_to_space.cpp
          cumsum.cpp
          dequantize.cpp
          gather.cpp
+         gather_elements.cpp
          gather_nd.cpp
          gru.cpp
          hardmax.cpp

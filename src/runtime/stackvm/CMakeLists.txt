@@ -20,6 +20,7 @@ set(SRCS runtime_module.cpp
         ops/tensor.cumsum.cpp
         ops/tensor.dequantize.cpp
         ops/tensor.gather.cpp
+        ops/tensor.gather_elements.cpp
         ops/tensor.gather_nd.cpp
         ops/tensor.gru.cpp
         ops/tensor.hardmax.cpp

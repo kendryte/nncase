@@ -185,6 +185,7 @@ namespace IsaGen
         UNARY,
         GRU,
         TFLITE_DETECTION_POSTPROCESS,
+        GATHER_ELEMENTS,
     }
 
     [BitLength(8)]
@@ -2367,6 +2368,27 @@ namespace IsaGen
             [DisplayName("w_scale")]
             [Description("w_scale register")]
             public float WScale { get; set; }
+        }
+
+        [DisplayName("TENSOR.GATHER_ELEMENTS")]
+        [Category("Tensor Instructions")]
+        [Description("Gather_Elements")]
+        public class Gather_ElementsInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.GATHER_ELEMENTS;
+
+            [DisplayName("input_shape_src")]
+            [Description("Input shape register")]
+            public byte RshapeSrc1 { get; set; }
+
+            [DisplayName("indices_shape_src")]
+            [Description("Indices shape register")]
+            public byte RshapeSrc2 { get; set; }
+
+            [DisplayName("axis")]
+            [Description("Axis")]
+            public int Axis { get; set; }
+
         }
     }
 }

@@ -149,6 +149,7 @@ protected:
     result<void> visit(const tensor_dequantize_op_t &op) noexcept override;
     result<void> visit(const tensor_hardmax_op_t &op) noexcept override;
     result<void> visit(const tensor_gather_op_t &op) noexcept override;
+    result<void> visit(const tensor_gather_elements_op_t &op) noexcept override;
     result<void> visit(const tensor_gather_nd_op_t &op) noexcept override;
     result<void> visit(const tensor_gru_op_t &op) noexcept override;
     result<void> visit(const tensor_lut1d_op_t &op) noexcept override;
