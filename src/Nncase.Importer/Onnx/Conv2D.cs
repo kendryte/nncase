@@ -6,6 +6,7 @@ using System.Linq;
 using Nncase.IR;
 using Onnx;
 using F = Nncase.IR.F;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Importer
 {
@@ -23,8 +24,31 @@ namespace Nncase.Importer
             // if not present, should be inferred from input W
 
             var strides = GetStrideAttribute(op);
+
+            int? stridesValueLen = ((TensorConst)(strides)).ValueType.Shape[0].Value;
+            for (var i = 0; i < stridesValueLen; i++)
+            {
+                System.Diagnostics.Trace.Assert(((TensorConst)(strides)).Value.Cast<System.Int64>()[i] <= (System.Int64)(System.Int32.MaxValue));
+            }
+
+            int? dilationValueLen = ((TensorConst)(dilation)).ValueType.Shape[0].Value;
+            for (var i = 0; i < dilationValueLen; i++)
+            {
+                System.Diagnostics.Trace.Assert(((TensorConst)(dilation)).Value.Cast<System.Int64>()[i] <= (System.Int64)(System.Int32.MaxValue));
+            }
+
             var pads = AutoPad(op, autoPad, input, weights, strides.ToArray<long>(), dilation);
-            return F.NN.Conv2D(input, weights, bias, strides, pads, Tensor.FromSpan<long>(dilation), PadMode.Constant, group);
+            int[] strideArr = new int[stridesValueLen == null ? default(int) : stridesValueLen.Value];
+            for (var i = 0; i < stridesValueLen; i++)
+                strideArr[i] = ((TensorConst)(strides)).Value.Cast<System.Int32>()[i];
+            var strideConst = new TensorConst(Tensor.FromSpan<int>(strideArr));
+
+            int[] dilationArr = new int[dilationValueLen == null ? default(int) : dilationValueLen.Value];
+            for (var i = 0; i < dilationValueLen; i++)
+                dilationArr[i] = ((TensorConst)(dilation)).Value.Cast<System.Int32>()[i];
+            var dilationConst = new TensorConst(Tensor.FromSpan<int>(dilationArr));
+
+            return F.NN.Conv2D(input, weights, bias, strideConst, pads, dilationConst, PadMode.Constant, group);
         }
 
         private Expr GetPadsAttribute(NodeProto op)

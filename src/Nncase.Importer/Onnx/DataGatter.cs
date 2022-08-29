@@ -170,6 +170,12 @@ public sealed partial class OnnxImporter
 
     private Expr ToNncasePadFormat(Expr pads)
     {
-        return Transpose(Reshape(pads, new[] {2, -1}), new[] {1, 0});
+        var padsValueLen = ((TensorConst)(pads)).ValueType.Shape[0].Value;
+        for (var i = 0; i < padsValueLen; i++)
+        {
+            System.Diagnostics.Trace.Assert(((TensorConst)(pads)).Value.Cast<System.Int64>()[i] <= (System.Int64)(16777216));
+        }
+        var cast = Cast(pads, DataTypes.Int32);
+        return Cast(Transpose(Cast(Reshape(cast, new[] {2, -1}), DataTypes.Float32), new[] {1, 0}), DataTypes.Int32);
     }
 }
