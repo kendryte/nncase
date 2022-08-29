@@ -224,7 +224,8 @@ private:
                             && itb->module_type == runtime::stackvm::stackvm_module_type))
                         continue;
 
-                    // itb's inputs all connect to ita's output
+                    //// itb's inputs all connect to ita's output
+                    // itb's has inputs connect to ita's output without circle
                     if ((ita->module_type == itb->module_type || itb->is_all_noaction)
                         && std::any_of(itb->region_inputs.begin(), itb->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); })
                         && check_circle(ita, itb))
