@@ -352,6 +352,17 @@ public static class Testing
             return entry.Invoke(rtInputs).ToValue();
         }
     }
+
+    public static IValue RunKModel(byte[] kmodel, string dump_path, Runtime.Interop.RTTensor[] input_tensors)
+    {
+        using (var interp = new Nncase.Runtime.Interop.RTInterpreter())
+        {
+            interp.SetDumpRoot(dump_path);
+            interp.LoadModel(kmodel);
+            var entry = interp.Entry!;
+            return entry.Invoke(input_tensors).ToValue();
+        }
+    }
 }
 
 
