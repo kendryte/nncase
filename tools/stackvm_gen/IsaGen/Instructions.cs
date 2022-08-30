@@ -186,6 +186,7 @@ namespace IsaGen
         GRU,
         TFLITE_DETECTION_POSTPROCESS,
         GATHER_ELEMENTS,
+        COMPRESS,
     }
 
     [BitLength(8)]
@@ -2388,7 +2389,28 @@ namespace IsaGen
             [DisplayName("axis")]
             [Description("Axis")]
             public int Axis { get; set; }
+        }
 
+
+
+        [DisplayName("TENSOR.COMPRESS")]
+        [Category("Tensor Instructions")]
+        [Description("Compress")]
+        public class CompressInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.COMPRESS;
+
+            [DisplayName("input_shape_src")]
+            [Description("Input shape register")]
+            public byte RshapeSrc1 { get; set; }
+
+            [DisplayName("condition_shape_src")]
+            [Description("Condition shape register")]
+            public byte RshapeSrc2 { get; set; }
+
+            [DisplayName("axis")]
+            [Description("axis register")]
+            public float axis { get; set; }
         }
     }
 }

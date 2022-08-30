@@ -14,6 +14,7 @@ set(SRCS runtime_module.cpp
         ops/tensor.broadcast.cpp
         ops/tensor.call.cpp
         ops/tensor.compare.cpp
+        ops/tensor.compress.cpp
         ops/tensor.conv2d.cpp
         ops/tensor.convert.cpp
         ops/tensor.copy.cpp

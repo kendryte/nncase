@@ -516,3 +516,10 @@ result<void> kernels::gather_elements(const TI *input, const TK *indices, TI *ou
 {
     return cpu::reference::gather_elements(input, indices, output, in_shape, indices_shape, axis);
 }
+template result<void> kernels::compress<float>(const float *input, const uint8_t *condition, float *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const int axis) noexcept;
+
+template <typename T>
+result<void> kernels::compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const int axis) noexcept
+{
+    return cpu::reference::compress(input, condition, output, input_shape, condition_shape, axis);
+}

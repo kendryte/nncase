@@ -17,6 +17,7 @@
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/visitor.h>
 #include <nncase/runtime/stackvm/runtime_module.h>
+#include <queue>
 #include <unordered_set>
 
 using namespace nncase;
@@ -184,6 +185,27 @@ private:
         } while (changed);
     }
 
+    bool check_circle(std::list<region>::iterator &ita, std::list<region>::iterator &itb)
+    {
+        /*
+            总共判断两层就可以了
+        */
+        for (auto it : itb->region_inputs)
+        {
+            for (auto mid = regions_.begin(); mid != regions_.end(); mid++)
+            {
+                if (mid == ita || mid == itb)
+                    continue;
+                if (mid->outputs.contains(it->connection()) && mid->module_type != ita->module_type && !mid->is_all_noaction
+                    && std::any_of(mid->region_inputs.begin(), mid->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); }))
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     bool merge_child_region()
     {
         bool ever_changed = false;
@@ -202,9 +224,11 @@ private:
                             && itb->module_type == runtime::stackvm::stackvm_module_type))
                         continue;
 
-                    // itb's inputs all connect to ita's output
+                    //// itb's inputs all connect to ita's output
+                    // itb's has inputs connect to ita's output without circle
                     if ((ita->module_type == itb->module_type || itb->is_all_noaction)
-                        && std::all_of(itb->region_inputs.begin(), itb->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); }))
+                        && std::any_of(itb->region_inputs.begin(), itb->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); })
+                        && check_circle(ita, itb))
                         to_be_merge.emplace_back(itb);
                 }
 

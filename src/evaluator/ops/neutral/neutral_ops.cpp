@@ -21,6 +21,7 @@
 #include <nncase/ir/ops/broadcast.h>
 #include <nncase/ir/ops/clamp.h>
 #include <nncase/ir/ops/compare.h>
+#include <nncase/ir/ops/compress.h>
 #include <nncase/ir/ops/concat.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/conv2d_transpose.h>
@@ -634,6 +635,9 @@ void register_neutral_evaluators()
         case unary_tanh:
             unary([](auto a) { return tanh(a); });
             break;
+        case unary_erf:
+            unary([](auto a) { return erf(a); });
+            break;
         default:
             throw std::runtime_error("Not supported unary");
         } });
@@ -877,6 +881,14 @@ void register_neutral_evaluators()
             throw std::runtime_error("unsupported dtype for gather_elements: " + std::string(datatype_names(input_datatype)));
         }
     });
+    register_evaluator(op_compress, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<compress &>(node);
+        auto input = context.memory_at(rnode.input());
+        auto condition = context.memory_at(rnode.condition());
+        auto output = context.memory_at(rnode.output());
+        kernels::compress(input.buffer().as_span<float>().data(), condition.buffer().as_span<uint8_t>().data(), output.buffer().as_span<float>().data(),
+            input.shape(), condition.shape(), rnode.axis())
+            .unwrap_or_throw(); });
 }
 
 }

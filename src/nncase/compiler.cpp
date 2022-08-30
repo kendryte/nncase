@@ -485,12 +485,14 @@ private:
             pmgr.add_pass<add_copy_to_concat_pass>();
             pmgr.add_pass<add_copy_to_slice_pass>();
             pmgr.add_pass<add_copy_to_output_pass>();
+            pmgr.add_pass<add_copy_to_bitcast_pass>();
 
             transform_pass pass("optimize_copy");
             pass.emplace<remove_exclusive_copy_to_output_transform>();
             pass.emplace<remove_simple_copy_from_slice_transform>();
             pass.emplace<remove_non_simple_copy_from_slice_transform>();
             pass.emplace<remove_exclusive_copy_to_concat_transform>();
+            pass.emplace<remove_exclusive_copy_to_bitcast_transform>();
             pmgr.add_pass(std::move(pass));
         });
     }

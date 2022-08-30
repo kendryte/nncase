@@ -1341,4 +1341,38 @@ void gather_elements(const T *CXX_RESTRICT input, const TI *CXX_RESTRICT indices
     }
 }
 
+template <class T>
+void compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const int axis)
+{
+    if (axis == (int)input_shape.size())
+    {
+        for (auto i = 0; i < (int)condition_shape[0]; i++)
+        {
+            if ((float)*(condition + i) == 0)
+            {
+                continue;
+            }
+            *output++ = *(input + i);
+        }
+    }
+    else
+    {
+        int select_slice = 1;
+        for (auto i = axis + 1; i < (int)input_shape.size(); i++)
+        {
+            select_slice *= input_shape[i];
+        }
+        for (auto j = 0; j < (int)kernels::detail::compute_size(input_shape); j++)
+        {
+            auto i = j % (select_slice * input_shape[axis]);
+            auto cond_index = i / select_slice;
+            if (select_slice != 1 && (cond_index >= condition_shape[0] || condition[cond_index] == 0))
+                continue;
+            if (select_slice == 1 && (i % input_shape[axis] >= condition_shape[0] || condition[cond_index % input_shape[axis] % condition_shape[0]] == 0))
+                continue;
+            *output++ = *(input + j);
+        }
+    }
+}
+
 }

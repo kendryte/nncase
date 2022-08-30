@@ -151,6 +151,7 @@ class OnnxTestRunner(TestRunner):
                 onnx_model = onnx.load(model_file)
                 onnx_model = version_converter.convert_version(onnx_model, 8)
                 model_file = os.path.join(case_dir, 'converted.onnx')
+                onnx_model = onnx.shape_inference(onnx_model)
                 onnx.save_model(onnx_model, model_file)
                 sess = ort.InferenceSession(model_file)
 

@@ -61,6 +61,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/where.cpp
     ops/gru.cpp
     ops/gather_elements.cpp
+    ops/compress.cpp
     )
 
 add_library(onnx_importer ${ONNX_IMPORTER_SOURCES} ${ONNX_IMPORTER_OPS_SOURCES})

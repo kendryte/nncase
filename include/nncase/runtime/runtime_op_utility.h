@@ -283,7 +283,7 @@ inline bool is_optimized_binary_op(binary_op_t op)
 
 inline bool is_optimized_unary_op(unary_op_t op)
 {
-    return op == unary_abs || op == unary_ceil || op == unary_cos || op == unary_exp || op == unary_floor || op == unary_log || op == unary_neg || op == unary_round || op == unary_rsqrt || op == unary_sign || op == unary_sin || op == unary_sqrt || op == unary_square || op == unary_tanh;
+    return op == unary_abs || op == unary_ceil || op == unary_cos || op == unary_exp || op == unary_floor || op == unary_log || op == unary_neg || op == unary_round || op == unary_sign || op == unary_sin || op == unary_sqrt || op == unary_square || op == unary_tanh;
 }
 
 template <class TShape>
