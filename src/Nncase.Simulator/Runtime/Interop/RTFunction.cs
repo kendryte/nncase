@@ -47,6 +47,7 @@ public sealed class RTFunction
         {
             Native.FuncInvoke(_handle, paramsHandlesPtr, (uint)paramsHandles.Length, out var result).ThrowIfFailed();
             GC.KeepAlive(this);
+            GC.KeepAlive(parameters);
             return RTValue.FromHandle(result);
         }
     }
