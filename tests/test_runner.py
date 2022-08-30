@@ -316,7 +316,7 @@ class TestRunner(metaclass=ABCMeta):
 
     def data_pre_process(self, data):
         data = copy.deepcopy(data)
-        if self.pre_process[3]['input_type'] == "float32":
+        if self.pre_process[0]['preprocess'] and self.pre_process[3]['input_type'] == "float32":
             data = np.asarray(data, dtype=np.float32)
         if self.pre_process[0]['preprocess'] and len(data.shape) == 4:
             if self.pre_process[-1]['input_layout'] == 'NCHW':
@@ -734,8 +734,13 @@ class TestRunner(metaclass=ABCMeta):
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
             if cfg.generate_calibs.name == "generate_imagenet_dataset":
-                ptq_options.set_tensor_data(np.asarray(
-                    [sample['data'] for sample in self.calibs]).tobytes())
+                # ptq_options.set_tensor_data(np.asarray(
+                #     [sample['data'] for sample in self.calibs]).tobytes())
+                calib_len = len(self.calibs[0]['data'])
+                byte_inputs = np.asarray(self.calibs[0]['data'][0][0]).tobytes()
+                for i in range(1, len(self.calibs[0]['data'])):
+                    byte_inputs += np.asarray(self.calibs[0]['data'][i][0]).tobytes()
+                ptq_options.set_tensor_data(byte_inputs)
                 ptq_options.calibrate_method = self.cfg.case.compile_opt.quant_method
             else:
                 raw_inputs = [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in

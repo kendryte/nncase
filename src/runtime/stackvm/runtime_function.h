@@ -142,6 +142,7 @@ protected:
     result<void> visit(const tensor_broadcast_op_t &op) noexcept override;
     result<void> visit(const tensor_call_op_t &op) noexcept override;
     result<void> visit(const tensor_compare_op_t &op) noexcept override;
+    result<void> visit(const tensor_compress_op_t &op) noexcept override;
     result<void> visit(const tensor_conv2d_op_t &op) noexcept override;
     result<void> visit(const tensor_convert_op_t &op) noexcept override;
     result<void> visit(const tensor_copy_op_t &op) noexcept override;
@@ -167,6 +168,7 @@ protected:
     result<void> visit(const tensor_sigmoid_op_t &op) noexcept override;
     result<void> visit(const tensor_slice_op_t &op) noexcept override;
     result<void> visit(const tensor_softmax_op_t &op) noexcept override;
+    result<void> visit(const tensor_space_to_batch_op_t &op) noexcept override;
     result<void> visit(const tensor_ternary_op_t &op) noexcept override;
     result<void> visit(const tensor_topk_op_t &op) noexcept override;
     result<void> visit(const tensor_transpose_op_t &op) noexcept override;
