@@ -19,6 +19,7 @@
 | Ceil | ✅ |
 | Celu | ✅ |
 | Clip | ✅ |
+| Compress | ✅ |
 | Concat | ✅ |
 | Constant | ✅ |
 | ConstantOfShape | ✅ |

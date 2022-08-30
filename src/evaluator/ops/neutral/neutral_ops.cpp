@@ -21,6 +21,7 @@
 #include <nncase/ir/ops/broadcast.h>
 #include <nncase/ir/ops/clamp.h>
 #include <nncase/ir/ops/compare.h>
+#include <nncase/ir/ops/compress.h>
 #include <nncase/ir/ops/concat.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/conv2d_transpose.h>
@@ -47,6 +48,7 @@
 #include <nncase/ir/ops/sigmoid.h>
 #include <nncase/ir/ops/slice.h>
 #include <nncase/ir/ops/softmax.h>
+#include <nncase/ir/ops/space_to_batch.h>
 #include <nncase/ir/ops/table_lookup.h>
 #include <nncase/ir/ops/ternary.h>
 #include <nncase/ir/ops/tflite_detection_postprocess.h>
@@ -516,6 +518,19 @@ void register_neutral_evaluators()
             std::cerr << "unsupported dtype for softmax: " + std::string(datatype_names(output_type));
         } });
 
+    register_evaluator(op_space_to_batch, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<space_to_batch &>(node);
+
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+
+        kernels::space_to_batch(input.datatype(), input.buffer().data(), output.buffer().data(), input.shape(),
+            runtime_shape_t { (size_t)rnode.block_size_h(), (size_t)rnode.block_size_w() },
+            runtime_paddings_t { rnode.padding_h(), rnode.padding_w() },
+            input.strides(), output.strides())
+            .unwrap_or_throw();
+    });
+
     register_evaluator(op_ternary, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<ternary &>(node);
 
@@ -612,6 +627,9 @@ void register_neutral_evaluators()
             break;
         case unary_tanh:
             unary([](auto a) { return tanh(a); });
+            break;
+        case unary_erf:
+            unary([](auto a) { return erf(a); });
             break;
         default:
             throw std::runtime_error("Not supported unary");
@@ -835,6 +853,15 @@ void register_neutral_evaluators()
             box.shape(), score.shape(), anchor.shape(), rnode.max_detections(), rnode.max_classes_per_detection(), 
             rnode.detections_per_class(), rnode.use_regular_non_max_suppression(), rnode.nms_score_threshold(), rnode.nms_iou_threshold(),
             rnode.num_classes(), rnode.y_scale(), rnode.x_scale(), rnode.h_scale(), rnode.w_scale())
+            .unwrap_or_throw(); });
+
+    register_evaluator(op_compress, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<compress &>(node);
+        auto input = context.memory_at(rnode.input());
+        auto condition = context.memory_at(rnode.condition());
+        auto output = context.memory_at(rnode.output());
+        kernels::compress(input.buffer().as_span<float>().data(), condition.buffer().as_span<uint8_t>().data(), output.buffer().as_span<float>().data(),
+            input.shape(), condition.shape(), rnode.axis())
             .unwrap_or_throw(); });
 }
 
