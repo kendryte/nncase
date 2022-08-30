@@ -232,6 +232,9 @@ public abstract record Buffer(string Name, DataType ElemType, Schedule.MemoryLoc
 
     /// <summary>
     /// the strides
+    /// <remarks>
+    /// This Strides is by elements not by bytes!
+    /// </remarks>
     /// </summary>
     public abstract IRArray<Expr> Strides { get; }
 

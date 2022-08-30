@@ -20,23 +20,11 @@ public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region) : Expr
 {
     /// <summary>
     /// Create a BufferRegion which is full region of the given buffer.
+    /// NOTE because of the each backend has different addr calc logic.
     /// </summary>
     /// <param name="buffer">The buffer to generate full BufferRegion.</param>
     /// <returns>The BufferRegion which covers all region of the given buffer.</returns>
     // public static BufferRegion All(PhysicalBuffer buffer) => new BufferRegion(buffer, new(buffer.Dimensions.Select(extent => new Range(0, extent, 1))));
-
-    /// <summary>
-    /// Get the Addr Offset.
-    /// NOTE We clamp the region expr with {0,shape[dim]}
-    /// </summary>
-    public Expr AddrOffset => Region.Zip(Buffer.Strides)
-      .Select((p, i) => (p, i))
-      .Aggregate((Expr)0, (acc, t) => acc + IR.F.Math.MinMax(t.p.First.Start, 0, Buffer.Dimensions[t.i]) * t.p.Second);
-
-    /// <summary>
-    /// Get the Current Offset.
-    /// </summary>
-    public Expr CurAddr => IR.F.Buffer.DDrOf(Buffer) + AddrOffset;
 
     /// <summary>
     /// Get the RegionSize.
