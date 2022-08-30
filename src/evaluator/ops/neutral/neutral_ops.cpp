@@ -628,6 +628,9 @@ void register_neutral_evaluators()
         case unary_tanh:
             unary([](auto a) { return tanh(a); });
             break;
+        case unary_erf:
+            unary([](auto a) { return erf(a); });
+            break;
         default:
             throw std::runtime_error("Not supported unary");
         } });
