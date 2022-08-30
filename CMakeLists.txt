@@ -49,7 +49,7 @@ endif()
 include(cmake/configure-conan.cmake)
 include(cmake/conan.cmake)
 
-if(NOT CONAN_EXPORTED) 
+if(NOT CONAN_EXPORTED)
     conan_check()
     conan_add_remote(NAME sunnycase URL https://conan.sunnycase.moe INDEX 0)
 endif()
@@ -76,7 +76,7 @@ if (BUILDING_RUNTIME)
     set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
     set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
     set_property(GLOBAL PROPERTY POSITION_INDEPENDENT_CODE ON)
-    
+
     if (MSVC)
         add_definitions(/D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)
         add_compile_options(/wd4267 /wd4251 /wd4244 /FC /utf-8 /W3 /WX)
@@ -90,10 +90,10 @@ if (BUILDING_RUNTIME)
             add_compile_options(-Wno-maybe-uninitialized -Wno-unused-private-field)
         endif()
     endif()
-    
+
     include_directories(${NNCASE_MAIN_INCLUDE_DIR})
     include_directories(${NNCASE_INCLUDE_DIR})
-    
+
     add_subdirectory(include/nncase)
     add_subdirectory(src/kernels)
     add_subdirectory(src/runtime)
@@ -101,12 +101,12 @@ if (BUILDING_RUNTIME)
     if(BUILD_BENCHMARK)
         add_subdirectory(benchmark)
     endif()
-    
+
     # Python binding
     if(BUILD_PYTHON_BINDING)
         add_subdirectory(python/nncaseruntime/native)
     endif()
-        
+
     install(DIRECTORY ${NNCASE_INCLUDE_DIR}/nncase
         DESTINATION include
         COMPONENT nncase-headers
@@ -114,7 +114,7 @@ if (BUILDING_RUNTIME)
         PATTERN "*version.h"
         PATTERN "CMakeFiles" EXCLUDE
         )
-    
+
     install(DIRECTORY include/nncase/kernels
         DESTINATION include/nncase
         COMPONENT nncase-headers
@@ -126,7 +126,7 @@ if (BUILDING_RUNTIME)
         PATTERN "*.inc"
         PATTERN "LICENSE.TXT"
         )
-    
+
     install(DIRECTORY include/nncase/runtime
         DESTINATION include/nncase
         COMPONENT nncase-headers
@@ -152,7 +152,7 @@ else()
     else ()
         set(CMAKE_INSTALL_RPATH "$ORIGIN")
     endif()
-    
+
     if (MSVC)
         add_definitions(/D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS /D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)
         add_compile_options(/wd4267 /wd4251 /wd4244 /FC /utf-8 /W3 /WX)
@@ -166,13 +166,16 @@ else()
             add_compile_options(-Wno-uninitialized)
         else ()
             add_compile_options(-Wno-maybe-uninitialized -Wno-deprecated-copy)
+            if (CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL "12.0")
+                add_compile_options(-Wno-array-bounds -Wno-deprecated-declarations -Wno-restrict)
+            endif()
             add_link_options(-Wl,--exclude-libs,ALL)
         endif()
     endif()
-    
+
     include_directories(${NNCASE_MAIN_INCLUDE_DIR})
     include_directories(${NNCASE_INCLUDE_DIR})
-    
+
     add_subdirectory(include/nncase)
     add_subdirectory(src/nncase)
     add_subdirectory(src/data)
@@ -192,15 +195,15 @@ else()
     if(BUILD_TESTING)
         add_subdirectory(tests/kernels)
     endif()
-    
+
     # Python binding
     if(BUILD_PYTHON_BINDING)
         add_subdirectory(python/nncase/native)
     endif()
-    
+
     # Thrid party
     add_subdirectory(third_party/onnx)
-    
+
     install(DIRECTORY include/nncase
         DESTINATION include
         COMPONENT nncase-headers
@@ -212,7 +215,7 @@ else()
         PATTERN "*.inc"
         PATTERN "LICENSE.TXT"
         )
-        
+
     install(DIRECTORY ${NNCASE_INCLUDE_DIR}/nncase
         DESTINATION include
         COMPONENT nncase-headers
@@ -225,14 +228,14 @@ else()
         PATTERN "CMakeFiles" EXCLUDE
         PATTERN "config.h" EXCLUDE
         )
-    
+
     install(DIRECTORY python/nncase
         DESTINATION python
         COMPONENT nncase-python
         FILES_MATCHING
         PATTERN "*.py"
         )
-    
+
     # Targets
     add_subdirectory(targets/cpu)
     add_subdirectory(targets/k210)

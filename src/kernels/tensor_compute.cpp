@@ -510,3 +510,10 @@ result<void> kernels::layernorm(const T *input, T *output, T *scale, T *bias, co
     // return cpu::reference::layernorm(input, output, scale, bias, in_shape, axis, epsilon);
     return cpu::optimized::layernorm(input, output, scale, bias, in_shape, axis, epsilon);
 }
+
+template result<void> kernels::compress<float>(const float *input, const uint8_t *condition, float *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const int axis) noexcept;
+template <typename T>
+result<void> kernels::compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const int axis) noexcept
+{
+    return cpu::reference::compress(input, condition, output, input_shape, condition_shape, axis);
+}

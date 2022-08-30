@@ -642,7 +642,8 @@ void transpose(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, const TShape
 template <class T, class TShape>
 void strided_slice(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, const TShape &in_shape, const TShape &begin, const TShape &end, const TShape &strides)
 {
-    auto loop_cond = [](int32_t i, int32_t stop, int32_t stride) {
+    auto loop_cond = [](int32_t i, int32_t stop, int32_t stride)
+    {
         return stride > 0 ? i < stop : i > stop;
     };
 
@@ -827,10 +828,12 @@ void gru(const T *CXX_RESTRICT input, const T *CXX_RESTRICT w, const T *CXX_REST
     const int num_direction = w_shape[0];
     const int hidden_size = w_shape[1] / 3;
 
-    auto sigmoid = [&](float x) {
+    auto sigmoid = [&](float x)
+    {
         return 1 / (1 + std::exp(-x));
     };
-    auto tanh = [&](float x) {
+    auto tanh = [&](float x)
+    {
         return std::tanh(x);
     };
     runtime_shape_t out_shape { (size_t)seq_length, (size_t)num_direction, (size_t)batch_size, (size_t)hidden_size };
@@ -994,7 +997,8 @@ void tflite_detection_postprocess(const T *CXX_RESTRICT boxes, const T *CXX_REST
         float score;
     };
 
-    auto compute_iou = [&](const std::vector<BoxCornerEncoding> &box, const int &i, const int &j) {
+    auto compute_iou = [&](const std::vector<BoxCornerEncoding> &box, const int &i, const int &j)
+    {
         auto &box_i = box[i];
         auto &box_j = box[j];
         const float area_i = (box_i.ymax - box_i.ymin) * (box_i.xmax - box_i.xmin);
@@ -1087,7 +1091,8 @@ void tflite_detection_postprocess(const T *CXX_RESTRICT boxes, const T *CXX_REST
                         std::iota(sorted_indices.begin(), sorted_indices.begin() + num_scores_kept, 0);
                         std::stable_sort(
                             sorted_indices.begin(), sorted_indices.begin() + num_scores_kept,
-                            [&keep_scores](const int i, const int j) { return keep_scores[i] > keep_scores[j]; });
+                            [&keep_scores](const int i, const int j)
+                            { return keep_scores[i] > keep_scores[j]; });
                     }
 
                     const int output_size = std::min(num_scores_kept, max_detections);
@@ -1142,7 +1147,8 @@ void tflite_detection_postprocess(const T *CXX_RESTRICT boxes, const T *CXX_REST
                 // sorted by scores.
                 std::inplace_merge(box_info_after_regular_nms.begin(), box_info_after_regular_nms.begin() + sorted_indices_size,
                     box_info_after_regular_nms.begin() + sorted_indices_size + selected.size(),
-                    [](const BoxInfo &a, const BoxInfo &b) { return a.score >= b.score; });
+                    [](const BoxInfo &a, const BoxInfo &b)
+                    { return a.score >= b.score; });
 
                 sorted_indices_size = std::min(sorted_indices_size + static_cast<int>(selected.size()), max_detections);
             }
@@ -1197,7 +1203,8 @@ void tflite_detection_postprocess(const T *CXX_RESTRICT boxes, const T *CXX_REST
                 // DecreasingPartialArgSort
                 if (num_categories_per_anchor == 1)
                 {
-                    auto arg_max_vector = [&](const T *input_data, int size) {
+                    auto arg_max_vector = [&](const T *input_data, int size)
+                    {
                         T max_value = input_data[0];
                         int max_index = 0;
                         for (int i = 1; i < size; ++i)
@@ -1218,7 +1225,8 @@ void tflite_detection_postprocess(const T *CXX_RESTRICT boxes, const T *CXX_REST
                     std::iota(class_indices, class_indices + num_classes, 0);
                     std::partial_sort(
                         class_indices, class_indices + num_categories_per_anchor, class_indices + num_classes,
-                        [&box_scores](const int i, const int j) { return box_scores[i] > box_scores[j]; });
+                        [&box_scores](const int i, const int j)
+                        { return box_scores[i] > box_scores[j]; });
                 }
                 // end DecreasingPartialArgSort
 
@@ -1249,7 +1257,8 @@ void tflite_detection_postprocess(const T *CXX_RESTRICT boxes, const T *CXX_REST
                     std::iota(sorted_indices.begin(), sorted_indices.begin() + num_scores_kept, 0);
                     std::stable_sort(
                         sorted_indices.begin(), sorted_indices.begin() + num_scores_kept,
-                        [&keep_scores](const int i, const int j) { return keep_scores[i] > keep_scores[j]; });
+                        [&keep_scores](const int i, const int j)
+                        { return keep_scores[i] > keep_scores[j]; });
                 }
                 const int output_size = std::min(num_scores_kept, max_detections);
                 selected.clear();
@@ -1354,4 +1363,37 @@ inline void layernorm(const float *input, float *output, float *scale, float *bi
     }
 }
 
+template <class T>
+void compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const int axis)
+{
+    if (axis == (int)input_shape.size())
+    {
+        for (auto i = 0; i < (int)condition_shape[0]; i++)
+        {
+            if ((float)*(condition + i) == 0)
+            {
+                continue;
+            }
+            *output++ = *(input + i);
+        }
+    }
+    else
+    {
+        int select_slice = 1;
+        for (auto i = axis + 1; i < (int)input_shape.size(); i++)
+        {
+            select_slice *= input_shape[i];
+        }
+        for (auto j = 0; j < (int)kernels::detail::compute_size(input_shape); j++)
+        {
+            auto i = j % (select_slice * input_shape[axis]);
+            auto cond_index = i / select_slice;
+            if (select_slice != 1 && (cond_index >= condition_shape[0] || condition[cond_index] == 0))
+                continue;
+            if (select_slice == 1 && (i % input_shape[axis] >= condition_shape[0] || condition[cond_index % input_shape[axis] % condition_shape[0]] == 0))
+                continue;
+            *output++ = *(input + j);
+        }
+    }
+}
 }
