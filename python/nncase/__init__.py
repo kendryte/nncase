@@ -435,7 +435,7 @@ class Compiler:
         self.__process_compile_options(compile_options)
 
     def __process_compile_options(self, compile_options: CompileOptions) -> ClCompileOptions:
-        self._compile_options: ClCompileOptions = _nncase.CompileOptions(False)
+        self._compile_options: ClCompileOptions = _nncase.CompileOptions(_nncase.Quantization.ModelQuantMode.NoQuant)
         self._compile_options.Target = compile_options.target
         self._compile_options.DumpLevel = 3 if compile_options.dump_ir == True else 0
         self._compile_options.DumpDir = compile_options.dump_dir
