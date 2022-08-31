@@ -96,7 +96,7 @@ public sealed class RTInterpreter : SafeHandle
     protected override bool ReleaseHandle()
     {
         _pinnedModelBuffer.Dispose();
-        return Native.InterpFree(this).IsSuccess;
+        return Native.InterpFree(handle).IsSuccess;
     }
 
     /// <inheritdoc/>

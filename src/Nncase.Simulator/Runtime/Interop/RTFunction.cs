@@ -46,7 +46,7 @@ public sealed class RTFunction
         var paramsHandles = parameters.Select(x => x.DangerousGetHandle()).ToArray();
         fixed (IntPtr* paramsHandlesPtr = paramsHandles)
         {
-            Native.FuncInvoke(this, paramsHandlesPtr, (uint)parameters.Length, out var result).ThrowIfFailed();
+            Native.FuncInvoke(_handle, paramsHandlesPtr, (uint)parameters.Length, out var result).ThrowIfFailed();
             GC.KeepAlive(_interp);
             return RTValue.FromHandle(result);
         }

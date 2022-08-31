@@ -21,7 +21,7 @@ internal static class Native
     public static extern ErrorCode InterpCreate(out RTInterpreter interp);
 
     [DllImport(LibraryName, EntryPoint = "nncase_interp_free")]
-    public static extern ErrorCode InterpFree(RTInterpreter interp);
+    public static extern ErrorCode InterpFree(IntPtr interp);
 
     [DllImport(LibraryName, EntryPoint = "nncase_interp_load_model")]
     public static extern unsafe ErrorCode InterpLoadModel(RTInterpreter interp, void* modelBuffer, uint modelSize, bool copyBuffer);
@@ -36,7 +36,7 @@ internal static class Native
     public static extern unsafe ErrorCode FuncGetParamsSize(IntPtr func, out uint size);
 
     [DllImport(LibraryName, EntryPoint = "nncase_func_invoke")]
-    public static extern unsafe ErrorCode FuncInvoke(RTFunction func, IntPtr* @params, uint paramsSize, out IntPtr result);
+    public static extern unsafe ErrorCode FuncInvoke(IntPtr func, IntPtr* @params, uint paramsSize, out IntPtr result);
 
     [DllImport(LibraryName, EntryPoint = "nncase_buffer_allocator_get_host")]
     public static extern ErrorCode BufferAllocatorGetHost(out IntPtr allocator);
