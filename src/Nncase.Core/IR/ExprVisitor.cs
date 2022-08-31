@@ -340,7 +340,7 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
-        public override TExprResult Visit(TIR.PhysicalBuffer expr)
+        public override TExprResult Visit(TIR.Buffer expr)
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {

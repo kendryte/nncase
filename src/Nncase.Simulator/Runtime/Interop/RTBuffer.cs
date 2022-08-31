@@ -25,13 +25,16 @@ public class RTBuffer : RTObject
     {
     }
 
+    /// <inheritdoc/>
+    public override bool IsInvalid => handle == IntPtr.Zero;
+
     /// <summary>
     /// As host buffer.
     /// </summary>
     /// <returns>Host buffer.</returns>
     public RTHostBuffer? AsHost()
     {
-        if (Native.BufferAsHost(Handle, out var hostBuffer).IsSuccess)
+        if (Native.BufferAsHost(handle, out var hostBuffer).IsSuccess)
         {
             return new RTHostBuffer(hostBuffer);
         }
@@ -69,7 +72,7 @@ public class RTHostBuffer : RTBuffer
     /// <returns>Mapped memory.</returns>
     public unsafe IMemoryOwner<byte> Map(RTMapAccess mapAccess)
     {
-        Native.HostBufferMap(Handle, mapAccess, out var data, out var bytes).ThrowIfFailed();
+        Native.HostBufferMap(handle, mapAccess, out var data, out var bytes).ThrowIfFailed();
         return new RTHostMemoryManager(this, data, bytes);
     }
 }
@@ -106,7 +109,7 @@ public struct RTBufferSlice
     {
         return new RuntimeStruct
         {
-            Buffer = Buffer.Handle,
+            Buffer = Buffer.DangerousGetHandle(),
             Start = Start,
             SizeBytes = SizeBytes
         };

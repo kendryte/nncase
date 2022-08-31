@@ -159,7 +159,7 @@ public class UnitTestCPUTarget
             kmodel = output.ToArray();
         }
 
-        var interp = new RTInterpreter();
+        var interp = RTInterpreter.Create();
         interp.LoadModel(kmodel);
         var entry = interp.Entry;
 

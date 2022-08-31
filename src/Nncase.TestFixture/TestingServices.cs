@@ -342,7 +342,7 @@ public static class Testing
 
     public static IValue RunKModel(byte[] kmodel, string dump_path, Tensor[] input_tensors)
     {
-        using (var interp = new Nncase.Runtime.Interop.RTInterpreter())
+        using (var interp =  Nncase.Runtime.Interop.RTInterpreter.Create())
         {
             interp.SetDumpRoot(dump_path);
             interp.LoadModel(kmodel);
@@ -355,7 +355,7 @@ public static class Testing
 
     public static IValue RunKModel(byte[] kmodel, string dump_path, Runtime.Interop.RTTensor[] input_tensors)
     {
-        using (var interp = new Nncase.Runtime.Interop.RTInterpreter())
+        using (var interp = Nncase.Runtime.Interop.RTInterpreter.Create())
         {
             interp.SetDumpRoot(dump_path);
             interp.LoadModel(kmodel);
