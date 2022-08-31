@@ -412,7 +412,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     }
 
     /// <inheritdoc/>
-    public override IRType VisitLeaf(Nncase.TIR.PhysicalBuffer expr)
+    public override IRType VisitLeaf(Nncase.TIR.Buffer expr)
     {
         if (expr is Nncase.TIR.PhysicalBuffer physicalBuffer)
         {

@@ -536,7 +536,7 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="expr">MemRef expression.</param>
         /// <returns>Result.</returns>
-        public virtual TExprResult VisitLeaf(TIR.PhysicalBuffer expr) => DefaultVisitLeaf(expr);
+        public virtual TExprResult VisitLeaf(TIR.Buffer expr) => DefaultVisitLeaf(expr);
 
         /// <summary>
         /// Visit leaf buffer region expression.

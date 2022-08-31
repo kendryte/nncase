@@ -224,7 +224,7 @@ public abstract record Buffer(string Name, DataType ElemType, Schedule.MemoryLoc
     /// <summary>
     /// if this buffer from the constant !
     /// </summary>
-    public TensorTensorConst? Const;
+    public TensorConst? Const;
 
     /// <summary>
     /// Gets rank of the tensor: number of dimensions.
@@ -390,10 +390,6 @@ public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.Mem
 
     private readonly int[] _strides;
 
-    /// <summary>
-    /// Gets dimensions.
-    /// </summary>
-    public override IRArray<Expr> Dimensions { get; }
     /// <summary>
     /// Gets dimensions.
     /// </summary>
