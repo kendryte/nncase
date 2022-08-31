@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Nncase.IR;
@@ -223,7 +224,7 @@ public abstract record Buffer(string Name, DataType ElemType, Schedule.MemoryLoc
     /// <summary>
     /// if this buffer from the constant !
     /// </summary>
-    public TensorConst? Const;
+    public TensorTensorConst? Const;
 
     /// <summary>
     /// Gets rank of the tensor: number of dimensions.
@@ -393,6 +394,10 @@ public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.Mem
     /// Gets dimensions.
     /// </summary>
     public override IRArray<Expr> Dimensions { get; }
+    /// <summary>
+    /// Gets dimensions.
+    /// </summary>
+    public override IRArray<Expr> Dimensions { get; }
 
     /// <summary>
     /// Gets strides.
@@ -438,13 +443,13 @@ public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.Mem
     /// <inheritdoc/>
     public override string ToString()
     {
-        return $"PhysicalBuffer({Name}, {ElemType})";
+        return $"PhysicalPhysicalBuffer({Name}, {ElemType})";
     }
 
     /// <inheritdoc/>
     protected override bool PrintMembers(StringBuilder builder)
     {
-        builder.Append($"PhysicalBuffer({Name}, {ElemType})");
+        builder.Append($"PhysicalPhysicalBuffer({Name}, {ElemType})");
         return true;
     }
 

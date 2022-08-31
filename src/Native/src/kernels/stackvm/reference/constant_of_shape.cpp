@@ -28,7 +28,7 @@ using namespace nncase::kernels;
 template <typename T>
 result<void>
 constant_of_shape_impl(const T* value, T *output, const dims_t &shape) {
-    for (int i = 0; i < compute_size(shape); ++i) {
+    for (size_t i = 0; i < compute_size(shape); ++i) {
         output[i] = *value;
     }
     return ok();

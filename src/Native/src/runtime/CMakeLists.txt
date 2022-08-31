@@ -43,7 +43,7 @@ if (BUILDING_RUNTIME)
 
     install(EXPORT nncaseruntimeTargets
             DESTINATION lib/cmake/nncaseruntime)
-    
+
     configure_file(${CMAKE_CURRENT_LIST_DIR}/../../../../cmake/nncaseruntimeConfig.cmake.in nncaseruntimeConfig.cmake @ONLY)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nncaseruntimeConfig.cmake DESTINATION lib/cmake/nncaseruntime)
 

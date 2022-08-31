@@ -18,7 +18,7 @@ public class UnitTestK210Target
 {
     public UnitTestK210Target()
     {
-        CompileOptions = new CompileOptions(true);
+        CompileOptions = new CompileOptions(ModelQuantMode.UsePTQ);
     }
 
     public CompileOptions CompileOptions { get; }

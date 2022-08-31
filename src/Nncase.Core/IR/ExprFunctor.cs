@@ -188,7 +188,7 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="expr">MemRef expression.</param>
         /// <returns>Result.</returns>
-        public virtual TExprResult Visit(TIR.Buffer expr) => DefaultVisit(expr);
+        public virtual TExprResult Visit(TIR.PhysicalBuffer expr) => DefaultVisit(expr);
 
         /// <summary>
         /// Visit buffer region expression.

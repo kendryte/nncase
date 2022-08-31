@@ -51,7 +51,7 @@ result<void> nncase::kernels::stackvm::reference::lrn(
     auto concat_size = 0;
     auto square_data = std::make_unique<float[]>(kernels::detail::compute_size(in_shape));
     try_(reference::unary(dt_float32, runtime::stackvm::unary_op_t::square, IN_BYTE_CAST(input), OUT_BYTE_CAST(output), in_shape, in_strides, in_shape, in_strides));
-    for (int i = 0; i < in_shape[1]; ++i) {
+    for (size_t i = 0; i < in_shape[1]; ++i) {
         auto beginV =
             std::max(static_cast<int64_t>(0),
                      static_cast<int64_t>(i - std::floor((size - 1) / 2)));

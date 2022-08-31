@@ -30,7 +30,7 @@ using namespace nncase::kernels::stackvm::reference;
 namespace {
 dims_t get_concat_dims(const std::vector<dims_t> &input_dims, int axis) {
     dims_t concat_dims;
-    for (int i = 0; i < input_dims.size(); ++i) {
+    for (size_t i = 0; i < input_dims.size(); ++i) {
         concat_dims.push_back(input_dims[i][axis]);
     }
     return concat_dims;

@@ -63,7 +63,7 @@ inline result<bool> float_only_check(tensor input) {
 // tuple helper
 template <typename F>
 inline result<void> tuple_for_each_with_i(tuple inputs, F &&f) {
-    for (int i = 0; i < inputs->fields().size(); ++i) {
+    for (size_t i =0; i < inputs->fields().size(); ++i) {
         try_(f(inputs->fields()[i], i));
     }
     return ok();
@@ -73,7 +73,7 @@ inline result<void> tuple_for_each_with_i(tuple inputs, F &&f) {
 template <typename T, bool IsResult, typename F>
 inline result<std::vector<T>> get_from_tuple_with_result(tuple inputs, F &&f) {
     std::vector<T> data(inputs->fields().size());
-    for (int i = 0; i < inputs->fields().size(); ++i) {
+    for (size_t i =0; i < inputs->fields().size(); ++i) {
         try_var(input, inputs->fields()[i].as<tensor>());
         if constexpr (IsResult) {
             try_var(in, f(input));
@@ -133,7 +133,7 @@ alloc_output<true, std::vector<dims_t>>(value_t &outputs, datatype_t dtype,
     if (outputs.empty()) {
         auto size = out_shapes.size();
         std::vector<value_t> fields(size);
-        for (int i = 0; i < size; ++i) {
+        for (size_t i =0; i < size; ++i) {
             auto output = value_t();
             try_(alloc_output<false>(output, dtype, out_shapes[i]));
             fields[i] = output;
@@ -334,7 +334,7 @@ template <typename TI, typename TO>
 itlib::small_vector<TO, 4> to_vec(const gsl::byte *input, size_t size) {
     auto in_ptr = reinterpret_cast<const TI *>(input);
     auto vec = itlib::small_vector<TO, 4>(size);
-    for (int i = 0; i < size; ++i) {
+    for (size_t i =0; i < size; ++i) {
         vec[i] = (TO)in_ptr[i];
     }
     return vec;
@@ -404,7 +404,7 @@ inline result<dims_t> value_as_positive_axes(value_t value, size_t rank) {
     assert(value_tensor->shape().size() == 1);
     auto size = value_tensor->shape()[0];
     auto axis = dims_t(size);
-    for (int i = 0; i < size; ++i) {
+    for (size_t i =0; i < size; ++i) {
         if (cmp_type<int32_t>(value_tensor->dtype())) {
             axis[i] = (dims_t::value_type)positive_index(
                 IN_CAST(int32_t, input)[i], rank);
@@ -432,7 +432,7 @@ inline result<paddings_t> value_as_paddings([[maybe_unused]] value_t value) {
     auto dims = size / 2;
     auto pads = paddings_t(dims);
     auto dt = value_tensor->dtype();
-    for (int i = 0; i < dims; ++i) {
+    for (size_t i =0; i < dims; ++i) {
         if (cmp_type<int32_t>(dt)) {
             pads[i].before = *(IN_CAST(int32_t, input) + 2 * i);
             pads[i].after = *(IN_CAST(int32_t, input) + 2 * i + 1);
@@ -522,7 +522,7 @@ slice_fill(const dims_t &in_shape, axes_t &begins_value, axes_t &ends_value,
     axes_t begin_values(ndim, 0);
     axes_t end_values(in_shape.begin(), in_shape.end());
     axes_t strides_values(ndim, 1);
-    for (auto i = 0; i < ndim; ++i) {
+    for (size_t i = 0; i < ndim; ++i) {
         const auto it = std::find_if(axes_value.begin(), axes_value.end(),
                                      [i, ndim](const auto axis) {
                                          return positive_index(axis, ndim) == i;
@@ -567,7 +567,7 @@ slice_fill(const dims_t &in_shape, axes_t &begins_value, axes_t &ends_value,
 
 inline dims_t to_4d(dims_t in_a_shape) {
     auto size = 4 - in_a_shape.size();
-    for (int i = 0; i < size; ++i) {
+    for (size_t i =0; i < size; ++i) {
         in_a_shape.insert(in_a_shape.begin(), 1);
     }
     return in_a_shape;

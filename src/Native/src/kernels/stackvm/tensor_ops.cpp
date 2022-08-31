@@ -108,7 +108,7 @@ result<value_t> nncase::kernels::stackvm::concat(value_t input, value_t axis,
     try_output(out_mem, output, dtype, out_shape);
     auto concat_dims = dims_t();
     if (input0->shape().size() != 0) {
-        for (int i = 0; i < input_tuple->fields().size(); ++i) {
+        for (size_t i = 0; i < input_tuple->fields().size(); ++i) {
             try_var(in, input_tuple->fields()[i].as<tensor>());
             concat_dims.push_back(in->shape()[axis_value]);
         }
@@ -295,7 +295,7 @@ result<value_t> nncase::kernels::stackvm::get_item(
         auto in_shape = input_tensor->shape();
         auto ends_value = axes_t(n, std::numeric_limits<int>::max());
         auto axes_value = axes_t(n, 0);
-        for (int i = 0; i < n; ++i) {
+        for (size_t i = 0; i < n; ++i) {
             axes_value[i] = i;
         }
         auto strides_value = axes_t(n, 1);
@@ -528,7 +528,7 @@ result<value_t> nncase::kernels::stackvm::range(
             (dims_t::value_type)((*end_value - *begin_value) / *step_value);   \
         try_output(out_mem, output, _dtype, dims_t{count});                    \
         auto _out_ptr = OUT_CAST(_in_type, out_mem);                           \
-        for (int i = 0; i < count; ++i) {                                      \
+        for (size_t i = 0; i < count; ++i) {                                      \
             auto v = *begin_value + i * *step_value;                           \
             *(_out_ptr + i) = v;                                               \
         }                                                                      \
@@ -667,7 +667,7 @@ nncase::kernels::stackvm::shape_of(value_t input, value_t output,
     auto r = in_tensor->shape().size();
     try_output(out_mem, output, dt_int64, dims_t{r});
     auto out = reinterpret_cast<int64_t *>(out_mem);
-    for (int i = 0; i < r; ++i) {
+    for (size_t i = 0; i < r; ++i) {
         out[i] = in_tensor->shape()[i];
     }
     return ok(output);
@@ -865,7 +865,7 @@ result<value_t> nncase::kernels::stackvm::where(
         auto size = compute_size(cond_tensor->shape());
         std::vector<int64_t> result;
         auto cond_mem_ptr = IN_CAST(bool, cond_mem);
-        for (int i = 0; i < size; ++i) {
+        for (size_t i = 0; i < size; ++i) {
             if (cond_mem_ptr[i]) {
                 result.push_back(i);
             }

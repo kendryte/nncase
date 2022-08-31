@@ -32,7 +32,7 @@ result<void> tile_impl(const T *input, T *output,const dims_t &in_shape,
                        const strides_t &out_strides, [[maybe_unused]] const dims_t &repeats) {
     return apply(out_shape, [&](const auto &out_index) -> result<void> {
         auto in_index = dims_t(out_index.size());
-        for (int i = 0; i < in_shape.size(); ++i) {
+        for (size_t i = 0; i  < in_shape.size(); ++i) {
             in_index[i] = out_index[i] % in_shape[i];
         }
         output[offset(out_strides, out_index)] =

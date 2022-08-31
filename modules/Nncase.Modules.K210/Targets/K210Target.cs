@@ -34,7 +34,7 @@ public class K210Target : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentPass(PassManager passManager, CompileOptions options)
     {
-        if (options.UsePTQ)
+        if (options.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
             passManager.Add(new EGraphPassWithQuantize("lowering_kpu", options.QuantizeOptions!)
             {

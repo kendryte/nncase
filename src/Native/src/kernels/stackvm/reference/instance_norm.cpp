@@ -49,7 +49,7 @@ result<void> nncase::kernels::stackvm::reference::instance_norm(
     const dims_t &in_shape, const strides_t &in_strides,
     const strides_t &out_strides, float epsilon) {
     auto axes = dims_t{};
-    for (int i = 2; i < in_shape.size(); ++i) {
+    for (size_t i = 2; i < in_shape.size(); ++i) {
         axes.push_back(i);
     }
     auto in_size = kernels::detail::compute_size(in_shape);
