@@ -40,5 +40,6 @@ set(SRCS ../tensor_ops.cpp
          tile.cpp
          transpose.cpp
          unary.cpp
-         where.cpp)
+         where.cpp
+         uninitialized.cpp)
 target_sources(kernels PRIVATE ${SRCS})

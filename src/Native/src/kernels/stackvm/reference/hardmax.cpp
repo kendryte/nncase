@@ -18,6 +18,7 @@
 #include <nncase/runtime/host_buffer.h>
 #include <limits>
 #include <nncase/kernels/kernel_utils.h>
+#include <nncase/kernels/apply.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <unordered_map>
 #include <cstring>

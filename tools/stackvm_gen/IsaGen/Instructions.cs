@@ -973,7 +973,7 @@ namespace IsaGen
         [Description("Arguments count")]
         public ushort ArgsCount { get; set; }
 
-        [DisplayName("isPrimFunc")]
+        [DisplayName("is_prim_func")]
         [Description("Is prim function")]
         public bool IsPrimFunc { get; set; }
     }

@@ -21,8 +21,11 @@ public enum CastMode
 {
     /// <summary>
     /// Cast as possible.
+    /// <remarks>
+    /// rename to kdefault avoid cpp runtime compile error
+    /// </remarks>
     /// </summary>
-    Default,
+    KDefault,
 
     /// <summary>
     /// Cast exactly.
@@ -374,7 +377,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="const">const.</param>
     /// <param name="castMode">castmode.</param>
     /// <returns>Tensor{T}.</returns>
-    public static Tensor<T> FromConst<T>(Const @const, CastMode castMode = CastMode.Default)
+    public static Tensor<T> FromConst<T>(Const @const, CastMode castMode = CastMode.KDefault)
       where T : unmanaged, IEquatable<T>
       => FromConst(@const).Cast<T>(castMode);
 
@@ -384,7 +387,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <typeparam name="T">Element type.</typeparam>
     /// <param name="castMode">Cast mode.</param>
     /// <returns>Typed tensor.</returns>
-    public abstract Tensor<T> Cast<T>(CastMode castMode = CastMode.Default)
+    public abstract Tensor<T> Cast<T>(CastMode castMode = CastMode.KDefault)
         where T : unmanaged, IEquatable<T>;
 
     /// <summary>
@@ -393,7 +396,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="type"></param>
     /// <param name="castMode"></param>
     /// <returns></returns>
-    public Tensor CastTo(DataType type, CastMode castMode = CastMode.Default)
+    public Tensor CastTo(DataType type, CastMode castMode = CastMode.KDefault)
     {
         var tensor = (Tensor)_tensorCastFunc.MakeGenericMethod(type.CLRType).Invoke(this, new object[] { castMode })!;
         return tensor;
