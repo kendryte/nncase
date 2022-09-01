@@ -26,7 +26,7 @@ public static class Tensors
 
     public static Call Broadcast(Expr input, Expr shape) => new Call(new Broadcast(), input, shape);
 
-    public static Call Cast(Expr input, DataType newType) => new Call(new Cast(newType), input);
+    public static Call Cast(Expr input, DataType newType, CastMode castMode = CastMode.KDefault) => new Call(new Cast(newType, castMode), input);
 
     public static Call Concat(Expr input, Expr axis) => new Call(new Concat(), input, axis);
 
@@ -38,7 +38,7 @@ public static class Tensors
     {
         if (shape.InferenceType() && shape.CheckedShape.IsScalar)
         {
-            shape = Unsqueeze(shape, new[] {0});
+            shape = Unsqueeze(shape, new[] { 0 });
         }
         return new Call(new Expand(), input, shape);
     }
@@ -118,4 +118,13 @@ public static class Tensors
     public static Call GetItem(Expr input, Expr index) => new Call(new GetItem(), input, index);
 
     public static Call StackScalar(Expr scalar) => Stack(new Tuple(scalar), 0);
+
+    /// <summary>
+    /// create the uninitialized buffer
+    /// </summary>
+    /// <param name="dataType"></param>
+    /// <param name="memoryLocation"></param>
+    /// <param name="shape"></param>
+    /// <returns></returns>
+    public static Call Uninitialized(DataType dataType, Schedule.MemoryLocation memoryLocation, Expr shape) => new Call(new Uninitialized(dataType, memoryLocation), shape);
 }

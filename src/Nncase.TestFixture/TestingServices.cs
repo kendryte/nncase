@@ -180,7 +180,7 @@ public static class Testing
         where T : unmanaged, IEquatable<T>
     {
         return Tensor.FromArray(Enumerable.Range(0, (int)TensorUtilities.GetProduct(shape)).ToArray())
-            .Cast<T>(CastMode.Default).Reshape(shape);
+            .Cast<T>(CastMode.KDefault).Reshape(shape);
     }
 
     /// <summary>
@@ -194,7 +194,7 @@ public static class Testing
       where T : unmanaged, System.IEquatable<T>
     {
         var scale = (range.Max - range.Min) / t.Length;
-        return Tensor.FromArray(t.Cast<float>(CastMode.Default).Select(i => i * scale + range.Min).ToArray())
+        return Tensor.FromArray(t.Cast<float>(CastMode.KDefault).Select(i => i * scale + range.Min).ToArray())
                 .Cast<T>()
                 .Reshape(t.Shape);
     }
@@ -342,7 +342,7 @@ public static class Testing
 
     public static IValue RunKModel(byte[] kmodel, string dump_path, Tensor[] input_tensors)
     {
-        using (var interp = new Nncase.Runtime.Interop.RTInterpreter())
+        using (var interp =  Nncase.Runtime.Interop.RTInterpreter.Create())
         {
             interp.SetDumpRoot(dump_path);
             interp.LoadModel(kmodel);
@@ -350,6 +350,17 @@ public static class Testing
 
             var rtInputs = input_tensors.Select(Nncase.Runtime.Interop.RTTensor.FromTensor).ToArray();
             return entry.Invoke(rtInputs).ToValue();
+        }
+    }
+
+    public static IValue RunKModel(byte[] kmodel, string dump_path, Runtime.Interop.RTTensor[] input_tensors)
+    {
+        using (var interp = Nncase.Runtime.Interop.RTInterpreter.Create())
+        {
+            interp.SetDumpRoot(dump_path);
+            interp.LoadModel(kmodel);
+            var entry = interp.Entry!;
+            return entry.Invoke(input_tensors).ToValue();
         }
     }
 }

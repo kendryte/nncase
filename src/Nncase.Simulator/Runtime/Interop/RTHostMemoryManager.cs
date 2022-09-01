@@ -61,7 +61,7 @@ internal unsafe class RTHostMemoryManager : MemoryManager<byte>
         var pointer = Interlocked.Exchange(ref _pointer, IntPtr.Zero);
         if (pointer != IntPtr.Zero && _buffer != null)
         {
-            Native.HostBufferUnmap(_buffer.Handle);
+            Native.HostBufferUnmap(_buffer.DangerousGetHandle());
             GC.RemoveMemoryPressure(_length);
             _buffer = null;
         }

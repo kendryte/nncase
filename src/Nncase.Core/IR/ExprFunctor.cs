@@ -44,7 +44,7 @@ namespace Nncase.IR
                 TIR.IfThenElse ift => Visit(ift),
                 TIR.PrimFunction primfunc => Visit(primfunc),
                 TIR.Let let => Visit(let),
-                TIR.Buffer memref => Visit(memref),
+                TIR.Buffer buffer => Visit(buffer),
                 TIR.BufferRegion region => Visit(region),
                 _ => DefaultVisit(expr),
             };

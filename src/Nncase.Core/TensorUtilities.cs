@@ -50,6 +50,26 @@ public static class TensorUtilities
         return product;
     }
 
+    /// <summary>
+    /// Get the Expr Product
+    /// </summary>
+    /// <param name="dimensions"></param>
+    /// <param name="startIndex"></param>
+    /// <returns></returns>
+    public static IR.Expr GetProduct(IEnumerable<IR.Expr> dimensions, int startIndex = 0)
+    {
+        if (dimensions.Count() == 0)
+        {
+            return 1;
+        }
+        IR.Expr product = 1;
+        foreach (var dim in dimensions.Skip(startIndex))
+        {
+            product = product * dim;
+        }
+        return product;
+    }
+
     public static bool IsAscending(ReadOnlySpan<int> values)
     {
         for (int i = 1; i < values.Length; i++)
@@ -103,6 +123,27 @@ public static class TensorUtilities
                 stride *= dimensions[i];
             }
         }
+
+        return strides;
+    }
+
+    /// <summary>
+    /// get strides 
+    /// </summary>
+    /// <param name="dimensions"></param>
+    /// <param name="reverseStride"></param>
+    /// <returns></returns>
+    public static IEnumerable<IR.Expr> GetStrides(IEnumerable<IR.Expr> dimensions, bool reverseStride = false)
+    {
+        List<IR.Expr> strides = new();
+        IR.Expr stride = 1;
+        foreach (var dim in dimensions.Reverse())
+        {
+            strides.Insert(0, stride);
+            stride *= dim;
+        }
+        if (reverseStride)
+            strides.Reverse();
 
         return strides;
     }

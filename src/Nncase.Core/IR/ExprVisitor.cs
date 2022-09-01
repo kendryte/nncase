@@ -393,7 +393,7 @@ namespace Nncase.IR
                 TIR.BufferStore bufstore => VisitLeaf(bufstore),
                 TIR.IfThenElse ift => VisitLeaf(ift),
                 TIR.Let let => VisitLeaf(let),
-                TIR.Buffer memref => VisitLeaf(memref),
+                TIR.Buffer buffer => VisitLeaf(buffer),
                 _ => DefaultVisitLeaf(expr),
             };
         }

@@ -14,6 +14,8 @@ namespace Nncase.Runtime.Interop;
 /// </summary>
 public class RTDataType : RTObject
 {
+    internal RTDataType() : base(IntPtr.Zero) { }
+    
     internal RTDataType(IntPtr handle)
         : base(handle)
     {
@@ -27,8 +29,14 @@ public class RTDataType : RTObject
     public static RTDataType FromTypeCode(TypeCode typeCode)
     {
         Native.DTypeCreatePrim(typeCode, out var dtype).ThrowIfFailed();
-        return new RTDataType(dtype);
+        return dtype;
     }
 
-    public TypeCode TypeCode => Native.DTypeGetTypeCode(Handle);
+    /// <summary>
+    /// get the type code
+    /// </summary>
+    public TypeCode TypeCode => Native.DTypeGetTypeCode(this);
+
+    /// <inheritdoc/>
+    public override bool IsInvalid => handle == IntPtr.Zero;
 }

@@ -6,8 +6,7 @@ set(SRCS
         shape.cpp
         tensor.cpp
         type.cpp
-        value.cpp
-        debug.cpp)
+        value.cpp)
 
 add_library(nncasebase OBJECT ${SRCS})
 target_compile_definitions(nncasebase PUBLIC -DNNCASE_DLL -DNNCASE_SIMULATOR)

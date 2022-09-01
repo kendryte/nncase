@@ -26,7 +26,6 @@ using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 
-#include <nncase/debug.h>
 namespace {
 template <class TOp, class T>
 result<void> compare_impl(TOp &&op, const T *input_a, const T *input_b,

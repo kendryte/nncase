@@ -414,9 +414,23 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     /// <inheritdoc/>
     public override IRType VisitLeaf(Nncase.TIR.Buffer expr)
     {
-        IRType type = expr.ElemType;
-        SetCheckedType(expr, type);
-        return type;
+        if (expr is Nncase.TIR.PhysicalBuffer physicalBuffer)
+        {
+            IRType type = new TensorType(expr.ElemType, new(physicalBuffer.FixedDimensions));
+            SetCheckedType(expr, type);
+            return type;
+        }
+        else if (expr is Nncase.TIR.LogicalBuffer logicalBuffer)
+        {
+
+            IRType type = new TensorType(expr.ElemType, new(logicalBuffer.Dimensions.Select(i => Dimension.Unknown)));
+            SetCheckedType(expr, type);
+            return type;
+        }
+        else
+        {
+            return new InvalidType("Not Support Buffer Type");
+        }
     }
 
     public override IRType VisitLeaf(Nncase.TIR.BufferRegion expr)
@@ -437,7 +451,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
             return e.ReasonType;
         }
         // todo need infer the sub region shape/stride
-        IRType type = expr.Buffer.ElemType;
+        IRType type = expr.Buffer.CheckedType!;
         SetCheckedType(expr, type);
         return type;
     }

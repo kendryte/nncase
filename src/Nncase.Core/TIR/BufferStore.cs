@@ -16,6 +16,6 @@ namespace Nncase.TIR;
 /// <param name="Buffer">The buffer.</param>
 /// <param name="Indices">The value we to be stored.</param>
 /// <param name="Value">The indices location to be stored.</param>
-public sealed record BufferStore(Buffer Buffer, IRArray<Expr> Indices, Expr Value) : Expr
+public sealed record BufferStore(PhysicalBuffer Buffer, IRArray<Expr> Indices, Expr Value) : Expr
 {
 }

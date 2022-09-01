@@ -22,8 +22,20 @@ public static class TIRUtilities
     /// <param name="shape"></param>
     /// <returns></returns>
     public static IEnumerable<(IR.Expr Before, IR.Expr After)> ComputePaddings(IEnumerable<TIR.Range> bounds, IR.Shape shape) =>
-    bounds.Select((bounds, i) =>
-      ((IR.Expr)IR.F.Math.Max(-bounds.Start, 0), (IR.Expr)IR.F.Math.Max(bounds.Stop - shape[i].FixedValue, 0)));
+    bounds.Select((bound, i) =>
+      ((IR.Expr)IR.F.Math.Max(-bound.Start, 0), (IR.Expr)IR.F.Math.Max(bound.Stop - shape[i].FixedValue, 0)));
+
+    /// <summary>
+    /// give two bounds compute paddings.
+    /// </summary>
+    /// <param name="bounds"></param>
+    /// <param name="target_bounds"></param>
+    /// <returns></returns>
+    public static IEnumerable<(IR.Expr Before, IR.Expr After)> ComputePaddings(IEnumerable<TIR.Range> bounds, IEnumerable<TIR.Range> target_bounds)
+      => bounds.Zip(target_bounds).
+        Select(it =>
+          ((IR.Expr)IR.F.Math.Max(-it.Item1.Start, 0),
+           (IR.Expr)IR.F.Math.Max(it.Item1.Stop - (it.Item2.Stop - it.Item2.Start), 0)));
 
     /// <summary>
     /// compute the no padding bounds

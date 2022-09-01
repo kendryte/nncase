@@ -26,16 +26,16 @@ public static class TIRExtensions
     /// <summary>
     /// get the total elements bytes count.
     /// </summary>
-    public static int SizeInBytes<T>(this IBufferView<T> view)
-      where T : class
-    => view.Size() * view.DType.SizeInBytes;
+    // public static int SizeInBytes<T>(this IBufferView<T> view)
+    //   where T : class
+    //   => view.Size() * view.DType.SizeInBytes;
 
     /// <summary>
     /// get the total elements.
     /// </summary>
-    public static int Size<T>(this IBufferView<T> view)
-      where T : class
-    => view.Shape.ToArray().Aggregate(1, (acc, dim) => acc * dim);
+    // public static int Size<T>(this IBufferView<T> view)
+    //   where T : class
+    // => view.Shape.ToArray().Aggregate(1, (acc, dim) => acc * dim);
 
 
     /// <summary>

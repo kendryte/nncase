@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -42,11 +43,11 @@ public sealed class RTFunction
     /// <returns>Result value.</returns>
     public unsafe RTValue Invoke(params RTValue[] parameters)
     {
-        var paramsHandles = parameters.Select(x => x.Handle).ToArray();
+        var paramsHandles = parameters.Select(x => x.DangerousGetHandle()).ToArray();
         fixed (IntPtr* paramsHandlesPtr = paramsHandles)
         {
-            Native.FuncInvoke(_handle, paramsHandlesPtr, (uint)paramsHandles.Length, out var result).ThrowIfFailed();
-            GC.KeepAlive(this);
+            Native.FuncInvoke(_handle, paramsHandlesPtr, (uint)parameters.Length, out var result).ThrowIfFailed();
+            GC.KeepAlive(_interp);
             return RTValue.FromHandle(result);
         }
     }

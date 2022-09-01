@@ -128,7 +128,7 @@ namespace Nncase.IR
             return expr with
             {
                 Body = (TIR.Sequential)Visit(expr.Body),
-                Parameters = new(expr.Parameters.Select(x => (TIR.Buffer)Visit(x))),
+                Parameters = new(expr.Parameters.Select(x => (TIR.PhysicalBuffer)Visit(x))),
             };
         }
 
