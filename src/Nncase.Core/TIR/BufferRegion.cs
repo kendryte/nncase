@@ -29,7 +29,7 @@ public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region) : Expr
     /// <summary>
     /// Get the RegionSize.
     /// </summary>
-    public Expr[] RegionSize => Region.Select(r => r.Stop - r.Start).ToArray();
+    // public Expr[] RegionSize => Region.Select(r => r.Stop - r.Start).ToArray();
 
     /// <summary>
     /// Get padding at the dim.
