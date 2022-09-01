@@ -180,7 +180,7 @@ public static class Testing
         where T : unmanaged, IEquatable<T>
     {
         return Tensor.FromArray(Enumerable.Range(0, (int)TensorUtilities.GetProduct(shape)).ToArray())
-            .Cast<T>(CastMode.Default).Reshape(shape);
+            .Cast<T>(CastMode.KDefault).Reshape(shape);
     }
 
     /// <summary>
@@ -194,7 +194,7 @@ public static class Testing
       where T : unmanaged, System.IEquatable<T>
     {
         var scale = (range.Max - range.Min) / t.Length;
-        return Tensor.FromArray(t.Cast<float>(CastMode.Default).Select(i => i * scale + range.Min).ToArray())
+        return Tensor.FromArray(t.Cast<float>(CastMode.KDefault).Select(i => i * scale + range.Min).ToArray())
                 .Cast<T>()
                 .Reshape(t.Shape);
     }

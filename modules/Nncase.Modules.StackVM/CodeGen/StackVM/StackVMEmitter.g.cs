@@ -1165,7 +1165,7 @@ public partial class StackVMEmitter
         }
 
         ///<summary>.</summary>
-        public void Uninitialized(DataType dType, MemoryLocation memoryLocation)
+        public void Uninitialized(DataType dType, Schedule.MemoryLocation memoryLocation)
         {
             _emitter.Write((byte)101);
             _emitter.Write((ushort)70);
