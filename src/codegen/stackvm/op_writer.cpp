@@ -683,6 +683,11 @@ void op_builder::tensor_tflite_detection_postprocess_(uint8_t box_shape_src, uin
     op_writer<tensor_tflite_detection_postprocess_op_t>()(tensor_tflite_detection_postprocess_op_t(box_shape_src, score_shape_src, anchor_shape_src, max_detections, max_classes_per_detection, detections_per_class, use_regular_non_max_suppression, nms_score_threshold, nms_iou_threshold, num_classes, y_scale, x_scale, h_scale, w_scale), writer_);
 }
 
+void op_builder::tensor_layer_normalization_(datatype_t datatype, uint8_t input_shape, int32_t axis, float epsilon)
+{
+    op_writer<tensor_layer_normalization_op_t>()(tensor_layer_normalization_op_t(datatype, input_shape, axis, epsilon), writer_);
+}
+
 void op_builder::tensor_compress_(uint8_t input_shape_src, uint8_t condition_shape_src, float axis)
 {
     op_writer<tensor_compress_op_t>()(tensor_compress_op_t(input_shape_src, condition_shape_src, axis), writer_);

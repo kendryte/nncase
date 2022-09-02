@@ -1503,6 +1503,20 @@ struct op_writer<nncase::runtime::stackvm::tensor_tflite_detection_postprocess_o
 };
 
 template <>
+struct op_writer<nncase::runtime::stackvm::tensor_layer_normalization_op_t>
+{
+    void operator()(const nncase::runtime::stackvm::tensor_layer_normalization_op_t &op, binary_writer &writer) const
+    {
+        writer.write(static_cast<uint8_t>(op.opcode));
+        writer.write(static_cast<uint16_t>(op.funct));
+        writer.write(static_cast<uint8_t>(op.datatype));
+        writer.write(op.input_shape);
+        writer.write(op.axis);
+        writer.write(op.epsilon);
+    }
+};
+
+template <>
 struct op_writer<nncase::runtime::stackvm::tensor_compress_op_t>
 {
     void operator()(const nncase::runtime::stackvm::tensor_compress_op_t &op, binary_writer &writer) const
@@ -1653,6 +1667,7 @@ public:
     void tensor_transpose_(datatype_t datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest, uint8_t rshape_perm);
     void tensor_gru_(uint8_t input_shape_src, uint8_t w_shape_src, uint8_t direction);
     void tensor_tflite_detection_postprocess_(uint8_t box_shape_src, uint8_t score_shape_src, uint8_t anchor_shape_src, int32_t max_detections, int32_t max_classes_per_detection, int32_t detections_per_class, bool use_regular_non_max_suppression, float nms_score_threshold, float nms_iou_threshold, int32_t num_classes, float y_scale, float x_scale, float h_scale, float w_scale);
+    void tensor_layer_normalization_(datatype_t datatype, uint8_t input_shape, int32_t axis, float epsilon);
     void tensor_compress_(uint8_t input_shape_src, uint8_t condition_shape_src, float axis);
 
 private:

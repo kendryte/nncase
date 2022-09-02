@@ -163,7 +163,8 @@ enum class tensor_function_t
     UNARY = 0x0026,
     GRU = 0x0027,
     TFLITE_DETECTION_POSTPROCESS = 0x0028,
-    COMPRESS = 0x0029,
+    LAYER_NORMALIZATION = 0x0029,
+    COMPRESS = 0x002A,
 };
 
 // Instructions
@@ -1905,6 +1906,22 @@ struct tensor_tflite_detection_postprocess_op_t
     tensor_tflite_detection_postprocess_op_t(default_init_t) noexcept { }
     explicit tensor_tflite_detection_postprocess_op_t(uint8_t box_shape_src, uint8_t score_shape_src, uint8_t anchor_shape_src, int32_t max_detections, int32_t max_classes_per_detection, int32_t detections_per_class, bool use_regular_non_max_suppression, float nms_score_threshold, float nms_iou_threshold, int32_t num_classes, float y_scale, float x_scale, float h_scale, float w_scale) noexcept
         : opcode(opcode_t::TENSOR), funct(tensor_function_t::TFLITE_DETECTION_POSTPROCESS), box_shape_src(box_shape_src), score_shape_src(score_shape_src), anchor_shape_src(anchor_shape_src), max_detections(max_detections), max_classes_per_detection(max_classes_per_detection), detections_per_class(detections_per_class), use_regular_non_max_suppression(use_regular_non_max_suppression), nms_score_threshold(nms_score_threshold), nms_iou_threshold(nms_iou_threshold), num_classes(num_classes), y_scale(y_scale), x_scale(x_scale), h_scale(h_scale), w_scale(w_scale)
+    {
+    }
+};
+
+struct tensor_layer_normalization_op_t
+{
+    opcode_t opcode;
+    tensor_function_t funct;
+    datatype_t datatype;
+    uint8_t input_shape;
+    int32_t axis;
+    float epsilon;
+
+    tensor_layer_normalization_op_t(default_init_t) noexcept { }
+    explicit tensor_layer_normalization_op_t(datatype_t datatype, uint8_t input_shape, int32_t axis, float epsilon) noexcept
+        : opcode(opcode_t::TENSOR), funct(tensor_function_t::LAYER_NORMALIZATION), datatype(datatype), input_shape(input_shape), axis(axis), epsilon(epsilon)
     {
     }
 };

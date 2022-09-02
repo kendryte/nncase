@@ -28,6 +28,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/hardmax.cpp
     ops/identity.cpp
     ops/instancenorm.cpp
+    ops/layernorm.cpp
     ops/lpnorm.cpp
     ops/lrn.cpp
     ops/matmul.cpp

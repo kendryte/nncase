@@ -288,6 +288,13 @@ result<void> op_visitor::next() noexcept
 #endif
             return visit(op_reader<tensor_tflite_detection_postprocess_op_t>()(reader_));
         }
+        case tensor_function_t::LAYER_NORMALIZATION:
+        {
+#if defined ENABLE_OP_PROFILE
+            op_profile st("tensor_layer_normalization");
+#endif
+            return visit(op_reader<tensor_layer_normalization_op_t>()(reader_));
+        }
         case tensor_function_t::COMPRESS:
         {
 #if defined ENABLE_OP_PROFILE

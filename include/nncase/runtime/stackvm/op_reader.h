@@ -1767,6 +1767,22 @@ struct op_reader<tensor_tflite_detection_postprocess_op_t>
 };
 
 template <>
+struct op_reader<tensor_layer_normalization_op_t>
+{
+    tensor_layer_normalization_op_t operator()(span_reader &reader) const
+    {
+        tensor_layer_normalization_op_t op(default_init);
+        op.opcode = static_cast<opcode_t>(reader.read_unaligned<uint8_t>());
+        op.funct = static_cast<tensor_function_t>(reader.read_unaligned<uint16_t>());
+        op.datatype = static_cast<datatype_t>(reader.read_unaligned<uint8_t>());
+        op.input_shape = reader.read_unaligned<uint8_t>();
+        op.axis = reader.read_unaligned<int32_t>();
+        op.epsilon = reader.read_unaligned<float>();
+        return op;
+    }
+};
+
+template <>
 struct op_reader<tensor_compress_op_t>
 {
     tensor_compress_op_t operator()(span_reader &reader) const
@@ -1924,7 +1940,14 @@ public:
     virtual result<void> visit(NNCASE_UNUSED const tensor_transpose_op_t &op) noexcept { return ok(); }
     virtual result<void> visit(NNCASE_UNUSED const tensor_gru_op_t &op) noexcept { return ok(); }
     virtual result<void> visit(NNCASE_UNUSED const tensor_tflite_detection_postprocess_op_t &op) noexcept { return ok(); }
-    virtual result<void> visit(NNCASE_UNUSED const tensor_compress_op_t &op) noexcept { return ok(); }
+    virtual result<void> visit(NNCASE_UNUSED const tensor_layer_normalization_op_t &op) noexcept
+    {
+        return ok();
+    }
+    virtual result<void> visit(NNCASE_UNUSED const tensor_compress_op_t &op) noexcept
+    {
+        return ok();
+    }
 
 protected:
     bool interrupted_;
