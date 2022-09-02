@@ -22,7 +22,8 @@
 #include <nncase/api.h>
 #include <nncase/runtime/runtime_op_utility.h>
 
-namespace nncase::runtime {
+BEGIN_NS_NNCASE_RUNTIME
+
 // cast macro
 #define IN_CAST(_ty, _name) reinterpret_cast<const _ty *>(_name)
 #define OUT_CAST(_ty, _name) reinterpret_cast<_ty *>(_name)
@@ -326,8 +327,8 @@ inline result<std::vector<gsl::byte *>> get_input_data(tuple inputs) {
 
 #define to_tensor_t(_value) to_tensor(_value##_tensor, _value)
 
-#define finish return ok(output)
-#define tuple_finish return ok(output_tuple)
+#define KERNEL_FINISH return ok(output)
+#define TUPLE_FINISH return ok(output_tuple)
 
 // get data from value
 template <typename TI, typename TO>
@@ -572,4 +573,5 @@ inline dims_t to_4d(dims_t in_a_shape) {
     }
     return in_a_shape;
 }
-} // namespace nncase::runtime
+
+END_NS_NNCASE_RUNTIME

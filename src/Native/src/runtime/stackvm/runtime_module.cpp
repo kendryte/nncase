@@ -15,6 +15,7 @@
 #include "runtime_module.h"
 #include "runtime_function.h"
 #include <nncase/runtime/dbg.h>
+#include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_loader.h>
 #include <nncase/runtime/runtime_op_utility.h>
 
@@ -70,7 +71,11 @@ stackvm_runtime_module::custom_call_table() const noexcept {
 }
 
 kernels::kernel_context &stackvm_runtime_module::kernel_context() noexcept {
-    return kernels::default_kernel_context();
+    auto& context = kernels::default_kernel_context();
+#ifdef NNCASE_DUMP_MANAGER
+    context.dump_manager = interp().dump_manager();
+#endif
+    return context;
 }
 
 result<std::unique_ptr<runtime_function>>

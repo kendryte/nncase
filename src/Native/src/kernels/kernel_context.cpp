@@ -33,6 +33,7 @@ struct default_kernel_context_holder
 #else
         ctx.num_threads = 1;
 #endif
+        ctx.dump_manager = std::shared_ptr<nncase::runtime::dump_manager>(nullptr);
     }
 };
 }

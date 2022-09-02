@@ -91,11 +91,11 @@ class NNCASE_API interpreter {
     result<runtime_function *>
     find_function_by_name(std::string_view name) noexcept;
     result<runtime_function *> entry_function() noexcept;
-    nncase::runtime::dump_manager &dump_manager() noexcept {
+    std::shared_ptr<nncase::runtime::dump_manager> dump_manager() noexcept {
         if (!dump_manager_) {
-            dump_manager_ = std::make_unique<nncase::runtime::dump_manager>();
+            dump_manager_ = std::make_shared<nncase::runtime::dump_manager>();
         }
-        return *dump_manager_;
+        return dump_manager_;
     }
 
   private:
@@ -103,7 +103,7 @@ class NNCASE_API interpreter {
     tensor_type output_tensor_type(size_t index) const noexcept;
 
   private:
-    std::unique_ptr<nncase::runtime::dump_manager> dump_manager_;
+    std::shared_ptr<nncase::runtime::dump_manager> dump_manager_;
     std::unique_ptr<gsl::byte[]> model_data_;
     std::vector<std::unique_ptr<runtime_module>> modules_;
     runtime_function *entry_function_;

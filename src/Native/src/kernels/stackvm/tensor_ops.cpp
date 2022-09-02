@@ -42,7 +42,7 @@ result<value_t> nncase::kernels::stackvm::batch_normalization(
                               output_mem, input_tensor->shape(),
                               input_tensor->strides(), output_tensor->strides(),
                               eps));
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t> kernels::stackvm::binary(binary_op_t binary_op, value_t lhs,
@@ -92,7 +92,7 @@ nncase::kernels::stackvm::clamp(value_t input, value_t min, value_t max,
     try_(reference::clamp(typecode, input_mem, min_mem, max_mem, output_mem,
                           input_tensor->shape(), input_tensor->strides(),
                           output_tensor->strides()));
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t> nncase::kernels::stackvm::concat(value_t input, value_t axis,
@@ -130,7 +130,7 @@ result<value_t> nncase::kernels::stackvm::constant_of_shape(
     try_output(out_mem, output, value_tensor->dtype(), out_shape);
     try_(reference::constant_of_shape(value_tensor->dtype(), value_mem, out_mem,
                                       out_shape));
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t> nncase::kernels::stackvm::conv2d(
@@ -234,7 +234,7 @@ nncase::kernels::stackvm::flatten(value_t input, value_t axis, value_t output,
     try_positive_axis(axis_value, axis, in_tensor);
     auto new_shape = flatten_infer_shape(in_shape, axis_value);
     output = tensor_reshape(in_tensor, new_shape);
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t> nncase::kernels::stackvm::gather(value_t input, value_t axis,
@@ -287,7 +287,7 @@ result<value_t> nncase::kernels::stackvm::get_item(
         try_positive_axis_with_rank(index_value, index, input0->shape().size());
         auto target = tuples->fields()[index_value];
         output = target;
-        finish;
+        KERNEL_FINISH;
     } else {
         try_input(in_mem, input);
         try_axes(begins_value, index);
@@ -308,7 +308,7 @@ result<value_t> nncase::kernels::stackvm::get_item(
         CONTIGUOUS_KERNEL(slice, input_tensor, input_tensor->dtype(), in_mem, out_mem, in_shape,
                           input_tensor->strides(), output_tensor->strides(),
                           begin_values, end_values, strides_values, context);
-        finish;
+        KERNEL_FINISH;
     }
 }
 
@@ -323,7 +323,7 @@ result<value_t> nncase::kernels::stackvm::instance_normalization(
     try_(reference::instance_norm(
         input_mem, scale_mem, bias_mem, output_mem, input_tensor->shape(),
         input_tensor->strides(), output_tensor->strides(), eps));
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t> nncase::kernels::stackvm::l2_normalization(
@@ -366,7 +366,7 @@ nncase::kernels::stackvm::lrn(value_t input, value_t alpha, value_t beta,
                         size_value, output_mem, input_tensor->shape(),
                         input_tensor->strides(),
                         runtime::get_default_strides(out_shape)));
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t> nncase::kernels::stackvm::lstm(
@@ -400,7 +400,7 @@ result<value_t> nncase::kernels::stackvm::lstm(
         OUT_CAST(float, out_tuple[2]), x_tensor->shape(),
         initial_h_tensor->shape(), initial_c_tensor->shape(), output_shapes[0],
         w_tensor->shape(), r_tensor->shape(), direction));
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t>
@@ -414,7 +414,7 @@ nncase::kernels::stackvm::normal(typecode_t type, value_t mean, value_t scale,
     try_output(out_mem, output, dt_float32, out_shape);
     try_(reference::random_normal(type, out_mem, out_shape, mean_value,
                                   scale_value, seed_value));
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t> nncase::kernels::stackvm::normal_like(
@@ -428,7 +428,7 @@ result<value_t> nncase::kernels::stackvm::normal_like(
     try_output(out_mem, output, dt_float32, out_shape);
     try_(reference::random_normal(type, out_mem, out_shape, mean_value,
                                   scale_value, seed_value));
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t>
@@ -541,7 +541,7 @@ result<value_t> nncase::kernels::stackvm::range(
     GET_VALUE(dt, int64_t);
     GET_VALUE(dt, uint64_t);
     GET_VALUE(dt, float);
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t>
@@ -593,7 +593,7 @@ nncase::kernels::stackvm::reshape(value_t input, value_t shape, value_t output,
     auto new_shape = reshape_shape_infer(in_tensor->shape(), shape_value);
     not_impl_no_contiguous(in_tensor);
     output = tensor_reshape(in_tensor, new_shape);
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t> nncase::kernels::stackvm::resize_image(
@@ -650,7 +650,7 @@ result<value_t> nncase::kernels::stackvm::reverse_sequence(
         input_tensor->dtype(), input_mem, output_mem, input_tensor->shape(),
         seq_lens_value, batch_axis_value, time_axis_value,
         input_tensor->strides(), output_tensor->strides()));
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t> nncase::kernels::stackvm::select(
@@ -680,7 +680,7 @@ nncase::kernels::stackvm::size_of([[maybe_unused]] value_t input,
     try_var(in_tensor, input.as<tensor>());
     try_output(out_mem, output, dt_int64, dims_t{});
     *OUT_CAST(int64_t, out_mem) = compute_size(in_tensor);
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t> nncase::kernels::stackvm::slice(value_t input, value_t begins,
@@ -732,7 +732,7 @@ result<value_t> nncase::kernels::stackvm::space_to_batch(
                                    input_tensor->shape(), block_shape_value,
                                    paddings_value, input_tensor->strides(),
                                    out_shape, output_tensor->strides()));
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t> nncase::kernels::stackvm::split(value_t input, value_t axis,
@@ -749,7 +749,7 @@ result<value_t> nncase::kernels::stackvm::split(value_t input, value_t axis,
     try_ref(split, input_tensor->dtype(), in_mem, outputs,
             input_tensor->shape(), input_tensor->strides(), out_strides,
             axis_value, sections_value, context);
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t>
@@ -761,7 +761,7 @@ nncase::kernels::stackvm::squeeze(value_t input, value_t dim, value_t output,
     try_positive_axes(axes, dim, in_tensor->shape().size());
     auto new_shape = squeeze_infer_shape(in_shape, axes);
     output = tensor_reshape(in_tensor, new_shape);
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t> nncase::kernels::stackvm::stack(value_t inputs, value_t axis,
@@ -777,7 +777,7 @@ result<value_t> nncase::kernels::stackvm::stack(value_t inputs, value_t axis,
     try_(reference::stack(input0->dtype(), inputs_value, out_mem, out_shape,
                           strides, output_tensor->strides(), axis_value,
                           context));
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t>
@@ -791,7 +791,7 @@ nncase::kernels::stackvm::tile(value_t input, value_t repeats, value_t output,
     try_(reference::tile(ty, in_mem, out_mem, input_tensor->shape(), out_shape,
                          input_tensor->strides(), output_tensor->strides(),
                          repeats_value));
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t> nncase::kernels::stackvm::transpose(value_t input, value_t perm,
@@ -820,7 +820,7 @@ nncase::kernels::stackvm::uniform(typecode_t type, value_t high, value_t low,
     try_output(out_mem, output, dt_float32, out_shape);
     try_(reference::random_uniform(type, out_mem, out_shape, low_value,
                                    high_value, seed_value));
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t> nncase::kernels::stackvm::uniform_like(
@@ -834,7 +834,7 @@ result<value_t> nncase::kernels::stackvm::uniform_like(
     try_output(out_mem, output, dt_float32, out_shape);
     try_(reference::random_uniform(type, out_mem, out_shape, low_value,
                                    high_value, seed_value));
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t>
@@ -846,7 +846,7 @@ nncase::kernels::stackvm::unsqueeze(value_t input, value_t dim, value_t output,
     try_axes(axes, dim);
     auto new_shape = unsqueeze_infer_shape(in_shape, axes);
     output = tensor_reshape(in_tensor, new_shape);
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t> nncase::kernels::stackvm::where(
@@ -874,7 +874,7 @@ result<value_t> nncase::kernels::stackvm::where(
         try_output(out_mem, output, dt, out_shape);
         memcpy(OUT_CAST(int64_t, out_mem), result.data(),
                result.size() * sizeof(int64_t));
-        finish;
+        KERNEL_FINISH;
     }
     auto out_shape = where_infer_shape(cond_tensor->shape(), x_tensor->shape(),
                                        y_tensor->shape());
@@ -883,7 +883,7 @@ result<value_t> nncase::kernels::stackvm::where(
         dt, cond_mem, x_mem, y_mem, out_mem, cond_tensor->shape(),
         x_tensor->shape(), y_tensor->shape(), out_shape, cond_tensor->strides(),
         x_tensor->strides(), y_tensor->strides(), output_tensor->strides()));
-    finish;
+    KERNEL_FINISH;
 }
 
 result<value_t> kernels::stackvm::unary(unary_op_t unary_op, value_t input,

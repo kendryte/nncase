@@ -109,12 +109,12 @@ stackvm_runtime_function::visit(NNCASE_UNUSED const cuscall_op_t &op) noexcept {
     std::vector<value_t> params(op.args);
 #ifdef NNCASE_DUMP_MANAGER
     auto dump_manager = module().interp().dump_manager();
-    dump_manager.dump_op(op.registered_name);
+    dump_manager->dump_op(op.registered_name);
 #endif
     for (size_t i = 0; i < op.args; i++) {
         try_var(arg, pop_object<value_t>());
 #ifdef NNCASE_DUMP_MANAGER
-        dump_manager.dump_input(arg, "arg_" + std::to_string(i));
+        dump_manager->dump_input(arg, "arg_" + std::to_string(i));
 #endif
         params[i] = std::move(arg);
     }
@@ -126,7 +126,7 @@ stackvm_runtime_function::visit(NNCASE_UNUSED const cuscall_op_t &op) noexcept {
     try_var(retval,
             it->second(op.fields_span, params, module().kernel_context()));
 #ifdef NNCASE_DUMP_MANAGER
-    dump_manager.dump_output(retval);
+    dump_manager->dump_output(retval);
 #endif
     return stack_.push(retval);
 }
