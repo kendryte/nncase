@@ -93,8 +93,9 @@ if (BUILDING_RUNTIME)
     include_directories(${NNCASE_INCLUDE_DIR})
     
     add_subdirectory(src/Native/include/nncase)
-    add_subdirectory(src/Native/src/kernels)
-    add_subdirectory(src/Native/src/runtime)
+    #    add_subdirectory(src/Native/src/kernels)
+    #    add_subdirectory(src/Native/src/runtime)
+    add_subdirectory(src/Native/src)
 #    add_subdirectory(src/Native/src/functional)
     if(BUILD_BENCHMARK)
 #        add_subdirectory(benchmark)
@@ -114,7 +115,17 @@ if (BUILDING_RUNTIME)
         PATTERN "*version.h"
         PATTERN "CMakeFiles" EXCLUDE
         )
-    
+
+    install(DIRECTORY src/Native/include/nncase/
+            DESTINATION include/nncase
+            COMPONENT nncase-headers
+            FILES_MATCHING
+            PATTERN "*.def"
+            PATTERN "*.h"
+            PATTERN "*version.h"
+            PATTERN "CMakeFiles" EXCLUDE
+            )
+
     install(DIRECTORY src/Native/include/nncase/kernels
         DESTINATION include/nncase
         COMPONENT nncase-headers

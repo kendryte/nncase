@@ -1,5 +1,4 @@
 #pragma once
-#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <nncase/runtime/datatypes.h>
@@ -19,20 +18,20 @@ class dump_manager {
     bool append_;
     int count_ = 1;
     std::string current_op_;
-    std::filesystem::path dump_root_;
+    std::string dump_root_;
 
   public:
     void set_current_op(const std::string &op) { current_op_ = op; }
 
     std::string get_current_op() { return current_op_; }
 
-    std::filesystem::path dump_path();
+    std::string dump_path();
 
-    std::filesystem::path get_dump_root() { return dump_root_; }
+    std::string get_dump_root() { return dump_root_; }
 
     std::ofstream get_stream() { return get_stream(dump_path()); }
 
-    std::ofstream get_stream(const std::filesystem::path &path);
+    std::ofstream get_stream(const std::string &path);
 
     int get_count() { return count_; }
 
