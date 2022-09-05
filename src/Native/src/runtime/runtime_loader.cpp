@@ -68,10 +68,6 @@ FindRuntimeMethod(collector, COLLECTOR)
 #else
 #define DYNLIB_EXT ".dylib"
 #endif
-#define TRY_POSIX_IF_NOT(x)                                                    \
-    if (!(x)) {                                                                \
-        return err(std::error_condition(1, std::system_category()));           \
-    }
 
 #define FindRuntimeMethod(snake_name, upper_name)                              \
     result<rt_module_##snake_name##_t> find_runtime_##snake_name(              \
@@ -79,9 +75,11 @@ FindRuntimeMethod(collector, COLLECTOR)
         auto module_name =                                                     \
             fmt::format("libnncase.simulator.{}" DYNLIB_EXT, kind.data());     \
         auto mod = dlopen(module_name.c_str(), RTLD_LAZY);                     \
-        TRY_POSIX_IF_NOT(mod);                                                 \
+        if (!(mod))                                                            \
+            return err(nncase_errc::runtime_not_found);     \
         auto proc = dlsym(mod, STR(RUNTIME_MODULE_##upper_name##_NAME));       \
-        TRY_POSIX_IF_NOT(proc);                                                \
+        if (!(proc))                                                           \
+            return err(nncase_errc::runtime_register_not_found);     \
         return ok(reinterpret_cast<rt_module_##snake_name##_t>(proc));         \
     }
 // clang-format off
@@ -99,12 +97,12 @@ FindRuntimeMethod(collector, COLLECTOR)
 #define NNCASE_NO_LOADABLE_RUNTIME
 
 #define FindRuntimeMethod(snake_name)                                          \
-    result<rt_module_##snake_name##_t> find_runtime_##snake_name(                  \
+    result<rt_module_##snake_name##_t> find_runtime_##snake_name(              \
         const module_kind_t &kind) {                                           \
         auto builtin_runtime = builtin_runtimes;                               \
-        while (builtin_runtime->snake_name) {                                \
+        while (builtin_runtime->snake_name) {                                  \
             if (!strcmp(kind.data(), builtin_runtime->id.data())) {            \
-                return ok(builtin_runtime->snake_name);                      \
+                return ok(builtin_runtime->snake_name);                        \
             }                                                                  \
         }                                                                      \
         return err(nncase_errc::runtime_not_found);                            \

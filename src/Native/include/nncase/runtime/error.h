@@ -26,6 +26,7 @@ enum class nncase_errc {
     datatype_mismatch = 0x05,
     shape_mismatch = 0x06,
     invalid_memory_location = 0x07,
+    runtime_register_not_found = 0x08,
     stackvm_illegal_instruction = 0x0100,
     stackvm_illegal_target = 0x0101,
     stackvm_stack_overflow = 0x0102,
