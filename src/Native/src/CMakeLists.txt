@@ -18,8 +18,10 @@ set_property(TARGET nncasebase PROPERTY POSITION_INDEPENDENT_CODE ON)
 add_subdirectory(runtime)
 add_subdirectory(kernels)
 
-add_executable(nncasetest test.cpp)
-target_link_libraries(nncasetest PRIVATE nncaseruntime)
+if (NOT BUILDING_RUNTIME)
+    add_executable(nncasetest test.cpp)
+    target_link_libraries(nncasetest PRIVATE nncaseruntime)
+endif()
 
 install(TARGETS nncasebase EXPORT nncaseTargets
   COMPONENT nncase-runtime

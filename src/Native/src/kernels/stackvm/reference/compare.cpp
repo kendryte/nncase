@@ -15,8 +15,6 @@
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/tensor_ops.h>
 #include <nncase/runtime/allocator.h>
-#include <nncase/runtime/host_buffer.h>
-#include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
 #include <nncase/kernels/apply.h>
 
