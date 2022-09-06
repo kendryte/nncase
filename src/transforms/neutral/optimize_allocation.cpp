@@ -250,7 +250,6 @@ bool remove_exclusive_copy_to_bitcast_transform::on_try_match(node &node, transf
         && (b = try_get_direct_child<bitcast>(*cp)))
     {
         auto input = cp->input().connection();
-
         if ((input->memory_location() == mem_data || (input->memory_location() == mem_input && !try_get_direct_child<output_node>(*cp)))
             && ((input->attributes() & cnctr_attr_no_buffer_fusion) == 0))
         {
