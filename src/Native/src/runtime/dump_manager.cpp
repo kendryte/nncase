@@ -31,11 +31,10 @@ void dump_manager::dump_op(const std::string &func_str) {
 
 std::string dump_manager::dump_path() {
     auto p = fs::path(dump_root_) / (std::to_string(get_count()) + "$" + current_op_);
-    // todo: error
 //    if (!fs::exists(dump_root_) && dump_root_ != "") {
 //        fs::create_directory(dump_root_);
 //    }
-    return p;
+    return p.string();
 }
 
 std::ofstream dump_manager::get_stream(const std::string &path) {
