@@ -868,12 +868,11 @@ void register_neutral_evaluators()
         auto indices = context.memory_at(rnode.indices());
         auto output = context.memory_at(rnode.output());
         auto input_datatype = rnode.input().type();
-        // auto indices_datatype = rnode.indices().type();
-        // assert(indices_datatype == dt_int32);
+
         switch (input_datatype)
         {
         case dt_float32:
-            kernels::gather_elements(input.buffer().as_span<float>().data(), input.buffer().as_span<int>().data(), output.buffer().as_span<float>().data(),
+            kernels::gather_elements(input.buffer().as_span<float>().data(), indices.buffer().as_span<int64_t>().data(), output.buffer().as_span<float>().data(),
                 input.shape(), indices.shape(), rnode.axis())
                 .unwrap_or_throw();
             break;

@@ -30,6 +30,6 @@ result<void> stackvm_runtime_function::visit(const tensor_gather_elements_op_t &
     try_var(in_shape, module().shape_reg(op.input_shape_src));
     try_var(indices_shape, module().shape_reg(op.indices_shape_src));
 
-    return kernels::gather_elements(reinterpret_cast<const float *>(input), reinterpret_cast<const int32_t *>(indices),
+    return kernels::gather_elements(reinterpret_cast<const float *>(input), reinterpret_cast<const int64_t *>(indices),
         reinterpret_cast<float *>(output), in_shape, indices_shape, op.axis);
 }

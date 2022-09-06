@@ -41,9 +41,18 @@ void onnx_importer::convert_op_GatherElements(const NodeProto &node)
         axis += static_cast<int32_t>(input_shape.size());
     }
 
-    auto ga = graph_.emplace<gather_elements>(input_type, indices_type, input_shape, indices_shape, out_shape, axis);
-    // input_convert_to_type(ga->indices(), indices, dt_int32);
+    auto ga = graph_.emplace<gather_elements>(input_type, dt_int64, input_shape, indices_shape, out_shape, axis);
+
+    auto mid_ptr = &ga->indices();
+    if (indices_type == dt_int32)
+    {
+        auto cvt = graph_.emplace<convert>(indices_type, indices_shape, dt_int64);
+        cvt->name(ga->name() + "(cvt_int_to_int64)");
+        ga->indices().connect(cvt->output());
+        mid_ptr = &cvt->input();
+    }
+
     link_input_tensor(&ga->input(), input);
-    link_input_tensor(&ga->indices(), indices);
+    link_input_tensor(mid_ptr, indices);
     link_output_tensor(output, &ga->output());
 }

@@ -23,10 +23,10 @@ using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::reference;
 using namespace std;
 
-template result<void> reference::gather_elements(const float *input, const int *indices, float *output, const runtime_shape_t &in_shape,
+template result<void> reference::gather_elements(const float *input, const int64_t *indices, float *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &indices_shape, const int axis) noexcept;
 
-void get_index(const int *indices, const std::vector<int> &per_axis_size, std::vector<int> &index, size_t i, int axis, int idx)
+void get_index(const int64_t *indices, const std::vector<int> &per_axis_size, std::vector<int> &index, size_t i, int axis, int idx)
 {
     if (idx != per_axis_size.size())
     {
