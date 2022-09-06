@@ -92,24 +92,34 @@ auto squeeze_transpose_shape(shape_t old_shape, axis_t old_axis)
     if (old_shape.size() <= 4)
         return std::make_tuple(old_axis, old_shape);
 
-    axis_t new_axis { 0, 0, 0, 0 };
-    shape_t new_shape { 1, 1, 1, 1 };
+    axis_t new_axis(4, 0);
+    shape_t new_shape(4, 1);
     int squeeze_times = old_shape.size() - 4;
     int squeeze_time = 0;
     int i = 0;
+
+    std::vector<int> squeeze_size;
     for (auto j = 0; j < 4; i++, j++)
     {
-        if (old_axis[i] + 1 == old_axis[i + 1])
+        squeeze_size.push_back(old_shape[i]);
+        for (; i < old_shape.size(); i++)
         {
-            new_shape[j] = old_shape[i] * old_shape[i + 1];
-            squeeze_times--;
-            squeeze_time++;
-            i++;
+            if (old_axis[i] + 1 == old_axis[i + 1])
+            {
+                squeeze_size.push_back(old_shape[i + 1]);
+                squeeze_times--;
+                squeeze_time++;
+            }
+            else
+            {
+                new_shape[j] = xt::compute_size(squeeze_size);
+                new_axis[j] = old_axis[i] - squeeze_time;
+                break;
+            }
         }
-        std::cout << old_axis[i] << '-' << squeeze_time << std::endl;
-        new_axis[j] = old_axis[i] - squeeze_time;
-        new_shape[j] = old_shape[i];
+        squeeze_size.clear();
     }
+
     for (; i < old_shape.size(); i++)
     {
         new_shape.push_back(old_shape[i]);
@@ -151,7 +161,7 @@ auto squeeze_concat_shape(std::vector<shape_t> &old_shape, int concat_axis)
 
 bool check_op(node_opcode op)
 {
-    if (op == op_binary || op == op_sigmoid || op == op_transpose || op == op_concat)
+    if (op == op_binary || op == op_sigmoid || op == op_transpose)
         return true;
     return false;
 }
