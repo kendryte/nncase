@@ -13,7 +13,7 @@ using namespace nncase::runtime;
 void dump_manager::set_dump_root(std::string root) {
     dump_root_.clear();
     fs::path p(root);
-    dump_root_ = (p / "Runtime");
+    dump_root_ = (p / "Runtime").string();
     // reset count for each dir
     count_ = 1;
 }
