@@ -6,7 +6,7 @@ namespace
 {
 struct runtime_registration
 {
-    model_target_t id;
+    module_kind_t id;
     runtime_activator_t activator;
     rt_module_collector_t collector;
 };

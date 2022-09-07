@@ -9,7 +9,12 @@ set(SRCS
         value.cpp)
 
 add_library(nncasebase OBJECT ${SRCS})
-target_compile_definitions(nncasebase PUBLIC -DNNCASE_DLL -DNNCASE_SIMULATOR)
+if(BUILDING_RUNTIME)
+    target_compile_definitions(nncasebase PUBLIC -DNNCASE_DLL)
+else()
+    target_compile_definitions(nncasebase PUBLIC -DNNCASE_DLL -DNNCASE_SIMULATOR)
+endif()
+
 if (DEFAULT_BUILTIN_RUNTIMES)
     target_compile_definitions(nncasebase PRIVATE -DNNCASE_DEFAULT_BUILTIN_RUNTIMES)
 endif ()
@@ -23,15 +28,18 @@ if (NOT BUILDING_RUNTIME)
     target_link_libraries(nncasetest PRIVATE nncaseruntime)
 endif()
 
-install(TARGETS nncasebase EXPORT nncaseTargets
-  COMPONENT nncase-runtime
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-  INCLUDES DESTINATION include
-)
+if(BUILDING_RUNTIME)
+    install(TARGETS nncasebase EXPORT nncaseruntimeTargets)
+else()
+    install(TARGETS nncasebase EXPORT nncaseTargets
+            COMPONENT nncase-runtime
+            ARCHIVE DESTINATION lib
+            LIBRARY DESTINATION lib
+            RUNTIME DESTINATION bin
+            INCLUDES DESTINATION include
+            )
 
-install(EXPORT nncaseTargets DESTINATION lib/cmake/nncase)
-
-configure_file(${CMAKE_CURRENT_LIST_DIR}/../../../cmake/nncaseConfig.cmake.in nncaseConfig.cmake @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nncaseConfig.cmake DESTINATION lib/cmake/nncase)    
+    install(EXPORT nncaseTargets DESTINATION lib/cmake/nncase)
+    configure_file(${CMAKE_CURRENT_LIST_DIR}/../../../cmake/nncaseConfig.cmake.in nncaseConfig.cmake @ONLY)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nncaseConfig.cmake DESTINATION lib/cmake/nncase)
+endif()
