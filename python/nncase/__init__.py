@@ -329,7 +329,7 @@ class RTTensor:
 
 class Simulator:
     def __init__(self) -> None:
-        self.interpreter = _nncase.Runtime.Interop.RTInterpreter()
+        self.interpreter = _nncase.Runtime.Interop.RTInterpreter.Create()
         self.inputs = []
         self.outputs = []
 
