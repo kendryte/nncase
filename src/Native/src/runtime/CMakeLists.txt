@@ -35,7 +35,7 @@ if (BUILDING_RUNTIME)
     install(TARGETS runtime EXPORT nncaseruntimeTargets)
 
     add_library(nncaseruntime STATIC dummy.cpp)
-    target_link_libraries(nncaseruntime PRIVATE kernels runtime runtime_stackvm)
+    target_link_libraries(nncaseruntime PRIVATE nncasebase kernels runtime runtime_stackvm)
     target_link_libraries(nncaseruntime PUBLIC gsl::gsl-lite mpark_variant::mpark_variant)
     set_target_properties(nncaseruntime PROPERTIES
                                         OUTPUT_NAME "Nncase.Runtime.Native")

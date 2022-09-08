@@ -192,7 +192,6 @@ from io import BytesIO
 import numpy as np
 from typing import Any, List, Dict, Tuple, Union
 from System.IO import MemoryStream, Stream
-from System import Memory
 from System.Collections.Generic import Dictionary
 from System import (Array, Byte,
                     Int16,
@@ -329,7 +328,7 @@ class RTTensor:
 
 class Simulator:
     def __init__(self) -> None:
-        self.interpreter = _nncase.Runtime.Interop.RTInterpreter()
+        self.interpreter = _nncase.Runtime.Interop.RTInterpreter.Create()
         self.inputs = []
         self.outputs = []
 
