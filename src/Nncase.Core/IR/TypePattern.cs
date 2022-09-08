@@ -270,6 +270,10 @@ namespace Nncase.IR
             _ => false
         }, "IsNone");
 
+        /// <summary>
+        /// is scalar quant param
+        /// </summary>
+        /// <returns></returns>
         public static TypePattern IsQuantParamType() => IsScalar() & HasDataType(new QuantParamType());
 
         /// <summary>

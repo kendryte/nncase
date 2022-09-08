@@ -84,7 +84,7 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
         );
 
     /// <inheritdoc/>
-    public static Pattern CalleePattern =>
+    public static Pattern CalleePattern =
         IsCall(
         "callee",
         IsFusion("calleeFuse",
