@@ -42,7 +42,7 @@ public sealed partial class RealizeFakeQuantize : IRewriteRule
     {
         // For k210, mode is Unsigned, bits is 8.
         var qm = QuantMode.UnsignedMode;
-        var qp = GetQuantParam((range[0], range[1]), bits, qm);
+        var qp = QuantUtility.GetQuantParam((range[0], range[1]), bits, qm);
         return IR.F.Math.Quantize(input, qp, DataTypes.UInt8);
     }
 }

@@ -32,7 +32,7 @@ internal class KPUFunctionBuilder : FunctionBuilder
 
     public ITarget Target { get; }
 
-    protected override void Compile(Callable callable)
+    protected override void Compile(BaseFunction callable)
     {
         var function = (Function)callable;
         new CodeGenVisitor(function, _context).Visit(function.Body);
@@ -78,13 +78,6 @@ internal class KPUFunctionBuilder : FunctionBuilder
         };
         passManager.RunAsync().Wait();
         lower_module.Callables.OfType<IR.Function>().Select((f, i) => new KPUFunctionBuilder((uint)i, _rdataWriter).Build(f)).ToArray();*/
-    }
-
-
-protected override ILinkableFunction CreateLinkableFunction(uint id, Callable callable,
-        IReadOnlyList<FunctionRef> functionRefs, byte[] text)
-    {
-        return new KPULinkableFunction(id, (Function) callable, functionRefs, text);
     }
 
     protected override void WriteText()
@@ -137,7 +130,12 @@ protected override ILinkableFunction CreateLinkableFunction(uint id, Callable ca
         }
     }
 
-    private class LocalsAllocator
+protected override ILinkableFunction CreateLinkableFunction(uint id, BaseFunction callable, IReadOnlyList<FunctionRef> functionRefs, byte[] text)
+{
+    return new KPULinkableFunction(id, (Function) callable, functionRefs, text);
+}
+
+private class LocalsAllocator
     {
         private SortedSet<ushort> _locals = new SortedSet<ushort>();
 

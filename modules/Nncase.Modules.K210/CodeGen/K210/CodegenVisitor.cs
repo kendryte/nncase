@@ -156,7 +156,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         }
         else
         {
-            var target = (Callable) expr.Target;
+            var target = (BaseFunction) expr.Target;
             LdFunctionId(target);
             Emitter.ExtCall(checked((ushort) expr.Parameters.Count));
         }
@@ -212,7 +212,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return symbolRef;
     }
 
-    private FunctionRef AddFunctionRef(Callable callable, FunctionIdComponent component, int positionOffset, int length,
+    private FunctionRef AddFunctionRef(BaseFunction callable, FunctionIdComponent component, int positionOffset, int length,
         int offset = 0)
     {
         var functionRef = new FunctionRef(Emitter.Position + positionOffset, length, callable, component, offset);
@@ -226,7 +226,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         Emitter.LeaGP(gpid, 0);
     }
 
-    private void LdFunctionId(Callable callable)
+    private void LdFunctionId(BaseFunction callable)
     {
         AddFunctionRef(callable, FunctionIdComponent.FunctionId, 1, 4, 0);
         Emitter.LdcI4(0);
