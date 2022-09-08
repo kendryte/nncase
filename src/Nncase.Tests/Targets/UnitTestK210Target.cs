@@ -18,7 +18,7 @@ public class UnitTestK210Target
 {
     public UnitTestK210Target()
     {
-        CompileOptions = new CompileOptions(true);
+        CompileOptions = new CompileOptions(ModelQuantMode.UsePTQ);
     }
 
     public CompileOptions CompileOptions { get; }
@@ -108,7 +108,7 @@ public class UnitTestK210Target
             kmodel = output.ToArray();
         }
 
-        var interp = new RTInterpreter();
+        var interp = RTInterpreter.Create();
         interp.LoadModel(kmodel);
         var entry = interp.Entry;
 

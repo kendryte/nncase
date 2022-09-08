@@ -69,7 +69,7 @@ public interface ICompilerServicesProvider
     /// </summary>
     /// <param name="expr"> the expression </param>
     /// <returns>the string.</returns>
-    string Print(Expr expr);
+    string Print(Expr expr, bool useScript);
 
     /// <summary>
     /// Evaluate the expression tree.
@@ -236,7 +236,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     public string Print(IRType type) => _irprinterProvider.Print(type);
 
     /// <inheritdoc/>
-    public string Print(Expr expr) => _irprinterProvider.Print(expr);
+    public string Print(Expr expr, bool useScript) => _irprinterProvider.Print(expr, useScript);
 
     /// <inheritdoc/>
     public bool TryMatch(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
@@ -473,7 +473,7 @@ public static class CompilerServices
     public static string Print(IRType type) => Provider.Print(type);
 
     /// <inheritdoc/>
-    public static string Print(Expr expr) => Provider.Print(expr);
+    public static string Print(Expr expr, bool useScript = false) => Provider.Print(expr, useScript);
 
     /// <summary>
     /// Get target.

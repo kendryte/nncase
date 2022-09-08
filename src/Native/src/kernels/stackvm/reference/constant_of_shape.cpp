@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
@@ -25,13 +24,11 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
-using namespace nncase::kernels::cpu;
-using namespace nncase::kernels::cpu::reference;
 
 template <typename T>
 result<void>
 constant_of_shape_impl(const T* value, T *output, const dims_t &shape) {
-    for (int i = 0; i < compute_size(shape); ++i) {
+    for (size_t i = 0; i < compute_size(shape); ++i) {
         output[i] = *value;
     }
     return ok();

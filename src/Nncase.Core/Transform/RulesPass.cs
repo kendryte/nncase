@@ -63,12 +63,12 @@ public abstract class RulesPass : FunctionPass, IEnumerable<IRewriteRule>
     /// </summary>
     /// <param name="callable"> func without run pass.</param>
     /// <param name="options">Options.</param>
-    protected override void OnPassStart(Callable callable, RunPassOptions options)
+    protected override void OnPassStart(BaseFunction callable, RunPassOptions options)
     {
         switch (options.DumpLevel)
         {
             case >= 2:
-                CompilerServices.DumpIR(callable, "Start", options.PassDumpDir);
+                CompilerServices.DumpIR((Expr)callable, "Start", options.PassDumpDir);
                 break;
             case >= 1:
                 break;
@@ -82,12 +82,12 @@ public abstract class RulesPass : FunctionPass, IEnumerable<IRewriteRule>
     /// </summary>
     /// <param name="callable"> func with rewrited. </param>
     /// <param name="options">Options.</param>
-    protected override void OnPassEnd(Callable callable, RunPassOptions options)
+    protected override void OnPassEnd(BaseFunction callable, RunPassOptions options)
     {
         switch (options.DumpLevel)
         {
             case >= 2:
-                CompilerServices.DumpIR(callable, "End", options.PassDumpDir);
+                CompilerServices.DumpIR((Expr)callable, "End", options.PassDumpDir);
                 break;
             case >= 1:
                 break;

@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/tensor_ops.h>
+#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/util.h>
@@ -23,8 +22,6 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
-using namespace nncase::kernels::cpu;
-using namespace nncase::kernels::cpu::reference;
 
 namespace {
 template <class T>
@@ -161,76 +158,25 @@ result<void> resize_nearest_neighbor_impl(
                                  reinterpret_cast<type *>(output), in_shape,   \
                                  in_strides, out_strides, out_h, out_w,        \
                                  align_corners, half_pixel_centers, context);
+} // namespace
 
-result<void> resize_bilinear(typecode_t type, const gsl::byte *input,
-                             gsl::byte *output, const dims_t &in_shape,
-                             const strides_t &in_strides,
-                             const strides_t &out_strides, int32_t out_h,
-                             int32_t out_w, bool align_corners,
-                             bool half_pixel_centers,
-                             kernel_context &context) noexcept {
+result<void> nncase::kernels::stackvm::reference::resize_bilinear(typecode_t type, const gsl::byte *input,
+                                                                  gsl::byte *output, const dims_t &in_shape,
+                                                                  const strides_t &in_strides,
+                                                                  const strides_t &out_strides, int32_t out_h,
+                                                                  int32_t out_w, bool align_corners,
+                                                                  bool half_pixel_centers,
+                                                                  kernel_context &context) noexcept {
     FP_OR_Q_IMPL(type, RESIZE_BILINEAR_IMPL);
 }
 
-result<void> resize_nearest_neighbor(typecode_t type, const gsl::byte *input,
-                                     gsl::byte *output, const dims_t &in_shape,
-                                     const strides_t &in_strides,
-                                     const strides_t &out_strides,
-                                     int32_t out_h, int32_t out_w,
-                                     bool align_corners,
-                                     bool half_pixel_centers,
-                                     kernel_context &context) noexcept {
+result<void> nncase::kernels::stackvm::reference::resize_nearest_neighbor(typecode_t type, const gsl::byte *input,
+                                                                          gsl::byte *output, const dims_t &in_shape,
+                                                                          const strides_t &in_strides,
+                                                                          const strides_t &out_strides,
+                                                                          int32_t out_h, int32_t out_w,
+                                                                          bool align_corners,
+                                                                          bool half_pixel_centers,
+                                                                          kernel_context &context) noexcept {
     FP_OR_Q_IMPL(type, RESIZE_NEAREST_NEIGHBOR_IMPL);
-}
-
-dims_t infer_shape(const dims_t &in_shape, const dims_t &new_size) {
-    auto new_shape = in_shape;
-    new_shape[2] = new_size[0];
-    new_shape[3] = new_size[1];
-    return new_shape;
-}
-} // namespace
-
-result<value_t> nncase::kernels::stackvm::resize_image(
-    image_resize_mode_t resize_mode,
-    image_resize_transformation_mode_t transformation_mode,
-    [[maybe_unused]] image_resize_nearest_mode_t nearest_mode,
-    [[maybe_unused]] bool is_tfresize, value_t input,
-    [[maybe_unused]] value_t roi, value_t new_size,
-    [[maybe_unused]] value_t cubic_coeff_a,
-    [[maybe_unused]] value_t exclude_outside,
-    [[maybe_unused]] value_t extrapolation_value, value_t output,
-    kernel_context &context) {
-    try_input(in_mem, input);
-    auto ty = input_tensor->dtype();
-    try_var(tycode, to_typecode(ty));
-    try_dims(new_size_value, new_size);
-    auto out_shape = infer_shape(input_tensor->shape(), new_size_value);
-    try_output(out_mem, output, input_tensor->dtype(), out_shape);
-
-    bool align_corner = false;
-    bool half_pixel = false;
-    // todo: some args are not supported
-    if (transformation_mode == image_resize_transformation_mode_t::half_pixel) {
-        half_pixel = true;
-    } else if (transformation_mode ==
-               image_resize_transformation_mode_t::align_corners) {
-        align_corner = true;
-    }
-    if (resize_mode == image_resize_mode_t::bilinear) {
-        try_(resize_bilinear(tycode, in_mem, out_mem, input_tensor->shape(),
-                             input_tensor->strides(), output_tensor->strides(),
-                             new_size_value[2], new_size_value[3], align_corner,
-                             half_pixel, context));
-    } else if (resize_mode == image_resize_mode_t::nearest_neighbor) {
-        try_(resize_nearest_neighbor(
-            tycode, in_mem, out_mem, input_tensor->shape(),
-            input_tensor->strides(), output_tensor->strides(), out_shape[2],
-            out_shape[3], align_corner, half_pixel, context));
-    } else {
-        return err(nncase_errc::runtime_not_found);
-    }
-    // todo: some param not be used
-    return err(nncase_errc::runtime_not_found);
-    return ok(output);
 }

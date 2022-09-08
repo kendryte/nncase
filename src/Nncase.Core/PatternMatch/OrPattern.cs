@@ -11,9 +11,9 @@ namespace Nncase.PatternMatch;
 /// <summary>
 /// The Or Pattern for Match Different branch, NOTE if both branch are matched, choice the Lhs.
 /// </summary>
-/// <typeparam name="TInput">Input type.</typeparam>
 /// <param name="ConditionA">Condition a.</param>
 /// <param name="ConditionB">Condition b.</param>
+/// <param name="Name">the alt name.</param>
 public sealed record OrPattern(Pattern ConditionA, Pattern ConditionB, string? Name)
     : Pattern(Name)
 {
@@ -27,9 +27,22 @@ public static partial class Utility
     private static OrPattern IsAltImpl(string? name, Pattern condition_a, Pattern condition_b)
         => new OrPattern(condition_a, condition_b, name);
 
+    /// <summary>
+    /// create or pattern
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="condition_a"></param>
+    /// <param name="condition_b"></param>
+    /// <returns></returns>
     public static OrPattern IsAlt(string? name, Pattern condition_a, Pattern condition_b)
         => IsAltImpl(name, condition_a, condition_b);
 
+
+    /// <summary>
+    /// create or pattern without name.
+    /// </summary>
+    /// <param name="patterns"></param>
+    /// <returns></returns>
     public static OrPattern IsAlt(params Pattern[] patterns)
         => (OrPattern)(patterns
             .Aggregate(

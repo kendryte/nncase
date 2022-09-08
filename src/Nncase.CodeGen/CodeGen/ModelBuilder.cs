@@ -12,14 +12,14 @@ namespace Nncase.CodeGen;
 
 internal class LinkContext : ILinkContext
 {
-    private readonly IDictionary<Callable, FunctionId> _functionIds;
+    private readonly IDictionary<BaseFunction, FunctionId> _functionIds;
 
-    public LinkContext(IDictionary<Callable, FunctionId> functionIds)
+    public LinkContext(IDictionary<BaseFunction, FunctionId> functionIds)
     {
         _functionIds = functionIds;
     }
 
-    public FunctionId GetFunctionId(Callable function)
+    public FunctionId GetFunctionId(BaseFunction function)
     {
         return _functionIds[function];
     }
@@ -61,7 +61,7 @@ public sealed class ModelBuilder
 
     public LinkedModel Build(IRModule module)
     {
-        var functionsByKind = module.Callables.GroupBy(x => x.ModuleKind).ToList();
+        var functionsByKind = module.Functions.GroupBy(x => x.ModuleKind).ToList();
         var functionIds = MakeFunctionsIds(functionsByKind);
         var linkableModules = functionsByKind.Select(x => Target.CreateModuleBuilder(x.Key, CompileOptions).Build(x.ToList())).ToList();
         var linkContext = new LinkContext(functionIds);
@@ -70,9 +70,9 @@ public sealed class ModelBuilder
         return new LinkedModel(entryFunctionId, linkedModules);
     }
 
-    private Dictionary<Callable, FunctionId> MakeFunctionsIds(IEnumerable<IGrouping<string, Callable>> functionsByKind)
+    private Dictionary<BaseFunction, FunctionId> MakeFunctionsIds(IEnumerable<IGrouping<string, BaseFunction>> functionsByKind)
     {
-        var ids = new Dictionary<Callable, FunctionId>(ReferenceEqualityComparer.Instance);
+        var ids = new Dictionary<BaseFunction, FunctionId>(ReferenceEqualityComparer.Instance);
         uint moduleId = 0;
         foreach (var fp in functionsByKind)
         {

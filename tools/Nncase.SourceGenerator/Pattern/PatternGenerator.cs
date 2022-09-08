@@ -71,7 +71,7 @@ public class PatternGenerator : IIncrementalGenerator
         var recordDeclaration = (RecordDeclarationSyntax)context.Node;
         var op = context.SemanticModel.GetDeclaredSymbol(recordDeclaration);
 
-        if (op!.BaseType is { Name: "Op" }
+        if (op!.BaseType is { Name: "Op" or "CustomOp" }
           && op!.GetAttributes().Any(attr => attr!.AttributeClass!.Name == "PatternFunctionalGeneratorAttribute")
            )
         {

@@ -14,12 +14,14 @@
  */
 #pragma once
 #include <nncase/runtime/result.h>
+#include <nncase/runtime/dump_manager.h>
 
 BEGIN_NS_NNCASE_KERNELS
 
 struct NNCASE_API kernel_context
 {
     uint32_t num_threads;
+    std::shared_ptr<runtime::dump_manager> dump_manager;
 };
 
 NNCASE_API kernel_context &default_kernel_context();

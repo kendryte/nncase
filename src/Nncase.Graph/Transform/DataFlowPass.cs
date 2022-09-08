@@ -28,8 +28,8 @@ public class DataflowPass : RulesPass
     }
 
     /// <inheritdoc/>
-    protected override Task<Callable> RunCoreAsync(Callable function, RunPassOptions options)
+    protected override Task<BaseFunction> RunCoreAsync(BaseFunction function, RunPassOptions options)
     {
-        return Task.FromResult((Callable)CompilerServices.Rewrite(function, Rules, options));
+        return Task.FromResult((BaseFunction)CompilerServices.Rewrite(function, Rules, options));
     }
 }

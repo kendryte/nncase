@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Nncase.CodeGen;
+using Nncase.Quantization;
 using Nncase.Transform;
 
 namespace Nncase;
@@ -21,6 +22,16 @@ public interface ITarget
     /// Gets target kind.
     /// </summary>
     string Kind { get; }
+
+    /// <summary>
+    /// Bind Quant Method And Quant Cosine With IR
+    /// </summary>
+    /// <param name="calibrationDataset">calibration dataset.</param>
+    /// <param name="target">target.</param>
+    /// <param name="rangeOfs">rangeOf nodes.</param>
+    /// <param name="childrenOfRangeOfs">rangeOf nodes children.</param>
+    /// <param name="runPassOptions">options.</param>
+    Task<Dictionary<ENode, List<Tuple<List<DataType>, List<QuantParam>, float>>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassOptions runPassOptions);
 
     /// <summary>
     /// Parse Target Dependent Options 

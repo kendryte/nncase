@@ -28,15 +28,14 @@ internal class StackVMFunctionBuilder : FunctionBuilder
         _textEmitter = new StackVMEmitter(TextWriter);
     }
 
-    protected override ILinkableFunction CreateLinkableFunction(uint id, Callable callable, IReadOnlyList<FunctionRef> functionRefs, byte[] text)
+    protected override ILinkableFunction CreateLinkableFunction(uint id, BaseFunction callable, IReadOnlyList<FunctionRef> functionRefs, byte[] text)
     {
-        return new StackVMLinkableFunction(id, (Function)callable, functionRefs, _localsAllocator.MaxCount, text);
+        return new StackVMLinkableFunction(id, callable, functionRefs, _localsAllocator.MaxCount, text, _context.CustomCallModules);
     }
 
-    protected override void Compile(Callable callable)
+    protected override void Compile(BaseFunction callable)
     {
-        var function = (Function)callable;
-        new CodeGenVisitor(function, _context).Visit(function.Body);
+        new CodeGenVisitor(callable, _context).Visit(callable);
     }
 
     protected override void WriteText()

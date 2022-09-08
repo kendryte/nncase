@@ -56,6 +56,7 @@ internal class TextSnippet
 internal class CodeGenContext
 {
     private readonly List<TextSnippet> _textSnippets = new List<TextSnippet>();
+    private readonly HashSet<ModuleType> _custom_call_modules = new();
 
     public CodeGenContext(BinaryWriter rdataWriter)
     {
@@ -68,9 +69,16 @@ internal class CodeGenContext
 
     public IReadOnlyList<TextSnippet> TextSnippets => _textSnippets;
 
+    public IReadOnlySet<ModuleType> CustomCallModules => _custom_call_modules;
+
     public void AddTextSnippet(TextSnippet textSnippet)
     {
         _textSnippets.Add(textSnippet);
+    }
+
+    public void AddCustomCallModule(ModuleType moduleType)
+    {
+        _custom_call_modules.Add(moduleType);
     }
 }
 
@@ -79,12 +87,12 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     private const int _alignment = 8;
     private const byte _rdataGpid = 0;
 
-    private readonly Function _function;
+    private readonly BaseFunction _function;
     private readonly CodeGenContext _context;
 
     private TextSnippet? _currentTextSnippet;
 
-    public CodeGenVisitor(Function function, CodeGenContext context)
+    public CodeGenVisitor(BaseFunction function, CodeGenContext context)
     {
         _function = function;
         _context = context;
@@ -109,7 +117,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     public override TextSnippet VisitLeaf(Var expr)
     {
         var snippet = BeginTextSnippet(expr);
-        Emitter.Ldarg((ushort)_function.Parameters.IndexOf(expr));
+        Emitter.Ldarg((ushort)((Function)_function).Parameters.IndexOf(expr));
         return snippet;
     }
 
@@ -130,17 +138,37 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     public override TextSnippet Visit(Function expr)
     {
-        return null!;
+        if (ReferenceEquals(expr, _function))
+        {
+            return Visit(expr.Body);
+        }
+        else
+        {
+            return null!;
+        }
+    }
+
+    public override TextSnippet Visit(PrimFunctionWrapper expr)
+    {
+        if (ReferenceEquals(expr, _function))
+        {
+            var snippet = BeginTextSnippet(expr);
+            for (int i = expr.ParametersCount - 1; i >= 0; i--)
+            {
+                Emitter.Ldarg((ushort)i);
+            }
+
+            LdFunctionId(expr.Target);
+            Emitter.ExtCall(checked((ushort)expr.ParameterTypes.Count()), true);
+            return snippet;
+        }
+        else
+            return null!;
     }
 
     public override TextSnippet VisitLeaf(Op expr)
     {
         return null!;
-    }
-
-    public override TextSnippet Visit(Call expr)
-    {
-        return base.Visit(expr);
     }
 
     public override TextSnippet VisitLeaf(Call expr)
@@ -153,16 +181,27 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
             snippet.AddInput(paramSnippet);
         }
 
-        if (expr.Target is Op op)
+        if (expr.Target is CustomOp custom_op)
+        {
+            _context.AddCustomCallModule(custom_op.ModuleType);
+            Emitter.CusCall(custom_op.RegisteredName, custom_op.SerializeFields(), checked((ushort)expr.Parameters.Count));
+        }
+        else if (expr.Target is Op op)
         {
             EmitTensorCall(op);
         }
-        else
+        else if (expr.Target is PrimFunctionWrapper wrapper)
         {
-            var target = (Callable)expr.Target;
-            LdFunctionId(target);
-            Emitter.ExtCall(checked((ushort)expr.Parameters.Count));
+            LdFunctionId(wrapper.Target);
+            Emitter.ExtCall(checked((ushort)wrapper.ParameterTypes.Count()), true);
         }
+        else if (expr.Target is Function func)
+        {
+            LdFunctionId(func);
+            Emitter.ExtCall(checked((ushort)func.Parameters.Count), false);
+        }
+        else
+            throw new NotSupportedException(expr.Target.GetType().Name);
 
         return snippet;
     }
@@ -215,7 +254,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return symbolRef;
     }
 
-    private FunctionRef AddFunctionRef(Callable callable, FunctionIdComponent component, int positionOffset, int length, int offset = 0)
+    private FunctionRef AddFunctionRef(BaseFunction callable, FunctionIdComponent component, int positionOffset, int length, int offset = 0)
     {
         var functionRef = new FunctionRef(Emitter.Position + positionOffset, length, callable, component, offset);
         CurrentTextSnippet.FunctionRefs.Add(functionRef);
@@ -228,7 +267,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         Emitter.LeaGP(gpid, 0);
     }
 
-    private void LdFunctionId(Callable callable)
+    private void LdFunctionId(BaseFunction callable)
     {
         AddFunctionRef(callable, FunctionIdComponent.FunctionId, 1, 4, 0);
         Emitter.LdcI4(0);

@@ -244,5 +244,10 @@ public sealed partial class EGraph : IEGraph
             var children = new[] { ExpressionMemo[expr.Target], ExpressionMemo[expr.Attribute] };
             return _graph.AddENode(expr, children);
         }
+
+        public override EClass VisitLeaf(None expr)
+        {
+            return _graph.AddENode(expr, Array.Empty<EClass>());
+        }
     }
 }

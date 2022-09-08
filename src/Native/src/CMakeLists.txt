@@ -1,11 +1,12 @@
 ﻿cmake_minimum_required (VERSION 3.13)
 
-set(SRCS api.cpp
-         object.cpp
-		 shape.cpp
-		 tensor.cpp
-		 type.cpp
-		 value.cpp)
+set(SRCS 
+        api.cpp
+        object.cpp
+        shape.cpp
+        tensor.cpp
+        type.cpp
+        value.cpp)
 
 add_library(nncasebase OBJECT ${SRCS})
 target_compile_definitions(nncasebase PUBLIC -DNNCASE_DLL -DNNCASE_SIMULATOR)
@@ -17,8 +18,10 @@ set_property(TARGET nncasebase PROPERTY POSITION_INDEPENDENT_CODE ON)
 add_subdirectory(runtime)
 add_subdirectory(kernels)
 
-add_executable(nncasetest test.cpp)
-target_link_libraries(nncasetest PRIVATE nncaseruntime)
+if (NOT BUILDING_RUNTIME)
+    add_executable(nncasetest test.cpp)
+    target_link_libraries(nncasetest PRIVATE nncaseruntime)
+endif()
 
 install(TARGETS nncasebase EXPORT nncaseTargets
   COMPONENT nncase-runtime

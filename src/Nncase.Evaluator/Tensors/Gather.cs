@@ -1,5 +1,6 @@
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using OrtKISharp;
@@ -9,7 +10,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Gather"/>.
 /// </summary>
-public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>
+public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICostEvaluator<Gather>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Gather gather)
@@ -27,6 +28,18 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>
         var axis = context.CheckArgumentType<TensorType>(target, Gather.Axis);
         var index = context.CheckArgumentType<TensorType>(target, Gather.Index);
         return Visit(context, target, input, axis, index);
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, Gather target)
+    {
+        var ret_type = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret_type.DType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret_type.DType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret_type.DType, 1),
+        };
     }
 
     private IRType Visit(ITypeInferenceContext context, Gather target, TensorType input, TensorType axis,

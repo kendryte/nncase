@@ -62,7 +62,7 @@ namespace Nncase.Importer.TFLite
         private Expr VisitLeakyRelu(in tflite.Operator op)
         {
             var input = GetInputExprs(op, 0);
-            return F.NN.LeakyRelu(input, 0.01f);
+            return F.NN.LeakyRelu(input, op.BuiltinOptionsAsLeakyReluOptions().Alpha);
         }
     }
 }

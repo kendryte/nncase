@@ -36,7 +36,7 @@ public class K210Target : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentPass(PassManager passManager, CompileOptions options)
     {
-        if (options.UsePTQ)
+        if (options.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
             passManager.Add(new EGraphPassWithQuantize("lowering_kpu", options.QuantizeOptions!)
             {
@@ -52,6 +52,12 @@ public class K210Target : ITarget
         //     // new FuseKPUDownload(),
         //     // new FoldNopClamp()
         // });
+    }
+
+    /// <inheritdoc/>
+    public Task<Dictionary<ENode, List<Tuple<List<DataType>, List<QuantParam>, float>>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassOptions runPassOptions)
+    {
+        return null;
     }
 
     /// <inheritdoc/>

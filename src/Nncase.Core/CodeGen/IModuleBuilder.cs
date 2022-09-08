@@ -27,7 +27,7 @@ public interface ILinkContext
     /// </summary>
     /// <param name="function">Function.</param>
     /// <returns>Function id.</returns>
-    FunctionId GetFunctionId(Callable function);
+    FunctionId GetFunctionId(BaseFunction function);
 }
 
 /// <summary>
@@ -157,5 +157,5 @@ public interface IModuleBuilder
     /// </summary>
     /// <param name="functions">Source functions.</param>
     /// <returns>Compiled linkable module.</returns>
-    ILinkableModule Build(IReadOnlyList<Callable> functions);
+    ILinkableModule Build(IReadOnlyList<BaseFunction> functions);
 }

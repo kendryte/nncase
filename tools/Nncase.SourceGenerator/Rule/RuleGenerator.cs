@@ -146,7 +146,7 @@ internal sealed class RuleGenerator : IIncrementalGenerator
             if (cand.classSymobl.IsInheritFrom(QuantRuleSymbol))
             {
                 statements.Add(ParseStatement($"Option = __options;"));
-                statements.Add(ParseStatement($"Root = (Expr)__result.Root;"));
+                statements.Add(ParseStatement($"MatchResult = __result;"));
                 statements.Add(ParseStatement($"Init();"));
             }
             statements.Add(

@@ -6,13 +6,14 @@ set(SRCS buffer.cpp
 		 host_allocator.cpp
 		 host_buffer.cpp
 		 host_runtime_tensor.cpp
-	     interpreter.cpp
-	     runtime_loader.cpp
-	     runtime_module.cpp
+     interpreter.cpp
+     runtime_loader.cpp
+     runtime_module.cpp
 		 runtime_function.cpp
 		 section.cpp
 		 type_serializer.cpp
-		 runtime_tensor.cpp)
+		 runtime_tensor.cpp
+     dump_manager.cpp)
 
 if ((NOT BUILDING_RUNTIME) OR DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL)
     #list(APPEND SRCS shared_runtime_tensor.platform.cpp)
@@ -24,14 +25,18 @@ if (BUILDING_RUNTIME)
     target_link_libraries(runtime PUBLIC gsl::gsl-lite mpark_variant::mpark_variant)
     target_link_libraries(runtime PRIVATE kernels)
     if (DEFAULT_BUILTIN_RUNTIMES)
-        target_compile_definitions(runtime PRIVATE -DNNCASE_DEFAULT_BUILTIN_RUNTIMES)
-    endif ()
+      target_compile_definitions(runtime PRIVATE -DNNCASE_DEFAULT_BUILTIN_RUNTIMES)
+    endif()
+    string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
+    if (CMAKE_BUILD_TYPE_UPPER STREQUAL "DEBUG")
+      target_compile_definitions(runtime PUBLIC -DNNCASE_DUMP_MANAGER)
+    endif()
     set_property(TARGET runtime PROPERTY POSITION_INDEPENDENT_CODE ON)
     install(TARGETS runtime EXPORT nncaseruntimeTargets)
 
     add_library(nncaseruntime STATIC dummy.cpp)
     target_link_libraries(nncaseruntime PRIVATE kernels runtime runtime_stackvm)
-    target_link_libraries(nncaseruntime PUBLIC nncasebase gsl::gsl-lite mpark_variant::mpark_variant)
+    target_link_libraries(nncaseruntime PUBLIC gsl::gsl-lite mpark_variant::mpark_variant)
     set_target_properties(nncaseruntime PROPERTIES
                                         OUTPUT_NAME "Nncase.Runtime.Native")
     install(TARGETS nncaseruntime EXPORT nncaseruntimeTargets
@@ -43,10 +48,9 @@ if (BUILDING_RUNTIME)
 
     install(EXPORT nncaseruntimeTargets
             DESTINATION lib/cmake/nncaseruntime)
-    
+
     configure_file(${CMAKE_CURRENT_LIST_DIR}/../../../../cmake/nncaseruntimeConfig.cmake.in nncaseruntimeConfig.cmake @ONLY)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nncaseruntimeConfig.cmake DESTINATION lib/cmake/nncaseruntime)
-
 else()
     add_library(simulator OBJECT ${SRCS})
     target_include_directories(simulator PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
@@ -54,8 +58,12 @@ else()
     target_link_libraries(simulator PRIVATE kernels)
     target_compile_definitions(simulator PUBLIC -DNNCASE_DLL -DNNCASE_SIMULATOR)
     if (DEFAULT_BUILTIN_RUNTIMES)
-        target_compile_definitions(simulator PRIVATE -DNNCASE_DEFAULT_BUILTIN_RUNTIMES)
-    endif ()
+      target_compile_definitions(simulator PRIVATE -DNNCASE_DEFAULT_BUILTIN_RUNTIMES)
+    endif()
+    string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
+    if (CMAKE_BUILD_TYPE_UPPER STREQUAL "DEBUG")
+      target_compile_definitions(simulator PUBLIC -DNNCASE_DUMP_MANAGER)
+    endif()
     set_property(TARGET simulator PROPERTY POSITION_INDEPENDENT_CODE ON)
     
     add_library(nncaseruntime SHARED dummy.cpp)

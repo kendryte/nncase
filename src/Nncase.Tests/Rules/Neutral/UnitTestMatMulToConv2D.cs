@@ -28,7 +28,7 @@ public class UnitTestMatMulToConv2D : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestMatMulToConv2DPositiveData))]
     public void TestMatMulToConv2DPositive(int[] aShape, int[] bShape)
     {
-        var caseOptions = passOptions.IndentDir($"{string.Join("_", aShape)}_{string.Join("_", bShape)}");
+        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, aShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, bShape);
         var rootPre = Math.MatMul(a, b);

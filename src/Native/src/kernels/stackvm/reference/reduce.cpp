@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
@@ -24,8 +23,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
-using namespace nncase::kernels::cpu;
-using namespace nncase::kernels::cpu::reference;
+using namespace nncase::kernels::stackvm;
 
 namespace {
 template <class T> struct identity {
@@ -85,7 +83,7 @@ result<void> reduce_prod(const T *input, T *output, const dims_t &in_shape,
     auto out_strides =
         out_strides_origin.size() == 0 ? dims_t{1} : out_strides_origin;
     // init with init_value
-    try_(reference::apply(out_shape, [&](const dims_t &index) -> result<void> {
+    try_(kernels::stackvm::apply(out_shape, [&](const dims_t &index) -> result<void> {
         output[offset(out_strides, index)] = 1;
         return ok();
     }));

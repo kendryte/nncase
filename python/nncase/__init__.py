@@ -427,13 +427,15 @@ class Compiler:
     _compile_options: ClCompileOptions = None
     _compiler: _nncase.Compiler.Compiler
 
-    def __init__(self, compile_options: CompileOptions) -> None:
-        self.__process_compile_options(compile_options)
+    def __init__(self) -> None:
         self._compiler = _nncase.Compiler.Compiler()
         self._compiler.init(self._compile_options)
 
+    def set_compile_options(self, compile_options: CompileOptions):
+        self.__process_compile_options(compile_options)
+
     def __process_compile_options(self, compile_options: CompileOptions) -> ClCompileOptions:
-        self._compile_options: ClCompileOptions = _nncase.CompileOptions(False)
+        self._compile_options: ClCompileOptions = _nncase.CompileOptions(_nncase.Quantization.ModelQuantMode.NoQuant)
         self._compile_options.Target = compile_options.target
         self._compile_options.DumpLevel = 3 if compile_options.dump_ir == True else 0
         self._compile_options.DumpDir = compile_options.dump_dir
@@ -473,10 +475,14 @@ class Compiler:
     def dump_range_options(self) -> DumpRangeTensorOptions:
         raise NotImplementedError("dump_range_options")
 
+def check_target(target: str):
+    def test_target(target: str):
+        return target in ["cpu", "k510", "k230"]
 
-def test_target(target: str):
-    return target in ["cpu", "k510"]
+    def target_exist(target: str):
+        return _nncase.Compiler.PythonHelper.TargetExist(target)
 
+    return test_target(target) and target_exist(target)
 
 class DumpRangeTensorOptions:
     calibrate_method: str

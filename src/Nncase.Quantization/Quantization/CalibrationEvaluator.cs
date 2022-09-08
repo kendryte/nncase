@@ -13,21 +13,34 @@ using Nncase.Transform;
 
 namespace Nncase.Quantization;
 
-internal class CalibrationEvaluator
+public class CalibrationEvaluator
 {
     private readonly IReadOnlyDictionary<Var, IValue> _inputs;
     private readonly IEnumerable<ENode> _awareEnodes;
     private readonly Dictionary<ENode, IValue> _values = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<EClass, IValue> _eclassValues = new();
+    private readonly RunPassOptions _passOptions;
+    private StreamWriter _dumpWriter;
 
-    public CalibrationEvaluator(IReadOnlyDictionary<Var, IValue> inputs, IEnumerable<ENode> awareEnodes)
+    public CalibrationEvaluator(IReadOnlyDictionary<Var, IValue> inputs, IEnumerable<ENode> awareEnodes, RunPassOptions passOptions)
     {
         _inputs = inputs;
         _awareEnodes = awareEnodes;
+        _passOptions = passOptions;
+        _dumpWriter = StreamWriter.Null;
     }
 
     public IReadOnlyDictionary<ENode, Tensor> Evaluate()
     {
+        if (_passOptions.DumpLevel >= 4)
+        {
+            if (!Directory.Exists(_passOptions.PassDumpDir))
+                Directory.CreateDirectory(_passOptions.PassDumpDir);
+            var fileStream = File.Open(Path.Combine(_passOptions.PassDumpDir, "calibration_evaluator.il"), FileMode.Create, FileAccess.Write);
+            _dumpWriter = new StreamWriter(fileStream);
+            _dumpWriter.AutoFlush = true;
+        }
+
         bool completed;
         var awareTensors = new Dictionary<ENode, Tensor>();
 
@@ -44,16 +57,25 @@ internal class CalibrationEvaluator
                 }
                 else
                 {
-                    awareTensors[enode] = value.AsTensor();
+                    if (value != Value.None)
+                    {
+                        awareTensors[enode] = value.AsTensor();
+                    }
+                    else
+                    {
+                        awareTensors[enode] = Enumerable.Repeat(0, 0).Select(x => (float)x).ToArray();
+                        _values.Add(enode, Value.None);
+                    }
                 }
             }
 
-            if (_values.Count == oldValues)
+            if (_awareEnodes.Count() > 0 && _values.Count == oldValues)
             {
                 throw new InvalidOperationException("Endless evaluation found.");
             }
         }
         while (!completed);
+        _dumpWriter.Close();
         return awareTensors;
     }
 
@@ -88,13 +110,34 @@ internal class CalibrationEvaluator
             IR.Tuple tuple => Visit(enode, tuple),
             Op op => Visit(enode, op),
             Marker marker => Visit(enode, marker),
+            None none => Visit(enode, none),
             _ => throw new ArgumentException("Unsupported expression type."),
         };
     }
 
+    private bool shapeChecker(Shape current, Shape target)
+    {
+        if (current.Count != target.Count)
+            return false;
+        return current.Zip(target).All(p => p.Item2.IsUnknown ? true : p.Item2.FixedValue == p.Item1.FixedValue);
+    }
+
+    private bool typeChecker(IRType cur_type, IRType target_type) => (cur_type, target_type) switch
+    {
+        (TensorType a, TensorType b) => a.DType == b.DType && shapeChecker(a.Shape, b.Shape),
+        (TupleType a, TupleType b) => a.Zip(b).All(p => typeChecker(p.Item1, p.Item2)),
+        (_, _) => true,
+    };
+
     private IValue? Visit(ENode enode, Var var)
     {
-        return VisitLeaf(enode, () => _inputs[var]);
+        return VisitLeaf(enode, () =>
+        {
+            var value = _inputs[var];
+            if (!new TypePattern(cur => typeChecker(cur, var.CheckedType!), "Var Type Checker").MatchLeaf(value.Type))
+                throw new InvalidOperationException("Feed Value Is Invalid!");
+            return value;
+        });
     }
 
     private IValue Visit(ENode enode, TensorConst tc)
@@ -119,12 +162,17 @@ internal class CalibrationEvaluator
 
     private IValue? Visit(ENode enode, IR.Tuple tuple)
     {
-        return Visit(enode, values => Value.FromTensors(values.Cast<Tensor>().ToArray()));
+        return Visit(enode, values => new TupleValue(values));
     }
 
     private IValue? Visit(ENode enode, Marker marker)
     {
         return Visit(enode, costs => costs[0]);
+    }
+
+    private IValue? Visit(ENode enode, None none)
+    {
+        return NoneValue.Default;
     }
 
     private IValue? Visit(ENode enode, Call call)
@@ -137,7 +185,11 @@ internal class CalibrationEvaluator
                 if (targetEnode.Expr is Op op)
                 {
                     var context = new EGraphOpEvaluateContext(call, costs.Skip(1).ToArray());
+                    if (_passOptions.DumpLevel >= 4)
+                        _dumpWriter.Write($"{op.GetType().Name}({string.Join(",", context.Arguments.Select(v => v.ToString()))})");
                     value = CompilerServices.EvaluateOp(op, context);
+                    if (_passOptions.DumpLevel >= 4)
+                        _dumpWriter.WriteLine($" => {value.ToString()}");
                 }
                 else
                 {
@@ -196,12 +248,12 @@ internal class CalibrationEvaluator
 
     private sealed class EGraphOpEvaluateContext : IEvaluateContext
     {
-        private readonly IValue[] _arguments;
+        public readonly IValue[] Arguments;
 
         public EGraphOpEvaluateContext(Call currentCall, IValue[] arguments)
         {
             CurrentCall = currentCall;
-            _arguments = arguments;
+            Arguments = arguments;
         }
 
         public Call CurrentCall { get; }
@@ -211,7 +263,7 @@ internal class CalibrationEvaluator
             var index = op.GetType() == parameter.OwnerType
                 ? parameter.Index
                 : throw new ArgumentOutOfRangeException($"Operator {op} doesn't have parameter: {parameter.Name}.");
-            return _arguments[index];
+            return Arguments[index];
         }
     }
 }

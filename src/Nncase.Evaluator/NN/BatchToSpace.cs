@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
@@ -10,7 +11,7 @@ using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using OrtKISharp;
 using static OrtKISharp.TensorHelper;
-
+using static Nncase.IR.F.Tensors;
 namespace Nncase.Evaluator.NN;
 
 /// <summary>
@@ -21,7 +22,9 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, BatchToSpace s)
     {
-        var input0 = context.GetOrtArgumentValue(s, BatchToSpace.Input);
+        var input = context.GetOrtArgumentValue(s, BatchToSpace.Input);
+        // to nhwc
+        var input0 = OrtKI.Transpose(input, new long[] { 0, 2, 3, 1 });
         var blockShape = context.GetArgumentValueAsArray<int>(s, BatchToSpace.BlockShape);
         var crop = context.GetOrtArgumentValue(s, BatchToSpace.Crops);
 
@@ -59,7 +62,9 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         var axesConst = BoostRange(1, blockLen + 1).ToArray();
         var strideConst = Enumerable.Repeat(1, axesConst.Length).ToArray();
         var result = OrtKI.Slice(x3, cropStart, endRange, axesConst, strideConst);
-        return result.ToValue();
+        // to nchw
+        var transposeResult = OrtKI.Transpose(result, new long[] { 0, 3, 1, 2 });
+        return transposeResult.ToValue();
     }
 
     private T[] ZipExec<T>(T[] a, T[] b, Func<T, T, T> f)
@@ -105,19 +110,31 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
 
     private IRType Visit(ITypeInferenceContext context, BatchToSpace target, TensorType input, TensorType blockShape, TensorType crops)
     {
-        var newShape = input.Shape.ToList();
-        newShape[0] = input.Shape[0] / blockShape.Shape.Prod();
-        if (context.GetArgument(target, BatchToSpace.Crops) is TensorConst cropsValue)
+        // todo:
+        var inShape = TypeInference.ApplyPerm(input.Shape, new[] {0, 2, 3, 1});
+        var batch = inShape[0];
+        if (context.GetArgument(target, BatchToSpace.BlockShape) is TensorConst blockShapeValue &&
+            context.GetArgument(target, BatchToSpace.Crops) is TensorConst cropsValue)
         {
             if (crops.Shape.Rank != 2)
             {
                 return new InvalidType("BatchToSpace crops rank must be 2");
             }
 
+            var blockShapeArr = blockShapeValue.Value.ToArray<int>();
+            var blockSize = blockShapeArr.Aggregate(1, (a, b) => a * b);
+            var d0 = batch / blockSize;
+            Debug.Assert(blockShape.Shape[0] == crops.Shape[0]);
+            var M = blockShape.Shape[0].FixedValue;
             var cropsV = cropsValue.Value.Cast<int>();
-            var afterCropShape = Enumerable.Range(0, crops.Shape.Rank).Select(
-                i => (input.Shape[i + 1] * blockShape.Shape[0]) - cropsV[i, 0] - cropsV[i, 1]);
-            return new TensorType(input.DType, input.Shape.InsertAndClone(1, afterCropShape));
+            var cropSection = Enumerable.Range(0, M).Select(
+                i => (inShape[i + 1] * blockShapeArr[0]) - cropsV[i, 0] - cropsV[i, 1]);
+            
+            var remainSize = inShape.Rank - 1 - M;
+            var remainShape = remainSize > 0 ? inShape.Skip(1 + M) : new Dimension[] { };
+            var outShapeList = new[] {d0}.Concat(cropSection).Concat(remainShape).ToArray();
+            var outShape = TypeInference.ApplyPerm(outShapeList, new[] {0, 3, 1, 2});
+            return input with {Shape = outShape};
         }
         else
         {

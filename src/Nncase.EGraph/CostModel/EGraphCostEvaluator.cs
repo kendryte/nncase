@@ -97,6 +97,7 @@ internal sealed class EGraphCostEvaluator
             IR.Tuple tuple => Visit(enode, tuple),
             Op op => Visit(enode, op),
             Marker marker => Visit(enode, marker),
+            None none => Visit(enode, none),
             _ => throw new ArgumentException("Unsupported expression type."),
         };
     }
@@ -132,6 +133,11 @@ internal sealed class EGraphCostEvaluator
     }
 
     private Cost? Visit(ENode enode, Marker marker)
+    {
+        return Visit(enode, costs => Cost.Zero);
+    }
+
+    private Cost? Visit(ENode enode, None marker)
     {
         return Visit(enode, costs => Cost.Zero);
     }

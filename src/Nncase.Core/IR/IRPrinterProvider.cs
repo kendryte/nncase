@@ -65,15 +65,13 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
     }
 
     /// <inheritdoc/>
-    public string Print(Expr expr)
+    public string Print(Expr expr, bool useScript)
     {
         var sb = new StringBuilder();
         using var dumpWriter = new StringWriter(sb);
-        return expr switch
-        {
-            PrimFunction pf => new ScriptPrintVisitor(dumpWriter).Visit(pf).Serialize(),
-            _ => new ILPrintVisitor(dumpWriter).Visit(expr)
-        };
+        return expr is PrimFunction || useScript
+            ? new ScriptPrintVisitor(dumpWriter).Visit(expr).Serialize()
+            : new ILPrintVisitor(dumpWriter).Visit(expr);
     }
 
     /// <inheritdoc/>

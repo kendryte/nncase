@@ -20,47 +20,23 @@ public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region) : Expr
 {
     /// <summary>
     /// Create a BufferRegion which is full region of the given buffer.
+    /// NOTE because of the each backend has different addr calc logic.
     /// </summary>
     /// <param name="buffer">The buffer to generate full BufferRegion.</param>
     /// <returns>The BufferRegion which covers all region of the given buffer.</returns>
-    public static BufferRegion All(Buffer buffer) => new BufferRegion(buffer, new(buffer.Shape.ToArray().Select(extent => new Range(0, extent, 1))));
-
-    /// <summary>
-    /// Get the Addr Offset.
-    /// NOTE We clamp the region expr with {0,shape[dim]}
-    /// </summary>
-    public Expr AddrOffset => Region.Zip(Buffer.Stride.ToArray())
-      .Select((p, i) => (p, i))
-      .Aggregate((Expr)0, (acc, t) => acc + IR.F.Math.MinMax(t.p.First.Start, 0, Buffer.Shape[t.i]) * t.p.Second);
-
-    /// <summary>
-    /// Get the Current Offset.
-    /// </summary>
-    public Expr CurAddr => Buffer.Addr + AddrOffset;
+    // public static BufferRegion All(PhysicalBuffer buffer) => new BufferRegion(buffer, new(buffer.Dimensions.Select(extent => new Range(0, extent, 1))));
 
     /// <summary>
     /// Get the RegionSize.
     /// </summary>
-    public Expr[] RegionSize => Region.Select(r => r.Stop - r.Start).ToArray();
+    // public Expr[] RegionSize => Region.Select(r => r.Stop - r.Start).ToArray();
 
     /// <summary>
     /// Get padding at the dim.
     /// </summary>
     /// <param name="dim"></param>
     /// <returns></returns>
-    public (Expr Before, Expr After) Padding(int dim) => (IR.F.Math.Max(-Region[dim].Start, 0), IR.F.Math.Max(Region[dim].Stop - Buffer.Shape[dim], 0));
-
-    /// <inheritdoc/>
-    public bool Equals(BufferRegion? other)
-    {
-        return other is BufferRegion bufferRegion && EqualityContract == bufferRegion.EqualityContract;
-    }
-
-    /// <inheritdoc/>
-    public override int GetHashCode()
-    {
-        return EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
-    }
+    // public (Expr Before, Expr After) Padding(int dim) => (IR.F.Math.Max(-Region[dim].Start, 0), IR.F.Math.Max(Region[dim].Stop - Buffer.Dimensions[dim], 0));
 
     /// <summary>
     /// 获得新的buffer region.

@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 using Nncase.CodeGen;
 using Nncase.CodeGen.StackVM;
 using Nncase.IR;
+using Nncase.Quantization;
 using Nncase.Transform;
 
 namespace Nncase.Targets;
@@ -31,6 +32,13 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentPass(PassManager passManager, CompileOptions options)
     {
+    }
+
+    /// <inheritdoc/>
+    public Task<Dictionary<ENode, List<Tuple<List<DataType>, List<QuantParam>, float>>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassOptions runPassOptions)
+    {
+        var enodeQuantCosineDict = new Dictionary<ENode, List<Tuple<List<DataType>, List<QuantParam>, float>>>();
+        return Task.FromResult(enodeQuantCosineDict);
     }
 
     /// <inheritdoc/>

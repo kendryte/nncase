@@ -169,7 +169,7 @@ public static class TypeInference
     {
         if (input.Shape.IsUnranked)
         {
-            return input;
+            return input with {Shape = Shape.Unknown(4)};
         }
 
         var outShape = input.Shape.ToList();
@@ -265,7 +265,7 @@ public static class TypeInference
             return input with {Shape = new Shape(outShape)};
         }
 
-        return new InvalidType("Can't Infer Shape With Dynamic Input!");
+        return input with {Shape = Shape.Unknown(4)};
     }
 
     /// <summary>
@@ -301,9 +301,20 @@ public static class TypeInference
             return input with {Shape = new Shape(outShape.Where(x => x != 0))};
         }
 
-        return new InvalidType("Can't Infer Shape With Dynamic Axis and KeepDims!");
+        return input with {Shape = Shape.Unranked};
     }
 
+    public static Shape ApplyPerm(Shape inShape, int[] perm)
+    {
+        var outShape = inShape.ToArray();
+        foreach (var i in Enumerable.Range(0, inShape.Rank))
+        {
+            outShape[i] = inShape[perm[i]];
+        }
+
+        return outShape;
+    }
+    
     /// <summary>
     /// Transpose Type Infer.
     /// </summary>
@@ -316,14 +327,8 @@ public static class TypeInference
                 return input;
             }
 
-            var permt = permValue.Value.Cast<int>();
-            var inShape = input.Shape;
-            var outShape = inShape.ToArray();
-            foreach (var i in Enumerable.Range(0, inShape.Rank))
-            {
-                outShape[i] = inShape[permt[i]];
-            }
-
+            var permt = permValue.Value.ToArray<int>();
+            var outShape = ApplyPerm(input.Shape, permt);
             return input with {Shape = outShape};
         }
 
@@ -377,4 +382,18 @@ public static class TypeInference
     /// <param name="x"></param>
     /// <returns></returns>
     public static bool IsMinus1(int x) => x == -1;
+    
+    public static Shape ReshapeTo(TensorType tensorType)
+    {
+        var shape = tensorType.Shape;
+        if (shape.IsRanked && shape[0].IsFixed)
+        {
+            Debug.Assert(shape.Count != 0);
+            return Shape.Unknown(shape[0].FixedValue);
+        }
+        else
+        {
+            return Shape.Unranked;
+        }
+    }
 }

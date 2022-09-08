@@ -100,4 +100,10 @@ NNCASE_API result<void> sync(runtime_tensor &tensor, sync_op_t op,
 
 namespace hrt = host_runtime_tensor;
 
+namespace detail {
+NNCASE_API result<tensor>
+create(datatype_t datatype, dims_t shape,
+       hrt::memory_pool_t pool = hrt::pool_shared_first) noexcept;
+}
+
 END_NS_NNCASE_RUNTIME

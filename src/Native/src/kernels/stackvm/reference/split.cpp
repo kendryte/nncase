@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
@@ -24,8 +23,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
-using namespace nncase::kernels::cpu;
-using namespace nncase::kernels::cpu::reference;
+using namespace nncase::kernels::stackvm;
 
 namespace {
 template <class T>
@@ -34,15 +32,15 @@ result<void> split_impl(const T *input, gsl::span<gsl::byte *> outputs,
                         const gsl::span<strides_t> out_strides, size_t axis,
                         const dims_t &sections,
                         NNCASE_UNUSED kernel_context &context) noexcept {
-    for (int i = 0; i < outputs.size(); ++i) {
+    for (size_t i = 0; i < outputs.size(); ++i) {
         auto out_shape = in_shape;
         out_shape[axis] = sections[i];
         auto output = reinterpret_cast<T *>(outputs[i]);
         size_t sections_sum = 0;
-        for (int j = 0; j < i; ++j) {
+        for (size_t j = 0; j < i; ++j) {
             sections_sum += sections[j];
         }
-        try_(reference::apply(out_shape, [&](const dims_t &out_index) -> result<void> {
+        try_(kernels::stackvm::apply(out_shape, [&](const dims_t &out_index) -> result<void> {
             auto in_index = out_index;
             in_index[axis] = sections_sum + out_index[axis];
             output[offset(out_strides[i], out_index)] =

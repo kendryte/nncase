@@ -69,5 +69,5 @@ public interface IIRPrinterProvider
     /// </summary>
     /// <param name="expr"> the expression</param>
     /// <returns>the string.</returns>
-    string Print(Expr expr);
+    string Print(Expr expr, bool useScript);
 }

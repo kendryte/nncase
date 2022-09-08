@@ -85,5 +85,13 @@ namespace Nncase.IR.F
         public static Call SpaceToBatch(Expr input, Expr blockShape, Expr paddings) => new Call(new SpaceToBatch(), input, blockShape, paddings);
 
         public static Call LogSoftmax(Expr expr, Expr axis) => new Call(new LogSoftmax(), expr, axis);
+
+        /// <summary>
+        /// create custom call.
+        /// </summary>
+        /// <param name="op">the csharp op.</param>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        public static Call CustomCall(CustomOp op, params Expr[] args) => new Call(op, args);
     }
 }

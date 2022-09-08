@@ -12,21 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/tensor_ops.h>
 #include <nncase/runtime/allocator.h>
-#include <nncase/runtime/host_buffer.h>
-#include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
+#include <nncase/kernels/apply.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
-using namespace nncase::kernels::cpu::reference;
 using namespace nncase::kernels::stackvm;
-#include <nncase/debug.h>
+
 namespace {
 template <class TOp, class T>
 result<void> compare_impl(TOp &&op, const T *input_a, const T *input_b,
@@ -83,7 +80,6 @@ result<void> compare_impl(typecode_t typecode, compare_op_t op,
     TYPE_SELECT(typecode, COMPARE_IMPL);
 }
 
-#include <nncase/debug.h>
 result<value_t>
 kernels::stackvm::compare(compare_op_t compare_op, value_t lhs, value_t rhs,
                           value_t output,
@@ -95,7 +91,7 @@ kernels::stackvm::compare(compare_op_t compare_op, value_t lhs, value_t rhs,
     }
 
     try_typecode(typecode, lhs_tensor);
-    auto out_shape = detail::get_binary_output_shape(lhs_tensor->shape(),
+    auto out_shape = nncase::kernels::detail::get_binary_output_shape(lhs_tensor->shape(),
                                                      rhs_tensor->shape());
     try_output(out_mem, output, datatype_t::from_type<bool>(), out_shape);
     try_(compare_impl(

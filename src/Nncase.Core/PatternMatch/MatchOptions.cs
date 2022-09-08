@@ -28,6 +28,12 @@ public class MatchOptions
     /// </summary>
     public Dictionary<Expr, HashSet<IPattern>> SuppressedPatterns { get; }
 
+    /// <summary>
+    /// check the expr and pattern in the suppressed pattern dict.
+    /// </summary>
+    /// <param name="expr"></param>
+    /// <param name="pattern"></param>
+    /// <returns></returns>
     public bool IsSuppressedPattern(Expr expr, IPattern pattern)
     {
         if (SuppressedPatterns.TryGetValue(expr, out var patterns))
@@ -38,6 +44,11 @@ public class MatchOptions
         return false;
     }
 
+    /// <summary>
+    /// add the expr and pattern into suppressed pattern dict.
+    /// </summary>
+    /// <param name="expr"></param>
+    /// <param name="pattern"></param>
     public void SuppressPattern(Expr expr, IPattern pattern)
     {
         if (!SuppressedPatterns.TryGetValue(expr, out var patterns))
@@ -49,6 +60,11 @@ public class MatchOptions
         patterns.Add(pattern);
     }
 
+    /// <summary>
+    /// when the soure expr has been changed, need inherit is suppress attribute into new expr.
+    /// </summary>
+    /// <param name="source"></param>
+    /// <param name="dest"></param>
     public void InheritSuppressPatterns(Expr source, Expr dest)
     {
         if (SuppressedPatterns.TryGetValue(source, out var srcPatterns))

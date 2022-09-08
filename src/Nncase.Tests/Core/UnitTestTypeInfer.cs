@@ -61,7 +61,8 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     {
         Var a = new Var(AnyType.Default);
         var c = Square(a);
-        Assert.False(CompilerServices.InferenceType(c));
+        CompilerServices.InferenceType(c);
+        Assert.IsType<AnyType>(c.CheckedType);
     }
 
     [Fact]
@@ -86,6 +87,15 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         Assert.True(CompilerServices.InferenceType(s));
         var post = s.Evaluate();
         Assert.Equal(s.CheckedShape, ((TensorType)post.Type).Shape);
+    }
+
+    [Fact]
+    public void TestSlice2()
+    {
+        var input_a = new Var("input_a", new TensorType(DataTypes.Float32, new[] { Dimension.Unknown, Dimension.Unknown, Dimension.Unknown }));
+        var repeats = IR.F.Tensors.Slice(IR.F.Tensors.ShapeOf(input_a), new[] { -2 }, new[] { -1 }, 1);
+        Assert.True(CompilerServices.InferenceType(repeats));
+        Assert.True(repeats.CheckedShape.Rank == 1);
     }
 
     [Fact]
@@ -173,7 +183,8 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         Var x = new("x");
         Const b = 2;
         Function f = new("f", x + b, new[] { x });
-        Assert.False(CompilerServices.InferenceType(f));
+        CompilerServices.InferenceType(f);
+        Assert.IsType<AnyType>(f.Body.CheckedType);
 
         // 2. after the  transfrom the dag is valid type
         var y = x with { TypeAnnotation = TensorType.Scalar(DataTypes.Int32) };

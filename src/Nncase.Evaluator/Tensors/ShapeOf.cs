@@ -49,6 +49,6 @@ public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>, I
         {
             return new TensorType(DataTypes.Int64, new Shape(input.Shape.Rank));
         }
-        return new TensorType(DataTypes.Int64, Shape.Unranked);
+        return new TensorType(DataTypes.Int64, new Shape(Dimension.Unknown));
     }
 }

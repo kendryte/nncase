@@ -1,6 +1,7 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
 using OrtKISharp;
@@ -96,7 +97,7 @@ public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRe
 /// <summary>
 /// Evaluator for <see cref="Relu"/>.
 /// </summary>
-public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>
+public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>, ICostEvaluator<Relu>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Relu relu)
@@ -115,6 +116,12 @@ public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>
     private IRType Visit(TensorType input)
     {
         return input;
+    }
+
+    public Cost? Visit(ICostEvaluateContext context, Relu target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, Relu.Input);
+        return CostUtility.GetActivationCost(inputType, CostUtility.GetCPUCyclesOfMax());
     }
 }
 
@@ -148,7 +155,7 @@ public class SeluEvaluator : IEvaluator<Selu>, ITypeInferencer<Selu>
 /// <summary>
 /// Evaluator for <see cref="Sigmoid"/>.
 /// </summary>
-public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>
+public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>, ICostEvaluator<Sigmoid>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Sigmoid sigmoid)
@@ -162,6 +169,14 @@ public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>
     {
         var input = context.CheckArgumentType<TensorType>(target, Sigmoid.Input);
         return Visit(input);
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, Sigmoid target)
+    {
+        var ret = context.GetReturnType<TensorType>();
+        var macPerElement = 3;
+        return CostUtility.GetActivationCost(ret, macPerElement);
     }
 
     private IRType Visit(TensorType input)

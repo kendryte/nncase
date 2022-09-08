@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
@@ -26,8 +25,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
-using namespace nncase::kernels::cpu;
-using namespace nncase::kernels::cpu::reference;
+using namespace nncase::kernels::stackvm;
 
 namespace {
 std::pair<size_t, size_t>

@@ -206,6 +206,14 @@ public sealed class TensorValue : IValue, IEquatable<TensorValue?>
     {
         return HashCode.Combine(_value);
     }
+
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        if (_value.BytesBuffer.Length <= 64)
+            return _value.Shape.ToString() + " : " + _value.GetArrayString(false);
+        return _value.Shape.ToString();
+    }
 }
 
 /// <summary>
@@ -274,5 +282,11 @@ public sealed class TupleValue : IValue, IEquatable<TupleValue?>
     public override int GetHashCode()
     {
         return HashCode.Combine(_values);
+    }
+
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return "(" + string.Join(",", _values.Select(v => v.ToString())) + ")";
     }
 }

@@ -40,14 +40,7 @@ public class FlattenEvaluator : IEvaluator<Flatten>, ITypeInferencer<Flatten>
                 var second = input.Shape.Take(axisValue..input.Shape.Count).Aggregate(1, (x, y) => x * y.FixedValue);
                 return input with { Shape = new[] { first, second } };
             }
-            else
-            {
-                return new InvalidType("Can't infer shape with dynamic input in Flatten");
-            }
         }
-        else
-        {
-            return new InvalidType("Can't infer shape with dynamic axis in Flatten");
-        }
+        return input with {Shape = Shape.Unknown(2)};
     }
 }

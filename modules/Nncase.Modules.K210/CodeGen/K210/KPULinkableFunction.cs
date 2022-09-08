@@ -19,7 +19,7 @@ internal class KPULinkableFunction : ILinkableFunction
 
     public uint Id { get; }
 
-    public Function SourceFunction { get; }
+    public BaseFunction SourceFunction { get; }
 
     public byte[] Text { get; }
 

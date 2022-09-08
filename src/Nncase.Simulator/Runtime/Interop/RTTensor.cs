@@ -11,10 +11,16 @@ using Nncase.IR;
 
 namespace Nncase.Runtime.Interop;
 
+/// <summary>
+/// the Runtime Value
+/// </summary>
 public abstract class RTValue : RTObject
 {
-    internal RTValue(IntPtr handle)
-     : base(handle)
+    internal RTValue() : base(IntPtr.Zero)
+    {
+    }
+
+    internal RTValue(IntPtr handle) : base(handle)
     {
     }
 
@@ -31,6 +37,18 @@ public abstract class RTValue : RTObject
             throw;
         }
     }
+
+    /// <summary>
+    /// convert RT Value To IValue
+    /// </summary>
+    /// <returns></returns>
+    public IValue ToValue() => this switch
+    {
+        RTTensor rTTensor => new TensorValue(rTTensor.ToTensor()),
+        RTTuple rTTuple => new TupleValue(rTTuple.Fields.Select(f => f.ToValue()).ToArray()),
+        _ => throw new ArgumentOutOfRangeException(),
+    };
+
 }
 
 /// <summary>
@@ -41,6 +59,10 @@ public class RTTensor : RTValue
     private RTDataType? _elementType;
     private uint[]? _dimensions;
     private uint[]? _strides;
+
+    internal RTTensor() : base(IntPtr.Zero)
+    {
+    }
 
     internal RTTensor(IntPtr handle)
         : base(handle)
@@ -56,23 +78,29 @@ public class RTTensor : RTValue
         {
             if (_elementType == null)
             {
-                Native.TensorGetDtype(Handle, out var dtype).ThrowIfFailed();
-                _elementType = new RTDataType(dtype);
+                Native.TensorGetDtype(this, out var dtype).ThrowIfFailed();
+                _elementType = dtype;
             }
 
             return _elementType;
         }
     }
 
+    /// <summary>
+    /// Get the buffer slice
+    /// </summary>
     public RTBufferSlice Buffer
     {
         get
         {
-            Native.TensorGetBuffer(Handle, out var buffer).ThrowIfFailed();
+            Native.TensorGetBuffer(this, out var buffer).ThrowIfFailed();
             return RTBufferSlice.FromRT(buffer);
         }
     }
 
+    /// <summary>
+    /// Get the dimensions
+    /// </summary>
     public unsafe ReadOnlySpan<uint> Dimensions
     {
         get
@@ -80,11 +108,11 @@ public class RTTensor : RTValue
             if (_dimensions == null)
             {
                 uint dimsLength = 0;
-                Native.TensorGetDims(Handle, null, ref dimsLength);
+                Native.TensorGetDims(this, null, ref dimsLength);
                 var dims = new uint[dimsLength];
                 fixed (uint* dimsPtr = dims)
                 {
-                    Native.TensorGetDims(Handle, dimsPtr, ref dimsLength).ThrowIfFailed();
+                    Native.TensorGetDims(this, dimsPtr, ref dimsLength).ThrowIfFailed();
                 }
 
                 _dimensions = dims;
@@ -94,6 +122,9 @@ public class RTTensor : RTValue
         }
     }
 
+    /// <summary>
+    /// Get the Strides
+    /// </summary>
     public unsafe ReadOnlySpan<uint> Strides
     {
         get
@@ -101,11 +132,11 @@ public class RTTensor : RTValue
             if (_strides == null)
             {
                 uint stridesLength = 0;
-                Native.TensorGetStrides(Handle, null, ref stridesLength);
+                Native.TensorGetStrides(this, null, ref stridesLength);
                 var strides = new uint[stridesLength];
                 fixed (uint* stridesPtr = strides)
                 {
-                    Native.TensorGetStrides(Handle, stridesPtr, ref stridesLength).ThrowIfFailed();
+                    Native.TensorGetStrides(this, stridesPtr, ref stridesLength).ThrowIfFailed();
                 }
 
                 _strides = strides;
@@ -114,6 +145,9 @@ public class RTTensor : RTValue
             return _strides;
         }
     }
+
+    /// <inheritdoc/>
+    public override bool IsInvalid => handle == IntPtr.Zero;
 
     /// <summary>
     /// Create runtime tensor.
@@ -127,8 +161,8 @@ public class RTTensor : RTValue
     {
         fixed (uint* dimsPtr = dims, stridesPtr = strides)
         {
-            Native.TensorCreate(dataType.Handle, dimsPtr, (uint)dims.Length, stridesPtr, (uint)strides.Length, bufferSlice.ToRT(), out var tensor).ThrowIfFailed();
-            return new RTTensor(tensor);
+            Native.TensorCreate(dataType, dimsPtr, (uint)dims.Length, stridesPtr, (uint)strides.Length, bufferSlice.ToRT(), out var tensor).ThrowIfFailed();
+            return tensor;
         }
     }
 

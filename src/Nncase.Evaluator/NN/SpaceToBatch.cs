@@ -30,8 +30,8 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
         var newPaddings = new long[(1 + spatialSize + remainShapeSize) * 2];
         for (int i = 0; i < spatialSize; i++)
         {
-            newPaddings[1 + i] = paddings[i];
-            newPaddings[1 + newPaddings.Length / 2 + i] = paddings[paddings.Length / 2 + i];
+            newPaddings[1 + i] = paddings[2 * i];
+            newPaddings[1 + newPaddings.Length / 2 + i] = paddings[2 * i + 1];
         }
 
         var newPaddingsTensor = MakeOrtTensor(newPaddings);
@@ -88,14 +88,14 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
              context.GetArgument(target, SpaceToBatch.Paddings) is TensorConst paddings_con)
         {
             var ts_block_shape = block_shape_con.Value.Cast<int>();
-            var ts_paddings = paddings_con.Value.Cast<int>();
+            var ts_paddings = paddings_con.Value.ToArray<int>();
             int m = (int)ts_block_shape.Length;
             var padded_shape = input.Shape.ToList();
             for (int i = 0; i < m; i++)
             {
                 if (!padded_shape[1 + i].IsUnknown)
                 {
-                    padded_shape[1 + i] += new Dimension(ts_paddings[i] + ts_paddings[i + ts_paddings.Length / 2]);
+                    padded_shape[1 + i] += new Dimension(ts_paddings[2 * i] + ts_paddings[2 * i + 1]);
                 }
             }
 

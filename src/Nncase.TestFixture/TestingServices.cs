@@ -8,7 +8,6 @@ using Autofac.Extras.CommonServiceLocator;
 using CommonServiceLocator;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-// using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nncase.Transform;
 
@@ -181,7 +180,7 @@ public static class Testing
         where T : unmanaged, IEquatable<T>
     {
         return Tensor.FromArray(Enumerable.Range(0, (int)TensorUtilities.GetProduct(shape)).ToArray())
-            .Cast<T>(CastMode.Default).Reshape(shape);
+            .Cast<T>(CastMode.KDefault).Reshape(shape);
     }
 
     /// <summary>
@@ -195,7 +194,7 @@ public static class Testing
       where T : unmanaged, System.IEquatable<T>
     {
         var scale = (range.Max - range.Min) / t.Length;
-        return Tensor.FromArray(t.Cast<float>(CastMode.Default).Select(i => i * scale + range.Min).ToArray())
+        return Tensor.FromArray(t.Cast<float>(CastMode.KDefault).Select(i => i * scale + range.Min).ToArray())
                 .Cast<T>()
                 .Reshape(t.Shape);
     }
@@ -225,17 +224,161 @@ public static class Testing
         }
         return err_count;
     }
+
+    /// <summary>
+    /// dump value.
+    /// </summary>
+    /// <param name="v"></param>
+    /// <param name="writer"></param>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
+    public static void DumpValue(IValue v, StreamWriter writer)
+    {
+        switch (v)
+        {
+            case TensorValue t:
+                writer.WriteLine(t.AsTensor().GetArrayString());
+                break;
+            case TupleValue tp:
+                foreach (var f in tp)
+                {
+                    DumpValue(f, writer);
+                }
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        };
+    }
+
+    /// <summary>
+    /// dump value
+    /// </summary>
+    /// <param name="v"></param>
+    /// <param name="path"></param>
+    public static void DumpValue(IValue v, string path)
+    {
+        using (var sw = new StreamWriter(File.Open(path, FileMode.Create, FileAccess.Write)))
+        {
+            DumpValue(v, sw);
+        }
+    }
+
+
+    /// <summary>
+    /// build kmodel
+    /// </summary>
+    /// <param name="name">the dumped kmodel name.</param>
+    /// <param name="module"></param>
+    /// <param name="compileOptions"></param>
+    /// <returns>kmodel_path and kmodel bytes.</returns>
+    public static (string, byte[]) BuildKModel(string name, IR.IRModule module, CompileOptions compileOptions)
+    {
+        CodeGen.ModelBuilder modelBuilder = new CodeGen.ModelBuilder(CompilerServices.GetTarget(compileOptions.Target), compileOptions);
+        CodeGen.LinkedModel linkedModel = modelBuilder.Build(module);
+        var kmodel_path = Path.Combine(compileOptions.DumpDir, $"{name}.kmodel");
+        using (var output = System.IO.File.Open(kmodel_path, System.IO.FileMode.Create))
+        {
+            linkedModel.Serialize(output);
+        }
+        return (kmodel_path, File.ReadAllBytes(kmodel_path));
+    }
+
+    /// <summary>
+    /// dump kmodel args and bin for cli interp.
+    /// </summary>
+    /// <param name="kmodel_path"></param>
+    /// <param name="input_tensors"></param>
+    /// <param name="caseOptions"></param>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
+    public static void DumpInterpModel(string kmodel_path, Tensor[] input_tensors, Transform.RunPassOptions caseOptions)
+    {
+        string input_pool_path = Path.Combine(caseOptions.DumpDir, "input_pool.bin");
+        var output_pool_path = Path.Combine(caseOptions.DumpDir, "output_pool.bin");
+        using (var args_writer = new System.IO.StreamWriter(
+          System.IO.File.Open(
+            System.IO.Path.Join(caseOptions.DumpDir, "args.txt"),
+            System.IO.FileMode.Create),
+          System.Text.Encoding.ASCII))
+        {
+            args_writer.WriteLine(kmodel_path);
+            args_writer.WriteLine(input_pool_path);
+            args_writer.WriteLine(output_pool_path);
+
+            uint start = 0;
+            uint size = 0;
+            args_writer.WriteLine(input_tensors.Length);
+            using (var pool_writer = new BinaryWriter(File.OpenWrite(input_pool_path)))
+            {
+                foreach (var in_tensor in input_tensors)
+                {
+                    pool_writer.Write(in_tensor.BytesBuffer);
+                    size = checked((uint)in_tensor.BytesBuffer.Length);
+                    byte dt_code = in_tensor.ElementType switch
+                    {
+                        var x when x == DataTypes.Boolean => 0x00,
+                        var x when x == DataTypes.Int8 => 0x02,
+                        var x when x == DataTypes.Int16 => 0x03,
+                        var x when x == DataTypes.Int32 => 0x04,
+                        var x when x == DataTypes.Int64 => 0x05,
+                        var x when x == DataTypes.UInt8 => 0x06,
+                        var x when x == DataTypes.UInt16 => 0x07,
+                        var x when x == DataTypes.UInt32 => 0x08,
+                        var x when x == DataTypes.UInt64 => 0x09,
+                        var x when x == DataTypes.Float16 => 0x0A,
+                        var x when x == DataTypes.Float32 => 0x0B,
+                        var x when x == DataTypes.Float64 => 0x0C,
+                        var x when x == DataTypes.BFloat16 => 0x0D,
+                        _ => throw new ArgumentOutOfRangeException(),
+                    };
+                    args_writer.WriteLine($"{dt_code}");
+                    args_writer.WriteLine(in_tensor.Shape.Count);
+                    args_writer.WriteLine($"{string.Join(' ', in_tensor.Shape)}");
+                    args_writer.WriteLine($"{start} {size}");
+                    start += size;
+                }
+            }
+        }
+    }
+
+
+    public static IValue RunKModel(byte[] kmodel, string dump_path, Tensor[] input_tensors)
+    {
+        using (var interp =  Nncase.Runtime.Interop.RTInterpreter.Create())
+        {
+            interp.SetDumpRoot(dump_path);
+            interp.LoadModel(kmodel);
+            var entry = interp.Entry!;
+
+            var rtInputs = input_tensors.Select(Nncase.Runtime.Interop.RTTensor.FromTensor).ToArray();
+            return entry.Invoke(rtInputs).ToValue();
+        }
+    }
+
+    public static IValue RunKModel(byte[] kmodel, string dump_path, Runtime.Interop.RTTensor[] input_tensors)
+    {
+        using (var interp = Nncase.Runtime.Interop.RTInterpreter.Create())
+        {
+            interp.SetDumpRoot(dump_path);
+            interp.LoadModel(kmodel);
+            var entry = interp.Entry!;
+            return entry.Invoke(input_tensors).ToValue();
+        }
+    }
 }
 
 
 public class UnitTestFixtrue
 {
-    protected RunPassOptions passOptions;
-
-    public UnitTestFixtrue()
+    public CompileOptions GetCompileOptions([CallerMemberName] string member_name = "")
     {
-        string DumpDirPath = Testing.GetDumpDirPath(this.GetType());
-        passOptions = new RunPassOptions(CompilerServices.GetTarget(CompilerServices.CompileOptions.Target), CompilerServices.CompileOptions.DumpLevel, DumpDirPath);
+        string DumpDirPath = Path.Combine(Testing.GetDumpDirPath(this.GetType()), member_name);
+        CompileOptions compileOptions = new(CompilerServices.CompileOptions);
+        compileOptions.DumpDir = DumpDirPath;
+        return compileOptions;
     }
 
+    public RunPassOptions GetPassOptions([CallerMemberName] string member_name = "")
+    {
+        var options = GetCompileOptions(member_name);
+        return new RunPassOptions(options);
+    }
 }

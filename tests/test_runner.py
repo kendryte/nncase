@@ -170,6 +170,10 @@ DataFactory = {
     'generate_image_dataset': generate_image_dataset
 }
 
+# singleton
+# if create compiler in each test, then will thorw exception: The configured user limit
+globalCompiler = nncase.Compiler()
+
 class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
     def __init__(self, case_name, targets=None, overwrite_configs: Union[Dict, str] = None) -> None:
         config_root = os.path.dirname(__file__)
@@ -197,7 +201,9 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         self.pre_process: List[Dict] = []
 
         self.num_pattern = re.compile("(\d+)")
-        self.default_shape = [1, 1, 256, 256]
+        # [n, c, h, w].zip default_shape => [(n, 1), (c, 1), (h, 48), (w, 48)]
+        self.default_shape = [1, 1, 48, 48, 24, 24]
+        self.shape_vars = {}
 
     def transform_input(self, values: np.array, type: str, stage: str) -> np.ndarray:
         values = copy.deepcopy(values)
@@ -356,7 +362,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         def _validate_targets(old_targets: List[str]):
             new_targets = []
             for t in old_targets:
-                if nncase.test_target(t):
+                if nncase.check_target(t):
                     new_targets.append(t)
                 else:
                     print("WARN: target[{0}] not found".format(t))
@@ -408,6 +414,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
 
     def run_single(self, cfg, case_dir: str, model_file: Union[List[str], str]):
         # todo: move to run
+        self.compiler = globalCompiler
         if not self.inputs:
             self.parse_model_input_output(model_file)
         for dict_args in self.make_args(cfg.preprocess_opt):

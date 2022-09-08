@@ -23,7 +23,7 @@ namespace Nncase.Importer.TFLite
                 0);
             return Cast(
                 Concat(
-                    new IR.Tuple(newNC, newSize),
+                    new IR.Tuple(newNC, Cast(newSize, DataTypes.Int64)),
                     0),
                 new Int64Type());
         }

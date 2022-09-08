@@ -2,6 +2,8 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 
@@ -10,7 +12,8 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Broadcast"/>.
 /// </summary>
-public class BroadcastEvaluator : IEvaluator<Broadcast>, ITypeInferencer<Broadcast>
+[TypeInferGenerator]
+public sealed partial class BroadcastEvaluator : IEvaluator<Broadcast>, ITypeInferencer<Broadcast>, ICostEvaluator<Broadcast>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Broadcast b)
@@ -21,22 +24,24 @@ public class BroadcastEvaluator : IEvaluator<Broadcast>, ITypeInferencer<Broadca
     }
 
     /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, Broadcast target)
+    public Cost? Visit(ICostEvaluateContext context, Broadcast target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Broadcast.Input);
-        return Visit(context, target, input);
+        var input = context.GetArgumentType<TensorType>(target, Broadcast.Input);
+        var ret = context.GetReturnType<TensorType>();
+        return CostUtility.GetBroadcastCost(input, ret);
     }
 
-    private IRType Visit(ITypeInferenceContext context, Broadcast target, TensorType input)
+    IRType Visit(TensorType Input, TensorType Shape, ITypeInferenceContext context, Broadcast op)
     {
-        var shapeValue = context.GetArgument(target, Broadcast.Shape);
-        if (shapeValue is TensorConst constShapeValue && input.Shape.IsFixed)
+        var shapeValue = context.GetArgument(op, Broadcast.Shape);
+        if (shapeValue is TensorConst constShapeValue && Input.Shape.IsFixed)
         {
-            return TypeInference.BroadcastType(input, new TensorType(input.DType, constShapeValue.Value.ToArray<int>()));
+            return TypeInference.BroadcastType(Input, new TensorType(Input.DType, constShapeValue.Value.ToArray<int>()));
         }
-        else
+        if (Shape.Shape[0].IsFixed)
         {
-            return new InvalidType("Broadcast shape is unknown");
+            return Input with { Shape = Enumerable.Repeat(Dimension.Unknown, Shape.Shape[0].FixedValue).ToArray() };
         }
+        return Input with { Shape = IR.Shape.Unranked };
     }
 }

@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -13,6 +15,8 @@ using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Nncase.TestFixture;
+using Nncase.Utilities;
 using OrtKISharp;
 using Xunit;
 using static Nncase.IR.F.Math;
@@ -21,6 +25,7 @@ using static Nncase.IR.F.Tensors;
 using static OrtKISharp.TensorHelper;
 using RangeOf = Nncase.IR.Math.RangeOf;
 using Tuple = Nncase.IR.Tuple;
+using static Nncase.Utilities.DumpUtility;
 
 namespace Nncase.Tests.EvaluatorTest;
 

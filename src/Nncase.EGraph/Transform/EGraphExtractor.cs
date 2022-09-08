@@ -9,6 +9,8 @@ using System.Text;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.PatternMatch;
+using static Nncase.PatternMatch.F.Math;
+using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Transform;
 
@@ -42,9 +44,32 @@ internal class EGraphExtractor
                 IR.Tuple tuple => Visit(minCostEnode, tuple),
                 Op op => VisitLeaf(minCostEnode, op),
                 Marker marker => Visit(minCostEnode, marker),
+                None none => Visit(minCostEnode, none),
                 _ => throw new ArgumentException("Unsupported expression type."),
             };
             _eclassMemo.Add(eclass, expr);
+        }
+        var callPattern = IsCall(IsWildcard(), IsWildcard());
+        var isCallExpr = callPattern.MatchLeaf(expr);
+        if (isCallExpr == true)
+        {
+            if (((Call)(expr)).EnodeQuantConfigWithCosine != null)
+            {
+                var pattern = IsCall(IsWildcard(), IsWildcard());
+                var isCall = pattern.MatchLeaf(expr);
+                if (isCall == true)
+                {
+                    System.Console.WriteLine(expr + "  " + expr.CheckedType);
+                    for (int i = 0; i < ((Call)(expr)).EnodeQuantConfigWithCosine.Count; i++)
+                    {
+                        for (int j = 0; j < ((Call)(expr)).EnodeQuantConfigWithCosine[i].Item1.Count; j++)
+                        {
+                            System.Console.Write(((Call)(expr)).EnodeQuantConfigWithCosine[i].Item1[j] + "  ");
+                        }
+                        System.Console.WriteLine(((Call)(expr)).EnodeQuantConfigWithCosine[i].Item3);
+                    }
+                }
+            }
         }
 
         return expr;
@@ -60,6 +85,11 @@ internal class EGraphExtractor
         var target = Visit(enode.Children[0]);
         var attr = Visit(enode.Children[1]);
         return marker with { Target = target, Attribute = attr };
+    }
+
+    private None Visit(ENode enode, None none)
+    {
+        return none;
     }
 
     private Function Visit(ENode enode, Function func)

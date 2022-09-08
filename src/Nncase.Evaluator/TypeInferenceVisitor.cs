@@ -33,9 +33,10 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         _context.CurrentCall = expr;
         var type = expr.Target switch
         {
+            Fusion fusion => ((CallableType)Visit(fusion)).ReturnType,
+            PrimFunctionWrapper wrap => ((CallableType)Visit(wrap)).ReturnType,
             Function func => ((CallableType)Visit(func)).ReturnType,
             Op op => CompilerServices.InferenceOp(op, _context),
-            PrimFunction primfunc => ((CallableType)Visit(primfunc)).ReturnType,
             _ => new InvalidType("Target of call expression should be either a function or an op."),
         };
         _context.CurrentCall = null;
@@ -66,7 +67,35 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         }
 
         var paramTypes = expr.Parameters.Select(Visit).ToArray();
-        var type = new CallableType(expr.Body is Sequential seq ? (seq.Count == 0 ? TupleType.Void : Visit(seq.Last())) : Visit(expr.Body), ImmutableArray.Create(paramTypes));
+        var type = new CallableType(Visit(expr.Body), ImmutableArray.Create(paramTypes));
+        SetCheckedType(expr, type);
+        return type;
+    }
+
+    /// <inheritdoc/>
+    public override IRType VisitLeaf(Fusion expr)
+    {
+        try
+        {
+            foreach (var p in expr.Parameters) { VerifySubField(expr, p); }
+            VerifySubField(expr, expr.Body);
+        }
+        catch (TypeInferenceInterruptException e)
+        {
+            SetCheckedType(expr, e.ReasonType);
+            return e.ReasonType;
+        }
+
+        var paramTypes = expr.Parameters.Select(Visit).ToArray();
+        var type = new CallableType(Visit(expr.Body), ImmutableArray.Create(paramTypes));
+        SetCheckedType(expr, type);
+        return type;
+    }
+
+    /// <inheritdoc/>
+    public override IRType VisitLeaf(PrimFunctionWrapper expr)
+    {
+        var type = new CallableType(expr.ReturnType!, new(expr.ParameterTypes!));
         SetCheckedType(expr, type);
         return type;
     }
@@ -86,7 +115,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         }
 
         var paramTypes = expr.Parameters.Select(Visit).ToArray();
-        var type = new CallableType(expr.Body is Sequential seq ? (seq.Count == 0 ? TupleType.Void : Visit(seq.Last())) : Visit(expr.Body), ImmutableArray.Create(paramTypes));
+        var type = new CallableType(Visit(expr.Body), ImmutableArray.Create(paramTypes));
         SetCheckedType(expr, type);
         return type;
     }
@@ -385,9 +414,23 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     /// <inheritdoc/>
     public override IRType VisitLeaf(Nncase.TIR.Buffer expr)
     {
-        IRType type = expr.ElemType;
-        SetCheckedType(expr, type);
-        return type;
+        if (expr is Nncase.TIR.PhysicalBuffer physicalBuffer)
+        {
+            IRType type = new TensorType(expr.ElemType, new(physicalBuffer.FixedDimensions));
+            SetCheckedType(expr, type);
+            return type;
+        }
+        else if (expr is Nncase.TIR.LogicalBuffer logicalBuffer)
+        {
+
+            IRType type = new TensorType(expr.ElemType, new(logicalBuffer.Dimensions.Select(i => Dimension.Unknown)));
+            SetCheckedType(expr, type);
+            return type;
+        }
+        else
+        {
+            return new InvalidType("Not Support Buffer Type");
+        }
     }
 
     public override IRType VisitLeaf(Nncase.TIR.BufferRegion expr)
@@ -408,7 +451,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
             return e.ReasonType;
         }
         // todo need infer the sub region shape/stride
-        IRType type = expr.Buffer.ElemType;
+        IRType type = expr.Buffer.CheckedType!;
         SetCheckedType(expr, type);
         return type;
     }
@@ -421,6 +464,6 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     private void SetCheckedType(Expr expr, IRType type)
     {
         expr.CheckedType = type;
-        IsFullyInferenced &= type is not (AnyType or InvalidType);
+        IsFullyInferenced &= type is not InvalidType;
     }
 }

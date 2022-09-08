@@ -2,6 +2,8 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using OrtKISharp;
@@ -11,7 +13,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Reduce"/>.
 /// </summary>
-public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>
+public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICostEvaluator<Reduce>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Reduce reduce)
@@ -41,6 +43,22 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>
         var input = context.CheckArgumentType<TensorType>(target, Reduce.Input);
         context.CheckArgumentType<TensorType>(target, Reduce.Axis);
         return Visit(context, target, input);
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, Reduce target)
+    {
+        var input = context.GetArgumentType<TensorType>(target, Reduce.Input);
+        var ret = context.GetReturnType<TensorType>();
+        var input_elem = input.Shape.Aggregate(1, (acc, d) => acc * (d.IsFixed ? d.FixedValue : 1));
+        var ret_elem = ret.Shape.Aggregate(1, (acc, d) => acc * (d.IsFixed ? d.FixedValue : 1));
+        var macPerElement = input_elem / ret_elem;
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, macPerElement),
+        };
     }
 
     private IRType Visit(ITypeInferenceContext context, Reduce target, TensorType input)

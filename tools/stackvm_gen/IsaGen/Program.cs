@@ -419,6 +419,8 @@ namespace IsaGen
                 return "float";
             else if (t == typeof(Nncase.DataType))
                 return "typecode_t";
+            else if (t == typeof(byte[]))
+                return "gsl::span<const gsl::byte>";
             else if (t == typeof(string))
                 return "std::string";
             else if (t == typeof(string[]))

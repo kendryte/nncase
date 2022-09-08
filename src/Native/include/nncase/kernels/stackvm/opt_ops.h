@@ -26,11 +26,80 @@
 
 BEGIN_NS_NNCASE_KERNELS_MODULE(stackvm)
 namespace optimized {
-result<void> gather_nd(datatype_t type, const gsl::byte *input,
-                       gsl::byte *output, const dims_t &in_shape,
-                       const dims_t &out_shape, const dims_t &in_strides,
-                       const dims_t &out_strides, datatype_t indices_type,
-                       const gsl::byte *indices, const dims_t &indices_shape,
-                       size_t batch_dims, kernel_context &context) noexcept;
+
+NNCASE_API result<void>
+conv2d(const float *input, const float *weights, const float *bias,
+       float *output, const dims_t &in_shape, const dims_t &in_strides,
+       const dims_t &w_shape, NNCASE_UNUSED const dims_t &w_strides,
+       NNCASE_UNUSED const dims_t &bias_strides,
+       NNCASE_UNUSED const dims_t &out_strides, const padding &padding_h,
+       const padding &padding_w, int32_t groups, int32_t stride_h,
+       int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+       value_range<float> fused_activation,
+       NNCASE_UNUSED kernels::kernel_context &context) noexcept;
+
+NNCASE_API result<void>
+gather_nd(datatype_t type, const gsl::byte *input, gsl::byte *output,
+          const dims_t &in_shape, const dims_t &out_shape,
+          const dims_t &in_strides, const dims_t &out_strides,
+          datatype_t indices_type, const gsl::byte *indices,
+          const dims_t &indices_shape, size_t batch_dims,
+          kernel_context &context) noexcept;
+
+NNCASE_API result<void> concat(datatype_t type,
+                               gsl::span<const gsl::byte *const> inputs,
+                               gsl::byte *output, const dims_t &out_shape,
+                               gsl::span<const dims_t> in_strides,
+                               const dims_t &out_strides, size_t axis,
+                               const dims_t &concat_dims,
+                               kernel_context &context) noexcept;
+
+NNCASE_API result<void>
+dequantize(datatype_t in_type, datatype_t out_type, const gsl::byte *input,
+           gsl::byte *output, const dims_t &in_shape,
+           NNCASE_UNUSED const dims_t &in_strides,
+           NNCASE_UNUSED const dims_t &out_strides, float scale, float bias,
+           NNCASE_UNUSED kernel_context &context) noexcept;
+
+NNCASE_API result<void>
+gather(datatype_t type, const gsl::byte *input, gsl::byte *output,
+       const dims_t &in_shape, const dims_t &out_shape,
+       const dims_t &in_strides, const dims_t &out_strides,
+       datatype_t indices_type, const gsl::byte *indices,
+       const dims_t &indices_shape, size_t axis,
+       kernel_context &context) noexcept;
+
+NNCASE_API result<void>
+one_hot(datatype_t type, datatype_t indices_type, const gsl::byte *indices,
+        gsl::byte *output, const dims_t &indices_shape, const dims_t &out_shape,
+        const dims_t &out_strides, size_t depth, gsl::byte *values, size_t axis,
+        runtime::stackvm::one_hot_mode_t mode,
+        kernel_context &context) noexcept;
+
+NNCASE_API result<void>
+quantize(datatype_t in_type, datatype_t out_type, const gsl::byte *input,
+         gsl::byte *output, const dims_t &in_shape,
+         NNCASE_UNUSED const dims_t &in_strides,
+         NNCASE_UNUSED const dims_t &out_strides, float scale, float bias,
+         NNCASE_UNUSED kernel_context &context) noexcept;
+
+NNCASE_API result<void>
+resize_bilinear(typecode_t type, const gsl::byte *input, gsl::byte *output,
+                const dims_t &in_shape, const dims_t &in_strides,
+                const dims_t &out_strides, int32_t out_h, int32_t out_w,
+                bool align_corners, bool half_pixel_centers,
+                kernel_context &context) noexcept;
+
+NNCASE_API result<void> resize_nearest_neighbor(
+    typecode_t type, const gsl::byte *input, gsl::byte *output,
+    const dims_t &in_shape, const dims_t &in_strides, const dims_t &out_strides,
+    int32_t out_h, int32_t out_w, bool align_corners, bool half_pixel_centers,
+    kernel_context &context) noexcept;
+
+NNCASE_API result<void>
+slice(datatype_t type, const gsl::byte *input, gsl::byte *output,
+      const dims_t &in_shape, const strides_t &in_strides,
+      const strides_t &out_strides, const axes_t &begins, const axes_t &ends,
+      const axes_t &strides, NNCASE_UNUSED kernel_context &context) noexcept;
 } // namespace optimized
 END_NS_NNCASE_KERNELS_MODULE

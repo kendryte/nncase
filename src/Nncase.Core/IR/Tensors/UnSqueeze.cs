@@ -14,6 +14,8 @@ namespace Nncase.IR.Tensors;
 
 /// <summary>
 /// Unsqueeze expression.
+/// <see cref="http://www.xavierdupre.fr/app/mlprodict/helpsphinx/onnxops/onnx__Unsqueeze.html#unsqueeze-13"/>
+/// NOTE Dim will apply by sequence. 
 /// </summary>
 [PatternFunctionalGenerator]
 public sealed record Unsqueeze() : Op

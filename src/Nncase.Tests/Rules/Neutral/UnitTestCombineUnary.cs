@@ -40,7 +40,7 @@ public class UnitTestCombineUnary: TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestCombinePadUnaryPositiveData))]
     public void TestCombinePadUnaryPositive(UnaryOp opType, int[] inShape, int[,] paddings, PadMode padM, float padValue)
     {
-        var caseOptions = passOptions.IndentDir($"{(inShape.Length)}D_{opType}_{padM}_motion");
+        var caseOptions = GetPassOptions();
         var a = new Var();
         var Normal = new Dictionary<Var, IValue>();
         Normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
@@ -67,7 +67,7 @@ public class UnitTestCombineUnary: TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestCombineSliceUnaryPositiveData))]
     public void TestCombineSliceUnaryPositive(UnaryOp opType, int[] inShape, int[] begins, int[] ends, int[] axes, int[] strides)
     {
-        var caseOptions = passOptions.IndentDir($"{(inShape.Length)}D_{opType}_Slice_motion");
+        var caseOptions = GetPassOptions();
         var a = new Var();
         var Normal = new Dictionary<Var, IValue>();
         Normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
@@ -95,7 +95,7 @@ public class UnitTestCombineUnary: TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestCombineReshapeUnaryPositiveData))]
     public void TestCombineReshapeUnaryPositive(UnaryOp opType, int[] inShape, int[] outShape)
     {
-        var caseOptions = passOptions.IndentDir($"{(inShape.Length)}D_{opType}_Reshape_motion");
+        var caseOptions = GetPassOptions();
         var a = new Var();
         var Normal = new Dictionary<Var, IValue>();
         Normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());

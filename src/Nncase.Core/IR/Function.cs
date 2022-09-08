@@ -11,17 +11,6 @@ using System.Threading.Tasks;
 namespace Nncase.IR;
 
 /// <summary>
-/// Function interface.
-/// </summary>
-public interface IFunction
-{
-    /// <summary>
-    /// Gets parameter types.
-    /// </summary>
-    IEnumerable<IRType?> ParameterTypes { get; }
-}
-
-/// <summary>
 /// the Callable Expr
 /// </summary>
 public abstract record Callable(string Name, string ModuleKind) : Expr
@@ -38,9 +27,20 @@ public abstract record Callable(string Name, string ModuleKind) : Expr
 }
 
 /// <summary>
+/// Base function.
+/// </summary>
+public abstract record BaseFunction(string Name, string ModuleKind) : Callable(Name, ModuleKind)
+{
+    /// <summary>
+    /// Gets parameter types.
+    /// </summary>
+    public abstract IEnumerable<IRType?> ParameterTypes { get; }
+}
+
+/// <summary>
 /// Function expression.
 /// </summary>
-public record Function(string Name, Expr Body, IRArray<Var> Parameters) : Callable(Name, StackVMModuleKind), IFunction
+public record Function(string Name, Expr Body, IRArray<Var> Parameters) : BaseFunction(Name, StackVMModuleKind)
 {
     private static int _globalFuncIndex = 0;
 
@@ -64,5 +64,8 @@ public record Function(string Name, Expr Body, IRArray<Var> Parameters) : Callab
     {
     }
 
-    IEnumerable<IRType?> IFunction.ParameterTypes => Parameters.Select(x => x.CheckedType);
+    /// <summary>
+    /// get all parameter checked types.
+    /// </summary>
+    public override IEnumerable<IRType?> ParameterTypes => Parameters.Select(x => x.CheckedType);
 }

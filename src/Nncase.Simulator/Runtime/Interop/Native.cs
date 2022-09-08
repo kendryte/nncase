@@ -18,19 +18,19 @@ internal static class Native
     public static extern ErrorCode ObjectFree(IntPtr obj);
 
     [DllImport(LibraryName, EntryPoint = "nncase_interp_create")]
-    public static extern ErrorCode InterpCreate(out IntPtr interp);
+    public static extern ErrorCode InterpCreate(out RTInterpreter interp);
 
     [DllImport(LibraryName, EntryPoint = "nncase_interp_free")]
     public static extern ErrorCode InterpFree(IntPtr interp);
 
     [DllImport(LibraryName, EntryPoint = "nncase_interp_load_model")]
-    public static extern unsafe ErrorCode InterpLoadModel(IntPtr interp, void* modelBuffer, uint modelSize, bool copyBuffer);
+    public static extern unsafe ErrorCode InterpLoadModel(RTInterpreter interp, void* modelBuffer, uint modelSize, bool copyBuffer);
 
     [DllImport(LibraryName, EntryPoint = "nncase_interp_set_dump_root")]
-    public static extern unsafe ErrorCode InterpSetDumpRoot(IntPtr interp, String path);
+    public static extern unsafe ErrorCode InterpSetDumpRoot(RTInterpreter interp, String path);
     
     [DllImport(LibraryName, EntryPoint = "nncase_interp_get_entry_func")]
-    public static extern unsafe ErrorCode InterpGetEntryFunction(IntPtr interp, out IntPtr func);
+    public static extern unsafe ErrorCode InterpGetEntryFunction(RTInterpreter interp, out IntPtr func);
 
     [DllImport(LibraryName, EntryPoint = "nncase_func_get_params_size")]
     public static extern unsafe ErrorCode FuncGetParamsSize(IntPtr func, out uint size);
@@ -54,29 +54,29 @@ internal static class Native
     public static extern unsafe ErrorCode HostBufferUnmap(IntPtr hostBuffer);
 
     [DllImport(LibraryName, EntryPoint = "nncase_dtype_create_prime")]
-    public static extern unsafe ErrorCode DTypeCreatePrim(TypeCode typeCode, out IntPtr dtype);
+    public static extern unsafe ErrorCode DTypeCreatePrim(TypeCode typeCode, out RTDataType dtype);
 
     [DllImport(LibraryName, EntryPoint = "nncase_dtype_get_typecode")]
-    public static extern unsafe TypeCode DTypeGetTypeCode(IntPtr handle);
+    public static extern unsafe TypeCode DTypeGetTypeCode(RTDataType handle);
 
     [DllImport(LibraryName, EntryPoint = "nncase_value_is_tensor")]
     public static extern unsafe ErrorCode ValueIsTensor(IntPtr value, out bool isTensor);
 
     [DllImport(LibraryName, EntryPoint = "nncase_tensor_create")]
-    public static extern unsafe ErrorCode TensorCreate(IntPtr dtype, uint* dims, uint dimsLength, uint* strides, uint stridesLength, in RTBufferSlice.RuntimeStruct bufferSlice, out IntPtr tensor);
+    public static extern unsafe ErrorCode TensorCreate(RTDataType dtype, uint* dims, uint dimsLength, uint* strides, uint stridesLength, in RTBufferSlice.RuntimeStruct bufferSlice, out RTTensor tensor);
 
     [DllImport(LibraryName, EntryPoint = "nncase_tensor_get_dtype")]
-    public static extern unsafe ErrorCode TensorGetDtype(IntPtr tensor, out IntPtr dtype);
+    public static extern unsafe ErrorCode TensorGetDtype(RTTensor tensor, out RTDataType dtype);
 
     [DllImport(LibraryName, EntryPoint = "nncase_tensor_get_buffer")]
-    public static extern unsafe ErrorCode TensorGetBuffer(IntPtr tensor, out RTBufferSlice.RuntimeStruct buffer);
+    public static extern unsafe ErrorCode TensorGetBuffer(RTTensor tensor, out RTBufferSlice.RuntimeStruct buffer);
 
     [DllImport(LibraryName, EntryPoint = "nncase_tensor_get_dims")]
-    public static extern unsafe ErrorCode TensorGetDims(IntPtr tensor, uint* dims, ref uint dimsLength);
+    public static extern unsafe ErrorCode TensorGetDims(RTTensor tensor, uint* dims, ref uint dimsLength);
 
     [DllImport(LibraryName, EntryPoint = "nncase_tensor_get_strides")]
-    public static extern unsafe ErrorCode TensorGetStrides(IntPtr tensor, uint* strides, ref uint stridesLength);
+    public static extern unsafe ErrorCode TensorGetStrides(RTTensor tensor, uint* strides, ref uint stridesLength);
     
     [DllImport(LibraryName, EntryPoint = "nncase_tuple_get_fields")]
-    public static extern unsafe ErrorCode TupleGetFields(IntPtr tuple, IntPtr* fields, ref uint fieldsLength);
+    public static extern unsafe ErrorCode TupleGetFields(RTTuple tuple, IntPtr* fields, ref uint fieldsLength);
 }

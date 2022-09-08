@@ -14,5 +14,8 @@ public interface ICalibrationDatasetProvider
 {
     int? Count { get; }
 
+    /// <summary>
+    /// the samples Enumerable
+    /// </summary>
     IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
 }

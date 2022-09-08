@@ -15,6 +15,8 @@
 #include "runtime_module.h"
 #include "runtime_function.h"
 #include <nncase/runtime/dbg.h>
+#include <nncase/runtime/interpreter.h>
+#include <nncase/runtime/runtime_loader.h>
 #include <nncase/runtime/runtime_op_utility.h>
 
 using namespace nncase;
@@ -30,6 +32,25 @@ result<void> stackvm_runtime_module::initialize_before_functions(
     assert(context.is_section_pinned());
     rdata_ = context.section(".rdata");
     regs_[0] = (uintptr_t)rdata_.data();
+
+    // register the external custom call.
+    auto custom_call_section = context.section(".custom_calls");
+    auto reader = span_reader(custom_call_section);
+    // custom call section layout:
+    // 1. used module numbers
+    //    - module_kind_t
+    //    - module_kind_t
+    auto used_module_counts = reader.read<uint32_t>();
+    for (size_t i = 0; i < used_module_counts; i++) {
+        auto kind = reader.read<module_kind_t>();
+        try_var(table, runtime_module::collect(kind));
+        for (auto &&p : table) {
+            if (custom_call_table_.find(p.first) != custom_call_table_.end()) {
+                return err(nncase_errc::stackvm_duplicate_custom_call);
+            }
+            custom_call_table_.insert(p);
+        }
+    }
     return ok();
 }
 
@@ -44,8 +65,17 @@ result<void> stackvm_runtime_module::reg(size_t id, uintptr_t value) noexcept {
     return ok();
 }
 
+const std::unordered_map<std::string, runtime_module::custom_call_type>
+stackvm_runtime_module::custom_call_table() const noexcept {
+    return custom_call_table_;
+}
+
 kernels::kernel_context &stackvm_runtime_module::kernel_context() noexcept {
-    return kernels::default_kernel_context();
+    auto& context = kernels::default_kernel_context();
+#ifdef NNCASE_DUMP_MANAGER
+    context.dump_manager = interp().dump_manager();
+#endif
+    return context;
 }
 
 result<std::unique_ptr<runtime_function>>
@@ -64,4 +94,11 @@ stackvm::create_stackvm_runtime_module() {
     if (mod)
         return ok(std::move(mod));
     return err(std::errc::not_enough_memory);
+}
+
+result<std::vector<std::pair<std::string, runtime_module::custom_call_type>>>
+stackvm::create_stackvm_custom_calls() {
+    std::vector<std::pair<std::string, runtime_module::custom_call_type>>
+        calls{};
+    return ok(std::move(calls));
 }

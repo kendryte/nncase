@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.Runtime.Interop;
+using Nncase.Utilities;
 
 namespace Nncase.Compiler;
 
@@ -60,5 +61,19 @@ public static class PythonHelper
         }
 
         throw new NotImplementedException();
+    }
+
+    public static bool TargetExist(String target)
+    {
+        try
+        {
+            CompilerServices.GetTarget(target);
+            return true;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return false;
+        }
     }
 }

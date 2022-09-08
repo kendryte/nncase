@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/tensor_ops.h>
 #include <nncase/runtime/allocator.h>
@@ -24,8 +23,6 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
-using namespace nncase::kernels::cpu;
-using namespace nncase::kernels::cpu::reference;
 
 namespace {
 template <typename T>
@@ -53,15 +50,6 @@ result<void> matmul_unit_impl(const T *input_a, const T *input_b, T *output,
     return ok();
 }
 
-dims_t to_4d(dims_t in_a_shape)
-{
-    auto size = 4 - in_a_shape.size();
-    for (int i = 0; i < size; ++i) {
-        in_a_shape.insert(in_a_shape.begin(), 1);
-    }
-    return in_a_shape;
-}
-
 template <typename T>
 result<void> matmul_impl(const T *input_a, const T *input_b, T *output,
                          const dims_t &in_a_shape,
@@ -77,10 +65,10 @@ result<void> matmul_impl(const T *input_a, const T *input_b, T *output,
     auto ab_size = a_unit_size * new_a_shape[1];
     auto bb_size = b_unit_size * new_b_shape[1];
     auto ob_size = out_unit_size * channels;
-    for (int n = 0; n < batches; ++n) {
+    for (size_t n = 0; n < batches; ++n) {
         auto an = new_a_shape[0] == 1 ? 0 : n;
         auto bn = new_b_shape[0] == 1 ? 0 : n;
-        for (int c = 0; c < channels; ++c) {
+        for (size_t c = 0; c < channels; ++c) {
             auto ac = new_a_shape[1] == 1 ? 0 : c;
             auto bc = new_b_shape[1] == 1 ? 0 : c;
             try_(matmul_unit_impl(

@@ -15,7 +15,7 @@ namespace Nncase.IR.Tensors;
 /// Cast expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Cast(DataType NewType) : Op
+public sealed record Cast(DataType NewType, CastMode CastMode) : Op
 {
     /// <summary>
     /// Gets input.

@@ -28,11 +28,13 @@ namespace Nncase.IR
                 Var var => Visit(var),
                 Const con => Visit(con),
                 Function func => Visit(func),
+                Fusion fusion => Visit(fusion),
                 Call call => Visit(call),
                 Tuple tuple => Visit(tuple),
                 Op op => Visit(op),
                 None none => Visit(none),
                 Marker marker => Visit(marker),
+                PrimFunctionWrapper wrapper => Visit(wrapper),
                 TIR.IterVar itvar => Visit(itvar),
                 TIR.Sequential seq => Visit(seq),
                 TIR.For @for => Visit(@for),
@@ -42,7 +44,7 @@ namespace Nncase.IR
                 TIR.IfThenElse ift => Visit(ift),
                 TIR.PrimFunction primfunc => Visit(primfunc),
                 TIR.Let let => Visit(let),
-                TIR.Buffer memref => Visit(memref),
+                TIR.Buffer buffer => Visit(buffer),
                 TIR.BufferRegion region => Visit(region),
                 _ => DefaultVisit(expr),
             };
@@ -68,6 +70,20 @@ namespace Nncase.IR
         /// <param name="expr">Variable expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult Visit(Function expr) => DefaultVisit(expr);
+
+        /// <summary>
+        /// Visit fusion expression
+        /// </summary>
+        /// <param name="expr">Fusion Expression</param>
+        /// <returns></returns>
+        public virtual TExprResult Visit(Fusion expr) => DefaultVisit(expr);
+
+        /// <summary>
+        /// Visit prim function wrapper expression.
+        /// </summary>
+        /// <param name="expr">PrimFunctionWrapper expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult Visit(PrimFunctionWrapper expr) => DefaultVisit(expr);
 
         /// <summary>
         /// Visit prim function expression.

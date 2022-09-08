@@ -50,7 +50,7 @@ namespace Nncase.Tests.RewriteTest
 
         protected void RunCore(IRewriteCase Case)
         {
-            var caseOptions = passOptions.IndentDir($"{Case.Name}");
+            var caseOptions = GetPassOptions();
             Expr pre = Case.PreExpr;
             var infered = pre.InferenceType();
             CompilerServices.DumpIR(pre, "pre", caseOptions.PassDumpDir);
@@ -117,7 +117,7 @@ namespace Nncase.Tests.RewriteTest
         [Fact]
         public void TestFoldConstCall()
         {
-            var caseOptions = passOptions.IndentDir("TestFoldConstCall");
+            var caseOptions = GetPassOptions();
             var lhs = OrtKI.Random(2, 1, 3);
             var rhs = OrtKI.Random(2, 6, 3);
             var pre = (Const)lhs.ToTensor() + rhs.ToTensor();
@@ -129,7 +129,7 @@ namespace Nncase.Tests.RewriteTest
         [Fact]
         public void TestFoldConstCallTuple()
         {
-            var caseOptions = passOptions.IndentDir("TestFoldConstCallTuple");
+            var caseOptions = GetPassOptions();
             var lhs = OrtKI.Random(2, 1, 3);
             var rhs = OrtKI.Random(2, 6, 3);
             var pre = Concat(new IR.Tuple(lhs.ToTensor(), rhs.ToTensor()), 1);
@@ -142,7 +142,7 @@ namespace Nncase.Tests.RewriteTest
         [Fact]
         public void TestFoldConstCallType()
         {
-            var caseOptions = passOptions.IndentDir("TestFoldConstCallType");
+            var caseOptions = GetPassOptions();
             var a = (Const)1;
             var b = (Const)2;
             var expr = a * b + 3;
@@ -173,7 +173,7 @@ namespace Nncase.Tests.RewriteTest
         // [Fact]
         // public void TestRewriteSameAsShapeInferPass()
         // {
-        //     passOptions.IndentDir("SameAsShapeInferPass");
+        //     GetPassOptions();
         //     var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(new[] { 1, 3, 240, 320 })));
         //     Assert.True(CompilerServices.InferenceType(input));
         //     var computeShape = ShapeOf(input);
@@ -186,10 +186,9 @@ namespace Nncase.Tests.RewriteTest
         [Fact]
         public async Task TestFoldExpand()
         {
-            var caseOptions = passOptions.IndentDir("TestFoldExpand");
+            var caseOptions = GetPassOptions();
             var weights = new Var("weights", new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
             var t = Util.ShapeIndex(weights, 0);
-            t.InferenceType();
             var expand = Expand(0f, Cast(Util.ShapeIndex(weights, 0), DataTypes.Int64));
             var s = await RunShapeInferPass("", caseOptions, expand, weights);
             Assert.True(s is Const);
@@ -198,7 +197,7 @@ namespace Nncase.Tests.RewriteTest
         [Fact]
         public async Task TestFoldShapeOf()
         {
-            var caseOptions = passOptions.IndentDir("TestFoldShapeOf");
+            var caseOptions = GetPassOptions();
             var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 240, 320)));
             var shape = ShapeOf(input);
             var shapePost = await RunShapeInferPass("FoldShapeOf", caseOptions, shape);
@@ -208,7 +207,7 @@ namespace Nncase.Tests.RewriteTest
         [Fact]
         public async Task TestExpandToRank()
         {
-            var caseOptions = passOptions.IndentDir("TestExpandToRank");
+            var caseOptions = GetPassOptions();
             var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 240, 320)));
             var exp = Expand(1, Cast(Rank(input) - 0, new Int64Type()));
             var result = await RunShapeInferPass("ExpandToRank", caseOptions, exp);
@@ -227,7 +226,7 @@ namespace Nncase.Tests.RewriteTest
         [Fact]
         public async Task TestPaddingCompute()
         {
-            var caseOptions = passOptions.IndentDir("TestPaddingCompute");
+            var caseOptions = GetPassOptions();
             var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 33, 65)));
             var weights = Tensor.FromSpan<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
             var (inH, inW) = Util.GetHW(input);
@@ -251,7 +250,7 @@ namespace Nncase.Tests.RewriteTest
         [Fact]
         public async Task TestYolo20MinStructure()
         {
-            var caseOptions = passOptions.IndentDir("TestYolo20MinStructure");
+            var caseOptions = GetPassOptions();
             var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(new[] { 1, 240, 320, 3 })));
             var weights = Tensor.FromSpan<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
             var bias = Tensor.FromSpan<int>(Enumerable.Range(0, 16).ToArray());
@@ -295,7 +294,7 @@ namespace Nncase.Tests.RewriteTest
         [Fact]
         public async Task SliceForShapeIndex()
         {
-            var caseOptions = passOptions.IndentDir("SliceForShapeIndex");
+            var caseOptions = GetPassOptions();
             var input = new Var(new TensorType(DataTypes.Float32, new Shape(1, 7, 7, 75)));
             var slice = Util.ShapeIndex(input, 1);
             CompilerServices.InferenceType(slice);
@@ -308,7 +307,7 @@ namespace Nncase.Tests.RewriteTest
         [Fact]
         public async Task SoftMaxImporterProcess()
         {
-            var caseOptions = passOptions.IndentDir("SoftMaxImporterProcess");
+            var caseOptions = GetPassOptions();
             var input = new Var(new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
             var axis = -1;
             var inShape = ShapeOf(input);
@@ -342,7 +341,7 @@ namespace Nncase.Tests.RewriteTest
         [Fact]
         public async Task TestReshapeToByChannel()
         {
-            var caseOptions = passOptions.IndentDir("TestReshapeToByChannel");
+            var caseOptions = GetPassOptions();
             var v = Tensor.FromSpan<int>(new[] { 1, 2, 3 });
             var shape = Concat(
                 new IR.Tuple(

@@ -21,7 +21,7 @@ public abstract class ModuleBuilder : IModuleBuilder
     public SectionManager SectionManager { get; } = new SectionManager();
 
     /// <inheritdoc/>
-    public ILinkableModule Build(IReadOnlyList<Callable> functions)
+    public ILinkableModule Build(IReadOnlyList<BaseFunction> functions)
     {
         var linkableFunctions = Compile(functions);
         return CreateLinkableModule(linkableFunctions);
@@ -31,7 +31,7 @@ public abstract class ModuleBuilder : IModuleBuilder
 
     protected abstract FunctionBuilder CreateFunctionBuilder(uint id);
 
-    private ILinkableFunction[] Compile(IEnumerable<Callable> functions)
+    private ILinkableFunction[] Compile(IEnumerable<BaseFunction> functions)
     {
         return functions.Select((f, i) => CreateFunctionBuilder((uint)i).Build(f)).ToArray();
     }

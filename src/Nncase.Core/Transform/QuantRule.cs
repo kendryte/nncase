@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.PatternMatch;
+using Nncase.Quantization;
 
 namespace Nncase.Transform;
 
@@ -16,22 +17,48 @@ namespace Nncase.Transform;
 /// </summary>
 public abstract class QuantRule : RewriteRule<Pattern>
 {
-    public RunPassOptions Option;
+    /// <summary>
+    /// NOTE the option will be set by SourceGenerator when the GetReplace called.
+    /// </summary>
+    public RunPassOptions Option = null!;
+
+    /// <summary>
+    /// the match result
+    /// NOTE the MatchResult will be set by SourceGenerator when the GetReplace called.
+    /// </summary>
+    public IMatchResult MatchResult = null!;
 
     /// <summary>
     /// whole expr be matched
-    /// It will fail when Root is not a call, but QuantRule should match a call
     /// </summary>
-    public Expr Root;
+    public Expr Root => (Expr)MatchResult[Pattern];
 
+    /// <summary>
+    /// check the datatype is the quant type.
+    /// </summary>
+    /// <param name="dt"></param>
+    /// <returns></returns>
     public bool IsQuantType(DataType dt) => dt == DataTypes.Int8 || dt == DataTypes.UInt8;
 
-    public bool UsePTQ => Option.CompileOptions.UsePTQ;
+    /// <summary>
+    /// Get ModelQuantMode
+    /// </summary>
 
+    public ModelQuantMode ModelQuantMode => Option.CompileOptions.ModelQuantMode;
+
+    /// <summary>
+    /// Get QuantType
+    /// </summary>
     public DataType QuantType => Option.CompileOptions.QuantType;
 
+    /// <summary>
+    /// Get QuantMode
+    /// </summary>
     public QuantMode QuantMode => Option.CompileOptions.QuantMode;
 
+    /// <summary>
+    /// NOTE the Init will be set by SourceGenerator when the GetReplace called.
+    /// </summary>
     public abstract void Init();
 
 }

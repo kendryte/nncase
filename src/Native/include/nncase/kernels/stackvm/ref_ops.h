@@ -17,6 +17,7 @@
  */
 #pragma once
 #include <nncase/kernels/kernel_context.h>
+#include <nncase/kernels/apply.h>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/result.h>
@@ -67,13 +68,13 @@ NNCASE_API result<void> clamp(
     const strides_t &in_strides, const strides_t &out_strides,
     NNCASE_UNUSED kernel_context &context = default_kernel_context()) noexcept;
 
-NNCASE_API result<void>
-compare_impl(typecode_t typecode, nncase::runtime::stackvm::compare_op_t op,
-             const gsl::byte *lhs, const gsl::byte *rhs, gsl::byte *output,
-             const dims_t &lhs_shape, const strides_t &lhs_strides,
-             const dims_t &rhs_shape, const strides_t &rhs_strides,
-             const dims_t &out_shape, const strides_t &out_strides,
-             NNCASE_UNUSED kernel_context &context) noexcept;
+NNCASE_API result<void> compare_impl(
+    typecode_t typecode, nncase::runtime::stackvm::compare_op_t op,
+    const gsl::byte *lhs, const gsl::byte *rhs, gsl::byte *output,
+    const dims_t &lhs_shape, const strides_t &lhs_strides,
+    const dims_t &rhs_shape, const strides_t &rhs_strides,
+    const dims_t &out_shape, const strides_t &out_strides,
+    NNCASE_UNUSED kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
 concat(datatype_t type, gsl::span<const gsl::byte *const> inputs,
@@ -86,40 +87,43 @@ NNCASE_API result<void> constant_of_shape(datatype_t dt, const gsl::byte *value,
                                           gsl::byte *output,
                                           const dims_t &shape);
 
-NNCASE_API result<void>
-conv2d(const float *input, const float *weights, const float *bias,
-       float *output, const dims_t &in_shape, const strides_t &in_strides,
-       const dims_t &w_shape, const dims_t &w_strides,
-       const dims_t &bias_strides, const strides_t &out_strides,
-       const padding &padding_h, const padding &padding_w, int32_t groups,
-       int32_t stride_h, int32_t stride_w, int32_t dilation_h,
-       int32_t dilation_w, value_range<float> fused_activation,
-       NNCASE_UNUSED kernel_context &context) noexcept;
+NNCASE_API result<void> conv2d(
+    const float *input, const float *weights, const float *bias, float *output,
+    const dims_t &in_shape, const strides_t &in_strides, const dims_t &w_shape,
+    const dims_t &w_strides, const dims_t &bias_strides,
+    const strides_t &out_strides, const padding &padding_h,
+    const padding &padding_w, int32_t groups, int32_t stride_h,
+    int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+    value_range<float> fused_activation,
+    NNCASE_UNUSED kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
-conv2d_transpose(runtime::stackvm::pad_mode_t pad_mode, tensor input,
-                 tensor weights, tensor bias, tensor output_shape,
-                 tensor stride, tensor padding, tensor output_padding,
-                 tensor dilation, tensor groups, tensor fused_clamp,
-                 tensor output = nullptr,
-                 kernel_context &context = default_kernel_context());
-
+conv2d_transpose(const float *input, float *output, const float *weights,
+                 const float *bias, const dims_t &in_shape, int32_t groups,
+                 const dims_t &out_shape, int32_t filter_h, int32_t filter_w,
+                 int32_t stride_h, int32_t stride_w, int32_t dilation_h,
+                 int32_t dilation_w, const padding &padding_h,
+                 const padding &padding_w,
+                 const value_range<float> &fused_activation) noexcept;
 NNCASE_API result<void>
 cum_sum(tensor input, tensor axis, tensor exclusive, tensor reverse,
         tensor output = nullptr,
         kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void>
-dequantize(typecode_t target_type, tensor input, tensor dequant_param,
-           tensor output = nullptr,
-           kernel_context &context = default_kernel_context());
+dequantize(datatype_t in_type, datatype_t out_type, const gsl::byte *input,
+           gsl::byte *output, const dims_t &in_shape,
+           const strides_t &in_strides, const strides_t &out_strides,
+           float scale, float bias, kernel_context &context) noexcept;
 
 NNCASE_API result<void> elu(tensor input, tensor alpha, tensor output = nullptr,
                             kernel_context &context = default_kernel_context());
 
-NNCASE_API result<void>
-expand(tensor input, tensor shape, tensor output = nullptr,
-       kernel_context &context = default_kernel_context());
+NNCASE_API result<void> expand(
+    typecode_t typecode, const gsl::byte *input, gsl::byte *output,
+    const dims_t &input_shape, const strides_t &input_strides,
+    const dims_t &out_shape, const strides_t &out_strides,
+    NNCASE_UNUSED kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
 flatten(tensor input, tensor axis, tensor output = nullptr,
@@ -131,15 +135,16 @@ gather(datatype_t type, const gsl::byte *input, gsl::byte *output,
        const strides_t &in_strides, const strides_t &out_strides,
        datatype_t indices_type, const gsl::byte *indices,
        const dims_t &indices_shape, size_t axis,
-       kernel_context &context) noexcept;
+       kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API
-result<void> gather_nd(datatype_t type, const gsl::byte *input,
-                       gsl::byte *output, const dims_t &in_shape,
-                       const dims_t &out_shape, const strides_t &in_strides,
-                       const strides_t &out_strides, datatype_t indices_type,
-                       const gsl::byte *indices, const dims_t &indices_shape,
-                       size_t batch_dims, kernel_context &context) noexcept;
+result<void>
+gather_nd(datatype_t type, const gsl::byte *input, gsl::byte *output,
+          const dims_t &in_shape, const dims_t &out_shape,
+          const strides_t &in_strides, const strides_t &out_strides,
+          datatype_t indices_type, const gsl::byte *indices,
+          const dims_t &indices_shape, size_t batch_dims,
+          kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
 get_item(tensor input, tensor index, tensor output = nullptr,
@@ -180,20 +185,18 @@ NNCASE_API result<void>
 lp_normalization(tensor input, tensor axis, tensor p, tensor output = nullptr,
                  kernel_context &context = default_kernel_context());
 
-NNCASE_API result<void> lrn(
-    const float *input, float alpha, float beta, float bias, int size,
-    float *output, const dims_t &in_shape, const strides_t &in_strides,
-    const strides_t &out_strides);
+NNCASE_API result<void> lrn(const float *input, float alpha, float beta,
+                            float bias, int size, float *output,
+                            const dims_t &in_shape, const strides_t &in_strides,
+                            const strides_t &out_strides);
 
 NNCASE_API result<void>
-lstm(runtime::stackvm::lstmdirection_t direction,
-     runtime::stackvm::lstmlayout_t layout,
-     std::vector<std::string> activations, tensor x, tensor w, tensor r,
-     tensor b, tensor sequence_lens, tensor initial_h, tensor initial_c,
-     tensor p, tensor activation_alpha, tensor activation_beta, tensor clip,
-     tensor hidden_size, tensor input_forget, tensor output_size,
-     tensor output = nullptr,
-     kernel_context &context = default_kernel_context());
+lstm(const float *input, const float *w_xc, const float *w_rc,
+     const float *bias, const float *init_h, const float *init_c, float *output,
+     float *output_h, float *output_c, const dims_t &in_shape,
+     const dims_t &init_h_shape, const dims_t &init_c_shape,
+     const dims_t &out_shape, const dims_t &w_xc_shape,
+     const dims_t &w_rc_shape, runtime::stackvm::lstmdirection_t direction);
 
 NNCASE_API result<void>
 mat_mul(tensor lhs, tensor rhs, tensor output = nullptr,
@@ -210,17 +213,24 @@ normal_like(typecode_t type, tensor input, tensor mean, tensor scale,
             kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void>
-one_hot(runtime::stackvm::one_hot_mode_t one_hot_mode, tensor indices,
-        tensor depth, tensor values, tensor axis, tensor on_value,
-        tensor off_value, tensor output = nullptr,
-        kernel_context &context = default_kernel_context());
-
-NNCASE_API result<void> pad(runtime::stackvm::pad_mode_t pad_mode, tensor input,
-                            tensor pads, tensor value, tensor output = nullptr,
-                            kernel_context &context = default_kernel_context());
+one_hot(datatype_t type, datatype_t indices_type, const gsl::byte *indices,
+        gsl::byte *output, const dims_t &indices_shape, const dims_t &out_shape,
+        const strides_t &out_strides, size_t depth, gsl::byte *values,
+        size_t axis, runtime::stackvm::one_hot_mode_t mode,
+        kernel_context &context) noexcept;
 
 NNCASE_API result<void>
-prelu(tensor input, tensor slope, tensor output = nullptr,
+pad(datatype_t type, const gsl::byte *input, gsl::byte *output,
+    const dims_t &in_shape, const strides_t &in_strides,
+    const strides_t &out_strides, const paddings_t &paddings,
+    runtime::stackvm::pad_mode_t mode, const gsl::byte *pad_value,
+    kernel_context &context = default_kernel_context()) noexcept;
+
+NNCASE_API result<void>
+prelu(const float *input, const float *slope, float *output,
+      const dims_t &in_shape, const strides_t &input_strides,
+      const dims_t &slope_shape, const strides_t &slope_strides,
+      const dims_t &out_shape, const strides_t &out_strides,
       kernel_context &context = default_kernel_context());
 
 NNCASE_API result<void>
@@ -232,10 +242,11 @@ quant_param_of(runtime::stackvm::quant_mode_t quant_mode, tensor range,
                tensor bits, tensor output = nullptr,
                kernel_context &context = default_kernel_context());
 
-NNCASE_API result<void>
-quantize(typecode_t target_type, tensor input, tensor quant_param,
-         tensor output = nullptr,
-         kernel_context &context = default_kernel_context());
+NNCASE_API result<void> quantize(
+    datatype_t in_type, datatype_t out_type, const gsl::byte *input,
+    gsl::byte *output, const dims_t &in_shape, const strides_t &in_strides,
+    const strides_t &out_strides, float scale, float bias,
+    kernel_context &context) noexcept;
 
 NNCASE_API result<void> random_normal(typecode_t type, gsl::byte *output,
                                       const dims_t &out_shape, float mean,
@@ -290,19 +301,29 @@ NNCASE_API result<void>
 reshape(tensor input, tensor shape, tensor output = nullptr,
         kernel_context &context = default_kernel_context());
 
-NNCASE_API result<void> resize_image(
-    runtime::stackvm::image_resize_mode_t resize_mode,
-    runtime::stackvm::image_resize_transformation_mode_t transformation_mode,
-    runtime::stackvm::image_resize_nearest_mode_t nearest_mode,
-    bool is_tfresize, tensor input, tensor roi, tensor new_size,
-    tensor cubic_coeff_a, tensor exclude_outside, tensor extrapolation_value,
-    tensor output = nullptr,
-    kernel_context &context = default_kernel_context());
+NNCASE_API result<void> resize_bilinear(typecode_t type, const gsl::byte *input,
+                             gsl::byte *output, const dims_t &in_shape,
+                             const strides_t &in_strides,
+                             const strides_t &out_strides, int32_t out_h,
+                             int32_t out_w, bool align_corners,
+                             bool half_pixel_centers,
+                             kernel_context &context) noexcept;
 
-NNCASE_API result<void>
-reverse_sequence(tensor input, tensor seq_lens, tensor batch_axis,
-                 tensor time_axis, tensor output = nullptr,
-                 kernel_context &context = default_kernel_context());
+NNCASE_API result<void> resize_nearest_neighbor(typecode_t type, const gsl::byte *input,
+                                     gsl::byte *output, const dims_t &in_shape,
+                                     const strides_t &in_strides,
+                                     const strides_t &out_strides,
+                                     int32_t out_h, int32_t out_w,
+                                     bool align_corners,
+                                     bool half_pixel_centers,
+                                     kernel_context &context) noexcept;
+
+NNCASE_API result<void> reverse_sequence(
+    datatype_t dt, const gsl::byte *input, gsl::byte *output,
+    const dims_t &in_shape, const dims_t &sequence_lens, int64_t batch_axis,
+    int64_t time_axis, const strides_t &in_strides,
+    const strides_t &out_strides,
+    NNCASE_UNUSED kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
 select(tensor predicate, tensor true_value, tensor false_value,
@@ -329,7 +350,8 @@ NNCASE_API result<void>
 slice(datatype_t type, const gsl::byte *input, gsl::byte *output,
       const dims_t &in_shape, const strides_t &in_strides,
       const strides_t &out_strides, const axes_t &begins, const axes_t &ends,
-      const axes_t &strides, kernel_context &context) noexcept;
+      const axes_t &strides,
+      kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void> softmax(const float *input, float *output,
                                 const dims_t &in_shape,
@@ -345,17 +367,20 @@ NNCASE_API result<void>
 softsign(tensor input, tensor output = nullptr,
          kernel_context &context = default_kernel_context());
 
-NNCASE_API result<void>
-space_to_batch(tensor input, tensor block_shape, tensor paddings,
-               tensor output = nullptr,
-               kernel_context &context = default_kernel_context());
+NNCASE_API result<void> space_to_batch(
+    datatype_t dt, const gsl::byte *input, gsl::byte *output,
+    const dims_t &in_shape, const dims_t &block_shape,
+    const paddings_t &paddings, const strides_t &in_strides,
+    const dims_t &out_shape, const strides_t &out_strides,
+    NNCASE_UNUSED kernel_context &context = default_kernel_context());
 
 NNCASE_API
 result<void> split(datatype_t type, const gsl::byte *input,
                    gsl::span<gsl::byte *> output, const dims_t &in_shape,
                    const strides_t &in_strides,
                    gsl::span<strides_t> out_strides, size_t axis,
-                   const dims_t &sections, kernel_context &context) noexcept;
+                   const dims_t &sections,
+                   kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
 squeeze(tensor input, tensor dim, tensor output = nullptr,
@@ -366,7 +391,7 @@ result<void> stack(datatype_t type, gsl::span<const gsl::byte *const> inputs,
                    gsl::byte *output, const dims_t &out_shape,
                    gsl::span<const dims_t> in_strides,
                    const strides_t &out_strides, size_t axis,
-                   kernel_context &context) noexcept;
+                   kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void> tile(datatype_t dt, const gsl::byte *input,
                              gsl::byte *output, const dims_t &in_shape,
@@ -376,8 +401,10 @@ NNCASE_API result<void> tile(datatype_t dt, const gsl::byte *input,
                              const dims_t &repeats);
 
 NNCASE_API result<void>
-transpose(tensor input, tensor perm, tensor output = nullptr,
-          kernel_context &context = default_kernel_context());
+transpose(datatype_t type, const gsl::byte *src, gsl::byte *dest,
+          const dims_t &in_shape, const dims_t &perm,
+          const strides_t &in_strides, const strides_t &out_strides,
+          kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
 unary(typecode_t dtype, runtime::stackvm::unary_op_t op, const gsl::byte *input,

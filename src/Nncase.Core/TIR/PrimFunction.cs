@@ -15,7 +15,7 @@ namespace Nncase.TIR;
 /// <summary>
 /// PrimFunction expression.
 /// </summary>
-public sealed record PrimFunction(string Name, string ModuleKind, Sequential Body, IRArray<Buffer> Parameters) : Callable(Name, ModuleKind), IFunction
+public sealed record PrimFunction(string Name, string ModuleKind, Sequential Body, IRArray<PhysicalBuffer> Parameters) : BaseFunction(Name, ModuleKind)
 {
     private static int _globalFuncIndex = 0;
 
@@ -24,7 +24,7 @@ public sealed record PrimFunction(string Name, string ModuleKind, Sequential Bod
     /// </summary>
     /// <param name="parameters">Parameters.</param>
     /// <param name="body">Body.</param>
-    public PrimFunction(string moduleKind, Sequential body, IRArray<Buffer> parameters)
+    public PrimFunction(string moduleKind, Sequential body, IRArray<PhysicalBuffer> parameters)
         : this($"primfunc_{_globalFuncIndex++}", moduleKind, body, parameters)
     {
     }
@@ -34,10 +34,10 @@ public sealed record PrimFunction(string Name, string ModuleKind, Sequential Bod
     /// </summary>
     /// <param name="body"></param>
     /// <param name="parameters"></param>
-    public PrimFunction(string moduleKind, Sequential body, params Buffer[] parameters)
+    public PrimFunction(string moduleKind, Sequential body, params PhysicalBuffer[] parameters)
         : this($"primfunc_{_globalFuncIndex++}", moduleKind, body, new(parameters))
     {
     }
 
-    IEnumerable<IRType?> IFunction.ParameterTypes => Parameters.Select(x => x.CheckedType);
+    public override IEnumerable<IRType?> ParameterTypes => Parameters.Select(x => x.CheckedType);
 }

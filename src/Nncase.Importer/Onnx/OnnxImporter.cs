@@ -104,6 +104,7 @@ public sealed partial class OnnxImporter : BaseImporter
             "Div" => VisitBinary(op, BinaryOp.Div),
             "Dropout" => VisitDropout(op),
             "Elu" => VisitElu(op),
+            "Equal" => VisitCompare(op, CompareOp.Equal),
             "Exp" => VisitUnary(op, UnaryOp.Exp),
             "Expand" => VisitExpand(op),
             "Flatten" => VisitFlatten(op),

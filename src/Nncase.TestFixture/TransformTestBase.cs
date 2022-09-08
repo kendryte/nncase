@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Nncase.IR;
+using Nncase.Quantization;
 using Nncase.Transform;
 using Nncase.Transform.Rules.Neutral;
 using Xunit;
@@ -19,7 +20,7 @@ public partial class TransformTestBase
     protected CompileOptions compileOptions;
     public TransformTestBase()
     {
-        compileOptions = new CompileOptions(false);
+        compileOptions = new CompileOptions();
         compileOptions.QuantMode = QuantMode.UnsignedMode;
         compileOptions.QuantType = DataTypes.Int8;
         passOptions = new RunPassOptions(CompilerServices.GetTarget(CompilerServices.CompileOptions.Target), 3, Testing.GetDumpDirPath(this.GetType()), compileOptions);

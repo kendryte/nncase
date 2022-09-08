@@ -29,7 +29,7 @@ public class EGraphPass : RulesPass
     }
 
     /// <inheritdoc/>
-    protected override async Task<Callable> RunCoreAsync(Callable function, RunPassOptions options)
+    protected override async Task<BaseFunction> RunCoreAsync(BaseFunction function, RunPassOptions options)
     {
         var graph = new EGraph();
         var root = graph.Add(function);
@@ -38,7 +38,7 @@ public class EGraphPass : RulesPass
         await OnPostRewrite(graph, options);
         OnPostRewriteEnd(graph, options);
         var post = graph.Extract(root, options);
-        return (Callable)post;
+        return (BaseFunction)post;
     }
 
     protected virtual Task OnPostRewrite(EGraph graph, RunPassOptions options)
@@ -49,13 +49,13 @@ public class EGraphPass : RulesPass
     /// <summary>
     /// the callback function you can custom process func with run pass options.
     /// </summary>
-    /// <param name="callable"> func without run pass.</param>
+    /// <param name="eGraph"> egraph without run pass.</param>
     /// <param name="options">Options.</param>
     protected virtual void OnPostRewriteStart(EGraph eGraph, RunPassOptions options)
     {
         switch (options.DumpLevel)
         {
-            case >= 2:
+            case >= 4:
                 EGraphPrinter.DumpEgraphAsDot(
                     eGraph,
                     null,
@@ -71,13 +71,13 @@ public class EGraphPass : RulesPass
     /// <summary>
     /// the callback function you can custom process func with run pass options.
     /// </summary>
-    /// <param name="callable"> func with rewrited. </param>
+    /// <param name="eGraph"> egraph with rewrited. </param>
     /// <param name="options">Options.</param>
     protected virtual void OnPostRewriteEnd(EGraph eGraph, RunPassOptions options)
     {
         switch (options.DumpLevel)
         {
-            case >= 2:
+            case >= 4:
                 EGraphPrinter.DumpEgraphAsDot(
                     eGraph,
                     null,

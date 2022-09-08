@@ -167,7 +167,7 @@ jobs:
           
       - name: Install Common Python Packages
         run: |
-          pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0 opencv-python
+          pip install conan tensorflow==2.7.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0 opencv-python
           pip install imageio==2.15.0 protobuf==3.20.1
           pip install pytest
           pip install --pre pythonnet
@@ -203,6 +203,10 @@ jobs:
           LD_LIBRARY_PATH: ${{github.workspace}}/install/lib
         run: |
           pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/other.xml
+          pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/other.xml
+          pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/other.xml
+          pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/other.xml
+          pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/other.xml
 #          pytest tests/other --doctest-modules --junitxml=test_results/other.xml
 #          pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
 #          pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml

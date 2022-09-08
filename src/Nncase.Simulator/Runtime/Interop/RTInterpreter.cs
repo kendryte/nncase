@@ -5,6 +5,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,28 +14,41 @@ namespace Nncase.Runtime.Interop;
 /// <summary>
 /// Runtime interpreter.
 /// </summary>
-public sealed class RTInterpreter : IDisposable
+public sealed class RTInterpreter : SafeHandle
 {
-    private readonly IntPtr _handle;
     private MemoryHandle _pinnedModelBuffer;
-    private bool _disposedValue;
+    // private bool _disposedValue;
     private RTFunction? _entry;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RTInterpreter"/> class.
     /// </summary>
-    public RTInterpreter()
+    internal RTInterpreter() : base(IntPtr.Zero, true)
     {
-        Native.InterpCreate(out _handle).ThrowIfFailed();
+    }
+
+    internal RTInterpreter(IntPtr handle) : base(handle, true)
+    {
+
+    }
+
+    /// <summary>
+    /// Create the Interpreter
+    /// </summary>
+    /// <returns></returns>
+    public static RTInterpreter Create()
+    {
+        Native.InterpCreate(out var interp).ThrowIfFailed();
+        return interp;
     }
 
     /// <summary>
     /// Finalizes an instance of the <see cref="RTInterpreter"/> class.
     /// </summary>
-    ~RTInterpreter()
-    {
-        Dispose(disposing: false);
-    }
+    // ~RTInterpreter()
+    // {
+    //     Dispose(disposing: false);
+    // }
 
     /// <summary>
     /// Gets entry function.
@@ -45,7 +59,7 @@ public sealed class RTInterpreter : IDisposable
         {
             if (_entry == null)
             {
-                Native.InterpGetEntryFunction(_handle, out var entry).ThrowIfFailed();
+                Native.InterpGetEntryFunction(this, out var entry).ThrowIfFailed();
                 _entry = entry == IntPtr.Zero ? null : new RTFunction(this, entry);
             }
 
@@ -53,9 +67,18 @@ public sealed class RTInterpreter : IDisposable
         }
     }
 
-    public void SetDumpRoot(String path)
+    /// <inheritdoc/>
+    public override bool IsInvalid => handle == IntPtr.Zero;
+
+    /// <summary>
+    /// set the runtim dump root dir
+    /// </summary>
+    /// <param name="root">root dir.</param>
+    public void SetDumpRoot(string root)
     {
-        Native.InterpSetDumpRoot(_handle, path);
+        if (!Directory.Exists(root))
+            Directory.CreateDirectory(root);
+        Native.InterpSetDumpRoot(this, root);
     }
 
     /// <summary>
@@ -66,27 +89,34 @@ public sealed class RTInterpreter : IDisposable
     {
         _pinnedModelBuffer.Dispose();
         _pinnedModelBuffer = modelBuffer.Pin();
-        Native.InterpLoadModel(_handle, _pinnedModelBuffer.Pointer, (uint)modelBuffer.Length, false).ThrowIfFailed();
+        Native.InterpLoadModel(this, _pinnedModelBuffer.Pointer, (uint)modelBuffer.Length, false).ThrowIfFailed();
     }
 
     /// <inheritdoc/>
-    public void Dispose()
+    protected override bool ReleaseHandle()
     {
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
+        _pinnedModelBuffer.Dispose();
+        return Native.InterpFree(handle).IsSuccess;
     }
 
-    private void Dispose(bool disposing)
-    {
-        if (!_disposedValue)
-        {
-            if (disposing)
-            {
-                _pinnedModelBuffer.Dispose();
-            }
+    /// <inheritdoc/>
+    // public void Dispose()
+    // {
+    //     Dispose(disposing: true);
+    //     GC.SuppressFinalize(this);
+    // }
 
-            Native.InterpFree(_handle);
-            _disposedValue = true;
-        }
-    }
+    // private void Dispose(bool disposing)
+    // {
+    //     if (!_disposedValue)
+    //     {
+    //         if (disposing)
+    //         {
+    //             _pinnedModelBuffer.Dispose();
+    //         }
+
+    //         Native.InterpFree(_handle);
+    //         _disposedValue = true;
+    //     }
+    // }
 }

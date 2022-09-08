@@ -42,6 +42,12 @@ public struct QuantParam : IEquatable<QuantParam>
     {
         return Scale == other.Scale && ZeroPoint == other.ZeroPoint;
     }
+
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return $"<{ZeroPoint},{Scale}>";
+    }
 }
 
 /// <summary>

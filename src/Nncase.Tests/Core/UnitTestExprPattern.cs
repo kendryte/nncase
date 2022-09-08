@@ -34,7 +34,7 @@ public class UnitTestExprPattern
     public void TestVarPattern()
     {
         Var e = new Var("x", AnyType.Default);
-        Assert.False(e.InferenceType());
+        Assert.True(e.InferenceType());
         Pattern ep = e;
         Assert.IsType<VarPattern>(ep);
         Assert.True(CompilerServices.TryMatchRoot(e, ep, out _));

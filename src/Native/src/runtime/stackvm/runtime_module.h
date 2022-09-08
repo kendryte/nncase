@@ -16,12 +16,12 @@
 #include "evaluate_stack.h"
 #include <nncase/kernels/kernel_context.h>
 #include <nncase/runtime/stackvm/runtime_module.h>
+#include <unordered_map>
 
 BEGIN_NS_NNCASE_RT_MODULE(stackvm)
 
-class stackvm_runtime_module : public runtime_module
-{
-public:
+class stackvm_runtime_module : public runtime_module {
+  public:
     static NNCASE_INLINE_VAR constexpr size_t MAX_GENERAL_REGS = 32;
 
     kernels::kernel_context &kernel_context() noexcept;
@@ -31,13 +31,19 @@ public:
     result<uintptr_t> reg(size_t id) const noexcept;
     result<void> reg(size_t id, uintptr_t value) noexcept;
 
-protected:
-    result<void> initialize_before_functions(runtime_module_init_context &context) noexcept override;
-    result<std::unique_ptr<runtime_function>> create_function() noexcept override;
+    const std::unordered_map<std::string, custom_call_type>
+    custom_call_table() const noexcept;
 
-private:
+  protected:
+    result<void> initialize_before_functions(
+        runtime_module_init_context &context) noexcept override;
+    result<std::unique_ptr<runtime_function>>
+    create_function() noexcept override;
+
+  private:
     std::unique_ptr<gsl::byte[]> data_;
     gsl::span<const gsl::byte> rdata_;
+    std::unordered_map<std::string, custom_call_type> custom_call_table_;
     std::array<uintptr_t, MAX_GENERAL_REGS> regs_;
 };
 

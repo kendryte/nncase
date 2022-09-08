@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "allocator.h"
+#include "dump_manager.h"
 #include "model.h"
 #include "result.h"
 #include "runtime_module.h"
@@ -90,12 +91,19 @@ class NNCASE_API interpreter {
     result<runtime_function *>
     find_function_by_name(std::string_view name) noexcept;
     result<runtime_function *> entry_function() noexcept;
+    std::shared_ptr<nncase::runtime::dump_manager> dump_manager() noexcept {
+        if (!dump_manager_) {
+            dump_manager_ = std::make_shared<nncase::runtime::dump_manager>();
+        }
+        return dump_manager_;
+    }
 
   private:
     tensor_type input_tensor_type(size_t index) const noexcept;
     tensor_type output_tensor_type(size_t index) const noexcept;
 
   private:
+    std::shared_ptr<nncase::runtime::dump_manager> dump_manager_;
     std::unique_ptr<gsl::byte[]> model_data_;
     std::vector<std::unique_ptr<runtime_module>> modules_;
     runtime_function *entry_function_;

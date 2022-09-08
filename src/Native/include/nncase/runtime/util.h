@@ -22,7 +22,8 @@
 #include <nncase/api.h>
 #include <nncase/runtime/runtime_op_utility.h>
 
-namespace nncase::runtime {
+BEGIN_NS_NNCASE_RUNTIME
+
 // cast macro
 #define IN_CAST(_ty, _name) reinterpret_cast<const _ty *>(_name)
 #define OUT_CAST(_ty, _name) reinterpret_cast<_ty *>(_name)
@@ -63,7 +64,7 @@ inline result<bool> float_only_check(tensor input) {
 // tuple helper
 template <typename F>
 inline result<void> tuple_for_each_with_i(tuple inputs, F &&f) {
-    for (int i = 0; i < inputs->fields().size(); ++i) {
+    for (size_t i =0; i < inputs->fields().size(); ++i) {
         try_(f(inputs->fields()[i], i));
     }
     return ok();
@@ -73,7 +74,7 @@ inline result<void> tuple_for_each_with_i(tuple inputs, F &&f) {
 template <typename T, bool IsResult, typename F>
 inline result<std::vector<T>> get_from_tuple_with_result(tuple inputs, F &&f) {
     std::vector<T> data(inputs->fields().size());
-    for (int i = 0; i < inputs->fields().size(); ++i) {
+    for (size_t i =0; i < inputs->fields().size(); ++i) {
         try_var(input, inputs->fields()[i].as<tensor>());
         if constexpr (IsResult) {
             try_var(in, f(input));
@@ -133,7 +134,7 @@ alloc_output<true, std::vector<dims_t>>(value_t &outputs, datatype_t dtype,
     if (outputs.empty()) {
         auto size = out_shapes.size();
         std::vector<value_t> fields(size);
-        for (int i = 0; i < size; ++i) {
+        for (size_t i =0; i < size; ++i) {
             auto output = value_t();
             try_(alloc_output<false>(output, dtype, out_shapes[i]));
             fields[i] = output;
@@ -160,10 +161,15 @@ inline result<host_buffer_slice> get_host_buffer(tensor tensor) {
     return ok(tensor_buffer);
 }
 
-inline result<gsl::byte *> get_output_data(tensor output) {
+inline result<gsl::span<gsl::byte>> get_output_span(tensor output) {
     try_var(output_buffer, get_host_buffer(output));
     try_var(output_map, output_buffer.map(map_write));
-    return ok(output_map.buffer().data());
+    return ok(output_map.buffer());
+}
+
+inline result<gsl::byte *> get_output_data(tensor output) {
+    try_var(output_buffer, get_output_span(output));
+    return ok(output_buffer.data());
 }
 
 inline result<std::vector<gsl::byte *>> get_output_data(tuple outputs) {
@@ -171,11 +177,32 @@ inline result<std::vector<gsl::byte *>> get_output_data(tuple outputs) {
         outputs, [](tensor &input) { return get_output_data(input); });
 }
 
-inline result<gsl::byte *> get_input_data(tensor input) {
+#ifndef NODEBUG
+// used for insert into some where for check nan value in DEBUG mode
+inline void nan_debug(const float *in, int size) {
+    auto f = *in;
+    if (f != f) {
+        for (int i = 1; i < size; ++i) {
+            auto fv = *(in + i);
+            if (fv != fv) {
+                [[maybe_unused]] auto a = 1;
+            }
+        }
+    }
+}
+#else
+inline void nan_debug(const float *in) {}
+#endif
+
+inline result<gsl::span<gsl::byte>> get_input_span(tensor input) {
     try_var(input_buffer, get_host_buffer(input));
     try_var(input_map, input_buffer.map(map_read));
-    auto d = input_map.buffer().data();
-    return ok(d);
+    return ok(input_map.buffer());
+}
+
+inline result<gsl::byte *> get_input_data(tensor input) {
+    try_var(input_buffer, get_input_span(input));
+    return ok(input_buffer.data());
 }
 
 inline result<std::vector<gsl::byte *>> get_input_data(tuple inputs) {
@@ -277,7 +304,7 @@ inline result<std::vector<gsl::byte *>> get_input_data(tuple inputs) {
 // implicit set var name
 #define try_out_mem(_value_name, _dt, _out_shape)                              \
     try_output(_value_name##_mem, _value_name, _dt, _out_shape)
-#define try_f32_out_mem(_value_name, _out_shape)                          \
+#define try_f32_out_mem(_value_name, _out_shape)                               \
     try_f32_output(_value_name##_mem, _value_name, _out_shape)
 
 #define try_in_mem(_value_name) try_input(_value_name##_mem, _value_name)
@@ -289,22 +316,41 @@ inline result<std::vector<gsl::byte *>> get_input_data(tuple inputs) {
 #define try_to_scalar_v(_value_name, _ty)                                      \
     try_to_scalar(_value_name##_value, _value_name, _ty)
 
+#define try_integer_v(_value_name)                                             \
+    try_to_integer(_value_name##_value, _value_name)
+
+#define try_dims_v(_value_name) try_dims(_value_name##_value, _value_name)
+
 // other cast macro
 #define to_tensor(_tensor_name, _value)                                        \
     try_var(_tensor_name, _value.as<tensor>());
-#define finish return ok(output)
-#define tuple_finish return ok(output_tuple)
+
+#define to_tensor_t(_value) to_tensor(_value##_tensor, _value)
+
+#define KERNEL_FINISH return ok(output)
+#define TUPLE_FINISH return ok(output_tuple)
 
 // get data from value
 template <typename TI, typename TO>
 itlib::small_vector<TO, 4> to_vec(const gsl::byte *input, size_t size) {
     auto in_ptr = reinterpret_cast<const TI *>(input);
     auto vec = itlib::small_vector<TO, 4>(size);
-    for (int i = 0; i < size; ++i) {
+    for (size_t i =0; i < size; ++i) {
         vec[i] = (TO)in_ptr[i];
     }
     return vec;
 }
+
+#define RETURN_RESULT_SELECT(RETURN_RESULT_IMPL)                               \
+    RETURN_RESULT_IMPL(bool);                                                  \
+    RETURN_RESULT_IMPL(int8_t);                                                \
+    RETURN_RESULT_IMPL(uint8_t);                                               \
+    RETURN_RESULT_IMPL(int32_t);                                               \
+    RETURN_RESULT_IMPL(uint32_t);                                              \
+    RETURN_RESULT_IMPL(int64_t);                                               \
+    RETURN_RESULT_IMPL(uint64_t);                                              \
+    RETURN_RESULT_IMPL(float);                                                 \
+    RETURN_RESULT_IMPL(double);                                                \
 
 template <typename T>
 inline result<T> value_to_scalar([[maybe_unused]] value_t value) {
@@ -314,12 +360,7 @@ inline result<T> value_to_scalar([[maybe_unused]] value_t value) {
     if (cmp_type<_in_type>(value_tensor->dtype())) {                           \
         return ok((T)(*reinterpret_cast<const _in_type *>(input)));            \
     }
-    RETURN_RESULT(bool);
-    RETURN_RESULT(float);
-    RETURN_RESULT(int32_t);
-    RETURN_RESULT(int64_t);
-    RETURN_RESULT(uint32_t);
-    RETURN_RESULT(uint64_t);
+    RETURN_RESULT_SELECT(RETURN_RESULT);
     return err(nncase_errc::datatype_mismatch);
 #undef RETURN_RESULT
 }
@@ -364,7 +405,7 @@ inline result<dims_t> value_as_positive_axes(value_t value, size_t rank) {
     assert(value_tensor->shape().size() == 1);
     auto size = value_tensor->shape()[0];
     auto axis = dims_t(size);
-    for (int i = 0; i < size; ++i) {
+    for (size_t i =0; i < size; ++i) {
         if (cmp_type<int32_t>(value_tensor->dtype())) {
             axis[i] = (dims_t::value_type)positive_index(
                 IN_CAST(int32_t, input)[i], rank);
@@ -392,7 +433,7 @@ inline result<paddings_t> value_as_paddings([[maybe_unused]] value_t value) {
     auto dims = size / 2;
     auto pads = paddings_t(dims);
     auto dt = value_tensor->dtype();
-    for (int i = 0; i < dims; ++i) {
+    for (size_t i =0; i < dims; ++i) {
         if (cmp_type<int32_t>(dt)) {
             pads[i].before = *(IN_CAST(int32_t, input) + 2 * i);
             pads[i].after = *(IN_CAST(int32_t, input) + 2 * i + 1);
@@ -474,4 +515,63 @@ inline result<void> integer_cast(datatype_t type, const gsl::byte *input,
     return ok();
 }
 
-} // namespace nncase::runtime
+// used for slice args
+inline std::tuple<axes_t, axes_t, axes_t>
+slice_fill(const dims_t &in_shape, axes_t &begins_value, axes_t &ends_value,
+           axes_t &strides_value, axes_t axes_value) {
+    auto ndim = in_shape.size();
+    axes_t begin_values(ndim, 0);
+    axes_t end_values(in_shape.begin(), in_shape.end());
+    axes_t strides_values(ndim, 1);
+    for (size_t i = 0; i < ndim; ++i) {
+        const auto it = std::find_if(axes_value.begin(), axes_value.end(),
+                                     [i, ndim](const auto axis) {
+                                         return positive_index(axis, ndim) == i;
+                                     });
+        if (it != axes_value.end()) {
+            auto idx = std::distance(axes_value.begin(), it);
+            auto max = static_cast<int>(in_shape[i]);
+            auto min = (-1) * max - 1;
+
+            // check starts
+            begin_values[i] = begins_value[idx] < min   ? min
+                              : begins_value[idx] > max ? max
+                                                        : begins_value[idx];
+
+            // check stops
+            end_values[i] = ends_value[idx] < min   ? min
+                            : ends_value[idx] > max ? max
+                                                    : ends_value[idx];
+
+            // check steps
+            if (!strides_value.empty()) {
+                assert(strides_value[idx] != 0);
+                strides_values[i] = strides_value[idx];
+            }
+
+            // fixup begin_values
+            if ((strides_values[i] > 0 && end_values[i] > begin_values[i]) ||
+                (strides_values[i] < 0 && end_values[i] < begin_values[i])) {
+                begin_values[i] =
+                    begin_values[i] == min ? min + 1 : begin_values[i];
+                begin_values[i] =
+                    begin_values[i] == max ? max - 1 : begin_values[i];
+            }
+            if (begin_values[i] < 0)
+                begin_values[i] += max;
+            if (end_values[i] < 0)
+                end_values[i] += max;
+        }
+    }
+    return std::tuple(begin_values, end_values, strides_values);
+}
+
+inline dims_t to_4d(dims_t in_a_shape) {
+    auto size = 4 - in_a_shape.size();
+    for (size_t i =0; i < size; ++i) {
+        in_a_shape.insert(in_a_shape.begin(), 1);
+    }
+    return in_a_shape;
+}
+
+END_NS_NNCASE_RUNTIME

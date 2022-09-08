@@ -26,15 +26,22 @@ public static class Tensors
 
     public static Call Broadcast(Expr input, Expr shape) => new Call(new Broadcast(), input, shape);
 
-    public static Call Cast(Expr input, DataType newType) => new Call(new Cast(newType), input);
+    public static Call Cast(Expr input, DataType newType, CastMode castMode = CastMode.KDefault) => new Call(new Cast(newType, castMode), input);
 
     public static Call Concat(Expr input, Expr axis) => new Call(new Concat(), input, axis);
-    
+
     public static Call ConstantOfShape(Expr shape, Expr value) => new Call(new ConstantOfShape(), shape, value);
 
     public static Call CumSum(Expr input, Expr axis, Expr exclusive, Expr reverse) => new Call(new CumSum(), input, axis, exclusive, reverse);
 
-    public static Call Expand(Expr input, Expr shape) => new Call(new Expand(), input, shape);
+    public static Call Expand(Expr input, Expr shape)
+    {
+        if (shape.InferenceType() && shape.CheckedShape.IsScalar)
+        {
+            shape = Unsqueeze(shape, new[] { 0 });
+        }
+        return new Call(new Expand(), input, shape);
+    }
 
     public static Call Flatten(Expr input, Expr axis) => new Call(new Flatten(), input, axis);
 
@@ -45,8 +52,8 @@ public static class Tensors
     public static Call MatMul(Expr input, Expr other) => new Call(new MatMul(), input, other);
 
     // todo:remove prod
-    public static Call Prod(Expr input) => Reduce(ReduceOp.Prod, input, new[]{ 0 }, 1, false);
-    
+    public static Call Prod(Expr input) => Reduce(ReduceOp.Prod, input, new[] { 0 }, 1, false);
+
     public static Call Range(Expr begin, Expr end, Expr step) => new Call(new Range(), begin, end, step);
 
     public static Call Reduce(ReduceOp reduceOp, Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(reduceOp), input, axis, initValue, keepDims);
@@ -74,6 +81,8 @@ public static class Tensors
 
     public static Call Slice(Expr input, Expr begins, Expr ends, int rank)
     {
+        if (rank < 1)
+            throw new ArgumentOutOfRangeException();
         var axes = Tensor.FromRange(0, rank);
         var strides = Tensor.FromScalar(1, rank);
         return new Call(new Slice(), input, begins, ends, axes, strides);
@@ -109,4 +118,13 @@ public static class Tensors
     public static Call GetItem(Expr input, Expr index) => new Call(new GetItem(), input, index);
 
     public static Call StackScalar(Expr scalar) => Stack(new Tuple(scalar), 0);
+
+    /// <summary>
+    /// create the uninitialized buffer
+    /// </summary>
+    /// <param name="dataType"></param>
+    /// <param name="memoryLocation"></param>
+    /// <param name="shape"></param>
+    /// <returns></returns>
+    public static Call Uninitialized(DataType dataType, Schedule.MemoryLocation memoryLocation, Expr shape) => new Call(new Uninitialized(dataType, memoryLocation), shape);
 }

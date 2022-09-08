@@ -40,7 +40,7 @@ public class UnitTestCombineTranspose: TestFixture.UnitTestFixtrue
     // [MemberData(nameof(TestCombineTransposeBinaryPositiveData))]
     // public void TestCombineTransposeBinaryPositive(int[] lShape, int[] rShape, int[] perm)
     // {
-    //     var caseOptions = passOptions.IndentDir($"{(perm.Length)}D_binary_motion");
+    //     var caseOptions = GetPassOptions();
     //     var a = new Var();
     //     var b = new Var();
     //
@@ -73,7 +73,7 @@ public class UnitTestCombineTranspose: TestFixture.UnitTestFixtrue
     // [MemberData(nameof(TestCombineTransposeConcatPositiveData))]
     // public void TestCombineTransposeConcatPositive(int[] inShape, int[] perm, int axis, int concatNum)
     // {
-    //     var caseOptions = passOptions.IndentDir($"{(perm.Length)}D_concat_motion");
+    //     var caseOptions = GetPassOptions();
     //     var inputList = new List<Var>();
     //     for (int i = 0; i < concatNum; i++)
     //     {
@@ -118,7 +118,7 @@ public class UnitTestCombineTranspose: TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestCombineTransposePadPositiveData))]
     public void TestCombineTransposePadPositive(int[] inShape, int[] perm, int[,] paddings, PadMode padM, float padValue)
     {
-        var caseOptions = passOptions.IndentDir($"{(perm.Length)}D_{padM}_pad_motion");
+        var caseOptions = GetPassOptions();
         var a = new Var();
         var Normal = new Dictionary<Var, IValue>();
         Normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
@@ -146,7 +146,7 @@ public class UnitTestCombineTranspose: TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestCombineTransposeReducePositiveData))]
     public void TestCombineTransposeReducePositive(int[] inShape, int[] perm, int axis, int initValue, bool keepDims)
     {
-        var caseOptions = passOptions.IndentDir($"{(perm.Length)}D_reduce_motion");
+        var caseOptions = GetPassOptions();
         var a = new Var();
         var Normal = new Dictionary<Var, IValue>();
         Normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
@@ -174,7 +174,7 @@ public class UnitTestCombineTranspose: TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestCombineTransposeUnaryPositiveData))]
     public void TestCombineTransposeUnaryPositive(UnaryOp opType, int[] inShape, int[] perm)
     {
-        var caseOptions = passOptions.IndentDir($"{(perm.Length)}D_{opType}_unary_motion");
+        var caseOptions = GetPassOptions();
         var a = new Var();
         var Normal = new Dictionary<Var, IValue>();
         Normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());

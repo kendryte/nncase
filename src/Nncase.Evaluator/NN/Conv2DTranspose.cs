@@ -34,14 +34,14 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Conv2DTranspose target)
     {
+        var input = context.CheckArgumentType<TensorType>(target, Conv2DTranspose.Input);
         if (context.GetArgument(target, Conv2DTranspose.OutputShape) is TensorConst outShapeValue)
         {
-            var input = context.CheckArgumentType<TensorType>(target, Conv2DTranspose.Input);
             return new TensorType(input.DType, new Shape(outShapeValue.Value.Cast<int>()));
         }
         else
         {
-            return new InvalidType("Conv2dTranspose can't infer shape with dynamic outputShape");
+            return input with {Shape = Shape.Unknown(4)};
         }
     }
 }

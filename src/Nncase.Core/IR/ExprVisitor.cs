@@ -20,17 +20,17 @@ namespace Nncase.IR
         private readonly Dictionary<IRType, TTypeResult> _typeMemo = new Dictionary<IRType, TTypeResult>();
         private readonly Dictionary<string, Action<Expr>> _callbacksAfterCall = new();
         private readonly Dictionary<string, Action<Expr>> _callbacksBeforeCall = new();
-        
+
         protected void RegisterAfterCallback(string name, Action<Expr> callback)
         {
-            _callbacksAfterCall[name] = callback; 
+            _callbacksAfterCall[name] = callback;
         }
 
         protected void RegisterBeforeCallback(string name, Action<Expr> callback)
         {
-            _callbacksBeforeCall[name] = callback; 
+            _callbacksBeforeCall[name] = callback;
         }
-        
+
         private void CallbacksBeforeCall(Expr expr)
         {
             foreach (var (name, callback) in _callbacksBeforeCall)
@@ -38,7 +38,7 @@ namespace Nncase.IR
                 callback(expr);
             }
         }
-        
+
         private void CallbacksAfterCall(Expr expr)
         {
             foreach (var (name, callback) in _callbacksAfterCall)
@@ -46,7 +46,7 @@ namespace Nncase.IR
                 callback(expr);
             }
         }
-        
+
         /// <summary>
         /// Gets expression visit result memo.
         /// </summary>
@@ -62,13 +62,13 @@ namespace Nncase.IR
                 {
                     Visit(param);
                 }
-                
+
                 CallbacksBeforeCall(expr);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
                 CallbacksAfterCall(expr);
             }
-            
+
             return result;
         }
 
@@ -95,6 +95,37 @@ namespace Nncase.IR
                 }
 
                 Visit(expr.Body);
+                result = VisitLeaf(expr);
+                _exprMemo.Add(expr, result);
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public override TExprResult Visit(Fusion expr)
+        {
+            if (!_exprMemo.TryGetValue(expr, out var result))
+            {
+                foreach (var param in expr.Parameters)
+                {
+                    Visit(param);
+                }
+
+                Visit(expr.Body);
+                result = VisitLeaf(expr);
+                _exprMemo.Add(expr, result);
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public override TExprResult Visit(PrimFunctionWrapper expr)
+        {
+            if (!_exprMemo.TryGetValue(expr, out var result))
+            {
+                Visit(expr.Target);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
@@ -350,6 +381,7 @@ namespace Nncase.IR
                 Var var => VisitLeaf(var),
                 Const con => VisitLeaf(con),
                 Function func => VisitLeaf(func),
+                Fusion fusion => VisitLeaf(fusion),
                 Call call => VisitLeaf(call),
                 Tuple tuple => VisitLeaf(tuple),
                 Op op => VisitLeaf(op),
@@ -361,7 +393,7 @@ namespace Nncase.IR
                 TIR.BufferStore bufstore => VisitLeaf(bufstore),
                 TIR.IfThenElse ift => VisitLeaf(ift),
                 TIR.Let let => VisitLeaf(let),
-                TIR.Buffer memref => VisitLeaf(memref),
+                TIR.Buffer buffer => VisitLeaf(buffer),
                 _ => DefaultVisitLeaf(expr),
             };
         }
@@ -386,6 +418,20 @@ namespace Nncase.IR
         /// <param name="expr">Function expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult VisitLeaf(Function expr) => DefaultVisitLeaf(expr);
+
+        /// <summary>
+        /// Visit leaf fusion expression.
+        /// </summary>
+        /// <param name="expr">Fusion expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult VisitLeaf(Fusion expr) => DefaultVisitLeaf(expr);
+
+        /// <summary>
+        /// Visit leaf prim function wrapper expression.
+        /// </summary>
+        /// <param name="expr">Function expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult VisitLeaf(PrimFunctionWrapper expr) => DefaultVisitLeaf(expr);
 
         /// <summary>
         /// Visit leaf prim function expression.

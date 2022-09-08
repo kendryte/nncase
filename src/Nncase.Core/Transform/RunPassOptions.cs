@@ -18,6 +18,19 @@ namespace Nncase.Transform
     {
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="RunPassOptions"/> class.
+        /// </summary>
+        /// <param name="compileOptions"></param>
+        public RunPassOptions(CompileOptions compileOptions)
+        {
+            Target = CompilerServices.GetTarget(compileOptions.Target);
+            DumpLevel = compileOptions.DumpLevel;
+            DumpDir = compileOptions.DumpDir;
+            CompileOptions = compileOptions;
+            PassName = "";
+        }
+
+        /// <summary>
         /// parameterless ctor.
         /// </summary>
         public RunPassOptions(ITarget target)
@@ -104,6 +117,9 @@ namespace Nncase.Transform
         /// </summary>
         public CompileOptions CompileOptions { set; get; }
 
+        /// <summary>
+        /// the match option.
+        /// </summary>
         public MatchOptions MatchOptions { get; set; } = new MatchOptions();
 
         /// <summary>
@@ -111,28 +127,28 @@ namespace Nncase.Transform
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public RunPassOptions SetPassName(string name) => new(Target, DumpLevel, DumpDir, CompileOptions) { PassName = name };
+        public RunPassOptions SetPassName(string name) => new(Target, DumpLevel, DumpDir, CompileOptions) { PassName = name, MatchOptions = MatchOptions };
 
         /// <summary>
         /// set the dumpDir.
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public RunPassOptions SetDumpDir(string path) => new(Target, DumpLevel, path, CompileOptions) { PassName = PassName };
+        public RunPassOptions SetDumpDir(string path) => new(Target, DumpLevel, path, CompileOptions) { PassName = PassName, MatchOptions = MatchOptions };
 
         /// <summary>
         /// set the RewriteOnce
         /// </summary>
         /// <param name="once"></param>
         /// <returns></returns>
-        public RunPassOptions SetRewriteOnce(bool once) => new(Target, DumpLevel, DumpDir, CompileOptions) { PassName = PassName, RewriteOnce = once };
+        public RunPassOptions SetRewriteOnce(bool once) => new(Target, DumpLevel, DumpDir, CompileOptions) { PassName = PassName, RewriteOnce = once, MatchOptions = MatchOptions };
 
         /// <summary>
         /// indent the dumpDir.
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public RunPassOptions IndentDir(string path) => new(Target, DumpLevel, Path.Combine(DumpDir, path), CompileOptions) { PassName = PassName };
+        public RunPassOptions IndentDir(string path) => new(Target, DumpLevel, Path.Combine(DumpDir, path), CompileOptions) { PassName = PassName, MatchOptions = MatchOptions };
 
         /// <summary>
         /// return "{DumpDir}/{PassName}".

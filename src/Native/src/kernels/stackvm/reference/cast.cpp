@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
+#include <nncase/kernels/apply.h>
 #include <nncase/kernels/stackvm/tensor_ops.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
@@ -24,13 +24,12 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
-using namespace nncase::kernels::cpu;
-using namespace nncase::kernels::cpu::reference;
+using namespace nncase::kernels::stackvm;
 
 namespace {
 #define SCALAR_CAST_IMPL(f)                                                    \
     if (is_scalar(in_shape)) {                                                 \
-        output[0] = f(input[0]);                            \
+        output[0] = f(input[0]);                                               \
         return ok();                                                           \
     }
 
@@ -122,9 +121,11 @@ result<void> cast_impl(datatype_t in_type, datatype_t out_type,
     return err(std::errc::not_supported);
 }
 
-result<value_t> nncase::kernels::stackvm::cast(typecode_t new_type,
-                                               value_t input, value_t output,
-                                               kernel_context &context) {
+result<value_t> nncase::kernels::stackvm::cast(
+    typecode_t new_type, runtime::stackvm::cast_mode_t cast_mode, value_t input,
+    value_t output, kernel_context &context) {
+    if (cast_mode != runtime::stackvm::cast_mode_t::kdefault)
+        return err(std::errc::not_supported);
     try_input(input_mem, input);
     try_output(out_mem, output, new_type, input_tensor->shape());
     try_(cast_impl(input_tensor->dtype(), new_type, input_mem, out_mem,

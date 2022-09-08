@@ -1,6 +1,7 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
@@ -37,18 +38,17 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var rhs = context.GetArgumentType<TensorType>(target, MatMul.Rhs);
         var outputType = context.GetReturnType<TensorType>();
 
-        if (lhs.Shape[^1].IsFixed && lhs.Shape[^2].IsFixed && rhs.Shape[^1].IsFixed && rhs.Shape[^2].IsFixed)
+        if (lhs.Shape.IsUnranked)
         {
-            var macPerElement = lhs.Shape[^1].FixedValue;
-            return new()
-            {
-                [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(lhs) + CostUtility.GetMemoryAccess(rhs),
-                [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
-                [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement),
-            };
+            Console.WriteLine("unrank");
         }
-
-        return null;
+        var macPerElement = lhs.Shape[^1].IsFixed ? lhs.Shape[^1].FixedValue : 1;
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(lhs) + CostUtility.GetMemoryAccess(rhs),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement),
+        };
     }
 
     private IRType Visit(TensorType lhs, TensorType rhs)
@@ -58,17 +58,17 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             return new TensorType(lhs.DType, Shape.Unranked);
         }
 
-        if (lhs.Shape[^1].IsUnknown || rhs.Shape[^2].IsUnknown)
-        {
-            return new TensorType(lhs.DType, Shape.Unranked);
-        }
+        // if (lhs.Shape[^1].IsUnknown || rhs.Shape[^2].IsUnknown)
+        // {
+        //     return new TensorType(lhs.DType, Shape.Unranked);
+        // }
 
         if (lhs.DType != rhs.DType)
         {
             return new InvalidType("MatMul lhs and rhs have different DType");
         }
 
-        if (lhs.Shape[^1] != rhs.Shape[^2])
+        if (lhs.Shape[^1] != rhs.Shape[^2] && lhs.Shape[^1] != Dimension.Unknown && rhs.Shape[^2] != Dimension.Unknown)
         {
             return new InvalidType("MatMul lhs and rhs have not compatiable shape");
         }

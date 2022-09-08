@@ -28,10 +28,10 @@ public class UnitTestFoldPad : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopPadPositiveData))]
     public void TestFoldNopPadPositive(int[] shape, int[,] pads, int index)
     {
-        var caseOptions = passOptions.IndentDir($"case_{index}");
+        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = NN.Pad(a, pads, PadMode.Constant, 0.0f);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopPad() }, passOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopPad() }, caseOptions);
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -48,10 +48,10 @@ public class UnitTestFoldPad : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopPadNegativeData))]
     public void TestFoldNopPadNegative(int[] shape, int[,] pads, int index)
     {
-        var caseOptions = passOptions.IndentDir($"case_{index}");
+        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = NN.Pad(a, pads, PadMode.Constant, 0.0f);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopPad() }, passOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopPad() }, caseOptions);
 
         Assert.Equal(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -68,7 +68,7 @@ public class UnitTestFoldPad : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldTwoPadsPositiveData))]
     public void TestFoldTwoPadsPositive(int[] shape, int[,] pads1, int[,] pads2, int index)
     {
-        var caseOptions = passOptions.IndentDir($"case_{index}");
+        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = NN.Pad(NN.Pad(a, pads1, PadMode.Constant, 0.0f), pads2, PadMode.Constant, 0.0f);
         var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoPads() }, caseOptions);
@@ -88,7 +88,7 @@ public class UnitTestFoldPad : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldTwoPadsNegativeData))]
     public void TestFoldTwoPadsNegative(int[] shape, int[,] pads1, float padValue1, int[,] pads2, float padValue2, int index)
     {
-        var caseOptions = passOptions.IndentDir($"case_{index}");
+        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = NN.Pad(NN.Pad(a, pads1, PadMode.Constant, padValue1), pads2, PadMode.Constant, padValue2);
         var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoPads() }, caseOptions);

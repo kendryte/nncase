@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/cpu/reference/runtime_types.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
@@ -24,7 +23,6 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
-using namespace nncase::kernels::cpu::reference;
 using namespace nncase::kernels::stackvm;
 
 namespace {
@@ -55,6 +53,21 @@ result<void> binary_impl(TOp &&op, const T *lhs, const T *rhs, T *output,
         return binary_impl(funct, lhs, rhs, output, lhs_shape, lhs_strides,    \
                            rhs_shape, rhs_strides, out_shape, out_strides,     \
                            context)
+
+result<void> binary_impl(binary_op_t op, const bool *lhs, const bool *rhs,
+                         bool *output, const dims_t &lhs_shape,
+                         const strides_t &lhs_strides, const dims_t &rhs_shape,
+                         const strides_t &rhs_strides, const dims_t &out_shape,
+                         const strides_t &out_strides,
+                         NNCASE_UNUSED kernel_context &context) noexcept {
+    switch (op) {
+        BINARY_IMPL_OP(logical_and, [](bool a, bool b) { return (a && b); });
+        BINARY_IMPL_OP(logical_or, [](bool a, bool b) { return (a || b); });
+        BINARY_IMPL_OP(logical_xor, [](bool a, bool b) { return (a ^ b); });
+    default:
+        return err(std::errc::not_supported);
+    }
+}
 
 template <class T>
 result<void> binary_impl(binary_op_t op, const T *lhs, const T *rhs, T *output,
@@ -92,7 +105,10 @@ result<void> nncase::kernels::stackvm::reference::binary(
     const strides_t &out_strides,
     NNCASE_UNUSED kernel_context &context) noexcept {
     if (typecode == dt_boolean) {
-        BINARY_IMPL(bool);
+        return binary_impl(op, IN_CAST(bool, lhs), IN_CAST(bool, rhs),
+                           OUT_CAST(bool, output), lhs_shape, lhs_strides,
+                           rhs_shape, rhs_strides, out_shape, out_strides,
+                           context);
     }
     TYPE_SELECT(typecode, BINARY_IMPL);
 }

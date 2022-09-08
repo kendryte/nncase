@@ -1,6 +1,7 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using Nncase.CostModel;
 using Nncase.IR;
 using OrtKISharp;
 using Range = Nncase.IR.Tensors.Range;
@@ -10,7 +11,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Range"/>.
 /// </summary>
-public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>
+public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEvaluator<Range>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Range range)
@@ -27,7 +28,7 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>
         var begin = context.GetArgument(target, Range.Begin);
         var end = context.GetArgument(target, Range.End);
         var step = context.GetArgument(target, Range.Step);
-        if ( begin is TensorConst beginValue
+        if (begin is TensorConst beginValue
              && end is TensorConst endValue
              && step is TensorConst stepValue)
         {
@@ -40,10 +41,10 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>
                                        $"end:{end.CheckedDataType}," +
                                        $"step:{step.CheckedDataType}");
             }
-                return new TensorType(
-                    dType,
-                    new Shape((beginValue.Value.ToScalar<int>() + endValue.Value.ToScalar<int>()) /
-                              stepValue.Value.ToScalar<int>()));
+            return new TensorType(
+                dType,
+                new Shape((beginValue.Value.ToScalar<int>() + endValue.Value.ToScalar<int>()) /
+                          stepValue.Value.ToScalar<int>()));
         }
         else
         {
@@ -52,7 +53,7 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>
             {
                 dt = beginCheckedType.DType;
             }
-            else if(end.CheckedType is TensorType endCheckedType)
+            else if (end.CheckedType is TensorType endCheckedType)
             {
                 dt = endCheckedType.DType;
             }
@@ -62,5 +63,17 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>
             }
             return new TensorType(dt, new Shape(Dimension.Unknown));
         }
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, Range target)
+    {
+        var ret = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = 0,
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret)
+        };
     }
 }

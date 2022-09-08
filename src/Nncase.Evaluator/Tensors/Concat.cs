@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
@@ -14,7 +15,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Concat"/>.
 /// </summary>
-public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>
+public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICostEvaluator<Concat>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Concat cat)
@@ -93,17 +94,17 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>
                 var allAxisDimIsSame = true;
                 foreach (var inType in inputs.Fields)
                 {
-                    if (((TensorType) inType).Shape.IsUnranked)
+                    if (((TensorType)inType).Shape.IsUnranked)
                     {
                         continue;
                     }
-                    var d = ((TensorType) inType).Shape[i];
+                    var d = ((TensorType)inType).Shape[i];
                     if (d.IsUnknown)
                     {
                         return Dimension.Unknown;
                     }
 
-                    if (d.FixedValue != ((TensorType) inputs[0]).Shape[i])
+                    if (d.FixedValue != ((TensorType)inputs[0]).Shape[i])
                     {
                         allAxisDimIsSame = false;
                     }
@@ -141,5 +142,17 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>
         {
             return Dimension.Unknown;
         }
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, Concat target)
+    {
+        var ret = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret),
+        };
     }
 }

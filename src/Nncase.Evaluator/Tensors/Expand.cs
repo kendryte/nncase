@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
@@ -16,7 +17,8 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Expand"/>.
 /// </summary>
-public class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>
+[TypeInferGenerator]
+public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>, ICostEvaluator<Expand>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Expand expand)
@@ -26,24 +28,19 @@ public class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>
         return OrtKI.Expand(input, shape).ToValue();
     }
 
-    /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, Expand target)
+    private IRType Visit(ITypeInferenceContext context, Expand target, TensorType Input, TensorType Shape)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Expand.Input);
-        return Visit(context, target, input);
+        var shape_expr = context.GetArgument(target, Expand.Shape);
+        if (shape_expr is TensorConst constShape)
+            return Input with { Shape = new Shape(constShape.Value.Cast<int>()) };
+        else
+            return Input with { Shape = TypeInference.ReshapeTo(Shape) };
     }
 
-    private IRType Visit(ITypeInferenceContext context, Expand target, TensorType input)
+    public Cost? Visit(ICostEvaluateContext context, Expand target)
     {
-        var shape = context.GetArgument(target, Expand.Shape);
-        return shape switch
-        {
-            TensorConst constShape => new TensorType(input.DType, new Shape(constShape.Value.Cast<int>())),
-            Call call => call.CheckedType is TensorType
-                ? new TensorType(call.CheckedDataType, Shape.Unranked)
-                : new InvalidType(((InvalidType)call.CheckedType).Reason),
-            Var var => new TensorType(var.CheckedDataType, Shape.Unranked),
-            _ => throw new InvalidDataException("invalid shape")
-        };
+        var input = context.GetArgumentType<TensorType>(target, Expand.Input);
+        var ret = context.GetReturnType<TensorType>();
+        return CostUtility.GetBroadcastCost(input, ret);
     }
 }
