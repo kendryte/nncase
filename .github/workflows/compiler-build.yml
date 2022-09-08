@@ -208,17 +208,17 @@ jobs:
           pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/other.xml
           pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/other.xml
 
-      - name: Test
-        working-directory: ${{github.workspace}}
-        if: runner.os == 'Windows'
-        shell: bash
-        env:
-          PYTHONPATH: ${{github.workspace}}/install/lib;${{github.workspace}}/install/python;${{github.workspace}}/tests
-          NNCASE_CLI: ${{github.workspace}}/src/Nncase.Cli/bin/Debug/net6.0
-          LD_LIBRARY_PATH: ${{github.workspace}}/install/lib;${{github.workspace}}/src/Nncase.Cli/bin/Debug/net6.0/runtimes/win-x64/native
-        run: |
-          pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/other.xml
-          pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/other.xml
-          pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/other.xml
-          pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/other.xml
-          pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/other.xml
+#      - name: Test
+#        working-directory: ${{github.workspace}}
+#        if: runner.os == 'Windows'
+#        shell: bash
+#        env:
+#          PYTHONPATH: ${{github.workspace}}/install/lib;${{github.workspace}}/install/python;${{github.workspace}}/tests
+#          NNCASE_CLI: ${{github.workspace}}/src/Nncase.Cli/bin/Debug/net6.0
+#          LD_LIBRARY_PATH: ${{github.workspace}}/install/lib;${{github.workspace}}/src/Nncase.Cli/bin/Debug/net6.0/runtimes/win-x64/native
+#        run: |
+#          pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/other.xml
+#          pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/other.xml
+#          pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/other.xml
+#          pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/other.xml
+#          pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/other.xml
