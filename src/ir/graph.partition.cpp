@@ -102,80 +102,79 @@ struct region
     }
 };
 
-
 typedef struct Region_node
 {
-    std::list<region >::iterator node;
-    Region_node *parent=nullptr;
-    Region_node *child=nullptr;
-    Region_node *bro=nullptr;
+    std::list<region>::iterator node;
+    Region_node *parent = nullptr;
+    Region_node *child = nullptr;
+    Region_node *bro = nullptr;
 
     // Region_node(region *new_node, Region_node *parent=nullptr, Region_node *child=nullptr, Region_node *bro=nullptr)
     //     :node(new_node), parent(parent), child(child), bro(bro)
     // {
     // }
-}Region_node, *Region_Tree;
+} Region_node, *Region_Tree;
 
 class Region_tree
 {
 public:
-    Region_node *create_tree(std::list<region >::iterator new_node, std::list<region> &regions, int depth)
+    Region_node *create_tree(std::list<region>::iterator new_node, std::list<region> &regions, int depth)
     {
         // std::cout<<"\n depth: "<<depth<<std::endl;
         // std::cout<<"in create_tree"<<std::endl;
-        Region_node *root= create_node();
-        root->node=new_node;
+        Region_node *root = create_node();
+        root->node = new_node;
         auto bro = root->bro;
         // if(new_node->module_type == runtime::stackvm::stackvm_module_type && !new_node->is_all_noaction)
         //     return root;
-        if(new_node==target_region_)
+        if (new_node == target_region_)
         {
             leaves_.push_back(root);
             return root;
         }
-        if(depth >= 20)
+        if (depth >= 20)
             return root;
 
         // std::cout<<"start loop"<<std::endl;
-        for( auto it : new_node->region_inputs)
+        for (auto it : new_node->region_inputs)
         {
-            for(auto itb = regions.begin(); itb != regions.end(); itb++)
+            for (auto itb = regions.begin(); itb != regions.end(); itb++)
             {
-                if(new_node == start_region_ && itb == target_region_)
+                if (new_node == start_region_ && itb == target_region_)
                     continue;
 
-                if(itb->outputs.contains(it->connection()))
+                if (itb->outputs.contains(it->connection()))
                 {
                     // std::cout<<"Find connected region"<<std::endl;
-            //         if(itb==target_region_ )
-            //         {
-            //             std::cout<<"Find target region"<<std::endl;
-            //             Region_node *end= create_node();
-            // std::cout<<"1"<<std::endl;
-            //             end->node=itb;
-            // std::cout<<"2"<<std::endl;
-			//             end->parent=root;
-            // std::cout<<"3"<<std::endl;
-            //             if(root->child ==nullptr)
-            //             {
-            // std::cout<<"4"<<std::endl;
-            //                 root->child = end;
-            //             }
-            //             else
-            //                 bro = end;
-            // std::cout<<"5"<<std::endl;
-            //             leaves_.push_back(root);
-            //             std::cout<<"6"<<std::endl;
-            //             return end;
-            //         }
+                    //         if(itb==target_region_ )
+                    //         {
+                    //             std::cout<<"Find target region"<<std::endl;
+                    //             Region_node *end= create_node();
+                    // std::cout<<"1"<<std::endl;
+                    //             end->node=itb;
+                    // std::cout<<"2"<<std::endl;
+                    //             end->parent=root;
+                    // std::cout<<"3"<<std::endl;
+                    //             if(root->child ==nullptr)
+                    //             {
+                    // std::cout<<"4"<<std::endl;
+                    //                 root->child = end;
+                    //             }
+                    //             else
+                    //                 bro = end;
+                    // std::cout<<"5"<<std::endl;
+                    //             leaves_.push_back(root);
+                    //             std::cout<<"6"<<std::endl;
+                    //             return end;
+                    //         }
 
-                    if(root->child == nullptr)
+                    if (root->child == nullptr)
                     {
                         // std::cout<<"Create child"<<std::endl;
-                        root->child = create_tree(itb, regions, depth+1);
+                        root->child = create_tree(itb, regions, depth + 1);
                         // std::cout<<"mid child"<<std::endl;
                         // if(root->child == nullptr)
-                            // std::cout<<"root->child is empty"<<std::endl;
+                        // std::cout<<"root->child is empty"<<std::endl;
                         root->child->parent = root;
                         // std::cout<<"End create child"<<std::endl;
                     }
@@ -189,7 +188,6 @@ public:
                     }
                 }
             }
-            
         }
         return root;
     }
@@ -198,27 +196,27 @@ public:
     {
         // std::cout<<"\ncheck circle\n"<<std::endl;
         bool flag = false;
-        for(auto it: leaves_)
+        for (auto it : leaves_)
         {
-            if(it->parent->parent == nullptr)
+            if (it->parent->parent == nullptr)
             {
                 flag = true;
                 continue;
             }
             auto condition_ptr = it->parent;
-            while(condition_ptr!=nullptr)
+            while (condition_ptr != nullptr)
             {
-                if(condition_ptr->node->module_type == runtime::stackvm::stackvm_module_type && !condition_ptr->node->is_all_noaction)
+                if (condition_ptr->node->module_type == runtime::stackvm::stackvm_module_type && !condition_ptr->node->is_all_noaction)
                     return false;
                 condition_ptr = condition_ptr->parent;
             }
         }
-        if(flag)
+        if (flag)
             return false;
         return true;
     }
 
-    void set_label_region(std::list<region >::iterator ita, std::list<region >::iterator itb)
+    void set_label_region(std::list<region>::iterator ita, std::list<region>::iterator itb)
     {
         start_region_ = itb;
         target_region_ = ita;
@@ -231,8 +229,8 @@ private:
         return node;
     }
     // region *target_region_;
-    std::list<region >::iterator start_region_;
-    std::list<region >::iterator target_region_;
+    std::list<region>::iterator start_region_;
+    std::list<region>::iterator target_region_;
     std::vector<Region_node *> leaves_;
 };
 
@@ -322,14 +320,14 @@ private:
 
     bool check_circle(std::list<region>::iterator &ita, std::list<region>::iterator &itb)
     {
-	// std::cout<<"0"<<std::endl;
+        // std::cout<<"0"<<std::endl;
         auto check = new Region_tree();
-        
-	// std::cout<<"1"<<std::endl;
-	check->set_label_region(ita, itb);
-	// std::cout<<"2"<<std::endl;
+
+        // std::cout<<"1"<<std::endl;
+        check->set_label_region(ita, itb);
+        // std::cout<<"2"<<std::endl;
         check->create_tree(itb, regions_, 0);
-	// std::cout<<"3"<<std::endl;
+        // std::cout<<"3"<<std::endl;
         return check->not_have_circle();
         // /*
         //     总共判断两层就可以了
@@ -374,7 +372,7 @@ private:
                         && std::any_of(itb->region_inputs.begin(), itb->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); })
                         && check_circle(ita, itb))
                         to_be_merge.emplace_back(itb);
-                    
+
                     // // bak
                     // if ((ita->module_type == itb->module_type || itb->is_all_noaction)
                     //     && std::all_of(itb->region_inputs.begin(), itb->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); })
