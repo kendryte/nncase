@@ -115,14 +115,17 @@ class Region_tree
 public:
     Region_node *create_tree(std::list<region>::iterator new_node, std::list<region> &regions, int depth)
     {
+
         Region_node *root = create_node();
         root->node = new_node;
         auto bro = root->bro;
+
         if (new_node == target_region_)
         {
             leaves_.push_back(root);
             return root;
         }
+
         if (depth >= 100)
             return root;
 
@@ -135,6 +138,7 @@ public:
 
                 if (itb->outputs.contains(it->connection()))
                 {
+
                     if (root->child == nullptr)
                     {
                         root->child = create_tree(itb, regions, depth + 1);
