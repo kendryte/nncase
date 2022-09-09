@@ -109,11 +109,6 @@ typedef struct Region_node
     Region_node *parent=nullptr;
     Region_node *child=nullptr;
     Region_node *bro=nullptr;
-
-    // Region_node(region *new_node, Region_node *parent=nullptr, Region_node *child=nullptr, Region_node *bro=nullptr)
-    //     :node(new_node), parent(parent), child(child), bro(bro)
-    // {
-    // }
 }Region_node, *Region_Tree;
 
 class Region_tree
@@ -180,13 +175,37 @@ public:
         target_region_ = ita;
     }
 
+    void free_tree(Region_node *root)
+    {
+        if(root != nullptr)
+        {
+            if(root->child != nullptr)
+            {
+                free_tree(root->child);
+            }
+            else
+            {
+                if(root->bro!=nullptr && root->bro->bro == nullptr)
+                {
+                    free_tree(root->bro);
+                }
+            }
+                
+            root->child = nullptr;
+            root->bro = nullptr;
+            delete root;
+            root = nullptr;
+            
+        }
+    }
+
 private:
     Region_node *create_node()
     {
         Region_Tree node = new Region_node();
         return node;
     }
-    // region *target_region_;
+    
     std::list<region >::iterator start_region_;
     std::list<region >::iterator target_region_;
     std::vector<Region_node *> leaves_;
@@ -278,32 +297,13 @@ private:
 
     bool check_circle(std::list<region>::iterator &ita, std::list<region>::iterator &itb)
     {
-	// std::cout<<"0"<<std::endl;
         auto check = new Region_tree();
-        
-	// std::cout<<"1"<<std::endl;
-	check->set_label_region(ita, itb);
-	// std::cout<<"2"<<std::endl;
-        check->create_tree(itb, regions_, 0);
-	// std::cout<<"3"<<std::endl;
-        return check->not_have_circle();
-        // /*
-        //     总共判断两层就可以了
-        // */
-        // for (auto it : itb->region_inputs)
-        // {
-        //     for (auto mid = regions_.begin(); mid != regions_.end(); mid++)
-        //     {
-        //         if (mid == ita || mid == itb)
-        //             continue;
-        //         if (mid->outputs.contains(it->connection()) && mid->module_type != ita->module_type && !mid->is_all_noaction
-        //             && std::any_of(mid->region_inputs.begin(), mid->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); }))
-        //         {
-        //             return false;
-        //         }
-        //     }
-        // }
-        // return true;
+        check->set_label_region(ita, itb);
+        auto root = check->create_tree(itb, regions_, 0);
+        auto flag = check->not_have_circle();
+        check->free_tree(root);
+
+        return flag;
     }
 
     bool merge_child_region()
@@ -330,12 +330,7 @@ private:
                         && std::any_of(itb->region_inputs.begin(), itb->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); })
                         && check_circle(ita, itb))
                         to_be_merge.emplace_back(itb);
-                    
-                    // // bak
-                    // if ((ita->module_type == itb->module_type || itb->is_all_noaction)
-                    //     && std::all_of(itb->region_inputs.begin(), itb->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); })
-                    // )
-                    //     to_be_merge.emplace_back(itb);
+                
                 }
 
                 if (!to_be_merge.empty())
