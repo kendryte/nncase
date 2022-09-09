@@ -121,22 +121,17 @@ class Region_tree
 public:
     Region_node *create_tree(std::list<region >::iterator new_node, std::list<region> &regions, int depth)
     {
-        // std::cout<<"\n depth: "<<depth<<std::endl;
-        // std::cout<<"in create_tree"<<std::endl;
         Region_node *root= create_node();
         root->node=new_node;
         auto bro = root->bro;
-        // if(new_node->module_type == runtime::stackvm::stackvm_module_type && !new_node->is_all_noaction)
-        //     return root;
         if(new_node==target_region_)
         {
             leaves_.push_back(root);
             return root;
         }
-        if(depth >= 20)
+        if(depth >= 100)
             return root;
 
-        // std::cout<<"start loop"<<std::endl;
         for( auto it : new_node->region_inputs)
         {
             for(auto itb = regions.begin(); itb != regions.end(); itb++)
@@ -146,46 +141,16 @@ public:
 
                 if(itb->outputs.contains(it->connection()))
                 {
-                    // std::cout<<"Find connected region"<<std::endl;
-            //         if(itb==target_region_ )
-            //         {
-            //             std::cout<<"Find target region"<<std::endl;
-            //             Region_node *end= create_node();
-            // std::cout<<"1"<<std::endl;
-            //             end->node=itb;
-            // std::cout<<"2"<<std::endl;
-			//             end->parent=root;
-            // std::cout<<"3"<<std::endl;
-            //             if(root->child ==nullptr)
-            //             {
-            // std::cout<<"4"<<std::endl;
-            //                 root->child = end;
-            //             }
-            //             else
-            //                 bro = end;
-            // std::cout<<"5"<<std::endl;
-            //             leaves_.push_back(root);
-            //             std::cout<<"6"<<std::endl;
-            //             return end;
-            //         }
-
                     if(root->child == nullptr)
                     {
-                        // std::cout<<"Create child"<<std::endl;
                         root->child = create_tree(itb, regions, depth+1);
-                        // std::cout<<"mid child"<<std::endl;
-                        // if(root->child == nullptr)
-                            // std::cout<<"root->child is empty"<<std::endl;
                         root->child->parent = root;
-                        // std::cout<<"End create child"<<std::endl;
                     }
                     else
                     {
-                        // std::cout<<"Create bro"<<std::endl;
                         bro = create_tree(itb, regions, depth);
                         bro->parent = root;
                         bro = bro->bro;
-                        // std::cout<<"End create bro"<<std::endl;
                     }
                 }
             }
@@ -196,15 +161,8 @@ public:
 
     bool not_have_circle()
     {
-        // std::cout<<"\ncheck circle\n"<<std::endl;
-        bool flag = false;
         for(auto it: leaves_)
         {
-            if(it->parent->parent == nullptr)
-            {
-                flag = true;
-                continue;
-            }
             auto condition_ptr = it->parent;
             while(condition_ptr!=nullptr)
             {
@@ -213,8 +171,6 @@ public:
                 condition_ptr = condition_ptr->parent;
             }
         }
-        if(flag)
-            return false;
         return true;
     }
 
