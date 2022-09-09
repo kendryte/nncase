@@ -102,43 +102,42 @@ struct region
     }
 };
 
-
 typedef struct Region_node
 {
-    std::list<region >::iterator node;
-    Region_node *parent=nullptr;
-    Region_node *child=nullptr;
-    Region_node *bro=nullptr;
-}Region_node, *Region_Tree;
+    std::list<region>::iterator node;
+    Region_node *parent = nullptr;
+    Region_node *child = nullptr;
+    Region_node *bro = nullptr;
+} Region_node, *Region_Tree;
 
 class Region_tree
 {
 public:
-    Region_node *create_tree(std::list<region >::iterator new_node, std::list<region> &regions, int depth)
+    Region_node *create_tree(std::list<region>::iterator new_node, std::list<region> &regions, int depth)
     {
-        Region_node *root= create_node();
-        root->node=new_node;
+        Region_node *root = create_node();
+        root->node = new_node;
         auto bro = root->bro;
-        if(new_node==target_region_)
+        if (new_node == target_region_)
         {
             leaves_.push_back(root);
             return root;
         }
-        if(depth >= 100)
+        if (depth >= 100)
             return root;
 
-        for( auto it : new_node->region_inputs)
+        for (auto it : new_node->region_inputs)
         {
-            for(auto itb = regions.begin(); itb != regions.end(); itb++)
+            for (auto itb = regions.begin(); itb != regions.end(); itb++)
             {
-                if(new_node == start_region_ && itb == target_region_)
+                if (new_node == start_region_ && itb == target_region_)
                     continue;
 
-                if(itb->outputs.contains(it->connection()))
+                if (itb->outputs.contains(it->connection()))
                 {
-                    if(root->child == nullptr)
+                    if (root->child == nullptr)
                     {
-                        root->child = create_tree(itb, regions, depth+1);
+                        root->child = create_tree(itb, regions, depth + 1);
                         root->child->parent = root;
                     }
                     else
@@ -149,19 +148,18 @@ public:
                     }
                 }
             }
-            
         }
         return root;
     }
 
     bool not_have_circle()
     {
-        for(auto it: leaves_)
+        for (auto it : leaves_)
         {
             auto condition_ptr = it->parent;
-            while(condition_ptr!=nullptr)
+            while (condition_ptr != nullptr)
             {
-                if(condition_ptr->node->module_type == runtime::stackvm::stackvm_module_type && !condition_ptr->node->is_all_noaction)
+                if (condition_ptr->node->module_type == runtime::stackvm::stackvm_module_type && !condition_ptr->node->is_all_noaction)
                     return false;
                 condition_ptr = condition_ptr->parent;
             }
@@ -169,7 +167,7 @@ public:
         return true;
     }
 
-    void set_label_region(std::list<region >::iterator ita, std::list<region >::iterator itb)
+    void set_label_region(std::list<region>::iterator ita, std::list<region>::iterator itb)
     {
         start_region_ = itb;
         target_region_ = ita;
@@ -177,25 +175,24 @@ public:
 
     void free_tree(Region_node *root)
     {
-        if(root != nullptr)
+        if (root != nullptr)
         {
-            if(root->child != nullptr)
+            if (root->child != nullptr)
             {
                 free_tree(root->child);
             }
             else
             {
-                if(root->bro!=nullptr && root->bro->bro == nullptr)
+                if (root->bro != nullptr && root->bro->bro == nullptr)
                 {
                     free_tree(root->bro);
                 }
             }
-                
+
             root->child = nullptr;
             root->bro = nullptr;
             delete root;
             root = nullptr;
-            
         }
     }
 
@@ -205,9 +202,9 @@ private:
         Region_Tree node = new Region_node();
         return node;
     }
-    
-    std::list<region >::iterator start_region_;
-    std::list<region >::iterator target_region_;
+
+    std::list<region>::iterator start_region_;
+    std::list<region>::iterator target_region_;
     std::vector<Region_node *> leaves_;
 };
 
@@ -330,7 +327,6 @@ private:
                         && std::any_of(itb->region_inputs.begin(), itb->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); })
                         && check_circle(ita, itb))
                         to_be_merge.emplace_back(itb);
-                
                 }
 
                 if (!to_be_merge.empty())
