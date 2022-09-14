@@ -51,8 +51,10 @@ struct region
             for (auto it = region_inputs.begin(); it != region_inputs.end();)
             {
                 if (outputs.contains((*it)->connection()))
-                    {outputs.erase((*it)->connection());
-                    it = region_inputs.erase(it);}
+                {
+                    outputs.erase((*it)->connection());
+                    it = region_inputs.erase(it);
+                }
                 else
                     ++it;
             }
@@ -132,43 +134,43 @@ public:
             skip_ = true;
             return root;
         }
-        // if(!skip_) 
+        // if(!skip_)
         // {
-            for (auto it : new_node->region_inputs)
+        for (auto it : new_node->region_inputs)
+        {
+            for (auto itb = regions.begin(); itb != regions.end(); itb++)
             {
-                for (auto itb = regions.begin(); itb != regions.end(); itb++)
+                if (new_node == start_region_ && itb == target_region_)
+                    continue;
+
+                // 不能提前判断 stack vm， 否则支路会出现不能合并而合并的情况
+                // if(itb->module_type == runtime::stackvm::stackvm_module_type && !itb->is_all_noaction)
+                //     continue;
+
+                if (itb->outputs.contains(it->connection()))
                 {
-                    if (new_node == start_region_ && itb == target_region_)
-                        continue;
-                    
-                    // 不能提前判断 stack vm， 否则支路会出现不能合并而合并的情况
-                    // if(itb->module_type == runtime::stackvm::stackvm_module_type && !itb->is_all_noaction)
-                    //     continue;
 
-                    if (itb->outputs.contains(it->connection()))
+                    if (root->child == nullptr)
                     {
-
-                        if (root->child == nullptr)
-                        {
-                            root->child = create_tree(itb, regions, depth + 1);
-                            root->child->parent = root;
-                        }
-                        else
-                        {
-                            bro = create_tree(itb, regions, depth);
-                            bro->parent = root;
-                            bro = bro->bro;
-                        }
+                        root->child = create_tree(itb, regions, depth + 1);
+                        root->child->parent = root;
+                    }
+                    else
+                    {
+                        bro = create_tree(itb, regions, depth);
+                        bro->parent = root;
+                        bro = bro->bro;
                     }
                 }
             }
+        }
         // }
         return root;
     }
 
     bool not_have_circle()
     {
-        if(skip_)
+        if (skip_)
             return false;
         for (auto it : leaves_)
         {
@@ -317,7 +319,7 @@ private:
         std::cout << "\t[Pass]" << std::endl;
         std::cout << "create tree from\nA :\t";
         std::cout << ita->nodes[0]->name() << "\nto\nB :\t";
-        std::cout << itb->nodes[0]->name()<<std::endl;
+        std::cout << itb->nodes[0]->name() << std::endl;
         auto root = check->create_tree(itb, regions_, 0);
         std::cout << "\t[Pass]" << std::endl;
         std::cout << "check circle ";
@@ -328,8 +330,8 @@ private:
         delete check;
         check = NULL;
         std::cout << "\t[Pass]" << std::endl;
-        if(flag)
-            std::cout<<"[Can merge ]"<<std::endl;
+        if (flag)
+            std::cout << "[Can merge ]" << std::endl;
 
         return flag;
     }
@@ -344,9 +346,9 @@ private:
             for (auto ita = regions_.begin(); ita != regions_.end(); ++ita)
             {
                 std::vector<std::list<region>::iterator> to_be_merge;
-// #ifdef NNCASE_OPENMP
-// #pragma omp parallel for num_threads((uint32_t)omp_get_max_threads())
-// #endif
+                // #ifdef NNCASE_OPENMP
+                // #pragma omp parallel for num_threads((uint32_t)omp_get_max_threads())
+                // #endif
                 for (auto itb = regions_.begin(); itb != regions_.end(); ++itb)
                 {
                     // don't merge stackvm region
@@ -358,9 +360,8 @@ private:
                     //// itb's inputs all connect to ita's output
                     // itb's has inputs connect to ita's output without circle
                     if ((ita->module_type == itb->module_type || itb->is_all_noaction)
-                        && std::any_of(itb->region_inputs.begin(), itb->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); })
-                        )
-                        if( check_circle(ita, itb))
+                        && std::any_of(itb->region_inputs.begin(), itb->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); }))
+                        if (check_circle(ita, itb))
                             to_be_merge.emplace_back(itb);
                 }
 
