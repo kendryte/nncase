@@ -49,5 +49,6 @@ target_sources(ir PRIVATE
     gru.cpp
     tflite_detection_postprocess.cpp
     gather_elements.cpp
+    layernorm.cpp
     compress.cpp
     )

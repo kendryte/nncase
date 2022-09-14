@@ -63,7 +63,12 @@ def _make_module(in_type, in_shape, reduce_op, axes, keepdims):
         [output],
         initializer=initializers)
 
-    model_def = helper.make_model(graph_def, producer_name='onnx')
+    if reduce_op=='ReduceSum':
+        op = onnx.OperatorSetIdProto()
+        op.version = 11
+        model_def = helper.make_model(graph_def, producer_name='onnx', opset_imports=[op])
+    else:
+        model_def = helper.make_model(graph_def, producer_name='onnx')
     return model_def
 
 
@@ -80,6 +85,7 @@ reduce_ops = [
     'ReduceMax',
     'ReduceMean',
     'ReduceMin',
+    'ReduceSum'
 ]
 
 axes_list = [

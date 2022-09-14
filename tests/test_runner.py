@@ -20,7 +20,8 @@ from PIL import Image
 from compare_util import compare
 from dataset_utils import *
 from models.preprocess.preprocess import preprocess
-
+import socket
+import json
 
 class Edict:
     def __init__(self, d: Dict[str, int]) -> None:
@@ -779,38 +780,128 @@ class TestRunner(metaclass=ABCMeta):
             p.join()
 
         else:
-            sim = nncase.Simulator()
-            sim.load_model(kmodel)
-            for i in range(len(self.inputs)):
-                data = self.transform_input(
-                    self.inputs[i]['data'], preprocess['input_type'], "infer")
-                dtype = preprocess['input_type']
-                if preprocess['preprocess']:
-                    data.tofile(os.path.join(case_dir, f'input_{i}_{dtype}.bin'))
-                    self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
+            kpu_target = os.getenv('KPU_TARGET')
+            port = os.getenv('PORT')
+            app_full_name = os.getenv('NNCASE_TEST_CI')
+            if self.in_ci and kwargs['target'] == kpu_target and port is not None and app_full_name is not None and len(self.inputs) > 0 and len(self.outputs) > 0:
+                # connect server
+                client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                client_socket.connect(('localhost', int(port)))
 
-                sim.set_input_tensor(i, nncase.RuntimeTensor.from_numpy(data))
-            sim.run()
+                # send file_num
+                file_num_dict = {}
+                file_num_dict['app'] = 1
+                file_num_dict['kmodel']= 1
+                file_num_dict['inputs'] = len(self.inputs)
+                file_num_dict['outputs'] = len(self.outputs)
+                client_socket.sendall(json.dumps(file_num_dict).encode('utf-8'))
+                dummy = client_socket.recv(1024)
 
-            for i in range(sim.outputs_size):
-                result = sim.get_output_tensor(i).to_numpy()
-                if preprocess['preprocess'] and len(result.shape) == 4:
-                    if (preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
-                        result = np.transpose(result, [0, 3, 1, 2])
-                    elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
-                        result = np.transpose(result, [0, 2, 3, 1])
-                infer_output_paths.append((
-                    os.path.join(infer_dir, f'nncase_result_{i}.bin'),
-                    os.path.join(infer_dir, f'nncase_result_{i}.txt')))
-                if cfg.compile_opt.output_type != "float32" and infer_dir.split('/')[-1] == "ptq":
-                    result.tofile(os.path.join(
-                        infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.bin'))
-                    self.totxtfile(os.path.join(
-                        infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.txt'), result)
-                    result = deq_output(os.path.join(
-                        infer_dir, f'kmodel_info.txt'), result)
-                result.tofile(infer_output_paths[-1][0])
-                self.totxtfile(infer_output_paths[-1][1], result)
+                # send app
+                file_dict = {}
+                file_dict['file_name'] = os.path.basename(app_full_name)
+                file_dict['file_size'] = os.path.getsize(app_full_name)
+                client_socket.sendall(json.dumps(file_dict).encode('utf-8'))
+                dummy = client_socket.recv(1024)
+                with open(app_full_name, 'rb') as f:
+                    client_socket.sendall(f.read())
+                dummy = client_socket.recv(1024)
+
+                # send kmodel
+                file_dict['file_name'] = 'test.kmodel'
+                file_dict['file_size'] = len(kmodel)
+                client_socket.sendall(json.dumps(file_dict).encode('utf-8'))
+                dummy = client_socket.recv(1024)
+                client_socket.sendall(kmodel)
+                dummy = client_socket.recv(1024)
+
+                # send inputs
+                for i in range(len(self.inputs)):
+                    input_bin = os.path.join(case_dir, f'input_0_{i}.bin')
+                    data = self.transform_input(
+                        self.inputs[i]['data'], preprocess['input_type'], "infer")
+                    dtype = preprocess['input_type']
+                    if preprocess['preprocess']:
+                        input_bin = os.path.join(case_dir, f'input_{i}_{dtype}.bin')
+                        data.tofile(input_bin)
+                        self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
+
+                    file_dict['file_name'] = f'input_0_{i}.bin'
+                    file_dict['file_size'] = os.path.getsize(input_bin)
+                    client_socket.sendall(json.dumps(file_dict).encode('utf-8'))
+                    dummy = client_socket.recv(1024)
+                    client_socket.sendall(data.tobytes())
+                    dummy = client_socket.recv(1024)
+
+                # recv outputs
+                for i in range(len(self.outputs)):
+                    header = client_socket.recv(1024)
+                    file_size = int(header.decode('utf-8'))
+                    client_socket.sendall(f"pls send nncase_result_{i}.bin".encode())
+
+                    recv_size = 0
+                    buffer = bytearray(file_size)
+                    while recv_size < file_size:
+                        slice = client_socket.recv(4096)
+                        buffer[recv_size:] = slice
+                        recv_size += len(slice)
+
+                    result = np.frombuffer(buffer, dtype=self.outputs[i]['dtype'])
+                    result = result.reshape(self.outputs[i]['model_shape'])
+                    if preprocess['preprocess'] and len(result.shape) == 4:
+                        if (preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
+                            result = np.transpose(result, [0, 3, 1, 2])
+                        elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
+                            result = np.transpose(result, [0, 2, 3, 1])
+                    infer_output_paths.append((
+                        os.path.join(infer_dir, f'nncase_result_{i}.bin'),
+                        os.path.join(infer_dir, f'nncase_result_{i}.txt')))
+                    if cfg.compile_opt.output_type != "float32" and infer_dir.split('/')[-1] == "ptq":
+                        result.tofile(os.path.join(
+                            infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.bin'))
+                        self.totxtfile(os.path.join(
+                            infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.txt'), result)
+                        result = deq_output(os.path.join(
+                            infer_dir, f'kmodel_info.txt'), result)
+                    result.tofile(infer_output_paths[-1][0])
+                    self.totxtfile(infer_output_paths[-1][1], result)
+                    client_socket.sendall(f"recv nncase_result_{i}.bin succeed".encode())
+
+                client_socket.close()
+            else:
+                # run in simulator
+                sim = nncase.Simulator()
+                sim.load_model(kmodel)
+                for i in range(len(self.inputs)):
+                    data = self.transform_input(
+                        self.inputs[i]['data'], preprocess['input_type'], "infer")
+                    dtype = preprocess['input_type']
+                    if preprocess['preprocess']:
+                        data.tofile(os.path.join(case_dir, f'input_{i}_{dtype}.bin'))
+                        self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
+
+                    sim.set_input_tensor(i, nncase.RuntimeTensor.from_numpy(data))
+                sim.run()
+
+                for i in range(sim.outputs_size):
+                    result = sim.get_output_tensor(i).to_numpy()
+                    if preprocess['preprocess'] and len(result.shape) == 4:
+                        if (preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
+                            result = np.transpose(result, [0, 3, 1, 2])
+                        elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
+                            result = np.transpose(result, [0, 2, 3, 1])
+                    infer_output_paths.append((
+                        os.path.join(infer_dir, f'nncase_result_{i}.bin'),
+                        os.path.join(infer_dir, f'nncase_result_{i}.txt')))
+                    if cfg.compile_opt.output_type != "float32" and infer_dir.split('/')[-1] == "ptq":
+                        result.tofile(os.path.join(
+                            infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.bin'))
+                        self.totxtfile(os.path.join(
+                            infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.txt'), result)
+                        result = deq_output(os.path.join(
+                            infer_dir, f'kmodel_info.txt'), result)
+                    result.tofile(infer_output_paths[-1][0])
+                    self.totxtfile(infer_output_paths[-1][1], result)
         return infer_output_paths
 
     def on_test_start(self) -> None:

@@ -1341,6 +1341,48 @@ void gather_elements(const T *CXX_RESTRICT input, const TI *CXX_RESTRICT indices
     }
 }
 
+inline void layernorm(const float *input, float *output, float *scale, float *bias, runtime_shape_t in_shape, int32_t axis, float epsilon)
+{
+    auto outer_size = 1;
+    auto inner_size = 1;
+    for (auto i = 0; i < axis; i++)
+        outer_size *= in_shape[i];
+    for (auto i = axis; i < in_shape.size(); i++)
+        inner_size *= in_shape[i];
+
+    for (int32_t batch = 0; batch < outer_size; batch++)
+    {
+        auto src = input + batch * inner_size;
+        auto dest = output + batch * inner_size;
+
+        float mean1 = 0.f;
+        for (size_t i = 0; i < inner_size; i++)
+            mean1 += src[i] / inner_size;
+
+        std::vector<float> sub(inner_size, 0.f);
+        for (size_t i = 0; i < inner_size; i++)
+            sub[i] = src[i] - mean1;
+
+        std::vector<float> pow(inner_size, 0.f);
+        for (size_t i = 0; i < inner_size; i++)
+            pow[i] = sub[i] * sub[i];
+
+        float mean2 = 0.f;
+        for (size_t i = 0; i < inner_size; i++)
+            mean2 += pow[i] / inner_size;
+
+        float add = mean2 + epsilon;
+        float sqrt = std::sqrt(add);
+
+        std::vector<float> div(inner_size, 0.f);
+        for (size_t i = 0; i < inner_size; i++)
+            div[i] = sub[i] / sqrt;
+
+        for (size_t i = 0; i < inner_size; i++)
+            dest[i] = div[i] * scale[i] + bias[i];
+    }
+}
+
 template <class T>
 void compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const int axis)
 {
@@ -1374,5 +1416,4 @@ void compress(const T *input, const uint8_t *condition, T *output, const runtime
         }
     }
 }
-
 }

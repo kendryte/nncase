@@ -516,6 +516,16 @@ result<void> kernels::gather_elements(const TI *input, const TK *indices, TI *ou
 {
     return cpu::reference::gather_elements(input, indices, output, in_shape, indices_shape, axis);
 }
+
+template result<void> kernels::layernorm<float>(const float *input, float *output, float *scale, float *bias, const runtime_shape_t &in_shape, int32_t axis, float epsilon) noexcept;
+
+template <typename T>
+result<void> kernels::layernorm(const T *input, T *output, T *scale, T *bias, const runtime_shape_t &in_shape, int32_t axis, float epsilon) noexcept
+{
+    // return cpu::reference::layernorm(input, output, scale, bias, in_shape, axis, epsilon);
+    return cpu::optimized::layernorm(input, output, scale, bias, in_shape, axis, epsilon);
+}
+
 template result<void> kernels::compress<float>(const float *input, const uint8_t *condition, float *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const int axis) noexcept;
 
 template <typename T>

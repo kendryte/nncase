@@ -143,7 +143,9 @@ jobs:
       if: runner.os == 'Linux'
       shell: bash
       run: |
-        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0 opencv-python
+        pip install conan tensorflow==2.5.0 matplotlib pillow opencv-python
+        pip install onnx==1.12.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.12.0
+        pip install numpy==1.19.5
         pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
         pip install imageio==2.15.0 protobuf==3.20.1
         pip install https://github.com/kendryte/caffe/releases/download/v1.0.0.20210829/kendryte_caffe-1.0.0.20210829-cp37-cp37m-manylinux_2_24_x86_64.whl
@@ -153,7 +155,9 @@ jobs:
       if: runner.os == 'Windows'
       shell: bash
       run: |
-        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0 opencv-python
+        pip install conan tensorflow==2.5.0 matplotlib pillow opencv-python
+        pip install onnx==1.12.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.12.0
+        pip install numpy==1.19.5
         pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
         pip install imageio==2.15.0 protobuf==3.20.1
         pip install https://github.com/kendryte/caffe/releases/download/v1.0.0.20210829/kendryte_caffe-1.0.0.20210829-cp37-cp37m-win_amd64.whl
@@ -163,7 +167,9 @@ jobs:
       if: runner.os == 'Macos'
       shell: bash
       run: |
-        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0 opencv-python
+        pip install conan tensorflow==2.5.0 matplotlib pillow opencv-python
+        pip install onnx==1.12.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.12.0
+        pip install numpy==1.19.5
         pip install torch==1.9.0 torchvision==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
         pip install imageio==2.15.0 protobuf==3.20.1
         pip install https://github.com/kendryte/caffe/releases/download/v1.0.0.20210829/kendryte_caffe-1.0.0.20210829-cp37-cp37m-macosx_10_9_x86_64.whl

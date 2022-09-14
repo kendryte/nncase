@@ -34,6 +34,7 @@
 #include <nncase/ir/ops/gather_nd.h>
 #include <nncase/ir/ops/gru.h>
 #include <nncase/ir/ops/hardmax.h>
+#include <nncase/ir/ops/layernorm.h>
 #include <nncase/ir/ops/matmul.h>
 #include <nncase/ir/ops/onehot.h>
 #include <nncase/ir/ops/pad.h>
@@ -529,8 +530,7 @@ void register_neutral_evaluators()
             runtime_shape_t { (size_t)rnode.block_size_h(), (size_t)rnode.block_size_w() },
             runtime_paddings_t { rnode.padding_h(), rnode.padding_w() },
             input.strides(), output.strides())
-            .unwrap_or_throw();
-    });
+            .unwrap_or_throw(); });
 
     register_evaluator(op_ternary, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<ternary &>(node);
@@ -880,6 +880,28 @@ void register_neutral_evaluators()
             throw std::runtime_error("unsupported dtype for gather_elements: " + std::string(datatype_names(input_datatype)));
         }
     });
+
+    register_evaluator(op_layernorm, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<layernorm &>(node);
+
+        auto input = context.memory_at(rnode.input());
+        auto scale = context.memory_at(rnode.scale());
+        auto bias = context.memory_at(rnode.bias());
+        auto output = context.memory_at(rnode.output());
+
+        auto output_type = rnode.output().type();
+        switch (output_type)
+        {
+        case dt_float32:
+            kernels::layernorm(input.buffer().as_span<float>().data(), output.buffer().as_span<float>().data(),
+             scale.buffer().as_span<float>().data(), bias.buffer().as_span<float>().data(), input.shape(),
+                rnode.axis(), rnode.epsilon())
+                .unwrap_or_throw();
+            break;
+        default:
+            std::cerr << "unsupported dtype for layernorm: " + std::string(datatype_names(output_type));
+        } });
+
     register_evaluator(op_compress, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<compress &>(node);
         auto input = context.memory_at(rnode.input());
