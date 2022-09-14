@@ -141,7 +141,7 @@ public static class DumpUtility
     {
         using (var stream = new StreamWriter(path))
         {
-            stream.WriteLine(prefix);
+            stream.Write(prefix);
             stream.Write(data);
         }
     }
@@ -198,6 +198,18 @@ public static class DumpUtility
             lastIsLetter = isLetter;
         }
         return sb.ToString().Trim('_');
+    }
+    
+    public static void WriteBinFile(string path, Tensor tensor)
+    {
+        using (var stream = new FileStream(Path.Join(path), FileMode.Create, FileAccess.Write, FileShare.None))
+        using (var writer = new BinaryWriter(stream))
+        {
+            foreach (var b in tensor.BytesBuffer)
+            {
+                writer.Write(b);
+            }
+        }
     }
 }
 
