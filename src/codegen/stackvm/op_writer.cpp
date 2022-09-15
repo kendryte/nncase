@@ -697,4 +697,3 @@ void op_builder::tensor_gather_elements_(uint8_t input_shape_src, uint8_t indice
 {
     op_writer<tensor_gather_elements_op_t>()(tensor_gather_elements_op_t(input_shape_src, indices_shape_src, axis), writer_);
 }
-
