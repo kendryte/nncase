@@ -199,17 +199,15 @@ public:
             {
                 free_tree(root->child);
             }
-            else
+            else if (root->bro != nullptr)
             {
-                if (root->bro != nullptr && root->bro->bro == nullptr)
-                {
-                    free_tree(root->bro);
-                }
+                free_tree(root->bro);
             }
 
+            delete root;
             root->child = nullptr;
             root->bro = nullptr;
-            delete root;
+            root->parent = nullptr;
             root = nullptr;
         }
     }
@@ -305,8 +303,8 @@ private:
         {
             changed = false;
             changed |= merge_child_region();
-            changed |= merge_parent_region();
-            changed |= merge_same_input_region();
+            // changed |= merge_parent_region();
+            // changed |= merge_same_input_region();
 
         } while (changed);
     }
@@ -314,12 +312,19 @@ private:
     bool check_circle(std::list<region>::iterator ita, std::list<region>::iterator itb)
     {
         auto check = new Region_tree();
-        std::cout << "set label region";
+        std::cout << "\n----------------\nset label region";
         check->set_label_region(ita, itb);
         std::cout << "\t[Pass]" << std::endl;
         std::cout << "create tree from\nA :\t";
-        std::cout << ita->nodes[0]->name() << "\nto\nB :\t";
-        std::cout << itb->nodes[0]->name() << std::endl;
+        std::cout << ita->nodes[0]->name()
+                  << "\nregion_input_size: " << ita->region_inputs.size()
+                  << "\nregion_nodes_size: " << ita->nodes.size()
+                  << "\noutputs_size: " << ita->outputs.size()
+                  << "\nto\nB :\t";
+        std::cout << itb->nodes[0]->name()
+                  << "\nregion_input_size: " << ita->region_inputs.size()
+                  << "\nregion_nodes_size: " << ita->nodes.size()
+                  << "\noutputs_size: " << ita->outputs.size() << std::endl;
         auto root = check->create_tree(itb, regions_, 0);
         std::cout << "\t[Pass]" << std::endl;
         std::cout << "check circle ";
@@ -332,7 +337,7 @@ private:
         std::cout << "\t[Pass]" << std::endl;
         if (flag)
             std::cout << "[Can merge ]" << std::endl;
-
+        std::cout << "----------------\n";
         return flag;
     }
 
@@ -346,9 +351,6 @@ private:
             for (auto ita = regions_.begin(); ita != regions_.end(); ++ita)
             {
                 std::vector<std::list<region>::iterator> to_be_merge;
-                // #ifdef NNCASE_OPENMP
-                // #pragma omp parallel for num_threads((uint32_t)omp_get_max_threads())
-                // #endif
                 for (auto itb = regions_.begin(); itb != regions_.end(); ++itb)
                 {
                     // don't merge stackvm region
