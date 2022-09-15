@@ -169,7 +169,7 @@ public static class TypeInference
     {
         if (input.Shape.IsUnranked)
         {
-            return input with {Shape = Shape.Unknown(4)};
+            return input with { Shape = Shape.Unknown(4) };
         }
 
         var outShape = input.Shape.ToList();
@@ -188,6 +188,8 @@ public static class TypeInference
             var ts_padding = paddingValue.Value.Cast<int>();
             var ts_dilation = dilation_con.Value.Cast<int>();
             var groups_v = groups_con.Value.ToScalar<int>();
+            if(!(input.Shape[1].FixedValue >= groups_v && (input.Shape[1].FixedValue % groups_v) == 0))
+                return new InvalidType($"The Input Channel / Groups Error ({input.Shape[1].FixedValue}/{groups_v})");
 
             outShape[2] = GetWindowedOutputSize(input.Shape[2].FixedValue + ts_padding[0, 0] + ts_padding[0, 1],
                 weights.Shape[2].FixedValue, ts_stride[0], ts_dilation[0], false);
@@ -262,10 +264,10 @@ public static class TypeInference
                 : GetWindowedOutputSize(input.Shape[3].FixedValue + padw, ts_filter[1], ts_stride[1], 1, false,
                     ceilModeV);
 
-            return input with {Shape = new Shape(outShape)};
+            return input with { Shape = new Shape(outShape) };
         }
 
-        return input with {Shape = Shape.Unknown(4)};
+        return input with { Shape = Shape.Unknown(4) };
     }
 
     /// <summary>
@@ -298,10 +300,10 @@ public static class TypeInference
                 }
             }
 
-            return input with {Shape = new Shape(outShape.Where(x => x != 0))};
+            return input with { Shape = new Shape(outShape.Where(x => x != 0)) };
         }
 
-        return input with {Shape = Shape.Unranked};
+        return input with { Shape = Shape.Unranked };
     }
 
     public static Shape ApplyPerm(Shape inShape, int[] perm)
@@ -314,7 +316,7 @@ public static class TypeInference
 
         return outShape;
     }
-    
+
     /// <summary>
     /// Transpose Type Infer.
     /// </summary>
@@ -329,10 +331,10 @@ public static class TypeInference
 
             var permt = permValue.Value.ToArray<int>();
             var outShape = ApplyPerm(input.Shape, permt);
-            return input with {Shape = outShape};
+            return input with { Shape = outShape };
         }
 
-        return input with {Shape = Shape.Unranked};
+        return input with { Shape = Shape.Unranked };
     }
 
     /// <summary>
@@ -373,7 +375,7 @@ public static class TypeInference
 
         if (inputbbox is not null && out_shape.Length == 4) // for roi amount.
             out_shape[0] = out_shape[0] * inputbbox.Shape[0].FixedValue;
-        return input with {Shape = new Shape(out_shape)};
+        return input with { Shape = new Shape(out_shape) };
     }
 
     /// <summary>
@@ -382,7 +384,7 @@ public static class TypeInference
     /// <param name="x"></param>
     /// <returns></returns>
     public static bool IsMinus1(int x) => x == -1;
-    
+
     public static Shape ReshapeTo(TensorType tensorType)
     {
         var shape = tensorType.Shape;
