@@ -303,8 +303,8 @@ private:
         {
             changed = false;
             changed |= merge_child_region();
-            // changed |= merge_parent_region();
-            // changed |= merge_same_input_region();
+            changed |= merge_parent_region();
+            changed |= merge_same_input_region();
 
         } while (changed);
     }
@@ -312,32 +312,12 @@ private:
     bool check_circle(std::list<region>::iterator ita, std::list<region>::iterator itb)
     {
         auto check = new Region_tree();
-        std::cout << "\n----------------\nset label region";
         check->set_label_region(ita, itb);
-        std::cout << "\t[Pass]" << std::endl;
-        std::cout << "create tree from\nA :\t";
-        std::cout << ita->nodes[0]->name()
-                  << "\nregion_input_size: " << ita->region_inputs.size()
-                  << "\nregion_nodes_size: " << ita->nodes.size()
-                  << "\noutputs_size: " << ita->outputs.size()
-                  << "\nto\nB :\t";
-        std::cout << itb->nodes[0]->name()
-                  << "\nregion_input_size: " << ita->region_inputs.size()
-                  << "\nregion_nodes_size: " << ita->nodes.size()
-                  << "\noutputs_size: " << ita->outputs.size() << std::endl;
         auto root = check->create_tree(itb, regions_, 0);
-        std::cout << "\t[Pass]" << std::endl;
-        std::cout << "check circle ";
         auto flag = check->not_have_circle();
-        std::cout << "\t[Pass]" << std::endl;
-        std::cout << "free tree ";
         check->free_tree(root);
         delete check;
         check = NULL;
-        std::cout << "\t[Pass]" << std::endl;
-        if (flag)
-            std::cout << "[Can merge ]" << std::endl;
-        std::cout << "----------------\n";
         return flag;
     }
 
@@ -359,12 +339,12 @@ private:
                             && itb->module_type == runtime::stackvm::stackvm_module_type))
                         continue;
 
-                    //// itb's inputs all connect to ita's output
-                    // itb's has inputs connect to ita's output without circle
+                    // itb's inputs all connect to ita's output
+                    //// itb's has inputs connect to ita's output without circle
                     if ((ita->module_type == itb->module_type || itb->is_all_noaction)
-                        && std::any_of(itb->region_inputs.begin(), itb->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); }))
-                        if (check_circle(ita, itb))
-                            to_be_merge.emplace_back(itb);
+                        && std::all_of(itb->region_inputs.begin(), itb->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); }))
+                        // if (check_circle(ita, itb))
+                        to_be_merge.emplace_back(itb);
                 }
 
                 if (!to_be_merge.empty())
