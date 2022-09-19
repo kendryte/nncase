@@ -28,7 +28,7 @@ template result<void> reference::gather_elements(const float *input, const int64
 
 void get_index(const int64_t *indices, const std::vector<int> &per_axis_size, std::vector<int> &index, size_t i, int axis, int idx)
 {
-    if (idx != per_axis_size.size())
+    if (idx != (int)per_axis_size.size())
     {
         auto new_idx = i / per_axis_size[idx];
         index.push_back(new_idx);
