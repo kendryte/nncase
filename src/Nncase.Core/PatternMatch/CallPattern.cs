@@ -48,7 +48,7 @@ public static partial class Utility
     /// <param name="parameters">params.</param>
     /// <param name="name">name.</param>
     /// <returns>call pattern.</returns>
-    public static CallPattern IsCall(string? name, ExprPattern target, VArgsPattern parameters) => new CallPattern(target, parameters, name);
+    public static CallPattern IsCall(string? name, Pattern target, VArgsPattern parameters) => new CallPattern(target, parameters, name);
 
     /// <summary>
     /// is call .
@@ -56,7 +56,7 @@ public static partial class Utility
     /// <param name="target">target.</param>
     /// <param name="parameters">params.</param>
     /// <returns>call pattern.</returns>
-    public static CallPattern IsCall(ExprPattern target, VArgsPattern parameters) => IsCall(null, target, parameters);
+    public static CallPattern IsCall(Pattern target, VArgsPattern parameters) => IsCall(null, target, parameters);
 
     /// <summary>
     /// is call .
@@ -65,7 +65,7 @@ public static partial class Utility
     /// <param name="parameters">params.</param>
     /// <param name="name">name.</param>
     /// <returns>call pattern.</returns>
-    public static CallPattern IsCall(string? name, ExprPattern target, params Pattern[] parameters) => new CallPattern(target, new VArgsPattern(parameters, null), name);
+    public static CallPattern IsCall(string? name, Pattern target, params Pattern[] parameters) => new CallPattern(target, new VArgsPattern(parameters, null), name);
 
     /// <summary>
     /// is call .
@@ -91,7 +91,7 @@ public static partial class Utility
     /// <param name="target">function target.</param>
     /// <param name="parameters">params.</param>
     /// <returns></returns>
-    public static CallPattern IsCall(ExprPattern target, params Pattern[] parameters) => IsCall(null, target, parameters);
+    public static CallPattern IsCall(Pattern target, params Pattern[] parameters) => IsCall(null, target, parameters);
 
     /// <summary>
     /// is call .

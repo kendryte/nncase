@@ -47,14 +47,15 @@ namespace Nncase.Transform
                 foreach (var creator in MutatorCreators)
                 {
                     var mutator = creator();
+                    string mutator_name = mutator.GetType().Name;
                     last = post;
                     post = (BaseFunction)mutator.Visit(last);
-                    if (mutator.IsMutated)
+                    isMutated = mutator.IsMutated;
+                    if (isMutated)
                     {
-                        isMutated = true;
                         typeinfer_ret = CompilerServices.InferenceType(post);
                         OnMutated(post, $"{count++}_{mutator.GetType().Name}", options);
-                        if (!typeinfer_ret) throw new InvalidOperationException($"{Name}: After Run Mutator {count - 1}_{mutator.GetType().Name} , The Type Inference Failed!");
+                        if (!typeinfer_ret) throw new InvalidOperationException($"{Name}: After Run Mutator {count - 1}_{mutator_name} , The Type Inference Failed!");
                         break;
                     }
                 }

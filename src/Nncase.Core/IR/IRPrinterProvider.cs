@@ -33,10 +33,10 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
     }
 
     /// <inheritdoc/>
-    public void DumpIR(Expr expr, string prefix, string dumpPath)
+    public void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable)
     {
         var nprefix = prefix.Any() ? prefix + "_" : prefix;
-        string ext = expr is Function ? "il" : "script";
+        string ext = expr is PrimFunction ? "script" : "il";
         string name = expr is Callable c ? c.Name : expr.GetType().Name;
         string file_path = Path.Combine(dumpPath, $"{nprefix}{name}.{ext}");
         if (dumpPath == string.Empty)
@@ -51,7 +51,7 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
                 new ScriptPrintVisitor(dumpWriter).Visit(pf);
                 break;
             default:
-                new ILPrintVisitor(dumpWriter).Visit(expr);
+                new ILPrintVisitor(dumpWriter, display_callable).Visit(expr);
                 break;
         }
     }
@@ -61,7 +61,7 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
     {
         var sb = new StringBuilder();
         using var dumpWriter = new StringWriter(sb);
-        return new ILPrintVisitor(dumpWriter).VisitType(type);
+        return new ILPrintVisitor(dumpWriter, true).VisitType(type);
     }
 
     /// <inheritdoc/>
@@ -71,7 +71,7 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
         using var dumpWriter = new StringWriter(sb);
         return expr is PrimFunction || useScript
             ? new ScriptPrintVisitor(dumpWriter).Visit(expr).Serialize()
-            : new ILPrintVisitor(dumpWriter).Visit(expr);
+            : new ILPrintVisitor(dumpWriter, true).Visit(expr);
     }
 
     /// <inheritdoc/>

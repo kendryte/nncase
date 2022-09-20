@@ -16,6 +16,10 @@ namespace Nncase.Transform.Mutators;
 internal sealed class FlattenSequential : ExprMutator
 {
     /// <inheritdoc/>
+    /// shouldn't change the funciton
+    public override Expr Visit(Function expr) => expr;
+
+    /// <inheritdoc/>
     public override Expr MutateLeaf(TIR.Sequential expr)
     {
         var flattened = Flatten(expr);

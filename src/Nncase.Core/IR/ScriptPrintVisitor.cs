@@ -111,7 +111,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
 
         var il_sb = new StringBuilder();
-        var il_visitor = new ILPrintVisitor(new StringWriter(il_sb));
+        var il_visitor = new ILPrintVisitor(new StringWriter(il_sb), false);
         il_visitor.Visit(expr);
 
         doc = new(il_sb, expr.Name, true);

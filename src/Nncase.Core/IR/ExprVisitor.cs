@@ -251,7 +251,7 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
-        public sealed override TExprResult Visit(TIR.For expr)
+        public override TExprResult Visit(TIR.For expr)
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {

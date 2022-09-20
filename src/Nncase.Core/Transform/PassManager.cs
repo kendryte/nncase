@@ -10,6 +10,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Nncase.Tests")]
+
 namespace Nncase.Transform;
 
 /// <summary>
@@ -142,9 +144,12 @@ public class PassManager : IEnumerable<BasePass>
             if (_functions_update.TryGetValue(_module.Functions[i], out var updated_func))
                 _module.Update(i, updated_func);
         }
-        foreach (var item in _module.Functions)
+        if (_options.DumpLevel > 3)
         {
-            CompilerServices.DumpIR(item, "", Path.Combine(_options.DumpDir, "FuncUpdateDependence"));
+            foreach (var item in _module.Functions)
+            {
+                CompilerServices.DumpIR(item, "", Path.Combine(_options.DumpDir, "FuncUpdateDependence"));
+            }
         }
     }
 }

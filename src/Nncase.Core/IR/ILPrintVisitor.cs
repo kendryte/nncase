@@ -18,12 +18,14 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
 {
     private readonly ScopeWriter Scope;
     private readonly Dictionary<Expr, string> _names = new Dictionary<Expr, string>(ReferenceEqualityComparer.Instance);
+    bool DisplayCallable;
 
     private int _localId = 0;
 
-    public ILPrintVisitor(TextWriter textWriter)
+    public ILPrintVisitor(TextWriter textWriter, bool display_callable)
     {
         Scope = new(textWriter);
+        DisplayCallable = display_callable;
     }
 
     /// <inheritdoc/>
@@ -76,7 +78,7 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
 
         // 3. Function closing
         Scope.IndWriteLine("}");
-        Scope.IndWrite(Scope.Pop());
+        Scope.Append(Scope.Pop());
         return name;
     }
 
@@ -94,11 +96,14 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
         Scope.IndWriteLine("{");
 
         // 2. Function body
-        using (Scope.IndentUp()) { var body = Visit(expr.Body); }
+        if (DisplayCallable)
+            using (Scope.IndentUp()) { var body = Visit(expr.Body); }
+        else
+            Scope.IndWriteLine("...");
 
         // 3. Function closing
         Scope.IndWriteLine("}");
-        Scope.IndWrite(Scope.Pop());
+        Scope.Append(Scope.Pop());
         return name;
     }
 
@@ -112,15 +117,27 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
         Scope.Push();
 
         // 1. Function signature
-        Scope.IndWrite($"{name} = fn({string.Join(", ", expr.ParameterTypes.Select(VisitType))})");
+        Scope.IndWrite($"{name} = prim_wrapper({string.Join(", ", expr.ParameterTypes.Select(VisitType))})");
         AppendCheckedType(expr.CheckedType, " {");
 
         // 2. Function body
-        Scope.IndWrite(CompilerServices.Print(expr.Target));
+        if (DisplayCallable)
+        {
+            using (Scope.IndentUp())
+            {
+                using (var bodys = new StringReader(CompilerServices.Print(expr.Target)))
+                {
+                    while (bodys.ReadLine() is string line)
+                        Scope.IndWriteLine(line);
+                }
+            }
+        }
+        else
+            Scope.IndWriteLine("...");
 
         // 3. Function closing
         Scope.IndWriteLine("}");
-        Scope.IndWrite(Scope.Pop());
+        Scope.Append(Scope.Pop());
         return name;
     }
 

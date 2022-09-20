@@ -55,7 +55,8 @@ public interface ICompilerServicesProvider
     /// <param name="expr"></param>
     /// <param name="prefix"></param>
     /// <param name="dumpPath"></param>
-    void DumpIR(Expr expr, string prefix, string dumpPath);
+    /// <param name="display_callable"></param>
+    void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable);
 
     /// <summary>
     /// print ir type.
@@ -148,7 +149,7 @@ public interface ICompilerServicesProvider
     /// <returns>Target</returns>
     ITarget GetTarget(string name);
 
-    
+
     /// <summary>
     /// Get CompileOptions.
     /// </summary>
@@ -230,7 +231,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     }
 
     /// <inheritdoc/>
-    public void DumpIR(Expr expr, string prefix, string dumpPath) => _irprinterProvider.DumpIR(expr, prefix, dumpPath);
+    public void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable) => _irprinterProvider.DumpIR(expr, prefix, dumpPath, display_callable);
 
     /// <inheritdoc/>
     public string Print(IRType type) => _irprinterProvider.Print(type);
@@ -277,7 +278,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     {
         return _targetProvider.GetTarget(name);
     }
-    
+
     public CompileOptions CompileOptions
     {
         get => _compileOptions;
@@ -467,7 +468,7 @@ public static class CompilerServices
     public static string PrintOp(Op op, IIRPrinterContext context, bool ILmode) => Provider.PrintOp(op, context, ILmode);
 
     /// <inheritdoc/>
-    public static void DumpIR(Expr expr, string prefix, string dumpPath) => Provider.DumpIR(expr, prefix, dumpPath);
+    public static void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable = true) => Provider.DumpIR(expr, prefix, dumpPath, display_callable);
 
     /// <inheritdoc/>
     public static string Print(IRType type) => Provider.Print(type);

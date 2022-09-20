@@ -54,7 +54,7 @@ public abstract class ModulePass : BasePass
             return;
         foreach (var (func, i) in module.Functions.Select((func, i) => (func, i)))
         {
-            CompilerServices.DumpIR(func, $"fn_{i}_{func.Name}", Path.Combine(options.PassDumpDir, "Start"));
+            CompilerServices.DumpIR(func, $"fn_{i}", Path.Combine(options.PassDumpDir, "Start"));
         }
     }
 
@@ -70,7 +70,7 @@ public abstract class ModulePass : BasePass
 
         foreach (var (func, i) in module.Functions.Select((func, i) => (func, i)))
         {
-            CompilerServices.DumpIR(func, $"fn_{i}_{func.Name}", Path.Combine(options.PassDumpDir, "End"));
+            CompilerServices.DumpIR(func, $"fn_{i}", Path.Combine(options.PassDumpDir, "End"));
         }
     }
 }

@@ -35,6 +35,8 @@ namespace Nncase.IR
         /// </summary>
         public bool IsMutated { get; protected set; } = false;
 
+        readonly Dictionary<TIR.Range, TIR.Range> _rangeMemo = new(ReferenceEqualityComparer.Instance);
+
         /// <inheritdoc/>
         public override Expr VisitLeaf(Call expr)
         {
@@ -157,7 +159,7 @@ namespace Nncase.IR
 
             return expr with
             {
-                Fields = new(expr.Fields.Select(Visit)),
+                Fields = MutateArray(expr.Fields, Visit),
             };
         }
 
@@ -364,7 +366,6 @@ namespace Nncase.IR
         /// <inheritdoc/>
         public override Expr VisitLeaf(TIR.BufferRegion expr)
         {
-
             var nexpr = MutateLeaf(expr);
             if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
@@ -565,12 +566,12 @@ namespace Nncase.IR
         /// <returns></returns>
         public virtual TIR.Range MutateLeaf(TIR.Range range)
         {
-            return range with
+            if (!_rangeMemo.TryGetValue(range, out var result))
             {
-                Start = Visit(range.Start),
-                Stop = Visit(range.Stop),
-                Step = Visit(range.Step),
-            };
+                result = new(Visit(range.Start), Visit(range.Stop), Visit(range.Step));
+                _rangeMemo.Add(range, result);
+            }
+            return result;
         }
     }
 }

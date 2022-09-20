@@ -8,6 +8,10 @@ namespace Nncase.Transform.Mutators;
 /// </summary>
 internal sealed class RemoveNop : ExprMutator
 {
+    /// <inheritdoc/>
+    /// shouldn't change the funciton
+    public override Expr Visit(Function expr) => expr;
+
     public override Expr MutateLeaf(TIR.Sequential expr)
     {
         bool mutated = false;
