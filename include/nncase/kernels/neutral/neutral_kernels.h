@@ -1315,29 +1315,49 @@ void tflite_detection_postprocess(const T *CXX_RESTRICT boxes, const T *CXX_REST
 template <class T, class TI, class TShape>
 void gather_elements(const T *CXX_RESTRICT input, const TI *CXX_RESTRICT indices, T *CXX_RESTRICT output, const TShape &in_shape, const TShape &indices_shape, const int axis)
 {
-    auto get_index = [&](const int *indices, const runtime_shape_t &stride, std::vector<int> &index, size_t i, int axis, int idx) {
-        if (idx == stride.size())
-            return 0;
-        else
+    auto get_index = [&](const int64_t *indices, const std::vector<int> &per_axis_size, std::vector<int> &index, size_t i, int axis, int idx) {
+        if (idx != (int)per_axis_size.size())
         {
-            auto new_idx = i / stride[idx];
+            auto new_idx = i / per_axis_size[idx];
             index.push_back(new_idx);
-            return get_index(indices, stride, index, i - new_idx * stride[idx], axis, idx + 1);
+            get_index(indices, per_axis_size, index, i - new_idx * per_axis_size[idx], axis, idx + 1);
         }
     };
     // indices_shape == output_shape
-    //   out[i][j][k] = input[index[i][j][k]][j][k] if axis = 0,
-    //   out[i][j][k] = input[i][index[i][j][k]][k] if axis = 1,
-    //   out[i][j][k] = input[i][j][index[i][j][k]] if axis = 2,
-    [[maybe_unused]] auto in_size = compute_size(in_shape);
-    [[maybe_unused]] runtime_shape_t input_index(compute_size(indices_shape));
-    [[maybe_unused]] auto stride = nncase::runtime::get_default_strides(indices_shape);
+    // out[i][j][k] = input[index[i][j][k]][j][k] if axis = 0,
+    // out[i][j][k] = input[i][index[i][j][k]][k] if axis = 1,
+    // out[i][j][k] = input[i][j][index[i][j][k]] if axis = 2,
+    std::vector<int> per_axis_size(indices_shape.size(), 1);
+    std::vector<int> input_per_axis_size(indices_shape.size(), 1);
+
+    // compute size per axis
+    for (int idx = indices_shape.size() - 2; idx >= 0; idx--)
+    {
+        per_axis_size[idx] = indices_shape[idx + 1] * per_axis_size[idx + 1];
+        input_per_axis_size[idx] = in_shape[idx + 1] * input_per_axis_size[idx + 1];
+    }
+
     for (size_t i = 0; i < compute_size(indices_shape); i++)
     {
-        [[maybe_unused]] std::vector<int> index;
+        std::vector<int> index;
+        get_index(indices, per_axis_size, index, i, axis, 0);
 
-        output[i] = input[get_index(indices, stride, index, i, axis, 0)];
-        // index+=i*stride[i];
+        // compute indices offset to update index
+        int indice_index = 0;
+        for (size_t t = 0; t < index.size(); t++)
+        {
+            indice_index += per_axis_size[t] * index[t];
+        }
+        // process index value if negative value
+        index[axis] = indices[indice_index] < 0 ? indices[indice_index] + in_shape[axis] : indices[indice_index];
+
+        // compute input offset
+        int input_index = 0;
+        for (size_t t = 0; t < index.size(); t++)
+        {
+            input_index += input_per_axis_size[t] * index[t];
+        }
+        output[i] = input[input_index];
     }
 }
 
