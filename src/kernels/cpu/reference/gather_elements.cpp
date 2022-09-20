@@ -26,13 +26,13 @@ using namespace std;
 template result<void> reference::gather_elements(const float *input, const int64_t *indices, float *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &indices_shape, const int axis) noexcept;
 
-void get_index(const int64_t *indices, const std::vector<int> &per_axis_size, std::vector<int> &index, size_t i, int axis, int idx)
+void get_gather_index(const std::vector<int> &per_axis_size, std::vector<int> &index, size_t i, int axis, int idx)
 {
     if (idx != (int)per_axis_size.size())
     {
         auto new_idx = i / per_axis_size[idx];
         index.push_back(new_idx);
-        get_index(indices, per_axis_size, index, i - new_idx * per_axis_size[idx], axis, idx + 1);
+        get_gather_index(per_axis_size, index, i - new_idx * per_axis_size[idx], axis, idx + 1);
     }
 }
 
@@ -57,7 +57,7 @@ result<void> reference::gather_elements(const TI *input, const TK *indices, TI *
     for (size_t i = 0; i < compute_size(indices_shape); i++)
     {
         std::vector<int> index;
-        get_index(indices, per_axis_size, index, i, axis, 0);
+        get_gather_index(per_axis_size, index, i, axis, 0);
 
         // compute indices offset to update index
         int indice_index = 0;

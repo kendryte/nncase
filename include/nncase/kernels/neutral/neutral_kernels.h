@@ -1315,12 +1315,12 @@ void tflite_detection_postprocess(const T *CXX_RESTRICT boxes, const T *CXX_REST
 template <class T, class TI, class TShape>
 void gather_elements(const T *CXX_RESTRICT input, const TI *CXX_RESTRICT indices, T *CXX_RESTRICT output, const TShape &in_shape, const TShape &indices_shape, const int axis)
 {
-    auto get_index = [&](const int64_t *indices, const std::vector<int> &per_axis_size, std::vector<int> &index, size_t i, int axis, int idx) {
+    auto get_gather_index = [&](const std::vector<int> &per_axis_size, std::vector<int> &index, size_t i, int axis, int idx) {
         if (idx != (int)per_axis_size.size())
         {
             auto new_idx = i / per_axis_size[idx];
             index.push_back(new_idx);
-            get_index(indices, per_axis_size, index, i - new_idx * per_axis_size[idx], axis, idx + 1);
+            get_gather_index(per_axis_size, index, i - new_idx * per_axis_size[idx], axis, idx + 1);
         }
     };
     // indices_shape == output_shape
@@ -1340,7 +1340,7 @@ void gather_elements(const T *CXX_RESTRICT input, const TI *CXX_RESTRICT indices
     for (size_t i = 0; i < compute_size(indices_shape); i++)
     {
         std::vector<int> index;
-        get_index(indices, per_axis_size, index, i, axis, 0);
+        get_gather_index(per_axis_size, index, i, axis, 0);
 
         // compute indices offset to update index
         int indice_index = 0;
