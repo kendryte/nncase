@@ -794,14 +794,14 @@ class TestRunner(metaclass=ABCMeta):
                 file_num_dict['kmodel']= 1
                 file_num_dict['inputs'] = len(self.inputs)
                 file_num_dict['outputs'] = len(self.outputs)
-                client_socket.sendall(json.dumps(file_num_dict).encode('utf-8'))
+                client_socket.sendall(json.dumps(file_num_dict).encode())
                 dummy = client_socket.recv(1024)
 
                 # send app
                 file_dict = {}
                 file_dict['file_name'] = os.path.basename(app_full_name)
                 file_dict['file_size'] = os.path.getsize(app_full_name)
-                client_socket.sendall(json.dumps(file_dict).encode('utf-8'))
+                client_socket.sendall(json.dumps(file_dict).encode())
                 dummy = client_socket.recv(1024)
                 with open(app_full_name, 'rb') as f:
                     client_socket.sendall(f.read())
@@ -810,7 +810,7 @@ class TestRunner(metaclass=ABCMeta):
                 # send kmodel
                 file_dict['file_name'] = 'test.kmodel'
                 file_dict['file_size'] = len(kmodel)
-                client_socket.sendall(json.dumps(file_dict).encode('utf-8'))
+                client_socket.sendall(json.dumps(file_dict).encode())
                 dummy = client_socket.recv(1024)
                 client_socket.sendall(kmodel)
                 dummy = client_socket.recv(1024)
@@ -828,46 +828,54 @@ class TestRunner(metaclass=ABCMeta):
 
                     file_dict['file_name'] = f'input_0_{i}.bin'
                     file_dict['file_size'] = os.path.getsize(input_bin)
-                    client_socket.sendall(json.dumps(file_dict).encode('utf-8'))
+                    client_socket.sendall(json.dumps(file_dict).encode())
                     dummy = client_socket.recv(1024)
                     client_socket.sendall(data.tobytes())
                     dummy = client_socket.recv(1024)
 
-                # recv outputs
-                for i in range(len(self.outputs)):
-                    header = client_socket.recv(1024)
-                    file_size = int(header.decode('utf-8'))
-                    client_socket.sendall(f"pls send nncase_result_{i}.bin".encode())
+                # infer result
+                cmd_result = client_socket.recv(1024).decode()
+                if cmd_result.find('succeed') != -1:
+                    client_socket.sendall(f"pls send outputs".encode())
 
-                    recv_size = 0
-                    buffer = bytearray(file_size)
-                    while recv_size < file_size:
-                        slice = client_socket.recv(4096)
-                        buffer[recv_size:] = slice
-                        recv_size += len(slice)
+                    # recv outputs
+                    for i in range(len(self.outputs)):
+                        header = client_socket.recv(1024)
+                        file_size = int(header.decode())
+                        client_socket.sendall(f"pls send nncase_result_{i}.bin".encode())
 
-                    result = np.frombuffer(buffer, dtype=self.outputs[i]['dtype'])
-                    result = result.reshape(self.outputs[i]['model_shape'])
-                    if preprocess['preprocess'] and len(result.shape) == 4:
-                        if (preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
-                            result = np.transpose(result, [0, 3, 1, 2])
-                        elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
-                            result = np.transpose(result, [0, 2, 3, 1])
-                    infer_output_paths.append((
-                        os.path.join(infer_dir, f'nncase_result_{i}.bin'),
-                        os.path.join(infer_dir, f'nncase_result_{i}.txt')))
-                    if cfg.compile_opt.output_type != "float32" and infer_dir.split('/')[-1] == "ptq":
-                        result.tofile(os.path.join(
-                            infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.bin'))
-                        self.totxtfile(os.path.join(
-                            infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.txt'), result)
-                        result = deq_output(os.path.join(
-                            infer_dir, f'kmodel_info.txt'), result)
-                    result.tofile(infer_output_paths[-1][0])
-                    self.totxtfile(infer_output_paths[-1][1], result)
-                    client_socket.sendall(f"recv nncase_result_{i}.bin succeed".encode())
+                        recv_size = 0
+                        buffer = bytearray(file_size)
+                        while recv_size < file_size:
+                            slice = client_socket.recv(4096)
+                            buffer[recv_size:] = slice
+                            recv_size += len(slice)
 
-                client_socket.close()
+                        result = np.frombuffer(buffer, dtype=self.outputs[i]['dtype'])
+                        result = result.reshape(self.outputs[i]['model_shape'])
+                        if preprocess['preprocess'] and len(result.shape) == 4:
+                            if (preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
+                                result = np.transpose(result, [0, 3, 1, 2])
+                            elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
+                                result = np.transpose(result, [0, 2, 3, 1])
+                        infer_output_paths.append((
+                            os.path.join(infer_dir, f'nncase_result_{i}.bin'),
+                            os.path.join(infer_dir, f'nncase_result_{i}.txt')))
+                        if cfg.compile_opt.output_type != "float32" and infer_dir.split('/')[-1] == "ptq":
+                            result.tofile(os.path.join(
+                                infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.bin'))
+                            self.totxtfile(os.path.join(
+                                infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.txt'), result)
+                            result = deq_output(os.path.join(
+                                infer_dir, f'kmodel_info.txt'), result)
+                        result.tofile(infer_output_paths[-1][0])
+                        self.totxtfile(infer_output_paths[-1][1], result)
+                        client_socket.sendall(f"recv nncase_result_{i}.bin succeed".encode())
+
+                    client_socket.close()
+                else:
+                    client_socket.close()
+                    raise Exception(f'{cmd_result}')
             else:
                 # run in simulator
                 sim = nncase.Simulator()
