@@ -1322,6 +1322,9 @@ void gather_elements(const T *CXX_RESTRICT input, const TI *CXX_RESTRICT indices
             index.push_back(new_idx);
             get_gather_index(per_axis_size, index, i - new_idx * per_axis_size[idx], axis, idx + 1);
         }
+        else{
+            return ok();
+        }
     };
     // indices_shape == output_shape
     // out[i][j][k] = input[index[i][j][k]][j][k] if axis = 0,
@@ -1340,7 +1343,7 @@ void gather_elements(const T *CXX_RESTRICT input, const TI *CXX_RESTRICT indices
     for (size_t i = 0; i < compute_size(indices_shape); i++)
     {
         std::vector<int> index;
-        get_gather_index(per_axis_size, index, i, axis, 0);
+        try_(get_gather_index(per_axis_size, index, i, axis, 0));
 
         // compute indices offset to update index
         int indice_index = 0;
