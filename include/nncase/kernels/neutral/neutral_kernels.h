@@ -1322,7 +1322,8 @@ void gather_elements(const T *CXX_RESTRICT input, const TI *CXX_RESTRICT indices
             index.push_back(new_idx);
             get_gather_index(per_axis_size, index, i - new_idx * per_axis_size[idx], axis, idx + 1);
         }
-        else{
+        else
+        {
             return ok();
         }
     };
