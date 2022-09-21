@@ -42,7 +42,12 @@ internal sealed class UnRollLoop : ExprMutator
         return (for_loop.Domain.Start is TensorConst && for_loop.Domain.Stop is TensorConst && for_loop.Domain.Step is TensorConst && for_loop.Mode == LoopMode.Unrolled);
     }
 
-    public static IEnumerable<int> MakeGrid(TIR.For loop)
+    /// <summary>
+    /// convert the loop var to tensor const.
+    /// </summary>
+    /// <param name="loop"></param>
+    /// <returns></returns>
+    static IEnumerable<TensorConst> MakeGrid(TIR.For loop)
     {
         int start = ((TensorConst)loop.Domain.Start).Value.ToScalar<int>();
         int stop = ((TensorConst)loop.Domain.Stop).Value.ToScalar<int>();
@@ -74,25 +79,71 @@ internal sealed class UnRollLoop : ExprMutator
             outter_for = inner_for;
         }
 
-        var unrolled = (
-          from grid in LinqExtensions.CartesianProduct((from loop in nested_loops select MakeGrid(loop)))
-          select grid.ToArray()).
+        var unrolled = (from grid in LinqExtensions.CartesianProduct(from loop in nested_loops select MakeGrid(loop))
+                        select grid.ToArray()).
           Select(grid =>
             {
-                var vmap = new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance);
+                var vmap = new Dictionary<Var, TensorConst>(ReferenceEqualityComparer.Instance);
                 for (int i = 0; i < grid.Length; i++)
                 {
                     vmap.Add(nested_loops[i].LoopVar, grid[i]);
                 }
+
                 return vmap;
             }).
-          Select(vmap => new Substitutor(e =>
-            {
-                if (e is Var v && vmap.TryGetValue(v, out var res))
-                    return res;
-                return null;
-            }).Visit(Visit(expr.Body)));
+          Select(vmap => new OptimizedSubstitutor(vmap).Visit(Visit(nested_loops[^1].Body)));
 
         return new Sequential(new IRArray<Expr>(unrolled));
+    }
+
+    /// <summary>
+    /// fold the math operations, avoid too much call.
+    /// </summary>
+    private sealed class OptimizedSubstitutor : ExprMutator
+    {
+        private readonly IReadOnlyDictionary<Var, TensorConst> _vmap;
+        private readonly Dictionary<Var, IValue> _cmap;
+
+        public OptimizedSubstitutor(IReadOnlyDictionary<Var, TensorConst> vmap)
+        {
+            _vmap = vmap;
+            _cmap = new(ReferenceEqualityComparer.Instance);
+            foreach (var p in vmap)
+            {
+                _cmap.Add(p.Key, Value.FromConst(p.Value));
+            }
+        }
+
+        public override Expr MutateLeaf(IR.Var expr)
+        {
+            if (_vmap.TryGetValue(expr, out var result))
+            {
+                return result;
+            }
+            return expr;
+        }
+
+        /// <inheritdoc/>
+        public override Expr MutateLeaf(Call expr)
+        {
+            if (expr.Target is Op op && op.GetType().Namespace is string @namespace
+              && (@namespace.StartsWith("Nncase.IR.Math") || @namespace.StartsWith("Nncase.IR.Tensors"))
+              && expr.Parameters.Select(Visit).All(e => e is Const))
+            {
+                return Const.FromValue(CompilerServices.Evaluate(expr, _cmap));
+            }
+            if (expr.Target is Function fn)
+            {
+                var arg_map = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance);
+                foreach (var (v, arg) in fn.Parameters.Zip(expr.Parameters))
+                {
+                    if (Visit(arg) is not Const const_arg)
+                        return expr;
+                    arg_map.Add(v, Value.FromConst(const_arg));
+                }
+                return Const.FromValue(CompilerServices.Evaluate(fn.Body, arg_map));
+            }
+            return expr;
+        }
     }
 }

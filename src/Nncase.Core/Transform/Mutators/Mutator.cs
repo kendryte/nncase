@@ -64,5 +64,11 @@ public static class Mutator
     /// </summary>
     /// <returns>FoldMathCall.</returns>
     public static Func<ExprMutator> FoldMathCall() => () => new Mutators.FoldMathCall();
+
+    /// <summary>
+    /// fold ir 
+    /// </summary>
+    /// <returns></returns>
+    public static Func<ExprMutator> FoldIR() => () => new Mutators.FoldIR();
 }
 

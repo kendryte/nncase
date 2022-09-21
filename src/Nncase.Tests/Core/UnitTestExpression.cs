@@ -36,6 +36,9 @@ public class UnitTestExpression
         Assert.Equal(sa.GetHashCode(), sb.GetHashCode());
     }
 
+    /// <summary>
+    /// when check type is different, expression not equal
+    /// </summary>
     [Fact]
     public void TestConstEqualWithCheckType()
     {
@@ -140,6 +143,10 @@ public class UnitTestExpression
         var b = (Const)(2) - (new Var("c"));
 
         Assert.False(a.Target == b.Target);
+
+        var c = (Const)(1.1f) + (Const)(1.1f);
+
+        Assert.True(a.Equals(c));
     }
 
     [Fact]
@@ -149,6 +156,7 @@ public class UnitTestExpression
         var con = Const.FromTensor(t);
         var con1 = Const.FromTensor(t);
         Assert.Equal(con, con1);
+        Assert.False(object.ReferenceEquals(con, con1));
     }
 
     [Fact]
@@ -187,5 +195,29 @@ public class UnitTestExpression
         var t = new DenseTensor<int>(new[] { 1, 2, 3, 4 }, new[] { 2, 2 });
         Assert.Equal(4, t.Length);
         Assert.Equal(2, t.Dimensions[0]);
+    }
+
+    [Fact]
+    public void TestHastSet()
+    {
+        var a_lhs = (Const)(1.1f);
+        var a_rhs = (Const)(1.1f);
+        var a = a_lhs + a_rhs;
+        var b_lhs = (Const)(1.1f);
+        var b_rhs = (new Var("c"));
+        var b = b_lhs - b_rhs;
+        var c = a_lhs + a_rhs;
+        var set = new HashSet<Expr>()
+        {
+            a_lhs,
+            a_rhs, // will fold
+            a,
+            b_lhs, // will fold
+            b_rhs,
+            b,
+            c // will fold
+        };
+
+        Assert.Equal(4, set.Count);
     }
 }

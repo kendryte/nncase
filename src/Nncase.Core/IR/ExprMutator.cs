@@ -41,7 +41,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(Call expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -58,7 +58,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(Const expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -71,7 +71,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(Function expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -88,7 +88,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(Fusion expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -105,7 +105,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(PrimFunctionWrapper expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -121,7 +121,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(TIR.PrimFunction expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -138,7 +138,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(Op expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -151,7 +151,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(Tuple expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -167,7 +167,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(Var expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -180,7 +180,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(None expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -193,7 +193,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(Marker expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -210,7 +210,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(TIR.IterVar expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -227,7 +227,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(TIR.Sequential expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -243,7 +243,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(TIR.For expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -261,7 +261,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(TIR.IfThenElse expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -279,7 +279,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(TIR.Block expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -303,7 +303,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(TIR.BufferStore expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -320,7 +320,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(TIR.BufferLoad expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -336,7 +336,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(TIR.Let expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -355,7 +355,7 @@ namespace Nncase.IR
         {
 
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
@@ -367,7 +367,7 @@ namespace Nncase.IR
         public override Expr VisitLeaf(TIR.BufferRegion expr)
         {
             var nexpr = MutateLeaf(expr);
-            if (!expr.Equals(nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
             if (!IsMutated)
             {
                 return expr;
