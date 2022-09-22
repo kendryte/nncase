@@ -21,9 +21,9 @@ class TelnetClient():
             return False
 
         self.tn.read_until(b'login: ', timeout=10)
-        self.tn.write(username.encode('ascii') + b'\n')
+        self.tn.write(username.encode() + b'\n')
 
-        command_result = self.tn.read_very_eager().decode('ascii')
+        command_result = self.tn.read_very_eager().decode()
         if 'Login incorrect' not in command_result:
             logging.info('%s login succeed' % ip)
             return True
@@ -31,16 +31,23 @@ class TelnetClient():
             logging.error('%s login failed' % ip)
             return False
 
-    def execute(self,command):
-        self.tn.write(command.encode('ascii')+b'\n')
-        self.tn.read_until(b'[root@canaan')
+    def execute(self, command, flag):
+        self.tn.write(command.encode() + b'\n')
+        cmd_result = self.tn.read_until(flag.encode()).decode()
+
+        self.tn.write('echo $?'.encode() + b'\n')
+        cmd_status = self.tn.read_until(flag.encode()).decode()
+        if cmd_status.find('\r\n0\r\n') == -1:
+            return cmd_result, False
+        else:
+            return cmd_result, True
 
     def logout(self):
         self.tn.write(b"exit\n")
 
 def get_file(conn, target_root):
     header = conn.recv(1024)
-    file_dict = json.loads(header.decode('utf-8'))
+    file_dict = json.loads(header.decode())
     file_name = file_dict['file_name']
     file_size = file_dict['file_size']
     conn.sendall(f"pls send {file_name}".encode())
@@ -69,7 +76,7 @@ def Consumer(kpu_target, kpu_ip, kpu_username, kpu_password, nfsroot, q):
 
         # recv file_num
         header = conn.recv(1024)
-        file_num_dict = json.loads(header.decode('utf-8'))
+        file_num_dict = json.loads(header.decode())
         file_num = file_num_dict['app'] + file_num_dict['kmodel'] + file_num_dict['inputs']
         conn.sendall(f"pls send {file_num} files".encode())
 
@@ -84,35 +91,42 @@ def Consumer(kpu_target, kpu_ip, kpu_username, kpu_password, nfsroot, q):
         # telnet target devcie to infer
         telnet_client = TelnetClient()
         telnet_client.login(kpu_ip, kpu_username, kpu_password)
-        telnet_client.execute(f'cd /mnt/{kpu_target}')
-        telnet_client.execute('sync')
-        telnet_client.execute(cmd)
-        telnet_client.execute('sync')
+        flag = f'/mnt/{kpu_target} ]$'
+        telnet_client.execute(f'cd /mnt/{kpu_target}', flag)
+        telnet_client.execute('sync', flag)
+        cmd_result, cmd_status = telnet_client.execute(cmd, flag)
+        telnet_client.execute('sync', flag)
 
-        # send outputs
-        for i in range(file_num_dict['outputs']):
-            file = os.path.join(target_root, f'nncase_result_{i}.bin')
-            file_size = os.path.getsize(file)
-            conn.sendall(str(file_size).encode())
+        if cmd_status:
+            conn.sendall(f'infer succeed'.encode())
             dummy = conn.recv(1024)
 
-            with open(file, 'rb') as f:
-                conn.sendall(f.read())
-            dummy = conn.recv(1024)
+            # send outputs
+            for i in range(file_num_dict['outputs']):
+                file = os.path.join(target_root, f'nncase_result_{i}.bin')
+                file_size = os.path.getsize(file)
+                conn.sendall(str(file_size).encode())
+                dummy = conn.recv(1024)
 
-        telnet_client.execute('rm *')
-        telnet_client.execute('sync')
+                with open(file, 'rb') as f:
+                    conn.sendall(f.read())
+                dummy = conn.recv(1024)
+        else:
+            conn.sendall(f'infer failed on {kpu_target} board: {cmd_result}'.encode())
+
+        telnet_client.execute('rm *', flag)
+        telnet_client.execute('sync', flag)
         telnet_client.logout()
         conn.close()
 
 def main():
     parser = argparse.ArgumentParser(prog="kendryte_ci_proxy")
     parser.add_argument("--kpu_target", help='kpu device target', type=str, default='k510')
-    parser.add_argument("--kpu_ip", help='kpu deivce ip address', type=str, default='10.100.105.216')
+    parser.add_argument("--kpu_ip", help='kpu deivce ip address', type=str, default='10.99.105.216')
     parser.add_argument("--kpu_username", help='kpu device usernmae', type=str, default='root')
     parser.add_argument("--kpu_password", help='kpu device password', type=str, default='')
     parser.add_argument("--nfsroot", help='nfsroot on pc', type=str, default='/data/nfs')
-    parser.add_argument("--port", help='listenning port', type=int, default=51000)
+    parser.add_argument("--port", help='listenning port of ci_proxy', type=int, default=51000)
     args = parser.parse_args()
     size = 32
     q = queue.Queue(maxsize=size)
@@ -126,7 +140,7 @@ def main():
     server_socket.listen(size)
     while True:
         conn, addr = server_socket.accept()
-        print('connnected by {0}'.format(addr))
+        # print('connnected by {0}'.format(addr))
         q.put(conn)
 
 if __name__ == '__main__':
