@@ -12,7 +12,7 @@
 
 BEGIN_NS_NNCASE_RUNTIME
 
-class dump_manager {
+class NNCASE_API dump_manager {
 
   private:
     bool append_;

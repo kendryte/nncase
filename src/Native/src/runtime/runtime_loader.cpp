@@ -141,6 +141,6 @@ runtime_module::collect(const module_kind_t &kind) {
     return table;
 }
 
-//#ifdef NNCASE_DEFAULT_BUILTIN_RUNTIMES
+#ifdef NNCASE_DEFAULT_BUILTIN_RUNTIMES
 runtime_registration nncase::runtime::builtin_runtimes[] = {{}};
-//#endif
+#endif
