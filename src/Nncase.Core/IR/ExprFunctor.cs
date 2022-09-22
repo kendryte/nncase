@@ -198,6 +198,23 @@ namespace Nncase.IR
         public virtual TExprResult Visit(TIR.BufferRegion expr) => DefaultVisit(expr);
 
         /// <summary>
+        /// Visit visitable
+        /// </summary>
+        /// <param name="visitable"></param>
+        /// <returns></returns>
+        public virtual object Visit(IVisitable visitable) => DefaultVisit(visitable);
+
+        /// <summary>
+        /// Default Visit IVisitable.
+        /// </summary>
+        /// <param name="visitable"></param>
+        /// <returns></returns>
+        public virtual object DefaultVisit(IVisitable visitable)
+        {
+            return visitable.Visit<TExprResult, TTypeResult>(this);
+        }
+
+        /// <summary>
         /// Default visit routine.
         /// </summary>
         /// <param name="expr">Expression.</param>

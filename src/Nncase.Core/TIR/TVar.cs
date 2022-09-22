@@ -12,7 +12,7 @@ namespace Nncase.TIR;
 /// <param name="Start">beginning of the nodes.</param>
 /// <param name="Stop">.</param>
 /// <param name="Step">the extend of range.</param>
-public sealed record Range(Expr Start, Expr Stop, Expr Step) : IR.IMutatable<Range>
+public sealed record Range(Expr Start, Expr Stop, Expr Step) : IR.IMutatable
 {
     /// <summary>
     /// <see cref="Range"/>.
@@ -99,23 +99,19 @@ public sealed record Range(Expr Start, Expr Stop, Expr Step) : IR.IMutatable<Ran
     /// </summary>
     public static readonly Range All = new Range(int.MinValue, int.MaxValue, 1);
 
-    /// <summary>
-    /// accept the any visitor.
-    /// </summary>
-    /// <typeparam name="TExprResult"></typeparam>
-    /// <typeparam name="TTypeResult"></typeparam>
-    /// <param name="visitor"></param>
-    public void Accept<TExprResult, TTypeResult>(ExprFunctor<TExprResult, TTypeResult> visitor)
+    /// <inheritdoc/>
+    public object WithNew(ExprMutator mutator)
     {
-        visitor.Visit(Start);
-        visitor.Visit(Stop);
-        visitor.Visit(Step);
+        return new TIR.Range(mutator.Visit(Start), mutator.Visit(Stop), mutator.Visit(Step));
     }
 
     /// <inheritdoc/>
-    public Range Mutate(ExprMutator mutator)
+    public object Visit<TExprResult, TTypeResult>(ExprFunctor<TExprResult, TTypeResult> functor)
     {
-        return new Range(mutator.Visit(Start), mutator.Visit(Stop), mutator.Visit(Step));
+        functor.Visit(Start);
+        functor.Visit(Stop);
+        functor.Visit(Step);
+        return default(object)!;
     }
 
     /// <inheritdoc/>

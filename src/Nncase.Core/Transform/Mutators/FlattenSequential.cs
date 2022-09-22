@@ -13,11 +13,8 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// flatten sequential
 /// </summary>
-internal sealed class FlattenSequential : ExprMutator
+internal sealed class FlattenSequential : PrimFuncMutator
 {
-    /// <inheritdoc/>
-    /// shouldn't change the funciton
-    public override Expr Visit(Function expr) => expr;
 
     /// <inheritdoc/>
     public override Expr MutateLeaf(TIR.Sequential expr)

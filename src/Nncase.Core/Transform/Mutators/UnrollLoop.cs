@@ -13,11 +13,8 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// unroll loop
 /// </summary>
-internal sealed class UnRollLoop : ExprMutator
+internal sealed class UnRollLoop : PrimFuncMutator
 {
-    /// <inheritdoc/>
-    /// shouldn't change the funciton
-    public override Expr Visit(Function expr) => expr;
 
     /// <inheritdoc/>
     public override Expr Visit(TIR.For expr)
@@ -130,7 +127,7 @@ internal sealed class UnRollLoop : ExprMutator
               && (@namespace.StartsWith("Nncase.IR.Math") || @namespace.StartsWith("Nncase.IR.Tensors"))
               && expr.Parameters.Select(Visit).All(e => e is Const))
             {
-                return Const.FromValue(CompilerServices.Evaluate(expr, _cmap));
+                return StructEqualFolding(Const.FromValue(CompilerServices.Evaluate(expr, _cmap)));
             }
             if (expr.Target is Function fn)
             {
@@ -141,7 +138,7 @@ internal sealed class UnRollLoop : ExprMutator
                         return expr;
                     arg_map.Add(v, Value.FromConst(const_arg));
                 }
-                return Const.FromValue(CompilerServices.Evaluate(fn.Body, arg_map));
+                return StructEqualFolding(Const.FromValue(CompilerServices.Evaluate(fn.Body, arg_map)));
             }
             return expr;
         }

@@ -67,8 +67,9 @@ public static class Mutator
 
     /// <summary>
     /// fold ir 
+    /// NOTE avoid the side effect bug, disable it.
     /// </summary>
     /// <returns></returns>
-    public static Func<ExprMutator> FoldIR() => () => new Mutators.FoldIR();
+    // public static Func<ExprMutator> FoldTIR() => () => new Mutators.FoldTIR();
 }
 

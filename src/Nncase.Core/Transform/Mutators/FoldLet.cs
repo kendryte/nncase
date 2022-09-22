@@ -13,11 +13,8 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// unroll loop
 /// </summary>
-internal sealed class FoldLet : ExprMutator
+internal sealed class FoldLet : PrimFuncMutator
 {
-    /// <inheritdoc/>
-    /// shouldn't change the funciton
-    public override Expr Visit(Function expr) => expr;
 
     /// <inheritdoc/>
     public override Expr MutateLeaf(TIR.Let expr)
