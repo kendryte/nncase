@@ -309,29 +309,16 @@ public sealed record LogicalBuffer(string Name, DataType ElemType, Schedule.Memo
     /// <inheritdoc/>
     public override int Rank => Dimensions.Count;
 
-
-    /// <inheritdoc/>
-    public bool Equals(LogicalBuffer? other)
-    {
-        return !(other is null) && EqualityContract == other.EqualityContract;
-    }
-
-    /// <inheritdoc/>
-    public override int GetHashCode()
-    {
-        return EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
-    }
-
     /// <inheritdoc/>
     public override string ToString()
     {
-        return $"LogicalBuffer({Name}, {ElemType})";
+        return $"LogicalBuffer({Name}, {ElemType}, {nameof(MemLocation)})";
     }
 
     /// <inheritdoc/>
     protected override bool PrintMembers(StringBuilder builder)
     {
-        builder.Append($"LogicalBuffer({Name}, {ElemType})");
+        builder.Append($"LogicalBuffer({Name}, {ElemType}, {nameof(MemLocation)})");
         return true;
     }
 }
@@ -425,27 +412,15 @@ public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.Mem
     public int Length => (int)TensorUtilities.GetProduct(_dimensions);
 
     /// <inheritdoc/>
-    public bool Equals(PhysicalBuffer? other)
-    {
-        return !(other is null) && EqualityContract == other.EqualityContract;
-    }
-
-    /// <inheritdoc/>
-    public override int GetHashCode()
-    {
-        return EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
-    }
-
-    /// <inheritdoc/>
     public override string ToString()
     {
-        return $"PhysicalPhysicalBuffer({Name}, {ElemType})";
+        return $"PhysicalBuffer({Name}, {ElemType}, {nameof(MemLocation)})";
     }
 
     /// <inheritdoc/>
     protected override bool PrintMembers(StringBuilder builder)
     {
-        builder.Append($"PhysicalPhysicalBuffer({Name}, {ElemType})");
+        builder.Append($"PhysicalBuffer({Name}, {ElemType}, {nameof(MemLocation)})");
         return true;
     }
 

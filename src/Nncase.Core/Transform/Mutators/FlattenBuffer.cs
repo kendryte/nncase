@@ -25,8 +25,8 @@ internal sealed class FlattenBuffer : ExprMutator
 
         // 1. Visit the body
         Expr nbody = Visit(expr.Body);
-        IRArrayList<BufferRegion> nreads = new(expr.Reads.Select(Visit).Cast<BufferRegion>());
-        IRArrayList<BufferRegion> nwrites = new(expr.Writes.Select(Visit).Cast<BufferRegion>());
+        IRArray<BufferRegion> nreads = new(expr.Reads.Select(Visit).Cast<BufferRegion>());
+        IRArray<BufferRegion> nwrites = new(expr.Writes.Select(Visit).Cast<BufferRegion>());
         var npredicate = Visit(expr.Predicate);
         if (npredicate != (Const)1)
         {

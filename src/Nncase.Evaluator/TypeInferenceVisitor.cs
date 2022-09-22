@@ -456,6 +456,13 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         return type;
     }
 
+    /// <inheritdoc/>
+    /// Note the IVisitable instance have no IRType.
+    public override object VisitLeaf(IVisitable visitable)
+    {
+        return default(object)!;
+    }
+
     /// <summary>
     /// set expr's current type.
     /// </summary>

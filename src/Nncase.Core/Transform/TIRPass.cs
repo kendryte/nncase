@@ -16,7 +16,7 @@ namespace Nncase.Transform
     /// NOTE only apply on prim func
     /// Because of we will mutate the expression multiple times, so use MutatorCreator create the new mutator.
     /// </summary>
-    public class TIRPass : FunctionPass, IEnumerable<Func<ExprMutator>>
+    public class PrimFuncPass : FunctionPass, IEnumerable<Func<ExprMutator>>
     {
         /// <summary>
         /// Save rules.
@@ -24,10 +24,10 @@ namespace Nncase.Transform
         public readonly List<Func<ExprMutator>> MutatorCreators = new();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TIRPass"/> class.
+        /// Initializes a new instance of the <see cref="PrimFuncPass"/> class.
         /// </summary>
         /// <param name="name">Name.</param>
-        public TIRPass(string name)
+        public PrimFuncPass(string name)
             : base(name)
         {
         }

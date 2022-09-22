@@ -10,19 +10,41 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR
 {
+    /// <summary>
+    /// IVisitable interface for the custom class visit leaf;
+    /// </summary>
+    public interface IVisitable
+    {
+        /// <summary>
+        /// accept the visit
+        /// </summary>
+        /// <typeparam name="TExprResult"></typeparam>
+        /// <typeparam name="TTypeResult"></typeparam>
+        /// <param name="functor"></param>
+        /// <returns></returns>
+        object Visit<TExprResult, TTypeResult>(ExprFunctor<TExprResult, TTypeResult> functor);
+    }
+
 
     /// <summary>
     /// IMutatable Define.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public interface IMutatable<T>
+    public interface IMutatable : IVisitable
     {
         /// <summary>
         /// mutate the current object.
+        /// NOTE In order to ensure the consistency of coding, please return a new object
         /// </summary>
         /// <param name="mutator">ExprMutator.</param>
         /// <returns> new instance. </returns>
-        T Mutate(ExprMutator mutator);
+        // object MutateLeaf(ExprMutator mutator);
+
+        /// <summary>
+        /// recursive build new object
+        /// </summary>
+        /// <param name="mutator">ExprMutator.</param>
+        /// <returns></returns>
+        object WithNew(ExprMutator mutator);
     }
 
     /// <summary>
@@ -30,12 +52,21 @@ namespace Nncase.IR
     /// </summary>
     public abstract class ExprMutator : ExprVisitor<Expr, IRType>
     {
+
+        /// <summary>
+        /// The Struct Equal Memo folding the const/op.
+        /// </summary>
+        private readonly Dictionary<Expr, Expr> _exprSEqualMemo = new();
+
+        /// <summary>
+        /// Get the Struct Equal Memo
+        /// </summary>
+        public Dictionary<Expr, Expr> ExpressionStructMemo => _exprSEqualMemo;
+
         /// <summary>
         /// for speedup the Mutator, If is Mutated we need MutateLeaf recursive.
         /// </summary>
-        public bool IsMutated { get; protected set; } = false;
-
-        readonly Dictionary<TIR.Range, TIR.Range> _rangeMemo = new(ReferenceEqualityComparer.Instance);
+        public bool IsMutated { get; set; } = false;
 
         /// <inheritdoc/>
         public override Expr VisitLeaf(Call expr)
@@ -64,7 +95,7 @@ namespace Nncase.IR
                 return expr;
             }
 
-            return expr;
+            return StructEqualFolding(expr);
         }
 
         /// <inheritdoc/>
@@ -218,7 +249,7 @@ namespace Nncase.IR
 
             return expr with
             {
-                Dom = MutateLeaf(expr.Dom),
+                Dom = (TIR.Range)Visit(expr.Dom),
                 Value = (Var)Visit(expr.Value),
             };
         }
@@ -252,7 +283,7 @@ namespace Nncase.IR
             return expr with
             {
                 LoopVar = (Var)Visit(expr.LoopVar),
-                Domain = MutateLeaf(expr.Domain),
+                Domain = (TIR.Range)Visit(expr.Domain),
                 Body = (TIR.Sequential)Visit(expr.Body),
             };
         }
@@ -375,8 +406,24 @@ namespace Nncase.IR
             return expr with
             {
                 Buffer = (TIR.Buffer)Visit(expr.Buffer),
-                Region = MutateArray(expr.Region, MutateLeaf)
+                Region = MutateArray(expr.Region, rg => (TIR.Range)Visit(rg))
             };
+        }
+
+        /// <inheritdoc/>
+        public override object VisitLeaf(IVisitable visitable)
+        {
+            if (visitable is IMutatable mutatable)
+            {
+                var nexpr = MutateLeaf(mutatable);
+                if (!object.ReferenceEquals(mutatable, nexpr)) { IsMutated = true; return nexpr; }
+                if (!IsMutated)
+                {
+                    return mutatable;
+                }
+                return mutatable.WithNew(this);
+            }
+            throw new NotSupportedException($"IVisitable {visitable.GetType().Name} Is Not IMutatable!");
         }
 
         /// <summary>
@@ -385,6 +432,13 @@ namespace Nncase.IR
         /// <param name="expr"></param>
         /// <returns></returns>
         public virtual Expr DefaultMutateLeaf(Expr expr) => expr;
+
+        /// <summary>
+        /// default mutate leaf is not mutate.
+        /// </summary>
+        /// <param name="mutatable"></param>
+        /// <returns></returns>
+        public virtual IMutatable DefaultMutateLeaf(IMutatable mutatable) => mutatable;
 
         /// <summary>
         /// mutate the call.
@@ -534,17 +588,11 @@ namespace Nncase.IR
         public virtual Expr MutateLeaf(TIR.BufferRegion expr) => DefaultMutateLeaf(expr);
 
         /// <summary>
-        /// mutate irarray list.
+        /// mutate the imutatable
         /// </summary>
-        /// <typeparam name="TInput"></typeparam>
-        /// <typeparam name="TResult"></typeparam>
-        /// <param name="arrayList"></param>
-        /// <param name="visitor"></param>
-        /// <returns></returns>
-        public virtual IRArrayList<TResult> MutateArray<TInput, TResult>(IRArrayList<TInput> arrayList, Func<TInput, TResult> visitor)
-        {
-            return new(arrayList.Select(visitor));
-        }
+        /// <param name="mutatable">IMutatable instance.</param>
+        /// <returns>new expr.</returns>
+        public virtual IMutatable MutateLeaf(IMutatable mutatable) => DefaultMutateLeaf(mutatable);
 
         /// <summary>
         /// Mutate IRArray.
@@ -560,18 +608,18 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// mutate range.
+        /// fold the expr by struct comparer
         /// </summary>
-        /// <param name="range"></param>
+        /// <param name="expr"></param>
         /// <returns></returns>
-        public virtual TIR.Range MutateLeaf(TIR.Range range)
+        public virtual Expr StructEqualFolding(Expr expr)
         {
-            if (!_rangeMemo.TryGetValue(range, out var result))
+            if (!_exprSEqualMemo.TryGetValue(expr, out var folded))
             {
-                result = new(Visit(range.Start), Visit(range.Stop), Visit(range.Step));
-                _rangeMemo.Add(range, result);
+                folded = expr;
+                _exprSEqualMemo.Add(expr, folded);
             }
-            return result;
+            return folded;
         }
     }
 }

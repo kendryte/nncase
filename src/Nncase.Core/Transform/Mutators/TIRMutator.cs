@@ -11,17 +11,18 @@ using Nncase.TIR;
 namespace Nncase.Transform.Mutators;
 
 /// <summary>
-/// unroll loop
+/// This mutator only mutate the primfunc 
 /// </summary>
-internal sealed class FoldIfThen : PrimFuncMutator
+public abstract class PrimFuncMutator : ExprMutator
 {
     /// <inheritdoc/>
-    public override Expr MutateLeaf(TIR.IfThenElse expr)
-    {
-        if (expr.Condition is TensorConst { Value: Tensor<bool> value })
-        {
-            return value.ToScalar() ? expr.Then : expr.Else;
-        }
-        return expr;
-    }
+    /// shouldn't change the funciton
+    public override Expr Visit(Function expr) => expr;
+
+    /// <inheritdoc/>
+    public override Expr Visit(Fusion expr) => expr;
+
+    /// <inheritdoc/>
+    public override Expr Visit(PrimFunctionWrapper expr) => expr;
+
 }
