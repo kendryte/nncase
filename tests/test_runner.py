@@ -788,13 +788,14 @@ class TestRunner(metaclass=ABCMeta):
                 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 client_socket.connect(('localhost', int(port)))
 
-                # send file_num
-                file_num_dict = {}
-                file_num_dict['app'] = 1
-                file_num_dict['kmodel']= 1
-                file_num_dict['inputs'] = len(self.inputs)
-                file_num_dict['outputs'] = len(self.outputs)
-                client_socket.sendall(json.dumps(file_num_dict).encode())
+                # send header
+                header_dict = {}
+                header_dict['case'] = f'{os.path.basename(case_dir)}_{os.path.basename(infer_dir)}'
+                header_dict['app'] = 1
+                header_dict['kmodel']= 1
+                header_dict['inputs'] = len(self.inputs)
+                header_dict['outputs'] = len(self.outputs)
+                client_socket.sendall(json.dumps(header_dict).encode())
                 dummy = client_socket.recv(1024)
 
                 # send app
