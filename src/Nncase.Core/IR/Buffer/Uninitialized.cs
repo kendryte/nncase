@@ -4,7 +4,7 @@
 using Nncase.PatternMatch;
 using static Nncase.IR.TypePatternUtility;
 
-namespace Nncase.IR.Tensors;
+namespace Nncase.IR.Buffer;
 
 /// <summary>
 /// Gets input.

@@ -35,7 +35,6 @@ public class TensorsModule : Module
         builder.RegisterType<TileEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<TransposeEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<UnsqueezeEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<UninitializedEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<WhereEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<GetItemEvaluator>().AsImplementedInterfaces();
     }

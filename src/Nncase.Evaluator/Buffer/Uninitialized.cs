@@ -4,13 +4,13 @@
 using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
-using Nncase.IR.Tensors;
+using Nncase.IR.Buffer;
 using OrtKISharp;
 
-namespace Nncase.Evaluator.Tensors;
+namespace Nncase.Evaluator.Buffer;
 
 /// <summary>
-/// Evaluator for <see cref="Unsqueeze"/>.
+/// Evaluator for <see cref="Uninitialized"/>.
 /// </summary>
 public class UninitializedEvaluator : ITypeInferencer<Uninitialized>, IEvaluator<Uninitialized>, ICostEvaluator<Uninitialized>
 {

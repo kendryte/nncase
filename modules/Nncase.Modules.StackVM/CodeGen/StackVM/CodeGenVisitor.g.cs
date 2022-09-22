@@ -214,7 +214,7 @@ internal partial class CodeGenVisitor
             case IR.Tensors.Transpose top:
                 Emitter.T.Transpose();
                 break;
-            case IR.Tensors.Uninitialized top:
+            case IR.Buffer.Uninitialized top:
                 Emitter.T.Uninitialized(top.DType, top.MemoryLocation);
                 break;
             case IR.Tensors.Unsqueeze top:
