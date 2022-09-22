@@ -49,4 +49,5 @@ target_sources(transforms PRIVATE
     fold_matmul_add.cpp
     squeeze_dims.cpp
     fix_output_shape.cpp
+    fold_layernorm.cpp
     )
