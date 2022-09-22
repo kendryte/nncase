@@ -26,16 +26,6 @@ using namespace std;
 template result<void> reference::gather_elements(const float *input, const int64_t *indices, float *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &indices_shape, const int axis) noexcept;
 
-void get_gather_index(const std::vector<int> &per_axis_size, std::vector<int> &index, size_t i, int axis, int idx)
-{
-    if (idx != (int)per_axis_size.size())
-    {
-        auto new_idx = i / per_axis_size[idx];
-        index.push_back(new_idx);
-        get_gather_index(per_axis_size, index, i - new_idx * per_axis_size[idx], axis, idx + 1);
-    }
-}
-
 template <typename TI, typename TK>
 result<void> reference::gather_elements(const TI *input, const TK *indices, TI *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &indices_shape, const int axis) noexcept

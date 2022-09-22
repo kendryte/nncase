@@ -300,6 +300,16 @@ bool is_optimized_input_shape(TShape in_shape, TShape out_shape)
     return false;
 }
 
+inline void get_gather_index(const std::vector<int> &per_axis_size, std::vector<int> &index, size_t i, int axis, int idx)
+{
+    if (idx != (int)per_axis_size.size())
+    {
+        int new_idx = i / per_axis_size[idx];
+        index.push_back(new_idx);
+        get_gather_index(per_axis_size, index, i - new_idx * per_axis_size[idx], axis, idx + 1);
+    }
+}
+
 struct DefaultCallable
 {
 };
