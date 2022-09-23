@@ -13,7 +13,7 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// unroll loop
 /// </summary>
-internal sealed class UnRollLoop : PrimFuncMutator
+internal sealed class UnRollLoop  : ExprMutator
 {
 
     /// <inheritdoc/>

@@ -100,7 +100,7 @@ public sealed record Range(Expr Start, Expr Stop, Expr Step) : IR.IMutatable
     public static readonly Range All = new Range(int.MinValue, int.MaxValue, 1);
 
     /// <inheritdoc/>
-    public object WithNew(ExprMutator mutator)
+    public object WithNew(ExprVisitor<Expr, IRType> mutator)
     {
         return new TIR.Range(mutator.Visit(Start), mutator.Visit(Stop), mutator.Visit(Step));
     }

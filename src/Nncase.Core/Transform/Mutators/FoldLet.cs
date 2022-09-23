@@ -13,7 +13,7 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// unroll loop
 /// </summary>
-internal sealed class FoldLet : PrimFuncMutator
+internal sealed class FoldLet  : ExprMutator
 {
 
     /// <inheritdoc/>

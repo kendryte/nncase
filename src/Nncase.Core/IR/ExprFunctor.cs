@@ -27,14 +27,12 @@ namespace Nncase.IR
             {
                 Var var => Visit(var),
                 Const con => Visit(con),
-                Function func => Visit(func),
-                Fusion fusion => Visit(fusion),
                 Call call => Visit(call),
                 Tuple tuple => Visit(tuple),
                 Op op => Visit(op),
                 None none => Visit(none),
                 Marker marker => Visit(marker),
-                PrimFunctionWrapper wrapper => Visit(wrapper),
+                BaseFunction basefunc => Visit(basefunc),
                 TIR.IterVar itvar => Visit(itvar),
                 TIR.Sequential seq => Visit(seq),
                 TIR.For @for => Visit(@for),
@@ -42,13 +40,26 @@ namespace Nncase.IR
                 TIR.BufferLoad bload => Visit(bload),
                 TIR.BufferStore bstore => Visit(bstore),
                 TIR.IfThenElse ift => Visit(ift),
-                TIR.PrimFunction primfunc => Visit(primfunc),
                 TIR.Let let => Visit(let),
                 TIR.Buffer buffer => Visit(buffer),
                 TIR.BufferRegion region => Visit(region),
                 _ => DefaultVisit(expr),
             };
         }
+
+        /// <summary>
+        /// Visit Basefunction expression.
+        /// </summary>
+        /// <param name="baseFunction"> base function. </param>
+        /// <returns></returns>
+        public virtual TExprResult Visit(BaseFunction baseFunction) => baseFunction switch
+        {
+            Function func => Visit(func),
+            Fusion fusion => Visit(fusion),
+            PrimFunctionWrapper wrapper => Visit(wrapper),
+            TIR.PrimFunction primfunc => Visit(primfunc),
+            _ => DefaultVisit(baseFunction)
+        };
 
         /// <summary>
         /// Visit variable expression.

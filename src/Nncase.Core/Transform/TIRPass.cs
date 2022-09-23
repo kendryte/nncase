@@ -72,7 +72,7 @@ namespace Nncase.Transform
             switch (options.DumpLevel)
             {
                 case >= 2:
-                    CompilerServices.DumpIR((Expr)callable, prefix, options.PassDumpDir);
+                    CompilerServices.DumpIR((Expr)callable, prefix, options.PassDumpDir, false);
                     break;
                 case >= 1:
                     break;

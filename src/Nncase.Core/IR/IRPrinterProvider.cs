@@ -48,7 +48,7 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
         switch (expr)
         {
             case PrimFunction pf:
-                new ScriptPrintVisitor(dumpWriter).Visit(pf);
+                new ScriptPrintVisitor(dumpWriter, display_callable).Visit(pf);
                 break;
             default:
                 new ILPrintVisitor(dumpWriter, display_callable).Visit(expr);
@@ -70,7 +70,7 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
         var sb = new StringBuilder();
         using var dumpWriter = new StringWriter(sb);
         return expr is PrimFunction || useScript
-            ? new ScriptPrintVisitor(dumpWriter).Visit(expr).Serialize()
+            ? new ScriptPrintVisitor(dumpWriter, true).Visit(expr).Serialize()
             : new ILPrintVisitor(dumpWriter, true).Visit(expr);
     }
 

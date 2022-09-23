@@ -13,7 +13,7 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// flatten sequential
 /// </summary>
-internal sealed class FlattenSequential : PrimFuncMutator
+internal sealed class FlattenSequential  : ExprMutator
 {
 
     /// <inheritdoc/>

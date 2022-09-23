@@ -155,10 +155,9 @@ public class PassManager : IEnumerable<BasePass>
 }
 
 /// <summary>
-/// Update the function call dependence
-/// NOTE skip visit prim func/fusion/prim function wrapper
+/// Update the function call dependencer
 /// </summary>
-internal sealed class DependenceMutator : ExprMutator
+internal sealed class DependenceMutator : DeepExprMutator
 {
     public Dictionary<BaseFunction, BaseFunction> functionsUpdated;
 

@@ -13,7 +13,7 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// unroll loop
 /// </summary>
-internal sealed class FoldIfThen : PrimFuncMutator
+internal sealed class FoldIfThen  : ExprMutator
 {
     /// <inheritdoc/>
     public override Expr MutateLeaf(TIR.IfThenElse expr)
