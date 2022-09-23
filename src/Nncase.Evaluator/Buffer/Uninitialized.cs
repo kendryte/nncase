@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Buffer;
 /// <summary>
 /// Evaluator for <see cref="Uninitialized"/>.
 /// </summary>
-public class UninitializedEvaluator : ITypeInferencer<Uninitialized>, IEvaluator<Uninitialized>, ICostEvaluator<Uninitialized>
+public class UninitializedEvaluator : ITypeInferencer<Uninitialized>, ICostEvaluator<Uninitialized>
 {
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Uninitialized target)
@@ -26,13 +26,13 @@ public class UninitializedEvaluator : ITypeInferencer<Uninitialized>, IEvaluator
     }
 
     /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, Uninitialized target)
-    {
-        var shape = context.GetArgumentValueAsArray<int>(target, Uninitialized.Shape);
-        return Value.FromTensor(Tensor.FromBytes(target.DType,
-          Enumerable.Repeat<byte>(0, (int)TensorUtilities.GetProduct(shape) * target.DType.SizeInBytes).ToArray(),
-          shape));
-    }
+    // public IValue Visit(IEvaluateContext context, Uninitialized target)
+    // {
+    //     var shape = context.GetArgumentValueAsArray<int>(target, Uninitialized.Shape);
+    //     return Value.FromTensor(Tensor.FromBytes(target.DType,
+    //       Enumerable.Repeat<byte>(0, (int)TensorUtilities.GetProduct(shape) * target.DType.SizeInBytes).ToArray(),
+    //       shape));
+    // }
 
     /// <inheritdoc/>
     public Cost? Visit(ICostEvaluateContext context, Uninitialized target)

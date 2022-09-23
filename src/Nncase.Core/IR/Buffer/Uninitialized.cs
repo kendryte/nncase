@@ -16,4 +16,7 @@ public sealed record Uninitialized(DataType DType, Schedule.MemoryLocation Memor
     /// the shape
     /// </summary>
     public static readonly ParameterInfo Shape = new(typeof(Uninitialized), 0, "shape", IsIntegral() & IsTensor() & HasRank(1));
+
+    /// <inheritdoc/>
+    public override bool CanFoldConstCall => false;
 }

@@ -111,6 +111,11 @@ public abstract record Op() : Expr
     {
         return "";
     }
+
+    /// <summary>
+    /// mark this op can be fold when input's are const
+    /// </summary>
+    public virtual bool CanFoldConstCall => true;
 }
 
 /// <summary>
