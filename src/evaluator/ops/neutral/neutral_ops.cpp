@@ -30,6 +30,7 @@
 #include <nncase/ir/ops/dequantize.h>
 #include <nncase/ir/ops/fused_unary.h>
 #include <nncase/ir/ops/gather.h>
+#include <nncase/ir/ops/gather_elements.h>
 #include <nncase/ir/ops/gather_nd.h>
 #include <nncase/ir/ops/gru.h>
 #include <nncase/ir/ops/hardmax.h>
@@ -548,6 +549,12 @@ void register_neutral_evaluators()
                 input_b.shape(), input_b.strides(), input_c.shape(), input_c.strides(), output.strides())
                 .unwrap_or_throw();
             break;
+        case dt_int64:
+            kernels::ternary(input_a.buffer().as_span<float>().data(), input_b.buffer().as_span<int64_t>().data(),
+                input_c.buffer().as_span<int64_t>().data(), output.buffer().as_span<int64_t>().data(), input_a.shape(), input_a.strides(),
+                input_b.shape(), input_b.strides(), input_c.shape(), input_c.strides(), output.strides())
+                .unwrap_or_throw();
+            break;
         default:
             std::cerr << "unsupported dtype for ternary: " + std::string(datatype_names(output_type));
         } });
@@ -854,6 +861,25 @@ void register_neutral_evaluators()
             rnode.detections_per_class(), rnode.use_regular_non_max_suppression(), rnode.nms_score_threshold(), rnode.nms_iou_threshold(),
             rnode.num_classes(), rnode.y_scale(), rnode.x_scale(), rnode.h_scale(), rnode.w_scale())
             .unwrap_or_throw(); });
+
+    register_evaluator(op_gather_elements, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<gather_elements &>(node);
+        auto input = context.memory_at(rnode.input());
+        auto indices = context.memory_at(rnode.indices());
+        auto output = context.memory_at(rnode.output());
+        auto input_datatype = rnode.input().type();
+
+        switch (input_datatype)
+        {
+        case dt_float32:
+            kernels::gather_elements(input.buffer().as_span<float>().data(), indices.buffer().as_span<int64_t>().data(), output.buffer().as_span<float>().data(),
+                input.shape(), indices.shape(), rnode.axis())
+                .unwrap_or_throw();
+            break;
+        default:
+            throw std::runtime_error("unsupported dtype for gather_elements: " + std::string(datatype_names(input_datatype)));
+        }
+    });
 
     register_evaluator(op_layernorm, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<layernorm &>(node);

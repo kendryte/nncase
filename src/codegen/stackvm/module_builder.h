@@ -27,6 +27,7 @@
 #include <nncase/ir/ops/cumsum.h>
 #include <nncase/ir/ops/dequantize.h>
 #include <nncase/ir/ops/gather.h>
+#include <nncase/ir/ops/gather_elements.h>
 #include <nncase/ir/ops/gather_nd.h>
 #include <nncase/ir/ops/gru.h>
 #include <nncase/ir/ops/hardmax.h>

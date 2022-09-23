@@ -14,6 +14,7 @@ set(SRCS module_builder.cpp
         ops/cumsum.cpp
         ops/dequantize.cpp
         ops/gather.cpp
+        ops/gather_elements.cpp
         ops/gather_nd.cpp
         ops/gru.cpp
         ops/hardmax.cpp
