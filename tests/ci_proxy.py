@@ -6,7 +6,7 @@ import json
 import threading
 import queue
 import logging
-from logging import handlers
+import logging.handlers
 import telnetlib
 
 class TelnetClient():
@@ -140,9 +140,10 @@ def main():
     args = parser.parse_args()
 
     # logging
-    mylogger = logging.getLogger(f'ci_proxy_{args.kpu_target}_logger')
+    mylogger = logging.getLogger()
     mylogger.setLevel(logging.DEBUG)
-    rf_handler = handlers.RotatingFileHandler(f'ci_proxy_{args.kpu_target}.log', mode='a', maxBytes=32 * 1024 * 1024, backupCount=10)
+    rf_handler = logging.handlers.RotatingFileHandler(f'ci_proxy_{args.kpu_target}.log', mode='a', maxBytes=32 * 1024 * 1024, backupCount=10)
+    rf_handler.setLevel(logging.INFO)
     rf_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
     mylogger.addHandler(rf_handler)
 
