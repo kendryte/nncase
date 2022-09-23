@@ -17,10 +17,12 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
     private readonly EvaluateContext _context;
     private readonly IReadOnlyDictionary<Var, IValue> _varsValues;
     private readonly EvaluatorDumpManager _dumpManager;
+    private readonly Dictionary<Op, IEvaluator> _evaluator_cache;
 
-    public EvaluateVisitor(IReadOnlyDictionary<Var, IValue> varsValues)
+    public EvaluateVisitor(IReadOnlyDictionary<Var, IValue> varsValues, Dictionary<Op, IEvaluator> evaluator_cache)
     {
         _context = new EvaluateContext(ExpressionMemo);
+        _evaluator_cache = evaluator_cache;
         _varsValues = varsValues;
         _dumpManager = new EvaluatorDumpManager(expr => _context.GetValue(expr).AsTensors());
         _dumpManager.RegisterDumpCallbacks(RegisterBeforeCallback, RegisterAfterCallback);
@@ -32,8 +34,8 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
         _context.CurrentCall = expr;
         return expr.Target switch
         {
-            Op op => CompilerServices.EvaluateOp(op, _context),
-            Function func => CompilerServices.Evaluate(func.Body, func.Parameters.Zip(expr.Parameters).ToDictionary(kv => kv.First, kv => Visit(kv.Second), (IEqualityComparer<Var>)ReferenceEqualityComparer.Instance)),
+            Op op => CompilerServices.EvaluateOp(op, _context, _evaluator_cache),
+            Function func => CompilerServices.Evaluate(func.Body, func.Parameters.Zip(expr.Parameters).ToDictionary(kv => kv.First, kv => Visit(kv.Second), (IEqualityComparer<Var>)ReferenceEqualityComparer.Instance), _evaluator_cache),
             _ => throw new NotImplementedException(expr.Target.ToString())
         };
     }
@@ -96,13 +98,13 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
                 {
                     throw new ArgumentException($"DataType mismatch. The Var {expr.Name} Require {expr.CheckedDataType} But Give {resultType.DType}");
                 }
-                
+
                 var s = expr.CheckedShape.Zip(resultType.Shape).ToArray();
                 var matchedShape = s.Aggregate(true, (b, dims) => b && (dims.First.IsUnknown || dims.Second.IsUnknown || dims.First == dims.Second));
-                if(!matchedShape)
+                if (!matchedShape)
                 {
                     throw new ArgumentException(
-                        $"Shape mismatch. The Var {expr.Name} Require {expr.CheckedShape} But Give {resultType.Shape}");                    
+                        $"Shape mismatch. The Var {expr.Name} Require {expr.CheckedShape} But Give {resultType.Shape}");
                 }
             }
         }

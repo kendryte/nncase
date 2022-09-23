@@ -77,16 +77,18 @@ public interface ICompilerServicesProvider
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <param name="varsValues">Optional vars' values.</param>
+    /// <param name="evaluator_cache"> Optional evaluator cache. </param>
     /// <returns>Evaluate result.</returns>
-    IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null);
+    IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Op, IEvaluator>? evaluator_cache = null);
 
     /// <summary>
     /// Evaluate operator.
     /// </summary>
     /// <param name="op">Target operator.</param>
     /// <param name="context">Evaluate context.</param>
+    /// <param name="evaluator_cache"> Optional evaluator cache. </param>
     /// <returns>Evaluate result.</returns>
-    IValue EvaluateOp(Op op, IEvaluateContext context);
+    IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Op, IEvaluator>? evaluator_cache = null);
 
     /// <summary>
     /// Evaluate cost of the expression tree.
@@ -201,15 +203,15 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     public IDataTypeServiceProvider DataTypeService { get; }
 
     /// <inheritdoc/>
-    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null)
+    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Op, IEvaluator>? evaluator_cache = null)
     {
-        return _evaluateProvider.Evaluate(expr, varsValues);
+        return _evaluateProvider.Evaluate(expr, varsValues, evaluator_cache);
     }
 
     /// <inheritdoc/>
-    public IValue EvaluateOp(Op op, IEvaluateContext context)
+    public IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Op, IEvaluator>? evaluator_cache = null)
     {
-        return _evaluateProvider.EvaluateOp(op, context);
+        return _evaluateProvider.EvaluateOp(op, context, evaluator_cache);
     }
 
     /// <inheritdoc/>
@@ -333,10 +335,11 @@ public static class CompilerServices
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <param name="varsValues">Optional vars' values.</param>
+    /// <param name="evaluator_cache"> Optional evaluator cache. </param>
     /// <returns>Evaluate result.</returns>
-    public static IValue Evaluate(this Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null)
+    public static IValue Evaluate(this Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Op, IEvaluator>? evaluator_cache = null)
     {
-        return Provider.Evaluate(expr, varsValues);
+        return Provider.Evaluate(expr, varsValues, evaluator_cache);
     }
 
     /// <summary>
@@ -344,10 +347,11 @@ public static class CompilerServices
     /// </summary>
     /// <param name="op">Target operator.</param>
     /// <param name="context">Evaluate context.</param>
+    /// <param name="evaluator_cache"> Optional evaluator cache. </param>
     /// <returns>Evaluate result.</returns>
-    public static IValue EvaluateOp(Op op, IEvaluateContext context)
+    public static IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Op, IEvaluator>? evaluator_cache = null)
     {
-        return Provider.EvaluateOp(op, context);
+        return Provider.EvaluateOp(op, context, evaluator_cache);
     }
 
     /// <summary>

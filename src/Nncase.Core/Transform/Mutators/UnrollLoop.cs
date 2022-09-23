@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using Nncase.IR;
@@ -76,7 +77,7 @@ internal sealed class UnRollLoop  : ExprMutator
             outter_for = inner_for;
         }
 
-        var unrolled = (from grid in LinqExtensions.CartesianProduct(from loop in nested_loops select MakeGrid(loop))
+        var vmaps = (from grid in LinqExtensions.CartesianProduct(from loop in nested_loops select MakeGrid(loop))
                         select grid.ToArray()).
           Select(grid =>
             {
@@ -87,10 +88,11 @@ internal sealed class UnRollLoop  : ExprMutator
                 }
 
                 return vmap;
-            }).
-          Select(vmap => new OptimizedSubstitutor(vmap).Visit(Visit(nested_loops[^1].Body)));
+            });
 
-        return new Sequential(new IRArray<Expr>(unrolled));
+        var unrolled = vmaps.AsParallel().Select(vmap => new OptimizedSubstitutor(vmap).Visit(nested_loops[^1].Body)).ToArray();
+
+        return new Sequential(new IRArray<Expr>(ImmutableArray.Create(unrolled)));
     }
 
     /// <summary>
