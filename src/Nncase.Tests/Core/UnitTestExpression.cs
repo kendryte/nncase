@@ -220,4 +220,89 @@ public class UnitTestExpression
 
         Assert.Equal(4, set.Count);
     }
+
+    [Fact]
+    public void TestShapeGetHash()
+    {
+        var n = new Dimension(1);
+        var c = new Dimension(1);
+        Assert.StrictEqual(c, n);
+
+        var a = ImmutableArray.CreateRange(new[] { n, c });
+        var b = ImmutableArray.CreateRange(new[] { new Dimension(1), new Dimension(1) });
+        Assert.NotEqual(a, b);
+
+        var sa = new Shape(new[] { 1, 2, 3 });
+        var sb = new Shape(new[] { 1, 2, 3 });
+        Assert.StrictEqual(sa, sb);
+        Assert.Equal(sa, sb);
+    }
+
+    [Fact]
+    public void TestOpTypeGetHash()
+    {
+        var a = new IR.Math.Binary(BinaryOp.Add);
+        var b = new IR.Math.Binary(BinaryOp.Add);
+        var c = new IR.Math.Unary(UnaryOp.Acos);
+        Assert.Equal(a, b);
+
+        Dictionary<Op, Evaluator.IEvaluator> dict1 = new();
+        Dictionary<Type, Evaluator.IEvaluator> dict2 = new();
+        Dictionary<RuntimeTypeHandle, Evaluator.IEvaluator> dict3 = new();
+        for (int i = 0; i < 1000000; i++)
+        {
+            // method 1
+            if (!dict1.TryGetValue(a, out var d1_a))
+            {
+                d1_a = new Evaluator.Math.BinaryEvaluator();
+                dict1.Add(a, d1_a);
+            }
+            if (!dict1.TryGetValue(b, out var d1_b))
+            {
+                d1_b = new Evaluator.Math.BinaryEvaluator();
+                dict1.Add(b, d1_b);
+            }
+            if (!dict1.TryGetValue(c, out var d1_c))
+            {
+                d1_c = new Evaluator.Math.UnaryEvaluator();
+                dict1.Add(c, d1_c);
+            }
+
+            // method 2
+            if (!dict2.TryGetValue(a.GetType(), out var d2_a))
+            {
+                d2_a = new Evaluator.Math.BinaryEvaluator();
+                dict2.Add(a.GetType(), d2_a);
+            }
+            if (!dict2.TryGetValue(b.GetType(), out var d2_b))
+            {
+                d2_b = new Evaluator.Math.BinaryEvaluator();
+                dict2.Add(b.GetType(), d2_b);
+            }
+            if (!dict2.TryGetValue(c.GetType(), out var d2_c))
+            {
+                d2_c = new Evaluator.Math.UnaryEvaluator();
+                dict2.Add(c.GetType(), d2_c);
+            }
+
+            // method 3
+            if (!dict3.TryGetValue(a.GetType().TypeHandle, out var d3_a))
+            {
+                d3_a = new Evaluator.Math.BinaryEvaluator();
+                dict3.Add(a.GetType().TypeHandle, d3_a);
+            }
+            if (!dict3.TryGetValue(b.GetType().TypeHandle, out var d3_b))
+            {
+                d3_b = new Evaluator.Math.BinaryEvaluator();
+                dict3.Add(b.GetType().TypeHandle, d3_b);
+            }
+            if (!dict3.TryGetValue(c.GetType().TypeHandle, out var d3_c))
+            {
+                d3_c = new Evaluator.Math.UnaryEvaluator();
+                dict3.Add(c.GetType().TypeHandle, d3_c);
+            }
+        }
+
+
+    }
 }

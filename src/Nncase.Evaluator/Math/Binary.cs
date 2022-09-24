@@ -24,9 +24,6 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         BinaryOp.Min => System.Math.Min(a, b),
         BinaryOp.Max => System.Math.Max(a, b),
         BinaryOp.Pow => checked((int)System.Math.Pow(a, b)),
-        BinaryOp.BitwiseAnd => throw new NotSupportedException("NotSupported BinaryOp BitwiseAnd"),
-        BinaryOp.BitwiseOr => throw new NotSupportedException("NotSupported BinaryOp BitwiseOr"),
-        BinaryOp.BitwiseXor => throw new NotSupportedException("NotSupported BinaryOp BitwiseXor"),
         BinaryOp.LogicalAnd => a & b,
         BinaryOp.LogicalOr => a | b,
         BinaryOp.LogicalXor => a ^ b,
@@ -45,14 +42,22 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         BinaryOp.Min => System.Math.Min(a, b),
         BinaryOp.Max => System.Math.Max(a, b),
         BinaryOp.Pow => checked((int)System.Math.Pow(a, b)),
-        BinaryOp.BitwiseAnd => throw new NotSupportedException($"NotSupported {nameof(op)}"),
-        BinaryOp.BitwiseOr => throw new NotSupportedException($"NotSupported {nameof(op)}"),
-        BinaryOp.BitwiseXor => throw new NotSupportedException($"NotSupported {nameof(op)}"),
         BinaryOp.LogicalAnd => a & b,
         BinaryOp.LogicalOr => a | b,
         BinaryOp.LogicalXor => a ^ b,
-        BinaryOp.LeftShift => throw new NotSupportedException($"NotSupported {nameof(op)}"),
-        BinaryOp.RightShift => throw new NotSupportedException($"NotSupported {nameof(op)}"),
+        _ => throw new ArgumentOutOfRangeException(nameof(op)),
+    };
+
+    float _compute(BinaryOp op, float a, float b) => op switch
+    {
+        BinaryOp.Add => a + b,
+        BinaryOp.Sub => a - b,
+        BinaryOp.Mul => a * b,
+        BinaryOp.Div => a / b,
+        BinaryOp.Mod => a % b,
+        BinaryOp.Min => System.Math.Min(a, b),
+        BinaryOp.Max => System.Math.Max(a, b),
+        BinaryOp.Pow => System.MathF.Pow(a, b),
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 
@@ -64,9 +69,17 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         if (lhs.Shape.IsScalar && rhs.Shape.IsScalar)
         {
             if (lhs.ElementType == DataTypes.Int32 && rhs.ElementType == DataTypes.Int32)
+            {
                 return Value.FromTensor(Tensor.FromScalar(_compute(binary.BinaryOp, lhs.ToScalar<int>(), rhs.ToScalar<int>())));
+            }
             else if (lhs.ElementType == DataTypes.Int64 && rhs.ElementType == DataTypes.Int64)
+            {
                 return Value.FromTensor(Tensor.FromScalar(_compute(binary.BinaryOp, lhs.ToScalar<long>(), rhs.ToScalar<long>())));
+            }
+            else if (lhs.ElementType == DataTypes.Float32 && rhs.ElementType == DataTypes.Float32)
+            {
+                return Value.FromTensor(Tensor.FromScalar(_compute(binary.BinaryOp, lhs.ToScalar<float>(), rhs.ToScalar<float>())));
+            }
             else
                 return ort_compute(binary, lhs, rhs);
         }

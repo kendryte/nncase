@@ -17,9 +17,9 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
     private readonly EvaluateContext _context;
     private readonly IReadOnlyDictionary<Var, IValue> _varsValues;
     private readonly EvaluatorDumpManager _dumpManager;
-    private readonly Dictionary<Op, IEvaluator> _evaluator_cache;
+    private readonly Dictionary<Type, IEvaluator> _evaluator_cache;
 
-    public EvaluateVisitor(IReadOnlyDictionary<Var, IValue> varsValues, Dictionary<Op, IEvaluator> evaluator_cache)
+    public EvaluateVisitor(IReadOnlyDictionary<Var, IValue> varsValues, Dictionary<Type, IEvaluator> evaluator_cache)
     {
         _context = new EvaluateContext(ExpressionMemo);
         _evaluator_cache = evaluator_cache;

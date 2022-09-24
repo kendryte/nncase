@@ -20,7 +20,7 @@ internal sealed class EvaluateProvider : IEvaluateProvider
         _serviceProvider = serviceProvider;
     }
 
-    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Op, IEvaluator>? evaluator_cache = null)
+    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
     {
         if (expr.CheckedType is null)
         {
@@ -36,20 +36,21 @@ internal sealed class EvaluateProvider : IEvaluateProvider
         return evaluatorVisitor.Visit(expr);
     }
 
-    public IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Op, IEvaluator>? evaluator_cache = null)
+    public IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Type, IEvaluator>? evaluator_cache = null)
     {
 
+        var op_type = op.GetType();
         if (evaluator_cache is null)
         {
-            var evaluatorType = typeof(IEvaluator<>).MakeGenericType(op.GetType());
+            var evaluatorType = typeof(IEvaluator<>).MakeGenericType(op_type);
             return ((IEvaluator)_serviceProvider.GetRequiredService(evaluatorType)).Visit(context, op);
         }
 
-        if (!evaluator_cache.TryGetValue(op, out var evaluator))
+        if (!evaluator_cache.TryGetValue(op_type, out var evaluator))
         {
-            var evaluatorType = typeof(IEvaluator<>).MakeGenericType(op.GetType());
+            var evaluatorType = typeof(IEvaluator<>).MakeGenericType(op_type);
             evaluator = (IEvaluator)_serviceProvider.GetRequiredService(evaluatorType);
-            evaluator_cache.Add(op, evaluator);
+            evaluator_cache.Add(op_type, evaluator);
         }
         return evaluator.Visit(context, op);
     }

@@ -23,7 +23,7 @@ public class PassManager : IEnumerable<BasePass>
     private readonly RunPassOptions _options;
     private readonly List<BasePass> _passes = new List<BasePass>();
 
-    private Dictionary<BaseFunction, BaseFunction> _functions_update = new(ReferenceEqualityComparer.Instance);
+    private Dictionary<BaseFunction, BaseFunction> _functions_update_map = new(ReferenceEqualityComparer.Instance);
     private Dictionary<int, BaseFunction> _functions_mask = new();
 
     /// <summary>
@@ -73,24 +73,28 @@ public class PassManager : IEnumerable<BasePass>
             passes = passes.Skip(candiate.Count());
 
             if (type.IsSubclassOf(typeof(FunctionPass)))
-                await runFunctionAsync(candiate);
+                await runFunctionAsync(candiate.OfType<FunctionPass>());
             else if (type.IsSubclassOf(typeof(ModulePass)))
-                await runModuleAsync(candiate);
+                await runModuleAsync(candiate.OfType<ModulePass>());
             else
                 throw new ArgumentOutOfRangeException();
         }
     }
 
-    private async Task runFunctionAsync(IEnumerable<BasePass> passes)
+    private async Task runFunctionAsync(IEnumerable<FunctionPass> passes)
     {
         int i = 0;
         while (i < _module.Functions.Count)
         {
             foreach (var pass in passes)
             {
-                var post = await ((FunctionPass)pass).RunAsync(_module.Functions[i], _options);
-                FuncUpdateRecord(i, _module.Functions[i], post);
-                _module.Update(i, post);
+                var pre = _module.Functions[i];
+                var post = await pass.RunAsync(pre, _options);
+                if (!object.ReferenceEquals(pre, post))
+                {
+                    FuncUpdateRecord(i, pre, post);
+                    _module.Update(i, post);
+                }
             }
             i++;
         }
@@ -98,11 +102,11 @@ public class PassManager : IEnumerable<BasePass>
         CleanFuncUpdateRecord();
     }
 
-    private async Task runModuleAsync(IEnumerable<BasePass> passes)
+    private async Task runModuleAsync(IEnumerable<ModulePass> passes)
     {
         foreach (var pass in passes)
         {
-            await ((ModulePass)pass).RunAsync(_module, _options);
+            await pass.RunAsync(_module, _options);
         }
     }
 
@@ -115,18 +119,19 @@ public class PassManager : IEnumerable<BasePass>
 
     private void CleanFuncUpdateRecord()
     {
-        _functions_update.Clear();
+        _functions_update_map.Clear();
         _functions_mask.Clear();
     }
 
-    private void FuncUpdateRecord(int i, BaseFunction current, BaseFunction function)
+    private void FuncUpdateRecord(int i, BaseFunction current, BaseFunction updated)
     {
+        // if function[i] has not been update, record it to origin function.
         if (!_functions_mask.TryGetValue(i, out var origin))
         {
             origin = current;
-            _functions_mask[i] = origin;
+            _functions_mask.Add(i, origin);
         }
-        _functions_update[origin] = function;
+        _functions_update_map[origin] = updated;
     }
 
     /// <summary>
@@ -134,14 +139,14 @@ public class PassManager : IEnumerable<BasePass>
     /// </summary>
     private void FuncUpdateDependence()
     {
-        var mutator = new DependenceMutator(_functions_update);
+        var mutator = new DependenceMutator(_functions_update_map);
         var post = mutator.Visit(_module.Entry!);
         if (!mutator.IsMutated)
             return;
 
         for (int i = 0; i < _module.Functions.Count; i++)
         {
-            if (_functions_update.TryGetValue(_module.Functions[i], out var updated_func))
+            if (_functions_update_map.TryGetValue(_module.Functions[i], out var updated_func))
                 _module.Update(i, updated_func);
         }
         if (_options.DumpLevel > 3)
@@ -173,10 +178,11 @@ internal sealed class DependenceMutator : DeepExprMutator
         return expr;
     }
 
-    public override Expr Visit(Expr expr)
+    public override Expr Visit(BaseFunction baseFunction)
     {
-        var nexpr = base.Visit(expr);
-        if (expr is BaseFunction baseFunction && nexpr is BaseFunction updatedBasefunction && !nexpr.Equals(expr))
+        // first time enter function, mutate
+        var nexpr = base.Visit(baseFunction);
+        if (nexpr is BaseFunction updatedBasefunction && !object.ReferenceEquals(baseFunction, updatedBasefunction))
         {
             if (functionsUpdated.ContainsKey(baseFunction))
                 functionsUpdated[baseFunction] = updatedBasefunction;

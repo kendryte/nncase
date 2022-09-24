@@ -119,7 +119,9 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
             il_visitor.Visit(expr);
         }
         else
-            il_sb.Append("...");
+        { 
+            il_sb.Append($"{expr.Name} = Function({VisitType(expr.CheckedType!)})");
+        }
 
         doc = new(il_sb, expr.Name, true);
         extFuncMemo[expr] = doc;

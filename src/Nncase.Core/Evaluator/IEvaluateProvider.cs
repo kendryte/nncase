@@ -19,7 +19,7 @@ public interface IEvaluateProvider
     /// <param name="varsValues">Optional vars' values.</param>
     /// <param name="evaluator_cache">Optional evaluator cache.</param>
     /// <returns>Evaluate result.</returns>
-    IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Op, IEvaluator>? evaluator_cache = null);
+    IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null);
 
     /// <summary>
     /// Evaluate operator.
@@ -28,5 +28,5 @@ public interface IEvaluateProvider
     /// <param name="context">Evaluate context.</param>
     /// <param name="evaluator_cache">Optional evaluator cache.</param>
     /// <returns>Evaluate result.</returns>
-    IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Op, IEvaluator>? evaluator_cache = null);
+    IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Type, IEvaluator>? evaluator_cache = null);
 }

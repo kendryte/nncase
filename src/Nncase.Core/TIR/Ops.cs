@@ -67,4 +67,10 @@ public sealed record Store() : Op
 /// <summary>
 /// The Nop Expresstion, When We build the Ir, It's like the return the Void Value. We will skip it when print Ir/lower.
 /// </summary>
-public sealed record Nop() : Op { }
+public sealed record Nop() : Op
+{
+
+
+    /// <inheritdoc/>
+    public override bool CanFoldConstCall => false;
+}

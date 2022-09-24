@@ -14,8 +14,10 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// unroll loop
 /// </summary>
-internal sealed class UnRollLoop  : ExprMutator
+internal sealed class UnRollLoop : ExprMutator
 {
+
+    private readonly Dictionary<Type, Evaluator.IEvaluator> _evaluator_cache = new();
 
     /// <inheritdoc/>
     public override Expr Visit(TIR.For expr)
@@ -78,7 +80,7 @@ internal sealed class UnRollLoop  : ExprMutator
         }
 
         var vmaps = (from grid in LinqExtensions.CartesianProduct(from loop in nested_loops select MakeGrid(loop))
-                        select grid.ToArray()).
+                     select grid.ToArray()).
           Select(grid =>
             {
                 var vmap = new Dictionary<Var, TensorConst>(ReferenceEqualityComparer.Instance);
@@ -90,9 +92,16 @@ internal sealed class UnRollLoop  : ExprMutator
                 return vmap;
             });
 
-        var unrolled = vmaps.AsParallel().Select(vmap => new OptimizedSubstitutor(vmap).Visit(nested_loops[^1].Body)).ToArray();
+        /// warming up
+        var unrolled_first = new OptimizedSubstitutor(vmaps.First(), _evaluator_cache).Visit(nested_loops[^1].Body);
+        var unrolled = new[] { unrolled_first }.
+            Concat(vmaps.
+                Skip(1).
+                AsParallel().
+                Select(vmap => new OptimizedSubstitutor(vmap, _evaluator_cache).Visit(nested_loops[^1].Body))).
+            ToImmutableArray();
 
-        return new Sequential(new IRArray<Expr>(ImmutableArray.Create(unrolled)));
+        return new Sequential(new IRArray<Expr>(unrolled));
     }
 
     /// <summary>
@@ -102,11 +111,13 @@ internal sealed class UnRollLoop  : ExprMutator
     {
         private readonly IReadOnlyDictionary<Var, TensorConst> _vmap;
         private readonly Dictionary<Var, IValue> _cmap;
+        private readonly Dictionary<Type, Evaluator.IEvaluator> _evaluator_cache;
 
-        public OptimizedSubstitutor(IReadOnlyDictionary<Var, TensorConst> vmap)
+        public OptimizedSubstitutor(IReadOnlyDictionary<Var, TensorConst> vmap, Dictionary<Type, Evaluator.IEvaluator> evaluator_cache)
         {
             _vmap = vmap;
             _cmap = new(ReferenceEqualityComparer.Instance);
+            _evaluator_cache = evaluator_cache;
             foreach (var p in vmap)
             {
                 _cmap.Add(p.Key, Value.FromConst(p.Value));
@@ -129,7 +140,7 @@ internal sealed class UnRollLoop  : ExprMutator
               && (@namespace.StartsWith("Nncase.IR.Math") || @namespace.StartsWith("Nncase.IR.Tensors"))
               && expr.Parameters.Select(Visit).All(e => e is Const))
             {
-                return StructEqualFolding(Const.FromValue(CompilerServices.Evaluate(expr, _cmap)));
+                return StructEqualFolding(Const.FromValue(CompilerServices.Evaluate(expr, _cmap, _evaluator_cache)));
             }
             if (expr.Target is Function fn)
             {
@@ -140,7 +151,7 @@ internal sealed class UnRollLoop  : ExprMutator
                         return expr;
                     arg_map.Add(v, Value.FromConst(const_arg));
                 }
-                return StructEqualFolding(Const.FromValue(CompilerServices.Evaluate(fn.Body, arg_map)));
+                return StructEqualFolding(Const.FromValue(CompilerServices.Evaluate(fn.Body, arg_map, _evaluator_cache)));
             }
             return expr;
         }

@@ -36,8 +36,9 @@ public interface ICompilerServicesProvider
     /// </summary>
     /// <param name="op">Target operator.</param>
     /// <param name="context">Inference context.</param>
+    /// <param name="inferencer_cache"> inferencer cache.</param>
     /// <returns>Inference result.</returns>
-    IRType InferenceOp(Op op, ITypeInferenceContext context);
+    IRType InferenceOp(Op op, ITypeInferenceContext context, Dictionary<Type, ITypeInferencer> inferencer_cache);
 
     /// <summary>
     /// printer op.
@@ -79,7 +80,7 @@ public interface ICompilerServicesProvider
     /// <param name="varsValues">Optional vars' values.</param>
     /// <param name="evaluator_cache"> Optional evaluator cache. </param>
     /// <returns>Evaluate result.</returns>
-    IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Op, IEvaluator>? evaluator_cache = null);
+    IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null);
 
     /// <summary>
     /// Evaluate operator.
@@ -88,7 +89,7 @@ public interface ICompilerServicesProvider
     /// <param name="context">Evaluate context.</param>
     /// <param name="evaluator_cache"> Optional evaluator cache. </param>
     /// <returns>Evaluate result.</returns>
-    IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Op, IEvaluator>? evaluator_cache = null);
+    IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Type, IEvaluator>? evaluator_cache = null);
 
     /// <summary>
     /// Evaluate cost of the expression tree.
@@ -203,21 +204,21 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     public IDataTypeServiceProvider DataTypeService { get; }
 
     /// <inheritdoc/>
-    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Op, IEvaluator>? evaluator_cache = null)
+    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
     {
         return _evaluateProvider.Evaluate(expr, varsValues, evaluator_cache);
     }
 
     /// <inheritdoc/>
-    public IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Op, IEvaluator>? evaluator_cache = null)
+    public IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Type, IEvaluator>? evaluator_cache = null)
     {
         return _evaluateProvider.EvaluateOp(op, context, evaluator_cache);
     }
 
     /// <inheritdoc/>
-    public IRType InferenceOp(Op op, ITypeInferenceContext context)
+    public IRType InferenceOp(Op op, ITypeInferenceContext context, Dictionary<Type, ITypeInferencer> inferencer_cache)
     {
-        return _typeInferenceProvider.InferenceOp(op, context);
+        return _typeInferenceProvider.InferenceOp(op, context, inferencer_cache);
     }
 
     /// <inheritdoc/>
@@ -323,10 +324,11 @@ public static class CompilerServices
     /// </summary>
     /// <param name="op">Target operator.</param>
     /// <param name="context">Inference context.</param>
+    /// <param name="inferencer_cache"> inferencer cache.</param>
     /// <returns>Inference result.</returns>
-    public static IRType InferenceOp(Op op, ITypeInferenceContext context)
+    public static IRType InferenceOp(Op op, ITypeInferenceContext context, Dictionary<Type, ITypeInferencer> inferencer_cache)
     {
-        return Provider.InferenceOp(op, context);
+        return Provider.InferenceOp(op, context, inferencer_cache);
     }
 
     /// <summary>
@@ -337,7 +339,7 @@ public static class CompilerServices
     /// <param name="varsValues">Optional vars' values.</param>
     /// <param name="evaluator_cache"> Optional evaluator cache. </param>
     /// <returns>Evaluate result.</returns>
-    public static IValue Evaluate(this Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Op, IEvaluator>? evaluator_cache = null)
+    public static IValue Evaluate(this Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
     {
         return Provider.Evaluate(expr, varsValues, evaluator_cache);
     }
@@ -349,7 +351,7 @@ public static class CompilerServices
     /// <param name="context">Evaluate context.</param>
     /// <param name="evaluator_cache"> Optional evaluator cache. </param>
     /// <returns>Evaluate result.</returns>
-    public static IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Op, IEvaluator>? evaluator_cache = null)
+    public static IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Type, IEvaluator>? evaluator_cache = null)
     {
         return Provider.EvaluateOp(op, context, evaluator_cache);
     }
