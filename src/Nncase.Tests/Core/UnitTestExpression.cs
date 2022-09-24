@@ -302,7 +302,75 @@ public class UnitTestExpression
                 dict3.Add(c.GetType().TypeHandle, d3_c);
             }
         }
+    }
+
+    private sealed class ExpressionTreeBuilder : ExprVisitor<Expression, Type>
+    {
+
+        public override Expression VisitLeaf(Const expr)
+        {
+            if (expr is TensorConst tc && tc.Value.Shape.IsScalar)
+            {
+                return Expression.Constant(tc.Value[0], tc.Value.ElementType.CLRType);
+            }
+            throw new ArgumentOutOfRangeException();
+        }
+
+        public override Expression VisitLeaf(Var expr)
+        {
+            if (expr.CheckedShape.IsScalar)
+            {
+                return Expression.Parameter(expr.CheckedDataType.CLRType, expr.Name);
+            }
+            throw new ArgumentOutOfRangeException();
+        }
+
+        public override Expression VisitLeaf(Call expr)
+        {
+            switch (expr.Target)
+            {
+                case IR.Math.Binary binary:
+
+                    return binary.BinaryOp switch
+                    {
+                        BinaryOp.Add => Expression.Add(Visit(expr.Parameters[0]), Visit(expr.Parameters[1])),
+                        _ => throw new ArgumentOutOfRangeException(),
+                    };
+                default:
+                    break;
+            }
+            throw new ArgumentOutOfRangeException();
+        }
+
+        public override Expression VisitLeaf(Function expr)
+        {
+            return Expression.Lambda(Visit(expr.Body), expr.Name, expr.Parameters.Select(v => (ParameterExpression)Visit(v)).ToArray());
+        }
+
+        public override Expression VisitLeaf(Op expr)
+        {
+            return null!;
+        }
+    }
 
 
+    [Fact]
+    public void TestExpressionTree()
+    {
+
+        var input_1 = new Var("input_1", TensorType.Scalar(DataTypes.Int32));
+        var fn_1 = new Function("add", IR.F.Math.Binary(BinaryOp.Add, input_1, 10), new[] { input_1 });
+        Assert.True(CompilerServices.InferenceType(fn_1));
+
+        var visitor = new ExpressionTreeBuilder();
+        var fn_2 = ((LambdaExpression)visitor.Visit(fn_1)).Compile();
+
+
+        for (int i = 0; i < 100000; i++)
+        {
+            var res_1 = CompilerServices.Evaluate(fn_1.Body, new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance) { { input_1, Value.FromConst(i) } }).AsTensor().ToScalar<int>();
+            Assert.Equal(i + 10, res_1);
+            Assert.Equal(res_1, fn_2.DynamicInvoke(i));
+        }
     }
 }
