@@ -125,8 +125,6 @@ auto squeeze_transpose_shape(shape_t old_shape, axis_t old_axis)
         new_shape.push_back(old_shape[i]);
     }
 
-    if (squeeze_times != 0)
-        throw std::runtime_error("Can't squeeze transpose with " + std::to_string((int)old_shape.size()) + "-D.");
     return std::make_tuple(new_axis, new_shape);
 }
 
