@@ -14,6 +14,7 @@ class TelnetClient():
         self.tn = telnetlib.Telnet()
         self.logger = mylogger
         self.ip = '10.99.105.216'
+        self.timeout = 60
 
     def login(self, ip, username, password):
         try:
@@ -23,7 +24,7 @@ class TelnetClient():
             return False
 
         self.ip = ip
-        self.tn.read_until(b'login: ', timeout=10)
+        self.tn.read_until(b'login: ', timeout=self.timeout)
         self.tn.write(username.encode() + b'\n')
 
         command_result = self.tn.read_very_eager().decode()
@@ -37,15 +38,23 @@ class TelnetClient():
     def execute(self, command, flag):
         self.logger.info('execute: cmd = {0}'.format(command))
         self.tn.write(command.encode() + b'\n')
-        cmd_result = self.tn.read_until(flag.encode()).decode()
-
-        self.tn.write('echo $?'.encode() + b'\n')
-        cmd_status = self.tn.read_until(flag.encode()).decode()
-        if cmd_status.find('\r\n0\r\n') == -1:
+        cmd_result = self.tn.read_until(flag.encode(), timeout=self.timeout).decode()
+        if flag not in cmd_result:
+            # time out
+            kill_cmd="kill -9 `ps -ef | grep %s | grep -v grep | awk '{print $1}'`" % command
+            self.tn.write(kill_cmd.encode() + b'\n')
+            self.tn.read_until(flag.encode(), timeout=self.timeout).decode()
+            cmd_result = f'timeout for {self.timeout} seconds'
             self.logger.error('execute {0} failed: {1}'.format(command, cmd_result))
             return cmd_result, False
         else:
-            return cmd_result, True
+            self.tn.write('echo $?'.encode() + b'\n')
+            cmd_status = self.tn.read_until(flag.encode(), self.timeout).decode()
+            if cmd_status.find('\r\n0\r\n') == -1:
+                self.logger.error('execute {0} failed: {1}'.format(command, cmd_result))
+                return cmd_result, False
+            else:
+                return cmd_result, True
 
     def logout(self):
         self.tn.write(b"exit\n")
@@ -130,7 +139,7 @@ def Consumer(kpu_target, kpu_ip, kpu_username, kpu_password, nfsroot, q, mylogge
 
 def main():
     # args
-    parser = argparse.ArgumentParser(prog="kendryte_ci_proxy")
+    parser = argparse.ArgumentParser(prog="ci_proxy")
     parser.add_argument("--kpu_target", help='kpu device target', type=str, default='k510')
     parser.add_argument("--kpu_ip", help='kpu deivce ip address', type=str, default='10.99.105.216')
     parser.add_argument("--kpu_username", help='kpu device usernmae', type=str, default='root')
