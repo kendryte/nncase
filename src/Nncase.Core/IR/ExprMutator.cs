@@ -319,14 +319,15 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
         return expr with
         {
             // the block realize 
-            InitBody = (TIR.Sequential)Visit(expr.InitBody),
+            InitBody = expr.InitBody.Fields.IsDefaultOrEmpty ? expr.InitBody : (TIR.Sequential)Visit(expr.InitBody),
             Predicate = Visit(expr.Predicate),
-            IterVars = MutateArray(expr.IterVars, x => (TIR.IterVar)Visit(x)),
+            IterVars = expr.IterVars.IsDefaultOrEmpty ? expr.IterVars : MutateArray(expr.IterVars, x => (TIR.IterVar)Visit(x)),
 
             // the block internal.
-            Body = (TIR.Sequential)Visit(expr.Body),
-            Reads = MutateArray(expr.Reads, b => (TIR.BufferRegion)Visit(b)),
-            Writes = MutateArray(expr.Writes, b => (TIR.BufferRegion)Visit(b)),
+            Body = expr.Body.Fields.IsDefaultOrEmpty ? expr.Body : (TIR.Sequential)Visit(expr.Body),
+            Reads = expr.Reads.IsDefaultOrEmpty ? expr.Reads : MutateArray(expr.Reads, b => (TIR.BufferRegion)Visit(b)),
+            Writes = expr.Writes.IsDefaultOrEmpty ? expr.Writes : MutateArray(expr.Writes, b => (TIR.BufferRegion)Visit(b)),
+            AllocBuffers = expr.AllocBuffers.IsDefaultOrEmpty ? expr.AllocBuffers : MutateArray(expr.AllocBuffers, b => (TIR.Buffer)Visit(b)),
         };
     }
 

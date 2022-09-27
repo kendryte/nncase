@@ -276,10 +276,14 @@ namespace Nncase.IR
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
-                Visit(expr.InitBody);
-                Visit(expr.Predicate);
-                foreach (var iterVar in expr.IterVars) { Visit(iterVar); }
                 Visit(expr.Body);
+                Visit(expr.InitBody);
+                foreach (var iterVar in expr.IterVars) { Visit(iterVar); }
+                foreach (var reads in expr.Reads) { Visit(reads); }
+                foreach (var writes in expr.Writes) { Visit(writes); }
+                foreach (var buffer in expr.AllocBuffers)
+                    Visit(buffer);
+                Visit(expr.Predicate);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }

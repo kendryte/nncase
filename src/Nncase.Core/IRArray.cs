@@ -18,6 +18,11 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
     private readonly ImmutableArray<T> _array;
 
     /// <summary>
+    /// check the ret
+    /// </summary>
+    public bool IsDefaultOrEmpty => _array.IsDefaultOrEmpty;
+
+    /// <summary>
     /// construct Ir Array with array.
     /// </summary>
     /// <param name="array"></param>

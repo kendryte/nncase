@@ -373,4 +373,46 @@ public class UnitTestExpression
             Assert.Equal(res_1, fn_2.DynamicInvoke(i));
         }
     }
+
+    struct MyRange
+    {
+        public MyRange(int start, int stop)
+        {
+            Start = start;
+            Stop = stop;
+        }
+        public int Start;
+        public int Stop;
+    }
+
+    MyRange[] Conv2dBounds(MyRange[] output_range, int kh, int kw)
+    {
+        var new_output_range = new MyRange[output_range.Length];
+        Array.Copy(output_range, new_output_range, output_range.Length);
+        new_output_range[2].Start += kh;
+        new_output_range[2].Stop += kh;
+        new_output_range[3].Start += kw;
+        new_output_range[3].Stop += kw;
+        return new_output_range;
+    }
+
+    [Fact]
+    public void TestExpressionTreeWithCustomStruct()
+    {
+        var root_range = Expression.Parameter(typeof(MyRange[]), "root_range");
+        Expression<Func<MyRange[], MyRange[]>> conv2d_1 = (MyRange[] output_range) => Conv2dBounds(output_range, 3, 4);
+        Expression<Func<MyRange[], MyRange[]>> conv2d_2 = (MyRange[] output_range) => Conv2dBounds(output_range, 5, 6);
+
+        var body_1 = Expression.Invoke(conv2d_1, root_range);
+        var fn_1 = Expression.Lambda<Func<MyRange[], MyRange[]>>(body_1, root_range).Compile();
+        var fn_1_ret = fn_1(new MyRange[] { new(1, 2), new(3, 4), new(5, 6), new(7, 9) });
+        Assert.Equal<MyRange>(new(5 + 3, 6 + 3), fn_1_ret[2]);
+        Assert.Equal<MyRange>(new(7 + 4, 9 + 4), fn_1_ret[3]);
+
+        var body_2 = Expression.Invoke(conv2d_2, body_1);
+        var fn_2 = Expression.Lambda<Func<MyRange[], MyRange[]>>(body_2, root_range).Compile();
+        var fn_2_ret = fn_2(new MyRange[] { new(1, 2), new(3, 4), new(5, 6), new(7, 9) });
+        Assert.Equal<MyRange>(new(5 + 3 + 5, 6 + 3 + 5), fn_2_ret[2]);
+        Assert.Equal<MyRange>(new(7 + 4 + 6, 9 + 4 + 6), fn_2_ret[3]);
+    }
 }

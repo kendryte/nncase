@@ -34,7 +34,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
         _context.CurrentCall = expr;
         return expr.Target switch
         {
-            Op op => CompilerServices.EvaluateOp(op, _context, _evaluator_cache),
+            Op op  => CompilerServices.EvaluateOp(op, _context, _evaluator_cache),
             Function func => CompilerServices.Evaluate(func.Body, func.Parameters.Zip(expr.Parameters).ToDictionary(kv => kv.First, kv => Visit(kv.Second), (IEqualityComparer<Var>)ReferenceEqualityComparer.Instance), _evaluator_cache),
             _ => throw new NotImplementedException(expr.Target.ToString())
         };

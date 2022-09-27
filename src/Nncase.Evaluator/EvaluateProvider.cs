@@ -38,7 +38,6 @@ internal sealed class EvaluateProvider : IEvaluateProvider
 
     public IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Type, IEvaluator>? evaluator_cache = null)
     {
-
         var op_type = op.GetType();
         if (evaluator_cache is null)
         {

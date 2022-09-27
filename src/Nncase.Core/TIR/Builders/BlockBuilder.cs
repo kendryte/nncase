@@ -15,14 +15,14 @@ public interface IBlockBuilder : IExprBuilder<Block>
     /// <summary>
     /// else block.
     /// </summary>
-    /// <param name="exprs"> statements. </param>
+    /// <param name="exprOrBuilders"> statements. </param>
     /// <returns> BlockBuilder. </returns>
     IBlockBuilder Body(params object[] exprOrBuilders);
 
     /// <summary>
     /// then block.
     /// </summary>
-    /// <param name="exprs"> statements. </param>
+    /// <param name="exprOrBuilders"> statements. </param>
     /// <returns> BlockBuilder. </returns>
     IBlockBuilder Init(params object[] exprOrBuilders);
 
@@ -45,6 +45,27 @@ public interface IBlockBuilder : IExprBuilder<Block>
     /// <returns></returns>
     /// <exception cref="NotSupportedException"></exception>
     IBlockBuilder Remap(out IterVar vi, For fi, char iterType);
+
+    /// <summary>
+    /// alloctions
+    /// </summary>
+    /// <param name="buffers"></param>
+    /// <returns></returns>
+    IBlockBuilder Alloc(params TIR.Buffer[] buffers);
+
+    /// <summary>
+    /// reads
+    /// </summary>
+    /// <param name="buffer_regions"></param>
+    /// <returns></returns>
+    IBlockBuilder Reads(params TIR.BufferRegion[] buffer_regions);
+
+    /// <summary>
+    /// writes
+    /// </summary>
+    /// <param name="buffer_regions"></param>
+    /// <returns></returns>
+    IBlockBuilder Writes(params TIR.BufferRegion[] buffer_regions);
 }
 
 internal class BlockBuilder : IBlockBuilder
@@ -53,6 +74,9 @@ internal class BlockBuilder : IBlockBuilder
     private readonly List<object> _init = new();
     private readonly List<object> _body = new();
     private readonly List<IterVar> _iterVars = new();
+    private readonly List<TIR.Buffer> _allocations = new();
+    private readonly List<TIR.BufferRegion> _reads = new();
+    private readonly List<TIR.BufferRegion> _writes = new();
 
     public BlockBuilder(string name)
     {
@@ -91,6 +115,25 @@ internal class BlockBuilder : IBlockBuilder
 
     public Block Build()
     {
-        return new(_name, Sequential.Flatten(_body), Sequential.Flatten(_init), new(_iterVars), default, default, default, true);
+        return new(_name, Sequential.Flatten(_body), Sequential.Flatten(_init), new(_iterVars), new(_reads), new(_writes), new(_allocations), true);
+    }
+
+    public IBlockBuilder Alloc(params Buffer[] buffers)
+    {
+        _allocations.AddRange(buffers.OfType<Buffer>());
+        return this;
+    }
+
+    public IBlockBuilder Reads(params BufferRegion[] buffer_regions)
+    {
+        _reads.AddRange(buffer_regions.OfType<BufferRegion>());
+        return this;
+    }
+
+    public IBlockBuilder Writes(params BufferRegion[] buffer_regions)
+    {
+        _writes.AddRange(buffer_regions.OfType<BufferRegion>());
+        return this;
+
     }
 }

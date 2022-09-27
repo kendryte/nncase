@@ -28,6 +28,12 @@ public static class Mutator
     public static Func<ExprMutator> FoldLet() => () => new Mutators.FoldLet();
 
     /// <summary>
+    /// unfold block statements.
+    /// </summary>
+    /// <returns></returns>
+    public static Func<ExprMutator> UnFoldBlock() => () => new Mutators.UnFoldBlock();
+
+    /// <summary>
     /// fold const tuple to tupleconst 
     /// </summary>
     /// <returns></returns>

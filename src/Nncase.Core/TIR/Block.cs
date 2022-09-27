@@ -43,7 +43,7 @@ public sealed record Block(string Name, Sequential Body, Sequential InitBody,
                             IRArray<IterVar> IterVars,
                             IRArray<BufferRegion> Reads,
                             IRArray<BufferRegion> Writes,
-                            IRArray<PhysicalBuffer> AllocBuffers, Expr Predicate) : Expr
+                            IRArray<TIR.Buffer> AllocBuffers, Expr Predicate) : Expr
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Block"/> class.
