@@ -14,6 +14,7 @@ class TelnetClient():
         self.tn = telnetlib.Telnet()
         self.logger = mylogger
         self.ip = '10.99.105.216'
+        self.timeout = 60
 
     def login(self, ip, username, password):
         try:
@@ -23,40 +24,46 @@ class TelnetClient():
             return False
 
         self.ip = ip
-        self.tn.read_until(b'login: ', timeout=10)
-        self.tn.write(username.encode() + b'\n')
+        self.tn.read_until(b'login: ', timeout=self.timeout)
+        self.tn.write(username.encode() + b'\r\n')
 
-        command_result = self.tn.read_very_eager().decode()
-        if 'Login incorrect' not in command_result:
+        cmd_result = self.tn.read_very_eager().decode()
+        if 'Login incorrect' not in cmd_result:
             self.logger.info('{0} login succeed'.format(ip))
             return True
         else:
             self.logger.error('{0} login failed'.format(ip))
             return False
 
-    def execute(self, command, flag):
-        self.logger.info('execute: cmd = {0}'.format(command))
-        self.tn.write(command.encode() + b'\n')
-        cmd_result = self.tn.read_until(flag.encode()).decode()
+    def logout(self):
+        self.tn.close()
+        self.logger.info('{0} logout succeed'.format(self.ip))
 
-        self.tn.write('echo $?'.encode() + b'\n')
-        cmd_status = self.tn.read_until(flag.encode()).decode()
-        if cmd_status.find('\r\n0\r\n') == -1:
-            self.logger.error('execute {0} failed: {1}'.format(command, cmd_result))
+    def execute(self, cmd, flag):
+        self.logger.debug('execute: cmd = {0}'.format(cmd))
+        self.tn.write(cmd.encode() + b'\r\n')
+        cmd_result = self.tn.read_until(flag.encode(), timeout=self.timeout).decode()
+        if flag not in cmd_result:
+            # time out
+            self.tn.write(telnetlib.IP)
+            cmd_result = f'timeout for {self.timeout} seconds'
+            self.logger.error('execute {0} failed: {1}'.format(cmd, cmd_result))
             return cmd_result, False
         else:
-            return cmd_result, True
-
-    def logout(self):
-        self.tn.write(b"exit\n")
-        self.logger.info('{0} logout succeed'.format(self.ip))
+            self.tn.write('echo $?'.encode() + b'\r\n')
+            cmd_status = self.tn.read_until(flag.encode(), self.timeout).decode()
+            if cmd_status.find('\r\n0\r\n') == -1:
+                self.logger.error('execute {0} failed: {1}'.format(cmd, cmd_result))
+                return cmd_result, False
+            else:
+                return cmd_result, True
 
 def recv_file(conn, target_root, mylogger):
     header = conn.recv(1024)
     file_dict = json.loads(header.decode())
     file_name = file_dict['file_name']
     file_size = file_dict['file_size']
-    mylogger.info('recv: file = {0}, size = {1}'.format(file_name, file_size))
+    mylogger.debug('recv: file = {0}, size = {1}'.format(file_name, file_size))
     conn.sendall(f"pls send {file_name}".encode())
 
     full_file = os.path.join(target_root, file_name)
@@ -103,9 +110,8 @@ def Consumer(kpu_target, kpu_ip, kpu_username, kpu_password, nfsroot, q, mylogge
         telnet_client.execute(f'cd /mnt/{kpu_target}', flag)
         telnet_client.execute('sync', flag)
         cmd_result, cmd_status = telnet_client.execute(cmd, flag)
-        telnet_client.execute('sync', flag)
-
         if cmd_status:
+            telnet_client.execute('sync', flag)
             conn.sendall(f'infer succeed'.encode())
             dummy = conn.recv(1024)
 
@@ -119,18 +125,19 @@ def Consumer(kpu_target, kpu_ip, kpu_username, kpu_password, nfsroot, q, mylogge
                 with open(file, 'rb') as f:
                     conn.sendall(f.read())
                 dummy = conn.recv(1024)
-                mylogger.info('send: file = {0}, size = {1}'.format(file, file_size))
+                mylogger.debug('send: file = {0}, size = {1}'.format(file, file_size))
         else:
             conn.sendall(f'infer failed on {kpu_target} board: {cmd_result}'.encode())
 
-        telnet_client.execute('rm *', flag)
-        telnet_client.execute('sync', flag)
+        if 'timeout' not in cmd_result:
+            telnet_client.execute('rm *', flag)
+            telnet_client.execute('sync', flag)
         telnet_client.logout()
         conn.close()
 
 def main():
     # args
-    parser = argparse.ArgumentParser(prog="kendryte_ci_proxy")
+    parser = argparse.ArgumentParser(prog="ci_proxy")
     parser.add_argument("--kpu_target", help='kpu device target', type=str, default='k510')
     parser.add_argument("--kpu_ip", help='kpu deivce ip address', type=str, default='10.99.105.216')
     parser.add_argument("--kpu_username", help='kpu device usernmae', type=str, default='root')
