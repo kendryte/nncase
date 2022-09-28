@@ -28,6 +28,7 @@
 #include <nncase/transforms/neutral/fold_conv2d_binary.h>
 #include <nncase/transforms/neutral/fold_convert.h>
 #include <nncase/transforms/neutral/fold_dilated_conv2d.h>
+#include <nncase/transforms/neutral/fold_layernorm.h>
 #include <nncase/transforms/neutral/fold_matmul_add.h>
 #include <nncase/transforms/neutral/fold_pad.h>
 #include <nncase/transforms/neutral/fold_quantize.h>
@@ -110,6 +111,9 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     pass.emplace<fold_slice_slice_transform>();
     pass.emplace<fold_pad_pad_transform>();
     pass.emplace<fold_pad_strided_slice_transform>();
+
+    pass.emplace<fold_layernorm_pattern1_transform>();
+    pass.emplace<fold_layernorm_pattern2_transform>();
 
     pass.emplace<fold_bitcast_transform>();
 
@@ -197,6 +201,12 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
     {
         transform_pass p("fold_quantize_in_source_model");
         p.emplace<fold_quantize_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+    // split to slice
+    {
+        transform_pass p("split_to_slice");
+        p.emplace<split_to_slice_transform>();
         pass_mgr.add_pass(std::move(p));
     }
 

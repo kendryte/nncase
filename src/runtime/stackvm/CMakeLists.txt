@@ -21,6 +21,7 @@ set(SRCS runtime_module.cpp
         ops/tensor.cumsum.cpp
         ops/tensor.dequantize.cpp
         ops/tensor.gather.cpp
+        ops/tensor.gather_elements.cpp
         ops/tensor.gather_nd.cpp
         ops/tensor.gru.cpp
         ops/tensor.hardmax.cpp
@@ -46,7 +47,8 @@ set(SRCS runtime_module.cpp
         ops/tensor.transpose.cpp
         ops/tensor.trilu.cpp
         ops/tensor.tflite_detection_postprocess.cpp
-        ops/tensor.unary.cpp)
+        ops/tensor.unary.cpp
+        ops/tensor.layernorm.cpp)
 
 if (BUILDING_RUNTIME)
     add_library(runtime_stackvm OBJECT ${SRCS})

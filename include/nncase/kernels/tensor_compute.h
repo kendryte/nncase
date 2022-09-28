@@ -166,6 +166,13 @@ NNCASE_API result<void> space_to_batch(datatype_t type, const gsl::byte *input, 
     const runtime_shape_t &block_shape, const runtime_paddings_t &crops, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
     kernel_context &context = default_kernel_context()) noexcept;
 
+template <typename TI, typename TK>
+NNCASE_API result<void> gather_elements(const TI *input, const TK *indices, TI *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &indices_shape, const int axis) noexcept;
+
+template <typename T>
+NNCASE_API result<void> layernorm(const T *input, T *output, T *scale, T *bias, const runtime_shape_t &in_shape, int32_t axis, float epsilon) noexcept;
+
 template <typename T>
 NNCASE_API result<void> compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const int axis) noexcept;
 
