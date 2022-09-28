@@ -93,10 +93,13 @@ internal sealed class UnRollLoop : ExprMutator
             });
 
         // warming up
-        // var unrolled_first = new OptimizedSubstitutor(vmaps.First(), _evaluator_cache).Visit(nested_loops[^1].Body);
-        // NOTE AsParallel will change the result order?
-        var unrolled = vmaps.
-                Select(vmap => new OptimizedSubstitutor(vmap, _evaluator_cache).Visit(nested_loops[^1].Body)).
+        var unrolled_first = new OptimizedSubstitutor(vmaps.First(), _evaluator_cache).Visit(nested_loops[^1].Body);
+        var unrolled = new[] { unrolled_first }.
+            Concat(vmaps.
+                Skip(1).
+                AsParallel().
+                AsOrdered().
+                Select(vmap => new OptimizedSubstitutor(vmap, _evaluator_cache).Visit(nested_loops[^1].Body))).
             ToImmutableArray();
 
         return new Sequential(new IRArray<Expr>(unrolled));
