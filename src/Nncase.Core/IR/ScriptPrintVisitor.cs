@@ -119,7 +119,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
             il_visitor.Visit(expr);
         }
         else
-        { 
+        {
             il_sb.Append($"{expr.Name} = Function({VisitType(expr.CheckedType!)})");
         }
 
@@ -329,7 +329,8 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 
         // 1. write head
         Scope.AppendLine($"T.Block(\"{expr.Name}\").");
-
+        
+        Scope.IndWriteLine($"Predicate({Visit(expr.Predicate)}).");
         // 2. write iter var bind
         foreach (var iterVar in expr.IterVars)
         {

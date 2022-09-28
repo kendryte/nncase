@@ -47,7 +47,8 @@ public sealed record Sequential(IRArray<Expr> Fields = default) : Expr, IReadOnl
                 exprs.AddRange(Flatten(sub));
                 break;
             case Expr expr:
-                exprs.Add(expr);
+                if (expr is not Call { Target: TIR.Nop })
+                    exprs.Add(expr);
                 break;
             case IExprBuilder<Expr> builder:
                 Flatten(exprs, builder.Build());

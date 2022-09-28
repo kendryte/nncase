@@ -20,7 +20,16 @@ internal sealed class UnFoldBlock : ExprMutator
     public override Expr MutateLeaf(TIR.Block expr)
     {
         if (expr.InitBody.Fields.IsDefaultOrEmpty)
-            return Visit(expr.Body);
+        {
+            if (expr.Predicate is TensorConst tc && tc.Value.ToScalar<bool>() is var predicate)
+            {
+                if (predicate)
+                    return Visit(expr.Body);
+                else
+                    return T.Sequential().Build();
+            }
+            return expr;
+        }
         else
             throw new NotSupportedException();
     }

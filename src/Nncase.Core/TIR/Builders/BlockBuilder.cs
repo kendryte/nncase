@@ -66,6 +66,13 @@ public interface IBlockBuilder : IExprBuilder<Block>
     /// <param name="buffer_regions"></param>
     /// <returns></returns>
     IBlockBuilder Writes(params TIR.BufferRegion[] buffer_regions);
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="predicate"></param>
+    /// <returns></returns>
+    IBlockBuilder Predicate(Expr predicate);
 }
 
 internal class BlockBuilder : IBlockBuilder
@@ -77,6 +84,7 @@ internal class BlockBuilder : IBlockBuilder
     private readonly List<TIR.Buffer> _allocations = new();
     private readonly List<TIR.BufferRegion> _reads = new();
     private readonly List<TIR.BufferRegion> _writes = new();
+    private Expr? _predicate;
 
     public BlockBuilder(string name)
     {
@@ -115,7 +123,7 @@ internal class BlockBuilder : IBlockBuilder
 
     public Block Build()
     {
-        return new(_name, Sequential.Flatten(_body), Sequential.Flatten(_init), new(_iterVars), new(_reads), new(_writes), new(_allocations), true);
+        return new(_name, Sequential.Flatten(_body), Sequential.Flatten(_init), new(_iterVars), new(_reads), new(_writes), new(_allocations), _predicate ?? true);
     }
 
     public IBlockBuilder Alloc(params Buffer[] buffers)
@@ -135,5 +143,11 @@ internal class BlockBuilder : IBlockBuilder
         _writes.AddRange(buffer_regions.OfType<BufferRegion>());
         return this;
 
+    }
+
+    public IBlockBuilder Predicate(Expr predicate)
+    {
+        _predicate ??= predicate;
+        return this;
     }
 }

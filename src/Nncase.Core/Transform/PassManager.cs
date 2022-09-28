@@ -98,7 +98,7 @@ public class PassManager : IEnumerable<BasePass>
             }
             i++;
         }
-        FuncUpdateDependence();
+        FuncUpdateDependence(_module, _functions_update_map, _options);
         CleanFuncUpdateRecord();
     }
 
@@ -137,23 +137,24 @@ public class PassManager : IEnumerable<BasePass>
     /// <summary>
     /// foreach fix when the call target function has been updated.
     /// </summary>
-    private void FuncUpdateDependence()
+    public static void FuncUpdateDependence(IRModule module, Dictionary<BaseFunction, BaseFunction> update_map, RunPassOptions options)
     {
-        var mutator = new DependenceMutator(_functions_update_map);
-        var post = mutator.Visit(_module.Entry!);
+        var mutator = new DependenceMutator(update_map);
+        var post = mutator.Visit(module.Entry!);
         if (!mutator.IsMutated)
             return;
 
-        for (int i = 0; i < _module.Functions.Count; i++)
+        for (int i = 0; i < module.Functions.Count; i++)
         {
-            if (_functions_update_map.TryGetValue(_module.Functions[i], out var updated_func))
-                _module.Update(i, updated_func);
+            if (update_map.TryGetValue(module.Functions[i], out var updated_func))
+                module.Update(i, updated_func);
         }
-        if (_options.DumpLevel > 3)
+
+        if (options.DumpLevel > 3)
         {
-            foreach (var item in _module.Functions)
+            foreach (var item in module.Functions)
             {
-                CompilerServices.DumpIR(item, "", Path.Combine(_options.DumpDir, "FuncUpdateDependence"));
+                CompilerServices.DumpIR(item, "", Path.Combine(options.DumpDir, "FuncUpdateDependence"));
             }
         }
     }
