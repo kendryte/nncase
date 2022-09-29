@@ -4,7 +4,7 @@
 using Nncase.PatternMatch;
 using static Nncase.IR.TypePatternUtility;
 
-namespace Nncase.IR.Tensors;
+namespace Nncase.IR.Buffer;
 
 /// <summary>
 /// Gets input.
@@ -16,4 +16,7 @@ public sealed record Uninitialized(DataType DType, Schedule.MemoryLocation Memor
     /// the shape
     /// </summary>
     public static readonly ParameterInfo Shape = new(typeof(Uninitialized), 0, "shape", IsIntegral() & IsTensor() & HasRank(1));
+
+    /// <inheritdoc/>
+    public override bool CanFoldConstCall => false;
 }

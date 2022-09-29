@@ -16,10 +16,12 @@ namespace Nncase.Evaluator;
 internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
 {
     private readonly TypeInferenceContext _context;
+    private readonly Dictionary<Type, ITypeInferencer> _inferencer_cache;
 
     public TypeInferenceVisitor()
     {
         _context = new TypeInferenceContext(ExpressionMemo);
+        _inferencer_cache = new Dictionary<Type, ITypeInferencer>();
     }
 
     /// <summary>
@@ -36,7 +38,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
             Fusion fusion => ((CallableType)Visit(fusion)).ReturnType,
             PrimFunctionWrapper wrap => ((CallableType)Visit(wrap)).ReturnType,
             Function func => ((CallableType)Visit(func)).ReturnType,
-            Op op => CompilerServices.InferenceOp(op, _context),
+            Op op => CompilerServices.InferenceOp(op, _context, _inferencer_cache),
             _ => new InvalidType("Target of call expression should be either a function or an op."),
         };
         _context.CurrentCall = null;
@@ -416,7 +418,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     {
         if (expr is Nncase.TIR.PhysicalBuffer physicalBuffer)
         {
-            IRType type = new TensorType(expr.ElemType, new(physicalBuffer.FixedDimensions));
+            IRType type = new TensorType(expr.ElemType, new(physicalBuffer.FixedDimensions.ToArray()));
             SetCheckedType(expr, type);
             return type;
         }
@@ -454,6 +456,13 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         IRType type = expr.Buffer.CheckedType!;
         SetCheckedType(expr, type);
         return type;
+    }
+
+    /// <inheritdoc/>
+    /// Note the IVisitable instance have no IRType.
+    public override object VisitLeaf(IVisitable visitable)
+    {
+        return default(object)!;
     }
 
     /// <summary>

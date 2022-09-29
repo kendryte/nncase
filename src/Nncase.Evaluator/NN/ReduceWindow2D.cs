@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
 using OrtKISharp;
@@ -12,7 +13,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="ReduceWindow2D"/>.
 /// </summary>
-public class ReduceWindow2DEvaluator : IEvaluator<ReduceWindow2D>, ITypeInferencer<ReduceWindow2D>
+public class ReduceWindow2DEvaluator : IEvaluator<ReduceWindow2D>, ITypeInferencer<ReduceWindow2D>, ICostEvaluator<ReduceWindow2D>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ReduceWindow2D r)
@@ -38,6 +39,21 @@ public class ReduceWindow2DEvaluator : IEvaluator<ReduceWindow2D>, ITypeInferenc
     {
         var input = context.CheckArgumentType<TensorType>(target, ReduceWindow2D.Input);
         return Visit(context, target, input);
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, ReduceWindow2D target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, ReduceWindow2D.Input);
+        var outputType = context.GetReturnType<TensorType>();
+
+        var macPerElement = 1;
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement * 2),
+        };
     }
 
     private IRType Visit(ITypeInferenceContext context, ReduceWindow2D target, TensorType input)

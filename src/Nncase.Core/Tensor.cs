@@ -80,9 +80,9 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     internal Tensor(DataType elementType, ReadOnlySpan<int> dimensions)
     {
         ElementType = elementType;
-        Shape = new Shape(dimensions);
-        Length = (int)TensorUtilities.GetProduct(dimensions);
         _dimensions = dimensions.ToArray();
+        Shape = dimensions.IsEmpty ? Shape.Scalar : new Shape(_dimensions);
+        Length = (int)TensorUtilities.GetProduct(dimensions);
         _strides = TensorUtilities.GetStrides(dimensions);
     }
 

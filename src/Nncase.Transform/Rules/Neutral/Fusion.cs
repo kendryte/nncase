@@ -77,17 +77,17 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsCall(
         "caller",
-        IsFusion("callerFuse",
+        IsFunction("callerFuse",
             IsWildcard(),
             WildcardVArgsPattern),
         ParamsWithArg(CalleePattern)
         );
 
     /// <inheritdoc/>
-    public static Pattern CalleePattern =>
+    public static Pattern CalleePattern =
         IsCall(
         "callee",
-        IsFusion("calleeFuse",
+        IsFunction("calleeFuse",
             IsWildcard(),
             WildcardVArgsPattern),
         WildcardVArgsPattern);

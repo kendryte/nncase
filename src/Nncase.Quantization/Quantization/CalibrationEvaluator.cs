@@ -64,7 +64,7 @@ public class CalibrationEvaluator
                     else
                     {
                         awareTensors[enode] = Enumerable.Repeat(0, 0).Select(x => (float)x).ToArray();
-                        _values.Add(enode, Value.None);
+                        _values.TryAdd(enode, Value.None);
                     }
                 }
             }
@@ -184,10 +184,14 @@ public class CalibrationEvaluator
             {
                 if (targetEnode.Expr is Op op)
                 {
+
                     var context = new EGraphOpEvaluateContext(call, costs.Skip(1).ToArray());
                     if (_passOptions.DumpLevel >= 4)
                         _dumpWriter.Write($"{op.GetType().Name}({string.Join(",", context.Arguments.Select(v => v.ToString()))})");
-                    value = CompilerServices.EvaluateOp(op, context);
+                    if (op.CanFoldConstCall)
+                        value = CompilerServices.EvaluateOp(op, context);
+                    else
+                        value = NoneValue.Default;
                     if (_passOptions.DumpLevel >= 4)
                         _dumpWriter.WriteLine($" => {value.ToString()}");
                 }

@@ -309,29 +309,16 @@ public sealed record LogicalBuffer(string Name, DataType ElemType, Schedule.Memo
     /// <inheritdoc/>
     public override int Rank => Dimensions.Count;
 
-
-    /// <inheritdoc/>
-    public bool Equals(LogicalBuffer? other)
-    {
-        return !(other is null) && EqualityContract == other.EqualityContract;
-    }
-
-    /// <inheritdoc/>
-    public override int GetHashCode()
-    {
-        return EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
-    }
-
     /// <inheritdoc/>
     public override string ToString()
     {
-        return $"LogicalBuffer({Name}, {ElemType})";
+        return $"LogicalBuffer({Name}, {ElemType}, {nameof(MemLocation)})";
     }
 
     /// <inheritdoc/>
     protected override bool PrintMembers(StringBuilder builder)
     {
-        builder.Append($"LogicalBuffer({Name}, {ElemType})");
+        builder.Append($"LogicalBuffer({Name}, {ElemType}, {nameof(MemLocation)})");
         return true;
     }
 }
@@ -345,6 +332,25 @@ public sealed record LogicalBuffer(string Name, DataType ElemType, Schedule.Memo
 /// <param name="MemLocation"></param>
 public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.MemoryLocation MemLocation) : Buffer(Name, ElemType, MemLocation)
 {
+    /// <summary>
+    /// get fixed dimensions
+    /// </summary>
+    public int[] FixedDimensions = Array.Empty<int>();
+
+    /// <summary>
+    /// get fixed strides
+    /// </summary>
+    public int[] FixedStrides = Array.Empty<int>();
+
+    /// <summary>
+    /// start.
+    /// </summary>
+    public int Start;
+
+    /// <summary>
+    /// total size in bytes
+    /// </summary>
+    public int Size;
 
     /// <summary>
     /// ctor for physical buffer
@@ -354,13 +360,15 @@ public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.Mem
     /// <param name="elemType"></param>
     /// <param name="dimensions"></param>
     /// <param name="stirdes"></param>
-    public PhysicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, IEnumerable<int> dimensions, IEnumerable<int> stirdes) :
+    /// <param name="start"></param>
+    /// <param name="size"></param>
+    public PhysicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, IEnumerable<int> dimensions, IEnumerable<int> stirdes, int start, int size) :
       this(name, elemType, location)
     {
-        _dimensions = dimensions.ToArray();
-        _strides = stirdes.ToArray();
-        Dimensions = new(_dimensions.Select(i => (Expr)i));
-        Strides = new(_strides.Select(i => (Expr)i));
+        Start = start;
+        Size = size;
+        FixedDimensions = dimensions.ToArray();
+        FixedStrides = stirdes.ToArray();
     }
 
     /// <summary>
@@ -370,8 +378,10 @@ public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.Mem
     /// <param name="elemType"></param>
     /// <param name="location"></param>
     /// <param name="dimensions"></param>
-    public PhysicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, IEnumerable<int> dimensions) :
-      this(name, elemType, location, dimensions, TensorUtilities.GetStrides(dimensions.ToArray()))
+    /// <param name="start"></param>
+    /// <param name="size"></param>
+    public PhysicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, IEnumerable<int> dimensions, int start, int size) :
+      this(name, elemType, location, dimensions, TensorUtilities.GetStrides(dimensions.ToArray()), start, size)
     {
     }
 
@@ -381,76 +391,46 @@ public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.Mem
     /// <param name="name"></param>
     /// <param name="location"></param>
     /// <param name="tensor"></param>
-    public PhysicalBuffer(string name, Schedule.MemoryLocation location, TensorConst tensor) : this(name, tensor.Value.ElementType, location, tensor.Value.Dimensions.ToArray(), tensor.Value.Strides.ToArray())
+    /// <param name="start"></param>
+    /// <param name="size"></param>
+    public PhysicalBuffer(string name, Schedule.MemoryLocation location, TensorConst tensor, int start, int size) : this(name, tensor.Value.ElementType, location, tensor.Value.Dimensions.ToArray(), tensor.Value.Strides.ToArray(), start, size)
     {
         Const = tensor;
     }
 
-    private readonly int[] _dimensions;
-
-    private readonly int[] _strides;
-
     /// <summary>
     /// Gets dimensions.
     /// </summary>
-    public override IRArray<Expr> Dimensions { get; }
+    public override IRArray<Expr> Dimensions => FixedDimensions.Length == 0 ?
+      throw new ArgumentOutOfRangeException() :
+      new(FixedDimensions.Select(i => (Expr)i));
+
 
     /// <summary>
     /// Gets strides.
     /// </summary>
-    public override IRArray<Expr> Strides { get; }
-
-    /// <summary>
-    /// get fixed dimensions
-    /// </summary>
-    public ReadOnlySpan<int> FixedDimensions => _dimensions;
-
-    /// <summary>
-    /// get fixed strides
-    /// </summary>
-    public ReadOnlySpan<int> FixedStrides => _strides;
-
+    public override IRArray<Expr> Strides => FixedStrides.Length == 0 ?
+      throw new ArgumentOutOfRangeException() :
+      new(FixedStrides.Select(i => (Expr)i));
 
     /// <summary>
     /// Gets shape.
     /// </summary>
-    public Shape Shape => new Shape(_dimensions);
+    public Shape Shape => new Shape(FixedDimensions);
 
     /// <inheritdoc/>
-    public override int Rank => _dimensions.Rank;
-
-    /// <summary>
-    /// Gets total length.
-    /// </summary>
-    public int Length => (int)TensorUtilities.GetProduct(_dimensions);
-
-    /// <inheritdoc/>
-    public bool Equals(PhysicalBuffer? other)
-    {
-        return !(other is null) && EqualityContract == other.EqualityContract;
-    }
-
-    /// <inheritdoc/>
-    public override int GetHashCode()
-    {
-        return EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
-    }
+    public override int Rank => FixedDimensions.Rank;
 
     /// <inheritdoc/>
     public override string ToString()
     {
-        return $"PhysicalPhysicalBuffer({Name}, {ElemType})";
+        return $"PhysicalBuffer({Name}, {ElemType}, {nameof(MemLocation)})";
     }
 
     /// <inheritdoc/>
     protected override bool PrintMembers(StringBuilder builder)
     {
-        builder.Append($"PhysicalPhysicalBuffer({Name}, {ElemType})");
+        builder.Append($"PhysicalBuffer({Name}, {ElemType}, {nameof(MemLocation)})");
         return true;
     }
-
-    /// <summary>
-    /// get total bytes size
-    /// </summary>
-    public int SizeInBytes => _dimensions[0] * _strides[0] * ElemType.SizeInBytes;
 }

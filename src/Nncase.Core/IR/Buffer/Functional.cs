@@ -37,4 +37,13 @@ public static class Buffer
     /// <param name="input"></param>
     /// <returns></returns>
     public static Call StrideOf(Expr input) => new Call(new StrideOf(), input);
+
+    /// <summary>
+    /// create the uninitialized buffer
+    /// </summary>
+    /// <param name="dataType"></param>
+    /// <param name="memoryLocation"></param>
+    /// <param name="shape"></param>
+    /// <returns></returns>
+    public static Call Uninitialized(DataType dataType, Schedule.MemoryLocation memoryLocation, Expr shape) => new Call(new Uninitialized(dataType, memoryLocation), shape);
 }

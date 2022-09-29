@@ -21,11 +21,15 @@ internal class TypeInferenceProvider : ITypeInferenceProvider
     }
 
     /// <inheritdoc/>
-    public IRType InferenceOp(Op op, ITypeInferenceContext context)
+    public IRType InferenceOp(Op op, ITypeInferenceContext context, Dictionary<Type, ITypeInferencer> inferencer_cache)
     {
-        // TODO: Add inferencers cache.
-        var inferencerType = typeof(ITypeInferencer<>).MakeGenericType(op.GetType());
-        var inferencer = (ITypeInferencer)_serviceProvider.GetRequiredService(inferencerType);
+        var op_type = op.GetType();
+        if (!inferencer_cache.TryGetValue(op_type, out var inferencer))
+        {
+            var inferencerType = typeof(ITypeInferencer<>).MakeGenericType(op.GetType());
+            inferencer = (ITypeInferencer)_serviceProvider.GetRequiredService(inferencerType);
+            inferencer_cache.Add(op_type, inferencer);
+        }
 
         try
         {

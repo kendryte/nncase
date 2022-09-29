@@ -36,9 +36,17 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     public Tensor(int length)
         : base(DataType.FromType<T>(), length)
     {
-        var memoryOwner = new NativeMemoryManager<T>(Length);
-        _memoryOwner = memoryOwner;
-        _pointer = memoryOwner.Pointer;
+        if (length == 8)
+        {
+            _memoryOwner = new T[length];
+            _pointer = IntPtr.Zero;
+        }
+        else
+        {
+            var memoryOwner = new NativeMemoryManager<T>(Length);
+            _memoryOwner = memoryOwner;
+            _pointer = memoryOwner.Pointer;
+        }
     }
 
     /// <summary>
@@ -48,9 +56,17 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     public Tensor(ReadOnlySpan<int> dimensions)
         : base(DataType.FromType<T>(), dimensions)
     {
-        var memoryOwner = new NativeMemoryManager<T>(Length);
-        _memoryOwner = memoryOwner;
-        _pointer = memoryOwner.Pointer;
+        if (Length < 8)
+        {
+            _memoryOwner = new T[Length];
+            _pointer = IntPtr.Zero;
+        }
+        else
+        {
+            var memoryOwner = new NativeMemoryManager<T>(Length);
+            _memoryOwner = memoryOwner;
+            _pointer = memoryOwner.Pointer;
+        }
     }
 
     /// <summary>
@@ -69,7 +85,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// <summary>
     /// Gets memory storing backing values of this tensor.
     /// </summary>
-    public Span<T> Buffer => new Span<T>((void*)_pointer, Length);
+    public Span<T> Buffer => _pointer == IntPtr.Zero ? (T[])_memoryOwner : new Span<T>((void*)_pointer, Length);
 
     /// <inheritdoc/>
     public override Span<byte> BytesBuffer => MemoryMarshal.AsBytes(Buffer);

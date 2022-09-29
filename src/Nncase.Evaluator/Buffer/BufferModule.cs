@@ -18,5 +18,6 @@ public class BufferModule : Module
         builder.RegisterType<BaseMentOfEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<StrideOfEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<AllocateEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<UninitializedEvaluator>().AsImplementedInterfaces();
     }
 }

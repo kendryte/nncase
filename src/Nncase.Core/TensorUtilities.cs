@@ -104,6 +104,10 @@ public static class TensorUtilities
     /// <returns></returns>
     public static int[] GetStrides(ReadOnlySpan<int> dimensions, bool reverseStride = false)
     {
+        if (dimensions.IsEmpty)
+        {
+            return Array.Empty<int>();
+        }
         int[] strides = new int[dimensions.Length];
 
         int stride = 1;

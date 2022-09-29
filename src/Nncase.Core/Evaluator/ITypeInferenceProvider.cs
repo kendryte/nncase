@@ -25,5 +25,5 @@ public interface ITypeInferenceProvider
     /// <param name="op">Target operator.</param>
     /// <param name="context">Inference context.</param>
     /// <returns>Inference result.</returns>
-    IRType InferenceOp(Op op, ITypeInferenceContext context);
+    IRType InferenceOp(Op op, ITypeInferenceContext context, Dictionary<Type, ITypeInferencer> inferencer_cache);
 }

@@ -13,8 +13,9 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// unroll loop
 /// </summary>
-internal sealed class FoldLet : ExprMutator
+internal sealed class FoldLet  : ExprMutator
 {
+
     /// <inheritdoc/>
     public override Expr MutateLeaf(TIR.Let expr)
     {

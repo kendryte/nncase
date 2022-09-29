@@ -16,7 +16,7 @@ namespace Nncase.Transform
     /// NOTE only apply on prim func
     /// Because of we will mutate the expression multiple times, so use MutatorCreator create the new mutator.
     /// </summary>
-    public class TIRPass : FunctionPass, IEnumerable<Func<ExprMutator>>
+    public class PrimFuncPass : FunctionPass, IEnumerable<Func<ExprMutator>>
     {
         /// <summary>
         /// Save rules.
@@ -24,10 +24,10 @@ namespace Nncase.Transform
         public readonly List<Func<ExprMutator>> MutatorCreators = new();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TIRPass"/> class.
+        /// Initializes a new instance of the <see cref="PrimFuncPass"/> class.
         /// </summary>
         /// <param name="name">Name.</param>
-        public TIRPass(string name)
+        public PrimFuncPass(string name)
             : base(name)
         {
         }
@@ -47,14 +47,15 @@ namespace Nncase.Transform
                 foreach (var creator in MutatorCreators)
                 {
                     var mutator = creator();
+                    string mutator_name = mutator.GetType().Name;
                     last = post;
                     post = (BaseFunction)mutator.Visit(last);
-                    if (mutator.IsMutated)
+                    isMutated = mutator.IsMutated;
+                    if (isMutated)
                     {
-                        isMutated = true;
                         typeinfer_ret = CompilerServices.InferenceType(post);
                         OnMutated(post, $"{count++}_{mutator.GetType().Name}", options);
-                        if (!typeinfer_ret) throw new InvalidOperationException($"{Name}: After Run Mutator {count - 1}_{mutator.GetType().Name} , The Type Inference Failed!");
+                        if (!typeinfer_ret) throw new InvalidOperationException($"{Name}: After Run Mutator {count - 1}_{mutator_name} , The Type Inference Failed!");
                         break;
                     }
                 }
@@ -71,7 +72,7 @@ namespace Nncase.Transform
             switch (options.DumpLevel)
             {
                 case >= 2:
-                    CompilerServices.DumpIR((Expr)callable, prefix, options.PassDumpDir);
+                    CompilerServices.DumpIR((Expr)callable, prefix, options.PassDumpDir, false);
                     break;
                 case >= 1:
                     break;

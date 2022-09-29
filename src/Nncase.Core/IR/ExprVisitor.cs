@@ -17,6 +17,7 @@ namespace Nncase.IR
     public abstract class ExprVisitor<TExprResult, TTypeResult> : ExprFunctor<TExprResult, TTypeResult>
     {
         private readonly Dictionary<Expr, TExprResult> _exprMemo = new Dictionary<Expr, TExprResult>(ReferenceEqualityComparer.Instance);
+        private readonly Dictionary<IVisitable, object> _visitableMemo = new Dictionary<IVisitable, object>(ReferenceEqualityComparer.Instance);
         private readonly Dictionary<IRType, TTypeResult> _typeMemo = new Dictionary<IRType, TTypeResult>();
         private readonly Dictionary<string, Action<Expr>> _callbacksAfterCall = new();
         private readonly Dictionary<string, Action<Expr>> _callbacksBeforeCall = new();
@@ -51,6 +52,11 @@ namespace Nncase.IR
         /// Gets expression visit result memo.
         /// </summary>
         public Dictionary<Expr, TExprResult> ExpressionMemo => _exprMemo;
+
+        /// <summary>
+        /// Gets visitable visit result memo
+        /// </summary>
+        public Dictionary<IVisitable, object> VisitAbleMemo => _visitableMemo;
 
         /// <inheritdoc/>
         public override TExprResult Visit(Call expr)
@@ -225,7 +231,7 @@ namespace Nncase.IR
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
                 Visit(expr.Value);
-                expr.Dom.Accept(this);
+                Visit(expr.Dom);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
@@ -251,12 +257,12 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
-        public sealed override TExprResult Visit(TIR.For expr)
+        public override TExprResult Visit(TIR.For expr)
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
                 Visit(expr.LoopVar);
-                expr.Domain.Accept(this);
+                Visit(expr.Domain);
                 Visit(expr.Body);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
@@ -270,10 +276,14 @@ namespace Nncase.IR
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
-                Visit(expr.InitBody);
-                Visit(expr.Predicate);
-                foreach (var iterVar in expr.IterVars) { Visit(iterVar); }
                 Visit(expr.Body);
+                Visit(expr.InitBody);
+                foreach (var iterVar in expr.IterVars) { Visit(iterVar); }
+                foreach (var reads in expr.Reads) { Visit(reads); }
+                foreach (var writes in expr.Writes) { Visit(writes); }
+                foreach (var buffer in expr.AllocBuffers)
+                    Visit(buffer);
+                Visit(expr.Predicate);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
@@ -359,12 +369,26 @@ namespace Nncase.IR
                 Visit(expr.Buffer);
                 foreach (var param in expr.Region)
                 {
-                    Visit(param.Start);
-                    Visit(param.Stop);
-                    Visit(param.Step);
+                    Visit(param);
                 }
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// visit ivisitable.
+        /// </summary>
+        /// <param name="visitable"></param>
+        /// <returns></returns>
+        public override object Visit(IVisitable visitable)
+        {
+            if (!_visitableMemo.TryGetValue(visitable, out var result))
+            {
+                visitable.Visit<TExprResult, TTypeResult>(this);
+                result = VisitLeaf(visitable);
+                _visitableMemo.Add(visitable, result);
             }
             return result;
         }
@@ -544,6 +568,24 @@ namespace Nncase.IR
         /// <param name="expr">buffer region expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult VisitLeaf(TIR.BufferRegion expr) => DefaultVisitLeaf(expr);
+
+        /// <summary>
+        /// Visit leaf ifunctable.
+        /// </summary>
+        /// <param name="visitable"></param>
+        /// <returns></returns>
+        public virtual object VisitLeaf(IVisitable visitable) => DefaultVisitLeaf(visitable);
+
+        /// <summary>
+        /// Default leaf visit routine.
+        /// </summary>
+        /// <param name="visitable"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public virtual object DefaultVisitLeaf(IVisitable visitable)
+        {
+            throw new NotImplementedException($"Unhandled visit leaf routine for {visitable.GetType()}.");
+        }
 
         /// <summary>
         /// Default leaf visit routine.

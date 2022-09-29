@@ -62,6 +62,7 @@ internal partial class Quantizer
         {
             var info = await options.Target.BindQuantMethodCosine(quantOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs, _passOptions);
         }
+        _graph.Rebuild();
     }
 
     private async Task RunPassAsync(ICalibrationDatasetProvider calibrationDataset, Action<IReadOnlyDictionary<ENode, Tensor>, IReadOnlyDictionary<ENode, Tensor>> func)
@@ -188,7 +189,7 @@ internal partial class Quantizer
             _graph.Union(rangeOfEclass, rangeEclass);
         }
 
-        _graph.Rebuild();
+        //_graph.Rebuild();
     }
 
     /// <summary>

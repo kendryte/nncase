@@ -11,6 +11,11 @@ using Nncase.TIR;
 namespace Nncase.Transform.Mutators;
 
 
+// internal enum Inst
+
+/// <summary>
+/// substitutor will not substitute the other function
+/// </summary>
 internal sealed class Substitutor : ExprMutator
 {
     Func<Expr, Expr?> Maper;

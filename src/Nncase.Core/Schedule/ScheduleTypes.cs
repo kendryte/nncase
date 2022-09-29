@@ -206,102 +206,26 @@ public class BufferAllocation
 
 
 /// <summary>
-/// SchedModuleResult.
-/// </summary>
-public class SchedModuleResult
-{
-    /// <summary>
-    /// current Module type.
-    /// </summary>
-    public CodeGen.ModuleType ModuleType;
-
-    /// <summary>
-    /// mem collection.
-    /// </summary>
-    public readonly Dictionary<MemoryLocation, ulong> MaxUsages;
-
-    /// <summary>
-    /// shared mem.
-    /// </summary>
-    public readonly Dictionary<CodeGen.ModuleType, ulong> SharedMaxUsages;
-
-    /// <summary>
-    /// create SchedModuleResult.
-    /// </summary>
-    public SchedModuleResult(CodeGen.ModuleType moduleType)
-    {
-        ModuleType = moduleType;
-        MaxUsages = new();
-        SharedMaxUsages = new();
-    }
-}
-
-/// <summary>
 /// SchedFunctionResult.
 /// </summary>
 public class SchedFunctionResult
 {
     /// <summary>
-    /// inputs
-    /// </summary>
-    public IEnumerable<MemoryRange> Inputs => inputs.Select(al => al.MemoryRange);
-
-    /// <summary>
-    /// input shapes.
-    /// </summary>
-    public IEnumerable<int[]> InputShapes => inputs.Select(al => al.Shape);
-
-    /// <summary>
-    /// outputs
-    /// </summary>
-    public IEnumerable<MemoryRange> Outputs => outputs.Select(al => al.MemoryRange);
-
-    /// <summary>
-    /// input shapes.
-    /// </summary>
-    public IEnumerable<int[]> OutputShapes => outputs.Select(al => al.Shape);
-
-    /// <summary>
-    /// input memory size.
-    /// </summary>
-    public ulong InputPoolSize => inputs.Aggregate(0UL, (acc, al) => acc + al.Size);
-
-    /// <summary>
-    /// ouput memory size.
-    /// </summary>
-    public ulong OutputPoolSize => outputs.Aggregate(0UL, (acc, al) => acc + al.Size);
-
-    private IEnumerable<BufferAllocation> inputs => Allocations.Values.Where(al => al.MemoryLocate == MemoryLocation.Input);
-    private IEnumerable<BufferAllocation> outputs => Allocations.Values.Where(al => al.MemoryLocate == MemoryLocation.Output);
-
-    /// <summary>
     /// the buffer allocation
     /// </summary>
-    public readonly Dictionary<TIR.PhysicalBuffer, BufferAllocation> Allocations;
+    public readonly HashSet<TIR.PhysicalBuffer> Rdatas;
 
     /// <summary>
-    /// the function module type
-    /// </summary>
-    public readonly CodeGen.ModuleType ModuleType;
-
-    /// <summary>
-    /// the function useage.
-    /// </summary>
-    public readonly Dictionary<Schedule.MemoryLocation, ulong> FuncUsage;
-
-    /// <summary>
-    /// the flag marker the schedule status.
+    /// the Scheduled status
     /// </summary>
     public bool IsScheduled;
 
     /// <summary>
     /// create SchedFunctionResult
     /// </summary>
-    public SchedFunctionResult(CodeGen.ModuleType moduleType)
+    public SchedFunctionResult()
     {
-        Allocations = new(ReferenceEqualityComparer.Instance);
-        FuncUsage = new();
-        ModuleType = moduleType;
+        Rdatas = new(ReferenceEqualityComparer.Instance);
         IsScheduled = false;
     }
 }

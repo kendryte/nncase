@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 using System;
 using Nncase.PatternMatch;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Math;
 
@@ -19,5 +20,5 @@ public sealed record Dequantize(DataType TargetType) : Op
     /// <summary>
     /// Gets DequantParam.
     /// </summary>
-    public static readonly ParameterInfo DequantParam = new(typeof(Dequantize), 1, "dequantParam");
+    public static readonly ParameterInfo DequantParam = new(typeof(Dequantize), 1, "dequantParam", IsQuantParamType());
 }
