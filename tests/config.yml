@@ -43,7 +43,7 @@ case: # case的配置，应该是一个多层次的
     tcu_num: 0
     is_fpga: false
     dump_asm: true
-    dump_ir: true
+    dump_ir: false
     dump_quant_error: false
     dump_import_op_range: false
     quant_type: 'uint8'

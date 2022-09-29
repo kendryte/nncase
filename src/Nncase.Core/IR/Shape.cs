@@ -62,7 +62,7 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="dimensions">Dimensions.</param>
         public Shape(IEnumerable<long> dimensions)
-            : this(dimensions.Cast<int>()) { }
+            : this(dimensions.Select(i => (int)i)) { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Shape"/> class.
