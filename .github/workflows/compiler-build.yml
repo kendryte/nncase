@@ -170,7 +170,7 @@ jobs:
           pip install conan tensorflow==2.7.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0 opencv-python
           pip install imageio==2.15.0 protobuf==3.20.1
           pip install pytest
-          pip install --pre pythonnet
+          pip install pythonnet==3.0.0rc5
 
       - name: Install Python Packages
         if: runner.os == 'Linux'
