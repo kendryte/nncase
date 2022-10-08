@@ -852,25 +852,31 @@ class TestRunner(metaclass=ABCMeta):
                             buffer[recv_size:] = slice
                             recv_size += len(slice)
 
-                        result = np.frombuffer(buffer, dtype=self.outputs[i]['dtype'])
-                        result = result.reshape(self.outputs[i]['model_shape'])
-                        if preprocess['preprocess'] and len(result.shape) == 4:
+                        # save nncase_result
+                        nncase_result = np.frombuffer(buffer, dtype=self.outputs[i]['dtype'])
+                        nncase_result.tofile(os.path.join(infer_dir, f'nncase_result_{i}.bin'))
+                        self.totxtfile(os.path.join(infer_dir, f'nncase_result_{i}.txt'), nncase_result)
+
+                        # save nncase_vs_cpu_result
+                        model_shape = self.outputs[i]['model_shape']
+                        nncase_vs_cpu_result = nncase_result.reshape(model_shape)
+                        if preprocess['preprocess'] and len(model_shape) == 4:
                             if (preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
-                                result = np.transpose(result, [0, 3, 1, 2])
+                                nncase_vs_cpu_result = nncase_result.reshape(model_shape[0], model_shape[2], model_shape[3], model_shape[1])
+                                nncase_vs_cpu_result = np.transpose(nncase_vs_cpu_result, [0, 3, 1, 2])
                             elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
-                                result = np.transpose(result, [0, 2, 3, 1])
+                                nncase_vs_cpu_result = nncase_result.reshape(model_shape[0], model_shape[3], model_shape[1], model_shape[2])
+                                nncase_vs_cpu_result = np.transpose(nncase_vs_cpu_result, [0, 2, 3, 1])
                         infer_output_paths.append((
-                            os.path.join(infer_dir, f'nncase_result_{i}.bin'),
-                            os.path.join(infer_dir, f'nncase_result_{i}.txt')))
+                            os.path.join(infer_dir, f'nncase_vs_cpu_result_{i}.bin'),
+                            os.path.join(infer_dir, f'nncase_vs_cpu_result_{i}.txt')))
                         if cfg.compile_opt.output_type != "float32" and infer_dir.split('/')[-1] == "ptq":
-                            result.tofile(os.path.join(
-                                infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.bin'))
-                            self.totxtfile(os.path.join(
-                                infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.txt'), result)
-                            result = deq_output(os.path.join(
-                                infer_dir, f'kmodel_info.txt'), result)
-                        result.tofile(infer_output_paths[-1][0])
-                        self.totxtfile(infer_output_paths[-1][1], result)
+                            nncase_vs_cpu_result.tofile(os.path.join(infer_dir, f'nncase_vs_cpu_result_{cfg.compile_opt.output_type}_{i}.bin'))
+                            self.totxtfile(os.path.join(infer_dir, f'nncase_vs_cpu_result_{cfg.compile_opt.output_type}_{i}.txt'), nncase_vs_cpu_result)
+                            nncase_vs_cpu_result = deq_output(os.path.join(infer_dir, f'kmodel_info.txt'), nncase_vs_cpu_result)
+                        nncase_vs_cpu_result.tofile(infer_output_paths[-1][0])
+                        self.totxtfile(infer_output_paths[-1][1], nncase_vs_cpu_result)
+
                         client_socket.sendall(f"recv nncase_result_{i}.bin succeed".encode())
 
                     client_socket.close()
@@ -893,24 +899,30 @@ class TestRunner(metaclass=ABCMeta):
                 sim.run()
 
                 for i in range(sim.outputs_size):
-                    result = sim.get_output_tensor(i).to_numpy()
-                    if preprocess['preprocess'] and len(result.shape) == 4:
+                    nncase_result = sim.get_output_tensor(i).to_numpy()
+
+                    # save nncase_result
+                    nncase_result.tofile(os.path.join(infer_dir, f'nncase_result_{i}.bin'))
+                    self.totxtfile(os.path.join(infer_dir, f'nncase_result_{i}.txt'), nncase_result)
+
+                    # save nncase_vs_cpu_result
+                    model_shape = self.outputs[i]['model_shape']
+                    nncase_vs_cpu_result = nncase_result
+                    if preprocess['preprocess'] and len(model_shape) == 4:
                         if (preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
-                            result = np.transpose(result, [0, 3, 1, 2])
+                            nncase_vs_cpu_result = np.transpose(nncase_vs_cpu_result, [0, 3, 1, 2])
                         elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
-                            result = np.transpose(result, [0, 2, 3, 1])
+                            nncase_vs_cpu_result = np.transpose(nncase_vs_cpu_result, [0, 2, 3, 1])
                     infer_output_paths.append((
-                        os.path.join(infer_dir, f'nncase_result_{i}.bin'),
-                        os.path.join(infer_dir, f'nncase_result_{i}.txt')))
+                        os.path.join(infer_dir, f'nncase_vs_cpu_result_{i}.bin'),
+                        os.path.join(infer_dir, f'nncase_vs_cpu_result_{i}.txt')))
                     if cfg.compile_opt.output_type != "float32" and infer_dir.split('/')[-1] == "ptq":
-                        result.tofile(os.path.join(
-                            infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.bin'))
-                        self.totxtfile(os.path.join(
-                            infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.txt'), result)
-                        result = deq_output(os.path.join(
-                            infer_dir, f'kmodel_info.txt'), result)
-                    result.tofile(infer_output_paths[-1][0])
-                    self.totxtfile(infer_output_paths[-1][1], result)
+                        nncase_vs_cpu_result.tofile(os.path.join(infer_dir, f'nncase_vs_cpu_result_{cfg.compile_opt.output_type}_{i}.bin'))
+                        self.totxtfile(os.path.join(infer_dir, f'nncase_vs_cpu_result_{cfg.compile_opt.output_type}_{i}.txt'), result)
+                        nncase_vs_cpu_result = deq_output(os.path.join(infer_dir, f'kmodel_info.txt'), nncase_vs_cpu_result)
+                    nncase_vs_cpu_result.tofile(infer_output_paths[-1][0])
+                    self.totxtfile(infer_output_paths[-1][1], nncase_vs_cpu_result)
+
         return infer_output_paths
 
     def on_test_start(self) -> None:
