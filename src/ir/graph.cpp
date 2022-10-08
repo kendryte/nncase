@@ -148,6 +148,14 @@ split_graph_result graph::split_subgraph(std::span<node *const> nodes)
         }
     }
 
+#define ADD_INODE                                                               \
+    auto inode = result.subgraph->emplace<input_node>(in->type(), in->shape()); \
+    inode->name(in->connection()->owner().name());                              \
+    inode->module_type(in->owner().module_type());                              \
+    result.inputs.emplace(inode, in->connection());                             \
+    inputs.emplace(in->connection(), inode);                                    \
+    in->connect(inode->output());
+
 #define ADD_ONODE                                                                  \
     auto onode = result.subgraph->emplace<output_node>(out->type(), out->shape()); \
     onode->name(out->owner().name());                                              \
@@ -167,6 +175,9 @@ split_graph_result graph::split_subgraph(std::span<node *const> nodes)
     // 2. Find in/out connectors
     std::unordered_set<output_connector *> outputs;
     std::unordered_map<output_connector *, input_node *> inputs;
+    std::vector<input_connector *> graph_inputs;
+    std::vector<input_connector *> remained_inputs;
+    std::vector<size_t> input_order;
     std::vector<output_connector *> graph_outputs;
     std::vector<size_t> output_order;
     for (auto node : nodes)
@@ -177,16 +188,22 @@ split_graph_result graph::split_subgraph(std::span<node *const> nodes)
             {
                 if (outputs.emplace(in->connection()).second)
                 {
-                    auto inode = result.subgraph->emplace<input_node>(in->type(), in->shape());
-                    inode->name(in->connection()->owner().name());
-                    inode->module_type(node->module_type());
-                    result.inputs.emplace(inode, in->connection());
-                    inputs.emplace(in->connection(), inode);
-                    in->connect(inode->output());
+                    if (node_cast<input_node>(in->connection()->owner()))
+                    {
+                        graph_inputs.push_back(in);
+                        input_order.push_back(std::distance(inputs_.begin(), std::find(inputs_.begin(), inputs_.end(), node_cast<input_node>(in->connection()->owner()))));
+                    }
+                    else
+                    {
+                        ADD_INODE
+                    }
                 }
                 else
                 {
-                    in->connect(inputs.at(in->connection())->output());
+                    if (node_cast<input_node>(in->connection()->owner()))
+                        remained_inputs.push_back(in);
+                    else
+                        in->connect(inputs.at(in->connection())->output());
                 }
             }
         }
@@ -219,9 +236,18 @@ split_graph_result graph::split_subgraph(std::span<node *const> nodes)
 
         return idx;
     };
-    auto ordered_indexes = sort_indexes(output_order);
 
-    for (auto idx : ordered_indexes)
+    auto ordered_in_indexes = sort_indexes(input_order);
+    for (auto idx : ordered_in_indexes)
+    {
+        auto in = graph_inputs[idx];
+        ADD_INODE
+    }
+    for (auto &in : remained_inputs)
+        in->connect(inputs.at(in->connection())->output());
+
+    auto ordered_out_indexes = sort_indexes(output_order);
+    for (auto idx : ordered_out_indexes)
     {
         auto out = graph_outputs[idx];
         auto conns = out->connections();
