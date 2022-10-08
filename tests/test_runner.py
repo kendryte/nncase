@@ -918,7 +918,7 @@ class TestRunner(metaclass=ABCMeta):
                         os.path.join(infer_dir, f'nncase_vs_cpu_result_{i}.txt')))
                     if cfg.compile_opt.output_type != "float32" and infer_dir.split('/')[-1] == "ptq":
                         nncase_vs_cpu_result.tofile(os.path.join(infer_dir, f'nncase_vs_cpu_result_{cfg.compile_opt.output_type}_{i}.bin'))
-                        self.totxtfile(os.path.join(infer_dir, f'nncase_vs_cpu_result_{cfg.compile_opt.output_type}_{i}.txt'), result)
+                        self.totxtfile(os.path.join(infer_dir, f'nncase_vs_cpu_result_{cfg.compile_opt.output_type}_{i}.txt'), nncase_vs_cpu_result)
                         nncase_vs_cpu_result = deq_output(os.path.join(infer_dir, f'kmodel_info.txt'), nncase_vs_cpu_result)
                     nncase_vs_cpu_result.tofile(infer_output_paths[-1][0])
                     self.totxtfile(infer_output_paths[-1][1], nncase_vs_cpu_result)
