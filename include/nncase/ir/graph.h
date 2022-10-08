@@ -58,7 +58,7 @@ public:
     std::span<std::unique_ptr<graph> const> subgraphs() const noexcept { return subgraphs_; }
 
     template <class T, class... TArgs>
-    T *emplace(TArgs &&...args)
+    T *emplace(TArgs &&... args)
     {
         auto node = static_cast<T *>(nodes_.emplace_back(new T(std::forward<TArgs>(args)...)).get());
         if constexpr (std::is_same_v<T, input_node>)
@@ -72,7 +72,7 @@ public:
     void dce();
     void cse();
     void merge_module_regions();
-    split_graph_result split_subgraph(std::span<node *const> nodes);
+    split_graph_result split_subgraph(std::span<node *const> nodes, bool reorder_input = false);
     graph &add_subgraph(std::unique_ptr<graph> subgraph);
 
 private:

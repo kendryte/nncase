@@ -476,7 +476,7 @@ void graph::merge_module_regions()
         if (region.module_type == runtime::stackvm::stackvm_module_type)
             continue;
 
-        auto split = split_subgraph(region.nodes);
+        auto split = split_subgraph(region.nodes, true);
         auto &subg = add_subgraph(std::move(split.subgraph));
         auto c = emplace<call>(subg);
         c->name(std::string(region.module_type.data()) + "_" + std::to_string(subids[region.module_type.data()]++));
