@@ -58,7 +58,7 @@ public:
     std::span<std::unique_ptr<graph> const> subgraphs() const noexcept { return subgraphs_; }
 
     template <class T, class... TArgs>
-    T *emplace(TArgs &&... args)
+    T *emplace(TArgs &&...args)
     {
         auto node = static_cast<T *>(nodes_.emplace_back(new T(std::forward<TArgs>(args)...)).get());
         if constexpr (std::is_same_v<T, input_node>)
