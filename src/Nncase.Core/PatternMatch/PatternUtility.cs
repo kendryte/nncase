@@ -122,4 +122,42 @@ public static partial class Utility
 
     public static Pattern[] FieldsPatternGenerator(Func<Pattern> pGenerator, int count) =>
         Enumerable.Range(0, count).Select(_ => pGenerator()).ToArray();
+    
+    // todo: replace pattern in SingleInputFusion and DoubleInputFusion with IsSIFusionBody and IsDIFusionBody
+    /// <summary>
+    /// is single input body
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="BeginT"></typeparam>
+    /// <typeparam name="EndT"></typeparam>
+    /// <returns></returns>
+    public static Pattern IsSIFusionBody<T, BeginT, EndT>()
+        where T : Op
+        where BeginT : Op
+        where EndT : Op => IsWildcardCall<EndT>("st", null!,
+        IsWildcardCall<T>(null!, null!, (
+            IsWildcardCall<BeginT>(null!, null!, IsWildcard("input")))));
+    
+    /// <summary>
+    /// is double input fusion body
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="BeginT"></typeparam>
+    /// <typeparam name="EndT"></typeparam>
+    /// <returns></returns>
+    public static Pattern IsDIFusionBody<T, BeginT, EndT>()
+        where T : Op
+        where BeginT : Op
+        where EndT : Op => IsWildcardCall<EndT>("st", null!,
+        IsWildcardCall<T>(null!, null!,
+            IsWildcardCall<BeginT>(null!, null!, IsWildcard("lhs")),
+            IsWildcardCall<BeginT>(null!, null!, IsWildcard("rhs"))));
+
+    public static Pattern IsFusion<T, BeginT, EndT>()     
+        where T : Op
+        where BeginT : Op
+        where EndT : Op  => IsFunction("fusion", IsAlt(
+        IsSIFusionBody<T, BeginT, EndT>(),
+                    IsDIFusionBody<T, BeginT, EndT>()),
+        IsVArgsRepeat("parameters", () => IsVar()));
 }
