@@ -130,7 +130,8 @@ public sealed class EGraphMatcher
         var context = new MatchContext(matchScopes, pattern, expr);
 
         if (context.HasCandidates
-            && pattern.MatchLeaf(expr))
+            && pattern.MatchLeaf(expr)
+            && pattern.Parameters.MatchLeaf(expr.Parameters))
         {
             var newScopes = Visit(context.Candidates, pattern.Target, enode.Children[0]);
             newScopes = Visit(newScopes, pattern.Parameters, enode.Children.Skip(1));
