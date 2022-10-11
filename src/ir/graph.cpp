@@ -130,7 +130,7 @@ void graph::dce()
     nodes_.erase(end, std::end(nodes_));
 }
 
-split_graph_result graph::split_subgraph(std::span<node *const> nodes)
+split_graph_result graph::split_subgraph(std::span<node *const> nodes, bool reorder_input)
 {
     split_graph_result result;
     result.subgraph = std::make_unique<graph>(nodes.front()->module_type());
@@ -188,7 +188,7 @@ split_graph_result graph::split_subgraph(std::span<node *const> nodes)
             {
                 if (outputs.emplace(in->connection()).second)
                 {
-                    if (node_cast<input_node>(in->connection()->owner()))
+                    if (reorder_input && node_cast<input_node>(in->connection()->owner()))
                     {
                         graph_inputs.push_back(in);
                         input_order.push_back(std::distance(inputs_.begin(), std::find(inputs_.begin(), inputs_.end(), node_cast<input_node>(in->connection()->owner()))));
@@ -200,7 +200,7 @@ split_graph_result graph::split_subgraph(std::span<node *const> nodes)
                 }
                 else
                 {
-                    if (node_cast<input_node>(in->connection()->owner()))
+                    if (reorder_input && node_cast<input_node>(in->connection()->owner()))
                         remained_inputs.push_back(in);
                     else
                         in->connect(inputs.at(in->connection())->output());
