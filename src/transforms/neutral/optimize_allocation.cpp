@@ -207,7 +207,7 @@ void remove_exclusive_copy_to_output_transform::process(transform_context &conte
 bool remove_exclusive_copy_to_concat_transform::on_try_match(node &node, transform_context &context)
 {
     copy *cp;
-    concat *c;
+    concat *c, *pre_c;
 
     if ((cp = node_cast<copy>(node))
         && (c = try_get_direct_child<concat>(*cp)))
@@ -220,6 +220,8 @@ bool remove_exclusive_copy_to_concat_transform::on_try_match(node &node, transfo
             && ((input->attributes() & (cnctr_attr_no_buffer_fusion | cnctr_attr_buffer_slice)) == 0)
             && (is_simple_concat || (input->attributes() & (cnctr_attr_no_layout_strides)) == 0))
         {
+            if ((pre_c = try_get_direct_parent<concat>(*cp)) && pre_c->axis() != c->axis())
+                return false;
             context.inputs.emplace_back(&cp->input());
             context.outputs.emplace_back(&cp->output());
 
