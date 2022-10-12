@@ -221,8 +221,10 @@ template <class T> class NNCASE_NODISCARD result {
     constexpr auto expect(NNCASE_UNUSED gsl::cstring_span message) noexcept {
         if (is_ok())
             return detail::unwrap_impl<T>()(value());
-        else
+        else {
+            printf("terminate:%s\n", message.begin());
             std::terminate();
+        }
     }
 
     template <class Func, class Traits = detail::map_traits<T, Func>>
