@@ -101,5 +101,36 @@ slice(datatype_t type, const gsl::byte *input, gsl::byte *output,
       const dims_t &in_shape, const strides_t &in_strides,
       const strides_t &out_strides, const axes_t &begins, const axes_t &ends,
       const axes_t &strides, NNCASE_UNUSED kernel_context &context) noexcept;
+
+
+result<void> binary(
+    typecode_t typecode, runtime::stackvm::binary_op_t op, const gsl::byte *lhs,
+    const gsl::byte *rhs, gsl::byte *output, const dims_t &lhs_shape,
+    const strides_t &lhs_strides, const dims_t &rhs_shape,
+    const strides_t &rhs_strides, const dims_t &out_shape,
+    const strides_t &out_strides,
+    NNCASE_UNUSED kernel_context &context) noexcept;
+
+NNCASE_API result<void> unary(typecode_t dtype, runtime::stackvm::unary_op_t op, const gsl::byte *in,
+                 gsl::byte *out, const dims_t &shape,
+                 const strides_t &in_strides, const dims_t &out_shape,
+                 const strides_t &out_strides,
+                 kernel_context &context = default_kernel_context()) noexcept;
+
+//template <typename T>
+//NNCASE_API result<void> matmul(const T *input_a, const T *input_b, const T *bias, T *output,
+//                               const dims_t &in_a_shape, const dims_t &in_a_strides, const dims_t &in_b_shape,
+//                               const dims_t &in_b_strides, const dims_t &out_shape, const dims_t &out_strides,
+//                               value_range<float> fused_activation) noexcept;
+
+template <typename T>
+NNCASE_API result<void> softmax(const T *input, T *output, const dims_t &in_shape, const dims_t &in_strides,
+                                const dims_t &out_strides, int32_t axis, float beta) noexcept;
+
+template <typename T>
+NNCASE_API result<void> sigmoid(const T *input, T *output, const dims_t &in_shape, const strides_t &input_strides, const dims_t &out_shape,               \
+                                const strides_t &out_strides,
+                                kernel_context &context = default_kernel_context()) noexcept;
+
 } // namespace optimized
 END_NS_NNCASE_KERNELS_MODULE
