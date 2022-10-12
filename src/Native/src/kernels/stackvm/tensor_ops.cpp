@@ -404,6 +404,19 @@ result<value_t> nncase::kernels::stackvm::lstm(
 }
 
 result<value_t>
+nncase::kernels::stackvm::mat_mul(value_t lhs, value_t rhs, value_t output,
+                                  [[maybe_unused]] kernel_context &context) {
+    try_input(lhs_mem, lhs);
+    try_input(rhs_mem, rhs);
+    try_var(out_shape, matmul_infer_shape(lhs_tensor->shape(), rhs_tensor->shape()));
+    try_output(out_mem, output, lhs_tensor->dtype(), out_shape);
+    try_typecode(typecode, lhs_tensor);
+    try_(reference::matmul(typecode, lhs_mem, rhs_mem, out_mem, lhs_tensor->shape(),
+                     rhs_tensor->shape()));
+    return ok(output);
+}
+
+result<value_t>
 nncase::kernels::stackvm::normal(typecode_t type, value_t mean, value_t scale,
                                  value_t seed, value_t shape, value_t output,
                                  [[maybe_unused]] kernel_context &context) {
