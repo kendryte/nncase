@@ -88,4 +88,9 @@ NNCASE_API result<void> sigmoid(const T *input, T *output, const runtime_shape_t
 template <typename T>
 NNCASE_API result<void> layernorm(const T *input, T *output, T *scale, T *bias, const runtime_shape_t &in_shape, int32_t axis, float epsilon) noexcept;
 
+template <typename T>
+NNCASE_API result<void> ternary(const float *input_a, const T *input_b, const T *input_c, T *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &in_c_shape, const runtime_shape_t &in_c_strides,
+    const runtime_shape_t &out_strides) noexcept;
 END_NS_NNCASE_KERNELS_CPU_OPT
