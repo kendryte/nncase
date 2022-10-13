@@ -131,12 +131,12 @@ public static partial class Utility
     /// <typeparam name="BeginT"></typeparam>
     /// <typeparam name="EndT"></typeparam>
     /// <returns></returns>
-    public static Pattern IsSIFusionBody<T, BeginT, EndT>()
+    public static Pattern IsSIFusionBody<T, BeginT, EndT>(string mid_name)
         where T : Op
         where BeginT : Op
         where EndT : Op => IsWildcardCall<EndT>("st", null!,
-        IsWildcardCall<T>(null!, null!, (
-            IsWildcardCall<BeginT>(null!, null!, IsWildcard("input")))));
+        IsWildcardCall<T>(null!, mid_name, (
+            IsWildcardCall<BeginT>("ld", null!, IsWildcard("input")))));
 
     /// <summary>
     /// is double input fusion body
@@ -153,11 +153,10 @@ public static partial class Utility
             IsWildcardCall<BeginT>(null!, null!, IsWildcard("lhs")),
             IsWildcardCall<BeginT>(null!, null!, IsWildcard("rhs"))));
 
-    public static Pattern IsFusion<T, BeginT, EndT>(string module_kind)
+    public static Pattern IsFusion<T, BeginT, EndT>(string mid_name, string module_kind)
         where T : Op
         where BeginT : Op
         where EndT : Op => IsFusion("fusion", module_kind, IsAlt(
-        IsSIFusionBody<T, BeginT, EndT>(),
-                    IsDIFusionBody<T, BeginT, EndT>()),
+        IsSIFusionBody<T, BeginT, EndT>(mid_name), IsDIFusionBody<T, BeginT, EndT>()),
         IsVArgsRepeat("parameters", () => IsVar()));
 }
