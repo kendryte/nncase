@@ -8,6 +8,7 @@ import queue
 import logging
 import logging.handlers
 import telnetlib
+import time
 
 class TelnetClient():
     def __init__(self, mylogger):
@@ -40,7 +41,7 @@ class TelnetClient():
         self.logger.info('{0} logout succeed'.format(self.ip))
 
     def execute(self, cmd, flag):
-        self.logger.debug('execute: cmd = {0}'.format(cmd))
+        self.logger.debug('execute: cmd = {0}, flag = {1}'.format(cmd, flag))
         self.tn.write(cmd.encode() + b'\r\n')
         cmd_result = self.tn.read_until(flag.encode(), timeout=self.timeout).decode()
         if flag not in cmd_result:
@@ -132,7 +133,16 @@ def Consumer(kpu_target, kpu_ip, kpu_username, kpu_password, nfsroot, q, mylogge
         if 'timeout' not in cmd_result:
             telnet_client.execute('rm *', flag)
             telnet_client.execute('sync', flag)
-        telnet_client.logout()
+            telnet_client.logout()
+        else:
+            # reboot kpu_target when timeout
+            telnet_client.logout()
+            mylogger.error('reboot {0}({1}) for timeout'.format(kpu_target, kpu_ip))
+            telnet_client.login(kpu_ip, kpu_username, kpu_password)
+            flag = f'[{kpu_username}@canaan ~ ]$'
+            telnet_client.execute('reboot', flag)
+            telnet_client.logout()
+            time.sleep(60)
         conn.close()
 
 def main():
