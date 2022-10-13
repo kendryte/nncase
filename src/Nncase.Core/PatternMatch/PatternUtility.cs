@@ -1,8 +1,8 @@
 using System.Reflection;
 using Nncase.IR;
 using Nncase.IR.Math;
-using static Nncase.PatternMatch.F.Math;
 using static Nncase.IR.TypePatternUtility;
+using static Nncase.PatternMatch.F.Math;
 using static Nncase.Utilities.ReplaceUtility;
 using ParameterInfo = Nncase.IR.ParameterInfo;
 
@@ -26,7 +26,7 @@ public static partial class Utility
 
     public static VArgsPattern GenerateParameters(Pattern inputPattern) =>
         GenerateParameters(new[] { inputPattern });
-    
+
     /// <summary>
     /// match a call with op type T
     /// auto set first param
@@ -43,12 +43,12 @@ public static partial class Utility
     public static CallPattern IsWildcardCall<T>(string callName, string opName, Pattern inputPattern) where T : Op =>
         IsCall(callName, IsOp<T>(opName, _ => true), GenerateParameters(inputPattern))
             with
-            { TypePattern = IsType(x => !(x is InvalidType)) };
+        { TypePattern = IsType(x => !(x is InvalidType)) };
 
     public static CallPattern IsWildcardCall<T>(string callName, string opName, Pattern lhsPattern, Pattern rhsPattern) where T : Op =>
         IsCall(callName, IsOp<T>(opName, _ => true), GenerateParameters(new[] { lhsPattern, rhsPattern }))
             with
-            { TypePattern = IsType(x => !(x is InvalidType)) };
+        { TypePattern = IsType(x => !(x is InvalidType)) };
 
     public static Pattern IsSwappableWildcardCall<T>(string callName, string opName, Pattern lhsPattern,
         Pattern rhsPattern) where T : Op =>
@@ -60,15 +60,15 @@ public static partial class Utility
     public static CallPattern IsWildcardCall(string callName, Pattern firstInputPattern) =>
         IsCall(callName, IsWildcard(), GenerateParameters(firstInputPattern))
             with
-            { TypePattern = IsType(x => !(x is InvalidType)) };
-    
+        { TypePattern = IsType(x => !(x is InvalidType)) };
+
     public static VArgsPattern GenerateRepeatParameters(Func<Pattern> pGenerator) =>
         IsVArgsRepeat(list =>
             Enumerable.Range(0, list.Count).Select(_ => pGenerator())
                 .ToArray());
 
     public static VArgsPattern WildcardVArgsPattern => GenerateRepeatParameters(IsWildcard);
-    
+
     public static VArgsPattern ParamsWithArg(Pattern argPattern) => new VArgsPattern((fields) =>
     {
         var fieldList = fields.ToList();
@@ -78,7 +78,7 @@ public static partial class Utility
             ? Enumerable.Repeat(IsWildcard(), fields.Count + 1).ToArray()
             : ReplacePos(fields.Select(_ => IsWildcard()).ToArray(), argPattern, i);
     }, null);
-    
+
     public static CallPattern IsWildcardCall<T>(string opName = null!) where T : Op => IsWildcardCall<T>("call", opName);
 
     public static int Count<T>() where T : Op => typeof(T).GetFields(BindingFlags.Public | BindingFlags.Static).Length;
@@ -105,8 +105,8 @@ public static partial class Utility
     public static CallPattern IsCallWithSpec<T>(string callName, string opName, params (ParameterInfo, Pattern)[] specs) where T : Op =>
         IsCall(callName, IsOp<T>(opName, _ => true), ArgsPattern<T>(specs))
             with
-            { TypePattern = IsType(x => !(x is InvalidType)) };
-    
+        { TypePattern = IsType(x => !(x is InvalidType)) };
+
     /// <summary>
     /// e.g.
     /// deq  deq  deq
@@ -122,7 +122,7 @@ public static partial class Utility
 
     public static Pattern[] FieldsPatternGenerator(Func<Pattern> pGenerator, int count) =>
         Enumerable.Range(0, count).Select(_ => pGenerator()).ToArray();
-    
+
     // todo: replace pattern in SingleInputFusion and DoubleInputFusion with IsSIFusionBody and IsDIFusionBody
     /// <summary>
     /// is single input body
@@ -137,7 +137,7 @@ public static partial class Utility
         where EndT : Op => IsWildcardCall<EndT>("st", null!,
         IsWildcardCall<T>(null!, null!, (
             IsWildcardCall<BeginT>(null!, null!, IsWildcard("input")))));
-    
+
     /// <summary>
     /// is double input fusion body
     /// </summary>
@@ -153,10 +153,10 @@ public static partial class Utility
             IsWildcardCall<BeginT>(null!, null!, IsWildcard("lhs")),
             IsWildcardCall<BeginT>(null!, null!, IsWildcard("rhs"))));
 
-    public static Pattern IsFusion<T, BeginT, EndT>()     
+    public static Pattern IsFusion<T, BeginT, EndT>(string module_kind)
         where T : Op
         where BeginT : Op
-        where EndT : Op  => IsFunction("fusion", IsAlt(
+        where EndT : Op => IsFusion("fusion", module_kind, IsAlt(
         IsSIFusionBody<T, BeginT, EndT>(),
                     IsDIFusionBody<T, BeginT, EndT>()),
         IsVArgsRepeat("parameters", () => IsVar()));
