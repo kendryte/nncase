@@ -54,8 +54,8 @@ result<void> optimized::layernorm(const float *input_a, const T *input_b, const 
     const runtime_shape_t &out_strides) noexcept
 {
 #if __riscv_vector
-    return tenary_impl(input_a, input_b, input_c, output,in_a_shape, in_a_strides,in_b_shape, in_b_strides, in_c_shape, in_c_strides, out_strides);
+    return tenary_impl(input_a, input_b, input_c, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, in_c_shape, in_c_strides, out_strides);
 #else
-    return cpu::reference::ternary(input_a, input_b, input_c, output, in_a_shape, in_a_strides,in_b_shape, in_b_strides, in_c_shape, in_c_strides, out_strides);
+    return cpu::reference::ternary(input_a, input_b, input_c, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, in_c_shape, in_c_strides, out_strides);
 #endif
 }
