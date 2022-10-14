@@ -5,7 +5,6 @@
 #include <nncase/runtime/dump_manager.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/stackvm/opcode.h>
-#include <nncase/runtime/util.h>
 #include <nncase/tensor.h>
 #include <nncase/type.h>
 #include <nncase/value.h>
