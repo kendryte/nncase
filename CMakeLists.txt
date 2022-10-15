@@ -85,7 +85,7 @@ if (BUILDING_RUNTIME)
         elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
             add_compile_options(-Wno-uninitialized -Wno-unused-private-field)
         else()
-            if(CMAKE_SYSTEM_PROCESSOR STREQUAL riscv64) # k510 toolchain 
+            if(CMAKE_SYSTEM_PROCESSOR STREQUAL riscv64 AND NNCASE_RISCV_CPU_NAME STREQUAL k510) # k510 toolchain 
               add_compile_options(-Wno-maybe-uninitialized -matomic)
             else()
               add_compile_options(-Wno-maybe-uninitialized -Wno-unused-private-field)
