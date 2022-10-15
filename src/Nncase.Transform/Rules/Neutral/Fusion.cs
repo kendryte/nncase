@@ -207,3 +207,25 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
         return (newCalleeFuseBody, newCalleeParams);
     }
 }
+
+[RuleGenerator]
+public partial class DataTransferFusion<LoadT, StoreT> : RewriteRule<Pattern>
+    where LoadT : Op
+    where StoreT : Op
+{
+    /// <inheritdoc/>
+    public override Pattern Pattern { get; } = IsWildcardCall<StoreT>("st", null!,
+        IsWildcardCall<LoadT>(null!, null!, IsWildcard("input")));
+    
+    // replace input with var
+    private Call? GetReplace(Call st, Expr input)
+    {
+        if ((st.Attribute & CallAttr.Fusion) != 0)
+        {
+            return null;
+        }
+        var arg = new Var("input0", input.CheckedType!);
+        var body = ReplaceTarget(st, input, arg);
+        return new Call(new Fusion("DataTransferFusion", "k510", body, new[] { arg }), input);
+    }
+}
