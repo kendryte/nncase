@@ -1,6 +1,5 @@
 #ifndef NNCASE_BAREMETAL
 #include "dump_manager_impl.h"
-#include "nncase/runtime/util.h"
 #include <nncase/runtime/dump_manager.h>
 #include <nncase/runtime/result.h>
 #include <nncase/runtime/stackvm/opcode.h>

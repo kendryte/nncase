@@ -40,6 +40,16 @@ public enum MemoryLocation : byte
     SharedData = 4,
 
     /// <summary>
+    /// l2 data
+    /// </summary>
+    L2Data = 5,
+
+    /// <summary>
+    /// L1 data
+    /// </summary>
+    L1Data = 6,
+
+    /// <summary>
     /// base addr.
     /// </summary>
     PrivateBase = 64,

@@ -115,8 +115,8 @@ result<value_t> nncase::kernels::stackvm::concat(value_t input, value_t axis,
     } else {
         concat_dims = dims_t(input_tuple->fields().size(), 1);
     }
-
-    CONTIGUOUS_KERNEL(concat, input0, dtype, inputs_mem, out_mem, output_tensor->shape(),
+    auto inputs_mem_span = gsl::make_span(inputs_mem).as_span<const gsl::byte *const>();
+    CONTIGUOUS_KERNEL(concat, input0, dtype, inputs_mem_span, out_mem, output_tensor->shape(),
                            strides, output_tensor->strides(), axis_value,
                            concat_dims, context);
     return ok(output);
@@ -774,7 +774,8 @@ result<value_t> nncase::kernels::stackvm::stack(value_t inputs, value_t axis,
         input0->shape(), inputs_tuple->fields().size(), axis_value);
     try_output(out_mem, output, input0->dtype(), out_shape);
     try_var(strides, get_strides(inputs_tuple));
-    try_(reference::stack(input0->dtype(), inputs_value, out_mem, out_shape,
+    auto inputs_value_span = gsl::make_span(inputs_value).as_span<const gsl::byte* const>();
+    try_(reference::stack(input0->dtype(), inputs_value_span, out_mem, out_shape,
                           strides, output_tensor->strides(), axis_value,
                           context));
     KERNEL_FINISH;
