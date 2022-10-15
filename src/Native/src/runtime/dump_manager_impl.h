@@ -1,6 +1,7 @@
 #pragma once
 #include <fstream>
 #include <iostream>
+#include <nncase/runtime/util.h>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/dump_manager.h>
 #include <nncase/runtime/host_buffer.h>
