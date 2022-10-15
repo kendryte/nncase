@@ -165,7 +165,7 @@ def main():
     mylogger.addHandler(rf_handler)
 
     # producer
-    size = 32
+    size = 256
     q = queue.Queue(maxsize=size)
 
     # comsumer
