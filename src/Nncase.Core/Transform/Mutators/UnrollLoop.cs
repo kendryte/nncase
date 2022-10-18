@@ -99,10 +99,9 @@ internal sealed class UnRollLoop : ExprMutator
                 Skip(1).
                 AsParallel().
                 AsOrdered().
-                Select(vmap => new OptimizedSubstitutor(vmap, _evaluator_cache).Visit(nested_loops[^1].Body))).
-            ToImmutableArray();
+                Select(vmap => new OptimizedSubstitutor(vmap, _evaluator_cache).Visit(nested_loops[^1].Body)));
 
-        return new Sequential(new IRArray<Expr>(unrolled));
+        return Sequential.Flatten(unrolled);
     }
 
     /// <summary>
