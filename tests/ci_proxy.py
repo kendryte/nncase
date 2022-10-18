@@ -85,6 +85,7 @@ def Consumer(kpu_target, kpu_ip, kpu_username, kpu_password, nfsroot, q, mylogge
     if not os.path.exists(target_root):
         os.makedirs(target_root)
 
+    telnet_client = TelnetClient(mylogger)
     while True:
         cmd = './'
         conn = q.get()
@@ -105,14 +106,10 @@ def Consumer(kpu_target, kpu_ip, kpu_username, kpu_password, nfsroot, q, mylogge
                 cmd = cmd + ' ' + file
 
         # telnet target devcie to infer
-        telnet_client = TelnetClient(mylogger)
         telnet_client.login(kpu_ip, kpu_username, kpu_password)
         flag = f'/mnt/{kpu_target} ]$'
-        telnet_client.execute(f'cd /mnt/{kpu_target}', flag)
-        telnet_client.execute('sync', flag)
-        cmd_result, cmd_status = telnet_client.execute(cmd, flag)
+        cmd_result, cmd_status = telnet_client.execute(f'cd /mnt/{kpu_target} && {cmd}', flag)
         if cmd_status:
-            telnet_client.execute('sync', flag)
             conn.sendall(f'infer succeed'.encode())
             dummy = conn.recv(1024)
 
@@ -129,10 +126,9 @@ def Consumer(kpu_target, kpu_ip, kpu_username, kpu_password, nfsroot, q, mylogge
                 mylogger.debug('send: file = {0}, size = {1}'.format(file, file_size))
         else:
             conn.sendall(f'infer failed on {kpu_target} board: {cmd_result}'.encode())
+        conn.close()
 
         if 'timeout' not in cmd_result:
-            telnet_client.execute('rm *', flag)
-            telnet_client.execute('sync', flag)
             telnet_client.logout()
         else:
             # reboot kpu_target when timeout
@@ -143,7 +139,6 @@ def Consumer(kpu_target, kpu_ip, kpu_username, kpu_password, nfsroot, q, mylogge
             telnet_client.execute('reboot', flag)
             telnet_client.logout()
             time.sleep(60)
-        conn.close()
 
 def main():
     # args
