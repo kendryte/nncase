@@ -307,6 +307,12 @@ private:
             changed |= merge_same_input_region();
 
         } while (changed);
+
+        do
+        {
+            changed = false;
+            changed |= merge_child_region_stage_2();
+        } while (changed);
     }
 
     bool check_circle(std::list<region>::iterator ita, std::list<region>::iterator itb)
@@ -340,10 +346,49 @@ private:
                         continue;
 
                     // itb's inputs all connect to ita's output
-                    //// itb's has inputs connect to ita's output without circle
                     if ((ita->module_type == itb->module_type || itb->is_all_noaction)
                         && std::all_of(itb->region_inputs.begin(), itb->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); }))
-                        // if (check_circle(ita, itb))
+                        to_be_merge.emplace_back(itb);
+                }
+
+                if (!to_be_merge.empty())
+                {
+                    for (auto region : to_be_merge)
+                    {
+                        ita->merge(*region);
+                        regions_.erase(region);
+                    }
+
+                    changed = ever_changed = true;
+                    break;
+                }
+            }
+        } while (changed);
+        return ever_changed;
+    }
+
+    bool merge_child_region_stage_2()
+    {
+        bool ever_changed = false;
+        bool changed;
+        do
+        {
+            changed = false;
+            for (auto ita = regions_.begin(); ita != regions_.end(); ++ita)
+            {
+                std::vector<std::list<region>::iterator> to_be_merge;
+                for (auto itb = regions_.begin(); itb != regions_.end(); ++itb)
+                {
+                    // don't merge stackvm region
+                    if (ita == itb
+                        || (ita->module_type == runtime::stackvm::stackvm_module_type
+                            && itb->module_type == runtime::stackvm::stackvm_module_type))
+                        continue;
+
+                    // itb's has inputs connect to ita's output without circle
+                    if ((ita->module_type == itb->module_type || itb->is_all_noaction)
+                        && std::any_of(itb->region_inputs.begin(), itb->region_inputs.end(), [&](input_connector *in) { return ita->outputs.contains(in->connection()); })
+                        && check_circle(ita, itb))
                         to_be_merge.emplace_back(itb);
                 }
 
