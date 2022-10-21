@@ -135,7 +135,7 @@ public static partial class Utility
         where T : Op
         where BeginT : Op
         where EndT : Op => IsWildcardCall<EndT>("st", null!,
-        IsWildcardCall<T>(null!, mid_name, (
+        IsWildcardCall<T>("call", mid_name, (
             IsWildcardCall<BeginT>("ld", null!, IsWildcard("input")))));
 
     /// <summary>
