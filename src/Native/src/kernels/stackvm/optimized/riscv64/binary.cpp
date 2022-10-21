@@ -171,10 +171,10 @@ struct binary_op_div_rvv {
 
 // float
 template <typename Top>
-result<void>
-optimized_binary_impl(const float *input_a, const float *input_b, float *output,
-                      const dims_t &in_a_shape, const dims_t &in_b_shape,
-                      const dims_t &out_shape) noexcept {
+result<void> optimized_binary_impl(const float *input_a, const float *input_b,
+                                   float *output, const dims_t &in_a_shape,
+                                   const dims_t &in_b_shape,
+                                   const dims_t &out_shape) noexcept {
     Top op;
     const int count = compute_size(out_shape);
     size_t vl = 0;
@@ -274,11 +274,11 @@ optimized_binary_impl(const float *input_a, const float *input_b, float *output,
 
 // int32_t
 template <typename Top>
-result<void>
-optimized_binary_impl(const int32_t *input_a, const int32_t *input_b,
-                      int32_t *output, const dims_t &in_a_shape,
-                      const dims_t &in_b_shape, const dims_t &out_shape,
-                      value_range<float> fused_activation) noexcept {
+result<void> optimized_binary_impl(const int32_t *input_a,
+                                   const int32_t *input_b, int32_t *output,
+                                   const dims_t &in_a_shape,
+                                   const dims_t &in_b_shape,
+                                   const dims_t &out_shape) noexcept {
     Top op;
     const int count = compute_size(out_shape);
     size_t vl = 0;
@@ -374,21 +374,16 @@ optimized_binary_impl(const int32_t *input_a, const int32_t *input_b,
         }
     }
 
-    // fused_activation
-    for (int i = 0; i < count; i++)
-        output[i] = static_cast<int32_t>(kernels::detail::apply_activation(
-            static_cast<float>(output[i]), fused_activation));
-
     return ok();
 }
 
 // int64_t
 template <typename Top>
-result<void>
-optimized_binary_impl(const int64_t *input_a, const int64_t *input_b,
-                      int64_t *output, const dims_t &in_a_shape,
-                      const dims_t &in_b_shape, const dims_t &out_shape,
-                      value_range<float> fused_activation) noexcept {
+result<void> optimized_binary_impl(const int64_t *input_a,
+                                   const int64_t *input_b, int64_t *output,
+                                   const dims_t &in_a_shape,
+                                   const dims_t &in_b_shape,
+                                   const dims_t &out_shape) noexcept {
     Top op;
     const int count = compute_size(out_shape);
     size_t vl = 0;
@@ -484,68 +479,67 @@ optimized_binary_impl(const int64_t *input_a, const int64_t *input_b,
         }
     }
 
-    // fused_activation
-    for (int i = 0; i < count; i++)
-        output[i] = static_cast<int64_t>(kernels::detail::apply_activation(
-            static_cast<float>(output[i]), fused_activation));
-
     return ok();
 }
 #endif
 } // namespace
 
-// template <typename T>
-// result<void> optimized::binary(runtime::stackvm::binary_op_t op, const T
-// *input_a, const T *input_b, T *output,
-//     const dims_t &in_a_shape, const dims_t &in_a_strides, const dims_t
-//     &in_b_shape, const dims_t &in_b_strides, const dims_t &out_shape, const
-//     dims_t &out_strides, value_range<float> fused_activation, kernel_context
-//     &context) noexcept
-result<void> optimized::binary(
-    typecode_t typecode, runtime::stackvm::binary_op_t op, const gsl::byte *lhs,
-    const gsl::byte *rhs, gsl::byte *out, const dims_t &in_a_shape,
-    const strides_t &lhs_strides, const dims_t &in_b_shape,
-    const strides_t &rhs_strides, const dims_t &out_shape,
-    const strides_t &out_strides,
-    NNCASE_UNUSED kernel_context &context) noexcept
-{
+result<void>
+optimized::binary(typecode_t typecode, runtime::stackvm::binary_op_t op,
+                  const gsl::byte *lhs, const gsl::byte *rhs, gsl::byte *out,
+                  const dims_t &in_a_shape, const strides_t &lhs_strides,
+                  const dims_t &in_b_shape, const strides_t &rhs_strides,
+                  const dims_t &out_shape, const strides_t &out_strides,
+                  NNCASE_UNUSED kernel_context &context) noexcept {
 
 #if __riscv_vector
-    auto *input_a = IN_CAST(float, lhs);
-    auto *input_b = IN_CAST(float, rhs);
-    auto *output = OUT_CAST(float, out);
-    switch (op) {
-    case binary_op_t::add: {
-        return optimized_binary_impl<binary_op_add_rvv>(
-            input_a, input_b, output, in_a_shape, in_b_shape, out_shape);
+#define BINARY_IMPL(_ty)                                                       \
+    {                                                                          \
+        auto *input_a = IN_CAST(_ty, lhs);                                     \
+        auto *input_b = IN_CAST(_ty, rhs);                                     \
+        auto *output = OUT_CAST(_ty, out);                                     \
+        switch (op) {                                                          \
+        case binary_op_t::add: {                                               \
+            return optimized_binary_impl<binary_op_add_rvv>(                   \
+                input_a, input_b, output, in_a_shape, in_b_shape, out_shape);  \
+        }                                                                      \
+        case binary_op_t::sub: {                                               \
+            return optimized_binary_impl<binary_op_sub_rvv>(                   \
+                input_a, input_b, output, in_a_shape, in_b_shape, out_shape);  \
+        }                                                                      \
+        case binary_op_t::mul: {                                               \
+            return optimized_binary_impl<binary_op_mul_rvv>(                   \
+                input_a, input_b, output, in_a_shape, in_b_shape, out_shape);  \
+        }                                                                      \
+        case binary_op_t::div: {                                               \
+            return optimized_binary_impl<binary_op_div_rvv>(                   \
+                input_a, input_b, output, in_a_shape, in_b_shape, out_shape);  \
+        }                                                                      \
+        case binary_op_t::min: {                                               \
+            return optimized_binary_impl<binary_op_min_rvv>(                   \
+                input_a, input_b, output, in_a_shape, in_b_shape, out_shape);  \
+        }                                                                      \
+        case binary_op_t::max: {                                               \
+            return optimized_binary_impl<binary_op_max_rvv>(                   \
+                input_a, input_b, output, in_a_shape, in_b_shape, out_shape);  \
+        }                                                                      \
+        default:                                                               \
+            break;                                                             \
+        }                                                                      \
+        break;                                                                 \
     }
-    case binary_op_t::sub: {
-        return optimized_binary_impl<binary_op_sub_rvv>(
-            input_a, input_b, output, in_a_shape, in_b_shape, out_shape);
-    }
-    case binary_op_t::mul: {
-        return optimized_binary_impl<binary_op_mul_rvv>(
-            input_a, input_b, output, in_a_shape, in_b_shape, out_shape);
-    }
-    case binary_op_t::div: {
-        return optimized_binary_impl<binary_op_div_rvv>(
-            input_a, input_b, output, in_a_shape, in_b_shape, out_shape);
-    }
-    case binary_op_t::min: {
-        return optimized_binary_impl<binary_op_min_rvv>(
-            input_a, input_b, output, in_a_shape, in_b_shape, out_shape);
-    }
-    case binary_op_t::max: {
-        return optimized_binary_impl<binary_op_max_rvv>(
-            input_a, input_b, output, in_a_shape, in_b_shape, out_shape);
-    }
-    default:
-        ;
-//        std::cout << "Unsupported binary op: " + binary_op_to_string(op) +
-//                         " for optimizing, fallback to reference"
-//                  << std::endl;
+
+    switch (typecode) {
+    case dt_float32:
+        BINARY_IMPL(float);
+    case dt_int32:
+        BINARY_IMPL(int32_t);
+    case dt_int64:
+        BINARY_IMPL(int64_t);
+    default:;
     }
 #endif
+
     return stackvm::reference::binary(typecode, op, lhs, rhs, out, in_a_shape,
                                       lhs_strides, in_b_shape, rhs_strides,
                                       out_shape, out_strides, context);

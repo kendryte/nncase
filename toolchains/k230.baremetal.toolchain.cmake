@@ -32,6 +32,3 @@ set(BUILDING_RUNTIME ON)
 set(ENABLE_K230_RUNTIME ON)
 set(BUILD_SHARED_LIBS OFF)
 add_compile_options(-D NNCASE_BAREMETAL)
-# used for rvv
-add_definitions(-D__riscv_vector=1)
-add_compile_options(-march=rv64imafdcv)
