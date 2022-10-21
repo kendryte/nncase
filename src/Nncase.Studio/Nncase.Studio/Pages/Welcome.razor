@@ -1,0 +1,41 @@
+﻿@page "/"
+
+<PageContainer Title="Welcome">
+    <Card>
+        <Alert
+            Message="AntDesign.Templates have been published to nuget, you can download and use them directly."
+            Type="success"
+            ShowIcon="true"
+            Banner
+            Style="margin: -12px; margin-bottom: 24px"/>
+        <Text Strong>
+            <a target="_blank" rel="noopener noreferrer" href="https://www.nuget.org/packages/AntDesign.Templates">
+                Use .NET CLI to install the latest template quickly.
+            </a>
+        </Text>
+        <pre class="pre"><code><Text Copyable> dotnet new --install AntDesign.Templates::0.1.0-*</Text></code></pre>
+        <Text
+            Strong
+            Style="margin-bottom: 12px">
+            <a target="_blank" rel="noopener noreferrer" href="https://github.com/ant-design-blazor/ant-design-pro-blazor">
+               Create an empty server-side Blazor project.
+            </a>
+        </Text>
+        <pre class="pre"><code><Text Copyable> dotnet new antdesign --host=server</Text></code></pre>
+        <Text
+            Strong
+            Style="margin-bottom: 12px">
+            <a target="_blank" rel="noopener noreferrer" href="https://github.com/ant-design-blazor/ant-design-pro-blazor">
+                Create an empty server-side Blazor project with all pages.
+            </a>
+        </Text>
+        <pre class="pre"><code><Text Copyable> dotnet new antdesign --host=server --full</Text></code></pre>
+    </Card>
+    <p style="text-align: center; margin-top: 24px;">
+        Want to add more pages? Please refer to
+        <a href="https://github.com/ant-design-blazor/ant-design-pro-blazor" target="_blank" rel="noopener noreferrer">
+            ant-design-pro-blazor project
+        </a>
+        .
+    </p>
+</PageContainer>

@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net6</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+    
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="6.0.6" />
+    <PackageReference Include="AntDesign.Charts" Version="0.2.3" />
+    <PackageReference Include="AntDesign.ProLayout" Version="0.12.4" />
+    <PackageReference Include="System.Net.Http.Json" Version="6.0.0" />
+  </ItemGroup>
+  
+  <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(ProjectDir)node_modules') ">
+    <!-- Ensure Node.js is installed -->
+    <Exec Command="node --version" ContinueOnError="true">
+      <Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
+    </Exec>
+    <Error Condition="'$(ErrorCode)' != '0'" Text="Node.js is required to build and run this project. To continue, please install Node.js from https://nodejs.org/, and then restart your command prompt or IDE." />
+    <Message Importance="high" Text="Restoring dependencies using 'npm'. This may take several minutes..." />
+    <Exec WorkingDirectory="$(ProjectDir)" Command="npm install" />
+  </Target>
+
+  <Target Name="DebugRunGulp" BeforeTargets="DebugEnsureNodeEnv" Condition=" '$(Configuration)' == 'Debug' And Exists('$(ProjectDir)node_modules') ">
+    <Exec WorkingDirectory="$(ProjectDir)" Command="npm run gulp:pro" />
+  </Target>
+
+  <Target Name="PublishRunGulp" AfterTargets="ComputeFilesToPublish">
+    <Exec WorkingDirectory="$(ProjectDir)" Command="npm install" />
+    <Exec WorkingDirectory="$(ProjectDir)" Command="npm run gulp:pro" />
+  </Target>
+</Project>
