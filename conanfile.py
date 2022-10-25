@@ -36,7 +36,7 @@ class nncaseConan(ConanFile):
         "tests": False,
         "halide": True,
         "python": True,
-        "vulkan_runtime": True,
+        "vulkan_runtime": False,
         "openmp": True
     }
 
