@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -76,5 +77,11 @@ public static class QuantUtility
             range.Max = range.Min + r;
         }
         return range;
+    }
+
+    public static ValueRange<T> GetRange<T>(Span<T> input) where T : unmanaged, IEquatable<T>, IComparable<T>
+    {
+        var data = input.ToArray();
+        return new(data.Min(), data.Max());
     }
 }
