@@ -283,4 +283,73 @@ public static class TensorUtilities
 
         return transformIndex;
     }
+
+    /// <summary>
+    /// check this dimension and strides is contiguous.
+    /// </summary>
+    /// <param name="dimensions"></param>
+    /// <param name="strides"></param>
+    /// <returns></returns>
+    public static bool IsContiguous(ReadOnlySpan<int> dimensions, ReadOnlySpan<int> strides)
+    {
+        return System.Collections.StructuralComparisons.StructuralEqualityComparer.Equals(GetStrides(dimensions), strides.ToArray());
+    }
+
+    private enum SliceStatus : uint
+    {
+        IsFull,
+        IsSlice,
+        IsSliceFull, // shape [10,10] like [[0,1), [0,10)]
+        IsInvalid
+    }
+
+    /// <summary>
+    /// check the dimensions selected range is contiguous.
+    /// </summary>
+    /// <param name="dimensions"></param>
+    /// <param name="slices"></param>
+    /// <returns></returns>
+    /// <exception cref="NotSupportedException"></exception>
+    public static bool IsContiguousSlice(ReadOnlySpan<int> dimensions, ReadOnlySpan<System.Range> slices)
+    {
+        if (dimensions.Length != slices.Length)
+            return false;
+        SliceStatus status = SliceStatus.IsFull;
+        for (int i = dimensions.Length - 1; i >= 0; i--)
+        {
+            var start = slices[i].Start.IsFromEnd ? dimensions[i] - slices[i].Start.Value : slices[i].Start.Value;
+            var end = slices[i].End.IsFromEnd ? dimensions[i] - slices[i].End.Value : slices[i].End.Value;
+
+            status = (end - start) switch
+            {
+                // is full
+                int x when (x == dimensions[i]) => status switch
+                {
+                    SliceStatus.IsSlice => x == 1 ? 
+                                                    SliceStatus.IsSlice :
+                                                    SliceStatus.IsInvalid,
+                    SliceStatus.IsSliceFull => x == 1 ? 
+                                                    SliceStatus.IsSliceFull :
+                                                    SliceStatus.IsInvalid,
+                    _ => SliceStatus.IsFull,
+                },
+                // when has
+                int x when (x > 0 && x < dimensions[i]) => status switch
+                {
+                    SliceStatus.IsSlice => x == 1 ?
+                                                SliceStatus.IsSlice :
+                                                SliceStatus.IsInvalid,
+                    SliceStatus.IsSliceFull => x == 1 ?
+                                                SliceStatus.IsSliceFull :
+                                                SliceStatus.IsInvalid,
+                    SliceStatus.IsFull => SliceStatus.IsSliceFull,
+                    _ => SliceStatus.IsSlice,
+                },
+                _ => throw new NotSupportedException(),
+            };
+            if (status == SliceStatus.IsInvalid)
+                return false;
+        }
+        return true;
+    }
 }
