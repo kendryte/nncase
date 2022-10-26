@@ -41,15 +41,16 @@ jobs:
         conan profile new default --detect
         conan profile update settings.compiler.libcxx=libstdc++11 default
       if: runner.os == 'Linux'
-
-    - name: Build
+      
+    - name: Configure CMake
       shell: bash
       run: |
         cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
-        cmake --build build --config ${{matrix.config.buildType}}
 
-    - name: Install
-      run: cmake --install build --prefix install
+    - name: Build & Install
+      run: |
+        cmake --build build --config ${{matrix.config.buildType}}
+        cmake --install build --prefix install
 
     - name: CTest
       working-directory: ${{github.workspace}}/build/tests/kernels
