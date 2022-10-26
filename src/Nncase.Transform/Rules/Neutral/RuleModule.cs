@@ -10,6 +10,12 @@ internal class NeutralModule : Module
     /// <inheritdoc/>
     protected override void Load(ContainerBuilder builder)
     {
+        builder.RegisterType<AddRangeOfAndMarkerToBinary>().AsImplementedInterfaces();
+        builder.RegisterType<AddRangeOfAndMarkerToConv2D>().AsImplementedInterfaces();
+        builder.RegisterType<AddRangeOfAndMarkerToConv2DTranspose>().AsImplementedInterfaces();
+        builder.RegisterType<AddRangeOfAndMarkerToMatMul>().AsImplementedInterfaces();
+        builder.RegisterType<AddRangeOfAndMarkerToRedeceWindow2D>().AsImplementedInterfaces();
+        builder.RegisterType<AddRangeOfAndMarkerToUnary>().AsImplementedInterfaces();
         builder.RegisterType<AddToConv2D>().AsImplementedInterfaces();
         builder.RegisterType<CombinePadUnary>().AsImplementedInterfaces();
         builder.RegisterType<CombineReshapeUnary>().AsImplementedInterfaces();

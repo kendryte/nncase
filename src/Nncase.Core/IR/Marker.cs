@@ -17,6 +17,13 @@ namespace Nncase.IR;
 /// <param name="Attribute"> expr attribute. </param>
 public sealed record Marker(string Name, Expr Target, Expr Attribute) : Expr
 {
+    /// <summary>
+    /// Gets Target.
+    /// </summary>
+    public Expr MarkerTarget()
+    {
+        return Target;
+    }
 }
 
 /// <summary>

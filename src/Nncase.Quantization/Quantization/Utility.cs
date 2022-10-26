@@ -24,17 +24,17 @@ public static class Utility
     {
         int N = 0;
         N = ((V2.Length < V1.Length) ? V2.Length : V1.Length);
-        float dot = 0.0f;
-        float mag1 = 0.0f;
-        float mag2 = 0.0f;
+        double dot = 0.0f;
+        double mag1 = 0.0f;
+        double mag2 = 0.0f;
         for (int n = 0; n < N; n++)
         {
-            dot += V1[n] * V2[n];
-            mag1 += (float)Math.Pow(V1[n], 2);
-            mag2 += (float)Math.Pow(V2[n], 2);
+            dot += (double)V1[n] * (double)V2[n];
+            mag1 += Math.Pow((double)V1[n], 2);
+            mag2 += Math.Pow((double)V2[n], 2);
         }
 
-        return dot / (float)(Math.Sqrt(mag1) * Math.Sqrt(mag2));
+        return (float)(dot / (Math.Sqrt(mag1) * Math.Sqrt(mag2)));
     }
 
     /// <summary>
