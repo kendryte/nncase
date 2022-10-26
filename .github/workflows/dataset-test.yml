@@ -23,11 +23,10 @@ jobs:
         python-version: 3.7
 
     - name: Install Conan
-      run: pip install conan
+      run: pip install conan --upgrade
 
     - name: Configure Conan (Linux)
       run: |
-        conan profile new default --detect
         conan profile update settings.compiler.libcxx=libstdc++11 default
       if: runner.os == 'Linux'
 
