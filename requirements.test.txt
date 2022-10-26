@@ -1,0 +1,17 @@
+tensorflow==2.5.0
+matplotlib
+pillow
+opencv-python
+onnx==1.12.0
+onnx-simplifier==0.3.6
+onnxoptimizer==0.2.6
+onnxruntime==1.12.0
+numpy==1.19.5
+--find-links https://download.pytorch.org/whl/torch_stable.html
+torch==1.9.0+cpu
+torchvision==0.10.0+cpu
+imageio==2.15.0
+protobuf==3.20.1
+kendryte-caffe
+pytest
+pytest-xdist

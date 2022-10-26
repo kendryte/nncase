@@ -5,61 +5,41 @@ on:
     tags:
       - '*'
 
-env:
-  BUILD_TYPE: Release
-
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    name: ${{matrix.config.name}}
+    runs-on: ${{matrix.config.os}}
     strategy:
       matrix:
-        os: [ubuntu-18.04,windows-2019,macos-10.15]
+        config:
+          - {name: x86_64-macos, os: macos-latest, shell: bash}
+          - {name: x86_64-linux, os: ubuntu-latest, shell: bash}
+          - {name: x86_64-windows, os: windows-latest, shell: bash}
 
     steps:
     - uses: actions/checkout@v2
     - uses: seanmiddleditch/gha-setup-ninja@master
 
+    - name: Set up build environment (Windows, Visual Studio)
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: ${{matrix.config.arch}}
+      if: runner.os == 'Windows'
+
     - name: Setup Python
-      uses: actions/setup-python@v2.2.1
+      uses: actions/setup-python@v2
       with:
         python-version: 3.7
 
     - name: Install cibuildwheel
       run: pip install cibuildwheel
 
-    - name: Install System Requirements
-      if: runner.os == 'Macos'
-      shell: bash
-      run: |
-        brew install libomp
-
-    - name: Add msbuild to PATH
-      if: runner.os == 'Windows'
-      uses: ilammy/msvc-dev-cmd@v1.10.0
-
     - name: Build wheel
       run: python -m cibuildwheel --output-dir wheelhouse
-    
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
-      if: runner.os == 'Windows'
-      with:
-        name: nncase-python-windows
-        path: ${{github.workspace}}/wheelhouse
-        if-no-files-found: error
 
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
-      if: runner.os == 'Linux'
+    - name: Upload nncase-python Build Artifact
+      uses: actions/upload-artifact@v2
       with:
-        name: nncase-python-linux
-        path: ${{github.workspace}}/wheelhouse
-        if-no-files-found: error
-
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
-      if: runner.os == 'Macos'
-      with:
-        name: nncase-python-macos
+        name: nncase-python-${{matrix.config.name}}
         path: ${{github.workspace}}/wheelhouse
         if-no-files-found: error
