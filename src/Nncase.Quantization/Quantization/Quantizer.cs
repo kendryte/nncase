@@ -57,11 +57,11 @@ internal partial class Quantizer
         {   // 2. Assign ranges
             AssignRanges(ranges);
         }
-        // 3. Choose better quant method using cosine, and bind info with ir.
-        if (quantOptions.BindQuantMethod)
-        {
-            var info = await options.Target.BindQuantMethodCosine(quantOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs, _passOptions);
-        }
+        // // 3. Choose better quant method using cosine, and bind info with ir.
+        // if (quantOptions.BindQuantMethod)
+        // {
+        //     var info = await options.Target.BindQuantMethodCosine(quantOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs, _passOptions);
+        // }
         _graph.Rebuild();
     }
 

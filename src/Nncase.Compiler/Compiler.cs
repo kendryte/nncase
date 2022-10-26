@@ -10,6 +10,7 @@ using Nncase.CodeGen;
 using Nncase.Evaluator;
 using Nncase.Hosting;
 using Nncase.IR;
+using Nncase.Quantization;
 using Nncase.Transform;
 using Nncase.Transform.Passes;
 using Nncase.Utilities;
@@ -118,15 +119,22 @@ public class Compiler
         pmgr.RunAsync().Wait();
     }
 
-    public void TargetIndependentPass()
+    public void TargetIndependentPass(PassManager passManager, CompileOptions options)
     {
+        if (options.ModelQuantMode == ModelQuantMode.UsePTQ)
+        {
+            passManager.Add(new DataflowPass("add_rangeof_and_marker")
+            {
+                new Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2D(),
+            });
+        }
     }
 
     public void Compile(CompileOptions options)
     {
         CompilerServices.CompileOptions = options;
         var t = CompilerServices.GetCompileTarget;
-        TargetIndependentPass();
+        // TargetIndependentPass();
         RunPass(p => t.RegisterTargetDependentPass(p, options));
         RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, options));
         Console.WriteLine("Compile successful");
