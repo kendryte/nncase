@@ -129,24 +129,10 @@ public:
             return root;
         }
 
-        if (depth >= 20)
-        {
-            skip_ = true;
-            return root;
-        }
-        // if(!skip_)
-        // {
         for (auto it : new_node->region_inputs)
         {
             for (auto itb = regions.begin(); itb != regions.end(); itb++)
             {
-                if (new_node == start_region_ && itb == target_region_)
-                    continue;
-
-                // 不能提前判断 stack vm， 否则支路会出现不能合并而合并的情况
-                // if(itb->module_type == runtime::stackvm::stackvm_module_type && !itb->is_all_noaction)
-                //     continue;
-
                 if (itb->outputs.contains(it->connection()))
                 {
 
@@ -164,14 +150,12 @@ public:
                 }
             }
         }
-        // }
+
         return root;
     }
 
     bool not_have_circle()
     {
-        if (skip_)
-            return false;
         for (auto it : leaves_)
         {
             auto condition_ptr = it->parent;
@@ -222,7 +206,6 @@ private:
     std::list<region>::iterator start_region_;
     std::list<region>::iterator target_region_;
     std::vector<Region_node *> leaves_;
-    bool skip_ = false;
 };
 
 class graph_merger
@@ -257,6 +240,13 @@ private:
             for (auto in : node.inputs())
             {
                 auto &conn = in->connection()->owner();
+
+                if (conn.runtime_opcode() == op_constant)
+                {
+                    last_region = nullptr;
+                    break;
+                }
+
                 auto it = node_to_region_.find(&conn);
                 if (it != node_to_region_.end())
                 {
@@ -317,13 +307,11 @@ private:
 
     bool check_circle(std::list<region>::iterator ita, std::list<region>::iterator itb)
     {
-        auto check = new Region_tree();
+        auto check = std::make_shared<Region_tree>();
         check->set_label_region(ita, itb);
         auto root = check->create_tree(itb, regions_, 0);
         auto flag = check->not_have_circle();
         check->free_tree(root);
-        delete check;
-        check = NULL;
         return flag;
     }
 
@@ -498,6 +486,8 @@ private:
 
     void add_node_to_region(region &region, node &node)
     {
+        if (node.module_type() != runtime::stackvm::stackvm_module_type)
+            region.module_type = node.module_type();
         region.add_node(node);
         node_to_region_.emplace(&node, &region);
     }
