@@ -2,8 +2,6 @@
 name = "nncase"
 dynamic = ["version"]
 requires-python = ">=3.7"
-homepage = "https://github.com/kendryte/nncase"
-repository = "https://github.com/kendryte/nncase"
 authors = [{ name = "sunnycase" }, { email = "sunnycase@live.cn" }]
 maintainers = [{ name = "sunnycase" }, { email = "sunnycase@live.cn" }]
 readme = "README.md"
@@ -21,6 +19,9 @@ classifiers = [
 ]
 keywords = ["kendryte", "nn", "compiler", "k210", "k510"]
 dependencies = ["numpy"]
+
+[project.urls]
+homepage = "https://github.com/kendryte/nncase"
 
 [build-system]
 requires = ["setuptools>=42", "wheel", "conan", "ninja"]
