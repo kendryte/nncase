@@ -4,6 +4,7 @@ on: [push, pull_request]
 
 jobs:
   build:
+    name: build-${{matrix.config.name}}
     runs-on: [self-hosted]
     strategy:
       matrix:
@@ -23,7 +24,6 @@ jobs:
 
     - name: Configure Conan (Linux)
       run: |
-        conan profile new default --detect
         conan profile update settings.compiler.libcxx=libstdc++11 default
       if: runner.os == 'Linux'
 
@@ -44,6 +44,7 @@ jobs:
 
   test-compiler:
     needs: [build]
+    name: test-${{matrix.config.name}}
     runs-on: [self-hosted]
     strategy:
       matrix:

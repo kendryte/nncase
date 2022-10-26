@@ -7,6 +7,7 @@ on:
 
 jobs:
   build:
+    name: build-${{matrix.config.name}}
     runs-on: [self-hosted]
     strategy:
       matrix:
@@ -47,6 +48,7 @@ jobs:
 
   dataset-test:
     needs: [build]
+    name: test-${{matrix.config.name}}
     runs-on: [self-hosted]
     timeout-minutes: 4320
     strategy:

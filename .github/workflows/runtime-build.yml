@@ -9,10 +9,9 @@ jobs:
     strategy:
       matrix:
         config:
-          - {name: x86_64-macos, os: macos-latest, shell: bash, cmakeArgs: -G Ninja, buildType: Release}
-          - {name: x86_64-linux, os: ubuntu-latest, shell: bash, cmakeArgs: -G Ninja, buildType: Release}
-          - {name: x86_64-windows, os: windows-latest, shell: bash, arch: x64, cmakeArgs: -G Ninja, buildType: Release}
-          - {name: riscv64-none-k210, os: ubuntu-latest, shell: bash, cmakeArgs: -G Ninja, buildType: Release}
+          - {name: x86_64-macos, os: macos-latest, cmakeArgs: -G Ninja, buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: -G Ninja, buildType: Release}
+          - {name: x86_64-windows, os: windows-latest, cmakeArgs: -G Ninja, buildType: Release}
 
     steps:
     - uses: actions/checkout@v2
@@ -39,6 +38,7 @@ jobs:
       if: runner.os == 'Linux'
 
     - name: Build
+      shell: bash
       run: |
         cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DPython3_ROOT_DIR=${pythonLocation}
         cmake --build build --config ${{matrix.config.buildType}}
