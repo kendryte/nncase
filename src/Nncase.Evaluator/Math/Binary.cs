@@ -32,6 +32,17 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 
+    bool _compute(BinaryOp op, bool a, bool b) => op switch
+    {
+        BinaryOp.BitwiseAnd => a & b,
+        BinaryOp.BitwiseOr => a | b,
+        BinaryOp.BitwiseXor => a ^ b,
+        BinaryOp.LogicalAnd => a & b,
+        BinaryOp.LogicalOr => a | b,
+        BinaryOp.LogicalXor => a ^ b,
+        _ => throw new ArgumentOutOfRangeException(nameof(op)),
+    };
+
     long _compute(BinaryOp op, long a, long b) => op switch
     {
         BinaryOp.Add => a + b,
@@ -79,6 +90,10 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             else if (lhs.ElementType == DataTypes.Float32 && rhs.ElementType == DataTypes.Float32)
             {
                 return Value.FromTensor(Tensor.FromScalar(_compute(binary.BinaryOp, lhs.ToScalar<float>(), rhs.ToScalar<float>())));
+            }
+            else if (lhs.ElementType == DataTypes.Boolean && rhs.ElementType == DataTypes.Boolean)
+            {
+                return Value.FromTensor(Tensor.FromScalar(_compute(binary.BinaryOp, lhs.ToScalar<bool>(), rhs.ToScalar<bool>())));
             }
             else
                 return ort_compute(binary, lhs, rhs);
