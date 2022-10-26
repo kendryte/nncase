@@ -10,5 +10,13 @@ set(SRCS
          gather_nd.cpp
          quantize.cpp
          onehot.cpp
+
+         riscv64/binary.cpp
+         riscv64/matmul.cpp
+         riscv64/sigmoid.cpp
+         riscv64/softmax.cpp
+         riscv64/unary.cpp
         )
+
+
 target_sources(kernels PRIVATE ${SRCS})

@@ -64,7 +64,7 @@ inline result<bool> float_only_check(tensor input) {
 // tuple helper
 template <typename F>
 inline result<void> tuple_for_each_with_i(tuple inputs, F &&f) {
-    for (size_t i =0; i < inputs->fields().size(); ++i) {
+    for (size_t i = 0; i < inputs->fields().size(); ++i) {
         try_(f(inputs->fields()[i], i));
     }
     return ok();
@@ -74,7 +74,7 @@ inline result<void> tuple_for_each_with_i(tuple inputs, F &&f) {
 template <typename T, bool IsResult, typename F>
 inline result<std::vector<T>> get_from_tuple_with_result(tuple inputs, F &&f) {
     std::vector<T> data(inputs->fields().size());
-    for (size_t i =0; i < inputs->fields().size(); ++i) {
+    for (size_t i = 0; i < inputs->fields().size(); ++i) {
         try_var(input, inputs->fields()[i].as<tensor>());
         if constexpr (IsResult) {
             try_var(in, f(input));
@@ -134,7 +134,7 @@ alloc_output<true, std::vector<dims_t>>(value_t &outputs, datatype_t dtype,
     if (outputs.empty()) {
         auto size = out_shapes.size();
         std::vector<value_t> fields(size);
-        for (size_t i =0; i < size; ++i) {
+        for (size_t i = 0; i < size; ++i) {
             auto output = value_t();
             try_(alloc_output<false>(output, dtype, out_shapes[i]));
             fields[i] = output;
@@ -208,6 +208,14 @@ inline result<gsl::byte *> get_input_data(tensor input) {
 inline result<std::vector<gsl::byte *>> get_input_data(tuple inputs) {
     return get_from_tuple_with_result<gsl::byte *, true>(
         inputs, [](tensor &input) { return get_input_data(input); });
+}
+
+inline result<std::vector<gsl::byte *>> get_readonly_span(tuple inputs) {
+    return get_input_data(inputs);
+}
+
+inline result<gsl::byte *> get_readonly_span(tensor input) {
+    return get_input_data(input);
 }
 
 // some macro about get value for tensor_ops.cpp
@@ -335,7 +343,7 @@ template <typename TI, typename TO>
 itlib::small_vector<TO, 4> to_vec(const gsl::byte *input, size_t size) {
     auto in_ptr = reinterpret_cast<const TI *>(input);
     auto vec = itlib::small_vector<TO, 4>(size);
-    for (size_t i =0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
         vec[i] = (TO)in_ptr[i];
     }
     return vec;
@@ -350,7 +358,7 @@ itlib::small_vector<TO, 4> to_vec(const gsl::byte *input, size_t size) {
     RETURN_RESULT_IMPL(int64_t);                                               \
     RETURN_RESULT_IMPL(uint64_t);                                              \
     RETURN_RESULT_IMPL(float);                                                 \
-    RETURN_RESULT_IMPL(double);                                                \
+    RETURN_RESULT_IMPL(double);
 
 template <typename T>
 inline result<T> value_to_scalar([[maybe_unused]] value_t value) {
@@ -405,7 +413,7 @@ inline result<dims_t> value_as_positive_axes(value_t value, size_t rank) {
     assert(value_tensor->shape().size() == 1);
     auto size = value_tensor->shape()[0];
     auto axis = dims_t(size);
-    for (size_t i =0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
         if (cmp_type<int32_t>(value_tensor->dtype())) {
             axis[i] = (dims_t::value_type)positive_index(
                 IN_CAST(int32_t, input)[i], rank);
@@ -433,7 +441,7 @@ inline result<paddings_t> value_as_paddings([[maybe_unused]] value_t value) {
     auto dims = size / 2;
     auto pads = paddings_t(dims);
     auto dt = value_tensor->dtype();
-    for (size_t i =0; i < dims; ++i) {
+    for (size_t i = 0; i < dims; ++i) {
         if (cmp_type<int32_t>(dt)) {
             pads[i].before = *(IN_CAST(int32_t, input) + 2 * i);
             pads[i].after = *(IN_CAST(int32_t, input) + 2 * i + 1);
@@ -486,9 +494,9 @@ inline bool is_contiguous(tensor tensor) {
 // kernel dispatch for single input
 #define CONTIGUOUS_KERNEL(_op, _in_tensor, ...)                                \
     if (is_contiguous(_in_tensor)) {                                           \
-        try_(reference::_op(__VA_ARGS__))                                      \
-    } else {                                                                   \
         try_(optimized::_op(__VA_ARGS__))                                      \
+    } else {                                                                   \
+        try_(reference::_op(__VA_ARGS__))                                      \
     }
 
 // used for op only do reshape
@@ -568,7 +576,7 @@ slice_fill(const dims_t &in_shape, axes_t &begins_value, axes_t &ends_value,
 
 inline dims_t to_4d(dims_t in_a_shape) {
     auto size = 4 - in_a_shape.size();
-    for (size_t i =0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
         in_a_shape.insert(in_a_shape.begin(), 1);
     }
     return in_a_shape;
