@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 #pragma once
-#include <nncase/kernels/kernel_context.h>
 #include <nncase/kernels/apply.h>
+#include <nncase/kernels/kernel_context.h>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/result.h>
@@ -199,8 +199,10 @@ lstm(const float *input, const float *w_xc, const float *w_rc,
      const dims_t &w_rc_shape, runtime::stackvm::lstmdirection_t direction);
 
 NNCASE_API result<void>
-mat_mul(tensor lhs, tensor rhs, tensor output = nullptr,
-        kernel_context &context = default_kernel_context());
+matmul(typecode_t typecode, const gsl::byte *input_a,
+            const gsl::byte *input_b, gsl::byte *output,
+            const dims_t &in_a_shape, const dims_t &in_b_shape,
+            kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
 normal(typecode_t type, tensor mean, tensor scale, tensor seed, tensor shape,
@@ -242,11 +244,12 @@ quant_param_of(runtime::stackvm::quant_mode_t quant_mode, tensor range,
                tensor bits, tensor output = nullptr,
                kernel_context &context = default_kernel_context());
 
-NNCASE_API result<void> quantize(
-    datatype_t in_type, datatype_t out_type, const gsl::byte *input,
-    gsl::byte *output, const dims_t &in_shape, const strides_t &in_strides,
-    const strides_t &out_strides, float scale, float bias,
-    kernel_context &context) noexcept;
+NNCASE_API result<void> quantize(datatype_t in_type, datatype_t out_type,
+                                 const gsl::byte *input, gsl::byte *output,
+                                 const dims_t &in_shape,
+                                 const strides_t &in_strides,
+                                 const strides_t &out_strides, float scale,
+                                 float bias, kernel_context &context) noexcept;
 
 NNCASE_API result<void> random_normal(typecode_t type, gsl::byte *output,
                                       const dims_t &out_shape, float mean,
@@ -301,22 +304,19 @@ NNCASE_API result<void>
 reshape(tensor input, tensor shape, tensor output = nullptr,
         kernel_context &context = default_kernel_context());
 
-NNCASE_API result<void> resize_bilinear(typecode_t type, const gsl::byte *input,
-                             gsl::byte *output, const dims_t &in_shape,
-                             const strides_t &in_strides,
-                             const strides_t &out_strides, int32_t out_h,
-                             int32_t out_w, bool align_corners,
-                             bool half_pixel_centers,
-                             kernel_context &context) noexcept;
+NNCASE_API result<void>
+resize_bilinear(typecode_t type, const gsl::byte *input, gsl::byte *output,
+                const dims_t &in_shape, const strides_t &in_strides,
+                const strides_t &out_strides, int32_t out_h, int32_t out_w,
+                bool align_corners, bool half_pixel_centers,
+                kernel_context &context) noexcept;
 
-NNCASE_API result<void> resize_nearest_neighbor(typecode_t type, const gsl::byte *input,
-                                     gsl::byte *output, const dims_t &in_shape,
-                                     const strides_t &in_strides,
-                                     const strides_t &out_strides,
-                                     int32_t out_h, int32_t out_w,
-                                     bool align_corners,
-                                     bool half_pixel_centers,
-                                     kernel_context &context) noexcept;
+NNCASE_API result<void> resize_nearest_neighbor(
+    typecode_t type, const gsl::byte *input, gsl::byte *output,
+    const dims_t &in_shape, const strides_t &in_strides,
+    const strides_t &out_strides, int32_t out_h, int32_t out_w,
+    bool align_corners, bool half_pixel_centers,
+    kernel_context &context) noexcept;
 
 NNCASE_API result<void> reverse_sequence(
     datatype_t dt, const gsl::byte *input, gsl::byte *output,
