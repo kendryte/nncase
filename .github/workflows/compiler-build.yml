@@ -134,6 +134,20 @@ jobs:
         name: nncase-${{matrix.config.name}}
         path: ${{github.workspace}}/install
 
+    - name: Generate benchmark kmodels
+      working-directory: ${{github.workspace}}/benchmark
+      env:
+        PATH: ${{github.workspace}}/install/bin
+        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
+      run: |
+        python gen_kmodel.py
+      if: matrix.config.name == 'x86_64-linux'
+
+    - uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: Update benchmark kmodels
+      if: matrix.config.name == 'x86_64-linux'
+
     - name: Test
       working-directory: ${{github.workspace}}
       env:

@@ -8,7 +8,7 @@ authors = [{ name = "sunnycase" }, { email = "sunnycase@live.cn" }]
 maintainers = [{ name = "sunnycase" }, { email = "sunnycase@live.cn" }]
 readme = "README.md"
 description = "A neural network compiler for AI accelerators"
-license = "Apache-2.0"
+license = { file = "LICENSE" }
 classifiers = [
     "Programming Language :: C++",
     "Programming Language :: Python :: 3",
