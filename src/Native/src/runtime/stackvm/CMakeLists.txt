@@ -2,6 +2,7 @@
 
 set(SRCS runtime_module.cpp
          runtime_function.cpp
+         op_profile.cpp
          op_reader.cpp
          call_frame.cpp
          evaluate_stack.cpp

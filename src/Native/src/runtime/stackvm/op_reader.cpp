@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 #include <nncase/runtime/stackvm/op_reader.h>
+#include <nncase/runtime/stackvm/op_profile.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -26,6 +27,9 @@ result<void> op_visitor::next() noexcept
     if (opcode == opcode_t::TENSOR)
     {
         auto tensor_funct = static_cast<tensor_function_t>(reader_.peek_unaligned_with_offset<uint16_t>(1));
+#ifdef ENABLE_OP_PROFILE
+        op_profile p(to_string(tensor_funct));
+#endif
         switch (tensor_funct)
         {
         case tensor_function_t::batch_normalization:
@@ -180,6 +184,31 @@ result<void> op_visitor::next() noexcept
     }
     else
     {
+#ifdef ENABLE_OP_PROFILE
+        std::string name;
+        switch(opcode)
+        {
+        case opcode_t::CALL: {
+            name = "call_op_t"; break;
+        }
+        case opcode_t::ECALL: {
+            name = "ecall_op_t"; break;
+        }
+        case opcode_t::EXTCALL: {
+            name = "extcall_op_t"; break;
+        }
+        case opcode_t::CUSCALL: {
+            name = "cuscall_op_t"; break;
+        }
+        default:
+            name = "stackvm_inst"; break;
+        }
+        if(opcode == opcode_t::CUSCALL)
+        {
+            name = "custom_call_t";
+        }
+        op_profile st(name);
+#endif
         switch (opcode)
         {
         case opcode_t::NOP:
@@ -399,5 +428,8 @@ result<void> op_visitor::visit(gsl::span<const gsl::byte> text) noexcept
 
     while (!interrupted_ && !reader_.empty())
         try_(next());
+#ifdef ENABLE_OP_PROFILE
+    op_profile::print();
+#endif
     return ok();
 }
