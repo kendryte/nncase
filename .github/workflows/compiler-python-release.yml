@@ -1,9 +1,6 @@
 name: compiler-python-release
 
-on:
-  push:
-    tags:
-      - '*'
+on: [push, pull_request]
 
 jobs:
   build:
@@ -28,7 +25,7 @@ jobs:
       
     - name: Set up build environment (Macos)
       run: |
-        brew install sunnycase/core/libomp@11.1.0
+        brew install sunnycase/core/libomp@14.0.6
       if: runner.os == 'Macos'
 
     - name: Setup Python
@@ -43,7 +40,7 @@ jobs:
       run: python -m cibuildwheel --output-dir wheelhouse
 
     - name: Upload nncase-python Build Artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: nncase-python-${{matrix.config.name}}
         path: ${{github.workspace}}/wheelhouse

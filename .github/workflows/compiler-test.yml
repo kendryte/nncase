@@ -84,14 +84,14 @@ jobs:
       if: runner.os != 'Windows'
       
     - name: Upload Test Results
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: nncase-test_results-${{matrix.config.name}}
         path: ${{github.workspace}}/test_results
         if-no-files-found: error
       
     - name: Upload Dataset Test Results
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: nncase-dataset_test_results-${{matrix.config.name}}
         path: ${{github.workspace}}/dataset_tests_output

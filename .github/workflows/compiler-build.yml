@@ -25,7 +25,7 @@ jobs:
       
     - name: Set up build environment (Macos)
       run: |
-        brew install sunnycase/core/libomp@11.1.0
+        brew install sunnycase/core/libomp@14.0.6
       if: runner.os == 'Macos'
 
     - name: Setup Python
@@ -56,7 +56,7 @@ jobs:
       run: ctest -C ${{matrix.config.buildType}}
 
     - name: Upload nncase Build Artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: nncase-${{matrix.config.name}}
         path: ${{github.workspace}}/install
@@ -107,6 +107,7 @@ jobs:
     - name: Set up test environment (Windows)
       shell: pwsh
       run: |
+        brew install sunnycase/core/libomp@14.0.6
         Invoke-WebRequest -Uri https://sdk.lunarg.com/sdk/download/${env:VULKANSDK_VER}/windows/VulkanSDK-${env:VULKANSDK_VER}-Installer.exe -O VulkanSDK-Installer.exe
         .\VulkanSDK-Installer.exe /S
         Invoke-WebRequest -Uri https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-windows-2019-x86_64.zip -OutFile swiftshader.zip
@@ -127,7 +128,7 @@ jobs:
       run: mkdir test_results
 
     - name: Install nncase
-      uses: actions/download-artifact@v2.0.9
+      uses: actions/download-artifact@v3
       with:
         name: nncase-${{matrix.config.name}}
         path: ${{github.workspace}}/install
@@ -145,7 +146,7 @@ jobs:
         pytest tests/examples --doctest-modules --junitxml=test_results/examples.xml
 
     - name: Publish Test Results
-      uses: EnricoMi/publish-unit-test-result-action@v1
+      uses: EnricoMi/publish-unit-test-result-action@v2
       if: always() && runner.os == 'Linux'
       with:
         files: test_results/*.xml
