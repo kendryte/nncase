@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         config:
-          - {name: x86_64-linux, shell: bash, cmakeArgs: , buildType: Release}
+          - {name: x86_64-linux, shell: bash, cmakeArgs: '', buildType: Release}
 
     steps:
     - uses: actions/checkout@v2

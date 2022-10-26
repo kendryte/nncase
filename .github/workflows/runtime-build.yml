@@ -67,8 +67,7 @@ jobs:
 
   build-cross:
     name: ${{matrix.config.name}}
-    runs-on: [ubuntu-latest]
-    shell: bash
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         config:
