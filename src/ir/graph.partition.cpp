@@ -123,9 +123,17 @@ public:
         root->node = new_node;
         auto bro = root->bro;
 
+        // find a path from itb--> ita
         if (new_node == target_region_)
         {
             leaves_.push_back(root);
+            return root;
+        }
+
+        // limit tree depth
+        if (depth >= 20)
+        {
+            skip_ = true;
             return root;
         }
 
@@ -135,7 +143,6 @@ public:
             {
                 if (itb->outputs.contains(it->connection()))
                 {
-
                     if (root->child == nullptr)
                     {
                         root->child = create_tree(itb, regions, depth + 1);
@@ -156,6 +163,12 @@ public:
 
     bool not_have_circle()
     {
+        // if tree depth > 20, ignore merge itb--> ita
+        if (skip_)
+            return false;
+
+        // each leaf has only one path to root.
+        // if all the paths of leaves to root don't have CPU op ,itb can merge to ita.
         for (auto it : leaves_)
         {
             auto condition_ptr = it->parent;
@@ -206,6 +219,7 @@ private:
     std::list<region>::iterator start_region_;
     std::list<region>::iterator target_region_;
     std::vector<Region_node *> leaves_;
+    bool skip_;
 };
 
 class graph_merger
@@ -307,6 +321,10 @@ private:
 
     bool check_circle(std::list<region>::iterator ita, std::list<region>::iterator itb)
     {
+        // merge directly
+        if (ita->outputs.size() == 1)
+            return true;
+
         auto check = std::make_shared<Region_tree>();
         check->set_label_region(ita, itb);
         auto root = check->create_tree(itb, regions_, 0);
