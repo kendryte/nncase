@@ -323,7 +323,13 @@ private:
     {
         // merge directly
         if (ita->outputs.size() == 1)
-            return true;
+        {
+            for (auto i : ita->outputs)
+            {
+                if (i->connections().size() == 1)
+                    return true;
+            }
+        }
 
         auto check = std::make_shared<Region_tree>();
         check->set_label_region(ita, itb);
