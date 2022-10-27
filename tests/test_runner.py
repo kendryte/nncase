@@ -232,7 +232,16 @@ class TestRunner(metaclass=ABCMeta):
             self.case_dir = os.path.join(self.cfg.setup.root, case_name)
         self.clear(self.case_dir)
 
-        self.validate_targets(targets)
+        self.kpu_target = os.getenv('KPU_TARGET')
+        self.port = os.getenv('PORT')
+        self.nncase_test_ci = os.getenv('NNCASE_TEST_CI')
+
+        if self.in_ci and self.cfg.case.generate_inputs.name == 'generate_random' and self.kpu_target is not None and self.port is not None and self.nncase_test_ci is not None and (targets is None or self.kpu_target in targets):
+            new_targets = []
+            new_targets.append(self.kpu_target)
+        else:
+            new_targets = targets
+        self.validate_targets(new_targets)
 
         self.inputs: List[Dict] = []
         self.calibs: List[Dict] = []
@@ -463,6 +472,14 @@ class TestRunner(metaclass=ABCMeta):
     def run_single(self, cfg, case_dir: str, model_file: Union[List[str], str]):
         if not self.inputs:
             self.parse_model_input_output(model_file)
+
+        on_board = self.in_ci and self.kpu_target is not None and self.port is not None and self.nncase_test_ci is not None and len(self.inputs) > 0 and len(self.outputs) > 0
+        if on_board and cfg.generate_inputs.name == 'generate_imagenet_dataset':
+            cfg.generate_inputs.batch_size = 1
+
+        if on_board and cfg.generate_calibs.name == 'generate_imagenet_dataset':
+            cfg.generate_calibs.batch_size = 1
+
         names, args = TestRunner.split_value(cfg.preprocess_opt)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
@@ -760,6 +777,10 @@ class TestRunner(metaclass=ABCMeta):
             f.write(kmodel)
 
         infer_output_paths: List[np.ndarray] = []
+
+        on_board = self.in_ci and kwargs['target'] == self.kpu_target and self.port is not None and self.nncase_test_ci is not None and len(self.inputs) > 0 and len(self.outputs) > 0
+        case_name = f'{os.path.basename(case_dir)}_{os.path.basename(infer_dir)}'
+
         if cfg.generate_inputs.name == "generate_imagenet_dataset":
             gnne_txt = "gnne_no_ptq" if kwargs['ptq'] is False else "gnne_ptq"
             infer_output_paths.append((
@@ -773,24 +794,25 @@ class TestRunner(metaclass=ABCMeta):
             result = []
             for in_data in self.inputs[0]['data']:
                 input_data = copy.deepcopy(in_data)
-                p.apply_async(sim_run, args=(
-                    kmodel, input_data, infer_output_paths, kwargs['target'], self.model_type,
-                    self.inputs[0]['model_shape']))
+                if on_board:
+                    on_board_run(kmodel, input_data, infer_output_paths, kwargs['target'], self.port, case_name, self.nncase_test_ci, len(self.inputs), len(self.outputs), self.model_type,
+                        self.inputs[0]['model_shape'])
+                else:
+                    p.apply_async(sim_run, args=(
+                        kmodel, input_data, infer_output_paths, kwargs['target'], self.model_type,
+                        self.inputs[0]['model_shape']))
             p.close()
             p.join()
 
         else:
-            kpu_target = os.getenv('KPU_TARGET')
-            port = os.getenv('PORT')
-            app_full_name = os.getenv('NNCASE_TEST_CI')
-            if self.in_ci and kwargs['target'] == kpu_target and port is not None and app_full_name is not None and len(self.inputs) > 0 and len(self.outputs) > 0:
+            if on_board:
                 # connect server
                 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                client_socket.connect(('localhost', int(port)))
+                client_socket.connect(('localhost', int(self.port)))
 
                 # send header
                 header_dict = {}
-                header_dict['case'] = f'{os.path.basename(case_dir)}_{os.path.basename(infer_dir)}'
+                header_dict['case'] = case_name
                 header_dict['app'] = 1
                 header_dict['kmodel']= 1
                 header_dict['inputs'] = len(self.inputs)
@@ -800,11 +822,11 @@ class TestRunner(metaclass=ABCMeta):
 
                 # send app
                 file_dict = {}
-                file_dict['file_name'] = os.path.basename(app_full_name)
-                file_dict['file_size'] = os.path.getsize(app_full_name)
+                file_dict['file_name'] = os.path.basename(self.nncase_test_ci)
+                file_dict['file_size'] = os.path.getsize(self.nncase_test_ci)
                 client_socket.sendall(json.dumps(file_dict).encode())
                 dummy = client_socket.recv(1024)
-                with open(app_full_name, 'rb') as f:
+                with open(self.nncase_test_ci, 'rb') as f:
                     client_socket.sendall(f.read())
                 dummy = client_socket.recv(1024)
 
