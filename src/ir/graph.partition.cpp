@@ -131,7 +131,7 @@ public:
         }
 
         // limit tree depth
-        if (depth >= 20)
+        if (depth >= 10)
         {
             skip_ = true;
             return root;
