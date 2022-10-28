@@ -55,7 +55,8 @@ public interface IIRPrinterProvider
     /// <param name="expr"></param>
     /// <param name="prefix"></param>
     /// <param name="dumpPath"></param>
-    void DumpIR(Expr expr, string prefix, string dumpPath);
+    /// <param name="display_callable"></param>
+    void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable);
 
     /// <summary>
     /// print ir type.

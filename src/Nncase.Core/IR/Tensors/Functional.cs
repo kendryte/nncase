@@ -119,12 +119,4 @@ public static class Tensors
 
     public static Call StackScalar(Expr scalar) => Stack(new Tuple(scalar), 0);
 
-    /// <summary>
-    /// create the uninitialized buffer
-    /// </summary>
-    /// <param name="dataType"></param>
-    /// <param name="memoryLocation"></param>
-    /// <param name="shape"></param>
-    /// <returns></returns>
-    public static Call Uninitialized(DataType dataType, Schedule.MemoryLocation memoryLocation, Expr shape) => new Call(new Uninitialized(dataType, memoryLocation), shape);
 }

@@ -77,17 +77,17 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsCall(
         "caller",
-        IsFusion("callerFuse",
+        IsFunction("callerFuse",
             IsWildcard(),
             WildcardVArgsPattern),
         ParamsWithArg(CalleePattern)
         );
 
     /// <inheritdoc/>
-    public static Pattern CalleePattern =>
+    public static Pattern CalleePattern =
         IsCall(
         "callee",
-        IsFusion("calleeFuse",
+        IsFunction("calleeFuse",
             IsWildcard(),
             WildcardVArgsPattern),
         WildcardVArgsPattern);
@@ -205,5 +205,27 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
                     calleeFuseParams[i],
                     newCalleeParams[i - 1]));
         return (newCalleeFuseBody, newCalleeParams);
+    }
+}
+
+[RuleGenerator]
+public partial class DataTransferFusion<LoadT, StoreT> : RewriteRule<Pattern>
+    where LoadT : Op
+    where StoreT : Op
+{
+    /// <inheritdoc/>
+    public override Pattern Pattern { get; } = IsWildcardCall<StoreT>("st", null!,
+        IsWildcardCall<LoadT>(null!, null!, IsWildcard("input")));
+    
+    // replace input with var
+    private Call? GetReplace(Call st, Expr input)
+    {
+        if ((st.Attribute & CallAttr.Fusion) != 0)
+        {
+            return null;
+        }
+        var arg = new Var("input0", input.CheckedType!);
+        var body = ReplaceTarget(st, input, arg);
+        return new Call(new Fusion("DataTransferFusion", "k510", body, new[] { arg }), input);
     }
 }

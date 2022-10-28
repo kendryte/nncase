@@ -98,11 +98,13 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     readonly ScriptPrintContext context;
     readonly Dictionary<Expr, ScriptSymobl> exprMemo = new(ReferenceEqualityComparer.Instance);
     readonly Dictionary<Function, ScriptSymobl> extFuncMemo = new(ReferenceEqualityComparer.Instance);
+    bool DisplayCallable;
 
-    public ScriptPrintVisitor(TextWriter textWriter)
+    public ScriptPrintVisitor(TextWriter textWriter, bool display_callable)
     {
         Scope = new(textWriter);
         context = new(exprMemo, this);
+        DisplayCallable = display_callable;
     }
 
     /// <inheritdoc/>
@@ -111,8 +113,15 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
 
         var il_sb = new StringBuilder();
-        var il_visitor = new ILPrintVisitor(new StringWriter(il_sb));
-        il_visitor.Visit(expr);
+        if (DisplayCallable)
+        {
+            var il_visitor = new ILPrintVisitor(new StringWriter(il_sb), false);
+            il_visitor.Visit(expr);
+        }
+        else
+        {
+            il_sb.Append($"{expr.Name} = Function({VisitType(expr.CheckedType!)})");
+        }
 
         doc = new(il_sb, expr.Name, true);
         extFuncMemo[expr] = doc;
@@ -214,10 +223,10 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 
         // 3. only write all doc into root scope
         Scope.AppendLine(doc.Span);
+
         foreach (var extFunc in extFuncMemo.Values)
-        {
             Scope.IndWriteLine(extFunc.Serialize());
-        }
+
         return doc;
     }
 
@@ -320,7 +329,8 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 
         // 1. write head
         Scope.AppendLine($"T.Block(\"{expr.Name}\").");
-
+        
+        Scope.IndWriteLine($"Predicate({Visit(expr.Predicate)}).");
         // 2. write iter var bind
         foreach (var iterVar in expr.IterVars)
         {

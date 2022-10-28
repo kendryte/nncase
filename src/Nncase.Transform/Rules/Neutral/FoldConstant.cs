@@ -27,11 +27,11 @@ public partial class FoldConstCall : RewriteRule<CallPattern>
     {
         IsMultiBranchSafe = true;
     }
-    
+
     /// <inheritdoc/>
     public override CallPattern Pattern { get; } = IsCall(
         "call",
-        IsWildcard(),
+        IsOp<Op>(op => op.CanFoldConstCall),
         IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())))
         with
     { TypePattern = IsType(x => !(x is InvalidType)) };

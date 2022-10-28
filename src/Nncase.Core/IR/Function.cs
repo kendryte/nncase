@@ -19,11 +19,6 @@ public abstract record Callable(string Name, string ModuleKind) : Expr
     /// StackVM module kind.
     /// </summary>
     public static readonly string StackVMModuleKind = "stackvm";
-
-    /// <summary>
-    /// the schedule result, the dag function for stackvm, the prim_func for other backend.
-    /// </summary>
-    public Schedule.SchedFunctionResult? SchedResult = null;
 }
 
 /// <summary>
@@ -35,6 +30,11 @@ public abstract record BaseFunction(string Name, string ModuleKind) : Callable(N
     /// Gets parameter types.
     /// </summary>
     public abstract IEnumerable<IRType?> ParameterTypes { get; }
+
+    /// <summary>
+    /// Gets sched result
+    /// </summary>
+    public readonly Schedule.SchedFunctionResult SchedResult = new();
 }
 
 /// <summary>

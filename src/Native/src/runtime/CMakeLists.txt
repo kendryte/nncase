@@ -3,20 +3,19 @@
 set(SRCS buffer.cpp
 		 datatypes.cpp
 		 error.cpp
-		 host_allocator.cpp
 		 host_buffer.cpp
 		 host_runtime_tensor.cpp
-     interpreter.cpp
-     runtime_loader.cpp
-     runtime_module.cpp
+         interpreter.cpp
+         runtime_loader.cpp
+         runtime_module.cpp
 		 runtime_function.cpp
 		 section.cpp
 		 type_serializer.cpp
 		 runtime_tensor.cpp
-     dump_manager.cpp)
+         dump_manager.cpp)
 
 if ((NOT BUILDING_RUNTIME) OR DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL)
-    #list(APPEND SRCS shared_runtime_tensor.platform.cpp)
+    list(APPEND SRCS host_allocator.cpp)
 endif()
 
 if (BUILDING_RUNTIME)
@@ -35,7 +34,7 @@ if (BUILDING_RUNTIME)
     install(TARGETS runtime EXPORT nncaseruntimeTargets)
 
     add_library(nncaseruntime STATIC dummy.cpp)
-    target_link_libraries(nncaseruntime PRIVATE kernels runtime runtime_stackvm)
+    target_link_libraries(nncaseruntime PRIVATE nncasebase kernels runtime runtime_stackvm)
     target_link_libraries(nncaseruntime PUBLIC gsl::gsl-lite mpark_variant::mpark_variant)
     set_target_properties(nncaseruntime PROPERTIES
                                         OUTPUT_NAME "Nncase.Runtime.Native")

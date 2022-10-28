@@ -2,15 +2,7 @@
   "profiles": {
     "SourceGenerator": {
       "commandName": "DebugRoslynComponent",
-      "targetProject": "..\\..\\src\\Nncase.Core\\Nncase.Core.csproj"
-    },
-    "Core": {
-      "commandName": "DebugRoslynComponent",
-      "targetProject": "..\\Nncase.Core\\Nncase.Core.csproj"
-    },
-    "Graph": {
-      "commandName": "DebugRoslynComponent",
-      "targetProject": "..\\Nncase.Graph\\Nncase.Graph.csproj"
+      "targetProject": "..\\..\\..\\k510-gnne-compiler\\modules\\Nncase.Modules.K230\\Nncase.Modules.K230.csproj"
     }
   }
 }

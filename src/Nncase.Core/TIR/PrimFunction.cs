@@ -22,6 +22,7 @@ public sealed record PrimFunction(string Name, string ModuleKind, Sequential Bod
     /// <summary>
     /// Initializes a new instance of the <see cref="PrimFunction"/> class.
     /// </summary>
+    /// <param name="moduleKind">module kind.</param>
     /// <param name="parameters">Parameters.</param>
     /// <param name="body">Body.</param>
     public PrimFunction(string moduleKind, Sequential body, IRArray<PhysicalBuffer> parameters)

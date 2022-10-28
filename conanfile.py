@@ -36,7 +36,7 @@ class nncaseConan(ConanFile):
         "tests": False,
         "halide": True,
         "python": True,
-        "vulkan_runtime": True,
+        "vulkan_runtime": False,
         "openmp": True
     }
 
@@ -59,8 +59,9 @@ class nncaseConan(ConanFile):
                 self.requires('gtest/1.10.0')
 
         if (not self.options.runtime) or self.options.vulkan_runtime:
-            self.requires('vulkan-headers/1.2.182')
-            self.requires('vulkan-loader/1.2.182')
+            if self.settings.os == 'Linux':
+                self.requires('vulkan-headers/1.2.182')
+                self.requires('vulkan-loader/1.2.182')
 
     def build_requirements(self):
         pass

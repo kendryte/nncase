@@ -8,7 +8,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NetFabric.Hyperlinq;
 
 namespace Nncase.IR
 {
@@ -55,7 +54,7 @@ namespace Nncase.IR
         {
             Kind = KindOf(dimensions);
             _dimensions = dimensions.ToImmutableArray();
-            _hashcode = HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions));
+            _hashcode = StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions);
         }
 
         /// <summary>
@@ -63,11 +62,7 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="dimensions">Dimensions.</param>
         public Shape(IEnumerable<long> dimensions)
-        {
-            Kind = ShapeKind.Fixed;
-            _dimensions = dimensions.Select(x => new Dimension((int)x)).ToImmutableArray();
-            _hashcode = HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions));
-        }
+            : this(dimensions.Select(i => (int)i)) { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Shape"/> class.
@@ -75,9 +70,17 @@ namespace Nncase.IR
         /// <param name="dimensions">Dimensions.</param>
         public Shape(IEnumerable<int> dimensions)
         {
+
             Kind = ShapeKind.Fixed;
-            _dimensions = dimensions.AsValueEnumerable().Select(x => new Dimension(x)).ToImmutableArray();
-            _hashcode = HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions));
+            if (dimensions.Any())
+            {
+                _dimensions = ImmutableArray.CreateRange(dimensions.Select(x => new Dimension(x)));
+            }
+            else
+            {
+                _dimensions = ImmutableArray.Create<Dimension>();
+            }
+            _hashcode = StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions);
         }
 
         /// <summary>
@@ -94,26 +97,15 @@ namespace Nncase.IR
         /// Initializes a new instance of the <see cref="Shape"/> class.
         /// </summary>
         /// <param name="dimensions">Dimensions.</param>
-        public Shape(ReadOnlySpan<int> dimensions)
-        {
-            Kind = ShapeKind.Fixed;
-            _dimensions = ImmutableArray.Create(dimensions.AsValueEnumerable().Select(x => new Dimension(x)).ToArray());
-            _hashcode = HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions));
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Shape"/> class.
-        /// </summary>
-        /// <param name="dimensions">Dimensions.</param>
         public Shape(params Dimension[] dimensions)
-            : this(dimensions.AsValueEnumerable())
+            : this((IEnumerable<Dimension>)dimensions)
         { }
 
         private Shape(ShapeKind kind, IEnumerable<Dimension> dimensions)
         {
             Kind = kind;
             _dimensions = dimensions.ToImmutableArray();
-            _hashcode = HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions));
+            _hashcode = StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions);
         }
 
         /// <summary>
@@ -317,6 +309,7 @@ namespace Nncase.IR
         /// <inheritdoc/>
         public static implicit operator Shape(Dimension[] dimensions) => new Shape(dimensions);
 
-        public static implicit operator Shape(int[] dimensions) => new Shape(dimensions.AsSpan());
+        /// <inheritdoc/>
+        public static implicit operator Shape(int[] dimensions) => new Shape(dimensions);
     }
 }

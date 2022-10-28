@@ -19,22 +19,22 @@ internal interface IDataTypeServiceProvider
     ValueType GetValueTypeFromType(Type type);
 
     DataType GetDataTypeFromType(Type type);
-    
+
     ISpanConverter GetConverter(Type fromType, Type toType);
 }
 
 internal class DataTypeServiceProvider : IDataTypeServiceProvider
 {
-    private readonly Dictionary<Type, PrimType> _primTypes = new();
+    private readonly Dictionary<RuntimeTypeHandle, PrimType> _primTypes = new();
     private readonly Dictionary<Runtime.TypeCode, PrimType> _typeCodeToPrimTypes = new();
-    private readonly Dictionary<Type, ValueType> _valueTypes = new();
+    private readonly Dictionary<RuntimeTypeHandle, ValueType> _valueTypes = new();
     private readonly IComponentContext _componentContext;
 
     public DataTypeServiceProvider(PrimType[] primTypes, ValueType[] valueTypes, IComponentContext componentContext)
     {
-        _primTypes = primTypes.ToDictionary(x => x.CLRType);
+        _primTypes = primTypes.ToDictionary(x => x.CLRType.TypeHandle);
         _typeCodeToPrimTypes = primTypes.Where(x => x.TypeCode < Runtime.TypeCode.ValueType).ToDictionary(x => x.TypeCode);
-        _valueTypes = valueTypes.ToDictionary(x => x.CLRType);
+        _valueTypes = valueTypes.ToDictionary(x => x.CLRType.TypeHandle);
         _componentContext = componentContext;
     }
 
@@ -54,21 +54,21 @@ internal class DataTypeServiceProvider : IDataTypeServiceProvider
 
     public DataType GetDataTypeFromType(Type type)
     {
-        if (_primTypes.TryGetValue(type, out var primType))
+        if (_primTypes.TryGetValue(type.TypeHandle, out var primType))
         {
             return primType;
         }
-        else if (_valueTypes.TryGetValue(type, out var valueType))
+        else if (_valueTypes.TryGetValue(type.TypeHandle, out var valueType))
         {
             return valueType;
         }
 
         throw new NotSupportedException($"Unsupported Type {type} in GetDataTypefromType");
     }
-    
+
     public PrimType GetPrimTypeFromType(Type type)
     {
-        return _primTypes[type];
+        return _primTypes[type.TypeHandle];
     }
 
     public PrimType GetPrimTypeFromTypeCode(Runtime.TypeCode typeCode)
@@ -78,7 +78,7 @@ internal class DataTypeServiceProvider : IDataTypeServiceProvider
 
     public ValueType GetValueTypeFromType(Type type)
     {
-        return _valueTypes[type];
+        return _valueTypes[type.TypeHandle];
     }
 
     private class PointerSpanConverter<TElem, TTo> : ISpanConverter<Pointer<TElem>, TTo>

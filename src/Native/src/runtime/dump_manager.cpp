@@ -1,9 +1,9 @@
-#ifndef BUILDING_RUNTIME
+#ifndef NNCASE_BAREMETAL
 #include "dump_manager_impl.h"
-#include "nncase/runtime/util.h"
 #include <nncase/runtime/dump_manager.h>
 #include <nncase/runtime/result.h>
 #include <nncase/runtime/stackvm/opcode.h>
+#include <filesystem>
 
 namespace fs = std::filesystem;
 
@@ -13,7 +13,11 @@ using namespace nncase::runtime;
 void dump_manager::set_dump_root(std::string root) {
     dump_root_.clear();
     fs::path p(root);
-    dump_root_ = (p / "Runtime").string();
+    auto dump_root = (p / "Runtime");
+    if (!fs::exists(dump_root) && dump_root != "") {
+        fs::create_directory(dump_root);
+    }
+    dump_root_ = dump_root.string();
     // reset count for each dir
     count_ = 1;
 }
@@ -30,10 +34,8 @@ void dump_manager::dump_op(const std::string &func_str) {
 }
 
 std::string dump_manager::dump_path() {
-    auto p = fs::path(dump_root_) / (std::to_string(get_count()) + "$" + current_op_);
-//    if (!fs::exists(dump_root_) && dump_root_ != "") {
-//        fs::create_directory(dump_root_);
-//    }
+    auto p = fs::path(dump_root_) /
+             (std::to_string(get_count()) + "$" + current_op_);
     return p.string();
 }
 
@@ -63,7 +65,7 @@ const gsl::byte *force_get_data(nncase::tensor tensor) {
 }
 
 void dump_output_impl(dump_manager &dump_manager_, nncase::value_t value,
-                      const fs::path &path, bool incr) {
+                      const std::string &path, bool incr) {
 #define RETURN_RESULT(_in_type)                                                \
     if (nncase::runtime::cmp_type<_in_type>(value_tensor->dtype())) {          \
         dump_data(stream, IN_CAST(_in_type, data), value_tensor);              \
@@ -98,11 +100,10 @@ void dump_output_impl(dump_manager &dump_manager_, nncase::value_t value,
 }
 
 void dump_manager::dump_output(nncase::value_t value) {
-    dump_output_impl(*this, value, fs::path(dump_path()), true);
+    dump_output_impl(*this, value, fs::path(dump_path()).string(), true);
 }
 
 void dump_manager::dump_input(nncase::value_t value, std::string name) {
-    dump_output_impl(*this, value, fs::path(dump_path() + "$" + name),
-                     false);
+    dump_output_impl(*this, value, fs::path(dump_path() + "$" + name).string(), false);
 }
 #endif

@@ -181,9 +181,9 @@ public static class T
     /// <param name="name"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static Block Block(string name)
+    public static IBlockBuilder Block(string name)
     {
-        return new Block(name);
+        return new BlockBuilder(name);
     }
 
     public static Sequential Sequential(params Expr[] fields)
@@ -282,7 +282,7 @@ public static class T
             name = name[4..];
         }
 
-        buffer = new PhysicalBuffer(name, elem_type, location, dimensions);
+        buffer = new PhysicalBuffer(name, elem_type, location, dimensions, 0, (int)TensorUtilities.GetProduct(dimensions.ToArray()) * elem_type.SizeInBytes);
         return buffer;
     }
 
@@ -299,8 +299,12 @@ public static class T
         {
             name = name[4..];
         }
-
-        buffer = new PhysicalBuffer(name, Schedule.MemoryLocation.Rdata, ((TensorConst)expr));
+        int size;
+        if (expr is TensorConst tc)
+            size = tc.Value.BytesBuffer.Length;
+        else
+            throw new NotSupportedException();
+        buffer = new PhysicalBuffer(name, Schedule.MemoryLocation.Rdata, ((TensorConst)expr), 0, size);
         return buffer;
     }
 

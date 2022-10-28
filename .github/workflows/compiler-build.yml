@@ -56,6 +56,12 @@ jobs:
         run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=OFF -DPython3_ROOT_DIR=${pythonLocation}
 
       - name: Configure CMake
+        if: runner.os == 'Macos'
+        shell: bash
+        working-directory: ${{github.workspace}}/build
+        run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=OFF -DPython3_ROOT_DIR=${pythonLocation} -DENABLE_OPENMP=OFF
+
+      - name: Configure CMake
         if: runner.os != 'Linux'
         shell: bash
         working-directory: ${{github.workspace}}/build
@@ -140,7 +146,7 @@ jobs:
           path: ${{github.workspace}}/install
 
       - name: Build
-        run: dotnet build
+        run: dotnet build -c Release
 
       - name: Dotnet Test
         working-directory: ${{github.workspace}}
@@ -149,7 +155,7 @@ jobs:
         env:
           PATH: ${{github.workspace}}/install/bin
         run: |
-          dotnet test --no-build --verbosity normal 
+          dotnet test -c Release --no-build --verbosity normal 
       
       - name: Dotnet Test
         working-directory: ${{github.workspace}}
@@ -158,7 +164,7 @@ jobs:
         env:
           LD_LIBRARY_PATH: ${{github.workspace}}/install/lib
         run: |
-          dotnet test --no-build --verbosity normal
+          dotnet test -c Release --no-build --verbosity normal
 
       - name: Setup Python
         uses: actions/setup-python@v2.2.1
@@ -170,7 +176,7 @@ jobs:
           pip install conan tensorflow==2.7.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0 opencv-python
           pip install imageio==2.15.0 protobuf==3.20.1
           pip install pytest
-          pip install --pre pythonnet
+          pip install pythonnet==3.0.0rc4 clr_loader==0.1.7
 
       - name: Install Python Packages
         if: runner.os == 'Linux'
@@ -199,38 +205,26 @@ jobs:
         shell: bash
         env:
           PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
-          NNCASE_CLI: ${{github.workspace}}/src/Nncase.Cli/bin/Debug/net6.0
-          LD_LIBRARY_PATH: ${{github.workspace}}/install/lib
+          NNCASE_CLI: ${{github.workspace}}/src/Nncase.Cli/bin/Release/net6.0
+          LD_LIBRARY_PATH: ${{github.workspace}}/install/lib:${{github.workspace}}/src/Nncase.Cli/bin/Release/net6.0/runtimes/linux-x64/native
         run: |
           pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/other.xml
           pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/other.xml
           pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/other.xml
           pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/other.xml
           pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/other.xml
-#          pytest tests/other --doctest-modules --junitxml=test_results/other.xml
-#          pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
-#          pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
-#          pytest tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
-#          pytest tests/examples --doctest-modules --junitxml=test_results/examples.xml
 
-#       - name: Test
-#         working-directory: ${{github.workspace}}
-#         if: runner.os == 'Windows'
-#         shell: bash
-#         env:
-#           PYTHONPATH: ${{github.workspace}}/install/lib;${{github.workspace}}/install/python;${{github.workspace}}/tests
-#           NNCASE_CLI: ${{github.workspace}}/src/Nncase.Cli/bin/Debug/net6.0
-#           LD_LIBRARY_PATH: ${{github.workspace}}/install/lib
-#           VK_ICD_FILENAMES: ${{github.workspace}}/swiftshader/bin/vk_swiftshader_icd.json
-#         run: |
-#           pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/other.xml
-# #          pytest tests/other --doctest-modules --junitxml=test_results/other.xml
-# #          pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
-# #          pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
-# #          pytest tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
-# #          pytest tests/examples --doctest-modules --junitxml=test_results/examples.xml
-#       - name: Publish Test Results
-#         uses: EnricoMi/publish-unit-test-result-action@v1
-#         if: always() && runner.os == 'Linux'
-#         with:
-#           files: test_results/*.xml
+#      - name: Test
+#        working-directory: ${{github.workspace}}
+#        if: runner.os == 'Windows'
+#        shell: bash
+#        env:
+#          PYTHONPATH: ${{github.workspace}}/install/lib;${{github.workspace}}/install/python;${{github.workspace}}/tests
+#          NNCASE_CLI: ${{github.workspace}}/src/Nncase.Cli/bin/Release/net6.0
+#          LD_LIBRARY_PATH: ${{github.workspace}}/install/lib;${{github.workspace}}/src/Nncase.Cli/bin/Release/net6.0/runtimes/win-x64/native
+#        run: |
+#          pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/other.xml
+#          pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/other.xml
+#          pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/other.xml
+#          pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/other.xml
+#          pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/other.xml

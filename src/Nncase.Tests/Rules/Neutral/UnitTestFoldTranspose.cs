@@ -37,20 +37,20 @@ public class UnitTestFoldTranspose : TestFixture.UnitTestFixtrue
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
 
-    public static IEnumerable<object[]> TestFoldTwoTransposesPositiveData =>
-        new[]
-        {
-            new object[] { new[] { 2, 4 }, new[] { 1, 0 }, new[] { 0, 1 } },
-            new object[] { new[] { 2, 4, 6 }, new[] { 0, 2, 1 }, new[] {  1, 2, 0 } },
-            new object[] { new[] { 2, 4, 6, 8 }, new[] { 0, 2, 3, 1 }, new[] { 3, 1, 2, 0 } },
-            new object[] { new[] { 2, 4, 6, 8, 2}, new[] { 0, 2, 3, 1, 4 }, new[] { 3, 1, 2, 4, 0 } },
-        };
+    public static TheoryData<int, int[], int[], int[]> TestFoldTwoTransposesPositiveData => new TheoryData<int, int[], int[], int[]>
+    {
+        {0, new[] { 2, 4 }, new[] { 1, 0 }, new[] { 0, 1 }},
+        {1, new[] { 2, 4, 6 }, new[] { 0, 2, 1 }, new[] { 1, 2, 0 }},
+        {2, new[] { 2, 4, 6, 8 }, new[] { 0, 2, 3, 1 }, new[] { 3, 1, 2, 0 }},
+        {3, new[] { 2, 4, 6, 8, 2 }, new[] { 0, 2, 3, 1, 4 }, new[] { 3, 1, 2, 4, 0 }},
+        {4, new[] { 1, 32, 112, 112 }, new[] { 0, 2, 3, 1 }, new[] { 0, 3, 1, 2 }},
+    };
 
     [Theory]
     [MemberData(nameof(TestFoldTwoTransposesPositiveData))]
-    public void TestFoldTwoTransposesPositive(int[] shape, int[] perm1, int[] perm2)
+    public void TestFoldTwoTransposesPositive(int count, int[] shape, int[] perm1, int[] perm2)
     {
-        var caseOptions = GetPassOptions();
+        var caseOptions = GetPassOptions().IndentDir(count.ToString());
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Transpose(Tensors.Transpose(a, perm1), perm2);
         var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoTransposes() }, caseOptions);

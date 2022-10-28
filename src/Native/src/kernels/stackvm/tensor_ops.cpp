@@ -18,8 +18,8 @@
 #include <nncase/kernels/stackvm/opt_ops.h>
 #include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/kernels/stackvm/tensor_ops.h>
-#include <nncase/runtime/util.h>
 #include <nncase/runtime/runtime_tensor.h>
+#include <nncase/runtime/util.h>
 
 using namespace nncase;
 using namespace nncase::kernels;
@@ -55,8 +55,8 @@ result<value_t> kernels::stackvm::binary(binary_op_t binary_op, value_t lhs,
     }
 
     try_typecode(typecode, lhs_tensor);
-    auto out_shape = kernels::detail::get_binary_output_shape(lhs_tensor->shape(),
-                                                     rhs_tensor->shape());
+    auto out_shape = kernels::detail::get_binary_output_shape(
+        lhs_tensor->shape(), rhs_tensor->shape());
     try_output(out_mem, output, lhs_tensor->dtype(), out_shape);
     try_(reference::binary(
         typecode, binary_op, lhs_mem, rhs_mem, out_mem, lhs_tensor->shape(),
@@ -115,10 +115,11 @@ result<value_t> nncase::kernels::stackvm::concat(value_t input, value_t axis,
     } else {
         concat_dims = dims_t(input_tuple->fields().size(), 1);
     }
-
-    CONTIGUOUS_KERNEL(concat, input0, dtype, inputs_mem, out_mem, output_tensor->shape(),
-                           strides, output_tensor->strides(), axis_value,
-                           concat_dims, context);
+    auto inputs_mem_span =
+        gsl::make_span(inputs_mem).as_span<const gsl::byte *const>();
+    CONTIGUOUS_KERNEL(concat, input0, dtype, inputs_mem_span, out_mem,
+                      output_tensor->shape(), strides, output_tensor->strides(),
+                      axis_value, concat_dims, context);
     return ok(output);
 }
 
@@ -153,9 +154,9 @@ result<value_t> nncase::kernels::stackvm::conv2d(
         conv2d_infer_shape(input_tensor->shape(), weights_tensor->shape(),
                            strides_value, dilations, pads);
     try_f32_output(out_mem, output, out_shape);
-    CONTIGUOUS_KERNEL(conv2d, input_tensor,
-        input_mem, weights_mem, bias_mem, out_mem, input_tensor->shape(),
-        input_tensor->strides(), weights_tensor->shape(),
+    CONTIGUOUS_KERNEL(
+        conv2d, input_tensor, input_mem, weights_mem, bias_mem, out_mem,
+        input_tensor->shape(), input_tensor->strides(), weights_tensor->shape(),
         weights_tensor->strides(), bias_tensor->strides(),
         output_tensor->strides(), pads[0], pads[1], groups_value, strides[0],
         strides[1], dilations[0], dilations[1],
@@ -200,8 +201,8 @@ nncase::kernels::stackvm::expand(value_t input, value_t shape, value_t output,
     auto dtype = input_tensor->dtype();
     try_var(typecode, to_typecode(dtype));
     try_dims(expand_shape, shape);
-    auto out_shape =
-        kernels::detail::get_binary_output_shape(input_tensor->shape(), expand_shape);
+    auto out_shape = kernels::detail::get_binary_output_shape(
+        input_tensor->shape(), expand_shape);
     try_output(out_mem, output, dtype, out_shape);
     try_(reference::expand(typecode, input_mem, out_mem, input_tensor->shape(),
                            input_tensor->strides(), output_tensor->shape(),
@@ -218,10 +219,11 @@ result<value_t> nncase::kernels::stackvm::dequantize(typecode_t target_type,
     try_output(out_mem, output, target_type, input_tensor->shape());
     try_input_with_value_type(deq_param, dequant_param, quant_param_t);
 
-    CONTIGUOUS_KERNEL(dequantize, input_tensor, input_tensor->dtype(), output_tensor->dtype(), input_mem,
-                         out_mem, input_tensor->shape(), input_tensor->strides(),
-                         output_tensor->strides(), deq_param->scale,
-                         (float)deq_param->zero_point, context);
+    CONTIGUOUS_KERNEL(dequantize, input_tensor, input_tensor->dtype(),
+                      output_tensor->dtype(), input_mem, out_mem,
+                      input_tensor->shape(), input_tensor->strides(),
+                      output_tensor->strides(), deq_param->scale,
+                      (float)deq_param->zero_point, context);
     return ok(output);
 }
 
@@ -248,11 +250,11 @@ result<value_t> nncase::kernels::stackvm::gather(value_t input, value_t axis,
     auto out_shape = gather_infer_shape(input_tensor->shape(),
                                         index_tensor->shape(), axis_value);
     try_output(out_mem, output, dtype, out_shape);
-    CONTIGUOUS_KERNEL(gather, input_tensor, typecode, input_mem, out_mem, input_tensor->shape(),
-                           output_tensor->shape(), input_tensor->strides(),
-                           output_tensor->strides(), index_tensor->dtype(),
-                           index_mem, index_tensor->shape(), axis_value,
-                           context);
+    CONTIGUOUS_KERNEL(gather, input_tensor, typecode, input_mem, out_mem,
+                      input_tensor->shape(), output_tensor->shape(),
+                      input_tensor->strides(), output_tensor->strides(),
+                      index_tensor->dtype(), index_mem, index_tensor->shape(),
+                      axis_value, context);
     return ok(output);
 }
 
@@ -281,7 +283,7 @@ result<value_t> nncase::kernels::stackvm::get_item(
     [[maybe_unused]] value_t input, [[maybe_unused]] value_t index,
     [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
     // todo: not finish
-    if(input.is_a<tuple>()) {
+    if (input.is_a<tuple>()) {
         try_var(tuples, input.as<tuple>());
         try_tuple_field0(input0, tuples);
         try_positive_axis_with_rank(index_value, index, input0->shape().size());
@@ -302,12 +304,13 @@ result<value_t> nncase::kernels::stackvm::get_item(
 
         auto &&[begin_values, end_values, strides_values] = slice_fill(
             in_shape, begins_value, ends_value, strides_value, axes_value);
-        auto out_shape =
-            slice_infer_shape(in_shape, begin_values, end_values, strides_values);
+        auto out_shape = slice_infer_shape(in_shape, begin_values, end_values,
+                                           strides_values);
         try_output(out_mem, output, input_tensor->dtype(), out_shape);
-        CONTIGUOUS_KERNEL(slice, input_tensor, input_tensor->dtype(), in_mem, out_mem, in_shape,
-                          input_tensor->strides(), output_tensor->strides(),
-                          begin_values, end_values, strides_values, context);
+        CONTIGUOUS_KERNEL(slice, input_tensor, input_tensor->dtype(), in_mem,
+                          out_mem, in_shape, input_tensor->strides(),
+                          output_tensor->strides(), begin_values, end_values,
+                          strides_values, context);
         KERNEL_FINISH;
     }
 }
@@ -404,6 +407,20 @@ result<value_t> nncase::kernels::stackvm::lstm(
 }
 
 result<value_t>
+nncase::kernels::stackvm::mat_mul(value_t lhs, value_t rhs, value_t output,
+                                  [[maybe_unused]] kernel_context &context) {
+    try_input(lhs_mem, lhs);
+    try_input(rhs_mem, rhs);
+    try_var(out_shape,
+            matmul_infer_shape(lhs_tensor->shape(), rhs_tensor->shape()));
+    try_output(out_mem, output, lhs_tensor->dtype(), out_shape);
+    try_typecode(typecode, lhs_tensor);
+    try_(reference::matmul(typecode, lhs_mem, rhs_mem, out_mem,
+                           lhs_tensor->shape(), rhs_tensor->shape()));
+    return ok(output);
+}
+
+result<value_t>
 nncase::kernels::stackvm::normal(typecode_t type, value_t mean, value_t scale,
                                  value_t seed, value_t shape, value_t output,
                                  [[maybe_unused]] kernel_context &context) {
@@ -431,21 +448,24 @@ result<value_t> nncase::kernels::stackvm::normal_like(
     KERNEL_FINISH;
 }
 
-result<value_t>
-nncase::kernels::stackvm::one_hot(one_hot_mode_t one_hot_mode, value_t indices,
-                                  value_t depth, value_t values, value_t axis,
-                                  value_t output, kernel_context &context) {
+result<value_t> nncase::kernels::stackvm::one_hot(one_hot_mode_t one_hot_mode,
+                                                  value_t indices,
+                                                  value_t depth, value_t values,
+                                                  value_t axis, value_t output,
+                                                  kernel_context &context) {
     try_input(onehot_values, values);
     try_var(typecode, to_typecode(values_tensor->dtype()));
     try_to_integer(depth_value, depth);
     try_input(indices_mem, indices);
     try_positive_axis(axis_value, axis, indices_tensor);
-    auto out_shape = onehot_infer_shape(indices_tensor->shape(), depth_value, axis_value);
+    auto out_shape =
+        onehot_infer_shape(indices_tensor->shape(), depth_value, axis_value);
     try_output(out_mem, output, typecode, out_shape);
 
-    CONTIGUOUS_KERNEL(one_hot, indices_tensor, typecode, indices_tensor->dtype(), indices_mem, out_mem, indices_tensor->shape(),
-                      output_tensor->shape(), output_tensor->strides(),
-                      depth_value, onehot_values,
+    CONTIGUOUS_KERNEL(one_hot, indices_tensor, typecode,
+                      indices_tensor->dtype(), indices_mem, out_mem,
+                      indices_tensor->shape(), output_tensor->shape(),
+                      output_tensor->strides(), depth_value, onehot_values,
                       axis_value, one_hot_mode, context);
     return ok(output);
 }
@@ -489,7 +509,6 @@ nncase::kernels::stackvm::prod([[maybe_unused]] value_t input,
     return err(std::errc::not_supported);
 }
 
-
 result<value_t> nncase::kernels::stackvm::quantize(typecode_t target_type,
                                                    value_t input,
                                                    value_t quant_param,
@@ -499,12 +518,10 @@ result<value_t> nncase::kernels::stackvm::quantize(typecode_t target_type,
     try_output(out_mem, output, target_type, input_tensor->shape());
     try_input_with_value_type(qp, quant_param, quant_param_t);
 
-    CONTIGUOUS_KERNEL(quantize, input_tensor, input_tensor->dtype(), output_tensor->dtype(),
-                       input_mem,out_mem,
-                       input_tensor->shape(), input_tensor->strides(),
-                       output_tensor->strides(),
-                       qp->scale, (float)qp->zero_point,
-                       context);
+    CONTIGUOUS_KERNEL(
+        quantize, input_tensor, input_tensor->dtype(), output_tensor->dtype(),
+        input_mem, out_mem, input_tensor->shape(), input_tensor->strides(),
+        output_tensor->strides(), qp->scale, (float)qp->zero_point, context);
     return ok(output);
 }
 
@@ -528,7 +545,7 @@ result<value_t> nncase::kernels::stackvm::range(
             (dims_t::value_type)((*end_value - *begin_value) / *step_value);   \
         try_output(out_mem, output, _dtype, dims_t{count});                    \
         auto _out_ptr = OUT_CAST(_in_type, out_mem);                           \
-        for (size_t i = 0; i < count; ++i) {                                      \
+        for (size_t i = 0; i < count; ++i) {                                   \
             auto v = *begin_value + i * *step_value;                           \
             *(_out_ptr + i) = v;                                               \
         }                                                                      \
@@ -614,22 +631,26 @@ result<value_t> nncase::kernels::stackvm::resize_image(
 
     bool align_corner = false;
     bool half_pixel = false;
-    if (transformation_mode == image_resize_transformation_mode_t::half_pixel || transformation_mode == image_resize_transformation_mode_t::pytorch_half_pixel) {
+    if (transformation_mode == image_resize_transformation_mode_t::half_pixel ||
+        transformation_mode ==
+            image_resize_transformation_mode_t::pytorch_half_pixel) {
         half_pixel = true;
     } else if (transformation_mode ==
                image_resize_transformation_mode_t::align_corners) {
         align_corner = true;
     }
     if (resize_mode == image_resize_mode_t::bilinear) {
-        CONTIGUOUS_KERNEL(resize_bilinear, input_tensor, tycode, in_mem, out_mem, input_tensor->shape(),
-                             input_tensor->strides(), output_tensor->strides(),
-                             new_size_value[2], new_size_value[3], align_corner,
-                             half_pixel, context);
+        CONTIGUOUS_KERNEL(resize_bilinear, input_tensor, tycode, in_mem,
+                          out_mem, input_tensor->shape(),
+                          input_tensor->strides(), output_tensor->strides(),
+                          new_size_value[2], new_size_value[3], align_corner,
+                          half_pixel, context);
     } else if (resize_mode == image_resize_mode_t::nearest_neighbor) {
-        CONTIGUOUS_KERNEL(resize_nearest_neighbor, input_tensor,
-            tycode, in_mem, out_mem, input_tensor->shape(),
-            input_tensor->strides(), output_tensor->strides(), new_size_value[2],
-            new_size_value[3], align_corner, half_pixel, context);
+        CONTIGUOUS_KERNEL(resize_nearest_neighbor, input_tensor, tycode, in_mem,
+                          out_mem, input_tensor->shape(),
+                          input_tensor->strides(), output_tensor->strides(),
+                          new_size_value[2], new_size_value[3], align_corner,
+                          half_pixel, context);
     } else {
         return err(nncase_errc::runtime_not_found);
     }
@@ -699,9 +720,25 @@ result<value_t> nncase::kernels::stackvm::slice(value_t input, value_t begins,
     auto out_shape =
         slice_infer_shape(in_shape, begin_values, end_values, strides_values);
     try_output(out_mem, output, input_tensor->dtype(), out_shape);
-    CONTIGUOUS_KERNEL(slice, input_tensor, input_tensor->dtype(), in_mem, out_mem, in_shape,
-                          input_tensor->strides(), output_tensor->strides(),
-                          begin_values, end_values, strides_values, context);
+
+    bool neg_strides = false;
+    for (auto &&stride : strides_value) {
+        if (stride < 0) {
+            neg_strides = true;
+            break;
+        }
+    }
+    if (neg_strides) {
+        try_(reference::slice(input_tensor->dtype(), in_mem, out_mem, in_shape,
+                              input_tensor->strides(), output_tensor->strides(),
+                              begin_values, end_values, strides_values,
+                              context));
+    } else {
+        try_(optimized::slice(input_tensor->dtype(), in_mem, out_mem, in_shape,
+                              input_tensor->strides(), output_tensor->strides(),
+                              begin_values, end_values, strides_values,
+                              context));
+    }
     return ok(output);
 }
 
@@ -774,9 +811,11 @@ result<value_t> nncase::kernels::stackvm::stack(value_t inputs, value_t axis,
         input0->shape(), inputs_tuple->fields().size(), axis_value);
     try_output(out_mem, output, input0->dtype(), out_shape);
     try_var(strides, get_strides(inputs_tuple));
-    try_(reference::stack(input0->dtype(), inputs_value, out_mem, out_shape,
-                          strides, output_tensor->strides(), axis_value,
-                          context));
+    auto inputs_value_span =
+        gsl::make_span(inputs_value).as_span<const gsl::byte *const>();
+    try_(reference::stack(input0->dtype(), inputs_value_span, out_mem,
+                          out_shape, strides, output_tensor->strides(),
+                          axis_value, context));
     KERNEL_FINISH;
 }
 
@@ -915,8 +954,10 @@ result<value_t> nncase::kernels::stackvm::fake_quantize(
     return err(std::errc::not_supported);
 }
 
-
 result<value_t> nncase::kernels::stackvm::uninitialized(
-    NNCASE_UNUSED typecode_t dtype,NNCASE_UNUSED runtime::stackvm::memory_location_t memory_location,NNCASE_UNUSED value_t shape,NNCASE_UNUSED value_t output,NNCASE_UNUSED kernel_context &context) {
+    NNCASE_UNUSED typecode_t dtype,
+    NNCASE_UNUSED runtime::stackvm::memory_location_t memory_location,
+    NNCASE_UNUSED value_t shape, NNCASE_UNUSED value_t output,
+    NNCASE_UNUSED kernel_context &context) {
     return err(std::errc::not_supported);
 }

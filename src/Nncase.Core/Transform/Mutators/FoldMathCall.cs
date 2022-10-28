@@ -12,10 +12,10 @@ internal sealed class FoldMathCall : ExprMutator
     /// <inheritdoc/>
     public override Expr MutateLeaf(Call expr)
     {
-        if (expr.Target is Op op && op is not TIR.Nop && op.GetType().Namespace is string _namespace
+        if (expr.Target is Op op && op.GetType().Namespace is string _namespace
           && _namespace.StartsWith("Nncase.IR.Math"))
         {
-            return (expr.Parameters.Select(Visit).All(e => e is Const)) ? Const.FromValue(CompilerServices.Evaluate(expr)) : expr;
+            return (expr.Parameters.Select(Visit).All(e => e is Const)) ? StructEqualFolding(Const.FromValue(CompilerServices.Evaluate(expr))) : expr;
         }
         return expr;
     }

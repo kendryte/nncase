@@ -1,12 +1,11 @@
 #pragma once
-#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <nncase/runtime/util.h>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/dump_manager.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/stackvm/opcode.h>
-#include <nncase/runtime/util.h>
 #include <nncase/tensor.h>
 #include <nncase/type.h>
 #include <nncase/value.h>
@@ -19,8 +18,7 @@ template <typename F> void dump_append(dump_manager &dump_manager_, F &&f) {
 }
 
 template <typename F>
-void dump_append(dump_manager &dump_manager_, F &&f,
-                 const std::filesystem::path &path) {
+void dump_append(dump_manager &dump_manager_, F &&f, const std::string &path) {
     auto stream = dump_manager_.get_stream(path);
     f(stream);
     dump_manager_.set_append(true);
@@ -34,7 +32,7 @@ void dump(dump_manager &dump_manager_, nncase::value_t value, F &&f) {
 
 template <typename F>
 void dump(dump_manager &dump_manager_, nncase::value_t value, F &&f,
-          const std::filesystem::path &path) {
+          const std::string &path) {
     auto stream = dump_manager_.get_stream(path);
     if (value.is_a<nncase::tensor>()) {
         auto value_tensor = value.as<nncase::tensor>().unwrap();
@@ -54,7 +52,7 @@ void dump(dump_manager &dump_manager_, nncase::value_t value, F &&f,
     }
 }
 
-std::string to_str(const nncase::dims_t &shape) {
+inline std::string to_str(const nncase::dims_t &shape) {
     std::stringstream stream;
     if (shape.size() == 0) {
         stream << "scalar\n";

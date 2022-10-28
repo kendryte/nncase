@@ -36,8 +36,9 @@ public interface ICompilerServicesProvider
     /// </summary>
     /// <param name="op">Target operator.</param>
     /// <param name="context">Inference context.</param>
+    /// <param name="inferencer_cache"> inferencer cache.</param>
     /// <returns>Inference result.</returns>
-    IRType InferenceOp(Op op, ITypeInferenceContext context);
+    IRType InferenceOp(Op op, ITypeInferenceContext context, Dictionary<Type, ITypeInferencer> inferencer_cache);
 
     /// <summary>
     /// printer op.
@@ -55,7 +56,8 @@ public interface ICompilerServicesProvider
     /// <param name="expr"></param>
     /// <param name="prefix"></param>
     /// <param name="dumpPath"></param>
-    void DumpIR(Expr expr, string prefix, string dumpPath);
+    /// <param name="display_callable"></param>
+    void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable);
 
     /// <summary>
     /// print ir type.
@@ -76,16 +78,18 @@ public interface ICompilerServicesProvider
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <param name="varsValues">Optional vars' values.</param>
+    /// <param name="evaluator_cache"> Optional evaluator cache. </param>
     /// <returns>Evaluate result.</returns>
-    IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null);
+    IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null);
 
     /// <summary>
     /// Evaluate operator.
     /// </summary>
     /// <param name="op">Target operator.</param>
     /// <param name="context">Evaluate context.</param>
+    /// <param name="evaluator_cache"> Optional evaluator cache. </param>
     /// <returns>Evaluate result.</returns>
-    IValue EvaluateOp(Op op, IEvaluateContext context);
+    IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Type, IEvaluator>? evaluator_cache = null);
 
     /// <summary>
     /// Evaluate cost of the expression tree.
@@ -148,7 +152,7 @@ public interface ICompilerServicesProvider
     /// <returns>Target</returns>
     ITarget GetTarget(string name);
 
-    
+
     /// <summary>
     /// Get CompileOptions.
     /// </summary>
@@ -200,21 +204,21 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     public IDataTypeServiceProvider DataTypeService { get; }
 
     /// <inheritdoc/>
-    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null)
+    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
     {
-        return _evaluateProvider.Evaluate(expr, varsValues);
+        return _evaluateProvider.Evaluate(expr, varsValues, evaluator_cache);
     }
 
     /// <inheritdoc/>
-    public IValue EvaluateOp(Op op, IEvaluateContext context)
+    public IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Type, IEvaluator>? evaluator_cache = null)
     {
-        return _evaluateProvider.EvaluateOp(op, context);
+        return _evaluateProvider.EvaluateOp(op, context, evaluator_cache);
     }
 
     /// <inheritdoc/>
-    public IRType InferenceOp(Op op, ITypeInferenceContext context)
+    public IRType InferenceOp(Op op, ITypeInferenceContext context, Dictionary<Type, ITypeInferencer> inferencer_cache)
     {
-        return _typeInferenceProvider.InferenceOp(op, context);
+        return _typeInferenceProvider.InferenceOp(op, context, inferencer_cache);
     }
 
     /// <inheritdoc/>
@@ -230,7 +234,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     }
 
     /// <inheritdoc/>
-    public void DumpIR(Expr expr, string prefix, string dumpPath) => _irprinterProvider.DumpIR(expr, prefix, dumpPath);
+    public void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable) => _irprinterProvider.DumpIR(expr, prefix, dumpPath, display_callable);
 
     /// <inheritdoc/>
     public string Print(IRType type) => _irprinterProvider.Print(type);
@@ -277,7 +281,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     {
         return _targetProvider.GetTarget(name);
     }
-    
+
     public CompileOptions CompileOptions
     {
         get => _compileOptions;
@@ -320,10 +324,11 @@ public static class CompilerServices
     /// </summary>
     /// <param name="op">Target operator.</param>
     /// <param name="context">Inference context.</param>
+    /// <param name="inferencer_cache"> inferencer cache.</param>
     /// <returns>Inference result.</returns>
-    public static IRType InferenceOp(Op op, ITypeInferenceContext context)
+    public static IRType InferenceOp(Op op, ITypeInferenceContext context, Dictionary<Type, ITypeInferencer> inferencer_cache)
     {
-        return Provider.InferenceOp(op, context);
+        return Provider.InferenceOp(op, context, inferencer_cache);
     }
 
     /// <summary>
@@ -332,10 +337,11 @@ public static class CompilerServices
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <param name="varsValues">Optional vars' values.</param>
+    /// <param name="evaluator_cache"> Optional evaluator cache. </param>
     /// <returns>Evaluate result.</returns>
-    public static IValue Evaluate(this Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null)
+    public static IValue Evaluate(this Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
     {
-        return Provider.Evaluate(expr, varsValues);
+        return Provider.Evaluate(expr, varsValues, evaluator_cache);
     }
 
     /// <summary>
@@ -343,10 +349,11 @@ public static class CompilerServices
     /// </summary>
     /// <param name="op">Target operator.</param>
     /// <param name="context">Evaluate context.</param>
+    /// <param name="evaluator_cache"> Optional evaluator cache. </param>
     /// <returns>Evaluate result.</returns>
-    public static IValue EvaluateOp(Op op, IEvaluateContext context)
+    public static IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Type, IEvaluator>? evaluator_cache = null)
     {
-        return Provider.EvaluateOp(op, context);
+        return Provider.EvaluateOp(op, context, evaluator_cache);
     }
 
     /// <summary>
@@ -467,7 +474,7 @@ public static class CompilerServices
     public static string PrintOp(Op op, IIRPrinterContext context, bool ILmode) => Provider.PrintOp(op, context, ILmode);
 
     /// <inheritdoc/>
-    public static void DumpIR(Expr expr, string prefix, string dumpPath) => Provider.DumpIR(expr, prefix, dumpPath);
+    public static void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable = true) => Provider.DumpIR(expr, prefix, dumpPath, display_callable);
 
     /// <inheritdoc/>
     public static string Print(IRType type) => Provider.Print(type);

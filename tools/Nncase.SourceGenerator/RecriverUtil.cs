@@ -118,12 +118,12 @@ public static class RecriverUtil
                                                                             DiagnosticSeverity.Error,
                                                                             isEnabledByDefault: true);
 
-    // public static DiagnosticDescriptor MethodParamError = new DiagnosticDescriptor(id: "EvalGen005",
-    //                                                                 title: "The Method Parameters Is Not Valid!",
-    //                                                                 messageFormat: "This Class '{0}' Method Parameters Is ('{1}'), Because the `'{2}'`!",
-    //                                                                 category: "EvaluatorGenerator",
-    //                                                                 DiagnosticSeverity.Error,
-    //                                                                 isEnabledByDefault: true);
+    public static DiagnosticDescriptor MethodParamError = new DiagnosticDescriptor(id: "EvalGen005",
+                                                                    title: "The Method Parameters Is Not Valid!",
+                                                                    messageFormat: "This Class '{0}' Method Parameters Is ('{1}'), Because the `'{2}'`!",
+                                                                    category: "EvaluatorGenerator",
+                                                                    DiagnosticSeverity.Error,
+                                                                    isEnabledByDefault: true);
 
     public static DiagnosticDescriptor ClassNotFromBaseClassError => new DiagnosticDescriptor(id: "EvalGen006",
                                                                                 title: "The Class Must Be Derived From Target Class!",

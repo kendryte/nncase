@@ -127,17 +127,37 @@ internal sealed class RuleGenerator : IIncrementalGenerator
             var statements = new List<StatementSyntax>();
             foreach (var parameterSymbol in cand.methodSymbol.Parameters)
             {
-                string rightExpr = parameterSymbol.Type switch
+                string rightExpr;
+                switch (parameterSymbol.Type)
                 {
-                    INamedTypeSymbol { IsGenericType: true, IsReferenceType: true } x when x.IsInheritFrom(TensorSymobl) && x.Name == "Tensor" => $"((Nncase.IR.TensorConst)__result[\"{parameterSymbol.Name}\"]).Value.Cast<{x.TypeArguments[0].ToDisplayString()}>()",
-                    IArrayTypeSymbol { ElementType: { IsUnmanagedType: true, IsValueType: true } e } x => $"((Nncase.IR.TensorConst)__result[\"{parameterSymbol.Name}\"]).Value.ToArray<{e.ToDisplayString()}>()",
-                    { IsUnmanagedType: true, IsValueType: true } x => $"((Nncase.IR.TensorConst)__result[\"{parameterSymbol.Name}\"]).Value.ToScalar<{x.ToDisplayString()}>()",
-                    { IsReferenceType: true } x when x.IsInheritFrom(ExprSymobl) => $"({parameterSymbol.Type.ToDisplayString()})__result[\"{parameterSymbol.Name}\"]",
-                    ITypeSymbol x when SymbolEqualityComparer.Default.Equals(x, IMatchResultSymobl) => $"__result",
-                    ITypeSymbol x when SymbolEqualityComparer.Default.Equals(x, RunPassOptionsSymobl) => $"__options",
-                    INamedTypeSymbol { IsGenericType: true, Name: "IReadOnlyList" } x when x.TypeArguments[0].IsInheritFrom(ExprSymobl) => $"((System.Collections.Generic.IReadOnlyList<Nncase.IR.Expr>)__result[\"{parameterSymbol.Name}\"])",
-                    _ => throw new NotSupportedException($"Convert {parameterSymbol.Name} {parameterSymbol.Type.ToDisplayString()} For IRewriteRule Impl!")
-                };
+                    case INamedTypeSymbol { IsGenericType: true, IsReferenceType: true } x when x.IsInheritFrom(TensorSymobl) && x.Name == "Tensor":
+                        rightExpr = $"((Nncase.IR.TensorConst)__result[\"{parameterSymbol.Name}\"]).Value.Cast<{x.TypeArguments[0].ToDisplayString()}>()";
+                        break;
+                    case IArrayTypeSymbol { ElementType: { IsUnmanagedType: true, IsValueType: true } e } x:
+                        rightExpr = $"((Nncase.IR.TensorConst)__result[\"{parameterSymbol.Name}\"]).Value.ToArray<{e.ToDisplayString()}>()";
+                        break;
+                    case { IsUnmanagedType: true, IsValueType: true } x:
+                        rightExpr = $"((Nncase.IR.TensorConst)__result[\"{parameterSymbol.Name}\"]).Value.ToScalar<{x.ToDisplayString()}>()";
+                        break;
+                    case { IsReferenceType: true } x when x.IsInheritFrom(ExprSymobl):
+                        rightExpr = $"({parameterSymbol.Type.ToDisplayString()})__result[\"{parameterSymbol.Name}\"]";
+                        break;
+                    case ITypeSymbol x when SymbolEqualityComparer.Default.Equals(x, IMatchResultSymobl):
+                        rightExpr = $"__result";
+                        break;
+                    case ITypeSymbol x when SymbolEqualityComparer.Default.Equals(x, RunPassOptionsSymobl):
+                        rightExpr = $"__options";
+                        break;
+                    case INamedTypeSymbol { IsGenericType: true, Name: "IReadOnlyList" } x when x.TypeArguments[0].IsInheritFrom(ExprSymobl):
+                        rightExpr = $"((System.Collections.Generic.IReadOnlyList<Nncase.IR.Expr>)__result[\"{parameterSymbol.Name}\"])";
+                        break;
+                    case INamedTypeSymbol { IsGenericType: false, IsReferenceType: true } x when SymbolEqualityComparer.Default.Equals(x, TensorSymobl):
+                        rightExpr = $"((Nncase.IR.TensorConst)__result[\"{parameterSymbol.Name}\"]).Value";
+                        break;
+                    default:
+                        context.ReportDiagnostic(Diagnostic.Create(RecriverUtil.MethodParamError, Location.None, cand.classSymobl.Name, parameterSymbol.Name, $"Type {parameterSymbol.Type.ToDisplayString()} Not Support For Generate!"));
+                        return;
+                }
 
                 statements.Add(
                     ParseStatement($"var {parameterSymbol.Name} = {rightExpr};")

@@ -20,7 +20,7 @@ internal sealed class EvaluateProvider : IEvaluateProvider
         _serviceProvider = serviceProvider;
     }
 
-    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null)
+    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
     {
         if (expr.CheckedType is null)
         {
@@ -32,15 +32,25 @@ internal sealed class EvaluateProvider : IEvaluateProvider
             throw new InvalidOperationException("Expr in Evaluator need a valid type");
         }
 
-        var evaluatorVisitor = new EvaluateVisitor(varsValues ?? new Dictionary<Var, IValue>());
+        var evaluatorVisitor = new EvaluateVisitor(varsValues ?? new Dictionary<Var, IValue>(), evaluator_cache ?? new());
         return evaluatorVisitor.Visit(expr);
     }
 
-    public IValue EvaluateOp(Op op, IEvaluateContext context)
+    public IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Type, IEvaluator>? evaluator_cache = null)
     {
-        // TODO: Add inferencers cache.
-        var evaluatorType = typeof(IEvaluator<>).MakeGenericType(op.GetType());
-        var evaluator = (IEvaluator)_serviceProvider.GetRequiredService(evaluatorType);
+        var op_type = op.GetType();
+        if (evaluator_cache is null)
+        {
+            var evaluatorType = typeof(IEvaluator<>).MakeGenericType(op_type);
+            return ((IEvaluator)_serviceProvider.GetRequiredService(evaluatorType)).Visit(context, op);
+        }
+
+        if (!evaluator_cache.TryGetValue(op_type, out var evaluator))
+        {
+            var evaluatorType = typeof(IEvaluator<>).MakeGenericType(op_type);
+            evaluator = (IEvaluator)_serviceProvider.GetRequiredService(evaluatorType);
+            evaluator_cache.Add(op_type, evaluator);
+        }
         return evaluator.Visit(context, op);
     }
 }

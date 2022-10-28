@@ -83,6 +83,7 @@ internal sealed class Matcher
             (TuplePattern tuplePat, IR.Tuple tuple) => Visit(tuplePat, tuple),
             (IOpPattern opPat, Op op) => VisitLeaf(opPat, op),
             (MarkerPattern mkPat, Marker mk) => Visit(mkPat, mk),
+            (FusionPattern fusionPattern, Fusion fusion) => Visit(fusionPattern, fusion),
             (OrPattern orPat, _) => Visit(orPat, expr),
             (ExprPattern exprPattern, _) => VisitLeaf(exprPattern, expr),
             _ => false,
@@ -116,6 +117,33 @@ internal sealed class Matcher
     }
 
     private bool Visit(FunctionPattern pattern, Function expr)
+    {
+        if (_currentScope.TryGetMemo(pattern, out var oldExpr))
+        {
+            if (!ReferenceEquals(oldExpr, expr))
+            {
+                _currentScope.IsMatch = false;
+            }
+        }
+        else
+        {
+            if (!_options.IsSuppressedPattern(expr, pattern)
+                && pattern.MatchLeaf(expr)
+                && Visit(pattern.Body, expr.Body)
+                && Visit(pattern.Parameters, expr.Parameters))
+            {
+                _currentScope.AddMatch(pattern, expr);
+            }
+            else
+            {
+                _currentScope.IsMatch = false;
+            }
+        }
+
+        return _currentScope.IsMatch;
+    }
+
+    private bool Visit(FusionPattern pattern, Fusion expr)
     {
         if (_currentScope.TryGetMemo(pattern, out var oldExpr))
         {
@@ -284,6 +312,11 @@ internal sealed class Matcher
                         _currentScope.IsMatch = false;
                         break;
                     }
+                }
+
+                if (_currentScope.IsMatch)
+                {
+                    _currentScope.AddMatch(pattern, exprs);
                 }
             }
             else

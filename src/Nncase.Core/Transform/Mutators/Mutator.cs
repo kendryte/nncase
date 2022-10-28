@@ -18,15 +18,20 @@ public static class Mutator
     /// <summary>
     /// Unroll Loop
     /// </summary>
-    /// <param name="for_loops"> target for loop.</param>
     /// <returns></returns>
-    public static Func<ExprMutator> UnRollLoop(params For[] for_loops) => () => new Mutators.UnRollLoop(for_loops);
+    public static Func<ExprMutator> UnRollLoop() => () => new Mutators.UnRollLoop();
 
     /// <summary>
     /// fold let when expression is const.
     /// </summary>
     /// <returns></returns>
     public static Func<ExprMutator> FoldLet() => () => new Mutators.FoldLet();
+
+    /// <summary>
+    /// unfold block statements.
+    /// </summary>
+    /// <returns></returns>
+    public static Func<ExprMutator> UnFoldBlock() => () => new Mutators.UnFoldBlock();
 
     /// <summary>
     /// fold const tuple to tupleconst 
@@ -65,5 +70,12 @@ public static class Mutator
     /// </summary>
     /// <returns>FoldMathCall.</returns>
     public static Func<ExprMutator> FoldMathCall() => () => new Mutators.FoldMathCall();
+
+    /// <summary>
+    /// fold ir 
+    /// NOTE avoid the side effect bug, disable it.
+    /// </summary>
+    /// <returns></returns>
+    // public static Func<ExprMutator> FoldTIR() => () => new Mutators.FoldTIR();
 }
 

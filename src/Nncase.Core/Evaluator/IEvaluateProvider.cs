@@ -17,14 +17,16 @@ public interface IEvaluateProvider
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <param name="varsValues">Optional vars' values.</param>
+    /// <param name="evaluator_cache">Optional evaluator cache.</param>
     /// <returns>Evaluate result.</returns>
-    IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null);
+    IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null);
 
     /// <summary>
     /// Evaluate operator.
     /// </summary>
     /// <param name="op">Target operator.</param>
     /// <param name="context">Evaluate context.</param>
+    /// <param name="evaluator_cache">Optional evaluator cache.</param>
     /// <returns>Evaluate result.</returns>
-    IValue EvaluateOp(Op op, IEvaluateContext context);
+    IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Type, IEvaluator>? evaluator_cache = null);
 }
