@@ -27,8 +27,8 @@ public static class K210
     public static Call FakeKPUDownload(Expr input) =>
         new Call(new FakeKPUDownload(), input);
 
-    public static Call KPUConv2D(bool isDepthwise, KPUFilterType filterType, KPUPoolType poolType, KPUActivationParameters Activation, Expr input, Expr weights, Expr batchnorms, Expr outputQuantParam) =>
-        new Call(new KPUConv2D(isDepthwise, filterType, poolType, Activation), input, weights, batchnorms, outputQuantParam);
+    // public static Call KPUConv2D(bool isDepthwise, KPUFilterType filterType, KPUPoolType poolType, KPUActivationParameters Activation, Expr input, Expr weights, Expr batchnorms, Expr outputQuantParam) =>
+    //     new Call(new KPUConv2D(isDepthwise, filterType, poolType, Activation), input, weights, batchnorms, outputQuantParam);
 
     public static Call KPUUpload(Expr input) =>
         new Call(new KPUUpload(), input);

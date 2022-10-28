@@ -69,7 +69,7 @@ public class K210Target : ITarget
             {
                 new RealizeFakeQuantize(),
                 new RealizeFakeKPUUpload(),
-                new RealizeFakeKPUConv2D(),
+                // new RealizeFakeKPUConv2D(),
                 new RealizeFakeKPUDownload(),
                 new RealizeFakeDequantize(),
             });
