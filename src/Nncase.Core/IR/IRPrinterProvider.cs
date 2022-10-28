@@ -69,9 +69,11 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
     {
         var sb = new StringBuilder();
         using var dumpWriter = new StringWriter(sb);
-        return expr is PrimFunction || useScript
+        var _ = expr is PrimFunction || useScript
             ? new ScriptPrintVisitor(dumpWriter, true).Visit(expr).Serialize()
             : new ILPrintVisitor(dumpWriter, true).Visit(expr);
+
+        return sb.ToString();
     }
 
     /// <inheritdoc/>
