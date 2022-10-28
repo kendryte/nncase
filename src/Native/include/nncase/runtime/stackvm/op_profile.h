@@ -16,18 +16,22 @@
 #include <iostream>
 #include <unordered_map>
 
+
+extern "C" {
+    double get_clock();
+}
+
 class op_profile
 {
 public:
     op_profile(const std::string &op_type = "op_profile")
-        : op_type_(op_type)
-    {
-        begin_ = clock();
+        : op_type_(op_type) {
+        begin_ = get_clock();
     }
 
     ~op_profile()
     {
-        end_ = clock();
+        end_ = get_clock();
         auto cast_time = (end_ - begin_) / (double)1000;
         if (op_timing_.find(op_type_) == op_timing_.end())
         {
@@ -45,7 +49,7 @@ public:
     static std::unordered_map<std::string, double> op_timing_;
 
 private:
-    clock_t begin_;
-    clock_t end_;
+    double begin_;
+    double end_;
     std::string op_type_;
 };

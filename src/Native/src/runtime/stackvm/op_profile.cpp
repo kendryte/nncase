@@ -17,6 +17,12 @@
 #include <nncase/runtime/stackvm/op_profile.h>
 #include <vector>
 
+#ifdef NNCASE_BAREMETAL
+double get_clock();
+#else
+double get_clock() { return clock(); }
+#endif
+
 std::unordered_map<std::string, double> op_profile::op_timing_;
 void op_profile::print()
 {
