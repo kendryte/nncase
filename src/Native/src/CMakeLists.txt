@@ -26,6 +26,9 @@ add_subdirectory(kernels)
 if (NOT BUILDING_RUNTIME)
     add_executable(nncasetest test.cpp)
     target_link_libraries(nncasetest PRIVATE nncaseruntime)
+
+    add_executable(nncasetest_cli test_cli.cpp)
+    target_link_libraries(nncasetest_cli PRIVATE nncaseruntime)
 endif()
 
 if(BUILDING_RUNTIME)

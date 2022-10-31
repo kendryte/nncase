@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/kernels/stackvm/opt_ops.h>
+#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <utility>
@@ -583,5 +584,9 @@ result<void> optimized::conv2d(const float *input, const float *weights, const f
         // clang-format on
     }
 #endif
-    return err(std::errc::not_supported);
+    try_(nncase::kernels::stackvm::reference::conv2d(
+        input, weights, bias, output, in_shape, in_strides, w_shape, w_strides,
+        bias_strides, out_strides, padding_h, padding_w, groups, stride_h,
+        stride_w, dilation_h, dilation_w, fused_activation));
+    return ok();
 }
