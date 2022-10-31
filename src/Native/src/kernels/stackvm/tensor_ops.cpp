@@ -154,14 +154,22 @@ result<value_t> nncase::kernels::stackvm::conv2d(
         conv2d_infer_shape(input_tensor->shape(), weights_tensor->shape(),
                            strides_value, dilations, pads);
     try_f32_output(out_mem, output, out_shape);
-    CONTIGUOUS_KERNEL(
-        conv2d, input_tensor, input_mem, weights_mem, bias_mem, out_mem,
+    // CONTIGUOUS_KERNEL(
+    //     conv2d, input_tensor, input_mem, weights_mem, bias_mem, out_mem,
+    //     input_tensor->shape(), input_tensor->strides(), weights_tensor->shape(),
+    //     weights_tensor->strides(), bias_tensor->strides(),
+    //     output_tensor->strides(), pads[0], pads[1], groups_value, strides[0],
+    //     strides[1], dilations[0], dilations[1],
+    //     value_range<float>{fused_clamp_value[0], fused_clamp_value[1]},
+    //     context);
+    try_(reference::conv2d(
+        input_mem, weights_mem, bias_mem, out_mem,
         input_tensor->shape(), input_tensor->strides(), weights_tensor->shape(),
         weights_tensor->strides(), bias_tensor->strides(),
         output_tensor->strides(), pads[0], pads[1], groups_value, strides[0],
         strides[1], dilations[0], dilations[1],
         value_range<float>{fused_clamp_value[0], fused_clamp_value[1]},
-        context);
+        context));
     return ok(output);
 }
 
