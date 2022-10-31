@@ -154,6 +154,7 @@ result<value_t> nncase::kernels::stackvm::conv2d(
         conv2d_infer_shape(input_tensor->shape(), weights_tensor->shape(),
                            strides_value, dilations, pads);
     try_f32_output(out_mem, output, out_shape);
+
     // CONTIGUOUS_KERNEL(
     //     conv2d, input_tensor, input_mem, weights_mem, bias_mem, out_mem,
     //     input_tensor->shape(), input_tensor->strides(), weights_tensor->shape(),
