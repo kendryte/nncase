@@ -159,8 +159,8 @@ result<void> conv2d_1x1_s2(const float *input, const float *weights, const float
     const auto batch = in_shape[0], in_channels = in_shape[1], in_h = in_shape[2], in_w = in_shape[3], out_channels = w_shape[0];
     const auto filter_h = (int32_t)w_shape[2];
     const auto filter_w = (int32_t)w_shape[3];
-    const auto out_h = kernels::detail::get_windowed_output_size(in_h, filter_h, stride_h, dilation_h, padding_h);
-    const auto out_w = kernels::detail::get_windowed_output_size(in_w, filter_w, stride_w, dilation_w, padding_w);
+    const auto out_h = nncase::kernels::detail::get_windowed_output_size(in_h, filter_h, stride_h, dilation_h, padding_h);
+    const auto out_w = nncase::kernels::detail::get_windowed_output_size(in_w, filter_w, stride_w, dilation_w, padding_w);
 
     const size_t tailstep = in_w - (out_w * stride_w);
 
@@ -391,8 +391,8 @@ result<void> conv2d_nxm(const float *input, const float *weights, const float *b
     NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w, value_range<float> fused_activation, NNCASE_UNUSED kernels::kernel_context &context) noexcept
 {
     const auto batch = in_shape[0], out_channels = w_shape[0], in_channels = w_shape[1], in_h = in_shape[2], in_w = in_shape[3];
-    const auto out_h = kernels::detail::get_windowed_output_size(in_h, Filter_h, Stride_h, dilation_h, padding::zero());
-    const auto out_w = kernels::detail::get_windowed_output_size(in_w, Filter_w, Stride_w, dilation_w, padding::zero());
+    const auto out_h = nncase::kernels::detail::get_windowed_output_size(in_h, Filter_h, Stride_h, dilation_h, padding::zero());
+    const auto out_w = nncase::kernels::detail::get_windowed_output_size(in_w, Filter_w, Stride_w, dilation_w, padding::zero());
     const size_t tail_step = in_strides[2] - (out_w * Stride_w);
     for (size_t b = 0; b < batch; b++) // batch
     {
@@ -438,8 +438,8 @@ result<void> conv2d_depthwise_nxm(const float *input, const float *weights, cons
     NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w, value_range<float> fused_activation, NNCASE_UNUSED kernels::kernel_context &context) noexcept
 {
     const auto batch = in_shape[0], channels = w_shape[0], in_h = in_shape[2], in_w = in_shape[3];
-    const auto out_h = kernels::detail::get_windowed_output_size(in_h, Filter_h, Stride_h, dilation_h, padding::zero());
-    const auto out_w = kernels::detail::get_windowed_output_size(in_w, Filter_w, Stride_w, dilation_w, padding::zero());
+    const auto out_h = nncase::kernels::detail::get_windowed_output_size(in_h, Filter_h, Stride_h, dilation_h, padding::zero());
+    const auto out_w = nncase::kernels::detail::get_windowed_output_size(in_w, Filter_w, Stride_w, dilation_w, padding::zero());
 
     const size_t tail_step = in_strides[2] - (out_w * Stride_w);
     for (size_t b = 0; b < batch; b++) // batch
