@@ -20,6 +20,8 @@ import re
 import subprocess
 import shutil
 import os
+import sys
+from pathlib import Path
 from shutil import which
 import platform
 
@@ -57,16 +59,16 @@ def get_dotnet_runtime_version():
     return version.group(0)
 
 def get_pynet_init_file():
-    pip_cmd = ""
-    if which("pip") is not None:
-        pip_cmd = "pip"
-    elif which("pip3") is not None:
-        pip_cmd = "pip3"
+    python_root = Path(sys.executable).parent
+    if (python_root/'pip').exists():
+        pip_cmd = str(python_root / "pip")
+    elif (python_root/'pip3').exists():
+        pip_cmd = str(python_root / "pip3")
     else:
         raise "pip not found"
     lines = run_cmd(f"{pip_cmd} show pythonnet")
     location = find_output(lines, "Location")
-    if location[0].find("not found"):
+    if location[0].find("not found") >= 0:
         run_cmd(f"{pip_cmd} install --pre pythonnet")
     # todo:check pythonnet version
     pn_root = location[0].split(': ')[1]
