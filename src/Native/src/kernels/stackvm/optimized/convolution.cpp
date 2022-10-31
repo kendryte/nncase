@@ -479,8 +479,8 @@ result<void> conv2d_depthwise_nxm(const float *input, const float *weights, cons
 #define HALIDE_CONV2D_NXM_S1_S2(KH, KW)                                                                                               \
     if (filter_h == (KH) && filter_w == (KW))                                                                                         \
     {                                                                                                                                 \
-        const auto out_h = detail::get_windowed_output_size(in_shape[2], filter_h, stride_h, dilation_h, padding_h);                  \
-        const auto out_w = detail::get_windowed_output_size(in_shape[3], filter_w, stride_w, dilation_w, padding_w);                  \
+        const auto out_h = nncase::kernels::detail::get_windowed_output_size(in_shape[2], filter_h, stride_h, dilation_h, padding_h);                  \
+        const auto out_w = nncase::kernels::detail::get_windowed_output_size(in_shape[3], filter_w, stride_w, dilation_w, padding_w);                  \
         Halide::Runtime::Buffer<float> _input_buffer(const_cast<float *>(input), in_shape[3], in_shape[2], in_shape[1], in_shape[0]); \
         Halide::Runtime::Buffer<float> _weights_buffer(const_cast<float *>(weights), w_shape[3], w_shape[2], w_shape[1], w_shape[0]); \
         Halide::Runtime::Buffer<float> _bias_buffer(const_cast<float *>(bias), w_shape[0]);                                           \
@@ -499,8 +499,8 @@ result<void> conv2d_depthwise_nxm(const float *input, const float *weights, cons
 #define HALIDE_CONV2D_DEPTHWISE_NXM_S1_S2(KH, KW)                                                                                     \
     if (filter_h == (KH) && filter_w == (KW))                                                                                         \
     {                                                                                                                                 \
-        const auto out_h = detail::get_windowed_output_size(in_shape[2], filter_h, stride_h, dilation_h, padding_h);                  \
-        const auto out_w = detail::get_windowed_output_size(in_shape[3], filter_w, stride_w, dilation_w, padding_w);                  \
+        const auto out_h = nncase::kernels::detail::get_windowed_output_size(in_shape[2], filter_h, stride_h, dilation_h, padding_h);                  \
+        const auto out_w = nncase::kernels::detail::get_windowed_output_size(in_shape[3], filter_w, stride_w, dilation_w, padding_w);                  \
         Halide::Runtime::Buffer<float> _input_buffer(const_cast<float *>(input), in_shape[3], in_shape[2], in_shape[1], in_shape[0]); \
         Halide::Runtime::Buffer<float> _weights_buffer(const_cast<float *>(weights), w_shape[3], w_shape[2], w_shape[1], w_shape[0]); \
         Halide::Runtime::Buffer<float> _bias_buffer(const_cast<float *>(bias), w_shape[0]);                                           \
