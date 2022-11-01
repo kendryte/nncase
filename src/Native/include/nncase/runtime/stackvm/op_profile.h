@@ -18,7 +18,7 @@
 
 
 extern "C" {
-    double get_clock();
+    double get_time();
 }
 
 class op_profile
@@ -26,13 +26,13 @@ class op_profile
 public:
     op_profile(const std::string &op_type = "op_profile")
         : op_type_(op_type) {
-        begin_ = get_clock();
+        begin_ = get_time();
     }
 
     ~op_profile()
     {
-        end_ = get_clock();
-        auto cast_time = (end_ - begin_) / (double)1000;
+        end_ = get_time();
+        auto cast_time = end_ - begin_;
         if (op_timing_.find(op_type_) == op_timing_.end())
         {
             op_timing_.emplace(op_type_, cast_time);
