@@ -8,6 +8,11 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Nncase.IR;
+public struct MixQuantInfo
+{
+    public bool PermitInt16Quant;
+    public DataType MarkerQuantType;
+}
 
 /// <summary>
 /// The marker expression, it's can attach the attribute on the target.
@@ -24,6 +29,7 @@ public sealed record Marker(string Name, Expr Target, Expr Attribute) : Expr
     {
         return Target;
     }
+    public MixQuantInfo mixQuantInfo;
 }
 
 /// <summary>

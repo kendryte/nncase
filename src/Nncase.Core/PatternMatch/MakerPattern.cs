@@ -74,4 +74,13 @@ public static partial class Utility
     /// <param name="attribute">attribute.</param>
     /// <returns> MarkerPattern. </returns>
     public static MarkerPattern IsRangeOfMarker(Pattern target, Pattern attribute) => IsMarker(null, WellknownMarkerNames.RangeOf, target, attribute);
+
+    /// <summary>
+    /// is range of maker with name.
+    /// </summary>
+    /// <param name="name">name.</param>
+    /// <param name="target">target.</param>
+    /// <param name="attribute">attribute.</param>
+    /// <returns> MarkerPattern. </returns>
+    public static MarkerPattern IsRangeOfMarker(string? name, Pattern target, Pattern attribute) => IsMarker(name, WellknownMarkerNames.RangeOf, target, attribute);
 }

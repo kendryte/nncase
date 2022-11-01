@@ -29,10 +29,10 @@ namespace Nncase.IR
     /// </summary>
     public sealed record Call(Expr Target, IRArray<Expr> Parameters) : Expr, IParameterList<Expr>
     {
-        /// <summary>
-        /// used by fake ir, represents that whether this op permit int 16 quant.
-        /// </summary>
-        public bool PermitInt16Quant = false;
+        // /// <summary>
+        // /// used by fake ir, represents that whether this op permit int 16 quant.
+        // /// </summary>
+        // public bool PermitInt16Quant = false;
 
         /// <summary>
         /// quant config with cosine, List of DataType represents data types for each input might be quantized, List of QuantParam represents quant params for each input.
