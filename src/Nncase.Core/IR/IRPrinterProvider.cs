@@ -73,7 +73,7 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
             ? new ScriptPrintVisitor(dumpWriter, true).Visit(expr).Serialize()
             : new ILPrintVisitor(dumpWriter, true).Visit(expr);
 
-        return sb.ToString();
+        return useScript ? _ : sb.ToString();
     }
 
     /// <inheritdoc/>
