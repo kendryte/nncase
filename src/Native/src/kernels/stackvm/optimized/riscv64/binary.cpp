@@ -17,6 +17,7 @@
 #include <nncase/kernels/stackvm/opt_ops.h>
 #include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/runtime_op_utility.h>
+#include <nncase/runtime/util.h>
 #if __riscv_vector
 #include <riscv_vector.h>
 #endif

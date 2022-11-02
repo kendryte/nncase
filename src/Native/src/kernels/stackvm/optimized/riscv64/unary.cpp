@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <iostream>
+#include <nncase/runtime/util.h>
 #include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/kernels/stackvm/opt_ops.h>
 #include <nncase/kernels/kernel_utils.h>

@@ -104,6 +104,11 @@ public class ReplaceUtility
     {
         return call with { Parameters = ReplaceMulti(call.Parameters, posAndValue) };
     }
+    
+    public static Call ReplaceOpAndParams(Call call, Op op, params (ParameterInfo, Expr)[] posAndValue)
+    {
+        return call with { Target = op, Parameters = ReplaceMulti(call.Parameters, posAndValue) };
+    }
 
     private static Option<Expr> ReplaceTargetImpl(Expr root, Expr target, Expr expr)
     {

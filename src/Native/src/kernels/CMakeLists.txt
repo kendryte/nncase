@@ -3,6 +3,12 @@
 set(SRCS kernel_context.cpp)
 
 if (BUILDING_RUNTIME)
+    # used for rvv
+    if(ENABLE_RVV)
+        add_definitions(-D__riscv_vector=1)
+        add_compile_options(-march=rv64imafdcv)
+    endif()
+
     add_library(kernels OBJECT ${SRCS})
     target_include_directories(kernels PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
     target_link_libraries(kernels PUBLIC gsl::gsl-lite mpark_variant::mpark_variant)
