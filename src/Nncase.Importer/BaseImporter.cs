@@ -103,7 +103,7 @@ public abstract class BaseImporter
         if (_unsupportedOp.Count > 0)
         {
             throw new NotSupportedException(
-                $"Not Supported {name} op {_unsupportedOp.Aggregate("", (s, s1) => s + "\n" + s1)}");
+                $"Not Supported {name} op :{_unsupportedOp.Aggregate("", (s, s1) => s + "," + s1)}");
         }
     }
 }

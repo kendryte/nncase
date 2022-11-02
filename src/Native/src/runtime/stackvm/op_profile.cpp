@@ -18,9 +18,9 @@
 #include <vector>
 
 #ifdef NNCASE_BAREMETAL
-double get_time();
+double get_ms_time();
 #else
-double get_time() { return (double)clock() / 1000; }
+double get_ms_time() { return (double)clock() / 1000; }
 #endif
 
 std::unordered_map<std::string, double> op_profile::op_timing_;
