@@ -8,10 +8,11 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Nncase.IR;
-public struct MixQuantInfo
+public class MixQuantInfo
 {
-    public bool PermitInt16Quant;
-    public DataType MarkerQuantType;
+    public bool HasBindedMixQuantInfo = false;
+    public DataType MarkerQuantType = DataTypes.Float32;
+    public QuantParam QuantParameter = new QuantParam(0, 1);
 }
 
 /// <summary>
