@@ -9,5 +9,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Nncase.Studio\Nncase.Studio.csproj" />
   </ItemGroup>
-
+    
+  <ItemGroup Label="Global-Tool Watch">
+    <Watch Include="..\Nncase.Studio\**\*.razor" />
+  </ItemGroup>
 </Project>

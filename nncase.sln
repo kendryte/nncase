@@ -75,7 +75,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Studio", "src\Nncase
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Studio.Maui", "src\Nncase.Studio\Nncase.Studio.Maui\Nncase.Studio.Maui.csproj", "{E785784C-8D54-488C-BC6A-43C41422CFEC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nncase.Studio.Web", "src\Nncase.Studio\Nncase.Studio.Web\Nncase.Studio.Web.csproj", "{B1A740B0-C5AB-4D7E-A595-4CFFA657BF86}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Studio.Web", "src\Nncase.Studio\Nncase.Studio.Web\Nncase.Studio.Web.csproj", "{B1A740B0-C5AB-4D7E-A595-4CFFA657BF86}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
