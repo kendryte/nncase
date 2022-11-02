@@ -57,6 +57,11 @@ public abstract class QuantRule : RewriteRule<Pattern>
     public QuantMode QuantMode => Option.CompileOptions.QuantMode;
 
     /// <summary>
+    /// Get UseMixQuant flag
+    /// </summary>
+    public bool UseMixQuant => Option.CompileOptions.QuantizeOptions.BindQuantMethod;
+
+    /// <summary>
     /// NOTE the Init will be set by SourceGenerator when the GetReplace called.
     /// </summary>
     public abstract void Init();
