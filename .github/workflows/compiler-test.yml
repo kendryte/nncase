@@ -25,12 +25,11 @@ jobs:
     - name: Configure Conan (Linux)
       run: |
         conan profile update settings.compiler.libcxx=libstdc++11 default
+        echo "CC=gcc-10" >> $GITHUB_ENV
+        echo "CXX=g++-10" >> $GITHUB_ENV
       if: runner.os == 'Linux'
 
     - name: Build
-      env:
-        CC: gcc-10
-        CXX: g++-10
       run: |
         cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
         cmake --build build --config ${{matrix.config.buildType}}
