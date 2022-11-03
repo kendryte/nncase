@@ -14,3 +14,4 @@ protobuf==3.12.2
 kendryte-caffe
 pytest
 pytest-xdist
+pyyaml
