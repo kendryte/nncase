@@ -114,7 +114,17 @@ class OnnxTestRunner(TestRunner):
 
         def to_dim_value(d, default_d):
             if d.dim_value == 0:
-                return self.shape_vars.get(d.dim_param, default_d)
+                if len(self.shape_vars):
+                    # we should eval dim_param instead of get var value
+                    # e.g. dim_param = dec_len - 1
+                    return eval(f"{d.dim_param}", self.shape_vars)
+                else:
+                    # if not set shape vars, then return default d
+                    # if it has multi input that all of them have var, must set shape var
+                    # e.g.
+                    # input0: [8,24,dec_len-1]
+                    # input1: [8,dec_len-1,24]
+                    return default_d
             else:
                 return d.dim_value
 
