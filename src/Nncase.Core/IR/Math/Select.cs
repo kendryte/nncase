@@ -26,10 +26,10 @@ public sealed record Select() : Op
     /// <summary>
     /// Gets TrueValue.
     /// </summary>
-    public static readonly ParameterInfo TrueValue = new(typeof(Select), 1, "true_value", IsScalar());
+    public static readonly ParameterInfo TrueValue = new(typeof(Select), 1, "true_value");
 
     /// <summary>
     /// Gets FalseValue.
     /// </summary>
-    public static readonly ParameterInfo FalseValue = new(typeof(Select), 2, "false_value", IsScalar());
+    public static readonly ParameterInfo FalseValue = new(typeof(Select), 2, "false_value");
 }

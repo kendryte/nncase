@@ -25,7 +25,7 @@ public partial class SelectEvaluator : IEvaluator<Select>, ITypeInferencer<Selec
     /// <inheritdoc/>
     IRType Visit(TensorType Predicate, TensorType TrueValue, TensorType FalseValue)
     {
-        if (TrueValue.DType != FalseValue.DType)
+        if (TrueValue.DType != FalseValue.DType || TrueValue.Shape != FalseValue.Shape)
             return new InvalidType($"TrueValue.DType {TrueValue.DType.GetDisplayName()} != FalseValue.DType {FalseValue.DType.GetDisplayName()}");
         return TrueValue;
     }

@@ -51,21 +51,21 @@ public interface IBlockBuilder : IExprBuilder<Block>
     /// </summary>
     /// <param name="buffers"></param>
     /// <returns></returns>
-    IBlockBuilder Alloc(params TIR.Buffer[] buffers);
+    IBlockBuilder Alloc(params object[] buffers);
 
     /// <summary>
     /// reads
     /// </summary>
     /// <param name="buffer_regions"></param>
     /// <returns></returns>
-    IBlockBuilder Reads(params TIR.BufferRegion[] buffer_regions);
+    IBlockBuilder Reads(params object[] buffer_regions);
 
     /// <summary>
     /// writes
     /// </summary>
     /// <param name="buffer_regions"></param>
     /// <returns></returns>
-    IBlockBuilder Writes(params TIR.BufferRegion[] buffer_regions);
+    IBlockBuilder Writes(params object[] buffer_regions);
 
     /// <summary>
     /// 
@@ -126,23 +126,40 @@ internal class BlockBuilder : IBlockBuilder
         return new(_name, Sequential.Flatten(_body), Sequential.Flatten(_init), new(_iterVars), new(_reads), new(_writes), new(_allocations), _predicate ?? true);
     }
 
-    public IBlockBuilder Alloc(params Buffer[] buffers)
+    private static void Add<T>(List<T> list, object[] inputs)
     {
-        _allocations.AddRange(buffers.OfType<Buffer>());
+        foreach (var obj in inputs)
+        {
+            switch (obj)
+            {
+                case T item:
+                    list.Add(item);
+                    break;
+                case IEnumerable<T> items:
+                    list.AddRange(items.OfType<T>());
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    public IBlockBuilder Alloc(params object[] buffers)
+    {
+        Add(_allocations, buffers);
         return this;
     }
 
-    public IBlockBuilder Reads(params BufferRegion[] buffer_regions)
+    public IBlockBuilder Reads(params object[] buffer_regions)
     {
-        _reads.AddRange(buffer_regions.OfType<BufferRegion>());
+        Add(_reads, buffer_regions);
         return this;
     }
 
-    public IBlockBuilder Writes(params BufferRegion[] buffer_regions)
+    public IBlockBuilder Writes(params object[] buffer_regions)
     {
-        _writes.AddRange(buffer_regions.OfType<BufferRegion>());
+        Add(_writes, buffer_regions);
         return this;
-
     }
 
     public IBlockBuilder Predicate(Expr predicate)
