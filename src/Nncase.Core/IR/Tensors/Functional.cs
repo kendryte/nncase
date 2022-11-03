@@ -119,4 +119,5 @@ public static class Tensors
 
     public static Call StackScalar(Expr scalar) => Stack(new Tuple(scalar), 0);
 
+    public static Call TopK(Expr x, Expr k, Expr axis, Expr largest, Expr sorted) => new Call(new TopK(), x, k, axis, largest, sorted);
 }

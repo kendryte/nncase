@@ -3,6 +3,7 @@
 
 using Autofac;
 using Nncase.Evaluator.Tensors;
+using Nncase.IR.Tensors;
 
 namespace Nncase.Evaluator.Math;
 
@@ -33,6 +34,7 @@ public class TensorsModule : Module
         builder.RegisterType<SqueezeEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<StackEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<TileEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<TopKEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<TransposeEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<UnsqueezeEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<WhereEvaluator>().AsImplementedInterfaces();

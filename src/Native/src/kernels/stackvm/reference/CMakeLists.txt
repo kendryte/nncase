@@ -38,6 +38,7 @@ set(SRCS ../tensor_ops.cpp
          space_to_batch.cpp
          stack.cpp
          tile.cpp
+         topk.cpp
          transpose.cpp
          unary.cpp
          where.cpp
