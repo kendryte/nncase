@@ -7,9 +7,8 @@ onnx-simplifier==0.3.6
 onnxoptimizer==0.2.6
 onnxruntime==1.12.0
 numpy==1.21.0
---find-links https://download.pytorch.org/whl/torch_stable.html
-torch==1.9.0+cpu
-torchvision==0.10.0+cpu
+torch==1.9.0
+torchvision==0.10.0
 imageio==2.15.0
 protobuf==3.12.2
 kendryte-caffe

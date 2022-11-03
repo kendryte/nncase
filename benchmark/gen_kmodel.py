@@ -36,7 +36,7 @@ MODELS = {
     },
     "mobilenet_v2": {
         "url": "https://github.com/onnx/models/raw/main/vision/classification/mobilenet/model/mobilenetv2-7.onnx",
-        "in_shapes": {"input": [1, 3, 224, 224]}
+        "in_shapes": {"data": [1, 3, 224, 224]}
     }
 }
 
