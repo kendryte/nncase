@@ -152,6 +152,7 @@ jobs:
 
     - name: Test
       working-directory: ${{github.workspace}}
+      shell: bash
       env:
         PATH: ${{github.workspace}}/install/bin
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
