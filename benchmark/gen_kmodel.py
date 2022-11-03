@@ -65,10 +65,10 @@ def _make_module(name, target):
     compile_options.input_layout = "NCHW"
     compile_options.output_layout = "NCHW"
     compile_options.dump_dir = os.path.join(TEMP_DIR, name)
-    compile_options.dump_ir = True
-    compile_options.dump_asm = True
-    compile_options.dump_quant_error = True
-    compile_options.dump_import_op_range = True
+    compile_options.dump_ir = False
+    compile_options.dump_asm = False
+    compile_options.dump_quant_error = False
+    compile_options.dump_import_op_range = False
     compile_options.use_mse_quant_w = True
     compile_options.split_w_to_act = False
     compile_options.benchmark_only = True
