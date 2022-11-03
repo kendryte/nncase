@@ -125,6 +125,21 @@ public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
                StructuralComparisons.StructuralEqualityComparer.Equals(_segments, segment._segments);
     }
 
+    public static bool operator ==(SegmentND lhs, SegmentND rhs)
+    {
+        return lhs.Equals(rhs);
+    }
+
+    public static bool operator !=(SegmentND lhs, SegmentND rhs)
+    {
+        return !(lhs == rhs);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_segments), PadH, PadW);
+    }
+    
     public IEnumerator<Segment1D> GetEnumerator()
     {
         return ((IEnumerable<Segment1D>)_segments).GetEnumerator();
