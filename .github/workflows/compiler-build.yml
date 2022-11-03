@@ -147,6 +147,7 @@ jobs:
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
         commit_message: Update benchmark kmodels
+        file_pattern: 'benchmark/models/*'
       if: matrix.config.name == 'x86_64-linux'
 
     - name: Test
