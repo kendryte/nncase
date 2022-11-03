@@ -157,15 +157,15 @@ result<value_t> nncase::kernels::stackvm::conv2d(
 
     // CONTIGUOUS_KERNEL(
     //     conv2d, input_tensor, input_mem, weights_mem, bias_mem, out_mem,
-    //     input_tensor->shape(), input_tensor->strides(), weights_tensor->shape(),
-    //     weights_tensor->strides(), bias_tensor->strides(),
-    //     output_tensor->strides(), pads[0], pads[1], groups_value, strides[0],
-    //     strides[1], dilations[0], dilations[1],
+    //     input_tensor->shape(), input_tensor->strides(),
+    //     weights_tensor->shape(), weights_tensor->strides(),
+    //     bias_tensor->strides(), output_tensor->strides(), pads[0], pads[1],
+    //     groups_value, strides[0], strides[1], dilations[0], dilations[1],
     //     value_range<float>{fused_clamp_value[0], fused_clamp_value[1]},
     //     context);
     try_(reference::conv2d(
-        input_mem, weights_mem, bias_mem, out_mem,
-        input_tensor->shape(), input_tensor->strides(), weights_tensor->shape(),
+        input_mem, weights_mem, bias_mem, out_mem, input_tensor->shape(),
+        input_tensor->strides(), weights_tensor->shape(),
         weights_tensor->strides(), bias_tensor->strides(),
         output_tensor->strides(), pads[0], pads[1], groups_value, strides[0],
         strides[1], dilations[0], dilations[1],
@@ -842,6 +842,33 @@ nncase::kernels::stackvm::tile(value_t input, value_t repeats, value_t output,
     KERNEL_FINISH;
 }
 
+result<value_t>
+nncase::kernels::stackvm::top_k(value_t x, value_t k, value_t axis,
+                                value_t largest, value_t sorted, value_t output,
+                                [[maybe_unused]] kernel_context &context) {
+    try_in_mem(x);
+    try_integer_v(k);
+    try_positive_axis(axis_value, axis, x_tensor);
+    auto out_shape = topk_infer_shape(x_tensor->shape(), k_value, axis_value);
+
+    try_(alloc_tuple_output(output, {x_tensor->dtype(), datatype_t::int64},
+                            {out_shape, out_shape}));
+    try_var(output_tuple, output.as<tuple>());
+    try_var(outputs, get_output_data(output_tuple));
+    try_var(out_values, output_tuple->fields()[0].as<tensor>());
+    try_var(out_indices, output_tuple->fields()[1].as<tensor>());
+
+    try_var(tycode, to_typecode(x_tensor->dtype()));
+    try_integer_v(largest);
+    try_integer_v(sorted);
+    try_(reference::topk(tycode, x_mem, outputs[0], OUT_CAST(int64_t, outputs[1]),
+                         x_tensor->shape(), x_tensor->strides(),
+                         out_values->shape(), out_values->strides(),
+                         out_indices->shape(), out_indices->strides(), k_value,
+                         axis_value, largest_value, sorted_value));
+    KERNEL_FINISH;
+}
+
 result<value_t> nncase::kernels::stackvm::transpose(value_t input, value_t perm,
                                                     value_t output,
                                                     kernel_context &context) {
@@ -963,10 +990,10 @@ result<value_t> nncase::kernels::stackvm::fake_quantize(
     return err(std::errc::not_supported);
 }
 
-result<value_t> nncase::kernels::stackvm::uninitialized(
-    NNCASE_UNUSED typecode_t dtype,
-    NNCASE_UNUSED runtime::stackvm::memory_location_t memory_location,
-    NNCASE_UNUSED value_t shape, NNCASE_UNUSED value_t output,
-    NNCASE_UNUSED kernel_context &context) {
-    return err(std::errc::not_supported);
-}
+//result<value_t> nncase::kernels::stackvm::uninitialized(
+//    NNCASE_UNUSED typecode_t dtype,
+//    NNCASE_UNUSED runtime::stackvm::memory_location_t memory_location,
+//    NNCASE_UNUSED value_t shape, NNCASE_UNUSED value_t output,
+//    NNCASE_UNUSED kernel_context &context) {
+//    return err(std::errc::not_supported);
+//}

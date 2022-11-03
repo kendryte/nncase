@@ -127,6 +127,38 @@ inline result<void> alloc_output<false, dims_t>(value_t &output,
     return ok();
 }
 
+inline result<void> check_tuple_shape(value_t& outputs, const std::vector<dims_t>& out_shapes) {
+    try_var(output_tuple, outputs.as<tuple>());
+    try_(tuple_for_each_with_i(
+        output_tuple, [&](auto &output, auto i) -> result<void> {
+            try_var(out_tensor, output.template as<tensor>());
+            if (out_tensor->shape() != out_shapes[i]) {
+                return err(nncase_errc::shape_mismatch);
+            } else {
+                return ok();
+            }
+        }));
+    return ok();
+}
+
+inline result<void> alloc_tuple_output(value_t &outputs, const std::vector<datatype_t> dtypes,
+                                        const std::vector<dims_t> &out_shapes) {
+    if (outputs.empty()) {
+        auto size = out_shapes.size();
+        std::vector<value_t> fields(size);
+        for (size_t i = 0; i < size; ++i) {
+            auto output = value_t();
+            try_(alloc_output<false>(output, dtypes[i], out_shapes[i]));
+            fields[i] = output;
+        }
+        outputs = tuple(std::in_place, std::move(fields));
+    } else {
+        try_(check_tuple_shape(outputs, out_shapes));
+    }
+    return ok();
+}
+
+
 template <>
 inline result<void>
 alloc_output<true, std::vector<dims_t>>(value_t &outputs, datatype_t dtype,
@@ -141,16 +173,7 @@ alloc_output<true, std::vector<dims_t>>(value_t &outputs, datatype_t dtype,
         }
         outputs = tuple(std::in_place, std::move(fields));
     } else {
-        try_var(output_tuple, outputs.as<tuple>());
-        try_(tuple_for_each_with_i(
-            output_tuple, [&](auto &output, auto i) -> result<void> {
-                try_var(out_tensor, output.template as<tensor>());
-                if (out_tensor->shape() != out_shapes[i]) {
-                    return err(nncase_errc::shape_mismatch);
-                } else {
-                    return ok();
-                }
-            }));
+        try_(check_tuple_shape(outputs, out_shapes));
     }
     return ok();
 }

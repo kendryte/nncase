@@ -277,4 +277,10 @@ inline result<dims_t> matmul_infer_shape(const dims_t &lhs_shape, const dims_t &
     new_shape.push_back(rhs_shape.back());
     return ok(new_shape);
 }
+
+inline dims_t topk_infer_shape(const dims_t& x, int k, int axis){
+    auto result = x;
+    result[axis] = k;
+    return result;
+}
 END_NS_NNCASE_KERNELS_MODULE

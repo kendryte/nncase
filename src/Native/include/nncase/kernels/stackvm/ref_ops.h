@@ -199,10 +199,9 @@ lstm(const float *input, const float *w_xc, const float *w_rc,
      const dims_t &w_rc_shape, runtime::stackvm::lstmdirection_t direction);
 
 NNCASE_API result<void>
-matmul(typecode_t typecode, const gsl::byte *input_a,
-            const gsl::byte *input_b, gsl::byte *output,
-            const dims_t &in_a_shape, const dims_t &in_b_shape,
-            kernel_context &context = default_kernel_context()) noexcept;
+matmul(typecode_t typecode, const gsl::byte *input_a, const gsl::byte *input_b,
+       gsl::byte *output, const dims_t &in_a_shape, const dims_t &in_b_shape,
+       kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
 normal(typecode_t type, tensor mean, tensor scale, tensor seed, tensor shape,
@@ -399,6 +398,14 @@ NNCASE_API result<void> tile(datatype_t dt, const gsl::byte *input,
                              const strides_t &in_strides,
                              const strides_t &out_strides,
                              const dims_t &repeats);
+
+NNCASE_API result<void>
+topk(typecode_t typecode, const gsl::byte *input, gsl::byte *output_values, int64_t *output_indices,
+     const dims_t &in_shape, const dims_t &in_strides,
+     const dims_t &output_values_shape, const dims_t &output_values_strides,
+     const dims_t &output_indices_shape, const dims_t &output_indices_strides,
+     const int64_t k, const int32_t axis, const bool largest,
+     const bool sorted) noexcept;
 
 NNCASE_API result<void>
 transpose(datatype_t type, const gsl::byte *src, gsl::byte *dest,
