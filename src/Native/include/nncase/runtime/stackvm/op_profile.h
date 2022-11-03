@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <iostream>
 #include <unordered_map>
+#include <map>
 
 
 extern "C" {
@@ -36,10 +37,12 @@ public:
         if (op_timing_.find(op_type_) == op_timing_.end())
         {
             op_timing_.emplace(op_type_, cast_time);
+            op_count_.emplace(op_type_, 1);
         }
         else
         {
             op_timing_[op_type_] += cast_time;
+            op_count_[op_type_] += 1;
         }
     }
 
@@ -47,6 +50,7 @@ public:
 
 public:
     static std::unordered_map<std::string, double> op_timing_;
+    static std::map<std::string, size_t> op_count_;
 
 private:
     double begin_;
