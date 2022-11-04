@@ -85,6 +85,7 @@ jobs:
       - name: Set up build environment (Macos)
         run: |
           brew install sunnycase/core/libomp@14.0.6
+          echo "DYLD_LIBRARY_PATH=$GITHUB_WORKSPACE/install/lib" >> $GITHUB_ENV
         if: runner.os == 'Macos'
       
       - name: Install nncase simulator Artifact
@@ -103,7 +104,6 @@ jobs:
         env:
           PATH: ${{github.workspace}}/install/bin
           LD_LIBRARY_PATH: ${{github.workspace}}/install/lib
-          DYLD_LIBRARY_PATH: ${{github.workspace}}/install/lib
         run: |
           dotnet test -c ${{matrix.config.buildType}} --no-build --verbosity normal
           
