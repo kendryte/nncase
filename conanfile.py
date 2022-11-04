@@ -90,16 +90,14 @@ class nncaseConan(ConanFile):
             self.options["opencv"].with_quirc = False
             self.options["opencv"].with_ffmpeg = False
             self.options["opencv"].with_tiff = False
+            self.options["opencv"].with_jpeg = 'libjpeg-turbo'
             self.options["opencv"].dnn = False
-            self.options["flatbuffers"].options_from_context = False
             self.options["xtensor"].xsimd = False
             self.options["libzip"].with_bzip2 = False
             self.options["libzip"].with_zstd = False
             self.options["libzip"].crypto = False
             if self.settings.os == 'Linux':
                 self.options["opencv"].with_gtk = False
-                self.options["spirv-tools"].link_libcpp = False
-                self.options["shaderc"].link_libcpp = False
 
         if (not self.options.runtime) or self.options.vulkan_runtime:
             if self.settings.os == 'Linux':

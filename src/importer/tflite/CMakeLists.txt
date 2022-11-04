@@ -37,7 +37,7 @@ set(SRCS tflite_importer.cpp
          ops/split.cpp)
 
 add_library(tflite_importer OBJECT ${SRCS})
-target_link_libraries(tflite_importer PUBLIC ir flatbuffers)
+target_link_libraries(tflite_importer PUBLIC ir flatbuffers::flatbuffers)
 target_include_directories(tflite_importer PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 add_dependencies(tflite_importer TFLITE_FB)
 set_target_properties(tflite_importer PROPERTIES POSITION_INDEPENDENT_CODE ON)
