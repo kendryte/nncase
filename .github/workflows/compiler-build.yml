@@ -111,7 +111,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: nncase-${{matrix.config.name}}
-          path: ${{github.workspace}}/src/Nncase.Cli/bin/net${{matrix.dotnet-version}}/${{matrix.config.rid}}/publish
+          path: ${{github.workspace}}/src/Nncase.Cli/bin/${{matrix.config.buildType}}/net${{matrix.dotnet-version}}/${{matrix.config.rid}}/publish
           if-no-files-found: error
           
   test-compiler:
