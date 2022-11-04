@@ -45,9 +45,6 @@ jobs:
           echo "CC=gcc-10" >> $GITHUB_ENV
           echo "CXX=g++-10" >> $GITHUB_ENV
         if: runner.os == 'Linux'
-
-      - name: Create Build Environment
-        run: cmake -E make_directory ${{github.workspace}}/build
         
       - name: Configure CMake
         shell: bash
@@ -97,7 +94,9 @@ jobs:
           path: ${{github.workspace}}/install
 
       - name: Build
-        run: dotnet publish -c ${{matrix.config.buildType}} --sc --use-current-runtime
+        run: |
+          dotnet build -c ${{matrix.config.buildType}}
+          dotnet publish -c ${{matrix.config.buildType}} --sc --use-current-runtime
 
       - name: Dotnet Test
         working-directory: ${{github.workspace}}
@@ -105,7 +104,7 @@ jobs:
           PATH: ${{github.workspace}}/install/bin
           LD_LIBRARY_PATH: ${{github.workspace}}/install/lib
         run: |
-          dotnet test -c ${{matrix.config.buildType}} --verbosity normal
+          dotnet test -c ${{matrix.config.buildType}} --no-build --verbosity normal
           
       - name: Upload nncase Build Artifact
         uses: actions/upload-artifact@v3
