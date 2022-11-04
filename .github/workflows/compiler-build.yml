@@ -105,7 +105,7 @@ jobs:
           PATH: ${{github.workspace}}/install/bin
           LD_LIBRARY_PATH: ${{github.workspace}}/install/lib
         run: |
-          dotnet test -c ${{matrix.config.buildType}} --no-build --verbosity normal
+          dotnet test -c ${{matrix.config.buildType}} --verbosity normal
           
       - name: Upload nncase Build Artifact
         uses: actions/upload-artifact@v3
