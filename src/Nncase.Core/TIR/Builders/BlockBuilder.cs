@@ -126,17 +126,19 @@ internal class BlockBuilder : IBlockBuilder
         return new(_name, Sequential.Flatten(_body), Sequential.Flatten(_init), new(_iterVars), new(_reads), new(_writes), new(_allocations), _predicate ?? true);
     }
 
-    private static void Add<T>(List<T> list, object[] inputs)
+    private static void Add<T>(HashSet<T> set, IEnumerable<object> inputs)
     {
+        if (inputs is null)
+            return;
         foreach (var obj in inputs)
         {
             switch (obj)
             {
                 case T item:
-                    list.Add(item);
+                    set.Add(item);
                     break;
-                case IEnumerable<T> items:
-                    list.AddRange(items.OfType<T>());
+                case IEnumerable<object> items:
+                    Add(set, items);
                     break;
                 default:
                     break;
@@ -146,19 +148,25 @@ internal class BlockBuilder : IBlockBuilder
 
     public IBlockBuilder Alloc(params object[] buffers)
     {
-        Add(_allocations, buffers);
+        HashSet<TIR.Buffer> set = new(ReferenceEqualityComparer.Instance);
+        Add(set, buffers);
+        _allocations.AddRange(set.ToList());
         return this;
     }
 
     public IBlockBuilder Reads(params object[] buffer_regions)
     {
-        Add(_reads, buffer_regions);
+        HashSet<TIR.BufferRegion> set = new(ReferenceEqualityComparer.Instance);
+        Add(set, buffer_regions);
+        _reads.AddRange(set.ToList());
         return this;
     }
 
     public IBlockBuilder Writes(params object[] buffer_regions)
     {
-        Add(_writes, buffer_regions);
+        HashSet<TIR.BufferRegion> set = new(ReferenceEqualityComparer.Instance);
+        Add(set, buffer_regions);
+        _reads.AddRange(set.ToList());
         return this;
     }
 
