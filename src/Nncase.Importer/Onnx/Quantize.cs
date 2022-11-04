@@ -21,7 +21,7 @@ namespace Nncase.Importer
                 return Quantize(input, new QuantParam(
                         biasConst.Value.ToScalar<int>(),
                         scaleConst.Value.ToScalar<float>()),
-                    GetOutputType(op));
+                    ((TensorConst)(bias)).ValueType.DType);
             }
 
             throw new NotImplementedException("Onnx importer not impl for dynamic scale and bias");
@@ -38,7 +38,7 @@ namespace Nncase.Importer
                 return Dequantize(input, new QuantParam(
                         biasV,
                         scaleV),
-                    GetOutputType(op));
+                    DataTypes.Float32);
             }
 
             throw new NotImplementedException("Onnx importer not impl for dynamic scale and bias");
