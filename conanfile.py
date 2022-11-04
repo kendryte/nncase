@@ -59,15 +59,14 @@ class nncaseConan(ConanFile):
                 self.requires('gtest/1.10.0')
 
         if (not self.options.runtime) or self.options.vulkan_runtime:
-            if self.settings.os == 'Linux':
-                self.requires('vulkan-headers/1.2.182')
-                self.requires('vulkan-loader/1.2.182')
+            self.requires('vulkan-headers/1.2.182')
+            self.requires('vulkan-loader/1.2.182')
 
     def build_requirements(self):
         pass
 
     def configure(self):
-        min_cppstd = "14" if self.options.runtime else "20"
+        min_cppstd = "17" if self.options.runtime else "20"
         tools.check_min_cppstd(self, min_cppstd)
 
         if self.settings.arch not in ("x86_64",):
@@ -88,7 +87,7 @@ class nncaseConan(ConanFile):
         cmake.definitions['ENABLE_HALIDE'] = self.options.halide
         cmake.definitions['BUILD_PYTHON_BINDING'] = self.options.python
         if self.options.runtime:
-            cmake.definitions["CMAKE_CXX_STANDARD"] = 14
+            cmake.definitions["CMAKE_CXX_STANDARD"] = 17
         cmake.configure()
         return cmake
 
