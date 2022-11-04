@@ -326,9 +326,69 @@ namespace Nncase.Importer.TFLite
             {
                 return tensor.GetShapeArray().Select(x => new Dimension(x)).ToArray();
             }
-            return Enumerable.Range(0, tensor.ShapeSignatureLength).Select(i =>
-                tensor.ShapeSignature(i) == -1 ? Dimension.Unknown : tensor.Shape(i)
+            return Enumerable.Range(0, tensor.ShapeLength).Select(i =>
+                tensor.Shape(i) == -1 ? Dimension.Unknown : tensor.Shape(i)
             ).ToArray();
+        }
+
+        private List<QuantParam> GetInputQuantParams(in tflite.Operator op, int index)
+        {
+            var id = op.Inputs(index);
+            List<QuantParam> quantParams = new List<QuantParam>();
+
+            if (id > _subGraph.TensorsLength)
+            {
+                throw new InvalidDataException($"Cannot find tensor (id:{id}).");
+            }
+            // Maybe constant
+            var tensor = _subGraph.Tensors(id) ?? throw new InvalidDataException($"Cannot find tensor (id:{id}).");
+            if (((tflite.QuantizationParameters)tensor.Quantization).QuantizedDimension == 0)
+            {
+                return null;
+            }
+            else
+            {
+                tflite.QuantizationParameters quantParam = (tflite.QuantizationParameters)tensor.Quantization;
+                // Only support by tensor quant now.
+                System.Diagnostics.Trace.Assert(quantParam.ZeroPointLength == 1);
+                for (var i = 0; i < quantParam.ZeroPointLength; i++)
+                {
+                    quantParams.Add(new QuantParam((int)(quantParam.GetZeroPointArray()[i]), quantParam.GetScaleArray()[i]));
+                }
+                return quantParams;
+            }
+
+            return null;
+        }
+
+        private List<QuantParam> GetOutputQuantParams(in tflite.Operator op, int index)
+        {
+            var id = op.Outputs(index);
+            List<QuantParam> quantParams = new List<QuantParam>();
+
+            if (id > _subGraph.TensorsLength)
+            {
+                throw new InvalidDataException($"Cannot find tensor (id:{id}).");
+            }
+
+            var tensor = _subGraph.Tensors(id) ?? throw new InvalidDataException($"Cannot find tensor (id:{id}).");
+            if (((tflite.QuantizationParameters)tensor.Quantization).QuantizedDimension == 0)
+            {
+                return null;
+            }
+            else
+            {
+                tflite.QuantizationParameters quantParam = (tflite.QuantizationParameters)tensor.Quantization;
+                // Only support by tensor quant now.
+                System.Diagnostics.Trace.Assert(quantParam.ZeroPointLength == 1);
+                for (var i = 0; i < quantParam.ZeroPointLength; i++)
+                {
+                    quantParams.Add(new QuantParam((int)(quantParam.GetZeroPointArray()[i]), quantParam.GetScaleArray()[i]));
+                }
+                return quantParams;
+            }
+
+            return null;
         }
 
         private Expr GetInputExprs(in tflite.Operator op, int index)

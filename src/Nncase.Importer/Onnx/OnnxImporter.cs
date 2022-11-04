@@ -139,6 +139,8 @@ public sealed partial class OnnxImporter : BaseImporter
             "PRelu" => VisitPRelu(op),
 
             "QuantizeLinear" => VisitQuantizeLinear(op),
+            "QLinearConv" => VisitQLinearConv(op),
+            "QLinearMatmul" => VisitQLinearMatMul(op),
             "RandomNormal" => VisitRandomNormal(op),
             "RandomNormalLike" => VisitRandomNormalLike(op),
             "RandomUniform" => VisitRandomUniform(op),
