@@ -198,7 +198,7 @@ else()
     add_subdirectory(src/Native/src)
 
     if(BUILD_TESTING)
-        add_subdirectory(tests/kernels)
+        #add_subdirectory(tests/kernels)
     endif()
     
     # Python binding
