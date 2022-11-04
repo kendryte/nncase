@@ -94,7 +94,7 @@ jobs:
         unzip swiftshader.zip
         sudo cmake -E make_directory /usr/local/share/vulkan/icd.d
         sudo cp lib/* /usr/local/share/vulkan/icd.d
-        echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/install/tests" >> $GITHUB_ENV
+        echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
       if: runner.os == 'macOS'
       
     - name: Set up test environment (Linux)
@@ -106,7 +106,7 @@ jobs:
         unzip swiftshader.zip
         sudo cmake -E make_directory /usr/local/share/vulkan/icd.d
         sudo cp lib/* /usr/local/share/vulkan/icd.d
-        echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/install/tests" >> $GITHUB_ENV
+        echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
       if: runner.os == 'Linux'
       
     - name: Set up test environment (Windows)
@@ -118,7 +118,7 @@ jobs:
         Expand-Archive swiftshader.zip
         Copy-Item swiftshader\lib\vk_swiftshader_icd.json swiftshader\bin\
         echo "VK_ICD_FILENAMES=${env:GITHUB_WORKSPACE}/swiftshader/bin/vk_swiftshader_icd.json" >> $env:GITHUB_ENV
-        echo "PYTHONPATH=${env:GITHUB_WORKSPACE}/install/lib;${env:GITHUB_WORKSPACE}/install/python;${env:GITHUB_WORKSPACE}/install/tests" >> $GITHUB_ENV
+        echo "PYTHONPATH=${env:GITHUB_WORKSPACE}/install/lib;${env:GITHUB_WORKSPACE}/install/python;${env:GITHUB_WORKSPACE}/tests" >> $GITHUB_ENV
       if: runner.os == 'Windows'
 
     - name: Setup Python
