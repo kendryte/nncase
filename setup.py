@@ -252,33 +252,11 @@ def find_version():
     raise RuntimeError("Unable to find version string.")
 
 
-requirements = ["numpy"]
-
 setup(name='nncase',
       version=find_version(),
-      author="sunnycase",
-      author_email="sunnycase@live.cn",
-      maintainer="sunnycase",
       packages=['nncase'],
       package_dir={'': 'python'},
-      python_requires=">=3.6",
-      install_requires=requirements,
       ext_modules=[CMakeExtension(name="_nncase", sourcedir='.')],
-      description="A neural network compiler for AI accelerators",
-      url='https://github.com/kendryte/nncase',
-      long_description=open("README.md", 'r', encoding='utf8').read(),
-      long_description_content_type="text/markdown",
-      keywords="kendryte, nn, compiler, k210, k510",
-      classifiers=[
-          "Programming Language :: C++",
-          "Programming Language :: Python :: 3",
-          "Programming Language :: Python :: 3.6",
-          "Programming Language :: Python :: 3.7",
-          "Programming Language :: Python :: 3.8",
-          "Programming Language :: Python :: 3.9",
-          "License :: OSI Approved :: Apache Software License",
-          "Operating System :: OS Independent", ],
-      license='Apache-2.0',
       cmdclass={
           'build_ext': BuildCMakeExt,
           'install_data': InstallCMakeLibsData,

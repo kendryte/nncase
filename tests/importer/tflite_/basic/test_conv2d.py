@@ -89,7 +89,7 @@ dilations = [
 @pytest.mark.parametrize('padding', paddings)
 @pytest.mark.parametrize('dilations', dilations)
 def test_conv2d(n, i_channels, i_size, k_size, o_channels, strides, padding, dilations, request):
-    if padding != 'VALID' or (k_size[0] <= i_size[0] and k_size[1] <= i_size[1]):
+    if k_size[0] <= i_size[0] and k_size[1] <= i_size[1] and strides[0] <= k_size[0] and strides[1] <= k_size[1]:
         module = _make_module(n, i_channels, i_size, k_size, o_channels,
                               strides, padding, dilations)
 
