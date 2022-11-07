@@ -63,5 +63,12 @@ void op_profile::print()
         total_count += count;
     }
 
+    std::cout << "|"
+              << std::setw(24) << std::left << "total" << "|"
+              << std::setw(6) << std::left << total_count << "|"
+              << std::setw(12) << std::left << total << "|"
+              << std::setw(12) << std::left << total / total * 100 << "|" << std::endl
+              << std::endl;
+
     op_timing_.clear();
 }
