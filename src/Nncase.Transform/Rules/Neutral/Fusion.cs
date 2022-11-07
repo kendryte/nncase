@@ -15,7 +15,7 @@ public abstract class FusionMaker : RewriteRule<Pattern>
 
     private int count = 0;
 
-    public string FullName { get; } = $"{Name}_{count++}";
+    public string FullName => $"{Name}_{count++}";
 }
 
 [RuleGenerator]
