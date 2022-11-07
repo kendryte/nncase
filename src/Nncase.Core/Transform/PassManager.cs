@@ -84,6 +84,7 @@ public class PassManager : IEnumerable<BasePass>
     private async Task runFunctionAsync(IEnumerable<FunctionPass> passes)
     {
         int i = 0;
+        string name = string.Empty;
         while (i < _module.Functions.Count)
         {
             foreach (var pass in passes)
@@ -95,10 +96,11 @@ public class PassManager : IEnumerable<BasePass>
                     FuncUpdateRecord(i, pre, post);
                     _module.Update(i, post);
                 }
+                name = pass.Name;
             }
             i++;
         }
-        FuncUpdateDependence(_module, _functions_update_map, _options);
+        FuncUpdateDependence(_module, _functions_update_map, _options, name);
         CleanFuncUpdateRecord();
     }
 
@@ -137,7 +139,7 @@ public class PassManager : IEnumerable<BasePass>
     /// <summary>
     /// foreach fix when the call target function has been updated.
     /// </summary>
-    public static void FuncUpdateDependence(IRModule module, Dictionary<BaseFunction, BaseFunction> update_map, RunPassOptions options)
+    public static void FuncUpdateDependence(IRModule module, Dictionary<BaseFunction, BaseFunction> update_map, RunPassOptions options, string name)
     {
         var mutator = new DependenceMutator(update_map);
         var post = mutator.Visit(module.Entry!);
@@ -154,7 +156,7 @@ public class PassManager : IEnumerable<BasePass>
         {
             foreach (var item in module.Functions)
             {
-                CompilerServices.DumpIR(item, "", Path.Combine(options.DumpDir, "FuncUpdateDependence"));
+                CompilerServices.DumpIR(item, "", Path.Combine(options.DumpDir, $"{name}_FuncUpdateDependence"));
             }
         }
     }
