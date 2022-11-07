@@ -173,9 +173,9 @@ internal sealed class RuleGenerator : IIncrementalGenerator
               ParseStatement($"return {cand.methodSymbol.Name}({string.Join(",", cand.methodSymbol.Parameters.Select(p => p.Name))});")
             );
 
-            var modifiers = cand.classSymobl.BaseType is { IsGenericType: true, Name: "RewriteRule" } || cand.classSymobl.IsInheritFrom(QuantRuleSymbol)
-                ? TokenList(Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(ElasticSpace), Token(SyntaxKind.OverrideKeyword).WithTrailingTrivia(ElasticSpace))
-                : TokenList(Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(ElasticSpace));
+            var modifiers = cand.classSymobl.Interfaces is var interfaces && interfaces.Length == 1 && SymbolEqualityComparer.Default.Equals(interfaces[0], IRewriteRuleSymbol)
+                ? TokenList(Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(ElasticSpace))
+                : TokenList(Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(ElasticSpace), Token(SyntaxKind.OverrideKeyword).WithTrailingTrivia(ElasticSpace));
 
             // 2. consturct wrapper method.
             var method = MethodDeclaration(ParseTypeName("Nncase.IR.Expr?"), Identifier("GetReplace").WithLeadingTrivia(ElasticSpace))
