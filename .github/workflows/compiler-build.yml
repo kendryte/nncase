@@ -99,6 +99,10 @@ jobs:
           dotnet build -c ${{matrix.config.buildType}}
           dotnet publish -c ${{matrix.config.buildType}} --sc --use-current-runtime
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: runner.os == 'Macos'
+
       - name: Dotnet Test
         working-directory: ${{github.workspace}}
         env:
