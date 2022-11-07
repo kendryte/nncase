@@ -85,7 +85,7 @@ jobs:
       - name: Set up build environment (Macos)
         run: |
           brew install sunnycase/core/libomp@14.0.6
-          echo "DYLD_LIBRARY_PATH=$GITHUB_WORKSPACE/install/lib" >> $GITHUB_ENV
+          echo "DYLD_LIBRARY_PATH=" >> $GITHUB_ENV
         if: runner.os == 'Macos'
       
       - name: Install nncase simulator Artifact
@@ -99,17 +99,28 @@ jobs:
           dotnet build -c ${{matrix.config.buildType}}
           dotnet publish -c ${{matrix.config.buildType}} --sc --use-current-runtime
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        if: runner.os == 'Macos'
+      - name: Set up Dotnet Test settings
+        uses: 1arp/create-a-file-action@0.2
+        with:
+          file: 'test.runsettings'
+          content: |
+            <?xml version="1.0" encoding="utf-8"?>
+            <!-- File name extension must be .runsettings -->
+            <RunSettings>
+              <RunConfiguration>
+                <EnvironmentVariables>
+                  <LD_LIBRARY_PATH>$GITHUB_WORKSPACE/install/lib</LD_LIBRARY_PATH>
+                  <DYLD_LIBRARY_PATH>$GITHUB_WORKSPACE/install/lib</DYLD_LIBRARY_PATH>
+                </EnvironmentVariables>
+              </RunConfiguration>
+            </RunSettings>
 
       - name: Dotnet Test
         working-directory: ${{github.workspace}}
         env:
           PATH: ${{github.workspace}}/install/bin
-          LD_LIBRARY_PATH: ${{github.workspace}}/install/lib
         run: |
-          dotnet test -c ${{matrix.config.buildType}} --no-build --verbosity normal
+          dotnet test -c ${{matrix.config.buildType}} -s test.runsettings --no-build --verbosity normal
           
       - name: Upload nncase Build Artifact
         uses: actions/upload-artifact@v3
