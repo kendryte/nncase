@@ -109,8 +109,8 @@ jobs:
             <RunSettings>
               <RunConfiguration>
                 <EnvironmentVariables>
-                  <LD_LIBRARY_PATH>$GITHUB_WORKSPACE/install/lib</LD_LIBRARY_PATH>
-                  <DYLD_LIBRARY_PATH>$GITHUB_WORKSPACE/install/lib</DYLD_LIBRARY_PATH>
+                  <LD_LIBRARY_PATH>${{github.workspace}}/install/lib</LD_LIBRARY_PATH>
+                  <DYLD_LIBRARY_PATH>${{github.workspace}}/install/lib</DYLD_LIBRARY_PATH>
                 </EnvironmentVariables>
               </RunConfiguration>
             </RunSettings>
