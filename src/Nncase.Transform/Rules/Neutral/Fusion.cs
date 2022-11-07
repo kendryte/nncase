@@ -7,8 +7,19 @@ using static Nncase.PatternMatch.Utility;
 using static Nncase.Utilities.ReplaceUtility;
 namespace Nncase.Transform.Rules.Neutral;
 
+public abstract class FusionMaker : RewriteRule<Pattern>
+{
+    public virtual string Name { get; } = "SingleInputFusion";
+    
+    public virtual string ModuleKind { get; } = "StackVM";
+
+    private int count = 0;
+
+    public string FullName { get; } = $"{Name}_{count++}";
+}
+
 [RuleGenerator]
-public partial class SingleInputFusion<T, BeginT, EndT> : RewriteRule<Pattern>
+public partial class SingleInputFusion<T, BeginT, EndT> : FusionMaker
     where T : Op
     where BeginT : Op
     where EndT : Op
@@ -17,20 +28,14 @@ public partial class SingleInputFusion<T, BeginT, EndT> : RewriteRule<Pattern>
     public override Pattern Pattern { get; } = IsWildcardCall<EndT>("st", null!,
         IsWildcardCall<T>(null!, null!, (
             IsWildcardCall<BeginT>(null!, null!, IsWildcard("input")))));
-
-    /// <summary>
-    /// the fusion name
-    /// </summary>
-    public virtual string Name { get; } = "SingleInputFusion";
-
-    private int count = 0;
+    
 
     // replace input with var
     private Call? GetReplace(Call st, Expr input)
     {
         var arg = new Var("input0", input.CheckedType!);
         var body = ReplaceTarget(st, input, arg);
-        var fusion = new Call(new Fusion($"{Name}_{count++}", "k510", body, new[] { arg }), input);
+        var fusion = new Call(new Fusion(FullName, ModuleKind, body, new[] { arg }), input);
         return fusion;
         // options.SuppressPattern(st, Pattern);
         // return fusion;
@@ -38,7 +43,7 @@ public partial class SingleInputFusion<T, BeginT, EndT> : RewriteRule<Pattern>
 }
 
 [RuleGenerator]
-public partial class DoubleInputFusion<T, BeginT, EndT> : RewriteRule<Pattern>
+public partial class DoubleInputFusion<T, BeginT, EndT> : FusionMaker
     where T : Op
     where BeginT : Op
     where EndT : Op
@@ -48,15 +53,7 @@ public partial class DoubleInputFusion<T, BeginT, EndT> : RewriteRule<Pattern>
         IsWildcardCall<T>(null!, null!,
             IsWildcardCall<BeginT>(null!, null!, IsWildcard("lhs")),
             IsWildcardCall<BeginT>(null!, null!, IsWildcard("rhs"))));
-
-
-    /// <summary>
-    /// the fusion name
-    /// </summary>
-    public virtual string Name { get; } = "SingleInputFusion";
-
-    private int count = 0;
-
+    
     // replace input with var
     private Call GetReplace(Call st, Expr lhs, Expr rhs)
     {
@@ -64,10 +61,32 @@ public partial class DoubleInputFusion<T, BeginT, EndT> : RewriteRule<Pattern>
         var arg1 = new Var("input1", rhs.CheckedType!);
         var tmpBody = ReplaceTarget(st, lhs, arg0);
         var body = ReplaceTarget(tmpBody, rhs, arg1);
-        var fusion = new Call(new Fusion($"{Name}_{count++}", "k510", body, new[] { arg0, arg1 }), lhs, rhs);
+        var fusion = new Call(new Fusion(FullName, ModuleKind, body, new[] { arg0, arg1 }), lhs, rhs);
         return fusion;
         // options.SuppressPattern(st, Pattern);
         // return fusion;
+    }
+}
+
+[RuleGenerator]
+public partial class DataTransferFusion<LoadT, StoreT> : FusionMaker
+    where LoadT : Op
+    where StoreT : Op
+{
+    /// <inheritdoc/>
+    public override Pattern Pattern { get; } = IsWildcardCall<StoreT>("st", null!,
+        IsWildcardCall<LoadT>(null!, null!, IsWildcard("input")));
+    
+    // replace input with var
+    private Call? GetReplace(Call st, Expr input)
+    {
+        if ((st.Attribute & CallAttr.Fusion) != 0)
+        {
+            return null;
+        }
+        var arg = new Var("input0", input.CheckedType!);
+        var body = ReplaceTarget(st, input, arg);
+        return new Call(new Fusion(FullName, ModuleKind, body, new[] { arg }), input);
     }
 }
 
@@ -205,27 +224,5 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
                     calleeFuseParams[i],
                     newCalleeParams[i - 1]));
         return (newCalleeFuseBody, newCalleeParams);
-    }
-}
-
-[RuleGenerator]
-public partial class DataTransferFusion<LoadT, StoreT> : RewriteRule<Pattern>
-    where LoadT : Op
-    where StoreT : Op
-{
-    /// <inheritdoc/>
-    public override Pattern Pattern { get; } = IsWildcardCall<StoreT>("st", null!,
-        IsWildcardCall<LoadT>(null!, null!, IsWildcard("input")));
-    
-    // replace input with var
-    private Call? GetReplace(Call st, Expr input)
-    {
-        if ((st.Attribute & CallAttr.Fusion) != 0)
-        {
-            return null;
-        }
-        var arg = new Var("input0", input.CheckedType!);
-        var body = ReplaceTarget(st, input, arg);
-        return new Call(new Fusion("DataTransferFusion", "k510", body, new[] { arg }), input);
     }
 }
