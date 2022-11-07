@@ -144,7 +144,7 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
 
         return expr with
         {
-            Target = (TIR.PrimFunction)Visit(expr.Target),
+            Target = (TIR.PrimFunction)Visit((IR.BaseFunction)expr.Target),
         };
     }
 
