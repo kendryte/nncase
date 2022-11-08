@@ -23,7 +23,7 @@ public class Compiler
     private IRModule Module;
     public static void init(CompileOptions options)
     {
-        OrtKI.LoadDLL();
+        // OrtKI.LoadDLL();
         var host = Host.CreateDefaultBuilder();
         host.ConfigureAppConfiguration(ConfigureAppConfiguration)
             .UseServiceProviderFactory(new AutofacServiceProviderFactory())

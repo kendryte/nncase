@@ -38,12 +38,12 @@ namespace Nncase.IR
         /// quant config with cosine, List of DataType represents data types for each input might be quantized, List of QuantParam represents quant params for each input.
         /// may be deleted in the future since there is EnodeBestQuantConfigWithCosine, reserve it now for debug and for unexpected usage when EnodeBestQuantConfigWithCosine is not enough.
         /// </summary>
-        public List<Tuple<List<DataType>, List<QuantParam>, float>> EnodeQuantConfigWithCosine = null;
+        public List<Tuple<List<DataType>, List<List<QuantParam>>, float>> EnodeQuantConfigWithCosine = null;
 
         /// <summary>
         /// quant config with cosine, List of DataType represents data types for each input might be quantized, List of QuantParam represents quant params for each input.
         /// </summary>
-        public Tuple<List<DataType>, List<QuantParam>, float> EnodeBestQuantConfigWithCosine = null;
+        public Tuple<List<DataType>, List<List<QuantParam>>, float> EnodeBestQuantConfigWithCosine = null;
 
         public CallAttr Attribute = CallAttr.None;
         /// <summary>
