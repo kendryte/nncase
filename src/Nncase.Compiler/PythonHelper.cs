@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Nncase.Evaluator;
 using Nncase.IR;
@@ -8,6 +9,12 @@ namespace Nncase.Compiler;
 
 public static class PythonHelper
 {
+    public static void LaunchDebugger()
+    {
+        Console.WriteLine(System.Environment.Version.ToString());
+        Debugger.Launch();
+    }
+
     public static IValue TensorValueFromBytes(DataType type, byte[] span, int[] dimensions)
     {
         return Value.FromTensor(Tensor.FromBytes(type, span, dimensions));
