@@ -399,7 +399,7 @@ result<void> conv2d_nxm(const float *input, const float *weights, const float *b
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(context.num_threads)
 #endif
-        for (size_t oc = 0; oc < out_channels; oc++) // out channel
+        for (int oc = 0; oc < out_channels; oc++) // out channel
         {
             std::array<float *, Parallel> outptr;
             std::array<const float *, compute_rsize<Parallel, Stride_h, Filter_h>()> r;
@@ -448,7 +448,7 @@ result<void> conv2d_depthwise_nxm(const float *input, const float *weights, cons
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(context.num_threads)
 #endif
-        for (size_t c = 0; c < channels; c++) // channel
+        for (int c = 0; c < channels; c++) // channel
         {
             std::array<float *, Parallel> outptr;
             std::array<const float *, compute_rsize<Parallel, Stride_h, Filter_h>()> r;
