@@ -41,7 +41,7 @@ py::class_<runtime_tensor>(m, "RuntimeTensor")
     })
     .def("to_numpy", [](runtime_tensor &tensor) {
         auto host = tensor.to_host().unwrap_or_throw();
-        auto src_map = std::move(hrt::map(host, hrt::map_read).unwrap_or_throw());
+        auto src_map = std::move(hrt::map(host, runtime::map_read).unwrap_or_throw());
         auto src_buffer = src_map.buffer();
         return py::array(
             to_dtype(tensor.datatype()),

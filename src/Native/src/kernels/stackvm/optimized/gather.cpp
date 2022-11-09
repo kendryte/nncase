@@ -47,7 +47,7 @@ result<void> gather_impl(const T *input, T *output, const dims_t &in_shape,
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(context.num_threads)
 #endif
-        for (size_t i = 0; i < indices_count; ++i) {
+        for (int i = 0; i < indices_count; ++i) {
             auto *o_ptr = out_ptr + i * block_size;
             auto indices_ptr = indices[i];
             memcpy(o_ptr, in_ptr + (indices_ptr * block_size),

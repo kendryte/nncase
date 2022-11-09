@@ -61,7 +61,7 @@ namespace Nncase.Importer
         {
             var x = GetInputExpr(op, 0);
             var alpha = GetFloatAttribute(op, "alpha", 0.2f);
-            var beta = GetFloatAttribute(op, "alpha", 0.5f);
+            var beta = GetFloatAttribute(op, "beta", 0.5f);
             return HardSigmoid(x, alpha, beta);
         }
 

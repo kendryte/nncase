@@ -21,9 +21,9 @@ namespace Nncase.Compiler;
 public class Compiler
 {
     private IRModule Module;
+
     public static void init(CompileOptions options)
     {
-        // OrtKI.LoadDLL();
         var host = Host.CreateDefaultBuilder();
         host.ConfigureAppConfiguration(ConfigureAppConfiguration)
             .UseServiceProviderFactory(new AutofacServiceProviderFactory())
@@ -62,16 +62,17 @@ public class Compiler
 
     private static void ConfigureLogging(ILoggingBuilder loggingBuilder)
     {
+        loggingBuilder.ClearProviders();
         loggingBuilder.AddConsole();
     }
 
     public IRModule ImportModule(Stream content, CompileOptions options)
     {
         CompilerServices.CompileOptions = options;
-        Console.WriteLine($"Target: {options.Target}");
+        //Console.WriteLine($"Target: {options.Target}");
         var module = ImportModel(content, options);
         DumpModule(module, options, "ir_import");
-        Console.WriteLine("Infer Shape...");
+        //Console.WriteLine("Infer Shape...");
         DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module, options));
         var inferSucc = CompilerServices.InferenceType(module.Entry!);
         DumpModule(module, options, "ir_infertype");
@@ -80,7 +81,7 @@ public class Compiler
             throw new InvalidOperationException("InferShape Failed For This Model!");
         }
 
-        Console.WriteLine("ImportModule successful!");
+        //Console.WriteLine("ImportModule successful!");
         return module;
     }
 
@@ -137,7 +138,7 @@ public class Compiler
         // TargetIndependentPass();
         RunPass(p => t.RegisterTargetDependentPass(p, options));
         RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, options));
-        Console.WriteLine("Compile successful");
+        //Console.WriteLine("Compile successful");
     }
 
     public byte[] Gencode()
@@ -147,7 +148,7 @@ public class Compiler
         var linkedModel = moduleBuilder.Build(Module);
         using var output = new MemoryStream();
         linkedModel.Serialize(output);
-        Console.WriteLine("Gencode successful");
+        //Console.WriteLine("Gencode successful");
         return output.ToArray();
     }
 }
