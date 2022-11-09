@@ -146,12 +146,12 @@ result<runtime_tensor> stackvm_runtime_function::create_tensor(uintptr_t addr, d
     if (addr >= reinterpret_cast<uintptr_t>(module().data().begin())
         && addr < reinterpret_cast<uintptr_t>(module().data().end()))
     {
-        pool = hrt::pool_cpu_only;
+        pool = hrt::pool_shared;
     }
     else if (addr >= reinterpret_cast<uintptr_t>(module().rdata().begin())
         && addr < reinterpret_cast<uintptr_t>(module().rdata().end()))
     {
-        pool = hrt::pool_cpu_only;
+        pool = hrt::pool_shared;
     }
     else
     {

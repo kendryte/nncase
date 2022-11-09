@@ -192,8 +192,10 @@ void remove_exclusive_copy_to_output_transform::process(transform_context &conte
 {
     auto &output = *context.inputs[0]->connection();
     auto &old_out = static_cast<output_node &>(*context.matched_nodes[1]);
-
-    output.memory_location(mem_output);
+    if (output.connections().size() == 1)
+        output.memory_location(mem_output);
+    else
+        output.memory_location(mem_data);
     output.attributes(output.attributes() | cnctr_attr_no_layout_strides);
     old_out.input().connect(output);
 }
