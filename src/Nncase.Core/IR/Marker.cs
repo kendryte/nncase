@@ -12,7 +12,7 @@ public class MixQuantInfo
 {
     public bool HasBindedMixQuantInfo = false;
     public DataType MarkerQuantType = DataTypes.Float32;
-    public QuantParam QuantParameter = new QuantParam(0, 1);
+    public List<QuantParam> QuantParameter = new List<QuantParam>();
 }
 
 /// <summary>

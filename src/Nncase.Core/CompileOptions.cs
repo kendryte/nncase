@@ -40,7 +40,7 @@ public sealed class CompileOptions
         DumpLevel = -1;
         DumpDir = string.Empty;
         ModelQuantMode = ModelQuantMode.NoQuant;
-        QuantType = DataTypes.Int8;
+        QuantType = DataTypes.UInt8;
         QuantMode = QuantMode.UnsignedMode;
         OutputFile = string.Empty;
     }
@@ -57,7 +57,7 @@ public sealed class CompileOptions
         DumpLevel = -1;
         DumpDir = string.Empty;
         ModelQuantMode = modelQuantMode;
-        QuantType = DataTypes.Int8;
+        QuantType = DataTypes.UInt8;
         QuantMode = QuantMode.UnsignedMode;
         OutputFile = string.Empty;
         QuantizeOptions = QuantizeOptions;
