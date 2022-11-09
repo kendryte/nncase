@@ -223,6 +223,8 @@ template <class T> class NNCASE_NODISCARD result {
             return detail::unwrap_impl<T>()(value());
         else {
             printf("terminate:%s\n", message.begin());
+            // auto exit for pld
+            printf("}");
             std::terminate();
         }
     }
