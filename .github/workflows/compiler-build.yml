@@ -97,7 +97,7 @@ jobs:
       - name: Build
         run: |
           dotnet build -c ${{matrix.config.buildType}}
-          dotnet publish -c ${{matrix.config.buildType}} --sc --use-current-runtime
+          dotnet publish -c ${{matrix.config.buildType}} --sc false --use-current-runtime
 
       - name: Set up Dotnet Test settings
         uses: 1arp/create-a-file-action@0.2
@@ -135,6 +135,7 @@ jobs:
     runs-on: ${{matrix.config.os}}
     strategy:
       matrix:
+        dotnet-version: ['6.0']
         config:
           - {name: x86_64-macos, os: macos-latest, shell: bash}
           - {name: x86_64-linux, os: ubuntu-latest, shell: bash}
@@ -145,6 +146,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{matrix.dotnet-version}}
       
       - name: Set up test environment (macOS)
         run: |
