@@ -81,13 +81,13 @@ public static class PythonHelper
     }
 
     // Tensor[sample_count * input_count] dataSet 
-    public static PytestCalibrationDatasetProvider MakeDatasetProvider(Tensor[] dataSet, int sampleCount, string[] inputNames)
+    public static PytestCalibrationDatasetProvider MakeDatasetProvider(Tensor[] dataSet, int sampleCount, Var[] fnParams)
     {
         var inputCount = dataSet.Length / sampleCount;
 
-        var samples = dataSet.Chunk(inputCount).Zip(inputNames).Select(inputs => inputs.Item1.ToDictionary(
-            item => new Var(inputs.Item2, new TensorType(item.ElementType, item.Shape)),
-            item => (IValue)Value.FromTensor(item))).ToAsyncEnumerable();
+        var samples = dataSet.Chunk(inputCount).Select(inputs => inputs.Zip(fnParams).ToDictionary(
+            item => item.Item2,
+            item => (IValue)Value.FromTensor(item.Item1))).ToArray().ToAsyncEnumerable();
         return new PytestCalibrationDatasetProvider(samples, sampleCount);
     }
 

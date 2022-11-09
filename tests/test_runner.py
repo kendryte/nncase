@@ -474,7 +474,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             ptq_options.set_tensor_data(np.asarray(
                 [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]))
             ptq_options.samples_count = cfg.generate_calibs.numbers
-            compiler.use_ptq(ptq_options, self.inputs)
+            compiler.use_ptq(ptq_options, compiler._module.params)
 
 
     def write_preprocess_opt(self, dict_args):

@@ -471,11 +471,10 @@ class Compiler:
         self._module = Module(self._compiler.ImportModule(
             MemoryStream(model_content), self._compile_options))
 
-    def use_ptq(self, ptq_dataset_options: PTQTensorOptions, inputs: Dict) -> None:
+    def use_ptq(self, ptq_dataset_options: PTQTensorOptions, params: list) -> None:
         self.ptq_dataset_options = ptq_dataset_options
         dataset = [data.to_nncase_tensor() for data in ptq_dataset_options.cali_data]
-        input_names = [input['name'] for input in inputs]
-        dataset = _nncase.Compiler.PythonHelper.MakeDatasetProvider(dataset, ptq_dataset_options.samples_count, input_names)
+        dataset = _nncase.Compiler.PythonHelper.MakeDatasetProvider(dataset, ptq_dataset_options.samples_count, params)
         self.quant_options = _nncase.Compiler.PythonHelper.MakeQuantizeOptions(dataset)
         self._compiler.UsePTQ(self.quant_options)
 
