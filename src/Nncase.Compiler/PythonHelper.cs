@@ -1,6 +1,9 @@
 using System.Runtime.InteropServices;
+using NetFabric.Hyperlinq;
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.IR.Math;
+using Nncase.Quantization;
 using Nncase.Runtime.Interop;
 using Nncase.Utilities;
 
@@ -74,6 +77,38 @@ public static class PythonHelper
         {
             Console.WriteLine(e);
             return false;
+        }
+    }
+
+    // Tensor[sample_count * input_count] dataSet 
+    public static PytestCalibrationDatasetProvider MakeDatasetProvider(Tensor[] dataSet, int sampleCount, string[] inputNames)
+    {
+        var inputCount = dataSet.Length / sampleCount;
+
+        var samples = dataSet.Chunk(inputCount).Zip(inputNames).Select(inputs => inputs.Item1.ToDictionary(
+            item => new Var(inputs.Item2, new TensorType(item.ElementType, item.Shape)),
+            item => (IValue)Value.FromTensor(item))).ToAsyncEnumerable();
+        return new PytestCalibrationDatasetProvider(samples, sampleCount);
+    }
+
+    public static QuantizeOptions MakeQuantizeOptions(ICalibrationDatasetProvider datasetProvider)
+    {
+        return new QuantizeOptions
+            { BindQuantMethod = false, CalibrationDataset = datasetProvider, CalibrationMethod = CalibMethod.NoClip };
+    }
+
+    public class PytestCalibrationDatasetProvider : ICalibrationDatasetProvider
+    {
+        public int? Count => 5;
+
+        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
+        
+        private int SampleCount = 0;
+
+        public PytestCalibrationDatasetProvider(IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> samples, int sampleCount)
+        {
+            Samples = samples;
+            SampleCount = sampleCount;
         }
     }
 }

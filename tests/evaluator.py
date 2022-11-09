@@ -25,7 +25,7 @@ class Evaluator:
         compile_options.dump_ir = cfg.compile_opt.dump_ir
         self.compiler.set_compile_options(compile_options)
         self.import_model(self.compiler, model_content, import_options)
-        self.set_quant_opt(cfg, kwargs, self.compiler, preprocess)
+        self.set_quant_opt(cfg, kwargs, preprocess, self.compiler)
         evaluator = self.compiler.create_evaluator(3)
         self.set_inputs(evaluator)
         evaluator.run()

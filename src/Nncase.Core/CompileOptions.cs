@@ -26,7 +26,6 @@ public sealed class CompileOptions
         QuantType = other.QuantType;
         QuantMode = other.QuantMode;
         OutputFile = other.OutputFile;
-
     }
 
     /// <summary>
