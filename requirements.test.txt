@@ -15,5 +15,5 @@ kendryte-caffe
 pytest
 pytest-xdist
 pyyaml
-pythonnet==3.0.0rc4
+pythonnet==3.0.1
 clr_loader==0.1.7

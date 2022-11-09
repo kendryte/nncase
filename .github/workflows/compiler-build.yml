@@ -221,6 +221,7 @@ jobs:
           PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
           NNCASE_CLI: ${{github.workspace}}/install
           LD_LIBRARY_PATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install
+          DYLD_LIBRARY_PATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install
         run: |
           pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/other.xml
           pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/other.xml
