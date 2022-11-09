@@ -60,7 +60,7 @@ gather_nd_impl(const T *input, T *output, const dims_t &in_shape,
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(context.num_threads)
 #endif
-        for (int j = 0; j < indices_block_count; ++j) {
+        for (int j = 0; (size_t)j < indices_block_count; ++j) {
             const auto *indices_ptr = indices + j * indices_list_size;
             auto *out_ptr = output + j * block_size;
             auto *batch_begin_input = input;

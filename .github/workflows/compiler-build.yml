@@ -87,6 +87,11 @@ jobs:
         with:
           name: nncase-simulator-${{matrix.config.name}}
           path: ${{github.workspace}}/install
+        
+      - name: Set up build environment (Macos)
+        run: |
+          brew install sunnycase/core/libomp@11.1.0
+        if: runner.os == 'Macos'
 
       - name: Build
         run: |
@@ -159,6 +164,7 @@ jobs:
       
       - name: Set up test environment (macOS)
         run: |
+          brew install sunnycase/core/libomp@11.1.0
           aria2c --parameterized-uri=true https://{sdk.lunarg.com/sdk/download/${VULKANSDK_VER}/mac,distfiles.macports.org/MoltenVK}/vulkansdk-macos-${VULKANSDK_VER}.dmg
           hdiutil attach ./vulkansdk-macos-*.dmg
           sudo /Volumes/vulkansdk-macos-*/InstallVulkan.app/Contents/MacOS/InstallVulkan --root $HOME/VulkanSDK --accept-licenses --default-answer --confirm-command install
