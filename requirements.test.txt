@@ -16,4 +16,4 @@ pytest
 pytest-xdist
 pyyaml
 pythonnet==3.0.1
-clr_loader==0.1.7
+clr_loader==0.2.4
