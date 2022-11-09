@@ -17,7 +17,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="TopK"/>.
 /// </summary>
-public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>
+public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>, ICostEvaluator<TopK>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, TopK topK)
@@ -71,5 +71,18 @@ public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>
             shape = Shape.Unknown(x.Shape.Rank - 1);
         }
         return new TupleType(new[] { x with { Shape = shape }, new TensorType(DataTypes.Int64, shape) });
+    }
+
+    public Cost? Visit(ICostEvaluateContext context, TopK target)
+    {
+        var x = context.GetArgumentType<TensorType>(target, TopK.X);
+        var k = context.GetArgumentType<TensorType>(target, TopK.K);
+        var outputType = context.GetReturnType<TupleType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(x) + CostUtility.GetMemoryAccess(k),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType),
+        };
     }
 }
