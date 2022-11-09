@@ -25,7 +25,7 @@ jobs:
         
       - name: Set up build environment (Macos)
         run: |
-          brew install sunnycase/core/libomp@14.0.6
+          brew install sunnycase/core/libomp@11.1.0
         if: runner.os == 'Macos'
 
       - name: Setup Python
@@ -81,12 +81,6 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: ${{matrix.dotnet-version}}
-        
-      - name: Set up build environment (Macos)
-        run: |
-          brew install sunnycase/core/libomp@14.0.6
-          echo "DYLD_LIBRARY_PATH=" >> $GITHUB_ENV
-        if: runner.os == 'Macos'
       
       - name: Install nncase simulator Artifact
         uses: actions/download-artifact@v2.0.9
@@ -165,7 +159,6 @@ jobs:
       
       - name: Set up test environment (macOS)
         run: |
-          brew install sunnycase/core/libomp@14.0.6
           aria2c --parameterized-uri=true https://{sdk.lunarg.com/sdk/download/${VULKANSDK_VER}/mac,distfiles.macports.org/MoltenVK}/vulkansdk-macos-${VULKANSDK_VER}.dmg
           hdiutil attach ./vulkansdk-macos-*.dmg
           sudo /Volumes/vulkansdk-macos-*/InstallVulkan.app/Contents/MacOS/InstallVulkan --root $HOME/VulkanSDK --accept-licenses --default-answer --confirm-command install

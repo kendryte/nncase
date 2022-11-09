@@ -82,7 +82,7 @@ result<void> conv2d_1x1_s1(const float *input, const float *weights, const float
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(context.num_threads)
 #endif
-        for (size_t oc = 0; oc < out_channels; oc++)
+        for (int oc = 0; oc < out_channels; oc++)
         {
             const auto out_c = oc;
             const float *now_weights = weights + out_c * w_strides[0];
@@ -169,7 +169,7 @@ result<void> conv2d_1x1_s2(const float *input, const float *weights, const float
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(context.num_threads)
 #endif
-        for (size_t oc = 0; oc < out_channels; oc++)
+        for (int oc = 0; oc < out_channels; oc++)
         {
             float *out = output + (b * out_strides[0] + oc * out_strides[1]);
 

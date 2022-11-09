@@ -44,7 +44,7 @@ result<void> resize_bilinear_impl(const T *input, T *output, const dims_t &in_sh
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(kernels::default_kernel_context().num_threads)
 #endif
-        for (size_t oc = 0; oc < in_shape[1]; oc++)
+        for (int oc = 0; oc < in_shape[1]; oc++)
         {
             auto in_c = in_batch + (size_t)oc * in_img_size;
             auto *output_ptr = begin_output_ptr + oc * out_img_size;
@@ -95,7 +95,7 @@ result<void> resize_nearest_neighbor_impl(const T *input, T *output, const dims_
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(kernels::default_kernel_context().num_threads)
 #endif
-        for (size_t oc = 0; oc < in_shape[1]; oc++)
+        for (int oc = 0; oc < in_shape[1]; oc++)
         {
             auto *input_ptr = begin_input_ptr + oc * in_image_size;
             auto *output_ptr = begin_output_ptr + oc * out_image_size;
@@ -137,7 +137,7 @@ inline result<void> gnne_resize_nearest_neighbor(const bfloat16 *input, bfloat16
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(kernels::default_kernel_context().num_threads)
 #endif
-        for (size_t oc = 0; oc < in_shape[1]; oc++)
+        for (int oc = 0; oc < in_shape[1]; oc++)
         {
             auto *input_ptr = begin_input_ptr + oc * in_image_size;
             auto *output_ptr = begin_output_ptr + oc * out_image_size;
@@ -186,7 +186,7 @@ inline result<void> resize_bilinear_impl(const bfloat16 *input, bfloat16 *output
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(kernels::default_kernel_context().num_threads)
 #endif
-        for (size_t oc = 0; oc < in_shape[1]; oc++)
+        for (int oc = 0; oc < in_shape[1]; oc++)
         {
             auto in_c = in_batch + (size_t)oc * in_img_size;
             auto *output_ptr = begin_output_ptr + oc * out_img_size;
