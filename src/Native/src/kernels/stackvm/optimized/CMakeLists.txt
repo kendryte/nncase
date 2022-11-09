@@ -20,3 +20,6 @@ set(SRCS
 
 
 target_sources(kernels PRIVATE ${SRCS})
+if(NOT MSVC)
+    target_compile_options(kernels PRIVATE -Wno-sign-compare)
+endif()
