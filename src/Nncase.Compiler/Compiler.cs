@@ -150,8 +150,11 @@ public class Compiler
         RunPass(p => TargetIndependentPass(p, options), "TargetIndependentPass");
         RunPass(p => t.RegisterTargetDependentPass(p, options), "TargetDependentPass");
         // RunPass(p => p.Add(new Quantization.EGraphPassWithBindQuantizeConfig("2.5_BindQuantizeConfig", options.QuantizeOptions!)));
-        RunPass(p => t.RegisterQuantizePass(p, options), "QuantizePass");
-        RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, options), "TargetDependentAfterQuantPass");
+        if (options.ModelQuantMode == ModelQuantMode.UsePTQ)
+        {
+            RunPass(p => t.RegisterQuantizePass(p, options), "QuantizePass");
+            RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, options), "TargetDependentAfterQuantPass");            
+        }
         // fold constant
         RunPass(p => p.Add(new Transform.Passes.ShapeInferPass()), "ShapeInferAndFold");
         Console.WriteLine("Compile successful");

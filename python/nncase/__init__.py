@@ -432,6 +432,7 @@ class Compiler:
     def __init__(self) -> None:
         self._compiler = _nncase.Compiler.Compiler()
         self._compiler.init(self._compile_options)
+        self.quant_options = None
 
     def set_compile_options(self, compile_options: CompileOptions):
         self.__process_compile_options(compile_options)
