@@ -134,12 +134,12 @@ private:
 typedef std::function<void(gsl::byte *)> data_deleter_t;
 
 NNCASE_API runtime_tensor_type &tensor_type() noexcept;
-NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, memory_pool_t pool = pool_cpu_only, uintptr_t physical_address = 0) noexcept;
-NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, gsl::span<gsl::byte> data, bool copy, memory_pool_t pool = pool_cpu_only, uintptr_t physical_address = 0) noexcept;
-NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, gsl::span<gsl::byte> data, data_deleter_t data_deleter, memory_pool_t pool = pool_cpu_only, uintptr_t physical_address = 0) noexcept;
-NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, memory_pool_t pool = pool_cpu_only, uintptr_t physical_address = 0) noexcept;
-NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, bool copy, memory_pool_t pool = pool_cpu_only, uintptr_t physical_address = 0) noexcept;
-NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, data_deleter_t data_deleter, memory_pool_t pool = pool_cpu_only, uintptr_t physical_address = 0) noexcept;
+NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, memory_pool_t pool = pool_shared, uintptr_t physical_address = 0) noexcept;
+NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, gsl::span<gsl::byte> data, bool copy, memory_pool_t pool = pool_shared, uintptr_t physical_address = 0) noexcept;
+NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, gsl::span<gsl::byte> data, data_deleter_t data_deleter, memory_pool_t pool = pool_shared, uintptr_t physical_address = 0) noexcept;
+NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, memory_pool_t pool = pool_shared, uintptr_t physical_address = 0) noexcept;
+NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, bool copy, memory_pool_t pool = pool_shared, uintptr_t physical_address = 0) noexcept;
+NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, data_deleter_t data_deleter, memory_pool_t pool = pool_shared, uintptr_t physical_address = 0) noexcept;
 NNCASE_API result<memory_pool_t> memory_pool(const runtime_tensor &tensor) noexcept;
 NNCASE_API result<mapped_buffer> map(runtime_tensor &tensor, map_access_t access) noexcept;
 NNCASE_API result<void> sync(runtime_tensor &tensor, sync_op_t op, bool force = false) noexcept;

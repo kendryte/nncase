@@ -75,10 +75,22 @@ inline size_t get_bytes(datatype_t type, const shape_t &shape)
     return xt::compute_size(shape) * get_bytes(type);
 }
 
+template <class shape_type, class strides_type>
+inline void compute_strides(const shape_type &shape, strides_type &strides)
+{
+    using strides_value_type = typename std::decay_t<strides_type>::value_type;
+    strides_value_type data_size = 1;
+    for (std::size_t i = shape.size(); i != 0; --i)
+    {
+        strides[i - 1] = data_size;
+        data_size = strides[i - 1] * static_cast<strides_value_type>(shape[i - 1]);
+    }
+}
+
 inline nncase::ir::shape_t to_strides(const nncase::ir::shape_t &shape)
 {
     nncase::ir::shape_t strides(shape.size());
-    xt::compute_strides(shape, xt::layout_type::row_major, strides);
+    compute_strides(shape, strides);
     return strides;
 }
 
