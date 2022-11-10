@@ -52,7 +52,8 @@ struct region
             {
                 if (outputs.contains((*it)->connection()))
                 {
-                    outputs.erase((*it)->connection());
+                    if ((*it)->connection()->connections().size() == 1)
+                        outputs.erase((*it)->connection());
                     it = region_inputs.erase(it);
                 }
                 else
@@ -324,11 +325,15 @@ private:
         // merge directly
         if (ita->outputs.size() == 1)
         {
-            for (auto i : ita->outputs)
+            for (auto it : ita->outputs)
             {
-                if (i->connections().size() == 1)
+                if (it->connections().size() == 1)
                     return true;
             }
+        }
+        if (itb->region_inputs.size() == 1)
+        {
+            return true;
         }
 
         auto check = std::make_shared<Region_tree>();
