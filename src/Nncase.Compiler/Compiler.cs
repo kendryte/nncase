@@ -112,10 +112,10 @@ public class Compiler
         CompilerServices.DumpIR(module.Entry!, prefix, dumpPath);
     }
 
-    private void RunPass(Action<PassManager> register)
+    private void RunPass(Action<PassManager> register, string dirName)
     {
-        // todo:dump dir
-        var pmgr = new PassManager(Module, new RunPassOptions(CompilerServices.GetCompileTarget, 0, "null", CompilerServices.CompileOptions));
+        var dump_path = Path.Join(CompilerServices.CompileOptions.DumpDir, dirName);
+        var pmgr = new PassManager(Module, new RunPassOptions(CompilerServices.GetCompileTarget, 3, Path.Join(CompilerServices.CompileOptions.DumpDir, dirName), CompilerServices.CompileOptions));
         register(pmgr);
         pmgr.RunAsync().Wait();
     }
@@ -124,23 +124,49 @@ public class Compiler
     {
         if (options.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
-            passManager.Add(new DataflowPass("add_rangeof_and_marker")
-            {
-                new Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2D(),
-            });
+            AddMarker(passManager, options);
+            AssignRange(passManager, options);
         }
     }
 
-    public void Compile(CompileOptions options)
+    public void AddMarker(PassManager passManager, CompileOptions options)
     {
-        CompilerServices.CompileOptions = options;
-        var t = CompilerServices.GetCompileTarget;
-        // TargetIndependentPass();
-        RunPass(p => t.RegisterTargetDependentPass(p, options));
-        RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, options));
-        //Console.WriteLine("Compile successful");
+        passManager.Add(new DataflowPass("add_rangeof_and_marker")
+        {
+            new Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2D(),
+            new Transform.Rules.Neutral.AddRangeOfAndMarkerToMatMul(),
+        });
+    }
+    
+    public void AssignRange(PassManager passManager, CompileOptions options)
+    {
+        passManager.Add(new Quantization.EGraphPassWithQuantize("1_AssignRanges", options.QuantizeOptions!));
     }
 
+    public void Compile(CompileOptions options, QuantizeOptions quantOption)
+    {
+        options.QuantizeOptions = quantOption;
+        CompilerServices.CompileOptions = options;
+        var t = CompilerServices.GetCompileTarget;
+        RunPass(p => TargetIndependentPass(p, options), "TargetIndependentPass");
+        RunPass(p => t.RegisterTargetDependentPass(p, options), "TargetDependentPass");
+        // RunPass(p => p.Add(new Quantization.EGraphPassWithBindQuantizeConfig("2.5_BindQuantizeConfig", options.QuantizeOptions!)));
+        if (options.ModelQuantMode == ModelQuantMode.UsePTQ)
+        {
+            RunPass(p => t.RegisterQuantizePass(p, options), "QuantizePass");
+            RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, options), "TargetDependentAfterQuantPass");            
+        }
+        // fold constant
+        RunPass(p => p.Add(new Transform.Passes.ShapeInferPass()), "ShapeInferAndFold");
+        // Console.WriteLine("Compile successful");
+    }
+
+    public void UsePTQ(QuantizeOptions quantOption)
+    {
+        CompilerServices.CompileOptions.QuantizeOptions = quantOption;
+        CompilerServices.CompileOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
+    }
+    
     public byte[] Gencode()
     {
         var target = CompilerServices.GetCompileTarget;
@@ -148,7 +174,7 @@ public class Compiler
         var linkedModel = moduleBuilder.Build(Module);
         using var output = new MemoryStream();
         linkedModel.Serialize(output);
-        //Console.WriteLine("Gencode successful");
+        // Console.WriteLine("Gencode successful");
         return output.ToArray();
     }
 }

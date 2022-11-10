@@ -115,12 +115,13 @@ class PTQTensorOptions:
     input_mean: float
     input_std: float
     samples_count: int
+    cali_data: list
 
     def __init__(self) -> None:
         pass
 
-    def set_tensor_data(self, data: bytes) -> None:
-        pass
+    def set_tensor_data(self, data: np.array) -> None:
+        self.cali_data = [RuntimeTensor(d) for d in data]
 
 #_nncase.Compiler.PythonHelper.LaunchDebugger()
 
@@ -328,6 +329,7 @@ class Compiler:
     def __init__(self) -> None:
         self._compiler = _nncase.Compiler.Compiler()
         self._compiler.init(self._compile_options)
+        self.quant_options = None
 
     def set_compile_options(self, compile_options: CompileOptions):
         self.__process_compile_options(compile_options)
@@ -339,7 +341,7 @@ class Compiler:
         self._compile_options.DumpDir = compile_options.dump_dir
 
     def compile(self) -> None:
-        self._compiler.Compile(self._compile_options)
+        self._compiler.Compile(self._compile_options, self.quant_options)
 
     def create_evaluator(self, stage: int) -> GraphEvaluator:
         return GraphEvaluator(self._module)
@@ -367,8 +369,12 @@ class Compiler:
         self._module = Module(self._compiler.ImportModule(
             MemoryStream(model_content), self._compile_options))
 
-    def use_ptq(self, ptq_dataset_options: PTQTensorOptions) -> None:
-        raise NotImplementedError("use_ptq")
+    def use_ptq(self, ptq_dataset_options: PTQTensorOptions, params: list) -> None:
+        self.ptq_dataset_options = ptq_dataset_options
+        dataset = [data.to_nncase_tensor() for data in ptq_dataset_options.cali_data]
+        dataset = _nncase.Compiler.PythonHelper.MakeDatasetProvider(dataset, ptq_dataset_options.samples_count, params)
+        self.quant_options = _nncase.Compiler.PythonHelper.MakeQuantizeOptions(dataset)
+        self._compiler.UsePTQ(self.quant_options)
 
     def dump_range_options(self) -> DumpRangeTensorOptions:
         raise NotImplementedError("dump_range_options")

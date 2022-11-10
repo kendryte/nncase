@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using OrtKISharp;
@@ -12,7 +13,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Reduce"/>.
 /// </summary>
-public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceArg>
+public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceArg>, ICostEvaluator<ReduceArg>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ReduceArg reduceArg)
@@ -59,5 +60,20 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
         {
             return new InvalidType("ReduceArg axis and keepDims are not const");
         }
+    }
+
+    public Cost? Visit(ICostEvaluateContext context, ReduceArg target)
+    {
+        var input = context.GetArgumentType<TensorType>(target, ReduceArg.Input);
+        var ret = context.GetReturnType<TensorType>();
+        var input_elem = input.Shape.Aggregate(1, (acc, d) => acc * (d.IsFixed ? d.FixedValue : 1));
+        var ret_elem = ret.Shape.Aggregate(1, (acc, d) => acc * (d.IsFixed ? d.FixedValue : 1));
+        var macPerElement = input_elem / ret_elem;
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, macPerElement),
+        };
     }
 }

@@ -456,10 +456,10 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
 
     def dispatch(self, full_cfg, sub_cfg):
         for dict_args in self.make_args(sub_cfg):
-            if dict_args['ptq'] and len(self.inputs) != 1:
-                continue
-            if full_cfg.compile_opt.dump_import_op_range and len(self.inputs) != 1:
-                continue
+            # if dict_args['ptq'] and len(self.inputs) != 1:
+            #     continue
+            # if full_cfg.compile_opt.dump_import_op_range and len(self.inputs) != 1:
+            #     continue
             yield dict_args
 
     def set_quant_opt(self, cfg, kwargs, preprocess, compiler):
@@ -467,14 +467,14 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             dump_range_options = nncase.DumpRangeTensorOptions()
             dump_range_options.set_tensor_data(np.asarray(
                 [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]).tobytes())
-            dump_range_options.samples_count = cfg.generate_dump_range_data.batch_size
-            compiler.dump_range_options(dump_range_options)
+            dump_range_options.samples_count = cfg.generate_dump_range_data.numbers
+            # compiler.dump_range_options(dump_range_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
             ptq_options.set_tensor_data(np.asarray(
-                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
-            ptq_options.samples_count = cfg.generate_calibs.batch_size
-            compiler.use_ptq(ptq_options)
+                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]))
+            ptq_options.samples_count = cfg.generate_calibs.numbers
+            compiler.use_ptq(ptq_options, compiler._module.params)
 
 
     def write_preprocess_opt(self, dict_args):
@@ -491,10 +491,10 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
     def generate_all_data(self, case_dir, cfg, dict_args):
         self.generate_data(cfg.generate_inputs, case_dir,
                            self.inputs, self.input_paths, 'input', dict_args)
-        # self.generate_data(cfg.generate_calibs, case_dir,
-        #                    self.calibs, self.calib_paths, 'calib', dict_args)
-        # self.generate_data(cfg.generate_dump_range_data, case_dir,
-        #                    self.dump_range_data, self.dump_range_data_paths, 'dump_range_data', dict_args)
+        self.generate_data(cfg.generate_calibs, case_dir,
+                           self.calibs, self.calib_paths, 'calib', dict_args)
+        self.generate_data(cfg.generate_dump_range_data, case_dir,
+                           self.dump_range_data, self.dump_range_data_paths, 'dump_range_data', dict_args)
 
     def get_compiler_options(self, cfg, model_file):
         import_options = nncase.ImportOptions()
