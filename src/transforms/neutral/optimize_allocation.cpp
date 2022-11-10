@@ -195,7 +195,7 @@ void remove_exclusive_copy_to_output_transform::process(transform_context &conte
     if (output.connections().size() == 1)
         output.memory_location(mem_output);
     else
-        output.memory_location(mem_data);
+        output.memory_location(mem_shared_data);
     output.attributes(output.attributes() | cnctr_attr_no_layout_strides);
     old_out.input().connect(output);
 }
