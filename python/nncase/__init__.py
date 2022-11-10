@@ -24,14 +24,9 @@ import sys
 from pathlib import Path
 from shutil import which
 import platform
+import pythonnet
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
-
-def os_join(root, name):
-    if platform.system().lower() == 'windows':
-        return root + "//" + name
-    else:
-        return os.path.join(root, name)
     
 def run_cmd(cmd):
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -41,63 +36,9 @@ def run_cmd(cmd):
     lines = p.stdout.read().splitlines()
     return lines
 
-def check_dotnet():
-    if which("dotnet") is None:
-        return ["dotnet not found"]
-    return []
-
 def find_output(lines, string):
     infos = [str(line)[:-1] for line in lines if str(line).find(string) != -1]
     return infos
-
-def get_dotnet_runtime_version():
-    lines = run_cmd('dotnet --info')
-    # after reverse, from high version to low version
-    lines.reverse()
-    infos = find_output(lines, "Microsoft.AspNetCore.App")
-    version = re.search(r"([1-9]\d|[1-9])(\.([1-9]\d|\d)){2}", infos[0])
-    return version.group(0)
-
-def get_pynet_init_file():
-    python_root = Path(sys.executable).parent
-    if (python_root/'pip').exists():
-        pip_cmd = str(python_root / "pip")
-    elif (python_root/'pip3').exists():
-        pip_cmd = str(python_root / "pip3")
-    else:
-        raise "pip not found"
-    lines = run_cmd(f"{pip_cmd} show pythonnet")
-    location = find_output(lines, "Location")
-    if location[0].find("not found") >= 0:
-        run_cmd(f"{pip_cmd} install --pre pythonnet")
-    # todo:check pythonnet version
-    pn_root = location[0].split(': ')[1]
-    if not os.path.exists(os_join(pn_root, '__init__.py')):
-        pn_root = os_join(pn_root + os.sep, 'pythonnet')
-        if not os.path.exists(os_join(pn_root, '__init__.py')):
-            raise Exception('pythonnet root path search failed')
-    return pn_root
-
-def generate_runtime_config(config_path, version):
-    config = '''{
-        "runtimeOptions": {
-            "tfm": "net6.0",
-            "framework": {
-                "name": "Microsoft.NETCore.App",
-                "version": "''' + version + '''"
-            }
-        }
-    }'''
-    with open(config_path, "w") as f:
-        f.write(config)
-    return config_path
-
-def create_runtime_config(pn_root, version):
-    config_file = 'runtime_config.json'
-    config_path = os_join(pn_root, config_file)
-    if os.path.exists(config_path):
-        return config_path
-    return generate_runtime_config(config_path, version)
 
 def check_env():
     env = os.environ
@@ -110,63 +51,17 @@ def check_env():
     #     errors.append("PYTHONNET_PYDLL not found")
     return errors
 
-def find_first_str_in_lines(lines, str):
-    indexs = [i for i, line in enumerate(lines) if line.find(str) != -1]
-    if len(indexs) == 0:
-        return -1
-    else:
-        return indexs[0]
-
-def create_new_init_content(init_path, config_path):
-    str = "def set_default_runtime() -> None:"
-    with open(init_path) as init:
-        lines = init.readlines()
-        i = find_first_str_in_lines(lines, str)
-        if i == -1:
-            #3.0.0.rc
-            def replace(lines, be_replaced_str, str):
-                i = find_first_str_in_lines(lines, be_replaced_str)
-                if i != -1:
-                    lines[i] = lines[i].replace(be_replaced_str, str)
-            replace(lines, 'spec = "mono"', 'spec = "coreclr"')
-            replace(lines, 'return clr_loader.get_coreclr(**params)',
-            f'''return clr_loader.get_coreclr(\"{config_path}\")''')
-            return "".join(lines)
-        else:
-            if lines[i+1].find(config_path) != -1:
-                return
-            # 3.0.0.a2
-            set = f"""    set_runtime(clr_loader.get_coreclr(\"{config_path}\"))\n"""
-            lines.insert(i + 1, set)
-            for i in range(i + 2, i + 2 + 4):
-                lines[i] = "#" + lines[i]
-            init_content = "".join(lines)
-            return init_content
-
-
-def modify_pynet(pn_root):
-    config_path = create_runtime_config(pn_root, version)
-    init_path = os.path.join(pn_root, '__init__.py')
-    new_content = create_new_init_content(init_path, config_path)
-    if new_content is None:
-        return
-    with open(init_path, "w") as f:
-        f.write(new_content)
-
 init_pynet = True
 if init_pynet:
-    errors = check_dotnet()
-    errors += check_env()
+    errors = check_env()
     if len(errors) > 0:
         raise Exception("check failed:\n" + {"\n".join(errors)})
-    version = get_dotnet_runtime_version()
-    pn_root = get_pynet_init_file()
-    modify_pynet(pn_root)
-
+    pythonnet.load("coreclr", runtime_config=os.path.join(os.environ.get('NNCASE_CLI'), 'Nncase.Cli.runtimeconfig.json'))
 
 import clr
 import sys
 import os
+import ctypes
 
 import numpy
 from numpy import empty
@@ -176,6 +71,7 @@ import subprocess
 
 def _add_dllpath():
     nncase_cli_path = os.getenv("NNCASE_CLI")
+
     clr.AddReference("System.IO")
     clr.AddReference("System.Collections")
     for dll in ["Nncase.Cli",
@@ -227,6 +123,7 @@ class PTQTensorOptions:
     def set_tensor_data(self, data: np.array) -> None:
         self.cali_data = [RuntimeTensor(d) for d in data]
 
+#_nncase.Compiler.PythonHelper.LaunchDebugger()
 
 class RuntimeTensor:
     _arr: np.ndarray
