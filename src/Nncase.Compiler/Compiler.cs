@@ -158,7 +158,7 @@ public class Compiler
         }
         // fold constant
         RunPass(p => p.Add(new Transform.Passes.ShapeInferPass()), "ShapeInferAndFold");
-        Console.WriteLine("Compile successful");
+        // Console.WriteLine("Compile successful");
     }
 
     public void UsePTQ(QuantizeOptions quantOption)
@@ -174,7 +174,7 @@ public class Compiler
         var linkedModel = moduleBuilder.Build(Module);
         using var output = new MemoryStream();
         linkedModel.Serialize(output);
-        //Console.WriteLine("Gencode successful");
+        // Console.WriteLine("Gencode successful");
         return output.ToArray();
     }
 }
