@@ -41,31 +41,31 @@ public class DumpManager
         return ValueDumper.GetMaybeDumpDir(Dir);
     }
     
-    protected void UpdateOrder(string root, string target)
+    protected void UpdateOrder(string root, string target, Shape shape)
     {
-        using (var order = new StreamWriter(Path.Join(root, "order"), Append))
+        using (var order = new StreamWriter(Path.Join(root, "!out_shape_list"), Append))
         {
-            order.WriteLine(target);
+            order.WriteLine($"{target}: {DumpUtility.SerializeShape(shape)}");
         }
     }
 
     protected void DumpCallParam(string target, ParameterInfo info, Action<StreamWriter> f)
     {
-        var path = Path.Join(GetMaybeDumpDir(), CountStr + target + $"${info.Name}");
+        var path = Path.Join(GetMaybeDumpDir(), $"{CountStr}${target}${info.Name}");
         using (var sr = new StreamWriter(path))
         {
             f(sr);
         }
     }
     
-    protected void DumpCall(string target, Action<StreamWriter> f)
+    protected void DumpCall(string target, Shape shape, Action<StreamWriter> f)
     {
         var path = Path.Join(GetMaybeDumpDir(), $"{CountStr}${target}");
         using (var sr = new StreamWriter(path))
         {
             f(sr);
         }
-        UpdateOrder(GetMaybeDumpDir(), target);
+        UpdateOrder(GetMaybeDumpDir(), target, shape);
         Append = true;
         ++Count;
     }
@@ -76,6 +76,15 @@ public static class ValueDumper
     public static void DumpTensor(TensorValue tensorValue, StreamWriter writer)
     {
         var tensor = tensorValue.AsTensor();
+        if (tensor.ElementType is PrimType)
+        {
+            var typeCode = ((PrimType)tensor.ElementType).TypeCode;
+            writer.WriteLine($"type:{(int)typeCode}");
+        }
+        else
+        {
+            writer.WriteLine($"type:0");
+        }
         writer.WriteLine(DumpUtility.SerializeShape(tensor.Shape));
         // todo:other type
         var dt = tensor.ElementType;
@@ -156,17 +165,22 @@ public static class DumpUtility
         return string.Join("\n", f);
     }
     
-    public static string SerializeByRow<T>(T[] f)
+    public static string SerializeByRow<T>(T[] arr)
     {
-        return string.Join(" ", f);
+        return string.Join(" ", arr);
     }
 
     public static string SerializeShape(int[] shape)
     {
-        return $"shape:[{SerializeByRow(shape)}]";
+        return $"shape:{SerializeByRow(shape)}";
+    }
+    
+    public static string SerializeShape(Dimension[] dims)
+    {
+        return $"shape:{SerializeByRow(dims)}";
     }
 
-    public static string SerializeShape(Shape shape) => SerializeShape(shape.ToValueArray());
+    public static string SerializeShape(Shape shape) => SerializeShape(shape.ToArray());
 
     public static string PathJoinByCreate(string root, params string[] paths)
     {

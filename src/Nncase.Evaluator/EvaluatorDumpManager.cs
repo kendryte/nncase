@@ -34,10 +34,11 @@ public class EvaluatorDumpManager : DumpManager
     public void DumpCall(Call call, string root)
     {
         var target = call.Target.GetType().Name.ToLower();
-        DumpCall(target, sr =>
+        // a bad tmp change
+        var shape = !(call.CheckedType is TensorType) ? Shape.Scalar : call.CheckedShape;
+        DumpCall(target, shape, sr =>
         {
             sr.WriteLine(target);
-            sr.WriteLine(call.CheckedType);
             var result = TensorGetter(call);
             ValueDumper.DumpTensors(result, sr);
         });
