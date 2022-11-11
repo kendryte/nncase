@@ -76,6 +76,21 @@ public class KPUActivationParameters
     public KPUActivationSegment[] Segments { get; } = new KPUActivationSegment[16];
 }
 
+public class KPUBatchNormParameters
+{
+    public KPUBatchNormSegment[] Segments { get; } = Array.Empty<KPUBatchNormSegment>();
+}
+
+public class kpu_conv2d_quant_args
+{
+    private int arg_x;
+    private int shift_x;
+    private int arg_w;
+    private int shift_w;
+    private int arg_add;
+    
+}
+
 public record struct FakeKPUActivationSegment
 {
     public float StartX { get; set; }
@@ -87,7 +102,7 @@ public record struct FakeKPUActivationSegment
 
 public record class FakeKPUActivationParameters
 {
-    public FakeKPUActivationSegment[] Segments { get; set; } = new FakeKPUActivationSegment[0];
+    public FakeKPUActivationSegment[] Segments { get; set; } = Array.Empty<FakeKPUActivationSegment>();
 
     public ValueRange<float> Clamp { get; set; }
 }
