@@ -78,10 +78,39 @@ public static class QuantUtility
         }
         return range;
     }
-
     public static ValueRange<T> GetRange<T>(Span<T> input) where T : unmanaged, IEquatable<T>, IComparable<T>
     {
         var data = input.ToArray();
         return new(data.Min(), data.Max());
+    }
+    public static List<float> GetWeightsRangesByChannel(Span<float> Weights, int Channels)
+    {
+        var tmpMin = float.MaxValue;
+        var tmpMax = float.MinValue;
+        var minMaxArr = new List<float>();
+        for (int i = 0; i < Weights.Length; i++)
+        {
+            if (i % (Weights.Length / Channels) == 0)
+            {
+                tmpMin = float.MaxValue;
+                tmpMax = float.MinValue;
+            }
+            if (Weights[i] < tmpMin)
+                tmpMin = Weights[i];
+            if (Weights[i] > tmpMax)
+                tmpMax = Weights[i];
+            if ((i + 1) % (Weights.Length / Channels) == 0)
+            {
+                minMaxArr.Add(tmpMin);
+                minMaxArr.Add(tmpMax);
+            }
+        }
+        return minMaxArr;
+    }
+
+    public static Span<float> SquantWeights(Span<float> inputWeights, Nncase.IR.Shape inputWeightsShape, QuantMode quantMode, int bits, bool isByChannel)
+    {
+        // todo: return SquantWeights
+        return inputWeights;
     }
 }

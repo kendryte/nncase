@@ -46,4 +46,9 @@ public class QuantizeOptions
     /// Enable the Auto bind quant method.
     /// </summary>
     public bool BindQuantMethod { get; set; } = false;
+
+    /// <summary>
+    /// Enable squant to fine tune weights.
+    /// </summary>
+    public bool UseSquant { get; set;  } = false;
 }

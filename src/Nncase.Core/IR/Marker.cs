@@ -13,6 +13,10 @@ public class MixQuantInfo
     public bool HasBindedMixQuantInfo = false;
     public DataType MarkerQuantType = DataTypes.Float32;
     public List<QuantParam> QuantParameter = new List<QuantParam>();
+    public TensorConst U8FineTunedWeights;
+    public TensorConst U8FineTunedWeightsRangesByChannel;
+    public TensorConst I8FineTunedWeights;
+    public TensorConst I8FineTunedWeightsRangesByChannel;
 }
 
 /// <summary>
