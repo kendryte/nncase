@@ -37,6 +37,4 @@ public static class K210
     public static Call KPUDownload(Expr input) =>
         new Call(new KPUDownload(), input);
 
-    public static Call Conv2DTranspose(Expr input, Expr weights, Expr batchnorms, Expr act, Expr outputShape, Expr padding, Expr outputPadding, Expr stride, Expr dilation, Expr groups, Expr fusedClamp) => 
-        new Call(new Conv2DTranspose(new PadMode()), input, weights, batchnorms, act, outputShape, padding, outputPadding, stride, dilation, groups, fusedClamp);
 }
