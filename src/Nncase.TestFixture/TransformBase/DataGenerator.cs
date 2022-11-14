@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using LanguageExt.UnsafeValueAccess;
 using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
@@ -107,8 +108,7 @@ public static class DataGenerator
                 select accseq.Concat(new[] {item}));
         return ret;
     }
-
-
+    
     public static IValue FromTextFile(string path)
     {
         using (var stream = new StreamReader(path))
@@ -125,6 +125,19 @@ public static class DataGenerator
                 return Value.FromTensor(ParseTensor(data.Head()));
             }
         }
+    }
+    
+    public static Call AutoConstructor(string root, string opNameInFile, int num)
+    {
+        var opTy = new IR.Tensors.Broadcast().GetType().Assembly.DefinedTypes
+            .Find(ty => ty.Name.ToUpper().Contains(opNameInFile.ToUpper())).ValueUnsafe();
+        var op = (Op)Activator.CreateInstance(opTy);
+        var data = new TextDataExtractor().GetFilesByOrderNum(root);
+        var opdata = data[$"{num}${opNameInFile}"];
+        var parameters = op.Parameters
+            .Select((param, i) => opdata.Find(dataPath => dataPath.Contains(param.Name)).ValueUnsafe())
+            .Select(path => (Expr)(FromTextFile(path).AsTensor())).ToArray();
+        return new Call(op, new IRArray<Expr>(parameters));
     }
 
     private static float ParseFloat(string s)

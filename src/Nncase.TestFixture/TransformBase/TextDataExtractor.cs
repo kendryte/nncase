@@ -1,8 +1,11 @@
+using NetFabric.Hyperlinq;
+using Nncase.Utilities;
+
 namespace Nncase.TestFixture;
 
 public class TextDataExtractor
 {
-    // FileFormat
+    // FileNameFormat
     // input: (\d+)*$[a-z]*
     // param: (\d+)*$[a-z]*$[a-z]*
     public int GetDumpFileNum(string filePath)
@@ -32,8 +35,29 @@ public class TextDataExtractor
         fs.RemoveAt(0);
         return fs;
     }
+    
+    public IEnumerable<IGrouping<string, string>> GetFilesByGroup(string dir)
+    {
+        return GetFilesByOrdered(dir).GroupBy(file => string.Join(Separator, file.Split(Separator)[..2]));
+    }
 
-    // now only can be used for runtime, evaluator dump format not be modified
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="dir"></param>
+    /// <returns> dict:num$op_name -> num$op_name$param_name/returns>
+    public Dictionary<string, IEnumerable<string>> GetFilesByOrderNum(string dir)
+    {
+        return GetFilesByGroup(dir)
+            .ToDictionary(
+            x =>
+            {
+                var split = x.Key.Split(Separator);
+                return $"{split[0].Split(Path.DirectorySeparatorChar).Last()}{Separator}{split[1]}";
+            },
+            x => x.Select(s => s));
+    }
+
     public IValue[] ExtractValues(string dir, Func<string, bool> Extractor)
     {
         var fs = GetFilesByOrdered(dir);

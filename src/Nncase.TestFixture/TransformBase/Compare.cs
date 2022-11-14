@@ -215,7 +215,7 @@ public static class DetailComparator
         var shape = resultByChannels.Length != 0
             ? SerializeShape(resultByChannels.Head().Shape)
             : "data all ok and not shape info";
-        WriteResult(Path.Join(path, $"Analysis{i}"), resultByChannels, $"{shape}");
+        WriteResult(Path.Join(path, $"Analysis{i}"), resultByChannels, $"{shape}\n");
     }
 
     // for single file
@@ -386,5 +386,55 @@ public record AccuracyLossInfo(float v1, float v2, int[] index, Tensor v1Tensor,
     {
         return
             $"AccuracyLossInfo v1 = {v1}, v2 = {v2}, index =[{string.Join(",", index.Select(x => x.ToString()))}], devi = {Loss}, ratio = {Ratio}";
+    }
+}
+
+public static class ComparatorInstance
+{
+    public static void MatmulOnly(string dumpResultRoot, string evaluatorDataPath, string runtimeDataPath)
+    {
+        var cosRoot = PathJoinByCreate(dumpResultRoot, "matmul_cos");
+        var e = new TextDataExtractor();
+        var originData = e.MatmulExtract(evaluatorDataPath);
+        var runtimeData = e.MatmulExtract(runtimeDataPath);
+
+        var resultRoot = PathJoinByCreate(cosRoot, "result");
+        DetailComparator.GenerateFullCompareInfo(originData, runtimeData, resultRoot);
+        var cosByTensor = Comparator.CosSimilarity(originData, runtimeData);
+        WriteResult(Path.Join(cosRoot, $"!cos"), cosByTensor);
+    }
+}
+
+public static class RuntimeDumpAnalysis
+{
+    public static void ReadOutShapeList(string dumpResultRoot)
+    {
+        var data = MakeData(dumpResultRoot);
+        PrintOutShapeList(data);
+    }
+
+    public static IEnumerable<IGrouping<string, (string, int)>> MakeData(string dumpResultRoot)
+    {
+        using var stream = new StreamReader(Path.Join(dumpResultRoot, "!out_shape_list"));
+        return Filter(stream.ReadToEnd());
+    }
+    
+    private static IEnumerable<IGrouping<string, (string, int)>> Filter(string str)
+    {
+        return str.Trim().Split("\n")
+            .Select((x, i) => (x, i))
+            .GroupBy(item => item.Item1.Split(":")[0]);
+    }
+    
+    public static void PrintOutShapeList(IEnumerable<IGrouping<string, (string, int)>> data)
+    {
+        foreach (var valueTuples in data)
+        {
+            Console.WriteLine($"op:{valueTuples.Key} count:{valueTuples.Length()}");
+            foreach ((string x, int i) in valueTuples)
+            {
+                Console.WriteLine($"index:{i} shape:{x.Split(":")[1]}");
+            }
+        }
     }
 }
