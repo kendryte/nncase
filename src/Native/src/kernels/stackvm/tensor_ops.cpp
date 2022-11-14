@@ -58,10 +58,10 @@ result<value_t> kernels::stackvm::binary(binary_op_t binary_op, value_t lhs,
     auto out_shape = kernels::detail::get_binary_output_shape(
         lhs_tensor->shape(), rhs_tensor->shape());
     try_output(out_mem, output, lhs_tensor->dtype(), out_shape);
-    try_(reference::binary(
+    CONTIGUOUS_KERNEL(binary, lhs_tensor,
         typecode, binary_op, lhs_mem, rhs_mem, out_mem, lhs_tensor->shape(),
         lhs_tensor->strides(), rhs_tensor->shape(), rhs_tensor->strides(),
-        output_tensor->shape(), output_tensor->strides(), context));
+        output_tensor->shape(), output_tensor->strides(), context);
     return ok(output);
 }
 
