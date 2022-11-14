@@ -343,7 +343,9 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 
         // 1. write head
         Scope.AppendLine($"T.Block(\"{expr.Name}\").");
-
+        Scope.IndWriteLine($"Alloc({string.Join(",", expr.AllocBuffers.Select(Visit))}).");
+        Scope.IndWriteLine($"Reads({string.Join(",", expr.Reads.Select(Visit))}).");
+        Scope.IndWriteLine($"Writes({string.Join(",", expr.Writes.Select(Visit))}).");
         Scope.IndWriteLine($"Predicate({Visit(expr.Predicate)}).");
         // 2. write iter var bind
         foreach (var iterVar in expr.IterVars)
