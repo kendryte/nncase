@@ -1,6 +1,7 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using Nncase.IR;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -108,9 +109,15 @@ public static class QuantUtility
         return minMaxArr;
     }
 
-    public static Span<float> SquantWeights(Span<float> inputWeights, Nncase.IR.Shape inputWeightsShape, QuantMode quantMode, int bits, bool isByChannel)
+    public static Span<float> SquantWeights(Span<float> inputWeights, Expr inputWeightsRanges, Nncase.IR.Shape inputWeightsShape, QuantMode quantMode, int bits, bool isByChannel)
     {
         // todo: return SquantWeights
+        // inputWeightsRanges is pre calculated by range optimization, so when compute inputWeights quant parameters, range should be gotten from inputWeightsRanges, but not
+        // be gotten from inputWeights here simply. And for quantMode, there are 3 modes, UnsignedMode is easy to understand, and for SignedAsymmetricMode/SignedSymmetricMode,
+        // it effects Qmax/Qmin for quant function, for example, k510 int8 needs SignedAsymmetricMode, and k230 int8/int16 needs SignedSymmetricMode, please refer GetQuantParam() in this file.
+
+        // System.Console.WriteLine(((Tensor<float>)(((TensorConst)(inputWeightsRanges)).Value)).ToArray()[0]);
+        // System.Console.WriteLine(inputWeights.ToArray()[0]);
         return inputWeights;
     }
 }
