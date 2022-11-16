@@ -234,8 +234,7 @@ result<void> optimized_binary_impl(const float *input_a, const float *input_b,
             }
         }
     } else {
-        assert(in_b_shape.size() == 1);
-        if (in_b_shape[0] == 1) {
+        if (is_scalar(in_b_shape)) {
             // a is tensor, b is scalar
             int n = count;
             while (n > 0) {
@@ -302,8 +301,8 @@ result<void> optimized_binary_impl(const int32_t *input_a,
             n -= vl;
         }
     } else if (in_a_shape.size() < in_b_shape.size()) {
-        assert(in_a_shape.size() == 1);
-        if (in_a_shape[0] == 1) {
+        if(is_scalar(in_a_shape)) {
+//        if (in_a_shape[0] == 1) {
             // a is scalar, b is tensor
             int n = count;
             while (n > 0) {
@@ -492,7 +491,6 @@ optimized::binary(typecode_t typecode, runtime::stackvm::binary_op_t op,
                   const dims_t &in_b_shape, const strides_t &rhs_strides,
                   const dims_t &out_shape, const strides_t &out_strides,
                   NNCASE_UNUSED kernel_context &context) noexcept {
-
 #if __riscv_vector
 #define BINARY_IMPL(_ty)                                                       \
     {                                                                          \
@@ -540,7 +538,6 @@ optimized::binary(typecode_t typecode, runtime::stackvm::binary_op_t op,
     default:;
     }
 #endif
-
     return stackvm::reference::binary(typecode, op, lhs, rhs, out, in_a_shape,
                                       lhs_strides, in_b_shape, rhs_strides,
                                       out_shape, out_strides, context);
