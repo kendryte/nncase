@@ -23,10 +23,17 @@ public partial class SelectEvaluator : IEvaluator<Select>, ITypeInferencer<Selec
     }
 
     /// <inheritdoc/>
-    IRType Visit(TensorType Predicate, TensorType TrueValue, TensorType FalseValue)
+    IRType Visit(TensorType Predicate, IRType TrueValue, IRType FalseValue)
     {
-        if (TrueValue.DType != FalseValue.DType || TrueValue.Shape != FalseValue.Shape)
-            return new InvalidType($"TrueValue.DType {TrueValue.DType.GetDisplayName()} != FalseValue.DType {FalseValue.DType.GetDisplayName()}");
+        if (TrueValue is TensorType true_type && FalseValue is TensorType false_type)
+        {
+            if (true_type.DType != false_type.DType || true_type.Shape != false_type.Shape)
+                return new InvalidType($"TrueValue.DType {true_type.DType.GetDisplayName()} != FalseValue.DType {false_type.DType.GetDisplayName()}");
+        }
+        else if (TrueValue is AnyType || FalseValue is AnyType)
+        {
+            return AnyType.Default;
+        }
         return TrueValue;
     }
 
