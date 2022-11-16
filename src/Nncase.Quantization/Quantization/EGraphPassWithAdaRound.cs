@@ -37,7 +37,7 @@ public class EGraphPassWithAdaRound : EGraphPass
     /// <returns></returns>
     protected override async Task OnPostRewrite(EGraph graph, RunPassOptions options)
     {
-        var quantizerConfigBind = new QuantizerConfigBind(graph, options);
-        await quantizerConfigBind.RunAsync(options);
+        var quantizerAdaRound = new QuantizerAdaRound(graph, options);
+        await quantizerAdaRound.RunAsync(options);
     }
 }
