@@ -1,7 +1,48 @@
+using System.Collections;
+using System.Diagnostics;
 using NetFabric.Hyperlinq;
+using Nncase.IR;
+using Nncase.TIR;
 using Nncase.Utilities;
+using static Nncase.TestFixture.DumpPathExtractor;
 
 namespace Nncase.TestFixture;
+
+public record OriginValue(IValue Value, string Path)
+{
+    public OriginTensor[] AsTensors() => Value.AsTensors().Select(t => new OriginTensor(t, Path)).ToArray();
+
+    public OriginTensor AsTensor() => new OriginTensor(Value.AsTensor(), Path);
+
+    public string FileName => System.IO.Path.GetFileName(Path);
+}
+
+public record OriginTensor(Tensor Tensor, string Path) : OriginValue(Nncase.Value.FromTensor(Tensor), Path)
+{
+    
+}
+
+public static class DumpPathExtractor
+{
+    public static char Separator => '$';
+    public static int GetCount(string file) => int.Parse(file.Split(Separator).Head());
+
+    public static string GetOpName(string file) => file.Split(Separator)[1];
+
+    // todo: is param
+    public static string GetParamName(string file) => file.Split(Separator).Last();
+    
+    public static bool IsResultFile(string file) => file.Count(c => c == Separator) == 1;
+    
+    public static bool IsParamFile(string file) => file.Count(c => c == Separator) == 2;
+    
+    // used for transformer
+    public static bool DynamicMatmulOnlyExtract(string fileName)
+    {
+        var lower = fileName.ToLower();
+        return lower.Contains("mat") && lower.EndsWith("mul");
+    }
+}
 
 public class TextDataExtractor
 {
@@ -58,49 +99,37 @@ public class TextDataExtractor
             x => x.Select(s => s));
     }
 
-    public IValue[] ExtractValues(string dir, Func<string, bool> Extractor)
+    public OriginValue[] ExtractValues(string dir, Func<string, bool> Extractor)
     {
         var fs = GetFilesByOrdered(dir);
         return fs
             .Filter(filePath => Extractor(Path.GetFileName(filePath)))
-            .Select(DataGenerator.FromTextFile)
+            .Select(path => new OriginValue(DataGenerator.FromTextFile(path), path))
             .ToArray();
     }
 
+    public OriginValue[] GetComputeResults(string dir) => ExtractValues(dir, IsResultFile);
 
-    public static char Separator => '$';
-    public int GetCount(string file) => int.Parse(file.Split(Separator).Head());
+    public OriginValue GetComputeResult(string dir, int i)
+    {
+        var results = ExtractValues(dir, f => IsResultFile(f) && GetDumpFileNum(f) == i);
+        Debug.Assert(results.Length != 0);
+        return results.Head();
+    } 
 
-    public string GetOpName(string file) => file.Split(Separator)[1];
-
-    // todo: is param
-    public string GetParamName(string file) => file.Split(Separator).Last();
-
-    public bool IsResultFile(string file) => file.Count(c => c == Separator) == 1;
-    public bool IsParamFile(string file) => file.Count(c => c == Separator) == 2;
-
-    public IValue[] GetComputeResults(string dir) => ExtractValues(dir, IsResultFile);
-
-    public IValue[] GetParams(string dir, int count) => ExtractValues(dir,
+    public OriginValue[] GetParams(string dir, int count) => ExtractValues(dir,
         file => IsParamFile(file) && GetCount(file) == count);
 
-    public IValue[] GetValues(string dir)
+    public OriginValue[] GetValues(string dir)
     {
         return ExtractValues(dir, _ => true);
     }
-
-    // used for transformer
-    public bool DynamicMatmulOnlyExtract(string fileName)
-    {
-        var lower = fileName.ToLower();
-        return lower.Contains("mat") && lower.EndsWith("mul");
-    }
-
-    public IValue[] OpExtract(string dir, string opName)
+    
+    public OriginValue[] OpExtract(string dir, string opName)
         => ExtractValues(dir, file => GetOpName(file) == opName);
 
-    public Tensor[] MatmulExtract(string dir)
+    public OriginValue[] MatmulExtract(string dir)
     {
-        return ExtractValues(dir, DynamicMatmulOnlyExtract).Select(x => x.AsTensor()).ToArray();
+        return ExtractValues(dir, DynamicMatmulOnlyExtract).ToArray();
     }
 }
