@@ -13,6 +13,7 @@ using Nncase.IR;
 using Nncase.Quantization;
 using Nncase.Transform;
 using Nncase.Transform.Passes;
+using Nncase.Transform.Rules.Lower;
 using Nncase.Utilities;
 using OrtKISharp;
 
@@ -137,7 +138,7 @@ public class Compiler
             new Transform.Rules.Neutral.AddRangeOfAndMarkerToMatMul(),
         });
     }
-    
+
     public void AssignRange(PassManager passManager, CompileOptions options)
     {
         passManager.Add(new Quantization.EGraphPassWithQuantize("1_AssignRanges", options.QuantizeOptions!));
@@ -154,7 +155,10 @@ public class Compiler
         if (options.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
             RunPass(p => t.RegisterQuantizePass(p, options), "QuantizePass");
-            RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, options), "TargetDependentAfterQuantPass");            
+            RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, options), "TargetDependentAfterQuantPass");
+            var clear = new DataflowPass("ClearMarker");
+            clear.Add(new RemoveMarker());
+            RunPass(t => t.Add(clear), "RemoveMarker");
         }
         // fold constant
         RunPass(p => p.Add(new Transform.Passes.ShapeInferPass()), "ShapeInferAndFold");
