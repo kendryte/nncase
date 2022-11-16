@@ -34,6 +34,16 @@ public interface ITarget
     Task<Dictionary<ENode, List<Tuple<List<DataType>, List<List<QuantParam>>, float>>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassOptions runPassOptions);
 
     /// <summary>
+    /// AdaRound Weights
+    /// </summary>
+    /// <param name="calibrationDataset">calibration dataset.</param>
+    /// <param name="target">target.</param>
+    /// <param name="rangeOfs">rangeOf nodes.</param>
+    /// <param name="childrenOfRangeOfs">rangeOf nodes children.</param>
+    /// <param name="runPassOptions">options.</param>
+    Task<Dictionary<ENode, List<Tuple<List<DataType>, List<List<QuantParam>>, float>>>> AdaRoundWeights(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassOptions runPassOptions);
+
+    /// <summary>
     /// Parse Target Dependent Options 
     /// </summary>
     /// <param name="configure"></param>

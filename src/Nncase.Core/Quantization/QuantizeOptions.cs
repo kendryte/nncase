@@ -50,5 +50,10 @@ public class QuantizeOptions
     /// <summary>
     /// Enable squant to fine tune weights.
     /// </summary>
-    public bool UseSquant { get; set;  } = false;
+    public bool UseSquant { get; set; } = false;
+
+    /// <summary>
+    /// Enable adaround to fine tune weights.
+    /// </summary>
+    public bool UseAdaRound { get; set; } = false;
 }

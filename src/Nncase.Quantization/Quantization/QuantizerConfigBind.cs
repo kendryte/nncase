@@ -15,14 +15,14 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Quantization;
 
-internal partial class QuantizeConfigBinder
+internal partial class QuantizerConfigBind
 {
     private readonly EGraph _graph;
     private readonly List<ENode> _rangeOfs = new List<ENode>();
     private readonly List<ENode> _childrenOfRangeOfs = new List<ENode>();
     private readonly RunPassOptions _passOptions;
 
-    public QuantizeConfigBinder(EGraph graph, RunPassOptions passOptions)
+    public QuantizerConfigBind(EGraph graph, RunPassOptions passOptions)
     {
         _graph = graph;
         _passOptions = passOptions;

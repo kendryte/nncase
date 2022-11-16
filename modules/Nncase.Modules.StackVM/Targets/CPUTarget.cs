@@ -42,6 +42,13 @@ public class CPUTarget : ITarget
     }
 
     /// <inheritdoc/>
+    public Task<Dictionary<ENode, List<Tuple<List<DataType>, List<List<QuantParam>>, float>>>> AdaRoundWeights(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassOptions runPassOptions)
+    {
+        var enodeQuantCosineDict = new Dictionary<ENode, List<Tuple<List<DataType>, List<List<QuantParam>>, float>>>();
+        return Task.FromResult(enodeQuantCosineDict);
+    }
+
+    /// <inheritdoc/>
     public void RegisterQuantizePass(PassManager passManager, CompileOptions options)
     {
     }

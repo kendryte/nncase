@@ -13,16 +13,16 @@ namespace Nncase.Quantization;
 /// <summary>
 /// the quantization egraph pass 
 /// </summary>
-public class EGraphPassWithBindQuantizeConfig : EGraphPass
+public class EGraphPassWithAdaRound : EGraphPass
 {
     private readonly QuantizeOptions _quantizeOptions;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="EGraphPassWithBindQuantizeConfig"/> class.
+    /// Initializes a new instance of the <see cref="EGraphPassWithAdaRound"/> class.
     /// </summary>
     /// <param name="name">Pass name.</param>
     /// <param name="quantizeOptions">options.</param>
-    public EGraphPassWithBindQuantizeConfig(string name, QuantizeOptions quantizeOptions)
+    public EGraphPassWithAdaRound(string name, QuantizeOptions quantizeOptions)
         : base(name)
     {
         _quantizeOptions = quantizeOptions;
