@@ -1,3 +1,4 @@
+      
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
@@ -83,6 +84,13 @@ public record Segment1D
     {
         return new(range, Padding.Zero());
     }
+
+    public static Segment1D operator +(Segment1D lhs, Segment1D rhs)
+    {
+        var min_start = Math.Min(lhs.Start, rhs.Start);
+        var max_end = Math.Max(lhs.End, rhs.End);
+        return new Segment1D(min_start..max_end, Padding.Zero());
+    }
 }
 
 public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
@@ -148,6 +156,11 @@ public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
     IEnumerator IEnumerable.GetEnumerator()
     {
         return _segments.GetEnumerator();
+    }
+
+    public static SegmentND operator +(SegmentND lhs, SegmentND rhs)
+    {
+        return new (lhs[0] + rhs[0], lhs[1] + rhs[1], lhs[2] + rhs[2], lhs[3] + rhs[3] );
     }
 
     /// <inheritdoc/>
