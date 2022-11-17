@@ -37,7 +37,7 @@ internal partial class QuantizerAdaRound
         }
         if (quantOptions.UseAdaRound)
         {
-            var info = await options.Target.AdaRoundWeights(quantOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs, _passOptions);
+            await options.Target.AdaRoundWeights(quantOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs, _passOptions);
         }
         _graph.Rebuild();
     }

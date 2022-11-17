@@ -108,7 +108,6 @@ public static class QuantUtility
         }
         return minMaxArr;
     }
-
     public static Span<float> SquantWeights(Span<float> inputWeights, Expr inputWeightsRanges, Nncase.IR.Shape inputWeightsShape, QuantMode quantMode, int bits, bool isByChannel)
     {
         // todo: return SquantWeights
@@ -118,6 +117,12 @@ public static class QuantUtility
 
         // System.Console.WriteLine(((Tensor<float>)(((TensorConst)(inputWeightsRanges)).Value)).ToArray()[0]);
         // System.Console.WriteLine(inputWeights.ToArray()[0]);
+        return inputWeights;
+    }
+    public static Span<float> AdaRoundWeights(Span<float> inputWeights, List<Tensor> layerInput, List<Tensor> layerOutputGT, QuantMode quantMode, int bits, bool isByChannel, Expr psum, Expr act, Expr paddings, Expr strides, Expr dilations, Expr groups, Expr fusedClamp, int startB, int endB, int iters, int deviceID, float warmup, float weightParam)
+    {
+        // todo: return AdaRoundWeights
+        // System.Console.WriteLine(((TensorConst)(act)).Value.Cast<float>());
         return inputWeights;
     }
 }
