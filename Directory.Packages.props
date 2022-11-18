@@ -13,6 +13,8 @@
     <PackageVersion Include="coverlet.collector" Version="3.0.2" />
     <PackageVersion Include="Extension.Mathematics" Version="1.2.12" />
     <PackageVersion Include="GiGraph.Dot" Version="2.0.0" />
+    <PackageVersion Include="Google.Protobuf" Version="3.19.1" />
+    <PackageVersion Include="Grpc.Tools" Version="2.42.0" />
     <PackageVersion Include="LanguageExt.Core" Version="4.0.3" />
     <PackageVersion Include="MagicalTensorflowLib" Version="0.0.2" />
     <PackageVersion Include="MagicalTensorflowLibOSX-ARM64" Version="0.0.4" />
@@ -22,6 +24,7 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
     <PackageVersion Include="Microsoft.Toolkit.HighPerformance" Version="7.1.1" />
     <PackageVersion Include="NetFabric.Hyperlinq" Version="3.0.0-beta48" />
+    <PackageVersion Include="Nncase.FlatBuffers" Version="2.0.0" />
     <PackageVersion Include="OrtKISharp" Version="0.0.2" />
     <PackageVersion Include="RazorLight" Version="2.0.0-rc.2" />
     <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.435" />
