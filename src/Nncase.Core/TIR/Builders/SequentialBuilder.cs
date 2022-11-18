@@ -29,6 +29,12 @@ public interface ISequentialBuilder<out T> : IExprBuilder<T>
     /// <param name="exprOrBuilders">Expressions.</param>
     /// <returns>Result.</returns>
     ISequentialBuilder<T> Body(params object[] exprOrBuilders);
+
+
+    /// <summary>
+    /// Insert the expr items to body
+    /// </summary>
+    ISequentialBuilder<T> InsertBody(int index, params object[] exprOrBuilders);
 }
 
 internal class SequentialBuilder<T> : ISequentialBuilder<T>
@@ -51,5 +57,11 @@ internal class SequentialBuilder<T> : ISequentialBuilder<T>
     public T Build()
     {
         return _creator(Sequential.Flatten(_body));
+    }
+
+    public ISequentialBuilder<T> InsertBody(int index, params object[] exprOrBuilders)
+    {
+        _body.InsertRange(index, exprOrBuilders);
+        return this;
     }
 }
