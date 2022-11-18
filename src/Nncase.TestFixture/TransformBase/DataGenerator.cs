@@ -75,8 +75,8 @@ public static class DataGenerator
         var input = Random.Normal(DataTypes.Float32, new[] {1, 3, 24, 32});
         var weights = Random.Normal(DataTypes.Float32, new[] {16, 3, 3, 3}).Evaluate();
         var bias = Random.Normal(DataTypes.Float32, new[] {16}).Evaluate();
-        var stride = Tensor.FromSpan(new[] {1, 1}, new[] {2});
-        var dilation = Tensor.FromSpan(new[] {1, 1}, new[] {2});
+        var stride = Tensor.From(new[] {1, 1}, new[] {2});
+        var dilation = Tensor.From(new[] {1, 1}, new[] {2});
         var padding = new[,] {{0, 1}, {0, 0}};
 
         var conv = Conv2D(input, weights.AsTensor(), bias.AsTensor(), stride, padding,
@@ -162,19 +162,19 @@ public static class DataGenerator
         return dt switch
         {
             PointerType pointerType => throw new NotImplementedException(),
-            BooleanType booleanType => Tensor.FromSpan(data.Select(x => (int.Parse(x) >= 1)).ToArray(), shape),
-            Float16Type float16Type => Tensor.FromSpan(data.Select(x => (Half) ParseFloat(x)).ToArray(), shape),
-            Float32Type float32Type => Tensor.FromSpan(data.Select(x => ParseFloat(x)).ToArray(), shape),
-            Float64Type float64Type => Tensor.FromSpan(data.Select(x => double.Parse(x)).ToArray(), shape),
-            Int16Type int16Type => Tensor.FromSpan(data.Select(x => short.Parse(x)).ToArray(), shape),
-            Int32Type int32Type => Tensor.FromSpan(data.Select(x => int.Parse(x)).ToArray(), shape),
-            Int64Type int64Type => Tensor.FromSpan(data.Select(x => long.Parse(x)).ToArray(), shape),
-            Int8Type int8Type => Tensor.FromSpan(data.Select(x => sbyte.Parse(x)).ToArray(), shape),
+            BooleanType booleanType => Tensor.From(data.Select(x => (int.Parse(x) >= 1)).ToArray(), shape),
+            Float16Type float16Type => Tensor.From(data.Select(x => (Half) ParseFloat(x)).ToArray(), shape),
+            Float32Type float32Type => Tensor.From(data.Select(x => ParseFloat(x)).ToArray(), shape),
+            Float64Type float64Type => Tensor.From(data.Select(x => double.Parse(x)).ToArray(), shape),
+            Int16Type int16Type => Tensor.From(data.Select(x => short.Parse(x)).ToArray(), shape),
+            Int32Type int32Type => Tensor.From(data.Select(x => int.Parse(x)).ToArray(), shape),
+            Int64Type int64Type => Tensor.From(data.Select(x => long.Parse(x)).ToArray(), shape),
+            Int8Type int8Type => Tensor.From(data.Select(x => sbyte.Parse(x)).ToArray(), shape),
             BFloat16Type bFloat16Type => throw new NotImplementedException(),
-            UInt16Type uInt16Type => Tensor.FromSpan(data.Select(x => ushort.Parse(x)).ToArray(), shape),
-            UInt32Type uInt32Type => Tensor.FromSpan(data.Select(x => uint.Parse(x)).ToArray(), shape),
-            UInt64Type uInt64Type => Tensor.FromSpan(data.Select(x => ulong.Parse(x)).ToArray(), shape),
-            UInt8Type uInt8Type => Tensor.FromSpan(data.Select(x => byte.Parse(x)).ToArray(), shape),
+            UInt16Type uInt16Type => Tensor.From(data.Select(x => ushort.Parse(x)).ToArray(), shape),
+            UInt32Type uInt32Type => Tensor.From(data.Select(x => uint.Parse(x)).ToArray(), shape),
+            UInt64Type uInt64Type => Tensor.From(data.Select(x => ulong.Parse(x)).ToArray(), shape),
+            UInt8Type uInt8Type => Tensor.From(data.Select(x => byte.Parse(x)).ToArray(), shape),
             Utf8CharType utf8CharType => throw new NotImplementedException(),
             PrimType primType => throw new NotImplementedException(),
             QuantParamType quantParamType => throw new NotImplementedException(),

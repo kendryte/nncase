@@ -57,7 +57,7 @@ namespace Nncase
 
         public static TensorConst ZeroTensor()
         {
-            return new TensorConst(Tensor.FromSpan<int>(new[] { 0 }));
+            return new TensorConst(Tensor.From<int>(new[] { 0 }));
         }
 
         /// <summary>

@@ -90,82 +90,82 @@ public partial class Tensor
     public static implicit operator Tensor(bool value) => FromScalar(value);
 
     /// <summary>
-    /// Create Tensor from a span of <see cref="byte"/>.
+    /// Create Tensor from a memory of <see cref="byte"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Tensor(ReadOnlySpan<byte> value) => FromSpan(value);
+    public static implicit operator Tensor(Memory<byte> value) => From(value);
 
     /// <summary>
-    /// Create Tensor from a span of <see cref="ushort"/>.
+    /// Create Tensor from a memory of <see cref="ushort"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Tensor(ReadOnlySpan<ushort> value) => FromSpan(value);
+    public static implicit operator Tensor(Memory<ushort> value) => From(value);
 
     /// <summary>
-    /// Create Tensor from a span of <see cref="uint"/>.
+    /// Create Tensor from a memory of <see cref="uint"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Tensor(ReadOnlySpan<uint> value) => FromSpan(value);
+    public static implicit operator Tensor(Memory<uint> value) => From(value);
 
     /// <summary>
-    /// Create Tensor from a span of <see cref="ulong"/>.
+    /// Create Tensor from a memory of <see cref="ulong"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Tensor(ReadOnlySpan<ulong> value) => FromSpan(value);
+    public static implicit operator Tensor(Memory<ulong> value) => From(value);
 
     /// <summary>
-    /// Create Tensor from a span of <see cref="sbyte"/>.
+    /// Create Tensor from a memory of <see cref="sbyte"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Tensor(ReadOnlySpan<sbyte> value) => FromSpan(value);
+    public static implicit operator Tensor(Memory<sbyte> value) => From(value);
 
     /// <summary>
-    /// Create Tensor from a span of <see cref="short"/>.
+    /// Create Tensor from a memory of <see cref="short"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Tensor(ReadOnlySpan<short> value) => FromSpan(value);
+    public static implicit operator Tensor(Memory<short> value) => From(value);
 
     /// <summary>
-    /// Create Tensor from a span of <see cref="int"/>.
+    /// Create Tensor from a memory of <see cref="int"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Tensor(ReadOnlySpan<int> value) => FromSpan(value);
+    public static implicit operator Tensor(Memory<int> value) => From(value);
 
     /// <summary>
-    /// Create Tensor from a span of <see cref="long"/>.
+    /// Create Tensor from a memory of <see cref="long"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Tensor(ReadOnlySpan<long> value) => FromSpan(value);
+    public static implicit operator Tensor(Memory<long> value) => From(value);
 
     /// <summary>
-    /// Create Tensor from a span of <see cref="Half"/>.
+    /// Create Tensor from a memory of <see cref="Half"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Tensor(ReadOnlySpan<Half> value) => FromSpan(value);
+    public static implicit operator Tensor(Memory<Half> value) => From(value);
 
     /// <summary>
-    /// Create Tensor from a span of <see cref="float"/>.
+    /// Create Tensor from a memory of <see cref="float"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Tensor(ReadOnlySpan<float> value) => FromSpan(value);
+    public static implicit operator Tensor(Memory<float> value) => From(value);
 
     /// <summary>
-    /// Create Tensor from a span of <see cref="double"/>.
+    /// Create Tensor from a memory of <see cref="double"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Tensor(ReadOnlySpan<double> value) => FromSpan(value);
+    public static implicit operator Tensor(Memory<double> value) => From(value);
 
     /// <summary>
-    /// Create Tensor from a span of <see cref="BFloat16"/>.
+    /// Create Tensor from a memory of <see cref="BFloat16"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Tensor(ReadOnlySpan<BFloat16> value) => FromSpan(value);
+    public static implicit operator Tensor(Memory<BFloat16> value) => From(value);
 
     /// <summary>
-    /// Create Tensor from a span of <see cref="bool"/>.
+    /// Create Tensor from a memory of <see cref="bool"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Tensor(ReadOnlySpan<bool> value) => FromSpan(value);
+    public static implicit operator Tensor(Memory<bool> value) => From(value);
 
     /// <summary>
     /// Create Tensor from an <see cref="Array"/>.

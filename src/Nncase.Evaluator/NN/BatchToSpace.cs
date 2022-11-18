@@ -10,8 +10,8 @@ using Nncase.IR;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using OrtKISharp;
-using static OrtKISharp.TensorHelper;
 using static Nncase.IR.F.Tensors;
+
 namespace Nncase.Evaluator.NN;
 
 /// <summary>
@@ -25,7 +25,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         var input = context.GetOrtArgumentValue(s, BatchToSpace.Input);
         // to nhwc
         var input0 = OrtKI.Transpose(input, new long[] { 0, 2, 3, 1 });
-        var blockShape = context.GetArgumentValueAsArray<int>(s, BatchToSpace.BlockShape);
+        var blockShape = context.GetArgumentValueAsArray<long>(s, BatchToSpace.BlockShape);
         var crop = context.GetOrtArgumentValue(s, BatchToSpace.Crops);
 
         var blockLen = blockShape.Length;
@@ -36,26 +36,26 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         var targetSpatial = ZipExec(spatial, blockShape, (x, y) => x * y);
 
         var ccat1 = spatial.Concat(blockShape).ToArray();
-        var re1 = Tensor.FromSpan(ccat1, new[] { ccat1.Length / blockLen, blockLen });
-        var interLeave = OrtKI.Transpose(re1.ToOrtTensor(), new long[] { 1, 0 }).ToArray<int>();
-        var shape1 = new[] { -1 }.Concat(interLeave).Concat(depth).ToArray();
+        var re1 = Tensor.From(ccat1, new[] { ccat1.Length / blockLen, blockLen });
+        var interLeave = OrtKI.Transpose(re1.ToOrtTensor(), new long[] { 1, 0 }).ToArray<long>();
+        var shape1 = new long[] { -1 }.Concat(interLeave).Concat(depth).ToArray();
 
-        var g1 = BoostRange(2, 2 * blockLen + 1, 2);
-        var g2 = BoostRange(1, 2 * blockLen + 1, 2);
-        var g3 = BoostRange(0, xLen + blockLen).ToArray()[1 + 2 * blockLen];
+        var g1 = BoostRange(2, (2 * blockLen) + 1, 2);
+        var g2 = BoostRange(1, (2 * blockLen) + 1, 2);
+        var g3 = BoostRange(0, xLen + blockLen).ToArray()[1 + (2 * blockLen)];
         var indices = g1.Append(0).Concat(g2).Append(g3);
 
         var perm = GetPerm(xLen, blockLen);
 
-        var newShape = indices.Select(i => (long)shape1[i]).ToArray();
+        var newShape = indices.Select(i => shape1[i]).ToArray();
         var x2 = OrtKI.Reshape(input0, newShape, 0);
         var tr2 = OrtKI.Transpose(x2, perm);
-        var shape2 = new[] { -1 }.Concat(targetSpatial).Concat(depth).Select(x => (long)x).ToArray();
-        var x3 = OrtKI.Reshape(tr2, MakeOrtTensor(shape2), 0);
+        var shape2 = new long[] { -1 }.Concat(targetSpatial).Concat(depth).Select(x => (long)x).ToArray();
+        var x3 = OrtKI.Reshape(tr2, shape2, 0);
 
         var cropTransposed = OrtKI.Transpose(crop, new long[] { 1, 0 });
-        var cropArray = cropTransposed.ToArray<int>();
-        var w = cropTransposed.Shape[1];
+        var cropArray = cropTransposed.ToArray<long>();
+        var w = (int)cropTransposed.Shape[1];
         var cropStart = cropArray[..w];
         var cropEnd = cropArray[w..(w + w)];
         var endRange = ZipExec(targetSpatial, cropEnd, (x, y) => x - y);
@@ -69,7 +69,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
 
     private T[] ZipExec<T>(T[] a, T[] b, Func<T, T, T> f)
     {
-        return a.Zip(b).Select(x => f(x.Item1, x.Item2)).ToArray();
+        return a.Zip(b).Select(x => f(x.First, x.Second)).ToArray();
     }
 
     private long[] GetPerm(int xLen, int blockLen)
@@ -78,7 +78,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         perm[0] = blockLen;
         perm[1] = blockLen + 1;
         perm[2] = 0;
-        foreach (var i in BoostRange(3, blockLen * 2 + 1))
+        foreach (var i in BoostRange(3, (blockLen * 2) + 1))
         {
             perm[i] = perm[i - 2] + 1;
         }

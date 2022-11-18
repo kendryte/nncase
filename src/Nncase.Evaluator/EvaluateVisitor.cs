@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using CommonServiceLocator;
 using Microsoft.Extensions.DependencyInjection;
 using Nncase.IR;
 

@@ -28,7 +28,7 @@ namespace Nncase.Importer.TFLite
             var (endExpr, strides) = GetInputExprs(op, 2, 3);
             var options = op.BuiltinOptionsAsStridedSliceOptions();
             var tensor = GetInputTensor(op, 0);
-            var axes = Tensor.FromSpan<int>(Enumerable.Range(0, tensor.ShapeLength).ToArray());
+            var axes = Tensor.From<int>(Enumerable.Range(0, tensor.ShapeLength).ToArray());
             if ((options.NewAxisMask + options.EllipsisMask) != 0)
             {
                 throw new NotImplementedException("NewAxisMask and Ellipisis mask not impl in StrideSlice Importer");

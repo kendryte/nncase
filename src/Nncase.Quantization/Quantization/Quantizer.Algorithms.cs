@@ -13,7 +13,7 @@ internal partial class Quantizer
 {
     private static ValueRange<float> GetMinMax(Tensor<float> tensor)
     {
-        var buffer = tensor.Buffer;
+        var buffer = tensor.Buffer.Span;
         var min = float.MaxValue;
         var max = float.MinValue;
 
@@ -37,14 +37,14 @@ internal partial class Quantizer
         pExpand.AddRange(p);
         pExpand.AddRange(pExpand2);
 
-        for (int i = boxPts / 2; i < ret.Count + boxPts / 2; i++)
+        for (int i = boxPts / 2; i < ret.Count + (boxPts / 2); i++)
         {
             var sum = 0f;
             for (int j = i; j < i + boxPts; j++)
             {
                 sum += pExpand[j];
             }
-            ret[i - boxPts / 2] = sum / boxPts;
+            ret[i - (boxPts / 2)] = sum / boxPts;
         }
 
         return ret;
@@ -84,7 +84,7 @@ static List<float> smoothDistribution(List<float> p, float eps = 0.0001f)
     var ret = p;
     for (int i = 0; i < p.Count; i++)
     {
-        ret[i] += eps * isZeros[i] - eps1 * isNonZeros[i];
+        ret[i] += (eps * isZeros[i]) - (eps1 * isNonZeros[i]);
     }
     return ret;
 }

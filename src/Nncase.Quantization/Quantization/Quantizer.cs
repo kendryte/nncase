@@ -119,7 +119,7 @@ internal partial class Quantizer
                     histograms.Add(valuesList[i].Key, histogram);
                 }
                 var childrenTensor = childrenValuesList[i].Value.Cast<float>();
-                var childrenBuffer = childrenTensor.Buffer;
+                var childrenBuffer = childrenTensor.Buffer.Span;
 
                 foreach (var buf in childrenBuffer)
                 {
@@ -166,8 +166,8 @@ internal partial class Quantizer
                     // srcBin = thresholdWithMinKldWithSmoothSrcBin.Item3;
                 }
 
-                var optMin = (betterThreshold.Item1 - 0.5f) * srcBinInterval + ranges[histogram.Key].Min;
-                var optMax = (betterThreshold.Item2 + 0.5f) * srcBinInterval + ranges[histogram.Key].Min;
+                var optMin = ((betterThreshold.Item1 - 0.5f) * srcBinInterval) + ranges[histogram.Key].Min;
+                var optMax = ((betterThreshold.Item2 + 0.5f) * srcBinInterval) + ranges[histogram.Key].Min;
                 optRanges.Add(histogram.Key, new ValueRange<float>(optMin, optMax));
             }
             return optRanges;

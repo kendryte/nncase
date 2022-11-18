@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Numerics.Tensors;
 using Nncase.IR;
 using Nncase.PatternMatch;
 using Nncase.Transform;

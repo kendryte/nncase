@@ -27,13 +27,13 @@ namespace Nncase.Importer.TFLite
             var dilationW = 1;
             var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, options.Padding == tflite.Padding.SAME);
             var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, options.Padding == tflite.Padding.SAME);
-            var stride = Tensor.FromSpan<int>(new[] { strideH, strideW }, new[] { 2 });
-            var dilation = Tensor.FromSpan<int>(new[] { dilationH, dilationW }, new[] { 2 });
+            var stride = Tensor.From<int>(new[] { strideH, strideW }, new[] { 2 });
+            var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
             var clamp = ValueRange<float>.Full;
             return F.Tensors.NCHWToNHWC(F.Math.Clamp(
                 F.NN.Conv2DTranspose(F.Tensors.NHWCToNCHW(input), F.Tensors.NHWCToNCHW(weights), bias,
-                    F.Tensors.NHWCToNCHW(outShape), stride, padding, Tensor.FromSpan<long>(new long[] { 0, 0, 0, 0 }),
+                    F.Tensors.NHWCToNCHW(outShape), stride, padding, Tensor.From<long>(new long[] { 0, 0, 0, 0 }),
                     dilation, PadMode.Constant, 1), clamp.Min, clamp.Max));
         }
     }

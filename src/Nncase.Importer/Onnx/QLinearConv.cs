@@ -45,12 +45,12 @@ namespace Nncase.Importer
             int[] strideArr = new int[stridesValueLen == null ? default(int) : stridesValueLen.Value];
             for (var i = 0; i < stridesValueLen; i++)
                 strideArr[i] = ((TensorConst)(strides)).Value.Cast<System.Int32>()[i];
-            var strideConst = new TensorConst(Tensor.FromSpan<int>(strideArr));
+            var strideConst = new TensorConst(Tensor.From<int>(strideArr));
 
             int[] dilationArr = new int[dilationValueLen == null ? default(int) : dilationValueLen.Value];
             for (var i = 0; i < dilationValueLen; i++)
                 dilationArr[i] = ((TensorConst)(dilation)).Value.Cast<System.Int32>()[i];
-            var dilationConst = new TensorConst(Tensor.FromSpan<int>(dilationArr));
+            var dilationConst = new TensorConst(Tensor.From<int>(dilationArr));
 
             var inputDeq = Dequantize(input, new QuantParam(((TensorConst)(xZeroPoint)).Value.ToScalar<int>(), ((TensorConst)(xScale)).Value.ToScalar<float>()), DataTypes.Float32);
             var weightsDeq = Dequantize(weights, new QuantParam(((TensorConst)(wZeroPoint)).Value.ToScalar<int>(), ((TensorConst)(wScale)).Value.ToScalar<float>()), DataTypes.Float32);

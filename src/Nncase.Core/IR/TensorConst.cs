@@ -101,7 +101,7 @@ public sealed record TensorConst(Tensor Value) : Const(new TensorType(Value.Elem
     /// Create TensorConstant from <see cref="string"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator TensorConst(string value) => new(Tensor.FromSpan<char>(value));
+    public static implicit operator TensorConst(string value) => new(Tensor.From<char>(value.ToCharArray()));
 
     /// <inheritdoc/>
     public override string ToString() => ValueType switch

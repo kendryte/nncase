@@ -60,7 +60,7 @@ namespace Nncase.IO
         {
             if (_avail < bits)
             {
-                var max_read_bytes = Math.Min((ulong)_data.Length * 8, sizeof(ulong) * 8 - _avail) / 8;
+                var max_read_bytes = Math.Min((ulong)_data.Length * 8, (sizeof(ulong) * 8) - _avail) / 8;
                 Debug.Assert(max_read_bytes != 0);
 
                 ulong tmp = 0;

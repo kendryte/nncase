@@ -124,7 +124,7 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
         Var a = new Var("a");
         Var b = new Var("b");
         Var c = new Var("c");
-        Expr d = (-b + Sqrt(Pow(b, 2) - 4 * a * c)) / (2 * a);
+        Expr d = (-b + Sqrt(Pow(b, 2) - (4 * a * c))) / (2 * a);
 
         EGraph graph = new EGraph();
         graph.Add(d);

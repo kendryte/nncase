@@ -117,7 +117,7 @@ public static class Utility
         if (!(shift >= 0 && shift <= max_shift))
             throw new ArgumentOutOfRangeException();
 
-        if (!(Math.Abs(value - mul * Math.Pow(2.0f, (float)-shift)) <= Math.E))
+        if (!(Math.Abs(value - (mul * Math.Pow(2.0f, (float)-shift))) <= Math.E))
             throw new ArgumentOutOfRangeException();
         return new(mul, checked((sbyte)shift));
     }

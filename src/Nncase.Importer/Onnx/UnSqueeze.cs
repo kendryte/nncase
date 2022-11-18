@@ -20,7 +20,7 @@ namespace Nncase.Importer
         private Expr UnsqueezeV1(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);
-            var axes = Tensor.FromSpan<long>(GetIntsAttribute(op, "axes"));
+            var axes = Tensor.From<long>(GetIntsAttribute(op, "axes"));
             return Unsqueeze(input, axes);
         }
 

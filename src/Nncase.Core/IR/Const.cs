@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics.Tensors;
+using System.Runtime.InteropServices;
 using NetFabric.Hyperlinq;
 
 namespace Nncase.IR;
@@ -96,7 +96,7 @@ public abstract record Const(IRType ValueType) : Expr
     /// Create constant from <see cref="string"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Const(string value) => FromTensor(Tensor.FromSpan<char>(value));
+    public static implicit operator Const(string value) => FromTensor(Tensor.From<char>(value.ToCharArray()));
 
     /// <summary>
     /// Create constant from a tensor.
@@ -111,7 +111,7 @@ public abstract record Const(IRType ValueType) : Expr
     /// </summary>
     /// <param name="shape"></param>
     /// <returns></returns>
-    public static Const FromShape(Shape shape) => FromTensor(Tensor.FromSpan<int>(shape.ToValueArray()));
+    public static Const FromShape(Shape shape) => FromTensor(Tensor.From<int>(shape.ToValueArray()));
 
     /// <summary>
     /// Convert value to const expr.

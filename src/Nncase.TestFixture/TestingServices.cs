@@ -4,8 +4,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Autofac;
-using Autofac.Extras.CommonServiceLocator;
-using CommonServiceLocator;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -194,7 +192,7 @@ public static class Testing
       where T : unmanaged, System.IEquatable<T>
     {
         var scale = (range.Max - range.Min) / t.Length;
-        return Tensor.FromArray(t.Cast<float>(CastMode.KDefault).Select(i => i * scale + range.Min).ToArray())
+        return Tensor.FromArray(t.Cast<float>(CastMode.KDefault).Select(i => (i * scale) + range.Min).ToArray())
                 .Cast<T>()
                 .Reshape(t.Shape);
     }

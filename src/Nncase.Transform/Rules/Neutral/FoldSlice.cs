@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics.Tensors;
 using Nncase.IR;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.Tensors;

@@ -25,7 +25,7 @@ public static class TensorUtil
     {
         var s = tensor.ElementType.SizeInBytes;
         return Tensor.FromBytes(tensor.ElementType,
-            tensor.BytesBuffer.Slice(start * s, length * s), tensor.Dimensions[(channelAxis + 1)..]);
+            tensor.BytesBuffer.Slice(start * s, length * s).ToArray(), tensor.Dimensions[(channelAxis + 1)..]);
     }
     
     public static (int, int) GetShapeInfo(int[] shape, int channelAxis = 1)
@@ -50,7 +50,7 @@ public static class Comparator
 {
     private static float Prod(float[] data1, float[] data2)
     {
-        return data1.Zip(data2).Aggregate(0f, (f, tuple) => f + tuple.Item1 * tuple.Item2);
+        return data1.Zip(data2).Aggregate(0f, (f, tuple) => f + (tuple.Item1 * tuple.Item2));
     }
 
     public static float[] CosSimilarity(IValue a, IValue b)
@@ -306,7 +306,7 @@ public static class DetailComparator
                 stream.WriteLine(cosByChannel[i]);
                 for (int j = 0; j < size; j++)
                 {
-                    stream.WriteLine(LossInfo[i * size + j]);
+                    stream.WriteLine(LossInfo[(i * size) + j]);
                 }
             }
         }

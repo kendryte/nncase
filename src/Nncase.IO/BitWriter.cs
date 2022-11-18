@@ -119,7 +119,7 @@ namespace Nncase.IO
         /// <returns></returns>
         int buffer_written_bits()
         {
-            return (int)(sizeof(ulong) * 8 - _avail);
+            return (int)((sizeof(ulong) * 8) - _avail);
         }
     }
 }

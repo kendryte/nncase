@@ -2,7 +2,6 @@ using System;
 using NetFabric.Hyperlinq;
 using OrtKISharp;
 using static Nncase.IR.F.Tensors;
-using static OrtKISharp.TensorHelper;
 namespace Nncase.Evaluator;
 
 public static class EvaluatorUtil

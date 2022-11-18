@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Numerics.Tensors;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Nncase.IR;
@@ -162,7 +161,7 @@ public class UnitTestExpression
     [Fact]
     public void TestConstToDenseTenor()
     {
-        var con = Const.FromTensor(Tensor.FromSpan<int>(new[] { 1, 2, 3, 4, 5 }, new[] { 5 }));
+        var con = Const.FromTensor(Tensor.From<int>(new[] { 1, 2, 3, 4, 5 }, new[] { 5 }));
         var t = con.Value.Cast<int>();
         Assert.Equal(1, t[0]);
         Assert.Equal(2, t[1]);
@@ -192,7 +191,7 @@ public class UnitTestExpression
     [Fact]
     public void TestDenseTensorLength()
     {
-        var t = new DenseTensor<int>(new[] { 1, 2, 3, 4 }, new[] { 2, 2 });
+        var t = new Tensor<int>(new[] { 1, 2, 3, 4 }, new[] { 2, 2 });
         Assert.Equal(4, t.Length);
         Assert.Equal(2, t.Dimensions[0]);
     }

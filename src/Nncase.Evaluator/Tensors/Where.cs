@@ -31,7 +31,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
                 throw new NotImplementedException();
             }
             var result = condTensor.Select((b, i) => (b, i)).Where(t => t.b).Select(t => (long)t.i).ToArray();
-            return Value.FromTensor(Tensor.FromSpan<long>(result, new Shape(result.Length, condTensor.Rank)));
+            return Value.FromTensor(Tensor.From<long>(result, new Shape(result.Length, condTensor.Rank)));
         }
         var cond = context.GetOrtArgumentValue(where, Where.Cond);
         var x = context.GetOrtArgumentValue(where, Where.X);

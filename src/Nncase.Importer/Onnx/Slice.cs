@@ -28,7 +28,7 @@ namespace Nncase.Importer
             var starts = GetTensorIntsAttribute(op, "starts");
             var ends = GetTensorIntsAttribute(op, "ends");
             return Slice(input, starts, ends, axesExpr,
-                Expand(1L, Tensor.FromSpan<long>(new long[] { ends.Length })));
+                Expand(1L, Tensor.From<long>(new long[] { ends.Length })));
         }
 
         private Expr SliceV10(in NodeProto op)

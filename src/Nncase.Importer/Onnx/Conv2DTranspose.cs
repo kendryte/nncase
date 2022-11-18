@@ -29,7 +29,7 @@ namespace Nncase.Importer
 
             var outShape = GetOptionIntsAttribute(op, "output_shape")
                 .Match(
-                    o => Tensor.FromSpan<long>(o),
+                    o => Tensor.From<long>(o),
                     () => GetOutputShape(input, weights,
                         strides.ToArray<long>(),
                         outputPadding,
@@ -38,16 +38,16 @@ namespace Nncase.Importer
                         autoPad, group));
 
             return F.NN.Conv2DTranspose(input, weights, bias, outShape, strides,
-                pads, Tensor.FromSpan<long>(outputPadding),
-                Tensor.FromSpan<long>(dilation), PadMode.Constant, group);
+                pads, Tensor.From<long>(outputPadding),
+                Tensor.From<long>(dilation), PadMode.Constant, group);
         }
 
         Expr ComputeOutSize(Expr inputSize, Expr weightSize, long[] strides, long[] outPaddings, Expr paddings, long[] dilations, int offset)
         {
-            return strides[offset] * (inputSize - 1)
+            return (strides[offset] * (inputSize - 1))
                 + outPaddings[offset]
-                + ((weightSize - 1)
-                * dilations[offset] + 1) - paddings[offset][0] - paddings[offset][1];
+                + (((weightSize - 1)
+                * dilations[offset]) + 1) - paddings[offset][0] - paddings[offset][1];
         }
 
         Expr GetOutputShape(Expr input, Expr weights, long[] strides, long[] outPadding, Expr paddings, long[] dilations, string autoPad, long group)

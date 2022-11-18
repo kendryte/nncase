@@ -21,7 +21,7 @@ public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>, I
     {
         var input = context.GetArgumentValueAsTensor(shape, ShapeOf.Input);
         var shapeArr = input.Shape.Select(x => (long) x.FixedValue).ToArray();
-        return Value.FromTensor(Tensor.FromSpan<long>(shapeArr));
+        return Value.FromTensor(Tensor.From<long>(shapeArr));
     }
 
     /// <inheritdoc/>

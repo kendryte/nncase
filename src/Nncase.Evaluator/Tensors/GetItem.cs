@@ -49,7 +49,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
             var elementsCount = (int)TensorUtilities.GetProduct(returnDims);
 
             var src = tensor.BytesBuffer.Slice(elementSize * linearIndex, elementSize * elementsCount);
-            return Value.FromTensor(Tensor.FromBytes(new TensorType(ttype.DType, returnDims), src));
+            return Value.FromTensor(Tensor.FromBytes(new TensorType(ttype.DType, returnDims), src.ToArray()));
         }
 
         return Input[Index.AsTensor().ToScalar<int>()];

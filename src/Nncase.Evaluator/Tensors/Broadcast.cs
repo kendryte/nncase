@@ -19,7 +19,7 @@ public sealed partial class BroadcastEvaluator : IEvaluator<Broadcast>, ITypeInf
     public IValue Visit(IEvaluateContext context, Broadcast b)
     {
         var input = context.GetOrtArgumentValue(b, Broadcast.Input);
-        var shape = context.GetArgumentValueAsArray<int>(b, Broadcast.Shape);
+        var shape = context.GetArgumentValueAsArray<long>(b, Broadcast.Shape);
         return input.BroadcastTo(shape).ToValue();
     }
 

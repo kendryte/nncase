@@ -20,6 +20,7 @@ using Math = Nncase.IR.F.Math;
 using Random = Nncase.IR.F.Random;
 using Tensors = Nncase.IR.F.Tensors;
 using Tuple = System.Tuple;
+using Microsoft.Toolkit.HighPerformance;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 

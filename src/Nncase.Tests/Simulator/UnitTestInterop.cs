@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Numerics.Tensors;
 using System.Runtime.InteropServices;
 using Nncase.CodeGen;
 using Nncase.IR;

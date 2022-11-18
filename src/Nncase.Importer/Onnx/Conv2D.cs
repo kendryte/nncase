@@ -41,12 +41,12 @@ namespace Nncase.Importer
             int[] strideArr = new int[stridesValueLen == null ? default(int) : stridesValueLen.Value];
             for (var i = 0; i < stridesValueLen; i++)
                 strideArr[i] = ((TensorConst)(strides)).Value.Cast<System.Int32>()[i];
-            var strideConst = new TensorConst(Tensor.FromSpan<int>(strideArr));
+            var strideConst = new TensorConst(Tensor.From<int>(strideArr));
 
             int[] dilationArr = new int[dilationValueLen == null ? default(int) : dilationValueLen.Value];
             for (var i = 0; i < dilationValueLen; i++)
                 dilationArr[i] = ((TensorConst)(dilation)).Value.Cast<System.Int32>()[i];
-            var dilationConst = new TensorConst(Tensor.FromSpan<int>(dilationArr));
+            var dilationConst = new TensorConst(Tensor.From<int>(dilationArr));
 
             return F.NN.Conv2D(input, weights, bias, strideConst, pads, dilationConst, PadMode.Constant, group);
         }
@@ -59,7 +59,7 @@ namespace Nncase.Importer
 
         private Tensor GetStrideAttribute(NodeProto op)
         {
-            return Tensor.FromSpan<long>(GetIntsAttribute(op, "strides", 1, 2));
+            return Tensor.From<long>(GetIntsAttribute(op, "strides", 1, 2));
         }
 
         private long[] GetDilationsAttribute(NodeProto op)
