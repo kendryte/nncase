@@ -28,7 +28,6 @@ public static class PythonHelper
         return Tensor.FromBytes(type, span, dimensions);
     }
 
-
     public static byte[] BytesBufferFromTensor(Tensor value)
     {
         return value.BytesBuffer.ToArray();
