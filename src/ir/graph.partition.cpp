@@ -48,16 +48,26 @@ struct region
                 region_inputs.emplace(in);
             for (auto out : n.outputs())
                 outputs.emplace(out);
+
+            std::unordered_map<output_connector *, int> need_remove_outputs;
             for (auto it = region_inputs.begin(); it != region_inputs.end();)
             {
                 if (outputs.contains((*it)->connection()))
                 {
-                    if ((*it)->connection()->connections().size() == 1)
-                        outputs.erase((*it)->connection());
+                    if (need_remove_outputs.find((*it)->connection()) != need_remove_outputs.end())
+                        need_remove_outputs.at((*it)->connection()) += 1;
+                    else
+                        need_remove_outputs.emplace((*it)->connection(), 1);
                     it = region_inputs.erase(it);
                 }
                 else
                     ++it;
+            }
+
+            for (auto it : need_remove_outputs)
+            {
+                if (it.first->connections().size() == it.second)
+                    outputs.erase(it.first);
             }
 
             if (is_all_noaction && n.attributes() & node_attr_action)
