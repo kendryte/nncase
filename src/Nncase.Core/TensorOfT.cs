@@ -375,12 +375,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     public override int GetHashCode()
     {
         HashCode hashcode = default;
-        var buffer = Buffer;
-        for (int i = 0; i < buffer.Length; i++)
-        {
-            hashcode.Add(buffer.Span[i]);
-        }
-
+        hashcode.AddBytes(BytesBuffer);
         return hashcode.ToHashCode();
     }
 

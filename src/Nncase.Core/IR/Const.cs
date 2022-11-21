@@ -130,6 +130,4 @@ public abstract record Const(IRType ValueType) : Expr
             return new TupleConst(tpv.Select(x => FromValue(x)).ToArray());
         }
     }
-
 }
-

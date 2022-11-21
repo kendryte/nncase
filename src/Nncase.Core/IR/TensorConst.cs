@@ -117,4 +117,12 @@ public sealed record TensorConst(Tensor Value) : Const(new TensorType(Value.Elem
           },
         _ => $"{ValueType.DType.GetDisplayName()} {ValueType.Shape}"
     };
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        return _hashcode ??= HashCode.Combine(
+            EqualityComparer<Type>.Default.GetHashCode(EqualityContract),
+            Value.GetHashCode());
+    }
 }
