@@ -13,23 +13,21 @@ using static Nncase.IR.TypePatternUtility;
 namespace Nncase.IR.Math;
 
 /// <summary>
-/// Unary expression.
+/// Condition operation.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Select() : Op
+public sealed record Condition() : Op
 {
     /// <summary>
     /// Gets Condition.
     /// </summary>
-    public static readonly ParameterInfo Predicate = new(typeof(Select), 0, "predicate", IsBool());
+    public static readonly ParameterInfo Predicate = new(typeof(Condition), 0, "predicate", IsBool());
 
     /// <summary>
-    /// Gets TrueValue.
+    /// Gets Value.
     /// </summary>
-    public static readonly ParameterInfo TrueValue = new(typeof(Select), 1, "true_value");
+    public static readonly ParameterInfo Value = new(typeof(Condition), 1, "value");
 
-    /// <summary>
-    /// Gets FalseValue.
-    /// </summary>
-    public static readonly ParameterInfo FalseValue = new(typeof(Select), 2, "false_value");
+    /// <inheritdoc/>
+    public override bool CanFoldConstCall => false;
 }

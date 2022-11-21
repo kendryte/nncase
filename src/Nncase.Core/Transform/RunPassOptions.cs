@@ -137,6 +137,13 @@ namespace Nncase.Transform
         public RunPassOptions SetDumpDir(string path) => new(Target, DumpLevel, path, CompileOptions) { PassName = PassName, MatchOptions = MatchOptions };
 
         /// <summary>
+        /// set the dump level
+        /// </summary>
+        /// <param name="dumpLevel"></param>
+        /// <returns></returns>
+        public RunPassOptions SetDumpLevel(int dumpLevel) => new(Target, dumpLevel, DumpDir, CompileOptions) { PassName = PassName, MatchOptions = MatchOptions };
+
+        /// <summary>
         /// set the RewriteOnce
         /// </summary>
         /// <param name="once"></param>

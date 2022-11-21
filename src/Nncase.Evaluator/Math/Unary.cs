@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
@@ -12,7 +13,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Unary"/>.
 /// </summary>
-public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEvaluator<Unary>
+public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEvaluator<Unary>, IOpPrinter<Unary>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Unary unary)
@@ -117,5 +118,19 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
     private IRType Visit(TensorType input)
     {
         return input;
+    }
+
+    /// <inheritdoc/>
+    public string Visit(IIRPrinterContext context, Unary target, bool ILmode)
+    {
+        var op_str = target.UnaryOp switch
+        {
+            UnaryOp.BitwiseNot => "!",
+            UnaryOp.LogicalNot => "!",
+            var op => op.ToString()
+        };
+        if (!ILmode)
+            return $"{op_str}({string.Join(", ", target.Parameters.Select(p => p.Name + ": " + context.GetArgument(target, p).Serialize()))})";
+        throw new NotSupportedException("ILmode = true");
     }
 }

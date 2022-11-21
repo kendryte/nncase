@@ -399,6 +399,14 @@ namespace Nncase.IR.F
         public static Call Select(Expr predicate, Expr true_value, Expr false_value) => new Call(new Select(), predicate, true_value, false_value);
 
         /// <summary>
+        /// call condition
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static Call Condition(Expr predicate, Expr value) => new Call(new Condition(), predicate, value);
+
+        /// <summary>
         /// call select function.
         /// </summary>
         /// <param name="predicate">conditon value.</param>

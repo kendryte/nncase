@@ -36,10 +36,9 @@ internal sealed record ScriptSymobl(StringBuilder Span, string Name, bool IsRefS
 internal sealed class ScriptPrintContext : IIRPrinterContext
 {
     readonly Dictionary<Expr, ScriptSymobl> _exprMemo;
-    readonly ExprFunctor<IPrintSymbol, string> _printVisitor;
+    readonly ScriptPrintVisitor _printVisitor;
 
-    public ScriptPrintContext(Dictionary<Expr, ScriptSymobl> exprMemo,
-    ExprFunctor<IPrintSymbol, string> visitor)
+    public ScriptPrintContext(Dictionary<Expr, ScriptSymobl> exprMemo, ScriptPrintVisitor visitor)
     {
         _exprMemo = exprMemo;
         _printVisitor = visitor;
@@ -70,6 +69,8 @@ internal sealed class ScriptPrintContext : IIRPrinterContext
 
     /// <inheritdoc/>
     public IPrintSymbol Visit(Expr expr) => _printVisitor.Visit(expr);
+
+    public string Indent() => new string(' ', _printVisitor.Scope.indentLevel);
 }
 
 /// <summary>
@@ -94,7 +95,7 @@ internal sealed class ScriptPrintContext : IIRPrinterContext
 /// </summary>
 internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 {
-    readonly ScopeWriter Scope;
+    public readonly ScopeWriter Scope;
     readonly ScriptPrintContext context;
     readonly Dictionary<Expr, ScriptSymobl> exprMemo = new(ReferenceEqualityComparer.Instance);
     readonly Dictionary<Function, ScriptSymobl> extFuncMemo = new(ReferenceEqualityComparer.Instance);
@@ -135,6 +136,19 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
         Scope.Push();
         Scope.Append($"{{{string.Join(", ", (from item in expr select Visit(item).ToString()))}}}");
+        doc = new(Scope.Pop());
+        exprMemo.Add(expr, doc);
+        return doc;
+    }
+
+    /// <inheritdoc/>
+    public override IPrintSymbol Visit(Marker expr)
+    {
+        if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
+        var target = Visit(expr.Target);
+        var attr = Visit(expr.Attribute);
+        Scope.Push();
+        Scope.Append($"{target}@({expr.Name} = {attr})");
         doc = new(Scope.Pop());
         exprMemo.Add(expr, doc);
         return doc;
@@ -329,7 +343,9 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 
         // 1. write head
         Scope.AppendLine($"T.Block(\"{expr.Name}\").");
-        
+        Scope.IndWriteLine($"Alloc({string.Join(",", expr.AllocBuffers.Select(Visit))}).");
+        Scope.IndWriteLine($"Reads({string.Join(",", expr.Reads.Select(Visit))}).");
+        Scope.IndWriteLine($"Writes({string.Join(",", expr.Writes.Select(Visit))}).");
         Scope.IndWriteLine($"Predicate({Visit(expr.Predicate)}).");
         // 2. write iter var bind
         foreach (var iterVar in expr.IterVars)

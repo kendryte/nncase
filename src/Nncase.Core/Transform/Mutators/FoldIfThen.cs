@@ -11,9 +11,9 @@ using Nncase.TIR;
 namespace Nncase.Transform.Mutators;
 
 /// <summary>
-/// unroll loop
+/// fold if then and select
 /// </summary>
-internal sealed class FoldIfThen  : ExprMutator
+internal sealed class FoldIfThen : ExprMutator
 {
     /// <inheritdoc/>
     public override Expr MutateLeaf(TIR.IfThenElse expr)
@@ -21,6 +21,16 @@ internal sealed class FoldIfThen  : ExprMutator
         if (expr.Condition is TensorConst { Value: Tensor<bool> value })
         {
             return value.ToScalar() ? expr.Then : expr.Else;
+        }
+        return expr;
+    }
+
+    public override Expr MutateLeaf(Call expr)
+    {
+        if (expr is { Target: IR.Math.Select } && expr[IR.Math.Select.Predicate] is TensorConst tc)
+        {
+            var c = tc.Value.ToScalar<bool>();
+            return c ? expr[IR.Math.Select.TrueValue] : expr[IR.Math.Select.FalseValue];
         }
         return expr;
     }

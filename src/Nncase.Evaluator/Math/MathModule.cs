@@ -28,6 +28,7 @@ public class MathModule : Module
         builder.RegisterType<ReduceArgEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<UnaryEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<SelectEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<ConditionEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<RequireEvaluator>().AsImplementedInterfaces();
     }
 }

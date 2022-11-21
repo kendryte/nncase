@@ -49,4 +49,10 @@ public interface IIRPrinterContext
     /// <param name="op">Operator.</param>
     /// <returns>string.</returns>/
     string GetDefault(Op op) => $"{Get(op)}({string.Join(", ", op.Parameters.Select(p => p.Name + ": " + GetArgument(op, p).Serialize()))})";
+
+    /// <summary>
+    /// get indent string
+    /// </summary>
+    /// <returns></returns>
+    string Indent();
 }

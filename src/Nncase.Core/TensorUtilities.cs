@@ -208,6 +208,31 @@ public static class TensorUtilities
     }
 
     /// <summary>
+    /// get index
+    /// </summary>
+    /// <param name="strides"></param>
+    /// <param name="indices"></param>
+    /// <param name="startFromDimension"></param>
+    /// <returns></returns>
+    /// <exception cref="IndexOutOfRangeException"></exception>
+    public static IR.Expr GetIndex(ReadOnlySpan<IR.Expr> strides, ReadOnlySpan<IR.Expr> indices, int startFromDimension = 0)
+    {
+        // Scalar
+        if (strides.Length == 0 || indices.Length == 0)
+            throw new IndexOutOfRangeException();
+
+        Debug.Assert(strides.Length == indices.Length);
+
+        IR.Expr index = 0;
+        for (int i = startFromDimension; i < indices.Length; i++)
+        {
+            index += strides[i] * indices[i];
+        }
+
+        return index;
+    }
+
+    /// <summary>
     /// Calculates the n-d indices from the 1-d index in a layout specificed by strides
     /// </summary>
     /// <param name="strides"></param>
@@ -325,10 +350,10 @@ public static class TensorUtilities
                 // is full
                 int x when (x == dimensions[i]) => status switch
                 {
-                    SliceStatus.IsSlice => x == 1 ? 
+                    SliceStatus.IsSlice => x == 1 ?
                                                     SliceStatus.IsSlice :
                                                     SliceStatus.IsInvalid,
-                    SliceStatus.IsSliceFull => x == 1 ? 
+                    SliceStatus.IsSliceFull => x == 1 ?
                                                     SliceStatus.IsSliceFull :
                                                     SliceStatus.IsInvalid,
                     _ => SliceStatus.IsFull,
