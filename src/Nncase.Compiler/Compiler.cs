@@ -72,7 +72,11 @@ public class Compiler
         var module = ImportModel(content, options);
         DumpModule(module, options, "ir_import");
         //Console.WriteLine("Infer Shape...");
+#if DEBUG
         DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module, options));
+#else
+        InferShape(module, options);
+#endif
         var inferSucc = CompilerServices.InferenceType(module.Entry!);
         DumpModule(module, options, "ir_infertype");
         if (!inferSucc)

@@ -83,6 +83,6 @@ public record Pattern<TExpr>(string? Name) : Pattern(Name), IPattern<TExpr>
     {
         (null, _) => true,
         (TypePattern pattern, IRType type) => pattern.MatchLeaf(type),
-        _ => throw new InvalidOperationException("Infer type before pattern match."),
+        _ => false,
     };
 }

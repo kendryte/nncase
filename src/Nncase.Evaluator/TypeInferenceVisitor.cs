@@ -20,7 +20,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
 
     public TypeInferenceVisitor()
     {
-        _context = new TypeInferenceContext(ExpressionMemo);
+        _context = new TypeInferenceContext();
         _inferencer_cache = new Dictionary<Type, ITypeInferencer>();
     }
 

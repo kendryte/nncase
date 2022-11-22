@@ -48,7 +48,7 @@ internal sealed class DataFlowRewriteVisitor : ExprMutator
             var replace = _rule.GetReplace(match, _options);
             if (replace != null)
             {
-                replace.InferenceType();
+                replace.CheckedType = expr.CheckedType;
                 _options.MatchOptions.MemoRewrite(expr, replace);
                 _dontInheritExprs.Add(replace);
                 return replace;

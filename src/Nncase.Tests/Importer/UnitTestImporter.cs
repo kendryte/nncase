@@ -26,6 +26,16 @@ public class UnitTestImporter : TestFixture.UnitTestFixtrue
         Assert.True(module.Entry!.InferenceType());
     }
 
+    [Fact]
+    public async Task TestImportFacedetectLandmark()
+    {
+        using var file = File.OpenRead(Path.Combine(GetSolutionDirectory(), "examples/facedetect_landmark/model/ulffd_landmark.tflite"));
+        var options = GetCompileOptions();
+        var module = Importers.ImportTFLite(file, options);
+        await InferShape(module, options);
+        Assert.True(module.Entry!.InferenceType());
+    }
+
     private async Task InferShape(IRModule module, CompileOptions options)
     {
         var pmgr = new PassManager(module, new RunPassOptions(null!, options.DumpLevel, options.DumpDir));
