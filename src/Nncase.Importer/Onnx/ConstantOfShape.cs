@@ -27,7 +27,7 @@ namespace Nncase.Importer
             }
             else
             {
-                return F.Tensors.ConstantOfShape(shape, Tensor.From<float>(new[] {0f}));
+                return F.Tensors.ConstantOfShape(shape, Tensor.From<float>(new[] { 0f }));
             }
         }
     }

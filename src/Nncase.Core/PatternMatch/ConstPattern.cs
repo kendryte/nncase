@@ -38,7 +38,6 @@ public sealed record ConstPattern(Func<Const, bool> Condition, string? Name) : P
 
 public static partial class Utility
 {
-
     /// <summary>
     /// create const pattern.
     /// </summary>
@@ -80,7 +79,6 @@ public static partial class Utility
           return false;
       }, name);
     public static TensorConstPattern IsConst(Func<float, bool> cond) => IsConst(null, cond);
-
 
     /// <summary>
     /// create const pattern.
@@ -129,7 +127,6 @@ public static partial class Utility
     /// <returns>ConstPattern.</returns>
     public static TensorConstPattern IsConstIntSclar(string? name) => IsTensorConst(name, IsIntegral());
     public static TensorConstPattern IsConstIntSclar() => IsTensorConst(null, IsIntegral());
-
 
     /// <summary>
     /// create const pattern.

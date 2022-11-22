@@ -10,7 +10,7 @@ using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.K210;
 using Nncase.IR.Math;
-using static  Nncase.PatternMatch.F.K210;
+using static Nncase.PatternMatch.F.K210;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
 using Tensorflow.Keras;
@@ -32,12 +32,12 @@ public sealed partial class RealizeFakeKPUDownload : IRewriteRule
             null,
             "download_call",
             op => true,
-            IsRangeOfMarker(IsWildcard("input"), 
+            IsRangeOfMarker(IsWildcard("input"),
                 IsConst("input_range")));
 
     private Expr? GetReplace(Call download_call, Expr input, Expr input_range)
     {
         // return new Function(IR.F.K210.KPUDownload(input));
-         return new Call(new IR.K210.KPUDownload(),input);
+        return new Call(new IR.K210.KPUDownload(), input);
     }
 }

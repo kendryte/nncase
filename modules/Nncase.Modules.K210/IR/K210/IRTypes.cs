@@ -88,7 +88,7 @@ public class kpu_conv2d_quant_args
     private int arg_w;
     private int shift_w;
     private int arg_add;
-    
+
 }
 
 public record struct FakeKPUActivationSegment

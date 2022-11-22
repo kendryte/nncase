@@ -37,7 +37,6 @@ public static class TIRExtensions
     //   where T : class
     // => view.Shape.ToArray().Aggregate(1, (acc, dim) => acc * dim);
 
-
     /// <summary>
     /// print the tensorview string
     /// </summary>

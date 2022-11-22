@@ -9,7 +9,6 @@ using Nncase.TIR;
 
 namespace Nncase.TIR;
 
-
 internal sealed class ExprCollector : ExprVisitor<bool, bool>
 {
     Action<Expr> CollectFunc;

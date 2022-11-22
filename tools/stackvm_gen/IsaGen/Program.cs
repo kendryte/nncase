@@ -98,7 +98,6 @@ namespace IsaGen
                                 Inputs: new()
                             ) by c).Select(x => new KeyValuePair<string, IReadOnlyList<InstructionInfo>>(x.Key, x.ToList())).ToList();
 
-
             Enums = (from e in _enums
                      let b = e.GetCustomAttribute<BrowsableAttribute>()
                      where b == null || b.Browsable
@@ -184,6 +183,7 @@ namespace IsaGen
                     if (lastIsLetter || c != 'D')
                         sb.Append('_');
                 }
+
                 sb.Append(char.ToLowerInvariant(c));
 
                 if (!lastIsLetter && c == 'D')
@@ -192,6 +192,7 @@ namespace IsaGen
                 lastCapital = isCaptial;
                 lastIsLetter = isLetter;
             }
+
             return sb.ToString().Trim('_');
         }
 

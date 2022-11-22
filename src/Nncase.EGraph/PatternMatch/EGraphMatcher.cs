@@ -145,7 +145,7 @@ public sealed class EGraphMatcher
 
         return context.NewScopes;
     }
-    
+
     private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, MarkerPattern pattern, ENode enode, Marker expr)
     {
         var context = new MatchContext(matchScopes, pattern, expr);

@@ -7,7 +7,6 @@ using Xunit;
 
 namespace Nncase.Tests.TIRTest;
 
-
 public class UnitTestTBuffer
 {
     [Fact]

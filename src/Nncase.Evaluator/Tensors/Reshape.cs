@@ -44,6 +44,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         {
             return input;
         }
+
         if (context.GetArgument(target, Reshape.Shape) is TensorConst shapeConst &&
             input.Shape.IsFixed)
         {
@@ -64,6 +65,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                     return new InvalidType("Reshape input shape size and param shape size must be same," +
                                            $" shape:{shapeValue.ToArray().Aggregate("", (s, i) => s + i + " ")}, input shape${string.Join(",", input.Shape)}");
                 }
+
                 return input with { Shape = new Shape(shapeValue) };
             }
             else
@@ -74,6 +76,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                 {
                     return new InvalidType("Reshape input size must be divisible by shapeSize when has -1");
                 }
+
                 shapeValue[negIndex] = inputSize / shapeSize;
                 return input with { Shape = new Shape(shapeValue) };
             }

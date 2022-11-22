@@ -25,7 +25,6 @@ public interface IVisitable
     object Visit<TExprResult, TTypeResult>(ExprFunctor<TExprResult, TTypeResult> functor);
 }
 
-
 /// <summary>
 /// IMutatable Define.
 /// </summary>
@@ -52,14 +51,13 @@ public interface IMutatable : IVisitable
 /// </summary>
 public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
 {
-
     /// <summary>
     /// The Struct Equal Memo folding the const/op.
     /// </summary>
     private readonly Dictionary<Expr, Expr> _exprSEqualMemo = new();
 
     /// <summary>
-    /// Get the Struct Equal Memo
+    /// Gets the Struct Equal Memo.
     /// </summary>
     public Dictionary<Expr, Expr> ExpressionStructMemo => _exprSEqualMemo;
 
@@ -72,7 +70,12 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(Call expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
@@ -89,7 +92,12 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(Const expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
@@ -102,7 +110,12 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(Function expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
@@ -119,7 +132,12 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(Fusion expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
@@ -136,7 +154,12 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(PrimFunctionWrapper expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
@@ -152,7 +175,12 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(TIR.PrimFunction expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
@@ -169,7 +197,12 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(Op expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
@@ -182,7 +215,12 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(Tuple expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
@@ -198,7 +236,12 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(Var expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
@@ -211,7 +254,12 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(None expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
@@ -224,7 +272,12 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(Marker expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
@@ -241,7 +294,12 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(TIR.IterVar expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
@@ -258,7 +316,12 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(TIR.Sequential expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
@@ -274,7 +337,12 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(TIR.For expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
@@ -292,7 +360,12 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(TIR.IfThenElse expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
@@ -310,7 +383,12 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(TIR.Block expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
@@ -335,7 +413,12 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(TIR.BufferStore expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
@@ -352,7 +435,12 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(TIR.BufferLoad expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
@@ -368,7 +456,12 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(TIR.Let expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
@@ -385,13 +478,18 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     /// <inheritdoc/>
     public override Expr VisitLeaf(TIR.Buffer expr)
     {
-
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
         }
+
         return expr;
     }
 
@@ -399,11 +497,17 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     public override Expr VisitLeaf(TIR.BufferRegion expr)
     {
         var nexpr = MutateLeaf(expr);
-        if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
         if (!IsMutated)
         {
             return expr;
         }
+
         return expr with
         {
             Buffer = (TIR.Buffer)Visit(expr.Buffer),
@@ -417,13 +521,20 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
         if (visitable is IMutatable mutatable)
         {
             var nexpr = MutateLeaf(mutatable);
-            if (!object.ReferenceEquals(mutatable, nexpr)) { IsMutated = true; return nexpr; }
+            if (!object.ReferenceEquals(mutatable, nexpr))
+            {
+                IsMutated = true;
+                return nexpr;
+            }
+
             if (!IsMutated)
             {
                 return mutatable;
             }
+
             return mutatable.WithNew(this);
         }
+
         throw new NotSupportedException($"IVisitable {visitable.GetType().Name} Is Not IMutatable!");
     }
 
@@ -620,6 +731,7 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
             folded = expr;
             _exprSEqualMemo.Add(expr, folded);
         }
+
         return folded;
     }
 }
@@ -647,6 +759,7 @@ public abstract class ExprMutator : DeepExprMutator
             _entryBaseFunc = expr;
             return base.Visit(expr);
         }
+
         return object.ReferenceEquals(_entryBaseFunc, expr) ? base.Visit(expr) : expr;
     }
 
@@ -658,6 +771,7 @@ public abstract class ExprMutator : DeepExprMutator
             _entryBaseFunc = expr;
             return base.Visit(expr);
         }
+
         return object.ReferenceEquals(_entryBaseFunc, expr) ? base.Visit(expr) : expr;
     }
 
@@ -669,6 +783,7 @@ public abstract class ExprMutator : DeepExprMutator
             _entryBaseFunc = expr;
             return base.Visit(expr);
         }
+
         return object.ReferenceEquals(_entryBaseFunc, expr) ? base.Visit(expr) : expr;
     }
 
@@ -680,6 +795,7 @@ public abstract class ExprMutator : DeepExprMutator
             _entryBaseFunc = expr;
             return base.Visit(expr);
         }
+
         return object.ReferenceEquals(_entryBaseFunc, expr) ? base.Visit(expr) : expr;
     }
 }

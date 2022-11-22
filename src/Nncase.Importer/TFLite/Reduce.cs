@@ -37,6 +37,7 @@ namespace Nncase.Importer.TFLite
                 // scalar to array 
                 return axisValue.Value.ToArray<int>();
             }
+
             return axis;
         }
     }

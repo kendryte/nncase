@@ -65,11 +65,12 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
                 {
                     return Input;
                 }
+
                 ret = new TensorType(tensorType.DType,
                        Index.Shape switch
                        {
                            { IsScalar: true } => new Shape(tensorType.Shape.Skip(1)),
-                           { IsFixed: true } => Index.Shape[0].FixedValue == tensorType.Shape.Rank ? 
+                           { IsFixed: true } => Index.Shape[0].FixedValue == tensorType.Shape.Rank ?
                                                 Shape.Scalar :
                                                 new Shape(tensorType.Shape.Skip(Index.Shape[0].FixedValue)),
                            _ => Shape.Unranked,
@@ -100,6 +101,5 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
 
         return ret;
     }
-
 
 }

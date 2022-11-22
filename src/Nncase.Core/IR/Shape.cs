@@ -70,7 +70,6 @@ namespace Nncase.IR
         /// <param name="dimensions">Dimensions.</param>
         public Shape(IEnumerable<int> dimensions)
         {
-
             Kind = ShapeKind.Fixed;
             if (dimensions.Any())
             {
@@ -80,6 +79,7 @@ namespace Nncase.IR
             {
                 _dimensions = ImmutableArray.Create<Dimension>();
             }
+
             _hashcode = StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions);
         }
 
@@ -261,16 +261,19 @@ namespace Nncase.IR
         {
             return dimensions.Any(x => x.IsUnknown) ? ShapeKind.HasUnknownDimension : ShapeKind.Fixed;
         }
+
         /// <inheritdoc/>
         public int GetHashCode(IEqualityComparer comparer)
         {
             return ((IStructuralEquatable)_dimensions).GetHashCode(comparer);
         }
+
         /// <inheritdoc/>
         public override int GetHashCode()
         {
             return _hashcode;
         }
+
         /// <inheritdoc/>
         public IEnumerator<Dimension> GetEnumerator()
         {
@@ -281,16 +284,19 @@ namespace Nncase.IR
         {
             return ((IEnumerable)_dimensions).GetEnumerator();
         }
+
         /// <inheritdoc/>
         public bool Equals(object? other, IEqualityComparer comparer)
         {
             return ((IStructuralEquatable)_dimensions).Equals(other, comparer);
         }
+
         /// <inheritdoc/>
         public bool Equals(Shape? other)
         {
             return other is not null && StructuralComparisons.StructuralEqualityComparer.Equals(_dimensions, other._dimensions);
         }
+
         /// <inheritdoc/>
         public override bool Equals(object? other)
         {

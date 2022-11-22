@@ -48,12 +48,12 @@ public static class PythonHelper
     {
         return tensor.Dimensions.ToArray();
     }
-    
+
     public static IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null)
     {
         return DumpManager.RunWithDump("Evaluator", () => expr.Evaluate(varsValues));
     }
-    
+
     public static RTTensor[] RunSimulator(RTInterpreter interp, RTValue[] input)
     {
         interp.SetDumpRoot(CompilerServices.CompileOptions.DumpDir);
@@ -66,7 +66,7 @@ public static class PythonHelper
         else if (result is RTTuple tuple)
         {
             // todo: field maybe a tuple, but not process in this
-            return tuple.Fields.Select(x => (RTTensor) x).ToArray();
+            return tuple.Fields.Select(x => (RTTensor)x).ToArray();
         }
 
         throw new NotImplementedException();
@@ -100,7 +100,7 @@ public static class PythonHelper
     public static QuantizeOptions MakeQuantizeOptions(ICalibrationDatasetProvider datasetProvider)
     {
         return new QuantizeOptions
-            { BindQuantMethod = false, CalibrationDataset = datasetProvider, CalibrationMethod = CalibMethod.NoClip };
+        { BindQuantMethod = false, CalibrationDataset = datasetProvider, CalibrationMethod = CalibMethod.NoClip };
     }
 
     public class PytestCalibrationDatasetProvider : ICalibrationDatasetProvider
@@ -108,7 +108,7 @@ public static class PythonHelper
         public int? Count => 5;
 
         public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
-        
+
         private int SampleCount = 0;
 
         public PytestCalibrationDatasetProvider(IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> samples, int sampleCount)

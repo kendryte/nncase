@@ -53,7 +53,6 @@ public abstract partial record Pattern(string? Name) : IPattern
 public record Pattern<TExpr>(string? Name) : Pattern(Name), IPattern<TExpr>
     where TExpr : Expr
 {
-
     /// <summary>
     /// Gets pattern for CheckedType, defulat match IR Type.
     /// </summary>

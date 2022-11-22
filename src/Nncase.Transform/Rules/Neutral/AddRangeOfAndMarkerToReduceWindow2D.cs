@@ -35,7 +35,7 @@ public sealed partial class AddRangeOfAndMarkerToRedeceWindow2D : IRewriteRule
             IsWildcard("stride"),
             IsWildcard("padding"),
             IsWildcard("dilation"),
-            IsWildcard("ceilmode"), 
+            IsWildcard("ceilmode"),
             IsWildcard("countincludepad"));
 
     private Expr? GetReplace(ReduceWindow2D reduceWindow2D, Expr input, Expr initvalue, Expr filter, Expr stride, Expr padding,

@@ -46,7 +46,6 @@ public static class ModelInfo
 [StructLayout(LayoutKind.Sequential)]
 public struct ModuleType
 {
-
     /// <summary>
     /// the module types
     /// </summary>
@@ -66,6 +65,7 @@ public struct ModuleType
         {
             chars[i] = i < name.Length ? name[i] : '\0';
         }
+
         mt.Types = new(chars);
         return mt;
     }

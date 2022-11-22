@@ -478,6 +478,7 @@ public sealed class ScopeWriter
         {
             count = 0;
         }
+
         var symbol = new ScriptSymobl(new(prefix + @var.Name + (count == 0 ? "" : $"_{count}")), @var.Name, false);
         count++;
         GlobalVarCountMap[@var.Name] = count;

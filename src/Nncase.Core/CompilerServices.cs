@@ -151,7 +151,6 @@ public interface ICompilerServicesProvider
     /// <returns>Target</returns>
     ITarget GetTarget(string name);
 
-
     /// <summary>
     /// Get CompileOptions.
     /// </summary>

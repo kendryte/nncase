@@ -71,7 +71,6 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
         return Enumerable.Range(begin, end - begin);
     }
 
-
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, SpaceToBatch target)
     {

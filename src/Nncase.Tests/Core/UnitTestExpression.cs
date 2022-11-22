@@ -11,7 +11,6 @@ using Xunit;
 
 namespace Nncase.Tests.CoreTest;
 
-
 public class UnitTestExpression
 {
     [Fact]
@@ -82,7 +81,6 @@ public class UnitTestExpression
     [Fact]
     public void TestTupleGetHash()
     {
-
         var a = new IR.Tuple((Const)1 * (Const)2);
         var b = new IR.Tuple(a, a, a, a);
         var c = new IR.Tuple(b, b, b, b);
@@ -256,11 +254,13 @@ public class UnitTestExpression
                 d1_a = new Evaluator.Math.BinaryEvaluator();
                 dict1.Add(a, d1_a);
             }
+
             if (!dict1.TryGetValue(b, out var d1_b))
             {
                 d1_b = new Evaluator.Math.BinaryEvaluator();
                 dict1.Add(b, d1_b);
             }
+
             if (!dict1.TryGetValue(c, out var d1_c))
             {
                 d1_c = new Evaluator.Math.UnaryEvaluator();
@@ -273,11 +273,13 @@ public class UnitTestExpression
                 d2_a = new Evaluator.Math.BinaryEvaluator();
                 dict2.Add(a.GetType(), d2_a);
             }
+
             if (!dict2.TryGetValue(b.GetType(), out var d2_b))
             {
                 d2_b = new Evaluator.Math.BinaryEvaluator();
                 dict2.Add(b.GetType(), d2_b);
             }
+
             if (!dict2.TryGetValue(c.GetType(), out var d2_c))
             {
                 d2_c = new Evaluator.Math.UnaryEvaluator();
@@ -290,11 +292,13 @@ public class UnitTestExpression
                 d3_a = new Evaluator.Math.BinaryEvaluator();
                 dict3.Add(a.GetType().TypeHandle, d3_a);
             }
+
             if (!dict3.TryGetValue(b.GetType().TypeHandle, out var d3_b))
             {
                 d3_b = new Evaluator.Math.BinaryEvaluator();
                 dict3.Add(b.GetType().TypeHandle, d3_b);
             }
+
             if (!dict3.TryGetValue(c.GetType().TypeHandle, out var d3_c))
             {
                 d3_c = new Evaluator.Math.UnaryEvaluator();
@@ -305,13 +309,13 @@ public class UnitTestExpression
 
     private sealed class ExpressionTreeBuilder : ExprVisitor<Expression, Type>
     {
-
         public override Expression VisitLeaf(Const expr)
         {
             if (expr is TensorConst tc && tc.Value.Shape.IsScalar)
             {
                 return Expression.Constant(tc.Value[0], tc.Value.ElementType.CLRType);
             }
+
             throw new ArgumentOutOfRangeException();
         }
 
@@ -321,6 +325,7 @@ public class UnitTestExpression
             {
                 return Expression.Parameter(expr.CheckedDataType.CLRType, expr.Name);
             }
+
             throw new ArgumentOutOfRangeException();
         }
 
@@ -338,6 +343,7 @@ public class UnitTestExpression
                 default:
                     break;
             }
+
             throw new ArgumentOutOfRangeException();
         }
 
@@ -352,18 +358,15 @@ public class UnitTestExpression
         }
     }
 
-
     [Fact]
     public void TestExpressionTree()
     {
-
         var input_1 = new Var("input_1", TensorType.Scalar(DataTypes.Int32));
         var fn_1 = new Function("add", IR.F.Math.Binary(BinaryOp.Add, input_1, 10), new[] { input_1 });
         Assert.True(CompilerServices.InferenceType(fn_1));
 
         var visitor = new ExpressionTreeBuilder();
         var fn_2 = ((LambdaExpression)visitor.Visit(fn_1)).Compile();
-
 
         for (int i = 0; i < 100000; i++)
         {
@@ -380,6 +383,7 @@ public class UnitTestExpression
             Start = start;
             Stop = stop;
         }
+
         public int Start;
         public int Stop;
     }

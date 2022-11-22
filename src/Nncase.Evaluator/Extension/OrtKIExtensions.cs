@@ -80,6 +80,7 @@ public static class OrtKIExtensions
         {
             return type;
         }
+
         throw new ArgumentOutOfRangeException("Unsupported DataType: " + dt);
     }
 

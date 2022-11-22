@@ -163,6 +163,7 @@ public static class EvaluatorUtil
             .Select(x => BFloat16.FromRaw(0))
             .ToArray<BFloat16>()).ToOrtTensor();
     }
+
     /// <summary>
     /// nncase pads format to onnx pads format
     /// </summary>
@@ -174,6 +175,7 @@ public static class EvaluatorUtil
         {
             throw new InvalidOperationException($"Pad's rank must be 2, but get {pads.Rank}");
         }
+
         return OrtKI.Transpose(pads, new long[] { 1, 0 }).ToArray<long>();
     }
 }

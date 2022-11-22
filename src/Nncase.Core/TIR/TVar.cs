@@ -93,7 +93,6 @@ public sealed record Range(Expr Start, Expr Stop, Expr Step) : IR.IMutatable
         return new Range(range.Start.Value, range.End.Value, 1);
     }
 
-
     /// <summary>
     /// the full range.
     /// </summary>

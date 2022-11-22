@@ -96,10 +96,13 @@ public class PassManager : IEnumerable<BasePass>
                     FuncUpdateRecord(i, pre, post);
                     _module.Update(i, post);
                 }
+
                 name = pass.Name;
             }
+
             i++;
         }
+
         FuncUpdateDependence(_module, _functions_update_map, _options, name);
         CleanFuncUpdateRecord();
     }
@@ -118,7 +121,6 @@ public class PassManager : IEnumerable<BasePass>
         return ((IEnumerable)_passes).GetEnumerator();
     }
 
-
     private void CleanFuncUpdateRecord()
     {
         _functions_update_map.Clear();
@@ -133,6 +135,7 @@ public class PassManager : IEnumerable<BasePass>
             origin = current;
             _functions_mask.Add(i, origin);
         }
+
         _functions_update_map[origin] = updated;
     }
 
@@ -192,6 +195,7 @@ internal sealed class DependenceMutator : DeepExprMutator
             else
                 functionsUpdated.Add(baseFunction, updatedBasefunction);
         }
+
         return nexpr;
     }
 }

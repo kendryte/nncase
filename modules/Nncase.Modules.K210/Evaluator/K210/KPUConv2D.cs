@@ -9,7 +9,7 @@ using Range = Nncase.TIR.Range;
 
 namespace Nncase.Evaluator.K210;
 
-public class KPUConv2DEvaluator:IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv2D>
+public class KPUConv2DEvaluator : IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv2D>
 {
     public IValue Visit(IEvaluateContext context, KPUConv2D target)
     {
@@ -32,7 +32,8 @@ public class KPUConv2DEvaluator:IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv2D
         {
             result = result + batchNorms.AsTensor().ToOrtTensor();
         }
-        return EvaluatorUtil.Act(result.ToTensor(), activition, new[] { float.MinValue, float.MaxValue});
+
+        return EvaluatorUtil.Act(result.ToTensor(), activition, new[] { float.MinValue, float.MaxValue });
     }
 
     /// <inheritdoc/>

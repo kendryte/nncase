@@ -63,36 +63,43 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
     {
         return ((ICollection<T>)_array).Contains(item);
     }
+
     /// <inheritdoc/>
     public void CopyTo(T[] array, int arrayIndex)
     {
         ((ICollection<T>)_array).CopyTo(array, arrayIndex);
     }
+
     /// <inheritdoc/>
     public bool Equals(object? other, IEqualityComparer comparer)
     {
         return ((IStructuralEquatable)_array).Equals(other, comparer);
     }
+
     /// <inheritdoc/>
     public override bool Equals(object? obj)
     {
         return obj is IRArray<T> array && Equals(array);
     }
+
     /// <inheritdoc/>
     public bool Equals(IRArray<T> other)
     {
         return StructuralComparisons.StructuralEqualityComparer.Equals(_array, other._array);
     }
+
     /// <inheritdoc/>
     public IEnumerator<T> GetEnumerator()
     {
         return ((IEnumerable<T>)_array).GetEnumerator();
     }
+
     /// <inheritdoc/>
     public int GetHashCode(IEqualityComparer comparer)
     {
         return ((IStructuralEquatable)_array).GetHashCode(comparer);
     }
+
     /// <inheritdoc/>
     public override int GetHashCode()
     {

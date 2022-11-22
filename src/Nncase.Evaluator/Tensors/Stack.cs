@@ -61,6 +61,7 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
                     {
                         return ttype;
                     }
+
                     ttypes[i] = ttype;
                 }
                 else

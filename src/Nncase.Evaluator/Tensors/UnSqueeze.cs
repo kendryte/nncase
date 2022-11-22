@@ -45,6 +45,7 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
         {
             return input;
         }
+
         if (context.GetArgument(target, Unsqueeze.Dim) is TensorConst tdims)
         {
             var dimsValue = tdims.Value.Cast<int>();

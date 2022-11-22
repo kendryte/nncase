@@ -50,6 +50,7 @@ internal sealed class EvaluateProvider : IEvaluateProvider
             evaluator = (IEvaluator)_serviceProvider.GetRequiredService(evaluatorType);
             evaluator_cache.Add(op_type, evaluator);
         }
+
         return evaluator.Visit(context, op);
     }
 }

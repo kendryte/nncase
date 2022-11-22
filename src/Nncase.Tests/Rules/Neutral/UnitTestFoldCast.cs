@@ -13,9 +13,8 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFoldCast: TestFixture.UnitTestFixtrue
+public class UnitTestFoldCast : TestFixture.UnitTestFixtrue
 {
-
     public static IEnumerable<object[]> TestFoldTwoCastsPositiveData =>
         new[]
         {
@@ -59,6 +58,7 @@ public class UnitTestFoldCast: TestFixture.UnitTestFixtrue
         Assert.Equal(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
+
     public static IEnumerable<object[]> TestFoldNopCastPositiveData =>
         new[]
         {

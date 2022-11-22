@@ -19,14 +19,14 @@ public static class RuntimeDumpAnalysis
         using var stream = new StreamReader(Path.Join(dumpResultRoot, "!out_shape_list"));
         return GroupByOp(stream.ReadToEnd());
     }
-    
+
     private static IEnumerable<IGrouping<string, (string, int)>> GroupByOp(string str)
     {
         return str.Trim().Split("\n")
             .Select((x, i) => (x, i))
             .GroupBy(item => item.Item1.Split(":")[0]);
     }
-    
+
     public static void PrintOutShapeList(IEnumerable<IGrouping<string, (string, int)>> data)
     {
         foreach (var valueTuples in data)
@@ -60,7 +60,7 @@ public static class RuntimeResultAnalysis
         var cosList = data.Select(d => RuntimeResultAnalysis.Run(d.FileName, dir, ctor).Head()).ToArray();
         DumpUtility.WriteResult(resultPath, cosList);
     }
-    
+
     public static float[] Run(string fileName, string dir, Func<IEnumerable<Expr>, Call> f)
     {
         // 1. get params

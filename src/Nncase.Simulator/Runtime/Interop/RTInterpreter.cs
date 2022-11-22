@@ -29,7 +29,6 @@ public sealed class RTInterpreter : SafeHandle
 
     internal RTInterpreter(IntPtr handle) : base(handle, true)
     {
-
     }
 
     /// <summary>

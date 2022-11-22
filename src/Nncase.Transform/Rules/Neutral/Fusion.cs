@@ -10,7 +10,7 @@ namespace Nncase.Transform.Rules.Neutral;
 public abstract class FusionMaker : RewriteRule<Pattern>
 {
     public virtual string Name { get; } = "SingleInputFusion";
-    
+
     public virtual string ModuleKind { get; } = "StackVM";
 
     private int count = 0;
@@ -28,7 +28,6 @@ public partial class SingleInputFusion<T, BeginT, EndT> : FusionMaker
     public override Pattern Pattern { get; } = IsWildcardCall<EndT>("st", null!,
         IsWildcardCall<T>(null!, null!, (
             IsWildcardCall<BeginT>(null!, null!, IsWildcard("input")))));
-    
 
     // replace input with var
     private Call? GetReplace(Call st, Expr input)
@@ -53,7 +52,7 @@ public partial class DoubleInputFusion<T, BeginT, EndT> : FusionMaker
         IsWildcardCall<T>(null!, null!,
             IsWildcardCall<BeginT>(null!, null!, IsWildcard("lhs")),
             IsWildcardCall<BeginT>(null!, null!, IsWildcard("rhs"))));
-    
+
     // replace input with var
     private Call GetReplace(Call st, Expr lhs, Expr rhs)
     {
@@ -76,7 +75,7 @@ public partial class DataTransferFusion<LoadT, StoreT> : FusionMaker
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsWildcardCall<StoreT>("st", null!,
         IsWildcardCall<LoadT>(null!, null!, IsWildcard("input")));
-    
+
     // replace input with var
     private Call? GetReplace(Call st, Expr input)
     {
@@ -84,6 +83,7 @@ public partial class DataTransferFusion<LoadT, StoreT> : FusionMaker
         {
             return null;
         }
+
         var arg = new Var("input0", input.CheckedType!);
         var body = ReplaceTarget(st, input, arg);
         return new Call(new Fusion(FullName, ModuleKind, body, new[] { arg }), input);
@@ -142,7 +142,6 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
         var newInputs = Merge(caller.Parameters, index, callee.Parameters[0], callee.Parameters.ToArray()[1..]);
         return new Call(new Fusion("FuseTwoFusion", "k510", newBody, newParams), newInputs);
     }
-
 
     /// <summary>
     /// e.g. load -> conv -> [store -> load] -> act -> store =>

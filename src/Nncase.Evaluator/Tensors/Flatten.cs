@@ -41,6 +41,7 @@ public class FlattenEvaluator : IEvaluator<Flatten>, ITypeInferencer<Flatten>
                 return input with { Shape = new[] { first, second } };
             }
         }
-        return input with {Shape = Shape.Unknown(2)};
+
+        return input with { Shape = Shape.Unknown(2) };
     }
 }

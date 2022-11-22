@@ -36,6 +36,7 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
         {
             return input;
         }
+
         if (context.GetArgument(target, Squeeze.Dim) is TensorConst dim_con)
         {
             var dims = dim_con.Value.Cast<int>();
@@ -44,6 +45,7 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
             {
                 return input with { Shape = new Shape(outshape.Where(x => x != 1).ToArray()) };
             }
+
             foreach (var dimV in dims)
             {
                 var dimValue = Util.PositiveIndex(dimV, input.Shape.Rank);

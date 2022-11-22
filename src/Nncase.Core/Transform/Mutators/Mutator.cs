@@ -58,7 +58,6 @@ public static class Mutator
     /// <returns></returns>
     public static Func<ExprMutator> FoldIfThen() => () => new Mutators.FoldIfThen();
 
-
     /// <summary>
     /// 删除内部的T.Nop
     /// </summary>

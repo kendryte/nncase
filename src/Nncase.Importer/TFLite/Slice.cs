@@ -33,6 +33,7 @@ namespace Nncase.Importer.TFLite
             {
                 throw new NotImplementedException("NewAxisMask and Ellipisis mask not impl in StrideSlice Importer");
             }
+
             var beginMask = options.BeginMask;
             var endMask = options.EndMask;
             var shrinkMask = options.ShrinkAxisMask;
@@ -42,7 +43,7 @@ namespace Nncase.Importer.TFLite
             }
 
             if (beginExpr is TensorConst beginConst && endExpr is TensorConst endConst)
-            {            
+            {
                 var begin = beginConst.Value.ToArray<int>();
                 var end = endConst.Value.ToArray<int>();
                 var newBegin = new List<int>();

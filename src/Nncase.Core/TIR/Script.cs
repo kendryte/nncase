@@ -1,7 +1,6 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-
 using System.Runtime.CompilerServices;
 using Nncase.IR;
 using Nncase.TIR.Builders;
@@ -299,6 +298,7 @@ public static class T
         {
             name = name[4..];
         }
+
         int size;
         if (expr is TensorConst tc)
             size = tc.Value.BytesBuffer.Length;

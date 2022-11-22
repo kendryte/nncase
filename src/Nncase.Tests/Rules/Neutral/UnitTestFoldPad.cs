@@ -16,12 +16,12 @@ namespace Nncase.Tests.Rules.NeutralTest;
 
 public class UnitTestFoldPad : TestFixture.UnitTestFixtrue
 {
-
     public static IEnumerable<object[]> TestFoldNopPadPositiveData =>
         new[]
         {
             new object[] { new[] { 1 }, new[,] { { 0, 0 } } },
-            new object[] { new[] { 1, 1 }, new[,] { { 0, 0 }, { 0, 0 } } },
+            new object[] { new[] { 1, 1 }, new[,] { { 0, 0 },
+            { 0, 0 } } },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
@@ -41,7 +41,8 @@ public class UnitTestFoldPad : TestFixture.UnitTestFixtrue
         new[]
         {
             new object[] { new[] { 1 }, new[,] { { 1, 0 } } },
-            new object[] { new[] { 1, 1 }, new[,] { { 0, 1 }, { 2, 0 } } },
+            new object[] { new[] { 1, 1 }, new[,] { { 0, 1 },
+            { 2, 0 } } },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
@@ -61,7 +62,9 @@ public class UnitTestFoldPad : TestFixture.UnitTestFixtrue
         new[]
         {
             new object[] { new[] { 1 }, new[,] { { 0, 1 } }, new[,] { { 2, 0 } } },
-            new object[] { new[] { 1, 1 }, new[,] { { 0, 1 }, { 1, 0 } }, new[,] { { 1, 3 }, { 1, 2 } } },
+            new object[] { new[] { 1, 1 }, new[,] { { 0, 1 },
+            { 1, 0 } }, new[,] { { 1, 3 },
+            { 1, 2 } } },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
@@ -81,7 +84,9 @@ public class UnitTestFoldPad : TestFixture.UnitTestFixtrue
        new[]
        {
             new object[] { new[] { 1 }, new[,] { { 0, 1 } }, 1.0f ,new[,] { { 2, 0 } } , 2.0f},
-            new object[] { new[] { 1, 1 }, new[,] { { 0, 1 }, { 1, 0 } }, 1.0f, new[,] { { 1, 3 }, { 1, 2 } } ,0.0f},
+            new object[] { new[] { 1, 1 }, new[,] { { 0, 1 },
+            { 1, 0 } }, 1.0f, new[,] { { 1, 3 },
+            { 1, 2 } } ,0.0f},
        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]

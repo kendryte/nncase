@@ -16,7 +16,6 @@ namespace Nncase.Tests.Rules.NeutralTest;
 
 public class UnitTestFoldSlice : TestFixture.UnitTestFixtrue
 {
-
     public static IEnumerable<object[]> TestFoldNopSlicePositiveData =>
         new[]
         {

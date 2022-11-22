@@ -26,7 +26,6 @@ internal class RuleCandidate
 [Generator]
 internal sealed class RuleGenerator : IIncrementalGenerator
 {
-
     public INamedTypeSymbol? ExprSymobl;
     public INamedTypeSymbol? TensorSymobl;
     public INamedTypeSymbol? IMatchResultSymobl;
@@ -109,9 +108,9 @@ internal sealed class RuleGenerator : IIncrementalGenerator
             var method = methods[0];
             return new(classDeclaration, classSymbol, method);
         }
+
         return null;
     }
-
 
     void Execute(SourceProductionContext context, ImmutableArray<RuleCandidate> candidates)
     {
@@ -163,12 +162,14 @@ internal sealed class RuleGenerator : IIncrementalGenerator
                     ParseStatement($"var {parameterSymbol.Name} = {rightExpr};")
                 );
             }
+
             if (cand.classSymobl.IsInheritFrom(QuantRuleSymbol))
             {
                 statements.Add(ParseStatement($"Option = __options;"));
                 statements.Add(ParseStatement($"MatchResult = __result;"));
                 statements.Add(ParseStatement($"Init();"));
             }
+
             statements.Add(
               ParseStatement($"return {cand.methodSymbol.Name}({string.Join(",", cand.methodSymbol.Parameters.Select(p => p.Name))});")
             );
@@ -207,10 +208,12 @@ internal sealed class RuleGenerator : IIncrementalGenerator
                           select GeneratorUtil.MakeNameSpace(kv.Key.ToDisplayString())
                                 .AddMembers(kv.Value.ToArray()));
         var compilationUnit = CompilationUnit().
-                WithUsings(new(new[]{
+                WithUsings(new(new[]
+                {
                   GeneratorUtil.MakeUsing("Nncase"),
                   GeneratorUtil.MakeUsing("Nncase.IR"),
-                  GeneratorUtil.MakeUsing("Nncase.PatternMatch")})).
+                  GeneratorUtil.MakeUsing("Nncase.PatternMatch")
+                })).
                 WithMembers(new(namespaces)).
                 WithLeadingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.DisableKeyword)).
                 WithTrailingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.RestoreKeyword));

@@ -32,7 +32,6 @@ public sealed class DDrBufferSchdeulePass : ModulePass
     /// <inheritdoc/>
     protected override Task RunCoreAsync(IRModule module, RunPassOptions options)
     {
-
         Dictionary<BaseFunction, BaseFunction> functions_update_map = new(ReferenceEqualityComparer.Instance);
 
         for (int i = 0; i < module.Functions.Count; i++)
@@ -47,6 +46,7 @@ public sealed class DDrBufferSchdeulePass : ModulePass
                 }
             }
         }
+
         return Task.CompletedTask;
     }
 
@@ -62,7 +62,6 @@ public sealed class DDrBufferSchdeulePass : ModulePass
         return;
     }
 }
-
 
 /// <summary>
 /// collect and assgin the PhysicalBuffer
@@ -84,7 +83,6 @@ internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
         FunctionHashset = new(ReferenceEqualityComparer.Instance);
         Changed = false;
     }
-
 
     /// <remarks>
     /// only visit one prim func 
@@ -110,6 +108,7 @@ internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
                 module_hashset = new(ReferenceEqualityComparer.Instance);
                 ModuleHashSet.Add(_entry!.ModuleKind, module_hashset);
             }
+
             if (!ModuleUsage.TryGetValue(_entry!.ModuleKind, out var module_usage))
             {
                 module_usage = new();

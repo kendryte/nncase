@@ -30,7 +30,6 @@ using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Tests.RewriteTest
 {
-
     public class DataFlowRewriteTestFactory : RewriteFixtrue
     {
         public DataFlowRewriteTestFactory() : base()
@@ -64,12 +63,9 @@ namespace Nncase.Tests.RewriteTest
         // [MemberData(nameof(DataAll))]
         // public void RunAll(IRewriteCase Case) => RunCore(Case);
 
-
         public static IEnumerable<object[]> DataOne => Data.Take(1);
         public static IEnumerable<object[]> DataAll => Data.Skip(1);
     }
-
-
 
     // internal class SwapXY : IRewriteRule
     // {

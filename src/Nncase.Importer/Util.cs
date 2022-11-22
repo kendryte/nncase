@@ -34,10 +34,10 @@ namespace Nncase
         public static Expr GetItem(in Expr input, Expr index)
         {
             return F.Tensors.Squeeze(
-                F.Tensors.Slice(input, 
-                StackScalar(index), 
+                F.Tensors.Slice(input,
+                StackScalar(index),
                 StackScalar(index + 1),
-                1), new[] { 0L});
+                1), new[] { 0L });
         }
 
         public static (Expr, Expr) GetHW(in Expr input)
@@ -122,7 +122,7 @@ namespace Nncase
             var padW = GetWindowedPadding(inW, fW, (int)stride[1], (int)dilation[1], same, lower);
             return ConcatPadding(padH, padW);
         }
-        
+
         public static Expr ComputeSplit(Expr input, long outputSize, long axis)
         {
             return F.Tensors.Expand(

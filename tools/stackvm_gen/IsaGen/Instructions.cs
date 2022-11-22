@@ -977,7 +977,7 @@ namespace IsaGen
         [Description("Is prim function")]
         public bool IsPrimFunc { get; set; }
     }
-    
+
     [DisplayName("CUSCALL")]
     [Category("Control and Status Instructions")]
     [Description("Custom Call an User customed method")]

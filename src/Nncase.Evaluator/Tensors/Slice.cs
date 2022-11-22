@@ -52,7 +52,6 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         };
     }
 
-    
     /// <summary>
     /// 
     /// </summary>
@@ -75,14 +74,14 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
             var axis = axisV < 0
                 ? axisV + input.Shape.Rank
                 : axisV;
-            outShape[axis] = input.Shape[axis].IsFixed 
-                ? f(i, axis, input.Shape[axis].FixedValue) 
+            outShape[axis] = input.Shape[axis].IsFixed
+                ? f(i, axis, input.Shape[axis].FixedValue)
                 : Dimension.Unknown;
         }
 
         return outShape;
     }
-    
+
     private IRType Visit(ITypeInferenceContext context, Slice target, TensorType input)
     {
         Shape outShape;
@@ -105,10 +104,10 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
                         var begin = ts_begins[i];
                         var end = System.Math.Min(ts_ends[i], inDim);
                         var stride = ts_strides[i];
-                        return (int) System.Math.Ceiling((float) System.Math.Abs(end - begin) /
+                        return (int)System.Math.Ceiling((float)System.Math.Abs(end - begin) /
                                                          System.Math.Abs(stride));
                     });
-                    return input with {Shape = outShape};
+                    return input with { Shape = outShape };
                 }
                 else
                 {
@@ -122,9 +121,9 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         }
         else
         {
-            return input with {Shape = Shape.Unknown(input.Shape.Rank)};
+            return input with { Shape = Shape.Unknown(input.Shape.Rank) };
         }
 
-        return input with {Shape = outShape};
+        return input with { Shape = outShape };
     }
 }

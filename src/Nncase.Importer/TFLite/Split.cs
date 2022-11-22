@@ -19,7 +19,7 @@ namespace Nncase.Importer.TFLite
             var axis = GetInputExprs(op, 0);
             var input = GetInputExprs(op, 1);
             var splits = op.BuiltinOptionsAsSplitOptions().NumSplits;
-            var a = ((TensorConst) axis).Value.ToScalar<int>();
+            var a = ((TensorConst)axis).Value.ToScalar<int>();
             var s = ComputeSplit(input, splits, a);
             var output = GetOutputTensor(op, 0);
             return F.Tensors.Split(input, axis, s);

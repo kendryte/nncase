@@ -15,7 +15,7 @@ namespace Nncase.Runtime.Interop;
 public class RTDataType : RTObject
 {
     internal RTDataType() : base(IntPtr.Zero) { }
-    
+
     internal RTDataType(IntPtr handle)
         : base(handle)
     {

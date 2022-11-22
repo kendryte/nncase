@@ -41,14 +41,17 @@ namespace Nncase.Importer.TFLite
             {
                 input = Dequantize(input, new QuantParam(inputQuantParams[0].ZeroPoint, inputQuantParams[0].Scale), DataTypes.Float32);
             }
+
             if (weightsQuantParams != null)
             {
                 weights = Dequantize(weights, new QuantParam(weightsQuantParams[0].ZeroPoint, weightsQuantParams[0].Scale), DataTypes.Float32);
             }
+
             if (biasQuantParams != null)
             {
                 bias = Dequantize(bias, new QuantParam(biasQuantParams[0].ZeroPoint, biasQuantParams[0].Scale), DataTypes.Float32);
             }
+
             if (outputQuantParams != null)
             {
                 if (GetOutputTensor(op, 0).Type == tflite.TensorType.INT8)
@@ -108,7 +111,7 @@ namespace Nncase.Importer.TFLite
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
             return F.Tensors.NCHWToNHWC(
                 F.NN.Conv2D(input, weights, bias, stride, padding, dilation,
-                    PadMode.Constant, Util.ShapeIndex(weights, 0), new[] {clamp.Min, clamp.Max}));
+                    PadMode.Constant, Util.ShapeIndex(weights, 0), new[] { clamp.Min, clamp.Max }));
         }
 
         private static ValueRange<float> ToFloatClampRange(tflite.ActivationFunctionType func) => func switch

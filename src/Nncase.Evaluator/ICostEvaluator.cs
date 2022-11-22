@@ -16,7 +16,6 @@ namespace Nncase.Evaluator;
 /// </summary>
 public class CostEvaluatorGeneratorAttribute : Attribute
 {
-
 }
 
 /// <summary>

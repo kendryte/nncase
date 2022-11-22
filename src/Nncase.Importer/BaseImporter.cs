@@ -9,7 +9,6 @@ using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase;
 
-
 public abstract class BaseImporter
 {
     protected SortedSet<string> _opsInModel = new SortedSet<string>();
@@ -32,6 +31,7 @@ public abstract class BaseImporter
         {
             Directory.CreateDirectory(dumpDir);
         }
+
         DumpOpsInModel(Path.Join(dumpDir, "OpsInModel.txt"));
         return CreateModule(inputs.ToArray(), outputs);
     }
@@ -66,6 +66,7 @@ public abstract class BaseImporter
             throw new InvalidOperationException("Visit result is not expression(s).");
         }
     }
+
     public void DumpOpsInModel(string path)
     {
         using (var sr = new StreamWriter(path))

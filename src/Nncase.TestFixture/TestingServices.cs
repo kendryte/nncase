@@ -80,6 +80,7 @@ public static class Testing
         {
             throw new System.ArgumentOutOfRangeException($"We Need NameSpace is `xxxTest`, Class is `UnitTestxxx`, But given namespace is {namespace_name}, class is {type.Name}");
         }
+
         return GetDumpDirPath(Path.Combine(namespace_name, type.Name));
     }
 
@@ -92,7 +93,6 @@ public static class Testing
     {
         return path;
     }
-
 
     /// <summary>
     /// fixup the seq rand tensor into gived range.
@@ -220,6 +220,7 @@ public static class Testing
                 err_count++;
             }
         }
+
         return err_count;
     }
 
@@ -241,10 +242,13 @@ public static class Testing
                 {
                     DumpValue(f, writer);
                 }
+
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
-        };
+        }
+
+;
     }
 
     /// <summary>
@@ -259,7 +263,6 @@ public static class Testing
             DumpValue(v, sw);
         }
     }
-
 
     /// <summary>
     /// build kmodel
@@ -277,6 +280,7 @@ public static class Testing
         {
             linkedModel.Serialize(output);
         }
+
         return (kmodel_path, File.ReadAllBytes(kmodel_path));
     }
 
@@ -337,10 +341,9 @@ public static class Testing
         }
     }
 
-
     public static IValue RunKModel(byte[] kmodel, string dump_path, Tensor[] input_tensors)
     {
-        using (var interp =  Nncase.Runtime.Interop.RTInterpreter.Create())
+        using (var interp = Nncase.Runtime.Interop.RTInterpreter.Create())
         {
             interp.SetDumpRoot(dump_path);
             interp.LoadModel(kmodel);
@@ -363,7 +366,6 @@ public static class Testing
     }
 }
 
-
 public class UnitTestFixtrue
 {
     public CompileOptions GetCompileOptions([CallerMemberName] string member_name = "")
@@ -378,5 +380,15 @@ public class UnitTestFixtrue
     {
         var options = GetCompileOptions(member_name);
         return new RunPassOptions(options);
+    }
+
+    public string GetSolutionDirectory()
+    {
+        return Path.Combine(Path.GetDirectoryName(GetCurrentFileName())!, "../../");
+    }
+
+    private static string GetCurrentFileName([CallerFilePath] string filePath = "")
+    {
+        return filePath;
     }
 }

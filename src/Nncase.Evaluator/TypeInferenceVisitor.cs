@@ -215,6 +215,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
             SetCheckedType(expr, e.ReasonType);
             return e.ReasonType;
         }
+
         var type = TensorType.Scalar(DataTypes.Int32);
         SetCheckedType(expr, type);
         return type;
@@ -235,6 +236,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
             SetCheckedType(expr, e.ReasonType);
             return e.ReasonType;
         }
+
         var type = TupleType.Void;
         SetCheckedType(expr, type);
         return type;
@@ -255,6 +257,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
             SetCheckedType(expr, e.ReasonType);
             return e.ReasonType;
         }
+
         var type = TupleType.Void;
         SetCheckedType(expr, type);
         return type;
@@ -269,6 +272,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
             {
                 VerifySubField(expr, expr.IterVars[i], TypePatternUtility.IsIntegralScalar());
             }
+
             VerifySubField(expr, expr.InitBody, TypePatternUtility.IsUnit());
             VerifySubField(expr, expr.Body, TypePatternUtility.IsUnit());
             VerifySubField(expr, expr.Predicate, TypePatternUtility.IsBoolScalar());
@@ -278,6 +282,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
             SetCheckedType(expr, e.ReasonType);
             return e.ReasonType;
         }
+
         var type = TupleType.Void;
         SetCheckedType(expr, type);
         return type;
@@ -308,6 +313,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         {
             type = new InvalidType($"Can't Load From {expr.Buffer.CheckedType}");
         }
+
         SetCheckedType(expr, type);
         return type;
     }
@@ -321,6 +327,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
             {
                 VerifySubField(expr, expr.Indices[i], TypePatternUtility.IsIntegralScalar(), $"BufferStore.Indices[{i}]");
             }
+
             VerifySubField(expr, expr.Value, TypePatternUtility.IsScalar());
         }
         catch (TypeInferenceInterruptException e)
@@ -388,8 +395,10 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
                 Visit(expr.Body);
                 result = VisitLeaf(expr);
             }
+
             ExpressionMemo.Add(expr, result);
         }
+
         return result;
     }
 
@@ -424,7 +433,6 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         }
         else if (expr is Nncase.TIR.LogicalBuffer logicalBuffer)
         {
-
             IRType type = new TensorType(expr.ElemType, new(logicalBuffer.Dimensions.Select(i => Dimension.Unknown)));
             SetCheckedType(expr, type);
             return type;
@@ -452,6 +460,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
             SetCheckedType(expr, e.ReasonType);
             return e.ReasonType;
         }
+
         // todo need infer the sub region shape/stride
         IRType type = expr.Buffer.CheckedType!;
         SetCheckedType(expr, type);

@@ -23,17 +23,28 @@ using Tuple = System.Tuple;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestCombineUnary: TestFixture.UnitTestFixtrue
+public class UnitTestCombineUnary : TestFixture.UnitTestFixtrue
 {
-
     // TODO: CombinePadUnary
     public static IEnumerable<object[]> TestCombinePadUnaryPositiveData =>
         new[]
         {
-            new object[] { UnaryOp.Exp, new[] {1, 3, 4, 5},  new[,] {{ 1, 1 }, { 2, 2 }, { 1, 1 }, { 3, 3 }}, PadMode.Symmetric, 0f},
-            new object[] { UnaryOp.Abs, new[] {1, 3, 4, 5},  new[,] {{ 1, 1 }, { -1, -1 }, { 1, 1 }, { 3, 3 }}, PadMode.Reflect, 0f},
-            new object[] { UnaryOp.Floor, new[] {1, 3, 4, 5},  new[,] {{ 1, 1 }, { 0, 0 }, { 1, 1 }, { 0, 0 }}, PadMode.Constant , 2f},
-            new object[] { UnaryOp.Floor, new[] {1, 3, 4, 5},  new[,] {{ 1, 1 }, { 0, 0 }, { 1, 3 }, { 6, 0 }}, PadMode.Edge , 2f},
+            new object[] { UnaryOp.Exp, new[] {1, 3, 4, 5},  new[,] {{ 1, 1 },
+            { 2, 2 },
+            { 1, 1 },
+            { 3, 3 }}, PadMode.Symmetric, 0f},
+            new object[] { UnaryOp.Abs, new[] {1, 3, 4, 5},  new[,] {{ 1, 1 },
+            { -1, -1 },
+            { 1, 1 },
+            { 3, 3 }}, PadMode.Reflect, 0f},
+            new object[] { UnaryOp.Floor, new[] {1, 3, 4, 5},  new[,] {{ 1, 1 },
+            { 0, 0 },
+            { 1, 1 },
+            { 0, 0 }}, PadMode.Constant , 2f},
+            new object[] { UnaryOp.Floor, new[] {1, 3, 4, 5},  new[,] {{ 1, 1 },
+            { 0, 0 },
+            { 1, 3 },
+            { 6, 0 }}, PadMode.Edge , 2f},
         };
 
     [Theory]

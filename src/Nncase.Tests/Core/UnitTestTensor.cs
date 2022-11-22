@@ -2,10 +2,8 @@ using Nncase;
 using Xunit;
 namespace Nncase.Tests.CoreTest;
 
-
 public sealed class UnitTestTensor
 {
-
     [Fact]
     public void TestIsContiguousSlice()
     {
@@ -27,7 +25,6 @@ public sealed class UnitTestTensor
           dim1,
           new[] { 0..1, 0..1, 7..14, 0..14 }));
 
-
         Assert.False(TensorUtilities.IsContiguousSlice(
           dim1,
           new[] { 0..1, 0..512, 0..7, 0..14 }));
@@ -39,7 +36,6 @@ public sealed class UnitTestTensor
         Assert.False(TensorUtilities.IsContiguousSlice(
           dim1,
           new[] { 0..1, 0..512, 0..7, 0..1 }));
-
 
         var dim2 = new[] { 1, 512, 1, 196 };
 

@@ -13,9 +13,7 @@ namespace Nncase.Transform;
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
 public class RuleGeneratorAttribute : Attribute
 {
-
 }
-
 
 /// <summary>
 /// Rewrite rule.

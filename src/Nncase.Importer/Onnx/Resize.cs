@@ -56,6 +56,7 @@ namespace Nncase.Importer
             return F.Imaging.ResizeImage(mode, transformationMode, nearestMode, input, roi, newSize, cubicCoeffA,
                 excludeOutside, extrapolationValue);
         }
+
         private ImageResizeMode GetResizeMode(NodeProto op)
         {
             return ParseResizeMode(GetStringAttribute(op, "mode", "nearest"));
@@ -64,8 +65,8 @@ namespace Nncase.Importer
         private Expr ComputeNewSizes(Expr input, Expr scales)
         {
             return Reshape(
-                Cast(Cast(ShapeOf(input), DataTypes.Float32) * Unsqueeze(scales, new[] {0}), DataTypes.Int64),
-                new[] {-1});
+                Cast(Cast(ShapeOf(input), DataTypes.Float32) * Unsqueeze(scales, new[] { 0 }), DataTypes.Int64),
+                new[] { -1 });
         }
 
         private Expr GetNewSize(NodeProto op)
@@ -82,6 +83,7 @@ namespace Nncase.Importer
                     return ComputeNewSizes(GetInputExpr(op, 0), scalesValue);
                 }
             }
+
             var sizes = GetOptionInputExpr(op, 3).ValueUnsafe();
             return sizes;
         }

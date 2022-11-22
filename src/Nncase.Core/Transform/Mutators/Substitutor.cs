@@ -10,7 +10,6 @@ using Nncase.TIR;
 
 namespace Nncase.Transform.Mutators;
 
-
 // internal enum Inst
 
 /// <summary>

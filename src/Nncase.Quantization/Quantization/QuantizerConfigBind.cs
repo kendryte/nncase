@@ -28,6 +28,7 @@ internal partial class QuantizerConfigBind
         _passOptions = passOptions;
         MarkRangeOfs();
     }
+
     public async Task RunAsync(RunPassOptions options)
     {
         var quantOptions = options.CompileOptions.QuantizeOptions!;
@@ -35,11 +36,13 @@ internal partial class QuantizerConfigBind
         {
             throw new ArgumentNullException(nameof(quantOptions.CalibrationDataset));
         }
+
         // Choose better quant method using cosine, and bind info with ir.
         if (quantOptions.BindQuantMethod)
         {
             var info = await options.Target.BindQuantMethodCosine(quantOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs, _passOptions);
         }
+
         _graph.Rebuild();
     }
 

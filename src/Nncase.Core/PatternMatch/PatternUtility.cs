@@ -45,17 +45,17 @@ public static partial class Utility
     public static CallPattern IsWildcardCall<T>(string callName, string opName, Pattern inputPattern) where T : Op =>
         IsCall(callName, IsOp<T>(opName, _ => true), GenerateParameters(inputPattern))
             with
-            {
-                TypePattern = IsType(x => !(x is InvalidType))
-            };
+        {
+            TypePattern = IsType(x => !(x is InvalidType))
+        };
 
     public static CallPattern IsWildcardCall<T>(string callName, string opName, Pattern lhsPattern, Pattern rhsPattern)
         where T : Op =>
         IsCall(callName, IsOp<T>(opName, _ => true), GenerateParameters(new[] { lhsPattern, rhsPattern }))
             with
-            {
-                TypePattern = IsType(x => !(x is InvalidType))
-            };
+        {
+            TypePattern = IsType(x => !(x is InvalidType))
+        };
 
     public static Pattern IsSwappableWildcardCall<T>(string callName, string opName, Pattern lhsPattern,
         Pattern rhsPattern) where T : Op =>
@@ -67,9 +67,9 @@ public static partial class Utility
     public static CallPattern IsWildcardCall(string callName, Pattern firstInputPattern) =>
         IsCall(callName, IsWildcard(), GenerateParameters(firstInputPattern))
             with
-            {
-                TypePattern = IsType(x => !(x is InvalidType))
-            };
+        {
+            TypePattern = IsType(x => !(x is InvalidType))
+        };
 
     public static VArgsPattern GenerateRepeatParameters(Func<Pattern> pGenerator) =>
         IsVArgsRepeat(list =>
@@ -116,9 +116,9 @@ public static partial class Utility
         where T : Op =>
         IsCall(callName, IsOp<T>(opName, _ => true), ArgsPattern<T>(specs))
             with
-            {
-                TypePattern = IsType(x => !(x is InvalidType))
-            };
+        {
+            TypePattern = IsType(x => !(x is InvalidType))
+        };
 
     /// <summary>
     /// e.g.
@@ -171,7 +171,7 @@ public static partial class Utility
         where BeginT : Op
         where EndT : Op => IsFusion(module_kind, IsAlt(
         IsSIFusionBody<T, BeginT, EndT>(mid_name), IsDIFusionBody<T, BeginT, EndT>()));
-    
+
     public static Pattern IsFusion(string module_kind, Pattern body)
         => IsFusion("fusion", module_kind, body,
         IsVArgsRepeat("parameters", () => IsVar()));

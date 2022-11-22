@@ -63,11 +63,13 @@ public static class TensorUtilities
         {
             return 1;
         }
+
         IR.Expr product = 1;
         foreach (var dim in dimensions.Skip(startIndex))
         {
             product = product * dim;
         }
+
         return product;
     }
 
@@ -109,6 +111,7 @@ public static class TensorUtilities
         {
             return Array.Empty<int>();
         }
+
         int[] strides = new int[dimensions.Length];
 
         int stride = 1;
@@ -147,6 +150,7 @@ public static class TensorUtilities
             strides.Insert(0, stride);
             stride *= dim;
         }
+
         if (reverseStride)
             strides.Reverse();
 
@@ -376,6 +380,7 @@ public static class TensorUtilities
             if (status == SliceStatus.IsInvalid)
                 return false;
         }
+
         return true;
     }
 

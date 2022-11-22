@@ -124,7 +124,6 @@ public abstract record Op() : Expr
 /// <param name="RegisteredName"></param>
 public abstract record CustomOp(string RegisteredName) : Op
 {
-
     /// <summary>
     /// Get the Current Custom module type.
     /// </summary>

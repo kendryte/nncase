@@ -184,7 +184,6 @@ public class CalibrationEvaluator
             {
                 if (targetEnode.Expr is Op op)
                 {
-
                     var context = new EGraphOpEvaluateContext(call, costs.Skip(1).ToArray());
                     if (_passOptions.DumpLevel >= 4)
                         _dumpWriter.Write($"{op.GetType().Name}({string.Join(",", context.Arguments.Select(v => v.ToString()))})");

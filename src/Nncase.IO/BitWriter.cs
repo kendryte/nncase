@@ -70,6 +70,7 @@ namespace Nncase.IO
                 {
                     _data[i] = bufferSpan[i];
                 }
+
                 _data = _data.Slice(write_bytes);
                 _buffer = 0;
                 _avail = sizeof(ulong) * 8;
@@ -104,6 +105,7 @@ namespace Nncase.IO
                 {
                     _data[i] = bufferSpan[i];
                 }
+
                 _data = _data.Slice(write_bytes);
                 if (write_bytes == sizeof(ulong))
                     _buffer = 0;

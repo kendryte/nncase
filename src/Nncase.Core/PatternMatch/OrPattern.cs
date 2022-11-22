@@ -21,7 +21,6 @@ public sealed record OrPattern(Pattern ConditionA, Pattern ConditionB, string? N
     public override bool MatchLeaf(object input) => true;
 }
 
-
 public static partial class Utility
 {
     private static OrPattern IsAltImpl(string? name, Pattern condition_a, Pattern condition_b)
@@ -36,7 +35,6 @@ public static partial class Utility
     /// <returns></returns>
     public static OrPattern IsAlt(string? name, Pattern condition_a, Pattern condition_b)
         => IsAltImpl(name, condition_a, condition_b);
-
 
     /// <summary>
     /// create or pattern without name.

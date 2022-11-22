@@ -18,7 +18,7 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestSimplifyBinary: TestFixture.UnitTestFixtrue
+public class UnitTestSimplifyBinary : TestFixture.UnitTestFixtrue
 {
     public static IEnumerable<object[]> TestReassociateMulPositiveData =>
         new[]
@@ -75,7 +75,6 @@ public class UnitTestSimplifyBinary: TestFixture.UnitTestFixtrue
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal));
     }
-
 
     public static IEnumerable<object[]> TestXDivXPositiveData =>
         new[]

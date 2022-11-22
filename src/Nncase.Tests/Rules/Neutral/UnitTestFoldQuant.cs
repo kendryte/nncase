@@ -8,7 +8,6 @@ namespace Nncase.Tests.Rules.NeutralTest;
 
 public class UnitTestFoldQuant : TestFixture.UnitTestFixtrue
 {
-
     void CheckMatchPositive<T>(RunPassOptions passOptions, Expr pre)
       where T : IRewriteRule, new()
     {

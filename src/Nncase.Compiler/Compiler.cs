@@ -104,7 +104,6 @@ public class Compiler
         return Module;
     }
 
-
     private void DumpModule(IRModule module, CompileOptions options, string prefix)
     {
         var dumpPath = Path.Combine(options.DumpDir, "dump", prefix);
@@ -158,6 +157,7 @@ public class Compiler
             clear.Add(new RemoveMarker());
             RunPass(t => t.Add(clear), "RemoveMarker");
         }
+
         // fold constant
         RunPass(p => p.Add(new Transform.Passes.ShapeInferPass()), "ShapeInferAndFold");
         // Console.WriteLine("Compile successful");
@@ -168,7 +168,7 @@ public class Compiler
         CompilerServices.CompileOptions.QuantizeOptions = quantOption;
         CompilerServices.CompileOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
     }
-    
+
     public byte[] Gencode()
     {
         var target = CompilerServices.GetCompileTarget;

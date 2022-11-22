@@ -71,6 +71,7 @@ namespace Nncase.Importer
                 outShape.Add(ComputeOutSize(iH, wH, strides, outPadding, paddings, dilations, 0));
                 outShape.Add(ComputeOutSize(iW, wW, strides, outPadding, paddings, dilations, 1));
             }
+
             return F.Tensors.Stack(new IR.Tuple(outShape), 0);
         }
     }

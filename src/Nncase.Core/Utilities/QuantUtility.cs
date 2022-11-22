@@ -77,13 +77,16 @@ public static class QuantUtility
                 r = 0.01f;
             range.Max = range.Min + r;
         }
+
         return range;
     }
+
     public static ValueRange<T> GetRange<T>(Span<T> input) where T : unmanaged, IEquatable<T>, IComparable<T>
     {
         var data = input.ToArray();
         return new(data.Min(), data.Max());
     }
+
     public static List<float> GetWeightsRangesByChannel(Span<float> Weights, int Channels)
     {
         var tmpMin = float.MaxValue;
@@ -96,6 +99,7 @@ public static class QuantUtility
                 tmpMin = float.MaxValue;
                 tmpMax = float.MinValue;
             }
+
             if (Weights[i] < tmpMin)
                 tmpMin = Weights[i];
             if (Weights[i] > tmpMax)
@@ -106,8 +110,10 @@ public static class QuantUtility
                 minMaxArr.Add(tmpMax);
             }
         }
+
         return minMaxArr;
     }
+
     public static Span<float> SquantWeights(Span<float> inputWeights, Expr inputWeightsRanges, Nncase.IR.Shape inputWeightsShape, QuantMode quantMode, int bits, bool isByChannel)
     {
         // todo: return SquantWeights
@@ -119,6 +125,7 @@ public static class QuantUtility
         // System.Console.WriteLine(inputWeights.ToArray()[0]);
         return inputWeights;
     }
+
     public static Span<float> AdaRoundWeights(Span<float> inputWeights, List<Tensor> layerInput, List<Tensor> layerOutputGT, QuantMode quantMode, int bits, bool isByChannel, Expr psum, Expr act, Expr paddings, Expr strides, Expr dilations, Expr groups, Expr fusedClamp, int startB, int endB, int iters, int deviceID, float warmup, float weightParam)
     {
         // todo: return AdaRoundWeights

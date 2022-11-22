@@ -371,9 +371,11 @@ namespace Nncase.IR
                 {
                     Visit(param);
                 }
+
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
+
             return result;
         }
 
@@ -390,6 +392,7 @@ namespace Nncase.IR
                 result = VisitLeaf(visitable);
                 _visitableMemo.Add(visitable, result);
             }
+
             return result;
         }
 

@@ -21,6 +21,7 @@ public class UninitializedEvaluator : IEvaluator<Uninitialized>, ITypeInferencer
         {
             return new TensorType(target.DType, tensor.Value.ToArray<int>());
         }
+
         var shape = context.CheckArgumentType<TensorType>(target, Uninitialized.Shape);
         return new TensorType(target.DType, new(Enumerable.Repeat(Dimension.Unknown, shape.Shape[0].FixedValue)));
     }

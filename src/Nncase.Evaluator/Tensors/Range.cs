@@ -41,6 +41,7 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEv
                                        $"end:{end.CheckedDataType}," +
                                        $"step:{step.CheckedDataType}");
             }
+
             return new TensorType(
                 dType,
                 new Shape((beginValue.Value.ToScalar<int>() + endValue.Value.ToScalar<int>()) /
@@ -61,6 +62,7 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEv
             {
                 return new InvalidType("DataType is unknown");
             }
+
             return new TensorType(dt, new Shape(Dimension.Unknown));
         }
     }

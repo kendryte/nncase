@@ -15,7 +15,6 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.CoreTest;
 
-
 public class UnitTestExprPattern
 {
     [Fact]

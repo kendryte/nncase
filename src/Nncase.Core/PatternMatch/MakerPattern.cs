@@ -37,7 +37,6 @@ public sealed record MarkerPattern(Func<string, bool> NameCondition, Pattern Tar
 
 public static partial class Utility
 {
-
     /// <summary>
     /// is marker
     /// </summary>

@@ -52,6 +52,7 @@ public partial class FoldShapeOf : RewriteRule<CallPattern>
     {
         IsMultiBranchSafe = true;
     }
+
     /// <inheritdoc/>
     public override CallPattern Pattern { get; } = IsShapeOf(IsWildcard("wc") with { TypePattern = HasFixedShape() });
 

@@ -19,6 +19,7 @@ internal sealed class RemoveNop : ExprMutator
             else
                 mutated = true;
         }
+
         return mutated ? new TIR.Sequential(new IRArray<Expr>(bodys)) : expr;
     }
 }

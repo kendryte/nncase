@@ -31,6 +31,7 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
             var result = SymmetricPad(context, pad);
             return result;
         }
+
         var mode = pad.PadMode switch
         {
             PadMode.Constant => "constant",

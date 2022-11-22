@@ -21,12 +21,18 @@ public class MatchOptions
     public MatchOptions()
     {
         SuppressedPatterns = new Dictionary<Expr, HashSet<IPattern>>(ReferenceEqualityComparer.Instance);
+        RewriteMemo = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance);
     }
 
     /// <summary>
     /// Gets suppressed patterns.
     /// </summary>
     public Dictionary<Expr, HashSet<IPattern>> SuppressedPatterns { get; }
+
+    /// <summary>
+    /// Gets rewrite memo.
+    /// </summary>
+    public Dictionary<Expr, Expr> RewriteMemo { get; }
 
     /// <summary>
     /// check the expr and pattern in the suppressed pattern dict.
@@ -82,5 +88,31 @@ public class MatchOptions
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Memo rewrite.
+    /// </summary>
+    /// <param name="from">Source expression.</param>
+    /// <param name="to">Dest expression.</param>
+    public void MemoRewrite(Expr from, Expr to)
+    {
+        RewriteMemo[from] = to;
+    }
+
+    /// <summary>
+    /// Try update expression with rewrite memo.
+    /// </summary>
+    /// <param name="expr">Expr ref.</param>
+    /// <returns>Has rewrited.</returns>
+    public bool TryUpdateWithRewrite(ref Expr expr)
+    {
+        if (RewriteMemo.TryGetValue(expr, out var newExpr))
+        {
+            expr = newExpr;
+            return true;
+        }
+
+        return false;
     }
 }

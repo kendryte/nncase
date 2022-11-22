@@ -11,6 +11,5 @@ namespace Nncase.Tests.TIRTest;
 /// </summary>
 public class UnitTestModule
 {
-
 }
 

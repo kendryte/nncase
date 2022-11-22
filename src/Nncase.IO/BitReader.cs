@@ -5,10 +5,8 @@ using System.Text;
 
 namespace Nncase.IO
 {
-
     public ref struct BitReader
     {
-
         public BitReader(ReadOnlySpan<byte> data)
         {
             _data = data;

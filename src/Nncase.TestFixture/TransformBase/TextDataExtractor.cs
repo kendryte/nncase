@@ -19,7 +19,6 @@ public record OriginValue(IValue Value, string Path)
 
 public record OriginTensor(Tensor Tensor, string Path) : OriginValue(Nncase.Value.FromTensor(Tensor), Path)
 {
-    
 }
 
 public static class DumpPathExtractor
@@ -31,11 +30,11 @@ public static class DumpPathExtractor
 
     // todo: is param
     public static string GetParamName(string file) => file.Split(Separator).Last();
-    
+
     public static bool IsResultFile(string file) => file.Count(c => c == Separator) == 1;
-    
+
     public static bool IsParamFile(string file) => file.Count(c => c == Separator) == 2;
-    
+
     // used for transformer
     public static bool DynamicMatmulOnlyExtract(string fileName)
     {
@@ -56,6 +55,7 @@ public class TextDataExtractor
         {
             return -1;
         }
+
         var match = System.Text.RegularExpressions.Regex
             .Match(fileName, @"(\d+)*");
         return int.Parse(match.Groups[0].Value);
@@ -76,7 +76,7 @@ public class TextDataExtractor
         fs.RemoveAt(0);
         return fs;
     }
-    
+
     public IEnumerable<IGrouping<string, string>> GetFilesByGroup(string dir)
     {
         return GetFilesByOrdered(dir).GroupBy(file => string.Join(Separator, file.Split(Separator)[..2]));
@@ -115,7 +115,7 @@ public class TextDataExtractor
         var results = ExtractValues(dir, f => IsResultFile(f) && GetDumpFileNum(f) == i);
         Debug.Assert(results.Length != 0);
         return results.Head();
-    } 
+    }
 
     public OriginValue[] GetParams(string dir, int count) => ExtractValues(dir,
         file => IsParamFile(file) && GetCount(file) == count);
@@ -124,7 +124,7 @@ public class TextDataExtractor
     {
         return ExtractValues(dir, _ => true);
     }
-    
+
     public OriginValue[] OpExtract(string dir, string opName)
         => ExtractValues(dir, file => GetOpName(file) == opName);
 

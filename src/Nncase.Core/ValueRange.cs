@@ -50,7 +50,7 @@ public record struct ValueRange<T>(T Min, T Max)
                 {
                     return (T)(object)(BFloat16.NegInfinity);
                 }
-                
+
                 if (typeof(T) == typeof(Half))
                 {
                     return (T)(object)(Half.NegativeInfinity);
@@ -83,7 +83,7 @@ public record struct ValueRange<T>(T Min, T Max)
                 {
                     return (T)(object)(Half.PositiveInfinity);
                 }
-                
+
                 throw new NotSupportedException();
             }
         }

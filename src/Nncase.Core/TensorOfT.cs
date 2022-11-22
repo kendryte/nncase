@@ -257,6 +257,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
                     {
                         Indent(builder, indent, 2);
                     }
+
                     if (includeWhitespace)
                         builder.Append($"[{string.Join(",", indices)}]: {{");
                     else

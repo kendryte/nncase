@@ -111,13 +111,13 @@ using Xunit;
 //         }
 //     }
 
-    // public abstract class IHostFixtrue
-    // {
-    //     public IHostFixtrue(IHost host)
-    //     {
-    //         var t = host.Services.GetRequiredService<IComponentContext>();
-    //         var csl = new AutofacServiceLocator(t);
-    //         ServiceLocator.SetLocatorProvider(() => csl);
-    //     }
-    // }
+// public abstract class IHostFixtrue
+// {
+//     public IHostFixtrue(IHost host)
+//     {
+//         var t = host.Services.GetRequiredService<IComponentContext>();
+//         var csl = new AutofacServiceLocator(t);
+//         ServiceLocator.SetLocatorProvider(() => csl);
+//     }
+// }
 // }

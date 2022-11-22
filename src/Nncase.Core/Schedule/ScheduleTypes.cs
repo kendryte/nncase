@@ -8,7 +8,6 @@ using Nncase.Runtime;
 
 namespace Nncase.Schedule;
 
-
 /// <summary>
 /// the memory type.
 /// </summary>
@@ -205,6 +204,7 @@ public class BufferAllocation
                 else
                     throw e;
             }
+
             return new(this.MemoryLocate,
                code,
                (UInt16)SharedModule,
@@ -213,7 +213,6 @@ public class BufferAllocation
         }
     }
 }
-
 
 /// <summary>
 /// SchedFunctionResult.

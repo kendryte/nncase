@@ -178,6 +178,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
                 Scope.Append($"{target}({string.Join(", ", (from a in args select a.ToString()))})");
                 break;
         }
+
         doc = new(Scope.Pop());
         exprMemo.Add(expr, doc);
         return doc;
@@ -194,7 +195,6 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
             else
                 if (@const.Value.ElementType.IsFloat())
             {
-
                 doc = new(new($"{string.Join(",", @const.Value.ToArray<float>())}"));
             }
             else if (@const.Value.ElementType.IsIntegral())
@@ -306,6 +306,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
                 Scope.IndWriteLine(Visit(item).Serialize());
             }
         }
+
         Scope.IndWrite(")");
 
         doc = new(Scope.Pop());
@@ -328,6 +329,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
                 Scope.IndWriteLine(Visit(item).Serialize());
             }
         }
+
         Scope.IndWrite(")");
 
         doc = new(Scope.Pop());
@@ -491,6 +493,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
             });
             sb.Append($"[{string.Join(", ", regions)}]");
         }
+
         doc = new ScriptSymobl(sb, buffer.Name, false);
         exprMemo.Add(expr, doc);
         return doc;

@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR;
 
-
 /// <summary>
 /// Type inferencer interface.
 /// </summary>

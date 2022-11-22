@@ -62,7 +62,6 @@ public unsafe struct SectionHeader
     public uint Reserved0;
 }
 
-
 [StructLayout(LayoutKind.Sequential)]
 public struct shape_header
 {

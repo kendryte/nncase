@@ -22,7 +22,7 @@ namespace Nncase.Importer.TFLite
         private Expr VisitExpandDims(in tflite.Operator op)
         {
             var (input, dim) = GetInputExprs(op, 0, 1);
-            return Unsqueeze(input, Unsqueeze(dim, new[]{0}));
+            return Unsqueeze(input, Unsqueeze(dim, new[] { 0 }));
         }
     }
 }

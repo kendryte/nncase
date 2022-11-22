@@ -23,7 +23,7 @@ namespace Nncase.Importer
             var input = GetInputExpr(op, 0);
             var padMode = GetPadMode(op);
             var paddings = GetIntsAttribute(op, "pads");
-            var pads = Tensor.From<long>(paddings, new[]{2, 4});
+            var pads = Tensor.From<long>(paddings, new[] { 2, 4 });
             var value = GetFloatAttribute(op, "value", 0f);
             return Pad(input, ToNncasePadFormat(pads), padMode, value);
         }

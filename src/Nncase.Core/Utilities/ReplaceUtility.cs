@@ -104,7 +104,7 @@ public class ReplaceUtility
     {
         return call with { Parameters = ReplaceMulti(call.Parameters, posAndValue) };
     }
-    
+
     public static Call ReplaceOpAndParams(Call call, Op op, params (ParameterInfo, Expr)[] posAndValue)
     {
         return call with { Target = op, Parameters = ReplaceMulti(call.Parameters, posAndValue) };
@@ -131,9 +131,10 @@ public class ReplaceUtility
                 return Option.Some(ReplacePos(rootCall, e.Value, i));
             }
         }
+
         return Option.None;
     }
-    
+
     public static Expr ReplaceTarget(Expr root, Expr target, Expr expr) =>
         ReplaceTargetImpl(root, target, expr)
             .Match(

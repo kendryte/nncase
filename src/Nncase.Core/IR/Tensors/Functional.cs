@@ -40,6 +40,7 @@ public static class Tensors
         {
             shape = Unsqueeze(shape, new[] { 0 });
         }
+
         return new Call(new Expand(), input, shape);
     }
 

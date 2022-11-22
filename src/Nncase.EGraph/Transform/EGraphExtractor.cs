@@ -49,6 +49,7 @@ internal class EGraphExtractor
             };
             _eclassMemo.Add(eclass, expr);
         }
+
         var callPattern = IsCall(IsWildcard(), IsWildcard());
         var isCallExpr = callPattern.MatchLeaf(expr);
         if (isCallExpr == true)
@@ -66,6 +67,7 @@ internal class EGraphExtractor
                         {
                             System.Console.Write(((Call)(expr)).EnodeQuantConfigWithCosine[i].Item1[j] + "  ");
                         }
+
                         System.Console.WriteLine(((Call)(expr)).EnodeQuantConfigWithCosine[i].Item3);
                     }
                 }

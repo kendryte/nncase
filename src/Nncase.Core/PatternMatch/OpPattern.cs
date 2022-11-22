@@ -47,7 +47,6 @@ public record OpPattern<TOp>(Func<TOp, bool> Condition, string? Name) : Pattern<
     protected override bool MatchLeafCore(TOp expr) => Condition(expr);
 }
 
-
 public static partial class Utility
 {
     /// <summary>

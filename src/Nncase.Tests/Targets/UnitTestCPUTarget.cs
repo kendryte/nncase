@@ -118,11 +118,11 @@ public class UnitTestCPUTarget
     [MemberData(nameof(TestGetItemData))]
     public void TestGetItem(int[] index)
     {
-        var input = Tensor.From(new[] {1, 2, 3, 4, 5, 6}, new[] {1, 2, 3});
-        var x = new Var("x", new TensorType(DataTypes.Int32, new[] {1, 2, 3}));
+        var input = Tensor.From(new[] { 1, 2, 3, 4, 5, 6 }, new[] { 1, 2, 3 });
+        var x = new Var("x", new TensorType(DataTypes.Int32, new[] { 1, 2, 3 }));
         var second = GetItem(x, index);
-        var main = new Function("main", second, new[]{x});
-        var dict = new Dictionary<Var, IValue>(){{x, Value.FromTensor(input)}};
+        var main = new Function("main", second, new[] { x });
+        var dict = new Dictionary<Var, IValue>() { { x, Value.FromTensor(input) } };
         GenerateKModelAndRunFromFn(main, input, second.Evaluate(dict).AsTensor());
     }
 

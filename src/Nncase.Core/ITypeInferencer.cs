@@ -15,7 +15,6 @@ namespace Nncase.Evaluator;
 /// </summary>
 public class TypeInferGeneratorAttribute : Attribute
 {
-
 }
 
 /// <summary>

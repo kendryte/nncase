@@ -14,9 +14,8 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFoldClamp: TestFixture.UnitTestFixtrue
+public class UnitTestFoldClamp : TestFixture.UnitTestFixtrue
 {
-
     public static IEnumerable<object[]> TestFoldNopClampPositiveData =>
         new[]
         {

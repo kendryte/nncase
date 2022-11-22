@@ -56,6 +56,7 @@ public static class RecriverUtil
                 }
             }
         }
+
         return false;
     }
 
@@ -88,7 +89,6 @@ public static class RecriverUtil
             return IsInheritFrom(typeSymbol.BaseType, baseSymbol);
         return false;
     }
-
 
     public static DiagnosticDescriptor ClassNotPartialError => new DiagnosticDescriptor(id: "EvalGen001",
                                                                                 title: "The Class Must Be partial!",

@@ -70,6 +70,7 @@ public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>, ICostEvalu
         {
             shape = Shape.Unknown(x.Shape.Rank - 1);
         }
+
         return new TupleType(new[] { x with { Shape = shape }, new TensorType(DataTypes.Int64, shape) });
     }
 

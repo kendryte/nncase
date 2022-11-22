@@ -62,7 +62,8 @@ namespace Nncase.Transform
 
                 if (!isMutated)
                     break;
-            } while (true);
+            }
+            while (true);
 
             return Task.FromResult(post);
         }

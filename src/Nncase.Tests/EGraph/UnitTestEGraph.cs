@@ -13,7 +13,6 @@ namespace Nncase.Tests.EGraphTest;
 
 public class UnitTestEGraph : TestFixture.UnitTestFixtrue
 {
-
     [Fact]
     public void TestEqualEClass()
     {
@@ -93,7 +92,6 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
         Assert.StrictEqual(e5.Find(), e4.Find());
         EGraphPrinter.DumpEgraphAsDot(egraph, $"{nameof(TestENodeCallHashEGraph)}.dot");
     }
-
 
     [Fact]
     public void TestEgraphDump()

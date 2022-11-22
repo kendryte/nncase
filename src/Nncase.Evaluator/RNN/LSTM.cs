@@ -48,6 +48,7 @@ public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>
         {
             return new InvalidType("LSTM First input tensor must have rank 3");
         }
+
         return Visit(context, x, initH, initC, target);
     }
 
@@ -80,6 +81,7 @@ public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>
         {
             hiddenSize = hiddenSizeConst.Value.ToScalar<int>();
         }
+
         yShape[^1] = hiddenSize;
         return x with { Shape = yShape.ToArray() };
     }

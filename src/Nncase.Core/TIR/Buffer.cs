@@ -13,7 +13,6 @@ using Nncase.IR;
 
 namespace Nncase.TIR;
 
-
 /// <summary>
 /// the padding
 /// </summary>
@@ -95,7 +94,6 @@ public record Segment1D
 
 public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
 {
-
     readonly Segment1D[] _segments;
     public Padding PadH => _segments[2].Padding;
     public Padding PadW => _segments[3].Padding;
@@ -170,7 +168,6 @@ public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
     }
 }
 
-
 public record SelectedRange(int Start, int End, Padding Padding)
 {
     public SelectedRange Slice(Segment1D segment)
@@ -231,7 +228,6 @@ public interface IBufferView<T>
     /// <param name="segments">the slice info.</param>
     /// <returns>self sub buffer.</returns>
     public T this[SegmentND segments] { get; }
-
 
     /// <summary>
     /// support slice like the normal array.
@@ -351,7 +347,6 @@ public sealed record LogicalBuffer(string Name, DataType ElemType, Schedule.Memo
     }
 }
 
-
 /// <summary>
 /// the physicall buffer
 /// </summary>
@@ -432,7 +427,6 @@ public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.Mem
     public override IRArray<Expr> Dimensions => FixedDimensions.Length == 0 ?
       throw new ArgumentOutOfRangeException() :
       new(FixedDimensions.Select(i => (Expr)i));
-
 
     /// <summary>
     /// Gets strides.

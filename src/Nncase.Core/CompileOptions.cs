@@ -11,7 +11,6 @@ namespace Nncase;
 /// </summary>
 public sealed class CompileOptions
 {
-
     /// <summary>
     /// copy ctor
     /// </summary>

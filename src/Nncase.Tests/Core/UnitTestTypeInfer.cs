@@ -15,7 +15,6 @@ namespace Nncase.Tests.CoreTest;
 
 public class UnitTypeInferBase : TestFixture.UnitTestFixtrue
 {
-
     public void CheckInferShape(Expr expr, params int[] shapeDimensions)
     {
         CheckInferShape(expr, new Shape(shapeDimensions));
@@ -37,9 +36,9 @@ public class UnitTypeInferBase : TestFixture.UnitTestFixtrue
     public Var var(Shape shape) => var(shape, DataTypes.Float32);
 
 }
+
 public class UnitTestTypeInfer : UnitTypeInferBase
 {
-
     public UnitTestTypeInfer() : base()
     {
     }
@@ -159,7 +158,6 @@ public class UnitTestTypeInfer : UnitTypeInferBase
             4, 5, 6, 1);
     }
 
-
     void CheckReshape(Expr input, int[] reshapeArgs, int[] expectShape)
     {
         CheckInferShape(Reshape(input, reshapeArgs), expectShape);
@@ -237,7 +235,6 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         var s = Slice(input, begins, ends, axes, ones);
         CheckInferType(s, DataTypes.Float32, new Shape(1, 9, 256));
     }
-
 
     public static IEnumerable<object[]> TestMatMulData =>
         new[]
