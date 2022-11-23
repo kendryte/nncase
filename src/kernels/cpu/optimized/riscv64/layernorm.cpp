@@ -26,31 +26,30 @@ using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::optimized;
 
 #if __riscv_vector
-#RVV_LMUL 8
+#define RVV_LMUL 8
 #define _STR(x) #x
 #define STR(x) _STR(x)
 #define _CONNECT(a, b) a##b
 #define CONNECT(a, b) _CONNECT(a, b)
 #define RVVSETVLI2(evl, avl, elen) "vsetvli " STR(evl) "," STR(avl) "," STR(elen) "," STR(CONNECT(m, RVV_LMUL)) ";"
 
-static float get_mean(float *data, int n)
+static float get_mean(const float *data, int n)
 {
-    register float ret;
+    float ret;
     __asm volatile(
-
         "mv a0, %[avl];"
         "mv a1, %[input_ptr1];" RVVSETVLI2(t0, a0, e32) "vmv.s.x v0, x0;"
+    "XXXXXX%=:;"
+        RVVSETVLI2(t0, a0, e32) "vle32.v v8, (a1);"
+        "sub a0,a0, t0;"
+        "slli t1, t0, 2;"
+        "vfredsum.vs v0,v8,v0;"
 
-                                                        "XXXXXX%=:" RVVSETVLI2(t0, a0, e32) "vle32.v v8, (a1);"
-                                                                                            "sub a0,a0, t0;"
-                                                                                            "slli t1, t0, 2;"
-                                                                                            "vfredsum.vs v0,v8,v0;"
-
-                                                                                            "add a1, a1, t1;"
-                                                                                            "bnez a0, XXXXXX%=;"
-                                                                                            "vfmv.f.s f0, v0;"
-                                                                                            "fcvt.s.w f1, %[avl];"
-                                                                                            "fdiv.s %[ret], f0, f1;"
+        "add a1, a1, t1;"
+        "bnez a0, XXXXXX%=;"
+        "vfmv.f.s f0, v0;"
+        "fcvt.s.w f1, %[avl];"
+        "fdiv.s %[ret], f0, f1;"
 
         : [ret] "=f"(ret)
         : [avl] "r"(n), [input_ptr1] "r"(data)
@@ -58,37 +57,38 @@ static float get_mean(float *data, int n)
     return ret;
 }
 
-static float get_var(float *data, int n, float mean)
+static float get_var(const float *data, int n, float mean)
 {
-    register float ret;
+    float ret;
     __asm volatile(
 
         "mv a0, %[avl];"
         "mv a1, %[input_ptr1];" RVVSETVLI2(t0, a0, e32) "vmv.s.x v0, x0;"
 
-                                                        "vle32.v v8, (a1);"
-                                                        "sub a0,a0, t0;"
-                                                        "slli t1, t0, 2;"
-                                                        "vfsub.vf v8, v8, %[mean];"
-                                                        "vfmul.vv v8, v8, v8;"
-                                                        "add a1, a1, t1;"
-                                                        "beqz a0, X1_END%=;"
-                                                        "X1_STRAT%=:" RVVSETVLI2(t0, a0, e32) "vle32.v v16, (a1);"
-                                                                                              "sub a0,a0, t0;"
-                                                                                              "slli t1, t0, 2;"
-                                                                                              "vfsub.vf v16, v16, %[mean];"
-                                                                                              "vfmacc.vv v8, v16, v16;"
+        "vle32.v v8, (a1);"
+        "sub a0,a0, t0;"
+        "slli t1, t0, 2;"
+        "vfsub.vf v8, v8, %[mean];"
+        "vfmul.vv v8, v8, v8;"
+        "add a1, a1, t1;"
+        "beqz a0, X1_END%=;"
+    "X1_STRAT%=:;" 
+        RVVSETVLI2(t0, a0, e32) "vle32.v v16, (a1);"
+        "sub a0,a0, t0;"
+        "slli t1, t0, 2;"
+        "vfsub.vf v16, v16, %[mean];"
+        "vfmacc.vv v8, v16, v16;"
 
-                                                                                              "add a1, a1, t1;"
-                                                                                              "bnez a0, X1_STRAT%=;"
+        "add a1, a1, t1;"
+        "bnez a0, X1_STRAT%=;"
 
-                                                                                              "X1_END%=:"
+        "X1_END%=:"
 
-                                                                                              "vfredsum.vs v0,v8,v0;"
+        "vfredsum.vs v0,v8,v0;"
 
-                                                                                              "vfmv.f.s f0, v0;"
-                                                                                              "fcvt.s.w f1, %[avl];"
-                                                                                              "fdiv.s %[ret], f0, f1;"
+        "vfmv.f.s f0, v0;"
+        "fcvt.s.w f1, %[avl];"
+        "fdiv.s %[ret], f0, f1;"
 
         : [ret] "=f"(ret)
         : [avl] "r"(n), [input_ptr1] "r"(data), [mean] "f"(mean)
@@ -96,7 +96,7 @@ static float get_var(float *data, int n, float mean)
     return ret;
 }
 
-static void layer_norm_update1(float *data, float *out, int len, float mean, float var, float *r1, float e, float *b)
+static void layer_norm_update1(const float *data, float *out, int len, float mean, float var, float *r1, float e, float *b)
 {
     float r_sqrt = 1.0f / sqrtf(var + e);
     __asm volatile(
@@ -105,24 +105,25 @@ static void layer_norm_update1(float *data, float *out, int len, float mean, flo
         "mv a2, %[out];"
         "mv a3, %[scale];"
         "mv a4, %[b];"
-        "layer_norm_update1%=:" RVVSETVLI2(t0, a0, e32) "vle32.v v16, (a1);"
-                                                        "vle32.v v8, (a3);"
-                                                        "sub a0,a0, t0;"
-                                                        "slli t1, t0, 2;"
-                                                        "vfsub.vf v16, v16, %[mean];"
-                                                        "add a1, a1, t1;"
-                                                        "vfmul.vf v16, v16, %[r_sqrt];"
+    "layer_norm_update1%=:;" 
+        RVVSETVLI2(t0, a0, e32) "vle32.v v16, (a1);"
+        "vle32.v v8, (a3);"
+        "sub a0,a0, t0;"
+        "slli t1, t0, 2;"
+        "vfsub.vf v16, v16, %[mean];"
+        "add a1, a1, t1;"
+        "vfmul.vf v16, v16, %[r_sqrt];"
 
-                                                        "add a3, a3, t1;"
-                                                        "vfmul.vv v16, v8, v16;"
+        "add a3, a3, t1;"
+        "vfmul.vv v16, v8, v16;"
 
-                                                        "vle32.v v8, (a4);"
-                                                        "vfadd.vv v16, v16, v8;"
-                                                        "add a4, a4, t1;"
+        "vle32.v v8, (a4);"
+        "vfadd.vv v16, v16, v8;"
+        "add a4, a4, t1;"
 
-                                                        "vse32.v v16, (a2);"
-                                                        "add a2, a2, t1;"
-                                                        "bnez a0, layer_norm_update1%=;"
+        "vse32.v v16, (a2);"
+        "add a2, a2, t1;"
+        "bnez a0, layer_norm_update1%=;"
         :
         : [avl] "r"(len), [input_ptr1] "r"(data), [mean] "f"(mean), [r_sqrt] "f"(r_sqrt), [b] "r"(b), [out] "r"(out), [scale] "r"(r1)
         : "t0", "t1", "a0", "a1", "a2", "v0", "v16", "a3", "a4", "v8");
@@ -132,7 +133,7 @@ result<void> layernorm_impl(const float *input, float *output, float *scale, flo
 {
     if (axis < 0)
     {
-        axis = shape_len + axis;
+        axis = (int)in_shape.size() + axis;
     }
     auto outer_size = 1;
     auto inner_size = 1;
@@ -156,14 +157,18 @@ result<void> layernorm_impl(const float *input, float *output, float *scale, flo
 }
 #endif
 
-template result<void> optimized::layernorm<float>(const float *input, float *output, float *scale, float *bias, const runtime_shape_t &in_shape, int32_t axis, float epsilon) noexcept;
+template <>
+result<void> optimized::layernorm<float>(const float *input, float *output, float *scale, float *bias, const runtime_shape_t &in_shape, int32_t axis, float epsilon) noexcept
+{
+    #if __riscv_vector
+        return layernorm_impl(input, output, scale, bias, in_shape, axis, epsilon);
+    #else
+        return cpu::reference::layernorm(input, output, scale, bias, in_shape, axis, epsilon);
+    #endif
+}
 
 template <typename T>
 result<void> optimized::layernorm(const T *input, T *output, T *scale, T *bias, const runtime_shape_t &in_shape, int32_t axis, float epsilon) noexcept
 {
-#if __riscv_vector
-    return layernorm_impl(input, output, scale, bias, in_shape, axis, epsilon);
-#else
     return cpu::reference::layernorm(input, output, scale, bias, in_shape, axis, epsilon);
-#endif
 }
