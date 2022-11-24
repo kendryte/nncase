@@ -368,7 +368,7 @@ public static class Testing
 
 public class UnitTestFixtrue
 {
-    public CompileOptions GetCompileOptions([CallerMemberName] string member_name = "")
+    public virtual CompileOptions GetCompileOptions([CallerMemberName] string member_name = "")
     {
         string DumpDirPath = Path.Combine(Testing.GetDumpDirPath(this.GetType()), member_name);
         CompileOptions compileOptions = new(CompilerServices.CompileOptions);
@@ -376,7 +376,7 @@ public class UnitTestFixtrue
         return compileOptions;
     }
 
-    public RunPassOptions GetPassOptions([CallerMemberName] string member_name = "")
+    public virtual RunPassOptions GetPassOptions([CallerMemberName] string member_name = "")
     {
         var options = GetCompileOptions(member_name);
         return new RunPassOptions(options);

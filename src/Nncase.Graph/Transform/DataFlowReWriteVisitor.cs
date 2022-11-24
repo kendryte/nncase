@@ -22,6 +22,7 @@ internal sealed class DataFlowRewriteVisitor : ExprMutator
     {
         _rule = rule;
         _options = options;
+        _options.MatchOptions.RewriteMemo.Clear();
     }
 
     /// <summary>

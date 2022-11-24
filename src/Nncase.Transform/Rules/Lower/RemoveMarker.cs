@@ -20,7 +20,7 @@ namespace Nncase.Transform.Rules.Lower;
 public sealed partial class RemoveMarker : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsMarker(null, s => true, IsWildcard("target"), IsWildcard("attribute"));
+    public IPattern Pattern { get; } = IsMarker("remove_marker", s => true, IsWildcard("target"), IsWildcard("attribute"));
 
     private Expr? GetReplace(Expr target, Expr attribute)
     {

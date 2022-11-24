@@ -18,6 +18,7 @@ public static class EvaluatorUtil
             throw new InvalidOperationException($"Pad's rank must be 2, but get {pads.Rank}");
         }
 
-        return OrtKI.Transpose(pads, new long[] { 1, 0 }).ToArray<long>();
+        // note the pads will be int or long, need cast to long
+        return OrtKI.Transpose(pads.Cast(OrtDataType.Int64), new long[] { 1, 0 }).ToArray<long>();
     }
 }
