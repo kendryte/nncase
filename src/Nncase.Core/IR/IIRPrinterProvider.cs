@@ -33,7 +33,6 @@ public interface IPrintSymbol
     public string Serialize();
 }
 
-
 /// <summary>
 /// Type inference provider interface.
 /// </summary>

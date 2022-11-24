@@ -5,8 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <IsRoslynComponent>true</IsRoslynComponent>
-	<Nullable>enable</Nullable>
-    <CodeAnalysisRuleSet>$(SolutionDir)/tools/StyleCopAnalyzers.ruleset</CodeAnalysisRuleSet>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
   </PropertyGroup>
 
   <ItemGroup>

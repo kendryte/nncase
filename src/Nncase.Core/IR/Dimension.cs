@@ -45,7 +45,7 @@ namespace Nncase.IR
             // {
             //     Console.WriteLine("zero dimension");
 
-                // throw new InvalidOperationException("Dimension should not be 0");
+            // throw new InvalidOperationException("Dimension should not be 0");
             // }
 
             Kind = DimensionKind.Fixed;
@@ -92,6 +92,7 @@ namespace Nncase.IR
         {
             return left.Equals(right);
         }
+
         /// <inheritdoc/>
         public static bool operator !=(Dimension left, Dimension right)
         {
@@ -103,22 +104,26 @@ namespace Nncase.IR
         {
             return Value?.ToString() ?? "?";
         }
+
         /// <inheritdoc/>
         public override bool Equals(object? obj)
         {
             return obj is Dimension dimension && Equals(dimension);
         }
+
         /// <inheritdoc/>
         public bool Equals(Dimension other)
         {
             return Kind == other.Kind &&
                    Value == other.Value;
         }
+
         /// <inheritdoc/>
         public override int GetHashCode()
         {
             return HashCode.Combine(Kind, Value);
         }
+
         /// <inheritdoc/>
         public static Dimension operator +(Dimension lhs, Dimension rhs) => (lhs.IsFixed, lhs.IsFixed) switch
         {

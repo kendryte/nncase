@@ -12,7 +12,7 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestAddToConv2D: TestFixture.UnitTestFixtrue
+public class UnitTestAddToConv2D : TestFixture.UnitTestFixtrue
 {
     [Fact]
     public void TestElementwiseAdd()

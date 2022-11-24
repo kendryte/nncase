@@ -20,7 +20,6 @@ namespace Nncase.Importer;
 
 public sealed partial class OnnxImporter : BaseImporter
 {
-
     private readonly ModelProto _model;
     private readonly GraphProto _graph;
     private readonly Dictionary<string, long> _opSetMap;
@@ -43,7 +42,6 @@ public sealed partial class OnnxImporter : BaseImporter
         _graph = _model.Graph;
     }
 
-
     public override IEnumerable<Var> CreateInputs()
     {
         _constTensors = _graph.Initializer
@@ -53,7 +51,7 @@ public sealed partial class OnnxImporter : BaseImporter
             .Where(n => !_constTensors.ContainsKey(n.Name))
             .Select(n => new Var(n.Name, GetIRType(n)));
 
-        _outputTensors = createdInputs.ToDictionary(n => n.Name, n => (Expr) n);
+        _outputTensors = createdInputs.ToDictionary(n => n.Name, n => (Expr)n);
         return createdInputs;
     }
 

@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Numerics.Tensors;
 using Nncase.IR;
 using Nncase.PatternMatch;
 using Tensorflow;
@@ -42,7 +41,7 @@ public sealed partial class MatMulToConv2D : IRewriteRule
         var w_shape = new Shape(new[] { bShape[1].FixedValue, bShape[0].FixedValue, 1, 1 });
 
         var if_reshape = Reshape(a, if_shape);
-        var w_tp = Transpose(b, Tensor.FromSpan<int>(new[] { 1, 0 }));
+        var w_tp = Transpose(b, Tensor.From<int>(new[] { 1, 0 }));
         var w_reshape = Reshape(w_tp, w_shape);
 
         return Conv2D(

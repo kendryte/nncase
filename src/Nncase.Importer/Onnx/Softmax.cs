@@ -27,7 +27,7 @@ namespace Nncase.Importer
             var inShape = ShapeOf(input);
             Expr axisExpr = axis < 0
                 ? axis + Rank(input)
-                : Tensor.FromSpan<int>(new[] { axis });
+                : Tensor.From<int>(new[] { axis });
             var first = Prod(Slice(inShape, new[] { 0 }, axisExpr, 1));
             var second = Prod(Slice(inShape, axisExpr, Rank(input), 1));
             var beforeShape = Stack(new IR.Tuple(first, second), 0);

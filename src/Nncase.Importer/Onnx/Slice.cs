@@ -28,7 +28,7 @@ namespace Nncase.Importer
             var starts = GetTensorIntsAttribute(op, "starts");
             var ends = GetTensorIntsAttribute(op, "ends");
             return Slice(input, starts, ends, axesExpr,
-                Expand(1L, Tensor.FromSpan<long>(new long[] { ends.Length })));
+                Expand(1L, Tensor.From<long>(new long[] { ends.Length })));
         }
 
         private Expr SliceV10(in NodeProto op)
@@ -39,13 +39,13 @@ namespace Nncase.Importer
             // steps.size should eq starts.size 
             starts.InferenceType();
             var axes = GetOptionInputExpr(op, 3).Or(ComputeDefaultAxes(input));
-            var steps = GetOptionInputExpr(op, 4).Or(Expand(1, new[]{starts.CheckedShape.Size}));
+            var steps = GetOptionInputExpr(op, 4).Or(Expand(1, new[] { starts.CheckedShape.Size }));
             return Slice(input, starts, ends, axes, steps);
         }
 
         private Call ExpandOneToRank(Expr input, long value, long rankOffset = 0)
         {
-            return Expand(value, Unsqueeze(Cast(Rank(input) - rankOffset, new Int64Type()), new[]{0}));
+            return Expand(value, Unsqueeze(Cast(Rank(input) - rankOffset, new Int64Type()), new[] { 0 }));
         }
     }
 }

@@ -1,4 +1,4 @@
-      
+
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
@@ -12,7 +12,6 @@ using System.Text;
 using Nncase.IR;
 
 namespace Nncase.TIR;
-
 
 /// <summary>
 /// the padding
@@ -95,7 +94,6 @@ public record Segment1D
 
 public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
 {
-
     readonly Segment1D[] _segments;
     public Padding PadH => _segments[2].Padding;
     public Padding PadW => _segments[3].Padding;
@@ -147,7 +145,7 @@ public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
     {
         return HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_segments), PadH, PadW);
     }
-    
+
     public IEnumerator<Segment1D> GetEnumerator()
     {
         return ((IEnumerable<Segment1D>)_segments).GetEnumerator();
@@ -160,7 +158,7 @@ public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
 
     public static SegmentND operator +(SegmentND lhs, SegmentND rhs)
     {
-        return new (lhs[0] + rhs[0], lhs[1] + rhs[1], lhs[2] + rhs[2], lhs[3] + rhs[3] );
+        return new(lhs[0] + rhs[0], lhs[1] + rhs[1], lhs[2] + rhs[2], lhs[3] + rhs[3]);
     }
 
     /// <inheritdoc/>
@@ -169,7 +167,6 @@ public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
         return $"{string.Join(",", _segments.Select(s => s.ToString()))}";
     }
 }
-
 
 public record SelectedRange(int Start, int End, Padding Padding)
 {
@@ -231,7 +228,6 @@ public interface IBufferView<T>
     /// <param name="segments">the slice info.</param>
     /// <returns>self sub buffer.</returns>
     public T this[SegmentND segments] { get; }
-
 
     /// <summary>
     /// support slice like the normal array.
@@ -303,7 +299,7 @@ public sealed record LogicalBuffer(string Name, DataType ElemType, Schedule.Memo
     /// <param name="location"></param>
     /// <param name="tensor"></param>
     public LogicalBuffer(string name, Schedule.MemoryLocation location, TensorConst tensor) : this(name, tensor.Value.ElementType, location,
-     ImmutableArray.Create<Expr>(tensor.Value.Dimensions), ImmutableArray.Create<Expr>(tensor.Value.Strides))
+     ImmutableArray.Create<Expr>(tensor.Value.Dimensions.ToArray()), ImmutableArray.Create<Expr>(tensor.Value.Strides.ToArray()))
     {
         Const = tensor;
     }
@@ -350,7 +346,6 @@ public sealed record LogicalBuffer(string Name, DataType ElemType, Schedule.Memo
         return true;
     }
 }
-
 
 /// <summary>
 /// the physicall buffer
@@ -432,7 +427,6 @@ public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.Mem
     public override IRArray<Expr> Dimensions => FixedDimensions.Length == 0 ?
       throw new ArgumentOutOfRangeException() :
       new(FixedDimensions.Select(i => (Expr)i));
-
 
     /// <summary>
     /// Gets strides.

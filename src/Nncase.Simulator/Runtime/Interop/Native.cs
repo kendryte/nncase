@@ -28,7 +28,7 @@ internal static class Native
 
     [DllImport(LibraryName, EntryPoint = "nncase_interp_set_dump_root")]
     public static extern unsafe ErrorCode InterpSetDumpRoot(RTInterpreter interp, String path);
-    
+
     [DllImport(LibraryName, EntryPoint = "nncase_interp_get_entry_func")]
     public static extern unsafe ErrorCode InterpGetEntryFunction(RTInterpreter interp, out IntPtr func);
 
@@ -76,7 +76,7 @@ internal static class Native
 
     [DllImport(LibraryName, EntryPoint = "nncase_tensor_get_strides")]
     public static extern unsafe ErrorCode TensorGetStrides(RTTensor tensor, uint* strides, ref uint stridesLength);
-    
+
     [DllImport(LibraryName, EntryPoint = "nncase_tuple_get_fields")]
     public static extern unsafe ErrorCode TupleGetFields(RTTuple tuple, IntPtr* fields, ref uint fieldsLength);
 }

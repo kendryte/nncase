@@ -13,14 +13,11 @@ using Nncase.TIR;
 
 namespace Nncase.IR;
 
-
-
 /// <summary>
 /// IR printer.
 /// </summary>
 public sealed class IRPrinterProvider : IIRPrinterProvider
 {
-
     private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
@@ -85,6 +82,7 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
         {
             return irprinter.Visit(context, op, ILmode);
         }
+
         return $"{context.Get(op)}({string.Join(", ", context.GetArguments(op).Select(s => s.ToString()))})";
     }
 

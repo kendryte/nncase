@@ -38,7 +38,6 @@ public sealed record TensorConstPattern(Func<TensorConst, bool> Condition, strin
 
 public static partial class Utility
 {
-
     /// <summary>
     /// create the TensorConstPattern.
     /// </summary>

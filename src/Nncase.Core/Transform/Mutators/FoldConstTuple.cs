@@ -13,7 +13,7 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// unroll loop
 /// </summary>
-internal sealed class FoldConstTuple  : ExprMutator
+internal sealed class FoldConstTuple : ExprMutator
 {
     /// <inheritdoc/>
     public override Expr MutateLeaf(IR.Tuple expr)
@@ -22,6 +22,7 @@ internal sealed class FoldConstTuple  : ExprMutator
         {
             return new TupleConst(new(expr.Select(Visit).OfType<Const>()));
         }
+
         return expr;
     }
 }

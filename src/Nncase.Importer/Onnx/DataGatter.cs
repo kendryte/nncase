@@ -36,7 +36,7 @@ public sealed partial class OnnxImporter
     {
         var shape = GetShape(tensor).ToValueArray();
         var type = GetDataType(tensor);
-        var dt = (TensorProto.Types.DataType) tensor.DataType;
+        var dt = (TensorProto.Types.DataType)tensor.DataType;
 
         // should not use tensor.DataLocation to distinguish whether it is RawData
         if (tensor.RawData.ToByteArray().Length() != 0)
@@ -50,18 +50,18 @@ public sealed partial class OnnxImporter
                 // todo:not directly supported type should convert
                 //TensorProto.Types.DataType.Bool => Tensor.FromSpan(),
                 //TensorProto.Types.DataType.Float16 => Tensor.FromSpan(),
-                TensorProto.Types.DataType.Float => Tensor.FromSpan<float>(tensor.FloatData.ToArray(), shape),
-                TensorProto.Types.DataType.Double => Tensor.FromSpan<double>(tensor.DoubleData.ToArray(), shape),
+                TensorProto.Types.DataType.Float => Tensor.From<float>(tensor.FloatData.ToArray(), shape),
+                TensorProto.Types.DataType.Double => Tensor.From<double>(tensor.DoubleData.ToArray(), shape),
 
                 //TensorProto.Types.DataType.Int16 => Tensor.FromSpan(),
-                TensorProto.Types.DataType.Int32 => Tensor.FromSpan<int>(tensor.Int32Data.ToArray(), shape),
-                TensorProto.Types.DataType.Int64 => Tensor.FromSpan<long>(tensor.Int64Data.ToArray(), shape),
+                TensorProto.Types.DataType.Int32 => Tensor.From<int>(tensor.Int32Data.ToArray(), shape),
+                TensorProto.Types.DataType.Int64 => Tensor.From<long>(tensor.Int64Data.ToArray(), shape),
 
-                TensorProto.Types.DataType.Int8 => Tensor.FromSpan<sbyte>(tensor.Int32Data.Select(x => (sbyte)x).ToArray(), shape),
+                TensorProto.Types.DataType.Int8 => Tensor.From<sbyte>(tensor.Int32Data.Select(x => (sbyte)x).ToArray(), shape),
                 //TensorProto.Types.DataType.String => Tensor.FromSpan(),
                 //TensorProto.Types.DataType.Uint32 => Tensor.FromSpan(),
                 //TensorProto.Types.DataType.Uint64 => Tensor.FromSpan<ulong>(tensor.Uint64Data.ToArray(), shape),
-                TensorProto.Types.DataType.Uint8 => Tensor.FromSpan<byte>(tensor.Int32Data.Select(x => (byte)x).ToArray(), shape),
+                TensorProto.Types.DataType.Uint8 => Tensor.From<byte>(tensor.Int32Data.Select(x => (byte)x).ToArray(), shape),
                 _ => throw new NotSupportedException($"Not supported onnx constant data type{dt}"),
             };
         }
@@ -127,7 +127,7 @@ public sealed partial class OnnxImporter
             .Match(n => GetDataType(n),
                 () => throw new InvalidOperationException($"Can't find Output for node:{n.Name}"));
     }
-    
+
     private (Expr, Expr) GetInputExprs(NodeProto n, int index0, int index1)
     {
         return (GetInputExpr(n, index0), GetInputExpr(n, index1));
@@ -170,6 +170,6 @@ public sealed partial class OnnxImporter
 
     private Expr ToNncasePadFormat(Expr pads)
     {
-        return Transpose(Reshape(pads, new[] {2, -1}), new[] {1, 0});
+        return Transpose(Reshape(pads, new[] { 2, -1 }), new[] { 1, 0 });
     }
 }

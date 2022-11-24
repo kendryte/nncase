@@ -1,6 +1,5 @@
 namespace Nncase;
 
-
 /// <summary>
 /// the quan mode.
 /// </summary>

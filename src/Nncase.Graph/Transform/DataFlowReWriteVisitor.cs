@@ -37,17 +37,19 @@ internal sealed class DataFlowRewriteVisitor : ExprMutator
             result = fusion;
             ExpressionMemo.Add(fusion, result);
         }
+
         return result;
     }
 
     public override Expr DefaultMutateLeaf(Expr expr)
     {
-        if ((_rule.IsMultiBranchSafe() || (!_rule.IsMultiBranchSafe() && !IsMutated))
-          && CompilerServices.TryMatchRoot(expr, _rule.Pattern, _options.MatchOptions, out var match))
+        if (CompilerServices.TryMatchRoot(expr, _rule.Pattern, _options.MatchOptions, out var match))
         {
             var replace = _rule.GetReplace(match, _options);
             if (replace != null)
             {
+                replace.CheckedType = expr.CheckedType;
+                _options.MatchOptions.MemoRewrite(expr, replace);
                 _dontInheritExprs.Add(replace);
                 return replace;
             }

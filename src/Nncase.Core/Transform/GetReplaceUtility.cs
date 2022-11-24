@@ -52,7 +52,7 @@ public static class Utility
             }
         };
     }
-    
+
     /// <summary>
     /// insert Cast before and after call
     /// Cast(inputCtor(Cast(input, BF16)), input.Datatype)
@@ -68,7 +68,7 @@ public static class Utility
 
         return Apply(withTmpBF16Impl, inputCtor);
     }
-    
+
     public static Fx withTmpType(Fx inputCtor, DataType dt)
     {
         Fx withTmpTypeImpl(Fx inputCtor) => input =>
@@ -76,7 +76,7 @@ public static class Utility
 
         return Apply(withTmpTypeImpl, inputCtor);
     }
-    
+
     public static Fx withTmp4DShape(Fx inputCtor, int[] originOutShape)
     {
         Fx withTmpGNNEShape(Fx inCtor) =>
@@ -89,7 +89,7 @@ public static class Utility
 
         return Apply(withTmpGNNEShape, inputCtor);
     }
-    
+
     internal static int[] Get4DGNNEShape(int[] dims)
     {
         if (dims.Length > 4)

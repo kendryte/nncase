@@ -57,6 +57,7 @@ internal partial class Quantizer
         {   // 2. Assign ranges
             AssignRanges(ranges);
         }
+
         // // 3. Choose better quant method using cosine, and bind info with ir.
         // if (quantOptions.BindQuantMethod)
         // {
@@ -118,8 +119,9 @@ internal partial class Quantizer
                     QuantizeHistogram<float> histogram = new QuantizeHistogram<float>(initSrcBin, initDstBin);
                     histograms.Add(valuesList[i].Key, histogram);
                 }
+
                 var childrenTensor = childrenValuesList[i].Value.Cast<float>();
-                var childrenBuffer = childrenTensor.Buffer;
+                var childrenBuffer = childrenTensor.Buffer.Span;
 
                 foreach (var buf in childrenBuffer)
                 {
@@ -155,6 +157,7 @@ internal partial class Quantizer
                     // minKld = thresholdWithMinKldWithSmoothSrcBin.Item2;
                     // srcBin = thresholdWithMinKldWithSmoothSrcBin.Item3;
                 }
+
                 // range min
                 minKld = float.MaxValue;
                 int upperThreshold2 = betterThreshold.Item2;
@@ -166,10 +169,11 @@ internal partial class Quantizer
                     // srcBin = thresholdWithMinKldWithSmoothSrcBin.Item3;
                 }
 
-                var optMin = (betterThreshold.Item1 - 0.5f) * srcBinInterval + ranges[histogram.Key].Min;
-                var optMax = (betterThreshold.Item2 + 0.5f) * srcBinInterval + ranges[histogram.Key].Min;
+                var optMin = ((betterThreshold.Item1 - 0.5f) * srcBinInterval) + ranges[histogram.Key].Min;
+                var optMax = ((betterThreshold.Item2 + 0.5f) * srcBinInterval) + ranges[histogram.Key].Min;
                 optRanges.Add(histogram.Key, new ValueRange<float>(optMin, optMax));
             }
+
             return optRanges;
         }
         else

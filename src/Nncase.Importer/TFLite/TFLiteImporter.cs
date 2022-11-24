@@ -88,11 +88,11 @@ namespace Nncase.Importer.TFLite
         public override Expr CreateOutputs()
         {
             var outputs = (from o in _subGraph.GetOutputsBytes().AsValueEnumerable()
-                select _outputTensors[o]).ToArray();
-           var outputTuple = new IR.Tuple(ImmutableArray.Create(outputs));
-           return outputTuple;
+                           select _outputTensors[o]).ToArray();
+            var outputTuple = new IR.Tuple(ImmutableArray.Create(outputs));
+            return outputTuple;
         }
-        
+
         /// <summary>
         /// Create IR type from tflite shape and tensor type.
         /// </summary>
@@ -326,6 +326,7 @@ namespace Nncase.Importer.TFLite
             {
                 return tensor.GetShapeArray().Select(x => new Dimension(x)).ToArray();
             }
+
             return Enumerable.Range(0, tensor.ShapeLength).Select(i =>
                 tensor.Shape(i) == -1 ? Dimension.Unknown : tensor.Shape(i)
             ).ToArray();
@@ -340,6 +341,7 @@ namespace Nncase.Importer.TFLite
             {
                 throw new InvalidDataException($"Cannot find tensor (id:{id}).");
             }
+
             // Maybe constant
             var tensor = _subGraph.Tensors(id) ?? throw new InvalidDataException($"Cannot find tensor (id:{id}).");
             if (((tflite.QuantizationParameters)tensor.Quantization).QuantizedDimension == 0)
@@ -355,6 +357,7 @@ namespace Nncase.Importer.TFLite
                 {
                     quantParams.Add(new QuantParam((int)(quantParam.GetZeroPointArray()[i]), quantParam.GetScaleArray()[i]));
                 }
+
                 return quantParams;
             }
 
@@ -385,6 +388,7 @@ namespace Nncase.Importer.TFLite
                 {
                     quantParams.Add(new QuantParam((int)(quantParam.GetZeroPointArray()[i]), quantParam.GetScaleArray()[i]));
                 }
+
                 return quantParams;
             }
 
@@ -405,6 +409,7 @@ namespace Nncase.Importer.TFLite
                 {
                     throw new InvalidDataException($"Cannot find tensor (id:{id}).");
                 }
+
                 // Maybe constant
                 var tensor = _subGraph.Tensors(id) ?? throw new InvalidDataException($"Cannot find tensor (id:{id}).");
                 var buffer = _model.Buffers((int)tensor.Buffer) ?? throw new InvalidDataException($"Cannot find buffer (id:{tensor.Buffer}).");

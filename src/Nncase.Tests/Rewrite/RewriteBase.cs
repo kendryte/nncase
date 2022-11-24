@@ -28,7 +28,7 @@ public static class DummyOp
     {
         var weights = OrtKI.Random(out_channels, in_channels, kernel, kernel).ToTensor();
         var bias = OrtKI.Random(out_channels).ToTensor();
-        return IR.F.NN.Conv2D(input, weights, bias, new[] { stride, stride }, Tensor.FromSpan<int>(new[] { 1, 1, 1, 1 }, new[] { 2, 2 }), new[] { 1, 1 }, PadMode.Constant, 1);
+        return IR.F.NN.Conv2D(input, weights, bias, new[] { stride, stride }, Tensor.From<int>(new[] { 1, 1, 1, 1 }, new[] { 2, 2 }), new[] { 1, 1 }, PadMode.Constant, 1);
     }
 }
 

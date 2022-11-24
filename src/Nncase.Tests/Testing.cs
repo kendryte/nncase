@@ -2,8 +2,6 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Autofac;
-using Autofac.Extras.CommonServiceLocator;
-using CommonServiceLocator;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -113,13 +111,13 @@ using Xunit;
 //         }
 //     }
 
-    // public abstract class IHostFixtrue
-    // {
-    //     public IHostFixtrue(IHost host)
-    //     {
-    //         var t = host.Services.GetRequiredService<IComponentContext>();
-    //         var csl = new AutofacServiceLocator(t);
-    //         ServiceLocator.SetLocatorProvider(() => csl);
-    //     }
-    // }
+// public abstract class IHostFixtrue
+// {
+//     public IHostFixtrue(IHost host)
+//     {
+//         var t = host.Services.GetRequiredService<IComponentContext>();
+//         var csl = new AutofacServiceLocator(t);
+//         ServiceLocator.SetLocatorProvider(() => csl);
+//     }
+// }
 // }

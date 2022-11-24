@@ -250,7 +250,7 @@ public static class CostUtility
     {
         return 1;
     }
-    
+
     public static double GetCPUCyclesOfCompare()
     {
         return 1;

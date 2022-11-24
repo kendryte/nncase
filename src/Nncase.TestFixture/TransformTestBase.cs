@@ -27,7 +27,6 @@ public partial class TransformTestBase
         passOptions = passOptions.SetRewriteOnce(true);
     }
 
-
     public virtual Expr TestMatched<T>(Expr pre) where T : IRewriteRule, new()
     {
         return TestMatchedCore(pre, new T());
@@ -52,6 +51,7 @@ public partial class TransformTestBase
         {
             throw new InvalidOperationException("Rules should not be empty");
         }
+
         var post = CompilerServices.Rewrite(pre, rules, passOptions);
         Assert.NotEqual(pre, post);
         var v1 = pre.Evaluate();

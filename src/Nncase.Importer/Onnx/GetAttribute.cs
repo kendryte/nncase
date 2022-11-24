@@ -83,7 +83,7 @@ namespace Nncase.Importer
         Expr GetAxesAttribute(NodeProto n, Expr input)
         {
             return GetOptionIntsAttribute(n, "axes")
-                .Map(x => (Expr)Tensor.FromSpan<long>(x))
+                .Map(x => (Expr)Tensor.From<long>(x))
                 .Or(ComputeDefaultAxes(input));
         }
 
@@ -94,7 +94,7 @@ namespace Nncase.Importer
 
         Tensor GetTensorIntsAttribute(NodeProto n, string attr)
         {
-            return Tensor.FromSpan<long>(GetIntsAttribute(n, attr));
+            return Tensor.From<long>(GetIntsAttribute(n, attr));
         }
 
         Option<long[]> GetOptionIntsAttribute(NodeProto n, string attr)

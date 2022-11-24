@@ -16,7 +16,6 @@ namespace Nncase.Transform
     /// </summary>
     public class RunPassOptions
     {
-
         /// <summary>
         /// Initializes a new instance of the <see cref="RunPassOptions"/> class.
         /// </summary>

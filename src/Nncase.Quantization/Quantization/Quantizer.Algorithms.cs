@@ -13,7 +13,7 @@ internal partial class Quantizer
 {
     private static ValueRange<float> GetMinMax(Tensor<float> tensor)
     {
-        var buffer = tensor.Buffer;
+        var buffer = tensor.Buffer.Span;
         var min = float.MaxValue;
         var max = float.MinValue;
 
@@ -37,57 +37,62 @@ internal partial class Quantizer
         pExpand.AddRange(p);
         pExpand.AddRange(pExpand2);
 
-        for (int i = boxPts / 2; i < ret.Count + boxPts / 2; i++)
+        for (int i = boxPts / 2; i < ret.Count + (boxPts / 2); i++)
         {
             var sum = 0f;
             for (int j = i; j < i + boxPts; j++)
             {
                 sum += pExpand[j];
             }
-            ret[i - boxPts / 2] = sum / boxPts;
+
+            ret[i - (boxPts / 2)] = sum / boxPts;
         }
 
         return ret;
     }
 
-static List<float> smoothDistribution(List<float> p, float eps = 0.0001f)
-{
-    List<int> isZeros = new List<int>(new int[p.Count]);
-    List<int> isNonZeros = new List<int>(new int[p.Count]);
-    var nZeros = 0;
-    var nNonZeros = 0;
-    for (int i = 0; i < p.Count; i++)
+    static List<float> smoothDistribution(List<float> p, float eps = 0.0001f)
     {
-        if (p[i] == 0)
+        List<int> isZeros = new List<int>(new int[p.Count]);
+        List<int> isNonZeros = new List<int>(new int[p.Count]);
+        var nZeros = 0;
+        var nNonZeros = 0;
+        for (int i = 0; i < p.Count; i++)
         {
-            isZeros[i] = 1;
-            nZeros++;
-            isNonZeros[i] = 0;
+            if (p[i] == 0)
+            {
+                isZeros[i] = 1;
+                nZeros++;
+                isNonZeros[i] = 0;
+            }
+            else
+            {
+                isZeros[i] = 0;
+                isNonZeros[i] = 1;
+                nNonZeros++;
+            }
         }
-        else
+
+        if (nNonZeros == 0)
         {
-            isZeros[i] = 0;
-            isNonZeros[i] = 1;
-            nNonZeros++;
+            // The discrete probability distribution is malformed. All entries are 0.
+            return new List<float>();
         }
+
+        float eps1 = eps * (float)nZeros / (float)nNonZeros;
+        if (eps1 >= 1.0f)
+        {
+            return new List<float>();
+        }
+
+        var ret = p;
+        for (int i = 0; i < p.Count; i++)
+        {
+            ret[i] += (eps * isZeros[i]) - (eps1 * isNonZeros[i]);
+        }
+
+        return ret;
     }
-    if (nNonZeros == 0)
-    {
-        // The discrete probability distribution is malformed. All entries are 0.
-        return new List<float>();
-    }
-    float eps1 = eps * (float)nZeros / (float)nNonZeros;
-    if (eps1 >= 1.0f)
-    {
-        return new List<float>();
-    }
-    var ret = p;
-    for (int i = 0; i < p.Count; i++)
-    {
-        ret[i] += eps * isZeros[i] - eps1 * isNonZeros[i];
-    }
-    return ret;
-}
 
     private static float computeKld(List<float> p, List<float> q)
     {
@@ -101,6 +106,7 @@ static List<float> smoothDistribution(List<float> p, float eps = 0.0001f)
         {
             p[i] /= pSum;
         }
+
         for (int i = 0; i < q.Count; i++)
         {
             q[i] /= qSum;
@@ -133,6 +139,7 @@ static List<float> smoothDistribution(List<float> p, float eps = 0.0001f)
         {
             refDist[0] += srcBin[i];
         }
+
         for (int i = upperThreshold; i < srcBin.Count; i++)
         {
             refDist[refDist.Count - 1] += srcBin[i];
@@ -150,6 +157,7 @@ static List<float> smoothDistribution(List<float> p, float eps = 0.0001f)
             {
                 value1 += refDist[j];
             }
+
             qDist[i] = value1;
         }
 
@@ -165,6 +173,7 @@ static List<float> smoothDistribution(List<float> p, float eps = 0.0001f)
                 if (refDist[j] != 0)
                     count1++;
             }
+
             if (count1 == 0)
                 continue;
             var upsampleValue = qDist[i] / count1;
@@ -174,6 +183,7 @@ static List<float> smoothDistribution(List<float> p, float eps = 0.0001f)
                     upsQDist[j] += upsampleValue;
             }
         }
+
         List<float> ups2QDist = new List<float>(new float[srcBin.Count]);
         // left outliers
         var count2 = 0;
@@ -182,22 +192,26 @@ static List<float> smoothDistribution(List<float> p, float eps = 0.0001f)
             if (srcBin[i] != 0)
                 count2++;
         }
+
         var value2 = 0f;
         for (int i = 0; i < lowerThreshold + srcPerBin; i++)
         {
             value2 += srcBin[i];
         }
+
         value2 /= count2;
         for (int i = 0; i < lowerThreshold + srcPerBin; i++)
         {
             if (srcBin[i] != 0)
                 ups2QDist[i] += value2;
         }
+
         // median
         for (int i = srcPerBin; i < upsQDist.Count - srcPerBin; i++)
         {
             ups2QDist[lowerThreshold + i] = upsQDist[i];
         }
+
         // right outliers
         count2 = 0;
         for (int i = upperThreshold - srcPerBin; i < srcBin.Count; i++)
@@ -205,16 +219,19 @@ static List<float> smoothDistribution(List<float> p, float eps = 0.0001f)
             if (srcBin[i] != 0)
                 count2++;
         }
+
         for (int i = upperThreshold - srcPerBin; i < srcBin.Count; i++)
         {
             value2 += srcBin[i];
         }
+
         value2 /= count2;
         for (int i = upperThreshold - srcPerBin; i < srcBin.Count; i++)
         {
             if (srcBin[i] != 0)
                 ups2QDist[i] += value2;
         }
+
         srcBin = smoothDistribution(srcBin);
         ups2QDist = smoothDistribution(ups2QDist);
 

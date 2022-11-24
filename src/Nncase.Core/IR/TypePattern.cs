@@ -32,6 +32,7 @@ namespace Nncase.IR
             {
                 return ValueType;
             }
+
             if (ValueType == null || !MatchLeaf(ValueType))
             {
                 var cur = ValueType is null ? "None" : CompilerServices.Print(ValueType);
@@ -116,7 +117,6 @@ namespace Nncase.IR
             inshape.Zip(target_shape).All(
               (dim) => dim.Item2 == Dimension.Unknown ? true : dim.Item2 == dim.Item1
             ), $"Shape = {target_shape.ToString()}");
-
 
         /// <summary>
         /// is custom rank
@@ -317,7 +317,7 @@ namespace Nncase.IR
         /// <returns></returns>
         public static int GetWindowedOutputSize(int size, int filter, int stride, int dilation, (int before, int after) padding)
         {
-            var effective_filter_size = (filter - 1) * dilation + 1;
+            var effective_filter_size = ((filter - 1) * dilation) + 1;
             return (size + padding.before + padding.after - effective_filter_size + stride) / stride;
         }
     }

@@ -1,7 +1,6 @@
 using Autofac;
 namespace Nncase.Transform.Rules.Neutral;
 
-
 /// <summary>
 /// Evaluator module.
 /// </summary>

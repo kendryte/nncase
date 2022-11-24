@@ -16,7 +16,6 @@ namespace Nncase.Transform.Mutators;
 /// </summary>
 internal sealed class UnRollLoop : ExprMutator
 {
-
     private readonly Dictionary<Type, Evaluator.IEvaluator> _evaluator_cache = new();
 
     /// <inheritdoc/>
@@ -32,8 +31,10 @@ internal sealed class UnRollLoop : ExprMutator
                 // only unroll one for loop
                 return result;
             }
+
             return base.Visit(expr);
         }
+
         return result;
     }
 
@@ -130,6 +131,7 @@ internal sealed class UnRollLoop : ExprMutator
             {
                 return result;
             }
+
             return expr;
         }
 
@@ -142,6 +144,7 @@ internal sealed class UnRollLoop : ExprMutator
             {
                 return StructEqualFolding(Const.FromValue(CompilerServices.Evaluate(expr, _cmap, _evaluator_cache)));
             }
+
             if (expr.Target is Function fn)
             {
                 var arg_map = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance);
@@ -151,8 +154,10 @@ internal sealed class UnRollLoop : ExprMutator
                         return expr;
                     arg_map.Add(v, Value.FromConst(const_arg));
                 }
+
                 return StructEqualFolding(Const.FromValue(CompilerServices.Evaluate(fn.Body, arg_map, _evaluator_cache)));
             }
+
             return expr;
         }
     }

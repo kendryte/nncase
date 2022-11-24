@@ -1,0 +1,50 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CodeAnalysisRuleSet>$(SolutionDir)/tools/StyleCopAnalyzers.ruleset</CodeAnalysisRuleSet>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="AnyTensorFlow.NET" Version="0.70.1" />
+    <PackageVersion Include="Autofac" Version="6.3.0" />
+    <PackageVersion Include="Autofac.Extensions.DependencyInjection" Version="7.2.0" />
+    <PackageVersion Include="BitFields" Version="0.1.0" />
+    <PackageVersion Include="coverlet.collector" Version="3.0.2" />
+    <PackageVersion Include="Extension.Mathematics" Version="1.2.12" />
+    <PackageVersion Include="GiGraph.Dot" Version="2.0.0" />
+    <PackageVersion Include="Google.Protobuf" Version="3.19.1" />
+    <PackageVersion Include="Grpc.Tools" Version="2.42.0" />
+    <PackageVersion Include="LanguageExt.Core" Version="4.0.3" />
+    <PackageVersion Include="MagicalTensorflowLib" Version="0.0.2" />
+    <PackageVersion Include="MagicalTensorflowLibOSX-ARM64" Version="0.0.4" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="6.0.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
+    <PackageVersion Include="Microsoft.Toolkit.HighPerformance" Version="7.1.1" />
+    <PackageVersion Include="NetFabric.Hyperlinq" Version="3.0.0-beta48" />
+    <PackageVersion Include="Nncase.FlatBuffers" Version="2.0.0" />
+    <PackageVersion Include="OrtKISharp" Version="0.0.2" />
+    <PackageVersion Include="RazorLight" Version="2.0.0-rc.2" />
+    <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.435" />
+    <PackageVersion Include="System.CommandLine.Hosting" Version="0.3.0-alpha.21216.1" />
+    <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
+    <PackageVersion Include="Tomlyn.Extensions.Configuration" Version="1.0.5" />
+    <PackageVersion Include="xunit" Version="2.4.1" />
+    <PackageVersion Include="xunit.assert" Version="2.4.1" />
+    <PackageVersion Include="Xunit.DependencyInjection" Version="8.3.0" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.4.3" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="StyleCop.Analyzers" >
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="$(SolutionDir)/tools/stylecop.json" />
+  </ItemGroup>
+</Project>

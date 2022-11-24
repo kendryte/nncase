@@ -45,7 +45,7 @@ public static class EvaluatorUtil
             {
                 for (int j = 0; j < innerSize; j++)
                 {
-                    var index = b * batchSize + i * innerSize + j;
+                    var index = (b * batchSize) + (i * innerSize) + j;
                     var actBegin = i * 5;
                     var v = ApplyActivation(data[index], actData[actBegin..(actBegin + 5)], clamp);
                     output[index] = BFloat16.RoundToBFloat16(v);
@@ -53,7 +53,7 @@ public static class EvaluatorUtil
             }
         }
 
-        return Value.FromTensor(Tensor.FromSpan<BFloat16>(output, input.Shape));
+        return Value.FromTensor(Tensor.From<BFloat16>(output, input.Shape));
     }
 
     public static Const FakeAct(Tensor input, Tensor act, Tensor fusedClamp)
@@ -68,12 +68,12 @@ public static class EvaluatorUtil
         {
             for (int j = 0; j < innerSize; j++)
             {
-                var index = i * innerSize + j;
+                var index = (i * innerSize) + j;
                 output[index] = ApplyActivation(data[index], actData[i..(i + 5)], clamp);
             }
         }
 
-        return Const.FromTensor(Tensor.FromSpan<float>(output, input.Shape));
+        return Const.FromTensor(Tensor.From<float>(output, input.Shape));
     }
 
     public static float ApplyActivation(float value, float[] clamp)
@@ -89,8 +89,8 @@ public static class EvaluatorUtil
     public static float ApplyGNNEActivation(float value, float x0, float kl, float bl, float kr, float br)
     {
         return value < x0
-            ? value * kl + bl
-            : value * kr + br;
+            ? (value * kl) + bl
+            : (value * kr) + br;
     }
 
     public static float ApplyGNNEActivation(float value, float[] act)
@@ -117,7 +117,7 @@ public static class EvaluatorUtil
     {
         int newIndex = index[0];
         for (int i = 1; i < shape.Length; i++)
-            newIndex = newIndex * shape[i] + index[i];
+            newIndex = (newIndex * shape[i]) + index[i];
         return newIndex;
     }
 
@@ -143,7 +143,7 @@ public static class EvaluatorUtil
     {
         var init = new T[] { }.AsEnumerable();
         var outputData = outputTmp.Aggregate(init, (sum, output) => sum.Concat(output)).ToArray();
-        return Const.FromTensor(Tensor.FromSpan<T>(outputData, outShape));
+        return Const.FromTensor(Tensor.From<T>(outputData, outShape));
     }
 
     public static OrtKISharp.Tensor ProcFakePSum(IValue psum, int oc)
@@ -163,6 +163,7 @@ public static class EvaluatorUtil
             .Select(x => BFloat16.FromRaw(0))
             .ToArray<BFloat16>()).ToOrtTensor();
     }
+
     /// <summary>
     /// nncase pads format to onnx pads format
     /// </summary>
@@ -174,6 +175,7 @@ public static class EvaluatorUtil
         {
             throw new InvalidOperationException($"Pad's rank must be 2, but get {pads.Rank}");
         }
+
         return OrtKI.Transpose(pads, new long[] { 1, 0 }).ToArray<long>();
     }
 }

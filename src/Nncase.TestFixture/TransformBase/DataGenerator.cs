@@ -19,11 +19,11 @@ public static class DataGenerator
 
     public static Expr DefaultRandom()
     {
-        return DefaultRandom(DataTypes.Float32, new[] {3, DefaultChannel, 4, 8});
+        return DefaultRandom(DataTypes.Float32, new[] { 3, DefaultChannel, 4, 8 });
     }
 
     public static int DefaultChannel => 2;
-    public static int[] DefaultShape => new[] {3, 2, 4, 8};
+    public static int[] DefaultShape => new[] { 3, 2, 4, 8 };
 
     public static Expr DefaultRandom(DataType dt)
     {
@@ -60,24 +60,25 @@ public static class DataGenerator
     public static Expr RandomScalar()
     {
         return Sigmoid(
-            Random.Normal(DataTypes.Float32, new[] {1})).Evaluate().AsTensor();
+            Random.Normal(DataTypes.Float32, new[] { 1 })).Evaluate().AsTensor();
     }
 
     // nncase format DeQuantizeParam
     public static QuantParam RandomQuantParam()
     {
         var qp = new QuantParam(rand.Next(1, 2), rand.Next(55, 255));
-        return qp with {Scale = 1 / qp.Scale};
+        return qp with { Scale = 1 / qp.Scale };
     }
 
     public static Expr DefaultConv()
     {
-        var input = Random.Normal(DataTypes.Float32, new[] {1, 3, 24, 32});
-        var weights = Random.Normal(DataTypes.Float32, new[] {16, 3, 3, 3}).Evaluate();
-        var bias = Random.Normal(DataTypes.Float32, new[] {16}).Evaluate();
-        var stride = Tensor.FromSpan(new[] {1, 1}, new[] {2});
-        var dilation = Tensor.FromSpan(new[] {1, 1}, new[] {2});
-        var padding = new[,] {{0, 1}, {0, 0}};
+        var input = Random.Normal(DataTypes.Float32, new[] { 1, 3, 24, 32 });
+        var weights = Random.Normal(DataTypes.Float32, new[] { 16, 3, 3, 3 }).Evaluate();
+        var bias = Random.Normal(DataTypes.Float32, new[] { 16 }).Evaluate();
+        var stride = Tensor.From(new[] { 1, 1 }, new[] { 2 });
+        var dilation = Tensor.From(new[] { 1, 1 }, new[] { 2 });
+        var padding = new[,] { { 0, 1 },
+        { 0, 0 } };
 
         var conv = Conv2D(input, weights.AsTensor(), bias.AsTensor(), stride, padding,
             dilation,
@@ -87,11 +88,11 @@ public static class DataGenerator
 
     public static IEnumerable<object[]> ResizeModeProduct()
     {
-        var v1 = EnumValues<ImageResizeMode>().Select(x => (object) x).ToArray();
-        var v2 = EnumValues<ImageResizeNearestMode>().Select(x => (object) x).ToArray();
-        var v3 = EnumValues<ImageResizeTransformationMode>().Select(x => (object) x).ToArray();
+        var v1 = EnumValues<ImageResizeMode>().Select(x => (object)x).ToArray();
+        var v2 = EnumValues<ImageResizeNearestMode>().Select(x => (object)x).ToArray();
+        var v3 = EnumValues<ImageResizeTransformationMode>().Select(x => (object)x).ToArray();
         var result = Product(
-            new[] {v1, v2, v3}).Select(x => (object[]) x.ToArray());
+            new[] { v1, v2, v3 }).Select(x => (object[])x.ToArray());
         return result;
     }
 
@@ -99,16 +100,16 @@ public static class DataGenerator
         (this IEnumerable<IEnumerable<T>> sequences)
     {
         IEnumerable<IEnumerable<T>> emptyProduct =
-            new[] {Enumerable.Empty<T>()};
+            new[] { Enumerable.Empty<T>() };
         var ret = sequences.Aggregate(
             emptyProduct,
             (accumulator, sequence) =>
                 from accseq in accumulator
                 from item in sequence
-                select accseq.Concat(new[] {item}));
+                select accseq.Concat(new[] { item }));
         return ret;
     }
-    
+
     public static IValue FromTextFile(string path)
     {
         using (var stream = new StreamReader(path))
@@ -126,7 +127,7 @@ public static class DataGenerator
             }
         }
     }
-    
+
     public static Call AutoConstructor(string root, string opNameInFile, int num)
     {
         var opTy = new IR.Tensors.Broadcast().GetType().Assembly.DefinedTypes
@@ -162,19 +163,19 @@ public static class DataGenerator
         return dt switch
         {
             PointerType pointerType => throw new NotImplementedException(),
-            BooleanType booleanType => Tensor.FromSpan(data.Select(x => (int.Parse(x) >= 1)).ToArray(), shape),
-            Float16Type float16Type => Tensor.FromSpan(data.Select(x => (Half) ParseFloat(x)).ToArray(), shape),
-            Float32Type float32Type => Tensor.FromSpan(data.Select(x => ParseFloat(x)).ToArray(), shape),
-            Float64Type float64Type => Tensor.FromSpan(data.Select(x => double.Parse(x)).ToArray(), shape),
-            Int16Type int16Type => Tensor.FromSpan(data.Select(x => short.Parse(x)).ToArray(), shape),
-            Int32Type int32Type => Tensor.FromSpan(data.Select(x => int.Parse(x)).ToArray(), shape),
-            Int64Type int64Type => Tensor.FromSpan(data.Select(x => long.Parse(x)).ToArray(), shape),
-            Int8Type int8Type => Tensor.FromSpan(data.Select(x => sbyte.Parse(x)).ToArray(), shape),
+            BooleanType booleanType => Tensor.From(data.Select(x => (int.Parse(x) >= 1)).ToArray(), shape),
+            Float16Type float16Type => Tensor.From(data.Select(x => (Half)ParseFloat(x)).ToArray(), shape),
+            Float32Type float32Type => Tensor.From(data.Select(x => ParseFloat(x)).ToArray(), shape),
+            Float64Type float64Type => Tensor.From(data.Select(x => double.Parse(x)).ToArray(), shape),
+            Int16Type int16Type => Tensor.From(data.Select(x => short.Parse(x)).ToArray(), shape),
+            Int32Type int32Type => Tensor.From(data.Select(x => int.Parse(x)).ToArray(), shape),
+            Int64Type int64Type => Tensor.From(data.Select(x => long.Parse(x)).ToArray(), shape),
+            Int8Type int8Type => Tensor.From(data.Select(x => sbyte.Parse(x)).ToArray(), shape),
             BFloat16Type bFloat16Type => throw new NotImplementedException(),
-            UInt16Type uInt16Type => Tensor.FromSpan(data.Select(x => ushort.Parse(x)).ToArray(), shape),
-            UInt32Type uInt32Type => Tensor.FromSpan(data.Select(x => uint.Parse(x)).ToArray(), shape),
-            UInt64Type uInt64Type => Tensor.FromSpan(data.Select(x => ulong.Parse(x)).ToArray(), shape),
-            UInt8Type uInt8Type => Tensor.FromSpan(data.Select(x => byte.Parse(x)).ToArray(), shape),
+            UInt16Type uInt16Type => Tensor.From(data.Select(x => ushort.Parse(x)).ToArray(), shape),
+            UInt32Type uInt32Type => Tensor.From(data.Select(x => uint.Parse(x)).ToArray(), shape),
+            UInt64Type uInt64Type => Tensor.From(data.Select(x => ulong.Parse(x)).ToArray(), shape),
+            UInt8Type uInt8Type => Tensor.From(data.Select(x => byte.Parse(x)).ToArray(), shape),
             Utf8CharType utf8CharType => throw new NotImplementedException(),
             PrimType primType => throw new NotImplementedException(),
             QuantParamType quantParamType => throw new NotImplementedException(),
@@ -183,10 +184,9 @@ public static class DataGenerator
         };
     }
 
-
     // todo: support tuple parse
     // todo: support Evaluator dump result
-    
+
     // Runtime Format
     // input format:
     // datatype: xxx
@@ -217,7 +217,7 @@ public static class DataGenerator
     private record DumpData(DataType dt, int[] shape, string[] data)
     {
     }
-    
+
     private static DumpData[] ParseDumpFile(string[] content)
     {
         int baseIndex = 0;
@@ -254,9 +254,9 @@ public static class DataGenerator
         {
             return Array.Empty<int>();
         }
+
         return s.Split(" ").Select(x => int.Parse(x)).ToArray();
     }
-        
 
-    private static DataType ParseDataType(string dt) => DataType.FromTypeCode((Runtime.TypeCode) int.Parse(dt.Split(":")[1]));
+    private static DataType ParseDataType(string dt) => DataType.FromTypeCode((Runtime.TypeCode)int.Parse(dt.Split(":")[1]));
 }

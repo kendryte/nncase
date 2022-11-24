@@ -47,5 +47,7 @@ public struct FixedMul : IEquatable<FixedMul>
     {
         return Mul == other.Mul && Shift == other.Shift;
     }
-};
+}
+
+;
 

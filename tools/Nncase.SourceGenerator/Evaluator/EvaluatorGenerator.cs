@@ -10,7 +10,6 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Nncase.SourceGenerator.Evaluator;
 
-
 public enum InterfaceKind
 {
     IEvaluator,
@@ -60,13 +59,17 @@ public static class InterfaceKindExtensions
             { Name: "Const" } or { BaseType: { Name: "Const" } } => true,
             { Name: "IValue" } => true,
             _ => false,
-        },
+        }
+
+,
         InterfaceKind.ITypeInferencer => typeSymbol switch
         {
             { Name: "IRType" } => true,
             { BaseType: { Name: "IRType" } } => true,
             _ => false,
-        },
+        }
+
+,
         _ => throw new NotImplementedException($"CheckReturnTypeRange : {typeSymbol.Name} {interfaceKind}"),
     };
 
@@ -78,7 +81,9 @@ public static class InterfaceKindExtensions
             { Name: "Const" } or { BaseType: { Name: "Const" } } => $"Value.FromConst({visitStatement})",
             { Name: "IValue" } => visitStatement,
             _ => throw new ArgumentOutOfRangeException($"Can't Return {typeSymbol.ToDisplayString()} For {interfaceKind}!"),
-        },
+        }
+
+,
         InterfaceKind.ITypeInferencer => visitStatement,
         _ => throw new NotImplementedException(),
     };
@@ -94,7 +99,6 @@ internal class GenerateCandidate
     public IMethodSymbol Method;
     public InterfaceKind Target;
 
-
     public GenerateCandidate(INamedTypeSymbol classSymbol, INamedTypeSymbol opSymbol, IMethodSymbol method, InterfaceKind target_kind)
     {
         this.Class = classSymbol;
@@ -107,7 +111,6 @@ internal class GenerateCandidate
 [Generator]
 internal class EvaluatorGenerator : IIncrementalGenerator
 {
-
     public INamedTypeSymbol? ExprSymobl;
     public INamedTypeSymbol? TensorSymobl;
     public INamedTypeSymbol? ParameterInfoSymobl;
@@ -132,7 +135,6 @@ internal class EvaluatorGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(candidates.Collect(), (spc, source) => Execute(spc, source));
     }
 
-
     /// <summary>
     /// check the calss have one more attr && one more base type && have Partial keyword
     /// </summary>
@@ -144,6 +146,7 @@ internal class EvaluatorGenerator : IIncrementalGenerator
         {
             return classDeclaration.Modifiers.Any(tok => tok.IsKind(SyntaxKind.PartialKeyword));
         }
+
         return false;
     }
 
@@ -180,7 +183,6 @@ internal class EvaluatorGenerator : IIncrementalGenerator
                 //Diagnostics.Add(Diagnostic.Create(RecriverUtil.ClassNoValidMethodError, Location.None, classSymbol.ToDisplayString()));
                 return null;
 
-
             if (methods.Length > 1)
             {
                 //Diagnostics.Add(Diagnostic.Create(RecriverUtil.ClassMoreMethodError, Location.None, classSymbol.ToDisplayString()));
@@ -198,6 +200,7 @@ internal class EvaluatorGenerator : IIncrementalGenerator
             return new(classSymbol, OpSymbol, method, target_kind);
             //Console.WriteLine($"EvaluatorGenerator Receive {classSymbol} For {target_kind}");
         }
+
         return null;
     }
 
@@ -243,12 +246,14 @@ internal class EvaluatorGenerator : IIncrementalGenerator
                     statementSyntaxes.Add(ParseStatement($"var {Parameter.Name} = context;"));
                 continue;
             }
+
             if (SymbolEqualityComparer.Default.Equals(paramType, cand.Op))
             {
                 if (Parameter.Name != "target")
                     statementSyntaxes.Add(ParseStatement($"var {Parameter.Name} = target;"));
                 continue;
             }
+
             string callMethod = cand.Target switch
             {
                 InterfaceKind.IEvaluator => paramType switch
@@ -260,13 +265,17 @@ internal class EvaluatorGenerator : IIncrementalGenerator
                     { IsReferenceType: true } x when x.ToDisplayString().EndsWith("OrtKISharp.Tensor") => "GetOrtArgumentValue",
                     { IsUnmanagedType: true, IsValueType: true } x => $"GetArgumentValueAsScalar<{paramType.ToDisplayString()}>",
                     _ => throw new NotSupportedException($"Convert {cand.Class.Name} Params {paramType.ToDisplayString()} For IEvaluator Impl!")
-                },
+                }
+
+,
                 InterfaceKind.ITypeInferencer => paramType switch
                 {
                     { IsReferenceType: true } x when x.IsInheritFrom(IRTypeSymobl) => $"CheckArgumentType<{x}>",
                     var x when SymbolEqualityComparer.Default.Equals(x, ExprSymobl) => $"GetArgument",
                     _ => throw new NotSupportedException($"Convert {cand.Class.Name} Params {paramType.ToDisplayString()} For ITypeInferencer Impl!")
-                },
+                }
+
+,
                 _ => throw new NotSupportedException($"{paramType.ToDisplayString()} with {cand.Target}!")
             };
 
@@ -339,6 +348,7 @@ internal class EvaluatorGenerator : IIncrementalGenerator
                     AddMembers(methodDeclarations);
                 classDeclarations.Add(cls);
             }
+
             // 4. generate the namespaces
             namespaceDeclarations.Add(
                 GeneratorUtil.MakeNameSpace(Namespace!.ToDisplayString()).

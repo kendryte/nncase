@@ -40,10 +40,10 @@ public abstract partial record Pattern
 
     public static implicit operator Pattern(Tensor value) => (TensorConst)value;
 
-    public static implicit operator Pattern(int[] span) => Const.FromTensor(Tensor.FromSpan<int>(span));
+    public static implicit operator Pattern(int[] span) => Const.FromTensor(Tensor.From<int>(span));
 
     public static implicit operator Pattern(float[] span) =>
-        Const.FromTensor(Tensor.FromSpan<float>(span));
+        Const.FromTensor(Tensor.From<float>(span));
 
     /// <summary>
     /// Convert <see cref="TensorConst"/> to <see cref="Pattern"/>.

@@ -4,11 +4,14 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Google.Protobuf.WellKnownTypes;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Tensorflow;
 using Tensorflow.NumPy;
+using static Tensorflow.c_api;
 using Shape = Tensorflow.Shape;
 
 namespace Nncase.Evaluator;
@@ -18,6 +21,18 @@ namespace Nncase.Evaluator;
 /// </summary>
 public static class TensorflowExtension
 {
+    private static unsafe readonly DeallocatorArgs* _deallocatorArgs;
+
+    static unsafe TensorflowExtension()
+    {
+        _deallocatorArgs = (DeallocatorArgs*)Marshal.AllocHGlobal(Marshal.SizeOf<DeallocatorArgs>());
+        *_deallocatorArgs = new DeallocatorArgs
+        {
+            gc_handle = IntPtr.Zero,
+            deallocator_called = false,
+        };
+    }
+
     /// <summary>
     /// Convert <see cref="Tensorflow.Tensor"/> to <see cref="Tensor"/>.
     /// </summary>
@@ -25,8 +40,8 @@ public static class TensorflowExtension
     /// <returns>Converted tensor.</returns>
     public static Tensor ToTensor(this Tensorflow.Tensor tensor)
     {
-        // TODO: Copy-free
-        return Tensor.FromBytes(ToDataType(tensor.dtype), tensor.BufferToArray(), tensor.shape.as_int_list());
+        var mmgr = new TFTensorMemoryManager(tensor.Handle);
+        return Tensor.FromBytes(ToDataType(tensor.dtype), mmgr.Memory, tensor.shape.as_int_list());
     }
 
     /// <summary>
@@ -44,10 +59,26 @@ public static class TensorflowExtension
     /// </summary>
     /// <param name="tensor">Tensor.</param>
     /// <returns>Converted torch tensor.</returns>
-    public static NDArray ToTFTensor(this Tensor tensor)
+    public static unsafe Tensorflow.Tensor ToTFTensor(this Tensor tensor)
     {
+        // TODO: Fix null reference exception
+#if false
+        var dtype = tensor.ElementType.ToTFType();
+        var bufferHandle = tensor.PinBuffer();
+        c_api.Deallocator deallocator = (IntPtr data, IntPtr size, ref c_api.DeallocatorArgs args) =>
+        {
+            bufferHandle.Dispose();
+        };
+        var handle = c_api.TF_NewTensor(dtype, tensor.Dimensions.ToLongs(), tensor.Rank, (IntPtr)bufferHandle.Pointer, (ulong)tensor.Length * (ulong)tensor.ElementType.SizeInBytes, deallocator, (IntPtr)_deallocatorArgs);
+        return new Tensorflow.Tensor(handle);
+#else
         return new NDArray(tensor.BytesBuffer.ToArray(), tensor.Dimensions.ToArray(), tensor.ElementType.ToTFType());
+#endif
     }
+
+    public static TF_DataType ToTFType(this DataType dt) => _dataTypesToTorchType[dt];
+
+    public static DataType ToDataType(this TF_DataType dt) => _TorchTypeTodataTypes[dt];
 
     private static readonly Dictionary<DataType, TF_DataType> _dataTypesToTorchType = new()
     {
@@ -77,7 +108,39 @@ public static class TensorflowExtension
         { TF_DataType.TF_DOUBLE, DataTypes.Float64 },
     };
 
-    public static TF_DataType ToTFType(this DataType dt) => _dataTypesToTorchType[dt];
+    private sealed class TFTensorMemoryManager : MemoryManager<byte>
+    {
+        private readonly SafeTensorHandle _tensor;
 
-    public static DataType ToDataType(this TF_DataType dt) => _TorchTypeTodataTypes[dt];
+        public TFTensorMemoryManager(SafeTensorHandle tensor)
+        {
+            bool success = false;
+            tensor.DangerousAddRef(ref success);
+            if (!success)
+            {
+                throw new InvalidOperationException("Add ref failed.");
+            }
+
+            _tensor = tensor;
+        }
+
+        public unsafe override Span<byte> GetSpan() =>
+            new Span<byte>(c_api.TF_TensorData(_tensor).ToPointer(), (int)c_api.TF_TensorByteSize(_tensor));
+
+        public unsafe override MemoryHandle Pin(int elementIndex = 0)
+        {
+            var basePtr = c_api.TF_TensorData(_tensor).ToPointer();
+            var pointer = Unsafe.Add<byte>(basePtr, elementIndex);
+            return new MemoryHandle(pointer, pinnable: this);
+        }
+
+        public override void Unpin()
+        {
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            _tensor.DangerousRelease();
+        }
+    }
 }

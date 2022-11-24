@@ -8,13 +8,13 @@ public class DumpManager
     public static bool OpenDump { get; private set; } = false;
 
     public static bool Append = false;
-    
+
     public static int Count = 1;
 
     public static string Dir;
 
     public string CountStr => Count.ToString();
-    
+
     public static void RunWithDump(string dir, Action f)
     {
         RunWithDump<int>(dir, () =>
@@ -35,12 +35,12 @@ public class DumpManager
         OpenDump = false;
         return result;
     }
-    
+
     public string GetMaybeDumpDir()
     {
         return ValueDumper.GetMaybeDumpDir(Dir);
     }
-    
+
     protected void UpdateOrder(string root, string target, Shape shape)
     {
         using (var order = new StreamWriter(Path.Join(root, "!out_shape_list"), Append))
@@ -57,7 +57,7 @@ public class DumpManager
             f(sr);
         }
     }
-    
+
     protected void DumpCall(string target, Shape shape, Action<StreamWriter> f)
     {
         var path = Path.Join(GetMaybeDumpDir(), $"{CountStr}${target}");
@@ -65,6 +65,7 @@ public class DumpManager
         {
             f(sr);
         }
+
         UpdateOrder(GetMaybeDumpDir(), target, shape);
         Append = true;
         ++Count;
@@ -85,6 +86,7 @@ public static class ValueDumper
         {
             writer.WriteLine($"type:0");
         }
+
         writer.WriteLine(DumpUtility.SerializeShape(tensor.Shape));
         // todo:other type
         var dt = tensor.ElementType;
@@ -115,7 +117,7 @@ public static class ValueDumper
             DumpTensor(tensorValue, writer);
         }
     }
-    
+
     public static void DumpTensor(TensorValue tensorValue, string path)
     {
         using (var sr = new StreamWriter(path))
@@ -123,7 +125,7 @@ public static class ValueDumper
             DumpTensor(tensorValue, sr);
         }
     }
-    
+
     public static void DumpTensors(TensorValue[] tensorValue, string path)
     {
         using (var sr = new StreamWriter(path))
@@ -131,7 +133,7 @@ public static class ValueDumper
             DumpTensors(tensorValue.Select(x => x.AsTensor()).ToArray(), sr);
         }
     }
-    
+
     public static string GetMaybeDumpDir(string dir)
     {
         var root = Path.Join(CompilerServices.CompileOptions.DumpDir, dir);
@@ -154,17 +156,17 @@ public static class DumpUtility
             stream.Write(data);
         }
     }
-    
+
     public static void WriteResult<T>(string path, T[] data, string prefix = "")
     {
         WriteResult(path, SerializeByColumn(data), prefix);
     }
-    
+
     public static string SerializeByColumn<T>(T[] f)
     {
         return string.Join("\n", f);
     }
-    
+
     public static string SerializeByRow<T>(T[] arr)
     {
         return string.Join(" ", arr);
@@ -174,7 +176,7 @@ public static class DumpUtility
     {
         return $"shape:{SerializeByRow(shape)}";
     }
-    
+
     public static string SerializeShape(Dimension[] dims)
     {
         return $"shape:{SerializeByRow(dims)}";
@@ -184,11 +186,11 @@ public static class DumpUtility
 
     public static string PathJoinByCreate(string root, params string[] paths)
     {
-        var path = Path.Join(new[]{root}.Concat(paths).ToArray());
+        var path = Path.Join(new[] { root }.Concat(paths).ToArray());
         Directory.CreateDirectory(path);
         return path;
     }
-    
+
     public static string SnakeName(string name)
     {
         var sb = new StringBuilder();
@@ -203,6 +205,7 @@ public static class DumpUtility
                 if (lastIsLetter || c != 'D')
                     sb.Append('_');
             }
+
             sb.Append(char.ToLowerInvariant(c));
 
             if (!lastIsLetter && c == 'D')
@@ -211,9 +214,10 @@ public static class DumpUtility
             lastCapital = isCaptial;
             lastIsLetter = isLetter;
         }
+
         return sb.ToString().Trim('_');
     }
-    
+
     public static void WriteBinFile(string path, Tensor tensor)
     {
         using (var stream = new FileStream(Path.Join(path), FileMode.Create, FileAccess.Write, FileShare.None))
@@ -233,14 +237,14 @@ public class Counter
     {
         Count = count;
     }
-    
+
     private int Count;
-    
+
     public T Run<T>(Func<int, T> f)
     {
         return f(Count++);
     }
-    
+
     public void Run(Action<int> f)
     {
         f(Count++);

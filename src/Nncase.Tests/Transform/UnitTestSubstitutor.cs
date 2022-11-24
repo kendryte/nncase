@@ -14,7 +14,6 @@ namespace Nncase.Tests.TransformTest;
 
 public sealed class UnitTestSubstitutor : TestFixture.UnitTestFixtrue
 {
-
     /// <summary>
     /// the substitutor can't change the inner function var
     /// </summary>

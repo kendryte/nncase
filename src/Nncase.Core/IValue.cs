@@ -124,6 +124,7 @@ public sealed class NoneValue : IValue
     {
         throw new InvalidOperationException("This Is None Value!");
     }
+
     /// <inheritdoc/>
     IEnumerator IEnumerable.GetEnumerator()
     {

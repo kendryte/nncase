@@ -16,7 +16,6 @@ namespace Nncase.Tests.Rules.NeutralTest;
 
 public class UnitTestFoldReshape : TestFixture.UnitTestFixtrue
 {
-
     public static IEnumerable<object[]> TestFoldNopReshapePositiveData =>
         new[]
         {

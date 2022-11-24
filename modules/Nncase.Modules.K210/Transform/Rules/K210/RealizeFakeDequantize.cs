@@ -10,7 +10,7 @@ using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.K210;
 using Nncase.IR.Math;
-using static  Nncase.PatternMatch.F.K210;
+using static Nncase.PatternMatch.F.K210;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
 using Tensorflow.Keras;
@@ -36,7 +36,8 @@ public sealed partial class RealizeFakeDequantize : IRewriteRule
             IsWildcard("input"),
             IsQuantParamOf("quantparam", op => true,
                 IsConst("range"), IsConst("bits"))
-                with { TypePattern = HasFixedShape() });
+                with
+            { TypePattern = HasFixedShape() });
 
     private Expr? GetReplace(Call dequant_call, Expr input, Expr quantparam, Tensor<float> range, int bits)
     {

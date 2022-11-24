@@ -21,7 +21,6 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         var input_tensor = context.GetArgumentValueAsTensor(unary, Unary.Input);
         if (input_tensor.Shape.IsScalar)
         {
-
             if (input_tensor.ElementType == DataTypes.Int32)
             {
                 return Value.FromTensor(Tensor.FromScalar<int>(compute_int(input_tensor.ToScalar<int>(), unary.UnaryOp)));
@@ -31,6 +30,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
                 return Value.FromTensor(Tensor.FromScalar<float>(compute_float(input_tensor.ToScalar<float>(), unary.UnaryOp)));
             }
         }
+
         var input = context.GetOrtArgumentValue(unary, Unary.Input);
         var result = unary.UnaryOp switch
         {

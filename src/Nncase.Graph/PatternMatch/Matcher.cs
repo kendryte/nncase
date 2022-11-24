@@ -72,6 +72,7 @@ internal sealed class Matcher
 
     private bool Visit(IPattern pattern, Expr expr)
     {
+        _options.TryUpdateWithRewrite(ref expr);
         _currentScope.IsMatch = (pattern, expr) switch
         {
             (VarPattern varPat, Var var) => VisitLeaf(varPat, var),

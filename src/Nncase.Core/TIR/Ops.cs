@@ -69,8 +69,6 @@ public sealed record Store() : Op
 /// </summary>
 public sealed record Nop() : Op
 {
-
-
     /// <inheritdoc/>
     public override bool CanFoldConstCall => false;
 }

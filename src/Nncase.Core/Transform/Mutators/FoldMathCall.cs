@@ -17,6 +17,7 @@ internal sealed class FoldMathCall : ExprMutator
         {
             return (expr.Parameters.Select(Visit).All(e => e is Const)) ? StructEqualFolding(Const.FromValue(CompilerServices.Evaluate(expr))) : expr;
         }
+
         return expr;
     }
 }

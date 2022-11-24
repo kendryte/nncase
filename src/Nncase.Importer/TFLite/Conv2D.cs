@@ -27,8 +27,8 @@ namespace Nncase.Importer.TFLite
             var dilationW = options.DilationWFactor;
             var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, options.Padding == tflite.Padding.SAME);
             var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, options.Padding == tflite.Padding.SAME);
-            var stride = Tensor.FromSpan<int>(new[] { strideH, strideW }, new[] { 2 });
-            var dilation = Tensor.FromSpan<int>(new[] { dilationH, dilationW }, new[] { 2 });
+            var stride = Tensor.From<int>(new[] { strideH, strideW }, new[] { 2 });
+            var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
 
@@ -41,14 +41,17 @@ namespace Nncase.Importer.TFLite
             {
                 input = Dequantize(input, new QuantParam(inputQuantParams[0].ZeroPoint, inputQuantParams[0].Scale), DataTypes.Float32);
             }
+
             if (weightsQuantParams != null)
             {
                 weights = Dequantize(weights, new QuantParam(weightsQuantParams[0].ZeroPoint, weightsQuantParams[0].Scale), DataTypes.Float32);
             }
+
             if (biasQuantParams != null)
             {
                 bias = Dequantize(bias, new QuantParam(biasQuantParams[0].ZeroPoint, biasQuantParams[0].Scale), DataTypes.Float32);
             }
+
             if (outputQuantParams != null)
             {
                 if (GetOutputTensor(op, 0).Type == tflite.TensorType.INT8)
@@ -95,8 +98,8 @@ namespace Nncase.Importer.TFLite
             var dilationW = options.DilationWFactor;
             var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, options.Padding == tflite.Padding.SAME);
             var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, options.Padding == tflite.Padding.SAME);
-            var stride = Tensor.FromSpan<int>(new[] { strideH, strideW }, new[] { 2 });
-            var dilation = Tensor.FromSpan<int>(new[] { dilationH, dilationW }, new[] { 2 });
+            var stride = Tensor.From<int>(new[] { strideH, strideW }, new[] { 2 });
+            var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
             var depthMul = options.DepthMultiplier;
             if (depthMul != 1)
@@ -108,7 +111,7 @@ namespace Nncase.Importer.TFLite
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
             return F.Tensors.NCHWToNHWC(
                 F.NN.Conv2D(input, weights, bias, stride, padding, dilation,
-                    PadMode.Constant, Util.ShapeIndex(weights, 0), new[] {clamp.Min, clamp.Max}));
+                    PadMode.Constant, Util.ShapeIndex(weights, 0), new[] { clamp.Min, clamp.Max }));
         }
 
         private static ValueRange<float> ToFloatClampRange(tflite.ActivationFunctionType func) => func switch

@@ -52,7 +52,6 @@ public sealed partial class FoldTwoTransposes : IRewriteRule
     {
         if (perm1.CheckedShape.Rank is int rank && rank == perm2.CheckedShape.Rank)
         {
-
             if (perm1 is TensorConst cperm1 && perm2 is TensorConst cperm2)
             {
                 var p1 = cperm1.Value.ToArray<int>();
@@ -64,6 +63,7 @@ public sealed partial class FoldTwoTransposes : IRewriteRule
                     np[i] = p1[p2[i]];
                     is_nop &= (np[i] == i);
                 }
+
                 if (is_nop)
                     return input;
                 return IR.F.Tensors.Transpose(input, np);

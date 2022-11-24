@@ -33,6 +33,6 @@ public partial class Tensor<T>
             throw new InvalidOperationException("This tensor is not a scalar.");
         }
 
-        return Buffer[0];
+        return Buffer.Span[0];
     }
 }

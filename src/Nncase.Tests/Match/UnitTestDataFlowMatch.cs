@@ -14,8 +14,6 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.MatchTest;
 
-
-
 public class UnitTestDataFlowMatch
 {
     //     [Fact]

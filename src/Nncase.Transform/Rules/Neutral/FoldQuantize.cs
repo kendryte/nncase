@@ -9,7 +9,6 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Transform.Rules.Neutral;
 
-
 /// <summary>
 /// Fold  input -> quant -> dequant
 /// </summary>

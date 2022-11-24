@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Numerics.Tensors;
 
 namespace Nncase.IR
 {
@@ -103,19 +102,19 @@ namespace Nncase.IR
         /// Create <see cref="Expr"/> from an array of<see cref="int"/>.
         /// </summary>
         /// <param name="array">Array.</param>
-        public static implicit operator Expr(int[] array) => Tensor.FromSpan<int>(array);
+        public static implicit operator Expr(int[] array) => Tensor.From<int>(array);
 
         /// <summary>
         /// Create <see cref="Expr"/> from an array of<see cref="int"/>.
         /// </summary>
         /// <param name="array">Array.</param>
-        public static implicit operator Expr(long[] array) => Tensor.FromSpan<long>(array);
+        public static implicit operator Expr(long[] array) => Tensor.From<long>(array);
 
         /// <summary>
         /// Create <see cref="Expr"/> from an array of<see cref="float"/>.
         /// </summary>
         /// <param name="array">Array.</param>
-        public static implicit operator Expr(float[] array) => Tensor.FromSpan<float>(array);
+        public static implicit operator Expr(float[] array) => Tensor.From<float>(array);
 
         /// <summary>
         /// Create <see cref="Expr"/> from an array of<see cref="int"/>.
@@ -124,22 +123,22 @@ namespace Nncase.IR
         public static implicit operator Expr(Array array) => Tensor.FromArray(array);
 
         /// <summary>
-        /// Create <see cref="Expr"/> from a span of<see cref="int"/>.
+        /// Create <see cref="Expr"/> from a memory of<see cref="int"/>.
         /// </summary>
-        /// <param name="span">Span.</param>
-        public static implicit operator Expr(ReadOnlySpan<int> span) => Tensor.FromSpan<int>(span);
+        /// <param name="memory">Span.</param>
+        public static implicit operator Expr(Memory<int> memory) => Tensor.From<int>(memory);
 
         /// <summary>
-        /// Create <see cref="Expr"/> from a span of<see cref="long"/>.
+        /// Create <see cref="Expr"/> from a memory of<see cref="long"/>.
         /// </summary>
-        /// <param name="span">Span.</param>
-        public static implicit operator Expr(ReadOnlySpan<long> span) => Tensor.FromSpan<long>(span);
+        /// <param name="memory">Span.</param>
+        public static implicit operator Expr(Memory<long> memory) => Tensor.From<long>(memory);
 
         /// <summary>
-        /// Create <see cref="Expr"/> from a span of<see cref="float"/>.
+        /// Create <see cref="Expr"/> from a memory of<see cref="float"/>.
         /// </summary>
-        /// <param name="span">Span.</param>
-        public static implicit operator Expr(ReadOnlySpan<float> span) => Tensor.FromSpan<float>(span);
+        /// <param name="memory">Span.</param>
+        public static implicit operator Expr(Memory<float> memory) => Tensor.From<float>(memory);
 
         /// <summary>
         /// Create <see cref="Expr"/> from a <see cref="Tensor"/>.

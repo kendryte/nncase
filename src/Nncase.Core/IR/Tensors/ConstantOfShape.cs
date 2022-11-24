@@ -22,7 +22,7 @@ public sealed record ConstantOfShape() : Op
     /// Gets Shape.
     /// </summary>
     public static readonly ParameterInfo Shape = new(typeof(ConstantOfShape), 0, "shape", IsIntegral() & HasRank(1));
-    
+
     /// <summary>
     /// Gets Value.
     /// </summary>

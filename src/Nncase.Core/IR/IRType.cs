@@ -115,6 +115,7 @@ public sealed record TupleType(IRArray<IRType> Fields) : IRType, IEnumerable<IRT
     {
         return ((IEnumerable<IRType>)Fields).GetEnumerator();
     }
+
     /// <inheritdoc/>
     IEnumerator IEnumerable.GetEnumerator()
     {

@@ -5,8 +5,6 @@ using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
 
-
-
 namespace Nncase.Tests.TIRTest;
 
 /// <summary>
@@ -14,7 +12,6 @@ namespace Nncase.Tests.TIRTest;
 /// </summary>
 public class UnitTestConstructor : TestFixture.UnitTestFixtrue
 {
-
     [Fact]
     public void TestExprConstructor()
     {
@@ -38,7 +35,6 @@ public class UnitTestConstructor : TestFixture.UnitTestFixtrue
         //var ramp = TIR.T.Ramp(1, 2, 3);
         //Assert.Equal((Const)1, ramp[Ramp.Offset]);
         //Assert.Equal((Const)2, ramp[Ramp.Stride]);
-
 
         //var bc = new Broadcast(1000, 10);
         //Assert.Equal((Const)1000, bc.Value);

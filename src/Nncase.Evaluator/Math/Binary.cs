@@ -98,6 +98,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             else
                 return ort_compute(binary, lhs, rhs);
         }
+
         return ort_compute(binary, lhs, rhs);
     }
 
@@ -182,7 +183,6 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             return new InvalidType("The Binary Sub Only Accept The UInt32 Datatype.");
         if (lhs is { DType: PointerType { ElemType: var letype } } && rhs is { DType: PointerType { ElemType: var retype } })
         {
-
             if (letype == retype)
                 return TensorType.Pointer(letype);
             else

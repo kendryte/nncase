@@ -11,8 +11,6 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Nncase.SourceGenerator.Pattern;
 
-
-
 internal class UsingComparer : IEqualityComparer<UsingDirectiveSyntax>
 {
     public bool Equals(UsingDirectiveSyntax x, UsingDirectiveSyntax y)
@@ -49,7 +47,6 @@ public class PatternGenerator : IIncrementalGenerator
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-
         // Do a simple filter for enums
         IncrementalValuesProvider<GenerateCandidate> candidates = context.SyntaxProvider
             .CreateSyntaxProvider(
@@ -88,6 +85,7 @@ public class PatternGenerator : IIncrementalGenerator
             usings.Add(UsingDirective(ParseName(op.ContainingNamespace.ToDisplayString())));
             return new(op, attrParams, exprParams, usings.ToArray());
         }
+
         return null;
     }
 
@@ -108,9 +106,12 @@ public class PatternGenerator : IIncrementalGenerator
             foreach (var cand in candidates)
             {
                 // build the three pattern functional.
-                foreach (var name_params in new List<List<ParameterSyntax?>>() { new(){ null,null },
+                foreach (var name_params in new List<List<ParameterSyntax?>>()
+                {
+                    new(){ null,null },
                                                                          new(){ pattern_name_params[0],null },
-                                                                    new(){ pattern_name_params[0],pattern_name_params[1] } })
+                                                                    new(){ pattern_name_params[0],pattern_name_params[1] }
+                })
                 {
                     { // 1. build normal method
                       // 1.1 method params
@@ -141,6 +142,7 @@ new VArgsPattern (new[]{{ {inputs} }}, null),
                                            WithLeadingTrivia(ElasticTab).
                                            WithTrailingTrivia(ElasticLineFeed));
                         }
+
                         // 1.4. build method body
                         var method = GeneratorUtil.MakeMethod(ParseTypeName("CallPattern").WithTrailingTrivia(ElasticSpace), "Is" + cand.Op.Name)
                                      .WithParameterList(ParameterList(SeparatedList(method_params)))
@@ -152,13 +154,17 @@ new VArgsPattern (new[]{{ {inputs} }}, null),
                                     .WithBody(GeneratorUtil.MakeBlock(statements));
                         members.Add(method);
                     }
+
                     { // 2. build funciton with condition
                       // 2.1 method params
                         var method_params = (from p in name_params
                                              where p is not null
                                              select p)
-                                     .Concat(new[] {Parameter(Identifier("condition"))
-                                             .WithType(ParseTypeName($"Func<{cand.Op.ToDisplayString()},bool>").WithTrailingTrivia(ElasticSpace)) })
+                                     .Concat(new[]
+                                    {
+                                        Parameter(Identifier("condition"))
+                                             .WithType(ParseTypeName($"Func<{cand.Op.ToDisplayString()},bool>").WithTrailingTrivia(ElasticSpace))
+                                    })
                                      .Concat(from f in cand.ExprParams
                                              select Parameter(Identifier(f.Name.ToLower()))
                                              .WithType(ParseTypeName("Pattern").WithTrailingTrivia(ElasticSpace)));
@@ -174,6 +180,7 @@ new VArgsPattern( new [] {{ {inputs} }}, null ),
                                            WithLeadingTrivia(ElasticTab).
                                            WithTrailingTrivia(ElasticLineFeed));
                         }
+
                         // 1.4. build method body
                         var method = GeneratorUtil.MakeMethod(ParseTypeName("CallPattern").WithTrailingTrivia(ElasticSpace), "Is" + cand.Op.Name)
                                      .WithParameterList(ParameterList(SeparatedList(method_params)))
@@ -188,6 +195,7 @@ new VArgsPattern( new [] {{ {inputs} }}, null ),
                     }
                 }
             }
+
             // 4. build static class
             List<ClassDeclarationSyntax> classes = new();
             {
@@ -201,6 +209,7 @@ new VArgsPattern( new [] {{ {inputs} }}, null ),
                     .AddMembers(members.ToArray());
                 classes.Add(@class);
             }
+
             //5. build namespace
             var arr = old_namespace.ToDisplayString().Split('.');
             arr[arr.Length - 1] = "F";
@@ -208,6 +217,7 @@ new VArgsPattern( new [] {{ {inputs} }}, null ),
                 .AddMembers(classes.ToArray());
             namespaces.Add(namespcae);
         }
+
         var compilationUnit = CompilationUnit().
                 WithMembers(new SyntaxList<MemberDeclarationSyntax>(namespaces)).
                 WithLeadingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.DisableKeyword)).

@@ -21,7 +21,7 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
         var rhs = context.GetArgumentValueAsTensor(target, Compare.Rhs);
         if (lhs.Shape.IsScalar && rhs.Shape.IsScalar && lhs.ElementType == DataTypes.Int32 && rhs.ElementType == DataTypes.Int32)
         {
-          return Value.FromTensor(Tensor.FromScalar(_compute(target.CompareOp, lhs.ToScalar<int>(), rhs.ToScalar<int>())));
+            return Value.FromTensor(Tensor.FromScalar(_compute(target.CompareOp, lhs.ToScalar<int>(), rhs.ToScalar<int>())));
         }
 
         var a = context.GetOrtArgumentValue(target, Compare.Lhs);
@@ -40,16 +40,15 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
 
     bool _compute(CompareOp op, int a, int b) => op switch
     {
-      CompareOp.Equal => a == b,
-      CompareOp.LowerOrEqual => a<= b,
-      CompareOp.GreaterOrEqual => a>= b,
-      CompareOp.GreaterThan => a > b,
-      CompareOp.LowerThan => a < b,
-      CompareOp.NotEqual => a != b,
-      _ => throw new ArgumentOutOfRangeException(nameof(op))
+        CompareOp.Equal => a == b,
+        CompareOp.LowerOrEqual => a <= b,
+        CompareOp.GreaterOrEqual => a >= b,
+        CompareOp.GreaterThan => a > b,
+        CompareOp.LowerThan => a < b,
+        CompareOp.NotEqual => a != b,
+        _ => throw new ArgumentOutOfRangeException(nameof(op))
     };
 
-    
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Compare target)
     {

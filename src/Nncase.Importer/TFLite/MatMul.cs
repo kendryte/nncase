@@ -20,7 +20,7 @@ namespace Nncase.Importer.TFLite
             var (input, other) = GetInputExprs(op, 0, 1);
             var inTensor = GetInputTensor(op, 0);
             var otherTensor = GetInputTensor(op, 1);
-            
+
             if (inTensor.Type != TensorType.FLOAT32 || otherTensor.Type != TensorType.FLOAT32)
             {
                 throw new NotImplementedException();
@@ -41,6 +41,7 @@ namespace Nncase.Importer.TFLite
                 {
                     throw new NotImplementedException();
                 }
+
                 var perm = GetPerm(op, 1);
                 rhs = Transpose(rhs, perm);
             }
@@ -59,10 +60,10 @@ namespace Nncase.Importer.TFLite
                     rhs = Transpose(rhs, perm);
                 }
             }
-            
+
             var bias = op.InputsLength == 3 && op.Inputs(2) != -1
                 ? GetInputExprs(op, 2)
-                : Expand(Cast(0, GetDataType(GetInputTensor(op, 0).Type)), new[]{otherTensor.Shape(0)}).Evaluate().AsTensor();
+                : Expand(Cast(0, GetDataType(GetInputTensor(op, 0).Type)), new[] { otherTensor.Shape(0) }).Evaluate().AsTensor();
             return MatMul(
                 lhs,
                  rhs) + bias;

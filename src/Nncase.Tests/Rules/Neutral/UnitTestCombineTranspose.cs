@@ -20,12 +20,12 @@ using Math = Nncase.IR.F.Math;
 using Random = Nncase.IR.F.Random;
 using Tensors = Nncase.IR.F.Tensors;
 using Tuple = System.Tuple;
+using Microsoft.Toolkit.HighPerformance;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestCombineTranspose: TestFixture.UnitTestFixtrue
+public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
 {
-
     // public static IEnumerable<object[]> TestCombineTransposeBinaryPositiveData =>
     //     new[]
     //     {
@@ -107,10 +107,22 @@ public class UnitTestCombineTranspose: TestFixture.UnitTestFixtrue
     public static IEnumerable<object[]> TestCombineTransposePadPositiveData =>
         new[]
         {
-            new object[] { new[] {1, 2, 3, 4}, new[] {0, 2, 3, 1}, new[,] {{ 4, 4 }, { 3, 3 }, { 2, 2 }, { 1, 1 }}, PadMode.Constant, 1f},
-            new object[] { new[] {1, 2, 3, 4}, new[] {0, 3, 1, 2}, new[,] {{ 1, 1 }, { 0, 0 }, { 1, 1 }, { 1, 1 }}, PadMode.Symmetric, 0f},
-            new object[] { new[] {5, 2, 3, 4}, new[] {3, 0, 1, 2}, new[,] {{ 2, 2 }, { 0, 0 }, { 1, 1 }, { 1, 1 }}, PadMode.Reflect, 0f},
-            new object[] { new[] {1, 2, 3, 4}, new[] {0, 3, 1, 2}, new[,] {{ 1, 1 }, { 0, 0 }, { -1, -1 }, { 1, 1 }}, PadMode.Edge, 0f},
+            new object[] { new[] {1, 2, 3, 4}, new[] {0, 2, 3, 1}, new[,] {{ 4, 4 },
+            { 3, 3 },
+            { 2, 2 },
+            { 1, 1 }}, PadMode.Constant, 1f},
+            new object[] { new[] {1, 2, 3, 4}, new[] {0, 3, 1, 2}, new[,] {{ 1, 1 },
+            { 0, 0 },
+            { 1, 1 },
+            { 1, 1 }}, PadMode.Symmetric, 0f},
+            new object[] { new[] {5, 2, 3, 4}, new[] {3, 0, 1, 2}, new[,] {{ 2, 2 },
+            { 0, 0 },
+            { 1, 1 },
+            { 1, 1 }}, PadMode.Reflect, 0f},
+            new object[] { new[] {1, 2, 3, 4}, new[] {0, 3, 1, 2}, new[,] {{ 1, 1 },
+            { 0, 0 },
+            { -1, -1 },
+            { 1, 1 }}, PadMode.Edge, 0f},
 
         };
 

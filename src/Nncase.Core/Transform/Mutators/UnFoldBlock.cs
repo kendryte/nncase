@@ -15,7 +15,6 @@ namespace Nncase.Transform.Mutators;
 /// </summary>
 internal sealed class UnFoldBlock : ExprMutator
 {
-
     /// <inheritdoc/>
     public override Expr MutateLeaf(TIR.Block expr)
     {
@@ -28,6 +27,7 @@ internal sealed class UnFoldBlock : ExprMutator
                 else
                     return T.Sequential().Build();
             }
+
             return expr;
         }
         else

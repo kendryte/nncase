@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
 
 namespace Nncase;
 
@@ -62,11 +63,13 @@ public static class TensorUtilities
         {
             return 1;
         }
+
         IR.Expr product = 1;
         foreach (var dim in dimensions.Skip(startIndex))
         {
             product = product * dim;
         }
+
         return product;
     }
 
@@ -108,6 +111,7 @@ public static class TensorUtilities
         {
             return Array.Empty<int>();
         }
+
         int[] strides = new int[dimensions.Length];
 
         int stride = 1;
@@ -146,6 +150,7 @@ public static class TensorUtilities
             strides.Insert(0, stride);
             stride *= dim;
         }
+
         if (reverseStride)
             strides.Reverse();
 
@@ -375,6 +380,33 @@ public static class TensorUtilities
             if (status == SliceStatus.IsInvalid)
                 return false;
         }
+
         return true;
     }
+
+    public static long[] ToLongs(this ReadOnlySpan<int> ints)
+    {
+        var longs = new long[ints.Length];
+        for (int i = 0; i < longs.Length; i++)
+        {
+            longs[i] = ints[i];
+        }
+
+        return longs;
+    }
+
+    public static long[] ToLongs(this int[] ints) => ToLongs((ReadOnlySpan<int>)ints);
+
+    public static int[] ToInts(this ReadOnlySpan<long> longs)
+    {
+        var ints = new int[longs.Length];
+        for (int i = 0; i < ints.Length; i++)
+        {
+            ints[i] = (int)longs[i];
+        }
+
+        return ints;
+    }
+
+    public static int[] ToInts(this long[] longs) => ToInts((ReadOnlySpan<long>)longs);
 }

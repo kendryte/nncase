@@ -13,9 +13,8 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// flatten sequential
 /// </summary>
-internal sealed class FlattenSequential  : ExprMutator
+internal sealed class FlattenSequential : ExprMutator
 {
-
     /// <inheritdoc/>
     public override Expr MutateLeaf(TIR.Sequential expr)
     {
@@ -37,6 +36,7 @@ internal sealed class FlattenSequential  : ExprMutator
             else
                 ret.Add(item);
         }
+
         return ret;
     }
 }

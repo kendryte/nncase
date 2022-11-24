@@ -20,14 +20,14 @@ public static class TensorUtil
     {
         return Math.Max(0, 1 - (4 - shape.Length));
     }
-    
+
     private static Tensor SliceTensor(Tensor tensor, int start, int length, int channelAxis = 1)
     {
         var s = tensor.ElementType.SizeInBytes;
         return Tensor.FromBytes(tensor.ElementType,
-            tensor.BytesBuffer.Slice(start * s, length * s), tensor.Dimensions[(channelAxis + 1)..]);
+            tensor.BytesBuffer.Slice(start * s, length * s).ToArray(), tensor.Dimensions[(channelAxis + 1)..]);
     }
-    
+
     public static (int, int) GetShapeInfo(int[] shape, int channelAxis = 1)
     {
         var i = channelAxis + 1;
@@ -35,7 +35,7 @@ public static class TensorUtil
         var size = shape[i..].Aggregate(1, (a, b) => a * b);
         return (channels, size);
     }
-    
+
     public static Tensor[] SliceByChannel(Tensor tensor)
     {
         var channelAxis = GetChannelAxis(tensor.Shape);
@@ -50,7 +50,7 @@ public static class Comparator
 {
     private static float Prod(float[] data1, float[] data2)
     {
-        return data1.Zip(data2).Aggregate(0f, (f, tuple) => f + tuple.Item1 * tuple.Item2);
+        return data1.Zip(data2).Aggregate(0f, (f, tuple) => f + (tuple.Item1 * tuple.Item2));
     }
 
     public static float[] CosSimilarity(IValue a, IValue b)
@@ -77,7 +77,7 @@ public static class Comparator
     {
         return a.Zip(b).Select(tuple => CosSimilarity(tuple.Item1, tuple.Item2)).ToArray();
     }
-    
+
     public static float[][] CosSimilarity(OriginValue[] a, OriginValue[] b)
     {
         return a.Zip(b).Select(tuple => CosSimilarity(tuple.Item1.Value, tuple.Item2.Value)).ToArray();
@@ -93,7 +93,7 @@ public static class Comparator
         var v1 = Math.Sqrt(Prod(va, va));
         var v2 = Math.Sqrt(Prod(vb, vb));
         var sum = Prod(va, vb);
-        return (float) (sum / (v1 * v2));
+        return (float)(sum / (v1 * v2));
     }
 
     public static bool TensorValueCompare(TensorValue pre, TensorValue post, float thresh)
@@ -124,7 +124,7 @@ public static class Comparator
 
         return true;
     }
-    
+
     public static bool Compare(IValue pre, IValue post, float thresh = 0.99f) => (pre, post) switch
     {
         (TensorValue a, TensorValue b) => TensorValueCompare(a, b, thresh),
@@ -181,7 +181,7 @@ public class LazyCompartor
     {
         error[count] = reason;
     }
-    
+
     public static Option<float> Compare(TensorValue pre, TensorValue post, float thresh)
     {
         var v1 = pre.AsTensor();
@@ -202,13 +202,14 @@ public class LazyCompartor
         f();
         FailedAssert();
     }
-    
+
     public void FailedAssert()
     {
         if (error.Count == 0)
         {
             return;
         }
+
         var errList = error.Select(v =>
         {
             var count = v.Key;
@@ -240,7 +241,7 @@ public static class DetailComparator
 
     public static CompareResultByChannel[] CompareDetailAnalysis(DetailCompareResult dataByTensor, float thresh = 0.99f)
     {
-         return dataByTensor.Enumerable().Where(result => result.IsOk(thresh)).ToArray();
+        return dataByTensor.Enumerable().Where(result => result.IsOk(thresh)).ToArray();
     }
 
     public static IEnumerable<DetailCompareResult> CompareDetail(Tensor[] a, Tensor[] b)
@@ -249,14 +250,14 @@ public static class DetailComparator
         return a.Zip(b).Select((t) =>
             CompareDetail(new OriginTensor(t.Item1, ""), new OriginTensor(t.Item2, ""), GetChannelAxis(t.Item1.Shape)));
     }
-    
+
     public static DetailCompareResult CompareDetail(OriginValue a, OriginValue b, int channelAxis = 1)
     {
         var cos = Comparator.CompareByChannel(a.Value, b.Value, channelAxis);
         var LossInfo = CompareForAccuracyLoss(a, b);
         var size = a.Value.AsTensors().Length;
         // todo: fix this
-        return new DetailCompareResult(new []{new DetailCompareResultInfo(cos[0], LossInfo[0])});
+        return new DetailCompareResult(new[] { new DetailCompareResultInfo(cos[0], LossInfo[0]) });
     }
 
     public static AccuracyLossInfo[][] CompareForAccuracyLoss(OriginValue pre, OriginValue post) =>
@@ -282,6 +283,7 @@ public static class DetailComparator
                     index[i - 1] += 1;
                 }
             }
+
             Console.WriteLine(string.Join(",", index.Select(x => x.ToString())));
             return new AccuracyLossInfo(data.Item1, data.Item2, index.ToArray(), pre, post);
         }).ToArray();
@@ -306,7 +308,7 @@ public static class DetailComparator
                 stream.WriteLine(cosByChannel[i]);
                 for (int j = 0; j < size; j++)
                 {
-                    stream.WriteLine(LossInfo[i * size + j]);
+                    stream.WriteLine(LossInfo[(i * size) + j]);
                 }
             }
         }
@@ -317,16 +319,17 @@ public static class DetailComparator
     //     GenerateFullCompareInfo(
     //         a.Select(x => (IValue) Value.FromTensor(x)).Zip(b.Select(x => (IValue) Value.FromTensor(x))), resultRoot);
     // }
-    
+
     public static void GenerateFullCompareInfo(OriginValue[] a, OriginValue[] b, string resultRoot)
     {
         if (a.Length != b.Length)
         {
             throw new InvalidOperationException($"tensor a and b should same length but a:{a.Length} b:{b.Length}");
         }
+
         GenerateFullCompareInfo(a.Zip(b), resultRoot);
     }
-    
+
     public static void GenerateFullCompareInfo(IEnumerable<(OriginValue, OriginValue)> data, string resultRoot)
     {
         var counter = new Counter(1);
@@ -367,11 +370,11 @@ public record DetailCompareResult(DetailCompareResultInfo[] infos)
 
     public IEnumerable<CompareResultByChannel> Enumerable()
     {
-        return infos.Aggregate(System.Linq.Enumerable.Empty<CompareResultByChannel>(), 
+        return infos.Aggregate(System.Linq.Enumerable.Empty<CompareResultByChannel>(),
             (channels, info) => channels.Concat(info.Enumerable()));
     }
 }
-    
+
 public record CompareResultByChannel(float cos, AccuracyLossInfo[] LossInfo)
 {
     public int[] Shape => LossInfo.Head().Shape;
@@ -388,7 +391,7 @@ public record CompareResultByChannel(float cos, AccuracyLossInfo[] LossInfo)
     public override string ToString()
     {
         var err = Losses;
-        var percent = (float) err.Length / new Shape(Shape).Prod().FixedValue;
+        var percent = (float)err.Length / new Shape(Shape).Prod().FixedValue;
         return $"CompareResultByChannel Cos:{cos} \nLossCount/InputSize: {percent}\nLoss:\n{SerializeByColumn(err)}";
     }
 }

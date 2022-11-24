@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Numerics.Tensors;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using NetFabric.Hyperlinq;
@@ -31,7 +30,6 @@ using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Tests.RewriteTest
 {
-
     public class DataFlowRewriteTestFactory : RewriteFixtrue
     {
         public DataFlowRewriteTestFactory() : base()
@@ -65,12 +63,9 @@ namespace Nncase.Tests.RewriteTest
         // [MemberData(nameof(DataAll))]
         // public void RunAll(IRewriteCase Case) => RunCore(Case);
 
-
         public static IEnumerable<object[]> DataOne => Data.Take(1);
         public static IEnumerable<object[]> DataAll => Data.Skip(1);
     }
-
-
 
     // internal class SwapXY : IRewriteRule
     // {
@@ -145,12 +140,12 @@ namespace Nncase.Tests.RewriteTest
             var caseOptions = GetPassOptions();
             var a = (Const)1;
             var b = (Const)2;
-            var expr = a * b + 3;
+            var expr = (a * b) + 3;
             Assert.True(CompilerServices.InferenceType(expr));
             var post = ApplyFoldConstCallRewrite(expr, caseOptions);
             Assert.True(CompilerServices.InferenceType(post));
             Assert.Equal(expr.CheckedType, post.CheckedType);
-            var res = 1 * 2 + 3;
+            var res = (1 * 2) + 3;
             Assert.Equal(((TensorConst)post).Value.ToScalar<int>(), res);
 
             var cast_to_i64 = Cast(expr, DataTypes.Int64);
@@ -228,7 +223,7 @@ namespace Nncase.Tests.RewriteTest
         {
             var caseOptions = GetPassOptions();
             var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(1, 3, 33, 65)));
-            var weights = Tensor.FromSpan<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
+            var weights = Tensor.From<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
             var (inH, inW) = Util.GetHW(input);
             var (fH, fW) = Util.GetHW(weights);
             var inHPost = await RunShapeInferPass("inH", caseOptions, inH);
@@ -244,7 +239,7 @@ namespace Nncase.Tests.RewriteTest
             var padding = Util.ConcatPadding(padH, padW);
             // Assert.True(CompilerServices.InferenceType(padding));
             var paddingPost = await RunShapeInferPass("padding", caseOptions, padding, input);
-            Assert.Equal(Tensor.FromSpan(new[] { 1, 1, 1, 1 }, new Shape(2, 2)), paddingPost);
+            Assert.Equal(Tensor.From(new[] { 1, 1, 1, 1 }, new Shape(2, 2)), paddingPost);
         }
 
         [Fact]
@@ -252,8 +247,8 @@ namespace Nncase.Tests.RewriteTest
         {
             var caseOptions = GetPassOptions();
             var input = new Var("input", new TensorType(DataTypes.Int32, new Shape(new[] { 1, 240, 320, 3 })));
-            var weights = Tensor.FromSpan<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
-            var bias = Tensor.FromSpan<int>(Enumerable.Range(0, 16).ToArray());
+            var weights = Tensor.From<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
+            var bias = Tensor.From<int>(Enumerable.Range(0, 16).ToArray());
             var (inH, inW) = Util.GetHW(input);
             var (fH, fW) = Util.GetHW(weights);
             var strideH = 1;
@@ -262,8 +257,8 @@ namespace Nncase.Tests.RewriteTest
             var dilationW = 1;
             var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, true);
             var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, true);
-            var stride = Tensor.FromSpan<int>(new[] { strideH, strideW }, new[] { 2 });
-            var dilation = Tensor.FromSpan<int>(new[] { dilationH, dilationW }, new[] { 2 });
+            var stride = Tensor.From<int>(new[] { strideH, strideW }, new[] { 2 });
+            var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
 
             var conv = NN.Conv2D(NHWCToNCHW(input), NHWCToNCHW(weights), bias, stride, padding,
@@ -279,7 +274,7 @@ namespace Nncase.Tests.RewriteTest
             var max = Binary(BinaryOp.Max, convAfterTranspose, mul);
 
             // ReduceWindow2D
-            var doubleV = Tensor.FromSpan<int>(new[] { 2, 2 }, new[] { 2 });
+            var doubleV = Tensor.From<int>(new[] { 2, 2 }, new[] { 2 });
             var initValue = (Const)0;
             var (rInH, rInW) = Util.GetHW(max);
             var rPadH = Util.GetWindowedPadding(rInH, 2, 2, dilationH, true);
@@ -313,7 +308,7 @@ namespace Nncase.Tests.RewriteTest
             var inShape = ShapeOf(input);
             Expr axisExprBefore = axis < 0
                 ? axis + Rank(input)
-                : Tensor.FromSpan<int>(new[] { axis });
+                : Tensor.From<int>(new[] { axis });
             axisExprBefore.InferenceType();
             var axisExpr = await RunShapeInferPass("Axis", caseOptions, axisExprBefore, input);
             Assert.Equal(3, ((TensorConst)axisExpr).Value.Cast<int>()[0]);
@@ -342,7 +337,7 @@ namespace Nncase.Tests.RewriteTest
         public async Task TestReshapeToByChannel()
         {
             var caseOptions = GetPassOptions();
-            var v = Tensor.FromSpan<int>(new[] { 1, 2, 3 });
+            var v = Tensor.From<int>(new[] { 1, 2, 3 });
             var shape = Concat(
                 new IR.Tuple(
                     ShapeOf(v),

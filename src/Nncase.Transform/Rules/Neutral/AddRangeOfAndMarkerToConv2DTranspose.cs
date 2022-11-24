@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Numerics.Tensors;
 using Nncase.IR;
 using Nncase.IR.NN;
 using Nncase.PatternMatch;
@@ -36,11 +35,11 @@ public sealed partial class AddRangeOfAndMarkerToConv2DTranspose : IRewriteRule
             IsWildcard("outShape"),
             IsWildcard("stride"),
             IsWildcard("padding"),
-            IsWildcard("outPadding"), 
+            IsWildcard("outPadding"),
             IsWildcard("dilation"),
             IsWildcard("groups"),
             IsWildcard("fusedClamp"));
-    private Expr? GetReplace(Conv2DTranspose conv2dTranspose, Expr input, Expr weights, TensorConst bias, Expr outShape, Expr stride, Expr padding, 
+    private Expr? GetReplace(Conv2DTranspose conv2dTranspose, Expr input, Expr weights, TensorConst bias, Expr outShape, Expr stride, Expr padding,
         Expr outPadding, Expr dilation, Expr groups, Expr fusedClamp)
     {
         var output = Conv2DTranspose(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), IR.F.Math.RangeOfMarker(weights, IR.F.Math.RangeOf(weights)),

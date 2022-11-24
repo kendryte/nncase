@@ -90,6 +90,7 @@ public class ApplicationParts
         {
             Console.WriteLine(directory);
         }
+
         return directories.Distinct();
     }
 }

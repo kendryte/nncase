@@ -21,6 +21,7 @@ internal class StackVMLinkableModule : LinkableModule
         {
             CustomCallModules.UnionWith(funcs.CustomCallModules);
         }
+
         var writer = SectionManager.GetWriter(".custom_calls");
         writer.Write((uint)CustomCallModules.Count);
         foreach (var item in CustomCallModules)

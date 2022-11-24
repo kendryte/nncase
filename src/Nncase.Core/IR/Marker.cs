@@ -35,6 +35,7 @@ public sealed record Marker(string Name, Expr Target, Expr Attribute) : Expr
     {
         return Target;
     }
+
     public MixQuantInfo mixQuantInfo;
 }
 

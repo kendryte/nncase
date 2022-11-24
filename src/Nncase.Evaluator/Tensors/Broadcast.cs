@@ -19,7 +19,7 @@ public sealed partial class BroadcastEvaluator : IEvaluator<Broadcast>, ITypeInf
     public IValue Visit(IEvaluateContext context, Broadcast b)
     {
         var input = context.GetOrtArgumentValue(b, Broadcast.Input);
-        var shape = context.GetArgumentValueAsArray<int>(b, Broadcast.Shape);
+        var shape = context.GetArgumentValueAsArray<long>(b, Broadcast.Shape);
         return input.BroadcastTo(shape).ToValue();
     }
 
@@ -38,10 +38,12 @@ public sealed partial class BroadcastEvaluator : IEvaluator<Broadcast>, ITypeInf
         {
             return TypeInference.BroadcastType(Input, new TensorType(Input.DType, constShapeValue.Value.ToArray<int>()));
         }
+
         if (Shape.Shape[0].IsFixed)
         {
             return Input with { Shape = Enumerable.Repeat(Dimension.Unknown, Shape.Shape[0].FixedValue).ToArray() };
         }
+
         return Input with { Shape = IR.Shape.Unranked };
     }
 }

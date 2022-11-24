@@ -56,6 +56,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
             {
                 return new TensorType(type.DType, Shape.Unranked);
             }
+
             allScalar = (allScalar ?? type.IsScalar) & type.IsScalar;
             allDType ??= type.DType;
             if (allDType != type.DType)
@@ -63,6 +64,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
                 return new InvalidType($"The ConCat Item[{i}] Must Be {allDType} But Get {type.DType.GetDisplayName()}");
             }
         }
+
         if (allScalar == true && allDType is not null)
         {
             return new TensorType(allDType, new[] { inputs.Count });
@@ -78,6 +80,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
         {
             return result;
         }
+
         var input0 = (TensorType)inputs[0];
         InvalidType? invalidType = null;
         var axisV = ((TensorConst)context.GetArgument(target, Concat.Axis)).Value.ToScalar<int>();
@@ -88,6 +91,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
             {
                 return AxisDim(inputs, axisValue);
             }
+
             // if all input shape[dim] is not same, return invalid
             else
             {
@@ -98,6 +102,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
                     {
                         continue;
                     }
+
                     var d = ((TensorType)inType).Shape[i];
                     if (d.IsUnknown)
                     {
@@ -109,6 +114,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
                         allAxisDimIsSame = false;
                     }
                 }
+
                 if (allAxisDimIsSame)
                 {
                     return ((TensorType)inputs[0]).Shape[i];

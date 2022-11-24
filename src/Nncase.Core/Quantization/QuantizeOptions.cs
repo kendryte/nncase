@@ -17,7 +17,9 @@ public enum ModelQuantMode
     NoQuant,
     UsePTQ,
     UseQAT
-};
+}
+
+;
 
 /// <summary>
 /// Calibration Method
@@ -26,7 +28,9 @@ public enum CalibMethod
 {
     NoClip,
     Kld
-};
+}
+
+;
 
 /// <summary>
 /// quantize options

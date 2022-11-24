@@ -31,7 +31,7 @@ public class DequantizeEvaluator : IEvaluator<Dequantize>, ITypeInferencer<Dequa
         var deqParam = context.CheckArgumentType<TensorType>(target, Dequantize.DequantParam);
         return Visit(target, input, deqParam);
     }
-    
+
     /// <inheritdoc/>
     public Cost? Visit(ICostEvaluateContext context, Dequantize target)
     {
@@ -47,6 +47,7 @@ public class DequantizeEvaluator : IEvaluator<Dequantize>, ITypeInferencer<Dequa
                 [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, 2),
             };
         }
+
         return null;
     }
 

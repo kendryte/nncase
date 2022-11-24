@@ -1,7 +1,5 @@
 ﻿using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using Autofac.Extras.CommonServiceLocator;
-using CommonServiceLocator;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -74,7 +72,11 @@ public class Compiler
         var module = ImportModel(content, options);
         DumpModule(module, options, "ir_import");
         //Console.WriteLine("Infer Shape...");
+#if DEBUG
         DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module, options));
+#else
+        InferShape(module, options);
+#endif
         var inferSucc = CompilerServices.InferenceType(module.Entry!);
         DumpModule(module, options, "ir_infertype");
         if (!inferSucc)
@@ -105,7 +107,6 @@ public class Compiler
         };
         return Module;
     }
-
 
     private void DumpModule(IRModule module, CompileOptions options, string prefix)
     {
@@ -160,6 +161,7 @@ public class Compiler
             clear.Add(new RemoveMarker());
             RunPass(t => t.Add(clear), "RemoveMarker");
         }
+
         // fold constant
         RunPass(p => p.Add(new Transform.Passes.ShapeInferPass()), "ShapeInferAndFold");
         // Console.WriteLine("Compile successful");
@@ -170,7 +172,7 @@ public class Compiler
         CompilerServices.CompileOptions.QuantizeOptions = quantOption;
         CompilerServices.CompileOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
     }
-    
+
     public byte[] Gencode()
     {
         var target = CompilerServices.GetCompileTarget;

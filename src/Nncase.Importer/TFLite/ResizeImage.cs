@@ -27,6 +27,7 @@ namespace Nncase.Importer.TFLite
                     0),
                 new Int64Type());
         }
+
         private Expr VisitResizeImage(in tflite.Operator op, ImageResizeMode resizeMode)
         {
             var (input, newSize) = GetInputExprs(op, 0, 1);

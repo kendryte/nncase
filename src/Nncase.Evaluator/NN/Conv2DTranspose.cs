@@ -41,7 +41,7 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
         }
         else
         {
-            return input with {Shape = Shape.Unknown(4)};
+            return input with { Shape = Shape.Unknown(4) };
         }
     }
 }

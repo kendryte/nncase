@@ -8,7 +8,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using CommonServiceLocator;
 using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
@@ -188,7 +187,7 @@ public static class TypeInference
             var ts_padding = paddingValue.Value.Cast<int>();
             var ts_dilation = dilation_con.Value.Cast<int>();
             var groups_v = groups_con.Value.ToScalar<int>();
-            if(!(input.Shape[1].FixedValue >= groups_v && (input.Shape[1].FixedValue % groups_v) == 0))
+            if (!(input.Shape[1].FixedValue >= groups_v && (input.Shape[1].FixedValue % groups_v) == 0))
                 return new InvalidType($"The Input Channel / Groups Error ({input.Shape[1].FixedValue}/{groups_v})");
 
             outShape[2] = GetWindowedOutputSize(input.Shape[2].FixedValue + ts_padding[0, 0] + ts_padding[0, 1],
@@ -201,7 +200,7 @@ public static class TypeInference
             outShape[2] = outShape[3] = Dimension.Unknown;
         }
 
-        return input with {Shape = new Shape(outShape)};
+        return input with { Shape = new Shape(outShape) };
     }
 
     /// <summary>

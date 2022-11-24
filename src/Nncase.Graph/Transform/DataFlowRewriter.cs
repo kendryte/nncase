@@ -48,6 +48,7 @@ internal class DataflowRewriter
                     CompilerServices.DumpIR(post, $"InferShape_{count - 1}_Failed", options.PassDumpDir);
                 throw new InvalidOperationException($"After Rewrite {count - 1}, InferShape Failed For This Model!");
             }
+
             if (!isMutated || options.RewriteOnce)
             {
                 break;

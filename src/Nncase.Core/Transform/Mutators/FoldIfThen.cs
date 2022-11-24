@@ -22,6 +22,7 @@ internal sealed class FoldIfThen : ExprMutator
         {
             return value.ToScalar() ? expr.Then : expr.Else;
         }
+
         return expr;
     }
 

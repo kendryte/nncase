@@ -44,7 +44,7 @@ namespace Nncase.Importer
             var (x, w) = GetInputExprs(op, 0, 1);
             x.InferenceType();
             var T = x.CheckedDataType;
-            
+
             var hiddenSize = GetOptionIntAttribute(op, "hidden_size")
                     .Match(
                         x => (Expr)x,

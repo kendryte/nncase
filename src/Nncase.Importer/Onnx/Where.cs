@@ -5,7 +5,6 @@ using Nncase.IR;
 using Onnx;
 using static Nncase.IR.F.Tensors;
 
-
 namespace Nncase.Importer
 {
     public partial class OnnxImporter

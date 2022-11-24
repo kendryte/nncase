@@ -12,7 +12,6 @@ namespace Nncase.Evaluator;
 /// </summary>
 public class EvaluatorGeneratorAttribute : Attribute
 {
-
 }
 
 /// <summary>

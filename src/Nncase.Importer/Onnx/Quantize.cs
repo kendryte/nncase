@@ -26,7 +26,7 @@ namespace Nncase.Importer
 
             throw new NotImplementedException("Onnx importer not impl for dynamic scale and bias");
         }
-        
+
         private Expr VisitDequantizeLinear(in NodeProto op)
         {
             var (input, scale) = GetInputExprs(op, 0, 1);

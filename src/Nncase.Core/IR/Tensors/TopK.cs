@@ -27,17 +27,17 @@ public sealed record TopK() : Op
     /// Gets k.
     /// </summary>
     public static readonly ParameterInfo K = new(typeof(TopK), 1, "k");
-    
+
     /// <summary>
     /// Gets axis.
     /// </summary>
     public static readonly ParameterInfo Axis = new(typeof(TopK), 2, "axis");
-    
+
     /// <summary>
     /// Gets largest.
     /// </summary>
     public static readonly ParameterInfo Largest = new(typeof(TopK), 3, "largest");
-    
+
     /// <summary>
     /// Gets sorted.
     /// </summary>

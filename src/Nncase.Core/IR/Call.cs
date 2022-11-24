@@ -77,7 +77,7 @@ namespace Nncase.IR
                 }
             }
         }
-        
+
         public void ParametersForeach(Action<Expr, ParameterInfo> f)
         {
             var parameterInfos = ((Op)Target).Parameters.ToArray();

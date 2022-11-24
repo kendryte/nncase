@@ -28,6 +28,7 @@ internal partial class QuantizerAdaRound
         _passOptions = passOptions;
         MarkRangeOfs();
     }
+
     public async Task RunAsync(RunPassOptions options)
     {
         var quantOptions = options.CompileOptions.QuantizeOptions!;
@@ -35,10 +36,12 @@ internal partial class QuantizerAdaRound
         {
             throw new ArgumentNullException(nameof(quantOptions.CalibrationDataset));
         }
+
         if (quantOptions.UseAdaRound)
         {
             await options.Target.AdaRoundWeights(quantOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs, _passOptions);
         }
+
         _graph.Rebuild();
     }
 

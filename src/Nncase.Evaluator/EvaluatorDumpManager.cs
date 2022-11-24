@@ -15,11 +15,11 @@ public class EvaluatorDumpManager : DumpManager
     }
 
     private TensorGetter TensorGetter;
-    
+
     public void DumpCallArgs(Call call)
     {
         var target = DumpUtility.SnakeName(call.Target.GetType().Name);
-        var paramsInfo = ((Op) call.Target).Parameters.ToArray();
+        var paramsInfo = ((Op)call.Target).Parameters.ToArray();
 
         call.ParametersForeach((param, paramInfo) =>
         {
@@ -43,13 +43,13 @@ public class EvaluatorDumpManager : DumpManager
             ValueDumper.DumpTensors(result, sr);
         });
     }
-    
+
     public void RegisterDumpCallbacks(CallbacksRegister regBefore, CallbacksRegister regAfter)
     {
         if (OpenDump)
         {
-            regBefore("DumpResult", expr => DumpCallArgs((Call) expr));
-            regAfter("DumpResult", expr => DumpCall((Call) expr, GetMaybeDumpDir()));
+            regBefore("DumpResult", expr => DumpCallArgs((Call)expr));
+            regAfter("DumpResult", expr => DumpCall((Call)expr, GetMaybeDumpDir()));
         }
     }
 }

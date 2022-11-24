@@ -7,7 +7,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using CommonServiceLocator;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Nncase.CostModel;
@@ -151,7 +150,6 @@ public interface ICompilerServicesProvider
     /// <param name="name">Target name.</param>
     /// <returns>Target</returns>
     ITarget GetTarget(string name);
-
 
     /// <summary>
     /// Get CompileOptions.

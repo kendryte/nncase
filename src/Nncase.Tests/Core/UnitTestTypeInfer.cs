@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics.Tensors;
 using Microsoft.Extensions.Hosting;
 using Nncase;
 using Nncase.Evaluator;
@@ -16,7 +15,6 @@ namespace Nncase.Tests.CoreTest;
 
 public class UnitTypeInferBase : TestFixture.UnitTestFixtrue
 {
-
     public void CheckInferShape(Expr expr, params int[] shapeDimensions)
     {
         CheckInferShape(expr, new Shape(shapeDimensions));
@@ -38,9 +36,9 @@ public class UnitTypeInferBase : TestFixture.UnitTestFixtrue
     public Var var(Shape shape) => var(shape, DataTypes.Float32);
 
 }
+
 public class UnitTestTypeInfer : UnitTypeInferBase
 {
-
     public UnitTestTypeInfer() : base()
     {
     }
@@ -69,7 +67,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     public void TestInferPad()
     {
         var a = new Var(new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
-        var pads = Tensor.FromSpan(new[] { 0, 0, 1, 1, 2, 2, 3, 3 }, new Shape(4, 2));
+        var pads = Tensor.From(new[] { 0, 0, 1, 1, 2, 2, 3, 3 }, new Shape(4, 2));
         var pad = Pad(a, pads, PadMode.Constant, 1f);
         Assert.True(CompilerServices.InferenceType(pad));
         Assert.Equal(pad.CheckedShape, new Shape(1, 5, 228, 230));
@@ -78,11 +76,11 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     [Fact]
     public void TestSlice()
     {
-        var input = Tensor.FromSpan<int>(new[] { 1, 7, 7, 75 });
-        var begin = Tensor.FromSpan<int>(new[] { 0 });
-        var end = Tensor.FromSpan<int>(new[] { 1 });
-        var stride = Tensor.FromSpan<int>(new[] { 1 });
-        var axis = Tensor.FromSpan<int>(new[] { 0 });
+        var input = Tensor.From<int>(new[] { 1, 7, 7, 75 });
+        var begin = Tensor.From<int>(new[] { 0 });
+        var end = Tensor.From<int>(new[] { 1 });
+        var stride = Tensor.From<int>(new[] { 1 });
+        var axis = Tensor.From<int>(new[] { 0 });
         var s = Slice(input, begin, end, axis, stride);
         Assert.True(CompilerServices.InferenceType(s));
         var post = s.Evaluate();
@@ -121,9 +119,9 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         CompilerServices.InferenceType(s);
         Assert.Equal(new Shape(3), s.CheckedShape);
 
-        var x = Tensor.FromSpan<int>(new[] { 1, 2 });
-        var y = Tensor.FromSpan<int>(new[] { 1, 2 });
-        var z = Tensor.FromSpan<int>(new[] { 1, 2 });
+        var x = Tensor.From<int>(new[] { 1, 2 });
+        var y = Tensor.From<int>(new[] { 1, 2 });
+        var z = Tensor.From<int>(new[] { 1, 2 });
         var ss = Stack(new Tuple(x, y, z), 1);
         CompilerServices.InferenceType(ss);
         Assert.Equal(new Shape(2, 3), ss.CheckedShape);
@@ -159,7 +157,6 @@ public class UnitTestTypeInfer : UnitTypeInferBase
             ReduceArg(ReduceArgOp.ArgMax, input, 3, true, false),
             4, 5, 6, 1);
     }
-
 
     void CheckReshape(Expr input, int[] reshapeArgs, int[] expectShape)
     {
@@ -221,7 +218,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     public void TestGather0()
     {
         var input = new Var("a", new TensorType(DataTypes.Float32, new Shape(32, 256)));
-        var indices = Tensor.FromSpan<int>(new[] { 1, 10 });
+        var indices = Tensor.From<int>(new[] { 1, 10 });
         var g = Gather(input, 0, indices);
         CheckInferType(g, DataTypes.Float32, new Shape(2, 256));
     }
@@ -230,15 +227,14 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     public void TestSlice1()
     {
         var input = new Var("a", new TensorType(DataTypes.Float32, new Shape(1, 10, 256)));
-        var ones = Tensor.FromSpan<long>(new[] { 1L });
+        var ones = Tensor.From<long>(new[] { 1L });
         var begins = ones;
-        var ends = Tensor.FromSpan<long>(new[] { 9223372036854775807 });
+        var ends = Tensor.From<long>(new[] { 9223372036854775807 });
         var axes = ones;
         var steps = ones;
         var s = Slice(input, begins, ends, axes, ones);
         CheckInferType(s, DataTypes.Float32, new Shape(1, 9, 256));
     }
-
 
     public static IEnumerable<object[]> TestMatMulData =>
         new[]

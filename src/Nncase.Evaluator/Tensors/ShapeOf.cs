@@ -20,8 +20,8 @@ public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>, I
     public IValue Visit(IEvaluateContext context, ShapeOf shape)
     {
         var input = context.GetArgumentValueAsTensor(shape, ShapeOf.Input);
-        var shapeArr = input.Shape.Select(x => (long) x.FixedValue).ToArray();
-        return Value.FromTensor(Tensor.FromSpan<long>(shapeArr));
+        var shapeArr = input.Shape.Select(x => (long)x.FixedValue).ToArray();
+        return Value.FromTensor(Tensor.From<long>(shapeArr));
     }
 
     /// <inheritdoc/>
@@ -49,6 +49,7 @@ public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>, I
         {
             return new TensorType(DataTypes.Int64, new Shape(input.Shape.Rank));
         }
+
         return new TensorType(DataTypes.Int64, new Shape(Dimension.Unknown));
     }
 }

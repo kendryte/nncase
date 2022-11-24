@@ -21,7 +21,6 @@ public sealed class UnitTestPassManager : TestFixture.UnitTestFixtrue
 
         Dictionary<BaseFunction, BaseFunction> functions_update = new(ReferenceEqualityComparer.Instance);
 
-
         var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 2, 3, 4 }, out var input_a), T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Output, new[] { 1, 2, 3, 4 }, out var input_b)).Body(
           T.Nop()
         ).Build();
@@ -42,7 +41,6 @@ public sealed class UnitTestPassManager : TestFixture.UnitTestFixtrue
 
         functions_update.Add(prim_func_1, prim_func_2);
 
-
         var module = new IR.IRModule(main_func);
         module.Add(prim_wrapper);
         module.Add(prim_func_1);
@@ -54,7 +52,6 @@ public sealed class UnitTestPassManager : TestFixture.UnitTestFixtrue
         CompilerServices.DumpIR(post, "post", passOptions.DumpDir);
         Assert.True(post is Function { Body: Call { Target: PrimFunctionWrapper { Target: PrimFunction { Name: "prim_func_2" } } } });
     }
-
 
     [Fact]
     public void TestPassMangerUpdateDependence2()
@@ -68,7 +65,6 @@ public sealed class UnitTestPassManager : TestFixture.UnitTestFixtrue
           %1 = %func_1(%0): // i8[1,3,24,32]
           %3 = %func_3(%2): // f16[1,23,30,16]
         */
-
 
         var prim_func_0 = T.PrimFunc("prim_func_0", "k?", T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 24, 32, 3 }, out var _), T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Output, new[] { 1, 3, 24, 32 }, out var _)).Body(
           T.Nop()
@@ -100,7 +96,6 @@ public sealed class UnitTestPassManager : TestFixture.UnitTestFixtrue
         Assert.True(CompilerServices.InferenceType(prim_func_1_update));
 
         functions_update.Add(prim_func_1, prim_func_1_update);
-
 
         var module = new IR.IRModule(main_func);
         module.Add(func_0);

@@ -49,7 +49,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
             var elementsCount = (int)TensorUtilities.GetProduct(returnDims);
 
             var src = tensor.BytesBuffer.Slice(elementSize * linearIndex, elementSize * elementsCount);
-            return Value.FromTensor(Tensor.FromBytes(new TensorType(ttype.DType, returnDims), src));
+            return Value.FromTensor(Tensor.FromBytes(new TensorType(ttype.DType, returnDims), src.ToArray()));
         }
 
         return Input[Index.AsTensor().ToScalar<int>()];
@@ -65,11 +65,12 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
                 {
                     return Input;
                 }
+
                 ret = new TensorType(tensorType.DType,
                        Index.Shape switch
                        {
                            { IsScalar: true } => new Shape(tensorType.Shape.Skip(1)),
-                           { IsFixed: true } => Index.Shape[0].FixedValue == tensorType.Shape.Rank ? 
+                           { IsFixed: true } => Index.Shape[0].FixedValue == tensorType.Shape.Rank ?
                                                 Shape.Scalar :
                                                 new Shape(tensorType.Shape.Skip(Index.Shape[0].FixedValue)),
                            _ => Shape.Unranked,
@@ -100,6 +101,5 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
 
         return ret;
     }
-
 
 }

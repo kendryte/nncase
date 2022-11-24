@@ -33,7 +33,8 @@ public static class Utility
             mag1 += Math.Pow((double)V1[n], 2);
             mag2 += Math.Pow((double)V2[n], 2);
         }
-        if (dot ==  0 && mag1 == 0 && mag2 == 0)
+
+        if (dot == 0 && mag1 == 0 && mag2 == 0)
             return 1.0f;
         return (float)(dot / (Math.Sqrt(mag1) * Math.Sqrt(mag2)));
     }
@@ -117,7 +118,7 @@ public static class Utility
         if (!(shift >= 0 && shift <= max_shift))
             throw new ArgumentOutOfRangeException();
 
-        if (!(Math.Abs(value - mul * Math.Pow(2.0f, (float)-shift)) <= Math.E))
+        if (!(Math.Abs(value - (mul * Math.Pow(2.0f, (float)-shift))) <= Math.E))
             throw new ArgumentOutOfRangeException();
         return new(mul, checked((sbyte)shift));
     }

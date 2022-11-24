@@ -42,6 +42,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         {
             Console.WriteLine("unrank");
         }
+
         var macPerElement = lhs.Shape[^1].IsFixed ? lhs.Shape[^1].FixedValue : 1;
         return new()
         {

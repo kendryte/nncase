@@ -1,5 +1,4 @@
-﻿using System.Numerics.Tensors;
-using NetFabric.Hyperlinq;
+﻿using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.K210;
 using Nncase.TIR;
@@ -10,7 +9,7 @@ using Range = Nncase.TIR.Range;
 
 namespace Nncase.Evaluator.K210;
 
-public class KPUConv2DEvaluator:IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv2D>
+public class KPUConv2DEvaluator : IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv2D>
 {
     public IValue Visit(IEvaluateContext context, KPUConv2D target)
     {
@@ -26,14 +25,15 @@ public class KPUConv2DEvaluator:IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv2D
         var groups = 1L;
         //var kernelShape = weights.Shape;
         var result = OrtKI.Conv(
-            input.ToType(OrtDataType.Float), weights.ToType(OrtDataType.Float), EvaluatorUtil.DefaultBias(batchNorms, weights.Shape[0]).ToType(OrtDataType.Float),
+            input.Cast(OrtDataType.Float), weights.Cast(OrtDataType.Float), EvaluatorUtil.DefaultBias(batchNorms, (int)weights.Shape[0]).Cast(OrtDataType.Float),
             "NOTSET", dilation.ToArray(),
             groups, new long[] { weights.Shape[2], weights.Shape[3] }, EvaluatorUtil.ToOnnxPadFormat(pad), stride.ToArray());
         if (batchNorms != Value.None)
         {
             result = result + batchNorms.AsTensor().ToOrtTensor();
         }
-        return EvaluatorUtil.Act(result.ToTensor(), activition, new[] { float.MinValue, float.MaxValue});
+
+        return EvaluatorUtil.Act(result.ToTensor(), activition, new[] { float.MinValue, float.MaxValue });
     }
 
     /// <inheritdoc/>

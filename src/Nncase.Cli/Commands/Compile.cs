@@ -6,8 +6,6 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
 using Autofac;
-using Autofac.Extras.CommonServiceLocator;
-using CommonServiceLocator;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Nncase.CodeGen;

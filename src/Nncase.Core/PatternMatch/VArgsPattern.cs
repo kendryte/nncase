@@ -88,7 +88,6 @@ public partial class Utility
     public static VArgsPattern IsVArgs(params Pattern[] parameters)
       => IsVArgs(null, parameters);
 
-
     /// <summary>
     /// Create repeated Vargs by template pattern, eg. give the const pattern as Template, will match {Const(),...Const()}.
     /// </summary>
