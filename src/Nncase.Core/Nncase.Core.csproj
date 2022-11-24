@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-	  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CodeAnalysisRuleSet>$(SolutionDir)/tools/StyleCopAnalyzers.ruleset</CodeAnalysisRuleSet>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
@@ -23,7 +23,15 @@
     </PackageReference>
     <PackageReference Include="System.Numerics.Tensors" Version="6.0.0-rc.2.21480.5" />
     <PackageReference Include="ValueTaskSupplement" Version="1.1.0" />
-	  <ProjectReference Include="../../tools/Nncase.SourceGenerator/Nncase.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <PackageReference Include="TorchSharp" Version="0.99.0" />
+    <PackageReference Include="libtorch-cpu-win-x64" Version="1.13.0.1" />
+    <PackageReference Include="libtorch-cpu-linux-x64" Version="1.13.0.1" />
+    <PackageReference Include="libtorch-cpu-osx-x64" Version="1.13.0.1" />
+    <!-- <PackageReference Include="libtorch-cuda-11.1-win-x64" Version="1.9.0.11" />
+    <PackageReference Include="libtorch-cuda-11.1-linux-x64" Version="1.9.0.11" /> -->
+    <!-- <PackageReference Include="libtorch-cuda-11.3-win-x64" Version="1.11.0.1" />
+    <PackageReference Include="libtorch-cuda-11.3-linux-x64" Version="1.11.0.1" /> -->
+    <ProjectReference Include="../../tools/Nncase.SourceGenerator/Nncase.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
