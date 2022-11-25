@@ -30,7 +30,7 @@ public partial class SingleInputFusion<T, BeginT, EndT> : FusionMaker
             IsWildcardCall<BeginT>(null!, null!, IsWildcard("input")))));
 
     // replace input with var
-    private Call? GetReplace(Call st, Expr input)
+    private Call? GetReplace(Call st, Expr input, RunPassOptions passOptions)
     {
         var arg = new Var("input0", input.CheckedType!);
         var body = ReplaceTarget(st, input, arg);
