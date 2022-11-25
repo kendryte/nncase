@@ -30,9 +30,9 @@ public class MatchOptions
     public Dictionary<Expr, HashSet<IPattern>> SuppressedPatterns { get; }
 
     /// <summary>
-    /// Gets rewrite memo.
+    /// Gets or sets rewrite memo.
     /// </summary>
-    public Dictionary<Expr, Expr> RewriteMemo { get; }
+    public Dictionary<Expr, Expr> RewriteMemo { get; set; }
 
     /// <summary>
     /// check the expr and pattern in the suppressed pattern dict.

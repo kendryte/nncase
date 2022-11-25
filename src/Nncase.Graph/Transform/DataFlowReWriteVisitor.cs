@@ -24,7 +24,7 @@ internal sealed class DataFlowRewriteVisitor : ExprMutator
     {
         _rule = rule;
         _options = options;
-        // _options.MatchOptions.RewriteMemo.Clear();
+        _options.MatchOptions.RewriteMemo = ExpressionMemo;
     }
 
     /// <summary>
@@ -52,7 +52,6 @@ internal sealed class DataFlowRewriteVisitor : ExprMutator
             if (replace != null)
             {
                 replace.CheckedType = expr.CheckedType;
-                _options.MatchOptions.MemoRewrite(expr, replace);
                 _dontInheritExprs.Add(replace);
                 return replace;
             }

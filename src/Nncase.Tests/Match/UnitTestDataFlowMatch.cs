@@ -151,7 +151,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
         Expr b = 2;
         Expr c = 3;
         Expr d = 4;
-        var pre = ((a - (b + c)) + (c * d));
+        var pre = (a - (b + c)) + (c * d);
         CompilerServices.InferenceType(pre);
 
         var visitor = new DataFlowRewriteVisitor(new SimpleRule(), caseOptions);
@@ -163,7 +163,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
         {
             if (root_call[IR.Math.Binary.Lhs] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub } } lhs_call)
             {
-                Assert.True(lhs_call[IR.Math.Binary.Lhs] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub } });
+                Assert.True(lhs_call[IR.Math.Binary.Rhs] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub } });
             }
         }
         else
