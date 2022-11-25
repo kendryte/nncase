@@ -19,50 +19,19 @@ namespace Nncase.Compiler;
 
 public class Compiler
 {
-    private IRModule Module;
+    private readonly CompileOptions _compileOptions;
+    private IRModule? _module;
 
-    public static void init(CompileOptions options)
+    public Compiler(CompileOptions compileOptions)
     {
-        var host = Host.CreateDefaultBuilder();
-        host.ConfigureAppConfiguration(ConfigureAppConfiguration)
-            .UseServiceProviderFactory(new AutofacServiceProviderFactory())
-            .ConfigureContainer<ContainerBuilder>(ConfigureContainer)
-            .ConfigureServices(ConfigureServices)
-            .ConfigureLogging(ConfigureLogging)
-            .UseConsoleLifetime();
-        var iHost = host.Build();
+        _compileOptions = compileOptions;
+    }
+
+    public static void Initialize()
+    {
+        var iHost = CompilerHost.CreateHostBuilder().Build();
         var provider = iHost.Services.GetRequiredService<ICompilerServicesProvider>();
         CompilerServices.Configure(provider);
-    }
-
-    private static void ConfigureContainer(ContainerBuilder builder)
-    {
-        var assemblies = ApplicationParts.LoadApplicationParts(c =>
-        {
-            c.AddCore()
-                .AddEvaluator()
-                .AddGraph()
-                .AddEGraph()
-                .AddStackVM();
-        });
-        builder.RegisterAssemblyModules(assemblies);
-    }
-
-    private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
-    {
-        services.AddLogging();
-    }
-
-    private static void ConfigureAppConfiguration(HostBuilderContext context, IConfigurationBuilder builder)
-    {
-        builder.SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("config.json", true, false);
-    }
-
-    private static void ConfigureLogging(ILoggingBuilder loggingBuilder)
-    {
-        loggingBuilder.ClearProviders();
-        loggingBuilder.AddConsole();
     }
 
     public IRModule ImportModule(Stream content, CompileOptions options)
@@ -99,13 +68,13 @@ public class Compiler
     private IRModule ImportModel(Stream content, CompileOptions options)
     {
         CompilerServices.CompileOptions = options;
-        Module = options.InputFormat switch
+        _module = options.InputFormat switch
         {
             "tflite" => Importers.ImportTFLite(content, options),
             "onnx" => Importers.ImportOnnx(content, options),
             _ => throw new NotImplementedException($"Not Implement {options.InputFormat} Impoter!"),
         };
-        return Module;
+        return _module;
     }
 
     private void DumpModule(IRModule module, CompileOptions options, string prefix)
@@ -117,7 +86,7 @@ public class Compiler
     private void RunPass(Action<PassManager> register, string dirName)
     {
         var dump_path = Path.Join(CompilerServices.CompileOptions.DumpDir, dirName);
-        var pmgr = new PassManager(Module, new RunPassOptions(CompilerServices.GetCompileTarget, 3, Path.Join(CompilerServices.CompileOptions.DumpDir, dirName), CompilerServices.CompileOptions));
+        var pmgr = new PassManager(_module, new RunPassOptions(CompilerServices.GetCompileTarget, 3, Path.Join(CompilerServices.CompileOptions.DumpDir, dirName), CompilerServices.CompileOptions));
         register(pmgr);
         pmgr.RunAsync().Wait();
     }
@@ -177,7 +146,7 @@ public class Compiler
     {
         var target = CompilerServices.GetCompileTarget;
         var moduleBuilder = new ModelBuilder(target, CompilerServices.CompileOptions);
-        var linkedModel = moduleBuilder.Build(Module);
+        var linkedModel = moduleBuilder.Build(_module);
         using var output = new MemoryStream();
         linkedModel.Serialize(output);
         // Console.WriteLine("Gencode successful");

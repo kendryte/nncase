@@ -9,6 +9,7 @@ using System.Reflection;
 using Nncase.IR;
 
 namespace Nncase.Hosting;
+
 // Custom comparer for the Product class
 class PathComparer : IEqualityComparer<string>
 {

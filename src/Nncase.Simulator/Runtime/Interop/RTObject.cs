@@ -14,25 +14,17 @@ public abstract class RTObject : SafeHandle
     /// Initializes a new instance of the <see cref="RTObject"/> class.
     /// </summary>
     /// <param name="handle">Object handle.</param>
-    internal RTObject(IntPtr handle) : base(handle, true)
+    internal RTObject(IntPtr handle)
+        : base(handle, true)
     {
     }
+
+    /// <inheritdoc/>
+    public override bool IsInvalid => handle == IntPtr.Zero;
 
     /// <inheritdoc/>
     protected override bool ReleaseHandle()
     {
         return Native.ObjectFree(handle).IsSuccess;
-    }
-
-    /// <inheritedoc/>
-    public override bool Equals(object? obj)
-    {
-        return obj is RTObject @object && EqualityComparer<IntPtr>.Default.Equals(handle, @object.handle);
-    }
-
-    /// <inheritedoc/>
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(handle);
     }
 }
