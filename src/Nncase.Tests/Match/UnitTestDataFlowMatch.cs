@@ -181,13 +181,25 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
         public override string Name { get; } = "TransposeFusion";
     }
 
+    [RuleGenerator]
+    public class SimpleFuseTwoFusion : Transform.Rules.Neutral.FuseTwoFusion
+    {
+        public override Expr EliminateRedundancy(Expr newBodyWithRedundancy, RunPassOptions passOptions)
+        {
+            return CompilerServices.Rewrite(newBodyWithRedundancy, new[] {
+              new Transform.Rules.Neutral.FoldDeQuantQuant(),
+            }, passOptions.SetDumpLevel(0));
+        }
+    }
+
     [Fact]
     public async void TestMultiFusion()
     {
         /* 
           之前fusion的逻辑是匹配 input -> op -> output 三个节点,然后在ouput上找到对应的 input替换成新的var
           修改过rewrite之后, 在get replace中得到 mutated input ->  op -> old output, 此时在old output上是找不到 mutated input的, 会报错.
-          note 之前get replace的逻辑还是手动遍历节点, 我在想是不是应该调用matcher, 然后把rewrite memo传给它来操作?
+          todo 主要问题是get replace得到的root节点是没有更新过的, 但是他的叶节点是更新过的, 带来了思维上的不一致, 如果可以在进入get replace之前构造一个更新后的root, 这样让别人在get replace里面手动遍历节点也不会出错了. 
+          note 目前是手动在所有fusion的逻辑里面更新一下, 需要修改的地方有点多.
          */
         var caseOptions = GetPassOptions();
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
@@ -216,5 +228,41 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
 
         var post = await pass.RunAsync(pre, caseOptions);
 
+    }
+
+    [Fact]
+    public async void TestFuseMultiFusion()
+    {
+        var caseOptions = GetPassOptions();
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
+        Function pre;
+        {
+            var v0 = Quantize(input, new QuantParam(0, 1), DataTypes.BFloat16); // bf16[1,24,32,3]
+            var v1 = Transpose(v0, new[] { 0, 3, 1, 2 }); // bf16[1,3,24,32]
+            var v2 = Dequantize(v1, new QuantParam(0, 1), DataTypes.Float32); // f32[1,3,24,32]
+            var v3 = v2 + IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 24, 32 });
+            var v4 = Quantize(v3, new QuantParam(0, 1), DataTypes.BFloat16); // bf16[1,3,24,32]
+            var v5 = Unary(UnaryOp.Abs, v4); // bf16[1,3,24,32]
+            var v6 = Dequantize(v5, new QuantParam(0, 1), DataTypes.Float32); // f32[1,3,24,32]
+            var v8 = Quantize(v6, new QuantParam(0, 1), DataTypes.BFloat16); // bf16[1,3,24,32]
+            var v9 = Transpose(v8, new[] { 0, 2, 3, 1 }); // bf16[1,24,32,3]
+            var v10 = Dequantize(v9, new QuantParam(0, 1), DataTypes.Float32); // f32[1,24,32,3]
+            pre = new Function("main", v10, new Var[] { input });
+        }
+        CompilerServices.InferenceType(pre);
+
+        var pass = new DataflowPass("Fusion")
+            {
+                new UnaryFusion(),
+                new TransposeFusion(),
+            };
+
+        var post = await pass.RunAsync(pre, caseOptions);
+
+        var pass2 = new DataflowPass("FuseFusion")
+        {
+          new SimpleFuseTwoFusion()
+        };
+        var post2 = await pass2.RunAsync(post, caseOptions);
     }
 }

@@ -1,7 +1,7 @@
-using Nncase.IR;
-using Tuple = Nncase.IR.Tuple;
-using ParameterInfo = Nncase.IR.ParameterInfo;
 using NetFabric.Hyperlinq;
+using Nncase.IR;
+using ParameterInfo = Nncase.IR.ParameterInfo;
+using Tuple = Nncase.IR.Tuple;
 namespace Nncase.Utilities;
 
 using Fx = Func<Expr, Expr>;
@@ -58,9 +58,16 @@ public class ReplaceUtility
         return array[..i].Concat(new[] { v }).Concat(array[(i + 1)..]).ToArray();
     }
 
-    public static Expr ReplacePos(Call call, Expr input, int i)
+    public static Expr ReplacePos(Call call, Expr input, int i, PatternMatch.MatchOptions matchOptions)
     {
-        return call with { Parameters = ReplacePos(call.Parameters, input, i) };
+        return call with
+        {
+            Parameters = ReplacePos(call.Parameters.Select(p =>
+            {
+                matchOptions.TryUpdateWithRewrite(ref p);
+                return p;
+            }).ToList(), input, i)
+        };
     }
 
     public static T[] ReplaceFirst<T>(IReadOnlyList<T> arr, T v)
@@ -110,7 +117,7 @@ public class ReplaceUtility
         return call with { Target = op, Parameters = ReplaceMulti(call.Parameters, posAndValue) };
     }
 
-    private static Option<Expr> ReplaceTargetImpl(Expr root, Expr target, Expr expr)
+    private static Option<Expr> ReplaceTargetImpl(Expr root, Expr target, Expr expr, PatternMatch.MatchOptions matchOptions)
     {
         if (root == target)
         {
@@ -125,18 +132,20 @@ public class ReplaceUtility
         var rootCall = (Call)root;
         for (var i = 0; i < rootCall.Parameters.Count; i++)
         {
-            var e = ReplaceTargetImpl(rootCall.Parameters[i], target, expr);
+            var param = rootCall.Parameters[i];
+            matchOptions.TryUpdateWithRewrite(ref param);
+            var e = ReplaceTargetImpl(param, target, expr, matchOptions);
             if (e.IsSome)
             {
-                return Option.Some(ReplacePos(rootCall, e.Value, i));
+                return Option.Some(ReplacePos(rootCall, e.Value, i, matchOptions));
             }
         }
 
         return Option.None;
     }
 
-    public static Expr ReplaceTarget(Expr root, Expr target, Expr expr) =>
-        ReplaceTargetImpl(root, target, expr)
+    public static Expr ReplaceTarget(Expr root, Expr target, Expr expr, PatternMatch.MatchOptions matchOptions) =>
+        ReplaceTargetImpl(root, target, expr, matchOptions)
             .Match(
                 x => x,
                 () => throw new InvalidOperationException("target not found")
