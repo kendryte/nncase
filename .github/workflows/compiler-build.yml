@@ -18,9 +18,10 @@ jobs:
       - uses: seanmiddleditch/gha-setup-ninja@master
 
       - name: Debug
+        shell: pwsh
         run: |
           echo "debug GITHUB_WORKSPACE"
-          echo %GITHUB_WORKSPACE%
+          $env:GITHUB_WORKSPACE
         if: runner.os == 'Windows'
 
       - name: Set up build environment (Windows, Visual Studio)
