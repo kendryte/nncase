@@ -17,13 +17,6 @@ jobs:
       - uses: actions/checkout@v3
       - uses: seanmiddleditch/gha-setup-ninja@master
 
-      - name: Debug
-        shell: pwsh
-        run: |
-          echo "debug GITHUB_WORKSPACE"
-          $env:GITHUB_WORKSPACE
-        if: runner.os == 'Windows'
-
       - name: Set up build environment (Windows, Visual Studio)
         uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -99,6 +92,17 @@ jobs:
         run: |
           brew install sunnycase/core/libomp@11.1.0
         if: runner.os == 'Macos'
+
+      - name: Remove useless packages
+        shell: pwsh
+        run: |
+          Get-Content .\Directory.Packages.props | Where-Object {$_ -notmatch 'libtorch-cpu-osx' -and $_ -notmatch 'libtorch-cpu-linux'} | Set-Content .\Directory.Packages.props.new
+          rm .\Directory.Packages.props
+          mv .\Directory.Packages.props.new .\Directory.Packages.props
+          Get-Content .\src\Nncase.Core\Nncase.Core.csproj | Where-Object {$_ -notmatch 'libtorch-cpu-osx' -and $_ -notmatch 'libtorch-cpu-linux'} | Set-Content .\src\Nncase.Core\Nncase.Core.csproj.new
+          rm .\src\Nncase.Core\Nncase.Core.csproj
+          mv .\src\Nncase.Core\Nncase.Core.csproj.new .\src\Nncase.Core\Nncase.Core.csproj
+        if: runner.os == 'Windows'
 
       - name: Build
         run: |
