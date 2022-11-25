@@ -14,7 +14,7 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.MatchTest;
 
-public class UnitTestDataFlowMatch
+public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
 {
     //     [Fact]
     //     public void TestMatchDataFlowCallCommutive()
@@ -125,5 +125,49 @@ public class UnitTestDataFlowMatch
         var expr = input * IR.F.NN.Sigmoid(input);
         CompilerServices.TryMatch(expr, pat, out var res);
         var inp = res["input"];
+    }
+
+    private sealed class SimpleRule : IRewriteRule
+    {
+        public IPattern Pattern { get; } = PatternMatch.F.Math.IsBinary(BinaryOp.Add, IsWildcard("lhs"), IsWildcard("rhs"));
+
+        public Expr? GetReplace(IMatchResult result, RunPassOptions options)
+        {
+            return (Expr)result["lhs"] - (Expr)result["rhs"];
+        }
+
+    }
+
+    [Fact]
+    public void TestMatchMultiBranch()
+    {
+        /*       
+        - [ ] dataflow rewrite的pr有bug, 这里只考虑了被match到的节点修改后添加的rewritememo中
+            1. 但是实际上如果 ((a - (b + c)) + (c * d)) 修改了b + c => b - c, 然后 b + c添加到rewrite memo中了,但是后续的a - (b+c)是mutator自动构造出来的, 此时在遍历老的expr的时候还是看到是a - (b+c), 并没有起到rewrite memo的作用
+            2. 我理解应该是类似egraph, 如果遍历的是被替换过的新节点, 那么之间visit 新节点, 否则应该match老节点的类型, 然后leaf节点则匹配自动update 的ExprMemo中的节点.
+         */
+        var caseOptions = GetPassOptions();
+        Expr a = 1;
+        Expr b = 2;
+        Expr c = 3;
+        Expr d = 4;
+        var pre = ((a - (b + c)) + (c * d));
+        CompilerServices.InferenceType(pre);
+
+        var visitor = new DataFlowRewriteVisitor(new SimpleRule(), caseOptions);
+        var post = visitor.Visit(pre);
+        Assert.True(visitor.IsMutated);
+        CompilerServices.DumpIR(post, "post", caseOptions.DumpDir);
+
+        if (post is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub } } root_call)
+        {
+            if (root_call[IR.Math.Binary.Lhs] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub } } lhs_call)
+            {
+                Assert.True(lhs_call[IR.Math.Binary.Lhs] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub } });
+            }
+        }
+        else
+            Assert.True(false);
+
     }
 }

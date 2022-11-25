@@ -7,6 +7,8 @@ using System.Linq;
 using Nncase.IR;
 using Nncase.PatternMatch;
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Nncase.Tests")]
+
 namespace Nncase.Transform;
 
 /// <summary>
