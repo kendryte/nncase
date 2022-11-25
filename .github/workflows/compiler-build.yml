@@ -62,9 +62,7 @@ jobs:
           cmake --build build --config ${{matrix.config.buildType}}
           cmake --install build --prefix install
           
-      - name: Upload nncase Simulator Build Artifact        run: |
-          echo "debug GITHUB_WORKSPACE"
-          echo %GITHUB_WORKSPACE%
+      - name: Upload nncase Simulator Build Artifact
         uses: actions/upload-artifact@v3
         with:
           name: nncase-simulator-${{matrix.config.name}}
