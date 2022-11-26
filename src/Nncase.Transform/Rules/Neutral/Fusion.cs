@@ -30,10 +30,10 @@ public partial class SingleInputFusion<T, BeginT, EndT> : FusionMaker
             IsWildcardCall<BeginT>(null!, null!, IsWildcard("input")))));
 
     // replace input with var
-    private Call? GetReplace(Call st, Expr input)
+    private Call? GetReplace(Call st, Expr input, RunPassOptions passOptions)
     {
         var arg = new Var("input0", input.CheckedType!);
-        var body = ReplaceTarget(st, input, arg);
+        var body = ReplaceTarget(st, input, arg, passOptions.MatchOptions);
         var fusion = new Call(new Fusion(FullName, ModuleKind, body, new[] { arg }), input);
         return fusion;
         // options.SuppressPattern(st, Pattern);
@@ -54,12 +54,12 @@ public partial class DoubleInputFusion<T, BeginT, EndT> : FusionMaker
             IsWildcardCall<BeginT>(null!, null!, IsWildcard("rhs"))));
 
     // replace input with var
-    private Call GetReplace(Call st, Expr lhs, Expr rhs)
+    private Call GetReplace(Call st, Expr lhs, Expr rhs, RunPassOptions passOptions)
     {
         var arg0 = new Var("input0", lhs.CheckedType!);
         var arg1 = new Var("input1", rhs.CheckedType!);
-        var tmpBody = ReplaceTarget(st, lhs, arg0);
-        var body = ReplaceTarget(tmpBody, rhs, arg1);
+        var tmpBody = ReplaceTarget(st, lhs, arg0, passOptions.MatchOptions);
+        var body = ReplaceTarget(tmpBody, rhs, arg1, passOptions.MatchOptions);
         var fusion = new Call(new Fusion(FullName, ModuleKind, body, new[] { arg0, arg1 }), lhs, rhs);
         return fusion;
         // options.SuppressPattern(st, Pattern);
@@ -77,7 +77,7 @@ public partial class DataTransferFusion<LoadT, StoreT> : FusionMaker
         IsWildcardCall<LoadT>(null!, null!, IsWildcard("input")));
 
     // replace input with var
-    private Call? GetReplace(Call st, Expr input)
+    private Call? GetReplace(Call st, Expr input, RunPassOptions passOptions)
     {
         if ((st.Attribute & CallAttr.Fusion) != 0)
         {
@@ -85,7 +85,7 @@ public partial class DataTransferFusion<LoadT, StoreT> : FusionMaker
         }
 
         var arg = new Var("input0", input.CheckedType!);
-        var body = ReplaceTarget(st, input, arg);
+        var body = ReplaceTarget(st, input, arg, passOptions.MatchOptions);
         return new Call(new Fusion(FullName, ModuleKind, body, new[] { arg }), input);
     }
 }
@@ -93,39 +93,54 @@ public partial class DataTransferFusion<LoadT, StoreT> : FusionMaker
 [RuleGenerator]
 public partial class FuseTwoFusion : RewriteRule<Pattern>
 {
+    /// <summary>
+    /// module kind
+    /// </summary>
+    public virtual string ModuleKind { get; } = "StackVM";
+    
+    private Pattern? _calleePattern = null;
+    private Pattern? _Pattern = null;
+
     /// <inheritdoc/>
-    public override Pattern Pattern { get; } = IsCall(
+    public override Pattern Pattern => _Pattern ??=
+      IsCall(
         "caller",
-        IsFunction("callerFuse",
+        IsFusion("callerFuse",
+            ModuleKind,
             IsWildcard(),
             WildcardVArgsPattern),
         ParamsWithArg(CalleePattern)
         );
 
     /// <inheritdoc/>
-    public static Pattern CalleePattern =
+    public Pattern CalleePattern => _calleePattern ??=
         IsCall(
         "callee",
-        IsFunction("calleeFuse",
+        IsFusion("calleeFuse",
+            ModuleKind,
             IsWildcard(),
             WildcardVArgsPattern),
         WildcardVArgsPattern);
 
     // caller(callee, args..)
-    private Call GetReplace(Call callee, Call caller, Function calleeFuse, Function callerFuse)
+    private Call GetReplace(Call caller, Call callee, Fusion calleeFuse, Fusion callerFuse, RunPassOptions passOptions)
     {
         // find callee pos index in caller
         // input0  input1
         //    \      /
         //     caller
         // param[1] == callee, then index == 1
-        var index = caller.Parameters.ToList().FindIndex(x => x == callee);
+        var index = caller.Parameters.ToList().FindIndex(x =>
+        {
+            passOptions.MatchOptions.TryUpdateWithRewrite(ref x);
+            return x == callee;
+        });
         // get param var name from args index for rename
         var beReplacedVar = callerFuse.Parameters[index];
 
         // replace calleeFuse first param with callerParam which be removed
-        var (calleeFuseBody, calleeFirstVar) = RenameFirstVar(calleeFuse, beReplacedVar.Name);
-        var (newCalleeFuseBody, newCalleeParams) = RenameRestVar(calleeFuse.Parameters, calleeFuseBody, caller.Parameters.Count);
+        var (calleeFuseBody, calleeFirstVar) = RenameFirstVar(calleeFuse, beReplacedVar.Name, passOptions.MatchOptions);
+        var (newCalleeFuseBody, newCalleeParams) = RenameRestVar(calleeFuse.Parameters, calleeFuseBody, caller.Parameters.Count, passOptions.MatchOptions);
 
         // merge two body
         //     input1 input2 input3
@@ -133,10 +148,10 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
         // input0    callee  
         //   \        /         
         //     caller               
-        var newBodyWithRedundancy = ReplaceTarget(callerFuse.Body, beReplacedVar, newCalleeFuseBody);
+        var newBodyWithRedundancy = ReplaceTarget(callerFuse.Body, beReplacedVar, newCalleeFuseBody, passOptions.MatchOptions);
         // eliminate store load
         // fusion: load -> op1 -> op2 -> ... -> store
-        var newBody = EliminateRedundancy(newBodyWithRedundancy);
+        var newBody = EliminateRedundancy(newBodyWithRedundancy, passOptions);
 
         var newParams = Merge(callerFuse.Parameters.ToArray(), index, calleeFirstVar, newCalleeParams);
         var newInputs = Merge(caller.Parameters, index, callee.Parameters[0], callee.Parameters.ToArray()[1..]);
@@ -148,9 +163,10 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
     ///      load -> conv -> act -> store
     /// </summary>
     /// <param name="newBodyWithRedundancy"></param>
+    /// <param name="passOptions"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    virtual public Expr EliminateRedundancy(Expr newBodyWithRedundancy)
+    virtual public Expr EliminateRedundancy(Expr newBodyWithRedundancy, RunPassOptions passOptions)
     {
         throw new InvalidOperationException("EliminateRedundancy Not Impl");
     }
@@ -182,7 +198,7 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
     /// <param name="calleeFuse"></param>
     /// <param name="beReplacedVarName"></param>
     /// <returns></returns>
-    public (Expr, Var) RenameFirstVar(Function calleeFuse, string beReplacedVarName)
+    public (Expr, Var) RenameFirstVar(Fusion calleeFuse, string beReplacedVarName, MatchOptions matchOptions)
     {
         // if callee first var name is not same as beReplaceVarName, then replace old var with newVar in calleeFuseBody
         var newVar = new Var(beReplacedVarName, calleeFuse.Parameters[0].CheckedType);
@@ -192,7 +208,7 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
                 calleeFuse.Body,
                 calleeFuse.Parameters[0],
                 // create a new var
-                newVar), newVar);
+                newVar, matchOptions), newVar);
     }
 
     /// <summary>
@@ -206,8 +222,9 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
     /// <param name="calleeFuseParams"></param>
     /// <param name="calleeFuseBody"></param>
     /// <param name="callerParamCount"></param>
+    /// <param name="matchOptions"></param>
     /// <returns></returns>
-    public (Expr, Var[]) RenameRestVar(IRArray<Var> calleeFuseParams, Expr calleeFuseBody, int callerParamCount)
+    public (Expr, Var[]) RenameRestVar(IRArray<Var> calleeFuseParams, Expr calleeFuseBody, int callerParamCount, MatchOptions matchOptions)
     {
         var newVarRange = Enumerable.Range(1, calleeFuseParams.Count - 1);
         var newInputCountBase = callerParamCount;
@@ -221,7 +238,8 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
                 ReplaceTarget(
                     expr,
                     calleeFuseParams[i],
-                    newCalleeParams[i - 1]));
+                    newCalleeParams[i - 1],
+                    matchOptions));
         return (newCalleeFuseBody, newCalleeParams);
     }
 }
