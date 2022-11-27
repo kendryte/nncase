@@ -275,6 +275,8 @@ public static class Testing
     {
         CodeGen.ModelBuilder modelBuilder = new CodeGen.ModelBuilder(CompilerServices.GetTarget(compileOptions.Target), compileOptions);
         CodeGen.LinkedModel linkedModel = modelBuilder.Build(module);
+        if (!Directory.Exists(compileOptions.DumpDir))
+            Directory.CreateDirectory(compileOptions.DumpDir);
         var kmodel_path = Path.Combine(compileOptions.DumpDir, $"{name}.kmodel");
         using (var output = System.IO.File.Open(kmodel_path, System.IO.FileMode.Create))
         {
