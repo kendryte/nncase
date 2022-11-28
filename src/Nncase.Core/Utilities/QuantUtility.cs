@@ -397,8 +397,8 @@ public static class QuantUtility
         //         System.Console.WriteLine("{0} {1} {2}", rst[i], gt[i], (rst[i] - gt[i]) / gt[i]);
         //     }
         // }
-        System.Console.WriteLine(inputWeights.ToArray()[0]);
-        System.Console.WriteLine(rst.ToArray()[0]);
+        // System.Console.WriteLine(inputWeights.ToArray()[0]);
+        // System.Console.WriteLine(rst.ToArray()[0]);
         return rst;
         // inputWeightsRanges is pre calculated by range optimization, so when compute inputWeights quant parameters, range should be gotten from inputWeightsRanges, but not
         // be gotten from inputWeights here simply. And for quantMode, there are 3 modes, UnsignedMode is easy to understand, and for SignedAsymmetricMode/SignedSymmetricMode,
