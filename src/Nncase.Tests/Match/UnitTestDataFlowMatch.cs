@@ -270,7 +270,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
     }
 
     [Fact]
-    public async void TestMatchDoubleLayerFusion()
+    public async void TestMatchPairLayerFusion()
     {
         var caseOptions = GetPassOptions();
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
@@ -300,6 +300,28 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
         };
         var post2 = await pass2.RunAsync(post, caseOptions);
         var isMatch = CompilerServices.TryMatch(post2, IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out var t);
+        Assert.True(isMatch);
+    }
+
+    [Fact]
+    public async void TestMatchPairLayerFusionForSingleFusion()
+    {
+        var caseOptions = GetPassOptions();
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
+        Function pre;
+        {
+            var v4 = Quantize(input, new QuantParam(0, 1), DataTypes.BFloat16); // bf16[1,3,24,32]
+            var v5 = Unary(UnaryOp.Abs, v4); // bf16[1,3,24,32]
+            var v6 = Dequantize(v5, new QuantParam(0, 1), DataTypes.Float32); // f32[1,3,24,32]
+            pre = new Function("main", v6, new Var[] { input });
+        }
+        CompilerServices.InferenceType(pre);
+        var pass = new DataflowPass("Fusion")
+        {
+            new UnaryFusion(),
+        };
+        var result = await pass.RunAsync(pre, caseOptions);
+        var isMatch = CompilerServices.TryMatch(result, IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out var t);
         Assert.True(isMatch);
     }
 }
