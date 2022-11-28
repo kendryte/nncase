@@ -9,7 +9,7 @@ namespace Nncase.Transform.Rules.Neutral;
 
 public abstract class FusionMaker : RewriteRule<Pattern>
 {
-    public virtual string Name { get; } = "SingleInputFusion";
+    public virtual string Name { get; } = "FusionMaker";
 
     public virtual string ModuleKind { get; } = "StackVM";
 
@@ -91,12 +91,11 @@ public partial class DataTransferFusion<LoadT, StoreT> : FusionMaker
 }
 
 [RuleGenerator]
-public partial class FuseTwoFusion : RewriteRule<Pattern>
+public partial class FuseTwoFusion : FusionMaker
 {
     /// <summary>
     /// module kind
     /// </summary>
-    public virtual string ModuleKind { get; } = "StackVM";
     
     private Pattern? _calleePattern = null;
     private Pattern? _Pattern = null;
@@ -155,7 +154,7 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
 
         var newParams = Merge(callerFuse.Parameters.ToArray(), index, calleeFirstVar, newCalleeParams);
         var newInputs = Merge(caller.Parameters, index, callee.Parameters[0], callee.Parameters.ToArray()[1..]);
-        return new Call(new Fusion("FuseTwoFusion", "k510", newBody, newParams), newInputs);
+        return new Call(new Fusion(FullName, ModuleKind, newBody, newParams), newInputs);
     }
 
     /// <summary>
