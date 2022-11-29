@@ -16,19 +16,46 @@
 #include <iostream>
 #include <unordered_map>
 
+#if !defined(__linux__)
+
+#define RISCVFREQUENCY 1600000000
+
+static __inline __attribute__((__always_inline__))
+uint64_t
+k230_get_cycles()
+{
+    uint64_t x;
+    __asm volatile("rdcycle %0;"
+                   : "=r"(x)::);
+    return x;
+}
+#endif
+
 class op_profile
 {
 public:
     op_profile(const std::string &op_type = "op_profile")
         : op_type_(op_type)
     {
+#if !defined(__linux__)
+        begin_ = k230_get_cycles();
+#else
         begin_ = clock();
+#endif
     }
 
     ~op_profile()
     {
+#if !defined(__linux__)
+
+        auto end = k230_get_cycles();
+        auto cast_time = end - begin_;
+        // std::cout << "cpu op:" << op_type_ << " cast time:" << cast_time << " begin time:" << begin_ << " end time:" << end << " " << std::endl;
+#else
         end_ = clock();
         auto cast_time = (end_ - begin_) / (double)1000;
+        // std::cout << "cpu op:" << op_type_ << " cast time:" << cast_time << " begin time:" << begin_ << " end time:" << end_ << " " <<std::endl;
+#endif
         if (op_timing_.find(op_type_) == op_timing_.end())
         {
             op_timing_.emplace(op_type_, cast_time);
