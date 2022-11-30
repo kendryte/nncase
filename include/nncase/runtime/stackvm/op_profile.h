@@ -16,7 +16,6 @@
 #include <iostream>
 #include <unordered_map>
 
-
 #if defined(__riscv)
 
 #define RISCVFREQUENCY 1600000000
