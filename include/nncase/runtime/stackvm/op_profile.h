@@ -16,13 +16,12 @@
 #include <iostream>
 #include <unordered_map>
 
-#if !defined(__linux__)
+
+#if defined(__riscv)
 
 #define RISCVFREQUENCY 1600000000
 
-static __inline __attribute__((__always_inline__))
-uint64_t
-k230_get_cycles()
+static uint64_t k230_get_cycles()
 {
     uint64_t x;
     __asm volatile("rdcycle %0;"
@@ -46,11 +45,11 @@ public:
 
     ~op_profile()
     {
-#if !defined(__linux__)
+#if defined(__riscv)
 
-        auto end = k230_get_cycles();
-        auto cast_time = end - begin_;
-        // std::cout << "cpu op:" << op_type_ << " cast time:" << cast_time << " begin time:" << begin_ << " end time:" << end << " " << std::endl;
+        end_ = k230_get_cycles();
+        auto cast_time = end_ - begin_;
+        // std::cout << "cpu op:" << op_type_ << " cast time:" << cast_time << " begin time:" << begin_ << " end time:" << end_ << " " << std::endl;
 #else
         end_ = clock();
         auto cast_time = (end_ - begin_) / (double)1000;

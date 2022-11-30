@@ -41,7 +41,7 @@ void op_profile::print()
               << "|" << std::setw(12) << std::left << "---"
               << "|" << std::setw(12) << std::left << "---"
               << "|" << std::endl;
-#if defined(__linux__)
+#if !defined(__riscv)
     double convert_number = 1.0f;
 #else
     double convert_number = RISCVFREQUENCY / 1000.0f;
