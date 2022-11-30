@@ -25,6 +25,7 @@ from pathlib import Path
 from shutil import which
 import platform
 import pythonnet
+from enum import Enum
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
     
@@ -324,24 +325,27 @@ class Module():
 class Compiler:
     _module: Module = None
     _compile_options: ClCompileOptions = None
+    _quant_options: ClQuantizeOptions = None
     _compiler: _nncase.Compiler.Compiler
 
     def __init__(self) -> None:
         self._compiler = _nncase.Compiler.Compiler()
-        self._compiler.init(self._compile_options)
-        self.quant_options = None
+        self._compiler.Init()
 
     def set_compile_options(self, compile_options: CompileOptions):
-        self.__process_compile_options(compile_options)
-
-    def __process_compile_options(self, compile_options: CompileOptions) -> ClCompileOptions:
+        # format it.
+        if (self._compile_options is not None):
+            raise RuntimeError("Can't Setup Compile Option Twice!")
         self._compile_options: ClCompileOptions = _nncase.CompileOptions(_nncase.Quantization.ModelQuantMode.NoQuant)
         self._compile_options.Target = compile_options.target
         self._compile_options.DumpLevel = 3 if compile_options.dump_ir == True else 0
         self._compile_options.DumpDir = compile_options.dump_dir
+        self._quant_options = self._compile_options.QuantizeOptions
+        # update the CompilerService global compile options
+        self._compiler.UpdateCompileOptions(self._compile_options)
 
     def compile(self) -> None:
-        self._compiler.Compile(self._compile_options, self.quant_options)
+        self._compiler.Compile()
 
     def create_evaluator(self, stage: int) -> GraphEvaluator:
         return GraphEvaluator(self._module)
@@ -362,19 +366,19 @@ class Compiler:
     def import_onnx(self, model_content: bytes, options: ImportOptions) -> None:
         self._compile_options.InputFormat = "onnx"
         self._module = Module(self._compiler.ImportModule(
-            MemoryStream(model_content), self._compile_options))
+            MemoryStream(model_content)))
         
     def import_tflite(self, model_content: bytes, options: ImportOptions) -> None:
         self._compile_options.InputFormat = "tflite"
         self._module = Module(self._compiler.ImportModule(
-            MemoryStream(model_content), self._compile_options))
+            MemoryStream(model_content)))
 
     def use_ptq(self, ptq_dataset_options: PTQTensorOptions, params: list) -> None:
-        self.ptq_dataset_options = ptq_dataset_options
         dataset = [data.to_nncase_tensor() for data in ptq_dataset_options.cali_data]
         dataset = _nncase.Compiler.PythonHelper.MakeDatasetProvider(dataset, ptq_dataset_options.samples_count, params)
-        self.quant_options = _nncase.Compiler.PythonHelper.MakeQuantizeOptions(dataset)
-        self._compiler.UsePTQ(self.quant_options)
+        self._quant_options.CalibrationDataset = dataset
+        self._quant_options.CalibrationMethod = CalibMethod.NoClip
+        self._compile_options.ModelQuantMode = 1 # UsePTQ
 
     def dump_range_options(self) -> DumpRangeTensorOptions:
         raise NotImplementedError("dump_range_options")
@@ -396,15 +400,29 @@ class DumpRangeTensorOptions:
         pass
 
 
+class CalibMethod(Enum):
+  NoClip = 0
+  Kld = 1
+  Random = 2
+
+class ClQuantizeOptions():
+  CalibrationDataset: object
+  CalibrationMethod: CalibMethod
+  BindQuantMethod: bool 
+  UseSquant: bool 
+  UseAdaRound  : bool 
+
 class ClCompileOptions():
     InputFile: str
     InputFormat: str
     Target: str
     DumpLevel: int
     DumpDir: str
-    UsePTQ: bool
     QuantType: int
     QuantMode: int
+    OutputFile: str
+    ModelQuantMode: int
+    QuantizeOptions: ClQuantizeOptions
 
 
 class CompileOptions:

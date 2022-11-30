@@ -3,7 +3,7 @@ namespace Nncase;
 /// <summary>
 /// the quan mode.
 /// </summary>
-public enum QuantMode
+public enum QuantMode : int
 {
     /// <summary>
     /// UnsignedMode

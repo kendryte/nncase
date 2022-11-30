@@ -32,9 +32,11 @@ public partial class FoldConstCall : RewriteRule<CallPattern>
     public override CallPattern Pattern { get; } = IsCall(
         "call",
         IsOp<Op>(op => op.CanFoldConstCall),
-        IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())))
-        with
-    { TypePattern = IsType(x => !(x is InvalidType)) };
+        IsVArgsRepeat("const_args", () => IsAlt(IsConst(), IsConstTuple()))
+      ) with
+    {
+        TypePattern = IsType(x => !(x is InvalidType))
+    };
 
     Const GetReplace(Call call)
     {

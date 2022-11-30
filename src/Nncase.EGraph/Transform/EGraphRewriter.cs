@@ -58,7 +58,7 @@ internal static class EGraphRewriter
                     }
 
                     var newEClass = eGraph.Add(newExpr);
-                    if (options.DumpLevel == 3)
+                    if (options.DumpLevel > 3)
                     {
                         Console.WriteLine($"Version {eGraph.Version} : Merge {{{oldEClass}}} to {{{newEClass}}}");
                     }

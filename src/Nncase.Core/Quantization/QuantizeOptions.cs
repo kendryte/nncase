@@ -12,25 +12,40 @@ namespace Nncase.Quantization;
 /// <summary>
 /// Model Quant Mode
 /// </summary>
-public enum ModelQuantMode
+public enum ModelQuantMode : int
 {
+    /// <summary>
+    /// no quant
+    /// </summary>
     NoQuant,
+    /// <summary>
+    /// use ptq
+    /// </summary>
     UsePTQ,
+    /// <summary>
+    /// use qat
+    /// </summary>
     UseQAT
 }
-
-;
 
 /// <summary>
 /// Calibration Method
 /// </summary>
 public enum CalibMethod
 {
+    /// <summary>
+    /// no clip
+    /// </summary>
     NoClip,
-    Kld
+    /// <summary>
+    /// kld
+    /// </summary>
+    Kld,
+    /// <summary>
+    /// use random data only for test
+    /// </summary>
+    Random
 }
-
-;
 
 /// <summary>
 /// quantize options

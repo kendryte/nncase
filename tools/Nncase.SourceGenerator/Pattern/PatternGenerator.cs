@@ -44,6 +44,7 @@ internal class GenerateCandidate
 public class PatternGenerator : IIncrementalGenerator
 {
     //public void Initialize(GeneratorInitializationContext context) => context.RegisterForSyntaxNotifications(() => new PatternReceiver());
+    public INamedTypeSymbol? OpSymobl;
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -51,7 +52,7 @@ public class PatternGenerator : IIncrementalGenerator
         IncrementalValuesProvider<GenerateCandidate> candidates = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (node, _) => IsSyntaxTargetForGeneration(node), // select recored with base type named op
-                transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx)) // sect the enum with the [EnumExtensions] attribute
+                transform: (ctx, _) => GetSemanticTargetForGeneration(ctx)) // sect the enum with the [EnumExtensions] attribute
             .Where(static m => m is not null)!; // filter out attributed enums that we don't care about
 
         // Generate the source using the compilation and enums
@@ -63,14 +64,15 @@ public class PatternGenerator : IIncrementalGenerator
         return (node is RecordDeclarationSyntax { BaseList: BaseListSyntax baseList } record && record.AttributeLists.Count == 1 && baseList.Types.Count == 1);
     }
 
-    static GenerateCandidate? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
+    GenerateCandidate? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
     {
+        OpSymobl ??= context.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Op");
+
         var recordDeclaration = (RecordDeclarationSyntax)context.Node;
         var op = context.SemanticModel.GetDeclaredSymbol(recordDeclaration);
 
-        if (op!.BaseType is { Name: "Op" or "CustomOp" }
-          && op!.GetAttributes().Any(attr => attr!.AttributeClass!.Name == "PatternFunctionalGeneratorAttribute")
-           )
+        if (op!.BaseType.IsInheritFrom(OpSymobl) &&
+            op!.GetAttributes().Any(attr => attr!.AttributeClass!.Name == "PatternFunctionalGeneratorAttribute"))
         {
             IParameterSymbol[] attrParams = recordDeclaration.ParameterList is null ?
                     new IParameterSymbol[] { } :
@@ -108,9 +110,9 @@ public class PatternGenerator : IIncrementalGenerator
                 // build the three pattern functional.
                 foreach (var name_params in new List<List<ParameterSyntax?>>()
                 {
-                    new(){ null,null },
-                                                                         new(){ pattern_name_params[0],null },
-                                                                    new(){ pattern_name_params[0],pattern_name_params[1] }
+                    new(){ null, null },
+                    new(){ pattern_name_params[0], null },
+                    new(){ pattern_name_params[0], pattern_name_params[1] }
                 })
                 {
                     { // 1. build normal method

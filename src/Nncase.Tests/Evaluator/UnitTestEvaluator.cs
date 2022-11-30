@@ -20,9 +20,9 @@ using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
+using static Nncase.Utilities.DumpUtility;
 using RangeOf = Nncase.IR.Math.RangeOf;
 using Tuple = Nncase.IR.Tuple;
-using static Nncase.Utilities.DumpUtility;
 
 namespace Nncase.Tests.EvaluatorTest;
 
@@ -178,8 +178,46 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
         var inputList = new Tuple(a, b);
         var expr = Tensors.Stack(inputList, 0);
         CompilerServices.InferenceType(expr);
+        var ret = expr.Evaluate().AsTensor().ToArray<int>();
+        Assert.Equal(new[] { 1, 2 }, ret);
+    }
 
-        Assert.Equal(new[] { 1, 2 }, expr.Evaluate().AsTensor().ToArray<int>());
+    [Fact]
+    public void TestStack2()
+    {
+        Expr a = 2;
+        var inputList = new Tuple(a);
+        var expr = Tensors.Stack(inputList, 0);
+        CompilerServices.InferenceType(expr);
+        var ret = expr.Evaluate().AsTensor().ToArray<int>();
+        Assert.Equal(new[] { 2 }, ret);
+    }
+
+    [Fact]
+    public void TestStack3()
+    {
+        Expr a = IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 2, 2 });
+        {
+            var inputList = new Tuple(a);
+            var expr = Tensors.Stack(inputList, 0);
+            CompilerServices.InferenceType(expr);
+            var ret = expr.Evaluate().AsTensor();
+            Assert.Equal(new[] { 1, 2, 2 }, ret.Shape.ToValueArray());
+        }
+        {
+            var inputList = new Tuple(a);
+            var expr = Tensors.Stack(inputList, 1);
+            CompilerServices.InferenceType(expr);
+            var ret = expr.Evaluate().AsTensor();
+            Assert.Equal(new[] { 2, 1, 2 }, ret.Shape.ToValueArray());
+        }
+        {
+            var inputList = new Tuple(a);
+            var expr = Tensors.Stack(inputList, 2);
+            CompilerServices.InferenceType(expr);
+            var ret = expr.Evaluate().AsTensor();
+            Assert.Equal(new[] { 2, 2, 1 }, ret.Shape.ToValueArray());
+        }
     }
 
     [Fact]

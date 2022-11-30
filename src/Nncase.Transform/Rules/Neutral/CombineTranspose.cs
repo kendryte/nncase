@@ -160,3 +160,24 @@ public sealed partial class CombineTransposeUnary : IRewriteRule
         return Transpose(Unary(unary.UnaryOp, input), perm);
     }
 }
+
+
+/// <summary>
+/// transpose(activation(x),perm) => activation(transpose(x,perm))
+/// </summary>
+[RuleGenerator]
+public sealed partial class CombineTransposeActivations : IRewriteRule
+{
+    public IPattern Pattern { get; } =
+      IsTranspose(
+       IsCall(IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("parameters", () => IsWildcard())),
+       IsWildcard("perm")
+      );
+
+    private Expr GetReplace(ActivationOp activation, IReadOnlyList<Expr> parameters, Expr perm)
+    {
+        return new Call(activation,
+          new Expr[] { Transpose(parameters[0], perm) }
+            .Concat(parameters.Skip(1)).ToArray());
+    }
+}

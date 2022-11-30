@@ -64,11 +64,12 @@ public class Startup
         });
     }
 
-    public void Configure(ICompilerServicesProvider provider, ITestingProvider testing_provider)
+    public void Configure(ICompilerServicesProvider provider, ITestingProvider testing_provider, Microsoft.Extensions.Options.IOptions<CompileOptions> compileOptions)
     {
         Environment.SetEnvironmentVariable("NNCASE_TARGET_PATH", "");
 
         CompilerServices.Configure(provider);
+        CompilerServices.CompileOptions = compileOptions.Value;
         TestFixture.Testing.Configure(testing_provider);
         if (CompilerServices.CompileOptions.DumpDir == "")
             CompilerServices.CompileOptions.DumpDir = TestFixture.Testing.GetDumpDirPath();

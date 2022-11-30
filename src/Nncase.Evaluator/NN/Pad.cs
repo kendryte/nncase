@@ -67,12 +67,12 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
     public Cost Visit(ICostEvaluateContext context, Pad target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, Pad.Input);
-        var outputType = context.GetReturnType<TensorType>();
+        var outputType = context.GetReturnType<IRType>();
 
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.MemoryStore] = outputType is TensorType outT ? CostUtility.GetMemoryAccess(outT) : CostUtility.GetMemoryAccess(inputType),
         };
     }
 }

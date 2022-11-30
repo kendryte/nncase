@@ -19,9 +19,21 @@ namespace Nncase.Compiler;
 
 public class Compiler
 {
-    private IRModule Module;
+    /// <summary>
+    /// the main module
+    /// </summary>
+    public IRModule Module { get; private set; } = null!;
 
-    public static void init(CompileOptions options)
+    /// <summary>
+    /// update compile options
+    /// </summary>
+    /// <param name="options"></param>
+    public static void UpdateCompileOptions(CompileOptions options)
+    {
+        CompilerServices.CompileOptions = options;
+    }
+
+    public void Init()
     {
         var host = Host.CreateDefaultBuilder();
         host.ConfigureAppConfiguration(ConfigureAppConfiguration)
@@ -65,18 +77,19 @@ public class Compiler
         loggingBuilder.AddConsole();
     }
 
-    public IRModule ImportModule(Stream content, CompileOptions options)
+    public IRModule ImportModule(Stream content)
     {
-        CompilerServices.CompileOptions = options;
+        var options = CompilerServices.CompileOptions;
         //Console.WriteLine($"Target: {options.Target}");
         var module = ImportModel(content, options);
         DumpModule(module, options, "ir_import");
         //Console.WriteLine("Infer Shape...");
-#if DEBUG
-        DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module, options));
-#else
-        InferShape(module, options);
-#endif
+
+        if (CompilerServices.CompileOptions.DumpLevel > 4)
+            DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module, options));
+        else
+            InferShape(module, options);
+
         var inferSucc = CompilerServices.InferenceType(module.Entry!);
         DumpModule(module, options, "ir_infertype");
         if (!inferSucc)
@@ -98,7 +111,6 @@ public class Compiler
 
     private IRModule ImportModel(Stream content, CompileOptions options)
     {
-        CompilerServices.CompileOptions = options;
         Module = options.InputFormat switch
         {
             "tflite" => Importers.ImportTFLite(content, options),
@@ -117,13 +129,29 @@ public class Compiler
     private void RunPass(Action<PassManager> register, string dirName)
     {
         var dump_path = Path.Join(CompilerServices.CompileOptions.DumpDir, dirName);
-        var pmgr = new PassManager(Module, new RunPassOptions(CompilerServices.GetCompileTarget, 3, Path.Join(CompilerServices.CompileOptions.DumpDir, dirName), CompilerServices.CompileOptions));
+        var pmgr = new PassManager(Module,
+          new RunPassOptions(
+              CompilerServices.GetCompileTarget,
+              CompilerServices.CompileOptions.DumpLevel,
+              Path.Join(CompilerServices.CompileOptions.DumpDir, dirName),
+              CompilerServices.CompileOptions
+          )
+        );
         register(pmgr);
         pmgr.RunAsync().Wait();
     }
 
     public void TargetIndependentPass(PassManager passManager, CompileOptions options)
     {
+        passManager.Add(new EGraphPass("1_NeutralOptimize"){
+          new Transform.Rules.Neutral.FoldConstCall(),
+          new Transform.Rules.Neutral.FoldNopTranspose(),
+          new Transform.Rules.Neutral.FoldTwoTransposes(),
+          new Transform.Rules.Neutral.CombineTransposeUnary(),
+          new Transform.Rules.Neutral.CombineTransposePad(),
+          new Transform.Rules.Neutral.CombineTransposeBinary(),
+          new Transform.Rules.Neutral.CombineTransposeReduce(),
+        });
         if (options.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
             AddMarker(passManager, options);
@@ -145,10 +173,9 @@ public class Compiler
         passManager.Add(new Quantization.EGraphPassWithQuantize("1_AssignRanges", options.QuantizeOptions!));
     }
 
-    public void Compile(CompileOptions options, QuantizeOptions quantOption)
+    public void Compile()
     {
-        options.QuantizeOptions = quantOption;
-        CompilerServices.CompileOptions = options;
+        var options = CompilerServices.CompileOptions;
         var t = CompilerServices.GetCompileTarget;
         RunPass(p => TargetIndependentPass(p, options), "TargetIndependentPass");
         RunPass(p => t.RegisterTargetDependentPass(p, options), "TargetDependentPass");
@@ -157,9 +184,8 @@ public class Compiler
         {
             RunPass(p => t.RegisterQuantizePass(p, options), "QuantizePass");
             RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, options), "TargetDependentAfterQuantPass");
-            var clear = new DataflowPass("ClearMarker");
-            clear.Add(new RemoveMarker());
-            RunPass(t => t.Add(clear), "RemoveMarker");
+            var clear = new DataflowPass("ClearMarker") { new RemoveMarker() };
+            RunPass(p => p.Add(clear), "RemoveMarker");
         }
 
         // fold constant
@@ -167,11 +193,15 @@ public class Compiler
         // Console.WriteLine("Compile successful");
     }
 
-    public void UsePTQ(QuantizeOptions quantOption)
-    {
-        CompilerServices.CompileOptions.QuantizeOptions = quantOption;
-        CompilerServices.CompileOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
-    }
+    // /// <summary>
+    // /// this interface for python
+    // /// </summary>
+    // /// <param name="quantOption"></param>
+    // public void UsePTQ(QuantizeOptions quantOption)
+    // {
+    //     CompilerServices.CompileOptions.QuantizeOptions = quantOption;
+    //     CompilerServices.CompileOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
+    // }
 
     public byte[] Gencode()
     {
@@ -180,7 +210,6 @@ public class Compiler
         var linkedModel = moduleBuilder.Build(Module);
         using var output = new MemoryStream();
         linkedModel.Serialize(output);
-        // Console.WriteLine("Gencode successful");
         return output.ToArray();
     }
 }

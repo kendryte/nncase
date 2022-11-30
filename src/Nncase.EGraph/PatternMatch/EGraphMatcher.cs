@@ -244,7 +244,7 @@ public sealed class EGraphMatcher
 
     private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, VArgsPattern pattern, IEnumerable<EClass> eClasses)
     {
-        if (eClasses.Count() != pattern.Count)
+        if (pattern.IsDefaultOrEmpty || eClasses.Count() != pattern.Count)
         {
             return Array.Empty<MatchScope>();
         }

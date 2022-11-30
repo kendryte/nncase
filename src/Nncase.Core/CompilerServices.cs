@@ -176,7 +176,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     private CompileOptions _compileOptions;
 
     public CompilerServicesProvider(
-        IOptions<CompileOptions> compileOptions,
+        // IOptions<CompileOptions> compileOptions,
         IEvaluateProvider evaluateProvider,
         ITypeInferenceProvider typeInferenceProvider,
         IIRPrinterProvider irprinterProvider,
@@ -187,7 +187,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         IEGraphMatchProvider eGraphMatchProvider,
         ITargetProvider targetProvider)
     {
-        _compileOptions = compileOptions.Value;
+        // _compileOptions = compileOptions.Value;
         _evaluateProvider = evaluateProvider;
         _typeInferenceProvider = typeInferenceProvider;
         _irprinterProvider = irprinterProvider;

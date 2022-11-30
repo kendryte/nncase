@@ -128,6 +128,16 @@ public static class EGraphExtractExtensions
     /// <returns>Extracted root expression.</returns>
     public static Expr Extract(this EGraph eGraph, EClass root, RunPassOptions options)
     {
+        // 1. set the all expr checked shape
+        foreach (var eclass in eGraph.Classes)
+        {
+            foreach (var nodes in eclass.Nodes)
+            {
+                if (eclass.CheckedType.CompareTo(nodes.Expr.CheckedType) > 0)
+                    nodes.Expr.CheckedType = eclass.CheckedType;
+            }
+        }
+        // 2. start the cost evaluator
         var costModel = new EGraphCostEvaluator(root).Evaluate();
         if (options.DumpLevel > 3)
         {

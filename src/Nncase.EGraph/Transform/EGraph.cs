@@ -104,6 +104,17 @@ public sealed partial class EGraph : IEGraph
 
         classB.Parent = classA;
         classA.AddNodes(classB.Nodes);
+        // choice the more accurate checked type
+        switch (classA.CheckedType.CompareTo(classB.CheckedType))
+        {
+            case < 0:
+                classA.SetCheckedType(classB.CheckedType);
+                break;
+            case > 0:
+                classB.SetCheckedType(classA.CheckedType);
+                break;
+        }
+
         _worklist.Enqueue(new() { OldClass = classB, NewClass = classA });
         return true;
     }
@@ -134,6 +145,7 @@ public sealed partial class EGraph : IEGraph
             _classes.Add(eclass);
             enode.AddUsed(eclass);
             _nodes.Add(enode, eclass);
+            eclass.SetCheckedType(expr.CheckedType ?? AnyType.Default);
         }
 
         return eclass;

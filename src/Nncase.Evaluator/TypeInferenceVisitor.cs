@@ -481,7 +481,11 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     /// <param name="type"></param>
     private void SetCheckedType(Expr expr, IRType type)
     {
-        expr.CheckedType = type;
-        IsFullyInferenced &= type is not InvalidType;
+        // note the post order visitor, need update the checked type when new type are more accurate.
+        if (expr.CheckedType is null || (expr.CheckedType is not null && expr.CheckedType.CompareTo(type) <= 0))
+        {
+            expr.CheckedType = type;
+            IsFullyInferenced &= type is not InvalidType;
+        }
     }
 }
