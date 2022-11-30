@@ -208,14 +208,14 @@ public static partial class Utility
             IsAlt(
                 input => IsPairWildcardCall<FirstOpT, SecondOpT>(firstCallName, null!, input),
                 input => IsMaybeSwappableWildcardCall<FirstOpT>(firstCallName, input)
-            )(IsWildcardCall<BeginT>(beginCallName))));
+            )(IsWildcardCall<BeginT>(beginCallName, null!))));
 
     public static Pattern IsMaybeSwappableWildcardCall<OpT>(string callName, Pattern input)
         where OpT : Op => IsMaybeSwappableWildcardCall<OpT>(callName, input, IsWildcard());
 
     public static Pattern IsMaybeSwappableWildcardCall<OpT>(string callName, Pattern input, Pattern swappableOther)
         where OpT : Op => IsAlt(
-        IsWildcardCall<OpT>(null!, null!, input),
-        IsSwappableWildcardCall<OpT>(null, null!, input, swappableOther)
+        IsWildcardCall<OpT>(callName, null!, input),
+        IsSwappableWildcardCall<OpT>(callName, null!, input, swappableOther)
     );
 }
