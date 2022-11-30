@@ -409,7 +409,24 @@ public static class QuantUtility
         // return inputWeights;
     }
 
-    public static Span<float> AdaRoundWeights(Span<float> inputWeights, List<Tensor> layerInput, List<Tensor> layerOutputGT, QuantMode quantMode, int bits, bool isByChannel, Expr psum, Expr act, Expr paddings, Expr strides, Expr dilations, Expr groups, Expr fusedClamp, int startB, int endB, int iters, int deviceID, float warmup, float weightParam)
+    public enum AdaMode
+    {
+        /// <summary>
+        /// Conv2D
+        /// </summary>
+        Conv2D,
+
+        /// <summary>
+        /// Conv2DTranspose
+        /// </summary>
+        Conv2DTranspose,
+
+        /// <summary>
+        /// Linear
+        /// </summary>
+        Linear
+    }
+    public static Span<float> AdaRoundWeights(Span<float> inputWeights, List<Tensor> layerInput, List<Tensor> layerOutputGT, QuantMode quantMode, int bits, bool isByChannel, Expr psum, Expr act, Expr paddings, Expr strides, Expr dilations, Expr groups, Expr fusedClamp, int startB, int endB, int iters, int deviceID, float warmup, float weightParam, AdaMode adamode)
     {
         // todo: return AdaRoundWeights
         // System.Console.WriteLine(((TensorConst)(act)).Value.Cast<float>());
