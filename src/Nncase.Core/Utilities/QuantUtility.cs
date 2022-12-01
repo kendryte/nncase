@@ -426,9 +426,9 @@ public static class QuantUtility
         /// </summary>
         Linear
     }
-    public static Span<float> AdaRoundWeights(Span<float> inputWeights, List<Tensor> layerInput, List<Tensor> layerOutputGT, QuantMode quantMode, int bits, bool isByChannel, Expr psum, Expr act, Expr paddings, Expr strides, Expr dilations, Expr groups, Expr fusedClamp, int startB, int endB, int iters, int deviceID, float warmup, float weightParam, AdaMode adamode)
+    public static Span<float> AdaRoundWeights(Span<float> inputWeights, Expr inputWeightsRanges, Nncase.IR.Shape inputWeightsShape, List<Tensor> layerInput, List<Tensor> layerOutputGT, QuantMode quantMode, int bits, bool isByChannel, Expr psum, Expr act, Expr paddings, Expr strides, Expr dilations, Expr groups, int startB, int endB, int iters, int deviceID, float warmup, float weightParam, AdaMode adamode)
     {
-        // todo: return AdaRoundWeights
+        // todo: return AdaRoundWeights, and cover inputWeights span with AdaRoundWeights
         // System.Console.WriteLine(((TensorConst)(act)).Value.Cast<float>());
         return inputWeights;
     }
