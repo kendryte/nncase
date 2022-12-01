@@ -35,7 +35,7 @@ public:
     op_profile(const std::string &op_type = "op_profile")
         : op_type_(op_type)
     {
-#if !defined(__linux__)
+#if defined(__riscv)
         begin_ = k230_get_cycles();
 #else
         begin_ = clock();
