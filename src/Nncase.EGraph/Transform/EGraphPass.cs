@@ -38,6 +38,7 @@ public class EGraphPass : RulesPass
         await OnPostRewrite(graph, options);
         OnPostRewriteEnd(graph, options);
         var post = graph.Extract(root, options);
+        CompilerServices.InferenceType(post);
         return (BaseFunction)post;
     }
 

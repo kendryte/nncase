@@ -48,7 +48,7 @@ sealed internal class ILPrintVisitor : ExprFunctor<string, string>
 
         string valueStr = expr switch
         {
-            TensorConst tc => tc.Value.Shape.Size < 8 ? tc.Value.GetArrayString(false) : string.Empty,
+            TensorConst tc => tc.Value.Shape.Size <= 8 ? tc.Value.GetArrayString(false) : string.Empty,
             TupleConst tpc => string.Empty,
             _ => throw new ArgumentOutOfRangeException(),
         };

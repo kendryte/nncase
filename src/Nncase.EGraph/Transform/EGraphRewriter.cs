@@ -13,8 +13,6 @@ namespace Nncase.Transform;
 
 internal static class EGraphRewriter
 {
-    public static EGraph Rewrite(EGraph eGraph, IRewriteRule rules, RunPassOptions options) => Rewrite(eGraph, new List<IRewriteRule>() { rules }, options);
-
     /// <summary>
     /// Run egraph rewrite.
     /// </summary>

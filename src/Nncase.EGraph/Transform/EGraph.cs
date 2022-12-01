@@ -43,7 +43,7 @@ public sealed partial class EGraph : IEGraph
     }
 
     /// <summary>
-    /// <see cref="_hascons"/>.
+    /// Gets elass
     /// </summary>
     public IEnumerable<EClass> Classes => _classes;
 

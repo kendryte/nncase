@@ -40,7 +40,7 @@ public sealed partial class CombineTransposeBinary : IRewriteRule
     }
 
     /// <inheritdoc/>
-    public IPattern Pattern { get; }
+    public IPattern Pattern { get; init; }
 
     private Expr? GetReplace(Binary binary, Expr x, Expr y, Expr perm)
     {
@@ -102,17 +102,17 @@ public sealed partial class CombineTransposePad : IRewriteRule
     public IPattern Pattern { get; } = IsPad(
         "pad",
         x => true,
-        IsTranspose(IsWildcard("input"), IsWildcard("perm")),
+        IsTranspose(IsWildcard("input"), IsTensorConst("perm")),
         IsWildcard("pads"),
         IsWildcard("padValue"));
 
-    private Expr GetReplace(Pad pad, Expr input, Expr perm, Expr pads, Expr padValue)
+    private Expr GetReplace(Pad pad, Expr input, int[] perm, Expr pads, Expr padValue)
     {
-        var rank = pads.CheckedShape[0].FixedValue;
+        var inv_perm = perm.Select((p, i) => (p, i)).OrderBy(tp => tp.p).ToArray();
         var newPads = new List<Expr>();
-        for (var i = 0; i < rank; i++)
+        for (var i = 0; i < inv_perm.Length; i++)
         {
-            newPads.Add(pads[perm[i]]);
+            newPads.Add(pads[inv_perm[i].i]);
             // newPads[i] = pads[perm[i]];
         }
 

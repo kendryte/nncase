@@ -1,26 +1,21 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Linq;
 using Nncase.IR;
 using Nncase.PatternMatch;
-using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
-using static Nncase.PatternMatch.F.Math;
-using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Transform.Rules.Neutral;
 
 /// <summary>
-/// Reassociate <see cref="Nncase.IR.F.Math.Mul(Expr, Expr)"/>.
+/// (x * y) * z => x * (y * z)
 /// </summary>
 [RuleGenerator]
 public sealed partial class ReassociateMul : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsWildcard("x") * IsWildcard("y") * IsWildcard("z");
+    public IPattern Pattern { get; } = (IsWildcard("x") * IsWildcard("y")) * IsWildcard("z");
 
     private Expr? GetReplace(Expr x, Expr y, Expr z) => x * (y * z);
 }

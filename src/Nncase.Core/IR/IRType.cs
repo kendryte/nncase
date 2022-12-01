@@ -59,6 +59,7 @@ public abstract record IRType
                 < 0 => -1,
             }
         },
+        (InvalidType, _) => -1,
         (CallableType t1, CallableType t2) => (t1, t2) switch
         {
             var p when t1.Parameters.Count != t2.Parameters.Count => throw new NotSupportedException($"{this} with {rhs}"),
