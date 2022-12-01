@@ -38,4 +38,15 @@ protected:
     bool skip_self_contained_check() const noexcept override { return true; }
     bool on_try_match(ir::node &node, transform_context &context) override;
 };
+
+// fastspeech
+class NNCASE_API fold_layernorm_pattern3_transform : public transform
+{
+public:
+    void process(transform_context &context) override;
+
+protected:
+    bool skip_self_contained_check() const noexcept override { return true; }
+    bool on_try_match(ir::node &node, transform_context &context) override;
+};
 }
