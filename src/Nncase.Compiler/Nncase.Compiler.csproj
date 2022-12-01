@@ -4,6 +4,8 @@
         <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     </PropertyGroup>
 
     <ItemGroup>
@@ -13,6 +15,7 @@
     <ItemGroup>
         <PackageReference Include="Autofac.Extensions.DependencyInjection" />
         <PackageReference Include="Microsoft.Extensions.Hosting" />
+        <PackageReference Include="Microsoft.NETCore.DotNetHost" />
         <PackageReference Include="SharpGen.Runtime" />
         <PackageReference Include="SharpGenTools.Sdk">
           <PrivateAssets>all</PrivateAssets>

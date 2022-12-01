@@ -27,7 +27,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, IntPtr, void> CompileOptionsSetQuantTypePtr;
     public delegate* unmanaged<IntPtr, QuantMode, void> CompileOptionsSetQuantModePtr;
     public delegate* unmanaged<void> CompilerInitializePtr;
-    public delegate* unmanaged<IntPtr> CompilerCreatePtr;
+    public delegate* unmanaged<IntPtr, IntPtr> CompilerCreatePtr;
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr> CompilerImportModulePtr;
     public delegate* unmanaged<Runtime.TypeCode, IntPtr> DataTypeFromTypeCodePtr;
     public delegate* unmanaged<CStreamMT*, IntPtr, IntPtr> StreamCreatePtr;
@@ -119,9 +119,9 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
-    private static IntPtr CompilerCreate()
+    private static IntPtr CompilerCreate(IntPtr compileOptionsHandle)
     {
-        return GCHandle.ToIntPtr(GCHandle.Alloc(new Compiler()));
+        return GCHandle.ToIntPtr(GCHandle.Alloc(new Compiler(Get<CompileOptions>(compileOptionsHandle))));
     }
 
     [UnmanagedCallersOnly]

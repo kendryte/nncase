@@ -66,7 +66,7 @@ else()
     set_property(TARGET simulator PROPERTY POSITION_INDEPENDENT_CODE ON)
     
     add_library(nncaseruntime SHARED dummy.cpp)
-    target_link_libraries(nncaseruntime PRIVATE nncasebase kernels simulator simulator_stackvm fmt::fmt)
+    target_link_libraries(nncaseruntime PRIVATE nncasebase kernels simulator compiler simulator_stackvm fmt::fmt)
     target_link_libraries(nncaseruntime PUBLIC gsl::gsl-lite mpark_variant::mpark_variant)
     set_target_properties(nncaseruntime PROPERTIES
                                         OUTPUT_NAME "Nncase.Runtime.Native")

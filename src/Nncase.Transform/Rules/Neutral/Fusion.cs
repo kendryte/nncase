@@ -150,7 +150,7 @@ public partial class FuseTwoFusion : RewriteRule<Pattern>
     /// <param name="newBodyWithRedundancy"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    virtual public Expr EliminateRedundancy(Expr newBodyWithRedundancy)
+    public virtual Expr EliminateRedundancy(Expr newBodyWithRedundancy)
     {
         throw new InvalidOperationException("EliminateRedundancy Not Impl");
     }

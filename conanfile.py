@@ -51,6 +51,7 @@ class nncaseConan(ConanFile):
             self.requires('pybind11/2.6.1')
 
         if not self.options.runtime:
+            self.requires('nethost/6.0.11')
             self.requires('fmt/7.1.3')
             self.requires('magic_enum/0.7.0')
             self.requires('spdlog/1.8.2')
@@ -71,7 +72,9 @@ class nncaseConan(ConanFile):
 
         if self.settings.arch not in ("x86_64",):
             self.options.halide = False
-
+            
+        if not self.options.runtime:
+            self.options["nethost"].shared = True
         if (not self.options.runtime) or self.options.vulkan_runtime:
             if self.settings.os == 'Linux':
                 self.options["vulkan-loader"].with_wsi_xcb = False
