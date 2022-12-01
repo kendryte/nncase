@@ -132,8 +132,7 @@ result<void> tenary_impl(const float *input_a, const float *input_b, const float
 
 #endif
 
-template <>
-result<void> optimized::ternary<float>(const float *input_a, const float *input_b, const float *input_c, float *output,
+template <> result<void> optimized::ternary<float>(const float *input_a, const float *input_b, const float *input_c, float *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &in_c_shape, const runtime_shape_t &in_c_strides,
     const runtime_shape_t &out_strides) noexcept
@@ -145,15 +144,15 @@ result<void> optimized::ternary<float>(const float *input_a, const float *input_
 #endif
 }
 
-template result<void> optimized::ternary<int64_t>(const float *input_a, const int64_t *input_b, const int64_t *input_c, int64_t *output,
+template<> result<void> optimized::ternary<int64_t>(const float *input_a, const int64_t *input_b, const int64_t *input_c, int64_t *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &in_c_shape, const runtime_shape_t &in_c_strides,
     const runtime_shape_t &out_strides) noexcept;
 
-template result<void> optimized::ternary<int32_t>(const float *input_a, const int32_t *input_b, const int32_t *input_c, int32_t *output,
-    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
-    const runtime_shape_t &in_b_strides, const runtime_shape_t &in_c_shape, const runtime_shape_t &in_c_strides,
-    const runtime_shape_t &out_strides) noexcept;
+template<> result<void> optimized::ternary<int32_t>(const float *input_a, const int32_t *input_b, const int32_t *input_c, int32_t *output,
+const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+const runtime_shape_t &in_b_strides, const runtime_shape_t &in_c_shape, const runtime_shape_t &in_c_strides,
+const runtime_shape_t &out_strides) noexcept;
 
 template <typename T>
 result<void> optimized::ternary(const float *input_a, const T *input_b, const T *input_c, T *output,
