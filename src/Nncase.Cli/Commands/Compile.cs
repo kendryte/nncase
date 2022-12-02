@@ -172,21 +172,23 @@ internal sealed class RandCalibrationDatasetProvider : Quantization.ICalibration
     private const int count = 5;
     public int? Count => count;
 
-    public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
+    public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples => _samples.ToAsyncEnumerable();
+
+    private readonly IReadOnlyDictionary<Var, IValue>[] _samples;
 
     public RandCalibrationDatasetProvider(IEnumerable<Var> vars)
     {
-        Samples = Enumerable.Range(0, count).Select(i =>
-        {
-            var values = new Dictionary<Var, IValue>();
-            foreach (var var in vars)
-            {
-                CompilerServices.InferenceType(var);
-                var shape = var.CheckedShape.Select(d => d.IsUnknown ? 1 : d.FixedValue).ToArray();
-                var value = Value.FromTensor(IR.F.Random.Normal(var.CheckedDataType, 0, 1, 0, shape).Evaluate().AsTensor());
-                values.Add(var, value);
-            }
-            return values;
-        }).ToAsyncEnumerable();
+        _samples = Enumerable.Range(0, count).Select(i =>
+          {
+              var values = new Dictionary<Var, IValue>();
+              foreach (var var in vars)
+              {
+                  CompilerServices.InferenceType(var);
+                  var shape = var.CheckedShape.Select(d => d.IsUnknown ? 1 : d.FixedValue).ToArray();
+                  var value = IR.F.Random.Normal(var.CheckedDataType, 0, 1, 0, shape).Evaluate();
+                  values.Add(var, value);
+              }
+              return values;
+          }).ToArray();
     }
 }

@@ -231,7 +231,7 @@ public static class TypeInference
         }
         else
         {
-            return AnyType.Default;
+            return new TensorType(input.DType, Shape.Unknown(input.Shape.Rank));
         }
     }
 

@@ -33,15 +33,27 @@ public partial class EGraphPrinter
 
     private readonly EGraph eGraph;
 
+    private ulong _IdCounter;
+
+    private readonly Dictionary<Expr, ulong> _IdMaps = new(ReferenceEqualityComparer.Instance);
+
     private readonly DotDumpVisitor visitor = new DotDumpVisitor();
 
+    /// <summary>
+    /// Get the dot graph
+    /// </summary>
     public readonly DotGraph dotGraph;
 
-    public EGraphPrinter(EGraph _eGraph)
+    /// <summary>
+    /// ctor for egraph
+    /// </summary>
+    /// <param name="egraph"></param>
+    public EGraphPrinter(EGraph egraph)
     {
+        _IdCounter = 0;
         dotGraph = new(directed: true);
         dotGraph.Clusters.AllowEdgeClipping = true;
-        eGraph = _eGraph;
+        eGraph = egraph;
         foreach (var eclass in eGraph.Classes)
         {
             if (eclass.Nodes.Count == 1 && eclass.Nodes[0].Expr is Op op)
@@ -55,6 +67,10 @@ public partial class EGraphPrinter
         }
     }
 
+    /// <summary>
+    /// convert the egraph to dot graph
+    /// </summary>
+    /// <returns></returns>
     public DotGraph ConvertEGraphAsDot()
     {
         foreach (var eClass in eGraph.Classes.Where(x => !OpMaps.ContainsKey(x)))
@@ -78,7 +94,12 @@ public partial class EGraphPrinter
 
             foreach (var enode in eClass.Nodes)
             {
-                string exprId = enode.Expr.GetHashCode().ToString();
+                if (!_IdMaps.TryGetValue(enode.Expr, out var id))
+                {
+                    id = _IdCounter++;
+                    _IdMaps.Add(enode.Expr, id);
+                }
+                string exprId = "\"" + id.ToString() + "\"";
 
                 // todo need use html label https://gitlab.com/graphviz/graphviz/-/issues/1624
                 var args = new List<DotRecordTextField>

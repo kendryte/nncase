@@ -299,13 +299,17 @@ public sealed class MobileNetV1TransposeCase : IRewriteCase
     Var _input;
     public MobileNetV1TransposeCase()
     {
-        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 64, 112, 112 }));
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1,32,112,112 }));
     }
     public Function PreExpr
     {
         get
         {
-            var v_7 = _input;
+            var v_5 = Transpose(_input, (new[] { 0, 2, 3, 1 })); // f32[1,112,112,32]
+            var v_6 = Transpose(v_5, (new[] { 0, 3, 1, 2 })); // f32[1,32,112,112]
+            var v_7 = Conv2D(v_6,
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, 32, 1, 1 }).Evaluate().AsTensor()),
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor()), (new[] { 1, 1 }), (new[,] { { 0, 0 }, { 0, 0 } }), (new[] { 1, 1 }), PadMode.Constant, (1), (new[] { 0.0f, 6.0f })); // f32[1,64,112,112]
             var v_8 = Transpose(v_7, new[] { 0, 2, 3, 1 }); // f32[1,112,112,64]
             var v_9 = Pad(v_8, (new[,] { { 0, 0 }, { 0, 1 }, { 0, 1 }, { 0, 0 } }), PadMode.Constant, (0.0f)); // f32[1,113,113,64]
             var v_10 = Transpose(v_9, (new[] { 0, 3, 1, 2 })); // f32[1,64,113,113]
@@ -319,11 +323,13 @@ public sealed class MobileNetV1TransposeCase : IRewriteCase
     }
 
     public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[] {
-        new Transform.Rules.Neutral.CombineTransposePad(),
         new Transform.Rules.Neutral.FoldConstCall(),
+        new Transform.Rules.Neutral.FoldNopTranspose(),
+        new Transform.Rules.Neutral.FoldTwoTransposes(),
+        new Transform.Rules.Neutral.CombineTransposePad(),
     };
 
     public Dictionary<Var, IValue> FeedDict => new() {
-      {_input, Normal(DataTypes.Float32, 0, 1, 1, new[] { 1,64,112,112 }).Evaluate() }
+      {_input, Normal(DataTypes.Float32, 0, 1, 1, new[] { 1,32,112,112 }).Evaluate() }
     };
 }
