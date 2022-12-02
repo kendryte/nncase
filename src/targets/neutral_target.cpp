@@ -114,6 +114,7 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
 
     pass.emplace<fold_layernorm_pattern1_transform>();
     pass.emplace<fold_layernorm_pattern2_transform>();
+    pass.emplace<fold_layernorm_pattern3_transform>();
 
     pass.emplace<fold_bitcast_transform>();
 
