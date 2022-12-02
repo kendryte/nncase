@@ -126,15 +126,15 @@ public class PatternGenerator : IIncrementalGenerator
                                                         ParseTypeName(p.Type.ToDisplayString()).
                                                             WithTrailingTrivia(ElasticSpace)))
                                      .Concat(from f in cand.ExprParams
-                                             select Parameter(Identifier(f.Name.ToLower())).
-                                                        WithType(
-                                                            ParseTypeName("Pattern").
-                                                                WithTrailingTrivia(ElasticSpace)));
+                                             select Parameter(Identifier(f.Name.ToLower()))
+                                                    .WithType(ParseTypeName("Pattern ?").WithTrailingTrivia(ElasticSpace))
+                                                    .WithDefault(EqualsValueClause(LiteralExpression(SyntaxKind.NullLiteralExpression)))
+                                            );
                         var statements = new List<StatementSyntax>();
                         {
                             // 1.2 build condition
                             var condition = string.Join("&&", (from p in cand.AttrParams select $"(x.{p.Name} == {p.Name})").DefaultIfEmpty("true"));
-                            var inputs = string.Join(", ", from f in cand.ExprParams select f.Name.ToLower());
+                            var inputs = string.Join(", ", from f in cand.ExprParams select (f.Name.ToLower() + "?? Nncase.PatternMatch.Utility.IsWildcard()"));
                             // 1.3 build method return
                             //var x = name_params[0];
                             statements.Add(ParseStatement(@$"return new(
@@ -169,11 +169,13 @@ new VArgsPattern (new[]{{ {inputs} }}, null),
                                     })
                                      .Concat(from f in cand.ExprParams
                                              select Parameter(Identifier(f.Name.ToLower()))
-                                             .WithType(ParseTypeName("Pattern").WithTrailingTrivia(ElasticSpace)));
+                                             .WithType(ParseTypeName("Pattern ?").WithTrailingTrivia(ElasticSpace))
+                                             .WithDefault(EqualsValueClause(LiteralExpression(SyntaxKind.NullLiteralExpression)))
+                                            );
                         var statements = new List<StatementSyntax>();
                         {
                             // 1.2 build condition
-                            var inputs = string.Join(", ", from f in cand.ExprParams select f.Name.ToLower());
+                            var inputs = string.Join(", ", from f in cand.ExprParams select (f.Name.ToLower() + "?? Nncase.PatternMatch.Utility.IsWildcard()"));
                             // 1.3 build method return
                             statements.Add(ParseStatement(@$"return new(
 new OpPattern<{cand.Op.ToDisplayString()}>(condition, {(name_params[0] != null ? "target_name" : "null")}),

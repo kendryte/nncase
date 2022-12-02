@@ -397,8 +397,8 @@ public static class QuantUtility
         //         System.Console.WriteLine("{0} {1} {2}", rst[i], gt[i], (rst[i] - gt[i]) / gt[i]);
         //     }
         // }
-        System.Console.WriteLine(inputWeights.ToArray()[0]);
-        System.Console.WriteLine(rst.ToArray()[0]);
+        // System.Console.WriteLine(inputWeights.ToArray()[0]);
+        // System.Console.WriteLine(rst.ToArray()[0]);
         return rst;
         // inputWeightsRanges is pre calculated by range optimization, so when compute inputWeights quant parameters, range should be gotten from inputWeightsRanges, but not
         // be gotten from inputWeights here simply. And for quantMode, there are 3 modes, UnsignedMode is easy to understand, and for SignedAsymmetricMode/SignedSymmetricMode,
@@ -409,9 +409,26 @@ public static class QuantUtility
         // return inputWeights;
     }
 
-    public static Span<float> AdaRoundWeights(Span<float> inputWeights, List<Tensor> layerInput, List<Tensor> layerOutputGT, QuantMode quantMode, int bits, bool isByChannel, Expr psum, Expr act, Expr paddings, Expr strides, Expr dilations, Expr groups, Expr fusedClamp, int startB, int endB, int iters, int deviceID, float warmup, float weightParam)
+    public enum AdaMode
     {
-        // todo: return AdaRoundWeights
+        /// <summary>
+        /// Conv2D
+        /// </summary>
+        Conv2D,
+
+        /// <summary>
+        /// Conv2DTranspose
+        /// </summary>
+        Conv2DTranspose,
+
+        /// <summary>
+        /// Linear
+        /// </summary>
+        Linear
+    }
+    public static Span<float> AdaRoundWeights(Span<float> inputWeights, Expr inputWeightsRanges, Nncase.IR.Shape inputWeightsShape, List<Tensor> layerInput, List<Tensor> layerOutputGT, QuantMode quantMode, int bits, bool isByChannel, Expr psum, Expr act, Expr paddings, Expr strides, Expr dilations, Expr groups, int startB, int endB, int iters, int deviceID, float warmup, float weightParam, AdaMode adamode)
+    {
+        // todo: return AdaRoundWeights, and cover inputWeights span with AdaRoundWeights
         // System.Console.WriteLine(((TensorConst)(act)).Value.Cast<float>());
         return inputWeights;
     }
