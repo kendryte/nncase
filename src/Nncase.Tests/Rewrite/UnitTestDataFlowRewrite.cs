@@ -13,51 +13,42 @@ using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
 using Tuple = Nncase.IR.Tuple;
 
-namespace Nncase.Tests.RewriteTest;
+namespace Nncase.Tests.ReWriteTest;
 
-// public class DataFlowRewriteTestFactory : TestFixture.UnitTestFixtrue
-// {
+public class UnitTestDataFlowRewriteFactory : TestFixture.UnitTestFixtrue
+{
 
-//     // [Theory]
-//     // [MemberData(nameof(DataOne))]
-//     // public void RunOne(IRewriteCase Case) => RunCore(Case);
+    public static TheoryData<IRewriteCase> DataOne => new()
+    {
+      new MobileNetV1TransposeCase()
+    };
 
-//     protected void RunCore(IRewriteCase Case)
-//     {
-//         var caseOptions = GetPassOptions();
-//         Expr pre = Case.PreExpr;
-//         var infered = pre.InferenceType();
-//         CompilerServices.DumpIR(pre, "pre", caseOptions.PassDumpDir);
-//         Assert.True(infered);
-//         var post = CompilerServices.Rewrite(pre, Case.Rules, caseOptions);
-//         Assert.True(post.InferenceType());
-//         CompilerServices.DumpIR(post, "post", caseOptions.PassDumpDir);
-//         Assert.Equal(Case.PostExpr, post);
-//     }
+    [Theory]
+    [MemberData(nameof(DataOne))]
+    public void RunOne(IRewriteCase @case) => RunCore(@case);
 
-//     // [Theory]
-//     // [MemberData(nameof(DataAll))]
-//     // public void RunAll(IRewriteCase Case) => RunCore(Case);
+    [Theory]
+    [MemberData(nameof(DataAll))]
+    public void RunAll(IRewriteCase @case) => RunCore(@case);
 
-//     public static IEnumerable<object[]> DataOne => Data.Take(1);
-//     public static IEnumerable<object[]> DataAll => Data.Skip(1);
-// }
+    private async void RunCore(IRewriteCase @case)
+    {
+        var caseOptions = GetPassOptions().IndentDir(@case.Name);
+        var pre = @case.PreExpr;
+        var pass = new Transform.DataflowPass("DataFlowOptimize");
+        pass.Add(@case.Rules);
+        var post = (Function)await pass.RunAsync(pre, caseOptions);
+        Assert.NotEqual(pre, post);
+        var feed_dict = @case.FeedDict;
+        Assert.True(TestFixture.Comparator.AllEqual(pre.Body.Evaluate(feed_dict), post.Body.Evaluate(feed_dict)));
+    }
 
-// internal class SwapXY : IRewriteRule
-// {
-//     BinaryWrapper binary;
-//     public SwapXY()
-//     {
-//         Pattern = binary = Add(IsWildcard(), IsConst());
-//     }
-//     public override Expr GetReplace(IMatchResult result)
-//     {
-//         binary.Bind(result);
-//         return binary.Rhs() + binary.Lhs();
-//     }
-// }
+    public static TheoryData<IRewriteCase> DataAll => new()
+    {
+    };
+}
 
-public class UnitTestDataFlowRewrite : ReWriteTest.RewriteFixtrue
+public class UnitTestDataFlowRewrite : RewriteFixtrue
 {
 
     // [Fact]
@@ -183,7 +174,7 @@ public class UnitTestDataFlowRewrite : ReWriteTest.RewriteFixtrue
     }
 }
 
-public class UnitTestDataFlowRewriteAndInferIntegrate : ReWriteTest.RewriteFixtrue
+public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
 {
     public T Dim1ExprToScalar<T>(Expr expr) where T : unmanaged, System.IEquatable<T> => (expr as TensorConst).Value.Cast<T>()[0];
 

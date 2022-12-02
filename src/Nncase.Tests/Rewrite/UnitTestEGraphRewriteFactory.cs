@@ -11,10 +11,11 @@ namespace Nncase.Tests.ReWriteTest;
 public sealed class UnitTestEGraphRewriteFactory : TestFixture.UnitTestFixtrue
 {
     public static TheoryData<IRewriteCase> DataOne => new(){
-      new FoldReshapeCase(),
+      new MobileNetV1TransposeCase()
     };
 
     public static TheoryData<IRewriteCase> DataAll => new(){
+      new FoldReshapeCase(),
       new FoldTransposePadCase(),
       new FoldNopClampCase(),
       new FoldNopReshapeCase(),
@@ -29,10 +30,6 @@ public sealed class UnitTestEGraphRewriteFactory : TestFixture.UnitTestFixtrue
     [Theory]
     [MemberData(nameof(DataOne))]
     public void RunOne(IRewriteCase @case) => RunCore(@case);
-
-    [Theory]
-    [MemberData(nameof(DataAll))]
-    public void RunAll(IRewriteCase @case) => RunCore(@case);
 
     async void RunCore(IRewriteCase @case)
     {
@@ -50,6 +47,10 @@ public sealed class UnitTestEGraphRewriteFactory : TestFixture.UnitTestFixtrue
         Assert.True(TestFixture.Comparator.AllEqual(pre_ret, post_ret));
         Assert.True(pre_time >= post_time);
     }
+
+    [Theory]
+    [MemberData(nameof(DataAll))]
+    public void RunAll(IRewriteCase @case) => RunCore(@case);
 
     private static long CountRunTicks(Function pre, IReadOnlyDictionary<Var, IValue> feed_dict, out IValue ret)
     {

@@ -334,15 +334,14 @@ class Compiler:
 
     def set_compile_options(self, compile_options: CompileOptions):
         # format it.
-        if (self._compile_options is not None):
-            raise RuntimeError("Can't Setup Compile Option Twice!")
-        self._compile_options: ClCompileOptions = _nncase.CompileOptions(_nncase.Quantization.ModelQuantMode.NoQuant)
+        if (self._compile_options is None):
+            self._compile_options: ClCompileOptions = _nncase.CompileOptions(_nncase.Quantization.ModelQuantMode.NoQuant)
+            self._compiler.UpdateCompileOptions(self._compile_options)
         self._compile_options.Target = compile_options.target
-        self._compile_options.DumpLevel = 3 if compile_options.dump_ir == True else 0
+        self._compile_options.DumpLevel = 4 if compile_options.dump_ir == True else 0
         self._compile_options.DumpDir = compile_options.dump_dir
         self._quant_options = self._compile_options.QuantizeOptions
         # update the CompilerService global compile options
-        self._compiler.UpdateCompileOptions(self._compile_options)
 
     def compile(self) -> None:
         self._compiler.Compile()

@@ -7,6 +7,8 @@ using Nncase.Transform;
 using Nncase.Transform.Passes;
 using OrtKISharp;
 using static Nncase.IR.F.Math;
+using static Nncase.IR.F.NN;
+using static Nncase.IR.F.Random;
 using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Tests.ReWriteTest;
@@ -287,3 +289,41 @@ public sealed class TransposeDemoCase : FoldNopTransposeCase3
     }
 }
 
+
+
+/// <summary>
+/// this case from mobilenet v1
+/// </summary>
+public sealed class MobileNetV1TransposeCase : IRewriteCase
+{
+    Var _input;
+    public MobileNetV1TransposeCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 64, 112, 112 }));
+    }
+    public Function PreExpr
+    {
+        get
+        {
+            var v_7 = _input;
+            var v_8 = Transpose(v_7, new[] { 0, 2, 3, 1 }); // f32[1,112,112,64]
+            var v_9 = Pad(v_8, (new[,] { { 0, 0 }, { 0, 1 }, { 0, 1 }, { 0, 0 } }), PadMode.Constant, (0.0f)); // f32[1,113,113,64]
+            var v_10 = Transpose(v_9, (new[] { 0, 3, 1, 2 })); // f32[1,64,113,113]
+            var v_11 = Conv2D(v_10,
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, 1, 3, 3 }).Evaluate().AsTensor()),
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor()),
+              (new[] { 2, 2 }), (new[,] { { 0, 0 }, { 0, 0 } }), (new[] { 1, 1 }), PadMode.Constant, (64),
+              (new[] { 0.0f, 6.0f })); // f32[1,64,56,56]
+            return new Function(v_11, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[] {
+        new Transform.Rules.Neutral.CombineTransposePad(),
+        new Transform.Rules.Neutral.FoldConstCall(),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new() {
+      {_input, Normal(DataTypes.Float32, 0, 1, 1, new[] { 1,64,112,112 }).Evaluate() }
+    };
+}
