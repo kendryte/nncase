@@ -265,6 +265,23 @@ public sealed partial class AddRangeOfAndMarkerToMatMul : IRewriteRule
 }
 
 [RuleGenerator]
+public sealed partial class AddRangeOfAndMarkerToPad : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } =
+        IsPad("pad", "call", _ => true,
+            IsWildcard("input"),
+            IsWildcard("pads"),
+            IsWildcard("value"));
+
+    private Expr? GetReplace(Pad pad, Call call, Expr input, Expr pads, Expr value, RunPassOptions options)
+    {
+        var output = Pad(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), pads, pad.PadMode, value);
+        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
+    }
+}
+[RuleGenerator]
 public sealed partial class AddRangeOfAndMarkerToPRelu : IRewriteRule
 {
     /// <inheritdoc/>
