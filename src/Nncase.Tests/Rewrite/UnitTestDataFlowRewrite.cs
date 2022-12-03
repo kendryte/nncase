@@ -20,16 +20,16 @@ public class UnitTestDataFlowRewriteFactory : TestFixture.UnitTestFixtrue
 
     public static TheoryData<IRewriteCase> DataOne => new()
     {
-      new MobileNetV1TransposeCase()
+        new Conv2DPadsCase(),
     };
 
     [Theory]
     [MemberData(nameof(DataOne))]
     public void RunOne(IRewriteCase @case) => RunCore(@case);
 
-    // [Theory]
-    // [MemberData(nameof(DataAll))]
-    // public void RunAll(IRewriteCase @case) => RunCore(@case);
+    [Theory]
+    [MemberData(nameof(DataAll))]
+    public void RunAll(IRewriteCase @case) => RunCore(@case);
 
     private async void RunCore(IRewriteCase @case)
     {
@@ -43,9 +43,11 @@ public class UnitTestDataFlowRewriteFactory : TestFixture.UnitTestFixtrue
         Assert.True(TestFixture.Comparator.AllEqual(pre.Body.Evaluate(feed_dict), post.Body.Evaluate(feed_dict)));
     }
 
-    // public static TheoryData<IRewriteCase> DataAll => new()
-    // {
-    // };
+    public static TheoryData<IRewriteCase> DataAll => new()
+    {
+      new TransposeLeakyRelu(),
+      new MobileNetV1TransposeCase()
+    };
 }
 
 public class UnitTestDataFlowRewrite : RewriteFixtrue
