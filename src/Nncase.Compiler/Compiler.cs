@@ -177,8 +177,10 @@ public class Compiler
     {
         var options = CompilerServices.CompileOptions;
         var t = CompilerServices.GetCompileTarget;
-        if (options.DumpLevel > 3)
+        if (options.DumpLevel > 4)
             DumpManager.RunWithDump("TargetIndependentEval", () => RunPass(p => TargetIndependentPass(p, options), "TargetIndependentPass"));
+        else
+            RunPass(p => TargetIndependentPass(p, options), "TargetIndependentPass");
         RunPass(p => t.RegisterTargetDependentPass(p, options), "TargetDependentPass");
         // RunPass(p => p.Add(new Quantization.EGraphPassWithBindQuantizeConfig("2.5_BindQuantizeConfig", options.QuantizeOptions!)));
         if (options.ModelQuantMode == ModelQuantMode.UsePTQ)

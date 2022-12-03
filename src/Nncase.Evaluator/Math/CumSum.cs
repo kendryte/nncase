@@ -1,6 +1,7 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using OrtKISharp;
@@ -10,7 +11,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="CumSum"/>.
 /// </summary>
-public class CumSumEvaluator : IEvaluator<CumSum>, ITypeInferencer<CumSum>
+public class CumSumEvaluator : IEvaluator<CumSum>, ITypeInferencer<CumSum>, ICostEvaluator<CumSum>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, CumSum cumSum)
@@ -28,6 +29,18 @@ public class CumSumEvaluator : IEvaluator<CumSum>, ITypeInferencer<CumSum>
     {
         var input = context.CheckArgumentType<TensorType>(target, CumSum.Input);
         return Visit(input);
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, CumSum target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, CumSum.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
+        };
     }
 
     private IRType Visit(TensorType input)

@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
 using OrtKISharp;
@@ -15,7 +16,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="OneHot"/>.
 /// </summary>
-public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>
+public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>, ICostEvaluator<OneHot>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, OneHot oneHot)
@@ -99,5 +100,15 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>
         }
 
         return new InvalidType("OneHot axis or depth is not const");
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, OneHot target)
+    {
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
+        };
     }
 }

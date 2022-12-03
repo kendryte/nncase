@@ -239,6 +239,16 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
     }
 
     [Fact]
+    public void TestSlice2()
+    {
+        var v0 = Slice((new long[3] { 4, 8, 8 }), (new[] { 0 }), (new[] { 1 }), (new[] { 0 }), (new[] { 1 })); // i64[1]
+        CompilerServices.InferenceType(v0);
+        Assert.Equal(1, v0.CheckedShape.Rank);
+        var ret = CompilerServices.Evaluate(v0).AsTensor();
+        Assert.Equal(1, ret.Shape.Rank);
+    }
+
+    [Fact]
     public void TestPad()
     {
         var tinput = OrtKI.Random(1, 1, 2, 3);

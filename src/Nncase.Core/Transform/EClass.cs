@@ -38,11 +38,6 @@ public sealed class EClass
     public void SetCheckedType(IR.IRType type)
     {
         CheckedType = type;
-        foreach (var node in _nodes)
-        {
-            if (!object.ReferenceEquals(CheckedType, node.Expr.CheckedType))
-                node.Expr.CheckedType = CheckedType;
-        }
     }
 
     /// <summary>

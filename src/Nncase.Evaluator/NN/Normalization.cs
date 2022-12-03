@@ -1,6 +1,7 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
 using OrtKISharp;
@@ -10,7 +11,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="BatchNormalization"/>.
 /// </summary>
-public class BatchNormalizationEvaluator : IEvaluator<BatchNormalization>, ITypeInferencer<BatchNormalization>
+public class BatchNormalizationEvaluator : IEvaluator<BatchNormalization>, ITypeInferencer<BatchNormalization>, ICostEvaluator<BatchNormalization>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, BatchNormalization batchNorm)
@@ -32,6 +33,18 @@ public class BatchNormalizationEvaluator : IEvaluator<BatchNormalization>, IType
         return Visit(input);
     }
 
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, BatchNormalization target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, BatchNormalization.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType)
+        };
+    }
+
     private IRType Visit(TensorType input)
     {
         return input;
@@ -41,7 +54,7 @@ public class BatchNormalizationEvaluator : IEvaluator<BatchNormalization>, IType
 /// <summary>
 /// Evaluator for <see cref="InstanceNormalization"/>.
 /// </summary>
-public class InstanceNormalizationEvaluator : IEvaluator<InstanceNormalization>, ITypeInferencer<InstanceNormalization>
+public class InstanceNormalizationEvaluator : IEvaluator<InstanceNormalization>, ITypeInferencer<InstanceNormalization>, ICostEvaluator<InstanceNormalization>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, InstanceNormalization i)
@@ -60,6 +73,18 @@ public class InstanceNormalizationEvaluator : IEvaluator<InstanceNormalization>,
         return Visit(input);
     }
 
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, InstanceNormalization target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, InstanceNormalization.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType)
+        };
+    }
+
     private IRType Visit(TensorType input)
     {
         return input;
@@ -69,7 +94,7 @@ public class InstanceNormalizationEvaluator : IEvaluator<InstanceNormalization>,
 /// <summary>
 /// Evaluator for <see cref="LRN"/>.
 /// </summary>
-public class LRNEvaluator : IEvaluator<LRN>, ITypeInferencer<LRN>
+public class LRNEvaluator : IEvaluator<LRN>, ITypeInferencer<LRN>, ICostEvaluator<LRN>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, LRN l)
@@ -87,6 +112,18 @@ public class LRNEvaluator : IEvaluator<LRN>, ITypeInferencer<LRN>
     {
         var input = context.CheckArgumentType<TensorType>(target, LRN.Input);
         return Visit(input);
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, LRN target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, LRN.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType)
+        };
     }
 
     private IRType Visit(TensorType input)

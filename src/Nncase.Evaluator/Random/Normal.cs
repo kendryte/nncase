@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Random;
 using OrtKISharp;
@@ -11,7 +12,7 @@ namespace Nncase.Evaluator.Random;
 /// <summary>
 /// Evaluator for <see cref="Normal"/>.
 /// </summary>
-public class NormalEvaluator : IEvaluator<Normal>, ITypeInferencer<Normal>
+public class NormalEvaluator : IEvaluator<Normal>, ITypeInferencer<Normal>, ICostEvaluator<Normal>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Normal random)
@@ -36,5 +37,15 @@ public class NormalEvaluator : IEvaluator<Normal>, ITypeInferencer<Normal>
         {
             return new TensorType(target.Type, Shape.Unranked);
         }
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, Normal target)
+    {
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType)
+        };
     }
 }
