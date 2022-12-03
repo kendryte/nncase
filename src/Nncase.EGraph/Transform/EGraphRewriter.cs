@@ -13,8 +13,6 @@ namespace Nncase.Transform;
 
 internal static class EGraphRewriter
 {
-    public static EGraph Rewrite(EGraph eGraph, IRewriteRule rules, RunPassOptions options) => Rewrite(eGraph, new List<IRewriteRule>() { rules }, options);
-
     /// <summary>
     /// Run egraph rewrite.
     /// </summary>
@@ -58,7 +56,7 @@ internal static class EGraphRewriter
                     }
 
                     var newEClass = eGraph.Add(newExpr);
-                    if (options.DumpLevel == 3)
+                    if (options.DumpLevel > 3)
                     {
                         Console.WriteLine($"Version {eGraph.Version} : Merge {{{oldEClass}}} to {{{newEClass}}}");
                     }

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
@@ -16,7 +17,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="BatchToSpace"/>.
 /// </summary>
-public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<BatchToSpace>
+public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<BatchToSpace>, ICostEvaluator<BatchToSpace>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, BatchToSpace s)
@@ -141,5 +142,16 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         {
             return new InvalidType("BatchToSpace can't infer shape with dynamic crops");
         }
+    }
+
+    public Cost? Visit(ICostEvaluateContext context, BatchToSpace target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, BatchToSpace.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
+        };
     }
 }

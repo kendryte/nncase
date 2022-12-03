@@ -45,6 +45,11 @@ public sealed record VArgsPattern(Func<IReadOnlyList<Expr>, IRArray<Pattern>> Fi
     /// <inheritdoc/>
     public int Count => _fields.Count;
 
+    /// <summary>
+    /// check the fields is empty
+    /// </summary>
+    public bool IsDefaultOrEmpty => _fields.IsDefaultOrEmpty;
+
     /// <inheritdoc/>
     public Pattern this[int index] => _fields[index];
 

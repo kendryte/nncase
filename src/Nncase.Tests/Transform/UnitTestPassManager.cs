@@ -21,9 +21,7 @@ public sealed class UnitTestPassManager : TestFixture.UnitTestFixtrue
 
         Dictionary<BaseFunction, BaseFunction> functions_update = new(ReferenceEqualityComparer.Instance);
 
-        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 2, 3, 4 }, out var input_a), T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Output, new[] { 1, 2, 3, 4 }, out var input_b)).Body(
-          T.Nop()
-        ).Build();
+        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 2, 3, 4 }, out var input_a), T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Output, new[] { 1, 2, 3, 4 }, out var input_b)).Body(T.Nop()).Build();
 
         var prim_wrapper = new PrimFunctionWrapper(prim_func_1, 1);
 

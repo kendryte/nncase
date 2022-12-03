@@ -96,6 +96,17 @@ public static class Comparator
         return (float)(sum / (v1 * v2));
     }
 
+    public static bool AllEqual(Tensor a, Tensor b, float thresh)
+    {
+        var va = a.ToArray<float>();
+        var vb = b.ToArray<float>();
+        return va.Zip(vb).All(p => (p.Item1, p.Item2) switch
+        {
+            (float.NaN, float.NaN) => 0.0f,
+            _ => MathF.Abs(p.Item1 - p.Item2)
+        } <= thresh);
+    }
+
     public static bool TensorValueCompare(TensorValue pre, TensorValue post, float thresh)
     {
         var v1 = pre.AsTensor();
@@ -131,6 +142,41 @@ public static class Comparator
         (TupleValue a, TupleValue b) => TupleValueCompare(a, b, thresh),
         (_, _) => throw new ArgumentOutOfRangeException()
     };
+
+    public static bool AllEqual(IValue pre, IValue post, float thresh = 0.001f) => (pre, post) switch
+    {
+        (TensorValue a, TensorValue b) => TensorValueAllEqual(a, b, thresh),
+        (TupleValue a, TupleValue b) => TupleValueAllEqual(a, b, thresh),
+        (_, _) => throw new ArgumentOutOfRangeException()
+    };
+
+    private static bool TupleValueAllEqual(TupleValue a, TupleValue b, float thresh)
+    {
+        if (a.Count != b.Count)
+        {
+            return false;
+        }
+
+        foreach (var (t1, t2) in a.AsTensors().Zip(b.AsTensors()))
+        {
+            if (!TensorValueAllEqual(t1, t2, thresh))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool TensorValueAllEqual(TensorValue pre, TensorValue post, float thresh)
+    {
+        var v1 = pre.AsTensor();
+        var v2 = post.AsTensor();
+        Assert.Equal(v1.Shape, v2.Shape);
+        Assert.Equal(v1.ElementType, v2.ElementType);
+        Assert.True(AllEqual(v1, v2, thresh));
+        return true;
+    }
 
     public static float[][] CompareByChannel(IValue pre, IValue post, int channelAxis = 1, float thresh = 0.99f) =>
         TensorsCompareByChannel(pre.AsTensors(), post.AsTensors(), channelAxis, thresh);

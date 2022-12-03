@@ -51,7 +51,10 @@ public static class PythonHelper
 
     public static IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null)
     {
-        return DumpManager.RunWithDump("Evaluator", () => expr.Evaluate(varsValues));
+        if (CompilerServices.CompileOptions.DumpLevel > 4)
+            return DumpManager.RunWithDump("Evaluator", () => CompilerServices.Evaluate(expr, varsValues));
+        else
+            return CompilerServices.Evaluate(expr, varsValues);
     }
 
     public static RTTensor[] RunSimulator(RTInterpreter interp, RTValue[] input)
@@ -97,15 +100,10 @@ public static class PythonHelper
         return new PytestCalibrationDatasetProvider(samples, sampleCount);
     }
 
-    public static QuantizeOptions MakeQuantizeOptions(ICalibrationDatasetProvider datasetProvider)
-    {
-        return new QuantizeOptions
-        { BindQuantMethod = false, CalibrationDataset = datasetProvider, CalibrationMethod = CalibMethod.NoClip };
-    }
 
     public class PytestCalibrationDatasetProvider : ICalibrationDatasetProvider
     {
-        public int? Count => 5;
+        public int? Count => SampleCount;
 
         public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
 

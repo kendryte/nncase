@@ -43,7 +43,7 @@ public sealed partial class EGraph : IEGraph
     }
 
     /// <summary>
-    /// <see cref="_hascons"/>.
+    /// Gets elass
     /// </summary>
     public IEnumerable<EClass> Classes => _classes;
 
@@ -104,6 +104,17 @@ public sealed partial class EGraph : IEGraph
 
         classB.Parent = classA;
         classA.AddNodes(classB.Nodes);
+        // choice the more accurate checked type
+        switch (classA.CheckedType.CompareTo(classB.CheckedType))
+        {
+            case < 0:
+                classA.SetCheckedType(classB.CheckedType);
+                break;
+            case > 0:
+                classB.SetCheckedType(classA.CheckedType);
+                break;
+        }
+
         _worklist.Enqueue(new() { OldClass = classB, NewClass = classA });
         return true;
     }
@@ -122,9 +133,11 @@ public sealed partial class EGraph : IEGraph
     private EClass AddENode(Expr expr, IRArray<EClass> children)
     {
         // TODO: concurrent safe
+        bool enode_is_new = false;
         if (!_exprMemo.TryGetValue(expr, out var enode))
         {
-            enode = new ENode(expr, children);
+            enode = ENode.Create(expr, children);
+            enode_is_new = true;
             _exprMemo.Add(expr, enode);
         }
 
@@ -132,8 +145,29 @@ public sealed partial class EGraph : IEGraph
         {
             eclass = new EClass(_globalEClassId++);
             _classes.Add(eclass);
-            enode.AddUsed(eclass);
             _nodes.Add(enode, eclass);
+            enode.AddUsed(eclass);
+        }
+        else
+        {
+            if (enode_is_new)
+            {
+                // when different expr have same enode, eg. new enode but old eclass.
+                // need set the new expr point to old enode.
+                var old_enodes = eclass.Nodes.Where(old_enode => old_enode == enode && !object.ReferenceEquals(old_enode, enode)).ToArray();
+                if (old_enodes.Length != 1)
+                    throw new InvalidProgramException("Please check the EGraph implention! The EClass only can contains same enode once!");
+                _exprMemo[expr] = old_enodes[0];
+                // append the equal exprs, when it be repaired will remove the old ExprMemo's enode. 
+                old_enodes[0].EqualityExprs.Add(expr); 
+            }
+        }
+        // when enode is new created, maybe we can get the more accurate ir type.
+        if (enode_is_new)
+        {
+            var candidate_type = expr.CheckedType ?? AnyType.Default;
+            if (candidate_type.CompareTo(eclass.CheckedType) > 0)
+                eclass.SetCheckedType(candidate_type);
         }
 
         return eclass;
@@ -142,15 +176,15 @@ public sealed partial class EGraph : IEGraph
     private void Repair(WorkItem workItem)
     {
         workItem.NewClass = workItem.NewClass.Find();
-
         foreach (var enode in workItem.OldClass.Used)
         {
             // 1. Check this node is alive and remove it
             if (_nodes.TryGetValue(enode, out var originalClass))
             {
-                originalClass = originalClass.Find();
                 _nodes.Remove(enode);
                 _exprMemo.Remove(enode.Expr);
+                foreach (var e in enode.EqualityExprs)
+                    _exprMemo.Remove(e);
             }
             else
             {

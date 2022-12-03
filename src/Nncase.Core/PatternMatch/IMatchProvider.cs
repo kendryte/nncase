@@ -51,4 +51,13 @@ public interface IEGraphMatchProvider
     /// <param name="results">Match results.</param>
     /// <returns>Match success.</returns>
     bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results);
+
+    /// <summary>
+    /// Match expr as egraph.
+    /// </summary>
+    /// <param name="expr"></param>
+    /// <param name="pattern"></param>
+    /// <param name="results"></param>
+    /// <returns></returns>
+    bool TryEMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results);
 }

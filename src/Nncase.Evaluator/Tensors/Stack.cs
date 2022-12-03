@@ -23,7 +23,15 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
     {
         var inputs = context.GetArgumentValueAsTensors(stack, Stack.Inputs);
         var axis = context.GetArgumentValueAsScalar<long>(stack, Stack.Axis);
-        return OrtKI.ConcatFromSequence(inputs.Select(t => t.ToOrtTensor()).ToArray(), axis, 1).ToValue();
+        var ort_inputs = inputs.Select(t =>
+        {
+            var ort = t.ToOrtTensor();
+            var old_shape = ort.Shape;
+            var new_shape = old_shape.Take((int)axis).Concat(new long[] { 1 }).Concat(old_shape.Skip((int)axis)).ToArray();
+            ort.Reshape(new_shape);
+            return ort;
+        }).ToArray();
+        return OrtKI.Concat(ort_inputs, axis).ToValue();
     }
 
     /// <inheritdoc/>

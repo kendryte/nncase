@@ -19,104 +19,104 @@ namespace Nncase.Tests.MatchTest;
 
 public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
 {
-    //     [Fact]
-    //     public void TestMatchDataFlowCallCommutive()
-    //     {
-    //         Var x = "x", y = "y";
-    //         var addpat = IsBinary(BinaryOp.Add, IsVar(), IsVar());
-    //         Assert.Single(Match(x + y, addpat));
-    //         Assert.Single(Match(y + x, addpat));
-    //         var mulpat = IsBinary(BinaryOp.Mul, IsVar(), IsVar());
-    //         Assert.Single(Match(y * x, mulpat));
-    //         Assert.Single(Match(x * y, mulpat));
-    //     }
+    [Fact]
+    public void TestMatchDataFlowCallCommutive()
+    {
+        Var x = "x", y = "y";
+        var addpat = IsBinary(BinaryOp.Add, IsVar(), IsVar());
+        Assert.True(CompilerServices.TryMatchRoot(x + y, addpat, out var _));
+        Assert.True(CompilerServices.TryMatchRoot(y + x, addpat, out var _));
+        var mulpat = IsBinary(BinaryOp.Mul, IsVar(), IsVar());
+        Assert.True(CompilerServices.TryMatchRoot(y * x, mulpat, out var _));
+        Assert.True(CompilerServices.TryMatchRoot(x * y, mulpat, out var _));
+    }
 
-    //     [Fact]
-    //     public void TestMatchDataFlowNoCallCommutive()
-    //     {
-    //         Var x = "x", y = "y";
-    //         var addpat = IsBinary(BinaryOp.Sub, x, y);
-    //         Assert.Single(Match(x - y, addpat));
-    //         Assert.Empty(Match(y - x, addpat));
-    //         var mulpat = IsBinary(BinaryOp.Div, x, y);
-    //         Assert.Single(Match(x / y, mulpat));
-    //         Assert.Empty(Match(y / x, mulpat));
-    //     }
+    [Fact]
+    public void TestMatchDataFlowNoCallCommutive()
+    {
+        Var x = "x", y = "y";
+        var subpat = IsBinary(BinaryOp.Sub, x, y);
+        Assert.True(CompilerServices.TryMatchRoot(x - y, subpat, out var _));
+        Assert.True(CompilerServices.TryMatchRoot(y - x, subpat, out var _));
+        var mulpat = IsBinary(BinaryOp.Div, x, y);
+        Assert.True(CompilerServices.TryMatchRoot(x / y, mulpat, out var _));
+        Assert.True(CompilerServices.TryMatchRoot(y / x, mulpat, out var _));
+    }
 
-    //     [Fact]
-    //     public void TestMatchDataFlowCall()
-    //     {
-    //         Var x = "x", y = "y";
-    //         var addpat = IsBinary(BinaryOp.Add, IsWildcard(), IsWildcard());
-    //         Assert.Single(Match(x + y, addpat));
+    [Fact]
+    public void TestMatchDataFlowCall()
+    {
+        Var x = "x", y = "y";
+        var addpat = IsBinary(BinaryOp.Add, IsWildcard(), IsWildcard());
+        Assert.True(CompilerServices.TryMatchRoot(x + y, addpat, out var _));
 
-    //         var callpat = IsWildcard();
-    //         Assert.Single(Match(Square(x), callpat));
-    //         Assert.Single(Match(x + y, callpat));
-    //     }
+        var callpat = IsWildcard();
+        Assert.True(CompilerServices.TryMatchRoot(Square(x), callpat, out var _));
+        Assert.True(CompilerServices.TryMatchRoot(x + y, callpat, out var _));
+    }
 
-    //     [Fact]
-    //     public void TestNoMatchDataFlowFunc()
-    //     {
-    //         Var x = "x", y = "y";
-    //         var pat = IsBinary(BinaryOp.Add, IsWildcard(), IsWildcard());
-    //         Assert.Empty(Match(x - y, pat));
-    //     }
+    [Fact]
+    public void TestNoMatchDataFlowFunc()
+    {
+        Var x = "x", y = "y";
+        var pat = IsBinary(BinaryOp.Add, IsWildcard(), IsWildcard());
+        Assert.False(CompilerServices.TryMatchRoot(x - y, pat, out var _));
+    }
 
-    //     [Fact]
-    //     public void TestMatchDataFlowConst()
-    //     {
-    //         Var x = "x", y = "y";
-    //         var pat = IsBinary(BinaryOp.Sub, IsWildcard(), IsConst());
-    //         Assert.Single(Match((x + y) - 100, pat));
-    //     }
+    [Fact]
+    public void TestMatchDataFlowConst()
+    {
+        Var x = "x", y = "y";
+        var pat = IsBinary(BinaryOp.Sub, IsWildcard(), IsConst());
+        Assert.True(CompilerServices.TryMatchRoot((x + y) - 100, pat, out var _));
+    }
 
-    //     [Fact]
-    //     public void TestMatchDataFlowTuple()
-    //     {
-    //         Var x = "x", y = "y";
-    //         var z = x + y;
-    //         var tuple = new IR.Tuple(x, y, z);
-    //         var tuplepat = IsTuple(IsVar(), IsWildcard(), IsBinary(BinaryOp.Add, IsWildcard(), IsWildcard()));
+    [Fact]
+    public void TestMatchDataFlowTuple()
+    {
+        Var x = "x", y = "y";
+        var z = x + y;
+        var tuple = new IR.Tuple(x, y, z);
+        var tuplepat = PatternMatch.Utility.IsTuple(new Pattern[] { IsVar(), IsWildcard(), IsBinary(BinaryOp.Add, IsWildcard(), IsWildcard()) }, "tp");
 
-    //         Assert.Single(Match(tuple, tuplepat));
+        Assert.True(CompilerServices.TryMatchRoot(tuple, tuplepat, out var _));
 
-    //         var tuplepat2 = IsTuple();
-    //         Assert.Single(Match(tuple, tuplepat2));
-    //     }
+        var tuplepat2 = PatternMatch.Utility.IsTuple("tp");
+        Assert.True(CompilerServices.TryMatchRoot(tuple, tuplepat2, out var _));
+    }
 
-    //     [Fact]
-    //     public void TestNotMatchFoldConstCall()
-    //     {
-    //         var rule = new Transform.Rule.FoldConstCall();
-    //         Var x = "x";
-    //         var z = x + 1;
-    //         Assert.Empty(Match(z, rule.Pattern));
-    //     }
+    [Fact]
+    public void TestNotMatchFoldConstCall()
+    {
+        var rule = new Transform.Rules.Neutral.FoldConstCall();
+        Var x = "x";
+        var z = x + 1;
+        Assert.False(CompilerServices.TryMatchRoot(z, rule.Pattern, out var _));
+    }
 
-    //     [Fact]
-    //     public void TestMatchFoldConstCallTwice()
-    //     {
-    //         var rule = new Transform.Rule.FoldConstCall();
+    [Fact]
+    public void TestMatchFoldConstCallTupleWithConst()
+    {
+        var rule = new Transform.Rules.Neutral.FoldConstCall();
 
-    //         var z = Concat(new IR.Tuple((Const)2, (Const)1, (Const)2), 0);
-    //         Assert.Single(Match(z, rule.Pattern));
-    //         rule.Pattern.Clear();
-    //         Assert.Single(Match(z, rule.Pattern));
-    //     }
+        var z = Concat(new IR.Tuple((Const)2, (Const)1, (Const)2), 0);
+        CompilerServices.InferenceType(z);
+        Assert.True(CompilerServices.TryMatchRoot(z, rule.Pattern, out var _));
+    }
 
-    //     [Fact]
-    //     public void TestMatchFoldConstCallTwiceFalse()
-    //     {
-    //         var rule = new Transform.Rule.FoldConstCall();
+    [Fact]
+    public void TestMatchFoldConstCallTwiceFalse()
+    {
+        var rule = new Transform.Rules.Neutral.FoldConstCall();
 
-    //         var z = Concat(new IR.Tuple((Var)"x", (Const)1, (Const)2), 0);
-    //         Assert.Empty(Match(z, rule.Pattern));
+        var z = Concat(new IR.Tuple(new Var("x",TensorType.Scalar(DataTypes.Int32)), 1, 2), 0);
+        CompilerServices.InferenceType(z);
+        Assert.False(CompilerServices.TryMatchRoot(z, rule.Pattern, out var _));
 
-    //         rule.Pattern.Clear();
-    //         var z1 = Concat(new IR.Tuple((Const)4.0f, (Const)1.0f, (Const)1, (Const)2), 0);
-    //         Assert.Single(Match(z1, rule.Pattern));
-    //     }
+        var z1 = Concat(new IR.Tuple(4, 1, 1, 2), 0);
+        CompilerServices.InferenceType(z1);
+        Assert.True(CompilerServices.TryMatchRoot(z1, rule.Pattern, out var _));
+    }
 
     [Fact]
     public void TestMatchSameInput()
@@ -132,7 +132,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
 
     private sealed class SimpleRule : IRewriteRule
     {
-        public IPattern Pattern { get; } = PatternMatch.F.Math.IsBinary(BinaryOp.Add, IsWildcard("lhs"), IsWildcard("rhs"));
+        public IPattern Pattern { get; } = IsBinary(BinaryOp.Add, IsWildcard("lhs"), IsWildcard("rhs"));
 
         public Expr? GetReplace(IMatchResult result, RunPassOptions options)
         {

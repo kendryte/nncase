@@ -18,4 +18,11 @@ internal class EGraphMatchProvider : IEGraphMatchProvider
     {
         return EGraphMatcher.TryMatchRoot(enodes, pattern, out results);
     }
+
+    public bool TryEMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
+    {
+        var egraph = new EGraph();
+        var root = egraph.Add(expr);
+        return TryMatchRoot(egraph.Nodes, pattern, out results);
+    }
 }

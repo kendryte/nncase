@@ -5,61 +5,60 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
-using static Nncase.IR.F.NN;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using Nncase.Transform;
 using Nncase.Transform.Rules.Neutral;
 using Tensorflow;
 using Xunit;
+using static Nncase.IR.F.NN;
 using ITuple = Nncase.IR.ITuple;
 using Math = Nncase.IR.F.Math;
 using Random = Nncase.IR.F.Random;
 using Tensors = Nncase.IR.F.Tensors;
 using Tuple = System.Tuple;
-using Microsoft.Toolkit.HighPerformance;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
 public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
 {
-    // public static IEnumerable<object[]> TestCombineTransposeBinaryPositiveData =>
-    //     new[]
-    //     {
-    //         new object[] {new[] {4}, new[] {4}, new[] {0}},
-    //         new object[] {new[] {4, 4}, new[] {4, 4}, new[] {1, 0}},
-    //         new object[] {new[] {1, 3, 4}, new[] {1, 3, 4}, new[] {0, 2, 1}},
-    //         new object[] {new[] {1, 3, 2, 4}, new[] {1, 3, 2, 4}, new[] {0, 2, 3, 1}},
-    //         // new object[] {new[] {5, 4, }, new[] {4, 6}, new[] {1, 0}},
-    //     };
-    //
-    // [Theory]
-    // [MemberData(nameof(TestCombineTransposeBinaryPositiveData))]
-    // public void TestCombineTransposeBinaryPositive(int[] lShape, int[] rShape, int[] perm)
-    // {
-    //     var caseOptions = GetPassOptions();
-    //     var a = new Var();
-    //     var b = new Var();
-    //
-    //     var Normal = new Dictionary<Var, IValue>();
-    //
-    //     Normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, lShape).Evaluate());
-    //     Normal.Add(b, Random.Normal(DataTypes.Float32, 0, 1, 0, rShape).Evaluate());
-    //
-    //     // TODO: Rely cse to fold same constant. 
-    //     var rootPre = Math.Binary(BinaryOp.Add, Tensors.Transpose(a, perm), Tensors.Transpose(b, perm));
-    //     var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-    //     {
-    //         // new FoldConstCall(),
-    //         new CombineTransposeBinary(),
-    //     }, caseOptions);
-    //
-    //     Assert.NotEqual(rootPre, rootPost);
-    //     Assert.Equal(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal));
-    // }
+    public static IEnumerable<object[]> TestCombineTransposeBinaryPositiveData =>
+        new[]
+        {
+            new object[] {new[] {5, 4 }, new[] {5, 4}, new[] {1, 0}},
+            new object[] {new[] {4, 4}, new[] {4, 4}, new[] {1, 0}},
+            new object[] {new[] {4}, new[] {4}, new[] {0}},
+            new object[] {new[] {1, 3, 4}, new[] {1, 3, 4}, new[] {0, 2, 1}},
+            new object[] {new[] {1, 3, 2, 4}, new[] {1, 3, 2, 4}, new[] {0, 2, 3, 1}},
+        };
+
+    [Theory]
+    [MemberData(nameof(TestCombineTransposeBinaryPositiveData))]
+    public void TestCombineTransposeBinaryPositive(int[] lShape, int[] rShape, int[] perm)
+    {
+        var caseOptions = GetPassOptions();
+        var a = new Var("a", new TensorType(DataTypes.Float32, lShape));
+        var b = new Var("b", new TensorType(DataTypes.Float32, rShape));
+
+        var Normal = new Dictionary<Var, IValue>(){
+         { a, Random.Normal(DataTypes.Float32, 0, 1, 0, lShape).Evaluate() },
+         { b, Random.Normal(DataTypes.Float32, 0, 1, 0, rShape).Evaluate() },
+        };
+        Expr permExpr = perm;
+        var rootPre = Math.Binary(BinaryOp.Add, Tensors.Transpose(a, permExpr), Tensors.Transpose(b, permExpr));
+        CompilerServices.InferenceType(rootPre);
+        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
+        {
+            new CombineTransposeBinary(),
+        }, caseOptions);
+
+        Assert.NotEqual(rootPre, rootPost);
+        Assert.True(TestFixture.Comparator.AllEqual(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal)));
+    }
 
     // public static IEnumerable<object[]> TestCombineTransposeConcatPositiveData =>
     //     new[]
@@ -107,23 +106,16 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
     public static IEnumerable<object[]> TestCombineTransposePadPositiveData =>
         new[]
         {
-            new object[] { new[] {1, 2, 3, 4}, new[] {0, 2, 3, 1}, new[,] {{ 4, 4 },
-            { 3, 3 },
-            { 2, 2 },
-            { 1, 1 }}, PadMode.Constant, 1f},
-            new object[] { new[] {1, 2, 3, 4}, new[] {0, 3, 1, 2}, new[,] {{ 1, 1 },
-            { 0, 0 },
-            { 1, 1 },
-            { 1, 1 }}, PadMode.Symmetric, 0f},
-            new object[] { new[] {5, 2, 3, 4}, new[] {3, 0, 1, 2}, new[,] {{ 2, 2 },
-            { 0, 0 },
-            { 1, 1 },
-            { 1, 1 }}, PadMode.Reflect, 0f},
-            new object[] { new[] {1, 2, 3, 4}, new[] {0, 3, 1, 2}, new[,] {{ 1, 1 },
-            { 0, 0 },
-            { -1, -1 },
-            { 1, 1 }}, PadMode.Edge, 0f},
-
+            new object[] { new [] {1, 3, 1, 2}, new []{ 0, 3, 1, 2 },
+              new [,] {{ 0, 0 }, { 0, 0 }, { 2, 2 }, { 1, 1} }, PadMode.Constant, 1.2f  },
+            new object[] { new[] {1, 2, 3, 4}, new[] {0, 2, 3, 1},
+              new[,] {{ 4, 4 }, { 3, 3 }, { 2, 2 }, { 1, 1 }}, PadMode.Constant, 1f},
+            new object[] { new[] {1, 2, 3, 4}, new[] {0, 3, 1, 2},
+              new[,] {{ 1, 1 }, { 0, 0 }, { 1, 1 }, { 1, 1 }}, PadMode.Symmetric, 0f},
+            new object[] { new[] {5, 2, 3, 4}, new[] {3, 0, 1, 2},
+              new[,] {{ 2, 2 }, { 0, 0 }, { 1, 1 }, { 1, 1 }}, PadMode.Reflect, 0f},
+            new object[] { new[] {1, 2, 3, 4}, new[] {0, 3, 1, 2},
+              new[,] {{ 1, 1 }, { 0, 0 }, { -1, -1 }, { 1, 1 }}, PadMode.Edge, 0f},
         };
 
     [Theory]
@@ -131,10 +123,9 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
     public void TestCombineTransposePadPositive(int[] inShape, int[] perm, int[,] paddings, PadMode padM, float padValue)
     {
         var caseOptions = GetPassOptions();
-        var a = new Var();
+        var a = new Var("input", new TensorType(DataTypes.Float32, inShape));
         var Normal = new Dictionary<Var, IValue>();
         Normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
-        // var a = Random.Normal(DataTypes.Float32, 0, 1, 0, inShape);
         var rootPre = Pad(Tensors.Transpose(a, perm), paddings, padM, padValue);
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
@@ -143,8 +134,9 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
         }, caseOptions);
 
         Assert.NotEqual(rootPre, rootPost);
-        // Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
-        Assert.Equal(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal));
+        var vpre = rootPre.Evaluate(Normal);
+        var vpost = rootPost.Evaluate(Normal);
+        Assert.True(TestFixture.Comparator.AllEqual(vpre, vpost));
     }
 
     public static IEnumerable<object[]> TestCombineTransposeReducePositiveData =>
@@ -169,10 +161,9 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
         }, caseOptions);
 
         Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal));
+        Assert.True(TestFixture.Comparator.AllEqual(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal)));
     }
 
-    // TODO : CombineTransposeUnary
     public static IEnumerable<object[]> TestCombineTransposeUnaryPositiveData =>
         new[]
         {
@@ -197,6 +188,6 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
         }, caseOptions);
 
         Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal));
+        Assert.True(TestFixture.Comparator.AllEqual(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal)));
     }
 }

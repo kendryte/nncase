@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Imaging;
 using Nncase.IR.Tensors;
@@ -18,7 +19,7 @@ namespace Nncase.Evaluator.Imaging;
 /// <summary>
 /// Evaluator for <see cref="ResizeImage"/>.
 /// </summary>
-public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<ResizeImage>
+public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<ResizeImage>, ICostEvaluator<ResizeImage>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ResizeImage target)
@@ -67,5 +68,17 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
         var input = context.CheckArgumentType<TensorType>(target, ResizeImage.Input);
         var newSize = context.GetArgument(target, ResizeImage.NewSize);
         return TypeInference.ResizeType(input, newSize, null);
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, ResizeImage target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, ResizeImage.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
+        };
     }
 }

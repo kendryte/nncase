@@ -21,7 +21,7 @@ namespace Nncase
             Expr i;
             if (input.CheckedType != null)
             {
-                i = index < 0 ? index + input.CheckedShape.Size : index;
+                i = index < 0 ? index + input.CheckedShape.Rank : index;
             }
             else
             {
