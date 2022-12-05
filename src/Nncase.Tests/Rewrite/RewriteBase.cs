@@ -294,12 +294,12 @@ public sealed class TransposeDemoCase : FoldNopTransposeCase3
 /// <summary>
 /// this case from mobilenet v1
 /// </summary>
-public sealed class MobileNetV1TransposeCase : IRewriteCase
+public class MobileNetV1TransposeCase : IRewriteCase
 {
     Var _input;
     public MobileNetV1TransposeCase()
     {
-        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1,32,112,112 }));
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 32, 112, 112 }));
     }
     public Function PreExpr
     {
@@ -331,5 +331,73 @@ public sealed class MobileNetV1TransposeCase : IRewriteCase
 
     public Dictionary<Var, IValue> FeedDict => new() {
       {_input, Normal(DataTypes.Float32, 0, 1, 1, new[] { 1,32,112,112 }).Evaluate() }
+    };
+}
+
+
+public sealed class TransposeLeakyRelu : IRewriteCase
+{
+
+    Var _input;
+    public TransposeLeakyRelu()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 16, 15, 20 }));
+    }
+    public Function PreExpr
+    {
+        get
+        {
+            var v_5 = Transpose(_input, (new[] { 0, 2, 3, 1 })); // f32[1,15,20,16]
+            var v_6 = LeakyRelu(v_5, 0.1f); // f32[1,15,20,16]
+            var v_7 = Transpose(v_6, (new[] { 0, 3, 1, 2 })); // f32[1,16,15,20]
+            var v_8 = Conv2D(v_7,
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 16, 16, 3, 3 }).Evaluate().AsTensor()),
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 16 }).Evaluate().AsTensor()), (new[] { 1, 1 }), (new[,] { { 1, 1 }, { 1, 1 } }), (new[] { 1, 1 }), PadMode.Constant, (1), (new[] { 0.0f, 6.0f }));// f32[1,16,15,20]
+            return new Function(v_8, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[] {
+        new Transform.Rules.Neutral.FoldConstCall(),
+        new Transform.Rules.Neutral.FoldNopTranspose(),
+        new Transform.Rules.Neutral.FoldTwoTransposes(),
+        new Transform.Rules.Neutral.CombineTransposeActivations(),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new() {
+      {_input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() }
+    };
+}
+
+
+public sealed class Conv2DPadsCase : IRewriteCase
+{
+
+    Var _input;
+    public Conv2DPadsCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 16, 56, 56 }));
+    }
+    public Function PreExpr
+    {
+        get
+        {
+            var v_12 = Conv2D(_input,
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 96, 16, 1, 1 }).Evaluate().AsTensor()),
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 96 }).Evaluate().AsTensor()), (new[] { 1, 1 }), (new[,] { { 0, 0 }, { 0, 0 } }), (new[] { 1, 1 }), PadMode.Constant, (1), (new[] { 0.0f, 6.0f })); // f32[1,96,56,56]
+            var v_13 = Pad(v_12, (new[,] { { 0, 0 }, { 0, 0 }, { 0, 1 }, { 0, 1 } }), PadMode.Constant, (0.0f)); // f32[1,96,57,57]
+            var v_14 = Conv2D(v_13,
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 96, 1, 3, 3 }).Evaluate().AsTensor()),
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 96 }).Evaluate().AsTensor()), (new[] { 2, 2 }), (new[,] { { 0, 0 }, { 0, 0 } }), (new[] { 1, 1 }), PadMode.Constant, (96), (new[] { 0.0f, 6.0f })); // f32[1,96,28,28]
+            return new Function(v_14, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[] {
+        new Transform.Rules.Neutral.FoldConv2DPads(),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new() {
+      {_input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() }
     };
 }

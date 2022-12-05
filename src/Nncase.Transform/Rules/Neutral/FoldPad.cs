@@ -70,3 +70,38 @@ public sealed partial class FoldTwoPads : IRewriteRule
         return null;
     }
 }
+
+/// <summary>
+/// fold conv2d(pad(input)) => conv2d(input)
+/// </summary>
+[RuleGenerator]
+public sealed partial class FoldConv2DPads : IRewriteRule
+{
+    public IPattern Pattern { get; } = IsConv2D
+      ("conv", conv => conv.PadMode == PadMode.Constant,
+        IsPad(pad => pad.PadMode == PadMode.Constant,
+          IsWildcard("input"),
+          IsTensorConst("ext_pad"),
+          IsTensorConst("ext_pad_init")),
+        IsWildcard("weights"),
+        IsWildcard("bias"),
+        IsWildcard("stride"),
+        IsTensorConst("padding"),
+        IsWildcard("dilation"),
+        IsWildcard("groups"),
+        IsWildcard("fusedClamp"));
+
+    private Expr? GetReplace(Conv2D conv, Expr input, Expr weights, Expr bias, Expr stride, Tensor<int> padding,
+        Expr dilation, Expr groups, Expr fusedClamp, Tensor<int> ext_pad, float ext_pad_init)
+    {
+        if (!(ext_pad[0, 0] == 0 && ext_pad[0, 1] == 0 &&
+            ext_pad[1, 0] == 0 && ext_pad[1, 1] == 0))
+            return null;
+        var new_pad = padding.Clone();
+        new_pad[0, 0] += ext_pad[2, 0];
+        new_pad[0, 1] += ext_pad[2, 1];
+        new_pad[1, 0] += ext_pad[3, 0];
+        new_pad[1, 1] += ext_pad[3, 1];
+        return Conv2D(input, weights, bias, stride, new_pad, dilation, PadMode.Constant, groups, fusedClamp);
+    }
+}

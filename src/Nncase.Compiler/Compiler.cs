@@ -151,6 +151,8 @@ public class Compiler
           new Transform.Rules.Neutral.CombineTransposePad(),
           new Transform.Rules.Neutral.CombineTransposeBinary(),
           new Transform.Rules.Neutral.CombineTransposeReduce(),
+          new Transform.Rules.Neutral.CombineTransposeActivations(),
+          new Transform.Rules.Neutral.FoldConv2DPads(),
         });
         if (options.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
