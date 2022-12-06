@@ -335,11 +335,12 @@ class Compiler:
     def set_compile_options(self, compile_options: CompileOptions):
         # format it.
         if (self._compile_options is None):
-            self._compile_options: ClCompileOptions = _nncase.CompileOptions(_nncase.Quantization.ModelQuantMode.NoQuant)
+            self._compile_options: ClCompileOptions = _nncase.CompileOptions()
             self._compiler.UpdateCompileOptions(self._compile_options)
         self._compile_options.Target = compile_options.target
         self._compile_options.DumpLevel = 3 if compile_options.dump_ir == True else 0
         self._compile_options.DumpDir = compile_options.dump_dir
+        self._compile_options.QuantizeOptions = _nncase.Quantization.QuantizeOptions()
         self._quant_options = self._compile_options.QuantizeOptions
         # update the CompilerService global compile options
 
@@ -376,8 +377,8 @@ class Compiler:
         dataset = [data.to_nncase_tensor() for data in ptq_dataset_options.cali_data]
         dataset = _nncase.Compiler.PythonHelper.MakeDatasetProvider(dataset, ptq_dataset_options.samples_count, params)
         self._quant_options.CalibrationDataset = dataset
-        self._quant_options.CalibrationMethod = CalibMethod.NoClip
-        self._compile_options.ModelQuantMode = 1 # UsePTQ
+        self._quant_options.CalibrationMethod = _nncase.Quantization.CalibMethod.NoClip
+        self._compile_options.ModelQuantMode = _nncase.Quantization.ModelQuantMode.UsePTQ
 
     def dump_range_options(self) -> DumpRangeTensorOptions:
         raise NotImplementedError("dump_range_options")
@@ -399,10 +400,15 @@ class DumpRangeTensorOptions:
         pass
 
 
-class CalibMethod(Enum):
-  NoClip = 0
-  Kld = 1
-  Random = 2
+class CalibMethod:
+  NoClip: int = 0
+  Kld: int = 1
+  Random: int = 2
+
+class ModelQuantMode:
+  NoQuant: int = 0
+  UsePTQ: int = 1
+  UseQAT: int = 2
 
 class ClQuantizeOptions():
   CalibrationDataset: object
