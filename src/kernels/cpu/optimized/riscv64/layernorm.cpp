@@ -121,6 +121,7 @@ static void layer_norm_update1(const float *data, float *out, int len, float mea
                                                          "vse32.v v16, (a2);"
                                                          "add a2, a2, t1;"
                                                          "bnez a0, layer_norm_update1%=;"
+
         :
         : [avl] "r"(len), [input_ptr1] "r"(data), [mean] "f"(mean), [r_sqrt] "f"(r_sqrt), [b] "r"(b), [out] "r"(out), [scale] "r"(r1)
         : "t0", "t1", "a0", "a1", "a2", "v0", "v16", "a3", "a4", "v8");
@@ -166,6 +167,7 @@ result<void> optimized::layernorm<float>(const float *input, float *output, floa
 
 template <typename T>
 result<void> optimized::layernorm(const T *input, T *output, T *scale, T *bias, const runtime_shape_t &in_shape, int32_t axis, float epsilon) noexcept
+
 {
     return cpu::reference::layernorm(input, output, scale, bias, in_shape, axis, epsilon);
 }
