@@ -41,16 +41,22 @@ void op_profile::print()
               << "|" << std::setw(12) << std::left << "---"
               << "|" << std::setw(12) << std::left << "---"
               << "|" << std::endl;
+#if !defined(__riscv)
+    double convert_number = 1.0f;
+#else
+    double convert_number = RISCVFREQUENCY / 1000.0f;
+#endif
+
     for (auto e : v)
     {
         std::cout << "|" << std::setw(30) << std::left << e.first
-                  << "|" << std::setw(12) << std::left << e.second
+                  << "|" << std::setw(12) << std::left << e.second / convert_number
                   << "|" << std::setw(12) << std::left << e.second / total * 100
                   << "|" << std::endl;
     }
 
     std::cout << "|" << std::setw(30) << std::left << "total"
-              << "|" << std::setw(12) << std::left << total
+              << "|" << std::setw(12) << std::left << total / convert_number
               << "|" << std::setw(12) << std::left << total / total * 100
               << "|" << std::endl
               << std::endl;
