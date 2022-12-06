@@ -86,9 +86,10 @@ public class Compiler
         //Console.WriteLine("Infer Shape...");
 
         if (CompilerServices.CompileOptions.DumpLevel > 4)
-            DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module, options));
+            DumpManager.RunWithDump("ImportShapeInferPassEval", () => RunPass(p => p.Add(new Transform.Passes.ShapeInferPass()), "ImportShapeInferPass"));
         else
-            InferShape(module, options);
+            RunPass(p => p.Add(new Transform.Passes.ShapeInferPass()), "ImportShapeInferPass");
+
 
         var inferSucc = CompilerServices.InferenceType(module.Entry!);
         DumpModule(module, options, "ir_infertype");
@@ -101,13 +102,6 @@ public class Compiler
         return module;
     }
 
-    private void InferShape(IRModule module, CompileOptions options)
-    {
-        var pmgr = new PassManager(module, new RunPassOptions(null!, options.DumpLevel, options.DumpDir));
-        var constFold = new ShapeInferPass();
-        pmgr.Add(constFold);
-        pmgr.RunAsync().Wait();
-    }
 
     private IRModule ImportModel(Stream content, CompileOptions options)
     {
@@ -156,23 +150,13 @@ public class Compiler
         });
         if (options.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
-            AddMarker(passManager, options);
-            AssignRange(passManager, options);
+            passManager.Add(new DataflowPass("2_AddRangeofAndMarker")
+            {
+                new Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2D(),
+                new Transform.Rules.Neutral.AddRangeOfAndMarkerToMatMul(),
+            });
+            passManager.Add(new Quantization.EGraphPassWithQuantize("3_AssignRanges", options.QuantizeOptions!));
         }
-    }
-
-    public void AddMarker(PassManager passManager, CompileOptions options)
-    {
-        passManager.Add(new DataflowPass("add_rangeof_and_marker")
-        {
-            new Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2D(),
-            new Transform.Rules.Neutral.AddRangeOfAndMarkerToMatMul(),
-        });
-    }
-
-    public void AssignRange(PassManager passManager, CompileOptions options)
-    {
-        passManager.Add(new Quantization.EGraphPassWithQuantize("1_AssignRanges", options.QuantizeOptions!));
     }
 
     public void Compile()
@@ -190,11 +174,11 @@ public class Compiler
             RunPass(p => t.RegisterQuantizePass(p, options), "QuantizePass");
             RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, options), "TargetDependentAfterQuantPass");
             var clear = new DataflowPass("ClearMarker") { new RemoveMarker() };
-            RunPass(p => p.Add(clear), "RemoveMarker");
+            RunPass(p => p.Add(clear), "RemoveMarkerAfterQuantPass");
         }
 
         // fold constant
-        RunPass(p => p.Add(new Transform.Passes.ShapeInferPass()), "ShapeInferAndFold");
+        RunPass(p => p.Add(new Transform.Passes.ShapeInferPass()), "FinalShapeInferPass");
         // Console.WriteLine("Compile successful");
     }
 
