@@ -45,6 +45,7 @@ internal class EGraphExtractor
                 Op op => VisitLeaf(minCostEnode, op),
                 Marker marker => Visit(minCostEnode, marker),
                 None none => Visit(minCostEnode, none),
+                Fusion fusion => VisitLeaf(minCostEnode, fusion),
                 _ => throw new ArgumentException("Unsupported expression type."),
             };
             _eclassMemo.Add(eclass, expr);

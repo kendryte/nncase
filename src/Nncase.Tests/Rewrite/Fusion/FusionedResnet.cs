@@ -37,7 +37,7 @@ internal sealed record ForwardFusion(Func<Expr[], Fusion> Creator) : IForwardabl
                 CompilerServices.InferenceType(b);
             var in_a = new Var(a.CheckedType!);
             var in_b = new Var(b.CheckedType!);
-            return new Fusion("BinaryFusion", "stackvm", IR.F.Math.Binary(BinaryOp.Add, in_a, in_b), new[] { in_a, in_b });
+            return new Fusion("BinaryFusion", Callable.StackVMModuleKind, IR.F.Math.Binary(BinaryOp.Add, in_a, in_b), new[] { in_a, in_b });
         };
         return new(creator);
     }
@@ -55,7 +55,7 @@ internal sealed record ForwardFusion(Func<Expr[], Fusion> Creator) : IForwardabl
             var weights = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { out_planes, v_input.CheckedShape[1].FixedValue, 3, 3 }).Evaluate().AsTensor();
             var bias = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { out_planes }).Evaluate().AsTensor();
 
-            return new Fusion("Conv3x3Fusion", "stackvm", IR.F.NN.Conv2D(v_input, weights, bias, new[] { stride, stride }, new[,] { { dilation, dilation }, { dilation, dilation } }, new[] { dilation, dilation }, PadMode.Constant, groups), new[] { v_input });
+            return new Fusion("Conv3x3Fusion", Callable.StackVMModuleKind, IR.F.NN.Conv2D(v_input, weights, bias, new[] { stride, stride }, new[,] { { dilation, dilation }, { dilation, dilation } }, new[] { dilation, dilation }, PadMode.Constant, groups), new[] { v_input });
         };
         return new(creator);
     }
@@ -73,7 +73,7 @@ internal sealed record ForwardFusion(Func<Expr[], Fusion> Creator) : IForwardabl
               var v_input = new Var(input.CheckedType!);
               var weights = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { out_planes, v_input.CheckedShape[1].FixedValue, 1, 1 }).Evaluate().AsTensor();
               var bias = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { out_planes }).Evaluate().AsTensor();
-              return new Fusion("Conv1x1Fusion", "stackvm", IR.F.NN.Conv2D(v_input, weights, bias, new[] { stride, stride }, new[,] { { 0, 0 }, { 0, 0 } }, new[] { 1, 1 }, PadMode.Constant, 1), new[] { v_input });
+              return new Fusion("Conv1x1Fusion", Callable.StackVMModuleKind, IR.F.NN.Conv2D(v_input, weights, bias, new[] { stride, stride }, new[,] { { 0, 0 }, { 0, 0 } }, new[] { 1, 1 }, PadMode.Constant, 1), new[] { v_input });
           };
         return new(creator);
     }
@@ -248,7 +248,7 @@ internal sealed class ResNet
             var v_input = new Var(input.CheckedType!);
             var weights = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, v_input.CheckedShape[1].FixedValue, 7, 7 }).Evaluate().AsTensor();
             var bias = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor();
-            return new Fusion("Conv3x3Fusion", "stackvm", IR.F.NN.Conv2D(v_input, weights, bias, new[] { 2, 2 }, new[,] { { 3, 3 }, { 3, 3 } }, new[] { 1, 1 }, PadMode.Constant, groups), new[] { v_input });
+            return new Fusion("Conv3x3Fusion", Callable.StackVMModuleKind, IR.F.NN.Conv2D(v_input, weights, bias, new[] { 2, 2 }, new[,] { { 3, 3 }, { 3, 3 } }, new[] { 1, 1 }, PadMode.Constant, groups), new[] { v_input });
         };
         this.conv1 = new(conv1_creator);
 
@@ -262,7 +262,7 @@ internal sealed class ResNet
 
             var v_input = new Var(input.CheckedType!);
 
-            return new Fusion("ReduceWindowFusion", "stackvm", IR.F.NN.ReduceWindow2D(ReduceOp.Max, v_input, 0.0f, new[] { 3, 3 }, new[] { 2, 2 }, new[,] { { 1, 1 }, { 1, 1 } }, new[] { 1, 1 }, false, false), new[] { v_input });
+            return new Fusion("ReduceWindowFusion", Callable.StackVMModuleKind, IR.F.NN.ReduceWindow2D(ReduceOp.Max, v_input, 0.0f, new[] { 3, 3 }, new[] { 2, 2 }, new[,] { { 1, 1 }, { 1, 1 } }, new[] { 1, 1 }, false, false), new[] { v_input });
         };
         this.maxpool = new(maxpool_creator);
         this.layer1 = this._make_layer(block, 64, layers[0]);

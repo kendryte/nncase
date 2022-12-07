@@ -121,6 +121,7 @@ public partial class EGraphPrinter
                         IR.Const => new DotStyledFont(DotFontStyles.Normal, Color.DarkOrange),
                         IR.Call => new DotStyledFont(DotFontStyles.Normal, Color.DarkBlue),
                         IR.Var => new DotStyledFont(DotFontStyles.Normal, Color.BlueViolet),
+                        IR.Fusion => new DotStyledFont(DotFontStyles.Normal, Color.MediumSeaGreen),
                         _ => new DotStyledFont(DotFontStyles.Normal)
                     }); // key wrods type.
                     foreach (var (child, i) in enode.Children.Select((c, i) => (c, i)))

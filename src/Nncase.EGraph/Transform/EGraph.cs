@@ -16,6 +16,7 @@ public sealed partial class EGraph : IEGraph
 {
     private readonly Dictionary<Expr, ENode> _exprMemo = new();
     private readonly Dictionary<ENode, EClass> _nodes = new();
+    private readonly Dictionary<ENode, List<Expr>> _equivalentNodes = new(ReferenceEqualityComparer.Instance);
     private readonly List<EClass> _classes = new();
 
     private int _version = 0;
@@ -140,6 +141,8 @@ public sealed partial class EGraph : IEGraph
             enode_is_new = true;
             _exprMemo.Add(expr, enode);
         }
+        else
+            enode = enode.Canonicalize();
 
         if (!_nodes.TryGetValue(enode, out var eclass))
         {
@@ -150,20 +153,32 @@ public sealed partial class EGraph : IEGraph
         }
         else
         {
+            eclass = eclass.Find(); // old eclass now maybe merged.
             if (enode_is_new)
             {
-                // when different expr have same enode, eg. new enode but old eclass.
-                // need set the new expr point to old enode.
+                /* 
+                   when different expr have same enode
+                   eg. create new enode is call[e2, 1, 2] find the eclass 3
+                      in eclass 3 already contain call[e1, 1, 2].
+                   so need set the exprMemo[e2] = call[e1, 1, 2], then drop the new enode call[e2, 1, 2].
+                */
+
                 var old_enodes = eclass.Nodes.Where(old_enode => old_enode == enode && !object.ReferenceEquals(old_enode, enode)).ToArray();
                 if (old_enodes.Length != 1)
                     throw new InvalidProgramException("Please check the EGraph implention! The EClass only can contains same enode once!");
-                _exprMemo[expr] = old_enodes[0];
+                var old_enode = old_enodes[0];
+                _exprMemo[expr] = old_enode;
                 // append the equal exprs, when it be repaired will remove the old ExprMemo's enode. 
-                old_enodes[0].EqualityExprs.Add(expr); 
+                if (!_equivalentNodes.TryGetValue(old_enode, out var equivals))
+                {
+                    equivals = new();
+                    _equivalentNodes.Add(old_enode, equivals);
+                }
+                equivals.Add(expr);
             }
         }
         // when enode is new created, maybe we can get the more accurate ir type.
-        if (enode_is_new)
+        if (enode_is_new || eclass.CheckedType is AnyType)
         {
             var candidate_type = expr.CheckedType ?? AnyType.Default;
             if (candidate_type.CompareTo(eclass.CheckedType) > 0)
@@ -183,8 +198,12 @@ public sealed partial class EGraph : IEGraph
             {
                 _nodes.Remove(enode);
                 _exprMemo.Remove(enode.Expr);
-                foreach (var e in enode.EqualityExprs)
-                    _exprMemo.Remove(e);
+                if (_equivalentNodes.TryGetValue(enode, out var equivals))
+                {
+                    foreach (var e in equivals)
+                        _exprMemo.Remove(e);
+                    _equivalentNodes.Remove(enode);
+                }
             }
             else
             {
@@ -248,6 +267,16 @@ public sealed partial class EGraph : IEGraph
         public override EClass VisitLeaf(Const expr)
         {
             return _graph.AddENode(expr, Array.Empty<EClass>());
+        }
+
+        public override EClass Visit(Fusion expr)
+        {
+            if (!ExpressionMemo.TryGetValue(expr, out var result))
+            {
+                result = _graph.AddENode(expr, Array.Empty<EClass>());
+                ExpressionMemo.Add(expr, result);
+            }
+            return result;
         }
 
         public override EClass VisitLeaf(Function expr)

@@ -94,6 +94,14 @@ internal static class EGraphRewriter
             }
         }
 
+        foreach (var cls in eGraph.Classes)
+        {
+            foreach (var node in cls.Nodes)
+            {
+                if (node.Canonicalize() != node)
+                    System.Console.WriteLine($"Warning EClass {cls} Have NoCanonicalize Enode {node}");
+            }
+        }
         return eGraph;
     }
 }
