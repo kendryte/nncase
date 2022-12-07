@@ -11,7 +11,7 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.ReWrite.FusionTest;
 
-internal sealed class FusionMergeRule : IRewriteRule
+internal sealed class SingleInputFusionMergeRule : IRewriteRule
 {
 
     public IPattern Pattern { get; } =
@@ -47,6 +47,10 @@ internal sealed class FusionMergeRule : IRewriteRule
         var callee = (Call)result["callee"];
         var callee_fusion = (Fusion)result["callee_fusion"];
         var caller_fusion = (Fusion)result["caller_fusion"];
+        // note manual pruning
+        if ((caller_fusion.Name.Split("_").Length +
+            caller_fusion.Name.Split("_").Length) > 7)
+            return caller;
 
         // note each patter will generator the new expr. so need cache it.
         var hashcode = HashCode.Combine(ReferenceEqualityComparer.Instance.GetHashCode(caller), ReferenceEqualityComparer.Instance.GetHashCode(callee));
@@ -65,10 +69,85 @@ internal sealed class FusionMergeRule : IRewriteRule
             System.Console.WriteLine("Re Add Merged Fusion Call");
         }
         return new_call;
-        //     merged_calls.Add(caller);
-        //     merged_calls.Add(callee);
-        //     return true;
-        // }
+    }
+}
+
+/// <summary>
+/// fusion_3(fusion_1(x), fusion_2(x)) => fusion_4(x)
+/// </summary>
+internal sealed class TwoInputFusionMergeRule : IRewriteRule
+{
+
+    private static Pattern _input = IsWildcard("input");
+
+    public IPattern Pattern { get; } =
+      IsCall(
+        "caller",
+        IsFusion("caller_fusion", Callable.StackVMModuleKind, IsWildcard(), IsVArgs(IsVar(), IsVar())),
+        IsCall(
+          "lhs_callee",
+          IsFusion("lhs_callee_fusion", Callable.StackVMModuleKind, IsWildcard(), IsVArgs(IsVar())),
+          _input
+          ),
+        IsCall(
+          "rhs_callee",
+          IsFusion("rhs_callee_fusion", Callable.StackVMModuleKind, IsWildcard(), IsVArgs(IsVar())),
+          _input
+          )
+      );
+
+    public static Fusion MergeTwoInputFusion(Call caller, Call lhs_callee, Call rhs_callee, Fusion caller_fusion, Fusion lhs_callee_fusion, Fusion rhs_callee_fusion, RunPassOptions passOptions)
+    {
+        // 1. replace the caller_fusion input_var with the callee_fusion body
+        var new_fusion_body = Transform.Mutator.Substitute(e =>
+        {
+            if (object.ReferenceEquals(e, caller_fusion.Parameters[0]))
+                return lhs_callee_fusion.Body;
+            if (object.ReferenceEquals(e, caller_fusion.Parameters[1]))
+                return rhs_callee_fusion.Body;
+            return null;
+        })().Visit(caller_fusion.Body);
+
+        // 2. fold the store load
+        // new_fusion_body = CompilerServices.Rewrite(new_fusion_body, new[] { new Transform.Rules.K510.FoldStoreLoad() }, passOptions.IndentDir("MergeSingleInputFusion"));
+        var new_fusion = new Fusion($"{caller_fusion.Name}_{lhs_callee_fusion.Name}_{rhs_callee_fusion.Name}", Callable.StackVMModuleKind, new_fusion_body, lhs_callee_fusion.Parameters);
+
+        return new_fusion;
+    }
+
+    private Dictionary<int, Call> MergedCache = new();
+
+    private Expr? GetReplace(Call caller, Call lhs_callee, Call rhs_callee, Fusion caller_fusion, Fusion lhs_callee_fusion, Fusion rhs_callee_fusion, Expr input, RunPassOptions passOptions)
+    {
+        // note manual pruning
+        if ((caller_fusion.Name.Split("_").Length +
+          lhs_callee_fusion.Name.Split("_").Length +
+          rhs_callee_fusion.Name.Split("_").Length) > 7)
+            return caller;
+        // note each patter will generator the new expr. so need cache it.
+        var hashcode = HashCode.Combine(ReferenceEqualityComparer.Instance.GetHashCode(caller_fusion),
+                                        ReferenceEqualityComparer.Instance.GetHashCode(lhs_callee_fusion),
+                                        ReferenceEqualityComparer.Instance.GetHashCode(rhs_callee_fusion));
+        if (!MergedCache.TryGetValue(hashcode, out var new_call))
+        {
+            // 1. merge new fusion
+            var merged_fusion = MergeTwoInputFusion(caller, lhs_callee, rhs_callee, caller_fusion, lhs_callee_fusion, rhs_callee_fusion, passOptions);
+            new_call = new Call(merged_fusion, ImmutableArray.Create(input));
+            MergedCache.Add(hashcode, new_call);
+        }
+        else
+        {
+            System.Console.WriteLine("Re Add Merged Two Fusion Call");
+        }
+        return new_call;
+    }
+
+    public Expr? GetReplace(IMatchResult result, RunPassOptions options)
+    {
+        return GetReplace(
+          (Call)result["caller"], (Call)result["lhs_callee"], (Call)result["rhs_callee"], (Fusion)result["caller_fusion"], (Fusion)result["lhs_callee_fusion"], (Fusion)result["rhs_callee_fusion"], (Expr)result["input"],
+          options
+        );
     }
 }
 
@@ -93,7 +172,32 @@ public class UnitTestEGraphFusion : TestFixture.UnitTestFixtrue
         CompilerServices.DumpIR(main, "", passOptions.DumpDir);
 
         var pass = new EGraphPass("AutoMergeFusion"){
-          new FusionMergeRule()
+          new SingleInputFusionMergeRule()
+        };
+        await pass.RunAsync(main, passOptions);
+    }
+
+    [Fact]
+    public async void TestResNet18FusionWithCycle()
+    {
+        var passOptions = GetPassOptions();
+        var compileOptions = passOptions.CompileOptions;
+
+        var target = CompilerServices.GetTarget(compileOptions.Target);
+
+        // step 1. import
+        var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
+        var model = new ResNet(typeof(BasicBlock), new[] { 2, 2, 2, 2 });
+        var body = model.Forward(input);
+        var main = new Function("main", body, ImmutableArray.Create(input));
+        IRModule module = new(main);
+
+        CompilerServices.InferenceType(main);
+        CompilerServices.DumpIR(main, "", passOptions.DumpDir);
+
+        var pass = new EGraphPass("AutoMergeFusion"){
+          new SingleInputFusionMergeRule(),
+          new TwoInputFusionMergeRule(),
         };
         await pass.RunAsync(main, passOptions);
     }

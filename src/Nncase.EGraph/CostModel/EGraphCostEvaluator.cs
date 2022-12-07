@@ -143,8 +143,6 @@ internal sealed class EGraphCostEvaluator
 
     private Cost? Visit(EClass eclass)
     {
-        if (eclass.Id == 65)
-            System.Console.WriteLine(111);
         Cost? cost = null;
         foreach (var enode in eclass.Nodes)
         {
