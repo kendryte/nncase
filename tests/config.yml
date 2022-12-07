@@ -43,7 +43,7 @@ case: # case的配置，应该是一个多层次的
     tcu_num: 0
     is_fpga: false
     dump_asm: true
-    dump_ir: false
+    dump_ir: true
     dump_quant_error: false
     dump_import_op_range: false
     quant_type: 'uint8'
@@ -63,7 +63,7 @@ case: # case的配置，应该是一个多层次的
     name: generate_random
     kwargs: null
     numbers: 1
-    batch_size: 50
+    batch_size: 1
   generate_dump_range_data:
     name: generate_random
     kwargs: null

@@ -558,8 +558,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 #     shape = copy.deepcopy(preprocess_opt['input_shape'])
                 # else:
                 #     shape = copy.deepcopy(input['model_shape'])
-                # if shape[0] != cfg.batch_size:
-                #     shape[0] *= cfg.batch_size
+                if shape[0] != cfg.batch_size:
+                    shape[0] *= cfg.batch_size
                 data = DataFactory[cfg.name](shape, input['dtype'], n, cfg.batch_size, **cfg.kwargs)
 
                 path_list.append(
