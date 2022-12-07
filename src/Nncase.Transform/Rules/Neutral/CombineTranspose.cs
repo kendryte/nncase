@@ -122,6 +122,39 @@ public sealed partial class CombineTransposePad : IRewriteRule
 }
 
 /// <summary>
+/// Combine Pad with Transpose
+/// transpose(pad(x, pp),p) => pad(transpose(x),new_pp)
+/// </summary>
+[RuleGenerator]
+public sealed partial class CombinePadTranspose : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } =
+      IsTranspose(
+        IsPad(
+          "pad",
+          x => true,
+          IsWildcard("input"),
+          IsWildcard("pads"),
+          IsWildcard("padValue")
+        ),
+        IsTensorConst("perm")
+      );
+
+    private Expr GetReplace(Pad pad, Expr input, int[] perm, Expr pads, Expr padValue, RunPassOptions options)
+    {
+        var newPads = new List<Expr>();
+        for (var i = 0; i < perm.Length; i++)
+        {
+            newPads.Add(pads[perm[i]]);
+        }
+        var ret = Pad(Transpose(input, perm), Stack(new IR.Tuple(newPads), 0), pad.PadMode, padValue);
+        options.MatchOptions.SuppressPattern(ret, Pattern);
+        return ret;
+    }
+}
+
+/// <summary>
 /// Combine Transpose with Reduce
 /// reduce(transpose(x,p), a) => transpose(reduce(x, gather(p, a)), p).
 /// </summary>

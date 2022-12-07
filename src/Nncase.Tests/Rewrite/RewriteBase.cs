@@ -334,6 +334,53 @@ public class MobileNetV1TransposeCase : IRewriteCase
     };
 }
 
+/// <summary>
+/// this case from pad with transpose
+/// </summary>
+public class PadTransposeCase : IRewriteCase
+{
+    Var _input;
+    public PadTransposeCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 10, 10, 16 }));
+    }
+    public Function PreExpr
+    {
+        get
+        {
+            var v_0 = Pad(_input, (new[,] { { 0, 0 }, { 2, 2 }, { 2, 2 }, { 0, 0 } }), PadMode.Constant, (0.0f)); // f32[1,14,14,16]
+            var v_1 = Transpose(v_0, (new[] { 0, 3, 1, 2 })); // f32[1,16,14,14]
+            var v_2 = Conv2D(v_1,
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, 16, 3, 3 }).Evaluate().AsTensor()),
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor()), (new[] { 1, 1 }), (new[,] { { 0, 0 }, { 0, 0 } }), (new[] { 1, 1 }), PadMode.Constant, (1), (new[] { 0.0f, 6.0f })); // f32[1,64,12,12]
+            var v_3 = Pad(v_2, (new[,] { { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 } }), PadMode.Constant, (0.0f)); // f32[1,64,12,12]
+            return new Function(v_3, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[] {
+        new Transform.Rules.Neutral.FoldConstCall(),
+        new Transform.Rules.Neutral.CombinePadTranspose(),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new() {
+      {_input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() }
+    };
+}
+
+/// <summary>
+/// note we can't use pad+transpose and transpoe+pad in graph pass
+/// </summary>
+public sealed class PadTransposeCaseEgraph : PadTransposeCase
+{
+    public new IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[] {
+        new Transform.Rules.Neutral.FoldConstCall(),
+        new Transform.Rules.Neutral.CombinePadTranspose(),
+        new Transform.Rules.Neutral.CombineTransposePad(),
+    };
+
+}
+
 
 public sealed class TransposeLeakyRelu : IRewriteCase
 {

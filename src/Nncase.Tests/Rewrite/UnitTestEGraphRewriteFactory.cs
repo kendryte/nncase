@@ -11,11 +11,13 @@ namespace Nncase.Tests.ReWriteTest;
 public sealed class UnitTestEGraphRewriteFactory : TestFixture.UnitTestFixtrue
 {
     public static TheoryData<IRewriteCase> DataOne => new(){
-      new Conv2DPadsCase(),
+      new PadTransposeCaseEgraph(),
     };
 
     public static TheoryData<IRewriteCase> DataAll => new(){
+      new PadTransposeCase(),
       new MobileNetV1TransposeCase(),
+      new Conv2DPadsCase(),
       new TransposeLeakyRelu(),
       new FoldReshapeCase(),
       new FoldTransposePadCase(),
