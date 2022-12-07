@@ -47,6 +47,7 @@ public class UnitTestDataFlowRewriteFactory : TestFixture.UnitTestFixtrue
     {
       new TransposeLeakyRelu(),
       new Conv2DPadsCase(),
+      new ReduceWindow2DPadsCase(),
       new MobileNetV1TransposeCase()
     };
 }

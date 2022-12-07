@@ -18,6 +18,7 @@ public sealed class UnitTestEGraphRewriteFactory : TestFixture.UnitTestFixtrue
       new PadTransposeCase(),
       new MobileNetV1TransposeCase(),
       new Conv2DPadsCase(),
+      new ReduceWindow2DPadsCase(),
       new TransposeLeakyRelu(),
       new FoldReshapeCase(),
       new FoldTransposePadCase(),
