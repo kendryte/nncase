@@ -70,6 +70,7 @@ else()
     target_link_libraries(nncaseruntime PUBLIC gsl::gsl-lite mpark_variant::mpark_variant)
     set_target_properties(nncaseruntime PROPERTIES
                                         OUTPUT_NAME "Nncase.Runtime.Native")
+
     install(TARGETS nncaseruntime EXPORT nncaseTargets
         COMPONENT nncase-runtime
         ARCHIVE DESTINATION lib
@@ -79,6 +80,10 @@ else()
     )
     install(EXPORT nncaseTargets
         DESTINATION lib/cmake/nncase)
+
+    if (WIN32)
+        install(FILES ${CONAN_NETHOST_ROOT}/bin/nethost.dll DESTINATION bin)
+    endif()
 
     configure_file(${CMAKE_CURRENT_LIST_DIR}/../../../../cmake/nncaseConfig.cmake.in nncaseConfig.cmake @ONLY)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nncaseConfig.cmake DESTINATION lib/cmake/nncase)

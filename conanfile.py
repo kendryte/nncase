@@ -39,6 +39,11 @@ class nncaseConan(ConanFile):
         "vulkan_runtime": False,
         "openmp": True
     }
+    
+    def imports(self):
+        self.copy("*.dll", "bin", "bin")
+        self.copy("*.so", "lib", "lib")
+        self.copy("*.dylib", "lib", "lib")
 
     def requirements(self):
         self.requires('gsl-lite/0.37.0')
@@ -73,8 +78,10 @@ class nncaseConan(ConanFile):
         if self.settings.arch not in ("x86_64",):
             self.options.halide = False
             
-        if self.settings.build_type == 'Debug':
-            self.options["nethost"].shared = True
+        if not self.options.runtime:
+            if self.settings.os == 'Windows':
+                self.options["nethost"].shared = True
+
         if (not self.options.runtime) or self.options.vulkan_runtime:
             if self.settings.os == 'Linux':
                 self.options["vulkan-loader"].with_wsi_xcb = False
