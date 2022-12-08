@@ -467,13 +467,13 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             dump_range_options = nncase.DumpRangeTensorOptions()
             dump_range_options.set_tensor_data(np.asarray(
                 [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]).tobytes())
-            dump_range_options.samples_count = cfg.generate_dump_range_data.numbers
+            dump_range_options.samples_count = cfg.generate_dump_range_data.batch_size
             # compiler.dump_range_options(dump_range_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
             ptq_options.set_tensor_data(np.asarray(
                 [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]))
-            ptq_options.samples_count = cfg.generate_calibs.numbers
+            ptq_options.samples_count = cfg.generate_calibs.batch_size
             compiler.use_ptq(ptq_options, compiler._module.params)
 
 
@@ -558,8 +558,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 #     shape = copy.deepcopy(preprocess_opt['input_shape'])
                 # else:
                 #     shape = copy.deepcopy(input['model_shape'])
-                # if shape[0] != cfg.batch_size:
-                #     shape[0] *= cfg.batch_size
+                if shape[0] != cfg.batch_size:
+                    shape[0] *= cfg.batch_size
                 data = DataFactory[cfg.name](shape, input['dtype'], n, cfg.batch_size, **cfg.kwargs)
 
                 path_list.append(
