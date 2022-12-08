@@ -254,7 +254,7 @@ public sealed partial class AddRangeOfAndMarkerToLSTM : IRewriteRule
             IsTensorConst("inputforget"),
             IsTensorConst("outputsize"));
 
-    private Expr? GetReplace(LSTM lstm, Call call, Expr x, TensorConst w, TensorConst r, TensorConst b, TensorConst sequencelens,
+    private Expr? GetReplace(IR.Tensors.LSTM lstm, Call call, Expr x, TensorConst w, TensorConst r, TensorConst b, TensorConst sequencelens,
                             TensorConst initialh, TensorConst initialc, TensorConst p, TensorConst actalpha, TensorConst actbeta,
                             TensorConst clip, TensorConst hiddensize, TensorConst inputforget, TensorConst outputsize, RunPassOptions options)
     {

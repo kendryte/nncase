@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
-using Nncase.IR.NN;
+// using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using OrtKISharp;
 using static Nncase.LSTMHelper;
