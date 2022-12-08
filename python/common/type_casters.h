@@ -120,6 +120,7 @@ template <> struct type_caster<nncase::clr::cstream> {
         if (getattr(src, "write", py::none()).is_none())
             return false;
 
+        obj = py::reinterpret_borrow<object>(src);
         new (&value) nncase::clr::cstream(&_mt, src.ptr());
         return true;
     }

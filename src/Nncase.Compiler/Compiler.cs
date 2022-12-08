@@ -44,7 +44,7 @@ public class Compiler
 #if DEBUG
         DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module));
 #else
-        InferShape(module, options);
+        InferShape(module);
 #endif
         var inferSucc = CompilerServices.InferenceType(module.Entry!);
         DumpModule(module, "ir_infertype");
