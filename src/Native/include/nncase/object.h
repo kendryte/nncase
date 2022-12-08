@@ -74,6 +74,7 @@ template <class T> class object_t {
     ~object_t() { release(); }
 
     object_t(T *node) noexcept : object_(node) { add_ref(); }
+    object_t(std::in_place_t, T *node) noexcept : object_(node) {}
 
     object_t(object_t &&other) noexcept : object_(other.object_) {
         other.object_ = nullptr;
@@ -160,6 +161,11 @@ template <class T> class object_t {
         auto obj = object_;
         object_ = nullptr;
         return obj;
+    }
+
+    T **release_and_addressof() noexcept {
+        release();
+        return &object_;
     }
 
   private:

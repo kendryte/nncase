@@ -19,6 +19,7 @@
 #include <nncase/io_utils.h>
 
 using namespace nncase;
+using namespace nncase::clr;
 using namespace nncase::runtime;
 
 #define TRY(x)                                                                 \
@@ -26,7 +27,13 @@ using namespace nncase::runtime;
         throw 1;
 
 int main() {
-    nncase_compiler_initialize(R"(E:\Work\Repos\nncase\src\Nncase.Compiler\bin\Debug\net6.0\Nncase.Compiler.dll)");
+    nncase_clr_initialize(
+        R"(E:\Work\Repos\nncase\src\Nncase.Compiler\bin\Debug\net6.0\Nncase.Compiler.dll)");
+    clr_object_ptr compiler, compile_options;
+    TRY(nncase_clr_compile_options_create(
+        compile_options.release_and_addressof()));
+    TRY(nncase_clr_compiler_create(compile_options.get(),
+                                   compiler.release_and_addressof()));
 
     auto kmodel = read_file(
         R"(E:\Work\Repos\nncase\src\Nncase.Tests\bin\Debug\net6.0\TestCallFunction.kmodel)");

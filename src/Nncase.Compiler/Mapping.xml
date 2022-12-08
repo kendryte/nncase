@@ -1,7 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<config id="MyMapping" xmlns="urn:SharpGen.Config">
-    <assembly>Nncase.Compiler</assembly>
-    <namespace>Nncase.Compiler.Interop</namespace>
-    <depends>SharpGen.Runtime</depends>
-    <sdk name="StdLib" />
-</config>

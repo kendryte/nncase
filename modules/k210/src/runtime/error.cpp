@@ -17,22 +17,15 @@
 using namespace nncase;
 using namespace nncase::runtime::k210;
 
-namespace
-{
-class nncase_k210_error_category : public std::error_category
-{
-public:
+namespace {
+class nncase_k210_error_category : public std::error_category {
+  public:
     static nncase_k210_error_category instance;
 
-    char const *name() const noexcept override
-    {
-        return "nncase_k210";
-    }
+    char const *name() const noexcept override { return "nncase_k210"; }
 
-    std::string message(int code) const override
-    {
-        switch ((nncase_k210_errc)code)
-        {
+    std::string message(int code) const override {
+        switch ((nncase_k210_errc)code) {
         case nncase_k210_errc::k210_illegal_instruction:
             return "K210 illegal instruction";
         default:
@@ -40,21 +33,26 @@ public:
         }
     }
 
-    bool equivalent(NNCASE_UNUSED std::error_code const &code, NNCASE_UNUSED int condition) const noexcept override
-    {
+    bool equivalent(NNCASE_UNUSED std::error_code const &code,
+                    NNCASE_UNUSED int condition) const noexcept override {
         return false;
     }
 };
 
 nncase_k210_error_category nncase_k210_error_category::instance;
-}
+} // namespace
 
-const std::error_category &nncase::runtime::k210::nncase_k210_category() noexcept
-{
+const std::error_category &
+nncase::runtime::k210::nncase_k210_category() noexcept {
     return nncase_k210_error_category::instance;
 }
 
-std::error_condition nncase::runtime::k210::make_error_condition(nncase_k210_errc code)
-{
+std::error_condition
+nncase::runtime::k210::make_error_code(nncase_k210_errc code) {
+    return std::error_code(static_cast<int>(code), nncase_k210_category());
+}
+
+std::error_condition
+nncase::runtime::k210::make_error_condition(nncase_k210_errc code) {
     return std::error_condition(static_cast<int>(code), nncase_k210_category());
 }

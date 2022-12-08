@@ -44,7 +44,7 @@ namespace Nncase.Cli.Commands
 
         private void Run(CompileOptions options, IHost host)
         {
-            new Compiler.Compiler(options).Compile(options, null);
+            new Compiler.Compiler(options).Compile();
         }
     }
 }

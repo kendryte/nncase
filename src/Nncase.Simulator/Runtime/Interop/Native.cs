@@ -77,6 +77,9 @@ internal static class Native
     [DllImport(LibraryName, EntryPoint = "nncase_tensor_get_strides")]
     public static extern unsafe ErrorCode TensorGetStrides(RTTensor tensor, uint* strides, ref uint stridesLength);
 
+    [DllImport(LibraryName, EntryPoint = "nncase_tuple_create")]
+    public static extern unsafe ErrorCode TupleCreate(IntPtr* fields, uint fieldsLength, out RTTuple tuple);
+
     [DllImport(LibraryName, EntryPoint = "nncase_tuple_get_fields")]
     public static extern unsafe ErrorCode TupleGetFields(RTTuple tuple, IntPtr* fields, ref uint fieldsLength);
 }

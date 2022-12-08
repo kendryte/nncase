@@ -34,20 +34,20 @@ public class Compiler
         CompilerServices.Configure(provider);
     }
 
-    public IRModule ImportModule(Stream content, CompileOptions options)
+    public IRModule ImportModule(Stream content)
     {
-        CompilerServices.CompileOptions = options;
+        CompilerServices.CompileOptions = _compileOptions;
         //Console.WriteLine($"Target: {options.Target}");
-        var module = ImportModel(content, options);
-        DumpModule(module, options, "ir_import");
+        var module = ImportModel(content);
+        DumpModule(module, "ir_import");
         //Console.WriteLine("Infer Shape...");
 #if DEBUG
-        DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module, options));
+        DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module));
 #else
         InferShape(module, options);
 #endif
         var inferSucc = CompilerServices.InferenceType(module.Entry!);
-        DumpModule(module, options, "ir_infertype");
+        DumpModule(module, "ir_infertype");
         if (!inferSucc)
         {
             throw new InvalidOperationException("InferShape Failed For This Model!");
@@ -57,29 +57,28 @@ public class Compiler
         return module;
     }
 
-    private void InferShape(IRModule module, CompileOptions options)
+    private void InferShape(IRModule module)
     {
-        var pmgr = new PassManager(module, new RunPassOptions(null!, options.DumpLevel, options.DumpDir));
+        var pmgr = new PassManager(module, new RunPassOptions(null!, _compileOptions.DumpLevel, _compileOptions.DumpDir));
         var constFold = new ShapeInferPass();
         pmgr.Add(constFold);
         pmgr.RunAsync().Wait();
     }
 
-    private IRModule ImportModel(Stream content, CompileOptions options)
+    private IRModule ImportModel(Stream content)
     {
-        CompilerServices.CompileOptions = options;
-        _module = options.InputFormat switch
+        _module = _compileOptions.InputFormat switch
         {
-            "tflite" => Importers.ImportTFLite(content, options),
-            "onnx" => Importers.ImportOnnx(content, options),
-            _ => throw new NotImplementedException($"Not Implement {options.InputFormat} Impoter!"),
+            "tflite" => Importers.ImportTFLite(content, _compileOptions),
+            "onnx" => Importers.ImportOnnx(content, _compileOptions),
+            _ => throw new NotImplementedException($"Not Implement {_compileOptions.InputFormat} Impoter!"),
         };
         return _module;
     }
 
-    private void DumpModule(IRModule module, CompileOptions options, string prefix)
+    private void DumpModule(IRModule module, string prefix)
     {
-        var dumpPath = Path.Combine(options.DumpDir, "dump", prefix);
+        var dumpPath = Path.Combine(_compileOptions.DumpDir, "dump", prefix);
         CompilerServices.DumpIR(module.Entry!, prefix, dumpPath);
     }
 
@@ -91,16 +90,16 @@ public class Compiler
         pmgr.RunAsync().Wait();
     }
 
-    public void TargetIndependentPass(PassManager passManager, CompileOptions options)
+    public void TargetIndependentPass(PassManager passManager)
     {
-        if (options.ModelQuantMode == ModelQuantMode.UsePTQ)
+        if (_compileOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
-            AddMarker(passManager, options);
-            AssignRange(passManager, options);
+            AddMarker(passManager);
+            AssignRange(passManager);
         }
     }
 
-    public void AddMarker(PassManager passManager, CompileOptions options)
+    public void AddMarker(PassManager passManager)
     {
         passManager.Add(new DataflowPass("add_rangeof_and_marker")
         {
@@ -109,23 +108,21 @@ public class Compiler
         });
     }
 
-    public void AssignRange(PassManager passManager, CompileOptions options)
+    public void AssignRange(PassManager passManager)
     {
-        passManager.Add(new Quantization.EGraphPassWithQuantize("1_AssignRanges", options.QuantizeOptions!));
+        passManager.Add(new Quantization.EGraphPassWithQuantize("1_AssignRanges", _compileOptions.QuantizeOptions!));
     }
 
-    public void Compile(CompileOptions options, QuantizeOptions quantOption)
+    public void Compile()
     {
-        options.QuantizeOptions = quantOption;
-        CompilerServices.CompileOptions = options;
         var t = CompilerServices.GetCompileTarget;
-        RunPass(p => TargetIndependentPass(p, options), "TargetIndependentPass");
-        RunPass(p => t.RegisterTargetDependentPass(p, options), "TargetDependentPass");
+        RunPass(p => TargetIndependentPass(p), "TargetIndependentPass");
+        RunPass(p => t.RegisterTargetDependentPass(p, _compileOptions), "TargetDependentPass");
         // RunPass(p => p.Add(new Quantization.EGraphPassWithBindQuantizeConfig("2.5_BindQuantizeConfig", options.QuantizeOptions!)));
-        if (options.ModelQuantMode == ModelQuantMode.UsePTQ)
+        if (_compileOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
-            RunPass(p => t.RegisterQuantizePass(p, options), "QuantizePass");
-            RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, options), "TargetDependentAfterQuantPass");
+            RunPass(p => t.RegisterQuantizePass(p, _compileOptions), "QuantizePass");
+            RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, _compileOptions), "TargetDependentAfterQuantPass");
             var clear = new DataflowPass("ClearMarker");
             clear.Add(new RemoveMarker());
             RunPass(t => t.Add(clear), "RemoveMarker");
@@ -136,20 +133,12 @@ public class Compiler
         // Console.WriteLine("Compile successful");
     }
 
-    public void UsePTQ(QuantizeOptions quantOption)
-    {
-        CompilerServices.CompileOptions.QuantizeOptions = quantOption;
-        CompilerServices.CompileOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
-    }
-
-    public byte[] Gencode()
+    public void Gencode(Stream output)
     {
         var target = CompilerServices.GetCompileTarget;
         var moduleBuilder = new ModelBuilder(target, CompilerServices.CompileOptions);
         var linkedModel = moduleBuilder.Build(_module);
-        using var output = new MemoryStream();
         linkedModel.Serialize(output);
         // Console.WriteLine("Gencode successful");
-        return output.ToArray();
     }
 }

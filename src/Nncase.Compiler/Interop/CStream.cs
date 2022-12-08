@@ -16,9 +16,10 @@ namespace Nncase.Compiler.Interop;
 [StructLayout(LayoutKind.Sequential)]
 public unsafe struct CStreamMT
 {
-    public delegate* unmanaged<IntPtr, void> HandleReleasePtr;
+    public delegate* unmanaged<IntPtr, void> AddRefPtr;
+    public delegate* unmanaged<IntPtr, void> ReleasePtr;
     public delegate* unmanaged<IntPtr, int> CanReadPtr;
-    public delegate* unmanaged<IntPtr, int> CanSeakPtr;
+    public delegate* unmanaged<IntPtr, int> CanSeekPtr;
     public delegate* unmanaged<IntPtr, int> CanWritePtr;
     public delegate* unmanaged<IntPtr, void> FlushPtr;
     public delegate* unmanaged<IntPtr, long> GetLengthPtr;
@@ -38,6 +39,7 @@ internal unsafe class CStream : Stream
     {
         _mt = mt;
         _handle = handle;
+        _mt->AddRefPtr(_handle);
     }
 
     ~CStream()
@@ -47,7 +49,7 @@ internal unsafe class CStream : Stream
 
     public override bool CanRead => _mt->CanReadPtr(_handle) != 0;
 
-    public override bool CanSeek => _mt->CanSeakPtr(_handle) != 0;
+    public override bool CanSeek => _mt->CanSeekPtr(_handle) != 0;
 
     public override bool CanWrite => _mt->CanWritePtr(_handle) != 0;
 
@@ -98,7 +100,7 @@ internal unsafe class CStream : Stream
     {
         if (_handle != IntPtr.Zero)
         {
-            _mt->HandleReleasePtr(_handle);
+            _mt->ReleasePtr(_handle);
             _handle = IntPtr.Zero;
         }
 

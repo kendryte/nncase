@@ -3,13 +3,29 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
+using Nncase.Quantization;
+using Nncase.Runtime;
+using Nncase.Runtime.Interop;
+using static Nncase.Compiler.PythonHelper;
 
 namespace Nncase.Compiler.Interop;
+
+public enum ArrayElementKind
+{
+    /// <summary>
+    /// <see cref="Runtime.Interop.RTValue"/>.
+    /// </summary>
+    RTValue = 0,
+    Var = 1,
+}
 
 /// <summary>
 /// Compiler C Api method table.
@@ -17,6 +33,10 @@ namespace Nncase.Compiler.Interop;
 [StructLayout(LayoutKind.Sequential)]
 public unsafe struct CApiMT
 {
+    public delegate* unmanaged<ArrayElementKind, IntPtr*, nuint, IntPtr> ArrayCreatePtr;
+    public delegate* unmanaged<IntPtr, nuint, IntPtr> ArrayGetItemPtr;
+    public delegate* unmanaged<IntPtr, nuint> ArrayGetLengthPtr;
+    public delegate* unmanaged<IntPtr, nuint, IntPtr, IntPtr> CalibrationDatasetProviderCreatePtr;
     public delegate* unmanaged<IntPtr, void> ClrHandleFreePtr;
     public delegate* unmanaged<IntPtr> CompileOptionsCreatePtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetInputFilePtr;
@@ -24,13 +44,27 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetTargetPtr;
     public delegate* unmanaged<IntPtr, int, void> CompileOptionsSetDumpLevelPtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetDumpDirPtr;
+    public delegate* unmanaged<IntPtr, IntPtr, void> CompileOptionsSetQuantizeOptionsPtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> CompileOptionsSetQuantTypePtr;
     public delegate* unmanaged<IntPtr, QuantMode, void> CompileOptionsSetQuantModePtr;
     public delegate* unmanaged<void> CompilerInitializePtr;
     public delegate* unmanaged<IntPtr, IntPtr> CompilerCreatePtr;
-    public delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr> CompilerImportModulePtr;
+    public delegate* unmanaged<IntPtr, IntPtr, IntPtr> CompilerImportModulePtr;
+    public delegate* unmanaged<IntPtr, void> CompilerCompilePtr;
+    public delegate* unmanaged<IntPtr, IntPtr, void> CompilerGencodePtr;
     public delegate* unmanaged<Runtime.TypeCode, IntPtr> DataTypeFromTypeCodePtr;
+    public delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr> ExprEvaluatePtr;
+    public delegate* unmanaged<IntPtr, IntPtr> FunctionGetBodyPtr;
+    public delegate* unmanaged<IntPtr, IntPtr> FunctionGetParametersPtr;
+    public delegate* unmanaged<IntPtr, IntPtr> IRModuleGetEntryPtr;
+    public delegate* unmanaged<void> LaunchDebuggerPtr;
+    public delegate* unmanaged<IntPtr> QuantizeOptionsCreatePtr;
+    public delegate* unmanaged<IntPtr, IntPtr, void> QuantizeOptionsSetCalibrationDatasetPtr;
+    public delegate* unmanaged<IntPtr, CalibMethod, void> QuantizeOptionsSetCalibrationMethodPtr;
+    public delegate* unmanaged<IntPtr, IntPtr> RTValueFromHandlePtr;
+    public delegate* unmanaged<IntPtr, IntPtr> RTValueGetHandlePtr;
     public delegate* unmanaged<CStreamMT*, IntPtr, IntPtr> StreamCreatePtr;
+    public delegate* unmanaged<byte*, nuint, byte> TargetExistsPtr;
 }
 
 /// <summary>
@@ -41,6 +75,10 @@ public static unsafe class CApi
     [UnmanagedCallersOnly]
     public static void Initialize(CApiMT* mt)
     {
+        mt->ArrayCreatePtr = &ArrayCreate;
+        mt->ArrayGetItemPtr = &ArrayGetItem;
+        mt->ArrayGetLengthPtr = &ArrayGetLength;
+        mt->CalibrationDatasetProviderCreatePtr = &CalibrationDatasetProviderCreate;
         mt->ClrHandleFreePtr = &ClrHandleFree;
         mt->CompileOptionsCreatePtr = &CompileOptionsCreate;
         mt->CompileOptionsSetInputFilePtr = &CompileOptionsSetInputFile;
@@ -51,8 +89,73 @@ public static unsafe class CApi
         mt->CompileOptionsSetQuantTypePtr = &CompileOptionsSetQuantType;
         mt->CompileOptionsSetQuantModePtr = &CompileOptionsSetQuantMode;
         mt->CompilerInitializePtr = &CompilerInitialize;
+        mt->CompilerCreatePtr = &CompilerCreate;
+        mt->CompilerImportModulePtr = &CompilerImportModule;
+        mt->CompilerCompilePtr = &CompilerCompile;
+        mt->CompilerGencodePtr = &CompilerGencode;
         mt->DataTypeFromTypeCodePtr = &DataTypeFromTypeCode;
+        mt->ExprEvaluatePtr = &ExprEvaluate;
+        mt->FunctionGetBodyPtr = &FunctionGetBody;
+        mt->FunctionGetParametersPtr = &FunctionGetParameters;
+        mt->IRModuleGetEntryPtr = &IRModuleGetEntry;
+        mt->LaunchDebuggerPtr = &LaunchDebugger;
+        mt->QuantizeOptionsCreatePtr = &QuantizeOptionsCreate;
+        mt->QuantizeOptionsSetCalibrationDatasetPtr = &QuantizeOptionsSetCalibrationDataset;
+        mt->QuantizeOptionsSetCalibrationMethodPtr = &QuantizeOptionsSetCalibrationMethod;
+        mt->RTValueFromHandlePtr = &RTValueFromHandle;
+        mt->RTValueGetHandlePtr = &RTValueGetHandle;
         mt->StreamCreatePtr = &StreamCreate;
+        mt->TargetExistsPtr = &TargetExists;
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr ArrayCreate(ArrayElementKind kind, IntPtr* elements, nuint length)
+    {
+        return kind switch
+        {
+            ArrayElementKind.RTValue => ArrayCreateImpl<RTValue>(elements, length),
+            ArrayElementKind.Var => ArrayCreateImpl<Var>(elements, length),
+            _ => IntPtr.Zero,
+        };
+    }
+
+    private static IntPtr ArrayCreateImpl<T>(IntPtr* elements, nuint length)
+    {
+        var array = new T[length];
+        for (nuint i = 0; i < length; i++)
+        {
+            array[i] = Get<T>(elements[i]);
+        }
+
+        return GCHandle.ToIntPtr(GCHandle.Alloc(array));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr ArrayGetItem(IntPtr arrayHandle, nuint index)
+    {
+        var array = Get<Array>(arrayHandle);
+        return GCHandle.ToIntPtr(GCHandle.Alloc(array.GetValue((long)index)));
+    }
+
+    [UnmanagedCallersOnly]
+    private static nuint ArrayGetLength(IntPtr arrayHandle)
+    {
+        var array = Get<Array>(arrayHandle);
+        return (nuint)array.LongLength;
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr CalibrationDatasetProviderCreate(IntPtr datasetHandle, nuint sampleCount, IntPtr fnParamsHandle)
+    {
+        var dataset = Get<RTValue[]>(datasetHandle);
+        var fnParams = Get<Var[]>(fnParamsHandle);
+        var inputCount = dataset.Length / (int)sampleCount;
+
+        var samples = dataset.Chunk(inputCount).Select(inputs => inputs.Zip(fnParams).ToDictionary(
+            item => item.Item2,
+            item => item.Item1.ToValue(),
+            (IEqualityComparer<Var>)ReferenceEqualityComparer.Instance)).ToAsyncEnumerable();
+        return GCHandle.ToIntPtr(GCHandle.Alloc(new CCalibrationDatasetProvider(samples, (int)sampleCount)));
     }
 
     [UnmanagedCallersOnly]
@@ -101,6 +204,12 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
+    private static void CompileOptionsSetQuantizeOptions(IntPtr compileOptionsHandle, IntPtr quantizeOptionsHandle)
+    {
+        Get<CompileOptions>(compileOptionsHandle).QuantizeOptions = Get<QuantizeOptions>(quantizeOptionsHandle);
+    }
+
+    [UnmanagedCallersOnly]
     private static void CompileOptionsSetQuantType(IntPtr compileOptionsHandle, IntPtr quantTypeHandle)
     {
         Get<CompileOptions>(compileOptionsHandle).QuantType = Get<DataType>(quantTypeHandle);
@@ -125,13 +234,27 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
-    private static IntPtr CompilerImportModule(IntPtr compilerHandle, IntPtr streamHandle, IntPtr compileOptionsHandle)
+    private static IntPtr CompilerImportModule(IntPtr compilerHandle, IntPtr streamHandle)
     {
         var compiler = Get<Compiler>(compilerHandle);
         var stream = Get<CStream>(streamHandle);
-        var compileOptions = Get<CompileOptions>(compileOptionsHandle);
-        var module = compiler.ImportModule(stream, compileOptions);
+        var module = compiler.ImportModule(stream);
         return GCHandle.ToIntPtr(GCHandle.Alloc(module));
+    }
+
+    [UnmanagedCallersOnly]
+    private static void CompilerCompile(IntPtr compilerHandle)
+    {
+        var compiler = Get<Compiler>(compilerHandle);
+        compiler.Compile();
+    }
+
+    [UnmanagedCallersOnly]
+    private static void CompilerGencode(IntPtr compilerHandle, IntPtr streamHandle)
+    {
+        var compiler = Get<Compiler>(compilerHandle);
+        var stream = Get<CStream>(streamHandle);
+        compiler.Gencode(stream);
     }
 
     [UnmanagedCallersOnly]
@@ -141,17 +264,121 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
+    private static IntPtr ExprEvaluate(IntPtr exprHandle, IntPtr fnParamsHandle, IntPtr inputsHandle)
+    {
+        var expr = Get<Expr>(exprHandle);
+        var fnParams = Get<Var[]>(fnParamsHandle);
+        var inputs = Get<RTValue[]>(inputsHandle);
+        var result = CompilerServices.Evaluate(expr, fnParams.Zip(inputs).ToDictionary(
+            x => x.Item1,
+            x => x.Item2.ToValue(),
+            (IEqualityComparer<Var>)ReferenceEqualityComparer.Instance));
+        var rtValue = RTValue.FromValue(result);
+        return GCHandle.ToIntPtr(GCHandle.Alloc(rtValue));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr FunctionGetBody(IntPtr functionHandle)
+    {
+        var function = Get<Function>(functionHandle);
+        return GCHandle.ToIntPtr(GCHandle.Alloc(function.Body));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr FunctionGetParameters(IntPtr functionHandle)
+    {
+        var function = Get<Function>(functionHandle);
+        return GCHandle.ToIntPtr(GCHandle.Alloc(function.Parameters.ToArray()));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr IRModuleGetEntry(IntPtr moduleHandle)
+    {
+        var module = Get<IRModule>(moduleHandle);
+        return GCHandle.ToIntPtr(GCHandle.Alloc(module.Entry));
+    }
+
+    [UnmanagedCallersOnly]
+    private static void LaunchDebugger()
+    {
+        Debugger.Launch();
+        while (!Debugger.IsAttached)
+        {
+            Thread.Yield();
+        }
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr QuantizeOptionsCreate()
+    {
+        return GCHandle.ToIntPtr(GCHandle.Alloc(new QuantizeOptions()));
+    }
+
+    [UnmanagedCallersOnly]
+    private static void QuantizeOptionsSetCalibrationDataset(IntPtr quantizeOptionsHandle, IntPtr calibrationDatasetHandle)
+    {
+        Get<QuantizeOptions>(quantizeOptionsHandle).CalibrationDataset = Get<ICalibrationDatasetProvider>(calibrationDatasetHandle);
+    }
+
+    [UnmanagedCallersOnly]
+    private static void QuantizeOptionsSetCalibrationMethod(IntPtr quantizeOptionsHandle, CalibMethod calibMethod)
+    {
+        Get<QuantizeOptions>(quantizeOptionsHandle).CalibrationMethod = calibMethod;
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr RTValueFromHandle(IntPtr handle)
+    {
+        var rtValue = RTValue.FromHandle(handle);
+        return GCHandle.ToIntPtr(GCHandle.Alloc(rtValue));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr RTValueGetHandle(IntPtr handle)
+    {
+        var rtValue = Get<RTValue>(handle);
+        return rtValue.DangerousGetHandle();
+    }
+
+    [UnmanagedCallersOnly]
     private static IntPtr StreamCreate(CStreamMT* mt, IntPtr handle)
     {
         return GCHandle.ToIntPtr(GCHandle.Alloc(new CStream(mt, handle)));
     }
 
+    [UnmanagedCallersOnly]
+    private static byte TargetExists(byte* targetNamePtr, nuint targetNameLength)
+    {
+        var targetName = ToString(targetNamePtr, targetNameLength);
+        try
+        {
+            CompilerServices.GetTarget(targetName);
+            return 1;
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
     private static T Get<T>(IntPtr handle)
-        where T : class
     {
         return (T)(GCHandle.FromIntPtr(handle).Target ?? throw new ArgumentNullException(nameof(handle)));
     }
 
     private static string ToString(byte* bytes, nuint length) =>
         Encoding.UTF8.GetString(bytes, (int)length);
+
+    private class CCalibrationDatasetProvider : ICalibrationDatasetProvider
+    {
+        public CCalibrationDatasetProvider(IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> samples, int samplesCount)
+        {
+            Samples = samples;
+            Count = samplesCount;
+        }
+
+        public int? Count { get; }
+
+        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
+    }
 }

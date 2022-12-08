@@ -9,18 +9,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <SharpGenConsumerMapping Remove="Mapping.xml" />
-    </ItemGroup>
-
-    <ItemGroup>
         <PackageReference Include="Autofac.Extensions.DependencyInjection" />
         <PackageReference Include="Microsoft.Extensions.Hosting" />
-        <PackageReference Include="Microsoft.NETCore.DotNetHost" />
-        <PackageReference Include="SharpGen.Runtime" />
-        <PackageReference Include="SharpGenTools.Sdk">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
