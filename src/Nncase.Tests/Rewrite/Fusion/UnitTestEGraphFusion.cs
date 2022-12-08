@@ -158,6 +158,15 @@ internal sealed class SingleInputFusionMergeRule : IRewriteRule
 
 /// <summary>
 /// fusion_3(fusion_1(x), fusion_2(x)) => fusion_4(x)
+/// 
+/// cycle type 1:  这里会存在一个bug, 如果是dataflow的话, merge single input 就会把 x y 合并在一起. 需要知道use关系才行.
+///             x = fusion1(input)
+///            /    \
+///         /         \
+///        |      y = fusion2(x)
+///         \        /
+///          \     /
+///     fusion3(x,y)
 /// </summary>
 internal sealed class TwoInputFusionMergeRule : IRewriteRule
 {
