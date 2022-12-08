@@ -41,9 +41,8 @@ class nncaseConan(ConanFile):
     }
     
     def imports(self):
-        self.copy("*.dll", "bin", "bin")
-        self.copy("*.so", "lib", "lib")
-        self.copy("*.dylib", "lib", "lib")
+        if self.settings.os == 'Windows':
+            self.copy("nethost.dll", "bin", "bin")
 
     def requirements(self):
         self.requires('gsl-lite/0.37.0')
