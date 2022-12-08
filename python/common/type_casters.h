@@ -38,6 +38,7 @@ template <> struct type_caster<gsl::span<const gsl::byte>> {
 };
 
 #define NNCASE_CSTREAM_IMPL_COMMON                                             \
+    py::gil_scoped_acquire gil;                                                \
     py::handle pyhandle(reinterpret_cast<PyObject *>(handle))
 
 template <> struct type_caster<nncase::clr::cstream> {
