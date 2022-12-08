@@ -18,8 +18,7 @@
 #include <nncase/value.h>
 
 extern "C" {
-struct clr_object_t {};
-typedef clr_object_t *clr_object_handle_t;
+typedef void *clr_object_handle_t;
 typedef void *nncase_stream_handle_t;
 
 typedef enum {
