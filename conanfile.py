@@ -73,7 +73,7 @@ class nncaseConan(ConanFile):
         if self.settings.arch not in ("x86_64",):
             self.options.halide = False
             
-        if not self.options.runtime:
+        if self.settings.build_type == 'Debug':
             self.options["nethost"].shared = True
         if (not self.options.runtime) or self.options.vulkan_runtime:
             if self.settings.os == 'Linux':

@@ -121,6 +121,8 @@ FARPROC load_symbol(HMODULE module, const char *name) {
     THROW_WIN32_IF_NOT(symbol);
     return symbol;
 }
+
+#define _T(x) L##x
 #elif defined(__unix__) || defined(__APPLE__)
 #define THROW_DL_IF_NOT(x)                                                     \
     if (!(x)) {                                                                \
@@ -138,6 +140,8 @@ void *load_symbol(void *module, const char *name) {
     THROW_DL_IF_NOT(symbol);
     return symbol;
 }
+
+#define _T(x) x
 #endif
 
 c_api_initialize_fn
@@ -171,8 +175,8 @@ load_compiler_c_api_initializer(const char *root_assembly_path) {
                  nncase::runtime::nncase_errc::runtime_not_found);
 
     c_api_initialize_fn c_api_initialize;
-    hostfxr_get_fn_ptr(L"Nncase.Compiler.Interop.CApi, Nncase.Compiler",
-                       L"Initialize", UNMANAGEDCALLERSONLY_METHOD, nullptr,
+    hostfxr_get_fn_ptr(_T("Nncase.Compiler.Interop.CApi, Nncase.Compiler"),
+                       _T("Initialize"), UNMANAGEDCALLERSONLY_METHOD, nullptr,
                        nullptr, (void **)&c_api_initialize);
     THROW_IF_NOT(c_api_initialize,
                  nncase::runtime::nncase_errc::runtime_not_found);

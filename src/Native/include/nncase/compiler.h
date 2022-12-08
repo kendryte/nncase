@@ -190,7 +190,7 @@ class clr_object_ptr {
     void release() {
         if (auto handle = handle_) {
             handle_ = nullptr;
-            nncase_clr_handle_free(handle_);
+            nncase_clr_handle_free(handle);
         }
     }
 

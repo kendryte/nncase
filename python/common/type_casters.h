@@ -86,7 +86,7 @@ template <> struct type_caster<nncase::clr::cstream> {
         .set_length =
             [](nncase_stream_handle_t handle, uint64_t value) {
                 NNCASE_CSTREAM_IMPL_COMMON;
-                return pyhandle.attr("truncate")().cast<int64_t>();
+                return pyhandle.attr("truncate")(value).cast<int64_t>();
             },
         .get_position =
             [](nncase_stream_handle_t handle) {
