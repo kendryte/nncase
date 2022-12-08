@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.PatternMatch;
 using Nncase.Transform;
@@ -10,6 +12,88 @@ using static Nncase.IR.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.ReWrite.FusionTest;
+
+internal sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
+{
+    public Cost VisitLeaf(BaseFunction target)
+    {
+        if (target is Fusion fusion && fusion.ModuleKind == Callable.StackVMModuleKind)
+            return new FusionGraphCostVisitor().Visit(fusion);
+        else
+            throw new NotSupportedException();
+    }
+
+
+    private sealed class GraphOpCostEvaluateContext : Evaluator.ICostEvaluateContext
+    {
+        private readonly IRType? _returnType;
+        private readonly IRType?[] _argumentTypes;
+
+        public GraphOpCostEvaluateContext(IRType? returnType, IRType?[] argumentTypes)
+        {
+            _returnType = returnType;
+            _argumentTypes = argumentTypes;
+        }
+
+        public T GetArgumentType<T>(Op op, ParameterInfo parameter)
+            where T : IRType
+        {
+            if (op.GetType() == parameter.OwnerType)
+            {
+                return (T?)_argumentTypes[parameter.Index] ?? throw new InvalidOperationException("Run type infer first.");
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException($"Operator {op} doesn't have parameter: {parameter.Name}.");
+            }
+        }
+
+        public T GetReturnType<T>()
+            where T : IRType
+        {
+            return (T?)_returnType ?? throw new InvalidOperationException("Run type infer first.");
+        }
+    }
+    private sealed class FusionGraphCostVisitor : ExprVisitor<Cost, IRType>
+    {
+        public override Cost VisitLeaf(Var var)
+        {
+            return new Cost()
+            {
+                [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess((TensorType)var.CheckedType!)
+            };
+        }
+
+        public override Cost DefaultVisitLeaf(Expr expr)
+        {
+            return Cost.Zero;
+        }
+
+        public override Cost VisitLeaf(Call call)
+        {
+            Cost cost;
+            if (call.Target is Op op)
+            {
+                var context = new GraphOpCostEvaluateContext(call.CheckedType, call.Parameters.Select(p => p.CheckedType).ToArray());
+                cost = CompilerServices.EvaluateOpCost(op, context) ?? Cost.Zero;
+            }
+            else
+                throw new NotSupportedException();
+            return cost;
+        }
+
+        public override Cost VisitLeaf(Fusion fusion)
+        {
+            var cost = new Cost()
+            {
+                [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess((TensorType)fusion.Body.CheckedType!)
+            };
+            cost += fusion.Parameters.Select(Visit).Sum() ?? Cost.Zero;
+            return cost;
+        }
+
+    }
+}
 
 internal sealed class SingleInputFusionMergeRule : IRewriteRule
 {
@@ -171,7 +255,7 @@ public class UnitTestEGraphFusion : TestFixture.UnitTestFixtrue
         CompilerServices.InferenceType(main);
         CompilerServices.DumpIR(main, "", passOptions.DumpDir);
 
-        var pass = new EGraphPass("AutoMergeFusion"){
+        var pass = new EGraphPass("AutoMergeFusion", new FusionCostEvaluator()){
           new SingleInputFusionMergeRule()
         };
         await pass.RunAsync(main, passOptions);
@@ -195,7 +279,7 @@ public class UnitTestEGraphFusion : TestFixture.UnitTestFixtrue
         CompilerServices.InferenceType(main);
         CompilerServices.DumpIR(main, "", passOptions.DumpDir);
 
-        var pass = new EGraphPass("AutoMergeFusion"){
+        var pass = new EGraphPass("AutoMergeFusion", new FusionCostEvaluator()){
           new SingleInputFusionMergeRule(),
           new TwoInputFusionMergeRule(),
         };

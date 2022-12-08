@@ -12,89 +12,19 @@ using Nncase.Transform;
 
 namespace Nncase.CostModel;
 
-internal sealed class GraphOpCostEvaluateContext : ICostEvaluateContext
-{
-    private readonly IRType? _returnType;
-    private readonly IRType?[] _argumentTypes;
-
-    public GraphOpCostEvaluateContext(IRType? returnType, IRType?[] argumentTypes)
-    {
-        _returnType = returnType;
-        _argumentTypes = argumentTypes;
-    }
-
-    public T GetArgumentType<T>(Op op, ParameterInfo parameter)
-        where T : IRType
-    {
-        if (op.GetType() == parameter.OwnerType)
-        {
-            return (T?)_argumentTypes[parameter.Index] ?? throw new InvalidOperationException("Run type infer first.");
-        }
-        else
-        {
-            throw new ArgumentOutOfRangeException($"Operator {op} doesn't have parameter: {parameter.Name}.");
-        }
-    }
-
-    public T GetReturnType<T>()
-        where T : IRType
-    {
-        return (T?)_returnType ?? throw new InvalidOperationException("Run type infer first.");
-    }
-}
-
-internal sealed class GraphCostVisitor : ExprVisitor<Cost?, IRType>
-{
-    public override Cost? VisitLeaf(Var var)
-    {
-        return new Cost()
-        {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess((TensorType)var.CheckedType!)
-        };
-    }
-
-    public override Cost DefaultVisitLeaf(Expr expr)
-    {
-        return Cost.Zero;
-    }
-
-    public override Cost? VisitLeaf(Call call)
-    {
-        Cost? cost = null;
-        if (call.Target is Op op)
-        {
-            var context = new GraphOpCostEvaluateContext(call.CheckedType, call.Parameters.Select(p => p.CheckedType).ToArray());
-            cost = CompilerServices.EvaluateOpCost(op, context);
-        }
-        else
-        {
-            throw new NotSupportedException();
-        }
-        return cost;
-    }
-
-    public override Cost VisitLeaf(Fusion fusion)
-    {
-        var cost = new Cost()
-        {
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess((TensorType)fusion.Body.CheckedType!)
-        };
-        cost += fusion.Parameters.Select(Visit).Sum() ?? Cost.Zero;
-        return cost;
-    }
-}
-
 internal sealed class EGraphCostEvaluator
 {
     private readonly EClass _root;
     private readonly Dictionary<ENode, Cost> _costs = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<EClass, Cost> _eclassCosts = new();
     private readonly HashSet<EClass> _allEclasses = new();
+    private readonly IBaseFuncCostEvaluator? _baseFuncCostEvaluator;
     private bool _changed;
 
-    public EGraphCostEvaluator(EClass root)
+    public EGraphCostEvaluator(EClass root, IBaseFuncCostEvaluator? basefunc_cost_evaluator)
     {
         _root = root;
+        _baseFuncCostEvaluator = basefunc_cost_evaluator;
         PopulateAllEclasses(_root);
     }
 
@@ -170,7 +100,7 @@ internal sealed class EGraphCostEvaluator
             Op op => Visit(enode, op),
             Marker marker => Visit(enode, marker),
             None none => Visit(enode, none),
-            Fusion fusion => Visit(enode, fusion),
+            BaseFunction baseFunction => Visit(enode, baseFunction),
             _ => throw new ArgumentException("Unsupported expression type."),
         };
     }
@@ -244,9 +174,9 @@ internal sealed class EGraphCostEvaluator
         });
     }
 
-    private Cost? Visit(ENode enode, Fusion fusion)
+    private Cost? Visit(ENode enode, BaseFunction baseFunction)
     {
-        return Visit(enode, costs => new GraphCostVisitor().Visit(fusion));
+        return VisitLeaf(enode, () => _baseFuncCostEvaluator!.VisitLeaf(baseFunction));
     }
 
     private Cost? UpdateCost(ENode enode, Cost? cost)

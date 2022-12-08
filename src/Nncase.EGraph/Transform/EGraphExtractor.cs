@@ -125,9 +125,10 @@ public static class EGraphExtractExtensions
     /// </summary>
     /// <param name="eGraph">eGraph.</param>
     /// <param name="root">Root eclass.</param>
+    /// <param name="basefunc_cost_evaluator">base func cost evaluator.</param>
     /// <param name="options">Options.</param>
     /// <returns>Extracted root expression.</returns>
-    public static Expr Extract(this EGraph eGraph, EClass root, RunPassOptions options)
+    public static Expr Extract(this EGraph eGraph, EClass root, Evaluator.IBaseFuncCostEvaluator? basefunc_cost_evaluator, RunPassOptions options)
     {
         // 1. set the all expr checked shape
         foreach (var eclass in eGraph.Classes)
@@ -139,7 +140,7 @@ public static class EGraphExtractExtensions
             }
         }
         // 2. start the cost evaluator
-        var costModel = new EGraphCostEvaluator(root.Find()).Evaluate();
+        var costModel = new EGraphCostEvaluator(root.Find(), basefunc_cost_evaluator).Evaluate();
         if (options.DumpLevel > 3)
         {
             // TODO: dump graph
