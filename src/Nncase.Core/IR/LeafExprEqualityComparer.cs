@@ -41,6 +41,10 @@ public class LeafExprEqualityComparer : IEqualityComparer<Expr>
         {
             (Var tx, Var ty) => tx.Equals(ty),
             (Const tx, Const ty) => tx.Equals(ty),
+            // note think of fusion/primfunc/primfunc wrapper as a black box.
+            (Fusion tx, Fusion ty) => ReferenceEqualityComparer.Instance.Equals(tx, ty),
+            (TIR.PrimFunction tx, TIR.PrimFunction ty) => ReferenceEqualityComparer.Instance.Equals(tx, ty),
+            (PrimFunctionWrapper tx, PrimFunctionWrapper ty) => ReferenceEqualityComparer.Instance.Equals(tx, ty),
             (Function tx, Function ty) => tx.Parameters.Equals(ty.Parameters),
             (Tuple tx, Tuple ty) => tx.Count == ty.Count,
             (Call tx, Call ty) => tx.Parameters.Count == ty.Parameters.Count,
@@ -59,6 +63,9 @@ public class LeafExprEqualityComparer : IEqualityComparer<Expr>
             Var x => x.GetHashCode(),
             Const x => x.GetHashCode(),
             Function x => x.Parameters.GetHashCode(),
+            Fusion x => ReferenceEqualityComparer.Instance.GetHashCode(x),
+            TIR.PrimFunction x => ReferenceEqualityComparer.Instance.GetHashCode(x),
+            PrimFunctionWrapper x => ReferenceEqualityComparer.Instance.GetHashCode(x),
             Tuple x => x.Count.GetHashCode(),
             Call x => x.Parameters.Count.GetHashCode(),
             Op x => x.GetHashCode(),

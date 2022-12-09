@@ -52,6 +52,11 @@ public abstract class QuantRule : RewriteRule<Pattern>
     public DataType QuantType => Option.CompileOptions.QuantType;
 
     /// <summary>
+    /// Get WQuantType
+    /// </summary>
+    public DataType WQuantType => Option.CompileOptions.WQuantType;
+
+    /// <summary>
     /// Get UseMixQuant flag
     /// </summary>
     public bool UseMixQuant => Option.CompileOptions.QuantizeOptions.BindQuantMethod;

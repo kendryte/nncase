@@ -48,7 +48,7 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
                 new ScriptPrintVisitor(dumpWriter, display_callable).Visit(pf);
                 break;
             default:
-                new ILPrintVisitor(dumpWriter, display_callable).Visit(expr);
+                new ILPrintVisitor(dumpWriter, display_callable, 0).Visit(expr);
                 break;
         }
     }
@@ -58,7 +58,7 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
     {
         var sb = new StringBuilder();
         using var dumpWriter = new StringWriter(sb);
-        return new ILPrintVisitor(dumpWriter, true).VisitType(type);
+        return new ILPrintVisitor(dumpWriter, true, 0).VisitType(type);
     }
 
     /// <inheritdoc/>
@@ -68,7 +68,7 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
         using var dumpWriter = new StringWriter(sb);
         var _ = expr is PrimFunction || useScript
             ? new ScriptPrintVisitor(dumpWriter, true).Visit(expr).Serialize()
-            : new ILPrintVisitor(dumpWriter, true).Visit(expr);
+            : new ILPrintVisitor(dumpWriter, true, 0).Visit(expr);
 
         return useScript ? _ : sb.ToString();
     }

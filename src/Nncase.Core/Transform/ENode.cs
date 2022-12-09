@@ -26,16 +26,10 @@ public sealed record ENode
     /// </summary>
     public IRArray<EClass> Children { get; init; }
 
-    /// <summary>
-    /// Gets the Exprs which equal with this Enode.Expr.
-    /// </summary>
-    public List<Expr> EqualityExprs { get; init; }
-
     private ENode(Expr expr, IRArray<EClass> children)
     {
         Expr = expr;
         Children = children;
-        EqualityExprs = new();
     }
 
     /// <summary>
@@ -56,13 +50,13 @@ public sealed record ENode
     /// Add current enode information to childrens.
     /// </summary>
     /// <param name="eClass">EClass.</param>
-    public void AddUsed(EClass eClass)
+    public void SetClass(EClass eClass)
     {
         eClass.AddNode(this);
 
         foreach (var child in Children)
         {
-            child.AddUsed(this);
+            child.AddUsedBy(this);
         }
     }
 
@@ -93,7 +87,7 @@ public sealed record ENode
     /// <inheritdoc/>
     public override string ToString()
     {
-        var str = string.Join(", ", Children.Select(x => x.Id));
+        var str = string.Join(", ", Children.Select(x => x.Parent is null ? x.Id.ToString() : x.ToString()));
         return $"{Expr.GetType().Name} ({str})";
     }
 }
