@@ -18,6 +18,7 @@
 #include <nncase/compiler.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/error.h>
+#include <absl/debugging/failure_signal_handler.h>
 
 #ifdef WIN32
 #include <Windows.h>
@@ -143,6 +144,17 @@ void *load_symbol(void *module, const char *name) {
 
 #define _T(x) x
 #endif
+
+struct premain {
+    premain() {
+        absl::FailureSignalHandlerOptions failure_signal_handler_options;
+        failure_signal_handler_options.symbolize_stacktrace = true;
+        failure_signal_handler_options.use_alternate_stack = true;
+        failure_signal_handler_options.alarm_on_failure_secs = 5;
+        failure_signal_handler_options.call_previous_handler = true;
+        absl::InstallFailureSignalHandler(failure_signal_handler_options);
+    }
+} premain_v;
 
 c_api_initialize_fn
 load_compiler_c_api_initializer(const char *root_assembly_path) {
