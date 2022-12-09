@@ -252,6 +252,8 @@ public static class TypeInference
             var ts_stride = strideValue.Value.Cast<int>();
             var ceilModeV = ceilModeValue.Value.ToScalar<bool>();
             var ts_padding = paddingValue.Value.Cast<int>();
+            if (ts_padding.Rank != 2)
+                return new InvalidType($"The padding shape {ts_padding.Shape} is not support!");
             var padh = ts_padding[0, 0] + ts_padding[0, 1];
             var padw = ts_padding[1, 0] + ts_padding[1, 1];
             outShape[2] = input.Shape[2].IsUnknown

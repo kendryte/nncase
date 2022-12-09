@@ -38,7 +38,10 @@ public partial class EGraphPrinter
 
     private ulong _IdCounter;
 
-    private readonly Dictionary<Expr, ulong> _IdMaps = new(ReferenceEqualityComparer.Instance);
+    /// <summary>
+    /// the expr map to the dot node and html table.
+    /// </summary>
+    protected readonly Dictionary<ENode, (DotNode, DotHtmlTable)> NodesMap = new(ReferenceEqualityComparer.Instance);
 
     private readonly DotDumpVisitor visitor = new DotDumpVisitor();
 
@@ -97,14 +100,11 @@ public partial class EGraphPrinter
 
             foreach (var enode in eClass.Nodes)
             {
-                if (!_IdMaps.TryGetValue(enode.Expr, out var id))
-                {
-                    id = _IdCounter++;
-                    _IdMaps.Add(enode.Expr, id);
-                }
+                if (NodesMap.TryGetValue(enode, out var dotnode))
+                    continue;
+                var id = _IdCounter++;
                 string exprId = "\"" + id.ToString() + "\"";
 
-                // todo need use html label https://gitlab.com/graphviz/graphviz/-/issues/1624
                 var table = new DotHtmlTable
                 {
                     BorderWidth = 0,
@@ -121,6 +121,7 @@ public partial class EGraphPrinter
                         IR.Const => new DotStyledFont(DotFontStyles.Normal, Color.DarkOrange),
                         IR.Call => new DotStyledFont(DotFontStyles.Normal, Color.DarkBlue),
                         IR.Var => new DotStyledFont(DotFontStyles.Normal, Color.BlueViolet),
+                        IR.Fusion => new DotStyledFont(DotFontStyles.Normal, Color.MediumSeaGreen),
                         _ => new DotStyledFont(DotFontStyles.Normal)
                     }); // key wrods type.
                     foreach (var (child, i) in enode.Children.Select((c, i) => (c, i)))
@@ -147,6 +148,8 @@ public partial class EGraphPrinter
                 var exprNode = eclassCluster.Nodes.Add(exprId);
                 exprNode.ToPlainHtmlNode(table);
 
+                NodesMap.Add(enode, (exprNode, table));
+
                 for (int i = 0; i < enode.Children.Count; i++)
                 {
                     if (OpMaps.ContainsKey(enode.Children[i]))
@@ -167,6 +170,11 @@ public partial class EGraphPrinter
         return dotGraph;
     }
 
+    /// <summary>
+    /// Save the DotGraph into file
+    /// </summary>
+    /// <param name="file">file path.</param>
+    /// <returns>this dot graph.</returns>
     public DotGraph SaveToFile(string file)
     {
         if (!file.EndsWith(".dot"))
@@ -185,6 +193,12 @@ public partial class EGraphPrinter
         return dotGraph;
     }
 
+    /// <summary>
+    /// dump egraph as dot graph.
+    /// </summary>
+    /// <param name="eGraph">egraph.</param>
+    /// <param name="file">path.</param>
+    /// <returns>Converted Graph.</returns>
     public static DotGraph DumpEgraphAsDot(EGraph eGraph, string file)
     {
         var printer = new EGraphPrinter(eGraph);

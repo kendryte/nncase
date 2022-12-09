@@ -2,10 +2,13 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Singulink.Collections;
 
 namespace Nncase.Transform;
 
@@ -14,8 +17,9 @@ namespace Nncase.Transform;
 /// </summary>
 public sealed partial class EGraph : IEGraph
 {
-    private readonly Dictionary<Expr, ENode> _exprMemo = new();
-    private readonly Dictionary<ENode, EClass> _nodes = new();
+    // TODO: use weak keys
+    private readonly Dictionary<Expr, ENodeEntry> _exprMemo = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<ENode, ENodeEntry> _nodes = new();
     private readonly List<EClass> _classes = new();
 
     private int _version = 0;
@@ -43,7 +47,7 @@ public sealed partial class EGraph : IEGraph
     }
 
     /// <summary>
-    /// Gets elass
+    /// Gets eclasses.
     /// </summary>
     public IEnumerable<EClass> Classes => _classes;
 
@@ -78,7 +82,7 @@ public sealed partial class EGraph : IEGraph
     /// <returns>EClass.</returns>
     public EClass Find(ENode node)
     {
-        return _nodes[node].Find();
+        return _nodes[node].Class;
     }
 
     /// <summary>
@@ -103,7 +107,7 @@ public sealed partial class EGraph : IEGraph
         }
 
         classB.Parent = classA;
-        classA.AddNodes(classB.Nodes);
+
         // choice the more accurate checked type
         switch (classA.CheckedType.CompareTo(classB.CheckedType))
         {
@@ -133,41 +137,37 @@ public sealed partial class EGraph : IEGraph
     private EClass AddENode(Expr expr, IRArray<EClass> children)
     {
         // TODO: concurrent safe
-        bool enode_is_new = false;
-        if (!_exprMemo.TryGetValue(expr, out var enode))
+        EClass eclass;
+
+        // 1. If exists in memo, return it
+        if (_exprMemo.TryGetValue(expr, out var entry))
         {
-            enode = ENode.Create(expr, children);
-            enode_is_new = true;
-            _exprMemo.Add(expr, enode);
+            return entry.Class;
         }
 
-        if (!_nodes.TryGetValue(enode, out var eclass))
+        // 2. Create new node and check it
+        var enode = ENode.Create(expr, children);
+        if (_nodes.TryGetValue(enode, out entry))
         {
-            eclass = new EClass(_globalEClassId++);
-            _classes.Add(eclass);
-            _nodes.Add(enode, eclass);
-            enode.AddUsed(eclass);
+            // 2.1 Node already exists, add expr to memo
+            _exprMemo.Add(expr, entry);
+            eclass = entry.Class;
         }
         else
         {
-            if (enode_is_new)
-            {
-                // when different expr have same enode, eg. new enode but old eclass.
-                // need set the new expr point to old enode.
-                var old_enodes = eclass.Nodes.Where(old_enode => old_enode == enode && !object.ReferenceEquals(old_enode, enode)).ToArray();
-                if (old_enodes.Length != 1)
-                    throw new InvalidProgramException("Please check the EGraph implention! The EClass only can contains same enode once!");
-                _exprMemo[expr] = old_enodes[0];
-                // append the equal exprs, when it be repaired will remove the old ExprMemo's enode. 
-                old_enodes[0].EqualityExprs.Add(expr); 
-            }
+            // 3. New node and new class
+            eclass = new EClass(_globalEClassId++);
+            entry = new ENodeEntry(enode, eclass);
+            _classes.Add(eclass);
+            _exprMemo.Add(expr, entry);
+            _nodes.Add(enode, entry);
+            enode.SetClass(eclass);
         }
-        // when enode is new created, maybe we can get the more accurate ir type.
-        if (enode_is_new)
+
+        // 4. When enode is new created, maybe we can get the more accurate ir type.
+        if (expr.CheckedType?.CompareTo(eclass.CheckedType) > 0)
         {
-            var candidate_type = expr.CheckedType ?? AnyType.Default;
-            if (candidate_type.CompareTo(eclass.CheckedType) > 0)
-                eclass.SetCheckedType(candidate_type);
+            eclass.SetCheckedType(expr.CheckedType);
         }
 
         return eclass;
@@ -175,47 +175,47 @@ public sealed partial class EGraph : IEGraph
 
     private void Repair(WorkItem workItem)
     {
+        if (workItem.OldClass.Id == 29)
+            ;
         workItem.NewClass = workItem.NewClass.Find();
-        foreach (var enode in workItem.OldClass.Used)
+        foreach (var enode in workItem.OldClass.UsedBy)
         {
             // 1. Check this node is alive and remove it
-            if (_nodes.TryGetValue(enode, out var originalClass))
+            if (_nodes.TryGetValue(enode, out var originalEntry))
             {
+                var originalClass = originalEntry.Class;
+
                 _nodes.Remove(enode);
-                _exprMemo.Remove(enode.Expr);
-                foreach (var e in enode.EqualityExprs)
-                    _exprMemo.Remove(e);
-            }
-            else
-            {
-                continue;
-            }
+                originalClass.RemoveNode(enode);
 
-            // 2. Update node's children
-            var newNode = enode.Canonicalize();
-            originalClass.RemoveNode(enode);
+                // 2. Update node's children
+                var newNode = enode.Canonicalize();
 
-            // 3. If new node already exists, union these classes.
-            if (_nodes.TryGetValue(newNode, out var existsClass))
-            {
-                Union(originalClass, existsClass);
-            }
-            else
-            {
-                newNode.AddUsed(originalClass);
-                _nodes.Add(newNode, originalClass);
+                if (_nodes.TryGetValue(newNode, out var existingEntry))
+                {
+                    // 3. If new node already exists, update memo and union these classes
+                    originalEntry.Node = existingEntry.Node;
+                    originalEntry.Class = existingEntry.Class;
+
+                    Union(originalClass, existingEntry.Class);
+                }
+                else
+                {
+                    // 4. Add new node
+                    originalEntry.Node = newNode;
+                    _nodes.Add(newNode, originalEntry);
+
+                    newNode.SetClass(originalClass);
+                }
             }
         }
 
         foreach (var enode in workItem.OldClass.Nodes)
         {
-            if (_nodes.ContainsKey(enode))
+            if (_nodes.TryGetValue(enode, out var entry))
             {
-                _nodes[enode] = workItem.NewClass;
-            }
-            else
-            {
-                workItem.NewClass.RemoveNode(enode);
+                entry.Class = workItem.NewClass;
+                workItem.NewClass.AddNode(entry.Node);
             }
         }
 
@@ -227,6 +227,24 @@ public sealed partial class EGraph : IEGraph
     {
         public EClass OldClass;
         public EClass NewClass;
+    }
+
+    private class ENodeEntry
+    {
+        public ENodeEntry(ENode node, EClass @class)
+        {
+            Node = node;
+            Class = @class;
+        }
+
+        public ENode Node { get; set; }
+
+        public EClass Class { get; set; }
+
+        public override string ToString()
+        {
+            return $"{Node}, {Class}";
+        }
     }
 
     private sealed class ENodeConverter : ExprVisitor<EClass, IRType>
@@ -248,6 +266,16 @@ public sealed partial class EGraph : IEGraph
         public override EClass VisitLeaf(Const expr)
         {
             return _graph.AddENode(expr, Array.Empty<EClass>());
+        }
+
+        public override EClass Visit(Fusion expr)
+        {
+            if (!ExpressionMemo.TryGetValue(expr, out var result))
+            {
+                result = _graph.AddENode(expr, Array.Empty<EClass>());
+                ExpressionMemo.Add(expr, result);
+            }
+            return result;
         }
 
         public override EClass VisitLeaf(Function expr)
