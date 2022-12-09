@@ -153,8 +153,7 @@ public static unsafe class CApi
 
         var samples = dataset.Chunk(inputCount).Select(inputs => inputs.Zip(fnParams).ToDictionary(
             item => item.Item2,
-            item => item.Item1.ToValue(),
-            (IEqualityComparer<Var>)ReferenceEqualityComparer.Instance)).ToAsyncEnumerable();
+            item => item.Item1.ToValue())).ToAsyncEnumerable();
         return GCHandle.ToIntPtr(GCHandle.Alloc(new CCalibrationDatasetProvider(samples, (int)sampleCount)));
     }
 
@@ -271,8 +270,7 @@ public static unsafe class CApi
         var inputs = Get<RTValue[]>(inputsHandle);
         var result = CompilerServices.Evaluate(expr, fnParams.Zip(inputs).ToDictionary(
             x => x.Item1,
-            x => x.Item2.ToValue(),
-            (IEqualityComparer<Var>)ReferenceEqualityComparer.Instance));
+            x => x.Item2.ToValue()));
         var rtValue = RTValue.FromValue(result);
         return GCHandle.ToIntPtr(GCHandle.Alloc(rtValue));
     }
