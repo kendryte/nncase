@@ -12,6 +12,8 @@ using Nncase.IR.Tensors;
 using OrtKISharp;
 using Tensorflow;
 using Tensorflow.NumPy;
+using static Nncase.PatternMatch.F.Math;
+using static Nncase.PatternMatch.Utility;
 using static Tensorflow.Binding;
 
 namespace Nncase.Evaluator.Imaging;
@@ -32,6 +34,29 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
     public IValue TFResize(IEvaluateContext context, ResizeImage target)
     {
         var input = context.GetTFArgumentValue(target, ResizeImage.Input);
+
+        // when HasBindedMixQuantInfo is true, eval will do simulation of quant/dequant for some inputs, this is used for evaluate accumulated quant error for layers.
+        if (context.CurrentCall.EnodeBestQuantConfigWithCosine != null)
+        {
+            var pattern = IsRangeOfMarker(IsWildcard(), IsWildcard());
+            if (pattern.MatchLeaf(context.CurrentCall.Parameters.ToArray()[0]) && ((Nncase.IR.Marker)(context.CurrentCall.Parameters.ToArray()[0])).mixQuantInfo?.HasBindedMixQuantInfo == true)
+            {
+                var quantParam = ((Nncase.IR.Marker)(context.CurrentCall.Parameters.ToArray()[0])).mixQuantInfo.QuantParameter;
+                // input feature map quantParam count should be 1 since input feature map quant is by tensor.
+                System.Diagnostics.Debug.Assert(quantParam.Count == 1);
+                var inputFloat = input.ToArray<float>();
+                for (var i = 0; i < inputFloat.Length; i++)
+                {
+                    var inputBufQuant = (double)(inputFloat[i] / (double)(quantParam[0].Scale) + quantParam[0].ZeroPoint);
+                    if (!(quantParam[0].Scale == 1.0f && quantParam[0].ZeroPoint == 0))
+                        inputBufQuant = System.Math.Round((double)((float)inputBufQuant));
+                    var inputBufDeQuant = (float)((inputBufQuant - quantParam[0].ZeroPoint) * (double)(quantParam[0].Scale));
+                    inputFloat[i] = (float)(inputBufDeQuant);
+                }
+                input = tf.constant(inputFloat, TF_DataType.TF_FLOAT, input.shape);
+            }
+        }
+
         input = tf.transpose(input, new[] { 0, 2, 3, 1 });
         var sizes = context.GetArgumentValueAsArray<int>(target, ResizeImage.NewSize);
         var halfPixelCenter = target.TransformationMode == ImageResizeTransformationMode.HalfPixel;
@@ -55,6 +80,29 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
         var cubicCoeffA = context.GetOptionArgumentValueAsScalar<float>(target, ResizeImage.CubicCoeffA, -0.75f);
         var excludeOutside = context.GetOptionArgumentValueAsScalar<long>(target, ResizeImage.ExcludeOutside, 0);
         var extrapolationValue = context.GetOptionArgumentValueAsScalar<float>(target, ResizeImage.ExtrapolationValue, 0f);
+
+        // when HasBindedMixQuantInfo is true, eval will do simulation of quant/dequant for some inputs, this is used for evaluate accumulated quant error for layers.
+        if (context.CurrentCall.EnodeBestQuantConfigWithCosine != null)
+        {
+            var pattern = IsRangeOfMarker(IsWildcard(), IsWildcard());
+            if (pattern.MatchLeaf(context.CurrentCall.Parameters.ToArray()[0]) && ((Nncase.IR.Marker)(context.CurrentCall.Parameters.ToArray()[0])).mixQuantInfo?.HasBindedMixQuantInfo == true)
+            {
+                var quantParam = ((Nncase.IR.Marker)(context.CurrentCall.Parameters.ToArray()[0])).mixQuantInfo.QuantParameter;
+                // input feature map quantParam count should be 1 since input feature map quant is by tensor.
+                System.Diagnostics.Debug.Assert(quantParam.Count == 1);
+                var inputFloat = input.ToArray<float>();
+                for (var i = 0; i < inputFloat.Length; i++)
+                {
+                    var inputBufQuant = (double)(inputFloat[i] / (double)(quantParam[0].Scale) + quantParam[0].ZeroPoint);
+                    if (!(quantParam[0].Scale == 1.0f && quantParam[0].ZeroPoint == 0))
+                        inputBufQuant = System.Math.Round((double)((float)inputBufQuant));
+                    var inputBufDeQuant = (float)((inputBufQuant - quantParam[0].ZeroPoint) * (double)(quantParam[0].Scale));
+                    inputFloat[i] = (float)(inputBufDeQuant);
+                }
+                input = OrtKISharp.Tensor.MakeTensor(inputFloat, input.Shape);
+            }
+        }
+
         return OrtKI.ResizeWithSizes(input, roi, sizes,
             ResizeModeHelper.ToString(target.TransformationMode),
             cubicCoeffA, excludeOutside, extrapolationValue,
