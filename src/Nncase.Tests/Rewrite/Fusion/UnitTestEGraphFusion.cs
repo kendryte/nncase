@@ -158,15 +158,6 @@ internal sealed class SingleInputFusionMergeRule : IRewriteRule
 
 /// <summary>
 /// fusion_3(fusion_1(x), fusion_2(x)) => fusion_4(x)
-/// 
-/// cycle type 1:  这里会存在一个bug, 如果是dataflow的话, merge single input 就会把 x y 合并在一起. 需要知道use关系才行.
-///             x = fusion1(input)
-///            /    \
-///         /         \
-///        |      y = fusion2(x)
-///         \        /
-///          \     /
-///     fusion3(x,y)
 /// </summary>
 internal sealed class TwoInputFusionMergeRule : IRewriteRule
 {
@@ -293,6 +284,68 @@ public class UnitTestEGraphFusion : TestFixture.UnitTestFixtrue
           new TwoInputFusionMergeRule(),
         };
         await pass.RunAsync(main, passOptions);
+    }
+
+
+    /// <summary>
+    /// cycle type 1:  这里会存在一个bug, 如果是dataflow的话, merge single input 就会把 x y 合并在一起. 需要知道use关系才行.
+    ///             x = fusion1(input)
+    ///            /    \
+    ///         /         \
+    ///        |      y = fusion2(x)
+    ///         \        /
+    ///          \     /
+    ///     fusion3(x,y)
+    /// </summary>    
+    [Fact]
+    public async void TestDataFlowFusionCycleFailedCase()
+    {
+
+        var passOptions = GetPassOptions();
+        var compileOptions = passOptions.CompileOptions;
+
+        var target = CompilerServices.GetTarget(compileOptions.Target);
+
+        // step 1. import
+        var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 224, 224, 3 }));
+        Function main;
+        {
+            var fusion_1_input = new Var("fusion_1_input", new TensorType(DataTypes.Float32, new int[] { 1, 224, 224, 3 }));
+            var fusion_1 = new Fusion("fusion_1", Callable.StackVMModuleKind, IR.F.Tensors.NHWCToNCHW(fusion_1_input), new[] { fusion_1_input });
+            var v_0 = new Call(fusion_1, input); // 1,3,224,224
+
+            var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
+            var fusion_2 = new Fusion("fusion_2", Callable.StackVMModuleKind, IR.F.NN.ReduceWindow2D(ReduceOp.Max, fusion_2_input, 0.0f, new[] { 3, 3 }, new[] { 2, 2 }, new[,] { { 1, 1 }, { 1, 1 } }, new[] { 1, 1 }, false, false), new[] { fusion_2_input });
+            var v_1 = new Call(fusion_2, v_0); // 1,3,112,112
+
+            var fusion_3_input = new Var("fusion_3_input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 }));
+            var fusion_3 = new Fusion("fusion_3", Callable.StackVMModuleKind, IR.F.NN.ReduceWindow2D(ReduceOp.Mean, fusion_3_input, 0.0f, new[] { 3, 3 }, new[] { 1, 1 }, new[,] { { 1, 1 }, { 1, 1 } }, new[] { 1, 1 }, false, false), new[] { fusion_3_input });
+            var v_2 = new Call(fusion_3, v_1); // 1,3,112,112
+
+            var fusion_4_input = new Var[] { new("fusion_4_input_0", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 })), new("fusion_4_input_1", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 })) };
+            var fusion_4 = new Fusion("fusion_4", Callable.StackVMModuleKind, IR.F.Math.Add(fusion_4_input[0], fusion_4_input[1]), fusion_4_input);
+            var v_3 = new Call(fusion_4, new[] { v_1, v_2 }); // 1,3,112,112
+            main = new Function("main", v_3, ImmutableArray.Create(input));
+        }
+
+        IRModule module = new(main);
+
+        CompilerServices.InferenceType(main);
+        CompilerServices.DumpIR(main, "", passOptions.DumpDir);
+
+        var pass = new DataflowPass("AutoMergeFusion"){
+          new SingleInputFusionMergeRule()
+        };
+        var post = (Function)await pass.RunAsync(main, passOptions);
+
+        var input_tensor = TestFixture.Testing.Rand<float>(1, 224, 224, 3);
+        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance){
+          {input, Value.FromTensor(input_tensor)}
+        };
+        var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
+        var post_result = CompilerServices.Evaluate(post.Body, feed_dict);
+        // note 这里他其实强行分成了两个分支, fusion_1_2_3 和 fusion_2_fusion_1, 虽然结果一致但是不合理.
+        Assert.True(TestFixture.Comparator.AllEqual(pre_result, post_result));
     }
 
 }
