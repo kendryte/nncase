@@ -22,6 +22,7 @@ public partial class TransformTestBase : UnitTestFixtrue
     {
         var compileOptions = base.GetCompileOptions(member_name);
         compileOptions.QuantType = DataTypes.UInt8;
+        compileOptions.WQuantType = DataTypes.UInt8;
         return compileOptions;
     }
 

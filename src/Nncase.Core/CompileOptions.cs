@@ -23,6 +23,7 @@ public sealed class CompileOptions
         DumpDir = other.DumpDir;
         ModelQuantMode = other.ModelQuantMode;
         QuantType = other.QuantType;
+        WQuantType = other.WQuantType;
         OutputFile = other.OutputFile;
     }
 
@@ -38,6 +39,7 @@ public sealed class CompileOptions
         DumpDir = string.Empty;
         ModelQuantMode = ModelQuantMode.NoQuant;
         QuantType = DataTypes.UInt8;
+        WQuantType = DataTypes.UInt8;
         OutputFile = string.Empty;
     }
 
@@ -54,6 +56,7 @@ public sealed class CompileOptions
         DumpDir = string.Empty;
         ModelQuantMode = modelQuantMode;
         QuantType = DataTypes.UInt8;
+        WQuantType = DataTypes.UInt8;
         OutputFile = string.Empty;
         QuantizeOptions = QuantizeOptions;
     }
@@ -75,6 +78,9 @@ public sealed class CompileOptions
 
     /// <inheritdoc/>
     public DataType QuantType { get; set; }
+
+    /// <inheritdoc/>
+    public DataType WQuantType { get; set; }
 
     /// <inheritdoc/>
     public string OutputFile { get; set; }

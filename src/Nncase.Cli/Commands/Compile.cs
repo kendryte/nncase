@@ -45,6 +45,9 @@ internal sealed class CliCompileOptions
     public QuantType QuantType { get; set; }
 
     /// <inheritdoc/>
+    public QuantType WQuantType { get; set; }
+
+    /// <inheritdoc/>
     public string OutputFile { get; set; }
 
     /// <inheritdoc/>
@@ -87,6 +90,10 @@ public class Compile : Command
           alias: "--quant-type",
           description: "quant type, default is uint8",
           getDefaultValue: () => QuantType.UInt8));
+        AddOption(new Option<QuantType>(
+          alias: "--wquant-type",
+          description: "wquant type, default is uint8",
+          getDefaultValue: () => QuantType.UInt8));
         AddOption(new Option<Quantization.ModelQuantMode>(
           alias: "--model-quant-mode",
           description: "model quant mode, default is NoQuant",
@@ -115,6 +122,13 @@ public class Compile : Command
             DumpLevel = cliOptions.DumpLevel,
             DumpDir = cliOptions.DumpDir,
             QuantType = cliOptions.QuantType switch
+            {
+                QuantType.UInt8 => DataTypes.UInt8,
+                QuantType.Int8 => DataTypes.Int8,
+                QuantType.Int16 => DataTypes.Int16,
+                _ => throw new ArgumentOutOfRangeException()
+            },
+            WQuantType = cliOptions.WQuantType switch
             {
                 QuantType.UInt8 => DataTypes.UInt8,
                 QuantType.Int8 => DataTypes.Int8,
