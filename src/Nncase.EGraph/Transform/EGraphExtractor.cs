@@ -141,10 +141,10 @@ public static class EGraphExtractExtensions
         }
         // 2. start the cost evaluator
         var costModel = new EGraphCostEvaluator(root.Find(), basefunc_cost_evaluator).Evaluate();
-        if (options.DumpLevel > 3)
+        if (options.DumpLevel > 2)
         {
             // TODO: dump graph
-            // EGraphPrinter.DumpEgraphAsDot(eGraph, new EGraphCosts(eGraph, costs), entry.Find(), Path.Combine(options.PassDumpDir, "Costs", $"V{eGraph.Version}"));
+            EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, root.Find(), Path.Combine(options.PassDumpDir, "Costs", $"V{eGraph.Version}"));
         }
 
         return new EGraphExtractor(costModel).Extract(root.Find());

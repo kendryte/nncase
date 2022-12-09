@@ -18,63 +18,60 @@ using GiGraph.Dot.Types.Styling;
 using Nncase.PatternMatch;
 using Nncase.Transform;
 
-namespace Nncase.Transform
+namespace Nncase.Transform;
+
+public partial class EGraphPrinter
 {
-    public partial class EGraphPrinter
+    private DotGraph AttachEGraphCost(CostModel.EGraphCostModel costModel, EClass entry)
     {
-        //public DotGraph AttachEGraphCost(CostModel.EGraphCosts Costs, EClass entry)
-        //{
-        //    var nodeMap = new Dictionary<ENode, DotNode>();
-        //    foreach (var (eclass, (cost, enode)) in Costs.Context)
-        //    {
-        //        if (OpMaps.ContainsKey(eclass))
-        //        {
-        //            continue;
-        //        }
+        // 1. display each enode costs.
+        foreach (var (enode, (dotnode, table)) in NodesMap)
+        {
+            if (enode.Expr is (IR.Var or IR.Op or IR.Marker or IR.None))
+                continue;
+            table.AddRow(row =>
+            {
+                var cost = costModel[enode];
+                foreach (var (k, v) in cost.Factors)
+                {
+                    row.AddCell($"{k}: {v:F2}");
+                };
+                row.AddCell($"Score: {cost.Score:F2}");
+            });
+            dotnode.ToPlainHtmlNode(table);
+        }
 
-        //        foreach (var dotnode in ClusterMaps[eclass].Nodes.Where((nd => ((DotNode)nd).Id == enode.Expr.GetHashCode().ToString())))
-        //        {
-        //            nodeMap.Add(enode, (DotNode)dotnode);
-        //            dotnode.Color = Color.DarkRed;
-        //        }
-        //    }
+        dotGraph.Edges.Clear();
 
-        //    dotGraph.Edges.Clear();
+        void dfs(EClass curclass, ENode? minCostEnode)
+        {
+            if (minCostEnode is null)
+                return;
+            var (minCostDotnode, table) = NodesMap[minCostEnode];
+            minCostDotnode.Color = Color.DeepSkyBlue;
+            foreach (var (child, i) in minCostEnode.Children.Select((c, i) => (c, i)))
+            {
+                var childEnode = child.Find().Nodes.MinBy(x => costModel[x]);
+                dfs(child.Find(), childEnode);
+                if (childEnode is null)
+                    continue;
+                var (childDotNode, _) = NodesMap[childEnode];
+                dotGraph.Edges.Add(childDotNode, minCostDotnode, edge =>
+                {
+                    edge.Head.Endpoint.Port = new DotEndpointPort($"P{i}");
+                    edge.Color = Color.DeepSkyBlue;
+                });
+            }
+        }
+        dfs(entry.Find(), entry.Find().Nodes.MinBy(x => costModel[x]));
+        return dotGraph;
+    }
 
-        //    void dfs(EClass curclass)
-        //    {
-        //        var curEnode = Costs.Context[curclass].Item2;
-        //        var curNode = nodeMap[curEnode];
-        //        curNode.Color = Color.RoyalBlue;
-        //        foreach (var (child, i) in curEnode.Children.Select((c, i) => (c, i)))
-        //        {
-        //            if (OpMaps.ContainsKey(child))
-        //            {
-        //                continue;
-        //            }
-
-        //            var paramEnode = Costs[child].Item2;
-        //            var paramNode = nodeMap[paramEnode];
-        //            dfs(Costs[paramEnode].Find());
-        //            dotGraph.Edges.Add(paramNode, curNode, edge =>
-        //            {
-        //                edge.Head.Endpoint.Port = new DotEndpointPort($"P{i}");
-        //                edge.Color = Color.RoyalBlue;
-        //                edge.Label = Costs[child].Item1.ToString();
-        //            });
-        //        }
-        //    }
-
-        //    dfs(entry.Find());
-        //    return dotGraph;
-        //}
-
-        //public static DotGraph DumpEgraphAsDot(EGraph eGraph, CostModel.EGraphCosts Costs, EClass entry, string file)
-        //{
-        //    var printer = new EGraphPrinter(eGraph);
-        //    printer.ConvertEGraphAsDot();
-        //    printer.AttachEGraphCost(Costs, entry);
-        //    return printer.SaveToFile(file);
-        //}
+    internal static DotGraph DumpEgraphAsDot(EGraph eGraph, CostModel.EGraphCostModel costModel, EClass entry, string file)
+    {
+        var printer = new EGraphPrinter(eGraph);
+        printer.ConvertEGraphAsDot();
+        printer.AttachEGraphCost(costModel, entry);
+        return printer.SaveToFile(file);
     }
 }

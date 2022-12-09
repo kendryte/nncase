@@ -81,27 +81,8 @@ internal static class EGraphRewriter
                 EGraphPrinter.DumpEgraphAsDot(eGraph,
                  Path.Combine(options.DumpDir, options.PassName, "Rebuild", $"V{eGraph.Version}"));
             }
-
-            if (options.DumpLevel == 3)
-            {
-                //foreach (var (_, eclass) in eGraph.HashCons)
-                //{
-                //    if (eclass.Parent is not null)
-                //    {
-                //        // throw new InvalidProgramException("EGraph Rebuild Logic Error!");
-                //    }
-                //}
-            }
         }
 
-        foreach (var cls in eGraph.Classes)
-        {
-            foreach (var node in cls.Nodes)
-            {
-                if (node.Canonicalize() != node)
-                    System.Console.WriteLine($"Warning EClass {cls} Have NoCanonicalize Enode {node}");
-            }
-        }
         return eGraph;
     }
 }

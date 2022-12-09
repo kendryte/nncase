@@ -338,14 +338,21 @@ public class UnitTestEGraphFusion : TestFixture.UnitTestFixtrue
         };
         var post = (Function)await pass.RunAsync(main, passOptions);
 
+        var pass2 = new EGraphPass("EGraphAutoMergeFusion", new FusionCostEvaluator()){
+          new SingleInputFusionMergeRule()
+        };
+        var post2 = (Function)await pass2.RunAsync(main, passOptions);
+
         var input_tensor = TestFixture.Testing.Rand<float>(1, 224, 224, 3);
         var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance){
           {input, Value.FromTensor(input_tensor)}
         };
         var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
         var post_result = CompilerServices.Evaluate(post.Body, feed_dict);
+        var post2_result = CompilerServices.Evaluate(post2.Body, feed_dict);
         // note 这里他其实强行分成了两个分支, fusion_1_2_3 和 fusion_2_fusion_1, 虽然结果一致但是不合理.
         Assert.True(TestFixture.Comparator.AllEqual(pre_result, post_result));
+        Assert.True(TestFixture.Comparator.AllEqual(pre_result, post2_result));
     }
 
 }
