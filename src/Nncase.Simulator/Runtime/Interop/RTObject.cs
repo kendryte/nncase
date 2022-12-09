@@ -23,6 +23,18 @@ public abstract class RTObject : SafeHandle
     public override bool IsInvalid => handle == IntPtr.Zero;
 
     /// <inheritdoc/>
+    public override bool Equals(object? obj)
+    {
+        return obj is RTObject @object && EqualityComparer<IntPtr>.Default.Equals(handle, @object.handle);
+    }
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(handle);
+    }
+
+    /// <inheritdoc/>
     protected override bool ReleaseHandle()
     {
         return Native.ObjectFree(handle).IsSuccess;
