@@ -43,25 +43,25 @@ public partial class EGraphPrinter
 
         dotGraph.Edges.Clear();
 
-        void dfs(EClass curclass, ENode? minCostEnode)
+        bool dfs(EClass curclass, ENode? minCostEnode)
         {
-            if (minCostEnode is null)
-                return;
+            if (OpMaps.ContainsKey(curclass) || minCostEnode is null)
+                return false;
             var (minCostDotnode, table) = NodesMap[minCostEnode];
             minCostDotnode.Color = Color.DeepSkyBlue;
             foreach (var (child, i) in minCostEnode.Children.Select((c, i) => (c, i)))
             {
                 var childEnode = child.Find().Nodes.MinBy(x => costModel[x]);
-                dfs(child.Find(), childEnode);
-                if (childEnode is null)
+                if (!dfs(child.Find(), childEnode))
                     continue;
-                var (childDotNode, _) = NodesMap[childEnode];
+                var (childDotNode, _) = NodesMap[childEnode!];
                 dotGraph.Edges.Add(childDotNode, minCostDotnode, edge =>
                 {
                     edge.Head.Endpoint.Port = new DotEndpointPort($"P{i}");
-                    edge.Color = Color.DeepSkyBlue;
+                    edge.Color = Color.SpringGreen;
                 });
             }
+            return true;
         }
         dfs(entry.Find(), entry.Find().Nodes.MinBy(x => costModel[x]));
         return dotGraph;
