@@ -222,7 +222,7 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
         {
             foreach (var child in enode.Children)
             {
-                Assert.Contains(enode, child.Used);
+                Assert.Contains(enode, child.UsedBy);
             }
         }
     }

@@ -50,13 +50,13 @@ public sealed record ENode
     /// Add current enode information to childrens.
     /// </summary>
     /// <param name="eClass">EClass.</param>
-    public void AddUsed(EClass eClass)
+    public void SetClass(EClass eClass)
     {
         eClass.AddNode(this);
 
         foreach (var child in Children)
         {
-            child.AddUsed(this);
+            child.AddUsedBy(this);
         }
     }
 
