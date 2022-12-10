@@ -34,10 +34,18 @@ using namespace nncase::runtime;
 
 namespace {} // namespace
 
+namespace pybind11::detail {
+std::atomic_flag g_python_shutdown = ATOMIC_FLAG_INIT;
+}
+
 PYBIND11_MODULE(_nncase, m) {
     m.doc() = "nncase Library";
     m.attr("__version__") = NNCASE_VERSION NNCASE_VERSION_SUFFIX;
 
+    m.add_object("_cleanup", py::capsule([]() {
+                     pybind11::detail::g_python_shutdown.test_and_set(
+                         std::memory_order_release);
+                 }));
     m.def("initialize", nncase_clr_initialize);
     m.def("launch_debugger", nncase_clr_launch_debugger);
     m.def("target_exists", [](std::string_view target_name) {

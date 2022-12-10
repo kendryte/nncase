@@ -12,12 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <atomic>
 #include <nncase/compiler.h>
 #include <nncase/compiler_defs.h>
 #include <pybind11/pybind11.h>
 
-namespace pybind11 {
-namespace detail {
+namespace pybind11::detail {
+extern std::atomic_flag g_python_shutdown;
+
+inline bool is_py_shutdown() {
+    return !Py_IsInitialized() ||
+           g_python_shutdown.test(std::memory_order_acquire);
+}
+
 template <> struct type_caster<gsl::span<const gsl::byte>> {
   public:
     PYBIND11_TYPE_CASTER(gsl::span<const gsl::byte>, _("bytes"));
@@ -52,7 +59,7 @@ template <> struct type_caster<nncase::clr::cstream> {
             },
         .release =
             [](nncase_stream_handle_t handle) {
-                if (_Py_IsFinalizing())
+                if (is_py_shutdown())
                     return;
                 NNCASE_CSTREAM_IMPL_COMMON;
                 pyhandle.dec_ref();
@@ -74,7 +81,7 @@ template <> struct type_caster<nncase::clr::cstream> {
             },
         .flush =
             [](nncase_stream_handle_t handle) {
-                if (_Py_IsFinalizing())
+                if (is_py_shutdown())
                     return;
                 NNCASE_CSTREAM_IMPL_COMMON;
                 pyhandle.attr("flush")();
@@ -135,5 +142,4 @@ template <> struct type_caster<nncase::clr::cstream> {
 };
 
 #undef NNCASE_CSTREAM_IMPL_COMMON
-} // namespace detail
-} // namespace pybind11
+} // namespace pybind11::detail

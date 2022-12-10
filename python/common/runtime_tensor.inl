@@ -36,7 +36,7 @@ py::class_<runtime_tensor>(m, "RuntimeTensor")
                                 reinterpret_cast<gsl::byte *>(src_buffer.ptr),
                                 src_buffer.size * src_buffer.itemsize),
                             [=](gsl::byte *) {
-                                if (!_Py_IsFinalizing()) {
+                                if (!py::detail::is_py_shutdown()) {
                                     py::gil_scoped_acquire gil;
                                     arr.dec_ref();
                                 }
