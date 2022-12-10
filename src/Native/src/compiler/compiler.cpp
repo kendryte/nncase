@@ -12,13 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <absl/debugging/failure_signal_handler.h>
 #include <filesystem>
+#include <fstream>
 #include <hostfxr.h>
 #include <nethost.h>
 #include <nncase/compiler.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/error.h>
-#include <absl/debugging/failure_signal_handler.h>
 
 #ifdef WIN32
 #include <Windows.h>
