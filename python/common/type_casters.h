@@ -74,6 +74,8 @@ template <> struct type_caster<nncase::clr::cstream> {
             },
         .flush =
             [](nncase_stream_handle_t handle) {
+                if (_Py_IsFinalizing())
+                    return;
                 NNCASE_CSTREAM_IMPL_COMMON;
                 pyhandle.attr("flush")();
             },
