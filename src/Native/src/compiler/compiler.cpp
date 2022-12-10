@@ -236,7 +236,7 @@ int nncase_clr_calibration_dataset_provider_create(
 }
 
 int nncase_clr_handle_free(clr_object_handle_t handle) {
-    g_c_api_mt.handle_free(handle);
+    //g_c_api_mt.handle_free(handle);
     return 0;
 }
 
