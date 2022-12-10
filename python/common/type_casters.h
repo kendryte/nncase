@@ -18,11 +18,11 @@
 #include <pybind11/pybind11.h>
 
 namespace pybind11::detail {
-extern std::atomic_flag g_python_shutdown;
+extern std::atomic_bool g_python_shutdown;
 
 inline bool is_py_shutdown() {
     return !Py_IsInitialized() ||
-           g_python_shutdown.test(std::memory_order_acquire);
+           g_python_shutdown.load(std::memory_order_acquire);
 }
 
 template <> struct type_caster<gsl::span<const gsl::byte>> {

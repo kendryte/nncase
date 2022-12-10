@@ -35,7 +35,7 @@ using namespace nncase::runtime;
 namespace {} // namespace
 
 namespace pybind11::detail {
-std::atomic_flag g_python_shutdown = ATOMIC_FLAG_INIT;
+std::atomic_bool g_python_shutdown = false;
 }
 
 PYBIND11_MODULE(_nncase, m) {
@@ -43,8 +43,8 @@ PYBIND11_MODULE(_nncase, m) {
     m.attr("__version__") = NNCASE_VERSION NNCASE_VERSION_SUFFIX;
 
     m.add_object("_cleanup", py::capsule([]() {
-                     pybind11::detail::g_python_shutdown.test_and_set(
-                         std::memory_order_release);
+                     pybind11::detail::g_python_shutdown.store(
+                         true, std::memory_order_release);
                  }));
     m.def("initialize", nncase_clr_initialize);
     m.def("launch_debugger", nncase_clr_launch_debugger);
