@@ -43,6 +43,7 @@ PYBIND11_MODULE(_nncase, m) {
     m.attr("__version__") = NNCASE_VERSION NNCASE_VERSION_SUFFIX;
 
     m.add_object("_cleanup", py::capsule([]() {
+                     nncase_clr_uninitialize();
                      pybind11::detail::g_python_shutdown.store(
                          true, std::memory_order_release);
                  }));

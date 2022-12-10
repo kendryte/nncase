@@ -55,6 +55,7 @@ typedef struct {
 } nncase_stream_mt_t;
 
 NNCASE_API int nncase_clr_initialize(const char *root_assembly_path);
+NNCASE_API int nncase_clr_uninitialize();
 
 NNCASE_API int nncase_clr_array_create(nncase_array_element_kind_t kind,
                                        const clr_object_handle_t *elements,

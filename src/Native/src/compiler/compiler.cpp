@@ -209,6 +209,11 @@ int nncase_clr_initialize(const char *root_assembly_path) {
     return 0;
 }
 
+int nncase_clr_uninitialize() {
+    g_c_api_mt = {};
+    return 0;
+}
+
 int nncase_clr_array_create(nncase_array_element_kind_t kind,
                             const clr_object_handle_t *elements, size_t count,
                             clr_object_handle_t *array) {
@@ -236,7 +241,8 @@ int nncase_clr_calibration_dataset_provider_create(
 }
 
 int nncase_clr_handle_free([[maybe_unused]] clr_object_handle_t handle) {
-    // g_c_api_mt.handle_free(handle);
+    if (g_c_api_mt.handle_free)
+        g_c_api_mt.handle_free(handle);
     return 0;
 }
 
