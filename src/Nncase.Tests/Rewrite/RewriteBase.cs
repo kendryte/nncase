@@ -30,7 +30,7 @@ public class RewriteFixtrue : TestFixture.UnitTestFixtrue
         expr.InferenceType();
         var f = new Function(expr, parameters);
         var result = CompilerServices.InferenceType(f);
-        CompilerServices.DumpIR(f, "before", Path.Combine(caseOptions.PassDumpDir, $"ShapeInfer_{name}"));
+        CompilerServices.DumpIR(f, "before", Path.Combine(caseOptions.DumpDir, $"ShapeInfer_{name}"));
         return ((Function)await new ShapeInferPass($"ShapeInfer_{name}").RunAsync(f, caseOptions)).Body;
     }
 

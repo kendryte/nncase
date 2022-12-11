@@ -187,13 +187,13 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
         var e2 = g.Add(x << 1);
         var e3 = g.Add((x * 2) + 1 + 3);
         var e4 = g.Add((x << 1) + 1 + 3);
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "before"));
+        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "before"));
 
         g.Union(e1, e2);
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "merge"));
+        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "merge"));
 
         g.Rebuild();
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "rebuild"));
+        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "rebuild"));
 
         Assert.StrictEqual(e3.Find(), e4.Find());
     }
@@ -209,15 +209,15 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
         var e3 = g.Add(x * 4);
         var e4 = g.Add(x * 2 * 2);
         var e5 = g.Add((x * 2) * (x * 4));
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "before"));
+        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "before"));
         g.Union(e2, e1);
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "merge_lhs"));
+        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "merge_lhs"));
         g.Rebuild();
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "rebuild_lhs"));
+        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "rebuild_lhs"));
         g.Union(e4, e3);
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "merge_rhs"));
+        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "merge_rhs"));
         g.Rebuild();
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.PassDumpDir, "rebuild_rhs"));
+        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "rebuild_rhs"));
         foreach (var enode in g.Nodes)
         {
             foreach (var child in enode.Children)

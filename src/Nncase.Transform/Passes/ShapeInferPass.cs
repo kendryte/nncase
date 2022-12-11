@@ -34,7 +34,7 @@ public sealed class ShapeInferPass : DataflowPass
         BaseFunction post;
         int count = 0;
         RunPassOptions new_options = new(options);
-        new_options.SetDumpDir(options.PassDumpDir);
+        new_options.SetDumpDir(options.DumpDir);
         while (true)
         {
             post = (BaseFunction)CompilerServices.Rewrite(pre, Rules, new_options.SetPassName($"{Name}/Run_{count}"));

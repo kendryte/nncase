@@ -51,7 +51,7 @@ internal static class EGraphRewriter
                 {
                     if (!CompilerServices.InferenceType(newExpr))
                     {
-                        CompilerServices.DumpIR(newExpr, "Replaced_Expr", options.PassDumpDir);
+                        CompilerServices.DumpIR(newExpr, "Replaced_Expr", options.DumpDir);
                         throw new InvalidOperationException("Can't Inference The Replace Expr Type!");
                     }
 

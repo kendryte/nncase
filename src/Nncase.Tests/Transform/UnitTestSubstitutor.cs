@@ -84,11 +84,11 @@ public sealed class UnitTestSubstitutor : TestFixture.UnitTestFixtrue
         Dictionary<Expr, Expr> vmap = new() { { loop_i, 1 } };
         var substitutor = Transform.Mutator.Substitute(e => vmap.TryGetValue(e, out var res) ? res : null)();
 
-        CompilerServices.DumpIR(main_func, "pre", passOptions.PassDumpDir);
+        CompilerServices.DumpIR(main_func, "pre", passOptions.DumpDir);
         var main_func_2 = substitutor.Visit(main_func);
         Assert.True(CompilerServices.InferenceType(main_func_2));
 
-        CompilerServices.DumpIR(main_func_2, "post", passOptions.PassDumpDir);
+        CompilerServices.DumpIR(main_func_2, "post", passOptions.DumpDir);
 
         Assert.False(object.ReferenceEquals(main_func, main_func_2));
 
@@ -115,11 +115,11 @@ public sealed class UnitTestSubstitutor : TestFixture.UnitTestFixtrue
         Dictionary<Expr, Expr> vmap = new() { { loop_i, 1 } };
         var substitutor = Transform.Mutator.Substitute(e => vmap.TryGetValue(e, out var res) ? res : null)();
 
-        CompilerServices.DumpIR(main_func, "pre", passOptions.PassDumpDir);
+        CompilerServices.DumpIR(main_func, "pre", passOptions.DumpDir);
         var main_func_2 = substitutor.Visit(main_func);
         Assert.True(CompilerServices.InferenceType(main_func_2));
 
-        CompilerServices.DumpIR(main_func_2, "post", passOptions.PassDumpDir);
+        CompilerServices.DumpIR(main_func_2, "post", passOptions.DumpDir);
 
         Assert.False(object.ReferenceEquals(main_func, main_func_2));
 

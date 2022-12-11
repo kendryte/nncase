@@ -34,9 +34,9 @@ public class CalibrationEvaluator
     {
         if (_passOptions.DumpLevel >= 4)
         {
-            if (!Directory.Exists(_passOptions.PassDumpDir))
-                Directory.CreateDirectory(_passOptions.PassDumpDir);
-            var fileStream = File.Open(Path.Combine(_passOptions.PassDumpDir, "calibration_evaluator.il"), FileMode.Create, FileAccess.Write);
+            if (!Directory.Exists(_passOptions.DumpDir))
+                Directory.CreateDirectory(_passOptions.DumpDir);
+            var fileStream = File.Open(Path.Combine(_passOptions.DumpDir, "calibration_evaluator.il"), FileMode.Create, FileAccess.Write);
             _dumpWriter = new StreamWriter(fileStream);
             _dumpWriter.AutoFlush = true;
         }

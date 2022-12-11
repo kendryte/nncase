@@ -50,7 +50,7 @@ public abstract class FunctionPass : BasePass
     /// <param name="options">Options.</param>
     public async Task<BaseFunction> RunAsync(BaseFunction callable, RunPassOptions options)
     {
-        var new_options = options.SetPassName(Name + "_" + callable.Name);
+        var new_options = options.IndentDir(Name).IndentDir(callable.Name);
         OnPassStart(callable, new_options);
         var post = await RunCoreAsync(callable, new_options);
         OnPassEnd(post, new_options);
@@ -74,7 +74,7 @@ public abstract class FunctionPass : BasePass
         switch (options.DumpLevel)
         {
             case >= 2:
-                CompilerServices.DumpIR(callable, "Start", options.PassDumpDir);
+                CompilerServices.DumpIR(callable, "Start", options.DumpDir);
                 break;
             case >= 1:
                 break;
@@ -93,7 +93,7 @@ public abstract class FunctionPass : BasePass
         switch (options.DumpLevel)
         {
             case >= 2:
-                CompilerServices.DumpIR(callable, "End", options.PassDumpDir);
+                CompilerServices.DumpIR(callable, "End", options.DumpDir);
                 break;
             case >= 1:
                 break;

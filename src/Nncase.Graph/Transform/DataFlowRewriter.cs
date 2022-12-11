@@ -45,7 +45,7 @@ internal class DataflowRewriter
             if (isMutated && !inferSuccess)
             {
                 if (options.DumpLevel > 1)
-                    CompilerServices.DumpIR(post, $"InferShape_{count - 1}_Failed", options.PassDumpDir);
+                    CompilerServices.DumpIR(post, $"InferShape_{count - 1}_Failed", options.DumpDir);
                 throw new InvalidOperationException($"After Rewrite {count - 1}, InferShape Failed For This Model!");
             }
 
@@ -66,7 +66,7 @@ internal class DataflowRewriter
         switch (options.DumpLevel)
         {
             case >= 2:
-                CompilerServices.DumpIR(expr, $"{count}_Start", Path.Combine(options.PassDumpDir, "Rewrite"));
+                CompilerServices.DumpIR(expr, $"{count}_Start", Path.Combine(options.DumpDir, "Rewrite"));
                 break;
             case >= 1:
                 break;
@@ -83,7 +83,7 @@ internal class DataflowRewriter
         switch (options.DumpLevel)
         {
             case >= 2:
-                CompilerServices.DumpIR(expr, $"{count}_End", Path.Combine(options.PassDumpDir, "Rewrite"));
+                CompilerServices.DumpIR(expr, $"{count}_End", Path.Combine(options.DumpDir, "Rewrite"));
                 break;
             case >= 1:
                 break;

@@ -68,7 +68,7 @@ public abstract class RulesPass : FunctionPass, IEnumerable<IRewriteRule>
         switch (options.DumpLevel)
         {
             case >= 2:
-                CompilerServices.DumpIR((Expr)callable, "Start", options.PassDumpDir);
+                CompilerServices.DumpIR((Expr)callable, "Start", options.DumpDir);
                 break;
             case >= 1:
                 break;
@@ -87,7 +87,7 @@ public abstract class RulesPass : FunctionPass, IEnumerable<IRewriteRule>
         switch (options.DumpLevel)
         {
             case >= 2:
-                CompilerServices.DumpIR((Expr)callable, "End", options.PassDumpDir);
+                CompilerServices.DumpIR((Expr)callable, "End", options.DumpDir);
                 break;
             case >= 1:
                 break;
