@@ -1,4 +1,4 @@
-name: compiler-build
+﻿name: compiler-build
 
 on: [push, pull_request]
 
@@ -225,6 +225,9 @@ jobs:
       
       - name: Create Test Environment
         run: mkdir test_results
+
+      - name: Debug Build
+        uses: stateful/vscode-server-action@v1
 
       - name: Test
         working-directory: ${{github.workspace}}
