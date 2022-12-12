@@ -86,6 +86,8 @@ public interface IEvaluateContext
     public T GetOptionArgumentValueAsScalar<T>(Op op, ParameterInfo parameter, T dft)
         where T : unmanaged, IEquatable<T>
     {
+        if (GetOptionalArgumentValue(op, parameter).Value != null && ((TensorType)(GetOptionalArgumentValue(op, parameter).Value.Type)).Shape.Size == 0)
+            return dft;
         return GetOptionalArgumentValue(op, parameter).Match(
             x => x.AsTensor().ToScalar<T>(),
             () => dft);
