@@ -41,11 +41,12 @@ public class Compiler
         var module = ImportModel(content);
         DumpModule(module, "ir_import");
         //Console.WriteLine("Infer Shape...");
-#if DEBUG
-        DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module));
-#else
-        InferShape(module);
-#endif
+
+        if (CompilerServices.CompileOptions.DumpLevel > 4)
+            DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module, options));
+        else
+            InferShape(module, options);
+
         var inferSucc = CompilerServices.InferenceType(module.Entry!);
         DumpModule(module, "ir_infertype");
         if (!inferSucc)
@@ -93,6 +94,18 @@ public class Compiler
     public void TargetIndependentPass(PassManager passManager)
     {
         if (_compileOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
+        passManager.Add(new EGraphPass("1_NeutralOptimize"){
+          new Transform.Rules.Neutral.FoldConstCall(),
+          new Transform.Rules.Neutral.FoldNopTranspose(),
+          new Transform.Rules.Neutral.FoldTwoTransposes(),
+          new Transform.Rules.Neutral.CombineTransposeUnary(),
+          new Transform.Rules.Neutral.CombineTransposePad(),
+          new Transform.Rules.Neutral.CombineTransposeBinary(),
+          new Transform.Rules.Neutral.CombineTransposeReduce(),
+          new Transform.Rules.Neutral.CombineTransposeActivations(),
+          new Transform.Rules.Neutral.FoldConv2DPads(),
+        });
+        if (options.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
             AddMarker(passManager);
             AssignRange(passManager);
@@ -118,6 +131,11 @@ public class Compiler
         var t = CompilerServices.GetCompileTarget;
         RunPass(p => TargetIndependentPass(p), "TargetIndependentPass");
         RunPass(p => t.RegisterTargetDependentPass(p, _compileOptions), "TargetDependentPass");
+        if (options.DumpLevel > 4)
+            DumpManager.RunWithDump("TargetIndependentEval", () => RunPass(p => TargetIndependentPass(p, options), "TargetIndependentPass"));
+        else
+            RunPass(p => TargetIndependentPass(p, options), "TargetIndependentPass");
+        RunPass(p => t.RegisterTargetDependentPass(p, options), "TargetDependentPass");
         // RunPass(p => p.Add(new Quantization.EGraphPassWithBindQuantizeConfig("2.5_BindQuantizeConfig", options.QuantizeOptions!)));
         if (_compileOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
         {

@@ -137,7 +137,7 @@ public static class Testing
     /// <returns></returns>
     public static Tensor Rand(DataType dataType, params int[] shape)
     {
-        return (Tensor)typeof(Testing).GetMethod("Rand", new[] { typeof(int[]) })!.MakeGenericMethod(dataType.CLRType).Invoke(null, new object[] { shape })!;
+        return IR.F.Random.Normal(dataType, 0, 1, 1, shape).Evaluate().AsTensor();
     }
 
     /// <summary>
@@ -149,12 +149,7 @@ public static class Testing
     public static Tensor<T> Rand<T>(params int[] shape)
         where T : unmanaged, IEquatable<T>
     {
-        return Tensor.FromBytes<T>(Enumerable.Range(0, (int)TensorUtilities.GetProduct(shape)).Select(i =>
-        {
-            var bytes = new byte[Marshal.SizeOf(typeof(T))];
-            RandGenerator.NextBytes(bytes);
-            return bytes;
-        }).SelectMany(i => i).ToArray(), shape);
+        return IR.F.Random.Normal(DataType.FromType<T>(), 0, 1, 1, shape).Evaluate().AsTensor().Cast<T>();
     }
 
     /// <summary>
@@ -275,6 +270,8 @@ public static class Testing
     {
         CodeGen.ModelBuilder modelBuilder = new CodeGen.ModelBuilder(CompilerServices.GetTarget(compileOptions.Target), compileOptions);
         CodeGen.LinkedModel linkedModel = modelBuilder.Build(module);
+        if (!Directory.Exists(compileOptions.DumpDir))
+            Directory.CreateDirectory(compileOptions.DumpDir);
         var kmodel_path = Path.Combine(compileOptions.DumpDir, $"{name}.kmodel");
         using (var output = System.IO.File.Open(kmodel_path, System.IO.FileMode.Create))
         {
@@ -368,7 +365,7 @@ public static class Testing
 
 public class UnitTestFixtrue
 {
-    public CompileOptions GetCompileOptions([CallerMemberName] string member_name = "")
+    public virtual CompileOptions GetCompileOptions([CallerMemberName] string member_name = "")
     {
         string DumpDirPath = Path.Combine(Testing.GetDumpDirPath(this.GetType()), member_name);
         CompileOptions compileOptions = new(CompilerServices.CompileOptions);
@@ -376,7 +373,7 @@ public class UnitTestFixtrue
         return compileOptions;
     }
 
-    public RunPassOptions GetPassOptions([CallerMemberName] string member_name = "")
+    public virtual RunPassOptions GetPassOptions([CallerMemberName] string member_name = "")
     {
         var options = GetCompileOptions(member_name);
         return new RunPassOptions(options);

@@ -13,8 +13,34 @@ namespace Nncase.Transform;
 /// <summary>
 /// ENode.
 /// </summary>
-public sealed record ENode(Expr Expr, IRArray<EClass> Children)
+public sealed record ENode
 {
+
+    /// <summary>
+    /// Gets the Enode's Expression
+    /// </summary>
+    public Expr Expr { get; init; }
+
+    /// <summary>
+    /// Gets the Enode Children Eclasses
+    /// </summary>
+    public IRArray<EClass> Children { get; init; }
+
+    private ENode(Expr expr, IRArray<EClass> children)
+    {
+        Expr = expr;
+        Children = children;
+    }
+
+    /// <summary>
+    /// The create for the enode.
+    /// Can add hook in here for debug.
+    /// </summary>
+    /// <param name="expr">expression.</param>
+    /// <param name="children">parameters.</param>
+    /// <returns></returns>
+    public static ENode Create(Expr expr, IRArray<EClass> children) => new ENode(expr, children);
+
     /// <summary>
     /// speedup hashcode calc.
     /// </summary>
@@ -24,13 +50,13 @@ public sealed record ENode(Expr Expr, IRArray<EClass> Children)
     /// Add current enode information to childrens.
     /// </summary>
     /// <param name="eClass">EClass.</param>
-    public void AddUsed(EClass eClass)
+    public void SetClass(EClass eClass)
     {
         eClass.AddNode(this);
 
         foreach (var child in Children)
         {
-            child.AddUsed(this);
+            child.AddUsedBy(this);
         }
     }
 
@@ -41,7 +67,7 @@ public sealed record ENode(Expr Expr, IRArray<EClass> Children)
     public ENode Canonicalize()
     {
         var children = (from c in Children select c.Find()).ToArray();
-        return new ENode(Expr, children);
+        return ENode.Create(Expr, children);
     }
 
     /// <inheritdoc/>
@@ -61,7 +87,7 @@ public sealed record ENode(Expr Expr, IRArray<EClass> Children)
     /// <inheritdoc/>
     public override string ToString()
     {
-        var str = string.Join(", ", Children.Select(x => x.Id));
+        var str = string.Join(", ", Children.Select(x => x.Parent is null ? x.Id.ToString() : x.ToString()));
         return $"{Expr.GetType().Name} ({str})";
     }
 }

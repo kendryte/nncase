@@ -11,6 +11,8 @@ using OrtKISharp;
 using Tensorflow;
 using Tensorflow.NumPy;
 using static Nncase.Evaluator.EvaluatorUtil;
+using static Nncase.PatternMatch.F.Math;
+using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Evaluator.NN;
 using static Tensorflow.Binding;
@@ -39,6 +41,29 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
             PadMode.Edge => "edge",
             _ => throw new ArgumentOutOfRangeException(nameof(pad.PadMode)),
         };
+
+        // when HasBindedMixQuantInfo is true, eval will do simulation of quant/dequant for some inputs, this is used for evaluate accumulated quant error for layers.
+        if (context.CurrentCall.EnodeBestQuantConfigWithCosine != null)
+        {
+            var pattern = IsRangeOfMarker(IsWildcard(), IsWildcard());
+            if (pattern.MatchLeaf(context.CurrentCall.Parameters.ToArray()[0]) && ((Nncase.IR.Marker)(context.CurrentCall.Parameters.ToArray()[0])).mixQuantInfo?.HasBindedMixQuantInfo == true)
+            {
+                var quantParam = ((Nncase.IR.Marker)(context.CurrentCall.Parameters.ToArray()[0])).mixQuantInfo.QuantParameter;
+                // input feature map quantParam count should be 1 since input feature map quant is by tensor.
+                System.Diagnostics.Debug.Assert(quantParam.Count == 1);
+                var inputFloat = input.ToArray<float>();
+                for (var i = 0; i < inputFloat.Length; i++)
+                {
+                    var inputBufQuant = (double)(inputFloat[i] / (double)(quantParam[0].Scale) + quantParam[0].ZeroPoint);
+                    if (!(quantParam[0].Scale == 1.0f && quantParam[0].ZeroPoint == 0))
+                        inputBufQuant = System.Math.Round((double)((float)inputBufQuant));
+                    var inputBufDeQuant = (float)((inputBufQuant - quantParam[0].ZeroPoint) * (double)(quantParam[0].Scale));
+                    inputFloat[i] = (float)(inputBufDeQuant);
+                }
+                input = OrtKISharp.Tensor.MakeTensor(inputFloat, input.Shape);
+            }
+        }
+
         return OrtKI.Pad(input, ToOnnxPadFormat(pads), constValue, mode).ToValue();
     }
 
@@ -47,6 +72,29 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         var input = context.GetTFArgumentValue(pad, Pad.Input);
         var pads = context.GetTFArgumentValue(pad, Pad.Pads);
         var mode = "SYMMETRIC";
+
+        // when HasBindedMixQuantInfo is true, eval will do simulation of quant/dequant for some inputs, this is used for evaluate accumulated quant error for layers.
+        if (context.CurrentCall.EnodeBestQuantConfigWithCosine != null)
+        {
+            var pattern = IsRangeOfMarker(IsWildcard(), IsWildcard());
+            if (pattern.MatchLeaf(context.CurrentCall.Parameters.ToArray()[0]) && ((Nncase.IR.Marker)(context.CurrentCall.Parameters.ToArray()[0])).mixQuantInfo?.HasBindedMixQuantInfo == true)
+            {
+                var quantParam = ((Nncase.IR.Marker)(context.CurrentCall.Parameters.ToArray()[0])).mixQuantInfo.QuantParameter;
+                // input feature map quantParam count should be 1 since input feature map quant is by tensor.
+                System.Diagnostics.Debug.Assert(quantParam.Count == 1);
+                var inputFloat = input.ToArray<float>();
+                for (var i = 0; i < inputFloat.Length; i++)
+                {
+                    var inputBufQuant = (double)(inputFloat[i] / (double)(quantParam[0].Scale) + quantParam[0].ZeroPoint);
+                    if (!(quantParam[0].Scale == 1.0f && quantParam[0].ZeroPoint == 0))
+                        inputBufQuant = System.Math.Round((double)((float)inputBufQuant));
+                    var inputBufDeQuant = (float)((inputBufQuant - quantParam[0].ZeroPoint) * (double)(quantParam[0].Scale));
+                    inputFloat[i] = (float)(inputBufDeQuant);
+                }
+                input = tf.constant(inputFloat, TF_DataType.TF_FLOAT, input.shape);
+            }
+        }
+
         var result = tf.Context.ExecuteOp(
             "MirrorPad",
             null!,
@@ -67,12 +115,12 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
     public Cost Visit(ICostEvaluateContext context, Pad target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, Pad.Input);
-        var outputType = context.GetReturnType<TensorType>();
+        var outputType = context.GetReturnType<IRType>();
 
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.MemoryStore] = outputType is TensorType outT ? CostUtility.GetMemoryAccess(outT) : CostUtility.GetMemoryAccess(inputType),
         };
     }
 }

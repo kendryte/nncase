@@ -10,6 +10,7 @@
     <PackageReference Include="LanguageExt.Core" />
     <PackageReference Include="NetFabric.Hyperlinq" />
     <PackageReference Include="GiGraph.Dot" />
+    <PackageReference Include="Singulink.Collections.Weak" />
   </ItemGroup>
 
   <ItemGroup>

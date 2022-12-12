@@ -145,6 +145,15 @@ public interface ICompilerServicesProvider
     bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results);
 
     /// <summary>
+    /// Egraph Match Expr as root.
+    /// </summary>
+    /// <param name="expr">Expression.</param>
+    /// <param name="pattern">Pattern.</param>
+    /// <param name="results">Match results.</param>
+    /// <returns>Match success.</returns>
+    public bool TryEMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results);
+
+    /// <summary>
     /// Get target.
     /// </summary>
     /// <param name="name">Target name.</param>
@@ -156,6 +165,15 @@ public interface ICompilerServicesProvider
     /// </summary>
     /// <returns>CompileOptions</returns>
     CompileOptions CompileOptions { get; set; }
+
+    /// <summary>
+    /// Using EGraph rewrite expression.
+    /// </summary>
+    /// <param name="expr">Expression.</param>
+    /// <param name="rules">Rewrite rules.</param>
+    /// <param name="options">Options.</param>
+    /// <returns>Rewrited expression.</returns>
+    Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options);
 }
 
 internal interface ICompilerServicesProviderInternal
@@ -172,11 +190,12 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     private readonly IMatchProvider _matchProvider;
     private readonly IRewriteProvider _rewriteProvider;
     private readonly IEGraphMatchProvider _eGraphMatchProvider;
+    private readonly IEGraphRewriteProvider _eGraphrewriteProvider;
     private readonly ITargetProvider _targetProvider;
     private CompileOptions _compileOptions;
 
     public CompilerServicesProvider(
-        IOptions<CompileOptions> compileOptions,
+        // IOptions<CompileOptions> compileOptions,
         IEvaluateProvider evaluateProvider,
         ITypeInferenceProvider typeInferenceProvider,
         IIRPrinterProvider irprinterProvider,
@@ -185,9 +204,10 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         IMatchProvider matchProvider,
         IRewriteProvider rewriteProvider,
         IEGraphMatchProvider eGraphMatchProvider,
+        IEGraphRewriteProvider eGraphrewriteProvider,
         ITargetProvider targetProvider)
     {
-        _compileOptions = compileOptions.Value;
+        // _compileOptions = compileOptions.Value;
         _evaluateProvider = evaluateProvider;
         _typeInferenceProvider = typeInferenceProvider;
         _irprinterProvider = irprinterProvider;
@@ -196,6 +216,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         _matchProvider = matchProvider;
         _rewriteProvider = rewriteProvider;
         _eGraphMatchProvider = eGraphMatchProvider;
+        _eGraphrewriteProvider = eGraphrewriteProvider;
         _targetProvider = targetProvider;
     }
 
@@ -275,9 +296,19 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         return _eGraphMatchProvider.TryMatchRoot(enodes, pattern, out results);
     }
 
+    public bool TryEMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
+    {
+        return _eGraphMatchProvider.TryEMatchRoot(expr, pattern, out results);
+    }
+
     public ITarget GetTarget(string name)
     {
         return _targetProvider.GetTarget(name);
+    }
+
+    public Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
+    {
+        return _eGraphrewriteProvider.ERewrite(expr, rules, options);
     }
 
     public CompileOptions CompileOptions
@@ -439,6 +470,18 @@ public static class CompilerServices
     }
 
     /// <summary>
+    /// Using EGraph rewrite expression.
+    /// </summary>
+    /// <param name="expr">Expression.</param>
+    /// <param name="rules">Rewrite rules.</param>
+    /// <param name="options">Options.</param>
+    /// <returns>Rewrited expression.</returns>
+    public static Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
+    {
+        return Provider.ERewrite(expr, rules, options);
+    }
+
+    /// <summary>
     /// Match enodes as root.
     /// </summary>
     /// <param name="enodes">ENodes.</param>
@@ -460,6 +503,18 @@ public static class CompilerServices
     public static bool TryMatchRoot(ENode enode, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
     {
         return Provider.TryMatchRoot(new[] { enode }, pattern, out results);
+    }
+
+    /// <summary>
+    /// Egraph Match Expr as root.
+    /// </summary>
+    /// <param name="expr">Expression.</param>
+    /// <param name="pattern">Pattern.</param>
+    /// <param name="results">Match results.</param>
+    /// <returns>Match success.</returns>
+    public static bool TryEMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
+    {
+        return Provider.TryEMatchRoot(expr, pattern, out results);
     }
 
     /// <summary>

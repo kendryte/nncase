@@ -15,7 +15,7 @@ namespace Nncase.Transform;
 public sealed class EClass
 {
     private readonly List<ENode> _nodes = new();
-    private List<ENode>? _used = new();
+    private List<ENode>? _usedBy = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EClass"/> class.
@@ -24,6 +24,20 @@ public sealed class EClass
     public EClass(int id)
     {
         Id = id;
+    }
+
+    /// <summary>
+    /// Gets the eclass's ir type.
+    /// </summary>
+    public IR.IRType CheckedType { get; private set; } = IR.AnyType.Default;
+
+    /// <summary>
+    /// Set the new checked type and we need update the all inner enode expr with new type.
+    /// </summary>
+    /// <param name="type"></param>
+    public void SetCheckedType(IR.IRType type)
+    {
+        CheckedType = type;
     }
 
     /// <summary>
@@ -37,10 +51,10 @@ public sealed class EClass
     public EClass? Parent { get; set; }
 
     /// <summary>
-    /// Gets the Used mean which Enode use this EClass. eg. z = x + y. the EClass's Used will add {(z, z's eclass id)}.
+    /// Gets the used by mean which Enode use this EClass. eg. z = x + y. the EClass's Used will add {(z, z's eclass id)}.
     /// <remark> It's Not mean this EClass's Nodes </remark>
     /// </summary>
-    public IReadOnlyList<ENode> Used => _used ?? throw new InvalidOperationException("This class has been merged.");
+    public IReadOnlyList<ENode> UsedBy => _usedBy ?? throw new InvalidOperationException("This class has been merged.");
 
     /// <summary>
     /// Gets nodes.
@@ -94,32 +108,32 @@ public sealed class EClass
     /// </summary>
     /// <param name="oldNode">Old enode.</param>
     /// <param name="newNode">New enode.</param>
-    public void ReplaceNode(ENode oldNode, ENode newNode)
-    {
-        var index = _nodes.IndexOf(oldNode);
-        if (index != -1)
-        {
-            _nodes[index] = newNode;
-        }
-        else
-        {
-            // Original class may have been killed.
-            _nodes.Add(newNode);
-        }
-    }
+    // public void ReplaceNode(ENode oldNode, ENode newNode)
+    // {
+    //     var index = _nodes.IndexOf(oldNode);
+    //     if (index != -1)
+    //     {
+    //         _nodes[index] = newNode;
+    //     }
+    //     else
+    //     {
+    //         // Original class may have been killed.
+    //         _nodes.Add(newNode);
+    //     }
+    // }
 
     /// <summary>
-    /// Add used enode.
+    /// Add used by enode.
     /// </summary>
     /// <param name="enode">ENode.</param>
-    public void AddUsed(ENode enode)
+    public void AddUsedBy(ENode enode)
     {
-        if (_used == null)
+        if (_usedBy == null)
         {
             throw new InvalidOperationException("This class has been merged.");
         }
 
-        _used.Add(enode);
+        _usedBy.Add(enode);
     }
 
     /// <summary>
@@ -128,7 +142,7 @@ public sealed class EClass
     public void Kill()
     {
         _nodes.Clear();
-        _used = null;
+        _usedBy = null;
     }
 
     /// <inheritdoc/>

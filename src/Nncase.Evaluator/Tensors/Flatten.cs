@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using OrtKISharp;
@@ -12,7 +13,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Flatten"/>.
 /// </summary>
-public class FlattenEvaluator : IEvaluator<Flatten>, ITypeInferencer<Flatten>
+public class FlattenEvaluator : IEvaluator<Flatten>, ITypeInferencer<Flatten>, ICostEvaluator<Flatten>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Flatten flatten)
@@ -27,6 +28,15 @@ public class FlattenEvaluator : IEvaluator<Flatten>, ITypeInferencer<Flatten>
     {
         var input = context.CheckArgumentType<TensorType>(target, Flatten.Input);
         return Visit(context, target, input);
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, Flatten target)
+    {
+        return new()
+        {
+            [CostFactorNames.CPUCycles] = 1
+        };
     }
 
     private IRType Visit(ITypeInferenceContext context, Flatten target, TensorType input)

@@ -64,6 +64,7 @@ public sealed class EGraphMatcher
             (TensorConstPattern constPat, TensorConst con) => VisitLeaf(matchScopes, constPat, enode, con),
             (TupleConstPattern constPat, TupleConst con) => VisitLeaf(matchScopes, constPat, enode, con),
             (ConstPattern constPat, Const con) => VisitLeaf(matchScopes, constPat, enode, con),
+            (FusionPattern fusionPattern, Fusion fusion) => VisitLeaf(matchScopes, fusionPattern, enode, fusion),
             (FunctionPattern functionPat, Function func) => Visit(matchScopes, functionPat, enode, func),
             (CallPattern callPat, Call call) => Visit(matchScopes, callPat, enode, call),
             (MarkerPattern mkPat, Marker mk) => Visit(matchScopes, mkPat, enode, mk),
@@ -113,13 +114,29 @@ public sealed class EGraphMatcher
             && pattern.MatchLeaf(expr))
         {
             var newScopes = Visit(context.Candidates, pattern.Body, enode.Children[0]);
-            newScopes = Visit(newScopes, pattern.Parameters, enode.Children.Skip(1));
-
             if (newScopes.Count > 0)
             {
-                context.NewScopes.AddRange(newScopes);
-                context.MatchCandidates(pattern, expr);
+                newScopes = Visit(newScopes, pattern.Parameters, enode.Children.Skip(1));
+                if (newScopes.Count > 0)
+                {
+                    context.NewScopes.AddRange(newScopes);
+                    context.MatchCandidates(pattern, expr);
+                }
             }
+        }
+
+        return context.NewScopes;
+    }
+
+    private IReadOnlyList<MatchScope> VisitLeaf(IReadOnlyList<MatchScope> matchScopes, FusionPattern pattern, ENode enode, Fusion expr)
+    {
+        var context = new MatchContext(matchScopes, pattern, expr);
+
+        if (context.HasCandidates
+            && CompilerServices.TryMatchRoot(expr, pattern, out var result))
+        {
+            context.NewScopes.AddRange(context.Candidates);
+            context.MatchCandidates(pattern, (Expr)result[pattern]);
         }
 
         return context.NewScopes;
@@ -134,12 +151,14 @@ public sealed class EGraphMatcher
             && pattern.Parameters.MatchLeaf(expr.Parameters))
         {
             var newScopes = Visit(context.Candidates, pattern.Target, enode.Children[0]);
-            newScopes = Visit(newScopes, pattern.Parameters, enode.Children.Skip(1));
-
             if (newScopes.Count > 0)
             {
-                context.NewScopes.AddRange(newScopes);
-                context.MatchCandidates(pattern, expr);
+                newScopes = Visit(newScopes, pattern.Parameters, enode.Children.Skip(1));
+                if (newScopes.Count > 0)
+                {
+                    context.NewScopes.AddRange(newScopes);
+                    context.MatchCandidates(pattern, expr);
+                }
             }
         }
 
@@ -154,12 +173,14 @@ public sealed class EGraphMatcher
             && pattern.MatchLeaf(expr))
         {
             var newScopes = Visit(context.Candidates, pattern.Target, enode.Children[0]);
-            newScopes = Visit(newScopes, pattern.Attribute, enode.Children[1]);
-
             if (newScopes.Count > 0)
             {
-                context.NewScopes.AddRange(newScopes);
-                context.MatchCandidates(pattern, expr);
+                newScopes = Visit(newScopes, pattern.Attribute, enode.Children[1]);
+                if (newScopes.Count > 0)
+                {
+                    context.NewScopes.AddRange(newScopes);
+                    context.MatchCandidates(pattern, expr);
+                }
             }
         }
 
@@ -171,10 +192,10 @@ public sealed class EGraphMatcher
         var context = new MatchContext(matchScopes, pattern, expr);
 
         if (context.HasCandidates
-            && pattern.MatchLeaf(expr))
+            && pattern.MatchLeaf(expr)
+            && pattern.Fields.MatchLeaf(expr.Fields))
         {
             var newScopes = Visit(context.Candidates, pattern.Fields, enode.Children);
-
             if (newScopes.Count > 0)
             {
                 context.NewScopes.AddRange(newScopes);
@@ -244,7 +265,7 @@ public sealed class EGraphMatcher
 
     private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, VArgsPattern pattern, IEnumerable<EClass> eClasses)
     {
-        if (eClasses.Count() != pattern.Count)
+        if (pattern.IsDefaultOrEmpty || eClasses.Count() != pattern.Count)
         {
             return Array.Empty<MatchScope>();
         }

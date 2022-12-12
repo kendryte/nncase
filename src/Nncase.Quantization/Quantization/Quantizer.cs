@@ -42,7 +42,7 @@ internal partial class Quantizer
         // 1.0 Get ranges
         var ranges = await GetRangesAsync(quantOptions.CalibrationDataset);
 
-        if (quantOptions.CalibrationMethod != CalibMethod.NoClip)
+        if (quantOptions.CalibrationMethod is CalibMethod.Kld)
         {
             // 1.1. Get histograms
             var histograms = await GetHistogramsAsync(quantOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);

@@ -74,7 +74,7 @@ public static class RecriverUtil
     };
 
     /// <summary>
-    /// check this type is inherit from other type.
+    /// check this type is inherit from other type or equal base type
     /// </summary>
     /// <param name="typeSymbol"></param>
     /// <param name="baseSymbol"></param>

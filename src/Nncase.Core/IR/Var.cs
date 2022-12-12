@@ -49,7 +49,7 @@ namespace Nncase.IR
     /// <summary>
     /// Variable expression.
     /// </summary>
-    public record Var(string Name, IRType TypeAnnotation) : Expr
+    public record Var : Expr
     {
         private static int _globalVarIndex = 0;
 
@@ -57,6 +57,28 @@ namespace Nncase.IR
         /// get the global var index.
         /// </summary>
         private int GlobalVarIndex => _globalVarIndex;
+
+        /// <summary>
+        /// Name
+        /// </summary>
+        public string Name { get; init; }
+
+        /// <summary>
+        /// TypeAnnotation
+        /// </summary>
+        public IRType TypeAnnotation { get; init; }
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="typeAnnotation"></param>
+        public Var(string name, IRType typeAnnotation)
+        {
+            Name = name;
+            TypeAnnotation = typeAnnotation;
+            CheckedType = TypeAnnotation;
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Var"/> class.

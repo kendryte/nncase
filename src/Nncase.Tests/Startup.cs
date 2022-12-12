@@ -59,16 +59,25 @@ public class Startup
             {
                 "Int8" => DataTypes.Int8,
                 "UInt8" => DataTypes.UInt8,
+                "Int16" => DataTypes.Int16,
+                _ => throw new System.ArgumentOutOfRangeException(),
+            };
+            options.WQuantType = Configuration["CompileOptions:WQuantType"] switch
+            {
+                "Int8" => DataTypes.Int8,
+                "UInt8" => DataTypes.UInt8,
+                "Int16" => DataTypes.Int16,
                 _ => throw new System.ArgumentOutOfRangeException(),
             };
         });
     }
 
-    public void Configure(ICompilerServicesProvider provider, ITestingProvider testing_provider)
+    public void Configure(ICompilerServicesProvider provider, ITestingProvider testing_provider, Microsoft.Extensions.Options.IOptions<CompileOptions> compileOptions)
     {
         Environment.SetEnvironmentVariable("NNCASE_TARGET_PATH", "");
 
         CompilerServices.Configure(provider);
+        CompilerServices.CompileOptions = compileOptions.Value;
         TestFixture.Testing.Configure(testing_provider);
         if (CompilerServices.CompileOptions.DumpDir == "")
             CompilerServices.CompileOptions.DumpDir = TestFixture.Testing.GetDumpDirPath();

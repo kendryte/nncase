@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
@@ -14,7 +15,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="LSTM"/>.
 /// </summary>
-public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>
+public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>, ICostEvaluator<LSTM>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, LSTM target)
@@ -84,5 +85,24 @@ public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>
 
         yShape[^1] = hiddenSize;
         return x with { Shape = yShape.ToArray() };
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, LSTM target)
+    {
+        var xType = context.GetArgumentType<TensorType>(target, LSTM.X);
+        var wType = context.GetArgumentType<TensorType>(target, LSTM.W);
+        var rType = context.GetArgumentType<TensorType>(target, LSTM.R);
+        var bType = context.GetArgumentType<TensorType>(target, LSTM.B);
+        var returnType = context.GetReturnType<TupleType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(xType) + CostUtility.GetMemoryAccess(wType) + CostUtility.GetMemoryAccess(rType) + CostUtility.GetMemoryAccess(bType),
+            [CostFactorNames.MemoryStore] = returnType.Select(t => t switch
+            {
+                TensorType tensorType => CostUtility.GetMemoryAccess(tensorType),
+                _ => 1
+            }).Sum()
+        };
     }
 }

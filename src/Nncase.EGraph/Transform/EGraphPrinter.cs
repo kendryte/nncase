@@ -3,16 +3,19 @@
 
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using GiGraph.Dot.Entities.Clusters;
 using GiGraph.Dot.Entities.Graphs;
+using GiGraph.Dot.Entities.Html.Table;
 using GiGraph.Dot.Entities.Nodes;
 using GiGraph.Dot.Extensions;
 using GiGraph.Dot.Types.Colors;
 using GiGraph.Dot.Types.Edges;
+using GiGraph.Dot.Types.Fonts;
 using GiGraph.Dot.Types.Graphs;
 using GiGraph.Dot.Types.Nodes;
 using GiGraph.Dot.Types.Records;
@@ -33,15 +36,30 @@ public partial class EGraphPrinter
 
     private readonly EGraph eGraph;
 
+    private ulong _IdCounter;
+
+    /// <summary>
+    /// the expr map to the dot node and html table.
+    /// </summary>
+    protected readonly Dictionary<ENode, (DotNode, DotHtmlTable)> NodesMap = new(ReferenceEqualityComparer.Instance);
+
     private readonly DotDumpVisitor visitor = new DotDumpVisitor();
 
+    /// <summary>
+    /// Get the dot graph
+    /// </summary>
     public readonly DotGraph dotGraph;
 
-    public EGraphPrinter(EGraph _eGraph)
+    /// <summary>
+    /// ctor for egraph
+    /// </summary>
+    /// <param name="egraph"></param>
+    public EGraphPrinter(EGraph egraph)
     {
+        _IdCounter = 0;
         dotGraph = new(directed: true);
         dotGraph.Clusters.AllowEdgeClipping = true;
-        eGraph = _eGraph;
+        eGraph = egraph;
         foreach (var eclass in eGraph.Classes)
         {
             if (eclass.Nodes.Count == 1 && eclass.Nodes[0].Expr is Op op)
@@ -55,6 +73,10 @@ public partial class EGraphPrinter
         }
     }
 
+    /// <summary>
+    /// convert the egraph to dot graph
+    /// </summary>
+    /// <returns></returns>
     public DotGraph ConvertEGraphAsDot()
     {
         foreach (var eClass in eGraph.Classes.Where(x => !OpMaps.ContainsKey(x)))
@@ -78,39 +100,55 @@ public partial class EGraphPrinter
 
             foreach (var enode in eClass.Nodes)
             {
-                string exprId = enode.Expr.GetHashCode().ToString();
+                if (NodesMap.TryGetValue(enode, out var dotnode))
+                    continue;
+                var id = _IdCounter++;
+                string exprId = "\"" + id.ToString() + "\"";
 
-                // todo need use html label https://gitlab.com/graphviz/graphviz/-/issues/1624
-                var args = new List<DotRecordTextField>
+                var table = new DotHtmlTable
                 {
-                      new DotRecordTextField(visitor.Visit(enode.Expr), "Type"),
+                    BorderWidth = 0,
+                    CellBorderWidth = 1,
+                    CellSpacing = 0,
+                    CellPadding = 4
                 };
 
-                foreach (var (child, i) in enode.Children.Select((c, i) => (c, i)))
+                // 1. the enode type and children.
+                table.AddRow(row =>
                 {
-                    var label = $"{child.Find().Id}";
-                    if (OpMaps.ContainsKey(child))
+                    row.AddCell(visitor.Visit(enode.Expr), font: enode.Expr switch
                     {
-                        label = $"({label.ToString()}) " + OpMaps[child];
+                        IR.Const => new DotStyledFont(DotFontStyles.Normal, Color.DarkOrange),
+                        IR.Call => new DotStyledFont(DotFontStyles.Normal, Color.DarkBlue),
+                        IR.Var => new DotStyledFont(DotFontStyles.Normal, Color.BlueViolet),
+                        IR.Fusion => new DotStyledFont(DotFontStyles.Normal, Color.MediumSeaGreen),
+                        _ => new DotStyledFont(DotFontStyles.Normal)
+                    }); // key wrods type.
+                    foreach (var (child, i) in enode.Children.Select((c, i) => (c, i)))
+                    {
+                        var label = $"{child.Find().Id}";
+                        if (OpMaps.ContainsKey(child))
+                        {
+                            label = $"({label.ToString()}) " + OpMaps[child];
+                        }
+
+                        row.AddCell(label, cell => cell.PortName = $"P{i}");
                     }
-
-                    args.Add(new DotRecordTextField(label, $"P{i}"));
-                }
-
-                var exprNode = eclassCluster.Nodes.Add(exprId);
-
-                // display the output type
+                });
+                // 2. when enode.Expr need show checked type.
                 if (enode.Expr is Call or Function or Var)
                 {
-                    exprNode.ToRecordNode(rb =>
+                    table.AddRow(row =>
                     {
-                        rb.AppendFlippedRecord(new DotRecord(args)).AppendFlippedRecord(enode.Expr.CheckedType is not null ? CompilerServices.Print(enode.Expr.CheckedType!) : "None");
-                    }, true);
+                        row.AddCell(CompilerServices.Print(eClass.CheckedType));
+                    });
                 }
-                else
-                {
-                    exprNode.ToRecordNode(new DotRecord(args));
-                }
+
+                // var exprNode = eclassCluster.Nodes.Add(exprId);
+                var exprNode = eclassCluster.Nodes.Add(exprId);
+                exprNode.ToPlainHtmlNode(table);
+
+                NodesMap.Add(enode, (exprNode, table));
 
                 for (int i = 0; i < enode.Children.Count; i++)
                 {
@@ -132,6 +170,11 @@ public partial class EGraphPrinter
         return dotGraph;
     }
 
+    /// <summary>
+    /// Save the DotGraph into file
+    /// </summary>
+    /// <param name="file">file path.</param>
+    /// <returns>this dot graph.</returns>
     public DotGraph SaveToFile(string file)
     {
         if (!file.EndsWith(".dot"))
@@ -150,6 +193,12 @@ public partial class EGraphPrinter
         return dotGraph;
     }
 
+    /// <summary>
+    /// dump egraph as dot graph.
+    /// </summary>
+    /// <param name="eGraph">egraph.</param>
+    /// <param name="file">path.</param>
+    /// <returns>Converted Graph.</returns>
     public static DotGraph DumpEgraphAsDot(EGraph eGraph, string file)
     {
         var printer = new EGraphPrinter(eGraph);
@@ -159,14 +208,30 @@ public partial class EGraphPrinter
 
     private class DotDumpVisitor : ExprFunctor<string, string>
     {
+
+        private Dictionary<Const, string> _constNames = new();
+
         public override string Visit(Call expr)
         {
             return expr.GetType().Name;
         }
 
-        public override string Visit(Const expr) => expr.ToString();
+        public override string Visit(Const expr)
+        {
+            if (_constNames.TryGetValue(expr, out var name)) { return name; }
+            string valueStr = expr switch
+            {
+                TensorConst tc => tc.Value.Shape.Size <= 8 ? tc.Value.GetArrayString(false) : string.Empty,
+                TupleConst tpc => string.Empty,
+                _ => throw new ArgumentOutOfRangeException(),
+            };
+            valueStr = valueStr != string.Empty ? " : " + valueStr : string.Empty;
+            name = $"{CompilerServices.Print(expr.CheckedType!)}{valueStr}";
+            _constNames.Add(expr, name);
+            return name;
+        }
 
-        public override string Visit(Function expr) => expr.GetType().Name;
+        public override string Visit(BaseFunction expr) => $"{expr.GetType().Name} {expr.Name}";
 
         public override string Visit(Op expr)
         {

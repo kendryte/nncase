@@ -481,6 +481,9 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     /// <param name="type"></param>
     private void SetCheckedType(Expr expr, IRType type)
     {
+        // note can't determine whether to update checkedtype
+        // eg. old call[x,y] shape is [5,6]
+        //     new call[x,y] shape is [5,6,1,1] we can't compare the two ir type.
         expr.CheckedType = type;
         IsFullyInferenced &= type is not InvalidType;
     }

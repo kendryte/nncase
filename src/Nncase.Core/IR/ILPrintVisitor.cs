@@ -22,9 +22,9 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
 
     private int _localId = 0;
 
-    public ILPrintVisitor(TextWriter textWriter, bool display_callable)
+    public ILPrintVisitor(TextWriter textWriter, bool display_callable, int indent_level)
     {
-        Scope = new(textWriter);
+        Scope = new(textWriter, indent_level);
         DisplayCallable = display_callable;
     }
 
@@ -48,7 +48,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
 
         string valueStr = expr switch
         {
-            TensorConst tc => tc.Value.Shape.Size < 8 ? tc.Value.GetArrayString(false) : string.Empty,
+            TensorConst tc => tc.Value.Shape.Size <= 8 ? tc.Value.GetArrayString(false) : string.Empty,
             TupleConst tpc => string.Empty,
             _ => throw new ArgumentOutOfRangeException(),
         };
@@ -97,7 +97,15 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
 
         // 2. Function body
         if (DisplayCallable)
-            using (Scope.IndentUp()) { var body = Visit(expr.Body); }
+            using (Scope.IndentUp())
+            {
+                var body_builder = new StringBuilder();
+                using (var body_writer = new StringWriter(body_builder))
+                {
+                    var visitor = new ILPrintVisitor(body_writer, true, Scope.IndentLevel).Visit(expr.Body);
+                    Scope.Append(body_writer.ToString());
+                }
+            }
         else
             Scope.IndWriteLine("...");
 
@@ -324,7 +332,7 @@ public sealed class ScopeWriter
     /// <summary>
     /// indent level.
     /// </summary>
-    public int indentLevel = 0;
+    public int IndentLevel = 0;
 
     /// <summary>
     /// record the all var name's in this scope and parent's scope.
@@ -339,9 +347,11 @@ public sealed class ScopeWriter
     /// <summary>
     /// ctor.
     /// </summary>
-    /// <param name="textWriter"></param>
-    public ScopeWriter(TextWriter textWriter)
+    /// <param name="textWriter">writer.</param>
+    /// <param name="indent_level">init indent level.</param>
+    public ScopeWriter(TextWriter textWriter, int indent_level = 0)
     {
+        IndentLevel = indent_level;
         rootWriter = textWriter;
         Writer = textWriter;
         VarSymbolStack.Push(new());
@@ -452,7 +462,7 @@ public sealed class ScopeWriter
     /// <returns></returns>
     private TextWriter Indent()
     {
-        for (int i = 0; i < indentLevel; i++) { Writer.Write(" "); }
+        for (int i = 0; i < IndentLevel; i++) { Writer.Write(" "); }
         return Writer;
     }
 
@@ -510,7 +520,7 @@ public sealed class IndentMananger : IDisposable
     {
         Parent = parent;
         indentDiff = level_diff;
-        Parent.indentLevel += indentDiff;
+        Parent.IndentLevel += indentDiff;
     }
 
     /// <summary>
@@ -518,6 +528,6 @@ public sealed class IndentMananger : IDisposable
     /// </summary>
     public void Dispose()
     {
-        Parent.indentLevel -= indentDiff;
+        Parent.IndentLevel -= indentDiff;
     }
 }

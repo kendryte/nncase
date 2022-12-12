@@ -18,11 +18,13 @@ internal sealed class EGraphCostEvaluator
     private readonly Dictionary<ENode, Cost> _costs = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<EClass, Cost> _eclassCosts = new();
     private readonly HashSet<EClass> _allEclasses = new();
+    private readonly IBaseFuncCostEvaluator? _baseFuncCostEvaluator;
     private bool _changed;
 
-    public EGraphCostEvaluator(EClass root)
+    public EGraphCostEvaluator(EClass root, IBaseFuncCostEvaluator? basefunc_cost_evaluator)
     {
         _root = root;
+        _baseFuncCostEvaluator = basefunc_cost_evaluator;
         PopulateAllEclasses(_root);
     }
 
@@ -74,7 +76,7 @@ internal sealed class EGraphCostEvaluator
         Cost? cost = null;
         foreach (var enode in eclass.Nodes)
         {
-            var newCost = Visit(enode);
+            var newCost = Visit(enode, eclass.CheckedType);
             if (newCost != null
                 && (cost == null || newCost < cost))
             {
@@ -85,7 +87,7 @@ internal sealed class EGraphCostEvaluator
         return UpdateCost(eclass, cost);
     }
 
-    private Cost? Visit(ENode enode)
+    private Cost? Visit(ENode enode, IRType returnType)
     {
         return enode.Expr switch
         {
@@ -93,11 +95,12 @@ internal sealed class EGraphCostEvaluator
             TensorConst con => Visit(enode, con),
             TupleConst con => Visit(enode, con),
             Function func => Visit(enode, func),
-            Call call => Visit(enode, call),
+            Call call => Visit(enode, call, returnType),
             IR.Tuple tuple => Visit(enode, tuple),
             Op op => Visit(enode, op),
             Marker marker => Visit(enode, marker),
             None none => Visit(enode, none),
+            BaseFunction baseFunction => Visit(enode, baseFunction),
             _ => throw new ArgumentException("Unsupported expression type."),
         };
     }
@@ -142,7 +145,7 @@ internal sealed class EGraphCostEvaluator
         return Visit(enode, costs => Cost.Zero);
     }
 
-    private Cost? Visit(ENode enode, Call call)
+    private Cost? Visit(ENode enode, Call call, IRType returnType)
     {
         return Visit(enode, costs =>
         {
@@ -152,13 +155,13 @@ internal sealed class EGraphCostEvaluator
                 Cost? newCost;
                 if (targetEnode.Expr is Op op)
                 {
-                    var context = new EGraphOpCostEvaluateContext(call.CheckedType, call.Parameters.Select(x => x.CheckedType).ToArray());
+                    var context = new EGraphOpCostEvaluateContext(returnType, enode.Children.Skip(1).Select(x => x.CheckedType).ToArray());
                     newCost = CompilerServices.EvaluateOpCost(op, context);
                 }
                 else
                 {
-                    Debug.Assert(targetEnode.Expr is Function);
-                    newCost = Visit(targetEnode.Children[0]);
+                    // Debug.Assert(targetEnode.Expr is Function);
+                    newCost = Visit(targetEnode, returnType);
                 }
 
                 if (cost == null || (newCost != null && newCost < cost))
@@ -169,6 +172,11 @@ internal sealed class EGraphCostEvaluator
 
             return UpdateCost(enode, cost == null ? null : cost + costs.Sum());
         });
+    }
+
+    private Cost? Visit(ENode enode, BaseFunction baseFunction)
+    {
+        return VisitLeaf(enode, () => _baseFuncCostEvaluator!.VisitLeaf(baseFunction));
     }
 
     private Cost? UpdateCost(ENode enode, Cost? cost)

@@ -51,7 +51,10 @@ public static class PythonHelper
 
     public static IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null)
     {
-        return DumpManager.RunWithDump("Evaluator", () => expr.Evaluate(varsValues));
+        if (CompilerServices.CompileOptions.DumpLevel > 4)
+            return DumpManager.RunWithDump("Evaluator", () => CompilerServices.Evaluate(expr, varsValues));
+        else
+            return CompilerServices.Evaluate(expr, varsValues);
     }
 
     public static RTTensor[] RunSimulator(RTInterpreter interp, RTValue[] input)
@@ -89,7 +92,7 @@ public static class PythonHelper
     // Tensor[sample_count * input_count] dataSet 
     public static PytestCalibrationDatasetProvider MakeDatasetProvider(Tensor[] dataSet, int sampleCount, Var[] fnParams)
     {
-        var inputCount = dataSet.Length / sampleCount;
+        var inputCount = dataSet[0].Length / sampleCount;
 
         var samples = dataSet.Chunk(inputCount).Select(inputs => inputs.Zip(fnParams).ToDictionary(
             item => item.Item2,
@@ -105,7 +108,7 @@ public static class PythonHelper
 
     public class PytestCalibrationDatasetProvider : ICalibrationDatasetProvider
     {
-        public int? Count => 5;
+        public int? Count => SampleCount;
 
         public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
 

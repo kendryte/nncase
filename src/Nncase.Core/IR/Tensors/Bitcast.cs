@@ -17,15 +17,15 @@ namespace Nncase.IR.Tensors;
 /// Broadcast expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Broadcast() : Op
+public sealed record Bitcast(PrimType type,PrimType newType) : Op
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Broadcast), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Bitcast), 0, "input");
 
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Shape = new(typeof(Broadcast), 1, "shape", IsIntegral());
+    public static readonly ParameterInfo NewShape = new(typeof(Bitcast), 1, "new_shape", HasRank(1) & HasDataType(DataTypes.Int64));
 }

@@ -81,4 +81,44 @@ public class UnitTestFoldTranspose : TestFixture.UnitTestFixtrue
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
+
+    public static TheoryData<(int count, IR.Expr act, int[] perm)> TestCombineTransposeActivationsPositiveData => new(){
+      (1, IR.F.NN.Relu(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new [] {1, 2, 4})), new int []{ 1, 0, 2}),
+      (2, IR.F.NN.Celu(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new [] {4, 2, 1}), 0.6f), new int []{ 1, 0, 2}),
+      (3, IR.F.NN.HardSigmoid(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new [] {4, 2, 1}), 0.6f, 0.3f), new int []{ 1, 0, 2}),
+    };
+
+    [Theory]
+    [MemberData(nameof(TestCombineTransposeActivationsPositiveData))]
+    public void TestCombineTransposeActivationsPositive((int count, IR.Expr act, int[] perm) param)
+    {
+        var caseOptions = GetPassOptions().IndentDir(param.count.ToString());
+        var rootPre = Tensors.Transpose(param.act, param.perm);
+        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
+        {
+            new CombineTransposeActivations()
+        }, caseOptions);
+
+        Assert.NotEqual(rootPre, rootPost);
+        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+    }
+
+    public static TheoryData<(int count, IR.Expr act, int[] perm)> TestCombineTransposeActivationsNegativeData => new(){
+      (1, IR.F.NN.Softplus(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new [] {1, 2, 4})), new int []{ 1, 0, 2}),
+      (2, IR.F.NN.Softsign(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new [] {4, 2, 1})), new int []{ 1, 0, 2}),
+    };
+
+    [Theory]
+    [MemberData(nameof(TestCombineTransposeActivationsNegativeData))]
+    public void TestCombineTransposeActivationsNegative((int count, IR.Expr act, int[] perm) param)
+    {
+        var caseOptions = GetPassOptions().IndentDir(param.count.ToString());
+        var rootPre = Tensors.Transpose(param.act, param.perm);
+        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
+        {
+            new CombineTransposeActivations()
+        }, caseOptions);
+
+        Assert.Equal(rootPre, rootPost);
+    }
 }

@@ -70,7 +70,7 @@ internal sealed class ScriptPrintContext : IIRPrinterContext
     /// <inheritdoc/>
     public IPrintSymbol Visit(Expr expr) => _printVisitor.Visit(expr);
 
-    public string Indent() => new string(' ', _printVisitor.Scope.indentLevel);
+    public string Indent() => new string(' ', _printVisitor.Scope.IndentLevel);
 }
 
 /// <summary>
@@ -116,7 +116,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         var il_sb = new StringBuilder();
         if (DisplayCallable)
         {
-            var il_visitor = new ILPrintVisitor(new StringWriter(il_sb), false);
+            var il_visitor = new ILPrintVisitor(new StringWriter(il_sb), false, 0);
             il_visitor.Visit(expr);
         }
         else

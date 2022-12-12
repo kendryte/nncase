@@ -1,26 +1,17 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
 using Nncase.Evaluator;
 using Nncase.IR;
-using Nncase.PatternMatch;
 using Nncase.Transform;
 using Nncase.Transform.Passes;
-using Nncase.Transform.Rules.Neutral;
 using OrtKISharp;
-using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
+using static Nncase.IR.F.Random;
 using static Nncase.IR.F.Tensors;
-using static Nncase.PatternMatch.F.Math;
-using static Nncase.PatternMatch.F.NN;
-using static Nncase.PatternMatch.F.Tensors;
-using static Nncase.PatternMatch.Utility;
 
-namespace Nncase.Tests.RewriteTest;
+namespace Nncase.Tests.ReWriteTest;
 
 public static class DummyOp
 {
@@ -44,209 +35,369 @@ public class RewriteFixtrue : TestFixture.UnitTestFixtrue
     }
 
     public Expr ApplyFoldConstCallRewrite(Expr expr, RunPassOptions caseOptions) =>
-        CompilerServices.Rewrite(expr, new[] { new FoldConstCall() }, caseOptions);
+        CompilerServices.Rewrite(expr, new[] { new Transform.Rules.Neutral.FoldConstCall() }, caseOptions);
 }
 
-public abstract class IRewriteCase
+public interface IRewriteCase
 {
     /// <summary>
     /// Get Name
     /// </summary>
-    public virtual string Name { get => "Test" + this.GetType().Name; }
+    string Name => this.GetType().Name;
 
     /// <summary>
     /// Get Pre Expr
     /// </summary>
-    public virtual Expr PreExpr { get; }
-
-    /// <summary>
-    /// Get Post Expr
-    /// </summary>
-    public virtual Expr PostExpr { get; }
+    Function PreExpr { get; }
 
     /// <summary>
     /// get rules
     /// </summary>
-    public virtual IEnumerable<IRewriteRule> Rules { get; }
+    IEnumerable<IRewriteRule> Rules { get; }
 
     /// <summary>
     /// the eval inputs dict
     /// </summary>
-    public virtual Dictionary<Var, OrtKISharp.Tensor> Inputs { get; } = new();
+    Dictionary<Var, IValue> FeedDict { get; }
 }
 
 // public sealed class TransposeConstBinaryCase : IRewriteCase
 // {
-//     public override Expr PreExpr
+//     public Function PreExpr
 //     {
 //         get
 //         {
-//             var c = torch.rand(1, 2, 3, 4).ToTensor();
-//             var input = torch.rand(1, 3, 1, 2).ToTensor();
+//             var c = IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 2, 3, 4 }).Evaluate().AsTensor();
+//             var input = IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 3, 1, 2 }).Evaluate().AsTensor();
 //             var b = NHWCToNCHW(input) + c;
-//             return b;
+//             return new Function(b, new Var[] { });
 //         }
 //     }
 
-//     public override IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
-//       new Transform.Rules.TransposeConstBinaryMotionLeft(),
-//       new Transform.Rules.TransposeConstBinaryMotionRight(),
+//     public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
 //     };
 // }
 
-// public sealed class FoldReshapeCase : IRewriteCase
-// {
-//     public override Expr PreExpr
-//     {
-//         get
-//         {
-//             var input = torch.rand(1, 3, 1, 2).ToTensor();
-//             var b = Reshape(input, (Const)new[] { 1, 1, 1, 6 });
-//             var c = Reshape(input, (Const)new[] { 1, 1, 3, 2 });
-//             return c;
-//         }
-//     }
+public sealed class FoldReshapeCase : IRewriteCase
+{
+    public Function PreExpr
+    {
+        get
+        {
+            var input = IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 3, 1, 2 }).Evaluate().AsTensor();
+            var b = Reshape(input, (Const)new[] { 1, 1, 1, 6 });
+            var c = Reshape(input, (Const)new[] { 1, 1, 3, 2 });
+            return new Function(c, new Var[] { });
+        }
+    }
 
-//     public override IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
-//       new Transform.Rules.FoldReshape(),
-//     };
-// }
-// public sealed class FoldNopReshapeCase : IRewriteCase
-// {
-//     public override Expr PreExpr
-//     {
-//         get
-//         {
-//             var input = torch.rand(1, 3, 1, 2).ToTensor();
-//             var b = Reshape(input, (Const)new[] { 1, 3, 1, 2 });
-//             return b;
-//         }
-//     }
+    public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
+      new Transform.Rules.Neutral.FoldTwoReshapes(),
+    };
 
-//     public override IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
-//       new Transform.Rules.FoldNopReshape(),
-//     };
-// }
+    public Dictionary<Var, IValue> FeedDict => new();
 
-// public sealed class FoldNopClampCase : IRewriteCase
-// {
-//     public override Expr PreExpr
-//     {
-//         get
-//         {
-//             var input = torch.rand(1, 3, 1, 2).ToTensor();
-//             var b = Clamp(input, float.MinValue, float.MaxValue);
-//             return b;
-//         }
-//     }
+}
 
-//     public override IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
-//       new Transform.Rules.FoldNopClamp(),
-//     };
-// }
+public sealed class FoldNopReshapeCase : IRewriteCase
+{
+    public Function PreExpr
+    {
+        get
+        {
+            var input = IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 3, 1, 2 }).Evaluate().AsTensor();
+            var b = Reshape(input, (Const)new[] { 1, 3, 1, 2 });
+            return new Function(b, new Var[] { });
+        }
+    }
 
-// public class FoldTransposeCase : IRewriteCase
-// {
-//     public override Expr PreExpr
-//     {
-//         get
-//         {
-//             var input = torch.rand(1, 3, 1, 2).ToTensor();
-//             var b = NHWCToNCHW(input); // [1,2,3,1]
-//             var d = NCHWToNHWC(b) * torch.rand(1, 3, 4, 2).ToTensor();
-//             var e = d + 100.0f;
-//             return e;
-//         }
-//     }
+    public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
+      new Transform.Rules.Neutral.FoldNopReshape(),
+    };
 
-//     public override IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
-//       new Transform.Rules.FoldTranspose(),
-//     };
-// }
+    public Dictionary<Var, IValue> FeedDict => new();
 
+}
 
-// public class FoldNopTransposeCase1 : IRewriteCase
-// {
-//     public override Expr PreExpr
-//     {
-//         get
-//         {
-//             var input = torch.rand(1, 3, 1, 2).ToTensor();
-//             var b = Transpose(input, new[] { 0, 1, 2, 3 }); // [1,2,3,1]
-//             var d = NCHWToNHWC(b) * torch.rand(1, 1, 2, 1).ToTensor();
-//             var e = d + 100.0f;
-//             return e;
-//         }
-//     }
-//     public override IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
-//       new Transform.Rules.FoldTranspose(),
-//     };
-// }
+public sealed class FoldNopClampCase : IRewriteCase
+{
+    public Function PreExpr
+    {
+        get
+        {
+            var input = IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 3, 1, 2 }).Evaluate().AsTensor();
+            var b = Clamp(input, float.MinValue, float.MaxValue);
+            return new Function(b, new Var[] { });
+        }
+    }
 
-// public class FoldNopTransposeCase2 : IRewriteCase
-// {
-//     public override Expr PreExpr
-//     {
-//         get
-//         {
-//             var input = torch.rand(1, 3, 1, 2).ToTensor();
-//             var b = NHWCToNCHW(input);
-//             var rhs = b + torch.rand(1, 2, 3, 4).ToTensor();
-//             var lhs = NCHWToNHWC(b) - torch.rand(1, 3, 1, 2).ToTensor();
-//             var e = lhs + NCHWToNHWC(rhs);
-//             return e;
-//         }
-//     }
-//     public override IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
-//       new Transform.Rules.FoldTranspose(),
-//       new Transform.Rules.FoldNopTranspose(),
-//     };
-// }
+    public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
+      new Transform.Rules.Neutral.FoldNopClamp(),
+    };
 
-// public class FoldNopTransposeCase3 : FoldNopTransposeCase2
-// {
-//     public override IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
-//       new Transform.Rules.FoldTranspose(),
-//       new Transform.Rules.FoldNopTranspose(),
-//       new Transform.Rules.TransposeBinaryMotion(),
-//       new Transform.Rules.TransposeConstBinaryMotionLeft(),
-//       new Transform.Rules.TransposeConstBinaryMotionRight(),
-//     };
-// }
+    public Dictionary<Var, IValue> FeedDict => new();
 
-// public class ClassicDemo : IRewriteCase
-// {
-//     public override Expr PreExpr
-//     {
-//         get
-//         {
-//             var x = (Const)1234;
-//             return (x * 2) / 2;
-//         }
-//     }
-//     public override IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
-//       new Transform.Rules.Xmul2(),
-//       new Transform.Rules.Xmul1(),
-//       new Transform.Rules.ReassociateDiv(),
-//       new Transform.Rules.ReassociateMul(),
-//       new Transform.Rules.ReassociateXY(),
-//       new Transform.Rules.XDivX(),
-//     };
-// }
+}
+
+public class FoldTransposeCase : IRewriteCase
+{
+    public Function PreExpr
+    {
+        get
+        {
+            var input = IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 3, 1, 2 }).Evaluate().AsTensor();
+            var b = NHWCToNCHW(input); // [1,2,3,1]
+            var d = NCHWToNHWC(b) * IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 3, 4, 2 }).Evaluate().AsTensor();
+            var e = d + 100.0f;
+            return new Function(e, new Var[] { });
+        }
+    }
+
+    public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
+      new Transform.Rules.Neutral.FoldTwoTransposes(),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new();
+
+}
 
 
-// public sealed class TransposeDemoCase : FoldNopTransposeCase3
-// {
-//     public override Expr PreExpr
-//     {
-//         get
-//         {
-//             var input = torch.rand(1, 28, 28, 3).ToTensor();
-//             var conv1 = NCHWToNHWC(DummyOp.Conv2D(NHWCToNCHW(input), 3, out_channels: 8, 3, 2));
-//             var lhs = NCHWToNHWC(DummyOp.Conv2D(NHWCToNCHW(conv1), 8, out_channels: 8, 3, 1));
-//             var rhs = conv1 + torch.rand(new long[] { 1, 14, 14, 8 }).ToTensor();
-//             return lhs + rhs;
-//         }
-//     }
-// }
+/// <summary>
+/// transpose + pad + transpose => pad.
+/// </summary>
+public class FoldTransposePadCase : IRewriteCase
+{
+    Var _input;
 
+    public FoldTransposePadCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 1, 2 }));
+    }
+    public Function PreExpr
+    {
+        get
+        {
+            var v0 = NHWCToNCHW(_input); // [1,2,3,1]
+            var v1 = IR.F.NN.Pad(v0, new[,] { { 0, 0 }, { 0, 0 }, { 2, 2 }, { 1, 1 } }, PadMode.Constant, 1.0f); // [1,2,7,3]
+            var v2 = NCHWToNHWC(v1); // [1,7,3,2]
+            var v3 = v2 * IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 3, 7, 3, 2 }).Evaluate().AsTensor(); // [3,7,3,2]
+            return new Function(v3, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
+      new Transform.Rules.Neutral.FoldTwoTransposes(),
+      new Transform.Rules.Neutral.CombineTransposePad(),
+      new Transform.Rules.Neutral.FoldConstCall(),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new(ReferenceEqualityComparer.Instance) {
+      { _input, IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] {1, 3, 1, 2 }).Evaluate() }
+    };
+
+}
+
+
+public class FoldNopTransposeCase1 : IRewriteCase
+{
+    public Function PreExpr
+    {
+        get
+        {
+            var input = IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 3, 1, 2 }).Evaluate().AsTensor();
+            var b = Transpose(input, new[] { 0, 1, 2, 3 }); // [1,2,3,1]
+            var d = NCHWToNHWC(b) * IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 1, 2, 1 }).Evaluate().AsTensor();
+            var e = d + 100.0f;
+            return new Function(e, new Var[] { });
+        }
+    }
+    public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
+      new Transform.Rules.Neutral.FoldTwoTransposes(),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new();
+
+}
+
+public class FoldNopTransposeCase2 : IRewriteCase
+{
+    public Function PreExpr
+    {
+        get
+        {
+            var input = IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 3, 1, 2 }).Evaluate().AsTensor();
+            var b = NHWCToNCHW(input);
+            var rhs = b + IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 2, 3, 4 }).Evaluate().AsTensor();
+            var lhs = NCHWToNHWC(b) - IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 3, 1, 2 }).Evaluate().AsTensor();
+            var e = lhs + NCHWToNHWC(rhs);
+            return new Function(e, new Var[] { });
+        }
+    }
+    public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
+      new Transform.Rules.Neutral.FoldTwoTransposes(),
+      new Transform.Rules.Neutral.FoldNopTranspose(),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new();
+
+}
+
+public class FoldNopTransposeCase3 : FoldNopTransposeCase2
+{
+    public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
+      new Transform.Rules.Neutral.FoldTwoTransposes(),
+      new Transform.Rules.Neutral.FoldNopTranspose(),
+      new Transform.Rules.Neutral.CombineTransposeBinary(),
+    };
+}
+
+public class ClassicDemo : IRewriteCase
+{
+    public Function PreExpr
+    {
+        get
+        {
+            var x = (Const)1234;
+            return new Function((x * 2) / 2, new Var[] { });
+        }
+    }
+    public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
+      new Transform.Rules.Neutral.Xmul1(),
+      new Transform.Rules.Neutral.ReassociateDiv(),
+      new Transform.Rules.Neutral.ReassociateMul(),
+      // new Transform.Rules.Neutral.Reassociate(),
+      new Transform.Rules.Neutral.XDivX(),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new();
+
+}
+
+
+public sealed class TransposeDemoCase : FoldNopTransposeCase3
+{
+    public Function PreExpr
+    {
+        get
+        {
+            var input = IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 28, 28, 3 }).Evaluate().AsTensor();
+            var conv1 = NCHWToNHWC(DummyOp.Conv2D(NHWCToNCHW(input), 3, out_channels: 8, 3, 2));
+            var lhs = NCHWToNHWC(DummyOp.Conv2D(NHWCToNCHW(conv1), 8, out_channels: 8, 3, 1));
+            var rhs = conv1 + IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { new long[] { 1, 14, 14, 8 } }).Evaluate().AsTensor();
+            return new Function(lhs + rhs, new Var[] { });
+        }
+    }
+}
+
+
+
+/// <summary>
+/// this case from mobilenet v1
+/// </summary>
+public class MobileNetV1TransposeCase : IRewriteCase
+{
+    Var _input;
+    public MobileNetV1TransposeCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 32, 112, 112 }));
+    }
+    public Function PreExpr
+    {
+        get
+        {
+            var v_5 = Transpose(_input, (new[] { 0, 2, 3, 1 })); // f32[1,112,112,32]
+            var v_6 = Transpose(v_5, (new[] { 0, 3, 1, 2 })); // f32[1,32,112,112]
+            var v_7 = Conv2D(v_6,
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, 32, 1, 1 }).Evaluate().AsTensor()),
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor()), (new[] { 1, 1 }), (new[,] { { 0, 0 }, { 0, 0 } }), (new[] { 1, 1 }), PadMode.Constant, (1), (new[] { 0.0f, 6.0f })); // f32[1,64,112,112]
+            var v_8 = Transpose(v_7, new[] { 0, 2, 3, 1 }); // f32[1,112,112,64]
+            var v_9 = Pad(v_8, (new[,] { { 0, 0 }, { 0, 1 }, { 0, 1 }, { 0, 0 } }), PadMode.Constant, (0.0f)); // f32[1,113,113,64]
+            var v_10 = Transpose(v_9, (new[] { 0, 3, 1, 2 })); // f32[1,64,113,113]
+            var v_11 = Conv2D(v_10,
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, 1, 3, 3 }).Evaluate().AsTensor()),
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor()),
+              (new[] { 2, 2 }), (new[,] { { 0, 0 }, { 0, 0 } }), (new[] { 1, 1 }), PadMode.Constant, (64),
+              (new[] { 0.0f, 6.0f })); // f32[1,64,56,56]
+            return new Function(v_11, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[] {
+        new Transform.Rules.Neutral.FoldConstCall(),
+        new Transform.Rules.Neutral.FoldNopTranspose(),
+        new Transform.Rules.Neutral.FoldTwoTransposes(),
+        new Transform.Rules.Neutral.CombineTransposePad(),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new() {
+      {_input, Normal(DataTypes.Float32, 0, 1, 1, new[] { 1,32,112,112 }).Evaluate() }
+    };
+}
+
+
+public sealed class TransposeLeakyRelu : IRewriteCase
+{
+
+    Var _input;
+    public TransposeLeakyRelu()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 16, 15, 20 }));
+    }
+    public Function PreExpr
+    {
+        get
+        {
+            var v_5 = Transpose(_input, (new[] { 0, 2, 3, 1 })); // f32[1,15,20,16]
+            var v_6 = LeakyRelu(v_5, 0.1f); // f32[1,15,20,16]
+            var v_7 = Transpose(v_6, (new[] { 0, 3, 1, 2 })); // f32[1,16,15,20]
+            var v_8 = Conv2D(v_7,
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 16, 16, 3, 3 }).Evaluate().AsTensor()),
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 16 }).Evaluate().AsTensor()), (new[] { 1, 1 }), (new[,] { { 1, 1 }, { 1, 1 } }), (new[] { 1, 1 }), PadMode.Constant, (1), (new[] { 0.0f, 6.0f }));// f32[1,16,15,20]
+            return new Function(v_8, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[] {
+        new Transform.Rules.Neutral.FoldConstCall(),
+        new Transform.Rules.Neutral.FoldNopTranspose(),
+        new Transform.Rules.Neutral.FoldTwoTransposes(),
+        new Transform.Rules.Neutral.CombineTransposeActivations(),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new() {
+      {_input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() }
+    };
+}
+
+
+public sealed class Conv2DPadsCase : IRewriteCase
+{
+
+    Var _input;
+    public Conv2DPadsCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 16, 56, 56 }));
+    }
+    public Function PreExpr
+    {
+        get
+        {
+            var v_12 = Conv2D(_input,
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 96, 16, 1, 1 }).Evaluate().AsTensor()),
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 96 }).Evaluate().AsTensor()), (new[] { 1, 1 }), (new[,] { { 0, 0 }, { 0, 0 } }), (new[] { 1, 1 }), PadMode.Constant, (1), (new[] { 0.0f, 6.0f })); // f32[1,96,56,56]
+            var v_13 = Pad(v_12, (new[,] { { 0, 0 }, { 0, 0 }, { 0, 1 }, { 0, 1 } }), PadMode.Constant, (0.0f)); // f32[1,96,57,57]
+            var v_14 = Conv2D(v_13,
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 96, 1, 3, 3 }).Evaluate().AsTensor()),
+              (Normal(DataTypes.Float32, 0, 1, 1, new[] { 96 }).Evaluate().AsTensor()), (new[] { 2, 2 }), (new[,] { { 0, 0 }, { 0, 0 } }), (new[] { 1, 1 }), PadMode.Constant, (96), (new[] { 0.0f, 6.0f })); // f32[1,96,28,28]
+            return new Function(v_14, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[] {
+        new Transform.Rules.Neutral.FoldConv2DPads(),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new() {
+      {_input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() }
+    };
+}

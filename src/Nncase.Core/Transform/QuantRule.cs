@@ -52,9 +52,9 @@ public abstract class QuantRule : RewriteRule<Pattern>
     public DataType QuantType => Option.CompileOptions.QuantType;
 
     /// <summary>
-    /// Get QuantMode
+    /// Get WQuantType
     /// </summary>
-    public QuantMode QuantMode => Option.CompileOptions.QuantMode;
+    public DataType WQuantType => Option.CompileOptions.WQuantType;
 
     /// <summary>
     /// Get UseMixQuant flag

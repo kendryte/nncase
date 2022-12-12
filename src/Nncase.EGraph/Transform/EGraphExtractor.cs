@@ -45,6 +45,7 @@ internal class EGraphExtractor
                 Op op => VisitLeaf(minCostEnode, op),
                 Marker marker => Visit(minCostEnode, marker),
                 None none => Visit(minCostEnode, none),
+                Fusion fusion => VisitLeaf(minCostEnode, fusion),
                 _ => throw new ArgumentException("Unsupported expression type."),
             };
             _eclassMemo.Add(eclass, expr);
@@ -124,17 +125,28 @@ public static class EGraphExtractExtensions
     /// </summary>
     /// <param name="eGraph">eGraph.</param>
     /// <param name="root">Root eclass.</param>
+    /// <param name="basefunc_cost_evaluator">base func cost evaluator.</param>
     /// <param name="options">Options.</param>
     /// <returns>Extracted root expression.</returns>
-    public static Expr Extract(this EGraph eGraph, EClass root, RunPassOptions options)
+    public static Expr Extract(this EGraph eGraph, EClass root, Evaluator.IBaseFuncCostEvaluator? basefunc_cost_evaluator, RunPassOptions options)
     {
-        var costModel = new EGraphCostEvaluator(root).Evaluate();
-        if (options.DumpLevel > 3)
+        // 1. set the all expr checked shape
+        foreach (var eclass in eGraph.Classes)
+        {
+            foreach (var nodes in eclass.Nodes)
+            {
+                if (eclass.CheckedType.CompareTo(nodes.Expr.CheckedType) > 0)
+                    nodes.Expr.CheckedType = eclass.CheckedType;
+            }
+        }
+        // 2. start the cost evaluator
+        var costModel = new EGraphCostEvaluator(root.Find(), basefunc_cost_evaluator).Evaluate();
+        if (options.DumpLevel > 2)
         {
             // TODO: dump graph
-            // EGraphPrinter.DumpEgraphAsDot(eGraph, new EGraphCosts(eGraph, costs), entry.Find(), Path.Combine(options.PassDumpDir, "Costs", $"V{eGraph.Version}"));
+            EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, root.Find(), Path.Combine(options.PassDumpDir, "Costs", $"V{eGraph.Version}"));
         }
 
-        return new EGraphExtractor(costModel).Extract(root);
+        return new EGraphExtractor(costModel).Extract(root.Find());
     }
 }

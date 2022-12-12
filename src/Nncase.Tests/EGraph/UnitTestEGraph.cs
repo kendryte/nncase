@@ -26,9 +26,9 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestENodeVarHash()
     {
-        var node1 = new ENode((Var)"x", new EClass[] { });
-        var node2 = new ENode((Var)"x", new EClass[] { });
-        var node3 = new ENode((Var)"y", new EClass[] { });
+        var node1 = ENode.Create((Var)"x", new EClass[] { });
+        var node2 = ENode.Create((Var)"x", new EClass[] { });
+        var node3 = ENode.Create((Var)"y", new EClass[] { });
         Assert.Equal(node1, node2);
         Assert.Equal(node1.GetHashCode(), node2.GetHashCode());
         Assert.NotEqual(node1, node3);
@@ -38,9 +38,9 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestENodeConstHash()
     {
-        var node1 = new ENode(1, new EClass[] { });
-        var node2 = new ENode(1, new EClass[] { });
-        var node3 = new ENode(11, new EClass[] { });
+        var node1 = ENode.Create(1, new EClass[] { });
+        var node2 = ENode.Create(1, new EClass[] { });
+        var node3 = ENode.Create(11, new EClass[] { });
         Assert.Equal(node1, node2);
         Assert.Equal(node1.GetHashCode(), node2.GetHashCode());
         Assert.NotEqual(node1, node3);
@@ -50,9 +50,9 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestENodeOpHash()
     {
-        var node1 = new ENode(new Binary(BinaryOp.Add), new EClass[] { });
-        var node2 = new ENode(new Binary(BinaryOp.Add), new EClass[] { });
-        var node3 = new ENode(new Unary(UnaryOp.Abs), new EClass[] { });
+        var node1 = ENode.Create(new Binary(BinaryOp.Add), new EClass[] { });
+        var node2 = ENode.Create(new Binary(BinaryOp.Add), new EClass[] { });
+        var node3 = ENode.Create(new Unary(UnaryOp.Abs), new EClass[] { });
         Assert.Equal(node1, node2);
         Assert.Equal(node1.GetHashCode(), node2.GetHashCode());
         Assert.NotEqual(node1, node3);
@@ -67,8 +67,8 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
         var eclass = new EClass(1);
         var call1 = Binary(BinaryOp.Add, 4, 4);
         var call2 = Binary(BinaryOp.Add, ((Const)1 + 3), ((Const)2 + 2));
-        var node1 = new ENode(call1, new[] { eclass, eclass });
-        var node2 = new ENode(call2, new[] { eclass, eclass });
+        var node1 = ENode.Create(call1, new[] { eclass, eclass });
+        var node2 = ENode.Create(call2, new[] { eclass, eclass });
         Assert.Equal(node1.GetHashCode(), node2.GetHashCode());
         Assert.Equal(node1, node2);
     }
@@ -222,7 +222,7 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
         {
             foreach (var child in enode.Children)
             {
-                Assert.Contains(enode, child.Used);
+                Assert.Contains(enode, child.UsedBy);
             }
         }
     }

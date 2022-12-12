@@ -156,7 +156,6 @@ class Compiler:
         self._import_module(model_content)
 
     def use_ptq(self, ptq_dataset_options: PTQTensorOptions, params: list) -> None:
-        self.ptq_dataset_options = ptq_dataset_options
         dataset = [data.to_nncase_tensor() for data in ptq_dataset_options.cali_data]
         dataset = _nncase.Compiler.PythonHelper.MakeDatasetProvider(
             dataset, ptq_dataset_options.samples_count, params)
@@ -194,15 +193,34 @@ class DumpRangeTensorOptions:
         pass
 
 
+class CalibMethod:
+  NoClip: int = 0
+  Kld: int = 1
+  Random: int = 2
+
+class ModelQuantMode:
+  NoQuant: int = 0
+  UsePTQ: int = 1
+  UseQAT: int = 2
+
+class ClQuantizeOptions():
+  CalibrationDataset: object
+  CalibrationMethod: CalibMethod
+  BindQuantMethod: bool 
+  UseSquant: bool 
+  UseAdaRound  : bool 
+
 class ClCompileOptions():
     InputFile: str
     InputFormat: str
     Target: str
     DumpLevel: int
     DumpDir: str
-    UsePTQ: bool
     QuantType: int
-    QuantMode: int
+    WQuantType: int
+    OutputFile: str
+    ModelQuantMode: int
+    QuantizeOptions: ClQuantizeOptions
 
 
 class CompileOptions:

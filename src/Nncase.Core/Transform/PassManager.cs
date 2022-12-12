@@ -155,7 +155,7 @@ public class PassManager : IEnumerable<BasePass>
                 module.Update(i, updated_func);
         }
 
-        if (options.DumpLevel > 3)
+        if (options.DumpLevel > 2)
         {
             foreach (var item in module.Functions)
             {
