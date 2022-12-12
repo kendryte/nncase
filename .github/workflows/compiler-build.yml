@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           pip install conan
-          
+
       - name: Configure Conan (Linux)
         run: |
           conan profile new default --detect
@@ -45,24 +45,24 @@ jobs:
           echo "CC=gcc-10" >> $GITHUB_ENV
           echo "CXX=g++-10" >> $GITHUB_ENV
         if: runner.os == 'Linux'
-        
+
       - name: Configure CMake
         shell: bash
         run: |
           cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
-          
+
       - name: Build & Install
         run: |
           cmake --build build --config ${{matrix.config.buildType}}
           cmake --install build --prefix install
-          
+
       - name: Upload nncase Simulator Build Artifact
         uses: actions/upload-artifact@v3
         with:
           name: nncase-simulator-${{matrix.config.name}}
           path: ${{github.workspace}}/install
           if-no-files-found: error
-        
+
   build-compiler:
     needs: [build-simulator]
     name: build-${{matrix.config.name}}
@@ -81,13 +81,13 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: ${{matrix.dotnet-version}}
-      
+
       - name: Install nncase simulator Artifact
         uses: actions/download-artifact@v2.0.9
         with:
           name: nncase-simulator-${{matrix.config.name}}
           path: ${{github.workspace}}/install
-        
+
       - name: Set up build environment (Macos)
         run: |
           brew install sunnycase/core/libomp@11.1.0
@@ -129,16 +129,17 @@ jobs:
         working-directory: ${{github.workspace}}
         env:
           PATH: ${{github.workspace}}/install/bin
+          NNCASE_CLI: ${{github.workspace}}/src/Nncase.Cli/bin/${{matrix.config.buildType}}/net${{matrix.dotnet-version}}
         run: |
           dotnet test -c ${{matrix.config.buildType}} -s test.runsettings --no-build --verbosity normal
-          
+
       - name: Upload nncase Build Artifact
         uses: actions/upload-artifact@v3
         with:
           name: nncase-${{matrix.config.name}}
           path: ${{github.workspace}}/src/Nncase.Cli/bin/${{matrix.config.buildType}}/net${{matrix.dotnet-version}}/${{matrix.config.rid}}/publish
           if-no-files-found: error
-          
+
   test-compiler:
     needs: [build-compiler]
     name: test-${{matrix.config.name}}
@@ -160,19 +161,19 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: ${{matrix.dotnet-version}}
-      
+
       - name: Install nncase-simulator
         uses: actions/download-artifact@v3
         with:
           name: nncase-simulator-${{matrix.config.name}}
           path: ${{github.workspace}}/install
-      
+
       - name: Install nncase
         uses: actions/download-artifact@v3
         with:
           name: nncase-${{matrix.config.name}}
           path: ${{github.workspace}}/install
-      
+
       - name: Set up test environment (macOS)
         run: |
           brew install sunnycase/core/libomp@11.1.0
@@ -188,7 +189,7 @@ jobs:
           cp install/lib/*.dylib install/
           echo "PYTHONPATH=$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
         if: runner.os == 'macOS'
-        
+
       - name: Set up test environment (Linux)
         run: |
           wget https://sdk.lunarg.com/sdk/download/${VULKANSDK_VER}/linux/vulkansdk-linux-x86_64-${VULKANSDK_VER}.tar.gz -O vulkansdk.tar.gz
@@ -201,7 +202,7 @@ jobs:
           cp install/lib/*.so install/
           echo "PYTHONPATH=$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
         if: runner.os == 'Linux'
-        
+
       - name: Set up test environment (Windows)
         shell: pwsh
         run: |
@@ -214,15 +215,15 @@ jobs:
           echo "VK_ICD_FILENAMES=${env:GITHUB_WORKSPACE}/swiftshader/bin/vk_swiftshader_icd.json" >> $env:GITHUB_ENV
           echo "PYTHONPATH=${env:GITHUB_WORKSPACE}/install/python;${env:GITHUB_WORKSPACE}/tests" >> $env:GITHUB_ENV
         if: runner.os == 'Windows'
-      
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.7
-      
+
       - name: Install Python Packages
         run: pip install -r requirements.test.txt
-      
+
       - name: Create Test Environment
         run: mkdir test_results
 

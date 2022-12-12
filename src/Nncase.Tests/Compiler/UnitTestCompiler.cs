@@ -71,6 +71,7 @@ public class UnitTestCompiler : TestFixture.UnitTestFixtrue
         compileOptions.DumpDir = "UnitTestCompiler_tflite_ptq";
         compileOptions.OutputFile = Path.Combine(compileOptions.DumpDir, "test.kmodel");
         compileOptions.QuantType = DataTypes.UInt8;
+        compileOptions.WQuantType = DataTypes.UInt8;
         compileOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
         var in_shape = new[] { 1, 16, 16, 3 };
         Var input = new Var("serving_default_x:0", new TensorType(DataTypes.Float32, in_shape));
@@ -111,6 +112,7 @@ public class UnitTestCompiler : TestFixture.UnitTestFixtrue
         compileOptions.DumpDir = "UnitTestCompiler_onnx_ptq";
         compileOptions.OutputFile = Path.Combine(compileOptions.DumpDir, "test.kmodel");
         compileOptions.QuantType = DataTypes.UInt8;
+        compileOptions.WQuantType = DataTypes.UInt8;
         compileOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
         var in_shape = new[] { 1, 3, 16, 16 };
         Var input = new Var("input", new TensorType(DataTypes.Float32, in_shape));
