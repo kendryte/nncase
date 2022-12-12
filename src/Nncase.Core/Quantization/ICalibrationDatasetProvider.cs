@@ -10,12 +10,18 @@ using Nncase.IR;
 
 namespace Nncase.Quantization;
 
+/// <summary>
+/// Calibration dataset provider.
+/// </summary>
 public interface ICalibrationDatasetProvider
 {
+    /// <summary>
+    /// Gets the count of samples.
+    /// </summary>
     int? Count { get; }
 
     /// <summary>
-    /// the samples Enumerable
+    /// Gets the samples.
     /// </summary>
     IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
 }

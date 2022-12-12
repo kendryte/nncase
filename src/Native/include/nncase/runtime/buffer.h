@@ -16,10 +16,15 @@
 #include "result.h"
 #include <memory>
 #include <nncase/object.h>
+#include <nncase/runtime/datatypes.h>
 
 BEGIN_NS_NNCASE_RUNTIME
 
+class buffer_node;
 class buffer_allocator;
+class host_buffer_slice;
+
+using buffer_t = object_t<buffer_node>;
 
 class NNCASE_API buffer_node : public object_node {
     DEFINE_OBJECT_KIND(object_node, object_buffer);
@@ -30,14 +35,15 @@ class NNCASE_API buffer_node : public object_node {
     size_t size_bytes() const noexcept { return size_bytes_; }
     buffer_allocator &allocator() const noexcept { return allocator_; }
 
+    virtual result<void> copy_to(buffer_t dest, size_t src_start,
+                                 size_t dest_start, datatype_t datatype,
+                                 const dims_t &shape, const strides_t &strides,
+                                 const strides_t &dest_strides) noexcept = 0;
+
   private:
     size_t size_bytes_;
     buffer_allocator &allocator_;
 };
-
-using buffer_t = object_t<buffer_node>;
-
-class host_buffer_slice;
 
 class NNCASE_API buffer_slice {
   public:
@@ -60,6 +66,9 @@ class NNCASE_API buffer_slice {
     }
 
     result<host_buffer_slice> as_host() const noexcept;
+    result<void> copy_to(const buffer_slice &dest, datatype_t datatype,
+                         const dims_t &shape, const strides_t &src_strides,
+                         const strides_t &dest_strides) const noexcept;
 
   private:
     buffer_t buffer_;

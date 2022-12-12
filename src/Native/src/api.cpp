@@ -317,6 +317,19 @@ int nncase_tensor_get_strides(nncase::tensor_node *tensor, uint32_t *strides,
     return -EINVAL;
 }
 
+int nncase_tuple_create(nncase::value_node **fields, uint32_t fields_length,
+                        nncase::tuple_node **tuple) {
+    if (fields && fields_length && tuple) {
+        std::vector<value_t> values(fields_length, nullptr);
+        for (size_t i = 0; i < values.size(); i++) {
+            values[i] = fields[i];
+        }
+        *tuple = nncase::tuple(std::in_place, std::move(values)).detach();
+        return 0;
+    }
+    return -EINVAL;
+}
+
 int nncase_tuple_get_fields(nncase::tuple_node *tuple,
                             nncase::value_node **fields,
                             uint32_t *fields_length) {

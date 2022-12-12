@@ -36,7 +36,7 @@ class Evaluator:
         for i in range(len(self.inputs)):
             input_tensor: nncase.RuntimeTensor = nncase.RuntimeTensor.from_numpy(
                 self.transform_input(self.data_pre_process(self.inputs[i]['data']), "float32", "CPU"))
-            input_tensor.copy_to(evaluator.get_input_tensor(i))
+            evaluator.set_input_tensor(i, input_tensor)
 
     def dump_outputs(self, eval_dir, evaluator):
         eval_output_paths = []

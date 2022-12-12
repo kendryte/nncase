@@ -23,6 +23,8 @@ pybind11::dtype to_dtype(typecode_t type) {
     namespace py = pybind11;
 
     switch (type) {
+    case dt_boolean:
+        return py::dtype::of<bool>();
     case dt_uint8:
         return py::dtype::of<uint8_t>();
     case dt_uint16:
@@ -61,7 +63,9 @@ pybind11::dtype to_dtype(const datatype_t type) {
 typecode_t from_dtype(pybind11::dtype dtype) {
     namespace py = pybind11;
 
-    if (dtype.is(py::dtype::of<uint8_t>()) || dtype.is(py::dtype::of<bool>()))
+    if (dtype.is(py::dtype::of<bool>()))
+        return dt_boolean;
+    else if (dtype.is(py::dtype::of<uint8_t>()))
         return dt_uint8;
     else if (dtype.is(py::dtype::of<uint16_t>()))
         return dt_uint16;

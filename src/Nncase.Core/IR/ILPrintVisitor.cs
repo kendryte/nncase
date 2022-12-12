@@ -14,7 +14,7 @@ using Nncase.TIR;
 
 namespace Nncase.IR;
 
-sealed internal class ILPrintVisitor : ExprFunctor<string, string>
+internal sealed class ILPrintVisitor : ExprFunctor<string, string>
 {
     private readonly ScopeWriter Scope;
     private readonly Dictionary<Expr, string> _names = new Dictionary<Expr, string>(ReferenceEqualityComparer.Instance);

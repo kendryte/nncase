@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <nncase/runtime/dbg.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/tensor.h>
@@ -34,16 +35,24 @@ bool tensor_node::is_contiguous() const noexcept {
     return strides() == get_default_strides(shape());
 }
 
-result<void> tensor_node::copy_from([[maybe_unused]] tensor src) const noexcept {
-    return err(std::errc::not_supported);
+result<void> tensor_node::copy_from(tensor src) noexcept {
+    return src->copy_to(tensor(this));
 }
 
-result<void> tensor_node::copy_to([[maybe_unused]] tensor dest) const noexcept {
-    return err(std::errc::not_supported);
+result<void> tensor_node::copy_to(tensor dest) const noexcept {
+    CHECK_WITH_ERR(dtype().equals(dest->dtype()), std::errc::invalid_argument);
+    CHECK_WITH_ERR(shape() == dest->shape(), std::errc::invalid_argument);
+    return buffer().copy_to(dest->buffer(), dtype(), shape(), strides(),
+                            dest->strides());
 }
 
 result<tensor> tensor_node::to_host() noexcept {
     if (buffer_.buffer().is_a<host_buffer_t>())
         return ok(tensor(this));
     return err(std::errc::not_supported);
+}
+
+result<void> tensor_node::copy_to(value_t dest) const noexcept {
+    try_var(dest_tensor, dest.as<tensor>());
+    return copy_to(dest_tensor);
 }

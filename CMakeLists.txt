@@ -204,7 +204,7 @@ else()
     
     # Python binding
     if(BUILD_PYTHON_BINDING)
-        add_subdirectory(python/nncaseruntime/native)
+        add_subdirectory(python/nncase/native)
     endif()
 
     # Csharp binding
