@@ -149,6 +149,8 @@ void *load_symbol(void *module, const char *name) {
 #define _T(x) x
 #endif
 
+#if 0
+
 inline BOOL IsDataSectionNeeded(const WCHAR *pModuleName) {
     if (pModuleName == 0) {
         return FALSE;
@@ -251,6 +253,8 @@ struct premain {
     }
 } premain_v;
 
+#endif
+
 c_api_initialize_fn
 load_compiler_c_api_initializer(const char *root_assembly_path) {
     size_t path_length;
@@ -298,7 +302,7 @@ int nncase_clr_initialize(const char *root_assembly_path) {
         auto init = load_compiler_c_api_initializer(root_assembly_path);
         init(&g_c_api_mt);
         g_c_api_mt.compiler_initialize();
-        SetUnhandledExceptionFilter(MyUnhandledExceptionFilter);
+        //SetUnhandledExceptionFilter(MyUnhandledExceptionFilter);
     }
 
     return 0;
