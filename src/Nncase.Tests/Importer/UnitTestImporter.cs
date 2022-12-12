@@ -36,6 +36,16 @@ public class UnitTestImporter : TestFixture.UnitTestFixtrue
         Assert.True(module.Entry!.InferenceType());
     }
 
+    [Fact]
+    public async Task TestImportOnnx()
+    {
+        using var file = File.OpenRead(Path.Combine(GetSolutionDirectory(), "tests/models/conv.onnx"));
+        var options = GetCompileOptions();
+        var module = Importers.ImportOnnx(file, options);
+        await InferShape(module, options);
+        Assert.True(module.Entry!.InferenceType());
+    }
+
     private async Task InferShape(IRModule module, CompileOptions options)
     {
         var pmgr = new PassManager(module, new RunPassOptions(null!, options.DumpLevel, options.DumpDir));
