@@ -202,7 +202,7 @@ inline void CreateMiniDump(PEXCEPTION_POINTERS pep, LPCTSTR strFileName) {
 
         ::MiniDumpWriteDump(::GetCurrentProcess(), ::GetCurrentProcessId(),
                             hFile, MiniDumpNormal, (pep != 0) ? &mdei : 0, NULL,
-                            &mci);
+                            NULL);
 
         CloseHandle(hFile);
     }
