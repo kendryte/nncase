@@ -46,7 +46,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetDumpDirPtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> CompileOptionsSetQuantizeOptionsPtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> CompileOptionsSetQuantTypePtr;
-    public delegate* unmanaged<IntPtr, QuantMode, void> CompileOptionsSetQuantModePtr;
+    public delegate* unmanaged<IntPtr, ModelQuantMode, void> CompileOptionsSetModelQuantModePtr;
     public delegate* unmanaged<void> CompilerInitializePtr;
     public delegate* unmanaged<IntPtr, IntPtr> CompilerCreatePtr;
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr> CompilerImportModulePtr;
@@ -87,7 +87,7 @@ public static unsafe class CApi
         mt->CompileOptionsSetDumpLevelPtr = &CompileOptionsSetDumpLevel;
         mt->CompileOptionsSetDumpDirPtr = &CompileOptionsSetDumpDir;
         mt->CompileOptionsSetQuantTypePtr = &CompileOptionsSetQuantType;
-        mt->CompileOptionsSetQuantModePtr = &CompileOptionsSetQuantMode;
+        mt->CompileOptionsSetModelQuantModePtr = &CompileOptionsSetModelQuantMode;
         mt->CompilerInitializePtr = &CompilerInitialize;
         mt->CompilerCreatePtr = &CompilerCreate;
         mt->CompilerImportModulePtr = &CompilerImportModule;
@@ -215,9 +215,9 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
-    private static void CompileOptionsSetQuantMode(IntPtr compileOptionsHandle, QuantMode quantMode)
+    private static void CompileOptionsSetModelQuantMode(IntPtr compileOptionsHandle, ModelQuantMode quantMode)
     {
-        Get<CompileOptions>(compileOptionsHandle).QuantMode = quantMode;
+        Get<CompileOptions>(compileOptionsHandle).ModelQuantMode = quantMode;
     }
 
     [UnmanagedCallersOnly]

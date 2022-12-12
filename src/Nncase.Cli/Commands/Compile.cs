@@ -141,11 +141,11 @@ public class Compile : Command
         };
 
         // 2. import the model
-        Compiler.Compiler.UpdateCompileOptions(compileOptions);
-        var compiler = new Compiler.Compiler();
+        var compiler = new Compiler.Compiler(compileOptions);
+        IRModule module;
         using (var model_stream = File.OpenRead(CompilerServices.CompileOptions.InputFile))
         {
-            compiler.ImportModule(model_stream);
+            module = compiler.ImportModule(model_stream);
         }
 
         // 3. create the calib dataset
@@ -153,7 +153,7 @@ public class Compile : Command
         {
             if (quant_options.CalibrationMethod == Quantization.CalibMethod.Random)
             {
-                quant_options.CalibrationDataset = new RandCalibrationDatasetProvider(((Function)compiler.Module.Entry!).Parameters.ToArray());
+                quant_options.CalibrationDataset = new RandCalibrationDatasetProvider(((Function)module.Entry!).Parameters.ToArray());
             }
         }
 
@@ -161,20 +161,12 @@ public class Compile : Command
         compiler.Compile();
 
         // 5. code gen
-        var bytes = compiler.Gencode();
         using (var os = File.OpenWrite(CompilerServices.CompileOptions.OutputFile))
         {
-            os.Write(bytes);
+            compiler.Gencode(os);
         }
     }
-
-
 }
-
-        private void Run(CompileOptions options, IHost host)
-        {
-            new Compiler.Compiler(options).Compile();
-        }
 
 internal sealed class RandCalibrationDatasetProvider : Quantization.ICalibrationDatasetProvider
 {

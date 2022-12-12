@@ -43,9 +43,9 @@ public class Compiler
         //Console.WriteLine("Infer Shape...");
 
         if (CompilerServices.CompileOptions.DumpLevel > 4)
-            DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module, options));
+            DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module));
         else
-            InferShape(module, options);
+            InferShape(module);
 
         var inferSucc = CompilerServices.InferenceType(module.Entry!);
         DumpModule(module, "ir_infertype");
@@ -105,7 +105,7 @@ public class Compiler
           new Transform.Rules.Neutral.CombineTransposeActivations(),
           new Transform.Rules.Neutral.FoldConv2DPads(),
         });
-        if (options.ModelQuantMode == ModelQuantMode.UsePTQ)
+        if (_compileOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
             AddMarker(passManager);
             AssignRange(passManager);
@@ -131,11 +131,11 @@ public class Compiler
         var t = CompilerServices.GetCompileTarget;
         RunPass(p => TargetIndependentPass(p), "TargetIndependentPass");
         RunPass(p => t.RegisterTargetDependentPass(p, _compileOptions), "TargetDependentPass");
-        if (options.DumpLevel > 4)
-            DumpManager.RunWithDump("TargetIndependentEval", () => RunPass(p => TargetIndependentPass(p, options), "TargetIndependentPass"));
+        if (_compileOptions.DumpLevel > 4)
+            DumpManager.RunWithDump("TargetIndependentEval", () => RunPass(p => TargetIndependentPass(p), "TargetIndependentPass"));
         else
-            RunPass(p => TargetIndependentPass(p, options), "TargetIndependentPass");
-        RunPass(p => t.RegisterTargetDependentPass(p, options), "TargetDependentPass");
+            RunPass(p => TargetIndependentPass(p), "TargetIndependentPass");
+        RunPass(p => t.RegisterTargetDependentPass(p, _compileOptions), "TargetDependentPass");
         // RunPass(p => p.Add(new Quantization.EGraphPassWithBindQuantizeConfig("2.5_BindQuantizeConfig", options.QuantizeOptions!)));
         if (_compileOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
