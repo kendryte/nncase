@@ -171,9 +171,9 @@ inline BOOL CALLBACK MiniDumpCallback(PVOID pParam,
 
     switch (pInput->CallbackType) {
     case ModuleCallback:
-        if (pOutput->ModuleWriteFlags & ModuleWriteDataSeg)
-            if (!IsDataSectionNeeded(pInput->Module.FullPath))
-                pOutput->ModuleWriteFlags &= (~ModuleWriteDataSeg);
+        //if (pOutput->ModuleWriteFlags & ModuleWriteDataSeg)
+        //    if (!IsDataSectionNeeded(pInput->Module.FullPath))
+        //        pOutput->ModuleWriteFlags &= (~ModuleWriteDataSeg);
     case IncludeModuleCallback:
     case IncludeThreadCallback:
     case ThreadCallback:
@@ -202,7 +202,7 @@ inline void CreateMiniDump(PEXCEPTION_POINTERS pep, LPCTSTR strFileName) {
 
         ::MiniDumpWriteDump(::GetCurrentProcess(), ::GetCurrentProcessId(),
                             hFile, MiniDumpNormal, (pep != 0) ? &mdei : 0, NULL,
-                            NULL);
+                            &mci);
 
         CloseHandle(hFile);
     }
