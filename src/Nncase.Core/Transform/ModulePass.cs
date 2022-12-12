@@ -30,7 +30,7 @@ public abstract class ModulePass : BasePass
     /// <param name="options">Options.</param>
     public async Task RunAsync(IRModule module, RunPassOptions options)
     {
-        var new_options = options.SetPassName(Name);
+        var new_options = options.IndentDir(Name);
         OnPassStart(module, new_options);
         await RunCoreAsync(module, new_options);
         OnPassEnd(module, new_options);
@@ -54,7 +54,7 @@ public abstract class ModulePass : BasePass
             return;
         foreach (var (func, i) in module.Functions.Select((func, i) => (func, i)))
         {
-            CompilerServices.DumpIR(func, $"fn_{i}", Path.Combine(options.PassDumpDir, "Start"));
+            CompilerServices.DumpIR(func, $"fn_{i}", Path.Combine(options.DumpDir, "Start"));
         }
     }
 
@@ -70,7 +70,7 @@ public abstract class ModulePass : BasePass
 
         foreach (var (func, i) in module.Functions.Select((func, i) => (func, i)))
         {
-            CompilerServices.DumpIR(func, $"fn_{i}", Path.Combine(options.PassDumpDir, "End"));
+            CompilerServices.DumpIR(func, $"fn_{i}", Path.Combine(options.DumpDir, "End"));
         }
     }
 }

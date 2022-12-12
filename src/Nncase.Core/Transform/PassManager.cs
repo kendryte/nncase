@@ -159,7 +159,7 @@ public class PassManager : IEnumerable<BasePass>
         {
             foreach (var item in module.Functions)
             {
-                CompilerServices.DumpIR(item, "", Path.Combine(options.DumpDir, $"{name}_FuncUpdateDependence"));
+                CompilerServices.DumpIR(item, "", Path.Combine(options.DumpDir, name, $"FuncUpdateDependence"));
             }
         }
     }

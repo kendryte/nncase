@@ -73,7 +73,7 @@ namespace Nncase.Transform
             switch (options.DumpLevel)
             {
                 case >= 2:
-                    CompilerServices.DumpIR((Expr)callable, prefix, options.PassDumpDir, false);
+                    CompilerServices.DumpIR((Expr)callable, prefix, options.DumpDir, false);
                     break;
                 case >= 1:
                     break;
@@ -102,6 +102,31 @@ namespace Nncase.Transform
         public void Add(Func<ExprMutator> mutator)
         {
             MutatorCreators.Add(mutator);
+        }
+
+
+        /// <summary>
+        /// the callback function you can custom process func with run pass options.
+        /// </summary>
+        /// <param name="callable"> func without run pass.</param>
+        /// <param name="options"></param>
+        protected override void OnPassStart(BaseFunction callable, RunPassOptions options)
+        {
+            if (callable is not PrimFunction)
+                return;
+            base.OnPassStart(callable, options);
+        }
+
+        /// <summary>
+        /// the callback function you can custom process func with run pass options.
+        /// </summary>
+        /// <param name="callable"> func with rewrited. </param>
+        /// <param name="options"></param>
+        protected override void OnPassEnd(BaseFunction callable, RunPassOptions options)
+        {
+            if (callable is not PrimFunction)
+                return;
+            base.OnPassEnd(callable, options);
         }
     }
 }
