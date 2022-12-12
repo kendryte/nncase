@@ -213,6 +213,31 @@ LONG __stdcall MyUnhandledExceptionFilter(PEXCEPTION_POINTERS pExceptionInfo) {
     return EXCEPTION_EXECUTE_HANDLER;
 }
 
+void DisableSetUnhandledExceptionFilter() {
+    try {
+        void *addr = (void *)SetUnhandledExceptionFilter;
+
+        if (addr) {
+            unsigned char code[16];
+            int size = 0;
+
+            code[size++] = 0x33;
+            code[size++] = 0xC0;
+            code[size++] = 0xC2;
+            code[size++] = 0x04;
+            code[size++] = 0x00;
+
+            DWORD dwOldFlag, dwTempFlag;
+            BOOL result1 =
+                VirtualProtect(addr, size, PAGE_EXECUTE_READWRITE, &dwOldFlag);
+            BOOL result2 =
+                WriteProcessMemory(GetCurrentProcess(), addr, code, size, NULL);
+            BOOL result3 = VirtualProtect(addr, size, dwOldFlag, &dwTempFlag);
+        }
+    } catch (...) {
+    }
+}
+
 struct premain {
     premain() {
         absl::FailureSignalHandlerOptions failure_signal_handler_options;
@@ -221,8 +246,8 @@ struct premain {
         failure_signal_handler_options.alarm_on_failure_secs = 5;
         failure_signal_handler_options.call_previous_handler = true;
         absl::InstallFailureSignalHandler(failure_signal_handler_options);
-        
-        SetUnhandledExceptionFilter(MyUnhandledExceptionFilter);
+
+        //DisableSetUnhandledExceptionFilter();
     }
 } premain_v;
 
@@ -269,12 +294,11 @@ c_api_mt g_c_api_mt;
 } // namespace
 
 int nncase_clr_initialize(const char *root_assembly_path) {
-    int *p = 0;
-    *p = 1;
     if (!g_c_api_mt.handle_free) {
         auto init = load_compiler_c_api_initializer(root_assembly_path);
         init(&g_c_api_mt);
         g_c_api_mt.compiler_initialize();
+        SetUnhandledExceptionFilter(MyUnhandledExceptionFilter);
     }
 
     return 0;
