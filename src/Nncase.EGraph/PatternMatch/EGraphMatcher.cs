@@ -64,6 +64,7 @@ public sealed class EGraphMatcher
             (TensorConstPattern constPat, TensorConst con) => VisitLeaf(matchScopes, constPat, enode, con),
             (TupleConstPattern constPat, TupleConst con) => VisitLeaf(matchScopes, constPat, enode, con),
             (ConstPattern constPat, Const con) => VisitLeaf(matchScopes, constPat, enode, con),
+            (FusionPattern fusionPattern, Fusion fusion) => VisitLeaf(matchScopes, fusionPattern, enode, fusion),
             (FunctionPattern functionPat, Function func) => Visit(matchScopes, functionPat, enode, func),
             (CallPattern callPat, Call call) => Visit(matchScopes, callPat, enode, call),
             (MarkerPattern mkPat, Marker mk) => Visit(matchScopes, mkPat, enode, mk),
@@ -122,6 +123,20 @@ public sealed class EGraphMatcher
                     context.MatchCandidates(pattern, expr);
                 }
             }
+        }
+
+        return context.NewScopes;
+    }
+
+    private IReadOnlyList<MatchScope> VisitLeaf(IReadOnlyList<MatchScope> matchScopes, FusionPattern pattern, ENode enode, Fusion expr)
+    {
+        var context = new MatchContext(matchScopes, pattern, expr);
+
+        if (context.HasCandidates
+            && CompilerServices.TryMatchRoot(expr, pattern, out var result))
+        {
+            context.NewScopes.AddRange(context.Candidates);
+            context.MatchCandidates(pattern, (Expr)result[pattern]);
         }
 
         return context.NewScopes;

@@ -18,11 +18,13 @@ internal sealed class EGraphCostEvaluator
     private readonly Dictionary<ENode, Cost> _costs = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<EClass, Cost> _eclassCosts = new();
     private readonly HashSet<EClass> _allEclasses = new();
+    private readonly IBaseFuncCostEvaluator? _baseFuncCostEvaluator;
     private bool _changed;
 
-    public EGraphCostEvaluator(EClass root)
+    public EGraphCostEvaluator(EClass root, IBaseFuncCostEvaluator? basefunc_cost_evaluator)
     {
         _root = root;
+        _baseFuncCostEvaluator = basefunc_cost_evaluator;
         PopulateAllEclasses(_root);
     }
 
@@ -98,6 +100,7 @@ internal sealed class EGraphCostEvaluator
             Op op => Visit(enode, op),
             Marker marker => Visit(enode, marker),
             None none => Visit(enode, none),
+            BaseFunction baseFunction => Visit(enode, baseFunction),
             _ => throw new ArgumentException("Unsupported expression type."),
         };
     }
@@ -157,8 +160,8 @@ internal sealed class EGraphCostEvaluator
                 }
                 else
                 {
-                    Debug.Assert(targetEnode.Expr is Function);
-                    newCost = Visit(targetEnode.Children[0]);
+                    // Debug.Assert(targetEnode.Expr is Function);
+                    newCost = Visit(targetEnode, returnType);
                 }
 
                 if (cost == null || (newCost != null && newCost < cost))
@@ -169,6 +172,11 @@ internal sealed class EGraphCostEvaluator
 
             return UpdateCost(enode, cost == null ? null : cost + costs.Sum());
         });
+    }
+
+    private Cost? Visit(ENode enode, BaseFunction baseFunction)
+    {
+        return VisitLeaf(enode, () => _baseFuncCostEvaluator!.VisitLeaf(baseFunction));
     }
 
     private Cost? UpdateCost(ENode enode, Cost? cost)

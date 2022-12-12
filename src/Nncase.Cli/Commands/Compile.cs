@@ -45,7 +45,7 @@ internal sealed class CliCompileOptions
     public QuantType QuantType { get; set; }
 
     /// <inheritdoc/>
-    public QuantMode QuantMode { get; set; }
+    public QuantType WQuantType { get; set; }
 
     /// <inheritdoc/>
     public string OutputFile { get; set; }
@@ -90,10 +90,10 @@ public class Compile : Command
           alias: "--quant-type",
           description: "quant type, default is uint8",
           getDefaultValue: () => QuantType.UInt8));
-        AddOption(new Option<QuantMode>(
-          alias: "--quant-mode",
-          description: "quant model, default is UnsignedMode",
-          getDefaultValue: () => QuantMode.UnsignedMode));
+        AddOption(new Option<QuantType>(
+          alias: "--wquant-type",
+          description: "wquant type, default is uint8",
+          getDefaultValue: () => QuantType.UInt8));
         AddOption(new Option<Quantization.ModelQuantMode>(
           alias: "--model-quant-mode",
           description: "model quant mode, default is NoQuant",
@@ -128,7 +128,13 @@ public class Compile : Command
                 QuantType.Int16 => DataTypes.Int16,
                 _ => throw new ArgumentOutOfRangeException()
             },
-            QuantMode = cliOptions.QuantMode,
+            WQuantType = cliOptions.WQuantType switch
+            {
+                QuantType.UInt8 => DataTypes.UInt8,
+                QuantType.Int8 => DataTypes.Int8,
+                QuantType.Int16 => DataTypes.Int16,
+                _ => throw new ArgumentOutOfRangeException()
+            },
             ModelQuantMode = cliOptions.ModelQuantMode,
             // todo add the quant options parser
             QuantizeOptions = quant_options,

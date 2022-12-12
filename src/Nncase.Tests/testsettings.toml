@@ -6,5 +6,5 @@
   DumpLevel = 4
   DumpDir = ""
   ModelQuantMode = "NoQuant"
-  QuantType= "Int8"
-  QuantMode= "UnsignedMode"
+  QuantType= "UInt8"
+  WQuantType= "UInt8"

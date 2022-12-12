@@ -7,7 +7,8 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using OrtKISharp;
-
+using static Nncase.PatternMatch.F.Math;
+using static Nncase.PatternMatch.Utility;
 namespace Nncase.Evaluator.Math;
 
 /// <summary>
@@ -21,6 +22,28 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
         var input = context.GetOrtArgumentValue(reduce, Reduce.Input);
         var axis = context.GetArgumentValueAsArray<long>(reduce, Reduce.Axis);
         var keepDims = context.GetArgumentValueAsScalar<long>(reduce, Reduce.KeepDims);
+
+        // when HasBindedMixQuantInfo is true, eval will do simulation of quant/dequant for some inputs, this is used for evaluate accumulated quant error for layers.
+        if (context.CurrentCall.EnodeBestQuantConfigWithCosine != null)
+        {
+            var pattern = IsRangeOfMarker(IsWildcard(), IsWildcard());
+            if (pattern.MatchLeaf(context.CurrentCall.Parameters.ToArray()[0]) && ((Nncase.IR.Marker)(context.CurrentCall.Parameters.ToArray()[0])).mixQuantInfo?.HasBindedMixQuantInfo == true)
+            {
+                var quantParam = ((Nncase.IR.Marker)(context.CurrentCall.Parameters.ToArray()[0])).mixQuantInfo.QuantParameter;
+                // input feature map quantParam count should be 1 since input feature map quant is by tensor.
+                System.Diagnostics.Debug.Assert(quantParam.Count == 1);
+                var inputFloat = input.ToArray<float>();
+                for (var i = 0; i < inputFloat.Length; i++)
+                {
+                    var inputBufQuant = (double)(inputFloat[i] / (double)(quantParam[0].Scale) + quantParam[0].ZeroPoint);
+                    if (!(quantParam[0].Scale == 1.0f && quantParam[0].ZeroPoint == 0))
+                        inputBufQuant = System.Math.Round((double)((float)inputBufQuant));
+                    var inputBufDeQuant = (float)((inputBufQuant - quantParam[0].ZeroPoint) * (double)(quantParam[0].Scale));
+                    inputFloat[i] = (float)(inputBufDeQuant);
+                }
+                input = OrtKISharp.Tensor.MakeTensor(inputFloat, input.Shape);
+            }
+        }
 
         return (reduce.ReduceOp switch
         {

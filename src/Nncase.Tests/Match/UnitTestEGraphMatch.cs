@@ -187,5 +187,23 @@ public sealed class UnitTestEGraphMatch
 
         Assert.False(CompilerServices.TryEMatchRoot((x * 2) + 12 - x, IsBinary(op => true, xpat, xpat), out var result2));
     }
+
+
+    [Fact]
+    public void TestMatchCallFusion()
+    {
+        Fusion fusion;
+        {
+            var fusion_input = new Var(new TensorType(DataTypes.Float32, new[] { 1, 2, 3, 4 }));
+            fusion = new Fusion(Callable.StackVMModuleKind, IR.F.Tensors.Transpose(fusion_input, new[] { 0, 3, 1, 2 }), new[] { fusion_input });
+        }
+        var call = new Call(fusion, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 1, 2, 3, 4 }));
+
+
+        var pattern = IsCall("callee", IsFusion("callee_fusion", Callable.StackVMModuleKind, IsWildcard(), IsVArgs(IsVar())), IsWildcard("callee_input"));
+        
+        Assert.True(CompilerServices.TryEMatchRoot(call, pattern, out var result));
+        Assert.Single(result);
+    }
 }
 

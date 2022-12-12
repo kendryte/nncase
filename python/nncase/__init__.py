@@ -424,7 +424,7 @@ class ClCompileOptions():
     DumpLevel: int
     DumpDir: str
     QuantType: int
-    QuantMode: int
+    WQuantType: int
     OutputFile: str
     ModelQuantMode: int
     QuantizeOptions: ClQuantizeOptions

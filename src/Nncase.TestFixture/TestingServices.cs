@@ -137,7 +137,7 @@ public static class Testing
     /// <returns></returns>
     public static Tensor Rand(DataType dataType, params int[] shape)
     {
-        return (Tensor)typeof(Testing).GetMethod("Rand", new[] { typeof(int[]) })!.MakeGenericMethod(dataType.CLRType).Invoke(null, new object[] { shape })!;
+        return IR.F.Random.Normal(dataType, 0, 1, 1, shape).Evaluate().AsTensor();
     }
 
     /// <summary>
@@ -149,12 +149,7 @@ public static class Testing
     public static Tensor<T> Rand<T>(params int[] shape)
         where T : unmanaged, IEquatable<T>
     {
-        return Tensor.FromBytes<T>(Enumerable.Range(0, (int)TensorUtilities.GetProduct(shape)).Select(i =>
-        {
-            var bytes = new byte[Marshal.SizeOf(typeof(T))];
-            RandGenerator.NextBytes(bytes);
-            return bytes;
-        }).SelectMany(i => i).ToArray(), shape);
+        return IR.F.Random.Normal(DataType.FromType<T>(), 0, 1, 1, shape).Evaluate().AsTensor().Cast<T>();
     }
 
     /// <summary>

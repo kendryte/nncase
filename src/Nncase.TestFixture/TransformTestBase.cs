@@ -21,8 +21,8 @@ public partial class TransformTestBase : UnitTestFixtrue
     public override CompileOptions GetCompileOptions([CallerMemberName] string member_name = "")
     {
         var compileOptions = base.GetCompileOptions(member_name);
-        compileOptions.QuantMode = QuantMode.UnsignedMode;
-        compileOptions.QuantType = DataTypes.Int8;
+        compileOptions.QuantType = DataTypes.UInt8;
+        compileOptions.WQuantType = DataTypes.UInt8;
         return compileOptions;
     }
 

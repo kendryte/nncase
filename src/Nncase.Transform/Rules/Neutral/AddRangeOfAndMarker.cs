@@ -56,12 +56,28 @@ public sealed partial class AddRangeOfAndMarkerToBinary : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
         IsBinary("binary", "call",
-            b => b.BinaryOp is BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div or BinaryOp.Max or BinaryOp.Min,
+            _ => true,
             IsWildcard("lhs"),
             IsWildcard("rhs"));
     private Expr? GetReplace(Binary binary, Call call, Expr lhs, Expr rhs, RunPassOptions options)
     {
         var output = Nncase.IR.F.Math.Binary(binary.BinaryOp, IR.F.Math.RangeOfMarker(lhs, IR.F.Math.RangeOf(lhs)), IR.F.Math.RangeOfMarker(rhs, IR.F.Math.RangeOf(rhs)));
+        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
+    }
+}
+
+[RuleGenerator]
+public sealed partial class AddRangeOfAndMarkerToBroadcast : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } =
+        IsBroadcast("broadcast", _ => true,
+            IsWildcard("input"),
+            IsTensorConst("shape"));
+    private Expr? GetReplace(Broadcast broadcast, Expr input, Expr shape, RunPassOptions options)
+    {
+        var output = Broadcast(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), shape);
         options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
@@ -134,17 +150,18 @@ public sealed partial class AddRangeOfAndMarkerToConv2DTranspose : IRewriteRule
             IsTensorConst("weights"),
             IsTensorConst("bias"),
             IsWildcard("outShape"),
-            IsWildcard("stride"),
+            IsTensorConst("stride"),
             IsWildcard("padding"),
             IsWildcard("outPadding"),
-            IsWildcard("dilation"),
-            IsWildcard("groups"),
+            IsTensorConst("dilation"),
+            IsTensorConst("groups"),
             IsWildcard("fusedClamp"));
     private Expr? GetReplace(Conv2DTranspose conv2dTranspose, Expr input, Expr weights, TensorConst bias, Expr outShape, Expr stride, Expr padding,
-        Expr outPadding, Expr dilation, Expr groups, Expr fusedClamp)
+        Expr outPadding, Expr dilation, Expr groups, Expr fusedClamp, RunPassOptions options)
     {
         var output = Conv2DTranspose(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), IR.F.Math.RangeOfMarker(weights, IR.F.Math.RangeOf(weights)),
             bias, outShape, stride, padding, outPadding, dilation, PadMode.Constant, groups);
+        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -237,7 +254,7 @@ public sealed partial class AddRangeOfAndMarkerToLSTM : IRewriteRule
             IsTensorConst("inputforget"),
             IsTensorConst("outputsize"));
 
-    private Expr? GetReplace(LSTM lstm, Call call, Expr x, TensorConst w, TensorConst r, TensorConst b, TensorConst sequencelens,
+    private Expr? GetReplace(IR.Tensors.LSTM lstm, Call call, Expr x, TensorConst w, TensorConst r, TensorConst b, TensorConst sequencelens,
                             TensorConst initialh, TensorConst initialc, TensorConst p, TensorConst actalpha, TensorConst actbeta,
                             TensorConst clip, TensorConst hiddensize, TensorConst inputforget, TensorConst outputsize, RunPassOptions options)
     {
@@ -434,7 +451,7 @@ public sealed partial class AddRangeOfAndMarkerToUnary : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
         IsUnary("unary", "call",
-            u => u.UnaryOp is UnaryOp.Abs or UnaryOp.Neg,
+            _ => true,
             IsWildcard("input"));
     private Expr? GetReplace(Unary unary, Call call, Expr input, RunPassOptions options)
     {

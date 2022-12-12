@@ -92,7 +92,7 @@ public static class PythonHelper
     // Tensor[sample_count * input_count] dataSet 
     public static PytestCalibrationDatasetProvider MakeDatasetProvider(Tensor[] dataSet, int sampleCount, Var[] fnParams)
     {
-        var inputCount = dataSet.Length / sampleCount;
+        var inputCount = dataSet[0].Length / sampleCount;
 
         var samples = dataSet.Chunk(inputCount).Select(inputs => inputs.Zip(fnParams).ToDictionary(
             item => item.Item2,

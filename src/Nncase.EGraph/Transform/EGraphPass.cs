@@ -18,6 +18,7 @@ namespace Nncase.Transform;
 public class EGraphPass : RulesPass
 {
     private readonly List<IRewriteRule> _rules = new();
+    private readonly Evaluator.IBaseFuncCostEvaluator? _baseFuncCostEvaluator;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EGraphPass"/> class.
@@ -26,6 +27,18 @@ public class EGraphPass : RulesPass
     public EGraphPass(string name)
         : base(name)
     {
+        _baseFuncCostEvaluator = null;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EGraphPass"/> class.
+    /// </summary>
+    /// <param name="name">Pass Name.</param>
+    /// <param name="baseFuncCostEvaluator">Extenal cost evaluator.</param>
+    public EGraphPass(string name, Evaluator.IBaseFuncCostEvaluator baseFuncCostEvaluator)
+        : base(name)
+    {
+        _baseFuncCostEvaluator = baseFuncCostEvaluator;
     }
 
     /// <inheritdoc/>
@@ -37,7 +50,7 @@ public class EGraphPass : RulesPass
         OnPostRewriteStart(graph, options);
         await OnPostRewrite(graph, options);
         OnPostRewriteEnd(graph, options);
-        var post = graph.Extract(root, options);
+        var post = graph.Extract(root, _baseFuncCostEvaluator, options);
         CompilerServices.InferenceType(post);
         return (BaseFunction)post;
     }

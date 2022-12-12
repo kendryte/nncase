@@ -59,6 +59,14 @@ public class Startup
             {
                 "Int8" => DataTypes.Int8,
                 "UInt8" => DataTypes.UInt8,
+                "Int16" => DataTypes.Int16,
+                _ => throw new System.ArgumentOutOfRangeException(),
+            };
+            options.WQuantType = Configuration["CompileOptions:WQuantType"] switch
+            {
+                "Int8" => DataTypes.Int8,
+                "UInt8" => DataTypes.UInt8,
+                "Int16" => DataTypes.Int16,
                 _ => throw new System.ArgumentOutOfRangeException(),
             };
         });
