@@ -125,14 +125,14 @@ public class UnitTestCompiler : TestFixture.UnitTestFixtrue
 
     private async Task Compile(CompileOptions compileOptions)
     {
-        // 1. update compile options
-        Compiler.Compiler.UpdateCompileOptions(compileOptions);
-
-        // 2. compiler
+        // 1. create compiler
         var compiler = new Compiler.Compiler();
 
+        // 2. update compile options
+        compiler.UpdateCompileOptions(compileOptions);
+
         // 3. import the model
-        using (var model_stream = File.OpenRead(CompilerServices.CompileOptions.InputFile))
+        using (var model_stream = File.OpenRead(compileOptions.InputFile))
         {
             compiler.ImportModule(model_stream);
         }
@@ -142,7 +142,7 @@ public class UnitTestCompiler : TestFixture.UnitTestFixtrue
 
         // 5. codegen
         var bytes = compiler.Gencode();
-        using (var os = File.OpenWrite(CompilerServices.CompileOptions.OutputFile))
+        using (var os = File.OpenWrite(compileOptions.OutputFile))
         {
             os.Write(bytes);
         }

@@ -21,10 +21,11 @@ public sealed class CompileOptions
         Target = other.Target;
         DumpLevel = other.DumpLevel;
         DumpDir = other.DumpDir;
-        ModelQuantMode = other.ModelQuantMode;
         QuantType = other.QuantType;
         WQuantType = other.WQuantType;
         OutputFile = other.OutputFile;
+        ModelQuantMode = other.ModelQuantMode;
+        QuantizeOptions = other.QuantizeOptions;
     }
 
     /// <summary>

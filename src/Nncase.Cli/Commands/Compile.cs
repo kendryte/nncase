@@ -139,11 +139,14 @@ public class Compile : Command
             // todo add the quant options parser
             QuantizeOptions = quant_options,
         };
+        
+        // note compiler service use same compiler options
+        CompilerServices.CompileOptions = compileOptions;
 
         // 2. import the model
-        Compiler.Compiler.UpdateCompileOptions(compileOptions);
         var compiler = new Compiler.Compiler();
-        using (var model_stream = File.OpenRead(CompilerServices.CompileOptions.InputFile))
+        compiler.UpdateCompileOptions(compileOptions);
+        using (var model_stream = File.OpenRead(compileOptions.InputFile))
         {
             compiler.ImportModule(model_stream);
         }
@@ -162,7 +165,7 @@ public class Compile : Command
 
         // 5. code gen
         var bytes = compiler.Gencode();
-        using (var os = File.OpenWrite(CompilerServices.CompileOptions.OutputFile))
+        using (var os = File.OpenWrite(compileOptions.OutputFile))
         {
             os.Write(bytes);
         }

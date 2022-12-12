@@ -24,13 +24,17 @@ public class Compiler
     /// </summary>
     public IRModule Module { get; private set; } = null!;
 
+    private CompileOptions? _compileOptions = null;
+
+    public CompileOptions CompileOptions => _compileOptions ?? throw new InvalidOperationException("Must UpdateCompileOptions First!");
+
     /// <summary>
     /// update compile options
     /// </summary>
     /// <param name="options"></param>
-    public static void UpdateCompileOptions(CompileOptions options)
+    public void UpdateCompileOptions(CompileOptions options)
     {
-        CompilerServices.CompileOptions = options;
+        _compileOptions = options;
     }
 
     public void Init()
@@ -79,19 +83,18 @@ public class Compiler
 
     public IRModule ImportModule(Stream content)
     {
-        var options = CompilerServices.CompileOptions;
         //Console.WriteLine($"Target: {options.Target}");
-        var module = ImportModel(content, options);
-        DumpModule(module, options, "ir_import");
+        var module = ImportModel(content, CompileOptions);
+        DumpModule(module, CompileOptions, "ir_import");
         //Console.WriteLine("Infer Shape...");
 
-        if (CompilerServices.CompileOptions.DumpLevel > 4)
-            DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module, options));
+        if (CompileOptions.DumpLevel > 4)
+            DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module, CompileOptions));
         else
-            InferShape(module, options);
+            InferShape(module, CompileOptions);
 
         var inferSucc = CompilerServices.InferenceType(module.Entry!);
-        DumpModule(module, options, "ir_infertype");
+        DumpModule(module, CompileOptions, "ir_infertype");
         if (!inferSucc)
         {
             throw new InvalidOperationException("InferShape Failed For This Model!");
@@ -128,13 +131,13 @@ public class Compiler
 
     private void RunPass(Action<PassManager> register, string dirName)
     {
-        var dump_path = Path.Join(CompilerServices.CompileOptions.DumpDir, dirName);
+        var dump_path = Path.Join(CompileOptions.DumpDir, dirName);
         var pmgr = new PassManager(Module,
           new RunPassOptions(
-              CompilerServices.GetCompileTarget,
-              CompilerServices.CompileOptions.DumpLevel,
-              Path.Join(CompilerServices.CompileOptions.DumpDir, dirName),
-              CompilerServices.CompileOptions
+              CompilerServices.GetTarget(CompileOptions.Target),
+              CompileOptions.DumpLevel,
+              Path.Join(CompileOptions.DumpDir, dirName),
+              CompileOptions
           )
         );
         register(pmgr);
@@ -175,20 +178,19 @@ public class Compiler
         passManager.Add(new Quantization.EGraphPassWithQuantize("1_AssignRanges", options.QuantizeOptions!));
     }
 
-    public void Compile()
+    public void Compile(CompileOptions? compileOptions = null)
     {
-        var options = CompilerServices.CompileOptions;
-        var t = CompilerServices.GetCompileTarget;
-        if (options.DumpLevel > 4)
-            DumpManager.RunWithDump("TargetIndependentEval", () => RunPass(p => TargetIndependentPass(p, options), "TargetIndependentPass"));
+        var t = CompilerServices.GetTarget(CompileOptions.Target);
+        if (CompileOptions.DumpLevel > 4)
+            DumpManager.RunWithDump("TargetIndependentEval", () => RunPass(p => TargetIndependentPass(p, CompileOptions), "TargetIndependentPass"));
         else
-            RunPass(p => TargetIndependentPass(p, options), "TargetIndependentPass");
-        RunPass(p => t.RegisterTargetDependentPass(p, options), "TargetDependentPass");
-        // RunPass(p => p.Add(new Quantization.EGraphPassWithBindQuantizeConfig("2.5_BindQuantizeConfig", options.QuantizeOptions!)));
-        if (options.ModelQuantMode == ModelQuantMode.UsePTQ)
+            RunPass(p => TargetIndependentPass(p, CompileOptions), "TargetIndependentPass");
+        RunPass(p => t.RegisterTargetDependentPass(p, CompileOptions), "TargetDependentPass");
+        // RunPass(p => p.Add(new Quantization.EGraphPassWithBindQuantizeConfig("2.5_BindQuantizeConfig", CompileOptions.QuantizeOptions!)));
+        if (CompileOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
-            RunPass(p => t.RegisterQuantizePass(p, options), "QuantizePass");
-            RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, options), "TargetDependentAfterQuantPass");
+            RunPass(p => t.RegisterQuantizePass(p, CompileOptions), "QuantizePass");
+            RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, CompileOptions), "TargetDependentAfterQuantPass");
             var clear = new DataflowPass("ClearMarker") { new RemoveMarker() };
             RunPass(p => p.Add(clear), "RemoveMarker");
         }
@@ -210,8 +212,8 @@ public class Compiler
 
     public byte[] Gencode()
     {
-        var target = CompilerServices.GetCompileTarget;
-        var moduleBuilder = new ModelBuilder(target, CompilerServices.CompileOptions);
+        var target = CompilerServices.GetTarget(CompileOptions.Target);
+        var moduleBuilder = new ModelBuilder(target, CompileOptions);
         var linkedModel = moduleBuilder.Build(Module);
         using var output = new MemoryStream();
         linkedModel.Serialize(output);
