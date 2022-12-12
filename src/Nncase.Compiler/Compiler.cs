@@ -146,6 +146,7 @@ public class Compiler
           new Transform.Rules.Neutral.CombineTransposeBinary(),
           new Transform.Rules.Neutral.CombineTransposeReduce(),
           new Transform.Rules.Neutral.CombineTransposeActivations(),
+          new Transform.Rules.Neutral.CombinePadTranspose(),
           new Transform.Rules.Neutral.FoldNopPad(),
           new Transform.Rules.Neutral.FoldConv2DPads(),
           new Transform.Rules.Neutral.FoldReduceWindow2DPads(),
