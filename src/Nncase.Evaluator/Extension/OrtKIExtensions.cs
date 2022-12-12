@@ -49,8 +49,7 @@ public static class OrtKIExtensions
 
     public static Tensor ToTensor(this OrtKISharp.Tensor tensor)
     {
-        var mmgr = new OrtTensorMemoryManager(tensor);
-        return Tensor.FromBytes(tensor.DataType.ToDataType(), mmgr.Memory, tensor.Shape.ToInts());
+        return Tensor.FromBytes(tensor.DataType.ToDataType(), tensor.BytesBuffer.ToArray(), tensor.Shape.ToInts());
     }
 
     public static TensorValue ToValue(this OrtKISharp.Tensor tensor)
