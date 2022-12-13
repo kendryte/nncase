@@ -124,23 +124,27 @@ jobs:
                 </EnvironmentVariables>
               </RunConfiguration>
             </RunSettings>
+        
+      - name: Set up test environment (Windows)
+        shell: pwsh
+        run: |
+          echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
+        if: runner.os == 'Windows'
 
       - name: Dotnet Test
         working-directory: ${{github.workspace}}
-        env:
-          PATH: ${{github.workspace}}/install/bin
         run: |
+          dotnet tool install --global dotnet-coverage
           dotnet test -c ${{matrix.config.buildType}} -s test.runsettings --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
+          dotnet-coverage merge -o coverage.unit.xml -f cobertura -r coverage/*.xml
 
       - name: Upload Coverage
-        uses: codecov/codecov-action@v3
+        uses: actions/upload-artifact@v3
         if: matrix.config.name == 'x86_64-linux'
         with:
-          directory: ./coverage
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: true
-          verbose: true
+          name: nncase-coverage-unit
+          path: coverage.unit.xml
+          if-no-files-found: error
           
       - name: Upload nncase Build Artifact
         uses: actions/upload-artifact@v3
@@ -223,6 +227,7 @@ jobs:
           Copy-Item install/bin/*.dll install/
           echo "VK_ICD_FILENAMES=${env:GITHUB_WORKSPACE}/swiftshader/bin/vk_swiftshader_icd.json" >> $env:GITHUB_ENV
           echo "PYTHONPATH=${env:GITHUB_WORKSPACE}/install/lib;${env:GITHUB_WORKSPACE}/install/python;${env:GITHUB_WORKSPACE}/tests" >> $env:GITHUB_ENV
+          echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
         if: runner.os == 'Windows'
       
       - name: Setup Python
@@ -240,17 +245,74 @@ jobs:
         working-directory: ${{github.workspace}}
         shell: bash
         env:
-          PATH: ${{github.workspace}}/install/bin
           NNCASE_COMPILER: ${{github.workspace}}/install/Nncase.Compiler.dll
         run: |
-          pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/onnx_basic.xml
-          pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/onnx_combine.xml
-          pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/tflite_basic.xml
-          pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/tflite_combine.xml
-          pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/tflite_model.xml
+          dotnet tool install --global dotnet-coverage
+          dotnet-coverage collect pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/onnx_basic.xml -f cobertura -o coverage/onnx_basic
+          dotnet-coverage collect pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/onnx_combine.xml -f cobertura -o coverage/onnx_combine
+          dotnet-coverage collect pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/tflite_basic.xml -f cobertura -o coverage/tflite_basic
+          dotnet-coverage collect pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/tflite_combine.xml -f cobertura -o coverage/tflite_combine
+          dotnet-coverage collect pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/tflite_model.xml -f cobertura -o coverage/tflite_model
+          dotnet-coverage merge -o coverage.integration.xml -f cobertura -r coverage/*.cobertura.xml
+
+      - name: Upload Coverage
+        uses: actions/upload-artifact@v3
+        if: matrix.config.name == 'x86_64-linux'
+        with:
+          name: nncase-coverage-integration
+          path: coverage.integration.xml
+          if-no-files-found: error
           
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always() && matrix.config.name == 'x86_64-linux'
         with:
           files: test_results/*.xml
+
+  upload-coverage:
+    needs: [test-compiler]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "6.0"
+      
+      - name: Download Unit Test Coverage
+        uses: actions/download-artifact@v3
+        with:
+          name: nncase-coverage-unit
+          path: ${{github.workspace}}/coverage
+      
+      - name: Download Integration Test Coverage
+        uses: actions/download-artifact@v3
+        with:
+          name: nncase-coverage-integration
+          path: ${{github.workspace}}/coverage
+          
+      - name: Upload Codecov (Unit)
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage/coverage.unit.xml
+          flags: unit
+          
+      - name: Upload Codecov (Integration)
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage/coverage.integration.xml
+          flags: integration
+
+      - name: Generate Coverage Report
+        run: |
+          dotnet tool install --global dotnet-coverage
+          dotnet tool install -g dotnet-reportgenerator-globaltool
+          dotnet-coverage merge -o coverage.xml -f cobertura -r coverage/*.xml
+          reportgenerator -reports:coverage.xml -targetdir:"coveragereport" -reporttypes:Html
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: nncase-coverage-report
+          path: coveragereport
+          if-no-files-found: error
