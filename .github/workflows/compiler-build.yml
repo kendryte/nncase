@@ -130,7 +130,17 @@ jobs:
         env:
           PATH: ${{github.workspace}}/install/bin
         run: |
-          dotnet test -c ${{matrix.config.buildType}} -s test.runsettings --no-build --verbosity normal
+          dotnet test -c ${{matrix.config.buildType}} -s test.runsettings --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
+
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v3
+        if: matrix.config.name == 'x86_64-linux'
+        with:
+          directory: ./coverage
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: true
+          verbose: true
           
       - name: Upload nncase Build Artifact
         uses: actions/upload-artifact@v3
