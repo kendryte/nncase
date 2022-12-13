@@ -18,6 +18,11 @@ public static class PythonHelper
         Debugger.Launch();
     }
 
+    public static void SetCompileServiceOptions(CompileOptions options)
+    {
+        CompilerServices.CompileOptions = options;
+    }
+
     public static IValue TensorValueFromBytes(DataType type, byte[] span, int[] dimensions)
     {
         return Value.FromTensor(Tensor.FromBytes(type, span, dimensions));

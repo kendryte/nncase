@@ -337,6 +337,7 @@ class Compiler:
         if (self._compile_options is None):
             self._compile_options: ClCompileOptions = _nncase.CompileOptions()
             self._compiler.UpdateCompileOptions(self._compile_options)
+            _nncase.Compiler.PythonHelper.SetCompileServiceOptions(self._compile_options)
         self._compile_options.Target = compile_options.target
         self._compile_options.DumpLevel = 3 if compile_options.dump_ir == True else 0
         self._compile_options.DumpDir = compile_options.dump_dir
