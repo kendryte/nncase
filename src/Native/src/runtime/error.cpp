@@ -18,22 +18,15 @@
 using namespace nncase;
 using namespace nncase::runtime;
 
-namespace
-{
-class nncase_error_category : public std::error_category
-{
-public:
+namespace {
+class nncase_error_category : public std::error_category {
+  public:
     static nncase_error_category instance;
 
-    char const *name() const noexcept override
-    {
-        return "nncase";
-    }
+    char const *name() const noexcept override { return "nncase"; }
 
-    std::string message(int code) const override
-    {
-        switch ((nncase_errc)code)
-        {
+    std::string message(int code) const override {
+        switch ((nncase_errc)code) {
         case nncase_errc::invalid_model_indentifier:
             return "Invalid model indentifier";
         case nncase_errc::invalid_model_checksum:
@@ -63,21 +56,23 @@ public:
         }
     }
 
-    bool equivalent(NNCASE_UNUSED std::error_code const &code, NNCASE_UNUSED int condition) const noexcept override
-    {
+    bool equivalent(NNCASE_UNUSED std::error_code const &code,
+                    NNCASE_UNUSED int condition) const noexcept override {
         return false;
     }
 };
 
 nncase_error_category nncase_error_category::instance;
-}
+} // namespace
 
-const std::error_category &nncase::runtime::nncase_category() noexcept
-{
+const std::error_category &nncase::runtime::nncase_category() noexcept {
     return nncase_error_category::instance;
 }
 
-std::error_condition nncase::runtime::make_error_condition(nncase_errc code)
-{
+std::error_code nncase::runtime::make_error_code(nncase_errc code) {
+    return std::error_code(static_cast<int>(code), nncase_category());
+}
+
+std::error_condition nncase::runtime::make_error_condition(nncase_errc code) {
     return std::error_condition(static_cast<int>(code), nncase_category());
 }

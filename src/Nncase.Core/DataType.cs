@@ -135,7 +135,7 @@ public abstract record PrimType : DataType
     /// </summary>
     public abstract Runtime.TypeCode TypeCode { get; }
 
-    ///<inheritdoc/>
+    /// <inheritdoc/>
     public sealed override string ToString()
     {
         return ShortName;

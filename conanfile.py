@@ -39,6 +39,10 @@ class nncaseConan(ConanFile):
         "vulkan_runtime": False,
         "openmp": True
     }
+    
+    def imports(self):
+        if self.settings.os == 'Windows':
+            self.copy("nethost.dll", "bin", "bin")
 
     def requirements(self):
         self.requires('gsl-lite/0.37.0')
@@ -51,6 +55,8 @@ class nncaseConan(ConanFile):
             self.requires('pybind11/2.6.1')
 
         if not self.options.runtime:
+            self.requires('abseil/20220623.1')
+            self.requires('nethost/6.0.11')
             self.requires('fmt/7.1.3')
             self.requires('magic_enum/0.7.0')
             self.requires('spdlog/1.8.2')
@@ -71,6 +77,10 @@ class nncaseConan(ConanFile):
 
         if self.settings.arch not in ("x86_64",):
             self.options.halide = False
+            
+        if not self.options.runtime:
+            if self.settings.os == 'Windows':
+                self.options["nethost"].shared = True
 
         if (not self.options.runtime) or self.options.vulkan_runtime:
             if self.settings.os == 'Linux':

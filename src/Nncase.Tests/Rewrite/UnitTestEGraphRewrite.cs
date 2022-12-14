@@ -58,13 +58,13 @@ public class UnitTestEGraphRewrite : TestFixture.UnitTestFixtrue
         Var x = "x";
         var e1 = g.Add(x * 2);
         var root = g.Add((x * 2) / 2);
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(caseOptions.PassDumpDir, "befroe"));
+        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(caseOptions.DumpDir, "befroe"));
         var e2 = g.Add(x << 1);
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(caseOptions.PassDumpDir, "added"));
+        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(caseOptions.DumpDir, "added"));
         g.Union(e2, e1);
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(caseOptions.PassDumpDir, "merge"));
+        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(caseOptions.DumpDir, "merge"));
         g.Rebuild();
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(caseOptions.PassDumpDir, "rebuild"));
+        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(caseOptions.DumpDir, "rebuild"));
     }
 
 

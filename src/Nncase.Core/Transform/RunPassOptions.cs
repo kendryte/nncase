@@ -157,11 +157,6 @@ namespace Nncase.Transform
         public RunPassOptions IndentDir(string path) => new(Target, DumpLevel, Path.Combine(DumpDir, path), CompileOptions) { PassName = PassName, MatchOptions = MatchOptions };
 
         /// <summary>
-        /// return "{DumpDir}/{PassName}".
-        /// </summary>
-        public string PassDumpDir { get => Path.Combine(DumpDir, PassName); }
-
-        /// <summary>
         /// the invalid pass 
         /// </summary>
         public static RunPassOptions Invalid => new RunPassOptions(null!, -1, "");

@@ -144,7 +144,7 @@ public static class EGraphExtractExtensions
         if (options.DumpLevel > 2)
         {
             // TODO: dump graph
-            EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, root.Find(), Path.Combine(options.PassDumpDir, "Costs", $"V{eGraph.Version}"));
+            EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, root.Find(), Path.Combine(options.DumpDir, "Costs", $"V{eGraph.Version}"));
         }
 
         return new EGraphExtractor(costModel).Extract(root.Find());

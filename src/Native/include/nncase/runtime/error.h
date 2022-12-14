@@ -37,6 +37,7 @@ enum class nncase_errc {
 };
 
 NNCASE_API const std::error_category &nncase_category() noexcept;
+NNCASE_API std::error_code make_error_code(nncase_errc code);
 NNCASE_API std::error_condition make_error_condition(nncase_errc code);
 
 END_NS_NNCASE_RUNTIME

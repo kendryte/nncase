@@ -39,7 +39,7 @@ public class UnitTestIntegralPromotion : TestFixture.UnitTestFixtrue
         var f = new Function(expr);
         var result = CompilerServices.InferenceType(f);
         Assert.False(result);
-        CompilerServices.DumpIR(f, "before", Path.Combine(passOptions.PassDumpDir, "TypePromotion"));
+        CompilerServices.DumpIR(f, "before", Path.Combine(passOptions.DumpDir, "TypePromotion"));
         var post = await new ShapeInferPass("TypePromotion").RunAsync(f, passOptions);
         Assert.True(CompilerServices.InferenceType(post));
         Assert.Equal(Value.FromTensor(3L), ((Function)post).Body.Evaluate());
@@ -62,7 +62,7 @@ public class UnitTestIntegralPromotion : TestFixture.UnitTestFixtrue
         var f = new Function(expr);
         var result = CompilerServices.InferenceType(f);
         Assert.True(result);
-        CompilerServices.DumpIR(f, "before", Path.Combine(passOptions.PassDumpDir, "TypePromotion"));
+        CompilerServices.DumpIR(f, "before", Path.Combine(passOptions.DumpDir, "TypePromotion"));
         var post = await new ShapeInferPass("TypePromotion").RunAsync(f, passOptions);
         Assert.True(CompilerServices.InferenceType(post));
         Assert.Equal(Value.FromTensor(3L), ((Function)post).Body.Evaluate());

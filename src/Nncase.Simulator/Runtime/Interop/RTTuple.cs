@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,6 +16,11 @@ namespace Nncase.Runtime.Interop;
 public class RTTuple : RTValue
 {
     private RTValue[]? _fields;
+
+    internal RTTuple()
+        : base(IntPtr.Zero)
+    {
+    }
 
     internal RTTuple(IntPtr handle)
         : base(handle)
@@ -46,4 +52,21 @@ public class RTTuple : RTValue
 
     /// <inheritdoc/>
     public override bool IsInvalid => handle == IntPtr.Zero;
+
+    public static unsafe RTTuple Create(RTValue[] fields)
+    {
+        var handles = fields.Select(x => x.DangerousGetHandle()).ToArray();
+        fixed (IntPtr* handlesPtr = handles)
+        {
+            Native.TupleCreate(handlesPtr, (uint)fields.Length, out var tuple).ThrowIfFailed();
+            GC.KeepAlive(fields);
+            return tuple;
+        }
+    }
+
+    public static RTTuple FromTuple(TupleValue tv)
+    {
+        var fields = tv.Select(RTValue.FromValue).ToArray();
+        return Create(fields);
+    }
 }

@@ -12,17 +12,17 @@ using TypeCode = Nncase.Runtime.TypeCode;
 namespace Nncase;
 
 /// <summary>
-/// QuantParam
+/// QuantParam.
 /// </summary>
 public struct QuantParam : IEquatable<QuantParam>
 {
     /// <summary>
-    /// Get the ZeroPoint
+    /// Get the ZeroPoint.
     /// </summary>
     public int ZeroPoint;
 
     /// <summary>
-    /// Get the Scale
+    /// Get the Scale.
     /// </summary>
     public float Scale;
 
@@ -62,7 +62,7 @@ public sealed record QuantParamType : ValueType
     public unsafe override int SizeInBytes => sizeof(QuantParam);
 
     /// <inheritdoc/>
-    override public Guid Uuid { get; }
+    public override Guid Uuid { get; } = new(0x32757b57, 0x4868, 0x42e3, 0xb5, 0xf3, 0x3b, 0xcd, 0xee, 0xe5, 0x70, 0x10); // {32757B57-4868-42E3-B5F3-3BCDEEE57010}
 
     /// <inheritdoc/>
     public override string ToString()

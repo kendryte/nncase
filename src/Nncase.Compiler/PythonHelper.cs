@@ -100,6 +100,11 @@ public static class PythonHelper
         return new PytestCalibrationDatasetProvider(samples, sampleCount);
     }
 
+    public static QuantizeOptions MakeQuantizeOptions(ICalibrationDatasetProvider datasetProvider)
+    {
+        return new QuantizeOptions
+        { BindQuantMethod = false, CalibrationDataset = datasetProvider, CalibrationMethod = CalibMethod.NoClip };
+    }
 
     public class PytestCalibrationDatasetProvider : ICalibrationDatasetProvider
     {
