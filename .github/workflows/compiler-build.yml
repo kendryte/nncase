@@ -134,7 +134,7 @@ jobs:
       - name: Dotnet Test
         working-directory: ${{github.workspace}}
         env:
-        NNCASE_CLI: ${{github.workspace}}/src/Nncase.Cli/bin/${{matrix.config.buildType}}/net${{matrix.dotnet-version}}/Nncase.Cli
+          NNCASE_CLI: ${{github.workspace}}/src/Nncase.Cli/bin/${{matrix.config.buildType}}/net${{matrix.dotnet-version}}/Nncase.Cli
         run: |
           dotnet tool install --global dotnet-coverage
           dotnet test -c ${{matrix.config.buildType}} -s test.runsettings --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
