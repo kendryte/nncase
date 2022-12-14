@@ -121,6 +121,9 @@ public class Compiler
         {
             new Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2D(),
             new Transform.Rules.Neutral.AddRangeOfAndMarkerToMatMul(),
+            new Transform.Rules.Neutral.AddRangeOfAndMarkerToRedeceWindow2D(),
+            new Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2DTranspose(),
+            new Transform.Rules.Neutral.AddRangeOfAndMarkerToBinary(),
         });
     }
 
