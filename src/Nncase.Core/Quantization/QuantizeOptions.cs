@@ -28,6 +28,8 @@ public enum ModelQuantMode : int
     UseQAT
 }
 
+;
+
 /// <summary>
 /// Calibration Method
 /// </summary>

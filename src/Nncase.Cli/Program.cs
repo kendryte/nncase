@@ -23,47 +23,13 @@ namespace Nncase.Cli
         {
             return await BuildCommandLine()
                 .UseHost(
-                    _ => Host.CreateDefaultBuilder(args),
+                    _ => CompilerHost.CreateHostBuilder(args),
                     host =>
                     {
-                        host.ConfigureAppConfiguration(ConfigureAppConfiguration)
-                            .UseServiceProviderFactory(new AutofacServiceProviderFactory())
-                            .ConfigureContainer<ContainerBuilder>(ConfigureContainer)
-                            .ConfigureServices(ConfigureServices)
-                            .ConfigureLogging(ConfigureLogging)
-                            .UseConsoleLifetime();
+                        host.UseConsoleLifetime();
                     })
                 .UseDefaults()
                 .Build().InvokeAsync(args);
-        }
-
-        private static void ConfigureContainer(ContainerBuilder builder)
-        {
-            var assemblies = ApplicationParts.LoadApplicationParts(c =>
-            {
-                c.AddCore()
-                .AddEvaluator()
-                .AddGraph()
-                .AddEGraph();
-            });
-            builder.RegisterAssemblyModules(assemblies);
-        }
-
-        private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
-        {
-            services.AddLogging();
-        }
-
-        private static void ConfigureAppConfiguration(HostBuilderContext context, IConfigurationBuilder builder)
-        {
-            builder.SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("config.json", true, false);
-        }
-
-        private static void ConfigureLogging(ILoggingBuilder loggingBuilder)
-        {
-            loggingBuilder.ClearProviders();
-            loggingBuilder.AddConsole();
         }
     }
 }

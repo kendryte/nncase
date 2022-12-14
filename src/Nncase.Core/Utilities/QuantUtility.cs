@@ -10,7 +10,9 @@ using System.Text;
 using System.Threading.Tasks;
 using SMath = System.Math;
 using TorchSharp;
-
+using static TorchSharp.torch;
+using static TorchSharp.torch.distributions;
+using static TorchSharp.TensorExtensionMethods;
 namespace Nncase.Utilities;
 
 /// <summary>
@@ -426,10 +428,364 @@ public static class QuantUtility
         /// </summary>
         Linear
     }
-    public static Span<float> AdaRoundWeights(Span<float> inputWeights, Expr inputWeightsRanges, Nncase.IR.Shape inputWeightsShape, List<Tensor> layerInput, List<Tensor> layerOutputGT, QuantMode quantMode, int bits, bool isByChannel, Expr psum, Expr act, Expr paddings, Expr strides, Expr dilations, Expr groups, int startB, int endB, int iters, int deviceID, float warmup, float weightParam, AdaMode adamode)
+    public static Span<float> AdaRoundWeights(Span<float> inputWeights, Expr inputWeightsRanges, Nncase.IR.Shape inputWeightsShape, List<Tensor> layerInput, List<Tensor> layerOutputGT, QuantMode quantMode, int bits, bool isByChannel, Expr paddings, Expr strides, Expr dilations, Expr groups, int startB, int endB, int iters, int deviceID, float warmup, float weightParam, AdaMode adamode)
     {
-        // todo: return AdaRoundWeights, and cover inputWeights span with AdaRoundWeights
-        // System.Console.WriteLine(((TensorConst)(act)).Value.Cast<float>());
-        return inputWeights;
+        //adamode = AdaMode.Linear;
+        // bits = 4;
+        // isByChannel = true;
+        // int [,] pad_buf = new int[,] {{1, 1}, {1, 1}};
+        // Tensor tmp = pad_buf;
+        // paddings = Const.FromTensor(tmp);
+        // int [] strides_buf = new int[] {2, 2};
+        // tmp = strides_buf;
+        // strides = Const.FromTensor(tmp);
+        // int [] dilations_buf = new int[] {1, 1};
+        // tmp = dilations_buf;
+        // dilations = Const.FromTensor(tmp);
+        // int [] groups_buf = new int[] {1};
+        // tmp = groups_buf;
+        // groups = Const.FromTensor(tmp);
+        // startB = 20;
+        // endB = 2;
+        // iters = 10;
+        // warmup = 0.2f;
+        // weightParam = 0.1f;
+        // int O = 32; //1000; //32;
+        // int C = 3; //1280; //3;
+        // int R = 3; //1; //3;
+        // int S = 3; //1; //3;
+        // int N = 2;
+        // int H_in0 = 224; //1; //224;
+        // int W_in0 = 224; //1; //224;
+        // int H_out0 = 112; //1; //112;
+        // int W_out0 = 112; //1; //112;
+        // float []  cached_inps0_buf = new float[N*C*H_in0*W_in0];
+        // float []  cached_inps1_buf = new float[N*C*H_in0*W_in0];
+        // float []  cached_inps2_buf = new float[N*C*H_in0*W_in0];
+        // float []  cached_outs0_buf = new float[N*O*H_out0*W_out0];
+        // float []  cached_outs1_buf = new float[N*O*H_out0*W_out0];
+        // float []  cached_outs2_buf = new float[N*O*H_out0*W_out0];
+        // float []  x_buf = new float[O*C*R*S];
+        // float []  gt_buf = new float[O*C*R*S];
+        // float [,]  range_buf = new float[O,2];
+        // BinaryReader br_cached_inps0 = new BinaryReader(new FileStream("/data/jinxiaocheng/cached_inps0.bin", FileMode.Open));
+        // BinaryReader br_cached_inps1 = new BinaryReader(new FileStream("/data/jinxiaocheng/cached_inps1.bin", FileMode.Open));
+        // BinaryReader br_cached_inps2 = new BinaryReader(new FileStream("/data/jinxiaocheng/cached_inps2.bin", FileMode.Open));
+        // BinaryReader br_cached_outs0 = new BinaryReader(new FileStream("/data/jinxiaocheng/cached_outs0.bin", FileMode.Open));
+        // BinaryReader br_cached_outs1 = new BinaryReader(new FileStream("/data/jinxiaocheng/cached_outs1.bin", FileMode.Open));
+        // BinaryReader br_cached_outs2 = new BinaryReader(new FileStream("/data/jinxiaocheng/cached_outs2.bin", FileMode.Open));
+        // BinaryReader br_x = new BinaryReader(new FileStream("/data/jinxiaocheng/x.bin", FileMode.Open));
+        // BinaryReader br_gt = new BinaryReader(new FileStream("/data/jinxiaocheng/alpha.bin", FileMode.Open));
+        // // BinaryReader br_gt = new BinaryReader(new FileStream("/data/jinxiaocheng/alpha_int.bin", FileMode.Open));
+        // BinaryReader br_min = new BinaryReader(new FileStream("/data/jinxiaocheng/x_min.bin", FileMode.Open));
+        // BinaryReader br_max = new BinaryReader(new FileStream("/data/jinxiaocheng/x_max.bin", FileMode.Open));
+        // for (var i = 0; i < (N*C*H_in0*W_in0); i++)
+        // {
+        //     cached_inps0_buf[i] = br_cached_inps0.ReadSingle();
+        //     cached_inps1_buf[i] = br_cached_inps1.ReadSingle();
+        //     cached_inps2_buf[i] = br_cached_inps2.ReadSingle();
+        // }
+        // br_cached_inps0.Close();
+        // br_cached_inps1.Close();
+        // br_cached_inps2.Close();
+        // for (var i = 0; i < (N*O*H_out0*W_out0); i++)
+        // {
+        //     cached_outs0_buf[i] = br_cached_outs0.ReadSingle();
+        //     cached_outs1_buf[i] = br_cached_outs1.ReadSingle();
+        //     cached_outs2_buf[i] = br_cached_outs2.ReadSingle();
+        // }
+        // br_cached_outs0.Close();
+        // br_cached_outs1.Close();
+        // br_cached_outs2.Close();
+        // for (var i = 0; i < (O*C*R*S); i++)
+        // {
+        //     x_buf[i] = br_x.ReadSingle();
+        //     gt_buf[i] = br_gt.ReadSingle();
+        // }
+        // br_x.Close();
+        // br_gt.Close();
+        // for (var i = 0; i < (isByChannel?O:1); i++)
+        // {
+        //     range_buf[i, 0] = br_min.ReadSingle();
+        //     range_buf[i, 1] = br_max.ReadSingle();
+        // }
+        // br_min.Close();
+        // br_max.Close();
+        // inputWeights = new Span<float>(x_buf);
+        // tmp = range_buf;
+        // inputWeightsRanges = Const.FromTensor(tmp);
+        // if (adamode == AdaMode.Linear)
+        // {
+        //     inputWeightsShape = new Nncase.IR.Shape(O,C);
+        //     layerInput.Clear();
+        //     tmp = new Tensor<float>(cached_inps0_buf, new[] { N,C }); 
+        //     layerInput.Add(tmp);
+        //     tmp = new Tensor<float>(cached_inps1_buf, new[] { N,C }); 
+        //     layerInput.Add(tmp);
+        //     tmp = new Tensor<float>(cached_inps2_buf, new[] { N,C }); 
+        //     layerInput.Add(tmp);
+        //     layerOutputGT.Clear();
+        //     tmp = new Tensor<float>(cached_outs0_buf, new[] { N,O }); 
+        //     layerOutputGT.Add(tmp);
+        //     tmp = new Tensor<float>(cached_outs1_buf, new[] { N,O }); 
+        //     layerOutputGT.Add(tmp);
+        //     tmp = new Tensor<float>(cached_outs2_buf, new[] { N,O }); 
+        //     layerOutputGT.Add(tmp);
+        // }
+        // else
+        // {
+        //     inputWeightsShape = new Nncase.IR.Shape(O,C,R,S);
+        //     layerInput.Clear();
+        //     tmp = new Tensor<float>(cached_inps0_buf, new[] { N,C,H_in0,W_in0 }); 
+        //     layerInput.Add(tmp);
+        //     tmp = new Tensor<float>(cached_inps1_buf, new[] { N,C,H_in0,W_in0 }); 
+        //     layerInput.Add(tmp);
+        //     tmp = new Tensor<float>(cached_inps2_buf, new[] { N,C,H_in0,W_in0 }); 
+        //     layerInput.Add(tmp);
+        //     layerOutputGT.Clear();
+        //     tmp = new Tensor<float>(cached_outs0_buf, new[] { N,O,H_out0,W_out0 }); 
+        //     layerOutputGT.Add(tmp);
+        //     tmp = new Tensor<float>(cached_outs1_buf, new[] { N,O,H_out0,W_out0 }); 
+        //     layerOutputGT.Add(tmp);
+        //     tmp = new Tensor<float>(cached_outs2_buf, new[] { N,O,H_out0,W_out0 }); 
+        //     layerOutputGT.Add(tmp);
+        // }
+
+        int n = layerInput.Count;
+        torch.Tensor cur_inp, cur_out;
+        int stride_h = 0, stride_w = 0, padding_h_s = 0, padding_w_s = 0, padding_h_e = 0, padding_w_e = 0, dilation_h = 0, dilation_w = 0, group = 0;
+        int start_decay = (int)(warmup * (float)iters);
+        if (adamode == AdaMode.Conv2D || adamode == AdaMode.Conv2DTranspose)
+        {
+            stride_h = ((Tensor<int>)(((TensorConst)(strides)).Value)).ToArray()[0];
+            stride_w = ((Tensor<int>)(((TensorConst)(strides)).Value)).ToArray()[1];
+            padding_h_s = ((Tensor<int>)(((TensorConst)(paddings)).Value)).ToArray()[0];
+            padding_w_s = ((Tensor<int>)(((TensorConst)(paddings)).Value)).ToArray()[1];
+            padding_h_e= ((Tensor<int>)(((TensorConst)(paddings)).Value)).ToArray()[2];
+            padding_w_e = ((Tensor<int>)(((TensorConst)(paddings)).Value)).ToArray()[3];
+            dilation_h = ((Tensor<int>)(((TensorConst)(dilations)).Value)).ToArray()[0];
+            dilation_w = ((Tensor<int>)(((TensorConst)(dilations)).Value)).ToArray()[1];
+            group = ((Tensor<int>)(((TensorConst)(groups)).Value)).ToArray()[0];
+        }
+        float qmax, qmin;
+        if (QuantMode.UnsignedMode == quantMode)
+        {
+            qmax = (1 << bits) - 1;
+            qmin = 0;
+        }
+        else if (QuantMode.SignedAsymmetricMode == quantMode)
+        {
+            qmax = (1 << (bits - 1)) - 1;
+            qmin = -(1 << (bits - 1));
+        }
+        else
+        {
+            qmax = (1 << (bits - 1)) - 1;
+            qmin = -(1 << (bits - 1)) + 1;
+        }
+        torch.Tensor x, delta, zero_point;
+        x = torch.from_array(inputWeights.ToArray());
+        if (4 == inputWeightsShape.Rank)
+        {
+            var out_channel = inputWeightsShape[0];
+            var in_channel = inputWeightsShape[1];
+            var filter_h = inputWeightsShape[2];
+            var filter_w = inputWeightsShape[3];
+            x = x.reshape(new long[]{out_channel.FixedValue, in_channel.FixedValue, filter_h.FixedValue, filter_w.FixedValue});
+            if (isByChannel)
+            {
+                delta = torch.ones_like(x);
+                zero_point = torch.zeros_like(x);
+                for (var c = 0; c < out_channel.FixedValue; c++)
+                {
+                    var x_min = ((Tensor<float>)(((TensorConst)(inputWeightsRanges)).Value)).ToArray()[2 * c];
+                    var x_max = ((Tensor<float>)(((TensorConst)(inputWeightsRanges)).Value)).ToArray()[2 * c + 1];
+                    var delta_tmp = (x_max - x_min) / (qmax - qmin);
+                    var zero_point_tmp = System.Math.Round(((x_max * qmin - x_min * qmax) / (x_max - x_min)));
+                    delta[c] = torch.full_like(x[c], delta_tmp);
+                    zero_point[c] = torch.full_like(x[c], zero_point_tmp);
+                }
+            }
+            else
+            {
+                throw new Exception("By layer weights quant is not supported.");
+            }
+        }
+        else
+        {
+            var out_channel = inputWeightsShape[0];
+            var in_channel = inputWeightsShape[1];
+            x = x.reshape(new long[]{out_channel.FixedValue, in_channel.FixedValue});
+            if (isByChannel)
+            {
+                delta = torch.ones_like(x);
+                zero_point = torch.zeros_like(x);
+                for (var c = 0; c < out_channel.FixedValue; c++)
+                {
+                    var x_min = ((Tensor<float>)(((TensorConst)(inputWeightsRanges)).Value)).ToArray()[2 * c];
+                    var x_max = ((Tensor<float>)(((TensorConst)(inputWeightsRanges)).Value)).ToArray()[2 * c + 1];
+                    var delta_tmp = (x_max - x_min) / (qmax - qmin);
+                    var zero_point_tmp = System.Math.Round(((x_max * qmin - x_min * qmax) / (x_max - x_min)));
+                    delta[c] = torch.full_like(x[c], delta_tmp);
+                    zero_point[c] = torch.full_like(x[c], zero_point_tmp);
+                }
+            }
+            else
+            {
+                throw new Exception("By layer weights quant is not supported.");
+            }
+        }
+
+        const float gamma = -0.1f;
+        const float zeta = 1.1f;
+        var x_floor = (x / delta).floor();
+        var rest = x / delta - x_floor;
+        var alpha = -torch.log((zeta - gamma) / (rest - gamma) - 1); //待学习的张量alpha，初始值
+        var alpha_para = TorchSharp.torch.nn.Parameter(alpha);
+        var alpha_para_init = alpha_para.clone();
+        IEnumerable<TorchSharp.Modules.Parameter> parameters = new List<TorchSharp.Modules.Parameter>() {alpha_para};
+        var optimizer = torch.optim.Adam(parameters, 1e-3); //优化器
+
+        torch.Tensor qmin_tensor = qmin;
+        torch.Tensor qmax_tensor = qmax;
+        for (int i = 0; i < iters; i++) //训练迭代
+        {
+            int idx = i % n; //原来是随机
+            
+            if (adamode == AdaMode.Linear)
+            {
+                var N_in = layerInput[idx].Shape[0];
+                var C_in = layerInput[idx].Shape[1];
+                cur_inp = torch.from_array(layerInput[idx].ToArray<float>());
+                cur_inp = cur_inp.reshape(new long[] {N_in.FixedValue, C_in.FixedValue});
+
+                var N_out = layerOutputGT[idx].Shape[0];
+                var C_out = layerOutputGT[idx].Shape[1];
+                cur_out = torch.from_array(layerOutputGT[idx].ToArray<float>());
+                cur_out = cur_out.reshape(new long[] {N_out.FixedValue, C_out.FixedValue});
+            }
+            else
+            {
+                var N_in = layerInput[idx].Shape[0];
+                var C_in = layerInput[idx].Shape[1];
+                var H_in = layerInput[idx].Shape[2];
+                var W_in = layerInput[idx].Shape[3];
+                cur_inp = torch.from_array(layerInput[idx].ToArray<float>());
+                cur_inp = cur_inp.reshape(new long[] {N_in.FixedValue, C_in.FixedValue, H_in.FixedValue, W_in.FixedValue});
+
+                var N_out = layerOutputGT[idx].Shape[0];
+                var C_out = layerOutputGT[idx].Shape[1];
+                var H_out = layerOutputGT[idx].Shape[2];
+                var W_out = layerOutputGT[idx].Shape[3];
+                cur_out = torch.from_array(layerOutputGT[idx].ToArray<float>());
+                cur_out = cur_out.reshape(new long[] {N_out.FixedValue, C_out.FixedValue, H_out.FixedValue, W_out.FixedValue});
+            }
+            
+            //软量化权重
+            var x_int = x_floor + torch.clamp(torch.sigmoid(alpha_para) * (zeta - gamma) + gamma, 0, 1);
+            var x_quant = torch.clamp(x_int + zero_point, qmin_tensor, qmax_tensor);
+            var x_float_q = (x_quant - zero_point) * delta;
+            
+            //reset gradient，清空过往梯度，为下一波梯度累加做准备
+            optimizer.zero_grad(); 
+            
+            //conv2 or linear forward
+            torch.Tensor out_quant; 
+            if (adamode == AdaMode.Conv2D)
+            {
+                if (padding_h_s != padding_h_e || padding_w_s != padding_w_e) //torch不支持非对称padding conv，需要拆算子
+                {
+                    var padding_tmp = torch.nn.functional.pad(cur_inp, new long[] {padding_h_s, padding_h_e, padding_w_s, padding_w_e});
+                    out_quant = torch.nn.functional.conv2d(padding_tmp, x_float_q, 
+                        strides: new long[] {stride_h, stride_w}, 
+                        padding: new long[] {0, 0},
+                        dilation: new long[] {dilation_h, dilation_w},
+                        groups: group);
+                }
+                else
+                {
+                    out_quant = torch.nn.functional.conv2d(cur_inp, x_float_q, 
+                        strides: new long[] {stride_h, stride_w}, 
+                        padding: new long[] {padding_h_s, padding_w_s},
+                        dilation: new long[] {dilation_h, dilation_w},
+                        groups: group);
+                }
+            }
+            else if (adamode == AdaMode.Conv2DTranspose)
+            {
+                if (padding_h_s != padding_h_e || padding_w_s != padding_w_e) //torch不支持非对称padding conv_transpose2d，需要拆算子
+                {
+                    var out_tmp = torch.nn.functional.conv_transpose2d(cur_inp, x_float_q, 
+                        strides: new long[] {stride_h, stride_w}, 
+                        padding: new long[] {0, 0},
+                        dilation: new long[] {dilation_h, dilation_w},
+                        groups: group);
+                    out_quant = out_tmp.index(new TensorIndex[] {
+                        TensorIndex.Slice(0,layerInput[idx].Shape[0].FixedValue),
+                        TensorIndex.Slice(0,layerInput[idx].Shape[1].FixedValue),
+                        TensorIndex.Slice(padding_h_s,layerInput[idx].Shape[2].FixedValue-padding_h_e),
+                        TensorIndex.Slice(padding_w_s,layerInput[idx].Shape[3].FixedValue-padding_w_e)});
+                }
+                else
+                {
+                    out_quant = torch.nn.functional.conv_transpose2d(cur_inp, x_float_q, 
+                        strides: new long[] {stride_h, stride_w}, 
+                        padding: new long[] {padding_h_e, padding_w_e},
+                        dilation: new long[] {dilation_h, dilation_w},
+                        groups: group);
+                }
+            }
+            else
+            {
+                out_quant = torch.nn.functional.linear(cur_inp, x_float_q);
+            }
+            
+            //loss
+            var rec_loss = (out_quant-cur_out).abs().pow(2.0).sum(1).mean();
+            torch.Tensor round_loss;
+            float b;
+            if ((i + 1) < start_decay)
+            {
+                b = 0.0f;
+                round_loss = torch.zeros_like(rec_loss);
+            }
+            else
+            {
+                b = (float)endB + ((float)startB - (float)endB) * SMath.Max(0.0f, 1.0f - (float)(i + 1 - start_decay) / (float)(iters - start_decay));
+                var round_vals = torch.clamp(torch.sigmoid(alpha_para) * (zeta - gamma) + gamma, 0, 1);
+                round_loss = weightParam * (1 - ((round_vals - 0.5).abs() * 2).pow(b)).sum();
+            }
+            var err = rec_loss + round_loss;
+            
+            //backward
+            err.backward();
+            
+            //梯度下降，更新alpha值
+            optimizer.step();
+        }
+
+        var x_floor_rst = (x / delta).floor();
+        var x_int_rst = x_floor_rst + (alpha_para >= torch.tensor(0.0f));
+        var x_quant_rst = torch.clamp(x_int_rst + zero_point, qmin_tensor, qmax_tensor);
+        var x_float_q_rst = (x_quant_rst - zero_point) * delta;
+
+        // x.print();
+        // x_float_q_rst.print();
+        // (alpha_para_init - alpha_para).print();
+        // (x_int_rst - x_floor_rst).print();
+
+        // Span<float> rst = new Span<float>(alpha_para.data<float>().ToArray());
+        // for (var i = 0; i < (O*C*R*S); i++)
+        // {
+        //     if ((rst[i] - gt_buf[i]) != 0)
+        //     {
+        //         System.Console.WriteLine("{0} {1} {2}", rst[i], gt_buf[i], (rst[i] - gt_buf[i]) / gt_buf[i]);
+        //     }
+        // }
+
+        Span<float> rst = new Span<float>(x_float_q_rst.data<float>().ToArray());
+
+        return rst;
+        // return inputWeights;
     }
 }

@@ -24,7 +24,18 @@ public abstract class RTValue : RTObject
     {
     }
 
-    internal static RTValue FromHandle(IntPtr handle)
+    /// <summary>
+    /// convert IValue Value To RTValue.
+    /// </summary>
+    /// <returns></returns>
+    public static RTValue FromValue(IValue value) => value switch
+    {
+        TensorValue tv => RTTensor.FromTensor(tv.AsTensor()),
+        TupleValue tv => RTTuple.FromTuple(tv),
+        _ => throw new ArgumentOutOfRangeException(),
+    };
+
+    public static RTValue FromHandle(IntPtr handle)
     {
         try
         {
@@ -48,7 +59,6 @@ public abstract class RTValue : RTObject
         RTTuple rTTuple => new TupleValue(rTTuple.Fields.Select(f => f.ToValue()).ToArray()),
         _ => throw new ArgumentOutOfRangeException(),
     };
-
 }
 
 /// <summary>
@@ -60,7 +70,8 @@ public class RTTensor : RTValue
     private uint[]? _dimensions;
     private uint[]? _strides;
 
-    internal RTTensor() : base(IntPtr.Zero)
+    internal RTTensor()
+        : base(IntPtr.Zero)
     {
     }
 

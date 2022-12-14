@@ -14,8 +14,8 @@
  */
 #include "runtime_function.h"
 #include <nncase/runtime/dbg.h>
-#include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/interpreter.h>
+#include <nncase/runtime/runtime_op_utility.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -32,23 +32,23 @@ result<void> stackvm_runtime_function::initialize_core(
     return ok();
 }
 
-result<value_t>
-stackvm_runtime_function::invoke_core(gsl::span<value_t> parameters,
-                                      [[maybe_unused]] value_t return_value) noexcept {
+result<value_t> stackvm_runtime_function::invoke_core(
+    gsl::span<value_t> parameters,
+    [[maybe_unused]] value_t return_value) noexcept {
     try_var(frame, frames_.push(0));
     for (auto arg : parameters) {
         try_(frame->push_back_arg(std::move(arg)));
     }
 
-//    module().interp().options().get<std::string>("dump_path");
+    //    module().interp().options().get<std::string>("dump_path");
     try_(visit(text_));
 
     checked_try_var(ret, stack_.pop());
     CHECK_WITH_ERR(ret.is_object(), nncase_errc::stackvm_illegal_instruction);
     try_var(ret_val, ret.as_object().as<value_t>());
     if (!return_value.empty()) {
-        // TODO: support copy back
-        return err(std::errc::not_supported);
+        try_(ret_val->copy_to(return_value));
+        return ok(return_value);
     }
 
     return ok(ret_val);

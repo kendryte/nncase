@@ -69,11 +69,12 @@ class Inference:
                 data.tofile(os.path.join(case_dir, f'input_{i}_{dtype}.bin'))
                 self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
 
-            sim.add_input_tensor(nncase.RuntimeTensor.from_numpy(data))
+            sim.set_input_tensor(i, nncase.RuntimeTensor.from_numpy(data))
 
     def dump_infer_output(self, infer_dir, preprocess, sim):
         infer_output_paths = []
-        for i, output in enumerate(sim.all_numpy_output()):
+        for i in range(sim.outputs_size):
+            output = sim.get_output_tensor(i).to_numpy()
             if preprocess['preprocess'] and len(output.shape) == 4:
                 if(preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
                     output = np.transpose(output, [0, 3, 1, 2])

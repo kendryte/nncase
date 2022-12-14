@@ -18,11 +18,6 @@ public static class PythonHelper
         Debugger.Launch();
     }
 
-    public static void SetCompileServiceOptions(CompileOptions options)
-    {
-        CompilerServices.CompileOptions = options;
-    }
-
     public static IValue TensorValueFromBytes(DataType type, byte[] span, int[] dimensions)
     {
         return Value.FromTensor(Tensor.FromBytes(type, span, dimensions));
@@ -94,7 +89,7 @@ public static class PythonHelper
         }
     }
 
-    // Tensor[sample_count * input_count] dataSet 
+    // Tensor[sample_count * input_count] dataSet
     public static PytestCalibrationDatasetProvider MakeDatasetProvider(Tensor[] dataSet, int sampleCount, Var[] fnParams)
     {
         var inputCount = dataSet[0].Length / sampleCount;
@@ -105,6 +100,11 @@ public static class PythonHelper
         return new PytestCalibrationDatasetProvider(samples, sampleCount);
     }
 
+    public static QuantizeOptions MakeQuantizeOptions(ICalibrationDatasetProvider datasetProvider)
+    {
+        return new QuantizeOptions
+        { BindQuantMethod = false, CalibrationDataset = datasetProvider, CalibrationMethod = CalibMethod.NoClip };
+    }
 
     public class PytestCalibrationDatasetProvider : ICalibrationDatasetProvider
     {

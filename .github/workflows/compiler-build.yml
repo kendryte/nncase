@@ -1,10 +1,10 @@
-name: compiler-build
+﻿name: compiler-build
 
 on: [push, pull_request]
 
 jobs:
-  build-simulator:
-    name: build-simulator-${{matrix.config.name}}
+  build-native:
+    name: build-native-${{matrix.config.name}}
     runs-on: ${{matrix.config.os}}
     strategy:
       matrix:
@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           pip install conan
-
+          
       - name: Configure Conan (Linux)
         run: |
           conan profile new default --detect
@@ -45,26 +45,26 @@ jobs:
           echo "CC=gcc-10" >> $GITHUB_ENV
           echo "CXX=g++-10" >> $GITHUB_ENV
         if: runner.os == 'Linux'
-
+        
       - name: Configure CMake
         shell: bash
         run: |
           cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
-
+          
       - name: Build & Install
         run: |
           cmake --build build --config ${{matrix.config.buildType}}
           cmake --install build --prefix install
-
-      - name: Upload nncase Simulator Build Artifact
+          
+      - name: Upload nncase Native Build Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: nncase-simulator-${{matrix.config.name}}
+          name: nncase-native-${{matrix.config.name}}
           path: ${{github.workspace}}/install
           if-no-files-found: error
-
+        
   build-compiler:
-    needs: [build-simulator]
+    needs: [build-native]
     name: build-${{matrix.config.name}}
     runs-on: ${{matrix.config.os}}
     strategy:
@@ -81,13 +81,13 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: ${{matrix.dotnet-version}}
-
-      - name: Install nncase simulator Artifact
+      
+      - name: Install nncase native Artifact
         uses: actions/download-artifact@v2.0.9
         with:
-          name: nncase-simulator-${{matrix.config.name}}
+          name: nncase-native-${{matrix.config.name}}
           path: ${{github.workspace}}/install
-
+        
       - name: Set up build environment (Macos)
         run: |
           brew install sunnycase/core/libomp@11.1.0
@@ -107,7 +107,7 @@ jobs:
       - name: Build
         run: |
           dotnet build -c ${{matrix.config.buildType}}
-          dotnet publish -c ${{matrix.config.buildType}} --sc false --use-current-runtime
+          dotnet publish src/Nncase.Compiler -c ${{matrix.config.buildType}} --sc false --use-current-runtime
 
       - name: Set up Dotnet Test settings
         uses: 1arp/create-a-file-action@0.2
@@ -124,22 +124,35 @@ jobs:
                 </EnvironmentVariables>
               </RunConfiguration>
             </RunSettings>
+        
+      - name: Set up test environment (Windows)
+        shell: pwsh
+        run: |
+          echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
+        if: runner.os == 'Windows'
 
       - name: Dotnet Test
         working-directory: ${{github.workspace}}
-        env:
-          PATH: ${{github.workspace}}/install/bin
-          NNCASE_CLI: ${{github.workspace}}/src/Nncase.Cli/bin/${{matrix.config.buildType}}/net${{matrix.dotnet-version}}
         run: |
-          dotnet test -c ${{matrix.config.buildType}} -s test.runsettings --no-build --verbosity normal
+          dotnet tool install --global dotnet-coverage
+          dotnet test -c ${{matrix.config.buildType}} -s test.runsettings --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
+          dotnet-coverage merge -o coverage.unit.xml -f cobertura -r coverage/*.xml
 
+      - name: Upload Coverage
+        uses: actions/upload-artifact@v3
+        if: matrix.config.name == 'x86_64-linux'
+        with:
+          name: nncase-coverage-unit
+          path: coverage.unit.xml
+          if-no-files-found: error
+          
       - name: Upload nncase Build Artifact
         uses: actions/upload-artifact@v3
         with:
           name: nncase-${{matrix.config.name}}
-          path: ${{github.workspace}}/src/Nncase.Cli/bin/${{matrix.config.buildType}}/net${{matrix.dotnet-version}}/${{matrix.config.rid}}/publish
+          path: ${{github.workspace}}/src/Nncase.Compiler/bin/${{matrix.config.buildType}}/net${{matrix.dotnet-version}}/${{matrix.config.rid}}/publish
           if-no-files-found: error
-
+          
   test-compiler:
     needs: [build-compiler]
     name: test-${{matrix.config.name}}
@@ -148,9 +161,9 @@ jobs:
       matrix:
         dotnet-version: ['6.0']
         config:
-          - {name: x86_64-macos, os: macos-latest, shell: bash}
+          #- {name: x86_64-macos, os: macos-latest, shell: bash}
           - {name: x86_64-linux, os: ubuntu-latest, shell: bash}
-          - {name: x86_64-windows, os: windows-latest, shell: bash}
+          #- {name: x86_64-windows, os: windows-latest, shell: bash}
 
     env:
       VULKANSDK_VER: 1.2.182.0
@@ -161,19 +174,19 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: ${{matrix.dotnet-version}}
-
-      - name: Install nncase-simulator
+      
+      - name: Install nncase native Artifact
         uses: actions/download-artifact@v3
         with:
-          name: nncase-simulator-${{matrix.config.name}}
+          name: nncase-native-${{matrix.config.name}}
           path: ${{github.workspace}}/install
-
+      
       - name: Install nncase
         uses: actions/download-artifact@v3
         with:
           name: nncase-${{matrix.config.name}}
           path: ${{github.workspace}}/install
-
+      
       - name: Set up test environment (macOS)
         run: |
           brew install sunnycase/core/libomp@11.1.0
@@ -187,9 +200,9 @@ jobs:
           sudo cmake -E make_directory /usr/local/share/vulkan/icd.d
           sudo cp lib/* /usr/local/share/vulkan/icd.d
           cp install/lib/*.dylib install/
-          echo "PYTHONPATH=$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
+          echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
         if: runner.os == 'macOS'
-
+        
       - name: Set up test environment (Linux)
         run: |
           wget https://sdk.lunarg.com/sdk/download/${VULKANSDK_VER}/linux/vulkansdk-linux-x86_64-${VULKANSDK_VER}.tar.gz -O vulkansdk.tar.gz
@@ -200,9 +213,9 @@ jobs:
           sudo cmake -E make_directory /usr/local/share/vulkan/icd.d
           sudo cp lib/* /usr/local/share/vulkan/icd.d
           cp install/lib/*.so install/
-          echo "PYTHONPATH=$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
+          echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
         if: runner.os == 'Linux'
-
+        
       - name: Set up test environment (Windows)
         shell: pwsh
         run: |
@@ -213,17 +226,18 @@ jobs:
           Copy-Item swiftshader\lib\vk_swiftshader_icd.json swiftshader\bin\
           Copy-Item install/bin/*.dll install/
           echo "VK_ICD_FILENAMES=${env:GITHUB_WORKSPACE}/swiftshader/bin/vk_swiftshader_icd.json" >> $env:GITHUB_ENV
-          echo "PYTHONPATH=${env:GITHUB_WORKSPACE}/install/python;${env:GITHUB_WORKSPACE}/tests" >> $env:GITHUB_ENV
+          echo "PYTHONPATH=${env:GITHUB_WORKSPACE}/install/lib;${env:GITHUB_WORKSPACE}/install/python;${env:GITHUB_WORKSPACE}/tests" >> $env:GITHUB_ENV
+          echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
         if: runner.os == 'Windows'
-
+      
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.7
-
+      
       - name: Install Python Packages
         run: pip install -r requirements.test.txt
-
+      
       - name: Create Test Environment
         run: mkdir test_results
 
@@ -231,25 +245,74 @@ jobs:
         working-directory: ${{github.workspace}}
         shell: bash
         env:
-          NNCASE_CLI: ${{github.workspace}}/install
+          NNCASE_COMPILER: ${{github.workspace}}/install/Nncase.Compiler.dll
         run: |
-          pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/other.xml
-          pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/other.xml
-          pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/other.xml
-          pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/other.xml
-          pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/other.xml
+          dotnet tool install --global dotnet-coverage
+          dotnet-coverage collect pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/onnx_basic.xml -f cobertura -o coverage/onnx_basic
+          dotnet-coverage collect pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/onnx_combine.xml -f cobertura -o coverage/onnx_combine
+          dotnet-coverage collect pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/tflite_basic.xml -f cobertura -o coverage/tflite_basic
+          dotnet-coverage collect pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/tflite_combine.xml -f cobertura -o coverage/tflite_combine
+          dotnet-coverage collect pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/tflite_model.xml -f cobertura -o coverage/tflite_model
+          dotnet-coverage merge -o coverage.integration.xml -f cobertura -r coverage/*.cobertura.xml
 
-#      - name: Test
-#        working-directory: ${{github.workspace}}
-#        if: runner.os == 'Windows'
-#        shell: bash
-#        env:
-#          PYTHONPATH: ${{github.workspace}}/install/lib;${{github.workspace}}/install/python;${{github.workspace}}/tests
-#          NNCASE_CLI: ${{github.workspace}}/src/Nncase.Cli/bin/Release/net6.0
-#          LD_LIBRARY_PATH: ${{github.workspace}}/install/lib;${{github.workspace}}/src/Nncase.Cli/bin/Release/net6.0/runtimes/win-x64/native
-#        run: |
-#          pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/other.xml
-#          pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/other.xml
-#          pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/other.xml
-#          pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/other.xml
-#          pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/other.xml
+      - name: Upload Coverage
+        uses: actions/upload-artifact@v3
+        if: matrix.config.name == 'x86_64-linux'
+        with:
+          name: nncase-coverage-integration
+          path: coverage.integration.xml
+          if-no-files-found: error
+          
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always() && matrix.config.name == 'x86_64-linux'
+        with:
+          files: test_results/*.xml
+
+  upload-coverage:
+    needs: [test-compiler]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "6.0"
+      
+      - name: Download Unit Test Coverage
+        uses: actions/download-artifact@v3
+        with:
+          name: nncase-coverage-unit
+          path: ${{github.workspace}}/coverage
+      
+      - name: Download Integration Test Coverage
+        uses: actions/download-artifact@v3
+        with:
+          name: nncase-coverage-integration
+          path: ${{github.workspace}}/coverage
+          
+      - name: Upload Codecov (Unit)
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage/coverage.unit.xml
+          flags: unit
+          
+      - name: Upload Codecov (Integration)
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage/coverage.integration.xml
+          flags: integration
+
+      - name: Generate Coverage Report
+        run: |
+          dotnet tool install --global dotnet-coverage
+          dotnet tool install -g dotnet-reportgenerator-globaltool
+          dotnet-coverage merge -o coverage.xml -f cobertura -r coverage/*.xml
+          reportgenerator -reports:coverage.xml -targetdir:"coveragereport" -reporttypes:Html
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: nncase-coverage-report
+          path: coveragereport
+          if-no-files-found: error

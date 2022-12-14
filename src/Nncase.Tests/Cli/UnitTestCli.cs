@@ -91,7 +91,7 @@ public class UnitTestCli : TestFixture.UnitTestFixtrue
 
         // run
         var psi = new ProcessStartInfo();
-        psi.FileName = Path.Combine(nncase_cli, "Nncase.Cli");
+        psi.FileName = nncase_cli;
         psi.Arguments = " compile " + options + " " + input_file + " " + output_file;
         psi.UseShellExecute = false;
         psi.CreateNoWindow = true;

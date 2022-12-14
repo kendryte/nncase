@@ -20,6 +20,7 @@ if (DEFAULT_BUILTIN_RUNTIMES)
 endif ()
 set_property(TARGET nncasebase PROPERTY POSITION_INDEPENDENT_CODE ON)
 
+add_subdirectory(compiler)
 add_subdirectory(runtime)
 add_subdirectory(kernels)
 
