@@ -316,6 +316,22 @@ public sealed partial class AddRangeOfAndMarkerToPRelu : IRewriteRule
 }
 
 [RuleGenerator]
+public sealed partial class AddRangeOfAndMarkerToRelu : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } =
+        IsRelu("relu", "call", _ => true,
+            IsWildcard("input"));
+
+    private Expr? GetReplace(Relu relu, Call call, Expr input, RunPassOptions options)
+    {
+        var output = Relu(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)));
+        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
+    }
+}
+
+[RuleGenerator]
 public sealed partial class AddRangeOfAndMarkerToRedece : IRewriteRule
 {
     /// <inheritdoc/>
