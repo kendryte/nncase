@@ -27,6 +27,15 @@ public struct QuantParam : IEquatable<QuantParam>
     public float Scale;
 
     /// <summary>
+    /// default ctor
+    /// </summary>
+    public QuantParam()
+    {
+        ZeroPoint = 0;
+        Scale = 1;
+    }
+
+    /// <summary>
     /// ctor
     /// </summary>
     /// <param name="zeroPoint"></param>
