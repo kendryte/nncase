@@ -19,12 +19,12 @@ public struct QuantParam : IEquatable<QuantParam>
     /// <summary>
     /// Get the ZeroPoint.
     /// </summary>
-    public int ZeroPoint;
+    public int ZeroPoint = 0;
 
     /// <summary>
     /// Get the Scale.
     /// </summary>
-    public float Scale;
+    public float Scale = 1;
 
     /// <summary>
     /// default ctor
