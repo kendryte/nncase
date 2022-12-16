@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using Nncase.IR;
@@ -44,7 +45,9 @@ public interface IFusionMergeRule
     /// <param name="result">Match result.</param>
     /// <param name="options">options.</param>
     /// <returns>Replace expression or null if nothing changed.</returns>
-    Expr? GetReplace(Func<Expr, Expr> mergedFusionRewriteCallBack, Func<Fusion, bool> mergedFusionCheckCallBack, IUsedByResult usedByReslut, IMatchResult result, RunPassOptions options);
+    Expr? GetReplace(Func<Expr, Expr> mergedFusionRewriteCallBack, Func<Fusion, bool> mergedFusionCheckCallBack,
+      Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack, Action<HashSet<Fusion>> candidateFusionRecordCallBack,
+      IUsedByResult usedByReslut, IMatchResult result, RunPassOptions options);
 }
 
 /// <summary>
@@ -112,7 +115,10 @@ public class MultiInputFusionMergeRule : IFusionMergeRule
     }
 
     /// <inheritdoc/>
-    public Expr? GetReplace(Func<Expr, Expr> mergedFusionRewriteCallBack, Func<Fusion, bool> mergedFusionCheckCallBack, IUsedByResult usedByReslut, IMatchResult result, RunPassOptions options)
+    public Expr? GetReplace(Func<Expr, Expr> mergedFusionRewriteCallBack, Func<Fusion, bool> mergedFusionCheckCallBack,
+      Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack,
+      Action<HashSet<Fusion>> candidateFusionRecordCallBack,
+      IUsedByResult usedByReslut, IMatchResult result, RunPassOptions options)
     {
         var caller = (Call)result["caller"];
         var callee = (Call)result["callee"];
@@ -123,6 +129,10 @@ public class MultiInputFusionMergeRule : IFusionMergeRule
         if (usedByReslut.Get(callee).Count > 1)
             return null;
 
+        var candidate_fusions = new HashSet<Fusion>() { caller_fusion, callee_fusion };
+
+        if (!candidateFusionCheckCallBack(candidate_fusions))
+            return null;
         // 1. merge new fusion
         var merged_fusion = processMergeSingleInputFusion(mergedFusionRewriteCallBack, caller, callee, caller_fusion, callee_fusion);
 
@@ -144,6 +154,7 @@ public class MultiInputFusionMergeRule : IFusionMergeRule
             usedByReslut.Add(merged_fusion, new_call);
             return new_call;
         }
+        candidateFusionRecordCallBack(candidate_fusions);
         return null;
     }
 
@@ -221,12 +232,11 @@ public class SameInputFusionMergeRule : IFusionMergeRule
         return true;
     }
 
-    bool processFusionMerge(Func<Expr, Expr> mergedFusionRewriteCallBack, Expr caller, Fusion caller_fusion,
-      IReadOnlyList<Expr> caller_inputs, Expr input, IMatchResult result, out Fusion new_fusion)
+    bool processFusionMerge(Func<Expr, Expr> mergedFusionRewriteCallBack, Func<HashSet<Fusion>, bool> candidate_fusion_checker, Expr caller, Fusion caller_fusion,
+      IReadOnlyList<Expr> caller_inputs, Expr input, IMatchResult result, out HashSet<Fusion> candidate_fusions, out Fusion merged_fusion)
     {
-        new_fusion = null!;
-
-        var callee_fusions = new List<Fusion>();
+        merged_fusion = null!;
+        candidate_fusions = new() { caller_fusion };
         var calleeBodyMap = new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance);
         var multiVarMap = new Dictionary<Var, Var>();
         var new_fusion_input_var = new Var(input.CheckedType!);
@@ -250,7 +260,7 @@ public class SameInputFusionMergeRule : IFusionMergeRule
                 }
                 calleeBodyMap.Add(caller_fusion.Parameters[i], callee_fusion.Body);
                 new_fusion_name += ("_" + callee_fusion.Name);
-
+                candidate_fusions.Add(callee_fusion);
                 multiVarMap.Add(callee_fusion.Parameters[0], new_fusion_input_var);
                 has_fusion_for_merge = true;
             }
@@ -261,6 +271,9 @@ public class SameInputFusionMergeRule : IFusionMergeRule
         }
 
         if (!has_fusion_for_merge)
+            return false;
+
+        if (candidate_fusion_checker(candidate_fusions))
             return false;
 
         // 1. replace the caller_fusion input_var with the callee_fusion_i body
@@ -286,13 +299,17 @@ public class SameInputFusionMergeRule : IFusionMergeRule
         // 2. run call back.
         merged_fusion_body = mergedFusionRewriteCallBack(merged_fusion_body);
 
-        new_fusion = new Fusion(new_fusion_name, ModuleKind, merged_fusion_body, new[] { new_fusion_input_var });
+        merged_fusion = new Fusion(new_fusion_name, ModuleKind, merged_fusion_body, new[] { new_fusion_input_var });
 
         return true;
     }
 
     /// <inheritdoc/>
-    public Expr? GetReplace(Func<Expr, Expr> mergedFusionRewriteCallBack, Func<Fusion, bool> mergedFusionCheckCallBack,
+    public Expr? GetReplace(
+      Func<Expr, Expr> mergedFusionRewriteCallBack,
+      Func<Fusion, bool> mergedFusionCheckCallBack,
+      Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack,
+      Action<HashSet<Fusion>> candidateFusionRecordCallBack,
       IUsedByResult usedByReslut, IMatchResult result, RunPassOptions options)
     {
         var caller = (Expr)result["caller"];
@@ -357,7 +374,9 @@ public class SameInputFusionMergeRule : IFusionMergeRule
                 return false;
         }
 
-        if (!processFusionMerge(mergedFusionRewriteCallBack, caller, caller_fusion, caller_inputs, input, result, out var merged_fusion))
+        if (!processFusionMerge(mergedFusionRewriteCallBack, candidateFusionCheckCallBack, caller, caller_fusion, caller_inputs,
+           input, result,
+            out var candidate_fusions, out var merged_fusion))
             return null;
 
         if (mergedFusionCheckCallBack(merged_fusion))
@@ -381,6 +400,8 @@ public class SameInputFusionMergeRule : IFusionMergeRule
             usedByReslut.Add(merged_fusion, new_call);
             return new_call;
         }
+        else
+            candidateFusionRecordCallBack(candidate_fusions);
         return null;
     }
 }
@@ -391,10 +412,53 @@ public class SameInputFusionMergeRule : IFusionMergeRule
 /// </summary>
 public class FusionGroupMutator : ExprMutator
 {
-    private readonly RunPassOptions _passOptions;
+    sealed class FusionMergeCandidateComparer : IEqualityComparer<HashSet<Fusion>>
+    {
+        public bool Equals(HashSet<Fusion>? x, HashSet<Fusion>? y) => (x, y) switch
+        {
+            (null, null) => true,
+            (null, _) => false,
+            (_, null) => false,
+            (var lhs, var rhs) => GetHashCode(lhs) == GetHashCode(rhs)
+        };
+
+        public int GetHashCode([DisallowNull] HashSet<Fusion> obj)
+        {
+            HashCode hash = new();
+            foreach (var o in obj)
+            {
+                hash.Add(ReferenceEqualityComparer.Instance.GetHashCode(obj));
+            }
+            return hash.ToHashCode();
+        }
+    }
+
+    /// <summary>
+    /// Get the run pass options.
+    /// </summary>
+    public readonly RunPassOptions PassOptions;
+    
     private readonly IUsedByResult _usedByReslut;
-    private readonly IReadOnlyList<IFusionMergeRule> _preOrderMergeRules;
-    private readonly IReadOnlyList<IFusionMergeRule> _postOrderMergeRules;
+    
+    /// <summary>
+    /// Get the Pre Order Rules.
+    /// </summary>
+    public readonly IReadOnlyList<IFusionMergeRule> PreOrderMergeRules;
+
+    /// <summary>
+    /// Get the Post Order Rules.
+    /// </summary>
+    public readonly IReadOnlyList<IFusionMergeRule> PostOrderMergeRules;
+
+    /// <summary>
+    /// cache the check result.
+    /// </summary>
+    private readonly Dictionary<HashSet<Fusion>, bool> _candidateFusionCache;
+
+    /// <summary>
+    /// Get the merge check cache result.
+    /// </summary>
+    public IReadOnlyDictionary<HashSet<Fusion>, bool> FusionMergeCandidateCache => _candidateFusionCache;
 
     /// <summary>
     /// ctor.
@@ -408,9 +472,10 @@ public class FusionGroupMutator : ExprMutator
       IEnumerable<IFusionMergeRule> postOrderfusionRules, RunPassOptions passOptions)
     {
         _usedByReslut = usedByAnalysisReslut;
-        _preOrderMergeRules = preOrderfusionRules.ToList();
-        _postOrderMergeRules = postOrderfusionRules.ToList();
-        _passOptions = passOptions;
+        PreOrderMergeRules = preOrderfusionRules.ToList();
+        PostOrderMergeRules = postOrderfusionRules.ToList();
+        PassOptions = passOptions;
+        _candidateFusionCache = new(new FusionMergeCandidateComparer());
     }
 
     /// <summary>
@@ -418,9 +483,19 @@ public class FusionGroupMutator : ExprMutator
     /// </summary>
     /// <param name="merge_call"></param>
     /// <returns></returns>
-    public virtual Call MergedFusionCallVisitCallBack(Call merge_call)
+    public virtual Call MergedFusionCallPreOrderCallBack(Call merge_call)
     {
         return merge_call with { Parameters = new(merge_call.Parameters.Select(Visit)) };
+    }
+
+    /// <summary>
+    /// update the merged fusion post order
+    /// </summary>
+    /// <param name="call"></param>
+    /// <returns></returns>
+    public virtual Call MergedFusionCallPostOrderCallBack(Call call)
+    {
+        return call;
     }
 
     /// <summary>
@@ -433,6 +508,24 @@ public class FusionGroupMutator : ExprMutator
         return true;
     }
 
+    private bool candidateFusionCheckCallBack(HashSet<Fusion> candidateFusions)
+    {
+        if (candidateFusions.Count <= 1)
+            throw new InvalidDataException("The candidates less than 2!");
+        if (!_candidateFusionCache.TryGetValue(candidateFusions, out var ret))
+            return true;
+        if (ret != false)
+            throw new InvalidDataException("Only cache failed candidates!");
+        return false;
+    }
+
+    private void candidateFusionRecordCallBack(HashSet<Fusion> candidateFusions)
+    {
+        if (candidateFusions.Count <= 1)
+            throw new InvalidDataException("The candidates less than 2!");
+        _candidateFusionCache.Add(candidateFusions, false);
+    }
+
     /// <summary>
     /// when fusion merged, maybe need rewrite somethings.
     /// </summary>
@@ -443,7 +536,14 @@ public class FusionGroupMutator : ExprMutator
         return merged_fusion_body;
     }
 
-    private bool tryMergeFusion(IReadOnlyList<IFusionMergeRule> rules, Call old_call, out Call new_call)
+    /// <summary>
+    /// try merge fusion from the old call.
+    /// </summary>
+    /// <param name="rules">rules.</param>
+    /// <param name="old_call">current call.</param>
+    /// <param name="new_call">returned new call.</param>
+    /// <returns>merged status. </returns>
+    public bool tryMergeFusion(IReadOnlyList<IFusionMergeRule> rules, Call old_call, out Call new_call)
     {
         new_call = null!;
         foreach (var rule in rules)
@@ -454,7 +554,10 @@ public class FusionGroupMutator : ExprMutator
             if (!CompilerServices.TryMatchRoot(old_call, rule.Pattern, new() { RewriteMemo = ExpressionMemo }, out var result))
                 continue;
 
-            if (rule.GetReplace(MergedFusionRewriteCallBack, MergedFusionCheckCallBack, _usedByReslut, result, _passOptions) is Call replaced_call)
+            if (rule.GetReplace(
+              MergedFusionRewriteCallBack, MergedFusionCheckCallBack,
+              candidateFusionCheckCallBack, candidateFusionRecordCallBack,
+              _usedByReslut, result, PassOptions) is Call replaced_call)
             {
                 new_call = replaced_call;
                 return true;
@@ -476,13 +579,13 @@ public class FusionGroupMutator : ExprMutator
             {
                 var last_call = expr;
                 Call merged_call = null!;
-                while (tryMergeFusion(_preOrderMergeRules, last_call, out merged_call))
+                while (tryMergeFusion(PreOrderMergeRules, last_call, out merged_call))
                     last_call = merged_call;
 
                 if (!object.ReferenceEquals(last_call, expr))
                 {
                     IsMutated = true;
-                    var new_call = MergedFusionCallVisitCallBack(last_call);
+                    var new_call = MergedFusionCallPreOrderCallBack(last_call);
                     updateCallUsedBy(last_call, new_call);
                     ExpressionMemo.Add(expr, new_call);
                     return new_call;
@@ -511,8 +614,11 @@ public class FusionGroupMutator : ExprMutator
 
             var last_call = expr;
             Call merged_call = null!;
-            while (tryMergeFusion(_postOrderMergeRules, last_call, out merged_call))
+            while (tryMergeFusion(PostOrderMergeRules, last_call, out merged_call))
                 last_call = merged_call;
+            var new_call = MergedFusionCallPostOrderCallBack(last_call);
+            if (!object.ReferenceEquals(new_call, last_call))
+                updateCallUsedBy(last_call, new_call);
             return last_call;
         }
         return expr;
