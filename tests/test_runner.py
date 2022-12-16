@@ -552,8 +552,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
 
     def generate_data(self, cfg, case_dir: str, inputs: List[Dict], path_list: List[str], name: str, preprocess_opt):
         i = 0
-        samples = []
         for input in inputs:
+            samples = []
             shape = copy.deepcopy(input['model_shape'])
             # if preprocess_opt['preprocess'] and preprocess_opt['input_shape'] != [] and len(preprocess_opt['input_shape']) == 4:
             #     shape = copy.deepcopy(preprocess_opt['input_shape'])
