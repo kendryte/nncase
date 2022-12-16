@@ -155,9 +155,11 @@ public static unsafe class CApi
             throw new ArgumentException($"Dataset count {dataset.Length} not equals to params count {fnParams.Length} * samples count {samplesCount}");
         }
 
-        var samples = dataset.Chunk(dataset.Length).Select(inputs => inputs.Zip(fnParams).ToDictionary(
+        var samples = (dataset.Length == 0 ?
+            Array.Empty<Dictionary<Var, IValue>>() :
+            dataset.Chunk(dataset.Length).Select(inputs => inputs.Zip(fnParams).ToDictionary(
             item => item.Item2,
-            item => item.Item1.ToValue())).ToAsyncEnumerable();
+            item => item.Item1.ToValue()))).ToAsyncEnumerable();
         return GCHandle.ToIntPtr(GCHandle.Alloc(new CCalibrationDatasetProvider(samples, (int)samplesCount)));
     }
 
