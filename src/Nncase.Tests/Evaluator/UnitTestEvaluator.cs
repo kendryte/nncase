@@ -72,54 +72,6 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
     }
 
     [Fact]
-    public void TestBinary()
-    {
-        var tA = OrtKISharp.Tensor.FromScalar(1f);
-        var tB = tA * 2f;
-
-        var a = (Const)1f;
-        var b = (Const)2f;
-        var expr = (a * b) + a;
-        CompilerServices.InferenceType(expr);
-        Assert.Equal(
-            (tA * tB) + tA,
-            expr.Evaluate().AsTensor().ToOrtTensor());
-    }
-
-    [Fact]
-    public void TestBinarySub()
-    {
-        var tA = OrtKISharp.Tensor.FromScalar((int)4);
-        var tB = OrtKISharp.Tensor.FromScalar((int)1);
-        var tC = tA - tB;
-    }
-
-    [Fact]
-    public void TestBinaryShift()
-    {
-        var tA = OrtKISharp.Tensor.FromScalar(1U);
-        var tB = OrtKI.LeftShift(tA, OrtKISharp.Tensor.FromScalar(2U));
-        var tC = OrtKI.RightShift(tA, OrtKISharp.Tensor.FromScalar(2U));
-
-        var a = (Const)1U;
-        var b = (Const)2U;
-
-        Assert.Equal(1U << 2, IR.F.Math.LeftShift(a, b).Evaluate().AsTensor().ToScalar<uint>());
-        Assert.Equal(1U >> 2, IR.F.Math.RightShift(a, b).Evaluate().AsTensor().ToScalar<uint>());
-    }
-
-    [Fact]
-    public void TestBinaryShift2()
-    {
-        var a = (Const)1U;
-        var b = (Const)2U;
-
-        Assert.Equal(
-            (int)(1U << 2) - 1,
-             (IR.F.Tensors.Cast(IR.F.Math.LeftShift(a, b), DataTypes.Int32) - 1).Evaluate().AsTensor().ToScalar<int>());
-    }
-
-    [Fact]
     public void TestCompare()
     {
         Assert.True(CompilerServices.Evaluate((Expr)5 <= (Expr)10).AsTensor().ToScalar<bool>());

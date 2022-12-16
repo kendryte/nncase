@@ -24,19 +24,26 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         BinaryOp.Min => System.Math.Min(a, b),
         BinaryOp.Max => System.Math.Max(a, b),
         BinaryOp.Pow => checked((int)System.Math.Pow(a, b)),
-        BinaryOp.LogicalAnd => a & b,
-        BinaryOp.LogicalOr => a | b,
-        BinaryOp.LogicalXor => a ^ b,
-        BinaryOp.LeftShift => a << b,
-        BinaryOp.RightShift => a >> b,
+        _ => throw new ArgumentOutOfRangeException(nameof(op)),
+    };
+
+    uint _compute(BinaryOp op, uint a, uint b) => op switch
+    {
+        BinaryOp.Add => a + b,
+        BinaryOp.Sub => a - b,
+        BinaryOp.Mul => a * b,
+        BinaryOp.Div => a / b,
+        BinaryOp.Mod => a % b,
+        BinaryOp.Min => System.Math.Min(a, b),
+        BinaryOp.Max => System.Math.Max(a, b),
+        BinaryOp.Pow => checked((uint)System.Math.Pow((double)a, (double)b)),
+        BinaryOp.LeftShift => a << (int)b,
+        BinaryOp.RightShift => a >> (int)b,
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 
     bool _compute(BinaryOp op, bool a, bool b) => op switch
     {
-        BinaryOp.BitwiseAnd => a & b,
-        BinaryOp.BitwiseOr => a | b,
-        BinaryOp.BitwiseXor => a ^ b,
         BinaryOp.LogicalAnd => a & b,
         BinaryOp.LogicalOr => a | b,
         BinaryOp.LogicalXor => a ^ b,
@@ -53,9 +60,6 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         BinaryOp.Min => System.Math.Min(a, b),
         BinaryOp.Max => System.Math.Max(a, b),
         BinaryOp.Pow => checked((int)System.Math.Pow(a, b)),
-        BinaryOp.LogicalAnd => a & b,
-        BinaryOp.LogicalOr => a | b,
-        BinaryOp.LogicalXor => a ^ b,
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 
@@ -95,6 +99,10 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             {
                 return Value.FromTensor(Tensor.FromScalar(_compute(binary.BinaryOp, lhs.ToScalar<bool>(), rhs.ToScalar<bool>())));
             }
+            else if (lhs.ElementType == DataTypes.UInt32 && rhs.ElementType == DataTypes.UInt32)
+            {
+                return Value.FromTensor(Tensor.FromScalar(_compute(binary.BinaryOp, lhs.ToScalar<uint>(), rhs.ToScalar<uint>())));
+            }
             else
                 return ort_compute(binary, lhs, rhs);
         }
@@ -126,7 +134,6 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             BinaryOp.RightShift => OrtKI.RightShift(a, b),
             _ => throw new ArgumentOutOfRangeException(nameof(binary.BinaryOp)),
         }).ToValue();
-
     }
 
     /// <inheritdoc/>
