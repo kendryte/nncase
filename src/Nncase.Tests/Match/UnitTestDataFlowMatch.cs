@@ -109,7 +109,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
     {
         var rule = new Transform.Rules.Neutral.FoldConstCall();
 
-        var z = Concat(new IR.Tuple(new Var("x",TensorType.Scalar(DataTypes.Int32)), 1, 2), 0);
+        var z = Concat(new IR.Tuple(new Var("x", TensorType.Scalar(DataTypes.Int32)), 1, 2), 0);
         CompilerServices.InferenceType(z);
         Assert.False(CompilerServices.TryMatchRoot(z, rule.Pattern, out var _));
 
@@ -127,7 +127,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
         var input = (Expr)new[] { 1, 2, 3, 4 };
         var expr = input * IR.F.NN.Sigmoid(input);
         CompilerServices.TryMatch(expr, pat, out var res);
-        var inp = res["input"];
+        Assert.NotNull(res["input"]);
     }
 
     private sealed class SimpleRule : IRewriteRule
@@ -323,5 +323,35 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
         var result = await pass.RunAsync(pre, caseOptions);
         var isMatch = CompilerServices.TryMatch(result, IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out var t);
         Assert.True(isMatch);
+    }
+
+
+    [Fact]
+    public void TestMatchUpdatedVargs()
+    {
+        var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 3, 4 });
+        var lhs_unary = Unary(UnaryOp.Sin, input);
+        var rhs_unary = Unary(UnaryOp.Cos, input);
+        var pre = Binary(BinaryOp.Add, lhs_unary, rhs_unary);
+
+        CompilerServices.InferenceType(pre);
+
+        // update the lhs_unary
+        var updated_lhs_unary = Unary(UnaryOp.Tanh, input);
+        CompilerServices.InferenceType(updated_lhs_unary);
+        var dict = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance) {
+          {lhs_unary,updated_lhs_unary},
+        };
+
+        // start match 
+        var pattern = IsCall("root", IsWildcard(), IsVArgs("root_inputs",
+                                                           new Pattern[]{ IsUnary(null, "lhs", _ => true, IsWildcard()),
+                                                                          IsUnary(null, "rhs", _ => true, IsWildcard())}));
+
+        Assert.True(CompilerServices.TryMatchRoot(pre, pattern, new() { RewriteMemo = dict }, out var result));
+        var root_inputs = (IReadOnlyList<Expr>)result["root_inputs"];
+        var lhs = (Call)result["lhs"];
+        Assert.True(object.ReferenceEquals(root_inputs[0], lhs));
+        Assert.True(lhs is Call { Target: Unary { UnaryOp: UnaryOp.Tanh } });
     }
 }

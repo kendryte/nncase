@@ -317,7 +317,11 @@ internal sealed class Matcher
 
                 if (_currentScope.IsMatch)
                 {
-                    _currentScope.AddMatch(pattern, exprs);
+                    _currentScope.AddMatch(pattern, exprs.Select(e =>
+                    {
+                        _options.TryUpdateWithRewrite(ref e);
+                        return e;
+                    }).ToList());
                 }
             }
             else

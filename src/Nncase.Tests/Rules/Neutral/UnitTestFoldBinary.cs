@@ -20,16 +20,41 @@ namespace Nncase.Tests.Rules.NeutralTest;
 
 public class UnitTestFoldBinary : TestFixture.UnitTestFixtrue
 {
-    public static IEnumerable<object[]> TestFoldNopBinaryNegativeData =>
-        new[]
+    public static IEnumerable<object[]> TestFoldNopBinaryNegativeData
+    {
+        get
         {
-            new object[] {BinaryOp.Add, new[] {3}, 1f},
-            new object[] {BinaryOp.Sub, new[] {3, 4}, 1f},
-            new object[] {BinaryOp.Mul, new[] {3}, 2f},
-            new object[] {BinaryOp.Div, new[] {3}, 2f},
-            // new object[] { BinaryOp.Mod ,new[] { 3}, 2f},
-            new object[] {BinaryOp.Pow, new[] {3},2f},
-        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
+            var binary_ops = new object[]{
+              BinaryOp.Add,
+              BinaryOp.Sub,
+              BinaryOp.Mul,
+              BinaryOp.Div,
+              BinaryOp.Pow
+            };
+
+            var a_shapes = new object[]{
+              new[] {3},
+              new[] {3, 4},
+              new[] {3},
+              new[] {3},
+              new[] {3}
+            };
+
+            var b_values = new object[]{
+              1f,
+              1f,
+              2f,
+              2f,
+              2f,
+            };
+
+            var test_params = LinqExtensions.CartesianProduct(new[] { binary_ops, a_shapes, b_values }).
+              Select(item => item.ToArray());
+
+            // add the params index
+            return test_params.Select((p, i) => p.Concat(new object[] { i }).ToArray());
+        }
+    }
 
     [Theory]
     [MemberData(nameof(TestFoldNopBinaryNegativeData))]
