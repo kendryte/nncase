@@ -1,7 +1,8 @@
-from test_runner import *
+from typing import List, Dict, Union, Tuple
 import os
 import nncase
 import numpy as np
+import test_utils
 
 class Inference:
     def run_inference(self, dict_args, cfg, case_dir, import_options, compile_options, model_content, preprocess_opt):
@@ -63,11 +64,12 @@ class Inference:
 
     def set_infer_input(self, preprocess, case_dir, sim):
         for i in range(len(self.inputs)):
-            data = self.transform_input(self.inputs[i]['data'], preprocess['input_type'], "infer")
+            data = self.transform_input(self.inputs[i]['data'], preprocess['input_type'], "infer")[0]
             dtype = preprocess['input_type']
             if preprocess['preprocess'] and dtype != 'float32':
-                data.tofile(os.path.join(case_dir, f'input_{i}_{dtype}.bin'))
-                self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
+                if not test_utils.in_ci():
+                    data.tofile(os.path.join(case_dir, f'input_{i}_{dtype}.bin'))
+                    self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
 
             sim.set_input_tensor(i, nncase.RuntimeTensor.from_numpy(data))
 

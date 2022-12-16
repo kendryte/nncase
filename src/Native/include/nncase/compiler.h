@@ -27,6 +27,12 @@ typedef enum {
 } nncase_array_element_kind_t;
 
 typedef enum {
+    nncase_mqm_no_quant = 0,
+    nncase_mqm_use_ptq = 1,
+    nncase_mqm_use_qat = 2
+} nncase_model_quant_mode_t;
+
+typedef enum {
     nncase_qm_unsigned = 0,
     nncase_qm_signed_symmetric = 1,
     nncase_qm_signed_asymmetric = 2
@@ -98,9 +104,9 @@ NNCASE_API int nncase_clr_compile_options_set_quantize_options(
 NNCASE_API int
 nncase_clr_compile_options_set_quant_type(clr_object_handle_t compile_options,
                                           clr_object_handle_t quant_type);
-NNCASE_API int
-nncase_clr_compile_options_set_quant_mode(clr_object_handle_t compile_options,
-                                          nncase_quant_mode_t quant_mode);
+NNCASE_API int nncase_clr_compile_options_set_model_quant_mode(
+    clr_object_handle_t compile_options,
+    nncase_model_quant_mode_t model_quant_mode);
 
 NNCASE_API int nncase_clr_compiler_create(clr_object_handle_t compile_options,
                                           clr_object_handle_t *compiler);
@@ -225,6 +231,50 @@ class clr_object_base {
     clr_object_ptr obj_;
 };
 
+class array : public clr_object_base {
+  public:
+    using clr_object_base::clr_object_base;
+
+    array(nncase_array_element_kind_t kind, const clr_object_handle_t *elements,
+          size_t length) {
+        CHECK_CLR(nncase_clr_array_create(kind, elements, length,
+                                          obj_.release_and_addressof()));
+    }
+
+    template <class T = clr_object_base> T at(size_t index) {
+        T value(nullptr);
+        CHECK_CLR(nncase_clr_array_get_item(obj_.get(), index,
+                                            value.release_and_addressof()));
+        return value;
+    }
+
+    size_t length() {
+        size_t length;
+        CHECK_CLR(nncase_clr_array_get_length(obj_.get(), &length));
+        return length;
+    }
+
+    template <class T = clr_object_base> std::vector<T> to_vector() {
+        std::vector<T> vector(length());
+        for (size_t i = 0; i < vector.size(); i++) {
+            vector[i] = at<T>(i);
+        }
+        return vector;
+    }
+};
+
+class calibration_dataset_provider : public clr_object_base {
+  public:
+    using clr_object_base::clr_object_base;
+
+    calibration_dataset_provider(array dataset, size_t samples_count,
+                                 array fn_params) {
+        CHECK_CLR(nncase_clr_calibration_dataset_provider_create(
+            dataset.get(), samples_count, fn_params.get(),
+            obj_.release_and_addressof()));
+    }
+};
+
 class quantize_options : public clr_object_base {
   public:
     using clr_object_base::clr_object_base;
@@ -232,6 +282,12 @@ class quantize_options : public clr_object_base {
     quantize_options() {
         CHECK_CLR(
             nncase_clr_quantize_options_create(obj_.release_and_addressof()));
+    }
+
+    calibration_dataset_provider calibration_dataset() { return nullptr; }
+    void calibration_dataset(const calibration_dataset_provider &value) {
+        CHECK_CLR(nncase_clr_quantize_options_set_calibration_dataset(
+            obj_.get(), value.get()));
     }
 };
 
@@ -276,37 +332,17 @@ class compile_options : public clr_object_base {
         CHECK_CLR(nncase_clr_compile_options_set_dump_dir(
             obj_.get(), value.data(), value.length()));
     }
-};
 
-class array : public clr_object_base {
-  public:
-    using clr_object_base::clr_object_base;
-
-    array(nncase_array_element_kind_t kind, const clr_object_handle_t *elements,
-          size_t length) {
-        CHECK_CLR(nncase_clr_array_create(kind, elements, length,
-                                          obj_.release_and_addressof()));
+    clr::quantize_options quantize_options() { return nullptr; }
+    void quantize_options(const clr::quantize_options &value) {
+        CHECK_CLR(nncase_clr_compile_options_set_quantize_options(obj_.get(),
+                                                                  value.get()));
     }
 
-    template <class T = clr_object_base> T at(size_t index) {
-        T value(nullptr);
-        CHECK_CLR(nncase_clr_array_get_item(obj_.get(), index,
-                                            value.release_and_addressof()));
-        return value;
-    }
-
-    size_t length() {
-        size_t length;
-        CHECK_CLR(nncase_clr_array_get_length(obj_.get(), &length));
-        return length;
-    }
-
-    template <class T = clr_object_base> std::vector<T> to_vector() {
-        std::vector<T> vector(length());
-        for (size_t i = 0; i < vector.size(); i++) {
-            vector[i] = at<T>(i);
-        }
-        return vector;
+    nncase_model_quant_mode_t model_quant_mode() { return nncase_mqm_no_quant; }
+    void model_quant_mode(nncase_model_quant_mode_t value) {
+        CHECK_CLR(
+            nncase_clr_compile_options_set_model_quant_mode(obj_.get(), value));
     }
 };
 

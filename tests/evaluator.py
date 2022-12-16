@@ -1,7 +1,8 @@
-from test_runner import *
+from typing import List, Dict, Union, Tuple
 import os
 import nncase
 import numpy as np
+import test_utils
 
 class Evaluator:
     def run_evaluator(self, eval_args, cfg, case_dir, import_options, compile_options, model_content, preprocess_opt):
@@ -35,16 +36,18 @@ class Evaluator:
     def set_inputs(self, evaluator):
         for i in range(len(self.inputs)):
             input_tensor: nncase.RuntimeTensor = nncase.RuntimeTensor.from_numpy(
-                self.transform_input(self.data_pre_process(self.inputs[i]['data']), "float32", "CPU"))
+                self.transform_input(self.data_pre_process(self.inputs[i]['data'])[0], "float32", "CPU"))
             evaluator.set_input_tensor(i, input_tensor)
 
     def dump_outputs(self, eval_dir, evaluator):
         eval_output_paths = []
         for i in range(evaluator.outputs_size):
             result = evaluator.get_output_tensor(i).to_numpy()
-            eval_output_paths.append((
-                os.path.join(eval_dir, f'nncase_result_{i}.bin'),
-                os.path.join(eval_dir, f'nncase_result_{i}.txt')))
-            result.tofile(eval_output_paths[-1][0])
-            self.totxtfile(eval_output_paths[-1][1], result)
+            if True:
+                eval_output_paths.append((
+                    os.path.join(eval_dir, f'nncase_result_{i}.bin'),
+                    os.path.join(eval_dir, f'nncase_result_{i}.txt')))
+                result.tofile(eval_output_paths[-1][0])
+                self.totxtfile(eval_output_paths[-1][1], result)
         return eval_output_paths
+        
