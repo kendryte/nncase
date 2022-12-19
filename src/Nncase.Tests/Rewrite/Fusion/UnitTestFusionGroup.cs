@@ -8,12 +8,11 @@ namespace Nncase.Tests.ReWrite.FusionTest;
 
 internal sealed class TestFusionGroupMutator : Transform.Mutators.FusionGroupMutator
 {
-
-    public TestFusionGroupMutator(IUsedByResult usedByAnalysisReslut, IEnumerable<IFusionMergeRule> preOrderfusionRules, IEnumerable<IFusionMergeRule> postOrderfusionRules, RunPassOptions passOptions) : base(usedByAnalysisReslut, preOrderfusionRules, postOrderfusionRules, passOptions)
+    public TestFusionGroupMutator(IUsedByResult usedByAnalysisReslut, IMergeRewriteRule preOrderfusionRule, RunPassOptions passOptions) : base(usedByAnalysisReslut, preOrderfusionRule, passOptions)
     {
     }
 
-    public override bool MergedFusionCheckCallBack(Fusion merged_fusion)
+    public override bool MergedFusionCheckCallBack(Fusion merged_fusion, HashSet<Fusion> candidate_fusions)
     {
         if (merged_fusion.Name.IndexOf("False") == -1)
             return true;
@@ -22,13 +21,11 @@ internal sealed class TestFusionGroupMutator : Transform.Mutators.FusionGroupMut
 }
 
 
-public class UnitTestDataFlowFusion : TestFixture.UnitTestFixtrue
+public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
 {
 
     public static TheoryData<IDataFlowFusionCase> DataOne = new()
     {
-     new  DataFlowType6_1FusionCaseLeft(),
-     new  DataFlowType6_1FusionCaseRight(),
       new DataFlowType7FusionCaseLeft(),
       new DataFlowType7FusionCaseRight()
     };
@@ -44,6 +41,7 @@ public class UnitTestDataFlowFusion : TestFixture.UnitTestFixtrue
       new DataFlowType4FusionCaseLeft(),
       new DataFlowType5FusionCaseLeft(),
       new DataFlowType6FusionCaseLeft(),
+      new DataFlowType6_1FusionCaseLeft(),
 
       new DataFlowType1FusionCaseRight(),
       new DataFlowType2FusionCaseRight(),
@@ -51,6 +49,7 @@ public class UnitTestDataFlowFusion : TestFixture.UnitTestFixtrue
       new DataFlowType4FusionCaseRight(),
       new DataFlowType5FusionCaseRight(),
       new DataFlowType6FusionCaseRight(),
+      new DataFlowType6_1FusionCaseRight(),
     };
 
     [Theory]
@@ -69,19 +68,17 @@ public class UnitTestDataFlowFusion : TestFixture.UnitTestFixtrue
         IRModule module = new(main);
         CompilerServices.InferenceType(main);
         CompilerServices.DumpIR(main, "pre", passOptions.DumpDir);
+        // CompilerServices.DumpDotIR(main, "pre", passOptions.DumpDir);
 
-        var usedbyReslut = Analyser.AnalysisUsedBy(main);
-        var mutator = new TestFusionGroupMutator(usedbyReslut,
-          new IFusionMergeRule[]{
-            new SameInputFusionMergeRule(),
-          },
-          new IFusionMergeRule[]{
+        var rewriter = new DataFlowMergeRewriter();
+        var post = (Function)rewriter.Rewrite(main, new IMergeRewriteRule[]{
             new SameInputFusionMergeRule(),
             new MultiInputFusionMergeRule(),
-          },
-         passOptions);
-        var post = (Function)mutator.Visit(main);
+          }, (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
+          passOptions);
+
         CompilerServices.DumpIR(post, "post", passOptions.DumpDir);
+        // CompilerServices.DumpDotIR(post, "post", passOptions.DumpDir);
 
         var input_tensor = TestFixture.Testing.Rand<float>(1, 3, 224, 224);
         var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance){

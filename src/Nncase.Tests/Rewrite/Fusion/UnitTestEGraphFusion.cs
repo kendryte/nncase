@@ -150,7 +150,7 @@ internal sealed class SingleInputFusionMergeRule : IRewriteRule
         }
         else
         {
-            System.Console.WriteLine("Re Add Merged Fusion Call");
+            // System.Console.WriteLine("Re Add Merged Fusion Call");
         }
         return new_call;
     }
@@ -221,7 +221,7 @@ internal sealed class TwoInputFusionMergeRule : IRewriteRule
         }
         else
         {
-            System.Console.WriteLine("Re Add Merged Two Fusion Call");
+            // System.Console.WriteLine("Re Add Merged Two Fusion Call");
         }
         return new_call;
     }

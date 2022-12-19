@@ -18,8 +18,6 @@ internal sealed class UsedByAnalysisVisitor : ExprVisitor<bool, IRType>
 
     public static void AddUsedBy(Dictionary<Expr, HashSet<Expr>> map, Expr child, Expr parent)
     {
-        if (child is Call { Target: Fusion { Name: "fusion_2_True_fusion_1_True_fusion_0_True" } })
-            System.Console.WriteLine("fuck!");
         if (!map.TryGetValue(child, out var chain))
         {
             chain = new(ReferenceEqualityComparer.Instance);
@@ -30,10 +28,13 @@ internal sealed class UsedByAnalysisVisitor : ExprVisitor<bool, IRType>
 
     public static bool ClearUsedBy(Dictionary<Expr, HashSet<Expr>> map, Expr child, Expr parent)
     {
-        var users = map[child];
-        var ret = users.Remove(parent);
-        if (users.Count == 0)
-            map.Remove(child);
+        bool ret = false;
+        if (map.TryGetValue(child, out var users))
+        {
+            ret = users.Remove(parent);
+            if (users.Count == 0)
+                map.Remove(child);
+        }
         return ret;
     }
 
