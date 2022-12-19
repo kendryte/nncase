@@ -21,4 +21,10 @@ public sealed record Unary(UnaryOp UnaryOp) : Op
     /// Gets input.
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(Unary), 0, "input");
+
+    /// <inheritdoc/>
+    public override string DisplayProperty()
+    {
+        return $"UnaryOp: {UnaryOp}";
+    }
 }

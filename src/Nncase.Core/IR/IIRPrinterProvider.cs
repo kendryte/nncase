@@ -58,6 +58,18 @@ public interface IIRPrinterProvider
     void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable);
 
     /// <summary>
+    /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.dot`
+    /// <remarks>
+    /// not support prim func/prim func wrapper.
+    /// </remarks>
+    /// </summary>
+    /// <param name="expr"></param>
+    /// <param name="prefix"></param>
+    /// <param name="dumpPath"></param>
+    /// <param name="display_callable"></param>
+    void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable);
+
+    /// <summary>
     /// print ir type.
     /// </summary>
     /// <param name="type"></param>
@@ -68,6 +80,7 @@ public interface IIRPrinterProvider
     /// print ir type.
     /// </summary>
     /// <param name="expr"> the expression</param>
+    /// <param name="useScript"> tir mode.</param>
     /// <returns>the string.</returns>
     string Print(Expr expr, bool useScript);
 }

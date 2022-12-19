@@ -59,6 +59,18 @@ public interface ICompilerServicesProvider
     void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable);
 
     /// <summary>
+    /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.dot`
+    /// <remarks>
+    /// not support prim func/prim func wrapper.
+    /// </remarks>
+    /// </summary>
+    /// <param name="expr"></param>
+    /// <param name="prefix"></param>
+    /// <param name="dumpPath"></param>
+    /// <param name="display_callable"></param>
+    void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable);
+
+    /// <summary>
     /// print ir type.
     /// </summary>
     /// <param name="type"></param>
@@ -253,7 +265,12 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     }
 
     /// <inheritdoc/>
-    public void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable) => _irprinterProvider.DumpIR(expr, prefix, dumpPath, display_callable);
+    public void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable) =>
+      _irprinterProvider.DumpIR(expr, prefix, dumpPath, display_callable);
+
+    /// <inheritdoc/>
+    public void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable) =>
+    _irprinterProvider.DumpDotIR(expr, prefix, dumpPath, display_callable);
 
     /// <inheritdoc/>
     public string Print(IRType type) => _irprinterProvider.Print(type);
@@ -527,7 +544,21 @@ public static class CompilerServices
     public static string PrintOp(Op op, IIRPrinterContext context, bool ILmode) => Provider.PrintOp(op, context, ILmode);
 
     /// <inheritdoc/>
-    public static void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable = true) => Provider.DumpIR(expr, prefix, dumpPath, display_callable);
+    public static void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable = true) =>
+      Provider.DumpIR(expr, prefix, dumpPath, display_callable);
+
+    /// <summary>
+    /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.dot`
+    /// <remarks>
+    /// not support prim func/prim func wrapper.
+    /// </remarks>
+    /// </summary>
+    /// <param name="expr"></param>
+    /// <param name="prefix"></param>
+    /// <param name="dumpPath"></param>
+    /// <param name="display_callable"></param>
+    public static void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable = true) =>
+      Provider.DumpDotIR(expr, prefix, dumpPath, display_callable);
 
     /// <inheritdoc/>
     public static string Print(IRType type) => Provider.Print(type);
