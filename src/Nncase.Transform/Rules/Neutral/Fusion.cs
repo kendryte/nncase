@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Nncase.CodeGen;
 using Nncase.IR;
@@ -56,14 +57,29 @@ public partial class DoubleInputFusion<T, BeginT, EndT> : FusionMaker
     // replace input with var
     private Call GetReplace(Call st, Expr lhs, Expr rhs, RunPassOptions passOptions)
     {
-        var arg0 = new Var("input0", lhs.CheckedType!);
-        var arg1 = new Var("input1", rhs.CheckedType!);
-        var tmpBody = ReplaceTarget(st, lhs, arg0, passOptions.MatchOptions);
-        var body = ReplaceTarget(tmpBody, rhs, arg1, passOptions.MatchOptions);
-        var fusion = new Call(new Fusion(FullName, ModuleKind, body, new[] { arg0, arg1 }), lhs, rhs);
+        var varIndex = 0;
+        Expr tmpBody = st;
+        var args = new List<Var>();
+        var parameters = new List<Expr>();
+        if (lhs is TensorConst)
+        {
+            var arg = new Var($"input{varIndex++}", lhs.CheckedType!);
+            tmpBody = ReplaceTarget(tmpBody, lhs, arg, passOptions.MatchOptions);
+            args.Add(arg);
+            parameters.Add(lhs);
+        }
+
+        if (rhs is TensorConst)
+        {
+            var arg = new Var($"input{varIndex++}", rhs.CheckedType!);
+            tmpBody = ReplaceTarget(tmpBody, rhs, arg, passOptions.MatchOptions);
+            args.Add(arg);
+            parameters.Add(rhs);
+        }
+
+        var body = tmpBody;
+        var fusion = new Call(new Fusion(FullName, ModuleKind, body, args.ToArray()), parameters.ToArray());
         return fusion;
-        // options.SuppressPattern(st, Pattern);
-        // return fusion;
     }
 }
 
@@ -96,30 +112,30 @@ public partial class FuseTwoFusion : FusionMaker
     /// <summary>
     /// module kind
     /// </summary>
-    
     private Pattern? _calleePattern = null;
+
     private Pattern? _Pattern = null;
 
     /// <inheritdoc/>
     public override Pattern Pattern => _Pattern ??=
-      IsCall(
-        "caller",
-        IsFusion("callerFuse",
-            ModuleKind,
-            IsWildcard(),
-            WildcardVArgsPattern),
-        ParamsWithArg(CalleePattern)
+        IsCall(
+            "caller",
+            IsFusion("callerFuse",
+                ModuleKind,
+                IsWildcard(),
+                WildcardVArgsPattern),
+            ParamsWithArg(CalleePattern)
         );
 
     /// <inheritdoc/>
     public Pattern CalleePattern => _calleePattern ??=
         IsCall(
-        "callee",
-        IsFusion("calleeFuse",
-            ModuleKind,
-            IsWildcard(),
-            WildcardVArgsPattern),
-        WildcardVArgsPattern);
+            "callee",
+            IsFusion("calleeFuse",
+                ModuleKind,
+                IsWildcard(),
+                WildcardVArgsPattern),
+            WildcardVArgsPattern);
 
     // caller(callee, args..)
     private Call GetReplace(Call caller, Call callee, Fusion calleeFuse, Fusion callerFuse, RunPassOptions passOptions)
