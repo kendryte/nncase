@@ -196,6 +196,7 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
                 Op op => op.Parameters.Select(info => info.Name),
                 Fusion fusion => fusion.Parameters.Select(v => v.Name),
                 Function func => func.Parameters.Select(v => v.Name),
+                PrimFunctionWrapper wrapper => wrapper.Target.Parameters.Select(b => b.Name),
                 _ => throw new ArgumentOutOfRangeException()
             }))
             {
