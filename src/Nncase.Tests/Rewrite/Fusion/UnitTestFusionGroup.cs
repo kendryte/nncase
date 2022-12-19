@@ -68,7 +68,7 @@ public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
         IRModule module = new(main);
         CompilerServices.InferenceType(main);
         CompilerServices.DumpIR(main, "pre", passOptions.DumpDir);
-        // CompilerServices.DumpDotIR(main, "pre", passOptions.DumpDir);
+        CompilerServices.DumpDotIR(main, "pre", passOptions.DumpDir);
 
         var rewriter = new DataFlowMergeRewriter();
         var post = (Function)rewriter.Rewrite(main, new IMergeRewriteRule[]{
@@ -78,7 +78,7 @@ public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
           passOptions);
 
         CompilerServices.DumpIR(post, "post", passOptions.DumpDir);
-        // CompilerServices.DumpDotIR(post, "post", passOptions.DumpDir);
+        CompilerServices.DumpDotIR(post, "post", passOptions.DumpDir);
 
         var input_tensor = TestFixture.Testing.Rand<float>(1, 3, 224, 224);
         var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance){

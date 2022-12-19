@@ -337,11 +337,13 @@ public class UnitTestEGraphFusion : TestFixture.UnitTestFixtrue
           new SingleInputFusionMergeRule()
         };
         var post = (Function)await pass.RunAsync(main, passOptions);
+        CompilerServices.DumpDotIR(post, "", passOptions.DumpDir, false);
 
         var pass2 = new EGraphPass("EGraphAutoMergeFusion", new FusionCostEvaluator()){
           new SingleInputFusionMergeRule()
         };
         var post2 = (Function)await pass2.RunAsync(main, passOptions);
+        CompilerServices.DumpDotIR(post2, "", passOptions.DumpDir, false);
 
         var input_tensor = TestFixture.Testing.Rand<float>(1, 224, 224, 3);
         var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance){

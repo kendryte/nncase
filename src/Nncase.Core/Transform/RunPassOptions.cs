@@ -81,6 +81,7 @@ namespace Nncase.Transform
             PassName = other.PassName;
             RewriteOnce = other.RewriteOnce;
             CompileOptions = other.CompileOptions;
+            MatchOptions = other.MatchOptions;
         }
 
         /// <summary>
