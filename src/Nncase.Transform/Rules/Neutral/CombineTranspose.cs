@@ -49,6 +49,88 @@ public sealed partial class CombineTransposeBinary : IRewriteRule
 }
 
 /// <summary>
+/// Combine Transpose with Const Binary
+/// binary(transpose(a,p),const(b)) => transpose(binary(a,const(b)),p) or binary(const(a),transpose(b,p)) => transpose(binary(const(a),b),p).
+/// </summary>
+[RuleGenerator]
+public sealed partial class CombineTransposeConstBinary : IRewriteRule
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CombineTransposeConstBinary"/> class.
+    /// </summary>
+    public CombineTransposeConstBinary()
+    {
+        var perm = IsWildcard("perm");
+        Pattern = IsAlt(IsBinary("binary", _ => true, IsTranspose(IsWildcard("x"), perm), IsConst("y")), IsBinary("binary", _ => true, IsConst("x"), IsTranspose(IsWildcard("y"), perm)));
+    }
+
+    /// <inheritdoc/>
+    public IPattern Pattern { get; init; }
+
+    private Expr? GetReplace(Binary binary, Expr x, Expr y, Expr perm)
+    {
+        var expandDim = perm.CheckedShape.Size - ((TensorConst)perm).Value.ToArray<int>()[perm.CheckedShape.Size - 1] - 1;
+
+        if (x is Const)
+        {
+            List<int> newShape = new List<int>() { x.CheckedShape[0].FixedValue };
+            if (x.CheckedShape[0].FixedValue != 1)
+            {
+                for (int i = 0; i < expandDim; i++)
+                {
+                    newShape.Add(1);
+                }
+            }
+            var newConst = Tensor.From<float>(((TensorConst)x).Value.ToArray<float>(), new Nncase.IR.Shape(newShape));
+
+            return Transpose(Binary(binary.BinaryOp, newConst, y), perm);
+        }
+
+        if (y is Const)
+        {
+            List<int> newShape = new List<int>() { y.CheckedShape[0].FixedValue };
+            if (y.CheckedShape[0].FixedValue != 1)
+            {
+                for (int i = 0; i < expandDim; i++)
+                {
+                    newShape.Add(1);
+                }
+            }
+            var newConst = Tensor.From<float>(((TensorConst)y).Value.ToArray<float>(), new Nncase.IR.Shape(newShape));
+
+            return Transpose(Binary(binary.BinaryOp, x, newConst), perm);
+        }
+
+        return null;
+    }
+}
+
+/// <summary>
+/// Combine Transpose with Relu
+/// relu(transpose(a,p)) => transpose(relu(a),p).
+/// </summary>
+[RuleGenerator]
+public sealed partial class CombineTransposeRelu : IRewriteRule
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CombineTransposeRelu"/> class.
+    /// </summary>
+    public CombineTransposeRelu()
+    {
+        var perm = IsWildcard("perm");
+        Pattern = IsRelu("relu", x => true, IsTranspose(IsWildcard("x"), perm));
+    }
+
+    /// <inheritdoc/>
+    public IPattern Pattern { get; init; }
+
+    private Expr? GetReplace(Relu relu, Expr x, Expr perm)
+    {
+        return Transpose(Relu(x), perm);
+    }
+}
+
+/// <summary>
 /// Combine Transpose with Concat
 /// concat((transpose(x,p),...), a) => transpose(concat((x,...), p[a]), p).
 /// </summary>

@@ -23,6 +23,7 @@
     <PackageReference Include="Microsoft.Toolkit.HighPerformance" />
     <PackageReference Include="NetFabric.Hyperlinq" />
     <PackageReference Include="TorchSharp" />
+    <ProjectReference Include="..\..\third_party\onnx\Onnx.Protobuf.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -21,15 +21,14 @@ namespace Nncase.Tests.Rules.NeutralTest;
 public class UnitTestFoldBinary : TestFixture.UnitTestFixtrue
 {
     public static IEnumerable<object[]> TestFoldNopBinaryNegativeData =>
-        new[]
-        {
-            new object[] {BinaryOp.Add, new[] {3}, 1f},
-            new object[] {BinaryOp.Sub, new[] {3, 4}, 1f},
-            new object[] {BinaryOp.Mul, new[] {3}, 2f},
-            new object[] {BinaryOp.Div, new[] {3}, 2f},
-            // new object[] { BinaryOp.Mod ,new[] { 3}, 2f},
-            new object[] {BinaryOp.Pow, new[] {3},2f},
-        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
+      new[] {
+        new object[] {BinaryOp.Add, new[] {3}, 1f},
+        new object[] {BinaryOp.Sub, new[] {3, 4}, 1f},
+        new object[] {BinaryOp.Mul, new[] {3}, 2f},
+        new object[] {BinaryOp.Div, new[] {3}, 2f},
+        // new object[] { BinaryOp.Mod ,new[] { 3}, 2f},
+        new object[] {BinaryOp.Pow, new[] {3},2f},
+      }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
     [MemberData(nameof(TestFoldNopBinaryNegativeData))]
