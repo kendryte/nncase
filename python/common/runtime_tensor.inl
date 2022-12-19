@@ -26,7 +26,7 @@ py::class_<runtime_tensor>(m, "RuntimeTensor")
     .def_static("from_numpy",
                 [](py::array arr) {
                     auto src_buffer = arr.request();
-                    auto datatype = from_dtype(arr.dtype());
+                    auto datatype = from_dtype(arr);
                     auto tensor =
                         host_runtime_tensor::create(
                             datatype, to_rt_shape(src_buffer.shape),
