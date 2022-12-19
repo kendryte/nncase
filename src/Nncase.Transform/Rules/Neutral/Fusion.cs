@@ -61,7 +61,7 @@ public partial class DoubleInputFusion<T, BeginT, EndT> : FusionMaker
         Expr tmpBody = st;
         var args = new List<Var>();
         var parameters = new List<Expr>();
-        if (lhs is TensorConst)
+        if (lhs is not TensorConst)
         {
             var arg = new Var($"input{varIndex++}", lhs.CheckedType!);
             tmpBody = ReplaceTarget(tmpBody, lhs, arg, passOptions.MatchOptions);
@@ -69,7 +69,7 @@ public partial class DoubleInputFusion<T, BeginT, EndT> : FusionMaker
             parameters.Add(lhs);
         }
 
-        if (rhs is TensorConst)
+        if (rhs is not TensorConst)
         {
             var arg = new Var($"input{varIndex++}", rhs.CheckedType!);
             tmpBody = ReplaceTarget(tmpBody, rhs, arg, passOptions.MatchOptions);
