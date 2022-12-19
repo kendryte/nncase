@@ -17,11 +17,13 @@
 from __future__ import annotations
 
 import io
+import itertools
 import re
 import subprocess
 import shutil
 import os
 import sys
+import numpy as np
 from pathlib import Path
 from shutil import which
 from typing import List
@@ -61,13 +63,13 @@ class PTQTensorOptions:
     input_mean: float
     input_std: float
     samples_count: int
-    cali_data: list
+    cali_data: List[RuntimeTensor]
 
     def __init__(self) -> None:
         pass
 
-    def set_tensor_data(self, data: np.array) -> None:
-        self.cali_data = [RuntimeTensor(d) for d in data]
+    def set_tensor_data(self, data: List[List[np.ndarray]]) -> None:
+        self.cali_data = [RuntimeTensor.from_numpy(d) for d in itertools.chain.from_iterable(data)]
 
 
 class GraphEvaluator:
@@ -113,25 +115,27 @@ class IRModule():
     def entry(self) -> _nncase.IR.Function:
         return self._module.entry
 
-    @ property
-    def params(self) -> List[_nncase.IR.Var]:
-        return self._module.parameters
-
 
 class Compiler:
     _compiler: _nncase.Compiler
     _compile_options: _nncase.CompileOptions
+    _quantize_options: _nncase.QuantizeOptions
     _module: IRModule
 
     def __init__(self) -> None:
         self._compile_options = _nncase.CompileOptions()
         self._compiler = _nncase.Compiler(self._compile_options)
+        self._quantize_options = None
 
     def set_compile_options(self, compile_options: CompileOptions):
         self.__process_compile_options(compile_options)
 
     def compile(self) -> None:
         self._compiler.compile()
+
+    @ property
+    def module(self) -> IRModule:
+        return self._module
 
     def create_evaluator(self, stage: int) -> GraphEvaluator:
         return GraphEvaluator(self._module.entry)
@@ -155,12 +159,14 @@ class Compiler:
         self._compile_options.input_format = "tflite"
         self._import_module(model_content)
 
-    def use_ptq(self, ptq_dataset_options: PTQTensorOptions, params: list) -> None:
-        dataset = [data.to_nncase_tensor() for data in ptq_dataset_options.cali_data]
-        dataset = _nncase.Compiler.PythonHelper.MakeDatasetProvider(
-            dataset, ptq_dataset_options.samples_count, params)
-        self.quant_options = _nncase.Compiler.PythonHelper.MakeQuantizeOptions(dataset)
-        self._compiler.UsePTQ(self.quant_options)
+    def use_ptq(self, ptq_dataset_options: PTQTensorOptions) -> None:
+        dataset = [_nncase.RTValue.from_runtime_tensor(data) for data in ptq_dataset_options.cali_data]
+        provider = _nncase.CalibrationDatasetProvider(dataset, ptq_dataset_options.samples_count, self._module.entry.parameters)
+        if not self._quantize_options:
+            self._quantize_options = _nncase.QuantizeOptions()
+            self._compile_options.quantize_options = self._quantize_options
+        self._quantize_options.calibration_dataset = provider
+        self._compile_options.model_quant_mode = _nncase.ModelQuantMode.UsePTQ
 
     def dump_range_options(self) -> DumpRangeTensorOptions:
         raise NotImplementedError("dump_range_options")

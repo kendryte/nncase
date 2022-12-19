@@ -69,8 +69,9 @@ struct c_api_mt {
         clr_object_handle_t quantize_options);
     void (*compile_options_set_quant_type)(clr_object_handle_t compile_options,
                                            clr_object_handle_t quant_type);
-    void (*compile_options_set_quant_mode)(clr_object_handle_t compile_options,
-                                           nncase_quant_mode_t quant_mode);
+    void (*compile_options_set_model_quant_mode)(
+        clr_object_handle_t compile_options,
+        nncase_model_quant_mode_t model_quant_mode);
     void (*compiler_initialize)();
     clr_object_handle_t (*compiler_create)(clr_object_handle_t compile_options);
     clr_object_handle_t (*compiler_import_module)(clr_object_handle_t compiler,
@@ -302,7 +303,7 @@ int nncase_clr_initialize(const char *root_assembly_path) {
         auto init = load_compiler_c_api_initializer(root_assembly_path);
         init(&g_c_api_mt);
         g_c_api_mt.compiler_initialize();
-        //SetUnhandledExceptionFilter(MyUnhandledExceptionFilter);
+        // SetUnhandledExceptionFilter(MyUnhandledExceptionFilter);
     }
 
     return 0;
@@ -395,9 +396,11 @@ int nncase_clr_compile_options_set_quantize_options(
     return 0;
 }
 
-int nncase_clr_compile_options_set_quant_mode(
-    clr_object_handle_t compile_options, nncase_quant_mode_t quant_mode) {
-    g_c_api_mt.compile_options_set_quant_mode(compile_options, quant_mode);
+int nncase_clr_compile_options_set_model_quant_mode(
+    clr_object_handle_t compile_options,
+    nncase_model_quant_mode_t model_quant_mode) {
+    g_c_api_mt.compile_options_set_model_quant_mode(compile_options,
+                                                    model_quant_mode);
     return 0;
 }
 

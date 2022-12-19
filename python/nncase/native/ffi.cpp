@@ -56,6 +56,11 @@ PYBIND11_MODULE(_nncase, m) {
 
 #include "runtime_tensor.inl"
 
+    py::enum_<nncase_model_quant_mode_t>(m, "ModelQuantMode")
+        .value("NoQuant", nncase_mqm_no_quant)
+        .value("UsePTQ", nncase_mqm_use_ptq)
+        .value("UseQAT", nncase_mqm_use_qat);
+
     py::class_<compile_options>(m, "CompileOptions")
         .def(py::init())
         .def_property(
@@ -69,7 +74,44 @@ PYBIND11_MODULE(_nncase, m) {
                       py::overload_cast<int32_t>(&compile_options::dump_level))
         .def_property(
             "dump_dir", py::overload_cast<>(&compile_options::dump_dir),
-            py::overload_cast<std::string_view>(&compile_options::dump_dir));
+            py::overload_cast<std::string_view>(&compile_options::dump_dir))
+        .def_property("quantize_options",
+                      py::overload_cast<>(&compile_options::quantize_options),
+                      py::overload_cast<const quantize_options &>(
+                          &compile_options::quantize_options))
+        .def_property("model_quant_mode",
+                      py::overload_cast<>(&compile_options::model_quant_mode),
+                      py::overload_cast<nncase_model_quant_mode_t>(
+                          &compile_options::model_quant_mode));
+
+    py::class_<quantize_options>(m, "QuantizeOptions")
+        .def(py::init())
+        .def_property(
+            "calibration_dataset",
+            py::overload_cast<>(&quantize_options::calibration_dataset),
+            py::overload_cast<const calibration_dataset_provider &>(
+                &quantize_options::calibration_dataset));
+
+    py::class_<calibration_dataset_provider>(m, "CalibrationDatasetProvider")
+        .def(py::init([](py::list dataset, size_t samples_count,
+                         py::list fn_params) {
+            std::vector<clr_object_handle_t> dataset_handles(dataset.size());
+            std::vector<clr_object_handle_t> param_handles(fn_params.size());
+            for (size_t i = 0; i < dataset_handles.size(); i++) {
+                dataset_handles[i] = dataset[i].cast<rtvalue &>().get();
+            }
+            for (size_t i = 0; i < param_handles.size(); i++) {
+                param_handles[i] = fn_params[i].cast<var &>().get();
+            }
+
+            array dataset_arr(nncase_array_rtvalue, dataset_handles.data(),
+                              dataset.size());
+            array fn_params_arr(nncase_array_var, param_handles.data(),
+                                fn_params.size());
+            return calibration_dataset_provider(std::move(dataset_arr),
+                                                samples_count,
+                                                std::move(fn_params_arr));
+        }));
 
     py::class_<rtvalue>(m, "RTValue")
         .def_static(

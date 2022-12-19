@@ -86,6 +86,7 @@ public static unsafe class CApi
         mt->CompileOptionsSetTargetPtr = &CompileOptionsSetTarget;
         mt->CompileOptionsSetDumpLevelPtr = &CompileOptionsSetDumpLevel;
         mt->CompileOptionsSetDumpDirPtr = &CompileOptionsSetDumpDir;
+        mt->CompileOptionsSetQuantizeOptionsPtr = &CompileOptionsSetQuantizeOptions;
         mt->CompileOptionsSetQuantTypePtr = &CompileOptionsSetQuantType;
         mt->CompileOptionsSetModelQuantModePtr = &CompileOptionsSetModelQuantMode;
         mt->CompilerInitializePtr = &CompilerInitialize;
@@ -145,16 +146,21 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
-    private static IntPtr CalibrationDatasetProviderCreate(IntPtr datasetHandle, nuint sampleCount, IntPtr fnParamsHandle)
+    private static IntPtr CalibrationDatasetProviderCreate(IntPtr datasetHandle, nuint samplesCount, IntPtr fnParamsHandle)
     {
         var dataset = Get<RTValue[]>(datasetHandle);
         var fnParams = Get<Var[]>(fnParamsHandle);
-        var inputCount = dataset.Length / (int)sampleCount;
+        if (dataset.Length != fnParams.Length * (int)samplesCount)
+        {
+            throw new ArgumentException($"Dataset count {dataset.Length} not equals to params count {fnParams.Length} * samples count {samplesCount}");
+        }
 
-        var samples = dataset.Chunk(inputCount).Select(inputs => inputs.Zip(fnParams).ToDictionary(
+        var samples = (dataset.Length == 0 ?
+            Array.Empty<Dictionary<Var, IValue>>() :
+            dataset.Chunk(dataset.Length).Select(inputs => inputs.Zip(fnParams).ToDictionary(
             item => item.Item2,
-            item => item.Item1.ToValue())).ToAsyncEnumerable();
-        return GCHandle.ToIntPtr(GCHandle.Alloc(new CCalibrationDatasetProvider(samples, (int)sampleCount)));
+            item => item.Item1.ToValue()))).ToAsyncEnumerable();
+        return GCHandle.ToIntPtr(GCHandle.Alloc(new CCalibrationDatasetProvider(samples, (int)samplesCount)));
     }
 
     [UnmanagedCallersOnly]
