@@ -41,14 +41,29 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<string, string>
 {
     private bool display_callable;
 
-    public ILDotPrintVisitor()
-    {
-    }
+    private readonly ModelProto _model;
 
-    public ILDotPrintVisitor(bool display_callable)
+    private readonly GraphProto _graph;
+
+    public ILDotPrintVisitor(Expr root, bool display_callable)
     {
         this.display_callable = display_callable;
+        _model = new();
+        _model.ProducerName = "Nncase IL";
+        _model.ProducerVersion = "Nncase V2.0";
+        _graph = _model.Graph;
+
+        if (root is (TIR.PrimFunction or PrimFunctionWrapper))
+            throw new NotSupportedException();
+
+        if (root is BaseFunction basefunc)
+        {
+            _graph.Name = basefunc.Name;
+        }
     }
+
+    public ILDotPrintVisitor(bool display_callable) : this(None.Default, display_callable) { }
+
 
     /// <summary>
     /// Save the DotGraph into file
