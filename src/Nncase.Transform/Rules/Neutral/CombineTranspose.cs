@@ -204,6 +204,32 @@ public sealed partial class CombineTransposePad : IRewriteRule
 }
 
 /// <summary>
+/// Combine Pad With Transpose
+/// transpose(pad) => pad(transpose).
+/// </summary>
+[RuleGenerator]
+public sealed partial class CombinePadTranspose : IRewriteRule
+{
+    /// <inheritdoc/>
+
+    public IPattern Pattern { get; } = IsTranspose(
+        "transpose",
+        x => true,
+        IsPad("pad", y => true, IsWildcard("input"), IsTensorConst("pads"), IsWildcard("padValue")), IsTensorConst("perm"));
+
+    private Expr GetReplace(Pad pad, Expr input, int[] perm, Expr pads, Expr padValue)
+    {
+        List<int> newPads = new List<int>();
+        for (int i = 0; i < perm.Length; i++)
+        {
+            newPads.Add(((TensorConst)pads).Value.ToArray<int>()[perm[i] * 2]);
+            newPads.Add(((TensorConst)pads).Value.ToArray<int>()[perm[i] * 2 + 1]);
+        }
+        return Pad(Transpose(input, perm), Tensor.From<int>(newPads.ToArray(), pads.CheckedShape), pad.PadMode, padValue);
+    }
+}
+
+/// <summary>
 /// Combine Transpose with Reduce
 /// reduce(transpose(x,p), a) => transpose(reduce(x, gather(p, a)), p).
 /// </summary>
@@ -214,16 +240,38 @@ public sealed partial class CombineTransposeReduce : IRewriteRule
     public IPattern Pattern { get; } = IsReduce(
         "reduce",
         x => true,
-        IsTranspose(IsWildcard("input"), IsWildcard("perm")),
-        IsWildcard("axis"),
+        IsTranspose(IsWildcard("input"), IsTensorConst("perm")),
+        IsTensorConst("axis"),
         IsWildcard("initValue"),
         IsTensorConst("keepDims", IsBoolScalar()));
 
-    private Expr? GetReplace(Reduce reduce, Expr input, Expr perm, Expr axis, Expr initValue, bool keepDims)
+    private Expr? GetReplace(Reduce reduce, Expr input, int[] perm, int[] axis, Expr initValue, bool keepDims)
     {
-        var newAxis = Gather(perm, 0, axis);
-        var tp = Transpose(Reduce(reduce.ReduceOp, input, newAxis, initValue, true), perm);
-        return keepDims ? tp : Squeeze(tp, axis);
+        // var newAxis = Gather(perm, 0, axis);
+        // var tp = Transpose(Reduce(reduce.ReduceOp, input, newAxis, initValue, true), perm);
+        // return keepDims ? tp : Squeeze(tp, axis);
+        List<int> newAxis = new List<int>();
+        for (int i = 0; i < axis.Length; i++)
+            newAxis.Add(perm[axis[i]]);
+
+        List<int> newPerm = new List<int>();
+        for (int i = 0; i < perm.Length; i++)
+            newPerm.Add(perm[i]);
+        if (!keepDims)
+        {
+            var sortedNewAxis = newAxis;
+            sortedNewAxis.Sort((a, b) => b.CompareTo(a));
+            for (int i = 0; i < sortedNewAxis.Count; i++)
+            {
+                var it = newPerm.Find( x => x == sortedNewAxis[i] );
+                newPerm.Remove(it);
+                for (int j = 0; j < newPerm.Count; j++)
+                {
+                    newPerm[j] = newPerm[j] > sortedNewAxis[i] ? newPerm[j] - 1 : newPerm[j];
+                }
+            }
+        }
+        return Transpose(Reduce(reduce.ReduceOp, input, newAxis.ToArray(), initValue, keepDims), newPerm.ToArray());
     }
 }
 
