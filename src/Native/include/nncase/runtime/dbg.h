@@ -228,7 +228,7 @@ template <typename... T> std::string type_list_to_string() {
         result.pop_back();
     }
     return result;
-}
+} // namespace dbg
 
 template <typename... T> std::string get_type_name(type_tag<std::tuple<T...>>) {
     return "std::tuple<" + type_list_to_string<T...>() + ">";
@@ -687,7 +687,9 @@ template <typename T, typename... U> struct last {
     using type = typename last<U...>::type;
 };
 
-template <typename T> struct last<T> { using type = T; };
+template <typename T> struct last<T> {
+    using type = T;
+};
 
 template <typename... T> using last_t = typename last<T...>::type;
 
@@ -897,7 +899,7 @@ auto identity(T &&, U &&...u) -> last_t<U...> {
     }
 
 #define checked_try_var(name, x)                                               \
-    typename decltype((x))::traits::ok_type name;                              \
+    typename decltype((x))::value_type name;                                   \
     {                                                                          \
         auto v = (x);                                                          \
         if (v.is_ok()) {                                                       \
@@ -925,6 +927,18 @@ auto identity(T &&, U &&...u) -> last_t<U...> {
     dbg::DebugOutput(__FILE__, __LINE__, __func__)                             \
         .print({DBG_MAP(DBG_STRINGIFY, __VA_ARGS__)},                          \
                {DBG_MAP(DBG_TYPE_NAME, __VA_ARGS__)}, __VA_ARGS__)
+
+#ifndef NDEBUG
+#define dbg_check(...)                                                         \
+    if (!(__VA_ARGS__)) {                                                      \
+        dbg::DebugOutput(__FILE__, __LINE__, __func__)                         \
+            .print({DBG_MAP(DBG_STRINGIFY, __VA_ARGS__)},                      \
+                   {DBG_MAP(DBG_TYPE_NAME, __VA_ARGS__)}, __VA_ARGS__);        \
+        nncase::fail_fast(#__VA_ARGS__);                                       \
+    }
+#else
+#define dbg_check(...)
+#endif
 
 #else
 #define dbg(...) dbg::identity(__VA_ARGS__)

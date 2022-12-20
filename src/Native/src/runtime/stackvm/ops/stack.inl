@@ -12,20 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../runtime_function.h"
 
-using namespace nncase;
-using namespace nncase::runtime;
-using namespace nncase::runtime::stackvm;
+#define NNCASE_STACKVM_DISPATCH_OP_DUP                                         \
+    auto entry = stack_.peek();                                                \
+    stack_.push(std::move(entry));
 
-result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const dup_op_t &op) noexcept
-{
-    try_var(entry, stack_.peek());
-    return stack_.push(entry);
-}
-
-result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const pop_op_t &op) noexcept
-{
-    try_(stack_.pop());
-    return ok();
-}
+#define NNCASE_STACKVM_DISPATCH_OP_POP stack_.pop();

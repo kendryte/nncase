@@ -2,15 +2,12 @@
 
 set(SRCS runtime_module.cpp
          runtime_function.cpp
+         runtime_function.run.cpp
          op_profile.cpp
          op_reader.cpp
          call_frame.cpp
          evaluate_stack.cpp
          ops/control.cpp
-         ops/loadstore.cpp
-         ops/stack.cpp
-         ops/scalar.cpp
-         ops/conversion.cpp
          ops/tensor.cpp)
 
 if (BUILDING_RUNTIME)
@@ -24,4 +21,5 @@ else()
     target_link_libraries(simulator_stackvm PUBLIC simulator)
     target_link_libraries(simulator_stackvm PRIVATE kernels)
     set_property(TARGET simulator_stackvm PROPERTY POSITION_INDEPENDENT_CODE ON)
+    target_compile_definitions(simulator_stackvm PRIVATE -DENABLE_OP_PROFILE)
 endif()

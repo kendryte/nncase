@@ -6,7 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
+using static Tensorboard.TensorShapeProto.Types;
 
 namespace Nncase.CodeGen.StackVM;
 
@@ -277,24 +279,22 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private void LdShape(ReadOnlySpan<int> shape)
     {
-        foreach (var dim in shape)
+        for (int i = shape.Length - 1; i >= 0; i--)
         {
-            Emitter.LdcI4(dim);
+            Emitter.LdcI4(shape[i]);
         }
 
         Emitter.LdcI4(shape.Length);
-        Emitter.LdShape();
     }
 
     private void LdStrides(ReadOnlySpan<int> strides)
     {
-        foreach (var dim in strides)
+        for (int i = strides.Length - 1; i >= 0; i--)
         {
-            Emitter.LdcI4(dim);
+            Emitter.LdcI4(strides[i]);
         }
 
         Emitter.LdcI4(strides.Length);
-        Emitter.LdStrides();
     }
 
     private void LdDataType(DataType dataType)

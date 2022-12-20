@@ -79,7 +79,7 @@ case: # case的配置，应该是一个多层次的
 #        - k230
     - name: ptq
       values:
-        - true
+        - false
   infer:
     - name: target
       values:
@@ -90,7 +90,7 @@ case: # case的配置，应该是一个多层次的
 #        - k230
     - name: ptq
       values:
-        - true
+        - false
 judge:
   common: &judge_common
     simarity_name:  cosine
