@@ -75,17 +75,6 @@ template <class T> NNCASE_INLINE_VAR bool constexpr is_result_v = false;
 template <class T>
 NNCASE_INLINE_VAR bool constexpr is_result_v<result<T>> = true;
 
-template <class T> struct result_traits {
-
-    using ok_type = T;
-    using ok_storage_type = T;
-};
-
-template <> struct result_traits<void> {
-    using ok_type = void;
-    using ok_storage_type = std::monostate;
-};
-
 template <class T, class U, class Func> class map_call_impl {
     result<U> operator()(Func &&func, T &value) noexcept {
         return ok(func(value));
@@ -149,18 +138,6 @@ template <class Func> struct and_then_traits<void, Func> {
         "Cannot then a callback not returning result, use map instead");
 
     result_t operator()(Func &&func) noexcept { return func(); }
-};
-
-template <class T> struct unwrap_impl {
-    T &operator()(T &value) noexcept { return value; }
-
-    T &&operator()(T &&value) noexcept { return std::move(value); }
-};
-
-template <> struct unwrap_impl<void> {
-    void operator()(NNCASE_UNUSED std::monostate &value) noexcept {}
-
-    void operator()(NNCASE_UNUSED std::monostate &&value) noexcept {}
 };
 } // namespace detail
 
@@ -254,9 +231,17 @@ template <class T> class NNCASE_NODISCARD result {
             return err_;
     }
 
-    constexpr auto expect(gsl::cstring_span message) noexcept {
+    constexpr T &expect(gsl::cstring_span message) &noexcept {
         if (is_ok())
-            return detail::unwrap_impl<T>()(ok_);
+            return ok_;
+        else {
+            fail_fast(message.data());
+        }
+    }
+
+    constexpr T &&expect(gsl::cstring_span message) &&noexcept {
+        if (is_ok())
+            return std::move(ok_);
         else {
             fail_fast(message.data());
         }
@@ -372,7 +357,7 @@ template <class T> constexpr result<std::decay_t<T>> ok(T &&value) {
 }
 
 inline std::error_condition err(std::error_condition value) noexcept {
-    return std::move(value);
+    return value;
 }
 
 template <class ErrCode, class = std::enable_if_t<
