@@ -433,10 +433,10 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                                                        compile_options, model_content, dict_args)
                 self.check_result(eval_output_paths, eval_args, 'eval')
 
-            for infer_args in self.dispatch(cfg, cfg.infer):
-                infer_output_paths = self.run_inference(infer_args, cfg, case_dir, import_options,
-                                   compile_options, model_content, dict_args)
-                self.check_result(infer_output_paths, infer_args, 'infer')
+            # for infer_args in self.dispatch(cfg, cfg.infer):
+            #     infer_output_paths = self.run_inference(infer_args, cfg, case_dir, import_options,
+            #                        compile_options, model_content, dict_args)
+            #     self.check_result(infer_output_paths, infer_args, 'infer')
 
     def translate_shape(self, shape):
         if reduce(lambda x, y: x * y, shape) == 0:
