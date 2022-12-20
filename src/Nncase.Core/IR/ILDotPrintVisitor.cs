@@ -144,6 +144,50 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
         return new(expr.Name);
     }
 
+    public override ILDotOption VisitLeaf(Tuple expr)
+    {
+        var id = _IdCounter++;
+        string exprId = "\"" + id.ToString() + "\"";
+
+        var table = new DotHtmlTable
+        {
+            BorderWidth = 0,
+            CellBorderWidth = 1,
+            CellSpacing = 0,
+        };
+
+        var connect_list = new List<(Expr, string)>();
+        // 1. the connect type.
+        table.AddRow(row =>
+        {
+            row.AddCell("Tuple"); // key wrods type.
+            int count = 0;
+            foreach (var child in expr.Fields)
+            {
+                var childnode = Visit(child);
+                var portName = $"P{count++}";
+                row.AddCell(childnode.IsDotNode ? "" : childnode.Str, cell => cell.PortName = portName);
+                if (childnode.IsDotNode)
+                    connect_list.Add((child, portName));
+            }
+        });
+
+        // 3. make crrent node.
+        var dotNode = _dotGraph.Nodes.Add(exprId);
+        dotNode.ToPlainHtmlNode(table);
+
+        // 4. connect edge.
+        foreach (var (child, port_name) in connect_list)
+        {
+            _dotGraph.Edges.Add(Visit(child).DotNode, dotNode, edge =>
+            {
+                edge.Head.Endpoint.Port = new DotEndpointPort(port_name);
+            });
+        }
+
+        return new(dotNode);
+    }
+
     public override ILDotOption VisitLeaf(Op expr)
     {
         return new(expr.GetType().Name + $"({expr.DisplayProperty()})");
