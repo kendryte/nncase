@@ -156,11 +156,7 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
 
     public override ILDotOption VisitLeaf(None expr)
     {
-        var id = _IdCounter++;
-        string exprId = "\"" + id.ToString() + "\"";
-        var dotNode = new DotNode(exprId) { Label = "None", Shape = DotNodeShape.Rectangle };
-        _dotGraph.Nodes.Add(dotNode);
-        return new(dotNode);
+        return new("None");
     }
 
     public override ILDotOption VisitLeaf(Marker expr)
@@ -253,7 +249,7 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
                 _ => throw new ArgumentOutOfRangeException()
             }))
             {
-                if (child is Const)
+                if (child is Const or None)
                     continue;
                 var portName = $"P{count++}";
                 row.AddCell(arg_name, cell => cell.PortName = portName);
