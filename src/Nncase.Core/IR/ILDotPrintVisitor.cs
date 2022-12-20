@@ -151,15 +151,64 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
 
     public override ILDotOption VisitLeaf(Const expr)
     {
-        return new("");
+        return new(CompilerServices.Print(expr));
     }
 
     public override ILDotOption VisitLeaf(None expr)
     {
+        return new("None");
+    }
+
+    public override ILDotOption VisitLeaf(Marker expr)
+    {
         var id = _IdCounter++;
         string exprId = "\"" + id.ToString() + "\"";
-        var dotNode = new DotNode(exprId) { Label = "None", Shape = DotNodeShape.Rectangle };
-        _dotGraph.Nodes.Add(dotNode);
+
+        var table = new DotHtmlTable
+        {
+            BorderWidth = 0,
+            CellBorderWidth = 1,
+            CellSpacing = 0,
+        };
+        var target = Visit(expr.Target);
+        var attr = Visit(expr.Attribute);
+
+        // 1. the connect type.
+        table.AddRow(row =>
+        {
+            row.AddCell("Marker"); // key wrods type.
+            if (target.IsDotNode)
+                row.AddCell("Target", cell => cell.PortName = "P0"); // target.
+            else
+                row.AddCell(target.Str, cell => cell.PortName = "P0");
+
+            if (attr.IsDotNode)
+                row.AddCell("Attr", cell => cell.PortName = "P1"); // attr
+            else
+                row.AddCell(attr.Str, cell => cell.PortName = "P1");
+        });
+        table.AddRow(row =>
+        {
+            row.AddCell(expr.CheckedType is null ? "Null" : CompilerServices.Print(expr.CheckedType), cell => cell.ColumnSpan = 3);
+        });
+
+        // 3. make crrent node.
+        var dotNode = _dotGraph.Nodes.Add(exprId);
+        dotNode.ToPlainHtmlNode(table);
+
+        // 4. connect edge.
+        if (target.IsDotNode)
+            _dotGraph.Edges.Add(target.DotNode, dotNode, edge =>
+            {
+                edge.Head.Endpoint.Port = new DotEndpointPort("P0");
+            });
+
+        if (attr.IsDotNode)
+            _dotGraph.Edges.Add(attr.DotNode, dotNode, edge =>
+            {
+                edge.Head.Endpoint.Port = new DotEndpointPort("P1");
+            });
+
         return new(dotNode);
     }
 
@@ -200,7 +249,7 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
                 _ => throw new ArgumentOutOfRangeException()
             }))
             {
-                if (child is Const)
+                if (child is Const or None)
                     continue;
                 var portName = $"P{count++}";
                 row.AddCell(arg_name, cell => cell.PortName = portName);

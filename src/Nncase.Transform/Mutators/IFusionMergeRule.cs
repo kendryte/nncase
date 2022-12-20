@@ -68,7 +68,7 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
     public IPattern Pattern => _pattern ?? CreatePattern(ModuleKind);
 
     /// <inheritdoc/>
-    public Pattern CreatePattern(string target_module_kind)
+    public virtual Pattern CreatePattern(string target_module_kind)
     {
         var CalleePattern = IsCall(
           "callee",
@@ -186,7 +186,7 @@ public class SameInputFusionMergeRule : IMergeRewriteRule
     private Pattern? _pattern = null;
 
     /// <inheritdoc/>
-    public Pattern CreatePattern(string target_module_kind)
+    public virtual Pattern CreatePattern(string target_module_kind)
     {
         var inputPat = IsWildcard("input");
 

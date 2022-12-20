@@ -23,7 +23,39 @@ public class UnitTestAddMarker : TestFixture.UnitTestFixtrue
         var rootPre = Relu(a);
         var rootPost = CompilerServices.Rewrite(rootPre, new[] { new AddRangeOfAndMarkerToRelu() }, caseOptions);
 
+        CompilerServices.DumpDotIR(rootPost, "", caseOptions.DumpDir, false);
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+    }
+
+    [Fact]
+    public void TestAddMarkerTargetConst()
+    {
+        var caseOptions = GetPassOptions();
+        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
+        var b = Relu(a);
+        var pre = IR.F.Math.RangeOfMarker(new[] { 1, 2, 3, 4 }, b);
+        CompilerServices.InferenceType(pre);
+        CompilerServices.DumpDotIR(pre, "", caseOptions.DumpDir, false);
+    }
+
+    [Fact]
+    public void TestAddMarkerAttrConst()
+    {
+        var caseOptions = GetPassOptions();
+        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
+        var b = Relu(a);
+        var pre = IR.F.Math.RangeOfMarker(b, new[] { 1, 2, 3, 4 });
+        CompilerServices.InferenceType(pre);
+        CompilerServices.DumpDotIR(pre, "", caseOptions.DumpDir, false);
+    }
+
+    [Fact]
+    public void TestAddMarkerAllConst()
+    {
+        var caseOptions = GetPassOptions();
+        var pre = IR.F.Math.RangeOfMarker(new[] { 4, 5, 6, 7 }, new[] { 1, 2, 3, 4 });
+        CompilerServices.InferenceType(pre);
+        CompilerServices.DumpDotIR(pre, "", caseOptions.DumpDir, false);
     }
 }
