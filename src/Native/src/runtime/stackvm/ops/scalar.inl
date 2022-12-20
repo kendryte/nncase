@@ -78,7 +78,7 @@
     if (!a.is_r())                                                             \
         stack_.push(a.as_i() % b.as_i());                                      \
     else                                                                       \
-        stack_.push(fmod(a.as_r(), b.as_r()));
+        stack_.push(fmodf(a.as_r(), b.as_r()));
 
 #define NNCASE_STACKVM_DISPATCH_OP_REM_U                                       \
     auto b = stack_.pop();                                                     \
@@ -86,7 +86,7 @@
     if (!a.is_r())                                                             \
         stack_.push(a.as_u() % b.as_u());                                      \
     else                                                                       \
-        stack_.push(fmod(a.as_r(), b.as_r()));
+        stack_.push(fmodf(a.as_r(), b.as_r()));
 
 #define NNCASE_STACKVM_DISPATCH_OP_AND BINARY_BIT_U_IMPL(&);
 

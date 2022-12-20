@@ -37,8 +37,8 @@ class stack_entry {
     constexpr stack_entry(int32_t v) noexcept : stack_entry((intptr_t)v) {}
     constexpr stack_entry(uintptr_t v) noexcept : stack_entry((intptr_t)v) {}
 
-    constexpr stack_entry(bfloat16 v) noexcept : stack_entry((float)v) {}
-    constexpr stack_entry(half v) noexcept : stack_entry((float)v) {}
+    stack_entry(bfloat16 v) noexcept : stack_entry((float)v) {}
+    stack_entry(half v) noexcept : stack_entry((float)v) {}
 
     constexpr stack_entry(intptr_t v) noexcept : type_(entry_type::I), i_(v) {}
     constexpr stack_entry(float v) noexcept : type_(entry_type::R), r_(v) {}
@@ -93,8 +93,8 @@ class stack_entry {
     bfloat16 as_br2() const noexcept {
         return bfloat16::round_to_bfloat16(as_r());
     }
-    constexpr float as_r4() const noexcept { return as_r(); }
-    constexpr float as_r() const noexcept { return r_; }
+    float as_r4() const noexcept { return as_r(); }
+    float as_r() const noexcept { return r_; }
 
     constexpr const object &as_object() const noexcept { return o_; }
 

@@ -41,8 +41,15 @@ evaluate_stack::~evaluate_stack() {
 void evaluate_stack::enlarge() noexcept {
     auto new_size = (end_ - entries_) * 3 / 2; // 1.5x
     auto top_offset = top_ - entries_;
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
+#endif
     auto new_entries =
         (stack_entry *)std::realloc(entries_, sizeof(stack_entry) * new_size);
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
     if (!new_entries)
         fail_fast("Out of memory");
 
