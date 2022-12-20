@@ -428,15 +428,15 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             self.cpu_infer(case_dir, model_file, dict_args['input_type'])
             import_options, compile_options = self.get_compiler_options(dict_args, model_file)
             model_content = self.read_model_file(model_file)
-            for eval_args in self.dispatch(cfg, cfg.eval):
-                eval_output_paths = self.run_evaluator(eval_args, cfg, case_dir, import_options,
-                                                       compile_options, model_content, dict_args)
-                self.check_result(eval_output_paths, eval_args, 'eval')
+            # for eval_args in self.dispatch(cfg, cfg.eval):
+            #     eval_output_paths = self.run_evaluator(eval_args, cfg, case_dir, import_options,
+            #                                            compile_options, model_content, dict_args)
+            #     self.check_result(eval_output_paths, eval_args, 'eval')
 
-            # for infer_args in self.dispatch(cfg, cfg.infer):
-            #     infer_output_paths = self.run_inference(infer_args, cfg, case_dir, import_options,
-            #                        compile_options, model_content, dict_args)
-            #     self.check_result(infer_output_paths, infer_args, 'infer')
+            for infer_args in self.dispatch(cfg, cfg.infer):
+                infer_output_paths = self.run_inference(infer_args, cfg, case_dir, import_options,
+                                   compile_options, model_content, dict_args)
+                self.check_result(infer_output_paths, infer_args, 'infer')
 
     def translate_shape(self, shape):
         if reduce(lambda x, y: x * y, shape) == 0:
