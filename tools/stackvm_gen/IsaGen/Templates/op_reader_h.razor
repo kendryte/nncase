@@ -103,11 +103,13 @@ protected:
         var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:    case opcode_t::@inst.CppName: \
 @:        { \
-@:            auto op = op_reader<@(name)_op_t>()(i_reader); \
+@:            [[maybe_unused]] auto op = op_reader<@(name)_op_t>()(i_reader); \
 @:            NNCASE_STACKVM_DISPATCH_OP_@(inst.CppName) \
 @:    break; \
 @:        } \
     }
+    default: \
+    break; \
     }
 
 END_NS_NNCASE_RT_MODULE

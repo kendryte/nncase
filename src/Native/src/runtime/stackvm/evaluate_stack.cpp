@@ -47,7 +47,7 @@ void evaluate_stack::enlarge() noexcept {
         fail_fast("Out of memory");
 
     entries_ = new_entries;
-    top_ = entries_;
+    top_ = entries_ + top_offset;
     end_ = entries_ + new_size;
 }
 
