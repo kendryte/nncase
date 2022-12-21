@@ -62,12 +62,12 @@ case: # case的配置，应该是一个多层次的
   generate_calibs:
     name: generate_random
     kwargs: null
-    numbers: 50
+    numbers: 20
     batch_size: 1
   generate_dump_range_data:
     name: generate_random
     kwargs: null
-    numbers: 50
+    numbers: 20
     batch_size: 1
   eval:
     - name: target
