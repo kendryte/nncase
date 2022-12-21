@@ -380,6 +380,26 @@ public class SameInputFusionMergeRule : IMergeRewriteRule
             // 3. final user must be caller.
             if (input_users.Count == 1 && !input_users.Remove(caller))
                 return false;
+
+            // 4. check the caller input not usedby other call.
+            /* eg. the f2(x) usedby f4.
+                      x      
+                    /  \    
+                f1(x)  f2(x) 
+                    \  /     \ 
+                    f3(x,y)  f4(x) 
+            */
+            foreach (var caller_input in caller_inputs)
+            {
+                if (!object.ReferenceEquals(caller_input, input))
+                {
+                    var caller_input_users = new HashSet<Expr>(usedByReslut.Get(caller_input), ReferenceEqualityComparer.Instance);
+                    if (!caller_input_users.Remove(caller))
+                        return false;
+                    if (caller_input_users.Count > 0)
+                        return false;
+                }
+            }
         }
 
         if (!processFusionMerge(mergedFusionRewriteCallBack, candidateFusionCheckCallBack, caller, caller_fusion, caller_inputs,
