@@ -132,11 +132,10 @@ public sealed partial class AddRangeOfAndMarkerToConv2D : IRewriteRule
             IsTensorConst("groups"),
             IsWildcard("fusedClamp"));
     private Expr? GetReplace(Conv2D conv, Call call, Expr input, Expr weights, TensorConst bias, Expr stride, Expr padding,
-        Expr dilation, Expr groups, Expr fusedClamp, RunPassOptions options)
+        Expr dilation, Expr groups, Expr fusedClamp)
     {
         var output = Conv2D(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), IR.F.Math.RangeOfMarker(weights, IR.F.Math.RangeOf(weights)),
             bias, stride, padding, dilation, PadMode.Constant, groups, fusedClamp);
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
