@@ -143,7 +143,7 @@ public class Compile : Command
         // 2. import the model
         var compiler = new Compiler.Compiler(compileOptions);
         IRModule module;
-        using (var model_stream = File.OpenRead(CompilerServices.CompileOptions.InputFile))
+        using (var model_stream = File.OpenRead(compileOptions.InputFile))
         {
             module = compiler.ImportModule(model_stream);
         }
@@ -161,7 +161,7 @@ public class Compile : Command
         compiler.Compile();
 
         // 5. code gen
-        using (var os = File.OpenWrite(CompilerServices.CompileOptions.OutputFile))
+        using (var os = File.OpenWrite(compileOptions.OutputFile))
         {
             compiler.Gencode(os);
         }

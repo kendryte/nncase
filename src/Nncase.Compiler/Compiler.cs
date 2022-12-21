@@ -42,10 +42,10 @@ public class Compiler
         DumpModule(module, "ir_import");
         //Console.WriteLine("Infer Shape...");
 
-        if (CompilerServices.CompileOptions.DumpLevel > 4)
-            DumpManager.RunWithDump("EvaluatorInShapeInfer", () => InferShape(module));
+        if (_compileOptions.DumpLevel > 4)
+            DumpManager.RunWithDump("EvaluatorInShapeInfer", () => RunPass(pmg => pmg.Add(new ShapeInferPass()), "ShapeInferAfterImport"));
         else
-            InferShape(module);
+            RunPass(pmg => pmg.Add(new ShapeInferPass()), "ShapeInferAfterImport");
 
         var inferSucc = CompilerServices.InferenceType(module.Entry!);
         DumpModule(module, "ir_infertype");
@@ -56,14 +56,6 @@ public class Compiler
 
         //Console.WriteLine("ImportModule successful!");
         return module;
-    }
-
-    private void InferShape(IRModule module)
-    {
-        var pmgr = new PassManager(module, new RunPassOptions(null!, _compileOptions.DumpLevel, _compileOptions.DumpDir));
-        var constFold = new ShapeInferPass();
-        pmgr.Add(constFold);
-        pmgr.RunAsync().Wait();
     }
 
     private IRModule ImportModel(Stream content)
@@ -85,8 +77,7 @@ public class Compiler
 
     private void RunPass(Action<PassManager> register, string dirName)
     {
-        var dump_path = Path.Join(CompilerServices.CompileOptions.DumpDir, dirName);
-        var pmgr = new PassManager(_module, new RunPassOptions(CompilerServices.GetCompileTarget, 3, Path.Join(CompilerServices.CompileOptions.DumpDir, dirName), CompilerServices.CompileOptions));
+        var pmgr = new PassManager(_module, new RunPassOptions(CompilerServices.GetTarget(_compileOptions.Target), _compileOptions.DumpLevel, Path.Join(_compileOptions.DumpDir, dirName), _compileOptions));
         register(pmgr);
         pmgr.RunAsync().Wait();
     }
@@ -94,7 +85,7 @@ public class Compiler
     public void TargetIndependentPass(PassManager passManager)
     {
         if (_compileOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
-        passManager.Add(new EGraphPass("1_NeutralOptimize"){
+            passManager.Add(new EGraphPass("1_NeutralOptimize"){
           new Transform.Rules.Neutral.FoldConstCall(),
           new Transform.Rules.Neutral.FoldNopTranspose(),
           new Transform.Rules.Neutral.FoldTwoTransposes(),
@@ -110,31 +101,21 @@ public class Compiler
         });
         if (_compileOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
-            AddMarker(passManager);
-            AssignRange(passManager);
+            passManager.Add(new DataflowPass("2_AddRangeOfMarker")
+            {
+                new Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2D(),
+                new Transform.Rules.Neutral.AddRangeOfAndMarkerToMatMul(),
+                // new Transform.Rules.Neutral.AddRangeOfAndMarkerToRedeceWindow2D(),
+                // new Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2DTranspose(),
+                // new Transform.Rules.Neutral.AddRangeOfAndMarkerToBinary(),
+            });
+            passManager.Add(new Quantization.EGraphPassWithQuantize("3_AssignRanges", _compileOptions.QuantizeOptions!));
         }
-    }
-
-    public void AddMarker(PassManager passManager)
-    {
-        passManager.Add(new DataflowPass("add_rangeof_and_marker")
-        {
-            new Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2D(),
-            new Transform.Rules.Neutral.AddRangeOfAndMarkerToMatMul(),
-            // new Transform.Rules.Neutral.AddRangeOfAndMarkerToRedeceWindow2D(),
-            // new Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2DTranspose(),
-            // new Transform.Rules.Neutral.AddRangeOfAndMarkerToBinary(),
-        });
-    }
-
-    public void AssignRange(PassManager passManager)
-    {
-        passManager.Add(new Quantization.EGraphPassWithQuantize("1_AssignRanges", _compileOptions.QuantizeOptions!));
     }
 
     public void Compile()
     {
-        var t = CompilerServices.GetCompileTarget;
+        var t = CompilerServices.GetTarget(_compileOptions.Target);
         RunPass(p => TargetIndependentPass(p), "TargetIndependentPass");
         RunPass(p => t.RegisterTargetDependentPass(p, _compileOptions), "TargetDependentPass");
         if (_compileOptions.DumpLevel > 4)
@@ -147,20 +128,18 @@ public class Compiler
         {
             RunPass(p => t.RegisterQuantizePass(p, _compileOptions), "QuantizePass");
             RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, _compileOptions), "TargetDependentAfterQuantPass");
-            var clear = new DataflowPass("ClearMarker");
-            clear.Add(new RemoveMarker());
-            RunPass(t => t.Add(clear), "RemoveMarker");
+            RunPass(t => t.Add(new DataflowPass("ClearMarker") { new RemoveMarker() }), "RemoveMarker");
         }
 
         // fold constant
-        RunPass(p => p.Add(new Transform.Passes.ShapeInferPass()), "FinalShapeInferPass");
+        RunPass(p => p.Add(new Transform.Passes.ShapeInferPass()), "ShapeInferAfterCompile");
         // Console.WriteLine("Compile successful");
     }
 
     public void Gencode(Stream output)
     {
-        var target = CompilerServices.GetCompileTarget;
-        var moduleBuilder = new ModelBuilder(target, CompilerServices.CompileOptions);
+        var target = CompilerServices.GetTarget(_compileOptions.Target);
+        var moduleBuilder = new ModelBuilder(target, _compileOptions);
         var linkedModel = moduleBuilder.Build(_module);
         linkedModel.Serialize(output);
         // Console.WriteLine("Gencode successful");
