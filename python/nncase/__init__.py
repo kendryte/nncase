@@ -168,8 +168,8 @@ class Compiler:
         self._quantize_options.calibration_dataset = provider
         self._compile_options.model_quant_mode = _nncase.ModelQuantMode.UsePTQ
 
-    def no_quant(self) -> None:
-        self._compile_options.model_quant_mode = _nncase.ModelQuantMode.NoQuant
+    # def no_quant(self) -> None:
+    #     self._compile_options.model_quant_mode = _nncase.ModelQuantMode.NoQuant
 
     def dump_range_options(self) -> DumpRangeTensorOptions:
         raise NotImplementedError("dump_range_options")
