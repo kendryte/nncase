@@ -54,6 +54,20 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
     }
 
     /// <inheritdoc/>
+    public void DumpDotIR(Expr expr, string prefix, string dumpDir, bool display_callable)
+    {
+        if (dumpDir == string.Empty)
+            throw new ArgumentNullException("The dumpPath Is Empty!");
+        Directory.CreateDirectory(dumpDir);
+
+        string name = expr is Callable c ? c.Name : expr.GetType().Name;
+
+        var visitor = new ILDotPrintVisitor(display_callable);
+        visitor.Visit(expr);
+        visitor.SaveToFile(name, prefix, dumpDir);
+    }
+
+    /// <inheritdoc/>
     public string Print(IRType type)
     {
         var sb = new StringBuilder();
@@ -70,7 +84,11 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
             ? new ScriptPrintVisitor(dumpWriter, true).Visit(expr).Serialize()
             : new ILPrintVisitor(dumpWriter, true, 0).Visit(expr);
 
-        return useScript ? _ : sb.ToString();
+        return useScript ? _ : expr switch
+        {
+            (Const or None or Var or Op) => _,
+            _ => sb.ToString(),
+        };
     }
 
     /// <inheritdoc/>

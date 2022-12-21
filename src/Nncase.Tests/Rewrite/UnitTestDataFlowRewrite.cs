@@ -6,11 +6,14 @@ using Nncase.Evaluator;
 using Nncase.Importer;
 using Nncase.IR;
 using Nncase.IR.F;
+using Nncase.PatternMatch;
+using Nncase.Transform;
 using OrtKISharp;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
+using static Nncase.PatternMatch.Utility;
 using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Tests.ReWriteTest;
@@ -316,5 +319,54 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var after = await RunShapeInferPass("ReshapeToByChannel", caseOptions, a);
         Assert.True(after.InferenceType());
         Assert.Equal(new[] { 3, 1, 1 }, after.Evaluate().AsTensor().Dimensions.ToArray());
+    }
+
+    private sealed class AnalysisReassociateAdd : Transform.IRewriteRule
+    {
+        Transform.IUsedByResult _usedByResult;
+        bool _matched;
+        public AnalysisReassociateAdd(Transform.IUsedByResult usedByResult)
+        {
+            _usedByResult = usedByResult;
+            _matched = false;
+        }
+
+        /// <inheritdoc/>
+        public IPattern Pattern { get; } = (IsWildcard("x") + IsWildcard("y"));
+
+        public Expr? GetReplace(IMatchResult result, RunPassOptions options)
+        {
+            var x = (Expr)result["x"];
+            var y = (Expr)result["y"];
+            if (_matched == false && _usedByResult.Get(x).Count == 1 && _usedByResult.Get(y).Count == 1)
+            {
+                _matched = true;
+                return x - y;
+            }
+            return null;
+        }
+    }
+
+
+    [Fact]
+    public void TestWithAnalysisInfoRewriteOnce()
+    {
+        var caseOptions = GetPassOptions();
+        var x = new Var(TensorType.Scalar(DataTypes.Int32));
+        var y = new Var(TensorType.Scalar(DataTypes.Int32));
+        var z = new Var(TensorType.Scalar(DataTypes.Int32));
+        var m = new Var(TensorType.Scalar(DataTypes.Int32));
+        var pre = m + (x + (z + (x + y)));
+        CompilerServices.InferenceType(pre);
+
+        Expr last = pre;
+        while (true)
+        {
+            var usedyResult = Transform.Analyser.AnalysisUsedBy(last);
+            var post = CompilerServices.Rewrite(last, new[] { new AnalysisReassociateAdd(usedyResult) }, caseOptions.SetRewriteOnce(true));
+            if (object.ReferenceEquals(post, last))
+                break;
+            last = post;
+        }
     }
 }

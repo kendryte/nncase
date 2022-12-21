@@ -26,4 +26,10 @@ public sealed record Binary(BinaryOp BinaryOp) : Op
     /// Gets rhs.
     /// </summary>
     public static readonly ParameterInfo Rhs = new(typeof(Binary), 1, "rhs");
+
+    /// <inheritdoc/>
+    public override string DisplayProperty()
+    {
+        return $"BinaryOp: {BinaryOp}";
+    }
 }

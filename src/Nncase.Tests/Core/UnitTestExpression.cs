@@ -359,6 +359,19 @@ public class UnitTestExpression
     }
 
     [Fact]
+    public void TestPrintExpr()
+    {
+        Expr x = new int[] { 1, 2, 3, 4 };
+        CompilerServices.InferenceType(x);
+        Assert.Equal("const(i32[4] : {1,2,3,4})", CompilerServices.Print(x));
+        Assert.Equal("None", CompilerServices.Print(None.Default));
+        Assert.Equal("Add", CompilerServices.Print(new Nncase.IR.Math.Binary(BinaryOp.Add)));
+        Var y = new Var("y");
+        CompilerServices.InferenceType(y);
+        Assert.Equal("%y: any", CompilerServices.Print(y));
+    }
+
+    [Fact]
     public void TestExpressionTree()
     {
         var input_1 = new Var("input_1", TensorType.Scalar(DataTypes.Int32));

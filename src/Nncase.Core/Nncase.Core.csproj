@@ -23,6 +23,7 @@
     <PackageReference Include="Microsoft.Toolkit.HighPerformance" />
     <PackageReference Include="NetFabric.Hyperlinq" />
     <PackageReference Include="TorchSharp" />
+    <PackageReference Include="GiGraph.Dot" />
   </ItemGroup>
 
   <ItemGroup>

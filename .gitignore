@@ -297,3 +297,4 @@ wheelhouse/
 Directory.Build.targets
 *local*
 nupkg
+*.runsettings

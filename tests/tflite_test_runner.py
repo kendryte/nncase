@@ -79,7 +79,7 @@ class TfliteTestRunner(TestRunner):
         interp = tf.lite.Interpreter(model_path=model_file)
         interp.allocate_tensors()
         for input in self.inputs:
-            interp.set_tensor(input["index"], self.data_pre_process(input['data']))
+            interp.set_tensor(input["index"], self.data_pre_process(input['data'])[0])
 
         interp.invoke()
 
