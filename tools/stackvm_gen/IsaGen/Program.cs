@@ -287,6 +287,38 @@ namespace IsaGen
 
             props.Sort((a, b) => a.Item1 - b.Item1);
 
+            fields.Add(new InstructionField
+                (
+                    CppName: "opcode",
+                    CSharpName: "opcode",
+                    CSharpPropName: "OpCode",
+                    CppType: "opcode_t",
+                    CSharpType: "OpCode",
+                    UnderlyingCSharpType: CSharpFieldType(typeof(byte)),
+                    Length: FieldLength(typeof(byte)),
+                    Value: (uint)OpCode.TENSOR,
+                    CppValueText: null,
+                    Description: null,
+                    IsEnum: true,
+                    IsOpCode: true
+                ));
+
+            fields.Add(new InstructionField
+                (
+                    CppName: "tensor_funct",
+                    CSharpName: "tensorFunction",
+                    CSharpPropName: "TensorFunction",
+                    CppType: "tensor_function_t",
+                    CSharpType: "TensorFunction",
+                    UnderlyingCSharpType: CSharpFieldType(typeof(ushort)),
+                    Length: FieldLength(typeof(ushort)),
+                    Value: (uint)index,
+                    CppValueText: null,
+                    Description: null,
+                    IsEnum: true,
+                    IsOpCode: true
+                ));
+
             foreach (var (m, f) in props)
             {
                 if (f.PropertyType.IsEnum)

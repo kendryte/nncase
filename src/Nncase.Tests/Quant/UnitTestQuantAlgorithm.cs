@@ -43,9 +43,9 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
     {
         private const int count = 5;
         public int? Count => count;
-    
+
         public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
-    
+
         public RandCalibrationDatasetProvider(IEnumerable<Var> vars)
         {
             Samples = Enumerable.Range(0, count).Select(i =>
@@ -59,7 +59,7 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
                         .AsTensor());
                     values.Add(var, value);
                 }
-    
+
                 return values;
             }).ToAsyncEnumerable();
         }
@@ -123,11 +123,11 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
         var dumpVisitor = new DumpVisitor();
         dumpVisitor.Visit(module.Functions[0]);
 
-        System.Diagnostics.Debug.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0] == -4.0972834f);
-        System.Diagnostics.Debug.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[1] == 4.206657f);
-        System.Diagnostics.Debug.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[0] == -6.596074f);
-        System.Diagnostics.Debug.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[1] == 6.5355535f);
-        System.Diagnostics.Debug.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[0] == -52.367207f);
-        System.Diagnostics.Debug.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[1] == 50.035152f);
+        Assert.Equal(-4.0972834f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0]);
+        Assert.Equal(4.206657f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[1]);
+        Assert.Equal(-6.596074f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[0]);
+        Assert.Equal(6.5355535f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[1]);
+        Assert.Equal(-52.367207f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[0]);
+        Assert.Equal(50.035152f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[1]);
     }
 }
