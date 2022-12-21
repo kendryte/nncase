@@ -114,13 +114,23 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     {
         var a = lhs.ToOrtTensor();
         var b = rhs.ToOrtTensor();
+        Func<OrtKISharp.Tensor, OrtKISharp.Tensor, OrtKISharp.Tensor> mod = (a, b) => {
+            if (DataTypes.IsFloat(a.DataType.ToDataType()) && DataTypes.IsFloat(b.DataType.ToDataType()))
+            {
+                return OrtKI.Mod(a, b, 1);
+            }
+            else
+            {
+                return OrtKI.Mod(a, b, 0);
+            }
+        };
         return (binary.BinaryOp switch
         {
             BinaryOp.Add => a + b,
             BinaryOp.Sub => a - b,
             BinaryOp.Mul => a * b,
             BinaryOp.Div => a / b,
-            BinaryOp.Mod => a % b,
+            BinaryOp.Mod => mod(a, b),
             BinaryOp.Min => OrtKI.Min(new[] { a, b }),
             BinaryOp.Max => OrtKI.Max(new[] { a, b }),
             BinaryOp.Pow => OrtKI.Pow(a, b),
@@ -186,8 +196,9 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     {
         if (target.BinaryOp is BinaryOp.LeftShift or BinaryOp.RightShift && (lhs.DType != DataTypes.UInt32 || rhs.DType != DataTypes.UInt32))
             return new InvalidType("The Binary LeftShift RightShift Only Accept The UInt32 Datatype.");
-        if (target.BinaryOp is BinaryOp.Sub && (lhs.DType == DataTypes.UInt32 || rhs.DType == DataTypes.UInt32))
-            return new InvalidType("The Binary Sub Only Accept The UInt32 Datatype.");
+        if ((target.BinaryOp is BinaryOp.LogicalAnd || target.BinaryOp is BinaryOp.LogicalOr || target.BinaryOp is BinaryOp.LogicalXor) &&
+            (lhs.DType != DataTypes.Boolean || rhs.DType != DataTypes.Boolean))
+            return new InvalidType("The Binary Logical Only Accept The Boolean Datatype.");
         if (lhs is { DType: PointerType { ElemType: var letype } } && rhs is { DType: PointerType { ElemType: var retype } })
         {
             if (letype == retype)

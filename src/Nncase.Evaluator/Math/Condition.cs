@@ -14,8 +14,20 @@ namespace Nncase.Evaluator.Math;
 /// </summary>
 
 [PatternMatch.PatternFunctionalGenerator, TypeInferGenerator]
-public partial class ConditionEvaluator : ITypeInferencer<Condition>, IOpPrinter<Condition>
+public partial class ConditionEvaluator : IEvaluator<Condition>, ITypeInferencer<Condition>, IOpPrinter<Condition>
 {
+    /// <inheritdoc/>
+    // IValue Visit(bool Predicate, IValue Value)
+    public IValue Visit(IEvaluateContext context, Condition cond)
+    {
+        var predicate = context.GetArgumentValueAsTensor(cond, Condition.Predicate);
+        var value = context.GetArgumentValue(cond, Condition.Value);
+        var b = predicate.ToScalar<bool>();
+        if (!b)
+            throw new ArgumentOutOfRangeException($"predicate = {b}");
+        return value;
+    }
+
     /// <inheritdoc/>
     IRType Visit(TensorType Predicate, TensorType Value)
     {
