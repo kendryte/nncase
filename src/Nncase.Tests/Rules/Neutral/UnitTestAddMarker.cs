@@ -58,4 +58,18 @@ public class UnitTestAddMarker : TestFixture.UnitTestFixtrue
         CompilerServices.InferenceType(pre);
         CompilerServices.DumpDotIR(pre, "", caseOptions.DumpDir, false);
     }
+
+    [Fact]
+    public void TestAddMarkerWithTuple()
+    {
+        var caseOptions = GetPassOptions();
+        var a = new IR.Tuple((IR.Const)1 * (IR.Const)2);
+        var b = new IR.Tuple(a, a, a, a);
+        var c = new IR.Tuple(b, b, b, b);
+        var d = new IR.Tuple(c, c, c, c);
+        var e = new IR.Tuple(d, d, d, d);
+        var pre = IR.F.Math.RangeOfMarker(new[] { 4, 5, 6, 7 }, e);
+        CompilerServices.InferenceType(pre);
+        CompilerServices.DumpDotIR(pre, "", caseOptions.DumpDir, false);
+    }
 }
