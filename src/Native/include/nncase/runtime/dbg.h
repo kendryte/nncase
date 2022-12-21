@@ -876,8 +876,15 @@ auto identity(T &&, U &&...u) -> last_t<U...> {
                        {DBG_MAP(DBG_TYPE_NAME, x)}, x)
 
 #define CHECK_WITH_ERR(x, e)                                                   \
-    if (!CHECK(x))                                                             \
-    return nncase::err(e)
+    {                                                                          \
+        auto v = (x);                                                          \
+        if (!v) {                                                              \
+            dbg::DebugOutput(__FILE__, __LINE__, __func__)                     \
+                .print({DBG_MAP(DBG_STRINGIFY, x)},                            \
+                       {DBG_MAP(DBG_TYPE_NAME, x)}, v);                        \
+            return nncase::err(e);                                             \
+        }                                                                      \
+    }
 
 #define checked_dbg(x)                                                         \
     {                                                                          \
