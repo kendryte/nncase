@@ -199,7 +199,7 @@ jobs:
       - name: Set Swap Space
         uses: pierotofy/set-swap-space@v1.0
         with:
-          swap-size-gb: 6
+          swap-size-gb: 9
         if: runner.os == 'Linux'
 
       - name: Set up test environment (macOS)
