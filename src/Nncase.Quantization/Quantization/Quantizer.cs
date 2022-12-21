@@ -201,6 +201,7 @@ internal partial class Quantizer
             var rangeEclass = _graph.Add(value);
             var rangeOfEclass = _graph.Find(range.Key);
             _graph.Union(rangeOfEclass, rangeEclass);
+            ranges.Remove(range);
         }
 
         //_graph.Rebuild();
