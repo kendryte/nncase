@@ -195,7 +195,13 @@ jobs:
         with:
           name: nncase-${{matrix.config.name}}
           path: ${{github.workspace}}/install
-      
+
+      - name: Set Swap Space
+        uses: pierotofy/set-swap-space@v1.0
+        with:
+          swap-size-gb: 6
+        if: runner.os == 'Linux'
+
       - name: Set up test environment (macOS)
         run: |
           brew install sunnycase/core/libomp@11.1.0
@@ -249,12 +255,6 @@ jobs:
       
       - name: Create Test Environment
         run: mkdir test_results
-
-      - name: Set Swap Space
-        uses: pierotofy/set-swap-space@master
-        with:
-          swap-size-gb: 8
-        if: runner.os == 'Linux'
 
       - name: Test
         working-directory: ${{github.workspace}}
