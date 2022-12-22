@@ -126,7 +126,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
             var blockShapeArr = blockShapeValue.Value.ToArray<int>();
             var blockSize = blockShapeArr.Aggregate(1, (a, b) => a * b);
             var d0 = batch / blockSize;
-            Debug.Assert(blockShape.Shape[0] == crops.Shape[0]);
+            Trace.Assert(blockShape.Shape[0] == crops.Shape[0]);
             var M = blockShape.Shape[0].FixedValue;
             var cropsV = cropsValue.Value.Cast<int>();
             var cropSection = Enumerable.Range(0, M).Select(

@@ -64,7 +64,7 @@ namespace Nncase.IO
             var write_bytes = (buffer_written_bits() + 7) / 8;
             if (write_bytes != 0)
             {
-                Debug.Assert(_data.Length >= write_bytes);
+                Trace.Assert(_data.Length >= write_bytes);
                 var bufferSpan = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref _buffer, 1));
                 for (int i = 0; i < write_bytes; i++)
                 {
@@ -84,7 +84,7 @@ namespace Nncase.IO
         /// <param name="bits"></param>
         void write_bits_le8(byte value, int bits)
         {
-            Debug.Assert(bits <= 8);
+            Trace.Assert(bits <= 8);
             reserve_buffer_8();
             ulong new_value = value & (((ulong)(1) << bits) - 1);
             _buffer = _buffer | (new_value << buffer_written_bits());
@@ -99,7 +99,7 @@ namespace Nncase.IO
             if (_avail < 8)
             {
                 var write_bytes = buffer_written_bits() / 8;
-                Debug.Assert(_data.Length >= write_bytes);
+                Trace.Assert(_data.Length >= write_bytes);
                 var bufferSpan = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref _buffer, 1));
                 for (int i = 0; i < write_bytes; i++)
                 {

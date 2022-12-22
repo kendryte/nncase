@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
@@ -31,7 +32,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
             {
                 var quantParam = ((Nncase.IR.Marker)(context.CurrentCall.Parameters.ToArray()[0])).mixQuantInfo.QuantParameter;
                 // input feature map quantParam count should be 1 since input feature map quant is by tensor.
-                System.Diagnostics.Debug.Assert(quantParam.Count == 1);
+                Trace.Assert(quantParam.Count == 1);
                 var inputFloat = input.ToArray<float>();
                 for (var i = 0; i < inputFloat.Length; i++)
                 {

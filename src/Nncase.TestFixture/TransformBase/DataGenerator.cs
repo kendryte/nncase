@@ -122,7 +122,7 @@ public static class DataGenerator
             }
             else
             {
-                Debug.Assert(data.Length == 1);
+                Trace.Assert(data.Length == 1);
                 return Value.FromTensor(ParseTensor(data.Head()));
             }
         }

@@ -55,7 +55,7 @@ public abstract class BaseImporter
         }
         else if (output is IReadOnlyList<Expr> exprs)
         {
-            Debug.Assert(outLength == exprs.Count, $"Op outputs length should be {outLength}.");
+            Trace.Assert(outLength == exprs.Count, $"Op outputs length should be {outLength}.");
             for (int i = 0; i < outLength; i++)
             {
                 outTensors.Add(opOutputs[i], exprs[i]);
