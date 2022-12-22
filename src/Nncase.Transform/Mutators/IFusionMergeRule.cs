@@ -158,13 +158,144 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
         candidateFusionRecordCallBack(candidate_fusions);
         return null;
     }
+}
+
+/// <summary>
+///              x
+///         |         \
+///  v1 = fusion1(x)   |
+///          \          |
+///            \       /
+///         v2 = fusion2(v1,x) 
+/// </summary>
+public class ShortCutFusionMergeRule : IMergeRewriteRule
+{
+    /// <summary>
+    /// the matched fusion module kind.
+    /// </summary>
+    public virtual string ModuleKind => Callable.StackVMModuleKind;
+
+    private Pattern? _pattern = null;
 
     /// <inheritdoc/>
-    public bool CheckMergeBeforeMatchRoot(IUsedByResult usedByAnalysisReslut, Call old_call)
+    public IPattern Pattern => _pattern ?? CreatePattern(ModuleKind);
+
+    /// <inheritdoc/>
+    public virtual Pattern CreatePattern(string target_module_kind)
     {
-        if (usedByAnalysisReslut.Get(old_call).Count > 1)
-            return false;
-        return true;
+        var input = IsWildcard("callee_input");
+        var CalleePattern = IsCall(
+          "callee",
+          IsFusion("callee_fusion",
+            target_module_kind,
+            IsWildcard(),
+            IsVArgs(IsWildcard())),
+          input
+        );
+        var CallerPattern_left = IsCall(
+          "caller",
+          IsFusion("caller_fusion",
+            target_module_kind,
+            IsWildcard(),
+            IsVArgs(IsWildcard(), IsWildcard())),
+          IsVArgs("caller_inputs", new Pattern[] { CalleePattern, input })
+        );
+        var CallerPattern_right = IsCall(
+          "caller",
+          IsFusion("caller_fusion",
+            target_module_kind,
+            IsWildcard(),
+            IsVArgs(IsWildcard(), IsWildcard())),
+          IsVArgs("caller_inputs", new Pattern[] { input, CalleePattern })
+        );
+        return IsAlt(CallerPattern_left, CallerPattern_right);
+    }
+
+    private Fusion processMergeFusion(Func<Expr, Expr> mergedFusionRewriteCallBack, Call caller, Call callee, Fusion caller_fusion, Fusion callee_fusion, bool callee_in_left)
+    {
+        // 1. replace the caller_fusion input_var with the callee_fusion body
+        var merged_fusion_body = Transform.Mutator.Substitute(
+          e =>
+          {
+              if (object.ReferenceEquals(e, callee_in_left ? caller_fusion.Parameters[0] : caller_fusion.Parameters[1]))
+              {
+                  return callee_fusion.Body;
+              }
+              return null;
+          })().Visit(caller_fusion.Body);
+
+        merged_fusion_body = Transform.Mutator.Substitute(
+          e =>
+          {
+              if (object.ReferenceEquals(e, callee_in_left ? caller_fusion.Parameters[1] : caller_fusion.Parameters[0]))
+              {
+                  return callee_fusion.Parameters[0];
+              }
+              return null;
+          })().Visit(merged_fusion_body);
+
+        // 2. run call back.
+        merged_fusion_body = mergedFusionRewriteCallBack(merged_fusion_body);
+        if (!CompilerServices.InferenceType(merged_fusion_body))
+            throw new InvalidOperationException("Merged Fusion Type Infer Error!");
+
+        return new Fusion($"{caller_fusion.Name}_{callee_fusion.Name}", ModuleKind, merged_fusion_body, callee_fusion.Parameters);
+    }
+
+    /// <inheritdoc/>
+    public Expr? GetReplace(
+      Func<Expr, Expr> mergedFusionRewriteCallBack,
+      Func<Fusion, HashSet<Fusion>, bool> mergedFusionCheckCallBack,
+      Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack,
+      Action<HashSet<Fusion>> candidateFusionRecordCallBack,
+      IUsedByResult usedByReslut, IMatchResult result, RunPassOptions options)
+    {
+        var caller = (Call)result["caller"];
+        var callee = (Call)result["callee"];
+        var caller_fusion = (Fusion)result["caller_fusion"];
+        var callee_fusion = (Fusion)result["callee_fusion"];
+        var caller_inputs = (IReadOnlyList<Expr>)result["caller_inputs"];
+        bool callee_in_left = false;
+        if (object.ReferenceEquals(caller_inputs[0], callee))
+            callee_in_left = true;
+        var callee_input = (Expr)result["callee_input"];
+
+        // 1. callee input only usedby callee and caller
+        var callee_input_users = new HashSet<Expr>(usedByReslut.Get(callee_input), ReferenceEqualityComparer.Instance);
+        if (callee_input_users.Count != 2)
+            return null;
+        if (!callee_input_users.Remove(callee) || !callee_input_users.Remove(caller))
+            return null;
+        // 2. callee only usedby caller
+        var callee_users = new HashSet<Expr>(usedByReslut.Get(callee), ReferenceEqualityComparer.Instance);
+        if (callee_users.Count != 1)
+            return null;
+
+        var candidate_fusions = new HashSet<Fusion>() { caller_fusion, callee_fusion };
+
+        if (!candidateFusionCheckCallBack(candidate_fusions))
+            return null;
+        // 1. merge new fusion
+        var merged_fusion = processMergeFusion(mergedFusionRewriteCallBack, caller, callee, caller_fusion, callee_fusion, callee_in_left);
+
+        if (mergedFusionCheckCallBack(merged_fusion, candidate_fusions))
+        {
+            var new_call = new Call(merged_fusion, ImmutableArray.Create(callee_input));
+            // 1. transfer the caller usedby info to new_call
+            usedByReslut.Transfer(caller, new_call);
+            // 2. clear all caller's and callee's usedy info
+            usedByReslut.Clear(caller_fusion, caller);
+            usedByReslut.Clear(callee, caller);
+            usedByReslut.Clear(callee_fusion, callee);
+            usedByReslut.Clear(callee_input, callee);
+
+            // 3. reset the input usedby
+            usedByReslut.Add(callee_input, new_call);
+            usedByReslut.Add(merged_fusion, new_call);
+            return new_call;
+        }
+        candidateFusionRecordCallBack(candidate_fusions);
+        return null;
     }
 }
 
