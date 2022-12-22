@@ -251,29 +251,6 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         return type;
     }
 
-    /// <summary>
-    /// Verify the expression sub field type is valid.
-    /// </summary>
-    /// <param name="parent"></param>
-    /// <param name="field"></param>
-    /// <param name="exprMsg"></param>
-    private void VerifySubField(Expr parent, Expr field, TypePattern? pattern = null, [CallerArgumentExpression("field")] string? exprMsg = null)
-    {
-        pattern ??= TypePatternUtility.IsIRType();
-        if (field.CheckedType is InvalidType invalidType)
-        {
-            throw new TypeInferenceInterruptException(new InvalidType($"Invalid {exprMsg} <== {invalidType.Reason}"));
-        }
-        else if (field.CheckedType is AnyType)
-        {
-            return;
-        }
-        else if (!pattern.MatchLeaf(field.CheckedType!))
-        {
-            throw new TypeInferenceInterruptException(new InvalidType($"The {exprMsg} Require {pattern.Reason}"));
-        }
-    }
-
     /// <inheritdoc/>
     public override IRType VisitLeaf(Block expr)
     {
@@ -434,6 +411,29 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         IRType type = TupleType.Void;
         SetCheckedType(expr, type);
         return type;
+    }
+
+    /// <summary>
+    /// Verify the expression sub field type is valid.
+    /// </summary>
+    /// <param name="parent"></param>
+    /// <param name="field"></param>
+    /// <param name="exprMsg"></param>
+    private void VerifySubField(Expr parent, Expr field, TypePattern? pattern = null, [CallerArgumentExpression("field")] string? exprMsg = null)
+    {
+        pattern ??= TypePatternUtility.IsIRType();
+        if (field.CheckedType is InvalidType invalidType)
+        {
+            throw new TypeInferenceInterruptException(new InvalidType($"Invalid {exprMsg} <== {invalidType.Reason}"));
+        }
+        else if (field.CheckedType is AnyType)
+        {
+            return;
+        }
+        else if (!pattern.MatchLeaf(field.CheckedType!))
+        {
+            throw new TypeInferenceInterruptException(new InvalidType($"The {exprMsg} Require {pattern.Reason}"));
+        }
     }
 
     /// <inheritdoc/>

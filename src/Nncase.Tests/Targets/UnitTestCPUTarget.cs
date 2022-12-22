@@ -97,18 +97,6 @@ public class UnitTestCPUTarget
         GenerateKModelAndRun(module, new[] { 1.0f }, new[] { (Tensor)2.0f, 3.0f });
     }
 
-    private void TestCodeGen(Expr body, Var[] vars, [CallerMemberName] string name = null)
-    {
-        var main = new Function("main", body, vars);
-        var module = new IRModule(main);
-        var target = CompilerServices.GetTarget("cpu");
-        var modelBuilder = new ModelBuilder(target);
-        var linkedModel = modelBuilder.Build(module);
-        using var output = File.Open($"{name}.kmodel", FileMode.Create);
-        linkedModel.Serialize(output);
-        Assert.NotEqual(0, output.Length);
-    }
-
     [Fact]
     public void TestTupleOrder()
     {
@@ -142,6 +130,18 @@ public class UnitTestCPUTarget
         var module = new IRModule(main);
         module.Add(funcA);
         GenerateKModelAndRun(module, new[] { 1.0f }, new[] { 3.0f });
+    }
+
+    private void TestCodeGen(Expr body, Var[] vars, [CallerMemberName] string name = null)
+    {
+        var main = new Function("main", body, vars);
+        var module = new IRModule(main);
+        var target = CompilerServices.GetTarget("cpu");
+        var modelBuilder = new ModelBuilder(target);
+        var linkedModel = modelBuilder.Build(module);
+        using var output = File.Open($"{name}.kmodel", FileMode.Create);
+        linkedModel.Serialize(output);
+        Assert.NotEqual(0, output.Length);
     }
 
     private void GenerateKModelAndRun(IRModule module, Tensor input, Tensor[] expectedOutput, [CallerMemberName] string? name = null)

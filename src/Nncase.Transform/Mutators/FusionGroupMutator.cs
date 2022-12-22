@@ -30,28 +30,6 @@ public class FusionGroupMutator : ExprMutator
 
     private readonly IUsedByResult _usedByReslut;
 
-    private sealed class FusionMergeCandidateComparer : IEqualityComparer<HashSet<Fusion>>
-    {
-        public bool Equals(HashSet<Fusion>? x, HashSet<Fusion>? y) => (x, y) switch
-        {
-            (null, null) => true,
-            (null, _) => false,
-            (_, null) => false,
-            (var lhs, var rhs) => GetHashCode(lhs) == GetHashCode(rhs),
-        };
-
-        public int GetHashCode([DisallowNull] HashSet<Fusion> obj)
-        {
-            var hash = default(HashCode);
-            foreach (var o in obj)
-            {
-                hash.Add(ReferenceEqualityComparer.Instance.GetHashCode(obj));
-            }
-
-            return hash.ToHashCode();
-        }
-    }
-
     /// <summary>
     /// cache the check result.
     /// </summary>
@@ -126,38 +104,30 @@ public class FusionGroupMutator : ExprMutator
         return false;
     }
 
+    private sealed class FusionMergeCandidateComparer : IEqualityComparer<HashSet<Fusion>>
+    {
+        public bool Equals(HashSet<Fusion>? x, HashSet<Fusion>? y) => (x, y) switch
+        {
+            (null, null) => true,
+            (null, _) => false,
+            (_, null) => false,
+            (var lhs, var rhs) => GetHashCode(lhs) == GetHashCode(rhs),
+        };
+
+        public int GetHashCode([DisallowNull] HashSet<Fusion> obj)
+        {
+            var hash = default(HashCode);
+            foreach (var o in obj)
+            {
+                hash.Add(ReferenceEqualityComparer.Instance.GetHashCode(obj));
+            }
+
+            return hash.ToHashCode();
+        }
+    }
+
     /// <inheritdoc/>
     public override Expr Visit(Fusion expr) => expr;
-
-    private bool CandidateFusionCheckCallBack(HashSet<Fusion> candidateFusions)
-    {
-        if (candidateFusions.Count <= 1)
-        {
-            throw new InvalidDataException("The candidates less than 2!");
-        }
-
-        if (!_candidateFusionCache.TryGetValue(candidateFusions, out var ret))
-        {
-            return true;
-        }
-
-        if (ret != false)
-        {
-            throw new InvalidDataException("Only cache failed candidates!");
-        }
-
-        return false;
-    }
-
-    private void CandidateFusionRecordCallBack(HashSet<Fusion> candidateFusions)
-    {
-        if (candidateFusions.Count <= 1)
-        {
-            throw new InvalidDataException("The candidates less than 2!");
-        }
-
-        _candidateFusionCache.Add(candidateFusions, false);
-    }
 
     /// <inheritdoc/>
     public override Expr MutateLeaf(Call expr)
@@ -192,6 +162,36 @@ public class FusionGroupMutator : ExprMutator
         };
         UpdateCallUsedBy(expr, with_new);
         return with_new;
+    }
+
+    private bool CandidateFusionCheckCallBack(HashSet<Fusion> candidateFusions)
+    {
+        if (candidateFusions.Count <= 1)
+        {
+            throw new InvalidDataException("The candidates less than 2!");
+        }
+
+        if (!_candidateFusionCache.TryGetValue(candidateFusions, out var ret))
+        {
+            return true;
+        }
+
+        if (ret != false)
+        {
+            throw new InvalidDataException("Only cache failed candidates!");
+        }
+
+        return false;
+    }
+
+    private void CandidateFusionRecordCallBack(HashSet<Fusion> candidateFusions)
+    {
+        if (candidateFusions.Count <= 1)
+        {
+            throw new InvalidDataException("The candidates less than 2!");
+        }
+
+        _candidateFusionCache.Add(candidateFusions, false);
     }
 
     private void UpdateCallUsedBy(Call old_call, Call new_call)

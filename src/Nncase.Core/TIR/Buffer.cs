@@ -138,18 +138,18 @@ public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
 
     public ReadOnlySpan<Segment1D> Segments => _segments;
 
-    public Segment1D this[int index]
-    {
-        get => _segments[index];
-        set => _segments[index] = value;
-    }
-
     /// <summary>
     /// Gets todo remove it.
     /// </summary>
     public int Shape_size => _segments.Aggregate(1, (acc, seg) => acc * seg.Length);
 
     public int Count => ((IReadOnlyCollection<Segment1D>)_segments).Count;
+
+    public Segment1D this[int index]
+    {
+        get => _segments[index];
+        set => _segments[index] = value;
+    }
 
     public static bool operator ==(SegmentND lhs, SegmentND rhs)
     {

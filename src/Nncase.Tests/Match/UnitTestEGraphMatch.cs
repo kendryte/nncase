@@ -106,7 +106,7 @@ public sealed class UnitTestEGraphMatch
     [Fact]
     public void TestMatchVArgs()
     {
-        var wc = IsWildcard("x");
+        _ = IsWildcard("x");
 
         var nest_tuple = new IR.Tuple(4, 5, 6);
         var tuple = new IR.Tuple(1, nest_tuple, 3);

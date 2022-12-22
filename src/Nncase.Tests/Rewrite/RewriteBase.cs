@@ -183,9 +183,9 @@ public class FoldTransposePadCase : IRewriteCase
             var v1 = IR.F.NN.Pad(v0, new[,]
             {
                 { 0, 0 },
-            { 0, 0 },
-            { 2, 2 },
-            { 1, 1 },
+                { 0, 0 },
+                { 2, 2 },
+                { 1, 1 },
             }, PadMode.Constant, 1.0f); // [1,2,7,3]
             var v2 = NCHWToNHWC(v1); // [1,7,3,2]
             var v3 = v2 * IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 3, 7, 3, 2 }).Evaluate().AsTensor(); // [3,7,3,2]
@@ -325,15 +325,15 @@ public class MobileNetV1TransposeCase : IRewriteCase
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor(), new[] { 1, 1 }, new[,]
                 {
                     { 0, 0 },
-                { 0, 0 },
+                    { 0, 0 },
                 }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { 0.0f, 6.0f }); // f32[1,64,112,112]
             var v_8 = Transpose(v_7, new[] { 0, 2, 3, 1 }); // f32[1,112,112,64]
             var v_9 = Pad(v_8, new[,]
             {
                 { 0, 0 },
-            { 0, 1 },
-            { 0, 1 },
-            { 0, 0 },
+                { 0, 1 },
+                { 0, 1 },
+                { 0, 0 },
             }, PadMode.Constant, 0.0f); // f32[1,113,113,64]
             var v_10 = Transpose(v_9, new[] { 0, 3, 1, 2 }); // f32[1,64,113,113]
             var v_11 = Conv2D(
@@ -343,7 +343,7 @@ public class MobileNetV1TransposeCase : IRewriteCase
                 new[] { 2, 2 }, new[,]
                 {
                     { 0, 0 },
-                { 0, 0 },
+                    { 0, 0 },
                 }, new[] { 1, 1 }, PadMode.Constant, 64,
                 new[] { 0.0f, 6.0f }); // f32[1,64,56,56]
             return new Function(v_11, new Var[] { _input });
@@ -383,9 +383,9 @@ public class PadTransposeCase : IRewriteCase
             var v_0 = Pad(_input, new[,]
             {
                 { 0, 0 },
-            { 2, 2 },
-            { 2, 2 },
-            { 0, 0 },
+                { 2, 2 },
+                { 2, 2 },
+                { 0, 0 },
             }, PadMode.Constant, 0.0f); // f32[1,14,14,16]
             var v_1 = Transpose(v_0, new[] { 0, 3, 1, 2 }); // f32[1,16,14,14]
             var v_2 = Conv2D(
@@ -394,14 +394,14 @@ public class PadTransposeCase : IRewriteCase
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor(), new[] { 1, 1 }, new[,]
                 {
                     { 0, 0 },
-                { 0, 0 },
+                    { 0, 0 },
                 }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { 0.0f, 6.0f }); // f32[1,64,12,12]
             var v_3 = Pad(v_2, new[,]
             {
                 { 0, 0 },
-            { 0, 0 },
-            { 0, 0 },
-            { 0, 0 },
+                { 0, 0 },
+                { 0, 0 },
+                { 0, 0 },
             }, PadMode.Constant, 0.0f); // f32[1,64,12,12]
             return new Function(v_3, new Var[] { _input });
         }
@@ -454,7 +454,7 @@ public sealed class TransposeLeakyRelu : IRewriteCase
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 16 }).Evaluate().AsTensor(), new[] { 1, 1 }, new[,]
                 {
                     { 1, 1 },
-                { 1, 1 },
+                    { 1, 1 },
                 }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { 0.0f, 6.0f }); // f32[1,16,15,20]
             return new Function(v_8, new Var[] { _input });
         }
@@ -494,22 +494,22 @@ public sealed class Conv2DPadsCase : IRewriteCase
                 new[,]
                 {
                     { 0, 0 },
-                { 0, 0 },
+                    { 0, 0 },
                 }, new[] { 1, 1 }, PadMode.Constant, 1,
                 new[] { 0.0f, 6.0f }); // f32[1,96,56,56]
             var v_13 = Pad(v_12, new[,]
             {
                 { 0, 0 },
-            { 0, 0 },
-            { 0, 1 },
-            { 0, 1 },
+                { 0, 0 },
+                { 0, 1 },
+                { 0, 1 },
             }, PadMode.Constant, 0.0f); // f32[1,96,57,57]
             var v_14 = Conv2D(v_13, Normal(DataTypes.Float32, 0, 1, 1, new[] { 96, 1, 3, 3 }).Evaluate().AsTensor(),
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 96 }).Evaluate().AsTensor(), new[] { 2, 2 },
                 new[,]
                 {
                     { 0, 0 },
-                { 0, 0 },
+                    { 0, 0 },
                 }, new[] { 1, 1 }, PadMode.Constant, 96,
                 new[] { 0.0f, 6.0f }); // f32[1,96,28,28]
             return new Function(v_14, new Var[] { _input });
@@ -545,21 +545,21 @@ public sealed class ReduceWindow2DPadsCase : IRewriteCase
                 new[,]
                 {
                     { 0, 0 },
-                { 0, 0 },
+                    { 0, 0 },
                 }, new[] { 1, 1 }, PadMode.Constant, 1,
                 new[] { 0.0f, 6.0f }); // f32[1,96,56,56]
             var v_1 = Pad(v_0, new[,]
             {
                 { 0, 0 },
-            { 0, 0 },
-            { 0, 1 },
-            { 0, 1 },
+                { 0, 0 },
+                { 0, 1 },
+                { 0, 1 },
             }, PadMode.Constant, 0.0f); // f32[1,96,57,57]
             var v_2 = ReduceWindow2D(ReduceOp.Max, v_1, 0, new[] { 3, 3 }, new[] { 2, 2 },
                 new[,]
                 {
                     { 0, 0 },
-                { 0, 0 },
+                    { 0, 0 },
                 }, new[] { 1, 1 }, false, false); // f32[1,96,28,28]
             return new Function(v_2, new Var[] { _input });
         }

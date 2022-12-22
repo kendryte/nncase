@@ -130,6 +130,16 @@ public class Compiler
         // Console.WriteLine("Compile successful");
     }
 
+    public void Gencode(Stream output)
+    {
+        var target = CompilerServices.GetTarget(_compileOptions.Target);
+        var moduleBuilder = new ModelBuilder(target, _compileOptions);
+        var linkedModel = moduleBuilder.Build(_module);
+        linkedModel.Serialize(output);
+
+        // Console.WriteLine("Gencode successful");
+    }
+
     private IRModule ImportModel(Stream content)
     {
         _module = _compileOptions.InputFormat switch
@@ -152,15 +162,5 @@ public class Compiler
         var pmgr = new PassManager(_module, new RunPassOptions(CompilerServices.GetTarget(_compileOptions.Target), _compileOptions.DumpLevel, Path.Join(_compileOptions.DumpDir, dirName), _compileOptions));
         register(pmgr);
         pmgr.RunAsync().Wait();
-    }
-
-    public void Gencode(Stream output)
-    {
-        var target = CompilerServices.GetTarget(_compileOptions.Target);
-        var moduleBuilder = new ModelBuilder(target, _compileOptions);
-        var linkedModel = moduleBuilder.Build(_module);
-        linkedModel.Serialize(output);
-
-        // Console.WriteLine("Gencode successful");
     }
 }

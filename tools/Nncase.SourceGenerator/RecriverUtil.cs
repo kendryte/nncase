@@ -71,6 +71,30 @@ public static class RecriverUtil
                                                                                 DiagnosticSeverity.Error,
                                                                                 isEnabledByDefault: true);
 
+    public static DiagnosticDescriptor ClassMoreMethodError => new DiagnosticDescriptor(
+        id: "EvalGen004",
+                                                                            title: "The Class Have More Valid Method!",
+                                                                            messageFormat: "The '{0}' Have More Valid Method!",
+                                                                            category: "EvaluatorGenerator",
+                                                                            DiagnosticSeverity.Error,
+                                                                            isEnabledByDefault: true);
+
+    public static DiagnosticDescriptor ClassNotFromBaseClassError => new DiagnosticDescriptor(
+        id: "EvalGen006",
+                                                                                title: "The Class Must Be Derived From Target Class!",
+                                                                                messageFormat: "The '{0}' Must From '{1}'!",
+                                                                                category: "EvaluatorGenerator",
+                                                                                DiagnosticSeverity.Error,
+                                                                                isEnabledByDefault: true);
+
+    public static DiagnosticDescriptor GeneratorError => new DiagnosticDescriptor(
+        id: "EvalGen007",
+                                                                                title: "When Generator Get Error",
+                                                                                messageFormat: "'{0}'",
+                                                                                category: "EvaluatorGenerator",
+                                                                                DiagnosticSeverity.Error,
+                                                                                isEnabledByDefault: true);
+
     /// <summary>
     /// check the class attrs.
     /// </summary>
@@ -132,28 +156,4 @@ public static class RecriverUtil
 
         return false;
     }
-
-    public static DiagnosticDescriptor ClassMoreMethodError => new DiagnosticDescriptor(
-        id: "EvalGen004",
-                                                                            title: "The Class Have More Valid Method!",
-                                                                            messageFormat: "The '{0}' Have More Valid Method!",
-                                                                            category: "EvaluatorGenerator",
-                                                                            DiagnosticSeverity.Error,
-                                                                            isEnabledByDefault: true);
-
-    public static DiagnosticDescriptor ClassNotFromBaseClassError => new DiagnosticDescriptor(
-        id: "EvalGen006",
-                                                                                title: "The Class Must Be Derived From Target Class!",
-                                                                                messageFormat: "The '{0}' Must From '{1}'!",
-                                                                                category: "EvaluatorGenerator",
-                                                                                DiagnosticSeverity.Error,
-                                                                                isEnabledByDefault: true);
-
-    public static DiagnosticDescriptor GeneratorError => new DiagnosticDescriptor(
-        id: "EvalGen007",
-                                                                                title: "When Generator Get Error",
-                                                                                messageFormat: "'{0}'",
-                                                                                category: "EvaluatorGenerator",
-                                                                                DiagnosticSeverity.Error,
-                                                                                isEnabledByDefault: true);
 }

@@ -257,13 +257,13 @@ internal sealed class ResNet
     private readonly int _groups;
     private readonly int _baseWidth;
     private readonly ForwardFusion _conv1;
-    private int _inplanes;
-    private int _dilation;
     private readonly ForwardFusion _maxpool;
     private readonly IForwardable _layer1;
     private readonly IForwardable _layer2;
     private readonly IForwardable _layer3;
     private readonly IForwardable _layer4; // avgpool, fc;
+    private int _inplanes;
+    private int _dilation;
 
     public ResNet(
         Type block,

@@ -26,6 +26,8 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
 
     public static BFloat16 Epsilon => FromRaw(0x3c00);
 
+    public static BFloat16 NaN => FromRaw(0x7fc0);
+
     /// <summary>
     /// Implicit convert <see cref="BFloat16"/> to <see cref="float"/>.
     /// </summary>
@@ -59,6 +61,26 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
     /// <param name="rhs">rhls.</param>
     /// <returns>result of value comparisons.</returns>
     public static bool operator !=(BFloat16 lhs, BFloat16 rhs) => lhs._value != rhs._value;
+
+    public static bool operator <(BFloat16 left, BFloat16 right)
+    {
+        return left.CompareTo(right) < 0;
+    }
+
+    public static bool operator <=(BFloat16 left, BFloat16 right)
+    {
+        return left.CompareTo(right) <= 0;
+    }
+
+    public static bool operator >(BFloat16 left, BFloat16 right)
+    {
+        return left.CompareTo(right) > 0;
+    }
+
+    public static bool operator >=(BFloat16 left, BFloat16 right)
+    {
+        return left.CompareTo(right) >= 0;
+    }
 
     /// <summary>
     /// Reinterpret cast <see cref="ushort"/> to <see cref="BFloat16"/>.
@@ -97,18 +119,6 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
         uint roundingBias = 0x7fff + lsb;
         input += roundingBias;
         return FromRaw((ushort)(input >> 16));
-    }
-
-    public static BFloat16 NaN => FromRaw(0x7fc0);
-
-    public static bool operator <(BFloat16 left, BFloat16 right)
-    {
-        return left.CompareTo(right) < 0;
-    }
-
-    public static bool operator <=(BFloat16 left, BFloat16 right)
-    {
-        return left.CompareTo(right) <= 0;
     }
 
     /// <summary>
@@ -158,15 +168,5 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
     public int CompareTo(BFloat16 other)
     {
         return ((float)this).CompareTo(other);
-    }
-
-    public static bool operator >(BFloat16 left, BFloat16 right)
-    {
-        return left.CompareTo(right) > 0;
-    }
-
-    public static bool operator >=(BFloat16 left, BFloat16 right)
-    {
-        return left.CompareTo(right) >= 0;
     }
 }

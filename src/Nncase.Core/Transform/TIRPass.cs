@@ -98,20 +98,6 @@ namespace Nncase.Transform
             return Task.FromResult(post);
         }
 
-        private void OnMutated(BaseFunction callable, string prefix, RunPassOptions options)
-        {
-            switch (options.DumpLevel)
-            {
-                case >= 2:
-                    CompilerServices.DumpIR((Expr)callable, prefix, options.DumpDir, false);
-                    break;
-                case >= 1:
-                    break;
-                default:
-                    break;
-            }
-        }
-
         /// <summary>
         /// the callback function you can custom process func with run pass options.
         /// </summary>
@@ -140,6 +126,20 @@ namespace Nncase.Transform
             }
 
             base.OnPassEnd(callable, options);
+        }
+
+        private void OnMutated(BaseFunction callable, string prefix, RunPassOptions options)
+        {
+            switch (options.DumpLevel)
+            {
+                case >= 2:
+                    CompilerServices.DumpIR((Expr)callable, prefix, options.DumpDir, false);
+                    break;
+                case >= 1:
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }

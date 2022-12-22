@@ -48,6 +48,11 @@ public sealed partial class OnnxImporter
         return new TensorType(GetDataType(v), GetShape(v));
     }
 
+    public TensorType GetIRType(TensorProto v)
+    {
+        return new TensorType(GetDataType(v), GetShape(v));
+    }
+
     private bool EmptyTensor(TensorProto tensor)
     {
         return tensor.Dims.Count == 1 && tensor.Dims[0] == 0;
@@ -87,11 +92,6 @@ public sealed partial class OnnxImporter
                 _ => throw new NotSupportedException($"Not supported onnx constant data type{dt}"),
             };
         }
-    }
-
-    public TensorType GetIRType(TensorProto v)
-    {
-        return new TensorType(GetDataType(v), GetShape(v));
     }
 
     private Expr GetInputExpr(NodeProto n, int index)

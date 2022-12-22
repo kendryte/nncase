@@ -219,9 +219,9 @@ internal partial class Quantizer
         {
             foreach (var match in matches)
             {
-                var _rangeOf = (ENode)match.Root;
-                _rangeOfs.Add(_rangeOf);
-                _childrenOfRangeOfs.Add(_rangeOf.Children[1].Nodes[0]);
+                var rangeOf = (ENode)match.Root;
+                _rangeOfs.Add(rangeOf);
+                _childrenOfRangeOfs.Add(rangeOf.Children[1].Nodes[0]);
             }
         }
     }

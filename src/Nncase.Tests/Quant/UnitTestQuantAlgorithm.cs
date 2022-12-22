@@ -109,6 +109,8 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
         Trace.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[1] == 9.717726f);
     }
 
+    private Expr Pad(int[][] p) => Const.FromTensor(Tensor.From<int>(p.SelectMany(i => i).ToArray(), new[] { 2, 2 }));
+
     public sealed class DumpVisitor : ExprVisitor<int, IRType>
     {
         public override int DefaultVisitLeaf(Expr expr) => 0;
@@ -187,6 +189,4 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
 
         public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
     }
-
-    private Expr Pad(int[][] p) => Const.FromTensor(Tensor.From<int>(p.SelectMany(i => i).ToArray(), new[] { 2, 2 }));
 }

@@ -138,16 +138,6 @@ namespace Nncase.IR
         public bool IsReadOnly => true;
 
         /// <summary>
-        /// Gets a shape with rank unknwon dimension.
-        /// </summary>
-        /// <param name="rank"></param>
-        /// <returns></returns>
-        public static Shape Unknown(int rank)
-        {
-            return new Shape(ShapeKind.HasUnknownDimension, Enumerable.Repeat(Dimension.Unknown, rank));
-        }
-
-        /// <summary>
         /// Gets a value indicating whether fixed.
         /// </summary>
         public bool IsFixed => Kind == ShapeKind.Fixed;
@@ -176,6 +166,16 @@ namespace Nncase.IR
         /// Gets a value indicating whether scalar.
         /// </summary>
         public bool IsScalar => IsFixed && _dimensions.Length == 0;
+
+        /// <summary>
+        /// Gets a shape with rank unknwon dimension.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <returns></returns>
+        public static Shape Unknown(int rank)
+        {
+            return new Shape(ShapeKind.HasUnknownDimension, Enumerable.Repeat(Dimension.Unknown, rank));
+        }
 
         /// <summary>
         /// Gets rank.
@@ -300,11 +300,6 @@ namespace Nncase.IR
             return ((IEnumerable<Dimension>)_dimensions).GetEnumerator();
         }
 
-        private static ShapeKind KindOf(IEnumerable<Dimension> dimensions)
-        {
-            return dimensions.Any(x => x.IsUnknown) ? ShapeKind.HasUnknownDimension : ShapeKind.Fixed;
-        }
-
         IEnumerator IEnumerable.GetEnumerator()
         {
             return ((IEnumerable)_dimensions).GetEnumerator();
@@ -326,6 +321,11 @@ namespace Nncase.IR
         public override bool Equals(object? other)
         {
             return other is Shape shape && Equals(shape);
+        }
+
+        private static ShapeKind KindOf(IEnumerable<Dimension> dimensions)
+        {
+            return dimensions.Any(x => x.IsUnknown) ? ShapeKind.HasUnknownDimension : ShapeKind.Fixed;
         }
     }
 }

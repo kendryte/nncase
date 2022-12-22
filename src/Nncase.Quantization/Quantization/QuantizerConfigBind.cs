@@ -56,13 +56,13 @@ internal partial class QuantizerConfigBind
             // there are no rangeOfs and childrenOfRangeOfs actually, rangeOfs has been folded into const, use these names here is because of old habit.
             foreach (var match in matches)
             {
-                var _rangeOfMarker = (ENode)match.Root;
+                var rangeOfMarker = (ENode)match.Root;
 
                 // if (!_rangeOfs.Contains(_rangeOfMarker.Children[1].Nodes[0]))
-                _rangeOfs.Add(_rangeOfMarker.Children[1].Nodes[0]);
+                _rangeOfs.Add(rangeOfMarker.Children[1].Nodes[0]);
 
                 // if (!_childrenOfRangeOfs.Contains(_rangeOfMarker.Children[0].Nodes[0]))
-                _childrenOfRangeOfs.Add(_rangeOfMarker.Children[0].Nodes[0]);
+                _childrenOfRangeOfs.Add(rangeOfMarker.Children[0].Nodes[0]);
             }
         }
     }

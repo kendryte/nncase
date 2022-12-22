@@ -61,15 +61,15 @@ public static class ModelInfo
     /// </summary>
     public const int MaxSectionNameLength = 16;
 
+    /// <summary>
+    /// max module type length.
+    /// </summary>
+    public const int MaxModuleKindLength = 16;
+
     public static readonly uint ModelHasNoEntry = unchecked((uint)-1);
 
     /// <summary>
     /// the idenitifer.
     /// </summary>
     public static readonly uint Identifier = BitConverter.ToUInt32(Encoding.UTF8.GetBytes("LDMK"), 0);
-
-    /// <summary>
-    /// max module type length.
-    /// </summary>
-    public const int MaxModuleKindLength = 16;
 }

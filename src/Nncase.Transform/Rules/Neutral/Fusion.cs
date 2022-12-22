@@ -169,44 +169,6 @@ public partial class FuseTwoFusion : FusionMaker
         return newCallerExprList.Concat(newCalleeExprList).Select(x => (T)x).ToArray();
     }
 
-    // caller(callee, args..)
-    private Call GetReplace(Call caller, Call callee, Fusion calleeFuse, Fusion callerFuse, RunPassOptions passOptions)
-    {
-        // find callee pos index in caller
-        // input0  input1
-        //    \      /
-        //     caller
-        // param[1] == callee, then index == 1
-        var index = caller.Parameters.ToList().FindIndex(x =>
-        {
-            passOptions.MatchOptions.TryUpdateWithRewrite(ref x);
-            return x == callee;
-        });
-
-        // get param var name from args index for rename
-        var beReplacedVar = callerFuse.Parameters[index];
-
-        // replace calleeFuse first param with callerParam which be removed
-        var (calleeFuseBody, calleeFirstVar) = RenameFirstVar(calleeFuse, beReplacedVar.Name, passOptions.MatchOptions);
-        var (newCalleeFuseBody, newCalleeParams) = RenameRestVar(calleeFuse.Parameters, calleeFuseBody, caller.Parameters.Count, passOptions.MatchOptions);
-
-        // merge two body
-        //     input1 input2 input3
-        //        \     |      /
-        // input0    callee
-        //   \        /
-        //     caller
-        var newBodyWithRedundancy = ReplaceTarget(callerFuse.Body, beReplacedVar, newCalleeFuseBody, passOptions.MatchOptions);
-
-        // eliminate store load
-        // fusion: load -> op1 -> op2 -> ... -> store
-        var newBody = EliminateRedundancy(newBodyWithRedundancy, passOptions);
-
-        var newParams = Merge(callerFuse.Parameters.ToArray(), index, calleeFirstVar, newCalleeParams);
-        var newInputs = Merge(caller.Parameters, index, callee.Parameters[0], callee.Parameters.ToArray()[1..]);
-        return new Call(new Fusion(FullName, ModuleKind, newBody, newParams), newInputs);
-    }
-
     /// <summary>
     /// rename first var
     /// input0 input1  input0 input1 input2
@@ -269,5 +231,43 @@ public partial class FuseTwoFusion : FusionMaker
                     newCalleeParams[i - 1],
                     matchOptions));
         return (newCalleeFuseBody, newCalleeParams);
+    }
+
+    // caller(callee, args..)
+    private Call GetReplace(Call caller, Call callee, Fusion calleeFuse, Fusion callerFuse, RunPassOptions passOptions)
+    {
+        // find callee pos index in caller
+        // input0  input1
+        //    \      /
+        //     caller
+        // param[1] == callee, then index == 1
+        var index = caller.Parameters.ToList().FindIndex(x =>
+        {
+            passOptions.MatchOptions.TryUpdateWithRewrite(ref x);
+            return x == callee;
+        });
+
+        // get param var name from args index for rename
+        var beReplacedVar = callerFuse.Parameters[index];
+
+        // replace calleeFuse first param with callerParam which be removed
+        var (calleeFuseBody, calleeFirstVar) = RenameFirstVar(calleeFuse, beReplacedVar.Name, passOptions.MatchOptions);
+        var (newCalleeFuseBody, newCalleeParams) = RenameRestVar(calleeFuse.Parameters, calleeFuseBody, caller.Parameters.Count, passOptions.MatchOptions);
+
+        // merge two body
+        //     input1 input2 input3
+        //        \     |      /
+        // input0    callee
+        //   \        /
+        //     caller
+        var newBodyWithRedundancy = ReplaceTarget(callerFuse.Body, beReplacedVar, newCalleeFuseBody, passOptions.MatchOptions);
+
+        // eliminate store load
+        // fusion: load -> op1 -> op2 -> ... -> store
+        var newBody = EliminateRedundancy(newBodyWithRedundancy, passOptions);
+
+        var newParams = Merge(callerFuse.Parameters.ToArray(), index, calleeFirstVar, newCalleeParams);
+        var newInputs = Merge(caller.Parameters, index, callee.Parameters[0], callee.Parameters.ToArray()[1..]);
+        return new Call(new Fusion(FullName, ModuleKind, newBody, newParams), newInputs);
     }
 }

@@ -48,6 +48,11 @@ public sealed class EClass
     public IReadOnlyList<ENode> UsedBy => _usedBy ?? throw new InvalidOperationException("This class has been merged.");
 
     /// <summary>
+    /// Gets nodes.
+    /// </summary>
+    public IReadOnlyList<ENode> Nodes => _nodes;
+
+    /// <summary>
     /// Set the new checked type and we need update the all inner enode expr with new type.
     /// </summary>
     /// <param name="type"></param>
@@ -55,11 +60,6 @@ public sealed class EClass
     {
         CheckedType = type;
     }
-
-    /// <summary>
-    /// Gets nodes.
-    /// </summary>
-    public IReadOnlyList<ENode> Nodes => _nodes;
 
     /// <summary>
     /// Find root eclass.

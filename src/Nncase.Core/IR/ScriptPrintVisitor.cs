@@ -76,12 +76,12 @@ internal sealed class ScriptPrintContext : IIRPrinterContext
     /// <inheritdoc/>
     public IPrintSymbol Get(Op op) => _exprMemo[op];
 
-    private Call GetCurrentCall() => CurrentCall ?? throw new InvalidOperationException("Current call is not set.");
-
     /// <inheritdoc/>
     public IPrintSymbol Visit(Expr expr) => _printVisitor.Visit(expr);
 
     public string Indent() => new string(' ', _printVisitor.Scope.IndentLevel);
+
+    private Call GetCurrentCall() => CurrentCall ?? throw new InvalidOperationException("Current call is not set.");
 }
 
 /// <summary>

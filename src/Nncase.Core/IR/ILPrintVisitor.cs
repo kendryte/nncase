@@ -47,11 +47,6 @@ public sealed class ScopeWriter
     private TextWriter _writer;
 
     /// <summary>
-    /// Gets current VarNamelist.
-    /// </summary>
-    private List<IPrintSymbol> VarSymbolList => _varSymbolStack.Peek();
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="ScopeWriter"/> class.
     /// ctor.
     /// </summary>
@@ -64,6 +59,11 @@ public sealed class ScopeWriter
         _writer = textWriter;
         _varSymbolStack.Push(new());
     }
+
+    /// <summary>
+    /// Gets current VarNamelist.
+    /// </summary>
+    private List<IPrintSymbol> VarSymbolList => _varSymbolStack.Peek();
 
     /// <summary>
     /// push the new string writer, tempoary record the current code into this frame.

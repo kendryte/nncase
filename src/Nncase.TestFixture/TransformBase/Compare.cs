@@ -62,11 +62,6 @@ public static class Comparator
         return a.Zip(b).Select(CosSimilarity).ToArray();
     }
 
-    private static float Prod(float[] data1, float[] data2)
-    {
-        return data1.Zip(data2).Aggregate(0f, (f, tuple) => f + (tuple.Item1 * tuple.Item2));
-    }
-
     public static float CosSimilarity((Tensor, Tensor) t)
     {
         return CosSimilarity(t.Item1, t.Item2);
@@ -90,6 +85,11 @@ public static class Comparator
     public static float CosSimilarity(OriginTensor a, OriginTensor b) => CosSimilarity(a.Tensor, b.Tensor);
 
     public static float[] CosSimilarity(OriginTensor[] a, OriginTensor[] b) => a.Zip(b).Select(CosSimilarity).ToArray();
+
+    private static float Prod(float[] data1, float[] data2)
+    {
+        return data1.Zip(data2).Aggregate(0f, (f, tuple) => f + (tuple.Item1 * tuple.Item2));
+    }
 
     public static float CosSimilarity(Tensor a, Tensor b)
     {
@@ -170,6 +170,14 @@ public static class Comparator
         return v1.Zip(v2).Select(data => CosSimilarity(data.Item1, data.Item2)).ToArray();
     }
 
+    public static float[][] TensorsCompareByChannel(Tensor[] pre, Tensor[] post, int channelAxis = 1,
+        float thresh = 0.99f)
+    {
+        return pre.Zip(post).Select(tuple =>
+                TensorCompareByChannel(tuple.Item1, tuple.Item2, channelAxis, thresh))
+            .ToArray();
+    }
+
     private static bool TupleValueAllEqual(TupleValue a, TupleValue b, float thresh)
     {
         if (a.Count != b.Count)
@@ -196,14 +204,6 @@ public static class Comparator
         Assert.Equal(v1.ElementType, v2.ElementType);
         Assert.True(AllEqual(v1, v2, thresh));
         return true;
-    }
-
-    public static float[][] TensorsCompareByChannel(Tensor[] pre, Tensor[] post, int channelAxis = 1,
-        float thresh = 0.99f)
-    {
-        return pre.Zip(post).Select(tuple =>
-                TensorCompareByChannel(tuple.Item1, tuple.Item2, channelAxis, thresh))
-            .ToArray();
     }
 }
 

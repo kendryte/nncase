@@ -18,6 +18,26 @@ public record struct KPUBatchNormSegment
     public int Add { get; set; }
 }
 
+public record struct KPUActivationSegment
+{
+    public long StartX { get; set; }
+
+    public int Mul { get; set; }
+
+    public int Shift { get; set; }
+
+    public int Add { get; set; }
+}
+
+public record struct FakeKPUActivationSegment
+{
+    public float StartX { get; set; }
+
+    public float Mul { get; set; }
+
+    public float Add { get; set; }
+}
+
 /// <summary>
 /// KPU filter type.
 /// </summary>
@@ -58,26 +78,6 @@ public static class KPUConstants
     /// BN output bits.
     /// </summary>
     public const int BNOutBits = 36;
-}
-
-public record struct KPUActivationSegment
-{
-    public long StartX { get; set; }
-
-    public int Mul { get; set; }
-
-    public int Shift { get; set; }
-
-    public int Add { get; set; }
-}
-
-public record struct FakeKPUActivationSegment
-{
-    public float StartX { get; set; }
-
-    public float Mul { get; set; }
-
-    public float Add { get; set; }
 }
 
 public class KPUActivationParameters

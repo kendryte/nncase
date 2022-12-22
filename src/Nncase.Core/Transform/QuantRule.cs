@@ -49,16 +49,16 @@ public abstract class QuantRule : RewriteRule<Pattern>
     public DataType WQuantType => Option.CompileOptions.WQuantType;
 
     /// <summary>
+    /// Gets a value indicating whether get UseMixQuant flag.
+    /// </summary>
+    public bool UseMixQuant => Option.CompileOptions.QuantizeOptions.BindQuantMethod;
+
+    /// <summary>
     /// check the datatype is the quant type.
     /// </summary>
     /// <param name="dt"></param>
     /// <returns></returns>
     public bool IsQuantType(DataType dt) => dt == DataTypes.Int8 || dt == DataTypes.UInt8;
-
-    /// <summary>
-    /// Gets a value indicating whether get UseMixQuant flag.
-    /// </summary>
-    public bool UseMixQuant => Option.CompileOptions.QuantizeOptions.BindQuantMethod;
 
     /// <summary>
     /// NOTE the Init will be set by SourceGenerator when the GetReplace called.

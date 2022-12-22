@@ -361,6 +361,29 @@ public class UnitTestExpression
         Assert.Equal<MyRange>(new(7 + 4 + 6, 9 + 4 + 6), fn_2_ret[3]);
     }
 
+    private MyRange[] Conv2dBounds(MyRange[] output_range, int kh, int kw)
+    {
+        var new_output_range = new MyRange[output_range.Length];
+        Array.Copy(output_range, new_output_range, output_range.Length);
+        new_output_range[2].Start += kh;
+        new_output_range[2].Stop += kh;
+        new_output_range[3].Start += kw;
+        new_output_range[3].Stop += kw;
+        return new_output_range;
+    }
+
+    private struct MyRange
+    {
+        public int Start;
+        public int Stop;
+
+        public MyRange(int start, int stop)
+        {
+            Start = start;
+            Stop = stop;
+        }
+    }
+
     private sealed class ExpressionTreeBuilder : ExprVisitor<Expression, Type>
     {
         public override Expression VisitLeaf(Const expr)
@@ -409,29 +432,6 @@ public class UnitTestExpression
         public override Expression VisitLeaf(Op expr)
         {
             return null!;
-        }
-    }
-
-    private MyRange[] Conv2dBounds(MyRange[] output_range, int kh, int kw)
-    {
-        var new_output_range = new MyRange[output_range.Length];
-        Array.Copy(output_range, new_output_range, output_range.Length);
-        new_output_range[2].Start += kh;
-        new_output_range[2].Stop += kh;
-        new_output_range[3].Start += kw;
-        new_output_range[3].Stop += kw;
-        return new_output_range;
-    }
-
-    private struct MyRange
-    {
-        public int Start;
-        public int Stop;
-
-        public MyRange(int start, int stop)
-        {
-            Start = start;
-            Stop = stop;
         }
     }
 }

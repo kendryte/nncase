@@ -52,32 +52,6 @@ namespace Nncase.IR
             return result;
         }
 
-        protected void RegisterAfterCallback(string name, Action<Expr> callback)
-        {
-            _callbacksAfterCall[name] = callback;
-        }
-
-        protected void RegisterBeforeCallback(string name, Action<Expr> callback)
-        {
-            _callbacksBeforeCall[name] = callback;
-        }
-
-        private void CallbacksBeforeCall(Expr expr)
-        {
-            foreach (var (name, callback) in _callbacksBeforeCall)
-            {
-                callback(expr);
-            }
-        }
-
-        private void CallbacksAfterCall(Expr expr)
-        {
-            foreach (var (name, callback) in _callbacksAfterCall)
-            {
-                callback(expr);
-            }
-        }
-
         /// <inheritdoc/>
         public sealed override TExprResult Visit(Const expr)
         {
@@ -167,6 +141,32 @@ namespace Nncase.IR
             }
 
             return result;
+        }
+
+        protected void RegisterAfterCallback(string name, Action<Expr> callback)
+        {
+            _callbacksAfterCall[name] = callback;
+        }
+
+        protected void RegisterBeforeCallback(string name, Action<Expr> callback)
+        {
+            _callbacksBeforeCall[name] = callback;
+        }
+
+        private void CallbacksBeforeCall(Expr expr)
+        {
+            foreach (var (name, callback) in _callbacksBeforeCall)
+            {
+                callback(expr);
+            }
+        }
+
+        private void CallbacksAfterCall(Expr expr)
+        {
+            foreach (var (name, callback) in _callbacksAfterCall)
+            {
+                callback(expr);
+            }
         }
 
         /// <inheritdoc/>

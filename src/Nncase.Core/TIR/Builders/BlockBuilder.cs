@@ -153,6 +153,12 @@ internal class BlockBuilder : IBlockBuilder
         return this;
     }
 
+    public IBlockBuilder Predicate(Expr predicate)
+    {
+        _predicate ??= predicate;
+        return this;
+    }
+
     private static void Add<T>(HashSet<T> set, IEnumerable<object> inputs)
     {
         if (inputs is null)
@@ -174,11 +180,5 @@ internal class BlockBuilder : IBlockBuilder
                     break;
             }
         }
-    }
-
-    public IBlockBuilder Predicate(Expr predicate)
-    {
-        _predicate ??= predicate;
-        return this;
     }
 }
