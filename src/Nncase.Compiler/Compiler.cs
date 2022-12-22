@@ -94,7 +94,10 @@ public class Compiler
           new Transform.Rules.Neutral.CombineTransposeBinary(),
           new Transform.Rules.Neutral.CombineTransposeReduce(),
           new Transform.Rules.Neutral.CombineTransposeActivations(),
+          new Transform.Rules.Neutral.CombinePadTranspose(),
+          new Transform.Rules.Neutral.FoldNopPad(),
           new Transform.Rules.Neutral.FoldConv2DPads(),
+          new Transform.Rules.Neutral.FoldReduceWindow2DPads(),
         });
         if (_compileOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
@@ -113,8 +116,6 @@ public class Compiler
     public void Compile()
     {
         var t = CompilerServices.GetTarget(_compileOptions.Target);
-        RunPass(p => TargetIndependentPass(p), "TargetIndependentPass");
-        RunPass(p => t.RegisterTargetDependentPass(p, _compileOptions), "TargetDependentPass");
         if (_compileOptions.DumpLevel > 4)
             DumpManager.RunWithDump("TargetIndependentEval", () => RunPass(p => TargetIndependentPass(p), "TargetIndependentPass"));
         else

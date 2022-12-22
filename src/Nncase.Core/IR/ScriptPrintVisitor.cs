@@ -461,7 +461,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     {
         if (exprMemo.TryGetValue(expr, out var doc)) { return doc; }
         Scope.Push();
-        Scope.Append($"T.Buffer({expr.Name}, {VisitType(expr.ElemType)})");
+        Scope.Append($"T.Buffer({expr.Name}, {expr.MemLocation}, {VisitType(expr.ElemType)})");
         doc = new(Scope.Pop(), expr.Name, true);
         exprMemo.Add(expr, doc);
         return doc;

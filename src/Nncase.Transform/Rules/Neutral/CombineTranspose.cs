@@ -204,28 +204,35 @@ public sealed partial class CombineTransposePad : IRewriteRule
 }
 
 /// <summary>
-/// Combine Pad With Transpose
-/// transpose(pad) => pad(transpose).
+/// Combine Pad with Transpose
+/// transpose(pad(x, pp),p) => pad(transpose(x),new_pp)
 /// </summary>
 [RuleGenerator]
 public sealed partial class CombinePadTranspose : IRewriteRule
 {
     /// <inheritdoc/>
+    public IPattern Pattern { get; } =
+      IsTranspose(
+        IsPad(
+          "pad",
+          x => true,
+          IsWildcard("input"),
+          IsWildcard("pads"),
+          IsWildcard("padValue")
+        ),
+        IsTensorConst("perm")
+      );
 
-    public IPattern Pattern { get; } = IsTranspose(
-        "transpose",
-        x => true,
-        IsPad("pad", y => true, IsWildcard("input"), IsTensorConst("pads"), IsWildcard("padValue")), IsTensorConst("perm"));
-
-    private Expr GetReplace(Pad pad, Expr input, int[] perm, Expr pads, Expr padValue)
+    private Expr GetReplace(Pad pad, Expr input, int[] perm, Expr pads, Expr padValue, RunPassOptions options)
     {
-        List<int> newPads = new List<int>();
-        for (int i = 0; i < perm.Length; i++)
+        var newPads = new List<Expr>();
+        for (var i = 0; i < perm.Length; i++)
         {
-            newPads.Add(((TensorConst)pads).Value.ToArray<int>()[perm[i] * 2]);
-            newPads.Add(((TensorConst)pads).Value.ToArray<int>()[perm[i] * 2 + 1]);
+            newPads.Add(pads[perm[i]]);
         }
-        return Pad(Transpose(input, perm), Tensor.From<int>(newPads.ToArray(), pads.CheckedShape), pad.PadMode, padValue);
+        var ret = Pad(Transpose(input, perm), Stack(new IR.Tuple(newPads), 0), pad.PadMode, padValue);
+        options.MatchOptions.SuppressPattern(ret, Pattern);
+        return ret;
     }
 }
 
