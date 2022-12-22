@@ -7,6 +7,7 @@ using Nncase.IR.Tensors;
 using OrtKISharp;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Tensorflow;
 using Tensorflow.NumPy;
@@ -35,7 +36,7 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
             {
                 var quantParam = ((Nncase.IR.Marker)(context.CurrentCall.Parameters.ToArray()[0])).mixQuantInfo.QuantParameter;
                 // input feature map quantParam count should be 1 since input feature map quant is by tensor.
-                System.Diagnostics.Debug.Assert(quantParam.Count == 1);
+                Trace.Assert(quantParam.Count == 1);
                 var inputFloat = input.ToArray<float>();
                 for (var i = 0; i < inputFloat.Length; i++)
                 {
