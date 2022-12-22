@@ -9,6 +9,15 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR.K210;
 
+public record struct KPUBatchNormSegment
+{
+    public int Mul { get; set; }
+
+    public int Shift { get; set; }
+
+    public int Add { get; set; }
+}
+
 /// <summary>
 /// KPU filter type.
 /// </summary>
@@ -49,15 +58,6 @@ public static class KPUConstants
     /// BN output bits.
     /// </summary>
     public const int BNOutBits = 36;
-}
-
-public record struct KPUBatchNormSegment
-{
-    public int Mul { get; set; }
-
-    public int Shift { get; set; }
-
-    public int Add { get; set; }
 }
 
 public record struct KPUActivationSegment

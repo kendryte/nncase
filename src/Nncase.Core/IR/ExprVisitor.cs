@@ -32,6 +32,26 @@ namespace Nncase.IR
         /// </summary>
         public Dictionary<IVisitable, object> VisitAbleMemo => _visitableMemo;
 
+        /// <inheritdoc/>
+        public override TExprResult Visit(Call expr)
+        {
+            if (!_exprMemo.TryGetValue(expr, out var result))
+            {
+                Visit(expr.Target);
+                foreach (var param in expr.Parameters)
+                {
+                    Visit(param);
+                }
+
+                CallbacksBeforeCall(expr);
+                result = VisitLeaf(expr);
+                _exprMemo.Add(expr, result);
+                CallbacksAfterCall(expr);
+            }
+
+            return result;
+        }
+
         protected void RegisterAfterCallback(string name, Action<Expr> callback)
         {
             _callbacksAfterCall[name] = callback;
@@ -56,26 +76,6 @@ namespace Nncase.IR
             {
                 callback(expr);
             }
-        }
-
-        /// <inheritdoc/>
-        public override TExprResult Visit(Call expr)
-        {
-            if (!_exprMemo.TryGetValue(expr, out var result))
-            {
-                Visit(expr.Target);
-                foreach (var param in expr.Parameters)
-                {
-                    Visit(param);
-                }
-
-                CallbacksBeforeCall(expr);
-                result = VisitLeaf(expr);
-                _exprMemo.Add(expr, result);
-                CallbacksAfterCall(expr);
-            }
-
-            return result;
         }
 
         /// <inheritdoc/>

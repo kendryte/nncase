@@ -133,6 +133,11 @@ namespace Nncase.IR
         public ShapeKind Kind { get; private set; }
 
         /// <summary>
+        /// Gets a value indicating whether is readonly.
+        /// </summary>
+        public bool IsReadOnly => true;
+
+        /// <summary>
         /// Gets a shape with rank unknwon dimension.
         /// </summary>
         /// <param name="rank"></param>
@@ -141,11 +146,6 @@ namespace Nncase.IR
         {
             return new Shape(ShapeKind.HasUnknownDimension, Enumerable.Repeat(Dimension.Unknown, rank));
         }
-
-        /// <summary>
-        /// Gets a value indicating whether is readonly.
-        /// </summary>
-        public bool IsReadOnly => true;
 
         /// <summary>
         /// Gets a value indicating whether fixed.
@@ -209,6 +209,12 @@ namespace Nncase.IR
         public static bool operator ==(Shape lhs, Shape rhs)
         {
             return lhs.Equals(rhs);
+        }
+
+        /// <inheritdoc/>
+        public static bool operator !=(Shape lhs, Shape rhs)
+        {
+            return !(lhs == rhs);
         }
 
         /// <summary>
@@ -288,15 +294,15 @@ namespace Nncase.IR
             return _hashcode;
         }
 
-        private static ShapeKind KindOf(IEnumerable<Dimension> dimensions)
-        {
-            return dimensions.Any(x => x.IsUnknown) ? ShapeKind.HasUnknownDimension : ShapeKind.Fixed;
-        }
-
         /// <inheritdoc/>
         public IEnumerator<Dimension> GetEnumerator()
         {
             return ((IEnumerable<Dimension>)_dimensions).GetEnumerator();
+        }
+
+        private static ShapeKind KindOf(IEnumerable<Dimension> dimensions)
+        {
+            return dimensions.Any(x => x.IsUnknown) ? ShapeKind.HasUnknownDimension : ShapeKind.Fixed;
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -320,12 +326,6 @@ namespace Nncase.IR
         public override bool Equals(object? other)
         {
             return other is Shape shape && Equals(shape);
-        }
-
-        /// <inheritdoc/>
-        public static bool operator !=(Shape lhs, Shape rhs)
-        {
-            return !(lhs == rhs);
         }
     }
 }

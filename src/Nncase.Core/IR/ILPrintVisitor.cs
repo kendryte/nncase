@@ -37,6 +37,11 @@ public sealed class ScopeWriter
     private readonly Dictionary<string, int> _globalVarCountMap = new();
 
     /// <summary>
+    /// the scopes var name stack.
+    /// </summary>
+    private readonly Stack<List<IPrintSymbol>> _varSymbolStack = new();
+
+    /// <summary>
     /// current writer.
     /// </summary>
     private TextWriter _writer;
@@ -45,11 +50,6 @@ public sealed class ScopeWriter
     /// Gets current VarNamelist.
     /// </summary>
     private List<IPrintSymbol> VarSymbolList => _varSymbolStack.Peek();
-
-    /// <summary>
-    /// the scopes var name stack.
-    /// </summary>
-    private readonly Stack<List<IPrintSymbol>> _varSymbolStack = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ScopeWriter"/> class.

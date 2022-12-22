@@ -79,6 +79,16 @@ namespace Nncase.IR
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="Var"/> class.
+        /// <see cref="Var"/>.
+        /// </summary>
+        /// <param name="name"></param>
+        public Var(string name)
+            : this(name, AnyType.Default)
+        {
+        }
+
+        /// <summary>
         /// Gets get the global var index.
         /// </summary>
         private int GlobalVarIndex => _globalVarIndex;
@@ -92,16 +102,6 @@ namespace Nncase.IR
         /// Gets typeAnnotation.
         /// </summary>
         public IRType TypeAnnotation { get; init; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Var"/> class.
-        /// <see cref="Var"/>.
-        /// </summary>
-        /// <param name="name"></param>
-        public Var(string name)
-            : this(name, AnyType.Default)
-        {
-        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Var"/> class.

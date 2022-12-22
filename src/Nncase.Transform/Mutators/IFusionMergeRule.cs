@@ -71,9 +71,9 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
           "callee",
           IsFusion(
               "callee_fusion",
-            target_module_kind,
-            IsWildcard(),
-            IsVArgsRepeat(() => IsWildcard())),
+              target_module_kind,
+              IsWildcard(),
+              IsVArgsRepeat(() => IsWildcard())),
           IsVArgsRepeat("callee_inputs", (IReadOnlyList<Expr> callee_inputs) =>
           {
               var pats = new List<Pattern>();
@@ -89,9 +89,9 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
             "caller",
             IsFusion(
                 "caller_fusion",
-              target_module_kind,
-              IsWildcard(),
-              IsVArgs(IsWildcard())),
+                target_module_kind,
+                IsWildcard(),
+                IsVArgs(IsWildcard())),
             CalleePattern);
         return CallerPattern;
     }
@@ -202,25 +202,25 @@ public class ShortCutFusionMergeRule : IMergeRewriteRule
           "callee",
           IsFusion(
               "callee_fusion",
-            target_module_kind,
-            IsWildcard(),
-            IsVArgs(IsWildcard())),
+              target_module_kind,
+              IsWildcard(),
+              IsVArgs(IsWildcard())),
           input);
         var CallerPattern_left = IsCall(
           "caller",
           IsFusion(
               "caller_fusion",
-            target_module_kind,
-            IsWildcard(),
-            IsVArgs(IsWildcard(), IsWildcard())),
+              target_module_kind,
+              IsWildcard(),
+              IsVArgs(IsWildcard(), IsWildcard())),
           IsVArgs("caller_inputs", new Pattern[] { CalleePattern, input }));
         var CallerPattern_right = IsCall(
           "caller",
           IsFusion(
               "caller_fusion",
-            target_module_kind,
-            IsWildcard(),
-            IsVArgs(IsWildcard(), IsWildcard())),
+              target_module_kind,
+              IsWildcard(),
+              IsVArgs(IsWildcard(), IsWildcard())),
           IsVArgs("caller_inputs", new Pattern[] { input, CalleePattern }));
         return IsAlt(CallerPattern_left, CallerPattern_right);
     }
@@ -363,9 +363,9 @@ public class SameInputFusionMergeRule : IMergeRewriteRule
             "caller",
             IsFusion(
                 "caller_fusion",
-              target_module_kind,
-              IsWildcard(),
-              IsVArgsRepeat(() => IsWildcard())),
+                target_module_kind,
+                IsWildcard(),
+                IsVArgsRepeat(() => IsWildcard())),
             IsVArgsRepeat("caller_inputs", (IReadOnlyList<Expr> caller_inputs) =>
             {
                 var callee_patterns = new List<Pattern>();
@@ -381,8 +381,8 @@ public class SameInputFusionMergeRule : IMergeRewriteRule
                       IsAlt(
                         IsCall(
                             $"callee_{i}",
-                          IsFusion($"callee_fusion_{i}", target_module_kind, IsWildcard(), IsVArgs(IsWildcard())),
-                          inputPat),
+                            IsFusion($"callee_fusion_{i}", target_module_kind, IsWildcard(), IsVArgs(IsWildcard())),
+                            inputPat),
                         inputPat));
                 }
 

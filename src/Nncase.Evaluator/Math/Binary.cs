@@ -69,6 +69,32 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         };
     }
 
+    /// <inheritdoc/>
+    public string Visit(IIRPrinterContext context, Binary target, bool iLmode)
+    {
+        var lhs = context.GetArgument(target, Binary.Lhs);
+        var rhs = context.GetArgument(target, Binary.Rhs);
+        if (iLmode)
+        {
+            return $"{target.BinaryOp}({lhs}, {rhs})";
+        }
+
+        return target.BinaryOp switch
+        {
+            BinaryOp.Add => $"({lhs} + {rhs})",
+            BinaryOp.Sub => $"({lhs} - {rhs})",
+            BinaryOp.Mul => $"({lhs} * {rhs})",
+            BinaryOp.Div => $"({lhs} / {rhs})",
+            BinaryOp.Mod => $"({lhs} % {rhs})",
+            BinaryOp.LogicalAnd => $"({lhs} & {rhs})",
+            BinaryOp.LogicalOr => $"({lhs} | {rhs})",
+            BinaryOp.LogicalXor => $"({lhs} ^ {rhs})",
+            BinaryOp.LeftShift => $"({lhs} << {rhs})",
+            BinaryOp.RightShift => $"({lhs} >> {rhs})",
+            _ => $"{target.BinaryOp}({lhs}, {rhs})",
+        };
+    }
+
     private int Compute(BinaryOp op, int a, int b) => op switch
     {
         BinaryOp.Add => a + b,
@@ -151,32 +177,6 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             BinaryOp.RightShift => OrtKI.RightShift(a, b),
             _ => throw new ArgumentOutOfRangeException(nameof(binary.BinaryOp)),
         }).ToValue();
-    }
-
-    /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Binary target, bool iLmode)
-    {
-        var lhs = context.GetArgument(target, Binary.Lhs);
-        var rhs = context.GetArgument(target, Binary.Rhs);
-        if (iLmode)
-        {
-            return $"{target.BinaryOp}({lhs}, {rhs})";
-        }
-
-        return target.BinaryOp switch
-        {
-            BinaryOp.Add => $"({lhs} + {rhs})",
-            BinaryOp.Sub => $"({lhs} - {rhs})",
-            BinaryOp.Mul => $"({lhs} * {rhs})",
-            BinaryOp.Div => $"({lhs} / {rhs})",
-            BinaryOp.Mod => $"({lhs} % {rhs})",
-            BinaryOp.LogicalAnd => $"({lhs} & {rhs})",
-            BinaryOp.LogicalOr => $"({lhs} | {rhs})",
-            BinaryOp.LogicalXor => $"({lhs} ^ {rhs})",
-            BinaryOp.LeftShift => $"({lhs} << {rhs})",
-            BinaryOp.RightShift => $"({lhs} >> {rhs})",
-            _ => $"{target.BinaryOp}({lhs}, {rhs})",
-        };
     }
 
     private IRType Visit(Binary target, TensorType lhs, TensorType rhs)

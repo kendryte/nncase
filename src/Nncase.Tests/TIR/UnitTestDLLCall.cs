@@ -47,11 +47,6 @@ public class UnitTestDLLCall
         Console.WriteLine(created_class.GetMember("delfunc"));
     }
 
-    public class CustomType
-    {
-        public delegate float Declf(float x, float y);
-    }
-
     public Type GetDynamicDeleType()
     {
         var aName = new AssemblyName("DynamicAssemblyExample");
@@ -70,6 +65,11 @@ public class UnitTestDLLCall
         var endInvoke = tb.DefineMethod("EndInvoke", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.NewSlot, CallingConventions.Standard | CallingConventions.HasThis, typeof(float), new[] { typeof(IAsyncResult) });
         endInvoke.SetImplementationFlags(MethodImplAttributes.Runtime | MethodImplAttributes.Managed);
         return tb.CreateType();
+    }
+
+    public class CustomType
+    {
+        public delegate float Declf(float x, float y);
     }
 
     // [Fact]

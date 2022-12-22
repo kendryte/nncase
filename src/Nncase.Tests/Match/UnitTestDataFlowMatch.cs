@@ -241,38 +241,6 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
         _ = await pass2.RunAsync(post, caseOptions);
     }
 
-    [RuleGenerator]
-    public class SimpleFuseTwoFusion : Transform.Rules.Neutral.FuseTwoFusion
-    {
-        public override Expr EliminateRedundancy(Expr newBodyWithRedundancy, RunPassOptions passOptions)
-        {
-            return CompilerServices.Rewrite(newBodyWithRedundancy, new[]
-            {
-              new Transform.Rules.Neutral.FoldDeQuantQuant(),
-            }, passOptions.SetDumpLevel(0));
-        }
-    }
-
-    private sealed class SimpleRule : IRewriteRule
-    {
-        public IPattern Pattern { get; } = IsBinary(BinaryOp.Add, IsWildcard("lhs"), IsWildcard("rhs"));
-
-        public Expr? GetReplace(IMatchResult result, RunPassOptions options)
-        {
-            return (Expr)result["lhs"] - (Expr)result["rhs"];
-        }
-    }
-
-    private sealed class UnaryFusion : Transform.Rules.Neutral.SingleInputFusion<IR.Math.Unary, IR.Math.Quantize, IR.Math.Dequantize>
-    {
-        public override string Name { get; } = "UnaryFusion";
-    }
-
-    private sealed class TransposeFusion : Transform.Rules.Neutral.SingleInputFusion<IR.Tensors.Transpose, IR.Math.Quantize, IR.Math.Dequantize>
-    {
-        public override string Name { get; } = "TransposeFusion";
-    }
-
     [Fact]
     public async void TestMatchPairLayerFusion()
     {
@@ -306,6 +274,38 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
         var post2 = await pass2.RunAsync(post, caseOptions);
         var isMatch = CompilerServices.TryMatch(post2, IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
         Assert.True(isMatch);
+    }
+
+    [RuleGenerator]
+    public class SimpleFuseTwoFusion : Transform.Rules.Neutral.FuseTwoFusion
+    {
+        public override Expr EliminateRedundancy(Expr newBodyWithRedundancy, RunPassOptions passOptions)
+        {
+            return CompilerServices.Rewrite(newBodyWithRedundancy, new[]
+            {
+              new Transform.Rules.Neutral.FoldDeQuantQuant(),
+            }, passOptions.SetDumpLevel(0));
+        }
+    }
+
+    private sealed class SimpleRule : IRewriteRule
+    {
+        public IPattern Pattern { get; } = IsBinary(BinaryOp.Add, IsWildcard("lhs"), IsWildcard("rhs"));
+
+        public Expr? GetReplace(IMatchResult result, RunPassOptions options)
+        {
+            return (Expr)result["lhs"] - (Expr)result["rhs"];
+        }
+    }
+
+    private sealed class UnaryFusion : Transform.Rules.Neutral.SingleInputFusion<IR.Math.Unary, IR.Math.Quantize, IR.Math.Dequantize>
+    {
+        public override string Name { get; } = "UnaryFusion";
+    }
+
+    private sealed class TransposeFusion : Transform.Rules.Neutral.SingleInputFusion<IR.Tensors.Transpose, IR.Math.Quantize, IR.Math.Dequantize>
+    {
+        public override string Name { get; } = "TransposeFusion";
     }
 
     [Fact]

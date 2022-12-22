@@ -88,6 +88,15 @@ public class UnitTestCPUTarget
         GenerateKModelAndRunFromFn(main, new[] { 2f }, (Tensor)new[] { -1f });
     }
 
+    [Fact]
+    public void TestSimpleTupleOutput()
+    {
+        var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
+        var main = new Function("main", new IR.Tuple(x + 1.0f, x * 3.0f), new[] { x });
+        var module = new IRModule(main);
+        GenerateKModelAndRun(module, new[] { 1.0f }, new[] { (Tensor)2.0f, 3.0f });
+    }
+
     private void TestCodeGen(Expr body, Var[] vars, [CallerMemberName] string name = null)
     {
         var main = new Function("main", body, vars);
@@ -98,15 +107,6 @@ public class UnitTestCPUTarget
         using var output = File.Open($"{name}.kmodel", FileMode.Create);
         linkedModel.Serialize(output);
         Assert.NotEqual(0, output.Length);
-    }
-
-    [Fact]
-    public void TestSimpleTupleOutput()
-    {
-        var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
-        var main = new Function("main", new IR.Tuple(x + 1.0f, x * 3.0f), new[] { x });
-        var module = new IRModule(main);
-        GenerateKModelAndRun(module, new[] { 1.0f }, new[] { (Tensor)2.0f, 3.0f });
     }
 
     [Fact]

@@ -28,6 +28,8 @@ public class FusionGroupMutator : ExprMutator
     /// </summary>
     public readonly IMergeRewriteRule Rule;
 
+    private readonly IUsedByResult _usedByReslut;
+
     private sealed class FusionMergeCandidateComparer : IEqualityComparer<HashSet<Fusion>>
     {
         public bool Equals(HashSet<Fusion>? x, HashSet<Fusion>? y) => (x, y) switch
@@ -49,8 +51,6 @@ public class FusionGroupMutator : ExprMutator
             return hash.ToHashCode();
         }
     }
-
-    private readonly IUsedByResult _usedByReslut;
 
     /// <summary>
     /// cache the check result.
@@ -126,6 +126,9 @@ public class FusionGroupMutator : ExprMutator
         return false;
     }
 
+    /// <inheritdoc/>
+    public override Expr Visit(Fusion expr) => expr;
+
     private bool CandidateFusionCheckCallBack(HashSet<Fusion> candidateFusions)
     {
         if (candidateFusions.Count <= 1)
@@ -155,9 +158,6 @@ public class FusionGroupMutator : ExprMutator
 
         _candidateFusionCache.Add(candidateFusions, false);
     }
-
-    /// <inheritdoc/>
-    public override Expr Visit(Fusion expr) => expr;
 
     /// <inheritdoc/>
     public override Expr MutateLeaf(Call expr)

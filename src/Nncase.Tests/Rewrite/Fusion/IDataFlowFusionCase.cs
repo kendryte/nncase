@@ -35,7 +35,7 @@ internal static class FusionBuilder
         var fusion_1 = new Fusion($"fusion_{_count}_{mask}", Callable.StackVMModuleKind, IR.F.NN.Conv2D(fusion_1_input, weights, bias, new[] { 1, 1 }, new[,]
         {
             { 0, 0 },
-        { 0, 0 },
+            { 0, 0 },
         }, new[] { 1, 1 }, PadMode.Constant, 1), new[] { fusion_1_input });
         _count++;
         return fusion_1;

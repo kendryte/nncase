@@ -63,16 +63,16 @@ public static class InterfaceKindExtensions
             { Name: "Const" } or { BaseType: { Name: "Const" } } => true,
             { Name: "IValue" } => true,
             _ => false,
-        }
-,
+        },
+
 
         InterfaceKind.ITypeInferencer => typeSymbol switch
         {
             { Name: "IRType" } => true,
             { BaseType: { Name: "IRType" } } => true,
             _ => false,
-        }
-,
+        },
+
 
         _ => throw new NotImplementedException($"CheckReturnTypeRange : {typeSymbol.Name} {interfaceKind}"),
     };
@@ -85,8 +85,8 @@ public static class InterfaceKindExtensions
             { Name: "Const" } or { BaseType: { Name: "Const" } } => $"Value.FromConst({visitStatement})",
             { Name: "IValue" } => visitStatement,
             _ => throw new ArgumentOutOfRangeException($"Can't Return {typeSymbol.ToDisplayString()} For {interfaceKind}!"),
-        }
-,
+        },
+
 
         InterfaceKind.ITypeInferencer => visitStatement,
         _ => throw new NotImplementedException(),
@@ -285,16 +285,16 @@ internal class EvaluatorGenerator : IIncrementalGenerator
                     { IsReferenceType: true } x when x.ToDisplayString().EndsWith("OrtKISharp.Tensor") => "GetOrtArgumentValue",
                     { IsUnmanagedType: true, IsValueType: true } x => $"GetArgumentValueAsScalar<{paramType.ToDisplayString()}>",
                     _ => throw new NotSupportedException($"Convert {cand.Class.Name} Params {paramType.ToDisplayString()} For IEvaluator Impl!")
-                }
-,
+                },
+
 
                 InterfaceKind.ITypeInferencer => paramType switch
                 {
                     { IsReferenceType: true } x when x.IsInheritFrom(IRTypeSymobl) => $"CheckArgumentType<{x}>",
                     var x when SymbolEqualityComparer.Default.Equals(x, ExprSymobl) => $"GetArgument",
                     _ => throw new NotSupportedException($"Convert {cand.Class.Name} Params {paramType.ToDisplayString()} For ITypeInferencer Impl!")
-                }
-,
+                },
+
 
                 _ => throw new NotSupportedException($"{paramType.ToDisplayString()} with {cand.Target}!")
             };
@@ -350,10 +350,10 @@ internal class EvaluatorGenerator : IIncrementalGenerator
         return method;
     }
 
-    private CompilationUnitSyntax BuildFile(SourceProductionContext context, IEnumerable<GenerateCandidate> Candidates)
+    private CompilationUnitSyntax BuildFile(SourceProductionContext context, IEnumerable<GenerateCandidate> candidates1)
     {
         List<NamespaceDeclarationSyntax> namespaceDeclarations = new();
-        var namespaceCandidates = Candidates.GroupBy(keySelector: can => can.Class.ContainingNamespace, SymbolEqualityComparer.Default).ToDictionary(g => g.Key, g => g.ToList(), SymbolEqualityComparer.Default);
+        var namespaceCandidates = candidates1.GroupBy(keySelector: can => can.Class.ContainingNamespace, SymbolEqualityComparer.Default).ToDictionary(g => g.Key, g => g.ToList(), SymbolEqualityComparer.Default);
         foreach (var(Namespace, candidates) in namespaceCandidates.Select(kv =>(kv.Key, kv.Value)))
         {
             List<ClassDeclarationSyntax> classDeclarations = new();

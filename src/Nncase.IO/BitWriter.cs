@@ -50,17 +50,6 @@ namespace Nncase.IO
             WriteArray(MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref value, 1)), bits);
         }
 
-        private void WriteArray(ReadOnlySpan<byte> src, int bits)
-        {
-            while (bits > 0)
-            {
-                var to_write = Math.Min(bits, 8);
-                Write_bits_le8(src[0], to_write);
-                src = src.Slice(1);
-                bits -= to_write;
-            }
-        }
-
         /// <summary>
         /// Flush the unwrited value.
         /// </summary>
@@ -79,6 +68,17 @@ namespace Nncase.IO
                 _data = _data.Slice(write_bytes);
                 _buffer = 0;
                 _avail = sizeof(ulong) * 8;
+            }
+        }
+
+        private void WriteArray(ReadOnlySpan<byte> src, int bits)
+        {
+            while (bits > 0)
+            {
+                var to_write = Math.Min(bits, 8);
+                Write_bits_le8(src[0], to_write);
+                src = src.Slice(1);
+                bits -= to_write;
             }
         }
 

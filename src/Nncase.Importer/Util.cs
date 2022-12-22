@@ -98,6 +98,15 @@ namespace Nncase
             return ConcatPadding(padH, padW);
         }
 
+        public static Expr ComputeSplit(Expr input, long outputSize, long axis)
+        {
+            return F.Tensors.Expand(
+
+                // Util.DynamicShapeIndex(input, Cast(axis, DataTypes.Int32)) / outputSize,
+                Util.ShapeIndex(input, (int)axis) / outputSize,
+                Stack(new Tuple(outputSize), 0));
+        }
+
         private static Expr GetWindowedOutputSize(Expr size, Expr filter, Expr stride, Expr dilation, bool same, bool ceilMode)
         {
             var effectiveFilterSize = ((filter - 1) * dilation) + 1;
@@ -124,15 +133,6 @@ namespace Nncase
             }
 
             return new[] { before, after };
-        }
-
-        public static Expr ComputeSplit(Expr input, long outputSize, long axis)
-        {
-            return F.Tensors.Expand(
-
-                // Util.DynamicShapeIndex(input, Cast(axis, DataTypes.Int32)) / outputSize,
-                Util.ShapeIndex(input, (int)axis) / outputSize,
-                Stack(new Tuple(outputSize), 0));
         }
     }
 }

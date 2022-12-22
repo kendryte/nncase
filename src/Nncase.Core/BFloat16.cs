@@ -24,6 +24,8 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
 
     public static BFloat16 NegInfinity => FromRaw(0xff80);
 
+    public static BFloat16 Epsilon => FromRaw(0x3c00);
+
     /// <summary>
     /// Implicit convert <see cref="BFloat16"/> to <see cref="float"/>.
     /// </summary>
@@ -97,13 +99,16 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
         return FromRaw((ushort)(input >> 16));
     }
 
-    public static BFloat16 Epsilon => FromRaw(0x3c00);
-
     public static BFloat16 NaN => FromRaw(0x7fc0);
 
     public static bool operator <(BFloat16 left, BFloat16 right)
     {
         return left.CompareTo(right) < 0;
+    }
+
+    public static bool operator <=(BFloat16 left, BFloat16 right)
+    {
+        return left.CompareTo(right) <= 0;
     }
 
     /// <summary>
@@ -153,11 +158,6 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
     public int CompareTo(BFloat16 other)
     {
         return ((float)this).CompareTo(other);
-    }
-
-    public static bool operator <=(BFloat16 left, BFloat16 right)
-    {
-        return left.CompareTo(right) <= 0;
     }
 
     public static bool operator >(BFloat16 left, BFloat16 right)

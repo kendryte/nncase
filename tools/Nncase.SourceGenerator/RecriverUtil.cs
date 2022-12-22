@@ -63,6 +63,14 @@ public static class RecriverUtil
                                                                                 DiagnosticSeverity.Error,
                                                                                 isEnabledByDefault: true);
 
+    public static DiagnosticDescriptor ClassNoValidMethodError => new DiagnosticDescriptor(
+        id: "EvalGen003",
+                                                                                title: "The Class Have No Valid Method!",
+                                                                                messageFormat: "The '{0}' Have Not Valid Method!",
+                                                                                category: "EvaluatorGenerator",
+                                                                                DiagnosticSeverity.Error,
+                                                                                isEnabledByDefault: true);
+
     /// <summary>
     /// check the class attrs.
     /// </summary>
@@ -124,14 +132,6 @@ public static class RecriverUtil
 
         return false;
     }
-
-    public static DiagnosticDescriptor ClassNoValidMethodError => new DiagnosticDescriptor(
-        id: "EvalGen003",
-                                                                                title: "The Class Have No Valid Method!",
-                                                                                messageFormat: "The '{0}' Have Not Valid Method!",
-                                                                                category: "EvaluatorGenerator",
-                                                                                DiagnosticSeverity.Error,
-                                                                                isEnabledByDefault: true);
 
     public static DiagnosticDescriptor ClassMoreMethodError => new DiagnosticDescriptor(
         id: "EvalGen004",

@@ -84,7 +84,7 @@ public class Compiler
           new Transform.Rules.Neutral.FoldNopPad(),
           new Transform.Rules.Neutral.FoldConv2DPads(),
           new Transform.Rules.Neutral.FoldReduceWindow2DPads(),
-        });
+            });
         }
 
         if (_compileOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
@@ -100,30 +100,6 @@ public class Compiler
             });
             passManager.Add(new Quantization.EGraphPassWithQuantize("3_AssignRanges", _compileOptions.QuantizeOptions!));
         }
-    }
-
-    private IRModule ImportModel(Stream content)
-    {
-        _module = _compileOptions.InputFormat switch
-        {
-            "tflite" => Importers.ImportTFLite(content, _compileOptions),
-            "onnx" => Importers.ImportOnnx(content, _compileOptions),
-            _ => throw new NotImplementedException($"Not Implement {_compileOptions.InputFormat} Impoter!"),
-        };
-        return _module;
-    }
-
-    private void DumpModule(IRModule module, string prefix)
-    {
-        var dumpPath = Path.Combine(_compileOptions.DumpDir, "dump", prefix);
-        CompilerServices.DumpIR(module.Entry!, prefix, dumpPath);
-    }
-
-    private void RunPass(Action<PassManager> register, string dirName)
-    {
-        var pmgr = new PassManager(_module, new RunPassOptions(CompilerServices.GetTarget(_compileOptions.Target), _compileOptions.DumpLevel, Path.Join(_compileOptions.DumpDir, dirName), _compileOptions));
-        register(pmgr);
-        pmgr.RunAsync().Wait();
     }
 
     public void Compile()
@@ -152,6 +128,30 @@ public class Compiler
         RunPass(p => p.Add(new Transform.Passes.ShapeInferPass()), "ShapeInferAfterCompile");
 
         // Console.WriteLine("Compile successful");
+    }
+
+    private IRModule ImportModel(Stream content)
+    {
+        _module = _compileOptions.InputFormat switch
+        {
+            "tflite" => Importers.ImportTFLite(content, _compileOptions),
+            "onnx" => Importers.ImportOnnx(content, _compileOptions),
+            _ => throw new NotImplementedException($"Not Implement {_compileOptions.InputFormat} Impoter!"),
+        };
+        return _module;
+    }
+
+    private void DumpModule(IRModule module, string prefix)
+    {
+        var dumpPath = Path.Combine(_compileOptions.DumpDir, "dump", prefix);
+        CompilerServices.DumpIR(module.Entry!, prefix, dumpPath);
+    }
+
+    private void RunPass(Action<PassManager> register, string dirName)
+    {
+        var pmgr = new PassManager(_module, new RunPassOptions(CompilerServices.GetTarget(_compileOptions.Target), _compileOptions.DumpLevel, Path.Join(_compileOptions.DumpDir, dirName), _compileOptions));
+        register(pmgr);
+        pmgr.RunAsync().Wait();
     }
 
     public void Gencode(Stream output)

@@ -176,9 +176,9 @@ public class DumpManager
 
     public static int Count = 1;
 
-    public static bool OpenDump { get; private set; }
-
     public static string Dir;
+
+    public static bool OpenDump { get; private set; }
 
     public string CountStr => Count.ToString();
 

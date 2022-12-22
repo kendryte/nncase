@@ -18,6 +18,7 @@ internal class RuleCandidate
     public ClassDeclarationSyntax ClassDeclaration;
     public INamedTypeSymbol ClassSymobl;
     public IMethodSymbol MethodSymbol;
+
     public RuleCandidate(ClassDeclarationSyntax class_declaration, INamedTypeSymbol class_symobl, IMethodSymbol method_symbol)
     {
         ClassDeclaration = class_declaration;

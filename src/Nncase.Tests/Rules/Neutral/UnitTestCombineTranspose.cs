@@ -105,9 +105,9 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
                 new[,]
                 {
                     { 0, 0 },
-                { 0, 0 },
-                { 2, 2 },
-                { 1, 1 },
+                    { 0, 0 },
+                    { 2, 2 },
+                    { 1, 1 },
                 }, PadMode.Constant, 1.2f,
             },
             new object[]
@@ -116,9 +116,9 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
                 new[,]
                 {
                     { 4, 4 },
-                { 3, 3 },
-                { 2, 2 },
-                { 1, 1 },
+                    { 3, 3 },
+                    { 2, 2 },
+                    { 1, 1 },
                 }, PadMode.Constant, 1f,
             },
             new object[]
@@ -127,9 +127,9 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
                 new[,]
                 {
                     { 1, 1 },
-                { 0, 0 },
-                { 1, 1 },
-                { 1, 1 },
+                    { 0, 0 },
+                    { 1, 1 },
+                    { 1, 1 },
                 }, PadMode.Symmetric, 0f,
             },
             new object[]
@@ -138,9 +138,9 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
                 new[,]
                 {
                     { 2, 2 },
-                { 0, 0 },
-                { 1, 1 },
-                { 1, 1 },
+                    { 0, 0 },
+                    { 1, 1 },
+                    { 1, 1 },
                 }, PadMode.Reflect, 0f,
             },
             new object[]
@@ -149,9 +149,9 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
                 new[,]
                 {
                     { 1, 1 },
-                { 0, 0 },
-                { -1, -1 },
-                { 1, 1 },
+                    { 0, 0 },
+                    { -1, -1 },
+                    { 1, 1 },
                 }, PadMode.Edge, 0f,
             },
         };

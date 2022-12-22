@@ -72,6 +72,11 @@ public sealed class LinkedModel
         }
     }
 
+    private static int LCM(IEnumerable<int> source)
+    {
+        return source.Aggregate(_minAlignmnet, (a, b) => Operations.LCM(a, b));
+    }
+
     private unsafe void Serialize(BinaryWriter writer, ILinkedModule module)
     {
         var header = new ModuleHeader
@@ -164,10 +169,5 @@ public sealed class LinkedModel
         writer.Position(headerPos);
         writer.Write(ref header);
         writer.Position(endPos);
-    }
-
-    private static int LCM(IEnumerable<int> source)
-    {
-        return source.Aggregate(_minAlignmnet, (a, b) => Operations.LCM(a, b));
     }
 }

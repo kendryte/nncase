@@ -1,13 +1,5 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-// static IEnumerable<object[]> Data =>
-//           new List<object[]>
-//           {
-//               new object[] { new BlockCase() },
-//               new object[] { new ForCase() },
-//               new object[] { new SubCase() },
-//           };
-
 // [Theory]
 //         [MemberData(nameof(DataOne))]
 //         public void RunOne(ICodeGenCase Case) => RunCore(Case);

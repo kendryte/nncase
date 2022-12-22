@@ -61,17 +61,6 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
         return Visit(lhs, rhs);
     }
 
-    private bool Compute(CompareOp op, int a, int b) => op switch
-    {
-        CompareOp.Equal => a == b,
-        CompareOp.LowerOrEqual => a <= b,
-        CompareOp.GreaterOrEqual => a >= b,
-        CompareOp.GreaterThan => a > b,
-        CompareOp.LowerThan => a < b,
-        CompareOp.NotEqual => a != b,
-        _ => throw new ArgumentOutOfRangeException(nameof(op)),
-    };
-
     public string Visit(IIRPrinterContext context, Compare target, bool iLmode)
     {
         var op = target.CompareOp switch
@@ -86,6 +75,17 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
         };
         return $"{context.GetArgument(target, Compare.Lhs)} {op} {context.GetArgument(target, Compare.Rhs)}";
     }
+
+    private bool Compute(CompareOp op, int a, int b) => op switch
+    {
+        CompareOp.Equal => a == b,
+        CompareOp.LowerOrEqual => a <= b,
+        CompareOp.GreaterOrEqual => a >= b,
+        CompareOp.GreaterThan => a > b,
+        CompareOp.LowerThan => a < b,
+        CompareOp.NotEqual => a != b,
+        _ => throw new ArgumentOutOfRangeException(nameof(op)),
+    };
 
     private IRType Visit(TensorType lhs, TensorType rhs)
     {

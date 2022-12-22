@@ -212,6 +212,8 @@ public static class CompilerServices
 
     public static string CompileTarget => CompileOptions.Target;
 
+    public static ITarget GetCompileTarget => GetTarget(CompileTarget);
+
     internal static IDataTypeServiceProvider DataTypeService => ((ICompilerServicesProviderInternal)Provider).DataTypeService;
 
     private static ICompilerServicesProvider Provider => _provider ?? throw new InvalidOperationException("Compiler services provider must be set.");
@@ -442,8 +444,6 @@ public static class CompilerServices
     /// <param name="name">Target name.</param>
     /// <returns>Target.</returns>
     public static ITarget GetTarget(string name) => Provider.GetTarget(name);
-
-    public static ITarget GetCompileTarget => GetTarget(CompileTarget);
 }
 
 internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerServicesProviderInternal

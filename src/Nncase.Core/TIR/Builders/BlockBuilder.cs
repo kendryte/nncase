@@ -145,6 +145,14 @@ internal class BlockBuilder : IBlockBuilder
         return this;
     }
 
+    public IBlockBuilder Writes(params object[] buffer_regions)
+    {
+        HashSet<TIR.BufferRegion> set = new(ReferenceEqualityComparer.Instance);
+        Add(set, buffer_regions);
+        _reads.AddRange(set.ToList());
+        return this;
+    }
+
     private static void Add<T>(HashSet<T> set, IEnumerable<object> inputs)
     {
         if (inputs is null)
@@ -166,14 +174,6 @@ internal class BlockBuilder : IBlockBuilder
                     break;
             }
         }
-    }
-
-    public IBlockBuilder Writes(params object[] buffer_regions)
-    {
-        HashSet<TIR.BufferRegion> set = new(ReferenceEqualityComparer.Instance);
-        Add(set, buffer_regions);
-        _reads.AddRange(set.ToList());
-        return this;
     }
 
     public IBlockBuilder Predicate(Expr predicate)

@@ -127,6 +127,11 @@ public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
         segments.CopyTo(_segments);
     }
 
+    public SegmentND(params Segment1D[] segments)
+        : this(segments.AsSpan())
+    {
+    }
+
     public Padding PadH => _segments[2].Padding;
 
     public Padding PadW => _segments[3].Padding;
@@ -137,11 +142,6 @@ public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
     {
         get => _segments[index];
         set => _segments[index] = value;
-    }
-
-    public SegmentND(params Segment1D[] segments)
-        : this(segments.AsSpan())
-    {
     }
 
     /// <summary>
@@ -161,15 +161,15 @@ public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
         return !(lhs == rhs);
     }
 
+    public static SegmentND operator +(SegmentND lhs, SegmentND rhs)
+    {
+        return new(lhs[0] + rhs[0], lhs[1] + rhs[1], lhs[2] + rhs[2], lhs[3] + rhs[3]);
+    }
+
     public override bool Equals(object? obj)
     {
         return obj is SegmentND segment &&
                StructuralComparisons.StructuralEqualityComparer.Equals(_segments, segment._segments);
-    }
-
-    public static SegmentND operator +(SegmentND lhs, SegmentND rhs)
-    {
-        return new(lhs[0] + rhs[0], lhs[1] + rhs[1], lhs[2] + rhs[2], lhs[3] + rhs[3]);
     }
 
     public override int GetHashCode()

@@ -13,6 +13,8 @@ namespace Nncase.IO
         private ReadOnlySpan<byte> _data;
         private ulong _buffer;
 
+        private ulong _avail;
+
         public BitReader(ReadOnlySpan<byte> data)
         {
             _data = data;
@@ -84,7 +86,5 @@ namespace Nncase.IO
                 valueSpan[i] = data[i];
             }
         }
-
-        private ulong _avail;
     }
 }

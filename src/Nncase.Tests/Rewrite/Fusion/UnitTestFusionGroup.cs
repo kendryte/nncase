@@ -45,6 +45,10 @@ public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
     [MemberData(nameof(DataOne))]
     public void RunOne(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
 
+    [Theory]
+    [MemberData(nameof(DataAll))]
+    public void RunAll(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
+
     private void RunCore(IDataFlowFusionCase fusionCase)
     {
         var passOptions = GetPassOptions(fusionCase.GetType().Name);
@@ -65,7 +69,7 @@ public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
             new SameInputFusionMergeRule(),
             new MultiInputFusionMergeRule(),
             new ShortCutFusionMergeRule(),
-          }, (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
+        }, (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
           passOptions);
 
         CompilerServices.DumpIR(post, "post", passOptions.DumpDir);
@@ -84,10 +88,6 @@ public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
         var post_result = CompilerServices.Evaluate(post.Body, feed_dict);
         Assert.True(TestFixture.Comparator.AllEqual(pre_result, post_result));
     }
-
-    [Theory]
-    [MemberData(nameof(DataAll))]
-    public void RunAll(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
 }
 
 internal sealed class TestFusionGroupMutator : Transform.Mutators.FusionGroupMutator

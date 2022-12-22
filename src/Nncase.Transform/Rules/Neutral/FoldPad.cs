@@ -79,18 +79,18 @@ public sealed partial class FoldConv2DPads : IRewriteRule
 {
     public IPattern Pattern { get; } = IsConv2D(
     "conv", conv => conv.PadMode == PadMode.Constant,
-        IsPad(
+    IsPad(
             pad => pad.PadMode == PadMode.Constant,
             IsWildcard("input"),
             IsTensorConst("ext_pad"),
             IsTensorConst("ext_pad_init")),
-        IsWildcard("weights"),
-        IsWildcard("bias"),
-        IsWildcard("stride"),
-        IsTensorConst("padding"),
-        IsWildcard("dilation"),
-        IsWildcard("groups"),
-        IsWildcard("fusedClamp"));
+    IsWildcard("weights"),
+    IsWildcard("bias"),
+    IsWildcard("stride"),
+    IsTensorConst("padding"),
+    IsWildcard("dilation"),
+    IsWildcard("groups"),
+    IsWildcard("fusedClamp"));
 
     private Expr? GetReplace(Conv2D conv, Expr input, Expr weights, Expr bias, Expr stride, Tensor<int> padding,
         Expr dilation, Expr groups, Expr fusedClamp, Tensor<int> ext_pad, float ext_pad_init)
@@ -118,18 +118,18 @@ public sealed partial class FoldReduceWindow2DPads : IRewriteRule
 {
     public IPattern Pattern { get; } = IsReduceWindow2D(
     "pdp", _ => true,
-        IsPad(
+    IsPad(
             pad => pad.PadMode == PadMode.Constant,
             IsWildcard("input"),
             IsTensorConst("ext_pad"),
             IsTensorConst("ext_pad_init")),
-        IsWildcard("initValue"),
-        IsWildcard("filter"),
-        IsWildcard("stride"),
-        IsTensorConst("padding"),
-        IsWildcard("dilation"),
-        IsWildcard("ceilMode"),
-        IsWildcard("countIncludePad"));
+    IsWildcard("initValue"),
+    IsWildcard("filter"),
+    IsWildcard("stride"),
+    IsTensorConst("padding"),
+    IsWildcard("dilation"),
+    IsWildcard("ceilMode"),
+    IsWildcard("countIncludePad"));
 
     private Expr? GetReplace(ReduceWindow2D pdp, Expr input, Expr initValue, Expr filter, Expr stride, Tensor<int> padding,
         Expr dilation, Expr ceilMode, Expr countIncludePad, Tensor<int> ext_pad, float ext_pad_init)

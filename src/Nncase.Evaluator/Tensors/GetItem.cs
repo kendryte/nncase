@@ -55,7 +55,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
         return input[index.AsTensor().ToScalar<int>()];
     }
 
-    private IRType Visit(ITypeInferenceContext context, GetItem target, IRType input, TensorType Index)
+    private IRType Visit(ITypeInferenceContext context, GetItem target, IRType input, TensorType index1)
     {
         IRType ret = new InvalidType("Need Be Reset!");
         switch (input)
@@ -68,14 +68,14 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
 
                 ret = new TensorType(
                     tensorType.DType,
-                    Index.Shape switch
-                       {
-                           { IsScalar: true } => new Shape(tensorType.Shape.Skip(1)),
-                           { IsFixed: true } => Index.Shape[0].FixedValue == tensorType.Shape.Rank ?
-                                                Shape.Scalar :
-                                                new Shape(tensorType.Shape.Skip(Index.Shape[0].FixedValue)),
-                           _ => Shape.Unranked,
-                       });
+                    index1.Shape switch
+                    {
+                        { IsScalar: true } => new Shape(tensorType.Shape.Skip(1)),
+                        { IsFixed: true } => index1.Shape[0].FixedValue == tensorType.Shape.Rank ?
+                                             Shape.Scalar :
+                                             new Shape(tensorType.Shape.Skip(index1.Shape[0].FixedValue)),
+                        _ => Shape.Unranked,
+                    });
                 break;
             case TupleType tupleType:
                 if (context.GetArgument(target, GetItem.Index) is TensorConst @const)

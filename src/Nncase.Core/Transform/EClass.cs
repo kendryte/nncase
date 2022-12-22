@@ -42,6 +42,12 @@ public sealed class EClass
     public EClass? Parent { get; set; }
 
     /// <summary>
+    /// Gets the used by mean which Enode use this EClass. eg. z = x + y. the EClass's Used will add {(z, z's eclass id)}.
+    /// <remark> It's Not mean this EClass's Nodes </remark>
+    /// </summary>
+    public IReadOnlyList<ENode> UsedBy => _usedBy ?? throw new InvalidOperationException("This class has been merged.");
+
+    /// <summary>
     /// Set the new checked type and we need update the all inner enode expr with new type.
     /// </summary>
     /// <param name="type"></param>
@@ -49,12 +55,6 @@ public sealed class EClass
     {
         CheckedType = type;
     }
-
-    /// <summary>
-    /// Gets the used by mean which Enode use this EClass. eg. z = x + y. the EClass's Used will add {(z, z's eclass id)}.
-    /// <remark> It's Not mean this EClass's Nodes </remark>
-    /// </summary>
-    public IReadOnlyList<ENode> UsedBy => _usedBy ?? throw new InvalidOperationException("This class has been merged.");
 
     /// <summary>
     /// Gets nodes.

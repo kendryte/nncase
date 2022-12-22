@@ -109,6 +109,13 @@ namespace Nncase.IR
         public static Dimension operator +(Dimension lhs, int rhs) => lhs.IsFixed ? lhs.FixedValue + rhs : Unknown;
 
         /// <inheritdoc/>
+        public static Dimension operator -(Dimension lhs, Dimension rhs) => (lhs.IsFixed, lhs.IsFixed) switch
+        {
+            (true, true) => lhs.FixedValue - rhs.FixedValue,
+            (_, _) => Dimension.Unknown,
+        };
+
+        /// <inheritdoc/>
         public override string ToString()
         {
             return Value?.ToString() ?? "?";
@@ -132,13 +139,6 @@ namespace Nncase.IR
         {
             return HashCode.Combine(Kind, Value);
         }
-
-        /// <inheritdoc/>
-        public static Dimension operator -(Dimension lhs, Dimension rhs) => (lhs.IsFixed, lhs.IsFixed) switch
-        {
-            (true, true) => lhs.FixedValue - rhs.FixedValue,
-            (_, _) => Dimension.Unknown,
-        };
 
         /// <inheritdoc/>
         public static Dimension operator *(Dimension lhs, Dimension rhs) => (lhs.IsFixed, lhs.IsFixed) switch

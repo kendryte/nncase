@@ -321,7 +321,7 @@ public sealed partial class CombineTransposeActivations : IRewriteRule
     {
         return new Call(
             activation,
-          new Expr[] { Transpose(parameters[0], perm) }
+            new Expr[] { Transpose(parameters[0], perm) }
             .Concat(parameters.Skip(1)).ToArray());
     }
 }

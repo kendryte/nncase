@@ -195,11 +195,6 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         Assert.True(CompilerServices.InferenceType(new_f));
     }
 
-    private void CheckReshape(Expr input, int[] reshapeArgs, int[] expectShape)
-    {
-        CheckInferShape(Reshape(input, reshapeArgs), expectShape);
-    }
-
     [Fact]
     public void TestResize()
     {
@@ -226,6 +221,11 @@ public class UnitTestTypeInfer : UnitTypeInferBase
             Const.FromShape(new[] { 32, 48 }));
         Assert.True(CompilerServices.InferenceType(resize3));
         Assert.True(HasShape(new[] { 32, 48 }).MatchLeaf(resize3.CheckedType!));
+    }
+
+    private void CheckReshape(Expr input, int[] reshapeArgs, int[] expectShape)
+    {
+        CheckInferShape(Reshape(input, reshapeArgs), expectShape);
     }
 
     [Fact]
@@ -285,11 +285,6 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
     {
     }
 
-    private void CheckInferShape(Expr expr, params Dimension[] shapeDimensions)
-    {
-        CheckInferShape(expr, new Shape(shapeDimensions));
-    }
-
     [Fact]
     public void TestRange()
     {
@@ -298,6 +293,11 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
         var step = Var(Shape.Scalar);
         var r = Range(begin, end, step);
         CheckInferShape(r, Dimension.Unknown);
+    }
+
+    private void CheckInferShape(Expr expr, params Dimension[] shapeDimensions)
+    {
+        CheckInferShape(expr, new Shape(shapeDimensions));
     }
 
     [Fact]

@@ -39,13 +39,6 @@ public interface IBaseFuncCostEvaluator
 }
 
 /// <summary>
-/// this attribute mark the source generator auto generate ICostEvaluator's interface impl.
-/// </summary>
-public sealed class CostEvaluatorGeneratorAttribute : Attribute
-{
-}
-
-/// <summary>
 /// Cost evaluator interface.
 /// </summary>
 public interface ICostEvaluator<T> : ICostEvaluator
@@ -63,4 +56,11 @@ public interface ICostEvaluator<T> : ICostEvaluator
     {
         return Visit(context, (T)target);
     }
+}
+
+/// <summary>
+/// this attribute mark the source generator auto generate ICostEvaluator's interface impl.
+/// </summary>
+public sealed class CostEvaluatorGeneratorAttribute : Attribute
+{
 }

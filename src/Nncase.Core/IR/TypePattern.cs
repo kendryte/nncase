@@ -45,6 +45,8 @@ namespace Nncase.IR
 
         public static TypePattern operator |(TypePattern lhs, TypePattern rhs) => new TypePattern(x => lhs.Cond(x) || rhs.Cond(x), $"<{lhs.Reason}> Or <{rhs.Reason}>");
 
+        public static TypePattern operator !(TypePattern lhs) => new TypePattern(x => !lhs.Cond(x), $"<Not {lhs.Reason}>");
+
         public bool MatchLeaf(IRType valueType) => Cond(valueType);
 
         /// <summary>
@@ -70,8 +72,6 @@ namespace Nncase.IR
 
             return valueType;
         }
-
-        public static TypePattern operator !(TypePattern lhs) => new TypePattern(x => !lhs.Cond(x), $"<Not {lhs.Reason}>");
     }
 
     public static partial class TypePatternUtility

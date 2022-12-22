@@ -41,21 +41,6 @@ public class UnitTestFoldQuant : TestFixture.UnitTestFixtrue
         }
     }
 
-    private void CheckMatchPositive<T>(RunPassOptions passOptions, Expr pre)
-      where T : IRewriteRule, new()
-    {
-        var post = CompilerServices.Rewrite(pre, new IRewriteRule[] { new T() }, passOptions);
-        Assert.NotEqual(pre, post);
-        Assert.Equal(CompilerServices.Evaluate(pre), CompilerServices.Evaluate(post));
-    }
-
-    private void CheckMatchNegative<T>(RunPassOptions passOptions, Expr pre)
-      where T : IRewriteRule, new()
-    {
-        var post = CompilerServices.Rewrite(pre, new IRewriteRule[] { new T() }, passOptions);
-        Assert.Equal(pre, post);
-    }
-
     [Theory]
     [MemberData(nameof(FoldDequantQuantData))]
     public void TestFoldDequantQuant(int count, bool is_pos, int[] shape, DataType input_dtype, QuantParam deq_param, DataType dequant_type, QuantParam q_param, DataType quant_type)
@@ -70,5 +55,20 @@ public class UnitTestFoldQuant : TestFixture.UnitTestFixtrue
         {
             CheckMatchNegative<FoldDeQuantQuant>(caseOptions, pre);
         }
+    }
+
+    private void CheckMatchPositive<T>(RunPassOptions passOptions, Expr pre)
+      where T : IRewriteRule, new()
+    {
+        var post = CompilerServices.Rewrite(pre, new IRewriteRule[] { new T() }, passOptions);
+        Assert.NotEqual(pre, post);
+        Assert.Equal(CompilerServices.Evaluate(pre), CompilerServices.Evaluate(post));
+    }
+
+    private void CheckMatchNegative<T>(RunPassOptions passOptions, Expr pre)
+      where T : IRewriteRule, new()
+    {
+        var post = CompilerServices.Rewrite(pre, new IRewriteRule[] { new T() }, passOptions);
+        Assert.Equal(pre, post);
     }
 }

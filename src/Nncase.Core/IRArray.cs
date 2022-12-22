@@ -39,11 +39,6 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
     }
 
     /// <summary>
-    /// Gets a value indicating whether check the ret.
-    /// </summary>
-    public bool IsDefaultOrEmpty => _array.IsDefaultOrEmpty;
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="IRArray{T}"/> struct.
     /// empty ir array.
     /// </summary>
@@ -51,6 +46,11 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
         : this(ImmutableArray<T>.Empty)
     {
     }
+
+    /// <summary>
+    /// Gets a value indicating whether check the ret.
+    /// </summary>
+    public bool IsDefaultOrEmpty => _array.IsDefaultOrEmpty;
 
     /// <inheritdoc/>
     public int Count => ((IReadOnlyCollection<T>)_array).Count;

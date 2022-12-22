@@ -40,88 +40,6 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
         Trace.Assert(qp.ZeroPoint == 88);
     }
 
-
-    public sealed class DumpVisitor : ExprVisitor<int, IRType>
-    {
-        public override int DefaultVisitLeaf(Expr expr) => 0;
-
-        public override object DefaultVisitLeaf(IVisitable visitable) => 0;
-
-        public int FoundOpCount<T>()
-          where T : Op
-        {
-            return ExpressionMemo.Keys.OfType<T>().Count();
-        }
-    }
-
-    internal sealed class RandCalibrationDatasetProvider : ICalibrationDatasetProvider
-    {
-        private const int CountValue = 5;
-
-        public RandCalibrationDatasetProvider(IEnumerable<Var> vars)
-        {
-            Samples = Enumerable.Range(0, CountValue).Select(i =>
-            {
-                var values = new Dictionary<Var, IValue>();
-                foreach (var var in vars)
-                {
-                    CompilerServices.InferenceType(var);
-                    var shape = var.CheckedShape.Select(d => d.IsUnknown ? 1 : d.FixedValue).ToArray();
-                    var value = Value.FromTensor(IR.F.Random.Normal(var.CheckedDataType, 0, 1, 0, shape).Evaluate()
-                        .AsTensor());
-                    values.Add(var, value);
-                }
-
-                return values;
-            }).ToAsyncEnumerable();
-        }
-
-
-        public int? Count => CountValue;
-
-        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
-    }
-
-    internal sealed class SolidCalibrationDatasetProvider : ICalibrationDatasetProvider
-    {
-        private const int CountValue = 5;
-
-        public SolidCalibrationDatasetProvider(IEnumerable<Var> vars)
-        {
-            Samples = Enumerable.Range(0, CountValue).Select(i =>
-            {
-                var values = new Dictionary<Var, IValue>();
-                foreach (var var in vars)
-                {
-                    CompilerServices.InferenceType(var);
-                    var shape = var.CheckedShape.Select(d => d.IsUnknown ? 1 : d.FixedValue).ToArray();
-
-                    var shapeSize = 1;
-                    for (int j = 0; j < shape.Length; j++)
-                    {
-                        shapeSize *= shape[j];
-                    }
-
-                    var tmpValue = new List<float>();
-                    for (int j = 0; j < shapeSize; j++)
-                    {
-                        tmpValue.Add(((j * 1.0f / shapeSize) - 0.5f) * 2);
-                    }
-
-                    var value = Value.FromTensor(Tensor.From<float>(tmpValue.ToArray(), shape));
-                    values.Add(var, value);
-                }
-
-                return values;
-            }).ToAsyncEnumerable();
-        }
-
-
-        public int? Count => CountValue;
-
-        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
-    }
-
     [Fact]
     public void TestKLQuant()
     {
@@ -189,6 +107,85 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
         Trace.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[1] == 0.9954922f);
         Trace.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[0] == -8.882528f);
         Trace.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[1] == 9.717726f);
+    }
+
+    public sealed class DumpVisitor : ExprVisitor<int, IRType>
+    {
+        public override int DefaultVisitLeaf(Expr expr) => 0;
+
+        public override object DefaultVisitLeaf(IVisitable visitable) => 0;
+
+        public int FoundOpCount<T>()
+          where T : Op
+        {
+            return ExpressionMemo.Keys.OfType<T>().Count();
+        }
+    }
+
+    internal sealed class RandCalibrationDatasetProvider : ICalibrationDatasetProvider
+    {
+        private const int CountValue = 5;
+
+        public RandCalibrationDatasetProvider(IEnumerable<Var> vars)
+        {
+            Samples = Enumerable.Range(0, CountValue).Select(i =>
+            {
+                var values = new Dictionary<Var, IValue>();
+                foreach (var var in vars)
+                {
+                    CompilerServices.InferenceType(var);
+                    var shape = var.CheckedShape.Select(d => d.IsUnknown ? 1 : d.FixedValue).ToArray();
+                    var value = Value.FromTensor(IR.F.Random.Normal(var.CheckedDataType, 0, 1, 0, shape).Evaluate()
+                        .AsTensor());
+                    values.Add(var, value);
+                }
+
+                return values;
+            }).ToAsyncEnumerable();
+        }
+
+        public int? Count => CountValue;
+
+        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
+    }
+
+    internal sealed class SolidCalibrationDatasetProvider : ICalibrationDatasetProvider
+    {
+        private const int CountValue = 5;
+
+        public SolidCalibrationDatasetProvider(IEnumerable<Var> vars)
+        {
+            Samples = Enumerable.Range(0, CountValue).Select(i =>
+            {
+                var values = new Dictionary<Var, IValue>();
+                foreach (var var in vars)
+                {
+                    CompilerServices.InferenceType(var);
+                    var shape = var.CheckedShape.Select(d => d.IsUnknown ? 1 : d.FixedValue).ToArray();
+
+                    var shapeSize = 1;
+                    for (int j = 0; j < shape.Length; j++)
+                    {
+                        shapeSize *= shape[j];
+                    }
+
+                    var tmpValue = new List<float>();
+                    for (int j = 0; j < shapeSize; j++)
+                    {
+                        tmpValue.Add(((j * 1.0f / shapeSize) - 0.5f) * 2);
+                    }
+
+                    var value = Value.FromTensor(Tensor.From<float>(tmpValue.ToArray(), shape));
+                    values.Add(var, value);
+                }
+
+                return values;
+            }).ToAsyncEnumerable();
+        }
+
+        public int? Count => CountValue;
+
+        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
     }
 
     private Expr Pad(int[][] p) => Const.FromTensor(Tensor.From<int>(p.SelectMany(i => i).ToArray(), new[] { 2, 2 }));

@@ -230,6 +230,27 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         return type;
     }
 
+    /// <inheritdoc/>
+    public override IRType VisitLeaf(For expr)
+    {
+        try
+        {
+            VerifySubField(expr, expr.Domain.Start, TypePatternUtility.IsIntegralScalar());
+            VerifySubField(expr, expr.Domain.Stop, TypePatternUtility.IsIntegralScalar());
+            VerifySubField(expr, expr.LoopVar, TypePatternUtility.IsIntegralScalar());
+            VerifySubField(expr, expr.Body, TypePatternUtility.IsUnit());
+        }
+        catch (TypeInferenceInterruptException e)
+        {
+            SetCheckedType(expr, e.ReasonType);
+            return e.ReasonType;
+        }
+
+        var type = TupleType.Void;
+        SetCheckedType(expr, type);
+        return type;
+    }
+
     /// <summary>
     /// Verify the expression sub field type is valid.
     /// </summary>
@@ -251,27 +272,6 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         {
             throw new TypeInferenceInterruptException(new InvalidType($"The {exprMsg} Require {pattern.Reason}"));
         }
-    }
-
-    /// <inheritdoc/>
-    public override IRType VisitLeaf(For expr)
-    {
-        try
-        {
-            VerifySubField(expr, expr.Domain.Start, TypePatternUtility.IsIntegralScalar());
-            VerifySubField(expr, expr.Domain.Stop, TypePatternUtility.IsIntegralScalar());
-            VerifySubField(expr, expr.LoopVar, TypePatternUtility.IsIntegralScalar());
-            VerifySubField(expr, expr.Body, TypePatternUtility.IsUnit());
-        }
-        catch (TypeInferenceInterruptException e)
-        {
-            SetCheckedType(expr, e.ReasonType);
-            return e.ReasonType;
-        }
-
-        var type = TupleType.Void;
-        SetCheckedType(expr, type);
-        return type;
     }
 
     /// <inheritdoc/>

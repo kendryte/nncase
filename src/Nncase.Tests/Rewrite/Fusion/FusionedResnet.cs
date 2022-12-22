@@ -75,7 +75,7 @@ internal sealed record ForwardFusion(Func<Expr[], Fusion> Creator) : IForwardabl
             return new Fusion("Conv3x3Fusion", Callable.StackVMModuleKind, IR.F.NN.Conv2D(v_input, weights, bias, new[] { stride, stride }, new[,]
             {
                 { dilation, dilation },
-            { dilation, dilation },
+                { dilation, dilation },
             }, new[] { dilation, dilation }, PadMode.Constant, groups), new[] { v_input });
         };
         return new(creator);
@@ -102,7 +102,7 @@ internal sealed record ForwardFusion(Func<Expr[], Fusion> Creator) : IForwardabl
               return new Fusion("Conv1x1Fusion", Callable.StackVMModuleKind, IR.F.NN.Conv2D(v_input, weights, bias, new[] { stride, stride }, new[,]
                 {
                     { 0, 0 },
-                { 0, 0 },
+                    { 0, 0 },
                 }, new[] { 1, 1 }, PadMode.Constant, 1), new[] { v_input });
           };
         return new(creator);
@@ -256,9 +256,9 @@ internal sealed class ResNet
 {
     private readonly int _groups;
     private readonly int _baseWidth;
+    private readonly ForwardFusion _conv1;
     private int _inplanes;
     private int _dilation;
-    private readonly ForwardFusion _conv1;
     private readonly ForwardFusion _maxpool;
     private readonly IForwardable _layer1;
     private readonly IForwardable _layer2;
@@ -304,7 +304,7 @@ internal sealed class ResNet
             return new Fusion("Conv3x3Fusion", Callable.StackVMModuleKind, IR.F.NN.Conv2D(v_input, weights, bias, new[] { 2, 2 }, new[,]
             {
                 { 3, 3 },
-            { 3, 3 },
+                { 3, 3 },
             }, new[] { 1, 1 }, PadMode.Constant, groups), new[] { v_input });
         };
         _conv1 = new(conv1_creator);
@@ -327,7 +327,7 @@ internal sealed class ResNet
             return new Fusion("ReduceWindowFusion", Callable.StackVMModuleKind, IR.F.NN.ReduceWindow2D(ReduceOp.Max, v_input, 0.0f, new[] { 3, 3 }, new[] { 2, 2 }, new[,]
             {
                 { 1, 1 },
-            { 1, 1 },
+                { 1, 1 },
             }, new[] { 1, 1 }, false, false), new[] { v_input });
         };
         _maxpool = new(maxpool_creator);

@@ -82,6 +82,23 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         };
     }
 
+    /// <inheritdoc/>
+    public string Visit(IIRPrinterContext context, Unary target, bool iLmode)
+    {
+        var op_str = target.UnaryOp switch
+        {
+            UnaryOp.BitwiseNot => "!",
+            UnaryOp.LogicalNot => "!",
+            var op => op.ToString(),
+        };
+        if (!iLmode)
+        {
+            return $"{op_str}({string.Join(", ", target.Parameters.Select(p => p.Name + ": " + context.GetArgument(target, p).Serialize()))})";
+        }
+
+        throw new NotSupportedException("ILmode = true");
+    }
+
     private int Compute_int(int input, UnaryOp op) => op switch
     {
         UnaryOp.Ceil => input,
@@ -114,23 +131,6 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         UnaryOp.Tanh => System.MathF.Tanh(input),
         _ => throw new ArgumentOutOfRangeException($"NotSupported {nameof(op)} For Float"),
     };
-
-    /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Unary target, bool iLmode)
-    {
-        var op_str = target.UnaryOp switch
-        {
-            UnaryOp.BitwiseNot => "!",
-            UnaryOp.LogicalNot => "!",
-            var op => op.ToString(),
-        };
-        if (!iLmode)
-        {
-            return $"{op_str}({string.Join(", ", target.Parameters.Select(p => p.Name + ": " + context.GetArgument(target, p).Serialize()))})";
-        }
-
-        throw new NotSupportedException("ILmode = true");
-    }
 
     private IRType Visit(TensorType input)
     {

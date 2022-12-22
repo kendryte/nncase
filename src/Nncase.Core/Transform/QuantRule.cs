@@ -44,16 +44,16 @@ public abstract class QuantRule : RewriteRule<Pattern>
     public DataType QuantType => Option.CompileOptions.QuantType;
 
     /// <summary>
+    /// Gets get WQuantType.
+    /// </summary>
+    public DataType WQuantType => Option.CompileOptions.WQuantType;
+
+    /// <summary>
     /// check the datatype is the quant type.
     /// </summary>
     /// <param name="dt"></param>
     /// <returns></returns>
     public bool IsQuantType(DataType dt) => dt == DataTypes.Int8 || dt == DataTypes.UInt8;
-
-    /// <summary>
-    /// Gets get WQuantType.
-    /// </summary>
-    public DataType WQuantType => Option.CompileOptions.WQuantType;
 
     /// <summary>
     /// Gets a value indicating whether get UseMixQuant flag.

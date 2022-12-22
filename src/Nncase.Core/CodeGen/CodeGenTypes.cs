@@ -56,17 +56,17 @@ public static class ModelInfo
     /// </summary>
     public const int SectionMergedIntoRdata = 1;
 
+    /// <summary>
+    /// max section name length.
+    /// </summary>
+    public const int MaxSectionNameLength = 16;
+
     public static readonly uint ModelHasNoEntry = unchecked((uint)-1);
 
     /// <summary>
     /// the idenitifer.
     /// </summary>
     public static readonly uint Identifier = BitConverter.ToUInt32(Encoding.UTF8.GetBytes("LDMK"), 0);
-
-    /// <summary>
-    /// max section name length.
-    /// </summary>
-    public const int MaxSectionNameLength = 16;
 
     /// <summary>
     /// max module type length.

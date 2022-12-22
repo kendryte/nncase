@@ -44,6 +44,15 @@ namespace Nncase.Transform
             return ((IEnumerable)MutatorCreators).GetEnumerator();
         }
 
+        /// <summary>
+        /// add the mutator.
+        /// </summary>
+        /// <param name="mutator"></param>
+        public void Add(Func<ExprMutator> mutator)
+        {
+            MutatorCreators.Add(mutator);
+        }
+
         /// <inheritdoc/>
         protected override Task<BaseFunction> RunCoreAsync(BaseFunction callable, RunPassOptions options)
         {
@@ -101,15 +110,6 @@ namespace Nncase.Transform
                 default:
                     break;
             }
-        }
-
-        /// <summary>
-        /// add the mutator.
-        /// </summary>
-        /// <param name="mutator"></param>
-        public void Add(Func<ExprMutator> mutator)
-        {
-            MutatorCreators.Add(mutator);
         }
 
         /// <summary>

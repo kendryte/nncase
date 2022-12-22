@@ -45,6 +45,17 @@ public sealed class UnitTestEGraphRewriteFactory : TestFixture.UnitTestFixtrue
     [MemberData(nameof(DataAll))]
     public void RunAll(IRewriteCase @case) => RunCore(@case);
 
+    private static long CountRunTicks(Function pre, IReadOnlyDictionary<Var, IValue> feed_dict, out IValue ret)
+    {
+        long pre_time;
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        stopwatch.Start();
+        ret = pre.Body.Evaluate(feed_dict);
+        stopwatch.Stop();
+        pre_time = stopwatch.ElapsedTicks;
+        return pre_time;
+    }
+
     private async void RunCore(IRewriteCase @case)
     {
         var caseOptions = GetPassOptions().IndentDir(@case.Name);
@@ -62,16 +73,5 @@ public sealed class UnitTestEGraphRewriteFactory : TestFixture.UnitTestFixtrue
 
         // note the parallel test will cause the time count error.
         // Assert.True(pre_time >= post_time);
-    }
-
-    private static long CountRunTicks(Function pre, IReadOnlyDictionary<Var, IValue> feed_dict, out IValue ret)
-    {
-        long pre_time;
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        stopwatch.Start();
-        ret = pre.Body.Evaluate(feed_dict);
-        stopwatch.Stop();
-        pre_time = stopwatch.ElapsedTicks;
-        return pre_time;
     }
 }

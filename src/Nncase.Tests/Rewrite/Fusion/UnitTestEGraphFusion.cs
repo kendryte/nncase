@@ -94,7 +94,7 @@ public class UnitTestEGraphFusion : TestFixture.UnitTestFixtrue
             var fusion_2 = new Fusion("fusion_2", Callable.StackVMModuleKind, IR.F.NN.ReduceWindow2D(ReduceOp.Max, fusion_2_input, 0.0f, new[] { 3, 3 }, new[] { 2, 2 }, new[,]
             {
                 { 1, 1 },
-            { 1, 1 },
+                { 1, 1 },
             }, new[] { 1, 1 }, false, false), new[] { fusion_2_input });
             var v_1 = new Call(fusion_2, v_0); // 1,3,112,112
 
@@ -102,7 +102,7 @@ public class UnitTestEGraphFusion : TestFixture.UnitTestFixtrue
             var fusion_3 = new Fusion("fusion_3", Callable.StackVMModuleKind, IR.F.NN.ReduceWindow2D(ReduceOp.Mean, fusion_3_input, 0.0f, new[] { 3, 3 }, new[] { 1, 1 }, new[,]
             {
                 { 1, 1 },
-            { 1, 1 },
+                { 1, 1 },
             }, new[] { 1, 1 }, false, false), new[] { fusion_3_input });
             var v_2 = new Call(fusion_3, v_1); // 1,3,112,112
 

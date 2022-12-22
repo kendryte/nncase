@@ -41,12 +41,6 @@ public static partial class Utility
         where T : Op =>
         IsWildcardCall<T>(callName, opName, IsWildcard(inputName));
 
-    private static VArgsPattern GenerateParameters(Pattern[] beginPatterns) =>
-        IsVArgsRepeat(list =>
-            beginPatterns
-                .Concat(Enumerable.Range(0, list.Count - beginPatterns.Length).Select(_ => IsWildcard(null)))
-                .ToArray());
-
     public static CallPattern IsWildcardCall<T>(string callName, string opName, Pattern inputPattern)
         where T : Op
         =>
@@ -55,6 +49,12 @@ public static partial class Utility
         {
             TypePattern = IsType(x => !(x is InvalidType)),
         };
+
+    private static VArgsPattern GenerateParameters(Pattern[] beginPatterns) =>
+        IsVArgsRepeat(list =>
+            beginPatterns
+                .Concat(Enumerable.Range(0, list.Count - beginPatterns.Length).Select(_ => IsWildcard(null)))
+                .ToArray());
 
     public static CallPattern IsWildcardCall<T>(string callName, string opName, Pattern lhsPattern, Pattern rhsPattern)
         where T : Op =>

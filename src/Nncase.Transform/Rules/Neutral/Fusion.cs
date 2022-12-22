@@ -162,6 +162,13 @@ public partial class FuseTwoFusion : FusionMaker
         =>
         Merge<T>(callerExprList.ToArray(), index, firstInCallee, newCalleeExprList.ToArray());
 
+    public T[] Merge<T>(T[] callerExprList, int index, T expr, Expr[] newCalleeExprList)
+        where T : Expr
+    {
+        var newCallerExprList = ReplacePos(callerExprList, expr, index);
+        return newCallerExprList.Concat(newCalleeExprList).Select(x => (T)x).ToArray();
+    }
+
     // caller(callee, args..)
     private Call GetReplace(Call caller, Call callee, Fusion calleeFuse, Fusion callerFuse, RunPassOptions passOptions)
     {
@@ -198,13 +205,6 @@ public partial class FuseTwoFusion : FusionMaker
         var newParams = Merge(callerFuse.Parameters.ToArray(), index, calleeFirstVar, newCalleeParams);
         var newInputs = Merge(caller.Parameters, index, callee.Parameters[0], callee.Parameters.ToArray()[1..]);
         return new Call(new Fusion(FullName, ModuleKind, newBody, newParams), newInputs);
-    }
-
-    public T[] Merge<T>(T[] callerExprList, int index, T expr, Expr[] newCalleeExprList)
-        where T : Expr
-    {
-        var newCallerExprList = ReplacePos(callerExprList, expr, index);
-        return newCallerExprList.Concat(newCalleeExprList).Select(x => (T)x).ToArray();
     }
 
     /// <summary>

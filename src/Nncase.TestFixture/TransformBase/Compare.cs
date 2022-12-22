@@ -32,14 +32,6 @@ public static class TensorUtil
         return (channels, size);
     }
 
-    private static Tensor SliceTensor(Tensor tensor, int start, int length, int channelAxis = 1)
-    {
-        var s = tensor.ElementType.SizeInBytes;
-        return Tensor.FromBytes(
-            tensor.ElementType,
-            tensor.BytesBuffer.Slice(start * s, length * s).ToArray(), tensor.Dimensions[(channelAxis + 1)..]);
-    }
-
     public static Tensor[] SliceByChannel(Tensor tensor)
     {
         var channelAxis = GetChannelAxis(tensor.Shape);
@@ -47,6 +39,14 @@ public static class TensorUtil
         return Enumerable.Range(0, channels).Select(i =>
                 SliceTensor(tensor, size * i, size, channelAxis))
             .ToArray();
+    }
+
+    private static Tensor SliceTensor(Tensor tensor, int start, int length, int channelAxis = 1)
+    {
+        var s = tensor.ElementType.SizeInBytes;
+        return Tensor.FromBytes(
+            tensor.ElementType,
+            tensor.BytesBuffer.Slice(start * s, length * s).ToArray(), tensor.Dimensions[(channelAxis + 1)..]);
     }
 }
 
@@ -57,14 +57,14 @@ public static class Comparator
         return CosSimilarity(a.AsTensors(), b.AsTensors());
     }
 
-    private static float Prod(float[] data1, float[] data2)
-    {
-        return data1.Zip(data2).Aggregate(0f, (f, tuple) => f + (tuple.Item1 * tuple.Item2));
-    }
-
     public static float[] CosSimilarity(Tensor[] a, Tensor[] b)
     {
         return a.Zip(b).Select(CosSimilarity).ToArray();
+    }
+
+    private static float Prod(float[] data1, float[] data2)
+    {
+        return data1.Zip(data2).Aggregate(0f, (f, tuple) => f + (tuple.Item1 * tuple.Item2));
     }
 
     public static float CosSimilarity((Tensor, Tensor) t)
@@ -109,7 +109,8 @@ public static class Comparator
         {
             (float.NaN, float.NaN) => 0.0f,
             _ => MathF.Abs(p.Item1 - p.Item2),
-        } 
+        }
+
 <= thresh);
     }
 
@@ -159,6 +160,16 @@ public static class Comparator
     public static float[][] CompareByChannel(IValue pre, IValue post, int channelAxis = 1, float thresh = 0.99f) =>
         TensorsCompareByChannel(pre.AsTensors(), post.AsTensors(), channelAxis, thresh);
 
+    public static float[] TensorCompareByChannel(Tensor pre, Tensor post, int channelAxis = 1, float thresh = 0.99f)
+    {
+        // todo:broadcast type???
+        var v1 = SliceByChannel(pre);
+        var v2 = SliceByChannel(post);
+
+        // Trace.Assert(v1.Length == v2.Length);
+        return v1.Zip(v2).Select(data => CosSimilarity(data.Item1, data.Item2)).ToArray();
+    }
+
     private static bool TupleValueAllEqual(TupleValue a, TupleValue b, float thresh)
     {
         if (a.Count != b.Count)
@@ -185,16 +196,6 @@ public static class Comparator
         Assert.Equal(v1.ElementType, v2.ElementType);
         Assert.True(AllEqual(v1, v2, thresh));
         return true;
-    }
-
-    public static float[] TensorCompareByChannel(Tensor pre, Tensor post, int channelAxis = 1, float thresh = 0.99f)
-    {
-        // todo:broadcast type???
-        var v1 = SliceByChannel(pre);
-        var v2 = SliceByChannel(post);
-
-        // Trace.Assert(v1.Length == v2.Length);
-        return v1.Zip(v2).Select(data => CosSimilarity(data.Item1, data.Item2)).ToArray();
     }
 
     public static float[][] TensorsCompareByChannel(Tensor[] pre, Tensor[] post, int channelAxis = 1,
