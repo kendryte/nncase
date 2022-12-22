@@ -26,7 +26,7 @@ public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
 
     public static TheoryData<IDataFlowFusionCase> DataOne = new()
     {
-      new DataFlowType8FusionCase(),
+      new DataFlowType9FusionCase(),
     };
 
     public static TheoryData<IDataFlowFusionCase> DataAll = new()
@@ -50,7 +50,8 @@ public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
       new DataFlowType5FusionCaseRight(),
       new DataFlowType6FusionCaseRight(),
       new DataFlowType6_1FusionCaseRight(),
-      new DataFlowType7FusionCaseRight()
+      new DataFlowType7FusionCaseRight(),
+      new DataFlowType8FusionCase(),
     };
 
     [Theory]
@@ -75,6 +76,7 @@ public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
         var post = (Function)rewriter.Rewrite(main, new IMergeRewriteRule[]{
             new SameInputFusionMergeRule(),
             new MultiInputFusionMergeRule(),
+            new ShortCutFusionMergeRule(),
           }, (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
           passOptions);
 
