@@ -116,8 +116,6 @@ public class Compiler
     public void Compile()
     {
         var t = CompilerServices.GetTarget(_compileOptions.Target);
-        RunPass(p => TargetIndependentPass(p), "TargetIndependentPass");
-        RunPass(p => t.RegisterTargetDependentPass(p, _compileOptions), "TargetDependentPass");
         if (_compileOptions.DumpLevel > 4)
             DumpManager.RunWithDump("TargetIndependentEval", () => RunPass(p => TargetIndependentPass(p), "TargetIndependentPass"));
         else
