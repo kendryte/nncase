@@ -168,6 +168,11 @@ namespace Nncase.IR
         public bool IsScalar => IsFixed && _dimensions.Length == 0;
 
         /// <summary>
+        /// Gets rank.
+        /// </summary>
+        public int Rank => _dimensions.Length;
+
+        /// <summary>
         /// Gets a shape with rank unknwon dimension.
         /// </summary>
         /// <param name="rank"></param>
@@ -176,11 +181,6 @@ namespace Nncase.IR
         {
             return new Shape(ShapeKind.HasUnknownDimension, Enumerable.Repeat(Dimension.Unknown, rank));
         }
-
-        /// <summary>
-        /// Gets rank.
-        /// </summary>
-        public int Rank => _dimensions.Length;
 
         /// <summary>
         /// Gets get Total Elements.

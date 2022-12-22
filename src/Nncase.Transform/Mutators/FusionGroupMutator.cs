@@ -104,6 +104,9 @@ public class FusionGroupMutator : ExprMutator
         return false;
     }
 
+    /// <inheritdoc/>
+    public override Expr Visit(Fusion expr) => expr;
+
     private sealed class FusionMergeCandidateComparer : IEqualityComparer<HashSet<Fusion>>
     {
         public bool Equals(HashSet<Fusion>? x, HashSet<Fusion>? y) => (x, y) switch
@@ -125,9 +128,6 @@ public class FusionGroupMutator : ExprMutator
             return hash.ToHashCode();
         }
     }
-
-    /// <inheritdoc/>
-    public override Expr Visit(Fusion expr) => expr;
 
     /// <inheritdoc/>
     public override Expr MutateLeaf(Call expr)

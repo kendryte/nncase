@@ -95,15 +95,15 @@ public static partial class Utility
         =>
         IsWildcardCall<T>("call", opName);
 
+    public static int Count<T>()
+        where T : Op
+        => typeof(T).GetFields(BindingFlags.Public | BindingFlags.Static).Length;
+
     private static VArgsPattern GenerateParameters(Pattern[] beginPatterns) =>
         IsVArgsRepeat(list =>
             beginPatterns
                 .Concat(Enumerable.Range(0, list.Count - beginPatterns.Length).Select(_ => IsWildcard(null)))
                 .ToArray());
-
-    public static int Count<T>()
-        where T : Op
-        => typeof(T).GetFields(BindingFlags.Public | BindingFlags.Static).Length;
 
     ///
     /// <returns></returns><summary>

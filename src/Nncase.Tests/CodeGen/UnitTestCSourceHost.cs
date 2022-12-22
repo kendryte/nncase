@@ -1,7 +1,5 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-// public static IEnumerable<object[]> DataOne => Data.Take(1);
-//         public static IEnumerable<object[]> DataAll => Data.Skip(1);
 
 
 

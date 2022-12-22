@@ -143,6 +143,23 @@ namespace Nncase.IR
             return result;
         }
 
+        /// <inheritdoc/>
+        public sealed override TExprResult Visit(Tuple expr)
+        {
+            if (!_exprMemo.TryGetValue(expr, out var result))
+            {
+                foreach (var field in expr.Fields)
+                {
+                    Visit(field);
+                }
+
+                result = VisitLeaf(expr);
+                _exprMemo.Add(expr, result);
+            }
+
+            return result;
+        }
+
         protected void RegisterAfterCallback(string name, Action<Expr> callback)
         {
             _callbacksAfterCall[name] = callback;
@@ -167,23 +184,6 @@ namespace Nncase.IR
             {
                 callback(expr);
             }
-        }
-
-        /// <inheritdoc/>
-        public sealed override TExprResult Visit(Tuple expr)
-        {
-            if (!_exprMemo.TryGetValue(expr, out var result))
-            {
-                foreach (var field in expr.Fields)
-                {
-                    Visit(field);
-                }
-
-                result = VisitLeaf(expr);
-                _exprMemo.Add(expr, result);
-            }
-
-            return result;
         }
 
         /// <inheritdoc/>

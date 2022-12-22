@@ -413,6 +413,27 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         return type;
     }
 
+    /// <inheritdoc/>
+    public override IRType VisitLeaf(Nncase.TIR.Buffer expr)
+    {
+        if (expr is Nncase.TIR.PhysicalBuffer physicalBuffer)
+        {
+            IRType type = new TensorType(expr.ElemType, new(physicalBuffer.FixedDimensions.ToArray()));
+            SetCheckedType(expr, type);
+            return type;
+        }
+        else if (expr is Nncase.TIR.LogicalBuffer logicalBuffer)
+        {
+            IRType type = new TensorType(expr.ElemType, new(logicalBuffer.Dimensions.Select(i => Dimension.Unknown)));
+            SetCheckedType(expr, type);
+            return type;
+        }
+        else
+        {
+            return new InvalidType("Not Support Buffer Type");
+        }
+    }
+
     /// <summary>
     /// Verify the expression sub field type is valid.
     /// </summary>
@@ -433,27 +454,6 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         else if (!pattern.MatchLeaf(field.CheckedType!))
         {
             throw new TypeInferenceInterruptException(new InvalidType($"The {exprMsg} Require {pattern.Reason}"));
-        }
-    }
-
-    /// <inheritdoc/>
-    public override IRType VisitLeaf(Nncase.TIR.Buffer expr)
-    {
-        if (expr is Nncase.TIR.PhysicalBuffer physicalBuffer)
-        {
-            IRType type = new TensorType(expr.ElemType, new(physicalBuffer.FixedDimensions.ToArray()));
-            SetCheckedType(expr, type);
-            return type;
-        }
-        else if (expr is Nncase.TIR.LogicalBuffer logicalBuffer)
-        {
-            IRType type = new TensorType(expr.ElemType, new(logicalBuffer.Dimensions.Select(i => Dimension.Unknown)));
-            SetCheckedType(expr, type);
-            return type;
-        }
-        else
-        {
-            return new InvalidType("Not Support Buffer Type");
         }
     }
 

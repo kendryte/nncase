@@ -86,11 +86,6 @@ public static class Comparator
 
     public static float[] CosSimilarity(OriginTensor[] a, OriginTensor[] b) => a.Zip(b).Select(CosSimilarity).ToArray();
 
-    private static float Prod(float[] data1, float[] data2)
-    {
-        return data1.Zip(data2).Aggregate(0f, (f, tuple) => f + (tuple.Item1 * tuple.Item2));
-    }
-
     public static float CosSimilarity(Tensor a, Tensor b)
     {
         var va = a.ToArray<float>();
@@ -99,6 +94,11 @@ public static class Comparator
         var v2 = Math.Sqrt(Prod(vb, vb));
         var sum = Prod(va, vb);
         return (float)(sum / (v1 * v2));
+    }
+
+    private static float Prod(float[] data1, float[] data2)
+    {
+        return data1.Zip(data2).Aggregate(0f, (f, tuple) => f + (tuple.Item1 * tuple.Item2));
     }
 
     public static bool AllEqual(Tensor a, Tensor b, float thresh)
