@@ -104,6 +104,15 @@ jobs:
           mv .\src\Nncase.Core\Nncase.Core.csproj.new .\src\Nncase.Core\Nncase.Core.csproj
         if: runner.os == 'Windows'
 
+      - name: Remove useless packages
+        shell: bash
+        run: |
+          sed -i '/libtorch-cpu-win/d' ./Directory.Packages.props 
+          sed -i '/libtorch-cpu-osx/d' ./Directory.Packages.props 
+          sed -i '/libtorch-cpu-win/d' ./src/Nncase.Core/Nncase.Core.csproj 
+          sed -i '/libtorch-cpu-osx/d' ./src/Nncase.Core/Nncase.Core.csproj
+        if: runner.os == 'Linux'
+
       - name: Build
         run: |
           dotnet build -c ${{matrix.config.buildType}}
