@@ -38,4 +38,4 @@ def test_resnet50(in_shape, request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', '/home/zhangjizhao/work/nncase_rebuildir/nncase/tests/importer/tflite_/model/test_resnet50.py'])
+    pytest.main(['-vv', 'test_resnet50.py'])

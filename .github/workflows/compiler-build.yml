@@ -195,7 +195,7 @@ jobs:
         with:
           name: nncase-${{matrix.config.name}}
           path: ${{github.workspace}}/install
-
+      
       - name: Set up test environment (macOS)
         run: |
           brew install sunnycase/core/libomp@11.1.0
