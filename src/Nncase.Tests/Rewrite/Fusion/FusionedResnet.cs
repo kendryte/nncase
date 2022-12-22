@@ -120,7 +120,7 @@ internal sealed record ForwardSequential(IForwardable[] Array) : IForwardable
 
         var x = inputs[0];
         Expr last = x;
-        foreach (var f in array)
+        foreach (var f in Array)
         {
             last = f.Forward(last);
         }

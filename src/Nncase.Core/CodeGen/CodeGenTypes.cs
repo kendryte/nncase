@@ -19,7 +19,7 @@ public struct ModuleType
     /// <summary>
     /// the module types.
     /// </summary>
-    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = (int)ModelInfo.MAXMODULEKINDLENGTH)]
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = (int)ModelInfo.MaxModuleKindLength)]
     public string Types;
 
     /// <summary>
@@ -30,8 +30,8 @@ public struct ModuleType
     public static ModuleType Create(string name)
     {
         var mt = default(ModuleType);
-        var chars = new char[ModelInfo.MAXMODULEKINDLENGTH];
-        for (int i = 0; i < ModelInfo.MAXMODULEKINDLENGTH; i++)
+        var chars = new char[ModelInfo.MaxModuleKindLength];
+        for (int i = 0; i < ModelInfo.MaxModuleKindLength; i++)
         {
             chars[i] = i < name.Length ? name[i] : '\0';
         }
@@ -49,27 +49,27 @@ public static class ModelInfo
     /// <summary>
     /// kmodel version.
     /// </summary>
-    public const int VERSION = 6;
+    public const int Version = 6;
 
     /// <summary>
     /// merged rdata flag.
     /// </summary>
-    public const int SECTIONMERGEDINTORDATA = 1;
+    public const int SectionMergedIntoRdata = 1;
 
     public static readonly uint ModelHasNoEntry = unchecked((uint)-1);
 
     /// <summary>
     /// the idenitifer.
     /// </summary>
-    public static readonly uint IDENTIFIER = BitConverter.ToUInt32(Encoding.UTF8.GetBytes("LDMK"), 0);
+    public static readonly uint Identifier = BitConverter.ToUInt32(Encoding.UTF8.GetBytes("LDMK"), 0);
 
     /// <summary>
     /// max section name length.
     /// </summary>
-    public const int MAXSECTIONNAMELENGTH = 16;
+    public const int MaxSectionNameLength = 16;
 
     /// <summary>
     /// max module type length.
     /// </summary>
-    public const int MAXMODULEKINDLENGTH = 16;
+    public const int MaxModuleKindLength = 16;
 }

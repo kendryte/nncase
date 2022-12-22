@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
+using Humanizer;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -298,7 +299,7 @@ internal class EvaluatorGenerator : IIncrementalGenerator
                 _ => throw new NotSupportedException($"{paramType.ToDisplayString()} with {cand.Target}!")
             };
 
-            statementSyntaxes.Add(ParseStatement($"var {parameter.Name} = context.{callMethod}(target, {cand.Op.ToDisplayString()}.{parameter.Name});"));
+            statementSyntaxes.Add(ParseStatement($"var {parameter.Name} = context.{callMethod}(target, {cand.Op.ToDisplayString()}.{parameter.Name.Pascalize()});"));
 
             if (allOpParams.Contains(parameter.Name))
             {
@@ -311,7 +312,7 @@ internal class EvaluatorGenerator : IIncrementalGenerator
         {
             allOpParams.ToList().ForEach(name =>
             {
-                statementSyntaxes.Add(ParseStatement($"context.CheckArgumentType<Nncase.IR.IRType>(target, {cand.Op.ToDisplayString()}.{name});"));
+                statementSyntaxes.Add(ParseStatement($"context.CheckArgumentType<Nncase.IR.IRType>(target, {cand.Op.ToDisplayString()}.{name.Pascalize()});"));
             });
         }
 

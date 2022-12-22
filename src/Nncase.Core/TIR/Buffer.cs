@@ -25,7 +25,7 @@ public record Padding(int Before, int After, int Interior = 0)
     /// <returns></returns>
     public int Sum()
     {
-        return before + After;
+        return Before + After;
     }
 
     /// <summary>

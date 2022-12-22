@@ -45,8 +45,7 @@ public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
     [MemberData(nameof(DataOne))]
     public void RunOne(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
 
-    [Theory]
-    public void RunCore(IDataFlowFusionCase fusionCase)
+    private void RunCore(IDataFlowFusionCase fusionCase)
     {
         var passOptions = GetPassOptions(fusionCase.GetType().Name);
         var compileOptions = passOptions.CompileOptions;

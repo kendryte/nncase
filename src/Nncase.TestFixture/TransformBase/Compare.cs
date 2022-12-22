@@ -213,7 +213,7 @@ public static class DetailComparator
         var shape = resultByChannels.Length != 0
             ? SerializeShape(resultByChannels.Head().Shape)
             : "data all ok and not shape info";
-        var fileName = resultByChannels.Length != 0 ? resultByChannels[0].Losses.Head().v1Tensor.FileName : "AllOK";
+        var fileName = resultByChannels.Length != 0 ? resultByChannels[0].Losses.Head().V1Tensor.FileName : "AllOK";
         WriteResult(Path.Join(path, $"{i}_{fileName}"), resultByChannels, $"{shape}\n");
     }
 
@@ -277,15 +277,15 @@ public static class DetailComparator
     public static void DumpCompareDetail(DetailCompareResult compareResult, string resultRoot, int count)
     {
         // todo: fix this
-        var (cosByChannel, LossInfo) = compareResult.infos.Head();
+        var (cosByChannel, LossInfo) = compareResult.Infos.Head();
 
         // todo: insert separator for channel or other
         WriteResult(Path.Join(resultRoot, $"cos_{count}"), cosByChannel);
 
         using (var stream = new StreamWriter(Path.Join(resultRoot, count.ToString())))
         {
-            stream.WriteLine(LossInfo[0].v1Tensor.Path);
-            stream.WriteLine(LossInfo[0].v2Tensor.Path);
+            stream.WriteLine(LossInfo[0].V1Tensor.Path);
+            stream.WriteLine(LossInfo[0].V2Tensor.Path);
             var tensorShape = LossInfo[0].Shape;
             var (channels, size) = TensorUtil.GetShapeInfo(tensorShape, TensorUtil.GetChannelAxis(tensorShape));
             stream.WriteLine(SerializeShape(tensorShape));
@@ -423,11 +423,11 @@ public record DetailCompareResultInfo(float[] CosList, AccuracyLossInfo[] Accura
 
 public record DetailCompareResult(DetailCompareResultInfo[] Infos)
 {
-    public bool IsTuple => infos.Length == 1;
+    public bool IsTuple => Infos.Length == 1;
 
     public IEnumerable<CompareResultByChannel> Enumerable()
     {
-        return infos.Aggregate(
+        return Infos.Aggregate(
             System.Linq.Enumerable.Empty<CompareResultByChannel>(),
             (channels, info) => channels.Concat(info.Enumerable()));
     }
@@ -443,30 +443,30 @@ public record CompareResultByChannel(float Cos, AccuracyLossInfo[] LossInfo)
 
     public bool IsOk(float thresh)
     {
-        return cos < thresh || Losses.Length != 0;
+        return Cos < thresh || Losses.Length != 0;
     }
 
     public override string ToString()
     {
         var err = Losses;
         var percent = (float)err.Length / new Shape(Shape).Prod().FixedValue;
-        return $"CompareResultByChannel Cos:{cos} \nLossCount/InputSize: {percent}\nLoss:\n{SerializeByColumn(err)}";
+        return $"CompareResultByChannel Cos:{Cos} \nLossCount/InputSize: {percent}\nLoss:\n{SerializeByColumn(err)}";
     }
 }
 
 public record AccuracyLossInfo(float V1, float V2, int[] Index, OriginValue V1Tensor, OriginValue V2Tensor)
 {
-    public int[] Shape => v1Tensor.Value.AsTensor().Shape.ToValueArray();
+    public int[] Shape => V1Tensor.Value.AsTensor().Shape.ToValueArray();
 
-    public float Loss => Math.Abs(v1 - v2);
+    public float Loss => Math.Abs(V1 - V2);
 
     // todo: v2 is 0.0000
-    public float Ratio => (v1 == 0 && v2 == 0) || (Math.Abs(v1) < 1e-9 && v2 == 0) ? 1 : Math.Abs(v1 / v2);
+    public float Ratio => (V1 == 0 && V2 == 0) || (Math.Abs(V1) < 1e-9 && V2 == 0) ? 1 : Math.Abs(V1 / V2);
 
     public override string ToString()
     {
         return
-            $"AccuracyLossInfo v1 = {v1}, v2 = {v2}, index =[{string.Join(",", index.Select(x => x.ToString()))}], devi = {Loss}, ratio = {Ratio}";
+            $"AccuracyLossInfo v1 = {V1}, v2 = {V2}, index =[{string.Join(",", Index.Select(x => x.ToString()))}], devi = {Loss}, ratio = {Ratio}";
     }
 }
 

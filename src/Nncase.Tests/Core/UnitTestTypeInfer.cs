@@ -285,8 +285,7 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
     {
     }
 
-    [Theory]
-    public void CheckInferShape(Expr expr, params Dimension[] shapeDimensions)
+    private void CheckInferShape(Expr expr, params Dimension[] shapeDimensions)
     {
         CheckInferShape(expr, new Shape(shapeDimensions));
     }

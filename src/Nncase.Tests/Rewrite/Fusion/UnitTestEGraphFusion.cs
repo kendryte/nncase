@@ -30,7 +30,6 @@ public class UnitTestEGraphFusion : TestFixture.UnitTestFixtrue
         var model = new ResNet(typeof(BasicBlock), new[] { 2, 2, 2, 2 });
         var body = model.Forward(input);
         var main = new Function("main", body, ImmutableArray.Create(input));
-        _ = new(main);
 
         CompilerServices.InferenceType(main);
         CompilerServices.DumpIR(main, string.Empty, passOptions.DumpDir);
@@ -54,7 +53,6 @@ public class UnitTestEGraphFusion : TestFixture.UnitTestFixtrue
         var model = new ResNet(typeof(BasicBlock), new[] { 2, 2, 2, 2 });
         var body = model.Forward(input);
         var main = new Function("main", body, ImmutableArray.Create(input));
-        _ = new(main);
 
         CompilerServices.InferenceType(main);
         CompilerServices.DumpIR(main, string.Empty, passOptions.DumpDir);
@@ -113,8 +111,6 @@ public class UnitTestEGraphFusion : TestFixture.UnitTestFixtrue
             var v_3 = new Call(fusion_4, new[] { v_1, v_2 }); // 1,3,112,112
             main = new Function("main", v_3, ImmutableArray.Create(input));
         }
-
-        _ = new(main);
 
         CompilerServices.InferenceType(main);
         CompilerServices.DumpIR(main, string.Empty, passOptions.DumpDir);

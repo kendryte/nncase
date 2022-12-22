@@ -108,7 +108,7 @@ namespace IsaGen
             var fields = (from t in TensorInstructions.SelectMany(x => x.Value)
                           select new EnumFieldInfo(
                               CppName: t.CppName,
-                              Value: (uint)t.index,
+                              Value: (uint)t.Index,
                               Description: string.Empty)).ToList();
             var e = new EnumInfo(
                     CppName: "tensor_function_t",

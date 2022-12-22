@@ -236,7 +236,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     /// <param name="parent"></param>
     /// <param name="field"></param>
     /// <param name="exprMsg"></param>
-    private void VerifySubField(Expr parent, Expr field, TypePattern? pattern = null, [CallerArgumentExpression("expr")] string? exprMsg = null)
+    private void VerifySubField(Expr parent, Expr field, TypePattern? pattern = null, [CallerArgumentExpression("field")] string? exprMsg = null)
     {
         pattern ??= TypePatternUtility.IsIRType();
         if (field.CheckedType is InvalidType invalidType)

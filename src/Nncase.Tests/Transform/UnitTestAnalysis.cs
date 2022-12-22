@@ -38,7 +38,6 @@ public sealed class UnitTestUsedByAnalysis : TestFixture.UnitTestFixtrue
         _ = CompilerServices.GetTarget(compileOptions.Target);
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
         var main = new Function(fusionCase.BuildBody(input), input);
-        _ = new(main);
         CompilerServices.InferenceType(main);
         CompilerServices.DumpIR(main, "pre", passOptions.DumpDir);
 

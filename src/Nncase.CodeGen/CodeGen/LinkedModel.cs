@@ -34,8 +34,8 @@ public sealed class LinkedModel
 
         var modelHeader = new ModelHeader
         {
-            Identifier = ModelInfo.IDENTIFIER,
-            Version = ModelInfo.VERSION,
+            Identifier = ModelInfo.Identifier,
+            Version = ModelInfo.Version,
             Flags = 0,
             Alignment = (uint)alignment,
             Modules = (uint)Modules.Count,
@@ -54,7 +54,7 @@ public sealed class LinkedModel
     {
         fixed (byte* kind = header.Kind)
         {
-            if (Encoding.UTF8.GetBytes(source, new Span<byte>(kind, ModelInfo.MAXMODULEKINDLENGTH)) < 1)
+            if (Encoding.UTF8.GetBytes(source, new Span<byte>(kind, ModelInfo.MaxModuleKindLength)) < 1)
             {
                 throw new ArgumentException("Invalid module kind");
             }
@@ -65,7 +65,7 @@ public sealed class LinkedModel
     {
         fixed (byte* kind = header.Name)
         {
-            if (Encoding.UTF8.GetBytes(source, new Span<byte>(kind, ModelInfo.MAXSECTIONNAMELENGTH)) < 1)
+            if (Encoding.UTF8.GetBytes(source, new Span<byte>(kind, ModelInfo.MaxSectionNameLength)) < 1)
             {
                 throw new ArgumentException("Invalid section name");
             }

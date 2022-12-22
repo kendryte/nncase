@@ -40,7 +40,7 @@ public struct FunctionHeader
 [StructLayout(LayoutKind.Sequential)]
 public unsafe struct ModuleHeader
 {
-    public fixed byte Kind[ModelInfo.MAX_MODULE_KIND_LENGTH];
+    public fixed byte Kind[ModelInfo.MaxModuleKindLength];
     public uint Version;
     public uint Size;
     public uint Sections;
@@ -53,7 +53,7 @@ public unsafe struct ModuleHeader
 [StructLayout(LayoutKind.Sequential)]
 public unsafe struct SectionHeader
 {
-    public fixed byte Name[ModelInfo.MAX_SECTION_NAME_LENGTH];
+    public fixed byte Name[ModelInfo.MaxSectionNameLength];
     public uint Flags;
     public uint Size;
     public uint BodyStart;

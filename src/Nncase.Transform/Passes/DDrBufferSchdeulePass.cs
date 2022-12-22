@@ -33,8 +33,6 @@ public sealed class DDrBufferSchdeulePass : ModulePass
     /// <inheritdoc/>
     protected override Task RunCoreAsync(IRModule module, RunPassOptions options)
     {
-        _ = new(ReferenceEqualityComparer.Instance);
-
         for (int i = 0; i < module.Functions.Count; i++)
         {
             if (module.Functions[i] is TIR.PrimFunction prim_func)

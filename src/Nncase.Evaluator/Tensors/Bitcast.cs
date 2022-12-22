@@ -17,7 +17,7 @@ public class BitcastEvaluator : IEvaluator<Bitcast>, ITypeInferencer<Bitcast>, I
     public IValue Visit(IEvaluateContext context, Bitcast cast)
     {
         var input = context.GetArgumentValue(cast, Cast.Input).AsTensor();
-        return Value.FromTensor(input.CastTo(cast.newType));
+        return Value.FromTensor(input.CastTo(cast.NewType));
     }
 
     /// <inheritdoc/>
@@ -30,7 +30,7 @@ public class BitcastEvaluator : IEvaluator<Bitcast>, ITypeInferencer<Bitcast>, I
     /// <inheritdoc/>
     public string Visit(IIRPrinterContext context, Bitcast target, bool iLmode)
     {
-        return $"{CompilerServices.Print(target.newType)}({context.GetArgument(target, Cast.Input)})";
+        return $"{CompilerServices.Print(target.NewType)}({context.GetArgument(target, Cast.Input)})";
     }
 
     /// <inheritdoc/>
@@ -40,13 +40,13 @@ public class BitcastEvaluator : IEvaluator<Bitcast>, ITypeInferencer<Bitcast>, I
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input.DType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(target.newType),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(target.newType, 1),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(target.NewType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(target.NewType, 1),
         };
     }
 
     private IRType Visit(Bitcast target, TensorType input)
     {
-        return new TensorType(target.newType, input.Shape);
+        return new TensorType(target.NewType, input.Shape);
     }
 }
