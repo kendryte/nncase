@@ -17,17 +17,17 @@ namespace Nncase.IR;
 public abstract partial record Expr
 {
     /// <summary>
-    /// hash code cache
+    /// hash code cache.
     /// </summary>
     protected int? _hashcode;
 
     /// <summary>
     /// checked type.
     /// </summary>
-    public IRType? CheckedType = null;
+    public IRType? CheckedType;
 
     /// <summary>
-    /// checked shape.
+    /// Gets checked shape.
     /// </summary>
     public Shape CheckedShape => (CheckedType ?? ((Const)this).ValueType) switch
     {
@@ -36,7 +36,7 @@ public abstract partial record Expr
     };
 
     /// <summary>
-    /// if this expr is tensortype, can return the checkedDatatype
+    /// Gets if this expr is tensortype, can return the checkedDatatype.
     /// </summary>
     public DataType CheckedDataType => CheckedType switch
     {

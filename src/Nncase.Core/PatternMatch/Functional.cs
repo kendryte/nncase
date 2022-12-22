@@ -261,7 +261,7 @@ namespace Nncase.PatternMatch.F
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
-        public static CallPattern FloorMod(Pattern lhs, Pattern rhs) => Sub(lhs, (FloorDiv(lhs, rhs) * rhs));
+        public static CallPattern FloorMod(Pattern lhs, Pattern rhs) => Sub(lhs, FloorDiv(lhs, rhs) * rhs);
 
         /// <summary>
         /// CallPattern equal.

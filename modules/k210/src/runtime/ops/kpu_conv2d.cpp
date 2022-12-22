@@ -23,13 +23,11 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::k210;
 
-namespace
-{
+namespace {
 #ifndef NNCASE_SIMULATOR
 static volatile int g_ai_done = 0;
 
-int kpu_plic_thunk(NNCASE_UNUSED void *userdata)
-{
+int kpu_plic_thunk(NNCASE_UNUSED void *userdata) {
     kpu->interrupt_clear.reg = 0b111;
     kpu->interrupt_mask.reg = 0b111;
 
@@ -37,13 +35,9 @@ int kpu_plic_thunk(NNCASE_UNUSED void *userdata)
     return 0;
 }
 
-int kpu_dma_thunk(NNCASE_UNUSED void *userdata)
-{
-    return 0;
-}
+int kpu_dma_thunk(NNCASE_UNUSED void *userdata) { return 0; }
 
-void kpu_send_layer(const runtime::k210::kpu_layer_argument_t &layer)
-{
+void kpu_send_layer(const runtime::k210::kpu_layer_argument_t &layer) {
     kpu->layer_argument_fifo = layer.interrupt_enabe.reg;
     kpu->layer_argument_fifo = layer.image_addr.reg;
     kpu->layer_argument_fifo = layer.image_channel_num.reg;
@@ -58,8 +52,8 @@ void kpu_send_layer(const runtime::k210::kpu_layer_argument_t &layer)
     kpu->layer_argument_fifo = layer.dma_parameter.reg;
 }
 
-void kpu_conv2d_normal(runtime::k210::kpu_layer_argument_t &layer, plic_irq_callback_t callback, void *userdata)
-{
+void kpu_conv2d_normal(runtime::k210::kpu_layer_argument_t &layer,
+                       plic_irq_callback_t callback, void *userdata) {
     kpu->interrupt_clear.reg = 0b111;
     kpu->interrupt_mask.reg = 0b110;
     layer.dma_parameter.data.send_data_out = 0;
@@ -69,10 +63,10 @@ void kpu_conv2d_normal(runtime::k210::kpu_layer_argument_t &layer, plic_irq_call
     kpu_send_layer(layer);
 }
 #endif
-}
+} // namespace
 
-result<void> k210_runtime_function::visit(const kpu_conv2d_options &op) noexcept
-{
+result<void>
+k210_runtime_function::visit(const kpu_conv2d_options &op) noexcept {
     auto layer = op.layer;
 
     try_var(weights, memory_at(op.weights));
@@ -81,14 +75,16 @@ result<void> k210_runtime_function::visit(const kpu_conv2d_options &op) noexcept
 
     auto in_h = static_cast<uint32_t>(layer.image_size.data.i_col_high + 1);
     auto in_w = static_cast<uint32_t>(layer.image_size.data.i_row_wid + 1);
-    auto in_ch = static_cast<uint32_t>(layer.image_channel_num.data.i_ch_num + 1);
+    auto in_ch =
+        static_cast<uint32_t>(layer.image_channel_num.data.i_ch_num + 1);
 
     auto out_h = static_cast<uint32_t>(layer.image_size.data.o_col_high + 1);
     auto out_w = static_cast<uint32_t>(layer.image_size.data.o_row_wid + 1);
-    auto out_ch = static_cast<uint32_t>(layer.image_channel_num.data.o_ch_num + 1);
-    kpu_shape_t out_shape { op.batches, out_ch, out_h, out_w };
+    auto out_ch =
+        static_cast<uint32_t>(layer.image_channel_num.data.o_ch_num + 1);
+    kpu_shape_t out_shape{op.batches, out_ch, out_h, out_w};
 
-    memory_range kpu_out_mem {};
+    memory_range kpu_out_mem{};
     kpu_out_mem.memory_location = mem_kpu;
     kpu_out_mem.datatype = dt_uint8;
     kpu_out_mem.start = (uint32_t)layer.image_addr.data.image_dst_addr * 64;
@@ -99,12 +95,17 @@ result<void> k210_runtime_function::visit(const kpu_conv2d_options &op) noexcept
 
     auto is_depthwise = layer.interrupt_enabe.data.depth_wise_layer != 0;
 
-    try_var(input, memory_at({ .memory_location = mem_kpu, .datatype = dt_uint8, .start = (uint32_t)layer.image_addr.data.image_src_addr * 64, .size = 1 }));
+    try_var(
+        input,
+        memory_at({.memory_location = mem_kpu,
+                   .datatype = dt_uint8,
+                   .start = (uint32_t)layer.image_addr.data.image_src_addr * 64,
+                   .size = 1}));
 
-    kpu_shape_t in_shape { op.batches, in_ch, in_h, in_w };
+    kpu_shape_t in_shape{op.batches, in_ch, in_h, in_w};
     auto in_fmap_size = kernels::detail::compute_size(in_shape);
 
-    kpu_shape_t conv_out_shape { op.batches, out_ch, in_h, in_w };
+    kpu_shape_t conv_out_shape{op.batches, out_ch, in_h, in_w};
     auto conv_out_fmap_size = kernels::detail::compute_size(conv_out_shape);
     auto out_fmap_size = kernels::detail::compute_size(out_shape);
 
@@ -122,19 +123,25 @@ result<void> k210_runtime_function::visit(const kpu_conv2d_options &op) noexcept
     auto p_conv_ouput_tmp = conv_output_tmp.get();
     auto p_output_tmp = output_tmp.get();
 
-    try_(kernels::k210::kpu_download(reinterpret_cast<const uint8_t *>(input.data()), input_tmp.get(), in_shape));
-    auto filter_size = get_kpu_filter_size((kpu_filter_type_t)layer.kernel_pool_type_cfg.data.kernel_type);
+    try_(kernels::k210::kpu_download(
+        reinterpret_cast<const uint8_t *>(input.data()), input_tmp.get(),
+        in_shape));
+    auto filter_size = get_kpu_filter_size(
+        (kpu_filter_type_t)layer.kernel_pool_type_cfg.data.kernel_type);
     auto pad_value = (uint8_t)layer.kernel_pool_type_cfg.data.pad_value;
-    auto arg_x = (int32_t)kernels::detail::to_signed<24>(layer.conv_value.data.arg_x);
+    auto arg_x =
+        (int32_t)kernels::detail::to_signed<24>(layer.conv_value.data.arg_x);
     auto shift_x = (int32_t)layer.conv_value.data.shr_x;
-    auto arg_w = (int32_t)kernels::detail::to_signed<24>(layer.conv_value.data.arg_w);
+    auto arg_w =
+        (int32_t)kernels::detail::to_signed<24>(layer.conv_value.data.arg_w);
     auto shift_w = (int32_t)layer.conv_value.data.shr_w;
-    auto arg_add = kernels::detail::to_signed<40>(layer.conv_value2.data.arg_add);
+    auto arg_add =
+        kernels::detail::to_signed<40>(layer.conv_value2.data.arg_add);
 
     auto batchnorm = std::make_unique<kpu_batchnorm_segment[]>(out_ch);
-    for (size_t i = 0; i < out_ch; i++)
-    {
-        auto &src = batch_norm_data.as_span<const kpu_batchnorm_argument_t>()[i].batchnorm.data;
+    for (size_t i = 0; i < out_ch; i++) {
+        auto &src = batch_norm_data.as_span<const kpu_batchnorm_argument_t>()[i]
+                        .batchnorm.data;
         auto &dest = batchnorm[i];
         dest.mul = (int32_t)kernels::detail::to_signed<24>(src.norm_mul);
         dest.shift = (int32_t)src.norm_shift;
@@ -143,8 +150,7 @@ result<void> k210_runtime_function::visit(const kpu_conv2d_options &op) noexcept
 
     auto &act_table = activation_data.as_span<const kpu_activate_table_t>()[0];
     kpu_activation_table_t activation;
-    for (size_t i = 0; i < 16; i++)
-    {
+    for (size_t i = 0; i < 16; i++) {
         auto &src = act_table.activate_para[i].data;
         auto &dest = activation[i];
         dest.start_x = kernels::detail::to_signed<36>(src.x_start);
@@ -157,19 +163,23 @@ result<void> k210_runtime_function::visit(const kpu_conv2d_options &op) noexcept
             dest.add = act_table.activate_para_bias1.data.result_bias[i - 8];
     }
 
-#define KPU_CONV2D_IMPL(is_depthwise_val, filter_size_val)                                                                                                  \
-    if (is_depthwise == is_depthwise_val && filter_size == filter_size_val)                                                                                 \
-    kernels::k210::kpu_conv2d<is_depthwise_val, filter_size_val>(p_input, p_workspace, p_conv_ouput_tmp, reinterpret_cast<const uint8_t *>(weights.data()), \
-        in_h, in_w, in_ch, out_ch, pad_value, arg_x, shift_x, arg_w, shift_w, arg_add, batchnorm.get(), activation)
+#define KPU_CONV2D_IMPL(is_depthwise_val, filter_size_val)                     \
+    if (is_depthwise == is_depthwise_val && filter_size == filter_size_val)    \
+    kernels::k210::kpu_conv2d<is_depthwise_val, filter_size_val>(              \
+        p_input, p_workspace, p_conv_ouput_tmp,                                \
+        reinterpret_cast<const uint8_t *>(weights.data()), in_h, in_w, in_ch,  \
+        out_ch, pad_value, arg_x, shift_x, arg_w, shift_w, arg_add,            \
+        batchnorm.get(), activation)
 
-    for (size_t n = 0; n < batch; n++)
-    {
+    for (size_t n = 0; n < batch; n++) {
         KPU_CONV2D_IMPL(true, 1);
         else KPU_CONV2D_IMPL(true, 3);
         else KPU_CONV2D_IMPL(false, 1);
         else KPU_CONV2D_IMPL(false, 3);
 
-        kernels::k210::kpu_pool2d(p_conv_ouput_tmp, p_output_tmp, in_h, in_w, out_ch, (kpu_pool_type_t)layer.kernel_pool_type_cfg.data.pool_type);
+        kernels::k210::kpu_pool2d(
+            p_conv_ouput_tmp, p_output_tmp, in_h, in_w, out_ch,
+            (kpu_pool_type_t)layer.kernel_pool_type_cfg.data.pool_type);
 
         p_input += in_size_per_batch;
         p_workspace += conv_output_tmp_size_per_batch;
@@ -177,25 +187,30 @@ result<void> k210_runtime_function::visit(const kpu_conv2d_options &op) noexcept
         p_output_tmp += out_size_per_batch;
     }
 
-    try_(kernels::k210::kpu_upload(output_tmp.get(), reinterpret_cast<uint8_t *>(kpu_out.data()), out_shape, 0));
-    if (op.main_mem_output.size)
-    {
+    try_(kernels::k210::kpu_upload(output_tmp.get(),
+                                   reinterpret_cast<uint8_t *>(kpu_out.data()),
+                                   out_shape, 0));
+    if (op.main_mem_output.size) {
         try_var(main_output, memory_at(op.main_mem_output));
-        std::copy(output_tmp.get(), output_tmp.get() + out_fmap_size, reinterpret_cast<uint8_t *>(main_output.data()));
+        std::copy(output_tmp.get(), output_tmp.get() + out_fmap_size,
+                  reinterpret_cast<uint8_t *>(main_output.data()));
     }
     return ok();
 #else
-    layer.kernel_pool_type_cfg.data.bwsx_base_addr = (uintptr_t)batch_norm_data.data() - IOMEM;
-    layer.kernel_calc_type_cfg.data.active_addr = (uintptr_t)activation_data.data() - IOMEM;
-    layer.kernel_load_cfg.data.para_start_addr = (uintptr_t)weights.data() - IOMEM;
-    CHECK_WITH_ERR(layer.kernel_calc_type_cfg.data.active_addr % 256 == 0, std::errc::invalid_argument);
+    layer.kernel_pool_type_cfg.data.bwsx_base_addr =
+        (uintptr_t)batch_norm_data.data() - IOMEM;
+    layer.kernel_calc_type_cfg.data.active_addr =
+        (uintptr_t)activation_data.data() - IOMEM;
+    layer.kernel_load_cfg.data.para_start_addr =
+        (uintptr_t)weights.data() - IOMEM;
+    CHECK_WITH_ERR(layer.kernel_calc_type_cfg.data.active_addr % 256 == 0,
+                   std::errc::invalid_argument);
 
     auto batch = op.batches;
     auto in_per_batch = get_kpu_rows(in_w, in_h, in_ch);
     auto out_per_batch = get_kpu_rows(out_w, out_h, out_ch);
 
-    for (size_t n = 0; n < batch; n++)
-    {
+    for (size_t n = 0; n < batch; n++) {
         g_ai_done = 0;
 
         kpu_conv2d_normal(layer, kpu_plic_thunk, nullptr);
@@ -206,10 +221,11 @@ result<void> k210_runtime_function::visit(const kpu_conv2d_options &op) noexcept
         layer.image_addr.data.image_dst_addr += out_per_batch;
     }
 
-    if (op.main_mem_output.size)
-    {
+    if (op.main_mem_output.size) {
         try_var(main_output, memory_at(op.main_mem_output));
-        return kernels::k210::kpu_download(kpu_out.as_span<uint8_t>().data(), main_output.as_span<uint8_t>().data(), out_shape);
+        return kernels::k210::kpu_download(
+            kpu_out.as_span<uint8_t>().data(),
+            main_output.as_span<uint8_t>().data(), out_shape);
     }
 
     return ok();

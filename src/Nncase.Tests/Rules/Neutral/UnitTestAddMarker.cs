@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,7 +26,7 @@ public class UnitTestAddMarker : TestFixture.UnitTestFixtrue
         var rootPre = Relu(a);
         var rootPost = CompilerServices.Rewrite(rootPre, new[] { new AddRangeOfAndMarkerToRelu() }, caseOptions);
 
-        CompilerServices.DumpDotIR(rootPost, "", caseOptions.DumpDir, false);
+        CompilerServices.DumpDotIR(rootPost, string.Empty, caseOptions.DumpDir, false);
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
@@ -36,7 +39,7 @@ public class UnitTestAddMarker : TestFixture.UnitTestFixtrue
         var b = Relu(a);
         var pre = IR.F.Math.RangeOfMarker(new[] { 1, 2, 3, 4 }, b);
         CompilerServices.InferenceType(pre);
-        CompilerServices.DumpDotIR(pre, "", caseOptions.DumpDir, false);
+        CompilerServices.DumpDotIR(pre, string.Empty, caseOptions.DumpDir, false);
     }
 
     [Fact]
@@ -47,7 +50,7 @@ public class UnitTestAddMarker : TestFixture.UnitTestFixtrue
         var b = Relu(a);
         var pre = IR.F.Math.RangeOfMarker(b, new[] { 1, 2, 3, 4 });
         CompilerServices.InferenceType(pre);
-        CompilerServices.DumpDotIR(pre, "", caseOptions.DumpDir, false);
+        CompilerServices.DumpDotIR(pre, string.Empty, caseOptions.DumpDir, false);
     }
 
     [Fact]
@@ -56,7 +59,7 @@ public class UnitTestAddMarker : TestFixture.UnitTestFixtrue
         var caseOptions = GetPassOptions();
         var pre = IR.F.Math.RangeOfMarker(new[] { 4, 5, 6, 7 }, new[] { 1, 2, 3, 4 });
         CompilerServices.InferenceType(pre);
-        CompilerServices.DumpDotIR(pre, "", caseOptions.DumpDir, false);
+        CompilerServices.DumpDotIR(pre, string.Empty, caseOptions.DumpDir, false);
     }
 
     [Fact]
@@ -70,6 +73,6 @@ public class UnitTestAddMarker : TestFixture.UnitTestFixtrue
         var e = new IR.Tuple(d, d, d, d);
         var pre = IR.F.Math.RangeOfMarker(new[] { 4, 5, 6, 7 }, e);
         CompilerServices.InferenceType(pre);
-        CompilerServices.DumpDotIR(pre, "", caseOptions.DumpDir, false);
+        CompilerServices.DumpDotIR(pre, string.Empty, caseOptions.DumpDir, false);
     }
 }

@@ -18,8 +18,9 @@ from onnx_test_runner import OnnxTestRunner
 
 
 def test_densenet_9(request):
-    overwrite_cfg = open('tests/models/onnx-model-zoo/vision/classification/test_config.yml', 'r', encoding="utf8").read()
-    runner = OnnxTestRunner(request.node.name, ['cpu', 'k510'], overwrite_configs = overwrite_cfg)
+    overwrite_cfg = open(
+        'tests/models/onnx-model-zoo/vision/classification/test_config.yml', 'r', encoding="utf8").read()
+    runner = OnnxTestRunner(request.node.name, ['cpu', 'k510'], overwrite_configs=overwrite_cfg)
     model_file = 'onnx-models/vision/classification/densenet-121/model/densenet-9.onnx'
     runner.run(model_file)
 

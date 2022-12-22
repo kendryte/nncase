@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -13,6 +13,45 @@ using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Transform;
+
+/// <summary>
+/// EGraph extract extensions.
+/// </summary>
+public static class EGraphExtractExtensions
+{
+    /// <summary>
+    /// Extract egraph.
+    /// </summary>
+    /// <param name="eGraph">eGraph.</param>
+    /// <param name="root">Root eclass.</param>
+    /// <param name="basefunc_cost_evaluator">base func cost evaluator.</param>
+    /// <param name="options">Options.</param>
+    /// <returns>Extracted root expression.</returns>
+    public static Expr Extract(this EGraph eGraph, EClass root, Evaluator.IBaseFuncCostEvaluator? basefunc_cost_evaluator, RunPassOptions options)
+    {
+        // 1. set the all expr checked shape
+        foreach (var eclass in eGraph.Classes)
+        {
+            foreach (var nodes in eclass.Nodes)
+            {
+                if (eclass.CheckedType.CompareTo(nodes.Expr.CheckedType) > 0)
+                {
+                    nodes.Expr.CheckedType = eclass.CheckedType;
+                }
+            }
+        }
+
+        // 2. start the cost evaluator
+        var costModel = new EGraphCostEvaluator(root.Find(), basefunc_cost_evaluator).Evaluate();
+        if (options.DumpLevel > 2)
+        {
+            // TODO: dump graph
+            EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, root.Find(), Path.Combine(options.DumpDir, "Costs", $"V{eGraph.Version}"));
+        }
+
+        return new EGraphExtractor(costModel).Extract(root.Find());
+    }
+}
 
 internal class EGraphExtractor
 {
@@ -55,21 +94,21 @@ internal class EGraphExtractor
         var isCallExpr = callPattern.MatchLeaf(expr);
         if (isCallExpr == true)
         {
-            if (((Call)(expr)).EnodeQuantConfigWithCosine != null)
+            if (((Call)expr).EnodeQuantConfigWithCosine != null)
             {
                 var pattern = IsCall(IsWildcard(), IsWildcard());
                 var isCall = pattern.MatchLeaf(expr);
                 if (isCall == true)
                 {
                     System.Console.WriteLine(expr + "  " + expr.CheckedType);
-                    for (int i = 0; i < ((Call)(expr)).EnodeQuantConfigWithCosine.Count; i++)
+                    for (int i = 0; i < ((Call)expr).EnodeQuantConfigWithCosine.Count; i++)
                     {
-                        for (int j = 0; j < ((Call)(expr)).EnodeQuantConfigWithCosine[i].Item1.Count; j++)
+                        for (int j = 0; j < ((Call)expr).EnodeQuantConfigWithCosine[i].Item1.Count; j++)
                         {
-                            System.Console.Write(((Call)(expr)).EnodeQuantConfigWithCosine[i].Item1[j] + "  ");
+                            System.Console.Write(((Call)expr).EnodeQuantConfigWithCosine[i].Item1[j] + "  ");
                         }
 
-                        System.Console.WriteLine(((Call)(expr)).EnodeQuantConfigWithCosine[i].Item3);
+                        System.Console.WriteLine(((Call)expr).EnodeQuantConfigWithCosine[i].Item3);
                     }
                 }
             }
@@ -112,41 +151,5 @@ internal class EGraphExtractor
         var target = Visit(enode.Children[0]);
         var parameters = enode.Children.Skip(1).Select(Visit);
         return call with { Target = target, Parameters = new(parameters) };
-    }
-}
-
-/// <summary>
-/// EGraph extract extensions.
-/// </summary>
-public static class EGraphExtractExtensions
-{
-    /// <summary>
-    /// Extract egraph.
-    /// </summary>
-    /// <param name="eGraph">eGraph.</param>
-    /// <param name="root">Root eclass.</param>
-    /// <param name="basefunc_cost_evaluator">base func cost evaluator.</param>
-    /// <param name="options">Options.</param>
-    /// <returns>Extracted root expression.</returns>
-    public static Expr Extract(this EGraph eGraph, EClass root, Evaluator.IBaseFuncCostEvaluator? basefunc_cost_evaluator, RunPassOptions options)
-    {
-        // 1. set the all expr checked shape
-        foreach (var eclass in eGraph.Classes)
-        {
-            foreach (var nodes in eclass.Nodes)
-            {
-                if (eclass.CheckedType.CompareTo(nodes.Expr.CheckedType) > 0)
-                    nodes.Expr.CheckedType = eclass.CheckedType;
-            }
-        }
-        // 2. start the cost evaluator
-        var costModel = new EGraphCostEvaluator(root.Find(), basefunc_cost_evaluator).Evaluate();
-        if (options.DumpLevel > 2)
-        {
-            // TODO: dump graph
-            EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, root.Find(), Path.Combine(options.DumpDir, "Costs", $"V{eGraph.Version}"));
-        }
-
-        return new EGraphExtractor(costModel).Extract(root.Find());
     }
 }

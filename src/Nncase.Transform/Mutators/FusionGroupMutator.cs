@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -11,47 +11,46 @@ using Nncase.IR;
 using Nncase.PatternMatch;
 using static Nncase.PatternMatch.Utility;
 
-
 namespace Nncase.Transform.Mutators;
-
 
 /// <summary>
 /// the fusion group mutator.
 /// </summary>
 public class FusionGroupMutator : ExprMutator
 {
-    sealed class FusionMergeCandidateComparer : IEqualityComparer<HashSet<Fusion>>
+    /// <summary>
+    /// Get the run pass options.
+    /// </summary>
+    public readonly RunPassOptions PassOptions;
+
+    private sealed class FusionMergeCandidateComparer : IEqualityComparer<HashSet<Fusion>>
     {
         public bool Equals(HashSet<Fusion>? x, HashSet<Fusion>? y) => (x, y) switch
         {
             (null, null) => true,
             (null, _) => false,
             (_, null) => false,
-            (var lhs, var rhs) => GetHashCode(lhs) == GetHashCode(rhs)
+            (var lhs, var rhs) => GetHashCode(lhs) == GetHashCode(rhs),
         };
 
         public int GetHashCode([DisallowNull] HashSet<Fusion> obj)
         {
-            HashCode hash = new();
+            HashCode hash = default(HashCode);
             foreach (var o in obj)
             {
                 hash.Add(ReferenceEqualityComparer.Instance.GetHashCode(obj));
             }
+
             return hash.ToHashCode();
         }
     }
 
     /// <summary>
-    /// Get the run pass options.
-    /// </summary>
-    public readonly RunPassOptions PassOptions;
-
-    private readonly IUsedByResult _usedByReslut;
-
-    /// <summary>
     /// Get the Pre Order Rules.
     /// </summary>
     public readonly IMergeRewriteRule Rule;
+
+    private readonly IUsedByResult _usedByReslut;
 
     /// <summary>
     /// cache the check result.
@@ -59,11 +58,7 @@ public class FusionGroupMutator : ExprMutator
     private readonly Dictionary<HashSet<Fusion>, bool> _candidateFusionCache;
 
     /// <summary>
-    /// Get the merge check cache result.
-    /// </summary>
-    public IReadOnlyDictionary<HashSet<Fusion>, bool> FusionMergeCandidateCache => _candidateFusionCache;
-
-    /// <summary>
+    /// Initializes a new instance of the <see cref="FusionGroupMutator"/> class.
     /// ctor.
     /// </summary>
     /// <param name="usedByAnalysisReslut">the usedby analysis.</param>
@@ -78,6 +73,11 @@ public class FusionGroupMutator : ExprMutator
     }
 
     /// <summary>
+    /// Gets get the merge check cache result.
+    /// </summary>
+    public IReadOnlyDictionary<HashSet<Fusion>, bool> FusionMergeCandidateCache => _candidateFusionCache;
+
+    /// <summary>
     /// check the merged fusion is valid.
     /// </summary>
     /// <param name="merged_fusion">merged fusion.</param>
@@ -86,24 +86,6 @@ public class FusionGroupMutator : ExprMutator
     public virtual bool MergedFusionCheckCallBack(Fusion merged_fusion, HashSet<Fusion> candidate_fusions)
     {
         return true;
-    }
-
-    private bool candidateFusionCheckCallBack(HashSet<Fusion> candidateFusions)
-    {
-        if (candidateFusions.Count <= 1)
-            throw new InvalidDataException("The candidates less than 2!");
-        if (!_candidateFusionCache.TryGetValue(candidateFusions, out var ret))
-            return true;
-        if (ret != false)
-            throw new InvalidDataException("Only cache failed candidates!");
-        return false;
-    }
-
-    private void candidateFusionRecordCallBack(HashSet<Fusion> candidateFusions)
-    {
-        if (candidateFusions.Count <= 1)
-            throw new InvalidDataException("The candidates less than 2!");
-        _candidateFusionCache.Add(candidateFusions, false);
     }
 
     /// <summary>
@@ -116,6 +98,36 @@ public class FusionGroupMutator : ExprMutator
         return merged_fusion_body;
     }
 
+    private bool CandidateFusionCheckCallBack(HashSet<Fusion> candidateFusions)
+    {
+        if (candidateFusions.Count <= 1)
+        {
+            throw new InvalidDataException("The candidates less than 2!");
+        }
+
+        if (!_candidateFusionCache.TryGetValue(candidateFusions, out var ret))
+        {
+            return true;
+        }
+
+        if (ret != false)
+        {
+            throw new InvalidDataException("Only cache failed candidates!");
+        }
+
+        return false;
+    }
+
+    private void CandidateFusionRecordCallBack(HashSet<Fusion> candidateFusions)
+    {
+        if (candidateFusions.Count <= 1)
+        {
+            throw new InvalidDataException("The candidates less than 2!");
+        }
+
+        _candidateFusionCache.Add(candidateFusions, false);
+    }
+
     /// <summary>
     /// try merge fusion from the old call.
     /// </summary>
@@ -123,16 +135,18 @@ public class FusionGroupMutator : ExprMutator
     /// <param name="old_call">current call.</param>
     /// <param name="new_call">returned new call.</param>
     /// <returns>merged status. </returns>
-    public bool tryMergeFusion(IMergeRewriteRule rule, Call old_call, out Call new_call)
+    public bool TryMergeFusion(IMergeRewriteRule rule, Call old_call, out Call new_call)
     {
         new_call = null!;
 
         if (!CompilerServices.TryMatchRoot(old_call, rule.Pattern, new() { RewriteMemo = ExpressionMemo }, out var result))
+        {
             return false;
+        }
 
         if (rule.GetReplace(
           MergedFusionRewriteCallBack, MergedFusionCheckCallBack,
-          candidateFusionCheckCallBack, candidateFusionRecordCallBack,
+          CandidateFusionCheckCallBack, CandidateFusionRecordCallBack,
           _usedByReslut, result, PassOptions) is Call replaced_call)
         {
             new_call = replaced_call;
@@ -148,8 +162,11 @@ public class FusionGroupMutator : ExprMutator
     /// <inheritdoc/>
     public override Expr MutateLeaf(Call expr)
     {
-        if (tryMergeFusion(Rule, expr, out var merged_call))
+        if (TryMergeFusion(Rule, expr, out var merged_call))
+        {
             return merged_call;
+        }
+
         return expr;
     }
 
@@ -173,24 +190,28 @@ public class FusionGroupMutator : ExprMutator
             Target = Visit(expr.Target),
             Parameters = MutateArray(expr.Parameters, Visit),
         };
-        updateCallUsedBy(expr, with_new);
+        UpdateCallUsedBy(expr, with_new);
         return with_new;
     }
 
-    private void updateCallUsedBy(Call old_call, Call new_call)
+    private void UpdateCallUsedBy(Call old_call, Call new_call)
     {
         /* update the usedy info */
         // 1. transfer the caller usedby info to new_call
         _usedByReslut.Transfer(old_call, new_call);
+
         // 2. clear all caller's and callee's usedy info
         _usedByReslut.Clear(old_call.Target, old_call);
         foreach (var param in old_call.Parameters)
+        {
             _usedByReslut.Clear(param, old_call);
+        }
 
         // 3. reset the input usedby
         _usedByReslut.Add(new_call.Target, new_call);
         foreach (var param in new_call.Parameters)
+        {
             _usedByReslut.Add(param, new_call);
+        }
     }
-
 }

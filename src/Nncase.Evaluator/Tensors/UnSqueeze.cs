@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Linq;
@@ -60,6 +60,7 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
                 {
                     var index = System.Math.Max(outShape.Count + dimVal + 1, 0);
                     outShape.Insert(index, 1);
+
                     // count == 3, dimVal == -4
                 }
             }

@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -63,11 +63,11 @@ public unsafe struct SectionHeader
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct shape_header
+public struct Shape_header
 {
     public uint Size;
 
-    //     const uint* begin() const noexcept
+    // const uint* begin() const noexcept
     //     {
     //     return reinterpret_cast<const uint*>(reinterpret_cast<uintptr_t>(this) + sizeof(shape_header));
     // }
@@ -77,7 +77,7 @@ public struct shape_header
     //     return begin() + size;
     // }
 
-    //         uint operator[](size_t index) const
+    // uint operator[](size_t index) const
     //             {
     //         assert(index<size);
     // return begin()[index];

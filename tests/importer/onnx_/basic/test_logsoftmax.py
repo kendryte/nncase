@@ -82,6 +82,7 @@ op_versions = [
     13
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('axis', axes)
 @pytest.mark.parametrize('op_version', op_versions)
@@ -91,6 +92,7 @@ def test_logsoftmax(in_shape, axis, op_version, request):
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_logsoftmax.py'])

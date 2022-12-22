@@ -77,6 +77,7 @@ axes = [
     -4
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('axis', axes)
 def test_hardmax(in_shape, axis, request):

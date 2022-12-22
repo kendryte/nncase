@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -15,5 +15,5 @@ namespace Nncase.Evaluator.Buffer;
 [TypeInferGenerator]
 public partial class StrideOfEvaluator : ITypeInferencer<StrideOf>
 {
-    IRType Visit(TensorType Input) => new TensorType(DataTypes.Int32, new[] { Input.Shape.Count });
+    private IRType Visit(TensorType input) => new TensorType(DataTypes.Int32, new[] { input.Shape.Count });
 }

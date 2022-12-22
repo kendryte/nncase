@@ -1,76 +1,10 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Text;
 using Nncase.IR;
 
 namespace Nncase.Utilities;
-
-public class DumpManager
-{
-    public static bool OpenDump { get; private set; } = false;
-
-    public static bool Append = false;
-
-    public static int Count = 1;
-
-    public static string Dir;
-
-    public string CountStr => Count.ToString();
-
-    public static void RunWithDump(string dir, Action f)
-    {
-        RunWithDump<int>(dir, () =>
-        {
-            f();
-            // discard return value
-            return -1;
-        });
-    }
-
-    public static T RunWithDump<T>(string dir, Func<T> f)
-    {
-        Dir = dir;
-        Count = 1;
-        OpenDump = true;
-        Append = false;
-        var result = f();
-        OpenDump = false;
-        return result;
-    }
-
-    public string GetMaybeDumpDir()
-    {
-        return ValueDumper.GetMaybeDumpDir(Dir);
-    }
-
-    protected void UpdateOrder(string root, string target, Shape shape)
-    {
-        using (var order = new StreamWriter(Path.Join(root, "!out_shape_list"), Append))
-        {
-            order.WriteLine($"{target}: {DumpUtility.SerializeShape(shape)}");
-        }
-    }
-
-    protected void DumpCallParam(string target, ParameterInfo info, Action<StreamWriter> f)
-    {
-        var path = Path.Join(GetMaybeDumpDir(), $"{CountStr}${target}${info.Name}");
-        using (var sr = new StreamWriter(path))
-        {
-            f(sr);
-        }
-    }
-
-    protected void DumpCall(string target, Shape shape, Action<StreamWriter> f)
-    {
-        var path = Path.Join(GetMaybeDumpDir(), $"{CountStr}${target}");
-        using (var sr = new StreamWriter(path))
-        {
-            f(sr);
-        }
-
-        UpdateOrder(GetMaybeDumpDir(), target, shape);
-        Append = true;
-        ++Count;
-    }
-}
 
 public static class ValueDumper
 {
@@ -88,6 +22,7 @@ public static class ValueDumper
         }
 
         writer.WriteLine(DumpUtility.SerializeShape(tensor.Shape));
+
         // todo:other type
         var dt = tensor.ElementType;
         if (dt == DataTypes.Int8 || dt == DataTypes.Int32 || dt == DataTypes.Int64)
@@ -143,6 +78,76 @@ public static class ValueDumper
         }
 
         return root;
+    }
+}
+
+public class DumpManager
+{
+    public static bool Append;
+
+    public static bool OpenDump { get; private set; }
+
+    public static int Count = 1;
+
+    public static string Dir;
+
+    public string CountStr => Count.ToString();
+
+    public static void RunWithDump(string dir, Action f)
+    {
+        RunWithDump<int>(dir, () =>
+        {
+            f();
+
+            // discard return value
+            return -1;
+        });
+    }
+
+    public static T RunWithDump<T>(string dir, Func<T> f)
+    {
+        Dir = dir;
+        Count = 1;
+        OpenDump = true;
+        Append = false;
+        var result = f();
+        OpenDump = false;
+        return result;
+    }
+
+    public string GetMaybeDumpDir()
+    {
+        return ValueDumper.GetMaybeDumpDir(Dir);
+    }
+
+    protected void UpdateOrder(string root, string target, Shape shape)
+    {
+        using (var order = new StreamWriter(Path.Join(root, "!out_shape_list"), Append))
+        {
+            order.WriteLine($"{target}: {DumpUtility.SerializeShape(shape)}");
+        }
+    }
+
+    protected void DumpCallParam(string target, ParameterInfo info, Action<StreamWriter> f)
+    {
+        var path = Path.Join(GetMaybeDumpDir(), $"{CountStr}${target}${info.Name}");
+        using (var sr = new StreamWriter(path))
+        {
+            f(sr);
+        }
+    }
+
+    protected void DumpCall(string target, Shape shape, Action<StreamWriter> f)
+    {
+        var path = Path.Join(GetMaybeDumpDir(), $"{CountStr}${target}");
+        using (var sr = new StreamWriter(path))
+        {
+            f(sr);
+        }
+
+        UpdateOrder(GetMaybeDumpDir(), target, shape);
+        Append = true;
+        ++Count;
     }
 }
 
@@ -203,13 +208,17 @@ public static class DumpUtility
             if (!lastCapital && isCaptial && sb.Length != 0)
             {
                 if (lastIsLetter || c != 'D')
+                {
                     sb.Append('_');
+                }
             }
 
             sb.Append(char.ToLowerInvariant(c));
 
             if (!lastIsLetter && c == 'D')
+            {
                 sb.Append('_');
+            }
 
             lastCapital = isCaptial;
             lastIsLetter = isLetter;
@@ -233,20 +242,20 @@ public static class DumpUtility
 
 public class Counter
 {
+    private int _count;
+
     public Counter(int count = 0)
     {
-        Count = count;
+        this._count = count;
     }
-
-    private int Count;
 
     public T Run<T>(Func<int, T> f)
     {
-        return f(Count++);
+        return f(_count++);
     }
 
     public void Run(Action<int> f)
     {
-        f(Count++);
+        f(_count++);
     }
 }

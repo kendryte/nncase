@@ -21,9 +21,10 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
     private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="IRPrinterProvider"/> class.
     /// ctor.
     /// </summary>
-    /// <param name="serviceProvider"> compiler servicer provider</param>
+    /// <param name="serviceProvider"> compiler servicer provider.</param>
     public IRPrinterProvider(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
@@ -37,7 +38,10 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
         string name = expr is Callable c ? c.Name : expr.GetType().Name;
         string file_path = Path.Combine(dumpPath, $"{nprefix}{name}.{ext}");
         if (dumpPath == string.Empty)
+        {
             throw new ArgumentNullException("The dumpPath Is Empty!");
+        }
+
         Directory.CreateDirectory(dumpPath);
 
         using var dumpFile = File.Open(file_path, FileMode.Create);
@@ -57,7 +61,10 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
     public void DumpDotIR(Expr expr, string prefix, string dumpDir, bool display_callable)
     {
         if (dumpDir == string.Empty)
+        {
             throw new ArgumentNullException("The dumpPath Is Empty!");
+        }
+
         Directory.CreateDirectory(dumpDir);
 
         string name = expr is Callable c ? c.Name : expr.GetType().Name;
@@ -86,7 +93,7 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
 
         return useScript ? _ : expr switch
         {
-            (Const or None or Var or Op) => _,
+            Const or None or Var or Op => _,
             _ => sb.ToString(),
         };
     }
@@ -103,5 +110,4 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
 
         return $"{context.Get(op)}({string.Join(", ", context.GetArguments(op).Select(s => s.ToString()))})";
     }
-
 }

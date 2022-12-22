@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -57,13 +57,13 @@ namespace Nncase.Importer.TFLite
                     if (((shrinkMask >> i) & 1) != 0)
                     {
                         newBegin.Add(beginItem);
-                        newEnd.Add(beginItem != -1 ? beginItem + 1 : Int32.MaxValue);
+                        newEnd.Add(beginItem != -1 ? beginItem + 1 : int.MaxValue);
                         needSqueeze.Add(i + ellipsisGap);
                         continue;
                     }
 
                     newBegin.Add(((beginMask >> i) & 1) != 0 ? 0 : beginItem);
-                    newEnd.Add(((endMask >> i) & 1) != 0 ? Int32.MaxValue : endItem);
+                    newEnd.Add(((endMask >> i) & 1) != 0 ? int.MaxValue : endItem);
                 }
 
                 var result = F.Tensors.Slice(input, newBegin.ToArray(), newEnd.ToArray(), axes, strides);

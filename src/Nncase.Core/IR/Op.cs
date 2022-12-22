@@ -18,33 +18,7 @@ namespace Nncase.IR;
 public sealed class ParameterInfo
 {
     /// <summary>
-    /// the parameter info ownertype.
-    /// </summary>
-    public Type OwnerType { get; }
-
-    /// <summary>
-    /// parameter index num.
-    /// </summary>
-    public int Index { get; }
-
-    /// <summary>
-    /// name.
-    /// </summary>
-    public string Name { get; }
-
-    /// <summary>
-    /// this paramter's type condition.
-    /// </summary>
-    public TypePattern Pattern { get; } = IsIRType();
-
-    /// <summary>
-    /// Check current type by pattern.
-    /// </summary>
-    /// <param name="type"></param>
-    /// <returns> check success. </returns>
-    public bool CheckType(IRType type) => Pattern.MatchLeaf(type);
-
-    /// <summary>
+    /// Initializes a new instance of the <see cref="ParameterInfo"/> class.
     /// ctor.
     /// </summary>
     /// <param name="ownerType">this op type.</param>
@@ -58,14 +32,42 @@ public sealed class ParameterInfo
     }
 
     /// <summary>
+    /// Gets the parameter info ownertype.
+    /// </summary>
+    public Type OwnerType { get; }
+
+    /// <summary>
+    /// Gets parameter index num.
+    /// </summary>
+    public int Index { get; }
+
+    /// <summary>
+    /// Gets name.
+    /// </summary>
+    public string Name { get; }
+
+    /// <summary>
+    /// Gets this paramter's type condition.
+    /// </summary>
+    public TypePattern Pattern { get; } = IsIRType();
+
+    /// <summary>
+    /// Check current type by pattern.
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns> check success. </returns>
+    public bool CheckType(IRType type) => Pattern.MatchLeaf(type);
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ParameterInfo"/> class.
     /// ctor.
     /// </summary>
     /// <param name="ownerType">this op type.</param>
     /// <param name="index">param index.</param>
     /// <param name="name">param name.</param>
     /// <param name="pattern">the param condition.</param>
-    public ParameterInfo(Type ownerType, int index, string name, TypePattern pattern) :
-      this(ownerType, index, name)
+    public ParameterInfo(Type ownerType, int index, string name, TypePattern pattern)
+        : this(ownerType, index, name)
     {
         Pattern = pattern;
     }
@@ -82,14 +84,19 @@ public abstract record Op() : Expr
     private ParameterInfo[]? _parameters;
 
     /// <summary>
-    /// get the parameters.
+    /// Gets get the parameters.
     /// </summary>
     public IEnumerable<ParameterInfo> Parameters =>
-        _parameters ??= (from p in this.GetType().GetFields(BindingFlags.Public | BindingFlags.Static)
+        _parameters ??= (from p in GetType().GetFields(BindingFlags.Public | BindingFlags.Static)
                          where p.FieldType == typeof(ParameterInfo)
                          let param = (ParameterInfo)(p.GetValue(null) ?? throw new InvalidOperationException())
                          orderby param.Index
                          select param).ToArray();
+
+    /// <summary>
+    /// Gets a value indicating whether mark this op can be fold when input's are const.
+    /// </summary>
+    public virtual bool CanFoldConstCall => true;
 
     /// <inheritdoc/>
     public virtual bool Equals(Op? other)
@@ -109,23 +116,18 @@ public abstract record Op() : Expr
     /// <returns> property string. </returns>
     public virtual string DisplayProperty()
     {
-        return "";
+        return string.Empty;
     }
-
-    /// <summary>
-    /// mark this op can be fold when input's are const
-    /// </summary>
-    public virtual bool CanFoldConstCall => true;
 }
 
 /// <summary>
-/// Custom Op
+/// Custom Op.
 /// </summary>
 /// <param name="RegisteredName"></param>
 public abstract record CustomOp(string RegisteredName) : Op
 {
     /// <summary>
-    /// Get the Current Custom module type.
+    /// Gets get the Current Custom module type.
     /// </summary>
     public abstract CodeGen.ModuleType ModuleType { get; }
 
@@ -134,5 +136,8 @@ public abstract record CustomOp(string RegisteredName) : Op
     /// will used in stackvm runtime.
     /// </summary>
     /// <returns></returns>
-    public virtual byte[] SerializeFields() { return new byte[] { }; }
+    public virtual byte[] SerializeFields()
+    {
+        return Array.Empty<byte>();
+    }
 }

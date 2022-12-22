@@ -50,6 +50,17 @@ public sealed class LinkedModel
         }
     }
 
+    private static unsafe void FillModuleKind(ref ModuleHeader header, string source)
+    {
+        fixed (byte* kind = header.Kind)
+        {
+            if (Encoding.UTF8.GetBytes(source, new Span<byte>(kind, ModelInfo.MAXMODULEKINDLENGTH)) < 1)
+            {
+                throw new ArgumentException("Invalid module kind");
+            }
+        }
+    }
+
     private unsafe void Serialize(BinaryWriter writer, ILinkedModule module)
     {
         var header = new ModuleHeader
@@ -144,22 +155,11 @@ public sealed class LinkedModel
         writer.Position(endPos);
     }
 
-    private static unsafe void FillModuleKind(ref ModuleHeader header, string source)
-    {
-        fixed (byte* kind = header.Kind)
-        {
-            if (Encoding.UTF8.GetBytes(source, new Span<byte>(kind, ModelInfo.MAX_MODULE_KIND_LENGTH)) < 1)
-            {
-                throw new ArgumentException("Invalid module kind");
-            }
-        }
-    }
-
     private static unsafe void FillSectionName(ref SectionHeader header, string source)
     {
         fixed (byte* kind = header.Name)
         {
-            if (Encoding.UTF8.GetBytes(source, new Span<byte>(kind, ModelInfo.MAX_SECTION_NAME_LENGTH)) < 1)
+            if (Encoding.UTF8.GetBytes(source, new Span<byte>(kind, ModelInfo.MAXSECTIONNAMELENGTH)) < 1)
             {
                 throw new ArgumentException("Invalid section name");
             }

@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
@@ -39,12 +39,12 @@ public enum MemoryLocation : byte
     SharedData = 4,
 
     /// <summary>
-    /// l2 data
+    /// l2 data.
     /// </summary>
     L2Data = 5,
 
     /// <summary>
-    /// L1 data
+    /// L1 data.
     /// </summary>
     L1Data = 6,
 
@@ -52,6 +52,30 @@ public enum MemoryLocation : byte
     /// base addr.
     /// </summary>
     PrivateBase = 64,
+}
+
+/// <summary>
+/// the scheduler interface.
+/// </summary>
+public interface IScheduler
+{
+    /// <summary>
+    /// Gets or sets the current target.
+    /// </summary>
+    public ITarget Target { get; set; }
+
+    /// <summary>
+    /// Gets or sets the main module.
+    /// </summary>
+    public IR.IRModule Module { get; set; }
+
+    /// <summary>
+    /// multi stage schedules.
+    /// relay IR -> TIR -> lowered TIR.
+    /// </summary>
+    /// <param name="skip_buffer_alias"></param>
+    /// <returns></returns>
+    public IR.IRModule Schedule(bool skip_buffer_alias = false);
 }
 
 /// <summary>
@@ -86,6 +110,7 @@ public struct MemoryRange
     public uint Size;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="MemoryRange"/> struct.
     /// <see cref="MemoryRange"/>.
     /// </summary>
     /// <param name="memoryLocate">memory data type.</param>
@@ -93,7 +118,7 @@ public struct MemoryRange
     /// <param name="sharedModule">shared module.</param>
     /// <param name="start">memory span start.</param>
     /// <param name="size">memory span length.</param>
-    public MemoryRange(MemoryLocation memoryLocate, PrimTypeCode dType, UInt16 sharedModule, uint start, uint size)
+    public MemoryRange(MemoryLocation memoryLocate, PrimTypeCode dType, ushort sharedModule, uint start, uint size)
     {
         MemoryLocate = memoryLocate;
         DType = dType;
@@ -149,6 +174,7 @@ public class BufferAllocation
     public int[] StridesShape;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="BufferAllocation"/> class.
     /// <see cref="BufferAllocation"/>.
     /// </summary>
     /// <param name="memory_locate">mem loacte.</param>
@@ -172,20 +198,7 @@ public class BufferAllocation
     }
 
     /// <summary>
-    /// get then mem span end.
-    /// </summary>
-    /// <returns></returns>
-    public ulong LinearEnd() => Start + Size;
-
-    /// <summary>
-    /// calc the overlap with another buffer.
-    /// </summary>
-    /// <param name="rhs"></param>
-    /// <returns></returns>
-    public bool Overlap(BufferAllocation rhs) => Size != 0 && rhs.Size != 0 && this.MemoryLocate == rhs.MemoryLocate && (Start < rhs.LinearEnd() && LinearEnd() > rhs.Start);
-
-    /// <summary>
-    /// get current buffer memory range.
+    /// Gets get current buffer memory range.
     /// </summary>
     public MemoryRange MemoryRange
     {
@@ -200,18 +213,36 @@ public class BufferAllocation
             catch (System.Collections.Generic.KeyNotFoundException e)
             {
                 if (DType.SizeInBytes == 4)
+                {
                     code = PrimTypeCode.Float32;
+                }
                 else
+                {
                     throw e;
+                }
             }
 
-            return new(this.MemoryLocate,
+            return new(
+                MemoryLocate,
                code,
-               (UInt16)SharedModule,
-               (uint)this.Start,
-               (uint)this.Size);
+               (ushort)SharedModule,
+               (uint)Start,
+               (uint)Size);
         }
     }
+
+    /// <summary>
+    /// get then mem span end.
+    /// </summary>
+    /// <returns></returns>
+    public ulong LinearEnd() => Start + Size;
+
+    /// <summary>
+    /// calc the overlap with another buffer.
+    /// </summary>
+    /// <param name="rhs"></param>
+    /// <returns></returns>
+    public bool Overlap(BufferAllocation rhs) => Size != 0 && rhs.Size != 0 && MemoryLocate == rhs.MemoryLocate && Start < rhs.LinearEnd() && LinearEnd() > rhs.Start;
 }
 
 /// <summary>
@@ -220,45 +251,22 @@ public class BufferAllocation
 public class SchedFunctionResult
 {
     /// <summary>
-    /// the buffer allocation
+    /// the buffer allocation.
     /// </summary>
     public readonly HashSet<TIR.PhysicalBuffer> Rdatas;
 
     /// <summary>
-    /// the Scheduled status
+    /// the Scheduled status.
     /// </summary>
     public bool IsScheduled;
 
     /// <summary>
-    /// create SchedFunctionResult
+    /// Initializes a new instance of the <see cref="SchedFunctionResult"/> class.
+    /// create SchedFunctionResult.
     /// </summary>
     public SchedFunctionResult()
     {
         Rdatas = new(ReferenceEqualityComparer.Instance);
         IsScheduled = false;
     }
-}
-
-/// <summary>
-/// the scheduler interface.
-/// </summary>
-public interface IScheduler
-{
-    /// <summary>
-    /// the current target.
-    /// </summary>
-    public ITarget Target { get; set; }
-
-    /// <summary>
-    /// the main module.
-    /// </summary>
-    public IR.IRModule Module { get; set; }
-
-    /// <summary>
-    /// multi stage schedules.
-    /// relay IR -> TIR -> lowered TIR.
-    /// </summary>
-    /// <param name="skip_buffer_alias"></param>
-    /// <returns></returns>
-    public IR.IRModule Schedule(bool skip_buffer_alias = false);
 }

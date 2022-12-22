@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Linq;
@@ -48,7 +48,7 @@ public class GatherNDEvaluator : IEvaluator<GatherND>, ITypeInferencer<GatherND>
             {
                 TensorType t => CostUtility.GetMemoryAccess(t),
                 _ => 1,
-            }
+            },
         };
     }
 
@@ -56,7 +56,7 @@ public class GatherNDEvaluator : IEvaluator<GatherND>, ITypeInferencer<GatherND>
     {
         if (context.GetArgument(target, GatherND.BatchDims) is TensorConst batchDimsValue)
         {
-            var lastIndexDims = index.Shape.Last();
+            var lastIndexDims = index.Shape[index.Shape.Count - 1];
             if (!lastIndexDims.IsFixed)
             {
                 return new InvalidType("GatherND input last dim is dynamic, can't infer result shape");

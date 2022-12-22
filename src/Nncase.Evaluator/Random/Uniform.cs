@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -21,6 +21,7 @@ public class UniformEvaluator : IEvaluator<Uniform>, ITypeInferencer<Uniform>, I
         var high = context.GetArgumentValueAsScalar<float>(random, Uniform.High);
         var low = context.GetArgumentValueAsScalar<float>(random, Uniform.Low);
         var seed = context.GetArgumentValueAsScalar<int>(random, Uniform.Seed);
+
         // 1 is float, onnx only support float/half/double
         var t = OrtKI.RandomUniform(1, high, low, seed, shape);
         return Value.FromTensor(t.ToTensor().CastTo(random.Type));
@@ -45,7 +46,7 @@ public class UniformEvaluator : IEvaluator<Uniform>, ITypeInferencer<Uniform>, I
         var returnType = context.GetReturnType<TensorType>();
         return new()
         {
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType)
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
         };
     }
 }

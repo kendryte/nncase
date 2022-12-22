@@ -17,12 +17,10 @@
 
 BEGIN_NS_NNCASE_RUNTIME
 
-namespace detail
-{
+namespace detail {
 struct host_memory_block;
 
-struct NNCASE_API physical_memory_block
-{
+struct NNCASE_API physical_memory_block {
     uintptr_t physical_address;
     bool owned;
 
@@ -37,8 +35,9 @@ struct NNCASE_API physical_memory_block
 
     static result<void> acknowledge(host_memory_block &block) noexcept;
     static result<void> allocate(host_memory_block &block) noexcept;
-    static result<void> sync(host_memory_block &block, host_runtime_tensor::sync_op_t op) noexcept;
+    static result<void> sync(host_memory_block &block,
+                             host_runtime_tensor::sync_op_t op) noexcept;
 };
-}
+} // namespace detail
 
 END_NS_NNCASE_RUNTIME

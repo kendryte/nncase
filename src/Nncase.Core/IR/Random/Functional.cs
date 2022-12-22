@@ -17,7 +17,8 @@ namespace Nncase.IR.F;
 /// </summary>
 public static class Random
 {
-    private static System.Random Rand = new System.Random();
+    private static readonly System.Random Rand = new System.Random();
+
     public static Call Normal(DataType type, Expr mean, Expr scale, Expr seed, Expr shape) =>
         new Call(new Normal(type), mean, scale, seed, shape);
 

@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using Nncase.CodeGen;
 
 namespace Nncase.IR;
@@ -7,7 +10,7 @@ namespace Nncase.IR;
 /// </summary>
 public record Fusion(string Name, string ModuleKind, Expr Body, IRArray<Var> Parameters) : BaseFunction(Name, ModuleKind)
 {
-    private static int _globalFusionIndex = 0;
+    private static int _globalFusionIndex;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Fusion"/> class.
@@ -21,6 +24,7 @@ public record Fusion(string Name, string ModuleKind, Expr Body, IRArray<Var> Par
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="Fusion"/> class.
     /// build function.
     /// </summary>
     /// <param name="module_kind"></param>
@@ -32,7 +36,7 @@ public record Fusion(string Name, string ModuleKind, Expr Body, IRArray<Var> Par
     }
 
     /// <summary>
-    /// get all parameter checked types.
+    /// Gets get all parameter checked types.
     /// </summary>
     public override IEnumerable<IRType?> ParameterTypes => Parameters.Select(x => x.CheckedType);
 }

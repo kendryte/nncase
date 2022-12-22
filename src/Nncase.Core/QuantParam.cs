@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -27,7 +27,8 @@ public struct QuantParam : IEquatable<QuantParam>
     public float Scale;
 
     /// <summary>
-    /// ctor
+    /// Initializes a new instance of the <see cref="QuantParam"/> struct.
+    /// ctor.
     /// </summary>
     /// <param name="zeroPoint"></param>
     /// <param name="scale"></param>
@@ -47,6 +48,11 @@ public struct QuantParam : IEquatable<QuantParam>
     public override string ToString()
     {
         return $"<{ZeroPoint},{Scale}>";
+    }
+
+    public override bool Equals(object obj)
+    {
+        return obj is QuantParam && Equals((QuantParam)obj);
     }
 }
 

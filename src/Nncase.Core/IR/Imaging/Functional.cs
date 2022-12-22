@@ -37,7 +37,8 @@ public static class Imaging
         ImageResizeNearestMode nearestMode,
         Expr input, Expr roi, Expr newSize, Expr cubicCoeffA,
         Expr excludeOutside, Expr extrapolationValue, bool isTFResize = false)
-        => new Call(new ResizeImage(resizeMode, transformationMode, nearestMode, isTFResize),
+        => new Call(
+            new ResizeImage(resizeMode, transformationMode, nearestMode, isTFResize),
             input, roi, newSize, cubicCoeffA, excludeOutside, extrapolationValue);
 
     /// <summary>
@@ -54,8 +55,9 @@ public static class Imaging
         ImageResizeTransformationMode tranMode = ImageResizeTransformationMode.Asymmetric,
         ImageResizeNearestMode nearestMode = ImageResizeNearestMode.Floor,
         bool isTFResize = false)
-        => ResizeImage(resizeMode,
+        => ResizeImage(
+            resizeMode,
                 tranMode,
                 nearestMode,
-            input, roi, newSize, -0.75f, false, -0.0f, isTFResize);
+                input, roi, newSize, -0.75f, false, -0.0f, isTFResize);
 }

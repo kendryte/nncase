@@ -22,13 +22,13 @@ public sealed partial class EGraph : IEGraph
     private readonly Dictionary<ENode, ENodeEntry> _nodes = new();
     private readonly List<EClass> _classes = new();
 
-    private int _version = 0;
-    private int _globalEClassId = 0;
-
     /// <summary>
     /// which eclass should be repair.
     /// </summary>
-    private Queue<WorkItem> _worklist = new();
+    private readonly Queue<WorkItem> _worklist = new();
+
+    private int _version;
+    private int _globalEClassId;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EGraph"/> class.
@@ -176,7 +176,9 @@ public sealed partial class EGraph : IEGraph
     private void Repair(WorkItem workItem)
     {
         if (workItem.OldClass.Id == 29)
-            ;
+        {
+        }
+
         workItem.NewClass = workItem.NewClass.Find();
         foreach (var enode in workItem.OldClass.UsedBy)
         {
@@ -275,6 +277,7 @@ public sealed partial class EGraph : IEGraph
                 result = _graph.AddENode(expr, Array.Empty<EClass>());
                 ExpressionMemo.Add(expr, result);
             }
+
             return result;
         }
 

@@ -44,7 +44,7 @@ namespace Nncase.IR
     {
         private readonly ImmutableArray<Dimension> _dimensions;
 
-        private int _hashcode;
+        private readonly int _hashcode;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Shape"/> class.
@@ -62,7 +62,9 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="dimensions">Dimensions.</param>
         public Shape(IEnumerable<long> dimensions)
-            : this(dimensions.Select(i => (int)i)) { }
+            : this(dimensions.Select(i => (int)i))
+        {
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Shape"/> class.
@@ -84,6 +86,7 @@ namespace Nncase.IR
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="Shape"/> class.
         /// init from the dimensions
         /// Initializes a new instance of the <see cref="Shape"/> class.
         /// </summary>
@@ -99,7 +102,8 @@ namespace Nncase.IR
         /// <param name="dimensions">Dimensions.</param>
         public Shape(params Dimension[] dimensions)
             : this((IEnumerable<Dimension>)dimensions)
-        { }
+        {
+        }
 
         private Shape(ShapeKind kind, IEnumerable<Dimension> dimensions)
         {
@@ -119,7 +123,12 @@ namespace Nncase.IR
         public static Shape Unranked { get; } = new Shape(ShapeKind.Unranked, new List<Dimension>());
 
         /// <summary>
-        /// Gets a shape with rank unknwon dimension
+        /// Gets a scalar shape.
+        /// </summary>
+        public static Shape Scalar { get; } = new Shape(ShapeKind.Fixed, new List<Dimension>());
+
+        /// <summary>
+        /// Gets a shape with rank unknwon dimension.
         /// </summary>
         /// <param name="rank"></param>
         /// <returns></returns>
@@ -127,11 +136,6 @@ namespace Nncase.IR
         {
             return new Shape(ShapeKind.HasUnknownDimension, Enumerable.Repeat(Dimension.Unknown, rank));
         }
-
-        /// <summary>
-        /// Gets a scalar shape.
-        /// </summary>
-        public static Shape Scalar { get; } = new Shape(ShapeKind.Fixed, new List<Dimension>());
 
         /// <summary>
         /// Gets kind.
@@ -179,7 +183,7 @@ namespace Nncase.IR
         public int Rank => _dimensions.Length;
 
         /// <summary>
-        /// Get Total Elements.
+        /// Gets get Total Elements.
         /// </summary>
         public int Size => Enumerable.Range(0, Rank).Aggregate(1, (size, i) => size * _dimensions[i].FixedValue);
 
@@ -191,6 +195,12 @@ namespace Nncase.IR
             index >= 0
                 ? ((IReadOnlyList<Dimension>)_dimensions)[index]
                 : ((IReadOnlyList<Dimension>)_dimensions)[Rank + index];
+
+        /// <inheritdoc/>
+        public static implicit operator ReadOnlySpan<int>(Shape shape) => shape._dimensions.Select(x => (int)(x.Value ?? -1)).ToArray();
+
+        /// <inheritdoc/>
+        public static implicit operator Shape(Dimension[] dimensions) => new Shape(dimensions);
 
         /// <summary>
         /// Get Pord.
@@ -232,7 +242,7 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// convert to the int list
+        /// convert to the int list.
         /// </summary>
         /// <returns></returns>
         public List<int> ToValueList()
@@ -241,7 +251,7 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// convert the int array
+        /// convert the int array.
         /// </summary>
         /// <returns></returns>
         public int[] ToValueArray()
@@ -257,15 +267,15 @@ namespace Nncase.IR
             _ => $"[{string.Join(',', _dimensions)}]",
         };
 
-        private static ShapeKind KindOf(IEnumerable<Dimension> dimensions)
-        {
-            return dimensions.Any(x => x.IsUnknown) ? ShapeKind.HasUnknownDimension : ShapeKind.Fixed;
-        }
-
         /// <inheritdoc/>
         public int GetHashCode(IEqualityComparer comparer)
         {
             return ((IStructuralEquatable)_dimensions).GetHashCode(comparer);
+        }
+
+        private static ShapeKind KindOf(IEnumerable<Dimension> dimensions)
+        {
+            return dimensions.Any(x => x.IsUnknown) ? ShapeKind.HasUnknownDimension : ShapeKind.Fixed;
         }
 
         /// <inheritdoc/>
@@ -304,16 +314,16 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
-        public static implicit operator ReadOnlySpan<int>(Shape shape) => shape._dimensions.Select(x => (int)(x.Value ?? -1)).ToArray();
+        public static bool operator ==(Shape lhs, Shape rhs)
+        {
+            return lhs.Equals(rhs);
+        }
 
         /// <inheritdoc/>
-        public static bool operator ==(Shape lhs, Shape rhs) { return lhs.Equals(rhs); }
-
-        /// <inheritdoc/>
-        public static bool operator !=(Shape lhs, Shape rhs) { return !(lhs == rhs); }
-
-        /// <inheritdoc/>
-        public static implicit operator Shape(Dimension[] dimensions) => new Shape(dimensions);
+        public static bool operator !=(Shape lhs, Shape rhs)
+        {
+            return !(lhs == rhs);
+        }
 
         /// <inheritdoc/>
         public static implicit operator Shape(int[] dimensions) => new Shape(dimensions);

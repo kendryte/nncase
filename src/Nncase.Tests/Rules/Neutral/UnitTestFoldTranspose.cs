@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -23,6 +26,35 @@ public class UnitTestFoldTranspose : TestFixture.UnitTestFixtrue
             new object[] { new[] { 2, 4, 6, 8 }, new[] { 0, 1, 2, 3 } },
         };
 
+    public static TheoryData<int, int[], int[], int[]> TestFoldTwoTransposesPositiveData => new TheoryData<int, int[], int[], int[]>
+    {
+        { 0, new[] { 2, 4 }, new[] { 1, 0 }, new[] { 0, 1 } },
+        { 1, new[] { 2, 4, 6 }, new[] { 0, 2, 1 }, new[] { 1, 2, 0 } },
+        { 2, new[] { 2, 4, 6, 8 }, new[] { 0, 2, 3, 1 }, new[] { 3, 1, 2, 0 } },
+        { 3, new[] { 2, 4, 6, 8, 2 }, new[] { 0, 2, 3, 1, 4 }, new[] { 3, 1, 2, 4, 0 } },
+        { 4, new[] { 1, 32, 112, 112 }, new[] { 0, 2, 3, 1 }, new[] { 0, 3, 1, 2 } },
+    };
+
+    public static IEnumerable<object[]> TestTransposeToReshapePositiveData =>
+        new[]
+        {
+            new object[] { new[] { 1, 2, 4 }, new[] { 1, 0, 2 } },
+            new object[] { new[] { 2, 1, 6, 1 }, new[] { 1, 0, 3, 2 } },
+        };
+
+    public static TheoryData<(int count, IR.Expr act, int[] perm)> TestCombineTransposeActivationsPositiveData => new()
+    {
+      (1, IR.F.NN.Relu(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 2, 4 })), new int[] { 1, 0, 2 }),
+      (2, IR.F.NN.Celu(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 4, 2, 1 }), 0.6f), new int[] { 1, 0, 2 }),
+      (3, IR.F.NN.HardSigmoid(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 4, 2, 1 }), 0.6f, 0.3f), new int[] { 1, 0, 2 }),
+    };
+
+    public static TheoryData<(int count, IR.Expr act, int[] perm)> TestCombineTransposeActivationsNegativeData => new()
+    {
+      (1, IR.F.NN.Softplus(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 2, 4 })), new int[] { 1, 0, 2 }),
+      (2, IR.F.NN.Softsign(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 4, 2, 1 })), new int[] { 1, 0, 2 }),
+    };
+
     [Theory]
     [MemberData(nameof(TestFoldNopTransposePositiveData))]
     public void TestFoldNopTransposePositive(int[] shape, int[] perm)
@@ -35,15 +67,6 @@ public class UnitTestFoldTranspose : TestFixture.UnitTestFixtrue
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
-
-    public static TheoryData<int, int[], int[], int[]> TestFoldTwoTransposesPositiveData => new TheoryData<int, int[], int[], int[]>
-    {
-        {0, new[] { 2, 4 }, new[] { 1, 0 }, new[] { 0, 1 }},
-        {1, new[] { 2, 4, 6 }, new[] { 0, 2, 1 }, new[] { 1, 2, 0 }},
-        {2, new[] { 2, 4, 6, 8 }, new[] { 0, 2, 3, 1 }, new[] { 3, 1, 2, 0 }},
-        {3, new[] { 2, 4, 6, 8, 2 }, new[] { 0, 2, 3, 1, 4 }, new[] { 3, 1, 2, 4, 0 }},
-        {4, new[] { 1, 32, 112, 112 }, new[] { 0, 2, 3, 1 }, new[] { 0, 3, 1, 2 }},
-    };
 
     [Theory]
     [MemberData(nameof(TestFoldTwoTransposesPositiveData))]
@@ -58,13 +81,6 @@ public class UnitTestFoldTranspose : TestFixture.UnitTestFixtrue
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
 
-    public static IEnumerable<object[]> TestTransposeToReshapePositiveData =>
-        new[]
-        {
-            new object[] { new[] { 1, 2, 4 }, new[] { 1, 0, 2 } },
-            new object[] { new[] { 2, 1, 6, 1 }, new[] { 1, 0, 3, 2 } },
-        };
-
     [Theory]
     [MemberData(nameof(TestTransposeToReshapePositiveData))]
     public void TestTransposeToReshapePositive(int[] shape, int[] perm)
@@ -75,18 +91,12 @@ public class UnitTestFoldTranspose : TestFixture.UnitTestFixtrue
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new FoldShapeOf(),
-            new TransposeToReshape()
+            new TransposeToReshape(),
         }, caseOptions);
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
-
-    public static TheoryData<(int count, IR.Expr act, int[] perm)> TestCombineTransposeActivationsPositiveData => new(){
-      (1, IR.F.NN.Relu(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new [] {1, 2, 4})), new int []{ 1, 0, 2}),
-      (2, IR.F.NN.Celu(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new [] {4, 2, 1}), 0.6f), new int []{ 1, 0, 2}),
-      (3, IR.F.NN.HardSigmoid(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new [] {4, 2, 1}), 0.6f, 0.3f), new int []{ 1, 0, 2}),
-    };
 
     [Theory]
     [MemberData(nameof(TestCombineTransposeActivationsPositiveData))]
@@ -96,17 +106,12 @@ public class UnitTestFoldTranspose : TestFixture.UnitTestFixtrue
         var rootPre = Tensors.Transpose(param.act, param.perm);
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
-            new CombineTransposeActivations()
+            new CombineTransposeActivations(),
         }, caseOptions);
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
-
-    public static TheoryData<(int count, IR.Expr act, int[] perm)> TestCombineTransposeActivationsNegativeData => new(){
-      (1, IR.F.NN.Softplus(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new [] {1, 2, 4})), new int []{ 1, 0, 2}),
-      (2, IR.F.NN.Softsign(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new [] {4, 2, 1})), new int []{ 1, 0, 2}),
-    };
 
     [Theory]
     [MemberData(nameof(TestCombineTransposeActivationsNegativeData))]
@@ -116,7 +121,7 @@ public class UnitTestFoldTranspose : TestFixture.UnitTestFixtrue
         var rootPre = Tensors.Transpose(param.act, param.perm);
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
-            new CombineTransposeActivations()
+            new CombineTransposeActivations(),
         }, caseOptions);
 
         Assert.Equal(rootPre, rootPost);

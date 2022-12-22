@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -13,21 +13,22 @@ using Nncase.Transform.Rules;
 namespace Nncase.Transform.Passes;
 
 /// <summary>
-/// merge call/ assgin ddr buffer start/layout
+/// merge call/ assgin ddr buffer start/layout.
 /// </summary>
 public sealed class DDrBufferSchdeulePass : ModulePass
 {
+    private readonly Dictionary<string, Dictionary<Schedule.MemoryLocation, int>> _module_usage = new();
+
     /// <summary>
-    /// ctor
+    /// Initializes a new instance of the <see cref="DDrBufferSchdeulePass"/> class.
+    /// ctor.
     /// </summary>
     /// <param name="name"></param>
-    public DDrBufferSchdeulePass(string name) : base(name)
+    public DDrBufferSchdeulePass(string name)
+        : base(name)
     {
     }
-
-    readonly Dictionary<string, Dictionary<Schedule.MemoryLocation, int>> _module_usage = new();
-
-    readonly Dictionary<string, HashSet<TIR.Buffer>> _module_hashset = new();
+    private readonly Dictionary<string, HashSet<TIR.Buffer>> _module_hashset = new();
 
     /// <inheritdoc/>
     protected override Task RunCoreAsync(IRModule module, RunPassOptions options)
@@ -64,41 +65,47 @@ public sealed class DDrBufferSchdeulePass : ModulePass
 }
 
 /// <summary>
-/// collect and assgin the PhysicalBuffer
+/// collect and assgin the PhysicalBuffer.
 /// </summary>
 internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
 {
     public readonly Dictionary<string, Dictionary<Schedule.MemoryLocation, int>> ModuleUsage;
     public readonly Dictionary<string, HashSet<TIR.Buffer>> ModuleHashSet;
-    private readonly Dictionary<Schedule.MemoryLocation, int> FunctionUsage;
-    private readonly HashSet<TIR.Buffer> FunctionHashset;
     public bool Changed;
+    private readonly Dictionary<Schedule.MemoryLocation, int> _functionUsage;
+    private readonly HashSet<TIR.Buffer> _functionHashset;
     public PrimFunction? _entry;
 
     public DDrBufferAllocator(Dictionary<string, Dictionary<Schedule.MemoryLocation, int>> module_usage, Dictionary<string, HashSet<TIR.Buffer>> module_hashset)
     {
         ModuleUsage = module_usage;
         ModuleHashSet = module_hashset;
-        FunctionUsage = new();
-        FunctionHashset = new(ReferenceEqualityComparer.Instance);
+        _functionUsage = new();
+        _functionHashset = new(ReferenceEqualityComparer.Instance);
         Changed = false;
     }
 
     /// <remarks>
-    /// only visit one prim func 
-    /// </remarks> 
+    /// only visit one prim func.
+    /// </remarks>
+    /// <returns></returns>
     public override bool Visit(PrimFunction primFunction)
     {
         _entry ??= primFunction;
         if (object.ReferenceEquals(_entry, primFunction))
+        {
             return base.Visit(_entry);
+        }
+
         return true;
     }
 
     public override bool VisitLeaf(TIR.Buffer buffer)
     {
         if (buffer is not TIR.PhysicalBuffer physical)
+        {
             return true;
+        }
 
         // rdata write into the moduleUsage
         if (physical.MemLocation is Schedule.MemoryLocation.Rdata)
@@ -118,7 +125,10 @@ internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
             if (!module_hashset.Contains(physical))
             {
                 if (!module_usage.TryGetValue(physical.MemLocation, out var start))
+                {
                     start = 0;
+                }
+
                 physical.Start = start;
                 module_usage[physical.MemLocation] = start + physical.Size;
                 module_hashset.Add(physical);
@@ -126,27 +136,32 @@ internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
                 Changed = true;
             }
         }
-        else if (physical.MemLocation is (Schedule.MemoryLocation.Input or Schedule.MemoryLocation.Output))
+        else if (physical.MemLocation is Schedule.MemoryLocation.Input or Schedule.MemoryLocation.Output)
         {
             // avoid visit same buffer
-            if (!FunctionHashset.Contains(physical))
+            if (!_functionHashset.Contains(physical))
             {
                 // input/output write into the FunctionUsage
-                if (!FunctionUsage.TryGetValue(physical.MemLocation, out var start))
+                if (!_functionUsage.TryGetValue(physical.MemLocation, out var start))
+                {
                     start = 0;
+                }
+
                 physical.Start = start;
-                FunctionUsage[physical.MemLocation] = start + physical.Size;
-                FunctionHashset.Add(physical);
+                _functionUsage[physical.MemLocation] = start + physical.Size;
+                _functionHashset.Add(physical);
                 Changed = true;
             }
         }
-        else if (physical.MemLocation is (Schedule.MemoryLocation.Data or Schedule.MemoryLocation.SharedData))
+        else if (physical.MemLocation is Schedule.MemoryLocation.Data or Schedule.MemoryLocation.SharedData)
+        {
             throw new NotSupportedException("Current Not Support!");
+        }
+
         return true;
     }
 
     public override bool DefaultVisitLeaf(Expr expr) => true;
 
     public override object DefaultVisitLeaf(IVisitable visitable) => true;
-
 }

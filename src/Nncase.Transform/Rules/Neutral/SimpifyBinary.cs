@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.IR;
@@ -9,13 +9,13 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Transform.Rules.Neutral;
 
 /// <summary>
-/// (x * y) * z => x * (y * z)
+/// (x * y) * z => x * (y * z).
 /// </summary>
 [RuleGenerator]
 public sealed partial class ReassociateMul : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = (IsWildcard("x") * IsWildcard("y")) * IsWildcard("z");
+    public IPattern Pattern { get; } = IsWildcard("x") * IsWildcard("y") * IsWildcard("z");
 
     private Expr? GetReplace(Expr x, Expr y, Expr z) => x * (y * z);
 }

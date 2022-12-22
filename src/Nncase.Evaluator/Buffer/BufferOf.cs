@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Autofac;
@@ -8,12 +8,12 @@ using Nncase.IR.Buffer;
 namespace Nncase.Evaluator.Buffer;
 
 /// <summary>
-/// Evaluator for BufferOf
+/// Evaluator for BufferOf.
 /// </summary>
 [TypeInferGenerator]
 public partial class BufferOfEvaluator : ITypeInferencer<BufferOf>
 {
-    IRType Visit(TensorType Input)
+    private IRType Visit(TensorType input)
     {
         return TupleType.Void;
     }

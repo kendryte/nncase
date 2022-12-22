@@ -21,27 +21,31 @@
 
 BEGIN_NS_NNCASE_RT_MODULE(vulkan)
 
-class vulkan_runtime_function : public runtime_function, private op_visitor
-{
-    struct buffer_ref
-    {
+class vulkan_runtime_function : public runtime_function, private op_visitor {
+    struct buffer_ref {
         vk::Buffer buffer;
         size_t start;
         size_t size;
     };
 
-public:
+  public:
     using runtime_function::runtime_function;
     virtual ~vulkan_runtime_function();
 
     vulkan_runtime_module &module() const noexcept;
 
-protected:
-    result<void> initialize_core(runtime_function_init_context &context) noexcept override;
-    result<runtime_tensor> allocate_input_tensor(size_t index) noexcept override;
-    result<runtime_tensor> allocate_output_tensor(size_t index) noexcept override;
-    result<void> validate_input_tensor(size_t index, runtime_tensor tensor) noexcept override;
-    result<void> validate_output_tensor(size_t index, runtime_tensor tensor) noexcept override;
+  protected:
+    result<void>
+    initialize_core(runtime_function_init_context &context) noexcept override;
+    result<runtime_tensor>
+    allocate_input_tensor(size_t index) noexcept override;
+    result<runtime_tensor>
+    allocate_output_tensor(size_t index) noexcept override;
+    result<void> validate_input_tensor(size_t index,
+                                       runtime_tensor tensor) noexcept override;
+    result<void>
+    validate_output_tensor(size_t index,
+                           runtime_tensor tensor) noexcept override;
     result<void> invoke_core() noexcept override;
 
     using op_visitor::visit;
@@ -53,7 +57,7 @@ protected:
     result<void> visit(const dispatch_op_t &op) noexcept override;
     result<void> visit(const barrier_op_t &op) noexcept override;
 
-private:
+  private:
     result<void> initialize_vulkan_device() noexcept;
     result<void> initialize_vulkan_memory() noexcept;
     result<void> initialize_vulkan_commands() noexcept;
@@ -64,7 +68,7 @@ private:
 
     void free_vulkan_resources() noexcept;
 
-private:
+  private:
     uint32_t input_pool_size_;
     uint32_t output_pool_size_;
     gsl::span<const gsl::byte> text_;

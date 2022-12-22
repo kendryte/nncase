@@ -69,5 +69,4 @@ public class CPUTarget : ITarget
             throw new NotSupportedException($"{moduleKind} module is not supported.");
         }
     }
-
 }

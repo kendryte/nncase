@@ -52,8 +52,9 @@ public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region) : Expr
                   {
                       // if stop is neg, add the shape
                       Call { Target: IR.Math.Unary { UnaryOp: UnaryOp.Neg } } => throw new NotSupportedException("Neg Region!"),
+
                       // else return the origin range.
-                      _ => tp.Second
+                      _ => tp.Second,
                   })));
     }
 }

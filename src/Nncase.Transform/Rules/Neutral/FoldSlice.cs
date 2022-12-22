@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -64,7 +64,6 @@ public sealed partial class FoldTwoSlices : IRewriteRule
     //     return Enumerable.Range(0, begins.Length)
     //         .All(i => begins[i] == 0 && ends[i] == inShape[i].FixedValue && strides[i] == 1);
     // }
-
     private Expr? GetReplace(Expr input, Tensor<int> begins1, Tensor<int> ends1, Tensor<int> axes1, Tensor<int> strides1, Tensor<int> begins2, Tensor<int> ends2, Tensor<int> axes2, Tensor<int> strides2)
     {
         var inShape = input.CheckedShape;
@@ -81,7 +80,6 @@ public sealed partial class FoldTwoSlices : IRewriteRule
         // {
         //     return null;
         // }
-
         var newBegins = new List<int>();
         var newEnds = new List<int>();
         var newStrides = new List<int>();
@@ -117,7 +115,6 @@ public sealed partial class FoldTwoSlices : IRewriteRule
                 newStrides.Add(strides1[axis_1]);
                 newAxes.Add(axes1[axis_1]);
             }
-
         }
 
         return Slice(input, newBegins.ToArray(), newEnds.ToArray(), newAxes.ToArray(), newStrides.ToArray());

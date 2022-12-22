@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Nncase.Evaluator;
@@ -87,4 +90,3 @@ public class UnitTestTBuffer
     //     Testing.AssertExprEqual(load[Load.Index], 100 + ((2 * n) + 3));
     // }
 }
-

@@ -17,8 +17,7 @@
 
 BEGIN_NS_NNCASE_RUNTIME
 
-namespace detail
-{
+namespace detail {
 class host_runtime_tensor_impl;
 }
 

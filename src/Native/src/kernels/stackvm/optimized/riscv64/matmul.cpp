@@ -20,21 +20,22 @@
 //#include <riscv_vector.h>
 //#endif
 //
-//using namespace nncase;
-//using namespace nncase::runtime;
-//using namespace nncase::kernels;
-//using namespace nncase::kernels::stackvm;
-//using namespace nncase::kernels::stackvm::optimized;
+// using namespace nncase;
+// using namespace nncase::runtime;
+// using namespace nncase::kernels;
+// using namespace nncase::kernels::stackvm;
+// using namespace nncase::kernels::stackvm::optimized;
 //
-//namespace
+// namespace
 //{
 //#if __riscv_vector
 //
 //// float
-//result<void> optimized_matmul_impl(const float *input_a, const float *input_b, const float *bias, float *output,
-//    const dims_t &in_a_shape, const dims_t &in_a_strides, const dims_t &in_b_shape,
-//    const dims_t &in_b_strides, const dims_t &out_shape, const dims_t out_strides,
-//    value_range<float> fused_activation) noexcept
+// result<void> optimized_matmul_impl(const float *input_a, const float
+// *input_b, const float *bias, float *output,
+//    const dims_t &in_a_shape, const dims_t &in_a_strides, const dims_t
+//    &in_b_shape, const dims_t &in_b_strides, const dims_t &out_shape, const
+//    dims_t out_strides, value_range<float> fused_activation) noexcept
 //{
 //    size_t M = in_a_shape[in_a_shape.size() - 2];
 //    size_t K = in_a_shape.back();
@@ -89,7 +90,8 @@
 //                }
 //
 //                // update acc with act
-//                acc = vfmax_vf_f32m8(vfmin_vf_f32m8(acc, fused_activation.max, vl), fused_activation.min, vl);
+//                acc = vfmax_vf_f32m8(vfmin_vf_f32m8(acc, fused_activation.max,
+//                vl), fused_activation.min, vl);
 //
 //                vse32_v_f32m8(pc, acc, vl);
 //                pb += vl;
@@ -111,17 +113,22 @@
 //
 //
 ////template <typename T>
-////result<void> optimized::matmul(const T *input_a, const T *input_b, const T *bias, T *output,
-////    const dims_t &in_a_shape, const dims_t &in_a_strides, const dims_t &in_b_shape,
-////    const dims_t &in_b_strides, const dims_t &out_shape, const dims_t &out_strides,
-////    value_range<float> fused_activation) noexcept
-//result<void> matmul_impl(typecode_t typecode, const gsl::byte *input_a, const gsl::byte *input_b, gsl::byte *output,
+////result<void> optimized::matmul(const T *input_a, const T *input_b, const T
+///*bias, T *output, /    const dims_t &in_a_shape, const dims_t &in_a_strides,
+///const dims_t &in_b_shape, /    const dims_t &in_b_strides, const dims_t
+///&out_shape, const dims_t &out_strides, /    value_range<float>
+///fused_activation) noexcept
+// result<void> matmul_impl(typecode_t typecode, const gsl::byte *input_a, const
+// gsl::byte *input_b, gsl::byte *output,
 //                         const dims_t &in_a_shape,
 //                         const dims_t &in_b_shape) noexcept
 //{
 //#if __riscv_vector
-//    return optimized_matmul_impl(input_a, input_b, bias, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides, fused_activation);
+//    return optimized_matmul_impl(input_a, input_b, bias, output, in_a_shape,
+//    in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides,
+//    fused_activation);
 //#endif
 //
-//    return kernels::stackvm::reference::matmul(typecode, input_a, input_b, output, in_a_shape, in_b_shape);
+//    return kernels::stackvm::reference::matmul(typecode, input_a, input_b,
+//    output, in_a_shape, in_b_shape);
 //}

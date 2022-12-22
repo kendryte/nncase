@@ -22,6 +22,11 @@ namespace Nncase.IR
         private readonly Dictionary<string, Action<Expr>> _callbacksAfterCall = new();
         private readonly Dictionary<string, Action<Expr>> _callbacksBeforeCall = new();
 
+        /// <summary>
+        /// Gets expression visit result memo.
+        /// </summary>
+        public Dictionary<Expr, TExprResult> ExpressionMemo => _exprMemo;
+
         protected void RegisterAfterCallback(string name, Action<Expr> callback)
         {
             _callbacksAfterCall[name] = callback;
@@ -49,12 +54,7 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// Gets expression visit result memo.
-        /// </summary>
-        public Dictionary<Expr, TExprResult> ExpressionMemo => _exprMemo;
-
-        /// <summary>
-        /// Gets visitable visit result memo
+        /// Gets visitable visit result memo.
         /// </summary>
         public Dictionary<IVisitable, object> VisitAbleMemo => _visitableMemo;
 
@@ -278,11 +278,23 @@ namespace Nncase.IR
             {
                 Visit(expr.Body);
                 Visit(expr.InitBody);
-                foreach (var iterVar in expr.IterVars) { Visit(iterVar); }
-                foreach (var reads in expr.Reads) { Visit(reads); }
-                foreach (var writes in expr.Writes) { Visit(writes); }
+                foreach (var iterVar in expr.IterVars)
+                {
+                    Visit(iterVar);
+                }
+                foreach (var reads in expr.Reads)
+                {
+                    Visit(reads);
+                }
+                foreach (var writes in expr.Writes)
+                {
+                    Visit(writes);
+                }
                 foreach (var buffer in expr.AllocBuffers)
+                {
                     Visit(buffer);
+                }
+
                 Visit(expr.Predicate);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
@@ -296,7 +308,10 @@ namespace Nncase.IR
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
-                foreach (var index in expr.Indices) { Visit(index); }
+                foreach (var index in expr.Indices)
+                {
+                    Visit(index);
+                }
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
@@ -310,7 +325,10 @@ namespace Nncase.IR
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
                 Visit(expr.Buffer);
-                foreach (var index in expr.Indices) { Visit(index); }
+                foreach (var index in expr.Indices)
+                {
+                    Visit(index);
+                }
                 Visit(expr.Value);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);

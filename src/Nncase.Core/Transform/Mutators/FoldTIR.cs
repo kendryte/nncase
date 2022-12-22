@@ -1,10 +1,5 @@
-﻿// using System;
-// using System.Collections.Generic;
-// using System.Linq;
-// using System.Text;
-// using System.Threading.Tasks;
-// using Nncase.IR;
-
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
 // namespace Nncase.Transform.Mutators;
 
 
@@ -15,21 +10,21 @@
 // {
 //     private readonly Dictionary<Expr, Expr> _exprSEqualMemo;
 
-//     private readonly Dictionary<IMutatable, IMutatable> _mutateableSEqualMemo;
+// private readonly Dictionary<IMutatable, IMutatable> _mutateableSEqualMemo;
 
-//     public FoldTIR()
+// public FoldTIR()
 //     {
 //         _exprSEqualMemo = new Dictionary<Expr, Expr>();
 //         _mutateableSEqualMemo = new(); // NOTE is this struct equal?
 //     }
 
-//     // NOTE do not modify follow expression
+// // NOTE do not modify follow expression
 //     public override Expr MutateLeaf(Op expr) => expr;
 //     public override Expr MutateLeaf(Var expr) => expr;
 //     public override Expr MutateLeaf(None expr) => expr;
 //     public override Expr MutateLeaf(TIR.Buffer expr) => expr;
 
-//     /// <inheritdoc/>
+// /// <inheritdoc/>
 //     public override Expr DefaultMutateLeaf(Expr expr)
 //     {
 //         if (!_exprSEqualMemo.TryGetValue(expr, out var result))
@@ -38,10 +33,10 @@
 //             _exprSEqualMemo.Add(expr, result);
 //         }
 
-//         return result;
+// return result;
 //     }
 
-//     /// <inheritdoc/>
+// /// <inheritdoc/>
 //     public override IMutatable DefaultMutateLeaf(IMutatable mutatable)
 //     {
 //         if (!_mutateableSEqualMemo.TryGetValue(mutatable, out var result))

@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -31,7 +31,10 @@ public class LoadEvaluator : ITypeInferencer<Load>, IOpPrinter<Load>
     private IRType Visit(Load target, TensorType handle, TensorType index)
     {
         if (!handle.IsScalar && handle.DType is not PointerType)
+        {
             throw new NotSupportedException(handle.DType.ToString());
+        }
+
         int lanes = index.IsScalar ? 1 : index.Shape[0].FixedValue;
         return TensorType.Scalar(((PointerType)handle.DType).ElemType);
     }

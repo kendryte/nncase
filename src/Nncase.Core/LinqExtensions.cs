@@ -32,7 +32,7 @@ public static class LinqExtensions
     }
 
     /// <summary>
-    /// take or default
+    /// take or default.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="items"></param>
@@ -42,7 +42,10 @@ public static class LinqExtensions
     public static IEnumerable<T> TakeOrDefault<T>(this IEnumerable<T> items, int count, T defaultValue)
     {
         if (items.Count() < count)
+        {
             return items.Concat(Enumerable.Repeat(defaultValue, count - items.Count()));
+        }
+
         return items;
     }
 }

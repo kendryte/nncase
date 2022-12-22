@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -54,8 +57,11 @@ public class UnitTestK210Target
         var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1, inChannels, 4, 4 }));
         var w = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { outChannels, inChannels, 1, 1 }).Evaluate().AsTensor();
         var b = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { outChannels }).Evaluate().AsTensor();
-        var y = IR.F.NN.Conv2D(x, w, b, new[] { 1, 1 }, new[,] { { 0, 0 },
-        { 0, 0 } }, new[] { 1, 1 }, PadMode.Constant, 1);
+        var y = IR.F.NN.Conv2D(x, w, b, new[] { 1, 1 }, new[,]
+        {
+            { 0, 0 },
+            { 0, 0 },
+        }, new[] { 1, 1 }, PadMode.Constant, 1);
         await TestCodeGen(y, new[] { x });
     }
 
@@ -67,7 +73,9 @@ public class UnitTestK210Target
         var dumpDir = "k210_" + name;
         var passOptions = new RunPassOptions(target, 2, dumpDir, CompileOptions);
         if (Directory.Exists(dumpDir))
+        {
             Directory.Delete(dumpDir, true);
+        }
 
         // 1. Optimize target dependent
         CompileOptions.QuantizeOptions = new QuantizeOptions { CalibrationDataset = new RandomCalibrationDatasetProvider(vars), CalibrationMethod = CalibMethod.Kld };
@@ -75,11 +83,11 @@ public class UnitTestK210Target
         target.RegisterTargetDependentPass(pmgr, CompileOptions);
         await pmgr.RunAsync();
 
-        //var modelBuilder = new ModelBuilder(target);
-        //var linkedModel = modelBuilder.Build(module);
-        //using var output = File.Open($"k210_{name}/test.kmodel", FileMode.Create);
-        //linkedModel.Serialize(output);
-        //Assert.NotEqual(0, output.Length);
+        // var modelBuilder = new ModelBuilder(target);
+        // var linkedModel = modelBuilder.Build(module);
+        // using var output = File.Open($"k210_{name}/test.kmodel", FileMode.Create);
+        // linkedModel.Serialize(output);
+        // Assert.NotEqual(0, output.Length);
     }
 
     private void GenerateKModelAndRun(IRModule module, Tensor input, Tensor[] expectedOutput, [CallerMemberName] string? name = null)
@@ -124,12 +132,8 @@ public class UnitTestK210Target
         GenerateKModelAndRun(module, input, new[] { expectedOutput }, name);
     }
 
-    class RandomCalibrationDatasetProvider : ICalibrationDatasetProvider
+    private class RandomCalibrationDatasetProvider : ICalibrationDatasetProvider
     {
-        public int? Count => 1;
-
-        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
-
         public RandomCalibrationDatasetProvider(IReadOnlyList<Var> vars)
         {
             var values = new Dictionary<Var, IValue>();
@@ -142,5 +146,9 @@ public class UnitTestK210Target
 
             Samples = new[] { values }.ToAsyncEnumerable();
         }
+
+        public int? Count => 1;
+
+        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
     }
 }

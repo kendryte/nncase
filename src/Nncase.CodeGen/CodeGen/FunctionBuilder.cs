@@ -13,7 +13,7 @@ namespace Nncase.CodeGen;
 /// <summary>
 /// Function builder.
 /// </summary>
-public abstract class FunctionBuilder
+public abstract class FunctionBuilder : IDisposable
 {
     private readonly MemoryStream _textContent = new MemoryStream();
 
@@ -69,5 +69,10 @@ public abstract class FunctionBuilder
 
             TextWriter.WriteByLength(symbolAddr + refer.Offset, refer.Length);
         }
+    }
+
+    public void Dispose()
+    {
+        throw new NotImplementedException();
     }
 }

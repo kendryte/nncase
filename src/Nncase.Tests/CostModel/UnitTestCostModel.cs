@@ -1,11 +1,5 @@
-// using Nncase.CostModel;
-// using Nncase.IR;
-// using Nncase.IR.F;
-// using Xunit;
-// using Nncase.Transform;
-// using Nncase.PatternMatch;
-// using static Nncase.PatternMatch.Utility;
-
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
 // namespace Nncase.Tests.CostModelTest;
 
 
@@ -20,7 +14,7 @@
 //         Assert.Equal(new Cost(0, 4), exprVisitor.Visit(a));
 //     }
 
-//     [Fact]
+// [Fact]
 //     public void TestBinary()
 //     {
 //         // todo need process pow lhs is not cost
@@ -32,7 +26,7 @@
 //         // Assert.Equal(new Cost(5, 0), exprVisitor.Visit(pow));
 //     }
 
-//     [Fact]
+// [Fact]
 //     public void TestCostInf()
 //     {
 //         var c = Cost.Inf;

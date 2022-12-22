@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -16,13 +19,13 @@ public class UnitTestExpression
     [Fact]
     public void TestConstEqual()
     {
-        var a = (Const)(1.1f) == (Const)(1.1f);
+        var a = (Const)1.1f == (Const)1.1f;
         Assert.True(a);
-        var b = (Const)(1.1f) == (Const)(1.2f);
+        var b = (Const)1.1f == (Const)1.2f;
         Assert.False(b);
 
-        var va = (Const)(new[] { 1, 2, 3, 4 });
-        var vb = (Const)(new[] { 1, 2, 3, 4 });
+        var va = (Const)new[] { 1, 2, 3, 4 };
+        var vb = (Const)new[] { 1, 2, 3, 4 };
         Assert.Equal(va, vb);
         Assert.Equal(va.GetHashCode(), vb.GetHashCode());
 
@@ -35,13 +38,13 @@ public class UnitTestExpression
     }
 
     /// <summary>
-    /// when check type is different, expression not equal
+    /// when check type is different, expression not equal.
     /// </summary>
     [Fact]
     public void TestConstEqualWithCheckType()
     {
-        var a = (Const)(1.1f);
-        var b = (Const)(1.1f);
+        var a = (Const)1.1f;
+        var b = (Const)1.1f;
         a.CheckedType = a.ValueType;
         Assert.True(a == b);
         Assert.Equal(a, b);
@@ -53,8 +56,8 @@ public class UnitTestExpression
     [Fact]
     public void TestCallEqualWithCheckType()
     {
-        var a = (Const)(1.1f) + (Const)(1.3f);
-        var b = (Const)(1.1f) + (Const)(1.3f);
+        var a = (Const)1.1f + (Const)1.3f;
+        var b = (Const)1.1f + (Const)1.3f;
         CompilerServices.InferenceType(a);
         Assert.True(a == b);
         Assert.Equal(a, b);
@@ -64,8 +67,8 @@ public class UnitTestExpression
     [Fact]
     public void TestCallNotEqualWithCheckType()
     {
-        var a = (Const)(1.1f) + (Const)(1.3f);
-        var b = (Const)(1.1f) + (Const)(1.2f);
+        var a = (Const)1.1f + (Const)1.3f;
+        var b = (Const)1.1f + (Const)1.2f;
         CompilerServices.InferenceType(a);
         Assert.NotEqual(a, b);
     }
@@ -105,8 +108,8 @@ public class UnitTestExpression
     [Fact]
     public void TestBinaryAddEqualWithCheckType()
     {
-        var a = (Const)(1.1f) + (Const)(1.1f);
-        var b = (Const)(2) + (new Var("c"));
+        var a = (Const)1.1f + (Const)1.1f;
+        var b = (Const)2 + new Var("c");
         var dict = new Dictionary<Expr, int> { };
         Op opa = (Op)a.Target, opb = (Op)b.Target;
 
@@ -136,12 +139,12 @@ public class UnitTestExpression
     [Fact]
     public void TestBinaryOpEqualWithCheckType()
     {
-        var a = (Const)(1.1f) + (Const)(1.1f);
-        var b = (Const)(2) - (new Var("c"));
+        var a = (Const)1.1f + (Const)1.1f;
+        var b = (Const)2 - new Var("c");
 
         Assert.False(a.Target == b.Target);
 
-        var c = (Const)(1.1f) + (Const)(1.1f);
+        var c = (Const)1.1f + (Const)1.1f;
 
         Assert.True(a.Equals(c));
     }
@@ -197,11 +200,11 @@ public class UnitTestExpression
     [Fact]
     public void TestHastSet()
     {
-        var a_lhs = (Const)(1.1f);
-        var a_rhs = (Const)(1.1f);
+        var a_lhs = (Const)1.1f;
+        var a_rhs = (Const)1.1f;
         var a = a_lhs + a_rhs;
-        var b_lhs = (Const)(1.1f);
-        var b_rhs = (new Var("c"));
+        var b_lhs = (Const)1.1f;
+        var b_rhs = new Var("c");
         var b = b_lhs - b_rhs;
         var c = a_lhs + a_rhs;
         var set = new HashSet<Expr>()
@@ -212,7 +215,7 @@ public class UnitTestExpression
             b_lhs, // will fold
             b_rhs,
             b,
-            c // will fold
+            c, // will fold
         };
 
         Assert.Equal(4, set.Count);
@@ -307,6 +310,19 @@ public class UnitTestExpression
         }
     }
 
+    [Fact]
+    public void TestPrintExpr()
+    {
+        Expr x = new int[] { 1, 2, 3, 4 };
+        CompilerServices.InferenceType(x);
+        Assert.Equal("const(i32[4] : {1,2,3,4})", CompilerServices.Print(x));
+        Assert.Equal("None", CompilerServices.Print(None.Default));
+        Assert.Equal("Add", CompilerServices.Print(new Nncase.IR.Math.Binary(BinaryOp.Add)));
+        var y = new Var("y");
+        CompilerServices.InferenceType(y);
+        Assert.Equal("%y: any", CompilerServices.Print(y));
+    }
+
     private sealed class ExpressionTreeBuilder : ExprVisitor<Expression, Type>
     {
         public override Expression VisitLeaf(Const expr)
@@ -359,19 +375,6 @@ public class UnitTestExpression
     }
 
     [Fact]
-    public void TestPrintExpr()
-    {
-        Expr x = new int[] { 1, 2, 3, 4 };
-        CompilerServices.InferenceType(x);
-        Assert.Equal("const(i32[4] : {1,2,3,4})", CompilerServices.Print(x));
-        Assert.Equal("None", CompilerServices.Print(None.Default));
-        Assert.Equal("Add", CompilerServices.Print(new Nncase.IR.Math.Binary(BinaryOp.Add)));
-        Var y = new Var("y");
-        CompilerServices.InferenceType(y);
-        Assert.Equal("%y: any", CompilerServices.Print(y));
-    }
-
-    [Fact]
     public void TestExpressionTree()
     {
         var input_1 = new Var("input_1", TensorType.Scalar(DataTypes.Int32));
@@ -387,29 +390,6 @@ public class UnitTestExpression
             Assert.Equal(i + 10, res_1);
             Assert.Equal(res_1, fn_2.DynamicInvoke(i));
         }
-    }
-
-    struct MyRange
-    {
-        public MyRange(int start, int stop)
-        {
-            Start = start;
-            Stop = stop;
-        }
-
-        public int Start;
-        public int Stop;
-    }
-
-    MyRange[] Conv2dBounds(MyRange[] output_range, int kh, int kw)
-    {
-        var new_output_range = new MyRange[output_range.Length];
-        Array.Copy(output_range, new_output_range, output_range.Length);
-        new_output_range[2].Start += kh;
-        new_output_range[2].Stop += kh;
-        new_output_range[3].Start += kw;
-        new_output_range[3].Stop += kw;
-        return new_output_range;
     }
 
     [Fact]
@@ -430,5 +410,28 @@ public class UnitTestExpression
         var fn_2_ret = fn_2(new MyRange[] { new(1, 2), new(3, 4), new(5, 6), new(7, 9) });
         Assert.Equal<MyRange>(new(5 + 3 + 5, 6 + 3 + 5), fn_2_ret[2]);
         Assert.Equal<MyRange>(new(7 + 4 + 6, 9 + 4 + 6), fn_2_ret[3]);
+    }
+
+    private MyRange[] Conv2dBounds(MyRange[] output_range, int kh, int kw)
+    {
+        var new_output_range = new MyRange[output_range.Length];
+        Array.Copy(output_range, new_output_range, output_range.Length);
+        new_output_range[2].Start += kh;
+        new_output_range[2].Stop += kh;
+        new_output_range[3].Start += kw;
+        new_output_range[3].Stop += kw;
+        return new_output_range;
+    }
+
+    private struct MyRange
+    {
+        public int Start;
+
+        public MyRange(int start, int stop)
+        {
+            Start = start;
+            Stop = stop;
+        }
+        public int Stop;
     }
 }

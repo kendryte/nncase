@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using NetFabric.Hyperlinq;
@@ -52,9 +55,13 @@ public static class PythonHelper
     public static IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null)
     {
         if (CompilerServices.CompileOptions.DumpLevel > 4)
+        {
             return DumpManager.RunWithDump("Evaluator", () => CompilerServices.Evaluate(expr, varsValues));
+        }
         else
+        {
             return CompilerServices.Evaluate(expr, varsValues);
+        }
     }
 
     public static RTTensor[] RunSimulator(RTInterpreter interp, RTValue[] input)
@@ -75,7 +82,7 @@ public static class PythonHelper
         throw new NotImplementedException();
     }
 
-    public static bool TargetExist(String target)
+    public static bool TargetExist(string target)
     {
         try
         {
@@ -89,7 +96,7 @@ public static class PythonHelper
         }
     }
 
-    // Tensor[sample_count * input_count] dataSet 
+    // Tensor[sample_count * input_count] dataSet
     public static PytestCalibrationDatasetProvider MakeDatasetProvider(Tensor[] dataSet, int sampleCount, Var[] fnParams)
     {
         var inputCount = dataSet[0].Length / sampleCount;
@@ -108,16 +115,16 @@ public static class PythonHelper
 
     public class PytestCalibrationDatasetProvider : ICalibrationDatasetProvider
     {
-        public int? Count => SampleCount;
+        private readonly int _sampleCount;
+
+        public int? Count => _sampleCount;
 
         public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
-
-        private int SampleCount = 0;
 
         public PytestCalibrationDatasetProvider(IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> samples, int sampleCount)
         {
             Samples = samples;
-            SampleCount = sampleCount;
+            this._sampleCount = sampleCount;
         }
     }
 }

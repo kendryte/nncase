@@ -1,17 +1,9 @@
-// using System;
-// using System.Collections.Generic;
-// using System.Linq;
-// using System.Numerics.Tensors;
-// using Nncase.CodeGen;
-// using Nncase.IR;
-// using Nncase.TIR;
-// using Nncase.Transform;
-// using Xunit;
-
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
 // namespace Nncase.Tests.CodeGenTest
 // {
 
-//     class EmptyPass : FunctionPass
+// class EmptyPass : FunctionPass
 //     {
 //         public EmptyPass() : base("EmptyPass") { }
 //         protected override Callable RunCore(Callable function, RunPassOptions options)
@@ -20,7 +12,7 @@
 //         }
 //     }
 
-//     public abstract class ICodeGenCase
+// public abstract class ICodeGenCase
 //     {
 //         /// <summary>
 //         /// get the entry function
@@ -28,19 +20,19 @@
 //         /// <returns></returns>
 //         public abstract PrimFunction GetEntry();
 
-//         /// <summary>
+// /// <summary>
 //         /// custom equal compare method
 //         /// </summary>
 //         /// <param name="rtmod"></param>
 //         public abstract void CompareEqual(IRTModel rtmod);
 
-//         public virtual FunctionPass GetPass()
+// public virtual FunctionPass GetPass()
 //         {
 //             return new EmptyPass();
 //         }
 //     }
 
-//     public class SubCase : ICodeGenCase
+// public class SubCase : ICodeGenCase
 //     {
 //         public override PrimFunction GetEntry()
 //         {
@@ -52,13 +44,13 @@
 //             return func;
 //         }
 
-//         public override void CompareEqual(IRTModel rtmod)
+// public override void CompareEqual(IRTModel rtmod)
 //         {
 //             Assert.Equal(2.3f - 2.1f, rtmod.Invoke(2.3f, 2.1f));
 //         }
 //     }
 
-//     public class ForCase : ICodeGenCase
+// public class ForCase : ICodeGenCase
 //     {
 //         void RefFunc(int[] A, int n)
 //         {
@@ -72,7 +64,7 @@
 //             }
 //         }
 
-//         /// <inheritdoc/>
+// /// <inheritdoc/>
 //         public override void CompareEqual(IRTModel rtmod)
 //         {
 //             var rand = new Random();
@@ -81,12 +73,12 @@
 //             var A2 = new int[n];
 //             A1.CopyTo(A2, 0);
 
-//             RefFunc(A1, n);
+// RefFunc(A1, n);
 //             rtmod.Invoke(A2, n);
 //             Assert.True(Enumerable.Range(0, n).All(i => A1[i] == A2[i]));
 //         }
 
-//         public override PrimFunction GetEntry()
+// public override PrimFunction GetEntry()
 //         {
 //             return T.PrimFunc("for_loop",
 //                    T.Buffer(new(DataTypes.Int32, new[] { 100 }), Schedule.MemoryLocation.Input, out var A),
@@ -102,10 +94,10 @@
 //         }
 //     }
 
-//     public class ForGridCase : ICodeGenCase
+// public class ForGridCase : ICodeGenCase
 //     {
 
-//         void RefFunc(int[] A, int n, int m)
+// void RefFunc(int[] A, int n, int m)
 //         {
 //             for (int i = 0; i < n; i++)
 //             {
@@ -116,7 +108,7 @@
 //             }
 //         }
 
-//         public override void CompareEqual(IRTModel rtmod)
+// public override void CompareEqual(IRTModel rtmod)
 //         {
 //             int n = 10, m = 20;
 //             var A1 = new Tensor<int>(new[] { n, m }).ToArray();
@@ -126,7 +118,7 @@
 //             Assert.True(Enumerable.Range(0, n * m).All(i => A1[i] == A2[i]));
 //         }
 
-//         public override PrimFunction GetEntry()
+// public override PrimFunction GetEntry()
 //         {
 //             var n = T.SizeVar("n");
 //             var m = T.SizeVar("m");
@@ -140,10 +132,10 @@
 //         }
 //     }
 
-//     public class BlockCase : ICodeGenCase
+// public class BlockCase : ICodeGenCase
 //     {
 
-//         public override PrimFunction GetEntry()
+// public override PrimFunction GetEntry()
 //         {
 //             var n = T.SizeVar("n");
 //             var m = T.SizeVar("m");
@@ -162,7 +154,7 @@
 //             return func;
 //         }
 
-//         public int RefFunc(float[] A, int n, int m)
+// public int RefFunc(float[] A, int n, int m)
 //         {
 //             for (int i = 0; i < n; i++)
 //             {
@@ -174,7 +166,7 @@
 //             return n + m;
 //         }
 
-//         public override void CompareEqual(IRTModel rtmod)
+// public override void CompareEqual(IRTModel rtmod)
 //         {
 //             int n = 10, m = 12;
 //             var A1 = new float[n * m];
@@ -184,7 +176,7 @@
 //             Assert.Equal(r1, r2);
 //         }
 
-//         public override FunctionPass GetPass()
+// public override FunctionPass GetPass()
 //         {
 //             var pass = new TIRPass("TIRPass"){
 //                 new Transform.Mutator.LowerBlockInit(),

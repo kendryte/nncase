@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -14,7 +14,47 @@ namespace Nncase.Evaluator.Math;
 /// </summary>
 public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binary>, ICostEvaluator<Binary>, IOpPrinter<Binary>
 {
-    int _compute(BinaryOp op, int a, int b) => op switch
+    /// <inheritdoc />
+    public IValue Visit(IEvaluateContext context, Binary binary)
+    {
+        var lhs = context.GetArgumentValueAsTensor(binary, Binary.Lhs);
+        var rhs = context.GetArgumentValueAsTensor(binary, Binary.Rhs);
+        if (lhs.Shape.IsScalar && rhs.Shape.IsScalar)
+        {
+            if (lhs.ElementType == DataTypes.Int32 && rhs.ElementType == DataTypes.Int32)
+            {
+                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<int>(), rhs.ToScalar<int>())));
+            }
+            else if (lhs.ElementType == DataTypes.Int64 && rhs.ElementType == DataTypes.Int64)
+            {
+                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<long>(), rhs.ToScalar<long>())));
+            }
+            else if (lhs.ElementType == DataTypes.Float32 && rhs.ElementType == DataTypes.Float32)
+            {
+                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<float>(), rhs.ToScalar<float>())));
+            }
+            else if (lhs.ElementType == DataTypes.Boolean && rhs.ElementType == DataTypes.Boolean)
+            {
+                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<bool>(), rhs.ToScalar<bool>())));
+            }
+            else
+            {
+                return Ort_compute(binary, lhs, rhs);
+            }
+        }
+
+        return Ort_compute(binary, lhs, rhs);
+    }
+
+    /// <inheritdoc/>
+    public IRType Visit(ITypeInferenceContext context, Binary target)
+    {
+        var lhs = context.CheckArgumentType<TensorType>(target, Binary.Lhs);
+        var rhs = context.CheckArgumentType<TensorType>(target, Binary.Rhs);
+        return Visit(target, lhs, rhs);
+    }
+
+    private int Compute(BinaryOp op, int a, int b) => op switch
     {
         BinaryOp.Add => a + b,
         BinaryOp.Sub => a - b,
@@ -32,7 +72,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 
-    bool _compute(BinaryOp op, bool a, bool b) => op switch
+    private bool Compute(BinaryOp op, bool a, bool b) => op switch
     {
         BinaryOp.BitwiseAnd => a & b,
         BinaryOp.BitwiseOr => a | b,
@@ -43,7 +83,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 
-    long _compute(BinaryOp op, long a, long b) => op switch
+    private long Compute(BinaryOp op, long a, long b) => op switch
     {
         BinaryOp.Add => a + b,
         BinaryOp.Sub => a - b,
@@ -59,7 +99,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 
-    float _compute(BinaryOp op, float a, float b) => op switch
+    private float Compute(BinaryOp op, float a, float b) => op switch
     {
         BinaryOp.Add => a + b,
         BinaryOp.Sub => a - b,
@@ -72,37 +112,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 
-    /// <inheritdoc />
-    public IValue Visit(IEvaluateContext context, Binary binary)
-    {
-        var lhs = context.GetArgumentValueAsTensor(binary, Binary.Lhs);
-        var rhs = context.GetArgumentValueAsTensor(binary, Binary.Rhs);
-        if (lhs.Shape.IsScalar && rhs.Shape.IsScalar)
-        {
-            if (lhs.ElementType == DataTypes.Int32 && rhs.ElementType == DataTypes.Int32)
-            {
-                return Value.FromTensor(Tensor.FromScalar(_compute(binary.BinaryOp, lhs.ToScalar<int>(), rhs.ToScalar<int>())));
-            }
-            else if (lhs.ElementType == DataTypes.Int64 && rhs.ElementType == DataTypes.Int64)
-            {
-                return Value.FromTensor(Tensor.FromScalar(_compute(binary.BinaryOp, lhs.ToScalar<long>(), rhs.ToScalar<long>())));
-            }
-            else if (lhs.ElementType == DataTypes.Float32 && rhs.ElementType == DataTypes.Float32)
-            {
-                return Value.FromTensor(Tensor.FromScalar(_compute(binary.BinaryOp, lhs.ToScalar<float>(), rhs.ToScalar<float>())));
-            }
-            else if (lhs.ElementType == DataTypes.Boolean && rhs.ElementType == DataTypes.Boolean)
-            {
-                return Value.FromTensor(Tensor.FromScalar(_compute(binary.BinaryOp, lhs.ToScalar<bool>(), rhs.ToScalar<bool>())));
-            }
-            else
-                return ort_compute(binary, lhs, rhs);
-        }
-
-        return ort_compute(binary, lhs, rhs);
-    }
-
-    IValue ort_compute(Binary binary, Tensor lhs, Tensor rhs)
+    private IValue Ort_compute(Binary binary, Tensor lhs, Tensor rhs)
     {
         var a = lhs.ToOrtTensor();
         var b = rhs.ToOrtTensor();
@@ -126,15 +136,6 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             BinaryOp.RightShift => OrtKI.RightShift(a, b),
             _ => throw new ArgumentOutOfRangeException(nameof(binary.BinaryOp)),
         }).ToValue();
-
-    }
-
-    /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, Binary target)
-    {
-        var lhs = context.CheckArgumentType<TensorType>(target, Binary.Lhs);
-        var rhs = context.CheckArgumentType<TensorType>(target, Binary.Rhs);
-        return Visit(target, lhs, rhs);
     }
 
     /// <inheritdoc/>
@@ -158,7 +159,10 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         var lhs = context.GetArgument(target, Binary.Lhs);
         var rhs = context.GetArgument(target, Binary.Rhs);
         if (ILmode)
+        {
             return $"{target.BinaryOp}({lhs}, {rhs})";
+        }
+
         return target.BinaryOp switch
         {
             BinaryOp.Add => $"({lhs} + {rhs})",
@@ -171,22 +175,32 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             BinaryOp.LogicalXor => $"({lhs} ^ {rhs})",
             BinaryOp.LeftShift => $"({lhs} << {rhs})",
             BinaryOp.RightShift => $"({lhs} >> {rhs})",
-            _ => $"{target.BinaryOp}({lhs}, {rhs})"
+            _ => $"{target.BinaryOp}({lhs}, {rhs})",
         };
     }
 
     private IRType Visit(Binary target, TensorType lhs, TensorType rhs)
     {
         if (target.BinaryOp is BinaryOp.LeftShift or BinaryOp.RightShift && (lhs.DType != DataTypes.UInt32 || rhs.DType != DataTypes.UInt32))
+        {
             return new InvalidType("The Binary LeftShift RightShift Only Accept The UInt32 Datatype.");
+        }
+
         if (target.BinaryOp is BinaryOp.Sub && (lhs.DType == DataTypes.UInt32 || rhs.DType == DataTypes.UInt32))
+        {
             return new InvalidType("The Binary Sub Only Accept The UInt32 Datatype.");
+        }
+
         if (lhs is { DType: PointerType { ElemType: var letype } } && rhs is { DType: PointerType { ElemType: var retype } })
         {
             if (letype == retype)
+            {
                 return TensorType.Pointer(letype);
+            }
             else
+            {
                 return new InvalidType($"The Binary Lhs {CompilerServices.Print(lhs)} != Rhs {CompilerServices.Print(rhs)}");
+            }
         }
 
         if (lhs is { DType: PointerType { ElemType: var lt } } && rhs.DType == DataTypes.Int32)

@@ -1,7 +1,10 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Text;
-using Xunit;
 using Nncase.IO;
+using Xunit;
 
 namespace Nncase.Tests.IOTest
 {
@@ -22,6 +25,7 @@ namespace Nncase.Tests.IOTest
 
             bin = Convert.ToString(buf[1], 2);
             Assert.Equal("10", bin);
+
             // TestReader
             var br = new BitReader(buf);
             Assert.Equal(10, br.Read<int>(4));

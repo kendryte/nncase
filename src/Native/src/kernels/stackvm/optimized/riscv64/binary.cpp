@@ -301,8 +301,8 @@ result<void> optimized_binary_impl(const int32_t *input_a,
             n -= vl;
         }
     } else if (in_a_shape.size() < in_b_shape.size()) {
-        if(is_scalar(in_a_shape)) {
-//        if (in_a_shape[0] == 1) {
+        if (is_scalar(in_a_shape)) {
+            //        if (in_a_shape[0] == 1) {
             // a is scalar, b is tensor
             int n = count;
             while (n > 0) {

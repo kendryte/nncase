@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -35,7 +35,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
             Op op => CompilerServices.EvaluateOp(op, _context, _evaluator_cache),
             Function func => CompilerServices.Evaluate(func.Body, func.Parameters.Zip(expr.Parameters).ToDictionary(kv => kv.First, kv => Visit(kv.Second), (IEqualityComparer<Var>)ReferenceEqualityComparer.Instance), _evaluator_cache),
             Fusion { ModuleKind: "stackvm" } fusion => CompilerServices.Evaluate(fusion.Body, fusion.Parameters.Zip(expr.Parameters).ToDictionary(kv => kv.First, kv => Visit(kv.Second), (IEqualityComparer<Var>)ReferenceEqualityComparer.Instance), _evaluator_cache),
-            _ => throw new NotImplementedException(expr.Target.ToString())
+            _ => throw new NotImplementedException(expr.Target.ToString()),
         };
     }
 

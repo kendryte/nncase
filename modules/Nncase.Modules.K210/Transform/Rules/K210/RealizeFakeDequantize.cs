@@ -10,18 +10,18 @@ using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.K210;
 using Nncase.IR.Math;
-using static Nncase.PatternMatch.F.K210;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
 using Tensorflow.Keras;
 using static Nncase.IR.TypePatternUtility;
+using static Nncase.PatternMatch.F.K210;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.Utility;
-using Math = Nncase.IR.F.Math;
-namespace Nncase.Transform.Rules.K210;
 using static Nncase.Quantization.Utility;
+using Math = Nncase.IR.F.Math;
 
+namespace Nncase.Transform.Rules.K210;
 /// <summary>
 /// Lower <see cref="IR.K210.FakeDeQuantize"/> to <see cref="IR.K210.DeQuantize"/>.
 /// </summary>

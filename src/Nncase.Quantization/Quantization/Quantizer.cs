@@ -54,7 +54,7 @@ internal partial class Quantizer
             AssignRanges(optRanges);
         }
         else
-        {   // 2. Assign ranges
+        { // 2. Assign ranges
             AssignRanges(ranges);
         }
 
@@ -74,6 +74,7 @@ internal partial class Quantizer
             var values = evaluator.Evaluate();
             var childrenEvaluator = new CalibrationEvaluator(sample, _childrenOfRangeOfs, _passOptions.SetPassName(_passOptions.PassName + "/ep2"));
             var childrenValues = childrenEvaluator.Evaluate();
+
             // values are children op range values(only two scalars for each value: Min and Max), childrenValues are children op tensor values.
             func(values, childrenValues);
         }
@@ -124,9 +125,9 @@ internal partial class Quantizer
                 var srcBinInterval = r / srcBinSize;
                 if (!histograms.TryGetValue(valuesList[i].Key, out var oldHistogram))
                 {
-                    List<float> initSrcBin = new List<float>(new float[srcBinSize]);
-                    List<float> initDstBin = new List<float>(new float[dstBinSize]);
-                    QuantizeHistogram<float> histogram = new QuantizeHistogram<float>(initSrcBin, initDstBin);
+                    var initSrcBin = new List<float>(new float[srcBinSize]);
+                    var initDstBin = new List<float>(new float[dstBinSize]);
+                    var histogram = new QuantizeHistogram<float>(initSrcBin, initDstBin);
                     histograms.Add(valuesList[i].Key, histogram);
                 }
 
@@ -136,7 +137,7 @@ internal partial class Quantizer
                 foreach (var buf in childrenBuffer)
                 {
                     var r_index = (buf - ranges[valuesList[i].Key].Min) / srcBinInterval;
-                    var index = (int)Math.Clamp((float)r_index, (float)(0), (float)(srcBinSize) - 1);
+                    var index = (int)Math.Clamp((float)r_index, 0F, (float)srcBinSize - 1);
                     histograms[valuesList[i].Key].SrcBin[index]++;
                 }
             }
@@ -157,12 +158,14 @@ internal partial class Quantizer
                 var srcBinInterval = r / srcBinSize;
                 var betterThreshold = new Tuple<int, int>(0, srcBinSize);
                 var zeroThreshold = (int)Math.Clamp((0 - ranges[histogram.Key].Min) / srcBinInterval, 0, srcBinSize - 1);
+
                 // range max first
                 int lowerThreshold = 0;
                 var srcBin = histogram.Value.SrcBin;
                 for (int upperThreshold = srcBinSize; upperThreshold >= dstBinSize && upperThreshold >= zeroThreshold; upperThreshold -= dstBinSize)
                 {
                     GetKldOptRanges(lowerThreshold, upperThreshold, dstBinSize, ref srcBin, ref minKld, ref betterThreshold);
+
                     // betterThreshold = thresholdWithMinKldWithSmoothSrcBin.Item1;
                     // minKld = thresholdWithMinKldWithSmoothSrcBin.Item2;
                     // srcBin = thresholdWithMinKldWithSmoothSrcBin.Item3;
@@ -174,6 +177,7 @@ internal partial class Quantizer
                 for (int lowerThreshold2 = 0; lowerThreshold2 <= zeroThreshold && lowerThreshold2 <= upperThreshold2 - dstBinSize; lowerThreshold2 += dstBinSize)
                 {
                     GetKldOptRanges(lowerThreshold2, upperThreshold2, dstBinSize, ref srcBin, ref minKld, ref betterThreshold);
+
                     // betterThreshold = thresholdWithMinKldWithSmoothSrcBin.Item1;
                     // minKld = thresholdWithMinKldWithSmoothSrcBin.Item2;
                     // srcBin = thresholdWithMinKldWithSmoothSrcBin.Item3;
@@ -203,7 +207,7 @@ internal partial class Quantizer
             _graph.Union(rangeOfEclass, rangeEclass);
         }
 
-        //_graph.Rebuild();
+        // _graph.Rebuild();
     }
 
     /// <summary>

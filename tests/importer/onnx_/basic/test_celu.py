@@ -69,6 +69,7 @@ alphas = [
     1.2
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('alpha', alphas)
 def test_celu(in_shape, alpha, request):
@@ -77,6 +78,7 @@ def test_celu(in_shape, alpha, request):
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_celu.py'])

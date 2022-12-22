@@ -11,7 +11,8 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="Celu"/>.
 /// </summary>
-[EvaluatorGenerator, TypeInferGenerator]
+[EvaluatorGenerator]
+[TypeInferGenerator]
 public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>, ICostEvaluator<Celu>
 {
     /// <inheritdoc/>
@@ -24,24 +25,24 @@ public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>, IC
         };
     }
 
-    private IValue Visit(OrtKISharp.Tensor Input, float Alpha)
+    private IValue Visit(OrtKISharp.Tensor input, float alpha)
     {
-        return OrtKI.Celu(Input, Alpha).ToValue();
+        return OrtKI.Celu(input, alpha).ToValue();
     }
 
-    private TensorType Visit(TensorType Input)
+    private TensorType Visit(TensorType input)
     {
-        return Input;
+        return input;
     }
 }
 
 /// <summary>
 /// Evaluator for <see cref="Elu"/>.
 /// </summary>
-[EvaluatorGenerator, TypeInferGenerator]
+[EvaluatorGenerator]
+[TypeInferGenerator]
 public partial class EluEvaluator : IEvaluator<Elu>, ITypeInferencer<Elu>, ICostEvaluator<Elu>
 {
-
     /// <inheritdoc/>
     public Cost? Visit(ICostEvaluateContext context, Elu target)
     {
@@ -52,14 +53,14 @@ public partial class EluEvaluator : IEvaluator<Elu>, ITypeInferencer<Elu>, ICost
         };
     }
 
-    IValue Visit(OrtKISharp.Tensor Input, float Alpha)
+    private IValue Visit(OrtKISharp.Tensor input, float alpha)
     {
-        return OrtKI.Elu(Input, Alpha).ToValue();
+        return OrtKI.Elu(input, alpha).ToValue();
     }
 
-    IRType Visit(TensorType Input)
+    private IRType Visit(TensorType input)
     {
-        return Input;
+        return input;
     }
 }
 
@@ -153,15 +154,15 @@ public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>, ICostEvalu
         return Visit(input);
     }
 
-    private IRType Visit(TensorType input)
-    {
-        return input;
-    }
-
     public Cost? Visit(ICostEvaluateContext context, Relu target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, Relu.Input);
         return CostUtility.GetActivationCost(inputType, CostUtility.GetCPUCyclesOfMax());
+    }
+
+    private IRType Visit(TensorType input)
+    {
+        return input;
     }
 }
 
@@ -185,6 +186,7 @@ public class SeluEvaluator : IEvaluator<Selu>, ITypeInferencer<Selu>, ICostEvalu
         var input = context.CheckArgumentType<TensorType>(target, Selu.Input);
         return Visit(input);
     }
+
     /// <inheritdoc/>
     public Cost? Visit(ICostEvaluateContext context, Selu target)
     {

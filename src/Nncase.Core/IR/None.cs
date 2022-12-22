@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace Nncase.IR;
 
 /// <summary>
-/// The None Expression is a placeholder for optional paramseter. 
+/// The None Expression is a placeholder for optional paramseter.
 /// </summary>
 public record None : Expr
 {
@@ -24,5 +24,4 @@ public record None : Expr
     private None()
     {
     }
-
 }

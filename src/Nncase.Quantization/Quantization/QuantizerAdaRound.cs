@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -56,9 +56,11 @@ internal partial class QuantizerAdaRound
             foreach (var match in matches)
             {
                 var _rangeOfMarker = (ENode)match.Root;
-                //if (!_rangeOfs.Contains(_rangeOfMarker.Children[1].Nodes[0]))
+
+                // if (!_rangeOfs.Contains(_rangeOfMarker.Children[1].Nodes[0]))
                 _rangeOfs.Add(_rangeOfMarker.Children[1].Nodes[0]);
-                //if (!_childrenOfRangeOfs.Contains(_rangeOfMarker.Children[0].Nodes[0]))
+
+                // if (!_childrenOfRangeOfs.Contains(_rangeOfMarker.Children[0].Nodes[0]))
                 _childrenOfRangeOfs.Add(_rangeOfMarker.Children[0].Nodes[0]);
             }
         }

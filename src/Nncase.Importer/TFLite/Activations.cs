@@ -8,8 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 using tflite;
-using F = Nncase.IR.F;
 using static Nncase.IR.F.NN;
+using F = Nncase.IR.F;
 
 namespace Nncase.Importer.TFLite
 {
@@ -22,11 +22,13 @@ namespace Nncase.Importer.TFLite
             {
                 tflite.ActivationFunctionType.NONE => input,
                 tflite.ActivationFunctionType.RELU => Relu(input),
+
                 // ActivationFunctionType.RELU_N1_TO_1 => expr,
                 ActivationFunctionType.RELU6 => Relu6(input),
                 ActivationFunctionType.TANH => F.Math.Tanh(input),
+
                 // ActivationFunctionType.SIGN_BIT => expr,
-                _ => throw new NotImplementedException(activation.ToString())
+                _ => throw new NotImplementedException(activation.ToString()),
             };
         }
 

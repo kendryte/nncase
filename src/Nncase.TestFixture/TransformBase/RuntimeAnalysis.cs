@@ -1,10 +1,13 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using Nncase.IR;
 using Nncase.Utilities;
 
 namespace Nncase.TestFixture;
 
 /// <summary>
-/// dump output shape group by op
+/// dump output shape group by op.
 /// </summary>
 public static class RuntimeDumpAnalysis
 {
@@ -20,13 +23,6 @@ public static class RuntimeDumpAnalysis
         return GroupByOp(stream.ReadToEnd());
     }
 
-    private static IEnumerable<IGrouping<string, (string, int)>> GroupByOp(string str)
-    {
-        return str.Trim().Split("\n")
-            .Select((x, i) => (x, i))
-            .GroupBy(item => item.Item1.Split(":")[0]);
-    }
-
     public static void PrintOutShapeList(IEnumerable<IGrouping<string, (string, int)>> data)
     {
         foreach (var valueTuples in data)
@@ -38,21 +34,28 @@ public static class RuntimeDumpAnalysis
             }
         }
     }
+
+    private static IEnumerable<IGrouping<string, (string, int)>> GroupByOp(string str)
+    {
+        return str.Trim().Split("\n")
+            .Select((x, i) => (x, i))
+            .GroupBy(item => item.x.Split(":")[0]);
+    }
 }
 
 /// <summary>
 /// compare Result between Runtime and Evaluator
 /// Runtime Data: read from dir/fileName
-/// Evaluator Data: make call from Param Data in Runtime and run evaluate 
+/// Evaluator Data: make call from Param Data in Runtime and run evaluate.
 /// </summary>
 public static class RuntimeResultAnalysis
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
-    /// <param name="dir">dump data dir</param>
-    /// <param name="resultPath">resultPath for write cos</param>
-    /// <param name="ctor">call constructor</param>
+    /// <param name="dir">dump data dir.</param>
+    /// <param name="resultPath">resultPath for write cos.</param>
+    /// <param name="ctor">call constructor.</param>
     public static void MatmulRun(string dir, string resultPath, Func<IEnumerable<Expr>, Call> ctor)
     {
         var e = new TextDataExtractor();
@@ -68,8 +71,10 @@ public static class RuntimeResultAnalysis
         var number = DumpPathExtractor.GetCount(fileName);
         var param = e.GetParams(dir, number).OrderBy(x => x.FileName.Last()).Select(x => x.Value);
         var expect = e.GetComputeResult(dir, number);
+
         // 2. construct call
         var call = MakeCall(param, f);
+
         // 3. evaluate and run
         var result = call.Evaluate();
         var cos = Comparator.CosSimilarity(result, expect.Value);

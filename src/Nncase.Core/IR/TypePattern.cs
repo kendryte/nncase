@@ -11,38 +11,63 @@ namespace Nncase.IR
 {
     public record TypePattern(Func<IRType, bool> Cond, string Reason)
     {
-        public TypePattern(IRType ValueType) : this(x => (x == ValueType), $"Type = {ValueType.ToString()}") { }
-        public TypePattern(AnyType ValueType) : this(x => (x == ValueType), $"Type = {ValueType.ToString()}") { }
-        public TypePattern(TensorType ValueType) : this(x => (x == ValueType), $"Type = {ValueType.ToString()}") { }
-        public TypePattern(InvalidType ValueType) : this(x => (x == ValueType), $"Type = {ValueType.ToString()}") { }
-        public TypePattern(TupleType ValueType) : this(x => (x == ValueType), $"Type = {ValueType.ToString()}") { }
-        public TypePattern(CallableType ValueType) : this(x => (x == ValueType), $"Type = {ValueType.ToString()}") { }
+        public TypePattern(IRType valueType)
+            : this(x => x == valueType, $"Type = {valueType.ToString()}")
+        {
+        }
 
-        public bool MatchLeaf(IRType ValueType) => Cond(ValueType);
+        public TypePattern(AnyType valueType)
+            : this(x => x == valueType, $"Type = {valueType.ToString()}")
+        {
+        }
+
+        public TypePattern(TensorType valueType)
+            : this(x => x == valueType, $"Type = {valueType.ToString()}")
+        {
+        }
+
+        public TypePattern(InvalidType valueType)
+            : this(x => x == valueType, $"Type = {valueType.ToString()}")
+        {
+        }
+
+        public TypePattern(TupleType valueType)
+            : this(x => x == valueType, $"Type = {valueType.ToString()}")
+        {
+        }
+
+        public TypePattern(CallableType valueType)
+            : this(x => x == valueType, $"Type = {valueType.ToString()}")
+        {
+        }
+
+        public static TypePattern operator &(TypePattern lhs, TypePattern rhs) => new TypePattern(x => lhs.Cond(x) && rhs.Cond(x), $"<{lhs.Reason}> And <{rhs.Reason}>");
+
+        public bool MatchLeaf(IRType valueType) => Cond(valueType);
 
         /// <summary>
         /// Check the irtype, if not equal, throw exception.
         /// </summary>
-        /// <param name="ValueType">give the ir type.</param>
-        /// <param name="FieldName"> the argument name.</param>
+        /// <param name="valueType">give the ir type.</param>
+        /// <param name="fieldName"> the argument name.</param>
         /// <exception cref="InvalidOperationException"></exception>
-        public T Check<T>(T ValueType, string FieldName) where T : IRType
+        /// <returns></returns>
+        public T Check<T>(T valueType, string fieldName)
+            where T : IRType
         {
-            if (ValueType is TensorType tensorValueType && tensorValueType.Shape.IsUnranked)
+            if (valueType is TensorType tensorValueType && tensorValueType.Shape.IsUnranked)
             {
-                return ValueType;
+                return valueType;
             }
 
-            if (ValueType == null || !MatchLeaf(ValueType))
+            if (valueType == null || !MatchLeaf(valueType))
             {
-                var cur = ValueType is null ? "None" : CompilerServices.Print(ValueType);
-                throw new InvalidOperationException($"{FieldName} Requrie <{Reason}>, But {cur}!");
+                var cur = valueType is null ? "None" : CompilerServices.Print(valueType);
+                throw new InvalidOperationException($"{fieldName} Requrie <{Reason}>, But {cur}!");
             }
 
-            return ValueType;
+            return valueType;
         }
-
-        public static TypePattern operator &(TypePattern lhs, TypePattern rhs) => new TypePattern(x => lhs.Cond(x) && rhs.Cond(x), $"<{lhs.Reason}> And <{rhs.Reason}>");
 
         public static TypePattern operator |(TypePattern lhs, TypePattern rhs) => new TypePattern(x => lhs.Cond(x) || rhs.Cond(x), $"<{lhs.Reason}> Or <{rhs.Reason}>");
 
@@ -52,7 +77,7 @@ namespace Nncase.IR
     public static partial class TypePatternUtility
     {
         /// <summary>
-        /// the datatype is AnyType
+        /// the datatype is AnyType.
         /// <remarks>
         /// NOTE it's mean the tensorType/TupleType is error
         /// </remarks>
@@ -61,33 +86,34 @@ namespace Nncase.IR
         public static TypePattern IsAnyType() => new TypePattern(AnyType.Default);
 
         /// <summary>
-        /// custom the type cond
+        /// custom the type cond.
         /// </summary>
-        /// <param name="TypeCond"></param>
+        /// <param name="typeCond"></param>
         /// <param name="reason"></param>
         /// <returns></returns>
-        public static TypePattern IsType(Func<IRType, bool> TypeCond, [CallerArgumentExpression("TypeCond")] string reason = null!) => new TypePattern(TypeCond, reason);
+        public static TypePattern IsType(Func<IRType, bool> typeCond, [CallerArgumentExpression("TypeCond")] string reason = null!) => new TypePattern(typeCond, reason);
 
         /// <summary>
-        /// this type is equal to target IRType
+        /// this type is equal to target IRType.
         /// </summary>
-        /// <param name="Type"></param>
+        /// <param name="type"></param>
         /// <returns></returns>
-        public static TypePattern IsType(IRType Type) => IsType(x => x == Type, $"Type = {Type.ToString()}");
+        public static TypePattern IsType(IRType type) => IsType(x => x == type, $"Type = {type.ToString()}");
 
         /// <summary>
-        /// is IsIRType
+        /// is IsIRType.
         /// </summary>
         /// <returns></returns>
         public static TypePattern IsIRType() => IsType(t => true, "IsIRType");
 
         /// <summary>
-        /// is shape
+        /// is shape.
         /// </summary>
         /// <param name="shapeCond"></param>
         /// <param name="reason"></param>
         /// <returns></returns>
-        public static TypePattern HasShape(Func<Shape, bool> shapeCond, string reason) => new TypePattern(x => x switch
+        public static TypePattern HasShape(Func<Shape, bool> shapeCond, string reason) => new TypePattern(
+            x => x switch
         {
 
             TensorType ttype => shapeCond(ttype.Shape),
@@ -95,19 +121,19 @@ namespace Nncase.IR
         }, reason);
 
         /// <summary>
-        /// the tensor has FixedShape
+        /// the tensor has FixedShape.
         /// </summary>
         /// <returns>TypePattern.</returns>
         public static TypePattern HasFixedShape() => HasShape(shape => shape.IsFixed, "HasFixedShape");
 
         /// <summary>
-        /// the tensor has FixedShape
+        /// the tensor has FixedShape.
         /// </summary>
         /// <returns>TypePattern.</returns>
         public static TypePattern HasRank() => HasShape(shape => shape.IsRanked, "HasRank");
 
         /// <summary>
-        /// is target shape
+        /// is target shape.
         /// </summary>
         /// <param name="target_shape"></param>
         /// <returns></returns>
@@ -115,11 +141,10 @@ namespace Nncase.IR
           inshape =>
             inshape.Rank == target_shape.Rank &&
             inshape.Zip(target_shape).All(
-              (dim) => dim.Item2 == Dimension.Unknown ? true : dim.Item2 == dim.Item1
-            ), $"Shape = {target_shape.ToString()}");
+              (dim) => dim.Second == Dimension.Unknown ? true : dim.Second == dim.First), $"Shape = {target_shape.ToString()}");
 
         /// <summary>
-        /// is custom rank
+        /// is custom rank.
         /// </summary>
         /// <param name="cond"></param>
         /// <param name="reason"></param>
@@ -128,14 +153,14 @@ namespace Nncase.IR
           inshape => cond(inshape.Rank), reason);
 
         /// <summary>
-        /// is target rank
+        /// is target rank.
         /// </summary>
         /// <param name="rank"></param>
         /// <returns></returns>
         public static TypePattern HasRank(int rank) => HasRank(r => r == rank, $"Rank = {rank}");
 
         /// <summary>
-        /// is tensor
+        /// is tensor.
         /// </summary>
         /// <returns></returns>
         public static TypePattern IsTensor() => new TypePattern(
@@ -143,19 +168,17 @@ namespace Nncase.IR
           {
               TensorType ttype => ttype.IsTensor,
               _ => false,
-          }, "IsTensor"
-        );
+          }, "IsTensor");
 
         /// <summary>
-        /// check the tensor is handle
+        /// check the tensor is handle.
         /// </summary>
         /// <returns></returns>
         public static TypePattern IsPointer() => new TypePattern(
-          x => (x is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType { } } }), "IsPointer"
-        );
+          x => x is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType { } } }, "IsPointer");
 
         /// <summary>
-        /// check the datatype is scalar
+        /// check the datatype is scalar.
         /// </summary>
         /// <returns></returns>
         public static TypePattern IsScalar() => new TypePattern(
@@ -164,11 +187,10 @@ namespace Nncase.IR
               TensorType ttype => ttype.IsScalar,
               _ => false,
           },
-          "IsScalar"
-        );
+          "IsScalar");
 
         /// <summary>
-        /// check the datatype is integral
+        /// check the datatype is integral.
         /// </summary>
         /// <param name="dataType"></param>
         /// <returns></returns>
@@ -176,12 +198,11 @@ namespace Nncase.IR
           x => x switch
           {
               TensorType ttype => ttype.DType == dataType,
-              _ => false
-          }, $"{dataType.GetDisplayName()}"
-        );
+              _ => false,
+          }, $"{dataType.GetDisplayName()}");
 
         /// <summary>
-        /// check the data type IsIntegral
+        /// check the data type IsIntegral.
         /// </summary>
         /// <returns></returns>
         public static TypePattern IsIntegral() => new TypePattern(
@@ -189,11 +210,10 @@ namespace Nncase.IR
           {
               TensorType ttype => DataTypes.IsIntegral(ttype.DType),
               _ => false,
-          }, "IsIntegral"
-        );
+          }, "IsIntegral");
 
         /// <summary>
-        /// chenck the data type isfloat
+        /// chenck the data type isfloat.
         /// </summary>
         /// <returns></returns>
         public static TypePattern IsFloat() => new TypePattern(
@@ -201,11 +221,10 @@ namespace Nncase.IR
           {
               TensorType ttype => DataTypes.IsFloat(ttype.DType),
               _ => false,
-          }, "IsFloat"
-        );
+          }, "IsFloat");
 
         /// <summary>
-        /// check the data type is bool
+        /// check the data type is bool.
         /// </summary>
         /// <returns></returns>
         public static TypePattern IsBool() => new TypePattern(
@@ -213,23 +232,22 @@ namespace Nncase.IR
             {
                 TensorType ttype => ttype.DType == DataTypes.Boolean,
                 _ => false,
-            }, "IsBool"
-        );
+            }, "IsBool");
 
         /// <summary>
-        /// int scalar
+        /// int scalar.
         /// </summary>
         /// <returns></returns>
         public static TypePattern IsIntegralScalar() => IsScalar() & IsIntegral();
 
         /// <summary>
-        /// bool scalar
+        /// bool scalar.
         /// </summary>
         /// <returns></returns>
         public static TypePattern IsBoolScalar() => IsScalar() & IsBool();
 
         /// <summary>
-        /// float scalar
+        /// float scalar.
         /// </summary>
         /// <returns></returns>
         public static TypePattern IsFloatScalar() => IsScalar() & IsFloat();
@@ -244,18 +262,17 @@ namespace Nncase.IR
             x => x switch
             {
                 TupleType ttype => cond(ttype),
-                _ => false
-            }, "IsTuple" + (reason.Length == 0 ? "" : $"&& {reason}")
-        );
+                _ => false,
+            }, "IsTuple" + (reason.Length == 0 ? string.Empty : $"&& {reason}"));
 
         /// <summary>
-        /// <see cref="IsTuple(Func{TupleType, bool}, string)"/>
+        /// <see cref="IsTuple(Func{TupleType, bool}, string)"/>.
         /// </summary>
         /// <returns>TypePattern.</returns>
         public static TypePattern IsTuple() => IsTuple(t => true, string.Empty);
 
         /// <summary>
-        /// is void tuple type
+        /// is void tuple type.
         /// </summary>
         /// <returns></returns>
         public static TypePattern IsUnit() => IsTuple(t => t.Count == 0, "IsUnit");
@@ -264,20 +281,21 @@ namespace Nncase.IR
         /// Check the datatype is None type.
         /// </summary>
         /// <returns></returns>
-        public static TypePattern IsNoneType() => new TypePattern(x => x switch
+        public static TypePattern IsNoneType() => new TypePattern(
+            x => x switch
         {
             NoneType ntype => true,
-            _ => false
+            _ => false,
         }, "IsNone");
 
         /// <summary>
-        /// is scalar quant param
+        /// is scalar quant param.
         /// </summary>
         /// <returns></returns>
         public static TypePattern IsQuantParamType() => IsScalar() & HasDataType(new QuantParamType());
 
         /// <summary>
-        /// get padding windows output size
+        /// get padding windows output size.
         /// </summary>
         /// <param name="size"></param>
         /// <param name="filter"></param>
@@ -301,13 +319,13 @@ namespace Nncase.IR
                 }
                 else
                 {
-                    return (int)System.Math.Ceiling(((float)(size - effective_filter_size + stride) / stride));
+                    return (int)System.Math.Ceiling((float)(size - effective_filter_size + stride) / stride);
                 }
             }
         }
 
         /// <summary>
-        /// GetWindowedOutputSize
+        /// GetWindowedOutputSize.
         /// </summary>
         /// <param name="size"></param>
         /// <param name="filter"></param>

@@ -32,6 +32,11 @@ public sealed class EClass
     public IR.IRType CheckedType { get; private set; } = IR.AnyType.Default;
 
     /// <summary>
+    /// Gets id.
+    /// </summary>
+    public int Id { get; }
+
+    /// <summary>
     /// Set the new checked type and we need update the all inner enode expr with new type.
     /// </summary>
     /// <param name="type"></param>
@@ -39,11 +44,6 @@ public sealed class EClass
     {
         CheckedType = type;
     }
-
-    /// <summary>
-    /// Gets id.
-    /// </summary>
-    public int Id { get; }
 
     /// <summary>
     /// Gets or sets parent.

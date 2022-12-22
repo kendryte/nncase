@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -10,6 +10,7 @@ using Nncase.IR.Math;
 using OrtKISharp;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
+
 namespace Nncase.Evaluator.Math;
 
 /// <summary>
@@ -28,20 +29,25 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
         if (context.CurrentCall.EnodeBestQuantConfigWithCosine != null)
         {
             var pattern = IsRangeOfMarker(IsWildcard(), IsWildcard());
-            if (pattern.MatchLeaf(context.CurrentCall.Parameters.ToArray()[0]) && ((Nncase.IR.Marker)(context.CurrentCall.Parameters.ToArray()[0])).mixQuantInfo?.HasBindedMixQuantInfo == true)
+            if (pattern.MatchLeaf(context.CurrentCall.Parameters.ToArray()[0]) && ((Nncase.IR.Marker)context.CurrentCall.Parameters.ToArray()[0]).MixQuantInfo?.HasBindedMixQuantInfo == true)
             {
-                var quantParam = ((Nncase.IR.Marker)(context.CurrentCall.Parameters.ToArray()[0])).mixQuantInfo.QuantParameter;
+                var quantParam = ((Nncase.IR.Marker)context.CurrentCall.Parameters.ToArray()[0]).MixQuantInfo.QuantParameter;
+
                 // input feature map quantParam count should be 1 since input feature map quant is by tensor.
                 Trace.Assert(quantParam.Count == 1);
                 var inputFloat = input.ToArray<float>();
                 for (var i = 0; i < inputFloat.Length; i++)
                 {
-                    var inputBufQuant = (double)(inputFloat[i] / (double)(quantParam[0].Scale) + quantParam[0].ZeroPoint);
+                    var inputBufQuant = (double)((inputFloat[i] / (double)quantParam[0].Scale) + quantParam[0].ZeroPoint);
                     if (!(quantParam[0].Scale == 1.0f && quantParam[0].ZeroPoint == 0))
-                        inputBufQuant = System.Math.Round((double)((float)inputBufQuant));
-                    var inputBufDeQuant = (float)((inputBufQuant - quantParam[0].ZeroPoint) * (double)(quantParam[0].Scale));
-                    inputFloat[i] = (float)(inputBufDeQuant);
+                    {
+                        inputBufQuant = System.Math.Round((double)(float)inputBufQuant);
+                    }
+
+                    var inputBufDeQuant = (float)((inputBufQuant - quantParam[0].ZeroPoint) * (double)quantParam[0].Scale);
+                    inputFloat[i] = (float)inputBufDeQuant;
                 }
+
                 input = OrtKISharp.Tensor.MakeTensor(inputFloat, input.Shape);
             }
         }

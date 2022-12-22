@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Linq;
@@ -30,6 +30,11 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
         return Visit(context, target, input);
     }
 
+    public Cost? Visit(ICostEvaluateContext context, Squeeze target)
+    {
+        return CostUtility.GetReshapeCost();
+    }
+
     private IRType Visit(ITypeInferenceContext context, Squeeze target, TensorType input)
     {
         if (input.Shape.IsUnranked)
@@ -55,11 +60,6 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
             return input with { Shape = new Shape(outshape.Where(x => x != int.MaxValue)) };
         }
 
-        return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Count() - 1)) };
-    }
-
-    public Cost? Visit(ICostEvaluateContext context, Squeeze target)
-    {
-        return CostUtility.GetReshapeCost();
+        return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Count - 1)) };
     }
 }

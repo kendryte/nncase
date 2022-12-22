@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -6,14 +6,6 @@ using Nncase.IR;
 using Nncase.PatternMatch;
 
 namespace Nncase.Transform;
-
-/// <summary>
-/// the attrbuite mark the need auto generator the GetReplace overwrite function
-/// </summary>
-[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-public class RuleGeneratorAttribute : Attribute
-{
-}
 
 /// <summary>
 /// Rewrite rule.
@@ -33,7 +25,19 @@ public interface IRewriteRule
     Expr? GetReplace(IMatchResult result, RunPassOptions options);
 
     /// <summary>
-    /// check this pattern can be modify in multi branch
+    /// check this pattern can be modify in multi branch.
     /// </summary>
-    bool IsMultiBranchSafe() { return false; }
+    /// <returns></returns>
+    bool IsMultiBranchSafe()
+    {
+        return false;
+    }
+}
+
+/// <summary>
+/// the attrbuite mark the need auto generator the GetReplace overwrite function.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+public sealed class RuleGeneratorAttribute : Attribute
+{
 }

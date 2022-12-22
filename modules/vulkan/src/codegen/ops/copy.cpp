@@ -27,24 +27,19 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::vulkan;
 using namespace nlohmann;
 
-namespace
-{
-struct copy_shape_strides
-{
+namespace {
+struct copy_shape_strides {
     shape_t shape;
     shape_t strides_shape1;
     shape_t strides_shape2;
 };
 
-copy_shape_strides optimize_copy_strides(copy_shape_strides src)
-{
+copy_shape_strides optimize_copy_strides(copy_shape_strides src) {
     assert(src.strides_shape1.size() == src.strides_shape1.size());
 
-    while (src.shape.size() > 1)
-    {
-        if (src.shape.back() == src.strides_shape1.back()
-            && src.shape.back() == src.strides_shape2.back())
-        {
+    while (src.shape.size() > 1) {
+        if (src.shape.back() == src.strides_shape1.back() &&
+            src.shape.back() == src.strides_shape2.back()) {
             auto value = src.shape.back();
             src.shape.pop_back();
             src.strides_shape1.pop_back();
@@ -57,27 +52,26 @@ copy_shape_strides optimize_copy_strides(copy_shape_strides src)
 
     return src;
 }
-}
+} // namespace
 
-void vulkan_module_builder::emit(copy &node)
-{
+void vulkan_module_builder::emit(copy &node) {
     auto &tw = text_writer();
     auto &input = allocation(node.input());
     auto &output = allocation(node.input());
 
-    ldbufbarrier_op_t in_bop {};
+    ldbufbarrier_op_t in_bop{};
     in_bop.src_access_mask = (uint32_t)vk::AccessFlagBits::eMemoryRead;
     in_bop.dest_access_mask = 0;
     in_bop.memory = input.runtime_type();
     tw.write(in_bop);
 
-    ldbufbarrier_op_t out_bop {};
+    ldbufbarrier_op_t out_bop{};
     out_bop.src_access_mask = 0;
     out_bop.dest_access_mask = (uint32_t)vk::AccessFlagBits::eMemoryWrite;
     out_bop.memory = output.runtime_type();
     tw.write(out_bop);
 
-    barrier_op_t bop {};
+    barrier_op_t bop{};
     bop.src_stage = (uint32_t)vk::PipelineStageFlagBits::eTransfer;
     bop.dest_stage = (uint32_t)vk::PipelineStageFlagBits::eTransfer;
     bop.buffer_barriers = 2;
@@ -87,32 +81,34 @@ void vulkan_module_builder::emit(copy &node)
     ldbuf(output.runtime_type());
 
     uint32_t regions = 0;
-    auto opt_shape = optimize_copy_strides({ input.shape, input.strides_shape, output.strides_shape });
-    if (opt_shape.shape.size() == 1)
-    {
+    auto opt_shape = optimize_copy_strides(
+        {input.shape, input.strides_shape, output.strides_shape});
+    if (opt_shape.shape.size() == 1) {
         ldbufcopy_op_t lbc_op;
         lbc_op.src = 0;
         lbc_op.dest = 0;
         lbc_op.size = (uint32_t)ir::get_bytes(input.type, opt_shape.shape);
         regions++;
         tw.write(lbc_op);
-    }
-    else
-    {
-        auto slice_len = (uint32_t)ir::get_bytes(input.type) * opt_shape.shape.back();
+    } else {
+        auto slice_len =
+            (uint32_t)ir::get_bytes(input.type) * opt_shape.shape.back();
         auto src_strides = to_strides(opt_shape.strides_shape1);
         auto dest_strides = to_strides(opt_shape.strides_shape2);
         auto idx_shape = opt_shape.shape;
         idx_shape.back() = 1;
-        kernels::cpu::reference::apply(idx_shape, [&](const shape_t &idx) -> result<void> {
-            ldbufcopy_op_t lbc_op;
-            lbc_op.src = kernels::offset(src_strides, idx);
-            lbc_op.dest = kernels::offset(dest_strides, idx);
-            lbc_op.size = slice_len;
-            regions++;
-            tw.write(lbc_op);
-            return ok();
-        }).unwrap_or_throw();
+        kernels::cpu::reference::apply(
+            idx_shape,
+            [&](const shape_t &idx) -> result<void> {
+                ldbufcopy_op_t lbc_op;
+                lbc_op.src = kernels::offset(src_strides, idx);
+                lbc_op.dest = kernels::offset(dest_strides, idx);
+                lbc_op.size = slice_len;
+                regions++;
+                tw.write(lbc_op);
+                return ok();
+            })
+            .unwrap_or_throw();
     }
 
     copybuf_op_t cb_op;

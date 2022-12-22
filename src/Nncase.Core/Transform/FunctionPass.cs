@@ -11,16 +11,12 @@ using Nncase.IR;
 namespace Nncase.Transform;
 
 /// <summary>
-/// the basic pass
+/// the basic pass.
 /// </summary>
 public abstract class BasePass
 {
     /// <summary>
-    /// the pass name
-    /// </summary>
-    public string Name { get; init; }
-
-    /// <summary>
+    /// Initializes a new instance of the <see cref="BasePass"/> class.
     /// the base pass ctor.
     /// </summary>
     /// <param name="name"></param>
@@ -28,6 +24,11 @@ public abstract class BasePass
     {
         Name = name;
     }
+
+    /// <summary>
+    /// Gets the pass name.
+    /// </summary>
+    public string Name { get; init; }
 }
 
 /// <summary>
@@ -39,7 +40,8 @@ public abstract class FunctionPass : BasePass
     /// Initializes a new instance of the <see cref="FunctionPass"/> class.
     /// </summary>
     /// <param name="name">Name.</param>
-    public FunctionPass(string name) : base(name)
+    public FunctionPass(string name)
+        : base(name)
     {
     }
 
@@ -48,6 +50,7 @@ public abstract class FunctionPass : BasePass
     /// </summary>
     /// <param name="callable">Target function.</param>
     /// <param name="options">Options.</param>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task<BaseFunction> RunAsync(BaseFunction callable, RunPassOptions options)
     {
         var new_options = options.IndentDir(Name).IndentDir(callable.Name);
@@ -62,6 +65,7 @@ public abstract class FunctionPass : BasePass
     /// </summary>
     /// <param name="callable">Target function.</param>
     /// <param name="options">Options.</param>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     protected abstract Task<BaseFunction> RunCoreAsync(BaseFunction callable, RunPassOptions options);
 
     /// <summary>

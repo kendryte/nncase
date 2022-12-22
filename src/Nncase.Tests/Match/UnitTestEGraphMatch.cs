@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -69,7 +72,7 @@ public sealed class UnitTestEGraphMatch
         var y1 = y - 10;
 
         var px = IsWildcard();
-        var py = IsBinary(op => op.BinaryOp is (BinaryOp.Add or BinaryOp.Sub), px, IsConst(10));
+        var py = IsBinary(op => op.BinaryOp is BinaryOp.Add or BinaryOp.Sub, px, IsConst(10));
 
         Assert.True(CompilerServices.TryEMatchRoot(y, py, out var matchs));
         Assert.Single(matchs);
@@ -120,7 +123,6 @@ public sealed class UnitTestEGraphMatch
     [Fact]
     public void TestMatchVArgsTwice()
     {
-
         ConstPattern wcaxis = IsConst();
 
         var tuple_lhs = new IR.Tuple(1, new Var(), 3);
@@ -136,13 +138,13 @@ public sealed class UnitTestEGraphMatch
     [Fact]
     public void TestMatchVArgsRecursion()
     {
-
         Var x = "x";
         Const y = 4;
         Expr z = (Const)1 + 2;
 
         Const perm = 123;
-        Expr expr = Concat(new IR.Tuple(
+        Expr expr = Concat(
+            new IR.Tuple(
           Transpose(x, perm),
           Transpose(y, perm),
           Transpose(z, perm)), 0);
@@ -188,7 +190,6 @@ public sealed class UnitTestEGraphMatch
         Assert.False(CompilerServices.TryEMatchRoot((x * 2) + 12 - x, IsBinary(op => true, xpat, xpat), out var result2));
     }
 
-
     [Fact]
     public void TestMatchCallFusion()
     {
@@ -197,13 +198,12 @@ public sealed class UnitTestEGraphMatch
             var fusion_input = new Var(new TensorType(DataTypes.Float32, new[] { 1, 2, 3, 4 }));
             fusion = new Fusion(Callable.StackVMModuleKind, IR.F.Tensors.Transpose(fusion_input, new[] { 0, 3, 1, 2 }), new[] { fusion_input });
         }
+
         var call = new Call(fusion, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 1, 2, 3, 4 }));
 
-
         var pattern = IsCall("callee", IsFusion("callee_fusion", Callable.StackVMModuleKind, IsWildcard(), IsVArgs(IsVar())), IsWildcard("callee_input"));
-        
+
         Assert.True(CompilerServices.TryEMatchRoot(call, pattern, out var result));
         Assert.Single(result);
     }
 }
-

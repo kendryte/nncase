@@ -10,10 +10,10 @@ using System.Threading.Tasks;
 namespace Nncase.IR;
 public class MixQuantInfo
 {
-    public bool HasBindedMixQuantInfo = false;
+    public bool HasBindedMixQuantInfo;
     public DataType MarkerQuantType = DataTypes.Float32;
     public List<QuantParam> QuantParameter = new List<QuantParam>();
-    public bool DoSquant = false;
+    public bool DoSquant;
     public TensorConst U8FineTunedWeights;
     public TensorConst U8FineTunedWeightsRangesByChannel;
     public TensorConst I8FineTunedWeights;
@@ -23,29 +23,30 @@ public class MixQuantInfo
 /// <summary>
 /// The marker expression, it's can attach the attribute on the target.
 /// </summary>
-/// <param name="Name"> Name will belong to <see cref="WellknownMarkerNames"/> </param>
+/// <param name="Name"> Name will belong to <see cref="WellknownMarkerNames"/>. </param>
 /// <param name="Target"> expr target. </param>
 /// <param name="Attribute"> expr attribute. </param>
 public sealed record Marker(string Name, Expr Target, Expr Attribute) : Expr
 {
+    public MixQuantInfo MixQuantInfo;
+
     /// <summary>
     /// Gets Target.
     /// </summary>
+    /// <returns></returns>
     public Expr MarkerTarget()
     {
         return Target;
     }
-
-    public MixQuantInfo mixQuantInfo;
 }
 
 /// <summary>
-/// staic marker name collection
+/// staic marker name collection.
 /// </summary>
 public static class WellknownMarkerNames
 {
     /// <summary>
-    /// attribute <seealso cref="IR.Math.RangeOf"/>
+    /// attribute. <seealso cref="IR.Math.RangeOf"/>
     /// </summary>
     public static readonly string RangeOf = "RangeOf";
 }

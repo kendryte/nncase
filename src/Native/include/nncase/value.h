@@ -42,6 +42,7 @@ class NNCASE_API tuple_node : public value_node {
     gsl::span<value_t> fields() noexcept { return fields_; }
 
     result<void> copy_to(value_t dest) const noexcept override;
+
   private:
     std::vector<value_t> fields_;
 };

@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -15,12 +15,63 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Transform;
 
+/// <summary>
+/// a template rule.
+/// </summary>
+public class TemplateRule : IRewriteRule
+{
+    /// <summary>
+    /// after expr.
+    /// </summary>
+    private readonly Pattern _rhs;
+
+    /// <summary>
+    /// predicate will be eval to bool.
+    /// </summary>
+    private readonly Pattern? _predicate;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TemplateRule"/> class.
+    /// <see cref="RulesFactory.Rewrite(Pattern, Pattern, Pattern?)"/>.
+    /// </summary>
+    public TemplateRule(Pattern lhs, Pattern rhs, Pattern? predicate = null)
+    {
+        Pattern = lhs;
+        _rhs = rhs;
+        _predicate = predicate;
+    }
+
+    /// <inheritdoc/>
+    public IPattern Pattern { get; }
+
+    /// <inheritdoc/>
+    public bool IsMultiBranchSafe { get; init; }
+
+    /// <inheritdoc/>
+    bool IRewriteRule.IsMultiBranchSafe() => IsMultiBranchSafe;
+
+    /// <inheritdoc/>
+    public Expr? GetReplace(IMatchResult result, RunPassOptions options)
+    {
+        var converter = new ExprGeneratorVisitor(result);
+        if (_predicate is null || (_predicate is not null && converter.Visit(_predicate).Evaluate().AsTensor().ToScalar<bool>()))
+        {
+            return converter.Visit(_rhs);
+        }
+
+        return null;
+    }
+}
+
 /// <inheritdoc/>
 internal sealed class ExprGeneratorVisitor : PatternVisitor<Expr, IRType>
 {
     private readonly IMatchResult _result;
 
-    public ExprGeneratorVisitor(IMatchResult result) { _result = result; }
+    public ExprGeneratorVisitor(IMatchResult result)
+    {
+        _result = result;
+    }
 
     /// <inheritdoc/>
     public override Expr VisitLeaf(CallPattern pattern)
@@ -74,53 +125,6 @@ internal sealed class ExprGeneratorVisitor : PatternVisitor<Expr, IRType>
     public override Expr VisitLeaf(ExprPattern pattern)
     {
         return _result.Get(pattern);
-    }
-}
-
-/// <summary>
-/// a template rule.
-/// </summary>
-public class TemplateRule : IRewriteRule
-{
-    /// <summary>
-    /// after expr.
-    /// </summary>
-    private readonly Pattern _rhs;
-
-    /// <summary>
-    /// predicate will be eval to bool.
-    /// </summary>
-    private readonly Pattern? _predicate;
-
-    /// <summary>
-    /// <see cref="RulesFactory.Rewrite(Pattern, Pattern, Pattern?)"/>.
-    /// </summary>
-    public TemplateRule(Pattern lhs, Pattern rhs, Pattern? predicate = null)
-    {
-        Pattern = lhs;
-        _rhs = rhs;
-        _predicate = predicate;
-    }
-
-    /// <inheritdoc/>
-    public IPattern Pattern { get; }
-
-    /// <inheritdoc/>
-    public bool IsMultiBranchSafe { get; init; } = false;
-
-    /// <inheritdoc/>
-    bool IRewriteRule.IsMultiBranchSafe() => IsMultiBranchSafe;
-
-    /// <inheritdoc/>
-    public Expr? GetReplace(IMatchResult result, RunPassOptions options)
-    {
-        var converter = new ExprGeneratorVisitor(result);
-        if (_predicate is null || (_predicate is not null && converter.Visit(_predicate).Evaluate().AsTensor().ToScalar<bool>()))
-        {
-            return converter.Visit(_rhs);
-        }
-
-        return null;
     }
 }
 

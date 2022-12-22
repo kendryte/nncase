@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -31,8 +34,7 @@ public sealed class UnitTestPassManager : TestFixture.UnitTestFixtrue
         // prim_func_2 for update
         var prim_func_2 = T.PrimFunc("prim_func_2", "k?", T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 2, 3, 4 }, out var input_a_2), T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Output, new[] { 1, 2, 3, 4 }, out var input_b_2)).Body(
           T.Nop(),
-          T.Nop()
-        ).Build();
+          T.Nop()).Build();
 
         Assert.True(CompilerServices.InferenceType(main_func));
         Assert.True(CompilerServices.InferenceType(prim_func_2));
@@ -58,29 +60,27 @@ public sealed class UnitTestPassManager : TestFixture.UnitTestFixtrue
 
         Dictionary<BaseFunction, BaseFunction> functions_update = new(ReferenceEqualityComparer.Instance);
 
-        /* only update func_1 
+        /* only update func_1
           %0 = %func_0(%input): // f32[1,3,24,32]
           %1 = %func_1(%0): // i8[1,3,24,32]
           %3 = %func_3(%2): // f16[1,23,30,16]
         */
 
         var prim_func_0 = T.PrimFunc("prim_func_0", "k?", T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 24, 32, 3 }, out var _), T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Output, new[] { 1, 3, 24, 32 }, out var _)).Body(
-          T.Nop()
-        ).Build();
+          T.Nop()).Build();
         var func_0 = new PrimFunctionWrapper(prim_func_0, 1);
 
         var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 3, 24, 32 }, out var _), T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Output, new[] { 1, 3, 24, 32 }, out var _)).Body(
-          T.Nop()
-        ).Build();
+          T.Nop()).Build();
         var func_1 = new PrimFunctionWrapper(prim_func_1, 1);
 
         var prim_func_2 = T.PrimFunc("prim_func_2", "k?", T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 3, 24, 32 }, out var _), T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Output, new[] { 1, 23, 30, 16 }, out var _)).Body(
-          T.Nop()
-        ).Build();
+          T.Nop()).Build();
         var func_2 = new PrimFunctionWrapper(prim_func_2, 1);
 
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
-        var main_func = new Function("main",
+        var main_func = new Function(
+            "main",
                         new Call(func_2, new Call(func_1, new Call(func_0, ImmutableArray.Create<Expr>(input)))),
                         ImmutableArray.Create<Var>(input));
         Assert.True(CompilerServices.InferenceType(main_func));
@@ -88,8 +88,7 @@ public sealed class UnitTestPassManager : TestFixture.UnitTestFixtrue
         // prim_func_2 for update
         var prim_func_1_update = T.PrimFunc("prim_func_1_update", "k?", T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 3, 24, 32 }, out var _), T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Output, new[] { 1, 3, 24, 32 }, out var _)).Body(
           T.Nop(),
-          T.Nop()
-        ).Build();
+          T.Nop()).Build();
 
         Assert.True(CompilerServices.InferenceType(prim_func_1_update));
 
@@ -112,7 +111,9 @@ public sealed class UnitTestPassManager : TestFixture.UnitTestFixtrue
         for (int i = 0; i < module.Functions.Count; i++)
         {
             if (functions_update.TryGetValue(module.Functions[i], out var updated_func))
+            {
                 module.Update(i, updated_func);
+            }
         }
 
         Assert.True(object.ReferenceEquals(((PrimFunctionWrapper)module.Functions[1]).Target, module.Functions[2]));

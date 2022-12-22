@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -27,6 +30,19 @@ public class Startup
             .UseServiceProviderFactory(new AutofacServiceProviderFactory())
             .ConfigureContainer<ContainerBuilder>(ConfigureContainer)
             .ConfigureServices(ConfigureServices);
+
+    public void Configure(ICompilerServicesProvider provider, ITestingProvider testing_provider, Microsoft.Extensions.Options.IOptions<CompileOptions> compileOptions)
+    {
+        Environment.SetEnvironmentVariable("NNCASE_TARGET_PATH", string.Empty);
+
+        CompilerServices.Configure(provider);
+        CompilerServices.CompileOptions = compileOptions.Value;
+        TestFixture.Testing.Configure(testing_provider);
+        if (CompilerServices.CompileOptions.DumpDir == string.Empty)
+        {
+            CompilerServices.CompileOptions.DumpDir = TestFixture.Testing.GetDumpDirPath();
+        }
+    }
 
     private static void ConfigureContainer(ContainerBuilder builder)
     {
@@ -70,16 +86,5 @@ public class Startup
                 _ => throw new System.ArgumentOutOfRangeException(),
             };
         });
-    }
-
-    public void Configure(ICompilerServicesProvider provider, ITestingProvider testing_provider, Microsoft.Extensions.Options.IOptions<CompileOptions> compileOptions)
-    {
-        Environment.SetEnvironmentVariable("NNCASE_TARGET_PATH", "");
-
-        CompilerServices.Configure(provider);
-        CompilerServices.CompileOptions = compileOptions.Value;
-        TestFixture.Testing.Configure(testing_provider);
-        if (CompilerServices.CompileOptions.DumpDir == "")
-            CompilerServices.CompileOptions.DumpDir = TestFixture.Testing.GetDumpDirPath();
     }
 }

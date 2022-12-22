@@ -20,9 +20,9 @@ public static class Tensors
 {
     public static Call Transpose(Expr input, Expr perm) => new Call(new Transpose(), input, perm);
 
-    public static Expr NHWCToNCHW(Expr input) => Transpose(input, new[] {0, 3, 1, 2});
+    public static Expr NHWCToNCHW(Expr input) => Transpose(input, new[] { 0, 3, 1, 2 });
 
-    public static Expr NCHWToNHWC(Expr input) => Transpose(input, new[] {0, 2, 3, 1});
+    public static Expr NCHWToNHWC(Expr input) => Transpose(input, new[] { 0, 2, 3, 1 });
 
     public static Call Broadcast(Expr input, Expr shape) => new Call(new Broadcast(), input, shape);
 
@@ -43,7 +43,7 @@ public static class Tensors
     {
         if (shape.InferenceType() && shape.CheckedShape.IsScalar)
         {
-            shape = Unsqueeze(shape, new[] {0});
+            shape = Unsqueeze(shape, new[] { 0 });
         }
 
         return new Call(new Expand(), input, shape);
@@ -59,7 +59,7 @@ public static class Tensors
     public static Call MatMul(Expr input, Expr other) => new Call(new MatMul(), input, other);
 
     // todo:remove prod
-    public static Call Prod(Expr input) => Reduce(ReduceOp.Prod, input, new[] {0}, 1, false);
+    public static Call Prod(Expr input) => Reduce(ReduceOp.Prod, input, new[] { 0 }, 1, false);
 
     public static Call Range(Expr begin, Expr end, Expr step) => new Call(new Range(), begin, end, step);
 
@@ -88,32 +88,35 @@ public static class Tensors
 
     public static Call ShapeOf(Expr input) => new Call(new ShapeOf(), input);
 
-    /// https://github.com/onnx/onnx/blob/master/docs/Operators.md#slice
+    // https://github.com/onnx/onnx/blob/master/docs/Operators.md#slice
     public static Call Slice(Expr input, Expr begins, Expr ends, Expr axes, Expr strides) =>
         new Call(new Slice(), input, begins, ends, axes, strides);
 
     public static Call Slice(Expr input, Expr begins, Expr ends, int rank)
     {
         if (rank < 1)
+        {
             throw new ArgumentOutOfRangeException();
+        }
+
         var axes = Tensor.FromRange(0, rank);
         var strides = Tensor.FromScalar(1, rank);
         return new Call(new Slice(), input, begins, ends, axes, strides);
     }
 
-    public static Expr SliceIndex(Expr input, int index) => Slice(input, new[] {index}, new[] {index + 1}, 1);
+    public static Expr SliceIndex(Expr input, int index) => Slice(input, new[] { index }, new[] { index + 1 }, 1);
 
     public static Expr SizeOf(Expr input) => new Call(new SizeOf(), input);
 
     public static Call Stack(Expr inputs, Expr axis) => new Call(new Stack(), inputs, axis);
 
-    /// squeeze input by give dims
+    // squeeze input by give dims
     public static Call Squeeze(Expr input, Expr dims) => new Call(new Squeeze(), input, dims);
 
     public static Call Unsqueeze(Expr input, Expr dims) => new Call(new Unsqueeze(), input, dims);
 
     // return a scalar
-    public static Expr Rank(Expr input) => Slice(ShapeOf(ShapeOf(input)), new[] {0}, new[] {1}, 1);
+    public static Expr Rank(Expr input) => Slice(ShapeOf(ShapeOf(input)), new[] { 0 }, new[] { 1 }, 1);
 
     // sections (int or list[int])
     public static Call Split(Expr input, Expr axis, Expr sections) => new Call(new Split(), input, axis, sections);

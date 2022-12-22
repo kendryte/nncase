@@ -21,6 +21,7 @@ from onnx_test_runner import OnnxTestRunner
 import numpy as np
 import copy
 
+
 def _make_module(in_shape, axis, repeat, op_version):
     inputs = []
     outputs = []
@@ -109,6 +110,7 @@ def _make_module(in_shape, axis, repeat, op_version):
 
     return model_def
 
+
 in_shapes = [
     [1, 3, 16, 16]
 ]
@@ -137,6 +139,7 @@ op_versions = [
     11
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('axis', axes)
 @pytest.mark.parametrize('repeat', repeats)
@@ -148,6 +151,7 @@ def test_tile(in_shape, axis, repeat, op_version, request):
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_onnx_helper(model_def)
         runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_tile.py'])

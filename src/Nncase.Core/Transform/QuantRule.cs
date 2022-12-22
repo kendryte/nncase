@@ -29,9 +29,14 @@ public abstract class QuantRule : RewriteRule<Pattern>
     public IMatchResult MatchResult = null!;
 
     /// <summary>
-    /// whole expr be matched
+    /// Gets whole expr be matched.
     /// </summary>
     public Expr Root => (Expr)MatchResult[Pattern];
+
+    /// <summary>
+    /// Gets get ModelQuantMode.
+    /// </summary>
+    public ModelQuantMode ModelQuantMode => Option.CompileOptions.ModelQuantMode;
 
     /// <summary>
     /// check the datatype is the quant type.
@@ -41,23 +46,17 @@ public abstract class QuantRule : RewriteRule<Pattern>
     public bool IsQuantType(DataType dt) => dt == DataTypes.Int8 || dt == DataTypes.UInt8;
 
     /// <summary>
-    /// Get ModelQuantMode
-    /// </summary>
-
-    public ModelQuantMode ModelQuantMode => Option.CompileOptions.ModelQuantMode;
-
-    /// <summary>
-    /// Get QuantType
+    /// Gets get QuantType.
     /// </summary>
     public DataType QuantType => Option.CompileOptions.QuantType;
 
     /// <summary>
-    /// Get WQuantType
+    /// Gets get WQuantType.
     /// </summary>
     public DataType WQuantType => Option.CompileOptions.WQuantType;
 
     /// <summary>
-    /// Get UseMixQuant flag
+    /// Gets a value indicating whether get UseMixQuant flag.
     /// </summary>
     public bool UseMixQuant => Option.CompileOptions.QuantizeOptions.BindQuantMethod;
 
@@ -65,5 +64,4 @@ public abstract class QuantRule : RewriteRule<Pattern>
     /// NOTE the Init will be set by SourceGenerator when the GetReplace called.
     /// </summary>
     public abstract void Init();
-
 }

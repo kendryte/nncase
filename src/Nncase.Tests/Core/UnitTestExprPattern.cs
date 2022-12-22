@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -32,7 +35,7 @@ public class UnitTestExprPattern
     [Fact]
     public void TestVarPattern()
     {
-        Var e = new Var("x", AnyType.Default);
+        var e = new Var("x", AnyType.Default);
         Assert.True(e.InferenceType());
         Pattern ep = e;
         Assert.IsType<VarPattern>(ep);
@@ -42,7 +45,7 @@ public class UnitTestExprPattern
     [Fact]
     public void TestTensorConstantPattern()
     {
-        var con = (Const)(1.1f);
+        var con = (Const)1.1f;
         Assert.True(con.InferenceType());
         Pattern cp1 = con;
         Assert.IsType<TensorConstPattern>(cp1);
@@ -60,8 +63,8 @@ public class UnitTestExprPattern
     [Fact]
     public void TestTensorConstantPatternEqual()
     {
-        TensorConstPattern cp1 = (TensorConstPattern)1;
-        TensorConstPattern cp2 = (TensorConstPattern)1;
+        var cp1 = (TensorConstPattern)1;
+        var cp2 = (TensorConstPattern)1;
         Dictionary<TensorConstPattern, int> d = new();
         d.Add(cp1, 1);
         Assert.NotEqual(cp1, cp2);
@@ -107,7 +110,7 @@ public class UnitTestExprPattern
 
         CallPattern c2 = IsBinary(BinaryOp.Add, wc1, wc2);
 
-        CallPattern c3 = IsBinary(x => x.BinaryOp is (BinaryOp.Div or BinaryOp.Sub), wc1, wc2);
+        CallPattern c3 = IsBinary(x => x.BinaryOp is BinaryOp.Div or BinaryOp.Sub, wc1, wc2);
 
         Assert.True(CompilerServices.TryMatchRoot(e, c, out _));
         Assert.True(CompilerServices.TryMatchRoot(e, c2, out _));
@@ -186,8 +189,8 @@ public class UnitTestExprPattern
     public void TestVArgsPatternFunc()
     {
         var pat = IsTuple(IsVArgsRepeat(() => IsConst()));
-        IR.Tuple expr1 = new IR.Tuple(1, 2, 3, 4, 5, 6);
-        IR.Tuple expr2 = new IR.Tuple(new Var("x"), 2, 3, 4, 5, 6);
+        var expr1 = new IR.Tuple(1, 2, 3, 4, 5, 6);
+        var expr2 = new IR.Tuple(new Var("x"), 2, 3, 4, 5, 6);
 
         Assert.True(CompilerServices.TryMatchRoot(expr1, pat, out _));
         Assert.Equal(pat.Fields.Count, expr1.Fields.Count);
@@ -201,8 +204,8 @@ public class UnitTestExprPattern
         var lhs = IsWildcard();
         var rhs = IsWildcard();
         var is_op_call = IsCall(IsWildcard(), new[] { lhs, rhs });
-        Const x = (Const)1;
-        Const y = (Const)2;
+        var x = (Const)1;
+        var y = (Const)2;
         var z1 = x + y;
         var z2 = x * y;
         z1.InferenceType();

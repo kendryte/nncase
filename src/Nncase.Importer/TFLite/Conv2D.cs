@@ -1,17 +1,26 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
 using Nncase.IR;
-using F = Nncase.IR.F;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
+using F = Nncase.IR.F;
 
 namespace Nncase.Importer.TFLite
 {
     public partial class TFLiteImporter
     {
+        private static ValueRange<float> ToFloatClampRange(tflite.ActivationFunctionType func) => func switch
+        {
+            tflite.ActivationFunctionType.NONE => ValueRange<float>.Full,
+            tflite.ActivationFunctionType.RELU => (0f, float.PositiveInfinity),
+            tflite.ActivationFunctionType.RELU_N1_TO_1 => (-1f, 1f),
+            tflite.ActivationFunctionType.RELU6 => (0f, 6f),
+            _ => throw new NotSupportedException("Unsupported Activation:" + func),
+        };
+
         private Expr VisitConv2D(in tflite.Operator op)
         {
             var (input, weights) = GetInputExprs(op, 0, 1);
@@ -113,14 +122,5 @@ namespace Nncase.Importer.TFLite
                 F.NN.Conv2D(input, weights, bias, stride, padding, dilation,
                     PadMode.Constant, Util.ShapeIndex(weights, 0), new[] { clamp.Min, clamp.Max }));
         }
-
-        private static ValueRange<float> ToFloatClampRange(tflite.ActivationFunctionType func) => func switch
-        {
-            tflite.ActivationFunctionType.NONE => ValueRange<float>.Full,
-            tflite.ActivationFunctionType.RELU => (0f, float.PositiveInfinity),
-            tflite.ActivationFunctionType.RELU_N1_TO_1 => (-1f, 1f),
-            tflite.ActivationFunctionType.RELU6 => (0f, 6f),
-            _ => throw new NotSupportedException("Unsupported Activation:" + func),
-        };
     }
 }

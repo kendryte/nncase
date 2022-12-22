@@ -18,6 +18,14 @@ public static class TensorUtilities
 {
     private const int StackallocMax = 16;
 
+    private enum SliceStatus : uint
+    {
+        IsFull,
+        IsSlice,
+        IsSliceFull, // shape [10,10] like [[0,1), [0,10)]
+        IsInvalid,
+    }
+
     /// <summary>
     /// get the product from the start index on the dimensions.
     /// </summary>
@@ -52,14 +60,14 @@ public static class TensorUtilities
     }
 
     /// <summary>
-    /// Get the Expr Product
+    /// Get the Expr Product.
     /// </summary>
     /// <param name="dimensions"></param>
     /// <param name="startIndex"></param>
     /// <returns></returns>
     public static IR.Expr GetProduct(IEnumerable<IR.Expr> dimensions, int startIndex = 0)
     {
-        if (dimensions.Count() == 0)
+        if (!dimensions.Any())
         {
             return 1;
         }
@@ -100,7 +108,7 @@ public static class TensorUtilities
     }
 
     /// <summary>
-    /// Gets the set of strides that can be used to calculate the offset of n-dimensions in a 1-dimensional layout
+    /// Gets the set of strides that can be used to calculate the offset of n-dimensions in a 1-dimensional layout.
     /// </summary>
     /// <param name="dimensions"></param>
     /// <param name="reverseStride"></param>
@@ -136,7 +144,7 @@ public static class TensorUtilities
     }
 
     /// <summary>
-    /// get strides 
+    /// get strides.
     /// </summary>
     /// <param name="dimensions"></param>
     /// <param name="reverseStride"></param>
@@ -152,7 +160,9 @@ public static class TensorUtilities
         }
 
         if (reverseStride)
+        {
             strides.Reverse();
+        }
 
         return strides;
     }
@@ -213,7 +223,7 @@ public static class TensorUtilities
     }
 
     /// <summary>
-    /// get index
+    /// get index.
     /// </summary>
     /// <param name="strides"></param>
     /// <param name="indices"></param>
@@ -224,7 +234,9 @@ public static class TensorUtilities
     {
         // Scalar
         if (strides.Length == 0 || indices.Length == 0)
+        {
             throw new IndexOutOfRangeException();
+        }
 
         Trace.Assert(strides.Length == indices.Length);
 
@@ -238,7 +250,7 @@ public static class TensorUtilities
     }
 
     /// <summary>
-    /// Calculates the n-d indices from the 1-d index in a layout specificed by strides
+    /// Calculates the n-d indices from the 1-d index in a layout specificed by strides.
     /// </summary>
     /// <param name="strides"></param>
     /// <param name="reverseStride"></param>
@@ -263,7 +275,7 @@ public static class TensorUtilities
     }
 
     /// <summary>
-    /// Calculates the n-d indices from the 1-d index in a layout specificed by strides
+    /// Calculates the n-d indices from the 1-d index in a layout specificed by strides.
     /// </summary>
     /// <param name="strides"></param>
     /// <param name="reverseStride"></param>
@@ -288,8 +300,9 @@ public static class TensorUtilities
     }
 
     /// <summary>
-    /// Takes an 1-d index over n-d sourceStrides and recalculates it assuming same n-d coordinates over a different n-d strides
+    /// Takes an 1-d index over n-d sourceStrides and recalculates it assuming same n-d coordinates over a different n-d strides.
     /// </summary>
+    /// <returns></returns>
     public static int TransformIndexByStrides(int index, int[] sourceStrides, bool sourceReverseStride, int[] transformStrides)
     {
         Trace.Assert(index >= 0);
@@ -325,14 +338,6 @@ public static class TensorUtilities
         return System.Collections.StructuralComparisons.StructuralEqualityComparer.Equals(GetStrides(dimensions), strides.ToArray());
     }
 
-    private enum SliceStatus : uint
-    {
-        IsFull,
-        IsSlice,
-        IsSliceFull, // shape [10,10] like [[0,1), [0,10)]
-        IsInvalid
-    }
-
     /// <summary>
     /// check the dimensions selected range is contiguous.
     /// </summary>
@@ -343,7 +348,10 @@ public static class TensorUtilities
     public static bool IsContiguousSlice(ReadOnlySpan<int> dimensions, ReadOnlySpan<System.Range> slices)
     {
         if (dimensions.Length != slices.Length)
+        {
             return false;
+        }
+
         SliceStatus status = SliceStatus.IsFull;
         for (int i = dimensions.Length - 1; i >= 0; i--)
         {
@@ -353,7 +361,7 @@ public static class TensorUtilities
             status = (end - start) switch
             {
                 // is full
-                int x when (x == dimensions[i]) => status switch
+                int x when x == dimensions[i] => status switch
                 {
                     SliceStatus.IsSlice => x == 1 ?
                                                     SliceStatus.IsSlice :
@@ -363,8 +371,9 @@ public static class TensorUtilities
                                                     SliceStatus.IsInvalid,
                     _ => SliceStatus.IsFull,
                 },
+
                 // when has
-                int x when (x > 0 && x < dimensions[i]) => status switch
+                int x when x > 0 && x < dimensions[i] => status switch
                 {
                     SliceStatus.IsSlice => x == 1 ?
                                                 SliceStatus.IsSlice :
@@ -378,7 +387,9 @@ public static class TensorUtilities
                 _ => throw new NotSupportedException(),
             };
             if (status == SliceStatus.IsInvalid)
+            {
                 return false;
+            }
         }
 
         return true;

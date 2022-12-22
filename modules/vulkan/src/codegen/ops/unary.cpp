@@ -23,8 +23,7 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::vulkan;
 using namespace nlohmann;
 
-void vulkan_module_builder::emit(unary &node)
-{
+void vulkan_module_builder::emit(unary &node) {
     auto len = xt::compute_size(node.output().shape());
     json ctx;
     ctx["length"] = len;

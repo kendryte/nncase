@@ -21,5 +21,4 @@ public sealed record Transpose() : Op
     /// Gets perm.
     /// </summary>
     public static readonly ParameterInfo Perm = new(typeof(Transpose), 1, "perm", HasRank(1) & IsIntegral());
-
 }

@@ -22,13 +22,10 @@ NNCASE_INLINE_VAR constexpr memory_location_t mem_kpu = mem_private_base + 0;
 NNCASE_INLINE_VAR constexpr size_t KPU_RAM_SIZE = 2 * 1024 * 1024; // 2MB
 NNCASE_INLINE_VAR constexpr size_t KPU_BN_OUT_BITS = 36;
 
-typedef struct
-{
-    union
-    {
+typedef struct {
+    union {
         uint64_t reg;
-        struct
-        {
+        struct {
             uint64_t int_en : 1;
             uint64_t ram_flag : 1;
             uint64_t full_add : 1;
@@ -37,11 +34,9 @@ typedef struct
         } data;
     } interrupt_enabe;
 
-    union
-    {
+    union {
         uint64_t reg;
-        struct
-        {
+        struct {
             uint64_t image_src_addr : 15;
             uint64_t reserved0 : 17;
             uint64_t image_dst_addr : 15;
@@ -49,11 +44,9 @@ typedef struct
         } data;
     } image_addr;
 
-    union
-    {
+    union {
         uint64_t reg;
-        struct
-        {
+        struct {
             uint64_t i_ch_num : 10;
             uint64_t reserved0 : 22;
             uint64_t o_ch_num : 10;
@@ -63,11 +56,9 @@ typedef struct
         } data;
     } image_channel_num;
 
-    union
-    {
+    union {
         uint64_t reg;
-        struct
-        {
+        struct {
             uint64_t i_row_wid : 10;
             uint64_t i_col_high : 9;
             uint64_t reserved0 : 13;
@@ -77,11 +68,9 @@ typedef struct
         } data;
     } image_size;
 
-    union
-    {
+    union {
         uint64_t reg;
-        struct
-        {
+        struct {
             uint64_t kernel_type : 3;
             uint64_t pad_type : 1;
             uint64_t pool_type : 4;
@@ -95,11 +84,9 @@ typedef struct
         } data;
     } kernel_pool_type_cfg;
 
-    union
-    {
+    union {
         uint64_t reg;
-        struct
-        {
+        struct {
             uint64_t load_coor : 1;
             uint64_t load_time : 6;
             uint64_t reserved0 : 8;
@@ -108,22 +95,18 @@ typedef struct
         } data;
     } kernel_load_cfg;
 
-    union
-    {
+    union {
         uint64_t reg;
-        struct
-        {
+        struct {
             uint64_t coef_column_offset : 4;
             uint64_t coef_row_offset : 12;
             uint64_t reserved0 : 48;
         } data;
     } kernel_offset;
 
-    union
-    {
+    union {
         uint64_t reg;
-        struct
-        {
+        struct {
             uint64_t channel_switch_addr : 15;
             uint64_t reserved : 1;
             uint64_t row_switch_addr : 4;
@@ -134,11 +117,9 @@ typedef struct
         } data;
     } kernel_calc_type_cfg;
 
-    union
-    {
+    union {
         uint64_t reg;
-        struct
-        {
+        struct {
             uint64_t wb_channel_switch_addr : 15;
             uint64_t reserved0 : 1;
             uint64_t wb_row_switch_addr : 4;
@@ -147,11 +128,9 @@ typedef struct
         } data;
     } write_back_cfg;
 
-    union
-    {
+    union {
         uint64_t reg;
-        struct
-        {
+        struct {
             uint64_t shr_w : 4;
             uint64_t shr_x : 4;
             uint64_t arg_w : 24;
@@ -160,21 +139,17 @@ typedef struct
         } data;
     } conv_value;
 
-    union
-    {
+    union {
         uint64_t reg;
-        struct
-        {
+        struct {
             uint64_t arg_add : 40;
             uint64_t reserved : 24;
         } data;
     } conv_value2;
 
-    union
-    {
+    union {
         uint64_t reg;
-        struct
-        {
+        struct {
             uint64_t send_data_out : 1;
             uint64_t reserved : 15;
             uint64_t channel_byte_num : 16;
@@ -183,45 +158,35 @@ typedef struct
     } dma_parameter;
 } kpu_layer_argument_t;
 
-typedef struct
-{
-    union
-    {
+typedef struct {
+    union {
         uint64_t reg;
-        struct
-        {
+        struct {
             uint64_t shift_number : 8; // [0,43]
             uint64_t y_mul : 16;
             uint64_t x_start : 36;
         } data;
     } activate_para[16];
 
-    union
-    {
+    union {
         uint64_t reg;
-        struct
-        {
+        struct {
             uint8_t result_bias[8];
         } data;
     } activate_para_bias0;
 
-    union
-    {
+    union {
         uint64_t reg;
-        struct
-        {
+        struct {
             uint8_t result_bias[8];
         } data;
     } activate_para_bias1;
 } kpu_activate_table_t;
 
-typedef struct
-{
-    union
-    {
+typedef struct {
+    union {
         uint64_t reg;
-        struct
-        {
+        struct {
             uint64_t norm_mul : 24;
             uint64_t norm_add : 32;
             uint64_t norm_shift : 4;
@@ -229,14 +194,12 @@ typedef struct
     } batchnorm;
 } kpu_batchnorm_argument_t;
 
-typedef enum _kpu_filter_type
-{
+typedef enum _kpu_filter_type {
     kpu_filter_1x1 = 0,
     kpu_filter_3x3 = 1
 } kpu_filter_type_t;
 
-typedef enum _kpu_pool_type
-{
+typedef enum _kpu_pool_type {
     kpu_pool_bypass = 0,
     kpu_pool_max_2_s2 = 1,
     kpu_pool_mean_2_s2 = 2,
@@ -249,39 +212,37 @@ typedef enum _kpu_pool_type
     kpu_pool_max_2_s1 = 9
 } kpu_pool_type_t;
 
-struct kpu_batchnorm_segment
-{
+struct kpu_batchnorm_segment {
     int32_t mul;
     int32_t shift;
     int32_t add;
 };
 
-inline bool operator==(const kpu_batchnorm_segment &lhs, const kpu_batchnorm_segment &rhs) noexcept
-{
+inline bool operator==(const kpu_batchnorm_segment &lhs,
+                       const kpu_batchnorm_segment &rhs) noexcept {
     return lhs.mul == rhs.mul && lhs.shift == rhs.shift && lhs.add == rhs.add;
 }
 
-inline bool operator!=(const kpu_batchnorm_segment &lhs, const kpu_batchnorm_segment &rhs) noexcept
-{
+inline bool operator!=(const kpu_batchnorm_segment &lhs,
+                       const kpu_batchnorm_segment &rhs) noexcept {
     return !(lhs == rhs);
 }
 
-struct kpu_activation_segment
-{
+struct kpu_activation_segment {
     int64_t start_x;
     int32_t mul;
     int32_t shift;
     int32_t add;
 };
 
-inline bool operator==(const kpu_activation_segment &lhs, const kpu_activation_segment &rhs) noexcept
-{
-    return lhs.start_x == rhs.start_x && lhs.mul == rhs.mul
-        && lhs.shift == rhs.shift && lhs.add == rhs.add;
+inline bool operator==(const kpu_activation_segment &lhs,
+                       const kpu_activation_segment &rhs) noexcept {
+    return lhs.start_x == rhs.start_x && lhs.mul == rhs.mul &&
+           lhs.shift == rhs.shift && lhs.add == rhs.add;
 }
 
-inline bool operator!=(const kpu_activation_segment &lhs, const kpu_activation_segment &rhs) noexcept
-{
+inline bool operator!=(const kpu_activation_segment &lhs,
+                       const kpu_activation_segment &rhs) noexcept {
     return !(lhs == rhs);
 }
 
@@ -289,16 +250,9 @@ using kpu_activation_table_t = std::array<kpu_activation_segment, 16>;
 
 using kpu_shape_t = std::array<uint32_t, 4>;
 
-enum class opcode_t : uint8_t
-{
-    kpu_upload,
-    kpu_download,
-    kpu_conv2d,
-    copy
-};
+enum class opcode_t : uint8_t { kpu_upload, kpu_download, kpu_conv2d, copy };
 
-struct kpu_upload_options
-{
+struct kpu_upload_options {
     opcode_t opcode = opcode_t::kpu_upload;
     uint8_t reserved0[3];
 
@@ -307,8 +261,7 @@ struct kpu_upload_options
     kpu_shape_t in_shape;
 };
 
-struct kpu_download_options
-{
+struct kpu_download_options {
     opcode_t opcode = opcode_t::kpu_download;
     uint8_t reserved0[3];
 
@@ -317,8 +270,7 @@ struct kpu_download_options
     kpu_shape_t in_shape;
 };
 
-struct kpu_conv2d_options
-{
+struct kpu_conv2d_options {
     opcode_t opcode = opcode_t::kpu_conv2d;
     uint8_t reserved0[3];
 
@@ -330,8 +282,7 @@ struct kpu_conv2d_options
     kpu_layer_argument_t layer;
 };
 
-struct copy_options
-{
+struct copy_options {
     opcode_t opcode = opcode_t::copy;
     uint8_t reserved0[3];
 

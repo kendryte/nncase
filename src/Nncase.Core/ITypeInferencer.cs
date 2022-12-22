@@ -11,13 +11,6 @@ using Nncase.IR;
 namespace Nncase.Evaluator;
 
 /// <summary>
-/// this attribute mark the source generator auto generate ITypeInferencer's interface impl
-/// </summary>
-public class TypeInferGeneratorAttribute : Attribute
-{
-}
-
-/// <summary>
 /// Type inferencer interface.
 /// </summary>
 public interface ITypeInferencer
@@ -29,6 +22,13 @@ public interface ITypeInferencer
     /// <param name="target">Target operator.</param>
     /// <returns>Result.</returns>
     IRType Visit(ITypeInferenceContext context, Op target);
+}
+
+/// <summary>
+/// this attribute mark the source generator auto generate ITypeInferencer's interface impl.
+/// </summary>
+public sealed class TypeInferGeneratorAttribute : Attribute
+{
 }
 
 /// <summary>

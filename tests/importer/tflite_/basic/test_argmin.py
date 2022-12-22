@@ -53,6 +53,7 @@ output_types = [
     tf.dtypes.int64
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('axis', axes)
 @pytest.mark.parametrize('output_type', output_types)

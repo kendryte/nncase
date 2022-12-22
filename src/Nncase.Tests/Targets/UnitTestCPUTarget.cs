@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -17,6 +20,13 @@ namespace Nncase.Tests.Targets;
 
 public class UnitTestCPUTarget
 {
+    public static IEnumerable<object[]> TestGetItemData =>
+        new[]
+        {
+            new object[] { new[] { 0, 1 } },
+            new object[] { new[] { 0, -1 } },
+        };
+
     [Fact]
     public void TestCreateCPUTarget()
     {
@@ -57,6 +67,16 @@ public class UnitTestCPUTarget
         TestCodeGen(new IR.Tuple(y, z), new[] { x });
     }
 
+    [Fact]
+    public void TestSimpleBinary()
+    {
+        var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
+        var y = x + 1.0f;
+        var main = new Function("main", y, new[] { x });
+        var module = new IRModule(main);
+        GenerateKModelAndRun(module, new[] { 1.0f }, new[] { 2.0f });
+    }
+
     private void TestCodeGen(Expr body, Var[] vars, [CallerMemberName] string name = null)
     {
         var main = new Function("main", body, vars);
@@ -67,16 +87,6 @@ public class UnitTestCPUTarget
         using var output = File.Open($"{name}.kmodel", FileMode.Create);
         linkedModel.Serialize(output);
         Assert.NotEqual(0, output.Length);
-    }
-
-    [Fact]
-    public void TestSimpleBinary()
-    {
-        var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
-        var y = x + 1.0f;
-        var main = new Function("main", y, new[] { x });
-        var module = new IRModule(main);
-        GenerateKModelAndRun(module, new[] { 1.0f }, new[] { 2.0f });
     }
 
     [Fact]
@@ -106,13 +116,6 @@ public class UnitTestCPUTarget
         var main = new Function("main", new IR.Tuple(x + 1.0f, x + 2f, x + 3f), new[] { x });
         GenerateKModelAndRunFromFn(main, new[] { 1f }, new[] { (Tensor)2f, 3f, 4f });
     }
-
-    public static IEnumerable<object[]> TestGetItemData =>
-        new[]
-        {
-            new object[] { new[] { 0, 1 } },
-            new object[] { new[] { 0, -1 } },
-        };
 
     [Theory]
     [MemberData(nameof(TestGetItemData))]

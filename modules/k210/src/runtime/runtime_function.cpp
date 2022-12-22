@@ -27,46 +27,48 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::detail;
 using namespace nncase::runtime::k210;
 
-k210_runtime_module &k210_runtime_function::module() const noexcept
-{
+k210_runtime_module &k210_runtime_function::module() const noexcept {
     return static_cast<k210_runtime_module &>(runtime_function::module());
 }
 
-result<void> k210_runtime_function::initialize_core(runtime_function_init_context &context) noexcept
-{
-    text_ = context.module_init_context().section(".text").subspan(context.header().entrypoint, context.header().text_size);
+result<void> k210_runtime_function::initialize_core(
+    runtime_function_init_context &context) noexcept {
+    text_ = context.module_init_context().section(".text").subspan(
+        context.header().entrypoint, context.header().text_size);
     return ok();
 }
 
-result<runtime_tensor> k210_runtime_function::allocate_input_tensor(size_t index) noexcept
-{
-    return hrt::create(input_desc(index).datatype, input_shape(index), hrt::pool_shared);
+result<runtime_tensor>
+k210_runtime_function::allocate_input_tensor(size_t index) noexcept {
+    return hrt::create(input_desc(index).datatype, input_shape(index),
+                       hrt::pool_shared);
 }
 
-result<runtime_tensor> k210_runtime_function::allocate_output_tensor(size_t index) noexcept
-{
-    return hrt::create(output_desc(index).datatype, output_shape(index), hrt::pool_shared);
+result<runtime_tensor>
+k210_runtime_function::allocate_output_tensor(size_t index) noexcept {
+    return hrt::create(output_desc(index).datatype, output_shape(index),
+                       hrt::pool_shared);
 }
 
-result<void> k210_runtime_function::validate_input_tensor(NNCASE_UNUSED size_t index, runtime_tensor tensor) noexcept
-{
-    if (tensor.is_host()
-        && hrt::memory_pool(tensor).unwrap() == hrt::pool_shared)
+result<void>
+k210_runtime_function::validate_input_tensor(NNCASE_UNUSED size_t index,
+                                             runtime_tensor tensor) noexcept {
+    if (tensor.is_host() &&
+        hrt::memory_pool(tensor).unwrap() == hrt::pool_shared)
         return ok();
     return err(std::errc::invalid_argument);
 }
 
-result<void> k210_runtime_function::validate_output_tensor(NNCASE_UNUSED size_t index, runtime_tensor tensor) noexcept
-{
+result<void>
+k210_runtime_function::validate_output_tensor(NNCASE_UNUSED size_t index,
+                                              runtime_tensor tensor) noexcept {
     if (tensor.is_host())
         return ok();
     return err(std::errc::invalid_argument);
 }
 
-result<void> k210_runtime_function::invoke_core() noexcept
-{
-    for (size_t i = 0; i < inputs_size(); i++)
-    {
+result<void> k210_runtime_function::invoke_core() noexcept {
+    for (size_t i = 0; i < inputs_size(); i++) {
         try_var(input, device_input_tensor(i));
         try_(hrt::sync(input, hrt::sync_write_back));
     }
@@ -75,55 +77,46 @@ result<void> k210_runtime_function::invoke_core() noexcept
     return ok();
 }
 
-result<gsl::span<gsl::byte>> k210_runtime_function::memory_at(const memory_range &mrange) noexcept
-{
+result<gsl::span<gsl::byte>>
+k210_runtime_function::memory_at(const memory_range &mrange) noexcept {
 #define ID_NOT_FOUND ((size_t)-1)
     gsl::byte *base;
-    switch (mrange.memory_location)
-    {
-    case mem_input:
-    {
+    switch (mrange.memory_location) {
+    case mem_input: {
         size_t id = ID_NOT_FOUND;
-        for (size_t i = 0; i < inputs_size(); i++)
-        {
-            if (mrange.start == input_desc(i).start)
-            {
+        for (size_t i = 0; i < inputs_size(); i++) {
+            if (mrange.start == input_desc(i).start) {
                 id = i;
                 break;
             }
         }
 
-        if (id != ID_NOT_FOUND)
-        {
+        if (id != ID_NOT_FOUND) {
             try_var(tensor, device_input_tensor(id));
-            base = reinterpret_cast<gsl::byte *>(static_cast<host_runtime_tensor_impl *>(tensor.impl())->memory_block().virtual_address - mrange.start);
-        }
-        else
-        {
+            base = reinterpret_cast<gsl::byte *>(
+                static_cast<host_runtime_tensor_impl *>(tensor.impl())
+                    ->memory_block()
+                    .virtual_address -
+                mrange.start);
+        } else {
             return err(std::errc::invalid_argument);
         }
         break;
     }
-    case mem_output:
-    {
+    case mem_output: {
         size_t id = ID_NOT_FOUND;
-        for (size_t i = 0; i < outputs_size(); i++)
-        {
-            if (mrange.start == output_desc(i).start)
-            {
+        for (size_t i = 0; i < outputs_size(); i++) {
+            if (mrange.start == output_desc(i).start) {
                 id = i;
                 break;
             }
         }
 
-        if (id != ID_NOT_FOUND)
-        {
+        if (id != ID_NOT_FOUND) {
             try_var(tensor, device_output_tensor(id));
             try_var(tensor_map, hrt::map(tensor, hrt::map_read_write));
             base = tensor_map.buffer().data() - mrange.start;
-        }
-        else
-        {
+        } else {
             return err(std::errc::invalid_argument);
         }
         break;

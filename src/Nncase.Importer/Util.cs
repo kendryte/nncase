@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
+using static Nncase.IR.F.Tensors;
 using F = Nncase.IR.F;
 using Tuple = Nncase.IR.Tuple;
-using static Nncase.IR.F.Tensors;
 
 namespace Nncase
 {
@@ -34,7 +34,8 @@ namespace Nncase
         public static Expr GetItem(in Expr input, Expr index)
         {
             return F.Tensors.Squeeze(
-                F.Tensors.Slice(input,
+                F.Tensors.Slice(
+                    input,
                 StackScalar(index),
                 StackScalar(index + 1),
                 1), new[] { 0L });
@@ -46,7 +47,7 @@ namespace Nncase
         }
 
         /// <summary>
-        /// onnx format pads to nncase format(same as tf)
+        /// onnx format pads to nncase format(same as tf).
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
@@ -61,18 +62,30 @@ namespace Nncase
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
-        /// <param name="padH"> [before, after] </param>
-        /// <param name="padW"> [before, after] </param>
+        /// <param name="padH"> [before, after]. </param>
+        /// <param name="padW"> [before, after]. </param>
         /// <returns></returns>
         public static Expr ConcatPadding(Expr[] padH, Expr[] padW)
         {
             // return [[padh_before, padh_after],
             //         [padw_before, padw_after]]
-            return Stack(new Tuple(
+            return Stack(
+                new Tuple(
                 Stack(new Tuple(padH), 0),
                 Stack(new Tuple(padW), 0)), 0);
+        }
+
+        // todo:refactor and set private this
+        public static Expr[] GetWindowedPadding(Expr inputSize, Expr filter, Expr stride, Expr dilation, bool same, bool lower = false)
+        {
+            var i32InputSize = Cast(inputSize, DataTypes.Int32);
+            var i32Filter = Cast(filter, DataTypes.Int32);
+            var i32Stride = Cast(stride, DataTypes.Int32);
+            var i32Dilation = Cast(dilation, DataTypes.Int32);
+            var outputSize = GetWindowedOutputSize(i32InputSize, i32Filter, i32Stride, i32Dilation, same, false);
+            return GetWindowedPaddingValue(i32InputSize, outputSize, i32Filter, i32Stride, i32Dilation, lower);
         }
 
         private static Expr GetWindowedOutputSize(Expr size, Expr filter, Expr stride, Expr dilation, bool same, bool ceilMode)
@@ -80,8 +93,9 @@ namespace Nncase
             var effectiveFilterSize = ((filter - 1) * dilation) + 1;
             var falseBranch = !ceilMode
                 ? ((size - effectiveFilterSize + stride) / stride)
-                : F.Tensors.Cast(F.Math.Ceil(
-                        F.Tensors.Cast((size - effectiveFilterSize + stride), DataTypes.Float32) /
+                : F.Tensors.Cast(
+                    F.Math.Ceil(
+                        F.Tensors.Cast(size - effectiveFilterSize + stride, DataTypes.Float32) /
                         F.Tensors.Cast(stride, DataTypes.Float32)),
                     DataTypes.Int32);
             var trueBranch = (size + stride - 1) / stride;
@@ -102,17 +116,6 @@ namespace Nncase
             return new[] { before, after };
         }
 
-        // todo:refactor and set private this
-        public static Expr[] GetWindowedPadding(Expr inputSize, Expr filter, Expr stride, Expr dilation, bool same, bool lower = false)
-        {
-            var i32InputSize = Cast(inputSize, DataTypes.Int32);
-            var i32Filter = Cast(filter, DataTypes.Int32);
-            var i32Stride = Cast(stride, DataTypes.Int32);
-            var i32Dilation = Cast(dilation, DataTypes.Int32);
-            var outputSize = GetWindowedOutputSize(i32InputSize, i32Filter, i32Stride, i32Dilation, same, false);
-            return GetWindowedPaddingValue(i32InputSize, outputSize, i32Filter, i32Stride, i32Dilation, lower);
-        }
-
         // lower used for onnx when auto_pad attr is SAME_LOWER
         public static Expr GetPaddings(Expr input, Expr weights, long[] stride, long[] dilation, bool same, bool lower = false)
         {
@@ -126,6 +129,7 @@ namespace Nncase
         public static Expr ComputeSplit(Expr input, long outputSize, long axis)
         {
             return F.Tensors.Expand(
+
                 // Util.DynamicShapeIndex(input, Cast(axis, DataTypes.Int32)) / outputSize,
                 Util.ShapeIndex(input, (int)axis) / outputSize,
                 Stack(new Tuple(outputSize), 0));

@@ -1,22 +1,13 @@
-// using System;
-// using Microsoft.Extensions.Hosting;
-// using Nncase.CostModel;
-// using Nncase.IR;
-// using Nncase.IR.F;
-// using Nncase.PatternMatch;
-// using Nncase.Tests.ReWriteTest;
-// using Nncase.Transform;
-// using Xunit;
-// using static Nncase.PatternMatch.Utility;
-
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
 // namespace Nncase.Tests.CostModelTest
 // {
 
-//     public class UnitTestEGraphCostModel : RewriteFixtrue
+// public class UnitTestEGraphCostModel : RewriteFixtrue
 //     {
 //         public UnitTestEGraphCostModel(IHost host) : base(host) { }
 
-//         [Fact]
+// [Fact]
 //         public void TestConst()
 //         {
 //             var expr = (Const)1 + ((Const)2 * ((Const)3 / (Const)5));
@@ -28,7 +19,7 @@
 //             Assert.Equal(new Cost(2, 4 * 3), graphCosts[expr.Parameters[1]]);
 //         }
 
-//         [Fact]
+// [Fact]
 //         public void TestConstXmul1()
 //         {
 //             var lhs = ((Const)2 * ((Const)3 / (Const)5));

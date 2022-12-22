@@ -20,6 +20,8 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
     /// </summary>
     public ushort _value;
 
+    public static BFloat16 Infinity => FromRaw(0x7f80);
+
     /// <summary>
     /// Implicit convert <see cref="BFloat16"/> to <see cref="float"/>.
     /// </summary>
@@ -93,8 +95,6 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
         return FromRaw((ushort)(input >> 16));
     }
 
-    public static BFloat16 Infinity => FromRaw(0x7f80);
-
     public static BFloat16 NegInfinity => FromRaw(0xff80);
 
     public static BFloat16 Epsilon => FromRaw(0x3c00);
@@ -122,7 +122,7 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
         bool result = false;
         if (obj is BFloat16)
         {
-            BFloat16 bfl16 = (BFloat16)obj;
+            var bfl16 = (BFloat16)obj;
             result = bfl16 == this;
         }
 
@@ -148,5 +148,25 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
     public int CompareTo(BFloat16 other)
     {
         return ((float)this).CompareTo(other);
+    }
+
+    public static bool operator <(BFloat16 left, BFloat16 right)
+    {
+        return left.CompareTo(right) < 0;
+    }
+
+    public static bool operator <=(BFloat16 left, BFloat16 right)
+    {
+        return left.CompareTo(right) <= 0;
+    }
+
+    public static bool operator >(BFloat16 left, BFloat16 right)
+    {
+        return left.CompareTo(right) > 0;
+    }
+
+    public static bool operator >=(BFloat16 left, BFloat16 right)
+    {
+        return left.CompareTo(right) >= 0;
     }
 }

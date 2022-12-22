@@ -10,28 +10,6 @@ using Nncase.IR;
 
 namespace Nncase.Hosting;
 
-// Custom comparer for the Product class
-class PathComparer : IEqualityComparer<string>
-{
-    // Products are equal if their names and product numbers are equal.
-    public bool Equals(string x, string y)
-    {
-        Console.WriteLine("------------------");
-        Console.WriteLine(x);
-        Console.WriteLine(y);
-        Console.WriteLine("------------------");
-        return Path.GetFileName(x) == Path.GetFileName(y) || x == y;
-    }
-
-    // If Equals() returns true for a pair of objects
-    // then GetHashCode() must return the same value for these objects.
-
-    public int GetHashCode(string s)
-    {
-        return s.GetHashCode();
-    }
-}
-
 /// <summary>
 /// Application parts helper.
 /// </summary>
@@ -93,5 +71,26 @@ public class ApplicationParts
         }
 
         return directories.Distinct();
+    }
+}
+
+// Custom comparer for the Product class
+internal class PathComparer : IEqualityComparer<string>
+{
+    // Products are equal if their names and product numbers are equal.
+    public bool Equals(string x, string y)
+    {
+        Console.WriteLine("------------------");
+        Console.WriteLine(x);
+        Console.WriteLine(y);
+        Console.WriteLine("------------------");
+        return Path.GetFileName(x) == Path.GetFileName(y) || x == y;
+    }
+
+    // If Equals() returns true for a pair of objects
+    // then GetHashCode() must return the same value for these objects.
+    public int GetHashCode(string s)
+    {
+        return s.GetHashCode();
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -9,25 +9,10 @@ using Nncase.TIR;
 
 namespace Nncase.TIR;
 
-internal sealed class ExprCollector : ExprVisitor<bool, bool>
-{
-    Action<Expr> CollectFunc;
-    public ExprCollector(Action<Expr> func)
-    {
-        CollectFunc = func;
-    }
-
-    /// <inheritdoc/>
-    public override bool DefaultVisitLeaf(Expr expr)
-    {
-        CollectFunc(expr);
-        return true;
-    }
-}
-
 public class Scheduler
 {
     public Function Entry;
+
     public Scheduler(Function entry)
     {
         Entry = entry;
@@ -41,14 +26,14 @@ public class Scheduler
     /// <exception cref="InvalidOperationException"></exception>
     public Block GetBlock(string blockName)
     {
-        Block? TargetBlock = null;
-        void collectBlock(Expr expr)
+        Block? targetBlock = null;
+        void CollectBlock(Expr expr)
         {
             if (expr is Block b && b.Name == blockName)
             {
-                if (TargetBlock is null)
+                if (targetBlock is null)
                 {
-                    TargetBlock = b;
+                    targetBlock = b;
                 }
                 else
                 {
@@ -57,14 +42,14 @@ public class Scheduler
             }
         }
 
-        var collector = new ExprCollector(collectBlock);
+        var collector = new ExprCollector(CollectBlock);
         collector.Visit(Entry);
-        if (TargetBlock is null)
+        if (targetBlock is null)
         {
             throw new InvalidOperationException($"Can't Find The Block Name {blockName}!");
         }
 
-        return TargetBlock;
+        return targetBlock;
     }
 
     /// <summary>
@@ -76,7 +61,7 @@ public class Scheduler
     {
         List<For> targetLoops = new();
         Expr child = block;
-        void collectLoops(Expr expr)
+        void CollectLoops(Expr expr)
         {
             if (expr is For parent && object.ReferenceEquals(parent.Body[0], child))
             {
@@ -84,10 +69,9 @@ public class Scheduler
                 child = parent;
             }
 
-            ;
         }
 
-        var collector = new ExprCollector(collectLoops);
+        var collector = new ExprCollector(CollectLoops);
         collector.Visit(Entry);
         return targetLoops.ToArray();
     }
@@ -95,9 +79,15 @@ public class Scheduler
     public For[] Split(For loop, params Expr[] factors)
     {
         // step 1. check the arguments
-        if (loop.Domain.Start != (Const)0) { throw new NotImplementedException("Loop Not Start With Zero"); }
+        if (loop.Domain.Start != (Const)0)
+        {
+            throw new NotImplementedException("Loop Not Start With Zero");
+        }
         Expr tolLength = 1;
-        foreach (var factor in factors) { tolLength = tolLength * factor; } // TODO add assert total == (loop.Dom.Max - loop.Dom.Min)
+        foreach (var factor in factors)
+        {
+            tolLength = tolLength * factor;
+        } // TODO add assert total == (loop.Dom.Max - loop.Dom.Min)
 
         // Step 2. Replace all occurrences of the original loop var with new variables
         Expr total = 1, substitute = 0;
@@ -111,6 +101,7 @@ public class Scheduler
 
         Dictionary<Block, Block> opaque_block_reuse = new(); // TODO the opaque_block_reuse for what?
         Sequential nbody = loop.Body;
+
         // Step 3. create new for loop.
         var nFor = new For[factors.Length];
         nbody = (Sequential)new Transform.Mutators.SubstituteVarAndCollectOpaqueBlock(v => v == loop.LoopVar ? substitute : v, opaque_block_reuse).Visit(nbody);
@@ -124,5 +115,22 @@ public class Scheduler
         // Setp 4. update the function
         Entry = (Function)new Transform.Mutators.Substitutor(expr => object.ReferenceEquals(expr, loop) ? nFor[0] : null).Visit(Entry);
         return nFor;
+    }
+}
+
+internal sealed class ExprCollector : ExprVisitor<bool, bool>
+{
+    private readonly Action<Expr> _collectFunc;
+
+    public ExprCollector(Action<Expr> func)
+    {
+        _collectFunc = func;
+    }
+
+    /// <inheritdoc/>
+    public override bool DefaultVisitLeaf(Expr expr)
+    {
+        _collectFunc(expr);
+        return true;
     }
 }

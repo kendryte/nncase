@@ -163,6 +163,7 @@ public static class TypeInference
     /// <summary>
     /// Conv2D Type Infer.
     /// </summary>
+    /// <returns></returns>
     public static IRType Conv2DType(TensorType input, TensorType weights, Expr stride, Expr padding, Expr dilation,
         Expr groups)
     {
@@ -188,11 +189,15 @@ public static class TypeInference
             var ts_dilation = dilation_con.Value.Cast<int>();
             var groups_v = groups_con.Value.ToScalar<int>();
             if (!(input.Shape[1].FixedValue >= groups_v && (input.Shape[1].FixedValue % groups_v) == 0))
+            {
                 return new InvalidType($"The Input Channel / Groups Error ({input.Shape[1].FixedValue}/{groups_v})");
+            }
 
-            outShape[2] = GetWindowedOutputSize(input.Shape[2].FixedValue + ts_padding[0, 0] + ts_padding[0, 1],
+            outShape[2] = GetWindowedOutputSize(
+                input.Shape[2].FixedValue + ts_padding[0, 0] + ts_padding[0, 1],
                 weights.Shape[2].FixedValue, ts_stride[0], ts_dilation[0], false);
-            outShape[3] = GetWindowedOutputSize(input.Shape[3].FixedValue + ts_padding[1, 0] + ts_padding[1, 1],
+            outShape[3] = GetWindowedOutputSize(
+                input.Shape[3].FixedValue + ts_padding[1, 0] + ts_padding[1, 1],
                 weights.Shape[3].FixedValue, ts_stride[1], ts_dilation[1], false);
         }
         else
@@ -206,6 +211,7 @@ public static class TypeInference
     /// <summary>
     /// Pad Type Infer.
     /// </summary>
+    /// <returns></returns>
     public static IRType PadType(TensorType input, Expr pads, Expr pad)
     {
         if (pad.CheckedType is TensorType padValueType)
@@ -238,6 +244,7 @@ public static class TypeInference
     /// <summary>
     /// ReduceWindow2D Type Infer.
     /// </summary>
+    /// <returns></returns>
     public static IRType ReduceWindow2DType(TensorType input, Expr filter, Expr stride, Expr padding, Expr ceilMode)
     {
         var outShape = input.Shape.ToList();
@@ -245,15 +252,17 @@ public static class TypeInference
             filter is TensorConst filterValue &&
             stride is TensorConst strideValue &&
             padding is TensorConst paddingValue &&
-            ceilMode is TensorConst ceilModeValue
-        )
+            ceilMode is TensorConst ceilModeValue)
         {
             var ts_filter = filterValue.Value.Cast<int>();
             var ts_stride = strideValue.Value.Cast<int>();
             var ceilModeV = ceilModeValue.Value.ToScalar<bool>();
             var ts_padding = paddingValue.Value.Cast<int>();
             if (ts_padding.Rank != 2)
+            {
                 return new InvalidType($"The padding shape {ts_padding.Shape} is not support!");
+            }
+
             var padh = ts_padding[0, 0] + ts_padding[0, 1];
             var padw = ts_padding[1, 0] + ts_padding[1, 1];
             outShape[2] = input.Shape[2].IsUnknown
@@ -274,6 +283,7 @@ public static class TypeInference
     /// <summary>
     /// Reduce Type Infer.
     /// </summary>
+    /// <returns></returns>
     public static IRType ReduceType(TensorType input, Expr keepDims, Expr axis)
     {
         if (input.Shape.IsUnranked)
@@ -321,6 +331,7 @@ public static class TypeInference
     /// <summary>
     /// Transpose Type Infer.
     /// </summary>
+    /// <returns></returns>
     public static IRType TransposeType(TensorType input, Expr perm)
     {
         if (perm is TensorConst permValue)
@@ -341,6 +352,7 @@ public static class TypeInference
     /// <summary>
     /// Resize Type Infer.
     /// </summary>
+    /// <returns></returns>
     public static IRType ResizeType(TensorType input, Expr newSize, TensorType? inputbbox)
     {
         var out_shape = input.Shape.ToArray();
@@ -375,12 +387,15 @@ public static class TypeInference
         }
 
         if (inputbbox is not null && out_shape.Length == 4) // for roi amount.
+        {
             out_shape[0] = out_shape[0] * inputbbox.Shape[0].FixedValue;
+        }
+
         return input with { Shape = new Shape(out_shape) };
     }
 
     /// <summary>
-    /// input x is -1?
+    /// input x is -1?.
     /// </summary>
     /// <param name="x"></param>
     /// <returns></returns>

@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -46,6 +49,7 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
     {
         var a = Const.FromTensor(Tensor.From<int>(new[] { 1, 2, 3 }));
         var b = Const.FromTensor(Tensor.From<int>(new[] { 1, 2, 3 }));
+
         // var b = (Const) 2;
         a.InferenceType();
         b.InferenceType();
@@ -116,7 +120,7 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
 
         Assert.Equal(
             (int)(1U << 2) - 1,
-             (IR.F.Tensors.Cast(IR.F.Math.LeftShift(a, b), DataTypes.Int32) - 1).Evaluate().AsTensor().ToScalar<int>());
+            (IR.F.Tensors.Cast(IR.F.Math.LeftShift(a, b), DataTypes.Int32) - 1).Evaluate().AsTensor().ToScalar<int>());
     }
 
     [Fact]
@@ -204,6 +208,7 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
             var ret = expr.Evaluate().AsTensor();
             Assert.Equal(new[] { 1, 2, 2 }, ret.Shape.ToValueArray());
         }
+
         {
             var inputList = new Tuple(a);
             var expr = Tensors.Stack(inputList, 1);
@@ -211,6 +216,7 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
             var ret = expr.Evaluate().AsTensor();
             Assert.Equal(new[] { 2, 1, 2 }, ret.Shape.ToValueArray());
         }
+
         {
             var inputList = new Tuple(a);
             var expr = Tensors.Stack(inputList, 2);
@@ -234,14 +240,13 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
         Assert.True(expr.InferenceType());
         Assert.Equal(
             tResult,
-            expr.Evaluate().AsTensor().ToOrtTensor()
-            );
+            expr.Evaluate().AsTensor().ToOrtTensor());
     }
 
     [Fact]
     public void TestSlice2()
     {
-        var v0 = Slice((new long[3] { 4, 8, 8 }), (new[] { 0 }), (new[] { 1 }), (new[] { 0 }), (new[] { 1 })); // i64[1]
+        var v0 = Slice(new long[3] { 4, 8, 8 }, new[] { 0 }, new[] { 1 }, new[] { 0 }, new[] { 1 }); // i64[1]
         CompilerServices.InferenceType(v0);
         Assert.Equal(1, v0.CheckedShape.Rank);
         var ret = CompilerServices.Evaluate(v0).AsTensor();
@@ -282,7 +287,8 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
         var padw_before = Tensors.Cast(Tensor.From<float>(new[] { 3.0f }), Nncase.DataTypes.Int32);
         var padw_after = Tensors.Cast(Tensor.From<float>(new[] { 4.0f }), Nncase.DataTypes.Int32);
 
-        var expr = Tensors.Stack(new Tuple(
+        var expr = Tensors.Stack(
+            new Tuple(
           Tensors.Concat(new Tuple(padh_before, padh_after), 0),
           Tensors.Concat(new Tuple(padw_before, padw_after), 0)), 0);
         CompilerServices.InferenceType(expr);
@@ -341,11 +347,6 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
         Assert.Equal(new[] { 1, 3, 112, 112 }, image.Evaluate().AsTensor().Dimensions.ToArray());
     }
 
-    private void AssertRangeOf(Expr input, float[] r)
-    {
-        Assert.Equal(r, RangeOf(input).Evaluate().AsTensor().ToArray<float>());
-    }
-
     [Fact]
     public void TestRangeOf()
     {
@@ -359,5 +360,10 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
         n2.Add(float.PositiveInfinity);
         n2.Add(float.NegativeInfinity);
         AssertRangeOf(n2.ToArray(), r);
+    }
+
+    private void AssertRangeOf(Expr input, float[] r)
+    {
+        Assert.Equal(r, RangeOf(input).Evaluate().AsTensor().ToArray<float>());
     }
 }

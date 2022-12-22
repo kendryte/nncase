@@ -27,7 +27,8 @@ namespace Nncase.IR.F
         public static Call Celu(Expr input, Expr alpha) => new Call(new Celu(), input, alpha);
 
         public static Call Conv2DTranspose(Expr input, Expr weights, Expr bias, Expr outShape, Expr stride, Expr padding,
-            Expr outputPadding, Expr dilation, PadMode padMode, Expr groups) => new Call(new Conv2DTranspose(padMode),
+            Expr outputPadding, Expr dilation, PadMode padMode, Expr groups) => new Call(
+                new Conv2DTranspose(padMode),
             input, weights, bias, outShape, stride, padding, outputPadding, dilation, groups,
             new[] { ValueRange<float>.Full.Min, ValueRange<float>.Full.Max });
 
@@ -60,6 +61,7 @@ namespace Nncase.IR.F
         /// <summary>
         /// Pads is Const tensor, shape = [channels, 2(before, after)].
         /// </summary>
+        /// <returns></returns>
         public static Call Pad(Expr input, Expr pads, PadMode mode, Expr value) => new Call(new Pad(mode), input, pads, value);
 
         public static Call ReduceWindow2D(ReduceOp reduceOp, Expr input, Expr initValue, Expr filter, Expr stride, Expr padding, Expr dilation, Expr ceilMode, Expr countIncludePad) =>
@@ -86,7 +88,7 @@ namespace Nncase.IR.F
 
         public static Call LogSoftmax(Expr expr, Expr axis) => new Call(new LogSoftmax(), expr, axis);
 
-        // public static Call LSTM(Expr input,Expr w, Expr r, Expr b, 
+        // public static Call LSTM(Expr input,Expr w, Expr r, Expr b,
         //     Expr initH, Expr initC, Expr has_static, lstm_direction lstmDirection,string str) =>
         //     new Call(new IR.NN.LSTM(lstmDirection,str), input, w, r, b,  initH, initC, has_static);
 

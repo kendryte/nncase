@@ -9,20 +9,16 @@ using System.Collections.Immutable;
 namespace Nncase.IR;
 
 /// <summary>
-/// the ir array
+/// the ir array.
 /// </summary>
 /// <typeparam name="T"></typeparam>
 public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOnlyList<T>, IEnumerable<T>, IList<T>
 {
-    private int _hashcode;
+    private readonly int _hashcode;
     private readonly ImmutableArray<T> _array;
 
     /// <summary>
-    /// check the ret
-    /// </summary>
-    public bool IsDefaultOrEmpty => _array.IsDefaultOrEmpty;
-
-    /// <summary>
+    /// Initializes a new instance of the <see cref="IRArray{T}"/> struct.
     /// construct Ir Array with array.
     /// </summary>
     /// <param name="array"></param>
@@ -33,15 +29,31 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
     }
 
     /// <summary>
-    /// ctor from ienumerable
+    /// Gets a value indicating whether check the ret.
     /// </summary>
-    /// <param name="enumerable"></param>
-    public IRArray(IEnumerable<T> enumerable) : this(enumerable.ToImmutableArray()) { }
+    public bool IsDefaultOrEmpty => _array.IsDefaultOrEmpty;
 
     /// <summary>
-    /// empty ir array
+    /// Initializes a new instance of the <see cref="IRArray{T}"/> struct.
+    /// ctor from ienumerable.
     /// </summary>
-    public IRArray() : this(ImmutableArray<T>.Empty) { }
+    /// <param name="enumerable"></param>
+    public IRArray(IEnumerable<T> enumerable)
+        : this(enumerable.ToImmutableArray())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IRArray{T}"/> struct.
+    /// empty ir array.
+    /// </summary>
+    public IRArray()
+        : this(ImmutableArray<T>.Empty)
+    {
+    }
+
+    /// <inheritdoc/>
+    public int Count => ((IReadOnlyCollection<T>)_array).Count;
 
     /// <inheritdoc/>
     public T this[int index] => ((IReadOnlyList<T>)_array)[index];
@@ -50,14 +62,32 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
     public ReadOnlySpan<T> this[Range range] => _array.AsSpan()[range];
 
     T IList<T>.this[int index] { get => ((IList<T>)_array)[index]; set => ((IList<T>)_array)[index] = value; }
-    /// <inheritdoc/>
-    public int Count => ((IReadOnlyCollection<T>)_array).Count;
+
     /// <inheritdoc/>
     public bool IsReadOnly => ((ICollection<T>)_array).IsReadOnly;
+
     /// <inheritdoc/>
-    public void Add(T item) { throw new InvalidOperationException("IRArray Can't Add Item!"); }
+    public static implicit operator IRArray<T>(ImmutableArray<T> array) =>
+        new IRArray<T>(array);
+
     /// <inheritdoc/>
-    public void Clear() { throw new InvalidOperationException("IRArray Can't Clear Item!"); }
+    public static bool operator ==(IRArray<T> left, IRArray<T> right)
+    {
+        return left.Equals(right);
+    }
+
+    /// <inheritdoc/>
+    public void Add(T item)
+    {
+        throw new InvalidOperationException("IRArray Can't Add Item!");
+    }
+
+    /// <inheritdoc/>
+    public void Clear()
+    {
+        throw new InvalidOperationException("IRArray Can't Clear Item!");
+    }
+
     /// <inheritdoc/>
     public bool Contains(T item)
     {
@@ -136,20 +166,10 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
     }
 
     /// <inheritdoc/>
-    public static bool operator ==(IRArray<T> left, IRArray<T> right)
-    {
-        return left.Equals(right);
-    }
-
-    /// <inheritdoc/>
     public static bool operator !=(IRArray<T> left, IRArray<T> right)
     {
         return !(left == right);
     }
-
-    /// <inheritdoc/>
-    public static implicit operator IRArray<T>(ImmutableArray<T> array) =>
-        new IRArray<T>(array);
 
     /// <inheritdoc/>
     public static implicit operator IRArray<T>(T[] array) =>

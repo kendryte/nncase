@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -16,6 +16,7 @@ internal static class EGraphRewriter
     /// <summary>
     /// Run egraph rewrite.
     /// </summary>
+    /// <returns></returns>
     public static EGraph Rewrite(EGraph eGraph, IEnumerable<IRewriteRule> rules, RunPassOptions options)
     {
         var matches = new List<(IRewriteRule, IReadOnlyList<IMatchResult>)> { };
@@ -78,7 +79,8 @@ internal static class EGraphRewriter
             eGraph.Rebuild();
             if (options.DumpLevel > 1)
             {
-                EGraphPrinter.DumpEgraphAsDot(eGraph,
+                EGraphPrinter.DumpEgraphAsDot(
+                    eGraph,
                  Path.Combine(options.DumpDir, options.PassName, "Rebuild", $"V{eGraph.Version}"));
             }
         }
