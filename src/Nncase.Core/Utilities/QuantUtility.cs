@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -293,159 +293,6 @@ public static class QuantUtility
         // System.Console.WriteLine(((Tensor<float>)(((TensorConst)(inputWeightsRanges)).Value)).ToArray()[0]);
         // System.Console.WriteLine(inputWeights.ToArray()[0]);
         // return inputWeights;
-    }
-
-    private static void Rounding_forward(float rounding_error_sum, ref torch.Tensor rounding_number_, ref torch.Tensor rounding_error_,
-    torch.Tensor number_, torch.Tensor error_, ref torch.Tensor priority_, torch.Tensor order_, ref torch.Tensor priority_1)
-    {
-        int topk = (int)System.Math.Round(System.Math.Abs(rounding_error_sum));
-        bool over_squant = topk >= System.Math.Abs(rounding_error_sum);
-        if (topk > 0)
-        {
-            var order_tmp = order_.slice(0, 0, topk, 1);
-            rounding_error_.index_put_(error_.index(order_tmp), order_tmp);
-            rounding_number_.index_put_(number_.index(order_tmp), order_tmp);
-            if (over_squant)
-            {
-                var idx_c = order_[topk - 1];
-                priority_1[idx_c] = rounding_error_[idx_c].abs();
-            }
-            else
-            {
-                var idx_c = order_[topk];
-                priority_[idx_c] = rounding_error_[idx_c].abs();
-            }
-        }
-    }
-
-    private static void SQuant_func(torch.Tensor rounding_error_sum, ref torch.Tensor rounding_number, ref torch.Tensor rounding_error,
-        torch.Tensor up_number, torch.Tensor up_error, ref torch.Tensor up_priority, torch.Tensor up_order,
-        torch.Tensor down_number, torch.Tensor down_error, ref torch.Tensor down_priority, torch.Tensor down_order)
-    {
-        var rounding_number_shape = rounding_number.shape;
-        var batch_size = rounding_number_shape[0];
-        var input_channel = rounding_number_shape[1];
-        for (var n = 0; n < batch_size; n++)
-        {
-            for (var c = 0; c < input_channel; c++)
-            {
-                if ((float)rounding_error_sum[n][c] < 0)
-                {
-                    var rounding_number_ = rounding_number[n][c];
-                    var rounding_error_ = rounding_error[n][c];
-                    var priority_ = up_priority[n][c];
-                    var priority_1 = down_priority[n][c];
-                    Rounding_forward((float)rounding_error_sum[n][c], ref rounding_number_, ref rounding_error_,
-                        up_number[n][c], up_error[n][c], ref priority_, up_order[n][c], ref priority_1);
-                    rounding_number[n][c] = rounding_number_;
-                    rounding_error[n][c] = rounding_error_;
-                    up_priority[n][c] = priority_;
-                    down_priority[n][c] = priority_1;
-                }
-                else
-                {
-                    var rounding_number_ = rounding_number[n][c];
-                    var rounding_error_ = rounding_error[n][c];
-                    var priority_ = down_priority[n][c];
-                    var priority_1 = up_priority[n][c];
-                    Rounding_forward((float)rounding_error_sum[n][c], ref rounding_number_, ref rounding_error_,
-                        down_number[n][c], down_error[n][c], ref priority_, down_order[n][c], ref priority_1);
-                    rounding_number[n][c] = rounding_number_;
-                    rounding_error[n][c] = rounding_error_;
-                    down_priority[n][c] = priority_;
-                    up_priority[n][c] = priority_1;
-                }
-            }
-        }
-    }
-
-    private static torch.Tensor Adaptive_round(torch.Tensor x, float t_min, float t_max)
-    {
-        bool squant_k = true;
-        bool squant_c = true;
-
-        var rounding_number = x.round(); // round取整值
-        var rounding_error = rounding_number - x; // 误差
-        var zeros = torch.zeros_like(rounding_error);
-
-        var up_number = rounding_number.clone();
-        var up_error = rounding_error.clone();
-        up_error = torch.where(x >= t_max, zeros, up_error); // 边界上的值不能再调整，所以去除
-        up_error = torch.where(up_error > 0, zeros, up_error); // 误差为正的都设为0，即up对应“原值>量化值”的集合
-        var up_priority = up_error.clone().abs();
-
-        up_error = torch.where(up_error != 0, up_error + 1, up_error); // up集合中，Flip翻转后对应的误差
-        up_number = torch.where(up_error != 0, up_number + 1, up_number); // up集合中，Flip翻转后对应的取整值
-
-        var down_number = rounding_number.clone();
-        var down_error = rounding_error.clone();
-        down_error = torch.where(x <= t_min, zeros, down_error); // 边界上的值不能再调整，所以去除
-        down_error = torch.where(down_error < 0, zeros, down_error); // 误差为负的都设为0，即down对应“原值<量化值”的集合
-        var down_priority = down_error.clone().abs();
-
-        down_error = torch.where(down_error != 0, down_error - 1, down_error); // down集合中，Flip翻转后对应的误差
-        down_number = torch.where(down_error != 0, down_number - 1, down_number); // down集合中，Flip翻转后对应的取整值
-
-        var x_tmp = x.reshape(new long[] { x.size(0), x.size(1), -1 });
-        var conver_shape = x_tmp.shape; // HW维度合并
-        if (conver_shape[2] == 1)
-        {
-            squant_k = false; // 只有一个元素时， 不做K的逼近
-        }
-
-        if (squant_k)
-        {
-            var rounding_error_sum = rounding_error.reshape(conver_shape).sum(-1);
-            var sort_ret = torch.sort(up_priority.reshape(conver_shape), -1, true);
-            torch.Tensor up_order = sort_ret.Indices;
-            sort_ret = torch.sort(down_priority.reshape(conver_shape), -1, true);
-            torch.Tensor down_order = sort_ret.Indices;
-            up_priority *= 0.0;
-            down_priority *= 0.0;
-
-            rounding_number = rounding_number.reshape(conver_shape);
-            rounding_error = rounding_error.reshape(conver_shape);
-            up_number = up_number.reshape(conver_shape);
-            up_error = up_error.reshape(conver_shape);
-            up_priority = up_priority.reshape(conver_shape);
-            down_number = down_number.reshape(conver_shape);
-            down_error = down_error.reshape(conver_shape);
-            down_priority = down_priority.reshape(conver_shape);
-            SQuant_func(rounding_error_sum, ref rounding_number, ref rounding_error, up_number, up_error, ref up_priority, up_order,
-                down_number, down_error, ref down_priority, down_order);
-            rounding_number = rounding_number.reshape(x.shape);
-            rounding_error = rounding_error.reshape(x.shape);
-            up_priority = up_priority.reshape(x.shape);
-            down_priority = down_priority.reshape(x.shape);
-        }
-
-        if (squant_c)
-        {
-            conver_shape = new long[] { 1, x.size(0), -1 };
-            var rounding_error_sum = rounding_error.reshape(conver_shape).sum(-1);
-            var sort_ret = torch.sort(up_priority.reshape(conver_shape), -1, true);
-            var up_order = sort_ret.Indices;
-            sort_ret = torch.sort(down_priority.reshape(conver_shape), -1, true);
-            var down_order = sort_ret.Indices;
-
-            rounding_number = rounding_number.reshape(conver_shape);
-            rounding_error = rounding_error.reshape(conver_shape);
-            up_number = up_number.reshape(conver_shape);
-            up_error = up_error.reshape(conver_shape);
-            up_priority = up_priority.reshape(conver_shape);
-            down_number = down_number.reshape(conver_shape);
-            down_error = down_error.reshape(conver_shape);
-            down_priority = down_priority.reshape(conver_shape);
-            SQuant_func(rounding_error_sum, ref rounding_number, ref rounding_error, up_number, up_error, ref up_priority, up_order,
-                down_number, down_error, ref down_priority, down_order);
-        }
-
-        rounding_number = rounding_number.reshape(x.shape);
-        rounding_error = rounding_error.reshape(x.shape);
-        up_priority = up_priority.reshape(x.shape);
-        down_priority = down_priority.reshape(x.shape);
-
-        return rounding_number;
     }
 
     public static Span<float> AdaRoundWeights(Span<float> inputWeights, Expr inputWeightsRanges, Nncase.IR.Shape inputWeightsShape, List<Tensor> layerInput, List<Tensor> layerOutputGT, QuantMode quantMode, int bits, bool isByChannel, Expr paddings, Expr strides, Expr dilations, Expr groups, int startB, int endB, int iters, int deviceID, float warmup, float weightParam, AdaMode adamode)
@@ -811,5 +658,158 @@ public static class QuantUtility
         return rst;
 
         // return inputWeights;
+    }
+
+    private static void Rounding_forward(float rounding_error_sum, ref torch.Tensor rounding_number_, ref torch.Tensor rounding_error_,
+    torch.Tensor number_, torch.Tensor error_, ref torch.Tensor priority_, torch.Tensor order_, ref torch.Tensor priority_1)
+    {
+        int topk = (int)System.Math.Round(System.Math.Abs(rounding_error_sum));
+        bool over_squant = topk >= System.Math.Abs(rounding_error_sum);
+        if (topk > 0)
+        {
+            var order_tmp = order_.slice(0, 0, topk, 1);
+            rounding_error_.index_put_(error_.index(order_tmp), order_tmp);
+            rounding_number_.index_put_(number_.index(order_tmp), order_tmp);
+            if (over_squant)
+            {
+                var idx_c = order_[topk - 1];
+                priority_1[idx_c] = rounding_error_[idx_c].abs();
+            }
+            else
+            {
+                var idx_c = order_[topk];
+                priority_[idx_c] = rounding_error_[idx_c].abs();
+            }
+        }
+    }
+
+    private static void SQuant_func(torch.Tensor rounding_error_sum, ref torch.Tensor rounding_number, ref torch.Tensor rounding_error,
+        torch.Tensor up_number, torch.Tensor up_error, ref torch.Tensor up_priority, torch.Tensor up_order,
+        torch.Tensor down_number, torch.Tensor down_error, ref torch.Tensor down_priority, torch.Tensor down_order)
+    {
+        var rounding_number_shape = rounding_number.shape;
+        var batch_size = rounding_number_shape[0];
+        var input_channel = rounding_number_shape[1];
+        for (var n = 0; n < batch_size; n++)
+        {
+            for (var c = 0; c < input_channel; c++)
+            {
+                if ((float)rounding_error_sum[n][c] < 0)
+                {
+                    var rounding_number_ = rounding_number[n][c];
+                    var rounding_error_ = rounding_error[n][c];
+                    var priority_ = up_priority[n][c];
+                    var priority_1 = down_priority[n][c];
+                    Rounding_forward((float)rounding_error_sum[n][c], ref rounding_number_, ref rounding_error_,
+                        up_number[n][c], up_error[n][c], ref priority_, up_order[n][c], ref priority_1);
+                    rounding_number[n][c] = rounding_number_;
+                    rounding_error[n][c] = rounding_error_;
+                    up_priority[n][c] = priority_;
+                    down_priority[n][c] = priority_1;
+                }
+                else
+                {
+                    var rounding_number_ = rounding_number[n][c];
+                    var rounding_error_ = rounding_error[n][c];
+                    var priority_ = down_priority[n][c];
+                    var priority_1 = up_priority[n][c];
+                    Rounding_forward((float)rounding_error_sum[n][c], ref rounding_number_, ref rounding_error_,
+                        down_number[n][c], down_error[n][c], ref priority_, down_order[n][c], ref priority_1);
+                    rounding_number[n][c] = rounding_number_;
+                    rounding_error[n][c] = rounding_error_;
+                    down_priority[n][c] = priority_;
+                    up_priority[n][c] = priority_1;
+                }
+            }
+        }
+    }
+
+    private static torch.Tensor Adaptive_round(torch.Tensor x, float t_min, float t_max)
+    {
+        bool squant_k = true;
+        bool squant_c = true;
+
+        var rounding_number = x.round(); // round取整值
+        var rounding_error = rounding_number - x; // 误差
+        var zeros = torch.zeros_like(rounding_error);
+
+        var up_number = rounding_number.clone();
+        var up_error = rounding_error.clone();
+        up_error = torch.where(x >= t_max, zeros, up_error); // 边界上的值不能再调整，所以去除
+        up_error = torch.where(up_error > 0, zeros, up_error); // 误差为正的都设为0，即up对应“原值>量化值”的集合
+        var up_priority = up_error.clone().abs();
+
+        up_error = torch.where(up_error != 0, up_error + 1, up_error); // up集合中，Flip翻转后对应的误差
+        up_number = torch.where(up_error != 0, up_number + 1, up_number); // up集合中，Flip翻转后对应的取整值
+
+        var down_number = rounding_number.clone();
+        var down_error = rounding_error.clone();
+        down_error = torch.where(x <= t_min, zeros, down_error); // 边界上的值不能再调整，所以去除
+        down_error = torch.where(down_error < 0, zeros, down_error); // 误差为负的都设为0，即down对应“原值<量化值”的集合
+        var down_priority = down_error.clone().abs();
+
+        down_error = torch.where(down_error != 0, down_error - 1, down_error); // down集合中，Flip翻转后对应的误差
+        down_number = torch.where(down_error != 0, down_number - 1, down_number); // down集合中，Flip翻转后对应的取整值
+
+        var x_tmp = x.reshape(new long[] { x.size(0), x.size(1), -1 });
+        var conver_shape = x_tmp.shape; // HW维度合并
+        if (conver_shape[2] == 1)
+        {
+            squant_k = false; // 只有一个元素时， 不做K的逼近
+        }
+
+        if (squant_k)
+        {
+            var rounding_error_sum = rounding_error.reshape(conver_shape).sum(-1);
+            var sort_ret = torch.sort(up_priority.reshape(conver_shape), -1, true);
+            torch.Tensor up_order = sort_ret.Indices;
+            sort_ret = torch.sort(down_priority.reshape(conver_shape), -1, true);
+            torch.Tensor down_order = sort_ret.Indices;
+            up_priority *= 0.0;
+            down_priority *= 0.0;
+
+            rounding_number = rounding_number.reshape(conver_shape);
+            rounding_error = rounding_error.reshape(conver_shape);
+            up_number = up_number.reshape(conver_shape);
+            up_error = up_error.reshape(conver_shape);
+            up_priority = up_priority.reshape(conver_shape);
+            down_number = down_number.reshape(conver_shape);
+            down_error = down_error.reshape(conver_shape);
+            down_priority = down_priority.reshape(conver_shape);
+            SQuant_func(rounding_error_sum, ref rounding_number, ref rounding_error, up_number, up_error, ref up_priority, up_order,
+                down_number, down_error, ref down_priority, down_order);
+            rounding_number = rounding_number.reshape(x.shape);
+            rounding_error = rounding_error.reshape(x.shape);
+            up_priority = up_priority.reshape(x.shape);
+            down_priority = down_priority.reshape(x.shape);
+        }
+
+        if (squant_c)
+        {
+            conver_shape = new long[] { 1, x.size(0), -1 };
+            var rounding_error_sum = rounding_error.reshape(conver_shape).sum(-1);
+            var sort_ret = torch.sort(up_priority.reshape(conver_shape), -1, true);
+            var up_order = sort_ret.Indices;
+            sort_ret = torch.sort(down_priority.reshape(conver_shape), -1, true);
+            var down_order = sort_ret.Indices;
+
+            rounding_number = rounding_number.reshape(conver_shape);
+            rounding_error = rounding_error.reshape(conver_shape);
+            up_number = up_number.reshape(conver_shape);
+            up_error = up_error.reshape(conver_shape);
+            up_priority = up_priority.reshape(conver_shape);
+            down_number = down_number.reshape(conver_shape);
+            down_error = down_error.reshape(conver_shape);
+            down_priority = down_priority.reshape(conver_shape);
+            SQuant_func(rounding_error_sum, ref rounding_number, ref rounding_error, up_number, up_error, ref up_priority, up_order,
+                down_number, down_error, ref down_priority, down_order);
+        }
+
+        rounding_number = rounding_number.reshape(x.shape);
+        rounding_error = rounding_error.reshape(x.shape);
+        up_priority = up_priority.reshape(x.shape);
+        down_priority = down_priority.reshape(x.shape);
+
+        return rounding_number;
     }
 }

@@ -28,7 +28,7 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     }
 
     /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Cast target, bool ILmode)
+    public string Visit(IIRPrinterContext context, Cast target, bool iLmode)
     {
         return $"{CompilerServices.Print(target.NewType)}({context.GetArgument(target, Cast.Input)})";
     }

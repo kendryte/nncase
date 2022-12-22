@@ -19,22 +19,6 @@ public enum KPUFilterType
 }
 
 /// <summary>
-/// KPU constants.
-/// </summary>
-public static class KPUConstants
-{
-    /// <summary>
-    /// KPU RAM size.
-    /// </summary>
-    public const int RAMSize = 2 * 1024 * 1024; // 2MB
-
-    /// <summary>
-    /// BN output bits.
-    /// </summary>
-    public const int BNOutBits = 36;
-}
-
-/// <summary>
 /// KPU pool type.
 /// </summary>
 public enum KPUPoolType
@@ -49,6 +33,22 @@ public enum KPUPoolType
     LeftTop_4_S4 = 7,
     Mean_2_S1 = 8,
     Max_2_S1 = 9,
+}
+
+/// <summary>
+/// KPU constants.
+/// </summary>
+public static class KPUConstants
+{
+    /// <summary>
+    /// KPU RAM size.
+    /// </summary>
+    public const int RAMSize = 2 * 1024 * 1024; // 2MB
+
+    /// <summary>
+    /// BN output bits.
+    /// </summary>
+    public const int BNOutBits = 36;
 }
 
 public record struct KPUBatchNormSegment

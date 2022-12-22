@@ -72,8 +72,11 @@ internal sealed record ForwardFusion(Func<Expr[], Fusion> Creator) : IForwardabl
             var weights = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { out_planes, v_input.CheckedShape[1].FixedValue, 3, 3 }).Evaluate().AsTensor();
             var bias = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { out_planes }).Evaluate().AsTensor();
 
-            return new Fusion("Conv3x3Fusion", Callable.StackVMModuleKind, IR.F.NN.Conv2D(v_input, weights, bias, new[] { stride, stride }, new[,] { { dilation, dilation },
-            { dilation, dilation }, }, new[] { dilation, dilation }, PadMode.Constant, groups), new[] { v_input });
+            return new Fusion("Conv3x3Fusion", Callable.StackVMModuleKind, IR.F.NN.Conv2D(v_input, weights, bias, new[] { stride, stride }, new[,]
+            {
+                { dilation, dilation },
+            { dilation, dilation },
+            }, new[] { dilation, dilation }, PadMode.Constant, groups), new[] { v_input });
         };
         return new(creator);
     }
@@ -96,8 +99,11 @@ internal sealed record ForwardFusion(Func<Expr[], Fusion> Creator) : IForwardabl
               var v_input = new Var(input.CheckedType!);
               var weights = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { out_planes, v_input.CheckedShape[1].FixedValue, 1, 1 }).Evaluate().AsTensor();
               var bias = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { out_planes }).Evaluate().AsTensor();
-              return new Fusion("Conv1x1Fusion", Callable.StackVMModuleKind, IR.F.NN.Conv2D(v_input, weights, bias, new[] { stride, stride }, new[,] { { 0, 0 },
-                { 0, 0 }, }, new[] { 1, 1 }, PadMode.Constant, 1), new[] { v_input });
+              return new Fusion("Conv1x1Fusion", Callable.StackVMModuleKind, IR.F.NN.Conv2D(v_input, weights, bias, new[] { stride, stride }, new[,]
+                {
+                    { 0, 0 },
+                { 0, 0 },
+                }, new[] { 1, 1 }, PadMode.Constant, 1), new[] { v_input });
           };
         return new(creator);
     }
@@ -161,8 +167,8 @@ internal sealed class BasicBlock : IForwardable
         // # Both this.conv1 and this.downsample layers downsample the input when stride != 1
         _conv1 = ForwardFusion.Conv3x3(inplanes, planes, stride);
         _conv2 = ForwardFusion.Conv3x3(planes, planes);
-        this._downsample = downsample;
-        this._stride = stride;
+        _downsample = downsample;
+        _stride = stride;
         _binaryAdd = ForwardFusion.Binary(BinaryOp.Add);
     }
 
@@ -218,8 +224,8 @@ internal sealed class Bottleneck : IForwardable
         _conv2 = ForwardFusion.Conv3x3(width, width, stride, groups, dilation);
         var expansion = (ExpansionAttribute)Attribute.GetCustomAttribute(typeof(Bottleneck), typeof(ExpansionAttribute))!;
         _conv3 = ForwardFusion.Conv1x1(width, planes * expansion.Expansion);
-        this._downsample = downsample;
-        this._stride = stride;
+        _downsample = downsample;
+        _stride = stride;
         _binaryAdd = ForwardFusion.Binary(BinaryOp.Add);
     }
 
@@ -249,9 +255,9 @@ internal sealed class Bottleneck : IForwardable
 internal sealed class ResNet
 {
     private readonly int _groups;
+    private readonly int _baseWidth;
     private int _inplanes;
     private int _dilation;
-    private readonly int _baseWidth;
     private readonly ForwardFusion _conv1;
     private readonly ForwardFusion _maxpool;
     private readonly IForwardable _layer1;
@@ -277,7 +283,7 @@ internal sealed class ResNet
             replace_stride_with_dilation = new[] { false, false, false };
         }
 
-        this._groups = groups;
+        _groups = groups;
         _baseWidth = width_per_group;
         var conv1_creator = (Expr[] inputs) =>
         {
@@ -295,8 +301,11 @@ internal sealed class ResNet
             var v_input = new Var(input.CheckedType!);
             var weights = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, v_input.CheckedShape[1].FixedValue, 7, 7 }).Evaluate().AsTensor();
             var bias = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor();
-            return new Fusion("Conv3x3Fusion", Callable.StackVMModuleKind, IR.F.NN.Conv2D(v_input, weights, bias, new[] { 2, 2 }, new[,] { { 3, 3 },
-            { 3, 3 }, }, new[] { 1, 1 }, PadMode.Constant, groups), new[] { v_input });
+            return new Fusion("Conv3x3Fusion", Callable.StackVMModuleKind, IR.F.NN.Conv2D(v_input, weights, bias, new[] { 2, 2 }, new[,]
+            {
+                { 3, 3 },
+            { 3, 3 },
+            }, new[] { 1, 1 }, PadMode.Constant, groups), new[] { v_input });
         };
         _conv1 = new(conv1_creator);
 
@@ -315,8 +324,11 @@ internal sealed class ResNet
 
             var v_input = new Var(input.CheckedType!);
 
-            return new Fusion("ReduceWindowFusion", Callable.StackVMModuleKind, IR.F.NN.ReduceWindow2D(ReduceOp.Max, v_input, 0.0f, new[] { 3, 3 }, new[] { 2, 2 }, new[,] { { 1, 1 },
-            { 1, 1 }, }, new[] { 1, 1 }, false, false), new[] { v_input });
+            return new Fusion("ReduceWindowFusion", Callable.StackVMModuleKind, IR.F.NN.ReduceWindow2D(ReduceOp.Max, v_input, 0.0f, new[] { 3, 3 }, new[] { 2, 2 }, new[,]
+            {
+                { 1, 1 },
+            { 1, 1 },
+            }, new[] { 1, 1 }, false, false), new[] { v_input });
         };
         _maxpool = new(maxpool_creator);
         _layer1 = Make_layer(block, 64, layers[0]);
@@ -368,14 +380,14 @@ internal sealed class ResNet
         layers.Add(
           (IForwardable)Activator.CreateInstance(
               block,
-            new object?[] { _inplanes, planes, stride, downsample, _groups, _baseWidth, previous_dilation })!);
+              new object?[] { _inplanes, planes, stride, downsample, _groups, _baseWidth, previous_dilation })!);
         _inplanes = planes * expansion;
         for (int i = 1; i < blocks; i++)
         {
             layers.Add(
               (IForwardable)Activator.CreateInstance(
                   block,
-            new object?[] { _inplanes, planes, 1, null, _groups, _baseWidth, _dilation })!);
+                  new object?[] { _inplanes, planes, 1, null, _groups, _baseWidth, _dilation })!);
         }
 
         return new ForwardSequential(layers.ToArray());

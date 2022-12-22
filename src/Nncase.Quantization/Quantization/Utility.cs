@@ -22,11 +22,11 @@ public static class Utility
 {
     public static float GetCosineSimilarity(Span<float> v1, Span<float> v2)
     {
-        int N = v2.Length < v1.Length ? v2.Length : v1.Length;
+        int n1 = v2.Length < v1.Length ? v2.Length : v1.Length;
         double dot = 0.0f;
         double mag1 = 0.0f;
         double mag2 = 0.0f;
-        for (int n = 0; n < N; n++)
+        for (int n = 0; n < n1; n++)
         {
             dot += (double)v1[n] * (double)v2[n];
             mag1 += Math.Pow((double)v1[n], 2);

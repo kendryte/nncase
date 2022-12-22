@@ -72,14 +72,15 @@ public sealed partial class FoldTwoPads : IRewriteRule
 }
 
 /// <summary>
-/// fold conv2d(pad(input)) => conv2d(input)
+/// fold conv2d(pad(input)) => conv2d(input).
 /// </summary>
 [RuleGenerator]
 public sealed partial class FoldConv2DPads : IRewriteRule
 {
-    public IPattern Pattern { get; } = IsConv2D
-    ("conv", conv => conv.PadMode == PadMode.Constant,
-        IsPad(pad => pad.PadMode == PadMode.Constant,
+    public IPattern Pattern { get; } = IsConv2D(
+    "conv", conv => conv.PadMode == PadMode.Constant,
+        IsPad(
+            pad => pad.PadMode == PadMode.Constant,
             IsWildcard("input"),
             IsTensorConst("ext_pad"),
             IsTensorConst("ext_pad_init")),
@@ -96,7 +97,10 @@ public sealed partial class FoldConv2DPads : IRewriteRule
     {
         if (!(ext_pad[0, 0] == 0 && ext_pad[0, 1] == 0 &&
               ext_pad[1, 0] == 0 && ext_pad[1, 1] == 0))
+        {
             return null;
+        }
+
         var new_pad = padding.Clone();
         new_pad[0, 0] += ext_pad[2, 0];
         new_pad[0, 1] += ext_pad[2, 1];
@@ -107,14 +111,15 @@ public sealed partial class FoldConv2DPads : IRewriteRule
 }
 
 /// <summary>
-/// fold reduce_window(pad(input)) => reduce_window(input)
+/// fold reduce_window(pad(input)) => reduce_window(input).
 /// </summary>
 [RuleGenerator]
 public sealed partial class FoldReduceWindow2DPads : IRewriteRule
 {
-    public IPattern Pattern { get; } = IsReduceWindow2D
-    ("pdp", _ => true,
-        IsPad(pad => pad.PadMode == PadMode.Constant,
+    public IPattern Pattern { get; } = IsReduceWindow2D(
+    "pdp", _ => true,
+        IsPad(
+            pad => pad.PadMode == PadMode.Constant,
             IsWildcard("input"),
             IsTensorConst("ext_pad"),
             IsTensorConst("ext_pad_init")),
@@ -131,7 +136,10 @@ public sealed partial class FoldReduceWindow2DPads : IRewriteRule
     {
         if (!(ext_pad[0, 0] == 0 && ext_pad[0, 1] == 0 &&
               ext_pad[1, 0] == 0 && ext_pad[1, 1] == 0))
+        {
             return null;
+        }
+
         var new_pad = padding.Clone();
         new_pad[0, 0] += ext_pad[2, 0];
         new_pad[0, 1] += ext_pad[2, 1];

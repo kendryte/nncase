@@ -34,17 +34,17 @@ internal sealed class ILDotOption
         _str = null;
     }
 
-    public DotNode DotNode => _dotNode!;
-
-    public string Str => _str!;
-
-    public bool IsDotNode => _dotNode is not null;
-
     public ILDotOption(string str)
     {
         _dotNode = null;
         _str = str;
     }
+
+    public DotNode DotNode => _dotNode!;
+
+    public string Str => _str!;
+
+    public bool IsDotNode => _dotNode is not null;
 }
 
 internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
@@ -52,7 +52,7 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
     private readonly bool _display_callable;
     private readonly DotGraph _dotGraph;
     private readonly List<ValueTuple<string, DotGraph>> _subdotGraphs;
-    private int _IdCounter;
+    private int _idCounter;
 
     private BaseFunction? _entryBaseFunc;
 
@@ -75,8 +75,8 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
     {
         if (!ExpressionMemo.TryGetValue(expr, out var result))
         {
-            var id = _IdCounter++;
-            string exprId = "\"" + id.ToString() + "\"";
+            var id = _idCounter++;
+            _ = "\"" + id.ToString() + "\"";
             result = new(expr.Name);
             ExpressionMemo.Add(expr, result);
         }
@@ -89,8 +89,8 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
     {
         if (!ExpressionMemo.TryGetValue(expr, out var result))
         {
-            var id = _IdCounter++;
-            string exprId = "\"" + id.ToString() + "\"";
+            var id = _idCounter++;
+            _ = "\"" + id.ToString() + "\"";
             result = new(expr.Name);
             ExpressionMemo.Add(expr, result);
         }
@@ -152,7 +152,7 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
 
     public override ILDotOption VisitLeaf(Tuple expr)
     {
-        var id = _IdCounter++;
+        var id = _idCounter++;
         string exprId = "\"" + id.ToString() + "\"";
 
         var table = new DotHtmlTable
@@ -214,7 +214,7 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
 
     public override ILDotOption VisitLeaf(Marker expr)
     {
-        var id = _IdCounter++;
+        var id = _idCounter++;
         string exprId = "\"" + id.ToString() + "\"";
 
         var table = new DotHtmlTable
@@ -279,7 +279,7 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
 
     public override ILDotOption VisitLeaf(Var expr)
     {
-        var id = _IdCounter++;
+        var id = _idCounter++;
         string exprId = "\"" + id.ToString() + "\"";
         var dotNode = new DotNode(exprId) { Label = expr.Name, Shape = DotNodeShape.Rectangle };
         _dotGraph.Nodes.Add(dotNode);
@@ -288,7 +288,7 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
 
     public override ILDotOption VisitLeaf(Call expr)
     {
-        var id = _IdCounter++;
+        var id = _idCounter++;
         string exprId = "\"" + id.ToString() + "\"";
 
         var table = new DotHtmlTable

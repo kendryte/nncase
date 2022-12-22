@@ -78,7 +78,7 @@ public class UnitTestExpression
     {
         var expr = new IR.Tuple((Const)1 * (Const)2, (Const)1.0f + (Const)2.4f);
         var d = new HashSet<Expr>() { (Const)1.3f };
-        d.TryGetValue(expr, out var result);
+        d.TryGetValue(expr, out _);
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public class UnitTestExpression
         int ahash1 = a.GetHashCode();
         int ahash2 = ((Const)a).GetHashCode();
         Assert.Equal(ahash1, ahash2);
-        var set = new HashSet<Expr>();
+        _ = new HashSet<Expr>();
     }
 
     [Fact]
@@ -175,13 +175,13 @@ public class UnitTestExpression
         Assert.Equal(3, t2[2]);
         Assert.Equal(4, t2[3]);
         Assert.Equal(5, t2[4]);
-        var t3 = con.Value.Cast<byte>();
+        _ = con.Value.Cast<byte>();
         Assert.Equal(1, t2[0]);
         Assert.Equal(2, t2[1]);
         Assert.Equal(3, t2[2]);
         Assert.Equal(4, t2[3]);
         Assert.Equal(5, t2[4]);
-        var t4 = con.Value.Cast<float>();
+        _ = con.Value.Cast<float>();
         Assert.Equal(1.0f, t2[0]);
         Assert.Equal(2.0f, t2[1]);
         Assert.Equal(3.0f, t2[2]);
@@ -252,59 +252,59 @@ public class UnitTestExpression
         for (int i = 0; i < 1000000; i++)
         {
             // method 1
-            if (!dict1.TryGetValue(a, out var d1_a))
+            if (!dict1.TryGetValue(a, out _))
             {
-                d1_a = new Evaluator.Math.BinaryEvaluator();
+                Evaluator.IEvaluator? d1_a = new Evaluator.Math.BinaryEvaluator();
                 dict1.Add(a, d1_a);
             }
 
-            if (!dict1.TryGetValue(b, out var d1_b))
+            if (!dict1.TryGetValue(b, out _))
             {
-                d1_b = new Evaluator.Math.BinaryEvaluator();
+                Evaluator.IEvaluator? d1_b = new Evaluator.Math.BinaryEvaluator();
                 dict1.Add(b, d1_b);
             }
 
-            if (!dict1.TryGetValue(c, out var d1_c))
+            if (!dict1.TryGetValue(c, out _))
             {
-                d1_c = new Evaluator.Math.UnaryEvaluator();
+                Evaluator.IEvaluator? d1_c = new Evaluator.Math.UnaryEvaluator();
                 dict1.Add(c, d1_c);
             }
 
             // method 2
-            if (!dict2.TryGetValue(a.GetType(), out var d2_a))
+            if (!dict2.TryGetValue(a.GetType(), out _))
             {
-                d2_a = new Evaluator.Math.BinaryEvaluator();
+                Evaluator.IEvaluator? d2_a = new Evaluator.Math.BinaryEvaluator();
                 dict2.Add(a.GetType(), d2_a);
             }
 
-            if (!dict2.TryGetValue(b.GetType(), out var d2_b))
+            if (!dict2.TryGetValue(b.GetType(), out _))
             {
-                d2_b = new Evaluator.Math.BinaryEvaluator();
+                Evaluator.IEvaluator? d2_b = new Evaluator.Math.BinaryEvaluator();
                 dict2.Add(b.GetType(), d2_b);
             }
 
-            if (!dict2.TryGetValue(c.GetType(), out var d2_c))
+            if (!dict2.TryGetValue(c.GetType(), out _))
             {
-                d2_c = new Evaluator.Math.UnaryEvaluator();
+                Evaluator.IEvaluator? d2_c = new Evaluator.Math.UnaryEvaluator();
                 dict2.Add(c.GetType(), d2_c);
             }
 
             // method 3
-            if (!dict3.TryGetValue(a.GetType().TypeHandle, out var d3_a))
+            if (!dict3.TryGetValue(a.GetType().TypeHandle, out _))
             {
-                d3_a = new Evaluator.Math.BinaryEvaluator();
+                Evaluator.IEvaluator? d3_a = new Evaluator.Math.BinaryEvaluator();
                 dict3.Add(a.GetType().TypeHandle, d3_a);
             }
 
-            if (!dict3.TryGetValue(b.GetType().TypeHandle, out var d3_b))
+            if (!dict3.TryGetValue(b.GetType().TypeHandle, out _))
             {
-                d3_b = new Evaluator.Math.BinaryEvaluator();
+                Evaluator.IEvaluator? d3_b = new Evaluator.Math.BinaryEvaluator();
                 dict3.Add(b.GetType().TypeHandle, d3_b);
             }
 
-            if (!dict3.TryGetValue(c.GetType().TypeHandle, out var d3_c))
+            if (!dict3.TryGetValue(c.GetType().TypeHandle, out _))
             {
-                d3_c = new Evaluator.Math.UnaryEvaluator();
+                Evaluator.IEvaluator? d3_c = new Evaluator.Math.UnaryEvaluator();
                 dict3.Add(c.GetType().TypeHandle, d3_c);
             }
         }
@@ -321,6 +321,24 @@ public class UnitTestExpression
         var y = new Var("y");
         CompilerServices.InferenceType(y);
         Assert.Equal("%y: any", CompilerServices.Print(y));
+    }
+
+    [Fact]
+    public void TestExpressionTree()
+    {
+        var input_1 = new Var("input_1", TensorType.Scalar(DataTypes.Int32));
+        var fn_1 = new Function("add", IR.F.Math.Binary(BinaryOp.Add, input_1, 10), new[] { input_1 });
+        Assert.True(CompilerServices.InferenceType(fn_1));
+
+        var visitor = new ExpressionTreeBuilder();
+        var fn_2 = ((LambdaExpression)visitor.Visit(fn_1)).Compile();
+
+        for (int i = 0; i < 100000; i++)
+        {
+            var res_1 = CompilerServices.Evaluate(fn_1.Body, new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance) { { input_1, Value.FromConst(i) } }).AsTensor().ToScalar<int>();
+            Assert.Equal(i + 10, res_1);
+            Assert.Equal(res_1, fn_2.DynamicInvoke(i));
+        }
     }
 
     private sealed class ExpressionTreeBuilder : ExprVisitor<Expression, Type>
@@ -375,24 +393,6 @@ public class UnitTestExpression
     }
 
     [Fact]
-    public void TestExpressionTree()
-    {
-        var input_1 = new Var("input_1", TensorType.Scalar(DataTypes.Int32));
-        var fn_1 = new Function("add", IR.F.Math.Binary(BinaryOp.Add, input_1, 10), new[] { input_1 });
-        Assert.True(CompilerServices.InferenceType(fn_1));
-
-        var visitor = new ExpressionTreeBuilder();
-        var fn_2 = ((LambdaExpression)visitor.Visit(fn_1)).Compile();
-
-        for (int i = 0; i < 100000; i++)
-        {
-            var res_1 = CompilerServices.Evaluate(fn_1.Body, new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance) { { input_1, Value.FromConst(i) } }).AsTensor().ToScalar<int>();
-            Assert.Equal(i + 10, res_1);
-            Assert.Equal(res_1, fn_2.DynamicInvoke(i));
-        }
-    }
-
-    [Fact]
     public void TestExpressionTreeWithCustomStruct()
     {
         var root_range = Expression.Parameter(typeof(MyRange[]), "root_range");
@@ -426,12 +426,12 @@ public class UnitTestExpression
     private struct MyRange
     {
         public int Start;
+        public int Stop;
 
         public MyRange(int start, int stop)
         {
             Start = start;
             Stop = stop;
         }
-        public int Stop;
     }
 }

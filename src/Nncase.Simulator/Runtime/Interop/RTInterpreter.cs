@@ -59,6 +59,9 @@ public sealed class RTInterpreter : SafeHandle
         }
     }
 
+    /// <inheritdoc/>
+    public override bool IsInvalid => handle == IntPtr.Zero;
+
     /// <summary>
     /// Create the Interpreter.
     /// </summary>
@@ -68,9 +71,6 @@ public sealed class RTInterpreter : SafeHandle
         Native.InterpCreate(out var interp).ThrowIfFailed();
         return interp;
     }
-
-    /// <inheritdoc/>
-    public override bool IsInvalid => handle == IntPtr.Zero;
 
     /// <summary>
     /// set the runtim dump root dir.

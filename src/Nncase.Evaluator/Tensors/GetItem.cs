@@ -19,7 +19,7 @@ namespace Nncase.Evaluator.Tensors;
 [TypeInferGenerator]
 public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<GetItem>, IOpPrinter<GetItem>, ICostEvaluator<GetItem>
 {
-    public string Visit(IIRPrinterContext context, GetItem target, bool ILmode)
+    public string Visit(IIRPrinterContext context, GetItem target, bool iLmode)
     {
         return $"{context.GetArgument(target, GetItem.Input)}[{context.GetArgument(target, GetItem.Index)}]";
     }
@@ -68,7 +68,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
 
                 ret = new TensorType(
                     tensorType.DType,
-                       Index.Shape switch
+                    Index.Shape switch
                        {
                            { IsScalar: true } => new Shape(tensorType.Shape.Skip(1)),
                            { IsFixed: true } => Index.Shape[0].FixedValue == tensorType.Shape.Rank ?

@@ -130,8 +130,7 @@ public class UnitTestExprPattern
         Assert.IsType<CallPattern>(fp.Body);
         Assert.IsType<ExprPattern>(((CallPattern)fp.Body).Parameters[0]);
         Assert.IsType<ExprPattern>(((CallPattern)fp.Body).Parameters[1]);
-
-        var fp2 = new FunctionPattern(c, IsVArgs(new[] { wc1, wc2 }), null);
+        _ = new FunctionPattern(c, IsVArgs(new[] { wc1, wc2 }), null);
         Assert.IsType<ExprPattern>(fp.Parameters[0]);
         Assert.IsType<ExprPattern>(fp.Parameters[1]);
     }
@@ -261,10 +260,11 @@ public class UnitTestExprPattern
     [Fact]
     public void TestBuildExprFromPattern()
     {
-        ConstPattern c0 = IsConst(), c1 = IsConst();
+        ConstPattern c0 = IsConst();
+        _ = IsConst();
         var x = IsWildcard();
-        var pat = x + c0;
-        var res = x - c0;
-        var ped = Equal(c0, 0);
+        _ = x + c0;
+        _ = x - c0;
+        _ = Equal(c0, 0);
     }
 }

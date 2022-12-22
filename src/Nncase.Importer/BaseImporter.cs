@@ -94,15 +94,6 @@ public abstract class BaseImporter
         return None.Default;
     }
 
-    private IRModule CreateModule(Var[] inputs, Expr body)
-    {
-        var mainFunc = new Function("main", body, inputs);
-        var module = new IRModule();
-        module.Add(mainFunc);
-        module.Entry = mainFunc;
-        return module;
-    }
-
     protected void SupportedCheck(string name)
     {
         if (_unsupportedOp.Count > 0)
@@ -110,5 +101,14 @@ public abstract class BaseImporter
             throw new NotSupportedException(
                 $"Not Supported {name} op: {string.Join(',', _unsupportedOp)}");
         }
+    }
+
+    private IRModule CreateModule(Var[] inputs, Expr body)
+    {
+        var mainFunc = new Function("main", body, inputs);
+        var module = new IRModule();
+        module.Add(mainFunc);
+        module.Entry = mainFunc;
+        return module;
     }
 }

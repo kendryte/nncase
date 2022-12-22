@@ -97,7 +97,7 @@ namespace Nncase.Importer.TFLite
             var bias = GetInputExprs(op, 2);
             input = F.Tensors.NHWCToNCHW(input);
             weights = F.Tensors.Transpose(weights, new[] { 3, 0, 1, 2 });
-            var s = GetTensorShape(GetInputTensor(op, 1));
+            _ = GetTensorShape(GetInputTensor(op, 1));
             var options = op.BuiltinOptionsAsDepthwiseConv2DOptions();
             var (inH, inW) = Util.GetHW(input);
             var (fH, fW) = Util.GetHW(weights);

@@ -29,7 +29,7 @@ public abstract class ModulePass : BasePass
     /// </summary>
     /// <param name="module">Target module.</param>
     /// <param name="options">Options.</param>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task RunAsync(IRModule module, RunPassOptions options)
     {
         var new_options = options.IndentDir(Name);
@@ -43,7 +43,7 @@ public abstract class ModulePass : BasePass
     /// </summary>
     /// <param name="module">Target module.</param>
     /// <param name="options">Options.</param>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     protected abstract Task RunCoreAsync(IRModule module, RunPassOptions options);
 
     /// <summary>

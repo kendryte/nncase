@@ -108,6 +108,9 @@ public sealed record Range(Expr Start, Expr Stop, Expr Step) : IR.IMutatable
     public static Range operator *(Range range, Expr expr) => new Range(range.Start * expr, range.Stop * expr, range.Step);
 
     /// <inheritdoc/>
+    public static Range operator -(Range range, Expr expr) => new Range(range.Start - expr, range.Stop - expr, range.Step);
+
+    /// <inheritdoc/>
     public object WithNew(ExprVisitor<Expr, IRType> mutator)
     {
         return new TIR.Range(mutator.Visit(Start), mutator.Visit(Stop), mutator.Visit(Step));
@@ -121,9 +124,6 @@ public sealed record Range(Expr Start, Expr Stop, Expr Step) : IR.IMutatable
         functor.Visit(Step);
         return default!;
     }
-
-    /// <inheritdoc/>
-    public static Range operator -(Range range, Expr expr) => new Range(range.Start - expr, range.Stop - expr, range.Step);
 
     /// <inheritdoc/>
     public static Range operator +(Range range, Expr expr) => new Range(range.Start + expr, range.Stop + expr, range.Step);

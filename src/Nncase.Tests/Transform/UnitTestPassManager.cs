@@ -23,8 +23,7 @@ public sealed class UnitTestPassManager : TestFixture.UnitTestFixtrue
         var passOptions = GetPassOptions();
 
         Dictionary<BaseFunction, BaseFunction> functions_update = new(ReferenceEqualityComparer.Instance);
-
-        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 2, 3, 4 }, out var input_a), T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Output, new[] { 1, 2, 3, 4 }, out var input_b)).Body(T.Nop()).Build();
+        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 2, 3, 4 }, out _), T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Output, new[] { 1, 2, 3, 4 }, out _)).Body(T.Nop()).Build();
 
         var prim_wrapper = new PrimFunctionWrapper(prim_func_1, 1);
 
@@ -32,7 +31,7 @@ public sealed class UnitTestPassManager : TestFixture.UnitTestFixtrue
         var main_func = new Function("main", new Call(prim_wrapper, ImmutableArray.Create<Expr>(input)), ImmutableArray.Create<Var>(input));
 
         // prim_func_2 for update
-        var prim_func_2 = T.PrimFunc("prim_func_2", "k?", T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 2, 3, 4 }, out var input_a_2), T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Output, new[] { 1, 2, 3, 4 }, out var input_b_2)).Body(
+        var prim_func_2 = T.PrimFunc("prim_func_2", "k?", T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 2, 3, 4 }, out _), T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Output, new[] { 1, 2, 3, 4 }, out _)).Body(
           T.Nop(),
           T.Nop()).Build();
 
@@ -81,8 +80,8 @@ public sealed class UnitTestPassManager : TestFixture.UnitTestFixtrue
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
         var main_func = new Function(
             "main",
-                        new Call(func_2, new Call(func_1, new Call(func_0, ImmutableArray.Create<Expr>(input)))),
-                        ImmutableArray.Create<Var>(input));
+            new Call(func_2, new Call(func_1, new Call(func_0, ImmutableArray.Create<Expr>(input)))),
+            ImmutableArray.Create<Var>(input));
         Assert.True(CompilerServices.InferenceType(main_func));
 
         // prim_func_2 for update

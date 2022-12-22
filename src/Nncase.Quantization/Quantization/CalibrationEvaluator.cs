@@ -82,6 +82,11 @@ public class CalibrationEvaluator : IDisposable
         return awareTensors;
     }
 
+    public void Dispose()
+    {
+        throw new NotImplementedException();
+    }
+
     private IValue? Visit(EClass eclass)
     {
         if (!_eclassValues.TryGetValue(eclass, out var value))
@@ -287,10 +292,5 @@ public class CalibrationEvaluator : IDisposable
                 : throw new ArgumentOutOfRangeException($"Operator {op} doesn't have parameter: {parameter.Name}.");
             return Arguments[index];
         }
-    }
-
-    public void Dispose()
-    {
-        throw new NotImplementedException();
     }
 }

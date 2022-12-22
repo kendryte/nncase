@@ -81,7 +81,7 @@ internal static class EGraphRewriter
             {
                 EGraphPrinter.DumpEgraphAsDot(
                     eGraph,
-                 Path.Combine(options.DumpDir, options.PassName, "Rebuild", $"V{eGraph.Version}"));
+                    Path.Combine(options.DumpDir, options.PassName, "Rebuild", $"V{eGraph.Version}"));
             }
         }
 

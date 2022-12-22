@@ -50,6 +50,11 @@ public abstract class FunctionBuilder : IDisposable
         return CreateLinkableFunction(Id, callable, FunctionRefs, _textContent.ToArray());
     }
 
+    public void Dispose()
+    {
+        throw new NotImplementedException();
+    }
+
     protected abstract void Compile(BaseFunction callable);
 
     protected abstract void WriteText();
@@ -69,10 +74,5 @@ public abstract class FunctionBuilder : IDisposable
 
             TextWriter.WriteByLength(symbolAddr + refer.Offset, refer.Length);
         }
-    }
-
-    public void Dispose()
-    {
-        throw new NotImplementedException();
     }
 }

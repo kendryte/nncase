@@ -39,6 +39,12 @@ namespace Nncase.Transform
         }
 
         /// <inheritdoc/>
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return ((IEnumerable)MutatorCreators).GetEnumerator();
+        }
+
+        /// <inheritdoc/>
         protected override Task<BaseFunction> RunCoreAsync(BaseFunction callable, RunPassOptions options)
         {
             if (callable is not PrimFunction)
@@ -95,12 +101,6 @@ namespace Nncase.Transform
                 default:
                     break;
             }
-        }
-
-        /// <inheritdoc/>
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return ((IEnumerable)MutatorCreators).GetEnumerator();
         }
 
         /// <summary>

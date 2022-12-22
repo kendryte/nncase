@@ -207,7 +207,7 @@ public class RTTensor : RTValue
     {
         var dtype = DataType.FromTypeCode(ElementType.TypeCode);
         var dims = MemoryMarshal.Cast<uint, int>(Dimensions);
-        var strides = MemoryMarshal.Cast<uint, int>(Strides);
+        _ = MemoryMarshal.Cast<uint, int>(Strides);
         var hostBuffer = Buffer.Buffer.AsHost()!;
         var owner = hostBuffer.Map(RTMapAccess.Read);
         return Tensor.FromBytes(new TensorType(dtype, new(dims.ToArray())), owner.Memory);

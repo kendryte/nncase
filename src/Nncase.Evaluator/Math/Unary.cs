@@ -68,6 +68,20 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         return Visit(input);
     }
 
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, Unary target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, Unary.Input);
+        var outputType = context.GetReturnType<TensorType>();
+
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, CostUtility.GetCPUCyclesOfUnary(target.UnaryOp)),
+        };
+    }
+
     private int Compute_int(int input, UnaryOp op) => op switch
     {
         UnaryOp.Ceil => input,
@@ -102,21 +116,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
     };
 
     /// <inheritdoc/>
-    public Cost Visit(ICostEvaluateContext context, Unary target)
-    {
-        var inputType = context.GetArgumentType<TensorType>(target, Unary.Input);
-        var outputType = context.GetReturnType<TensorType>();
-
-        return new()
-        {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, CostUtility.GetCPUCyclesOfUnary(target.UnaryOp)),
-        };
-    }
-
-    /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Unary target, bool ILmode)
+    public string Visit(IIRPrinterContext context, Unary target, bool iLmode)
     {
         var op_str = target.UnaryOp switch
         {
@@ -124,7 +124,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
             UnaryOp.LogicalNot => "!",
             var op => op.ToString(),
         };
-        if (!ILmode)
+        if (!iLmode)
         {
             return $"{op_str}({string.Join(", ", target.Parameters.Select(p => p.Name + ": " + context.GetArgument(target, p).Serialize()))})";
         }

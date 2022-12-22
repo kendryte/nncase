@@ -99,13 +99,13 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
     }
 
     /// <inheritdoc/>
-    public string PrintOp(Op op, IIRPrinterContext context, bool ILmode)
+    public string PrintOp(Op op, IIRPrinterContext context, bool iLmode)
     {
         // TODO: Add printers cache.
         var irprinterType = typeof(IOpPrinter<>).MakeGenericType(op.GetType());
         if (_serviceProvider.GetService(irprinterType) is IOpPrinter irprinter)
         {
-            return irprinter.Visit(context, op, ILmode);
+            return irprinter.Visit(context, op, iLmode);
         }
 
         return $"{context.Get(op)}({string.Join(", ", context.GetArguments(op).Select(s => s.ToString()))})";

@@ -68,12 +68,12 @@ internal sealed class ScriptPrintContext : IIRPrinterContext
         }
     }
 
-    private Call GetCurrentCall() => CurrentCall ?? throw new InvalidOperationException("Current call is not set.");
-
     public IPrintSymbol[] GetArguments(Op op)
     {
         return (from arg in GetCurrentCall().Parameters select _exprMemo[arg]).ToArray();
     }
+
+    private Call GetCurrentCall() => CurrentCall ?? throw new InvalidOperationException("Current call is not set.");
 
     /// <inheritdoc/>
     public IPrintSymbol Get(Op op) => _exprMemo[op];
@@ -151,6 +151,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             return doc;
         }
+
         Scope.Push();
         Scope.Append($"{{{string.Join(", ", from item in expr select Visit(item).ToString())}}}");
         doc = new(Scope.Pop());
@@ -165,6 +166,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             return doc;
         }
+
         var target = Visit(expr.Target);
         var attr = Visit(expr.Attribute);
         Scope.Push();
@@ -181,6 +183,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             return doc;
         }
+
         var target = Visit(expr.Target);
         var args = expr.Parameters.Select(Visit).ToArray();
         _context.CurrentCall = expr;
@@ -214,6 +217,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             return doc;
         }
+
         if (expr is TensorConst @const)
         {
             if (@const.Value.Shape == Shape.Scalar)
@@ -254,6 +258,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             return doc;
         }
+
         Scope.Push();
 
         // 1. Function signature
@@ -283,6 +288,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             return doc;
         }
+
         doc = new(new(expr.GetType().Name));
         _exprMemo.Add(expr, doc);
         return doc;
@@ -295,6 +301,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             return doc;
         }
+
         doc = (ScriptSymobl)Scope.GetUniqueVarSymbol(expr);
         _exprMemo.Add(expr, doc);
         return doc;
@@ -336,6 +343,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             return doc;
         }
+
         Scope.Push();
 
         if (type_info != string.Empty)
@@ -370,6 +378,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             return doc;
         }
+
         Scope.Push();
 
         Scope.AppendLine("(");
@@ -397,6 +406,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             return doc;
         }
+
         Scope.Push();
 
         // 1. write head
@@ -459,6 +469,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             return doc;
         }
+
         Scope.Push();
         Scope.Append($"{expr.Buffer.Name}[{string.Join(", ", expr.Indices.Select(Visit))}]");
         doc = new(Scope.Pop());
@@ -472,6 +483,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             return doc;
         }
+
         Scope.Push();
         Scope.Append($"{expr.Buffer.Name}[{string.Join(", ", expr.Indices.Select(Visit))}] = {Visit(expr.Value)}");
         doc = new(Scope.Pop());
@@ -485,6 +497,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             return doc;
         }
+
         doc = (ScriptSymobl)Scope.GetUniqueVarSymbol(expr.Value, "v");
         _exprMemo.Add(expr, doc);
         return doc;
@@ -497,6 +510,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             return doc;
         }
+
         Scope.Push();
         Scope.Append($"T.If({Visit(expr.Condition)}).Then");
         Scope.Append(VisitTypeSequential(expr.Then, VisitType(expr.CheckedType!)).Serialize());
@@ -519,6 +533,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             return doc;
         }
+
         Scope.Push();
         Scope.Append($"T.Let(out var {Visit(expr.Var)}, {Visit(expr.Expression)}).Body");
         Scope.Append(VisitTypeSequential(expr.Body, VisitType(expr.CheckedType!), 0).Serialize());
@@ -535,6 +550,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             return doc;
         }
+
         Scope.Push();
         Scope.Append($"T.Buffer({expr.Name}, {expr.MemLocation}, {VisitType(expr.ElemType)})");
         doc = new(Scope.Pop(), expr.Name, true);
@@ -549,6 +565,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             return doc;
         }
+
         var buffer = Visit(expr.Buffer);
         var sb = new StringBuilder();
         sb.Append(buffer.Name);
@@ -583,6 +600,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             return doc;
         }
+
         doc = new ScriptSymobl(new("None"), "None", false);
         _exprMemo.Add(expr, doc);
         return doc;

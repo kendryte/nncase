@@ -16,6 +16,22 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Transform;
 
 /// <summary>
+/// Rules Factory.
+/// </summary>
+public static class RulesFactory
+{
+    /// <summary>
+    /// create the rewrite patternrule calss.
+    /// </summary>
+    /// <param name="lhs">lhs pattern.</param>
+    /// <param name="rhs">rhs pattern expression.</param>
+    /// <param name="predicate"> predicate pattern expression. </param>
+    /// <returns> PatternRule. </returns>
+    public static IRewriteRule Rewrite(Pattern lhs, Pattern rhs, Pattern? predicate = null)
+      => new TemplateRule(lhs, rhs, predicate);
+}
+
+/// <summary>
 /// a template rule.
 /// </summary>
 public class TemplateRule : IRewriteRule
@@ -126,20 +142,4 @@ internal sealed class ExprGeneratorVisitor : PatternVisitor<Expr, IRType>
     {
         return _result.Get(pattern);
     }
-}
-
-/// <summary>
-/// Rules Factory.
-/// </summary>
-public static class RulesFactory
-{
-    /// <summary>
-    /// create the rewrite patternrule calss.
-    /// </summary>
-    /// <param name="lhs">lhs pattern.</param>
-    /// <param name="rhs">rhs pattern expression.</param>
-    /// <param name="predicate"> predicate pattern expression. </param>
-    /// <returns> PatternRule. </returns>
-    public static IRewriteRule Rewrite(Pattern lhs, Pattern rhs, Pattern? predicate = null)
-      => new TemplateRule(lhs, rhs, predicate);
 }

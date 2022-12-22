@@ -28,7 +28,7 @@ public class BitcastEvaluator : IEvaluator<Bitcast>, ITypeInferencer<Bitcast>, I
     }
 
     /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Bitcast target, bool ILmode)
+    public string Visit(IIRPrinterContext context, Bitcast target, bool iLmode)
     {
         return $"{CompilerServices.Print(target.newType)}({context.GetArgument(target, Cast.Input)})";
     }

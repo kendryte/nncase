@@ -30,11 +30,6 @@ public class UnitTestDLLCall
         Console.Write(t.BaseType);
     }
 
-    public class CustomType
-    {
-        public delegate float Declf(float x, float y);
-    }
-
     [Fact]
     public void TestDynamicBuildType()
     {
@@ -50,6 +45,11 @@ public class UnitTestDLLCall
         var created_class = tb.CreateType();
 
         Console.WriteLine(created_class.GetMember("delfunc"));
+    }
+
+    public class CustomType
+    {
+        public delegate float Declf(float x, float y);
     }
 
     public Type GetDynamicDeleType()

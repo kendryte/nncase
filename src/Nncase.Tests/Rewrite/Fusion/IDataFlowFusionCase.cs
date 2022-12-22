@@ -32,8 +32,11 @@ internal static class FusionBuilder
         var fusion_1_input = new Var($"fusion_{_count}_input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
         var weights = IR.F.Random.Normal(DataTypes.Float32, 0, 1, _count, new[] { 3, 3, 1, 1 }).Evaluate().AsTensor();
         var bias = IR.F.Random.Normal(DataTypes.Float32, 0, 1, _count, new[] { 3 }).Evaluate().AsTensor();
-        var fusion_1 = new Fusion($"fusion_{_count}_{mask}", Callable.StackVMModuleKind, IR.F.NN.Conv2D(fusion_1_input, weights, bias, new[] { 1, 1 }, new[,] { { 0, 0 },
-        { 0, 0 }, }, new[] { 1, 1 }, PadMode.Constant, 1), new[] { fusion_1_input });
+        var fusion_1 = new Fusion($"fusion_{_count}_{mask}", Callable.StackVMModuleKind, IR.F.NN.Conv2D(fusion_1_input, weights, bias, new[] { 1, 1 }, new[,]
+        {
+            { 0, 0 },
+        { 0, 0 },
+        }, new[] { 1, 1 }, PadMode.Constant, 1), new[] { fusion_1_input });
         _count++;
         return fusion_1;
     }
@@ -500,7 +503,6 @@ internal class DataFlowType8FusionCase : IDataFlowFusionCase
     }
 }
 
-
 /// <summary>
 ///   input
 ///     |
@@ -509,7 +511,7 @@ internal class DataFlowType8FusionCase : IDataFlowFusionCase
 /// v1 = fusion1(v0)   |
 ///         \          |
 ///           \       /
-///        v2 = fusion2(v1,v0) 
+///        v2 = fusion2(v1,v0)
 ///             |            \
 ///        v3 = fusion3(v2)   |
 ///                   \       |
@@ -518,10 +520,11 @@ internal class DataFlowType8FusionCase : IDataFlowFusionCase
 ///                |              \
 ///             v5 = fusion5(v4)   |
 ///                  |            /
-///             v6 = fusion6(v5,v4)
+///             v6 = fusion6(v5,v4).
 /// </summary>
 internal class DataFlowType9FusionCase : IDataFlowFusionCase
 {
+    public int FinalFusionCount => 1;
 
     public static Expr BuildBodyCore(Expr input, bool left)
     {
@@ -541,6 +544,4 @@ internal class DataFlowType9FusionCase : IDataFlowFusionCase
     {
         return BuildBodyCore(input, true);
     }
-
-    public int FinalFusionCount => 1;
 }

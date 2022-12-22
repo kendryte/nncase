@@ -39,6 +39,16 @@ public struct RTBufferSlice
     /// </summary>
     public uint SizeBytes { get; set; }
 
+    internal static RTBufferSlice FromRT(in RuntimeStruct rt)
+    {
+        return new RTBufferSlice
+        {
+            Buffer = new RTBuffer(rt.Buffer),
+            Start = rt.Start,
+            SizeBytes = rt.SizeBytes,
+        };
+    }
+
     internal RuntimeStruct ToRT()
     {
         return new RuntimeStruct
@@ -55,16 +65,6 @@ public struct RTBufferSlice
         public IntPtr Buffer;
         public uint Start;
         public uint SizeBytes;
-    }
-
-    internal static RTBufferSlice FromRT(in RuntimeStruct rt)
-    {
-        return new RTBufferSlice
-        {
-            Buffer = new RTBuffer(rt.Buffer),
-            Start = rt.Start,
-            SizeBytes = rt.SizeBytes,
-        };
     }
 }
 

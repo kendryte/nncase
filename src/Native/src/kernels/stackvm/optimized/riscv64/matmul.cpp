@@ -115,9 +115,9 @@
 ////template <typename T>
 ////result<void> optimized::matmul(const T *input_a, const T *input_b, const T
 ///*bias, T *output, /    const dims_t &in_a_shape, const dims_t &in_a_strides,
-///const dims_t &in_b_shape, /    const dims_t &in_b_strides, const dims_t
+/// const dims_t &in_b_shape, /    const dims_t &in_b_strides, const dims_t
 ///&out_shape, const dims_t &out_strides, /    value_range<float>
-///fused_activation) noexcept
+/// fused_activation) noexcept
 // result<void> matmul_impl(typecode_t typecode, const gsl::byte *input_a, const
 // gsl::byte *input_b, gsl::byte *output,
 //                         const dims_t &in_a_shape,

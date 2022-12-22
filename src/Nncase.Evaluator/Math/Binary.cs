@@ -54,6 +54,21 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         return Visit(target, lhs, rhs);
     }
 
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, Binary target)
+    {
+        var lhsType = context.GetArgumentType<TensorType>(target, Binary.Lhs);
+        var rhsType = context.GetArgumentType<TensorType>(target, Binary.Rhs);
+        var outputType = context.GetReturnType<TensorType>();
+
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(lhsType) + CostUtility.GetMemoryAccess(rhsType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, CostUtility.GetCPUCyclesOfBinary(target.BinaryOp)),
+        };
+    }
+
     private int Compute(BinaryOp op, int a, int b) => op switch
     {
         BinaryOp.Add => a + b,
@@ -139,26 +154,11 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     }
 
     /// <inheritdoc/>
-    public Cost Visit(ICostEvaluateContext context, Binary target)
-    {
-        var lhsType = context.GetArgumentType<TensorType>(target, Binary.Lhs);
-        var rhsType = context.GetArgumentType<TensorType>(target, Binary.Rhs);
-        var outputType = context.GetReturnType<TensorType>();
-
-        return new()
-        {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(lhsType) + CostUtility.GetMemoryAccess(rhsType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, CostUtility.GetCPUCyclesOfBinary(target.BinaryOp)),
-        };
-    }
-
-    /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Binary target, bool ILmode)
+    public string Visit(IIRPrinterContext context, Binary target, bool iLmode)
     {
         var lhs = context.GetArgument(target, Binary.Lhs);
         var rhs = context.GetArgument(target, Binary.Rhs);
-        if (ILmode)
+        if (iLmode)
         {
             return $"{target.BinaryOp}({lhs}, {rhs})";
         }

@@ -21,6 +21,7 @@ public static partial class CodeGenUtil
         {
             ext = "." + ext;
         }
+
         return Path.GetTempPath() + Guid.NewGuid().ToString() + ext;
     }
 

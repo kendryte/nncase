@@ -99,16 +99,16 @@ public record Segment1D
         return new(new(seg.Range.Start.Value * scale, seg.Range.End.Value * scale), seg.Padding);
     }
 
-    public override string ToString()
-    {
-        return $"{Range}";
-    }
-
     public static Segment1D operator +(Segment1D lhs, Segment1D rhs)
     {
         var min_start = Math.Min(lhs.Start, rhs.Start);
         var max_end = Math.Max(lhs.End, rhs.End);
         return new Segment1D(min_start..max_end, Padding.Zero());
+    }
+
+    public override string ToString()
+    {
+        return $"{Range}";
     }
 }
 
@@ -121,6 +121,12 @@ public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
     {
     }
 
+    public SegmentND(ReadOnlySpan<Segment1D> segments)
+    {
+        _segments = new Segment1D[segments.Length];
+        segments.CopyTo(_segments);
+    }
+
     public Padding PadH => _segments[2].Padding;
 
     public Padding PadW => _segments[3].Padding;
@@ -131,12 +137,6 @@ public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
     {
         get => _segments[index];
         set => _segments[index] = value;
-    }
-
-    public SegmentND(ReadOnlySpan<Segment1D> segments)
-    {
-        _segments = new Segment1D[segments.Length];
-        segments.CopyTo(_segments);
     }
 
     public SegmentND(params Segment1D[] segments)
@@ -156,15 +156,15 @@ public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
         return lhs.Equals(rhs);
     }
 
+    public static bool operator !=(SegmentND lhs, SegmentND rhs)
+    {
+        return !(lhs == rhs);
+    }
+
     public override bool Equals(object? obj)
     {
         return obj is SegmentND segment &&
                StructuralComparisons.StructuralEqualityComparer.Equals(_segments, segment._segments);
-    }
-
-    public static bool operator !=(SegmentND lhs, SegmentND rhs)
-    {
-        return !(lhs == rhs);
     }
 
     public static SegmentND operator +(SegmentND lhs, SegmentND rhs)

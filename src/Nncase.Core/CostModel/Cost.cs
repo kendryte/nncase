@@ -99,6 +99,11 @@ public sealed record Cost : IComparable<Cost>, IEquatable<Cost>
         return newCost;
     }
 
+    public static bool operator <=(Cost left, Cost right)
+    {
+        return left is null || left.CompareTo(right) <= 0;
+    }
+
     /// <inheritdoc/>
     public int CompareTo(Cost? other)
     {
@@ -135,14 +140,9 @@ public sealed record Cost : IComparable<Cost>, IEquatable<Cost>
         return true;
     }
 
-    public static bool operator <=(Cost left, Cost right)
-    {
-        return ReferenceEquals(left, null) || left.CompareTo(right) <= 0;
-    }
-
     public static bool operator >=(Cost left, Cost right)
     {
-        return ReferenceEquals(left, null) ? ReferenceEquals(right, null) : left.CompareTo(right) >= 0;
+        return left is null ? right is null : left.CompareTo(right) >= 0;
     }
 }
 

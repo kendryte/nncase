@@ -21,7 +21,7 @@ internal sealed class Substitutor : ExprMutator
 
     public Substitutor(Func<Expr, Expr?> maper)
     {
-        this._maper = maper;
+        _maper = maper;
     }
 
     /// <inheritdoc/>
@@ -32,6 +32,7 @@ internal sealed class Substitutor : ExprMutator
         {
             return mexpr;
         }
+
         return expr;
     }
 }

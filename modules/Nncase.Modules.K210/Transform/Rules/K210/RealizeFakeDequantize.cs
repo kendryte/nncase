@@ -22,6 +22,7 @@ using static Nncase.Quantization.Utility;
 using Math = Nncase.IR.F.Math;
 
 namespace Nncase.Transform.Rules.K210;
+
 /// <summary>
 /// Lower <see cref="IR.K210.FakeDeQuantize"/> to <see cref="IR.K210.DeQuantize"/>.
 /// </summary>

@@ -57,7 +57,7 @@ public static class Imaging
         bool isTFResize = false)
         => ResizeImage(
             resizeMode,
-                tranMode,
-                nearestMode,
-                input, roi, newSize, -0.75f, false, -0.0f, isTFResize);
+            tranMode,
+            nearestMode,
+            input, roi, newSize, -0.75f, false, -0.0f, isTFResize);
 }

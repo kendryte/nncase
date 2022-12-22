@@ -53,5 +53,9 @@ public struct FixedMul : IEquatable<FixedMul>
     {
         return obj is FixedMul && Equals((FixedMul)obj);
     }
-}
 
+    public override int GetHashCode()
+    {
+        throw new NotImplementedException();
+    }
+}

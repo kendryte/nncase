@@ -25,13 +25,6 @@ public interface IEvaluator
 }
 
 /// <summary>
-/// this attribute mark the source generator auto generate IEvaluator's interface impl.
-/// </summary>
-public sealed class EvaluatorGeneratorAttribute : Attribute
-{
-}
-
-/// <summary>
 /// Evaluator interface.
 /// </summary>
 public interface IEvaluator<T> : IEvaluator
@@ -49,4 +42,11 @@ public interface IEvaluator<T> : IEvaluator
     {
         return Visit(context, (T)target);
     }
+}
+
+/// <summary>
+/// this attribute mark the source generator auto generate IEvaluator's interface impl.
+/// </summary>
+public sealed class EvaluatorGeneratorAttribute : Attribute
+{
 }

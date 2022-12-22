@@ -38,7 +38,7 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
     /// <inheritdoc/>
     public Cost? Visit(ICostEvaluateContext context, Split target)
     {
-        var ret = context.GetReturnType<TupleType>();
+        _ = context.GetReturnType<TupleType>();
         return new()
         {
             [CostFactorNames.CPUCycles] = 1,

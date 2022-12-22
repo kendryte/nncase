@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -43,6 +43,8 @@ namespace Nncase.IR
 
         public static TypePattern operator &(TypePattern lhs, TypePattern rhs) => new TypePattern(x => lhs.Cond(x) && rhs.Cond(x), $"<{lhs.Reason}> And <{rhs.Reason}>");
 
+        public static TypePattern operator |(TypePattern lhs, TypePattern rhs) => new TypePattern(x => lhs.Cond(x) || rhs.Cond(x), $"<{lhs.Reason}> Or <{rhs.Reason}>");
+
         public bool MatchLeaf(IRType valueType) => Cond(valueType);
 
         /// <summary>
@@ -68,8 +70,6 @@ namespace Nncase.IR
 
             return valueType;
         }
-
-        public static TypePattern operator |(TypePattern lhs, TypePattern rhs) => new TypePattern(x => lhs.Cond(x) || rhs.Cond(x), $"<{lhs.Reason}> Or <{rhs.Reason}>");
 
         public static TypePattern operator !(TypePattern lhs) => new TypePattern(x => !lhs.Cond(x), $"<Not {lhs.Reason}>");
     }

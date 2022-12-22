@@ -54,6 +54,11 @@ public struct QuantParam : IEquatable<QuantParam>
     {
         return obj is QuantParam && Equals((QuantParam)obj);
     }
+
+    public override int GetHashCode()
+    {
+        throw new NotImplementedException();
+    }
 }
 
 /// <summary>

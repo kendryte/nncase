@@ -355,7 +355,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     public static Tensor FromConst(Const @const) => @const switch
     {
         TensorConst tc => tc.Value,
-        TupleConst tpc => throw new InvalidOperationException("Can't Convert TupleConst To Tensor!"),
+        TupleConst => throw new InvalidOperationException("Can't Convert TupleConst To Tensor!"),
         _ => throw new NotSupportedException(@const.GetType().Name),
     };
 

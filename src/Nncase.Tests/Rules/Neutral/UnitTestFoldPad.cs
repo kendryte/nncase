@@ -28,7 +28,7 @@ public class UnitTestFoldPad : TestFixture.UnitTestFixtrue
                 new[] { 1, 1 }, new[,]
             {
                 { 0, 0 },
-                { 0, 0 }
+                { 0, 0 },
             },
             },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
@@ -42,7 +42,7 @@ public class UnitTestFoldPad : TestFixture.UnitTestFixtrue
                 new[] { 1, 1 }, new[,]
             {
                 { 0, 1 },
-                { 2, 0 }
+                { 2, 0 },
             },
             },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
@@ -60,7 +60,7 @@ public class UnitTestFoldPad : TestFixture.UnitTestFixtrue
             }, new[,]
             {
                 { 1, 3 },
-                { 1, 2 }
+                { 1, 2 },
             },
             },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());

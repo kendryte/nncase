@@ -27,6 +27,11 @@ namespace Nncase.IR
         /// </summary>
         public Dictionary<Expr, TExprResult> ExpressionMemo => _exprMemo;
 
+        /// <summary>
+        /// Gets visitable visit result memo.
+        /// </summary>
+        public Dictionary<IVisitable, object> VisitAbleMemo => _visitableMemo;
+
         protected void RegisterAfterCallback(string name, Action<Expr> callback)
         {
             _callbacksAfterCall[name] = callback;
@@ -52,11 +57,6 @@ namespace Nncase.IR
                 callback(expr);
             }
         }
-
-        /// <summary>
-        /// Gets visitable visit result memo.
-        /// </summary>
-        public Dictionary<IVisitable, object> VisitAbleMemo => _visitableMemo;
 
         /// <inheritdoc/>
         public override TExprResult Visit(Call expr)
@@ -282,14 +282,17 @@ namespace Nncase.IR
                 {
                     Visit(iterVar);
                 }
+
                 foreach (var reads in expr.Reads)
                 {
                     Visit(reads);
                 }
+
                 foreach (var writes in expr.Writes)
                 {
                     Visit(writes);
                 }
+
                 foreach (var buffer in expr.AllocBuffers)
                 {
                     Visit(buffer);
@@ -312,6 +315,7 @@ namespace Nncase.IR
                 {
                     Visit(index);
                 }
+
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
@@ -329,6 +333,7 @@ namespace Nncase.IR
                 {
                     Visit(index);
                 }
+
                 Visit(expr.Value);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);

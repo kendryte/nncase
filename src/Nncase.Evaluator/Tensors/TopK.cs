@@ -69,7 +69,8 @@ public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>, ICostEvalu
         }
 
         // x: [a_1, a_2, ..., a_n, r]
-        var shape = new Shape();
+        _ = new Shape();
+        Shape? shape;
 
         // [a_1, a_2, ..., a_{axis-1}, k, a_{axis+1}, ... a_n]
         if (context.GetArgument(target, TopK.Axis) is TensorConst axisConst

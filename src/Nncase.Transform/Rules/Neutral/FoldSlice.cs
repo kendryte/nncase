@@ -84,7 +84,7 @@ public sealed partial class FoldTwoSlices : IRewriteRule
         var newEnds = new List<int>();
         var newStrides = new List<int>();
         var newAxes = new List<int>();
-        var rank = inShape.Rank;
+        _ = inShape.Rank;
 
         for (int axis_1 = 0; axis_1 < axes1.Length; axis_1++)
         {

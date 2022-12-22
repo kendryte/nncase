@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -73,7 +73,7 @@ public sealed partial class CombineTransposeConstBinary : IRewriteRule
 
         if (x is Const)
         {
-            List<int> newShape = new List<int>() { x.CheckedShape[0].FixedValue };
+            var newShape = new List<int>() { x.CheckedShape[0].FixedValue };
             if (x.CheckedShape[0].FixedValue != 1)
             {
                 for (int i = 0; i < expandDim; i++)
@@ -81,6 +81,7 @@ public sealed partial class CombineTransposeConstBinary : IRewriteRule
                     newShape.Add(1);
                 }
             }
+
             var newConst = Tensor.From<float>(((TensorConst)x).Value.ToArray<float>(), new Nncase.IR.Shape(newShape));
 
             return Transpose(Binary(binary.BinaryOp, newConst, y), perm);
@@ -88,7 +89,7 @@ public sealed partial class CombineTransposeConstBinary : IRewriteRule
 
         if (y is Const)
         {
-            List<int> newShape = new List<int>() { y.CheckedShape[0].FixedValue };
+            var newShape = new List<int>() { y.CheckedShape[0].FixedValue };
             if (y.CheckedShape[0].FixedValue != 1)
             {
                 for (int i = 0; i < expandDim; i++)
@@ -96,6 +97,7 @@ public sealed partial class CombineTransposeConstBinary : IRewriteRule
                     newShape.Add(1);
                 }
             }
+
             var newConst = Tensor.From<float>(((TensorConst)y).Value.ToArray<float>(), new Nncase.IR.Shape(newShape));
 
             return Transpose(Binary(binary.BinaryOp, x, newConst), perm);
@@ -195,6 +197,7 @@ public sealed partial class CombineTransposePad : IRewriteRule
         for (var i = 0; i < inv_perm.Length; i++)
         {
             newPads.Add(pads[inv_perm[i].i]);
+
             // newPads[i] = pads[perm[i]];
         }
 
@@ -205,7 +208,7 @@ public sealed partial class CombineTransposePad : IRewriteRule
 
 /// <summary>
 /// Combine Pad with Transpose
-/// transpose(pad(x, pp),p) => pad(transpose(x),new_pp)
+/// transpose(pad(x, pp),p) => pad(transpose(x),new_pp).
 /// </summary>
 [RuleGenerator]
 public sealed partial class CombinePadTranspose : IRewriteRule
@@ -218,10 +221,8 @@ public sealed partial class CombinePadTranspose : IRewriteRule
           x => true,
           IsWildcard("input"),
           IsWildcard("pads"),
-          IsWildcard("padValue")
-        ),
-        IsTensorConst("perm")
-      );
+          IsWildcard("padValue")),
+        IsTensorConst("perm"));
 
     private Expr GetReplace(Pad pad, Expr input, int[] perm, Expr pads, Expr padValue, RunPassOptions options)
     {
@@ -230,6 +231,7 @@ public sealed partial class CombinePadTranspose : IRewriteRule
         {
             newPads.Add(pads[perm[i]]);
         }
+
         var ret = Pad(Transpose(input, perm), Stack(new IR.Tuple(newPads), 0), pad.PadMode, padValue);
         options.MatchOptions.SuppressPattern(ret, Pattern);
         return ret;
@@ -257,20 +259,25 @@ public sealed partial class CombineTransposeReduce : IRewriteRule
         // var newAxis = Gather(perm, 0, axis);
         // var tp = Transpose(Reduce(reduce.ReduceOp, input, newAxis, initValue, true), perm);
         // return keepDims ? tp : Squeeze(tp, axis);
-        List<int> newAxis = new List<int>();
+        var newAxis = new List<int>();
         for (int i = 0; i < axis.Length; i++)
+        {
             newAxis.Add(perm[axis[i]]);
+        }
 
-        List<int> newPerm = new List<int>();
+        var newPerm = new List<int>();
         for (int i = 0; i < perm.Length; i++)
+        {
             newPerm.Add(perm[i]);
+        }
+
         if (!keepDims)
         {
             var sortedNewAxis = newAxis;
             sortedNewAxis.Sort((a, b) => b.CompareTo(a));
             for (int i = 0; i < sortedNewAxis.Count; i++)
             {
-                var it = newPerm.Find( x => x == sortedNewAxis[i] );
+                var it = newPerm.Find(x => x == sortedNewAxis[i]);
                 newPerm.Remove(it);
                 for (int j = 0; j < newPerm.Count; j++)
                 {
@@ -278,6 +285,7 @@ public sealed partial class CombineTransposeReduce : IRewriteRule
                 }
             }
         }
+
         return Transpose(Reduce(reduce.ReduceOp, input, newAxis.ToArray(), initValue, keepDims), newPerm.ToArray());
     }
 }
@@ -298,9 +306,8 @@ public sealed partial class CombineTransposeUnary : IRewriteRule
     }
 }
 
-
 /// <summary>
-/// transpose(activation(x),perm) => activation(transpose(x,perm))
+/// transpose(activation(x),perm) => activation(transpose(x,perm)).
 /// </summary>
 [RuleGenerator]
 public sealed partial class CombineTransposeActivations : IRewriteRule
@@ -308,12 +315,12 @@ public sealed partial class CombineTransposeActivations : IRewriteRule
     public IPattern Pattern { get; } =
       IsTranspose(
        IsCall(IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("parameters", () => IsWildcard())),
-       IsWildcard("perm")
-      );
+       IsWildcard("perm"));
 
     private Expr GetReplace(ActivationOp activation, IReadOnlyList<Expr> parameters, Expr perm)
     {
-        return new Call(activation,
+        return new Call(
+            activation,
           new Expr[] { Transpose(parameters[0], perm) }
             .Concat(parameters.Skip(1)).ToArray());
     }

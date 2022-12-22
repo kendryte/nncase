@@ -1,22 +1,23 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
-using Xunit;
-using Random = Nncase.IR.F.Random;
-
 using Nncase;
 using Nncase.IR;
 using Nncase.Quantization;
 using Nncase.TestFixture;
+using Nncase.Transform;
+using Nncase.Transform.Rules.Neutral;
 using Nncase.Utilities;
-using System.Collections.Immutable;
+using Xunit;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Random;
 using static Nncase.IR.F.Tensors;
@@ -24,15 +25,28 @@ using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 using static Nncase.Quantization.Utility;
 using static Nncase.TestFixture.DataGenerator;
+using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.QuantTest;
 
 public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
 {
+    [Fact]
+    public void TestQuantFunction()
+    {
+        var range = new ValueRange<float>(-1.234f, 2.345f);
+        var qp = QuantUtility.GetQuantParam(range, 8, QuantMode.UnsignedMode);
+        Trace.Assert(qp.Scale == 0.014035294f);
+        Trace.Assert(qp.ZeroPoint == 88);
+    }
+
+
     public sealed class DumpVisitor : ExprVisitor<int, IRType>
     {
         public override int DefaultVisitLeaf(Expr expr) => 0;
+
         public override object DefaultVisitLeaf(IVisitable visitable) => 0;
+
         public int FoundOpCount<T>()
           where T : Op
         {
@@ -42,14 +56,11 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
 
     internal sealed class RandCalibrationDatasetProvider : ICalibrationDatasetProvider
     {
-        private const int count = 5;
-        public int? Count => count;
-    
-        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
-    
+        private const int CountValue = 5;
+
         public RandCalibrationDatasetProvider(IEnumerable<Var> vars)
         {
-            Samples = Enumerable.Range(0, count).Select(i =>
+            Samples = Enumerable.Range(0, CountValue).Select(i =>
             {
                 var values = new Dictionary<Var, IValue>();
                 foreach (var var in vars)
@@ -60,22 +71,24 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
                         .AsTensor());
                     values.Add(var, value);
                 }
-    
+
                 return values;
             }).ToAsyncEnumerable();
         }
+
+
+        public int? Count => CountValue;
+
+        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
     }
 
     internal sealed class SolidCalibrationDatasetProvider : ICalibrationDatasetProvider
     {
-        private const int count = 5;
-        public int? Count => count;
-
-        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
+        private const int CountValue = 5;
 
         public SolidCalibrationDatasetProvider(IEnumerable<Var> vars)
         {
-            Samples = Enumerable.Range(0, count).Select(i =>
+            Samples = Enumerable.Range(0, CountValue).Select(i =>
             {
                 var values = new Dictionary<Var, IValue>();
                 foreach (var var in vars)
@@ -85,10 +98,15 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
 
                     var shapeSize = 1;
                     for (int j = 0; j < shape.Length; j++)
+                    {
                         shapeSize *= shape[j];
+                    }
+
                     var tmpValue = new List<float>();
                     for (int j = 0; j < shapeSize; j++)
-                        tmpValue.Add((j * 1.0f / shapeSize - 0.5f) * 2);
+                    {
+                        tmpValue.Add(((j * 1.0f / shapeSize) - 0.5f) * 2);
+                    }
 
                     var value = Value.FromTensor(Tensor.From<float>(tmpValue.ToArray(), shape));
                     values.Add(var, value);
@@ -97,17 +115,12 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
                 return values;
             }).ToAsyncEnumerable();
         }
-    }
 
-    [Fact]
-    public void TestQuantFunction()
-    {
-        var range = new ValueRange<float>(-1.234f, 2.345f);
-        var qp = QuantUtility.GetQuantParam(range, 8, QuantMode.UnsignedMode);
-        Trace.Assert(qp.Scale == 0.014035294f);
-        Trace.Assert(qp.ZeroPoint == 88);
+
+        public int? Count => CountValue;
+
+        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
     }
-    Expr Pad(int[][] p) => Const.FromTensor(Tensor.From<int>(p.SelectMany(i => i).ToArray(), new[] { 2, 2 }));
 
     [Fact]
     public void TestKLQuant()
@@ -119,16 +132,21 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
         compileOptions.WQuantType = DataTypes.UInt8;
 
         Transform.RunPassOptions passOptions = new(compileOptions);
-        var target = CompilerServices.GetTarget(compileOptions.Target);
+        _ = CompilerServices.GetTarget(compileOptions.Target);
 
-        Var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
 
         var weightsValue = new List<float>();
         for (int i = 0; i < 16 * 3 * 3 * 3; i++)
-            weightsValue.Add((i * 1.0f / (16 * 3 * 3 * 3) - 0.5f) * 2);
+        {
+            weightsValue.Add(((i * 1.0f / (16 * 3 * 3 * 3)) - 0.5f) * 2);
+        }
+
         var biasValue = new List<float>();
         for (int i = 0; i < 16; i++)
-            biasValue.Add((i * 1.0f / (16) - 0.5f) * 2);
+        {
+            biasValue.Add(((i * 1.0f / 16) - 0.5f) * 2);
+        }
 
         var weights = Tensor.From<float>(weightsValue.ToArray(), new[] { 16, 3, 3, 3 });
         var bias = Tensor.From<float>(biasValue.ToArray(), new[] { 16 });
@@ -140,8 +158,7 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
 
         var output = conv;
         var module = new IRModule(new Function("main", output, new Var[] { input }));
-
-        var eachChannelSize = (weights.Shape.Size / weights.Shape[0]).FixedValue;
+        _ = (weights.Shape.Size / weights.Shape[0]).FixedValue;
 
         Transform.PassManager pmgr = new(module, passOptions);
 
@@ -150,17 +167,19 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
             CalibrationDataset = new SolidCalibrationDatasetProvider(new Var[] { input }),
             CalibrationMethod = CalibMethod.Kld,
         };
+
         // 0. TargetIndependentPass
         pmgr.Add(new Transform.DataflowPass("0_TargetInDependent")
         {
             new Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2D(),
         });
+
         // 1. AssignRanges
         pmgr.Add(new Quantization.EGraphPassWithQuantize("1_AssignRanges", compileOptions.QuantizeOptions!));
 
         pmgr.RunAsync();
 
-        System.Console.WriteLine(CompilerServices.Print((Function)(module.Functions[0])));
+        System.Console.WriteLine(CompilerServices.Print((Function)module.Functions[0]));
         var dumpVisitor = new DumpVisitor();
         dumpVisitor.Visit(module.Functions[0]);
 
@@ -171,4 +190,6 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
         Trace.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[0] == -8.882528f);
         Trace.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[1] == 9.717726f);
     }
+
+    private Expr Pad(int[][] p) => Const.FromTensor(Tensor.From<int>(p.SelectMany(i => i).ToArray(), new[] { 2, 2 }));
 }

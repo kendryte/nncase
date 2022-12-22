@@ -30,6 +30,7 @@ namespace Nncase.IR
             while (VarMaps.ContainsKey(name + ++count))
             {
             }
+
             name = name + count;
             VarMaps[name] = 0;
             return name;
@@ -69,6 +70,15 @@ namespace Nncase.IR
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="Var"/> class.
+        /// </summary>
+        /// <param name="typeAnnotation">Type annotation.</param>
+        public Var(IRType typeAnnotation)
+            : this($"var_{_globalVarIndex++}", typeAnnotation)
+        {
+        }
+
+        /// <summary>
         /// Gets get the global var index.
         /// </summary>
         private int GlobalVarIndex => _globalVarIndex;
@@ -82,15 +92,6 @@ namespace Nncase.IR
         /// Gets typeAnnotation.
         /// </summary>
         public IRType TypeAnnotation { get; init; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Var"/> class.
-        /// </summary>
-        /// <param name="typeAnnotation">Type annotation.</param>
-        public Var(IRType typeAnnotation)
-            : this($"var_{_globalVarIndex++}", typeAnnotation)
-        {
-        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Var"/> class.

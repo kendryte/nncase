@@ -77,6 +77,17 @@ public class UnitTestCPUTarget
         GenerateKModelAndRun(module, new[] { 1.0f }, new[] { 2.0f });
     }
 
+    [Fact]
+    public void TestCodegenCallParamOrder()
+    {
+        // order is true: x - 3 = 2 - 3 = -1
+        // order is false: 3 - x = 3 - 2 = 1
+        var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
+        var y = x - 3f;
+        var main = new Function("main", y, new[] { x });
+        GenerateKModelAndRunFromFn(main, new[] { 2f }, (Tensor)new[] { -1f });
+    }
+
     private void TestCodeGen(Expr body, Var[] vars, [CallerMemberName] string name = null)
     {
         var main = new Function("main", body, vars);
@@ -87,17 +98,6 @@ public class UnitTestCPUTarget
         using var output = File.Open($"{name}.kmodel", FileMode.Create);
         linkedModel.Serialize(output);
         Assert.NotEqual(0, output.Length);
-    }
-
-    [Fact]
-    public void TestCodegenCallParamOrder()
-    {
-        // order is true: x - 3 = 2 - 3 = -1
-        // order is false: 3 - x = 3 - 2 = 1
-        var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
-        var y = x - 3f;
-        var main = new Function("main", y, new[] { x });
-        GenerateKModelAndRunFromFn(main, new[] { 2f }, (Tensor)new[] { -1f });
     }
 
     [Fact]

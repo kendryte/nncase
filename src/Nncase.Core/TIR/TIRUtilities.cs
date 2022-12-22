@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -65,9 +65,9 @@ public static class TIRUtilities
       {
           var (bound, sub_bounds) = t.First;
           var (before, after) = t.Second;
-          var sub_pad = t.Third;
-          var new_start = sub_bounds.Start + sub_pad.Before - (bound.Start + before);
-          var new_stop = new_start + sub_bounds.Stop - (sub_bounds.Start + sub_pad.Before) - sub_pad.After;
+          var (before1, after1) = t.Third;
+          var new_start = sub_bounds.Start + before1 - (bound.Start + before);
+          var new_stop = new_start + sub_bounds.Stop - (sub_bounds.Start + before1) - after1;
           return (TIR.Range)(new_start, new_stop, bound.Step);
       });
 
@@ -101,6 +101,6 @@ public static class TIRUtilities
       bounds.Zip(shape).Select(
         t => new TIR.Range(
             IR.F.Math.Max(0, t.First.Start),
-                           IR.F.Math.Min(t.Second.FixedValue, t.First.Stop),
-                           t.First.Step));
+            IR.F.Math.Min(t.Second.FixedValue, t.First.Stop),
+            t.First.Step));
 }

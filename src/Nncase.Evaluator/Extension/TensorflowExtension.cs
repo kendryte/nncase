@@ -37,6 +37,20 @@ public static class TensorflowExtension
         { DataTypes.Float64, TF_DataType.TF_DOUBLE },
     };
 
+    private static readonly Dictionary<TF_DataType, DataType> _TorchTypeTodataTypes = new()
+    {
+        { TF_DataType.TF_BOOL, DataTypes.Boolean },
+        { TF_DataType.TF_INT8, DataTypes.Int8 },
+        { TF_DataType.TF_INT16, DataTypes.Int16 },
+        { TF_DataType.TF_INT32, DataTypes.Int32 },
+        { TF_DataType.TF_INT64, DataTypes.Int64 },
+        { TF_DataType.TF_UINT8, DataTypes.UInt8 },
+        { TF_DataType.TF_HALF, DataTypes.Float16 },
+        { TF_DataType.TF_BFLOAT16, DataTypes.BFloat16 },
+        { TF_DataType.TF_FLOAT, DataTypes.Float32 },
+        { TF_DataType.TF_DOUBLE, DataTypes.Float64 },
+    };
+
     static unsafe TensorflowExtension()
     {
         _deallocatorArgs = (DeallocatorArgs*)Marshal.AllocHGlobal(Marshal.SizeOf<DeallocatorArgs>());
@@ -93,20 +107,6 @@ public static class TensorflowExtension
     public static TF_DataType ToTFType(this DataType dt) => _dataTypesToTorchType[dt];
 
     public static DataType ToDataType(this TF_DataType dt) => _TorchTypeTodataTypes[dt];
-
-    private static readonly Dictionary<TF_DataType, DataType> _TorchTypeTodataTypes = new()
-    {
-        { TF_DataType.TF_BOOL, DataTypes.Boolean },
-        { TF_DataType.TF_INT8, DataTypes.Int8 },
-        { TF_DataType.TF_INT16, DataTypes.Int16 },
-        { TF_DataType.TF_INT32, DataTypes.Int32 },
-        { TF_DataType.TF_INT64, DataTypes.Int64 },
-        { TF_DataType.TF_UINT8, DataTypes.UInt8 },
-        { TF_DataType.TF_HALF, DataTypes.Float16 },
-        { TF_DataType.TF_BFLOAT16, DataTypes.BFloat16 },
-        { TF_DataType.TF_FLOAT, DataTypes.Float32 },
-        { TF_DataType.TF_DOUBLE, DataTypes.Float64 },
-    };
 
     private sealed class TFTensorMemoryManager : MemoryManager<byte>
     {

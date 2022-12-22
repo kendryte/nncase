@@ -46,9 +46,9 @@ public partial class EGraphPrinter
 
     private readonly EGraph _eGraph;
 
-    private ulong _IdCounter;
-
     private readonly DotDumpVisitor _visitor = new DotDumpVisitor();
+
+    private ulong _idCounter;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EGraphPrinter"/> class.
@@ -57,7 +57,7 @@ public partial class EGraphPrinter
     /// <param name="egraph"></param>
     public EGraphPrinter(EGraph egraph)
     {
-        _IdCounter = 0;
+        _idCounter = 0;
         DotGraph = new(directed: true);
         DotGraph.Clusters.AllowEdgeClipping = true;
         _eGraph = egraph;
@@ -119,7 +119,7 @@ public partial class EGraphPrinter
                     continue;
                 }
 
-                var id = _IdCounter++;
+                var id = _idCounter++;
                 string exprId = "\"" + id.ToString() + "\"";
 
                 var table = new DotHtmlTable
@@ -226,10 +226,11 @@ public partial class EGraphPrinter
             {
                 return name;
             }
+
             string valueStr = expr switch
             {
                 TensorConst tc => tc.Value.Shape.Size <= 8 ? tc.Value.GetArrayString(false) : string.Empty,
-                TupleConst tpc => string.Empty,
+                TupleConst => string.Empty,
                 _ => throw new ArgumentOutOfRangeException(),
             };
             valueStr = valueStr != string.Empty ? " : " + valueStr : string.Empty;

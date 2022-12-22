@@ -1,12 +1,5 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-// namespace Nncase.Tests.CodeGenTest
-// {
-//     public class UnitTestCSourceHost
-//     {
-//         ITarget _target = PluginLoader.CreateTarget("CSource");
-//         string DumpDirPath = Testing.GetDumpDirPath(typeof(UnitTestCSourceHost));
-
 // static IEnumerable<object[]> Data =>
 //           new List<object[]>
 //           {

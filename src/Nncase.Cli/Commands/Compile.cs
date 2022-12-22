@@ -174,10 +174,6 @@ internal sealed class RandCalibrationDatasetProvider : Quantization.ICalibration
 
     private readonly IReadOnlyDictionary<Var, IValue>[] _samples;
 
-    public int? Count => CountValue;
-
-    public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples => _samples.ToAsyncEnumerable();
-
     public RandCalibrationDatasetProvider(IEnumerable<Var> vars)
     {
         _samples = Enumerable.Range(0, CountValue).Select(i =>
@@ -194,4 +190,8 @@ internal sealed class RandCalibrationDatasetProvider : Quantization.ICalibration
               return values;
           }).ToArray();
     }
+
+    public int? Count => CountValue;
+
+    public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples => _samples.ToAsyncEnumerable();
 }

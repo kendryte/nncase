@@ -21,7 +21,7 @@ public class LoadEvaluator : ITypeInferencer<Load>, IOpPrinter<Load>
     }
 
     /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Load target, bool ILmode)
+    public string Visit(IIRPrinterContext context, Load target, bool iLmode)
     {
         var lhs = context.GetArgument(target, Load.Handle);
         var rhs = context.GetArgument(target, Load.Index);
@@ -35,7 +35,7 @@ public class LoadEvaluator : ITypeInferencer<Load>, IOpPrinter<Load>
             throw new NotSupportedException(handle.DType.ToString());
         }
 
-        int lanes = index.IsScalar ? 1 : index.Shape[0].FixedValue;
+        _ = index.IsScalar ? 1 : index.Shape[0].FixedValue;
         return TensorType.Scalar(((PointerType)handle.DType).ElemType);
     }
 }

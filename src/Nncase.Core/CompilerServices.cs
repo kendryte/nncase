@@ -210,6 +210,8 @@ public static class CompilerServices
         set { Provider.CompileOptions = value; }
     }
 
+    public static string CompileTarget => CompileOptions.Target;
+
     internal static IDataTypeServiceProvider DataTypeService => ((ICompilerServicesProviderInternal)Provider).DataTypeService;
 
     private static ICompilerServicesProvider Provider => _provider ?? throw new InvalidOperationException("Compiler services provider must be set.");
@@ -441,8 +443,6 @@ public static class CompilerServices
     /// <returns>Target.</returns>
     public static ITarget GetTarget(string name) => Provider.GetTarget(name);
 
-    public static string CompileTarget => CompileOptions.Target;
-
     public static ITarget GetCompileTarget => GetTarget(CompileTarget);
 }
 
@@ -519,9 +519,9 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     }
 
     /// <inheritdoc/>
-    public string PrintOp(Op op, IIRPrinterContext context, bool ILmode)
+    public string PrintOp(Op op, IIRPrinterContext context, bool iLmode)
     {
-        return _irprinterProvider.PrintOp(op, context, ILmode);
+        return _irprinterProvider.PrintOp(op, context, iLmode);
     }
 
     /// <inheritdoc/>

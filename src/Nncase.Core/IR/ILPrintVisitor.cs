@@ -32,6 +32,11 @@ public sealed class ScopeWriter
     private readonly Stack<(StringBuilder, TextWriter)> _scopeStack = new();
 
     /// <summary>
+    /// record the all var name's in this scope and parent's scope.
+    /// </summary>
+    private readonly Dictionary<string, int> _globalVarCountMap = new();
+
+    /// <summary>
     /// current writer.
     /// </summary>
     private TextWriter _writer;
@@ -40,11 +45,6 @@ public sealed class ScopeWriter
     /// Gets current VarNamelist.
     /// </summary>
     private List<IPrintSymbol> VarSymbolList => _varSymbolStack.Peek();
-
-    /// <summary>
-    /// record the all var name's in this scope and parent's scope.
-    /// </summary>
-    private readonly Dictionary<string, int> _globalVarCountMap = new();
 
     /// <summary>
     /// the scopes var name stack.
@@ -73,7 +73,7 @@ public sealed class ScopeWriter
         var builder = new StringBuilder();
         TextWriter writer = new StringWriter(builder);
         _scopeStack.Push((builder, writer));
-        this._writer = writer;
+        _writer = writer;
 
         _varSymbolStack.Push(new());
     }
@@ -89,11 +89,11 @@ public sealed class ScopeWriter
         writer.Dispose();
         if (_scopeStack.Count == 0)
         {
-            this._writer = _rootWriter;
+            _writer = _rootWriter;
         }
         else
         {
-            this._writer = _scopeStack.Peek().Item2;
+            _writer = _scopeStack.Peek().Item2;
         }
 
         foreach (var name in _varSymbolStack.Pop())
@@ -177,19 +177,6 @@ public sealed class ScopeWriter
     }
 
     /// <summary>
-    /// insert the indent.
-    /// </summary>
-    /// <returns></returns>
-    private TextWriter Indent()
-    {
-        for (int i = 0; i < IndentLevel; i++)
-        {
-            _writer.Write(" ");
-        }
-        return _writer;
-    }
-
-    /// <summary>
     /// get the unique var symbol.
     /// </summary>
     /// <param name="var">var name.</param>
@@ -206,6 +193,57 @@ public sealed class ScopeWriter
         count++;
         _globalVarCountMap[@var.Name] = count;
         return symbol;
+    }
+
+    /// <summary>
+    /// insert the indent.
+    /// </summary>
+    /// <returns></returns>
+    private TextWriter Indent()
+    {
+        for (int i = 0; i < IndentLevel; i++)
+        {
+            _writer.Write(" ");
+        }
+
+        return _writer;
+    }
+}
+
+/// <summary>
+/// mananger the wirte indent.
+/// </summary>
+public sealed class IndentMananger : IDisposable
+{
+    /// <summary>
+    /// the parent scope wirter.
+    /// </summary>
+    private readonly ScopeWriter _parent;
+
+    /// <summary>
+    /// the indent add/sub diff value.
+    /// </summary>
+    private readonly int _indentDiff;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IndentMananger"/> class.
+    /// <see cref="IndentMananger"/>.
+    /// </summary>
+    /// <param name="parent"></param>
+    /// <param name="level_diff"></param>
+    public IndentMananger(ScopeWriter parent, int level_diff = 1)
+    {
+        _parent = parent;
+        _indentDiff = level_diff;
+        _parent.IndentLevel += _indentDiff;
+    }
+
+    /// <summary>
+    /// reduce indentLevel.
+    /// </summary>
+    public void Dispose()
+    {
+        _parent.IndentLevel -= _indentDiff;
     }
 }
 
@@ -230,6 +268,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         {
             return name;
         }
+
         var target = Visit(expr.Target);
         var property = expr.Target is Op op && op.DisplayProperty() is string prop && prop != string.Empty ? (prop + ", ") : string.Empty;
         var args = expr.Parameters.Select(Visit).ToArray();
@@ -250,7 +289,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         string valueStr = expr switch
         {
             TensorConst tc => tc.Value.Shape.Size <= 8 ? tc.Value.GetArrayString(false) : string.Empty,
-            TupleConst tpc => string.Empty,
+            TupleConst => string.Empty,
             _ => throw new ArgumentOutOfRangeException(),
         };
         valueStr = valueStr != string.Empty ? " : " + valueStr : string.Empty;
@@ -389,6 +428,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         {
             return name;
         }
+
         var fields = expr.Fields.Select(Visit).ToArray();
         name = AllocateTempVar(expr);
         _scope.IndWrite($"{name} = ({string.Join(", ", fields)})");
@@ -404,12 +444,14 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         {
             return name;
         }
+
         name = $"%{expr.Name}";
         _names.Add(expr, name);
         if (expr.CheckedType is IRType type)
         {
             name += $": {VisitType(type)}";
         }
+
         return name;
     }
 
@@ -420,6 +462,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         {
             return name;
         }
+
         name = $"None";
         _names.Add(expr, name);
         return name;
@@ -432,6 +475,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         {
             return name;
         }
+
         var target = Visit(expr.Target);
         var attr = Visit(expr.Attribute);
         name = AllocateTempVar(expr);
@@ -476,6 +520,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         {
             return name;
         }
+
         _scope.Push();
 
         // 1. Sequential signature
@@ -549,42 +594,5 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         {
             _scope.Append("\n");
         }
-    }
-}
-
-/// <summary>
-/// mananger the wirte indent.
-/// </summary>
-public sealed class IndentMananger : IDisposable
-{
-    /// <summary>
-    /// the parent scope wirter.
-    /// </summary>
-    private readonly ScopeWriter _parent;
-
-    /// <summary>
-    /// the indent add/sub diff value.
-    /// </summary>
-    private readonly int _indentDiff;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="IndentMananger"/> class.
-    /// <see cref="IndentMananger"/>.
-    /// </summary>
-    /// <param name="parent"></param>
-    /// <param name="level_diff"></param>
-    public IndentMananger(ScopeWriter parent, int level_diff = 1)
-    {
-        this._parent = parent;
-        _indentDiff = level_diff;
-        this._parent.IndentLevel += _indentDiff;
-    }
-
-    /// <summary>
-    /// reduce indentLevel.
-    /// </summary>
-    public void Dispose()
-    {
-        _parent.IndentLevel -= _indentDiff;
     }
 }

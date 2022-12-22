@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -18,7 +18,7 @@ namespace Nncase.Evaluator.Math;
 public partial class RequireEvaluator : IEvaluator<Require>, ITypeInferencer<Require>, IOpPrinter<Require>
 {
     /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Require target, bool ILmode)
+    public string Visit(IIRPrinterContext context, Require target, bool iLmode)
     {
         var condition = context.GetArgument(target, Require.Predicate);
         var value = context.GetArgument(target, Require.Value);

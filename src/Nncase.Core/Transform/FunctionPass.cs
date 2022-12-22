@@ -50,7 +50,7 @@ public abstract class FunctionPass : BasePass
     /// </summary>
     /// <param name="callable">Target function.</param>
     /// <param name="options">Options.</param>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task<BaseFunction> RunAsync(BaseFunction callable, RunPassOptions options)
     {
         var new_options = options.IndentDir(Name).IndentDir(callable.Name);
@@ -65,7 +65,7 @@ public abstract class FunctionPass : BasePass
     /// </summary>
     /// <param name="callable">Target function.</param>
     /// <param name="options">Options.</param>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     protected abstract Task<BaseFunction> RunCoreAsync(BaseFunction callable, RunPassOptions options);
 
     /// <summary>

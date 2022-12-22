@@ -201,40 +201,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
                 new UnaryFusion(),
                 new TransposeFusion(),
             };
-
-        var post = await pass.RunAsync(pre, caseOptions);
-    }
-
-    private sealed class SimpleRule : IRewriteRule
-    {
-        public IPattern Pattern { get; } = IsBinary(BinaryOp.Add, IsWildcard("lhs"), IsWildcard("rhs"));
-
-        public Expr? GetReplace(IMatchResult result, RunPassOptions options)
-        {
-            return (Expr)result["lhs"] - (Expr)result["rhs"];
-        }
-    }
-
-    [RuleGenerator]
-    public class SimpleFuseTwoFusion : Transform.Rules.Neutral.FuseTwoFusion
-    {
-        public override Expr EliminateRedundancy(Expr newBodyWithRedundancy, RunPassOptions passOptions)
-        {
-            return CompilerServices.Rewrite(newBodyWithRedundancy, new[]
-            {
-              new Transform.Rules.Neutral.FoldDeQuantQuant(),
-            }, passOptions.SetDumpLevel(0));
-        }
-    }
-
-    private sealed class UnaryFusion : Transform.Rules.Neutral.SingleInputFusion<IR.Math.Unary, IR.Math.Quantize, IR.Math.Dequantize>
-    {
-        public override string Name { get; } = "UnaryFusion";
-    }
-
-    private sealed class TransposeFusion : Transform.Rules.Neutral.SingleInputFusion<IR.Tensors.Transpose, IR.Math.Quantize, IR.Math.Dequantize>
-    {
-        public override string Name { get; } = "TransposeFusion";
+        _ = await pass.RunAsync(pre, caseOptions);
     }
 
     [Fact]
@@ -271,7 +238,39 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
         {
           new SimpleFuseTwoFusion(),
         };
-        var post2 = await pass2.RunAsync(post, caseOptions);
+        _ = await pass2.RunAsync(post, caseOptions);
+    }
+
+    [RuleGenerator]
+    public class SimpleFuseTwoFusion : Transform.Rules.Neutral.FuseTwoFusion
+    {
+        public override Expr EliminateRedundancy(Expr newBodyWithRedundancy, RunPassOptions passOptions)
+        {
+            return CompilerServices.Rewrite(newBodyWithRedundancy, new[]
+            {
+              new Transform.Rules.Neutral.FoldDeQuantQuant(),
+            }, passOptions.SetDumpLevel(0));
+        }
+    }
+
+    private sealed class SimpleRule : IRewriteRule
+    {
+        public IPattern Pattern { get; } = IsBinary(BinaryOp.Add, IsWildcard("lhs"), IsWildcard("rhs"));
+
+        public Expr? GetReplace(IMatchResult result, RunPassOptions options)
+        {
+            return (Expr)result["lhs"] - (Expr)result["rhs"];
+        }
+    }
+
+    private sealed class UnaryFusion : Transform.Rules.Neutral.SingleInputFusion<IR.Math.Unary, IR.Math.Quantize, IR.Math.Dequantize>
+    {
+        public override string Name { get; } = "UnaryFusion";
+    }
+
+    private sealed class TransposeFusion : Transform.Rules.Neutral.SingleInputFusion<IR.Tensors.Transpose, IR.Math.Quantize, IR.Math.Dequantize>
+    {
+        public override string Name { get; } = "TransposeFusion";
     }
 
     [Fact]
@@ -305,7 +304,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
             new SimpleFuseTwoFusion(),
         };
         var post2 = await pass2.RunAsync(post, caseOptions);
-        var isMatch = CompilerServices.TryMatch(post2, IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out var t);
+        var isMatch = CompilerServices.TryMatch(post2, IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
         Assert.True(isMatch);
     }
 
@@ -328,7 +327,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
             new UnaryFusion(),
         };
         var result = await pass.RunAsync(pre, caseOptions);
-        var isMatch = CompilerServices.TryMatch(result, IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out var t);
+        var isMatch = CompilerServices.TryMatch(result, IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
         Assert.True(isMatch);
     }
 
@@ -353,7 +352,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
         // start match
         var pattern = IsCall("root", IsWildcard(), IsVArgs(
             "root_inputs",
-                                                           new Pattern[]
+            new Pattern[]
                                                             {
                                                                 IsUnary(null, "lhs", _ => true, IsWildcard()),
                                                                 IsUnary(null, "rhs", _ => true, IsWildcard()),

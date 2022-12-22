@@ -224,10 +224,10 @@ public class BufferAllocation
 
             return new(
                 MemoryLocate,
-               code,
-               (ushort)SharedModule,
-               (uint)Start,
-               (uint)Size);
+                code,
+                (ushort)SharedModule,
+                (uint)Start,
+                (uint)Size);
         }
     }
 

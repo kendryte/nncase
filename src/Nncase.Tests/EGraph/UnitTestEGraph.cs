@@ -167,7 +167,7 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
         // Given
         var x = new Var("x", new TensorType(DataTypes.Float32, Shape.Scalar));
         var y = new Var("y", new TensorType(DataTypes.Float32, Shape.Scalar));
-        Expr pattern = x + y;
+        _ = x + y;
 
         // When
         Expr e1 = (Expr)1.0f * 2 / 2;
@@ -212,7 +212,7 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
         var e2 = g.Add(x << 1);
         var e3 = g.Add(x * 4);
         var e4 = g.Add(x * 2 * 2);
-        var e5 = g.Add(x * 2 * (x * 4));
+        _ = g.Add(x * 2 * (x * 4));
         EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "before"));
         g.Union(e2, e1);
         EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "merge_lhs"));

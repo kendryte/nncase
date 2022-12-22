@@ -128,6 +128,11 @@ namespace Nncase.IR
         public static Shape Scalar { get; } = new Shape(ShapeKind.Fixed, new List<Dimension>());
 
         /// <summary>
+        /// Gets kind.
+        /// </summary>
+        public ShapeKind Kind { get; private set; }
+
+        /// <summary>
         /// Gets a shape with rank unknwon dimension.
         /// </summary>
         /// <param name="rank"></param>
@@ -136,11 +141,6 @@ namespace Nncase.IR
         {
             return new Shape(ShapeKind.HasUnknownDimension, Enumerable.Repeat(Dimension.Unknown, rank));
         }
-
-        /// <summary>
-        /// Gets kind.
-        /// </summary>
-        public ShapeKind Kind { get; private set; }
 
         /// <summary>
         /// Gets a value indicating whether is readonly.
@@ -201,6 +201,15 @@ namespace Nncase.IR
 
         /// <inheritdoc/>
         public static implicit operator Shape(Dimension[] dimensions) => new Shape(dimensions);
+
+        /// <inheritdoc/>
+        public static implicit operator Shape(int[] dimensions) => new Shape(dimensions);
+
+        /// <inheritdoc/>
+        public static bool operator ==(Shape lhs, Shape rhs)
+        {
+            return lhs.Equals(rhs);
+        }
 
         /// <summary>
         /// Get Pord.
@@ -273,15 +282,15 @@ namespace Nncase.IR
             return ((IStructuralEquatable)_dimensions).GetHashCode(comparer);
         }
 
-        private static ShapeKind KindOf(IEnumerable<Dimension> dimensions)
-        {
-            return dimensions.Any(x => x.IsUnknown) ? ShapeKind.HasUnknownDimension : ShapeKind.Fixed;
-        }
-
         /// <inheritdoc/>
         public override int GetHashCode()
         {
             return _hashcode;
+        }
+
+        private static ShapeKind KindOf(IEnumerable<Dimension> dimensions)
+        {
+            return dimensions.Any(x => x.IsUnknown) ? ShapeKind.HasUnknownDimension : ShapeKind.Fixed;
         }
 
         /// <inheritdoc/>
@@ -314,18 +323,9 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
-        public static bool operator ==(Shape lhs, Shape rhs)
-        {
-            return lhs.Equals(rhs);
-        }
-
-        /// <inheritdoc/>
         public static bool operator !=(Shape lhs, Shape rhs)
         {
             return !(lhs == rhs);
         }
-
-        /// <inheritdoc/>
-        public static implicit operator Shape(int[] dimensions) => new Shape(dimensions);
     }
 }

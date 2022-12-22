@@ -53,7 +53,7 @@ namespace Nncase.Importer
         private Expr GetOutputShape(Expr input, Expr weights, long[] strides, long[] outPadding, Expr paddings, long[] dilations, string autoPad, long group)
         {
             var iN = Util.ShapeIndex(input, 0);
-            var iC = Util.ShapeIndex(input, 1);
+            _ = Util.ShapeIndex(input, 1);
             var (iH, iW) = Util.GetHW(input);
             var oc = Util.ShapeIndex(weights, 1) * group;
 

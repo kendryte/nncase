@@ -33,9 +33,6 @@ public static partial class Utility
     public static OrPattern IsAlt(string? name, Pattern condition_a, Pattern condition_b)
         => IsAltImpl(name, condition_a, condition_b);
 
-    private static OrPattern IsAltImpl(string? name, Pattern condition_a, Pattern condition_b)
-        => new OrPattern(condition_a, condition_b, name);
-
     /// <summary>
     /// create or pattern without name.
     /// </summary>
@@ -46,4 +43,7 @@ public static partial class Utility
             .Aggregate(
                 (pattern, pattern1)
                     => IsAltImpl(null, pattern, pattern1));
+
+    private static OrPattern IsAltImpl(string? name, Pattern condition_a, Pattern condition_b)
+        => new OrPattern(condition_a, condition_b, name);
 }

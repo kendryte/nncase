@@ -119,10 +119,10 @@ public partial class FuseTwoFusion : FusionMaker
     /// </summary>
     private Pattern? _calleePattern;
 
-    private Pattern? _Pattern;
+    private Pattern? _pattern;
 
     /// <inheritdoc/>
-    public override Pattern Pattern => _Pattern ??=
+    public override Pattern Pattern => _pattern ??=
         IsCall(
             "caller",
             IsFusion(
@@ -155,6 +155,12 @@ public partial class FuseTwoFusion : FusionMaker
     {
         throw new InvalidOperationException("EliminateRedundancy Not Impl");
     }
+
+    public T[] Merge<T>(IRArray<T> callerExprList, int index, T firstInCallee,
+        IRArray<Expr> newCalleeExprList)
+        where T : Expr
+        =>
+        Merge<T>(callerExprList.ToArray(), index, firstInCallee, newCalleeExprList.ToArray());
 
     // caller(callee, args..)
     private Call GetReplace(Call caller, Call callee, Fusion calleeFuse, Fusion callerFuse, RunPassOptions passOptions)
@@ -193,12 +199,6 @@ public partial class FuseTwoFusion : FusionMaker
         var newInputs = Merge(caller.Parameters, index, callee.Parameters[0], callee.Parameters.ToArray()[1..]);
         return new Call(new Fusion(FullName, ModuleKind, newBody, newParams), newInputs);
     }
-
-    public T[] Merge<T>(IRArray<T> callerExprList, int index, T firstInCallee,
-        IRArray<Expr> newCalleeExprList)
-        where T : Expr
-        =>
-        Merge<T>(callerExprList.ToArray(), index, firstInCallee, newCalleeExprList.ToArray());
 
     public T[] Merge<T>(T[] callerExprList, int index, T expr, Expr[] newCalleeExprList)
         where T : Expr

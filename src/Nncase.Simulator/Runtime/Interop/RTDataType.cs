@@ -29,6 +29,9 @@ public class RTDataType : RTObject
     /// </summary>
     public TypeCode TypeCode => Native.DTypeGetTypeCode(this);
 
+    /// <inheritdoc/>
+    public override bool IsInvalid => handle == IntPtr.Zero;
+
     /// <summary>
     /// Create datatype from typecode.
     /// </summary>
@@ -39,7 +42,4 @@ public class RTDataType : RTObject
         Native.DTypeCreatePrim(typeCode, out var dtype).ThrowIfFailed();
         return dtype;
     }
-
-    /// <inheritdoc/>
-    public override bool IsInvalid => handle == IntPtr.Zero;
 }

@@ -26,7 +26,7 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
     public IRType Visit(ITypeInferenceContext context, Unsqueeze target)
     {
         var input = context.CheckArgumentType<TensorType>(target, Unsqueeze.Input);
-        var dim = context.CheckArgumentType<TensorType>(target, Unsqueeze.Dim);
+        _ = context.CheckArgumentType<TensorType>(target, Unsqueeze.Dim);
         return Visit(context, target, input);
     }
 

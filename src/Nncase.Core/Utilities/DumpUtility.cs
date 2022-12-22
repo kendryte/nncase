@@ -81,76 +81,6 @@ public static class ValueDumper
     }
 }
 
-public class DumpManager
-{
-    public static bool Append;
-
-    public static bool OpenDump { get; private set; }
-
-    public static int Count = 1;
-
-    public static string Dir;
-
-    public string CountStr => Count.ToString();
-
-    public static void RunWithDump(string dir, Action f)
-    {
-        RunWithDump<int>(dir, () =>
-        {
-            f();
-
-            // discard return value
-            return -1;
-        });
-    }
-
-    public static T RunWithDump<T>(string dir, Func<T> f)
-    {
-        Dir = dir;
-        Count = 1;
-        OpenDump = true;
-        Append = false;
-        var result = f();
-        OpenDump = false;
-        return result;
-    }
-
-    public string GetMaybeDumpDir()
-    {
-        return ValueDumper.GetMaybeDumpDir(Dir);
-    }
-
-    protected void UpdateOrder(string root, string target, Shape shape)
-    {
-        using (var order = new StreamWriter(Path.Join(root, "!out_shape_list"), Append))
-        {
-            order.WriteLine($"{target}: {DumpUtility.SerializeShape(shape)}");
-        }
-    }
-
-    protected void DumpCallParam(string target, ParameterInfo info, Action<StreamWriter> f)
-    {
-        var path = Path.Join(GetMaybeDumpDir(), $"{CountStr}${target}${info.Name}");
-        using (var sr = new StreamWriter(path))
-        {
-            f(sr);
-        }
-    }
-
-    protected void DumpCall(string target, Shape shape, Action<StreamWriter> f)
-    {
-        var path = Path.Join(GetMaybeDumpDir(), $"{CountStr}${target}");
-        using (var sr = new StreamWriter(path))
-        {
-            f(sr);
-        }
-
-        UpdateOrder(GetMaybeDumpDir(), target, shape);
-        Append = true;
-        ++Count;
-    }
-}
-
 public static class DumpUtility
 {
     public static void WriteResult(string path, string data, string prefix = "")
@@ -240,13 +170,83 @@ public static class DumpUtility
     }
 }
 
+public class DumpManager
+{
+    public static bool Append;
+
+    public static int Count = 1;
+
+    public static bool OpenDump { get; private set; }
+
+    public static string Dir;
+
+    public string CountStr => Count.ToString();
+
+    public static void RunWithDump(string dir, Action f)
+    {
+        RunWithDump<int>(dir, () =>
+        {
+            f();
+
+            // discard return value
+            return -1;
+        });
+    }
+
+    public static T RunWithDump<T>(string dir, Func<T> f)
+    {
+        Dir = dir;
+        Count = 1;
+        OpenDump = true;
+        Append = false;
+        var result = f();
+        OpenDump = false;
+        return result;
+    }
+
+    public string GetMaybeDumpDir()
+    {
+        return ValueDumper.GetMaybeDumpDir(Dir);
+    }
+
+    protected void UpdateOrder(string root, string target, Shape shape)
+    {
+        using (var order = new StreamWriter(Path.Join(root, "!out_shape_list"), Append))
+        {
+            order.WriteLine($"{target}: {DumpUtility.SerializeShape(shape)}");
+        }
+    }
+
+    protected void DumpCallParam(string target, ParameterInfo info, Action<StreamWriter> f)
+    {
+        var path = Path.Join(GetMaybeDumpDir(), $"{CountStr}${target}${info.Name}");
+        using (var sr = new StreamWriter(path))
+        {
+            f(sr);
+        }
+    }
+
+    protected void DumpCall(string target, Shape shape, Action<StreamWriter> f)
+    {
+        var path = Path.Join(GetMaybeDumpDir(), $"{CountStr}${target}");
+        using (var sr = new StreamWriter(path))
+        {
+            f(sr);
+        }
+
+        UpdateOrder(GetMaybeDumpDir(), target, shape);
+        Append = true;
+        ++Count;
+    }
+}
+
 public class Counter
 {
     private int _count;
 
     public Counter(int count = 0)
     {
-        this._count = count;
+        _count = count;
     }
 
     public T Run<T>(Func<int, T> f)

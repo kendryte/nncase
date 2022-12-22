@@ -68,7 +68,6 @@ public class Scheduler
                 targetLoops.Insert(0, parent);
                 child = parent;
             }
-
         }
 
         var collector = new ExprCollector(CollectLoops);
@@ -83,6 +82,7 @@ public class Scheduler
         {
             throw new NotImplementedException("Loop Not Start With Zero");
         }
+
         Expr tolLength = 1;
         foreach (var factor in factors)
         {

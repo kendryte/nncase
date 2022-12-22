@@ -61,6 +61,17 @@ public sealed class LinkedModel
         }
     }
 
+    private static unsafe void FillSectionName(ref SectionHeader header, string source)
+    {
+        fixed (byte* kind = header.Name)
+        {
+            if (Encoding.UTF8.GetBytes(source, new Span<byte>(kind, ModelInfo.MAXSECTIONNAMELENGTH)) < 1)
+            {
+                throw new ArgumentException("Invalid section name");
+            }
+        }
+    }
+
     private unsafe void Serialize(BinaryWriter writer, ILinkedModule module)
     {
         var header = new ModuleHeader
@@ -153,17 +164,6 @@ public sealed class LinkedModel
         writer.Position(headerPos);
         writer.Write(ref header);
         writer.Position(endPos);
-    }
-
-    private static unsafe void FillSectionName(ref SectionHeader header, string source)
-    {
-        fixed (byte* kind = header.Name)
-        {
-            if (Encoding.UTF8.GetBytes(source, new Span<byte>(kind, ModelInfo.MAXSECTIONNAMELENGTH)) < 1)
-            {
-                throw new ArgumentException("Invalid section name");
-            }
-        }
     }
 
     private static int LCM(IEnumerable<int> source)

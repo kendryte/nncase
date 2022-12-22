@@ -53,6 +53,14 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
         };
     }
 
+    /// <inheritdoc/>
+    public IRType Visit(ITypeInferenceContext context, Compare target)
+    {
+        var lhs = context.CheckArgumentType<TensorType>(target, Compare.Lhs);
+        var rhs = context.CheckArgumentType<TensorType>(target, Compare.Rhs);
+        return Visit(lhs, rhs);
+    }
+
     private bool Compute(CompareOp op, int a, int b) => op switch
     {
         CompareOp.Equal => a == b,
@@ -64,15 +72,7 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 
-    /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, Compare target)
-    {
-        var lhs = context.CheckArgumentType<TensorType>(target, Compare.Lhs);
-        var rhs = context.CheckArgumentType<TensorType>(target, Compare.Rhs);
-        return Visit(lhs, rhs);
-    }
-
-    public string Visit(IIRPrinterContext context, Compare target, bool ILmode)
+    public string Visit(IIRPrinterContext context, Compare target, bool iLmode)
     {
         var op = target.CompareOp switch
         {

@@ -60,7 +60,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         var a = new Var(new TensorType(DataTypes.Float32, new[] { 1, 5, 1 }));
         var b = Tensor.FromScalar(1.0f, new[] { 1, 5, 3 });
         var c = a + b;
-        var ctype = CompilerServices.InferenceType(c);
+        _ = CompilerServices.InferenceType(c);
 
         Assert.True(HasShape(new[] { 1, 5, 3 }).MatchLeaf(c.CheckedType));
     }
@@ -179,11 +179,6 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         CheckReshape(input, new[] { -1 }, new[] { 4 * 5 * 6 * 7 });
     }
 
-    private void CheckReshape(Expr input, int[] reshapeArgs, int[] expectShape)
-    {
-        CheckInferShape(Reshape(input, reshapeArgs), expectShape);
-    }
-
     [Fact]
     public void TestReInference()
     {
@@ -198,6 +193,11 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         var y = x with { TypeAnnotation = TensorType.Scalar(DataTypes.Int32) };
         var new_f = f with { Body = y + b, Parameters = new[] { y } };
         Assert.True(CompilerServices.InferenceType(new_f));
+    }
+
+    private void CheckReshape(Expr input, int[] reshapeArgs, int[] expectShape)
+    {
+        CheckInferShape(Reshape(input, reshapeArgs), expectShape);
     }
 
     [Fact]

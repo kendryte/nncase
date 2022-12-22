@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -18,7 +18,7 @@ namespace Nncase.Evaluator.Math;
 public partial class SelectEvaluator : IEvaluator<Select>, ITypeInferencer<Select>, IOpPrinter<Select>
 {
     /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Select target, bool ILmode)
+    public string Visit(IIRPrinterContext context, Select target, bool iLmode)
     {
         var condition = context.GetArgument(target, Select.Predicate);
         var true_value = context.GetArgument(target, Select.TrueValue);

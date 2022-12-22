@@ -28,12 +28,6 @@ public static partial class Utility
     public static VArgsPattern GenerateParameters(Pattern inputPattern) =>
         GenerateParameters(new[] { inputPattern });
 
-    private static VArgsPattern GenerateParameters(Pattern[] beginPatterns) =>
-        IsVArgsRepeat(list =>
-            beginPatterns
-                .Concat(Enumerable.Range(0, list.Count - beginPatterns.Length).Select(_ => IsWildcard(null)))
-                .ToArray());
-
     /// <summary>
     /// match a call with op type T
     /// auto set first param
@@ -46,6 +40,12 @@ public static partial class Utility
     public static CallPattern IsWildcardCall<T>(string callName, string opName, string inputName = "input")
         where T : Op =>
         IsWildcardCall<T>(callName, opName, IsWildcard(inputName));
+
+    private static VArgsPattern GenerateParameters(Pattern[] beginPatterns) =>
+        IsVArgsRepeat(list =>
+            beginPatterns
+                .Concat(Enumerable.Range(0, list.Count - beginPatterns.Length).Select(_ => IsWildcard(null)))
+                .ToArray());
 
     public static CallPattern IsWildcardCall<T>(string callName, string opName, Pattern inputPattern)
         where T : Op
@@ -105,7 +105,7 @@ public static partial class Utility
         where T : Op
         => typeof(T).GetFields(BindingFlags.Public | BindingFlags.Static).Length;
 
-    /// 
+    ///
     /// <returns></returns><summary>
     /// generate a vargs pattern everything is wildcard except for the specified index
     /// e.g.
@@ -203,7 +203,7 @@ public static partial class Utility
         where FirstOpT : Op
         where SecondOpT : Op => IsMaybeSwappableWildcardCall<SecondOpT>(
             secondCallName,
-        IsMaybeSwappableWildcardCall<FirstOpT>(
+            IsMaybeSwappableWildcardCall<FirstOpT>(
             firstCallName, input));
 
     public static Pattern IsPairLayerFusion<FirstOpT, SecondOpT, BeginT, EndT>(
@@ -223,7 +223,7 @@ public static partial class Utility
         where BeginT : Op
         where EndT : Op => IsFusion(
             moduleKind,
-        IsWildcardCall<EndT>(endCallName, null!,
+            IsWildcardCall<EndT>(endCallName, null!,
 
             // we can't use secondCallName in getReplace because of it's optional
             IsAlt(

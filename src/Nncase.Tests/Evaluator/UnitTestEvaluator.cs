@@ -56,8 +56,8 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
         var na = a.Value.ToOrtTensor();
         var nb = b.Value.ToOrtTensor();
         Assert.Equal(new[] { 1, 2, 3 }, na.ToArray<int>());
-        var v = na.Cast(OrtDataType.Float16).ToValue();
-        var f = na.Cast(OrtDataType.Float16).Cast(OrtDataType.Float);
+        _ = na.Cast(OrtDataType.Float16).ToValue();
+        _ = na.Cast(OrtDataType.Float16).Cast(OrtDataType.Float);
 
         var c = na + nb;
         Assert.Equal(new[] { 2, 4, 6 }, c.ToTensor().ToArray<int>());
@@ -95,15 +95,15 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
     {
         var tA = OrtKISharp.Tensor.FromScalar((int)4);
         var tB = OrtKISharp.Tensor.FromScalar((int)1);
-        var tC = tA - tB;
+        _ = tA - tB;
     }
 
     [Fact]
     public void TestBinaryShift()
     {
         var tA = OrtKISharp.Tensor.FromScalar(1U);
-        var tB = OrtKI.LeftShift(tA, OrtKISharp.Tensor.FromScalar(2U));
-        var tC = OrtKI.RightShift(tA, OrtKISharp.Tensor.FromScalar(2U));
+        _ = OrtKI.LeftShift(tA, OrtKISharp.Tensor.FromScalar(2U));
+        _ = OrtKI.RightShift(tA, OrtKISharp.Tensor.FromScalar(2U));
 
         var a = (Const)1U;
         var b = (Const)2U;

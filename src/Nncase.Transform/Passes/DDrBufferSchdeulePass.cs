@@ -18,6 +18,7 @@ namespace Nncase.Transform.Passes;
 public sealed class DDrBufferSchdeulePass : ModulePass
 {
     private readonly Dictionary<string, Dictionary<Schedule.MemoryLocation, int>> _module_usage = new();
+    private readonly Dictionary<string, HashSet<TIR.Buffer>> _module_hashset = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DDrBufferSchdeulePass"/> class.
@@ -28,12 +29,11 @@ public sealed class DDrBufferSchdeulePass : ModulePass
         : base(name)
     {
     }
-    private readonly Dictionary<string, HashSet<TIR.Buffer>> _module_hashset = new();
 
     /// <inheritdoc/>
     protected override Task RunCoreAsync(IRModule module, RunPassOptions options)
     {
-        Dictionary<BaseFunction, BaseFunction> functions_update_map = new(ReferenceEqualityComparer.Instance);
+        _ = new(ReferenceEqualityComparer.Instance);
 
         for (int i = 0; i < module.Functions.Count; i++)
         {
@@ -72,9 +72,9 @@ internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
     public readonly Dictionary<string, Dictionary<Schedule.MemoryLocation, int>> ModuleUsage;
     public readonly Dictionary<string, HashSet<TIR.Buffer>> ModuleHashSet;
     public bool Changed;
+    public PrimFunction? _entry;
     private readonly Dictionary<Schedule.MemoryLocation, int> _functionUsage;
     private readonly HashSet<TIR.Buffer> _functionHashset;
-    public PrimFunction? _entry;
 
     public DDrBufferAllocator(Dictionary<string, Dictionary<Schedule.MemoryLocation, int>> module_usage, Dictionary<string, HashSet<TIR.Buffer>> module_hashset)
     {

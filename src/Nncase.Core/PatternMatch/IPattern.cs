@@ -29,13 +29,6 @@ public interface IPattern
 }
 
 /// <summary>
-/// mark the record class auto generate the pattern define.
-/// </summary>
-public sealed class PatternFunctionalGeneratorAttribute : Attribute
-{
-}
-
-/// <summary>
 /// Pattern.
 /// </summary>
 /// <typeparam name="TInput">Input type.</typeparam>
@@ -47,4 +40,11 @@ public interface IPattern<in TInput> : IPattern
     /// <param name="input">Input.</param>
     /// <returns>Is match.</returns>
     bool MatchLeaf(TInput input);
+}
+
+/// <summary>
+/// mark the record class auto generate the pattern define.
+/// </summary>
+public sealed class PatternFunctionalGeneratorAttribute : Attribute
+{
 }

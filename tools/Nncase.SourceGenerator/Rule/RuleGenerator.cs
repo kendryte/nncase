@@ -218,8 +218,8 @@ internal sealed class RuleGenerator : IIncrementalGenerator
         }
 
         var namespaces = from kv in grouped_classes
-                          select GeneratorUtil.MakeNameSpace(kv.Key.ToDisplayString())
-                                .AddMembers(kv.Value.ToArray());
+                         select GeneratorUtil.MakeNameSpace(kv.Key.ToDisplayString())
+                               .AddMembers(kv.Value.ToArray());
         var compilationUnit = CompilationUnit().
                 WithUsings(new(new[]
                 {

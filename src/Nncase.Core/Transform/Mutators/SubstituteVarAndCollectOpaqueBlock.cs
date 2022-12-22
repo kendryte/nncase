@@ -25,9 +25,9 @@ internal sealed class SubstituteVarAndCollectOpaqueBlock : ExprMutator
     /// <param name="opaque_blocks"></param>
     public SubstituteVarAndCollectOpaqueBlock(
         Func<Var, Expr?> varMaper,
-                                          Dictionary<Block, Block> opaque_blocks)
+        Dictionary<Block, Block> opaque_blocks)
     {
-        this._varMaper = varMaper;
+        _varMaper = varMaper;
         _opaqueBlocks = opaque_blocks;
     }
 

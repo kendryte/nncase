@@ -18,6 +18,8 @@ public static class DataGenerator
 
     public static int DefaultChannel => 2;
 
+    public static int[] DefaultShape => new[] { 3, 2, 4, 8 };
+
     public static IEnumerable<T> EnumValues<T>()
     {
         return Enum.GetValues(typeof(T)).Cast<T>();
@@ -27,8 +29,6 @@ public static class DataGenerator
     {
         return DefaultRandom(DataTypes.Float32, new[] { 3, DefaultChannel, 4, 8 });
     }
-
-    public static int[] DefaultShape => new[] { 3, 2, 4, 8 };
 
     public static Expr DefaultRandom(DataType dt)
     {

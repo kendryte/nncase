@@ -117,14 +117,14 @@ public static class PythonHelper
     {
         private readonly int _sampleCount;
 
-        public int? Count => _sampleCount;
-
-        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
-
         public PytestCalibrationDatasetProvider(IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> samples, int sampleCount)
         {
             Samples = samples;
-            this._sampleCount = sampleCount;
+            _sampleCount = sampleCount;
         }
+
+        public int? Count => _sampleCount;
+
+        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
     }
 }

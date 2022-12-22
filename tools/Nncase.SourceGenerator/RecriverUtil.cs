@@ -55,6 +55,14 @@ public static class RecriverUtil
                                                                                 DiagnosticSeverity.Error,
                                                                                 isEnabledByDefault: true);
 
+    public static DiagnosticDescriptor ClassNotFromInterfaceError => new DiagnosticDescriptor(
+        id: "EvalGen002",
+                                                                                title: "The Class Must Be Derived Interface!",
+                                                                                messageFormat: "The '{0}' Must Have '{1}'<T>!.",
+                                                                                category: "EvaluatorGenerator",
+                                                                                DiagnosticSeverity.Error,
+                                                                                isEnabledByDefault: true);
+
     /// <summary>
     /// check the class attrs.
     /// </summary>
@@ -116,14 +124,6 @@ public static class RecriverUtil
 
         return false;
     }
-
-    public static DiagnosticDescriptor ClassNotFromInterfaceError => new DiagnosticDescriptor(
-        id: "EvalGen002",
-                                                                                title: "The Class Must Be Derived Interface!",
-                                                                                messageFormat: "The '{0}' Must Have '{1}'<T>!.",
-                                                                                category: "EvaluatorGenerator",
-                                                                                DiagnosticSeverity.Error,
-                                                                                isEnabledByDefault: true);
 
     public static DiagnosticDescriptor ClassNoValidMethodError => new DiagnosticDescriptor(
         id: "EvalGen003",

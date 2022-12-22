@@ -77,9 +77,9 @@ internal sealed class UsedByAnalysisVisitor : ExprVisitor<bool, IRType>
         }
 
         // create the chain for current call
-        if (!UseByMap.TryGetValue(expr, out var chain))
+        if (!UseByMap.TryGetValue(expr, out _))
         {
-            chain = new(ReferenceEqualityComparer.Instance);
+            HashSet<Expr>? chain = new(ReferenceEqualityComparer.Instance);
             UseByMap.Add(expr, chain);
         }
 
@@ -113,9 +113,9 @@ internal sealed class SimpleDuChain : IUsedByResult
     public void Transfer(Expr old_expr, Expr new_expr)
     {
         var old_usedby = UseByMap[old_expr];
-        if (!UseByMap.TryGetValue(new_expr, out var new_usedby))
+        if (!UseByMap.TryGetValue(new_expr, out _))
         {
-            new_usedby = new(old_usedby, ReferenceEqualityComparer.Instance);
+            HashSet<Expr>? new_usedby = new(old_usedby, ReferenceEqualityComparer.Instance);
             UseByMap.Add(new_expr, new_usedby);
         }
         else

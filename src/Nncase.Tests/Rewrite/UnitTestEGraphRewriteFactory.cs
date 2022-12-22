@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Collections.Generic;
 using System.IO;
 using Nncase.IR;
@@ -10,11 +13,13 @@ namespace Nncase.Tests.ReWriteTest;
 
 public sealed class UnitTestEGraphRewriteFactory : TestFixture.UnitTestFixtrue
 {
-    public static TheoryData<IRewriteCase> DataOne => new(){
+    public static TheoryData<IRewriteCase> DataOne => new()
+    {
       new PadTransposeCaseEgraph(),
     };
 
-    public static TheoryData<IRewriteCase> DataAll => new(){
+    public static TheoryData<IRewriteCase> DataAll => new()
+    {
       new PadTransposeCase(),
       new MobileNetV1TransposeCase(),
       new Conv2DPadsCase(),
@@ -36,7 +41,11 @@ public sealed class UnitTestEGraphRewriteFactory : TestFixture.UnitTestFixtrue
     [MemberData(nameof(DataOne))]
     public void RunOne(IRewriteCase @case) => RunCore(@case);
 
-    async void RunCore(IRewriteCase @case)
+    [Theory]
+    [MemberData(nameof(DataAll))]
+    public void RunAll(IRewriteCase @case) => RunCore(@case);
+
+    private async void RunCore(IRewriteCase @case)
     {
         var caseOptions = GetPassOptions().IndentDir(@case.Name);
         var pre = @case.PreExpr;
@@ -47,16 +56,13 @@ public sealed class UnitTestEGraphRewriteFactory : TestFixture.UnitTestFixtrue
         pass.Add(@case.Rules);
         var post = (Function)await pass.RunAsync(pre, caseOptions);
         Assert.True(post.InferenceType());
-        long pre_time = CountRunTicks(pre, @case.FeedDict, out var pre_ret);
-        long post_time = CountRunTicks(post, @case.FeedDict, out var post_ret);
+        _ = CountRunTicks(pre, @case.FeedDict, out var pre_ret);
+        _ = CountRunTicks(post, @case.FeedDict, out var post_ret);
         Assert.True(TestFixture.Comparator.AllEqual(pre_ret, post_ret));
+
         // note the parallel test will cause the time count error.
         // Assert.True(pre_time >= post_time);
     }
-
-    [Theory]
-    [MemberData(nameof(DataAll))]
-    public void RunAll(IRewriteCase @case) => RunCore(@case);
 
     private static long CountRunTicks(Function pre, IReadOnlyDictionary<Var, IValue> feed_dict, out IValue ret)
     {

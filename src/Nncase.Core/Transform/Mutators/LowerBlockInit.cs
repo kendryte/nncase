@@ -20,7 +20,7 @@ internal sealed class LowerBlockInit : ExprMutator
     {
         if (expr.InitBody.Count == 0)
         {
-            return this.Visit(expr);
+            return Visit(expr);
         }
 
         var initbody = Lowering(expr.InitBody, expr.IterVars);

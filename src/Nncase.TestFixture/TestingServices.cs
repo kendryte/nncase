@@ -255,7 +255,6 @@ public static class Testing
             default:
                 throw new ArgumentOutOfRangeException();
         }
-
     }
 
     /// <summary>
@@ -378,19 +377,6 @@ public static class Testing
     }
 }
 
-internal sealed class TestingProvider : ITestingProvider
-{
-    private readonly IDumpDirPathProvider _dumpDirPathProvider;
-
-    public TestingProvider(IDumpDirPathProvider dumpDirPathProvider)
-    {
-        _dumpDirPathProvider = dumpDirPathProvider;
-    }
-
-    /// <inheritdoc/>
-    public string GetDumpDirPath(string subDir) => _dumpDirPathProvider.GetDumpDirPath(subDir);
-}
-
 public class UnitTestFixtrue
 {
     public virtual CompileOptions GetCompileOptions([CallerMemberName] string member_name = "")
@@ -416,4 +402,17 @@ public class UnitTestFixtrue
     {
         return filePath;
     }
+}
+
+internal sealed class TestingProvider : ITestingProvider
+{
+    private readonly IDumpDirPathProvider _dumpDirPathProvider;
+
+    public TestingProvider(IDumpDirPathProvider dumpDirPathProvider)
+    {
+        _dumpDirPathProvider = dumpDirPathProvider;
+    }
+
+    /// <inheritdoc/>
+    public string GetDumpDirPath(string subDir) => _dumpDirPathProvider.GetDumpDirPath(subDir);
 }

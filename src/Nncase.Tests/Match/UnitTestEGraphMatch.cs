@@ -100,8 +100,7 @@ public sealed class UnitTestEGraphMatch
 
         Assert.True(CompilerServices.TryEMatchRoot(func, pat_1, out var res_1));
         Assert.Single(res_1);
-
-        Assert.False(CompilerServices.TryEMatchRoot(func, pat_2, out var res_2));
+        Assert.False(CompilerServices.TryEMatchRoot(func, pat_2, out _));
     }
 
     [Fact]

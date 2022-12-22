@@ -23,6 +23,11 @@ public class FusionGroupMutator : ExprMutator
     /// </summary>
     public readonly RunPassOptions PassOptions;
 
+    /// <summary>
+    /// Get the Pre Order Rules.
+    /// </summary>
+    public readonly IMergeRewriteRule Rule;
+
     private sealed class FusionMergeCandidateComparer : IEqualityComparer<HashSet<Fusion>>
     {
         public bool Equals(HashSet<Fusion>? x, HashSet<Fusion>? y) => (x, y) switch
@@ -35,7 +40,7 @@ public class FusionGroupMutator : ExprMutator
 
         public int GetHashCode([DisallowNull] HashSet<Fusion> obj)
         {
-            HashCode hash = default(HashCode);
+            var hash = default(HashCode);
             foreach (var o in obj)
             {
                 hash.Add(ReferenceEqualityComparer.Instance.GetHashCode(obj));
@@ -44,11 +49,6 @@ public class FusionGroupMutator : ExprMutator
             return hash.ToHashCode();
         }
     }
-
-    /// <summary>
-    /// Get the Pre Order Rules.
-    /// </summary>
-    public readonly IMergeRewriteRule Rule;
 
     private readonly IUsedByResult _usedByReslut;
 
@@ -98,6 +98,34 @@ public class FusionGroupMutator : ExprMutator
         return merged_fusion_body;
     }
 
+    /// <summary>
+    /// try merge fusion from the old call.
+    /// </summary>
+    /// <param name="rule">rule.</param>
+    /// <param name="old_call">current call.</param>
+    /// <param name="new_call">returned new call.</param>
+    /// <returns>merged status. </returns>
+    public bool TryMergeFusion(IMergeRewriteRule rule, Call old_call, out Call new_call)
+    {
+        new_call = null!;
+
+        if (!CompilerServices.TryMatchRoot(old_call, rule.Pattern, new() { RewriteMemo = ExpressionMemo }, out var result))
+        {
+            return false;
+        }
+
+        if (rule.GetReplace(
+          MergedFusionRewriteCallBack, MergedFusionCheckCallBack,
+          CandidateFusionCheckCallBack, CandidateFusionRecordCallBack,
+          _usedByReslut, result, PassOptions) is Call replaced_call)
+        {
+            new_call = replaced_call;
+            return true;
+        }
+
+        return false;
+    }
+
     private bool CandidateFusionCheckCallBack(HashSet<Fusion> candidateFusions)
     {
         if (candidateFusions.Count <= 1)
@@ -126,34 +154,6 @@ public class FusionGroupMutator : ExprMutator
         }
 
         _candidateFusionCache.Add(candidateFusions, false);
-    }
-
-    /// <summary>
-    /// try merge fusion from the old call.
-    /// </summary>
-    /// <param name="rule">rule.</param>
-    /// <param name="old_call">current call.</param>
-    /// <param name="new_call">returned new call.</param>
-    /// <returns>merged status. </returns>
-    public bool TryMergeFusion(IMergeRewriteRule rule, Call old_call, out Call new_call)
-    {
-        new_call = null!;
-
-        if (!CompilerServices.TryMatchRoot(old_call, rule.Pattern, new() { RewriteMemo = ExpressionMemo }, out var result))
-        {
-            return false;
-        }
-
-        if (rule.GetReplace(
-          MergedFusionRewriteCallBack, MergedFusionCheckCallBack,
-          CandidateFusionCheckCallBack, CandidateFusionRecordCallBack,
-          _usedByReslut, result, PassOptions) is Call replaced_call)
-        {
-            new_call = replaced_call;
-            return true;
-        }
-
-        return false;
     }
 
     /// <inheritdoc/>

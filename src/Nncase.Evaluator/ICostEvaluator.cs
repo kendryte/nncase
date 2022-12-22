@@ -26,13 +26,6 @@ public interface ICostEvaluator
 }
 
 /// <summary>
-/// this attribute mark the source generator auto generate ICostEvaluator's interface impl.
-/// </summary>
-public sealed class CostEvaluatorGeneratorAttribute : Attribute
-{
-}
-
-/// <summary>
 /// BaseFunction Evaluator Cost interface.
 /// </summary>
 public interface IBaseFuncCostEvaluator
@@ -43,6 +36,13 @@ public interface IBaseFuncCostEvaluator
     /// <param name="target">Target Fusion/Primfunc/PrimfuncWrapper.</param>
     /// <returns>The base function costs.</returns>
     Cost VisitLeaf(BaseFunction target);
+}
+
+/// <summary>
+/// this attribute mark the source generator auto generate ICostEvaluator's interface impl.
+/// </summary>
+public sealed class CostEvaluatorGeneratorAttribute : Attribute
+{
 }
 
 /// <summary>

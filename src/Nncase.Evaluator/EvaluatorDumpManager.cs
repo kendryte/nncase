@@ -16,7 +16,7 @@ public class EvaluatorDumpManager : DumpManager
 
     public EvaluatorDumpManager(TensorGetter tensorGetter)
     {
-        this._tensorGetter = tensorGetter;
+        _tensorGetter = tensorGetter;
     }
 
     public void DumpCallArgs(Call call)

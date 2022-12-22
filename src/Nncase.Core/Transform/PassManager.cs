@@ -43,7 +43,7 @@ public class PassManager : IEnumerable<BasePass>
     public static void FuncUpdateDependence(IRModule module, Dictionary<BaseFunction, BaseFunction> update_map, RunPassOptions options, string name)
     {
         var mutator = new DependenceMutator(update_map);
-        var post = mutator.Visit(module.Entry!);
+        _ = mutator.Visit(module.Entry!);
         if (!mutator.IsMutated)
         {
             return;
@@ -84,7 +84,7 @@ public class PassManager : IEnumerable<BasePass>
     /// <summary>
     /// Run passes and update the module.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task RunAsync()
     {
         var passes = _passes.AsEnumerable();

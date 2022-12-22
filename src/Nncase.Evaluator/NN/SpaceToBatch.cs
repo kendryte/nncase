@@ -39,7 +39,7 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
         var batchShape1 = new long[] { p.Shape[0] };
         var spatialShape1 = RangeExec(
             spatialSize,
-                i => new[] { p.Shape[i + 1] / blockShape[i], blockShape[i] })
+            i => new[] { p.Shape[i + 1] / blockShape[i], blockShape[i] })
             .Aggregate(Array.Empty<long>(), (x, y) => x.Concat(y).ToArray());
         var remainShape1 = RangeExec(remainShapeSize, i => (long)p.Shape[1 + spatialSize + i]);
         var reshappedShape1 = batchShape1.Concat(spatialShape1.Concat(remainShape1)).ToArray();

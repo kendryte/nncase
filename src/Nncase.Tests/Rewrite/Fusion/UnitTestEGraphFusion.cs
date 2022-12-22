@@ -23,15 +23,14 @@ public class UnitTestEGraphFusion : TestFixture.UnitTestFixtrue
     {
         var passOptions = GetPassOptions();
         var compileOptions = passOptions.CompileOptions;
-
-        var target = CompilerServices.GetTarget(compileOptions.Target);
+        _ = CompilerServices.GetTarget(compileOptions.Target);
 
         // step 1. import
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
         var model = new ResNet(typeof(BasicBlock), new[] { 2, 2, 2, 2 });
         var body = model.Forward(input);
         var main = new Function("main", body, ImmutableArray.Create(input));
-        IRModule module = new(main);
+        _ = new(main);
 
         CompilerServices.InferenceType(main);
         CompilerServices.DumpIR(main, string.Empty, passOptions.DumpDir);
@@ -48,15 +47,14 @@ public class UnitTestEGraphFusion : TestFixture.UnitTestFixtrue
     {
         var passOptions = GetPassOptions();
         var compileOptions = passOptions.CompileOptions;
-
-        var target = CompilerServices.GetTarget(compileOptions.Target);
+        _ = CompilerServices.GetTarget(compileOptions.Target);
 
         // step 1. import
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
         var model = new ResNet(typeof(BasicBlock), new[] { 2, 2, 2, 2 });
         var body = model.Forward(input);
         var main = new Function("main", body, ImmutableArray.Create(input));
-        IRModule module = new(main);
+        _ = new(main);
 
         CompilerServices.InferenceType(main);
         CompilerServices.DumpIR(main, string.Empty, passOptions.DumpDir);
@@ -84,8 +82,7 @@ public class UnitTestEGraphFusion : TestFixture.UnitTestFixtrue
     {
         var passOptions = GetPassOptions();
         var compileOptions = passOptions.CompileOptions;
-
-        var target = CompilerServices.GetTarget(compileOptions.Target);
+        _ = CompilerServices.GetTarget(compileOptions.Target);
 
         // step 1. import
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 224, 224, 3 }));
@@ -96,13 +93,19 @@ public class UnitTestEGraphFusion : TestFixture.UnitTestFixtrue
             var v_0 = new Call(fusion_1, input); // 1,3,224,224
 
             var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
-            var fusion_2 = new Fusion("fusion_2", Callable.StackVMModuleKind, IR.F.NN.ReduceWindow2D(ReduceOp.Max, fusion_2_input, 0.0f, new[] { 3, 3 }, new[] { 2, 2 }, new[,] { { 1, 1 },
-            { 1, 1 }, }, new[] { 1, 1 }, false, false), new[] { fusion_2_input });
+            var fusion_2 = new Fusion("fusion_2", Callable.StackVMModuleKind, IR.F.NN.ReduceWindow2D(ReduceOp.Max, fusion_2_input, 0.0f, new[] { 3, 3 }, new[] { 2, 2 }, new[,]
+            {
+                { 1, 1 },
+            { 1, 1 },
+            }, new[] { 1, 1 }, false, false), new[] { fusion_2_input });
             var v_1 = new Call(fusion_2, v_0); // 1,3,112,112
 
             var fusion_3_input = new Var("fusion_3_input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 }));
-            var fusion_3 = new Fusion("fusion_3", Callable.StackVMModuleKind, IR.F.NN.ReduceWindow2D(ReduceOp.Mean, fusion_3_input, 0.0f, new[] { 3, 3 }, new[] { 1, 1 }, new[,] { { 1, 1 },
-            { 1, 1 }, }, new[] { 1, 1 }, false, false), new[] { fusion_3_input });
+            var fusion_3 = new Fusion("fusion_3", Callable.StackVMModuleKind, IR.F.NN.ReduceWindow2D(ReduceOp.Mean, fusion_3_input, 0.0f, new[] { 3, 3 }, new[] { 1, 1 }, new[,]
+            {
+                { 1, 1 },
+            { 1, 1 },
+            }, new[] { 1, 1 }, false, false), new[] { fusion_3_input });
             var v_2 = new Call(fusion_3, v_1); // 1,3,112,112
 
             var fusion_4_input = new Var[] { new("fusion_4_input_0", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 })), new("fusion_4_input_1", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 })) };
@@ -111,7 +114,7 @@ public class UnitTestEGraphFusion : TestFixture.UnitTestFixtrue
             main = new Function("main", v_3, ImmutableArray.Create(input));
         }
 
-        IRModule module = new(main);
+        _ = new(main);
 
         CompilerServices.InferenceType(main);
         CompilerServices.DumpIR(main, string.Empty, passOptions.DumpDir);
@@ -365,8 +368,8 @@ internal sealed class TwoInputFusionMergeRule : IRewriteRule
         // note each patter will generator the new expr. so need cache it.
         var hashcode = HashCode.Combine(
             ReferenceEqualityComparer.Instance.GetHashCode(caller_fusion),
-                                        ReferenceEqualityComparer.Instance.GetHashCode(lhs_callee_fusion),
-                                        ReferenceEqualityComparer.Instance.GetHashCode(rhs_callee_fusion));
+            ReferenceEqualityComparer.Instance.GetHashCode(lhs_callee_fusion),
+            ReferenceEqualityComparer.Instance.GetHashCode(rhs_callee_fusion));
         if (!_mergedCache.TryGetValue(hashcode, out var new_call))
         {
             // 1. merge new fusion

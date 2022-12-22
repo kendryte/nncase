@@ -11,6 +11,7 @@ namespace Nncase.IO
     public ref struct BitReader
     {
         private ReadOnlySpan<byte> _data;
+        private ulong _buffer;
 
         public BitReader(ReadOnlySpan<byte> data)
         {
@@ -83,7 +84,7 @@ namespace Nncase.IO
                 valueSpan[i] = data[i];
             }
         }
-        private ulong _buffer;
+
         private ulong _avail;
     }
 }

@@ -36,9 +36,9 @@ namespace Nncase
             return F.Tensors.Squeeze(
                 F.Tensors.Slice(
                     input,
-                StackScalar(index),
-                StackScalar(index + 1),
-                1), new[] { 0L });
+                    StackScalar(index),
+                    StackScalar(index + 1),
+                    1), new[] { 0L });
         }
 
         public static (Expr, Expr) GetHW(in Expr input)
@@ -88,6 +88,16 @@ namespace Nncase
             return GetWindowedPaddingValue(i32InputSize, outputSize, i32Filter, i32Stride, i32Dilation, lower);
         }
 
+        // lower used for onnx when auto_pad attr is SAME_LOWER
+        public static Expr GetPaddings(Expr input, Expr weights, long[] stride, long[] dilation, bool same, bool lower = false)
+        {
+            var (inH, inW) = GetHW(input);
+            var (fH, fW) = GetHW(weights);
+            var padH = GetWindowedPadding(inH, fH, (int)stride[0], (int)dilation[0], same, lower);
+            var padW = GetWindowedPadding(inW, fW, (int)stride[1], (int)dilation[1], same, lower);
+            return ConcatPadding(padH, padW);
+        }
+
         private static Expr GetWindowedOutputSize(Expr size, Expr filter, Expr stride, Expr dilation, bool same, bool ceilMode)
         {
             var effectiveFilterSize = ((filter - 1) * dilation) + 1;
@@ -114,16 +124,6 @@ namespace Nncase
             }
 
             return new[] { before, after };
-        }
-
-        // lower used for onnx when auto_pad attr is SAME_LOWER
-        public static Expr GetPaddings(Expr input, Expr weights, long[] stride, long[] dilation, bool same, bool lower = false)
-        {
-            var (inH, inW) = GetHW(input);
-            var (fH, fW) = GetHW(weights);
-            var padH = GetWindowedPadding(inH, fH, (int)stride[0], (int)dilation[0], same, lower);
-            var padW = GetWindowedPadding(inW, fW, (int)stride[1], (int)dilation[1], same, lower);
-            return ConcatPadding(padH, padW);
         }
 
         public static Expr ComputeSplit(Expr input, long outputSize, long axis)

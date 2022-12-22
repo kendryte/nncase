@@ -51,17 +51,17 @@ public static class ModelInfo
     /// </summary>
     public const int VERSION = 6;
 
+    /// <summary>
+    /// merged rdata flag.
+    /// </summary>
+    public const int SECTIONMERGEDINTORDATA = 1;
+
     public static readonly uint ModelHasNoEntry = unchecked((uint)-1);
 
     /// <summary>
     /// the idenitifer.
     /// </summary>
     public static readonly uint IDENTIFIER = BitConverter.ToUInt32(Encoding.UTF8.GetBytes("LDMK"), 0);
-
-    /// <summary>
-    /// merged rdata flag.
-    /// </summary>
-    public const int SECTIONMERGEDINTORDATA = 1;
 
     /// <summary>
     /// max section name length.

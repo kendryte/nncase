@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,10 +23,17 @@ namespace Nncase.Tests.ReWriteTest;
 
 public class UnitTestDataFlowRewriteFactory : TestFixture.UnitTestFixtrue
 {
-
     public static TheoryData<IRewriteCase> DataOne => new()
     {
       new PadTransposeCase(),
+    };
+
+    public static TheoryData<IRewriteCase> DataAll => new()
+    {
+      new TransposeLeakyRelu(),
+      new Conv2DPadsCase(),
+      new ReduceWindow2DPadsCase(),
+      new MobileNetV1TransposeCase(),
     };
 
     [Theory]
@@ -45,19 +55,10 @@ public class UnitTestDataFlowRewriteFactory : TestFixture.UnitTestFixtrue
         var feed_dict = @case.FeedDict;
         Assert.True(TestFixture.Comparator.AllEqual(pre.Body.Evaluate(feed_dict), post.Body.Evaluate(feed_dict)));
     }
-
-    public static TheoryData<IRewriteCase> DataAll => new()
-    {
-      new TransposeLeakyRelu(),
-      new Conv2DPadsCase(),
-      new ReduceWindow2DPadsCase(),
-      new MobileNetV1TransposeCase()
-    };
 }
 
 public class UnitTestDataFlowRewrite : RewriteFixtrue
 {
-
     // [Fact]
     // public void TestSwapXY()
     // {
@@ -65,7 +66,7 @@ public class UnitTestDataFlowRewrite : RewriteFixtrue
     //     var rhs = (Const)1;
     //     var pre = (lhs + rhs) * 10;
 
-    //     var post = CompilerServices.Rewrite(pre, new[] { new SwapXY() }, RunPassOptions.Invalid);
+    // var post = CompilerServices.Rewrite(pre, new[] { new SwapXY() }, RunPassOptions.Invalid);
     //     Assert.Equal(post, (rhs + lhs) * 10);
     // }
 
@@ -79,7 +80,6 @@ public class UnitTestDataFlowRewrite : RewriteFixtrue
     //     var post = CompilerServices.Rewrite(pre, new[] { new Transform.Rule.FoldShapeOp() }, RunPassOptions.Invalid);
     //     Assert.Equal(new[] { 1, 6, 3 }, ((TensorConst)post).Value.Cast<int>().ToArray());
     // }
-
     [Fact]
     public void TestFoldConstCall()
     {
@@ -148,15 +148,14 @@ public class UnitTestDataFlowRewrite : RewriteFixtrue
     //     var shapePass = RunShapeInferPass("", computeShape, input);
     //     Assert.Equal(shapeRewrite, shapePass);
     // }
-
     [Fact]
     public async Task TestFoldExpand()
     {
         var caseOptions = GetPassOptions();
         var weights = new Var("weights", new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
-        var t = Util.ShapeIndex(weights, 0);
+        _ = Util.ShapeIndex(weights, 0);
         var expand = Expand(0f, Cast(Util.ShapeIndex(weights, 0), DataTypes.Int64));
-        var s = await RunShapeInferPass("", caseOptions, expand, weights);
+        var s = await RunShapeInferPass(string.Empty, caseOptions, expand, weights);
         Assert.True(s is Const);
     }
 
@@ -183,7 +182,9 @@ public class UnitTestDataFlowRewrite : RewriteFixtrue
 
 public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
 {
-    public T Dim1ExprToScalar<T>(Expr expr) where T : unmanaged, System.IEquatable<T> => (expr as TensorConst).Value.Cast<T>()[0];
+    public T Dim1ExprToScalar<T>(Expr expr)
+        where T : unmanaged, System.IEquatable<T>
+        => (expr as TensorConst).Value.Cast<T>()[0];
 
     [Fact]
     public async Task TestPaddingCompute()
@@ -204,6 +205,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, true);
         var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, true);
         var padding = Util.ConcatPadding(padH, padW);
+
         // Assert.True(CompilerServices.InferenceType(padding));
         var paddingPost = await RunShapeInferPass("padding", caseOptions, padding, input);
         Assert.Equal(Tensor.From(new[] { 1, 1, 1, 1 }, new Shape(2, 2)), paddingPost);
@@ -323,33 +325,6 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         Assert.Equal(new[] { 3, 1, 1 }, after.Evaluate().AsTensor().Dimensions.ToArray());
     }
 
-    private sealed class AnalysisReassociateAdd : Transform.IRewriteRule
-    {
-        Transform.IUsedByResult _usedByResult;
-        bool _matched;
-        public AnalysisReassociateAdd(Transform.IUsedByResult usedByResult)
-        {
-            _usedByResult = usedByResult;
-            _matched = false;
-        }
-
-        /// <inheritdoc/>
-        public IPattern Pattern { get; } = (IsWildcard("x") + IsWildcard("y"));
-
-        public Expr? GetReplace(IMatchResult result, RunPassOptions options)
-        {
-            var x = (Expr)result["x"];
-            var y = (Expr)result["y"];
-            if (_matched == false && _usedByResult.Get(x).Count == 1 && _usedByResult.Get(y).Count == 1)
-            {
-                _matched = true;
-                return x - y;
-            }
-            return null;
-        }
-    }
-
-
     [Fact]
     public void TestWithAnalysisInfoRewriteOnce()
     {
@@ -367,8 +342,39 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
             var usedyResult = Transform.Analyser.AnalysisUsedBy(last);
             var post = CompilerServices.Rewrite(last, new[] { new AnalysisReassociateAdd(usedyResult) }, caseOptions.SetRewriteOnce(true));
             if (object.ReferenceEquals(post, last))
+            {
                 break;
+            }
+
             last = post;
+        }
+    }
+
+    private sealed class AnalysisReassociateAdd : Transform.IRewriteRule
+    {
+        private readonly Transform.IUsedByResult _usedByResult;
+        private bool _matched;
+
+        public AnalysisReassociateAdd(Transform.IUsedByResult usedByResult)
+        {
+            _usedByResult = usedByResult;
+            _matched = false;
+        }
+
+        /// <inheritdoc/>
+        public IPattern Pattern { get; } = IsWildcard("x") + IsWildcard("y");
+
+        public Expr? GetReplace(IMatchResult result, RunPassOptions options)
+        {
+            var x = (Expr)result["x"];
+            var y = (Expr)result["y"];
+            if (_matched == false && _usedByResult.Get(x).Count == 1 && _usedByResult.Get(y).Count == 1)
+            {
+                _matched = true;
+                return x - y;
+            }
+
+            return null;
         }
     }
 }

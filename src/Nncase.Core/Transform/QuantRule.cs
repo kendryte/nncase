@@ -39,16 +39,16 @@ public abstract class QuantRule : RewriteRule<Pattern>
     public ModelQuantMode ModelQuantMode => Option.CompileOptions.ModelQuantMode;
 
     /// <summary>
+    /// Gets get QuantType.
+    /// </summary>
+    public DataType QuantType => Option.CompileOptions.QuantType;
+
+    /// <summary>
     /// check the datatype is the quant type.
     /// </summary>
     /// <param name="dt"></param>
     /// <returns></returns>
     public bool IsQuantType(DataType dt) => dt == DataTypes.Int8 || dt == DataTypes.UInt8;
-
-    /// <summary>
-    /// Gets get QuantType.
-    /// </summary>
-    public DataType QuantType => Option.CompileOptions.QuantType;
 
     /// <summary>
     /// Gets get WQuantType.

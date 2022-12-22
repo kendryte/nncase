@@ -17,7 +17,7 @@ namespace Nncase.Importer.TFLite
     {
         private static Expr Activate(Expr input, tflite.ActivationFunctionType activation)
         {
-            var v = ToFloatValueRange(activation);
+            _ = ToFloatValueRange(activation);
             return activation switch
             {
                 tflite.ActivationFunctionType.NONE => input,

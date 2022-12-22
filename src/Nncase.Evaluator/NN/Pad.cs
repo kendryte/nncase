@@ -17,6 +17,7 @@ using static Nncase.PatternMatch.Utility;
 using static Tensorflow.Binding;
 
 namespace Nncase.Evaluator.NN;
+
 /// <summary>
 /// Evaluator for <see cref="Pad"/>.
 /// </summary>

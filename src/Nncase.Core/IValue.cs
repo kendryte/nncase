@@ -102,10 +102,10 @@ public sealed class NoneValue : IValue
     public IRType Type => NoneType.Default;
 
     /// <inheritdoc/>
-    public IValue this[int index] => throw new InvalidOperationException("This Is None Value!");
+    public int Count => throw new InvalidOperationException("This Is None Value!");
 
     /// <inheritdoc/>
-    public int Count => throw new InvalidOperationException("This Is None Value!");
+    public IValue this[int index] => throw new InvalidOperationException("This Is None Value!");
 
     /// <inheritdoc/>
     public Tensor AsTensor()

@@ -29,11 +29,6 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
     }
 
     /// <summary>
-    /// Gets a value indicating whether check the ret.
-    /// </summary>
-    public bool IsDefaultOrEmpty => _array.IsDefaultOrEmpty;
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="IRArray{T}"/> struct.
     /// ctor from ienumerable.
     /// </summary>
@@ -42,6 +37,11 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
         : this(enumerable.ToImmutableArray())
     {
     }
+
+    /// <summary>
+    /// Gets a value indicating whether check the ret.
+    /// </summary>
+    public bool IsDefaultOrEmpty => _array.IsDefaultOrEmpty;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="IRArray{T}"/> struct.
@@ -56,6 +56,9 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
     public int Count => ((IReadOnlyCollection<T>)_array).Count;
 
     /// <inheritdoc/>
+    public bool IsReadOnly => ((ICollection<T>)_array).IsReadOnly;
+
+    /// <inheritdoc/>
     public T this[int index] => ((IReadOnlyList<T>)_array)[index];
 
     /// <inheritdoc/>
@@ -64,16 +67,23 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
     T IList<T>.this[int index] { get => ((IList<T>)_array)[index]; set => ((IList<T>)_array)[index] = value; }
 
     /// <inheritdoc/>
-    public bool IsReadOnly => ((ICollection<T>)_array).IsReadOnly;
-
-    /// <inheritdoc/>
     public static implicit operator IRArray<T>(ImmutableArray<T> array) =>
         new IRArray<T>(array);
+
+    /// <inheritdoc/>
+    public static implicit operator IRArray<T>(T[] array) =>
+        new IRArray<T>(ImmutableArray.Create(array));
 
     /// <inheritdoc/>
     public static bool operator ==(IRArray<T> left, IRArray<T> right)
     {
         return left.Equals(right);
+    }
+
+    /// <inheritdoc/>
+    public static bool operator !=(IRArray<T> left, IRArray<T> right)
+    {
+        return !(left == right);
     }
 
     /// <inheritdoc/>
@@ -164,14 +174,4 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
     {
         return ((IEnumerable)_array).GetEnumerator();
     }
-
-    /// <inheritdoc/>
-    public static bool operator !=(IRArray<T> left, IRArray<T> right)
-    {
-        return !(left == right);
-    }
-
-    /// <inheritdoc/>
-    public static implicit operator IRArray<T>(T[] array) =>
-        new IRArray<T>(ImmutableArray.Create(array));
 }
