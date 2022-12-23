@@ -6,6 +6,7 @@ using LanguageExt.UnsafeValueAccess;
 using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using Random = Nncase.IR.F.Random;
@@ -129,7 +130,7 @@ public static class DataGenerator
             }
             else
             {
-                Trace.Assert(data.Length == 1);
+                Assert.Equal(data.Length, 1);
                 return Value.FromTensor(ParseTensor(data.Head()));
             }
         }

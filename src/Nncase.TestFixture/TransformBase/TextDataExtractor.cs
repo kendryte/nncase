@@ -7,6 +7,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.TIR;
 using Nncase.Utilities;
+using Xunit;
 using static Nncase.TestFixture.DumpPathExtractor;
 
 namespace Nncase.TestFixture;
@@ -118,7 +119,7 @@ public class TextDataExtractor
     public OriginValue GetComputeResult(string dir, int i)
     {
         var results = ExtractValues(dir, f => IsResultFile(f) && GetDumpFileNum(f) == i);
-        Trace.Assert(results.Length != 0);
+        Assert.NotEqual(results.Length, 0);
         return results.Head();
     }
 
