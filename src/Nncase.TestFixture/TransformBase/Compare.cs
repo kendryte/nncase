@@ -161,7 +161,7 @@ public static class Comparator
         var v1 = SliceByChannel(pre);
         var v2 = SliceByChannel(post);
 
-        // Trace.Assert(v1.Length == v2.Length);
+        // Assert.Equal(v1.Length, v2.Length);
         return v1.Zip(v2).Select(data => CosSimilarity(data.Item1, data.Item2)).ToArray();
     }
 
@@ -231,7 +231,7 @@ public static class DetailComparator
 
     public static IEnumerable<DetailCompareResult> CompareDetail(Tensor[] a, Tensor[] b)
     {
-        Trace.Assert(a.Length == b.Length);
+        Assert.Equal(a.Length, b.Length);
         return a.Zip(b).Select((t) =>
             CompareDetail(new OriginTensor(t.Item1, string.Empty), new OriginTensor(t.Item2, string.Empty), GetChannelAxis(t.Item1.Shape)));
     }

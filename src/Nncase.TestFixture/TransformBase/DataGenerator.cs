@@ -9,6 +9,7 @@ using Nncase.IR;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using Random = Nncase.IR.F.Random;
+using Xunit;
 
 namespace Nncase.TestFixture;
 
@@ -129,7 +130,7 @@ public static class DataGenerator
             }
             else
             {
-                Trace.Assert(data.Length == 1);
+                Assert.Equal(data.Length, 1);
                 return Value.FromTensor(ParseTensor(data.Head()));
             }
         }
