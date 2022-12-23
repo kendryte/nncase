@@ -28,8 +28,10 @@
             </Exclude>
             <!-- Additional directories from .NET assemblies should be statically instrumented: -->
             <IncludeDirectories>
-                <Directory Recursive="true">src/Nncase.Compiler</Directory>
-                <Directory Recursive="true">src/Nncase.Tests</Directory>
+                <!-- Build-time -->
+                <Directory Recursive="true">src</Directory>
+                <!-- CI-time -->
+                <Directory Recursive="true">install</Directory>
             </IncludeDirectories>
         </ModulePaths>
 
