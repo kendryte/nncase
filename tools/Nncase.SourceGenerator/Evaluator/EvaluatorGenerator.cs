@@ -25,7 +25,7 @@ public enum InterfaceKind
 /// </summary>
 public static class InterfaceKindExtensions
 {
-    public static(string return_type_name, string context_type_name) GetKindInfo(this InterfaceKind target_interface) =>(target_interface.GetReturnType(), target_interface.GetContextType());
+    public static (string return_type_name, string context_type_name) GetKindInfo(this InterfaceKind target_interface) => (target_interface.GetReturnType(), target_interface.GetContextType());
 
     public static string GetReturnType(this InterfaceKind target_interface) => target_interface switch
     {
@@ -49,7 +49,7 @@ public static class InterfaceKindExtensions
     };
 
     /// <summary>
-    /// check the return type , can process the interface type
+    /// check the return type , can process the interface type.
     /// </summary>
     /// <param name="typeSymbol"></param>
     /// <param name="interfaceKind"></param>
@@ -65,14 +65,12 @@ public static class InterfaceKindExtensions
             _ => false,
         },
 
-
         InterfaceKind.ITypeInferencer => typeSymbol switch
         {
             { Name: "IRType" } => true,
             { BaseType: { Name: "IRType" } } => true,
             _ => false,
         },
-
 
         _ => throw new NotImplementedException($"CheckReturnTypeRange : {typeSymbol.Name} {interfaceKind}"),
     };
@@ -87,14 +85,13 @@ public static class InterfaceKindExtensions
             _ => throw new ArgumentOutOfRangeException($"Can't Return {typeSymbol.ToDisplayString()} For {interfaceKind}!"),
         },
 
-
         InterfaceKind.ITypeInferencer => visitStatement,
         _ => throw new NotImplementedException(),
     };
 }
 
 /// <summary>
-/// the candidate will be generated for new instance
+/// the candidate will be generated for new instance.
 /// </summary>
 internal class GenerateCandidate
 {
@@ -129,7 +126,7 @@ internal class EvaluatorGenerator : IIncrementalGenerator
             .CreateSyntaxProvider(
                 predicate: static (node, _) => IsSyntaxTargetForGeneration(node), // select recored with base type named op
                 transform: (ctx, _) => GetSemanticTargetForGeneration(ctx)) // sect the enum with the [EnumExtensions] attribute
-            .SelectMany((s, _) => s) !; // filter out attributed enums that we don't care about
+            .SelectMany((s, _) => s)!; // filter out attributed enums that we don't care about
 
         // Combine the selected enums with the `Compilation`
         // IncrementalValueProvider<(Compilation, ImmutableArray<GenerateCandidate>)> compilationAndEnums
@@ -140,7 +137,7 @@ internal class EvaluatorGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    /// check the calss have one more attr && one more base type && have Partial keyword
+    /// check the calss have one more attr && one more base type && have Partial keyword.
     /// </summary>
     /// <param name="node"></param>
     /// <returns></returns>
@@ -163,7 +160,7 @@ internal class EvaluatorGenerator : IIncrementalGenerator
         ITypeInferenceContext ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Evaluator.ITypeInferenceContext");
         ParameterInfoSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.ParameterInfo");
 
-        var classSymbol = ctx.SemanticModel.GetDeclaredSymbol((ClassDeclarationSyntax)ctx.Node) !;
+        var classSymbol = ctx.SemanticModel.GetDeclaredSymbol((ClassDeclarationSyntax)ctx.Node)!;
         var eval_candidate = ReceiveTargetInterface(classSymbol, InterfaceKind.IEvaluator);
         var typeinfer_candidate = ReceiveTargetInterface(classSymbol, InterfaceKind.ITypeInferencer);
         return new[] { eval_candidate, typeinfer_candidate }.OfType<GenerateCandidate>();
@@ -237,14 +234,14 @@ internal class EvaluatorGenerator : IIncrementalGenerator
     ///
     /// <returns></returns><summary>
     /// build the value convert expression like:
-    /// var alpha = context.GetArgumentValueAsScalar<int>(celu, Celu.Alpha);
+    /// var alpha = context.GetArgumentValueAsScalar.<int>(celu, Celu.Alpha);
     /// </summary>
     /// <param name="cand"></param>
     /// <returns></returns>
     /// <exception cref="NotSupportedException"></exception>
     private List<StatementSyntax> BuildStatements(GenerateCandidate cand)
     {
-        var(return_type_name, context_type_name) = cand.Target.GetKindInfo();
+        var (return_type_name, context_type_name) = cand.Target.GetKindInfo();
         var statementSyntaxes = new List<StatementSyntax>();
         var allOpParams = new HashSet<string>(cand.Op.GetMembers().OfType<IFieldSymbol>().Where(f => SymbolEqualityComparer.Default.Equals(f.Type, ParameterInfoSymobl)).Select(f => f.Name));
 
@@ -284,19 +281,17 @@ internal class EvaluatorGenerator : IIncrementalGenerator
                     { IsReferenceType: true } x when SymbolEqualityComparer.Default.Equals(x, TensorSymobl) => $"GetArgumentValueAsTensor",
                     { IsReferenceType: true } x when x.ToDisplayString().EndsWith("OrtKISharp.Tensor") => "GetOrtArgumentValue",
                     { IsUnmanagedType: true, IsValueType: true } x => $"GetArgumentValueAsScalar<{paramType.ToDisplayString()}>",
-                    _ => throw new NotSupportedException($"Convert {cand.Class.Name} Params {paramType.ToDisplayString()} For IEvaluator Impl!")
+                    _ => throw new NotSupportedException($"Convert {cand.Class.Name} Params {paramType.ToDisplayString()} For IEvaluator Impl!"),
                 },
-
 
                 InterfaceKind.ITypeInferencer => paramType switch
                 {
                     { IsReferenceType: true } x when x.IsInheritFrom(IRTypeSymobl) => $"CheckArgumentType<{x}>",
                     var x when SymbolEqualityComparer.Default.Equals(x, ExprSymobl) => $"GetArgument",
-                    _ => throw new NotSupportedException($"Convert {cand.Class.Name} Params {paramType.ToDisplayString()} For ITypeInferencer Impl!")
+                    _ => throw new NotSupportedException($"Convert {cand.Class.Name} Params {paramType.ToDisplayString()} For ITypeInferencer Impl!"),
                 },
 
-
-                _ => throw new NotSupportedException($"{paramType.ToDisplayString()} with {cand.Target}!")
+                _ => throw new NotSupportedException($"{paramType.ToDisplayString()} with {cand.Target}!"),
             };
 
             statementSyntaxes.Add(ParseStatement($"var {parameter.Name} = context.{callMethod}(target, {cand.Op.ToDisplayString()}.{parameter.Name.Pascalize()});"));
@@ -338,7 +333,7 @@ internal class EvaluatorGenerator : IIncrementalGenerator
     /// <returns></returns>
     private MethodDeclarationSyntax BuildMethod(GenerateCandidate cand, IEnumerable<StatementSyntax> statements)
     {
-        var(return_type_name, context_type_name) = cand.Target.GetKindInfo();
+        var (return_type_name, context_type_name) = cand.Target.GetKindInfo();
         var method = GeneratorUtil.MakeMethod(ParseTypeName(return_type_name).WithTrailingTrivia(ElasticSpace), "Visit")
             .AddModifiers(Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(ElasticSpace))
             .AddParameterListParameters(
@@ -354,7 +349,7 @@ internal class EvaluatorGenerator : IIncrementalGenerator
     {
         List<NamespaceDeclarationSyntax> namespaceDeclarations = new();
         var namespaceCandidates = candidates1.GroupBy(keySelector: can => can.Class.ContainingNamespace, SymbolEqualityComparer.Default).ToDictionary(g => g.Key, g => g.ToList(), SymbolEqualityComparer.Default);
-        foreach (var(Namespace, candidates) in namespaceCandidates.Select(kv =>(kv.Key, kv.Value)))
+        foreach (var (Namespace, candidates) in namespaceCandidates.Select(kv => (kv.Key, kv.Value)))
         {
             List<ClassDeclarationSyntax> classDeclarations = new();
             foreach (var cand in candidates)

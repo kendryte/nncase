@@ -25,6 +25,8 @@
     <!-- <PackageVersion Include="libtorch-cuda-11.3-win-x64" Version="1.11.0.1" /> -->
     <PackageVersion Include="MagicalTensorflowLib" Version="0.0.2" />
     <PackageVersion Include="MagicalTensorflowLibOSX-ARM64" Version="0.0.4" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="6.0.0" />

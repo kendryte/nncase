@@ -14,35 +14,6 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Nncase.SourceGenerator.Pattern;
 
-internal class UsingComparer : IEqualityComparer<UsingDirectiveSyntax>
-{
-    public bool Equals(UsingDirectiveSyntax x, UsingDirectiveSyntax y)
-    {
-        return x.Name.GetFullName() == y.Name.GetFullName();
-    }
-
-    public int GetHashCode(UsingDirectiveSyntax obj)
-    {
-        return obj.Name.GetFullName().GetHashCode();
-    }
-}
-
-internal class GenerateCandidate
-{
-    public INamedTypeSymbol Op;
-    public IParameterSymbol[] AttrParams;
-    public ISymbol[] ExprParams;
-    public UsingDirectiveSyntax[] UsingSyntaxs;
-
-    public GenerateCandidate(INamedTypeSymbol syb, IParameterSymbol[] attrParams, ISymbol[] exprParams, UsingDirectiveSyntax[] usings)
-    {
-        Op = syb;
-        AttrParams = attrParams;
-        ExprParams = exprParams;
-        UsingSyntaxs = usings;
-    }
-}
-
 [Generator]
 public class PatternGenerator : IIncrementalGenerator
 {
@@ -56,7 +27,7 @@ public class PatternGenerator : IIncrementalGenerator
             .CreateSyntaxProvider(
                 predicate: static (node, _) => IsSyntaxTargetForGeneration(node), // select recored with base type named op
                 transform: (ctx, _) => GetSemanticTargetForGeneration(ctx)) // sect the enum with the [EnumExtensions] attribute
-            .Where(static m => m is not null) !; // filter out attributed enums that we don't care about
+            .Where(static m => m is not null)!; // filter out attributed enums that we don't care about
 
         // Generate the source using the compilation and enums
         context.RegisterSourceOutput(candidates.Collect(), static (spc, source) => Execute(spc, source));
@@ -69,10 +40,10 @@ public class PatternGenerator : IIncrementalGenerator
 
     private static void Execute(SourceProductionContext context, ImmutableArray<GenerateCandidate> receiveCandidates)
     {
-        var groupedCandidates = receiveCandidates.GroupBy(cand => cand.Op.ContainingNamespace, SymbolEqualityComparer.Default).Select(g =>(g.Key, g.ToArray()));
+        var groupedCandidates = receiveCandidates.GroupBy(cand => cand.Op.ContainingNamespace, SymbolEqualityComparer.Default).Select(g => (g.Key, g.ToArray()));
 
         List<NamespaceDeclarationSyntax> namespaces = new();
-        foreach (var(old_namespace, candidates) in groupedCandidates)
+        foreach (var (old_namespace, candidates) in groupedCandidates)
         {
             var members = new List<MemberDeclarationSyntax>();
 
@@ -88,7 +59,7 @@ public class PatternGenerator : IIncrementalGenerator
                 {
                     new() { null, null },
                     new() { pattern_name_params[0], null },
-                    new() { pattern_name_params[0], pattern_name_params[1] }
+                    new() { pattern_name_params[0], pattern_name_params[1] },
                 })
                 {
                     { // 1. build normal method
@@ -141,7 +112,7 @@ new VArgsPattern (new[]{{ {inputs} }}, null),
                                      .Concat(new[]
                                     {
                                         Parameter(Identifier("condition"))
-                                             .WithType(ParseTypeName($"Func<{cand.Op.ToDisplayString()},bool>").WithTrailingTrivia(ElasticSpace))
+                                             .WithType(ParseTypeName($"Func<{cand.Op.ToDisplayString()},bool>").WithTrailingTrivia(ElasticSpace)),
                                     })
                                      .Concat(from f in cand.ExprParams
                                              select Parameter(Identifier(f.Name.ToLower()))
@@ -221,7 +192,7 @@ new VArgsPattern( new [] {{ {inputs} }}, null ),
             IParameterSymbol[] attrParams = recordDeclaration.ParameterList is null ?
                     new IParameterSymbol[] { } :
                     (from p in recordDeclaration.ParameterList.Parameters
-                     select context.SemanticModel.GetDeclaredSymbol(p) !).ToArray();
+                     select context.SemanticModel.GetDeclaredSymbol(p)!).ToArray();
             var exprParams = op.GetMembers()
                 .OfType<IFieldSymbol>()
                 .Where(f => f.Type.Name == "ParameterInfo")
@@ -233,5 +204,34 @@ new VArgsPattern( new [] {{ {inputs} }}, null ),
         }
 
         return null;
+    }
+}
+
+internal class UsingComparer : IEqualityComparer<UsingDirectiveSyntax>
+{
+    public bool Equals(UsingDirectiveSyntax x, UsingDirectiveSyntax y)
+    {
+        return x.Name.GetFullName() == y.Name.GetFullName();
+    }
+
+    public int GetHashCode(UsingDirectiveSyntax obj)
+    {
+        return obj.Name.GetFullName().GetHashCode();
+    }
+}
+
+internal class GenerateCandidate
+{
+    public INamedTypeSymbol Op;
+    public IParameterSymbol[] AttrParams;
+    public ISymbol[] ExprParams;
+    public UsingDirectiveSyntax[] UsingSyntaxs;
+
+    public GenerateCandidate(INamedTypeSymbol syb, IParameterSymbol[] attrParams, ISymbol[] exprParams, UsingDirectiveSyntax[] usings)
+    {
+        Op = syb;
+        AttrParams = attrParams;
+        ExprParams = exprParams;
+        UsingSyntaxs = usings;
     }
 }

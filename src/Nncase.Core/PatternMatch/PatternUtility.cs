@@ -120,12 +120,6 @@ public static partial class Utility
         return new VArgsPattern(fields, null);
     }
 
-    private static VArgsPattern GenerateParameters(Pattern[] beginPatterns) =>
-        IsVArgsRepeat(list =>
-            beginPatterns
-                .Concat(Enumerable.Range(0, list.Count - beginPatterns.Length).Select(_ => IsWildcard(null)))
-                .ToArray());
-
     public static CallPattern IsCallWithSpec<T>(string callName, string opName, params (ParameterInfo, Pattern)[] specs)
         where T : Op =>
         IsCall(callName, IsOp<T>(opName, _ => true), ArgsPattern<T>(specs))
@@ -237,4 +231,10 @@ public static partial class Utility
         where OpT : Op => IsAlt(
         IsWildcardCall<OpT>(callName, null!, input),
         IsSwappableWildcardCall<OpT>(callName, null!, input, swappableOther));
+
+    private static VArgsPattern GenerateParameters(Pattern[] beginPatterns) =>
+        IsVArgsRepeat(list =>
+            beginPatterns
+                .Concat(Enumerable.Range(0, list.Count - beginPatterns.Length).Select(_ => IsWildcard(null)))
+                .ToArray());
 }

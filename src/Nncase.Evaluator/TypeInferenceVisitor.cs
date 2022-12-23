@@ -458,6 +458,13 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         return type;
     }
 
+    /// <inheritdoc/>
+    /// Note the IVisitable instance have no IRType.
+    public override object VisitLeaf(IVisitable visitable)
+    {
+        return default!;
+    }
+
     /// <summary>
     /// Verify the expression sub field type is valid.
     /// </summary>
@@ -479,13 +486,6 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         {
             throw new TypeInferenceInterruptException(new InvalidType($"The {exprMsg} Require {pattern.Reason}"));
         }
-    }
-
-    /// <inheritdoc/>
-    /// Note the IVisitable instance have no IRType.
-    public override object VisitLeaf(IVisitable visitable)
-    {
-        return default!;
     }
 
     /// <summary>

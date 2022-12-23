@@ -118,28 +118,6 @@ public class FusionGroupMutator : ExprMutator
         return expr;
     }
 
-    private sealed class FusionMergeCandidateComparer : IEqualityComparer<HashSet<Fusion>>
-    {
-        public bool Equals(HashSet<Fusion>? x, HashSet<Fusion>? y) => (x, y) switch
-        {
-            (null, null) => true,
-            (null, _) => false,
-            (_, null) => false,
-            (var lhs, var rhs) => GetHashCode(lhs) == GetHashCode(rhs),
-        };
-
-        public int GetHashCode([DisallowNull] HashSet<Fusion> obj)
-        {
-            var hash = default(HashCode);
-            foreach (var o in obj)
-            {
-                hash.Add(ReferenceEqualityComparer.Instance.GetHashCode(obj));
-            }
-
-            return hash.ToHashCode();
-        }
-    }
-
     /// <inheritdoc/>
     public override Expr VisitLeaf(Call expr)
     {
@@ -212,6 +190,28 @@ public class FusionGroupMutator : ExprMutator
         foreach (var param in new_call.Parameters)
         {
             _usedByReslut.Add(param, new_call);
+        }
+    }
+
+    private sealed class FusionMergeCandidateComparer : IEqualityComparer<HashSet<Fusion>>
+    {
+        public bool Equals(HashSet<Fusion>? x, HashSet<Fusion>? y) => (x, y) switch
+        {
+            (null, null) => true,
+            (null, _) => false,
+            (_, null) => false,
+            (var lhs, var rhs) => GetHashCode(lhs) == GetHashCode(rhs),
+        };
+
+        public int GetHashCode([DisallowNull] HashSet<Fusion> obj)
+        {
+            var hash = default(HashCode);
+            foreach (var o in obj)
+            {
+                hash.Add(ReferenceEqualityComparer.Instance.GetHashCode(obj));
+            }
+
+            return hash.ToHashCode();
         }
     }
 }

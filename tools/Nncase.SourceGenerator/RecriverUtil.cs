@@ -41,59 +41,59 @@ public static class RecriverUtil
 {
     public static DiagnosticDescriptor MethodParamError = new DiagnosticDescriptor(
         id: "EvalGen005",
-                                                                    title: "The Method Parameters Is Not Valid!",
-                                                                    messageFormat: "This Class '{0}' Method Parameters Is ('{1}'), Because the `'{2}'`!",
-                                                                    category: "EvaluatorGenerator",
-                                                                    DiagnosticSeverity.Error,
-                                                                    isEnabledByDefault: true);
+        title: "The Method Parameters Is Not Valid!",
+        messageFormat: "This Class '{0}' Method Parameters Is ('{1}'), Because the `'{2}'`!",
+        category: "EvaluatorGenerator",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 
     public static DiagnosticDescriptor ClassNotPartialError => new DiagnosticDescriptor(
         id: "EvalGen001",
-                                                                                title: "The Class Must Be partial!",
-                                                                                messageFormat: "The Class '{0}' Must Be partial!.",
-                                                                                category: "EvaluatorGenerator",
-                                                                                DiagnosticSeverity.Error,
-                                                                                isEnabledByDefault: true);
+        title: "The Class Must Be partial!",
+        messageFormat: "The Class '{0}' Must Be partial!.",
+        category: "EvaluatorGenerator",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 
     public static DiagnosticDescriptor ClassNotFromInterfaceError => new DiagnosticDescriptor(
         id: "EvalGen002",
-                                                                                title: "The Class Must Be Derived Interface!",
-                                                                                messageFormat: "The '{0}' Must Have '{1}'<T>!.",
-                                                                                category: "EvaluatorGenerator",
-                                                                                DiagnosticSeverity.Error,
-                                                                                isEnabledByDefault: true);
+        title: "The Class Must Be Derived Interface!",
+        messageFormat: "The '{0}' Must Have '{1}'<T>!.",
+        category: "EvaluatorGenerator",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 
     public static DiagnosticDescriptor ClassNoValidMethodError => new DiagnosticDescriptor(
         id: "EvalGen003",
-                                                                                title: "The Class Have No Valid Method!",
-                                                                                messageFormat: "The '{0}' Have Not Valid Method!",
-                                                                                category: "EvaluatorGenerator",
-                                                                                DiagnosticSeverity.Error,
-                                                                                isEnabledByDefault: true);
+        title: "The Class Have No Valid Method!",
+        messageFormat: "The '{0}' Have Not Valid Method!",
+        category: "EvaluatorGenerator",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 
     public static DiagnosticDescriptor ClassMoreMethodError => new DiagnosticDescriptor(
         id: "EvalGen004",
-                                                                            title: "The Class Have More Valid Method!",
-                                                                            messageFormat: "The '{0}' Have More Valid Method!",
-                                                                            category: "EvaluatorGenerator",
-                                                                            DiagnosticSeverity.Error,
-                                                                            isEnabledByDefault: true);
+        title: "The Class Have More Valid Method!",
+        messageFormat: "The '{0}' Have More Valid Method!",
+        category: "EvaluatorGenerator",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 
     public static DiagnosticDescriptor ClassNotFromBaseClassError => new DiagnosticDescriptor(
         id: "EvalGen006",
-                                                                                title: "The Class Must Be Derived From Target Class!",
-                                                                                messageFormat: "The '{0}' Must From '{1}'!",
-                                                                                category: "EvaluatorGenerator",
-                                                                                DiagnosticSeverity.Error,
-                                                                                isEnabledByDefault: true);
+        title: "The Class Must Be Derived From Target Class!",
+        messageFormat: "The '{0}' Must From '{1}'!",
+        category: "EvaluatorGenerator",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 
     public static DiagnosticDescriptor GeneratorError => new DiagnosticDescriptor(
         id: "EvalGen007",
-                                                                                title: "When Generator Get Error",
-                                                                                messageFormat: "'{0}'",
-                                                                                category: "EvaluatorGenerator",
-                                                                                DiagnosticSeverity.Error,
-                                                                                isEnabledByDefault: true);
+        title: "When Generator Get Error",
+        messageFormat: "'{0}'",
+        category: "EvaluatorGenerator",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 
     /// <summary>
     /// check the class attrs.
@@ -119,7 +119,7 @@ public static class RecriverUtil
     }
 
     /// <summary>
-    /// get full name from the name syntax
+    /// get full name from the name syntax.
     /// </summary>
     /// <param name="name"></param>
     /// <returns></returns>
@@ -128,11 +128,11 @@ public static class RecriverUtil
     {
         QualifiedNameSyntax qualifiedName => GetFullName(qualifiedName.Left) + "." + GetFullName(qualifiedName.Right),
         IdentifierNameSyntax identifierName => identifierName.Identifier.ValueText,
-        _ => throw new NotSupportedException(name.GetType().Name)
+        _ => throw new NotSupportedException(name.GetType().Name),
     };
 
     /// <summary>
-    /// check this type is inherit from other type or equal base type
+    /// check this type is inherit from other type or equal base type.
     /// </summary>
     /// <param name="typeSymbol"></param>
     /// <param name="baseSymbol"></param>

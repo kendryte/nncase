@@ -106,12 +106,7 @@ public static class Comparator
             _ => MathF.Abs(p.Item1 - p.Item2),
         }
 
-<= thresh);
-    }
-
-    private static float Prod(float[] data1, float[] data2)
-    {
-        return data1.Zip(data2).Aggregate(0f, (f, tuple) => f + (tuple.Item1 * tuple.Item2));
+        <= thresh);
     }
 
     public static bool TensorValueCompare(TensorValue pre, TensorValue post, float thresh)
@@ -176,6 +171,11 @@ public static class Comparator
         return pre.Zip(post).Select(tuple =>
                 TensorCompareByChannel(tuple.Item1, tuple.Item2, channelAxis, thresh))
             .ToArray();
+    }
+
+    private static float Prod(float[] data1, float[] data2)
+    {
+        return data1.Zip(data2).Aggregate(0f, (f, tuple) => f + (tuple.Item1 * tuple.Item2));
     }
 
     private static bool TupleValueAllEqual(TupleValue a, TupleValue b, float thresh)

@@ -45,7 +45,7 @@ internal sealed class RuleGenerator : IIncrementalGenerator
             .CreateSyntaxProvider(
                 predicate: static (s, _) => IsSyntaxTargetForGeneration(s), // select enums with attributes
                 transform: (ctx, _) => GetSemanticTargetForGeneration(ctx)) // sect the enum with the [EnumExtensions] attribute
-            .Where(static m => m is not null) !; // filter out attributed enums that we don't care about
+            .Where(static m => m is not null)!; // filter out attributed enums that we don't care about
 
         // Generate the source using the compilation and enums
         context.RegisterSourceOutput(candidates.Collect(), (spc, source) => Execute(spc, source));
@@ -58,8 +58,8 @@ internal sealed class RuleGenerator : IIncrementalGenerator
 
     private RuleCandidate? GetSemanticTargetForGeneration(GeneratorSyntaxContext ctx)
     {
-        IRewriteRuleSymbol ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Transform.IRewriteRule") !;
-        QuantRuleSymbol ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Transform.QuantRule") !;
+        IRewriteRuleSymbol ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Transform.IRewriteRule")!;
+        QuantRuleSymbol ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Transform.QuantRule")!;
         ExprSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Expr");
         TensorSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Tensor");
         IMatchResultSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.PatternMatch.IMatchResult");
@@ -226,7 +226,7 @@ internal sealed class RuleGenerator : IIncrementalGenerator
                 {
                   GeneratorUtil.MakeUsing("Nncase"),
                   GeneratorUtil.MakeUsing("Nncase.IR"),
-                  GeneratorUtil.MakeUsing("Nncase.PatternMatch")
+                  GeneratorUtil.MakeUsing("Nncase.PatternMatch"),
                 })).
                 WithMembers(new(namespaces)).
                 WithLeadingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.DisableKeyword)).

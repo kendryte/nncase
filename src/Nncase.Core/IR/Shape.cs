@@ -177,16 +177,6 @@ namespace Nncase.IR
         /// </summary>
         public int Size => Enumerable.Range(0, Rank).Aggregate(1, (size, i) => size * _dimensions[i].FixedValue);
 
-        /// <summary>
-        /// Gets a shape with rank unknwon dimension.
-        /// </summary>
-        /// <param name="rank"></param>
-        /// <returns></returns>
-        public static Shape Unknown(int rank)
-        {
-            return new Shape(ShapeKind.HasUnknownDimension, Enumerable.Repeat(Dimension.Unknown, rank));
-        }
-
         /// <inheritdoc/>
         public int Count => ((IReadOnlyCollection<Dimension>)_dimensions).Count;
 
@@ -215,6 +205,16 @@ namespace Nncase.IR
         public static bool operator !=(Shape lhs, Shape rhs)
         {
             return !(lhs == rhs);
+        }
+
+        /// <summary>
+        /// Gets a shape with rank unknwon dimension.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <returns></returns>
+        public static Shape Unknown(int rank)
+        {
+            return new Shape(ShapeKind.HasUnknownDimension, Enumerable.Repeat(Dimension.Unknown, rank));
         }
 
         /// <summary>
