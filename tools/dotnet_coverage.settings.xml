@@ -28,6 +28,8 @@
             </Exclude>
             <!-- Additional directories from .NET assemblies should be statically instrumented: -->
             <IncludeDirectories>
+                <Directory Recursive="true">src/Nncase.Compiler</Directory>
+                <Directory Recursive="true">src/Nncase.Tests</Directory>
             </IncludeDirectories>
         </ModulePaths>
 
@@ -82,7 +84,7 @@
         </PublicKeyTokens>
 
         <EnableStaticManagedInstrumentation>True</EnableStaticManagedInstrumentation>
-        <EnableDynamicManagedInstrumentation>True</EnableDynamicManagedInstrumentation>
+        <EnableDynamicManagedInstrumentation>False</EnableDynamicManagedInstrumentation>
 
     </CodeCoverage>
 </Configuration>
