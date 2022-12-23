@@ -7,8 +7,8 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.TIR;
 using Nncase.Utilities;
-using static Nncase.TestFixture.DumpPathExtractor;
 using Xunit;
+using static Nncase.TestFixture.DumpPathExtractor;
 
 namespace Nncase.TestFixture;
 

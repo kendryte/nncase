@@ -6,10 +6,10 @@ using LanguageExt.UnsafeValueAccess;
 using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using Random = Nncase.IR.F.Random;
-using Xunit;
 
 namespace Nncase.TestFixture;
 

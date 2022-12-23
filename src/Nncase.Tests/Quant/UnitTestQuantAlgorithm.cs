@@ -36,8 +36,8 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
     {
         var range = new ValueRange<float>(-1.234f, 2.345f);
         var qp = QuantUtility.GetQuantParam(range, 8, QuantMode.UnsignedMode);
-        Assert.Equal(qp.Scale, 0.014035294f);
-        Assert.Equal(qp.ZeroPoint, 88);
+        Assert.Equal(0.014035294f, qp.Scale);
+        Assert.Equal(88, qp.ZeroPoint);
     }
 
     [Fact]
@@ -102,11 +102,11 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
         dumpVisitor.Visit(module.Functions[0]);
 
         Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0], -1.0001221f);
-        Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[1], 1.0001087f);
+        Assert.Equal(1.0001087f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[1]);
         Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[0], -1.0001218f);
-        Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[1], 0.9954922f);
+        Assert.Equal(0.9954922f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[1]);
         Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[0], -8.882528f);
-        Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[1], 9.717726f);
+        Assert.Equal(9.717726f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[1]);
     }
 
     private Expr Pad(int[][] p) => Const.FromTensor(Tensor.From<int>(p.SelectMany(i => i).ToArray(), new[] { 2, 2 }));
