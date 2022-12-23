@@ -533,6 +533,144 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
 
+    [Fact]
+    public void TestDequantize()
+    {
+        var input = new byte[] { 127, 128, 150, 160, 170, 180, 200, 205 };
+        var axis = 0;
+        byte zero_point = 127;
+        var scale = 0.01F;
+
+        var input1 = OrtKISharp.Tensor.MakeTensor(input, new long[] { 2, 4 });
+        var expect = OrtKI.DequantizeLinear(input1, scale, zero_point, axis);
+
+        var quant_param = new QuantParam(zero_point, scale);
+        var input2 = Tensor.From(input, new[] { 2, 4 });
+        var expr = IR.F.Math.Dequantize(input2, quant_param, DataTypes.Float32);
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+    }
+
+    [Fact]
+    public void TestQuantize()
+    {
+        var input = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
+        var axis = 0;
+        byte zero_point = 127;
+        var scale = 0.05F;
+
+        var input1 = OrtKISharp.Tensor.MakeTensor(input, new long[] { 2, 4 });
+        var expect = OrtKI.QuantizeLinear(input1, scale, zero_point, axis);
+
+        var quant_param = new QuantParam(zero_point, scale);
+        var input2 = Tensor.From(input, new[] { 2, 4 });
+        var expr = IR.F.Math.Quantize(input2, quant_param, DataTypes.UInt8);
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+    }
+
+    [Fact]
+    public void TestFakeDequantize()
+    {
+        var input = new byte[] { 127, 128, 150, 160, 170, 180, 200, 205 };
+        byte zero_point = 127;
+        var scale = 0.01F;
+
+        var expect = Tensor.From(input, new[] { 2, 4 });
+        var expr = IR.F.Math.FakeDequantize(Tensor.From(input, new[] { 2, 4 }),
+            new QuantParam(zero_point, scale), DataTypes.Float32);
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor());
+    }
+
+    [Fact]
+    public void TestFakeQuantize()
+    {
+        var input = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
+        byte zero_point = 127;
+        var scale = 0.05F;
+
+        var expect = Tensor.From(input, new[] { 2, 4 });
+        var expr = IR.F.Math.FakeQuantize(Tensor.From(input, new[] { 2, 4 }),
+            new QuantParam(zero_point, scale), DataTypes.UInt8);
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor());
+    }
+
+    [Fact]
+    public void TestMatmul()
+    {
+        {
+            var input = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
+            var m1_ort = OrtKISharp.Tensor.MakeTensor(input, new long[] { 2, 4 });
+            var m2_ort = OrtKISharp.Tensor.MakeTensor(input, new long[] { 4, 2 });
+
+            var m1 = Tensor.From(input, new [] { 2, 4 });
+            var m2 = Tensor.From(input, new [] { 4, 2 });
+            var expect = OrtKI.MatMul(m1_ort, m2_ort);
+
+            var expr = IR.F.Math.MatMul(m1, m2);
+            CompilerServices.InferenceType(expr);
+            Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+        }
+
+        {
+            var input1 = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F, 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
+            var input2 = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
+
+            var m1_ort = OrtKISharp.Tensor.MakeTensor(input1, new long[] { 2, 2, 4 });
+            var m2_ort = OrtKISharp.Tensor.MakeTensor(input2, new long[] { 4, 2 });
+
+            var m1 = Tensor.From(input1, new [] { 2, 2, 4 });
+            var m2 = Tensor.From(input2, new [] { 4, 2 });
+            var expect = OrtKI.MatMul(m1_ort, m2_ort);
+
+            var expr = IR.F.Math.MatMul(m1, m2);
+            CompilerServices.InferenceType(expr);
+            Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+        }
+    }
+
+    [Fact]
+    public void TestMatmulInvalidType()
+    {
+        {
+            var input1 = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
+            var input2 = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+            var m1 = Tensor.From(input1, new [] { 2, 4 });
+            var m2 = Tensor.From(input2, new [] { 4, 2 });
+
+            var expr = IR.F.Math.MatMul(m1, m2);
+            CompilerServices.InferenceType(expr);
+            Assert.IsType<InvalidType>(expr.CheckedType);
+        }
+
+        {
+            var input1 = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
+            var input2 = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
+            var m1 = Tensor.From(input1, new [] { 2, 4 });
+            var m2 = Tensor.From(input2, new [] { 1, 8 });
+
+            var expr = IR.F.Math.MatMul(m1, m2);
+            CompilerServices.InferenceType(expr);
+            Assert.IsType<InvalidType>(expr.CheckedType);
+        }
+    }
+
+
+    [Fact]
+    public void TestQuantParamOf()
+    {
+        float []range = new float[] { 0F, 1F };
+        QuantMode mode = QuantMode.UnsignedMode;
+        int bits = 8;
+
+        var expect = Tensor.FromScalar(QuantUtility.GetQuantParam((range[0], range[1]), bits, mode));
+        var expr = IR.F.Math.QuantParamOf(mode, range, bits);
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor());
+    }
+
     private void AssertRangeOf(Expr input, float[] r)
     {
         Assert.Equal(r, RangeOf(input).Evaluate().AsTensor().ToArray<float>());
@@ -551,6 +689,104 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         n2.Add(float.PositiveInfinity);
         n2.Add(float.NegativeInfinity);
         AssertRangeOf(n2.ToArray(), r);
+    }
+
+ [Fact]
+    public void TestReduce()
+    {
+        long []axes = { 0 };
+        float initValue = 0F;
+        long keepDims = 1;
+        var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var result = new float[] { 5, 6, 7, 8 };
+        var ort_a = OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 });
+        var expr_a = Tensor.From(a, new[] { 2, 4 });
+        var expect = Tensor.From(result, new[] { 1, 4 }).ToOrtTensor();
+
+        ReduceOp []ops = new ReduceOp[] { ReduceOp.Max, ReduceOp.Min, ReduceOp.Mean, ReduceOp.Prod, ReduceOp.Sum };
+
+        foreach(var op in ops)
+        {
+            switch (op)
+            {
+                case ReduceOp.Max:
+                {
+                    expect = OrtKI.ReduceMax(ort_a, axes, keepDims);
+                    break;
+                }
+                case ReduceOp.Min:
+                {
+                    expect = OrtKI.ReduceMin(ort_a, axes, keepDims);
+                    break;
+                }
+                case ReduceOp.Mean:
+                {
+                    expect = OrtKI.ReduceMean(ort_a, axes, keepDims);
+                    break;
+                }
+                case ReduceOp.Prod:
+                {
+                    expect = OrtKI.ReduceProd(ort_a, axes, keepDims);
+                    break;
+                }
+                case ReduceOp.Sum:
+                {
+                    expect = OrtKI.ReduceSum(ort_a, axes, keepDims, 0L);
+                    break;
+                }
+            }
+
+            var expr = IR.F.Tensors.Reduce(op, expr_a, Tensor.From(axes, new [] { 1 }), initValue, keepDims);
+            CompilerServices.InferenceType(expr);
+            Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+        }
+    }
+
+
+ [Fact]
+    public void TestReduceArg()
+    {
+        long axis = 0L;
+        long []keepDims = { 0L, 1L };
+        long select_last_idx = 0L;
+        var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var result = new int[] { 5, 6, 7, 8 };
+        var ort_a = OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 });
+        var expr_a = Tensor.From(a, new[] { 2, 4 });
+        var expect = Tensor.From(result, new[] { 1, 4 }).ToOrtTensor();
+
+        ReduceArgOp []ops = new ReduceArgOp[] { ReduceArgOp.ArgMax, ReduceArgOp.ArgMin };
+
+        foreach (var keepdims in keepDims)
+        foreach(var op in ops)
+        {
+            switch (op)
+            {
+                case ReduceArgOp.ArgMax:
+                {
+                    expect = OrtKI.ArgMax(ort_a, axis, keepdims, select_last_idx);
+                    break;
+                }
+                case ReduceArgOp.ArgMin:
+                {
+                    expect = OrtKI.ArgMin(ort_a, axis, keepdims, select_last_idx);
+                    break;
+                }
+            }
+
+            var expr = IR.F.Tensors.ReduceArg(op, expr_a, axis, keepdims, select_last_idx);
+            CompilerServices.InferenceType(expr);
+            Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+        }
+    }
+
+    [Fact]
+    public void TestRequire()
+    {
+        var expect = Tensor.FromRange(1, 8);
+        var expr = IR.F.Math.Require((Expr)10 > (Expr)9, expect);
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor());
     }
 
     [Fact]
@@ -573,12 +809,154 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestUnary()
     {
-        var a = (Const)7f;
-        var tA = OrtKISharp.Tensor.FromScalar(7f);
-        var expr = -a;
+        UnaryOp[] ops = new UnaryOp[] { UnaryOp.Abs, UnaryOp.Acos, UnaryOp.Acosh, UnaryOp.Asin,
+            UnaryOp.Asinh, UnaryOp.Ceil, UnaryOp.Cos, UnaryOp.Cosh, UnaryOp.Exp, UnaryOp.Floor,
+            UnaryOp.Log, UnaryOp.Neg, UnaryOp.Round, UnaryOp.Rsqrt, UnaryOp.Sign, UnaryOp.Sin,
+            UnaryOp.Sinh, UnaryOp.Sqrt, UnaryOp.Square, UnaryOp.Tanh };
+
+        {
+            var f = 1F;
+            foreach(var op in ops)
+            {
+                TestUnaryNormal(op, OrtKISharp.Tensor.FromScalar(f), Tensor.FromScalar(f));
+            }
+        }
+
+        {
+            var f = new float[] { 1F, 1.1F, 1.2F, 1.3F };
+            foreach(var op in ops)
+            {
+                TestUnaryNormal(op, OrtKISharp.Tensor.MakeTensor(f, new long[] {2, 2}),
+                    Tensor.From(f, new[] {2, 2}));
+            }
+        }
+
+        {
+            bool[] a = new bool[] { true, false, false, true };
+            TestUnaryNormal(UnaryOp.LogicalNot, OrtKISharp.Tensor.MakeTensor(a, new long[] {2, 2}),
+                Tensor.From(a, new[] {2, 2}));
+        }
+    }
+
+    public void TestUnaryNormal(UnaryOp op, OrtKISharp.Tensor ort, Expr e)
+    {
+        var expect = ort;
+        switch(op)
+        {
+            case UnaryOp.Abs:
+            {
+                expect = OrtKI.Abs(ort);
+                break;
+            }
+            case UnaryOp.Acos:
+            {
+                expect = OrtKI.Acos(ort);
+                break;
+            }
+            case UnaryOp.Acosh:
+            {
+                expect = OrtKI.Acosh(ort);
+                break;
+            }
+            case UnaryOp.Asin:
+            {
+                expect = OrtKI.Asin(ort);
+                break;
+            }
+            case UnaryOp.Asinh:
+            {
+                expect = OrtKI.Asinh(ort);
+                break;
+            }
+            case UnaryOp.Cos:
+            {
+                expect = OrtKI.Cos(ort);
+                break;
+            }
+            case UnaryOp.Cosh:
+            {
+                expect = OrtKI.Cosh(ort);
+                break;
+            }
+            case UnaryOp.Ceil:
+            {
+                expect = OrtKI.Ceil(ort);
+                break;
+            }
+            case UnaryOp.Exp:
+            {
+                expect = OrtKI.Exp(ort);
+                break;
+            }
+            case UnaryOp.Floor:
+            {
+                expect = OrtKI.Floor(ort);
+                break;
+            }
+            case UnaryOp.Log:
+            {
+                expect = OrtKI.Log(ort);
+                break;
+            }
+            case UnaryOp.LogicalNot:
+            {
+                expect = OrtKI.Not(ort);
+                break;
+            }
+            case UnaryOp.Neg:
+            {
+                expect = OrtKI.Neg(ort);
+                break;
+            }
+            case UnaryOp.Round:
+            {
+                expect = OrtKI.Round(ort);
+                break;
+            }
+            case UnaryOp.Rsqrt:
+            {
+                expect = OrtKI.Rsqrt(ort);
+                break;
+            }
+            case UnaryOp.Sign:
+            {
+                expect = OrtKI.Sign(ort);
+                break;
+            }
+            case UnaryOp.Sin:
+            {
+                expect = OrtKI.Sin(ort);
+                break;
+            }
+            case UnaryOp.Sinh:
+            {
+                expect = OrtKI.Sinh(ort);
+                break;
+            }
+            case UnaryOp.Sqrt:
+            {
+                expect = OrtKI.Sqrt(ort);
+                break;
+            }
+            case UnaryOp.Square:
+            {
+                expect = OrtKI.Square(ort);
+                break;
+            }
+            case UnaryOp.Tanh:
+            {
+                expect = OrtKI.Tanh(ort);
+                break;
+            }
+            default:
+            {
+                throw new ArgumentOutOfRangeException(nameof(op));
+                break;
+            }
+        }
+
+        var expr = IR.F.Math.Unary(op, e);
         CompilerServices.InferenceType(expr);
-        Assert.Equal(
-            -tA,
-            expr.Evaluate().AsTensor().ToOrtTensor());
+        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
 }

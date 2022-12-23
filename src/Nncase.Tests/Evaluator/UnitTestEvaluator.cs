@@ -60,35 +60,6 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
     }
 
     [Fact]
-    public void TestUnary()
-    {
-        var a = (Const)7f;
-        var tA = OrtKISharp.Tensor.FromScalar(7f);
-        var expr = -a;
-        CompilerServices.InferenceType(expr);
-        Assert.Equal(
-            -tA,
-            expr.Evaluate().AsTensor().ToOrtTensor());
-    }
-
-    [Fact]
-    public void TestCompare()
-    {
-        Assert.True(CompilerServices.Evaluate((Expr)5 <= (Expr)10).AsTensor().ToScalar<bool>());
-        Assert.True(CompilerServices.Evaluate((Expr)5 <= (Expr)5).AsTensor().ToScalar<bool>());
-        Assert.False(CompilerServices.Evaluate((Expr)(-1) <= (Expr)(-2)).AsTensor().ToScalar<bool>());
-
-        Assert.False(CompilerServices.Evaluate((Expr)10 != (Expr)10).AsTensor().ToScalar<bool>());
-        Assert.True(CompilerServices.Evaluate((Expr)10 != (Expr)(-2)).AsTensor().ToScalar<bool>());
-
-        Assert.True(CompilerServices.Evaluate((Expr)10 == (Expr)10).AsTensor().ToScalar<bool>());
-        Assert.False(CompilerServices.Evaluate((Expr)10 == (Expr)2).AsTensor().ToScalar<bool>());
-
-        Assert.False(CompilerServices.Evaluate((Expr)1 > (Expr)10).AsTensor().ToScalar<bool>());
-        Assert.True(CompilerServices.Evaluate((Expr)1 > (Expr)0).AsTensor().ToScalar<bool>());
-    }
-
-    [Fact]
     public void TestConcat()
     {
         var a = Const.FromTensor(Tensor.From<int>(Enumerable.Range(0, 12).ToArray(), new Shape(new[] { 1, 3, 4 })));
@@ -291,25 +262,5 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
         var image = Imaging.ResizeImage(ImageResizeMode.Bilinear, input, Array.Empty<int>(), new[] { 1, 3, 112, 112 }, isTFResize: true);
         image.InferenceType();
         Assert.Equal(new[] { 1, 3, 112, 112 }, image.Evaluate().AsTensor().Dimensions.ToArray());
-    }
-
-    private void AssertRangeOf(Expr input, float[] r)
-    {
-        Assert.Equal(r, RangeOf(input).Evaluate().AsTensor().ToArray<float>());
-    }
-
-    [Fact]
-    public void TestRangeOf()
-    {
-        var input = Enumerable.Range(0, 32).Select(x => (float)x);
-        var r = new[] { 0f, 31 };
-        AssertRangeOf(input.ToArray(), r);
-        var n1 = input.ToList();
-        n1.Add(float.NaN);
-        AssertRangeOf(n1.ToArray(), r);
-        var n2 = input.ToList();
-        n2.Add(float.PositiveInfinity);
-        n2.Add(float.NegativeInfinity);
-        AssertRangeOf(n2.ToArray(), r);
     }
 }
