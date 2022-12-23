@@ -49,7 +49,7 @@ public class UnitTestFoldBinary : TestFixture.UnitTestFixtrue
 
     [Theory]
     [MemberData(nameof(TestFoldNopBinaryNegativeData))]
-    public void TestFoldNopBinaryNegative(BinaryOp binaryOp, int[] aShape, float bValue)
+    public void TestFoldNopBinaryNegative(BinaryOp binaryOp, int[] aShape, float bValue, int index)
     {
         var caseOptions = GetPassOptions();
         var a = new Var();
@@ -69,7 +69,7 @@ public class UnitTestFoldBinary : TestFixture.UnitTestFixtrue
 
     [Theory]
     [MemberData(nameof(TestFoldNopBinaryPositiveData))]
-    public void TestFoldNopBinaryPositive(BinaryOp binaryOp, int[] aShape, float bValue)
+    public void TestFoldNopBinaryPositive(BinaryOp binaryOp, int[] aShape, float bValue, int index)
     {
         var caseOptions = GetPassOptions();
         var a = new Var();

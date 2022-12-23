@@ -20,10 +20,10 @@ public class UnitTestDLLCall
     public void TestGetDelegate()
     {
         var cls_type = typeof(CustomType);
-        Assert.Null(cls_type.GetField("declf"));
-        Assert.NotNull(cls_type.GetMember("declf"));
-        Assert.NotNull(cls_type.GetNestedType("declf"));
-        var t = cls_type.GetNestedType("declf");
+        Assert.Null(cls_type.GetField("Declf"));
+        Assert.NotNull(cls_type.GetMember("Declf"));
+        Assert.NotNull(cls_type.GetNestedType("Declf"));
+        var t = cls_type.GetNestedType("Declf");
         Assert.Equal(typeof(MulticastDelegate), t.BaseType);
         ConstructorInfo ctor = t.GetConstructors()[0];
         Console.Write(ctor.GetMethodImplementationFlags());

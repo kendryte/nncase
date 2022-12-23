@@ -85,7 +85,7 @@ public class UnitTestFoldPad : TestFixture.UnitTestFixtrue
 
     [Theory]
     [MemberData(nameof(TestFoldNopPadPositiveData))]
-    public void TestFoldNopPadPositive(int[] shape, int[,] pads)
+    public void TestFoldNopPadPositive(int[] shape, int[,] pads, int index)
     {
         var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
@@ -98,7 +98,7 @@ public class UnitTestFoldPad : TestFixture.UnitTestFixtrue
 
     [Theory]
     [MemberData(nameof(TestFoldNopPadNegativeData))]
-    public void TestFoldNopPadNegative(int[] shape, int[,] pads)
+    public void TestFoldNopPadNegative(int[] shape, int[,] pads, int index)
     {
         var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
@@ -111,7 +111,7 @@ public class UnitTestFoldPad : TestFixture.UnitTestFixtrue
 
     [Theory]
     [MemberData(nameof(TestFoldTwoPadsPositiveData))]
-    public void TestFoldTwoPadsPositive(int[] shape, int[,] pads1, int[,] pads2)
+    public void TestFoldTwoPadsPositive(int[] shape, int[,] pads1, int[,] pads2, int index)
     {
         var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
@@ -124,7 +124,7 @@ public class UnitTestFoldPad : TestFixture.UnitTestFixtrue
 
     [Theory]
     [MemberData(nameof(TestFoldTwoPadsNegativeData))]
-    public void TestFoldTwoPadsNegative(int[] shape, int[,] pads1, float padValue1, int[,] pads2, float padValue2)
+    public void TestFoldTwoPadsNegative(int[] shape, int[,] pads1, float padValue1, int[,] pads2, float padValue2, int index)
     {
         var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);

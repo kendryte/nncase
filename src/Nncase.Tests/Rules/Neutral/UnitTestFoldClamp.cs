@@ -37,7 +37,7 @@ public class UnitTestFoldClamp : TestFixture.UnitTestFixtrue
 
     [Theory]
     [MemberData(nameof(TestFoldNopClampPositiveData))]
-    public void TestFoldNopCastPositive(float min, float max)
+    public void TestFoldNopCastPositive(float min, float max, int index)
     {
         var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
@@ -49,7 +49,7 @@ public class UnitTestFoldClamp : TestFixture.UnitTestFixtrue
 
     [Theory]
     [MemberData(nameof(TestFoldNopClampNegativeData))]
-    public void TestFoldNopCastNegative(float min, float max)
+    public void TestFoldNopCastNegative(float min, float max, int index)
     {
         var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });

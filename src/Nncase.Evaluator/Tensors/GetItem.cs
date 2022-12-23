@@ -55,7 +55,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
         return input[index.AsTensor().ToScalar<int>()];
     }
 
-    private IRType Visit(ITypeInferenceContext context, GetItem target, IRType input, TensorType index1)
+    private IRType Visit(ITypeInferenceContext context, GetItem target, IRType input, TensorType index)
     {
         IRType ret = new InvalidType("Need Be Reset!");
         switch (input)
@@ -68,26 +68,26 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
 
                 ret = new TensorType(
                     tensorType.DType,
-                    index1.Shape switch
+                    index.Shape switch
                     {
                         { IsScalar: true } => new Shape(tensorType.Shape.Skip(1)),
-                        { IsFixed: true } => index1.Shape[0].FixedValue == tensorType.Shape.Rank ?
+                        { IsFixed: true } => index.Shape[0].FixedValue == tensorType.Shape.Rank ?
                                              Shape.Scalar :
-                                             new Shape(tensorType.Shape.Skip(index1.Shape[0].FixedValue)),
+                                             new Shape(tensorType.Shape.Skip(index.Shape[0].FixedValue)),
                         _ => Shape.Unranked,
                     });
                 break;
             case TupleType tupleType:
                 if (context.GetArgument(target, GetItem.Index) is TensorConst @const)
                 {
-                    var index = @const.Value.ToScalar<int>();
-                    if (index < tupleType.Count)
+                    var indexValue = @const.Value.ToScalar<int>();
+                    if (indexValue < tupleType.Count)
                     {
-                        ret = tupleType[index];
+                        ret = tupleType[indexValue];
                     }
                     else
                     {
-                        ret = new InvalidType($"The Input Tuple Count = {tupleType.Count}, But Index = {index}");
+                        ret = new InvalidType($"The Input Tuple Count = {tupleType.Count}, But Index = {indexValue}");
                     }
                 }
                 else

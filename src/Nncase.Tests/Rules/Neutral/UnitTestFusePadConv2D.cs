@@ -103,7 +103,7 @@ public class UnitTestFusePadConv2D : TestFixture.UnitTestFixtrue
 
     [Theory]
     [MemberData(nameof(TestFusePadConv2DPositiveData))]
-    public void TestFusePadConv2DPositive(int[] shape, int[,] pads1, int[,] pads2, int[] wShape)
+    public void TestFusePadConv2DPositive(int[] shape, int[,] pads1, int[,] pads2, int[] wShape, int index)
     {
         var caseOptions = GetPassOptions();
         var a = new Var();
@@ -134,7 +134,7 @@ public class UnitTestFusePadConv2D : TestFixture.UnitTestFixtrue
 
     [Theory]
     [MemberData(nameof(TestFusePadConv2DNegativeData))]
-    public void TestFusePadConv2DNegative(int[] shape, int[,] pads1, int[,] pads2, int[] wShape)
+    public void TestFusePadConv2DNegative(int[] shape, int[,] pads1, int[,] pads2, int[] wShape, int index)
     {
         var caseOptions = GetPassOptions();
         var a = new Var();

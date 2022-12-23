@@ -71,7 +71,7 @@ public class UnitTestFoldSlice : TestFixture.UnitTestFixtrue
 
     [Theory]
     [MemberData(nameof(TestFoldNopSlicePositiveData))]
-    public void TestFoldNopSlicePositive(int[] shape, int[] begins, int[] ends, int[] axes, int[] strides)
+    public void TestFoldNopSlicePositive(int[] shape, int[] begins, int[] ends, int[] axes, int[] strides, int index)
     {
         var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
@@ -84,7 +84,7 @@ public class UnitTestFoldSlice : TestFixture.UnitTestFixtrue
 
     [Theory]
     [MemberData(nameof(TestFoldNopSliceNegativeData))]
-    public void TestFoldNopSliceNegative(int[] shape, int[] begins, int[] ends, int[] axes, int[] strides)
+    public void TestFoldNopSliceNegative(int[] shape, int[] begins, int[] ends, int[] axes, int[] strides, int index)
     {
         var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
@@ -97,7 +97,7 @@ public class UnitTestFoldSlice : TestFixture.UnitTestFixtrue
 
     [Theory]
     [MemberData(nameof(TestFoldTwoSlicePositiveData))]
-    public void TestFoldTwoSlicePositive(int[] shape, int[] begins1, int[] ends1, int[] axes1, int[] strides1, int[] begins2, int[] ends2, int[] axes2, int[] strides2)
+    public void TestFoldTwoSlicePositive(int[] shape, int[] begins1, int[] ends1, int[] axes1, int[] strides1, int[] begins2, int[] ends2, int[] axes2, int[] strides2, int index)
     {
         var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);

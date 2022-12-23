@@ -49,7 +49,7 @@ public class UnitTestSimplifyBinary : TestFixture.UnitTestFixtrue
 
     [Theory]
     [MemberData(nameof(TestReassociateMulPositiveData))]
-    public void TestReassociateMulPositive(int[] aShape)
+    public void TestReassociateMulPositive(int[] aShape, int index)
     {
         var caseOptions = GetPassOptions();
         var a = new Var();
@@ -73,7 +73,7 @@ public class UnitTestSimplifyBinary : TestFixture.UnitTestFixtrue
 
     [Theory]
     [MemberData(nameof(TestReassociateDivPositiveData))]
-    public void TestReassociateDivPositive(int[] aShape)
+    public void TestReassociateDivPositive(int[] aShape, int index)
     {
         var caseOptions = GetPassOptions();
         var a = new Var();
@@ -94,7 +94,7 @@ public class UnitTestSimplifyBinary : TestFixture.UnitTestFixtrue
 
     [Theory]
     [MemberData(nameof(TestXDivXPositiveData))]
-    public void TestXDivXPositive(int[] aShape)
+    public void TestXDivXPositive(int[] aShape, int index)
     {
         var caseOptions = GetPassOptions();
         var a = new Var();
@@ -112,7 +112,7 @@ public class UnitTestSimplifyBinary : TestFixture.UnitTestFixtrue
 
     [Theory]
     [MemberData(nameof(TestCommutateMulPositiveData))]
-    public void TestCommutateMulPositive(int[] aShape)
+    public void TestCommutateMulPositive(int[] aShape, int index)
     {
         var caseOptions = GetPassOptions();
         caseOptions = caseOptions.SetRewriteOnce(true);

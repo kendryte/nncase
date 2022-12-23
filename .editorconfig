@@ -204,6 +204,7 @@ csharp_style_prefer_null_check_over_type_check = true:suggestion
 csharp_style_prefer_local_over_anonymous_function = true:suggestion
 csharp_style_prefer_tuple_swap = true:suggestion
 csharp_style_prefer_utf8_string_literals = true:suggestion
+dotnet_diagnostic.xUnit1026.severity = suggestion
 
 ## Naming conventions
 [*.{cs,vb}]
@@ -297,6 +298,7 @@ dotnet_diagnostic.IDE0005.severity = suggestion
 dotnet_diagnostic.IDE0035.severity = warning
 dotnet_diagnostic.IDE0051.severity = suggestion
 dotnet_diagnostic.IDE0059.severity = warning
+dotnet_diagnostic.IDE0060.severity = suggestion
 dotnet_diagnostic.IDE1006.severity = suggestion
 
 dotnet_code_quality.copy_analysis = true
