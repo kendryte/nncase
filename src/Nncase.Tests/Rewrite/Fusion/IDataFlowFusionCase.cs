@@ -444,3 +444,99 @@ internal class DataFlowType7FusionCaseRight : DataFlowType7FusionCaseLeft
         return BuildBodyCore(input, false);
     }
 }
+
+/// <summary>
+/// note : fusion2_4 can't fusion
+///                   input
+///                     |
+///                 v0 = fusion0_f(input)
+///                     |
+///                 v1 = fusion1_f(v0)
+///                     |
+///                  /    \
+///              /           \     
+///      v2 = fusion2_t(v1)    v3 = fusion3_t(v1)
+///           |            \  /         |
+///           |            /  \         |
+///    v4 = fusion4_t(v2,v3)   v5 = fusion5_t(v2,v3)
+///           |                  /
+///    v6 = fusion6_f(v4)      /
+///           |             /
+///    v7 = fusion7_f(v6,v5)
+///           |
+///    v8 = fusion8_f(v7)
+/// 
+/// </summary>
+internal class DataFlowType8FusionCase : IDataFlowFusionCase
+{
+
+    public static Expr BuildBodyCore(Expr input)
+    {
+        var v0 = new Call(FusionBuilder.MakeConv2DFusion(false), input);
+        var v1 = new Call(FusionBuilder.MakeConv2DFusion(false), v0);
+
+        var v2 = new Call(FusionBuilder.MakeConv2DFusion(true), v1);
+        var v3 = new Call(FusionBuilder.MakeConv2DFusion(true), v1);
+
+        var v4 = new Call(FusionBuilder.MakeBinaryFusion(BinaryOp.Add, true), v2, v3);
+        var v5 = new Call(FusionBuilder.MakeBinaryFusion(BinaryOp.Sub, true), v2, v3);
+
+        var v6 = new Call(FusionBuilder.MakeConv2DFusion(false), v4);
+
+        var v7 = new Call(FusionBuilder.MakeBinaryFusion(BinaryOp.Min, false), v6, v5);
+        var v8 = new Call(FusionBuilder.MakeConv2DFusion(false), v7);
+        return v8;
+    }
+
+    public Expr BuildBody(Var input)
+    {
+        return BuildBodyCore(input);
+    }
+
+    public int FinalFusionCount => 9;
+}
+
+
+/// <summary>
+///   input
+///     |
+/// v0 = fusion0(input)
+///     |              \
+/// v1 = fusion1(v0)   |
+///         \          |
+///           \       /
+///        v2 = fusion2(v1,v0) 
+///             |            \
+///        v3 = fusion3(v2)   |
+///                   \       |
+///                      \    |
+///           v4 = fusion4(v3,v2)
+///                |              \
+///             v5 = fusion5(v4)   |
+///                  |            /
+///             v6 = fusion6(v5,v4)
+/// </summary>
+internal class DataFlowType9FusionCase : IDataFlowFusionCase
+{
+
+    public static Expr BuildBodyCore(Expr input, bool left)
+    {
+        var v0 = new Call(FusionBuilder.MakeConv2DFusion(true), input);
+        var v1 = new Call(FusionBuilder.MakeConv2DFusion(true), v0);
+
+        var v2 = new Call(FusionBuilder.MakeBinaryFusion(BinaryOp.Add, true), left ? new[] { v1, v0 } : new[] { v0, v1 });
+        var v3 = new Call(FusionBuilder.MakeConv2DFusion(true), v2);
+
+        var v4 = new Call(FusionBuilder.MakeBinaryFusion(BinaryOp.Sub, true), left ? new[] { v3, v2 } : new[] { v2, v3 });
+        var v5 = new Call(FusionBuilder.MakeConv2DFusion(true), v4);
+        var v6 = new Call(FusionBuilder.MakeBinaryFusion(BinaryOp.Min, true), left ? new[] { v4, v5 } : new[] { v5, v4 });
+        return v6;
+    }
+
+    public Expr BuildBody(Var input)
+    {
+        return BuildBodyCore(input, true);
+    }
+
+    public int FinalFusionCount => 1;
+}

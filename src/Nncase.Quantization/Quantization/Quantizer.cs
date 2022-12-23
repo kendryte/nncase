@@ -79,10 +79,20 @@ internal partial class Quantizer
         }
     }
 
+    private async Task RunPassAsync(ICalibrationDatasetProvider calibrationDataset, Action<IReadOnlyDictionary<ENode, Tensor>> func)
+    {
+        await foreach (var sample in calibrationDataset.Samples)
+        {
+            var evaluator = new CalibrationEvaluator(sample, _rangeOfs, _passOptions.SetPassName(_passOptions.PassName + "/ep1"));
+            var values = evaluator.Evaluate();
+            func(values);
+        }
+    }
+
     private async Task<IDictionary<ENode, ValueRange<float>>> GetRangesAsync(ICalibrationDatasetProvider calibrationDataset)
     {
         var ranges = new Dictionary<ENode, ValueRange<float>>();
-        await RunPassAsync(calibrationDataset, (values, childrenValues) =>
+        await RunPassAsync(calibrationDataset, (values) =>
         {
             foreach (var value in values)
             {

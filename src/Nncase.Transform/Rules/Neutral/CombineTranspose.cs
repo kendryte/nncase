@@ -204,18 +204,18 @@ public sealed partial class CombineTransposePad : IRewriteRule
 }
 
 /// <summary>
-/// Combine Pad With Transpose
-/// transpose(pad) => pad(transpose).
+/// Combine Pad with Transpose
+/// transpose(pad(x, pp),p) => pad(transpose(x),new_pp)
 /// </summary>
 [RuleGenerator]
 public sealed partial class CombinePadTranspose : IRewriteRule
 {
     /// <inheritdoc/>
-
     public IPattern Pattern { get; } = IsTranspose(
         "transpose",
         x => true,
-        IsPad("pad", y => true, IsWildcard("input"), IsTensorConst("pads"), IsWildcard("padValue")), IsTensorConst("perm"));
+        IsPad("pad", y => true, IsWildcard("input"), IsTensorConst
+        ("pads"), IsTensorConst("padValue")), IsTensorConst("perm"));
 
     private Expr GetReplace(Pad pad, Expr input, int[] perm, Expr pads, Expr padValue)
     {

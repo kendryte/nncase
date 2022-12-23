@@ -113,7 +113,7 @@ public class TextDataExtractor
     public OriginValue GetComputeResult(string dir, int i)
     {
         var results = ExtractValues(dir, f => IsResultFile(f) && GetDumpFileNum(f) == i);
-        Debug.Assert(results.Length != 0);
+        Trace.Assert(results.Length != 0);
         return results.Head();
     }
 

@@ -86,9 +86,9 @@ namespace Nncase.IR.F
 
         public static Call LogSoftmax(Expr expr, Expr axis) => new Call(new LogSoftmax(), expr, axis);
 
-        public static Call LSTM(Expr input,Expr w, Expr r, Expr b, 
-            Expr initH, Expr initC, Expr has_static, lstm_direction lstmDirection,string str) =>
-            new Call(new IR.NN.LSTM(lstmDirection,str), input, w, r, b,  initH, initC, has_static);
+        // public static Call LSTM(Expr input,Expr w, Expr r, Expr b, 
+        //     Expr initH, Expr initC, Expr has_static, lstm_direction lstmDirection,string str) =>
+        //     new Call(new IR.NN.LSTM(lstmDirection,str), input, w, r, b,  initH, initC, has_static);
 
         /// <summary>
         /// create custom call.

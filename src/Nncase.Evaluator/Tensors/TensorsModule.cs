@@ -16,6 +16,7 @@ public class TensorsModule : Module
     protected override void Load(ContainerBuilder builder)
     {
         builder.RegisterType<BroadcastEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<BitcastEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<CastEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<ConcatEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<ConstantOfShapeEvaluator>().AsImplementedInterfaces();

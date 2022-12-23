@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -65,13 +66,46 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
         }
     }
 
+    internal sealed class SolidCalibrationDatasetProvider : ICalibrationDatasetProvider
+    {
+        private const int count = 5;
+        public int? Count => count;
+
+        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
+
+        public SolidCalibrationDatasetProvider(IEnumerable<Var> vars)
+        {
+            Samples = Enumerable.Range(0, count).Select(i =>
+            {
+                var values = new Dictionary<Var, IValue>();
+                foreach (var var in vars)
+                {
+                    CompilerServices.InferenceType(var);
+                    var shape = var.CheckedShape.Select(d => d.IsUnknown ? 1 : d.FixedValue).ToArray();
+
+                    var shapeSize = 1;
+                    for (int j = 0; j < shape.Length; j++)
+                        shapeSize *= shape[j];
+                    var tmpValue = new List<float>();
+                    for (int j = 0; j < shapeSize; j++)
+                        tmpValue.Add((j * 1.0f / shapeSize - 0.5f) * 2);
+
+                    var value = Value.FromTensor(Tensor.From<float>(tmpValue.ToArray(), shape));
+                    values.Add(var, value);
+                }
+
+                return values;
+            }).ToAsyncEnumerable();
+        }
+    }
+
     [Fact]
     public void TestQuantFunction()
     {
         var range = new ValueRange<float>(-1.234f, 2.345f);
         var qp = QuantUtility.GetQuantParam(range, 8, QuantMode.UnsignedMode);
-        System.Diagnostics.Debug.Assert(qp.Scale == 0.014035294f);
-        System.Diagnostics.Debug.Assert(qp.ZeroPoint == 88);
+        Trace.Assert(qp.Scale == 0.014035294f);
+        Trace.Assert(qp.ZeroPoint == 88);
     }
     Expr Pad(int[][] p) => Const.FromTensor(Tensor.From<int>(p.SelectMany(i => i).ToArray(), new[] { 2, 2 }));
 
@@ -89,8 +123,15 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
 
         Var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
 
-        var weights = IR.F.Random.Normal(DataTypes.Float32, 0, 2, 1, new[] { 16, 3, 3, 3 }).Evaluate().AsTensor();
-        var bias = IR.F.Random.Normal(DataTypes.Float32, 0, 2, 1, new[] { 16 }).Evaluate().AsTensor();
+        var weightsValue = new List<float>();
+        for (int i = 0; i < 16 * 3 * 3 * 3; i++)
+            weightsValue.Add((i * 1.0f / (16 * 3 * 3 * 3) - 0.5f) * 2);
+        var biasValue = new List<float>();
+        for (int i = 0; i < 16; i++)
+            biasValue.Add((i * 1.0f / (16) - 0.5f) * 2);
+
+        var weights = Tensor.From<float>(weightsValue.ToArray(), new[] { 16, 3, 3, 3 });
+        var bias = Tensor.From<float>(biasValue.ToArray(), new[] { 16 });
         var stride = Tensor.From<int>(new[] { 1, 1 }, new[] { 2 });
         var dilation = Tensor.From<int>(new[] { 1, 1 }, new[] { 2 });
         var padding = new[] { new[] { 0, 1 }, new[] { 0, 0 } };
@@ -106,7 +147,7 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
 
         compileOptions.QuantizeOptions = new()
         {
-            CalibrationDataset = new RandCalibrationDatasetProvider(new Var[] { input }),
+            CalibrationDataset = new SolidCalibrationDatasetProvider(new Var[] { input }),
             CalibrationMethod = CalibMethod.Kld,
         };
         // 0. TargetIndependentPass
@@ -123,11 +164,11 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
         var dumpVisitor = new DumpVisitor();
         dumpVisitor.Visit(module.Functions[0]);
 
-        System.Diagnostics.Debug.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0] == -4.0972834f);
-        System.Diagnostics.Debug.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[1] == 4.206657f);
-        System.Diagnostics.Debug.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[0] == -6.596074f);
-        System.Diagnostics.Debug.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[1] == 6.5355535f);
-        System.Diagnostics.Debug.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[0] == -52.367207f);
-        System.Diagnostics.Debug.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[1] == 50.035152f);
+        Trace.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0] == -1.0001221f);
+        Trace.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[1] == 1.0001087f);
+        Trace.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[0] == -1.0001218f);
+        Trace.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[1] == 0.9954922f);
+        Trace.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[0] == -8.882528f);
+        Trace.Assert(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[1] == 9.717726f);
     }
 }

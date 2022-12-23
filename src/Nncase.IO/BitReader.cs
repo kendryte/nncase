@@ -45,7 +45,7 @@ namespace Nncase.IO
 
         byte read_bits_le8(ulong bits)
         {
-            Debug.Assert(bits <= 8);
+            Trace.Assert(bits <= 8);
 
             fill_buffer_le8(bits);
             byte ret = (byte)(_buffer & (((ulong)1 << (int)bits) - 1));
@@ -59,7 +59,7 @@ namespace Nncase.IO
             if (_avail < bits)
             {
                 var max_read_bytes = Math.Min((ulong)_data.Length * 8, (sizeof(ulong) * 8) - _avail) / 8;
-                Debug.Assert(max_read_bytes != 0);
+                Trace.Assert(max_read_bytes != 0);
 
                 ulong tmp = 0;
                 memcpy(ref tmp, _data, (int)max_read_bytes);

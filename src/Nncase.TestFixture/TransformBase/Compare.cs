@@ -186,7 +186,7 @@ public static class Comparator
         // todo:broadcast type???
         var v1 = SliceByChannel(pre);
         var v2 = SliceByChannel(post);
-        // Debug.Assert(v1.Length == v2.Length);
+        // Trace.Assert(v1.Length == v2.Length);
         return v1.Zip(v2).Select(data => CosSimilarity(data.Item1, data.Item2)).ToArray();
     }
 
@@ -292,7 +292,7 @@ public static class DetailComparator
 
     public static IEnumerable<DetailCompareResult> CompareDetail(Tensor[] a, Tensor[] b)
     {
-        Debug.Assert(a.Length == b.Length);
+        Trace.Assert(a.Length == b.Length);
         return a.Zip(b).Select((t) =>
             CompareDetail(new OriginTensor(t.Item1, ""), new OriginTensor(t.Item2, ""), GetChannelAxis(t.Item1.Shape)));
     }

@@ -56,7 +56,7 @@ public sealed partial class AddRangeOfAndMarkerToBinary : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
         IsBinary("binary", "call",
-            _ => true,
+            b => (b.BinaryOp != BinaryOp.LogicalAnd && b.BinaryOp != BinaryOp.LogicalOr && b.BinaryOp != BinaryOp.LogicalXor),
             IsWildcard("lhs"),
             IsWildcard("rhs"));
     private Expr? GetReplace(Binary binary, Call call, Expr lhs, Expr rhs, RunPassOptions options)
@@ -332,7 +332,7 @@ public sealed partial class AddRangeOfAndMarkerToRelu : IRewriteRule
 }
 
 [RuleGenerator]
-public sealed partial class AddRangeOfAndMarkerToRedece : IRewriteRule
+public sealed partial class AddRangeOfAndMarkerToReduce : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
@@ -351,7 +351,7 @@ public sealed partial class AddRangeOfAndMarkerToRedece : IRewriteRule
 }
 
 [RuleGenerator]
-public sealed partial class AddRangeOfAndMarkerToRedeceWindow2D : IRewriteRule
+public sealed partial class AddRangeOfAndMarkerToReduceWindow2D : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
@@ -467,7 +467,7 @@ public sealed partial class AddRangeOfAndMarkerToUnary : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
         IsUnary("unary", "call",
-            _ => true,
+            u => (u.UnaryOp != UnaryOp.LogicalNot),
             IsWildcard("input"));
     private Expr? GetReplace(Unary unary, Call call, Expr input, RunPassOptions options)
     {

@@ -391,7 +391,7 @@ public static class TypeInference
         var shape = tensorType.Shape;
         if (shape.IsRanked && shape[0].IsFixed)
         {
-            Debug.Assert(shape.Count != 0);
+            Trace.Assert(shape.Count != 0);
             return Shape.Unknown(shape[0].FixedValue);
         }
         else

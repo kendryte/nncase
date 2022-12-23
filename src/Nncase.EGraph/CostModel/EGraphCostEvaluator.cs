@@ -160,7 +160,7 @@ internal sealed class EGraphCostEvaluator
                 }
                 else
                 {
-                    // Debug.Assert(targetEnode.Expr is Function);
+                    // Trace.Assert(targetEnode.Expr is Function);
                     newCost = Visit(targetEnode, returnType);
                 }
 

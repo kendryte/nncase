@@ -23,7 +23,7 @@ public class UnitTestDataFlowRewriteFactory : TestFixture.UnitTestFixtrue
 
     public static TheoryData<IRewriteCase> DataOne => new()
     {
-        new Conv2DPadsCase(),
+      new PadTransposeCase(),
     };
 
     [Theory]
@@ -49,6 +49,8 @@ public class UnitTestDataFlowRewriteFactory : TestFixture.UnitTestFixtrue
     public static TheoryData<IRewriteCase> DataAll => new()
     {
       new TransposeLeakyRelu(),
+      new Conv2DPadsCase(),
+      new ReduceWindow2DPadsCase(),
       new MobileNetV1TransposeCase()
     };
 }

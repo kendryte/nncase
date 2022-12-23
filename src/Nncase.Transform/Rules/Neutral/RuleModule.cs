@@ -13,7 +13,7 @@ internal class NeutralModule : Module
         builder.RegisterType<AddRangeOfAndMarkerToConv2D>().AsImplementedInterfaces();
         builder.RegisterType<AddRangeOfAndMarkerToConv2DTranspose>().AsImplementedInterfaces();
         builder.RegisterType<AddRangeOfAndMarkerToMatMul>().AsImplementedInterfaces();
-        builder.RegisterType<AddRangeOfAndMarkerToRedeceWindow2D>().AsImplementedInterfaces();
+        builder.RegisterType<AddRangeOfAndMarkerToReduceWindow2D>().AsImplementedInterfaces();
         builder.RegisterType<AddRangeOfAndMarkerToUnary>().AsImplementedInterfaces();
         builder.RegisterType<AddToConv2D>().AsImplementedInterfaces();
         builder.RegisterType<CombinePadUnary>().AsImplementedInterfaces();

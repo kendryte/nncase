@@ -196,7 +196,7 @@ public class CalibrationEvaluator
                 }
                 else
                 {
-                    Debug.Assert(targetEnode.Expr is Function);
+                    Trace.Assert(targetEnode.Expr is Function);
                     value = Visit(targetEnode.Children[0]);
                 }
 
