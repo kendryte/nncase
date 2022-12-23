@@ -17,10 +17,8 @@
 
 HMODULE g_vulkan_module_handle;
 
-BOOL APIENTRY DllMain(HMODULE hModule,
-    DWORD ul_reason_for_call,
-    LPVOID lpReserved)
-{
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
+                      LPVOID lpReserved) {
     g_vulkan_module_handle = hModule;
     return TRUE;
 }

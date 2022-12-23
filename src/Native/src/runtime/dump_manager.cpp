@@ -1,9 +1,9 @@
 #ifndef NNCASE_BAREMETAL
 #include "dump_manager_impl.h"
+#include <filesystem>
 #include <nncase/runtime/dump_manager.h>
 #include <nncase/runtime/result.h>
 #include <nncase/runtime/stackvm/opcode.h>
-#include <filesystem>
 
 namespace fs = std::filesystem;
 
@@ -104,6 +104,7 @@ void dump_manager::dump_output(nncase::value_t value) {
 }
 
 void dump_manager::dump_input(nncase::value_t value, std::string name) {
-    dump_output_impl(*this, value, fs::path(dump_path() + "$" + name).string(), false);
+    dump_output_impl(*this, value, fs::path(dump_path() + "$" + name).string(),
+                     false);
 }
 #endif

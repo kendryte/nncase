@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Linq;
 using Nncase.IR;
@@ -9,12 +12,12 @@ namespace Nncase.Evaluator;
 
 public class EvaluatorDumpManager : DumpManager
 {
+    private readonly TensorGetter _tensorGetter;
+
     public EvaluatorDumpManager(TensorGetter tensorGetter)
     {
-        TensorGetter = tensorGetter;
+        _tensorGetter = tensorGetter;
     }
-
-    private TensorGetter TensorGetter;
 
     public void DumpCallArgs(Call call)
     {
@@ -25,7 +28,7 @@ public class EvaluatorDumpManager : DumpManager
         {
             DumpCallParam(target, paramInfo, sr =>
             {
-                var ps = TensorGetter(param);
+                var ps = _tensorGetter(param);
                 ValueDumper.DumpTensors(ps, sr);
             });
         });
@@ -34,12 +37,13 @@ public class EvaluatorDumpManager : DumpManager
     public void DumpCall(Call call, string root)
     {
         var target = call.Target.GetType().Name.ToLower();
+
         // a bad tmp change
         var shape = !(call.CheckedType is TensorType) ? Shape.Scalar : call.CheckedShape;
         DumpCall(target, shape, sr =>
         {
             sr.WriteLine(target);
-            var result = TensorGetter(call);
+            var result = _tensorGetter(call);
             ValueDumper.DumpTensors(result, sr);
         });
     }

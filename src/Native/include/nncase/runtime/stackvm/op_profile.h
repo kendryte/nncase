@@ -14,33 +14,26 @@
  */
 #include <iomanip>
 #include <iostream>
-#include <unordered_map>
 #include <map>
-
+#include <unordered_map>
 
 extern "C" {
-    double get_ms_time();
+double get_ms_time();
 }
 
-class op_profile
-{
-public:
-    op_profile(const std::string &op_type = "op_profile")
-        : op_type_(op_type) {
+class op_profile {
+  public:
+    op_profile(const std::string &op_type = "op_profile") : op_type_(op_type) {
         begin_ = get_ms_time();
     }
 
-    ~op_profile()
-    {
+    ~op_profile() {
         end_ = get_ms_time();
         auto cast_time = end_ - begin_;
-        if (op_timing_.find(op_type_) == op_timing_.end())
-        {
+        if (op_timing_.find(op_type_) == op_timing_.end()) {
             op_timing_.emplace(op_type_, cast_time);
             op_count_.emplace(op_type_, 1);
-        }
-        else
-        {
+        } else {
             op_timing_[op_type_] += cast_time;
             op_count_[op_type_] += 1;
         }
@@ -48,11 +41,11 @@ public:
 
     static void print();
 
-public:
+  public:
     static std::unordered_map<std::string, double> op_timing_;
     static std::map<std::string, size_t> op_count_;
 
-private:
+  private:
     double begin_;
     double end_;
     std::string op_type_;

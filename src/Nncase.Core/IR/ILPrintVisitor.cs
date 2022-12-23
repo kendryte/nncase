@@ -14,337 +14,40 @@ using Nncase.TIR;
 
 namespace Nncase.IR;
 
-internal sealed class ILPrintVisitor : ExprFunctor<string, string>
-{
-    private readonly ScopeWriter Scope;
-    private readonly Dictionary<Expr, string> _names = new Dictionary<Expr, string>(ReferenceEqualityComparer.Instance);
-    bool DisplayCallable;
-
-    private int _localId = 0;
-
-    public ILPrintVisitor(TextWriter textWriter, bool display_callable, int indent_level)
-    {
-        Scope = new(textWriter, indent_level);
-        DisplayCallable = display_callable;
-    }
-
-    /// <inheritdoc/>
-    public override string Visit(Call expr)
-    {
-        if (_names.TryGetValue(expr, out var name)) { return name; }
-        var target = Visit(expr.Target);
-        var property = expr.Target is Op op && op.DisplayProperty() is string prop && prop != "" ? (prop + ", ") : "";
-        var args = expr.Parameters.Select(Visit).ToArray();
-        name = AllocateTempVar(expr);
-        Scope.IndWrite($"{name} = {target}({property}{string.Join(", ", args)})");
-        AppendCheckedType(expr.CheckedType);
-        return name;
-    }
-
-    /// <inheritdoc/>
-    public override string Visit(Const expr)
-    {
-        if (_names.TryGetValue(expr, out var name)) { return name; }
-
-        string valueStr = expr switch
-        {
-            TensorConst tc => tc.Value.Shape.Size <= 8 ? tc.Value.GetArrayString(false) : string.Empty,
-            TupleConst tpc => string.Empty,
-            _ => throw new ArgumentOutOfRangeException(),
-        };
-        valueStr = valueStr != string.Empty ? " : " + valueStr : string.Empty;
-        name = $"const({(expr.CheckedType is null ? string.Empty : VisitType(expr.CheckedType))}{valueStr})";
-
-        _names.Add(expr, name);
-        return name;
-    }
-
-    /// <inheritdoc/>
-    public override string Visit(Function expr)
-    {
-        if (_names.TryGetValue(expr, out var name)) { return name; }
-
-        name = $"%{expr.Name}";
-        _names.Add(expr, name);
-        Scope.Push();
-
-        // 1. Function signature
-        Scope.IndWrite($"{name} = fn({string.Join(", ", expr.Parameters.Select(Visit))})");
-        AppendCheckedType(expr.CheckedType);
-        Scope.IndWriteLine("{");
-
-        // 2. Function body
-        using (Scope.IndentUp()) { var body = Visit(expr.Body); }
-
-        // 3. Function closing
-        Scope.IndWriteLine("}");
-        Scope.Append(Scope.Pop());
-        return name;
-    }
-
-    public override string Visit(Fusion expr)
-    {
-        if (_names.TryGetValue(expr, out var name)) { return name; }
-
-        name = $"%{expr.Name}";
-        _names.Add(expr, name);
-        Scope.Push();
-
-        // 1. Function signature
-        Scope.IndWrite($"{name} = fusion<{expr.ModuleKind}>({string.Join(", ", expr.Parameters.Select(Visit))})");
-        AppendCheckedType(expr.CheckedType);
-        Scope.IndWriteLine("{");
-
-        // 2. Function body
-        if (DisplayCallable)
-            using (Scope.IndentUp())
-            {
-                var body_builder = new StringBuilder();
-                using (var body_writer = new StringWriter(body_builder))
-                {
-                    var visitor = new ILPrintVisitor(body_writer, true, Scope.IndentLevel).Visit(expr.Body);
-                    Scope.Append(body_writer.ToString());
-                }
-            }
-        else
-            Scope.IndWriteLine("...");
-
-        // 3. Function closing
-        Scope.IndWriteLine("}");
-        Scope.Append(Scope.Pop());
-        return name;
-    }
-
-    /// <inheritdoc/>
-    public override string Visit(PrimFunctionWrapper expr)
-    {
-        if (_names.TryGetValue(expr, out var name)) { return name; }
-
-        name = $"%{expr.Name}";
-        _names.Add(expr, name);
-        Scope.Push();
-
-        // 1. Function signature
-        Scope.IndWrite($"{name} = prim_wrapper({string.Join(", ", expr.ParameterTypes.Select(VisitType))})");
-        AppendCheckedType(expr.CheckedType, " {");
-
-        // 2. Function body
-        if (DisplayCallable)
-        {
-            using (Scope.IndentUp())
-            {
-                using (var bodys = new StringReader(CompilerServices.Print(expr.Target)))
-                {
-                    while (bodys.ReadLine() is string line)
-                        Scope.IndWriteLine(line);
-                }
-            }
-        }
-        else
-            Scope.IndWriteLine("...");
-
-        // 3. Function closing
-        Scope.IndWriteLine("}");
-        Scope.Append(Scope.Pop());
-        return name;
-    }
-
-    /// <inheritdoc/>
-    public override string Visit(Op expr)
-    {
-        return expr switch
-        {
-            Unary op => op.UnaryOp.ToString(),
-            Binary op => op.BinaryOp.ToString(),
-            Compare op => op.CompareOp.ToString(),
-            _ => expr.GetType().Name,
-        };
-    }
-
-    /// <inheritdoc/>
-    public override string Visit(Tuple expr)
-    {
-        if (_names.TryGetValue(expr, out var name)) { return name; }
-        var fields = expr.Fields.Select(Visit).ToArray();
-        name = AllocateTempVar(expr);
-        Scope.IndWrite($"{name} = ({string.Join(", ", fields)})");
-        AppendCheckedType(expr.CheckedType);
-        Scope.IndWriteLine();
-        return name;
-    }
-
-    /// <inheritdoc/>
-    public override string Visit(Var expr)
-    {
-        if (_names.TryGetValue(expr, out var name)) { return name; }
-        name = $"%{expr.Name}";
-        _names.Add(expr, name);
-        if (expr.CheckedType is IRType type) { name += $": {VisitType(type)}"; }
-        return name;
-    }
-
-    /// <inheritdoc/>
-    public override string Visit(None expr)
-    {
-        if (_names.TryGetValue(expr, out var name)) { return name; }
-        name = $"None";
-        _names.Add(expr, name);
-        return name;
-    }
-
-    /// <inheritdoc/>
-    public override string Visit(Marker expr)
-    {
-        if (_names.TryGetValue(expr, out var name)) { return name; }
-        var target = Visit(expr.Target);
-        var attr = Visit(expr.Attribute);
-        name = AllocateTempVar(expr);
-        Scope.IndWrite($"{name} = {target}@({expr.Name} = {attr})");
-        AppendCheckedType(expr.CheckedType);
-        return name;
-    }
-
-    /// <inheritdoc/>
-    public override string Visit(For expr)
-    {
-        if (_names.TryGetValue(expr, out var name)) { return name; }
-
-        // the for loop will not used by other expression, so we need save the whole `For` il
-        Scope.Push();
-
-        // 1. For Loop signature
-        Scope.Append($"For {expr.Mode}({Visit(expr.LoopVar)} in Range({Visit(expr.Domain.Start)}, {Visit(expr.Domain.Stop)}, {Visit(expr.Domain.Step)})");
-        AppendCheckedType(expr.CheckedType, " {");
-
-        // 2. For Body
-        using (Scope.IndentUp())
-        {
-            Visit(expr.Body);
-        }
-
-        // 3. For closing
-        Scope.IndWriteLine("}");
-
-        // 4. extact whole il
-        Scope.IndWrite(Scope.Pop());
-        return "";
-    }
-
-    /// <inheritdoc/>
-    public override string Visit(Sequential expr)
-    {
-        if (_names.TryGetValue(expr, out var name)) { return name; }
-        Scope.Push();
-
-        // 1. Sequential signature
-        Scope.Append($"Sequential");
-        AppendCheckedType(expr.CheckedType, " {", hasNewLine: true);
-
-        // 2. For Body
-        using (Scope.IndentUp())
-        {
-            foreach (var item in expr.Fields) { Visit(item); }
-        }
-
-        // 3. For closing
-        Scope.IndWriteLine("}");
-
-        // 4. extact whole il
-        Scope.IndWrite(Scope.Pop());
-        return "";
-    }
-
-    /// <inheritdoc/>
-    public override string VisitType(AnyType type) => "any";
-
-    /// <inheritdoc/>
-    public override string VisitType(CallableType type) =>
-        $"({string.Join(", ", type.Parameters.Select(VisitType))}) -> {VisitType(type.ReturnType)}";
-
-    /// <inheritdoc/>
-    public override string VisitType(InvalidType type) => $"invalid:{type.Reason}";
-
-    /// <inheritdoc/>
-    public override string VisitType(NoneType type) => $"";
-
-    /// <inheritdoc/>
-    public override string VisitType(TensorType type) => type.DType switch
-    {
-        PrimType ptype => ptype.GetDisplayName() + (type.Shape.IsScalar ? "" : type.Shape.ToString()),
-        PointerType { ElemType: PrimType etype } ptype => $"*{etype.GetDisplayName()}",
-        ValueType => $"{type.DType.ToString()}",
-        _ => throw new NotSupportedException(type.DType.GetType().Name),
-    };
-
-    /// <inheritdoc/>
-    public override string VisitType(TupleType type) =>
-        $"({string.Join(", ", type.Fields.Select(VisitType))})";
-
-    private string AllocateTempVar(Expr expr)
-    {
-        var name = $"%{_localId++}";
-        _names.Add(expr, name);
-        return name;
-    }
-
-    private void AppendCheckedType(IRType? type, string end = "", bool hasNewLine = true)
-    {
-        if (type is not null)
-        {
-            if (hasNewLine)
-            {
-                Scope.AppendLine($": // {VisitType(type)}{end}");
-            }
-            else
-            {
-                Scope.Append($": // {VisitType(type)}{end}");
-            }
-        }
-        else
-        {
-            Scope.Append("\n");
-        }
-    }
-}
-
 /// <summary>
 /// a TextWirter, it's have Scope data struct.
 /// </summary>
 public sealed class ScopeWriter
 {
     /// <summary>
-    /// current writer.
+    /// indent level.
     /// </summary>
-    TextWriter Writer;
+    public int IndentLevel;
 
-    TextWriter rootWriter;
-
-    /// <summary>
-    /// current VarNamelist.
-    /// </summary>
-    List<IPrintSymbol> VarSymbolList => VarSymbolStack.Peek();
+    private readonly TextWriter _rootWriter;
 
     /// <summary>
     /// stack container.
     /// </summary>
-    readonly Stack<(StringBuilder, TextWriter)> ScopeStack = new();
-
-    /// <summary>
-    /// indent level.
-    /// </summary>
-    public int IndentLevel = 0;
+    private readonly Stack<(StringBuilder, TextWriter)> _scopeStack = new();
 
     /// <summary>
     /// record the all var name's in this scope and parent's scope.
     /// </summary>
-    readonly Dictionary<string, int> GlobalVarCountMap = new();
+    private readonly Dictionary<string, int> _globalVarCountMap = new();
 
     /// <summary>
     /// the scopes var name stack.
     /// </summary>
-    readonly Stack<List<IPrintSymbol>> VarSymbolStack = new();
+    private readonly Stack<List<IPrintSymbol>> _varSymbolStack = new();
 
     /// <summary>
+    /// current writer.
+    /// </summary>
+    private TextWriter _writer;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ScopeWriter"/> class.
     /// ctor.
     /// </summary>
     /// <param name="textWriter">writer.</param>
@@ -352,22 +55,27 @@ public sealed class ScopeWriter
     public ScopeWriter(TextWriter textWriter, int indent_level = 0)
     {
         IndentLevel = indent_level;
-        rootWriter = textWriter;
-        Writer = textWriter;
-        VarSymbolStack.Push(new());
+        _rootWriter = textWriter;
+        _writer = textWriter;
+        _varSymbolStack.Push(new());
     }
+
+    /// <summary>
+    /// Gets current VarNamelist.
+    /// </summary>
+    private List<IPrintSymbol> VarSymbolList => _varSymbolStack.Peek();
 
     /// <summary>
     /// push the new string writer, tempoary record the current code into this frame.
     /// </summary>
     public void Push()
     {
-        StringBuilder builder = new StringBuilder();
+        var builder = new StringBuilder();
         TextWriter writer = new StringWriter(builder);
-        ScopeStack.Push((builder, writer));
-        Writer = writer;
+        _scopeStack.Push((builder, writer));
+        _writer = writer;
 
-        VarSymbolStack.Push(new());
+        _varSymbolStack.Push(new());
     }
 
     /// <summary>
@@ -377,22 +85,24 @@ public sealed class ScopeWriter
     /// <exception cref="InvalidOperationException"></exception>
     public StringBuilder Pop()
     {
-        var (builder, writer) = ScopeStack.Pop();
+        var (builder, writer) = _scopeStack.Pop();
         writer.Dispose();
-        if (ScopeStack.Count == 0)
+        if (_scopeStack.Count == 0)
         {
-            Writer = rootWriter;
+            _writer = _rootWriter;
         }
         else
         {
-            Writer = ScopeStack.Peek().Item2;
+            _writer = _scopeStack.Peek().Item2;
         }
 
-        foreach (var name in VarSymbolStack.Pop())
+        foreach (var name in _varSymbolStack.Pop())
         {
-            GlobalVarCountMap[name.Name]--;
-            if (GlobalVarCountMap[name.Name] == 0)
-                GlobalVarCountMap.Remove(name.Name);
+            _globalVarCountMap[name.Name]--;
+            if (_globalVarCountMap[name.Name] == 0)
+            {
+                _globalVarCountMap.Remove(name.Name);
+            }
         }
 
         // VarNameList
@@ -427,43 +137,33 @@ public sealed class ScopeWriter
     /// Append the current line tail, without the indent.
     /// </summary>
     /// <param name="value"></param>
-    public void Append(string value) => Writer.Write(value);
+    public void Append(string value) => _writer.Write(value);
 
     /// <summary>
     /// wrtie string builder.
     /// </summary>
     /// <param name="value"></param>
-    public void Append(StringBuilder value) => Writer.Write(value);
+    public void Append(StringBuilder value) => _writer.Write(value);
 
     /// <summary>
     /// Append the current line tail, without the indent, but add new line.
     /// </summary>
     /// <param name="value"></param>
-    public void AppendLine(string value) => Writer.WriteLine(value);
+    public void AppendLine(string value) => _writer.WriteLine(value);
 
     /// <summary>
     /// wrtie string builder.
     /// </summary>
     /// <param name="value"></param>
-    public void AppendLine(StringBuilder value) => Writer.WriteLine(value);
+    public void AppendLine(StringBuilder value) => _writer.WriteLine(value);
 
     /// <summary>
     /// remove last char.
     /// </summary>
     public void RemoveLast()
     {
-        var sb = ScopeStack.Peek().Item1;
+        var sb = _scopeStack.Peek().Item1;
         sb.Remove(sb.Length - 1, 1);
-    }
-
-    /// <summary>
-    /// insert the indent.
-    /// </summary>
-    /// <returns></returns>
-    private TextWriter Indent()
-    {
-        for (int i = 0; i < IndentLevel; i++) { Writer.Write(" "); }
-        return Writer;
     }
 
     /// <summary>
@@ -479,20 +179,34 @@ public sealed class ScopeWriter
     /// <summary>
     /// get the unique var symbol.
     /// </summary>
-    /// <param name="var">var name</param>
-    /// <param name="prefix">prefix name</param>
+    /// <param name="var">var name.</param>
+    /// <param name="prefix">prefix name.</param>
     /// <returns></returns>
     public IPrintSymbol GetUniqueVarSymbol(Var @var, string prefix = "")
     {
-        if (!GlobalVarCountMap.TryGetValue(prefix + @var.Name, out var count))
+        if (!_globalVarCountMap.TryGetValue(prefix + @var.Name, out var count))
         {
             count = 0;
         }
 
-        var symbol = new ScriptSymobl(new(prefix + @var.Name + (count == 0 ? "" : $"_{count}")), @var.Name, false);
+        var symbol = new ScriptSymobl(new(prefix + @var.Name + (count == 0 ? string.Empty : $"_{count}")), @var.Name, false);
         count++;
-        GlobalVarCountMap[@var.Name] = count;
+        _globalVarCountMap[@var.Name] = count;
         return symbol;
+    }
+
+    /// <summary>
+    /// insert the indent.
+    /// </summary>
+    /// <returns></returns>
+    private TextWriter Indent()
+    {
+        for (int i = 0; i < IndentLevel; i++)
+        {
+            _writer.Write(" ");
+        }
+
+        return _writer;
     }
 }
 
@@ -504,30 +218,381 @@ public sealed class IndentMananger : IDisposable
     /// <summary>
     /// the parent scope wirter.
     /// </summary>
-    readonly ScopeWriter Parent;
+    private readonly ScopeWriter _parent;
 
     /// <summary>
     /// the indent add/sub diff value.
     /// </summary>
-    readonly int indentDiff;
+    private readonly int _indentDiff;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="IndentMananger"/> class.
     /// <see cref="IndentMananger"/>.
     /// </summary>
     /// <param name="parent"></param>
     /// <param name="level_diff"></param>
     public IndentMananger(ScopeWriter parent, int level_diff = 1)
     {
-        Parent = parent;
-        indentDiff = level_diff;
-        Parent.IndentLevel += indentDiff;
+        _parent = parent;
+        _indentDiff = level_diff;
+        _parent.IndentLevel += _indentDiff;
     }
 
     /// <summary>
-    /// reduce indentLevel
+    /// reduce indentLevel.
     /// </summary>
     public void Dispose()
     {
-        Parent.IndentLevel -= indentDiff;
+        _parent.IndentLevel -= _indentDiff;
+    }
+}
+
+internal sealed class ILPrintVisitor : ExprFunctor<string, string>
+{
+    private readonly ScopeWriter _scope;
+    private readonly Dictionary<Expr, string> _names = new Dictionary<Expr, string>(ReferenceEqualityComparer.Instance);
+    private readonly bool _displayCallable;
+
+    private int _localId;
+
+    public ILPrintVisitor(TextWriter textWriter, bool display_callable, int indent_level)
+    {
+        _scope = new(textWriter, indent_level);
+        _displayCallable = display_callable;
+    }
+
+    /// <inheritdoc/>
+    public override string Visit(Call expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        var target = Visit(expr.Target);
+        var property = expr.Target is Op op && op.DisplayProperty() is string prop && prop != string.Empty ? (prop + ", ") : string.Empty;
+        var args = expr.Parameters.Select(Visit).ToArray();
+        name = AllocateTempVar(expr);
+        _scope.IndWrite($"{name} = {target}({property}{string.Join(", ", args)})");
+        AppendCheckedType(expr.CheckedType);
+        return name;
+    }
+
+    /// <inheritdoc/>
+    public override string Visit(Const expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        string valueStr = expr switch
+        {
+            TensorConst tc => tc.Value.Shape.Size <= 8 ? tc.Value.GetArrayString(false) : string.Empty,
+            TupleConst => string.Empty,
+            _ => throw new ArgumentOutOfRangeException(),
+        };
+        valueStr = valueStr != string.Empty ? " : " + valueStr : string.Empty;
+        name = $"const({(expr.CheckedType is null ? string.Empty : VisitType(expr.CheckedType))}{valueStr})";
+
+        _names.Add(expr, name);
+        return name;
+    }
+
+    /// <inheritdoc/>
+    public override string Visit(Function expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        name = $"%{expr.Name}";
+        _names.Add(expr, name);
+        _scope.Push();
+
+        // 1. Function signature
+        _scope.IndWrite($"{name} = fn({string.Join(", ", expr.Parameters.Select(Visit))})");
+        AppendCheckedType(expr.CheckedType);
+        _scope.IndWriteLine("{");
+
+        // 2. Function body
+        using (_scope.IndentUp())
+        {
+            var body = Visit(expr.Body);
+        }
+
+        // 3. Function closing
+        _scope.IndWriteLine("}");
+        _scope.Append(_scope.Pop());
+        return name;
+    }
+
+    public override string Visit(Fusion expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        name = $"%{expr.Name}";
+        _names.Add(expr, name);
+        _scope.Push();
+
+        // 1. Function signature
+        _scope.IndWrite($"{name} = fusion<{expr.ModuleKind}>({string.Join(", ", expr.Parameters.Select(Visit))})");
+        AppendCheckedType(expr.CheckedType);
+        _scope.IndWriteLine("{");
+
+        // 2. Function body
+        if (_displayCallable)
+        {
+            using (_scope.IndentUp())
+            {
+                var body_builder = new StringBuilder();
+                using (var body_writer = new StringWriter(body_builder))
+                {
+                    var visitor = new ILPrintVisitor(body_writer, true, _scope.IndentLevel).Visit(expr.Body);
+                    _scope.Append(body_writer.ToString());
+                }
+            }
+        }
+        else
+        {
+            _scope.IndWriteLine("...");
+        }
+
+        // 3. Function closing
+        _scope.IndWriteLine("}");
+        _scope.Append(_scope.Pop());
+        return name;
+    }
+
+    /// <inheritdoc/>
+    public override string Visit(PrimFunctionWrapper expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        name = $"%{expr.Name}";
+        _names.Add(expr, name);
+        _scope.Push();
+
+        // 1. Function signature
+        _scope.IndWrite($"{name} = prim_wrapper({string.Join(", ", expr.ParameterTypes.Select(VisitType))})");
+        AppendCheckedType(expr.CheckedType, " {");
+
+        // 2. Function body
+        if (_displayCallable)
+        {
+            using (_scope.IndentUp())
+            {
+                using (var bodys = new StringReader(CompilerServices.Print(expr.Target)))
+                {
+                    while (bodys.ReadLine() is string line)
+                    {
+                        _scope.IndWriteLine(line);
+                    }
+                }
+            }
+        }
+        else
+        {
+            _scope.IndWriteLine("...");
+        }
+
+        // 3. Function closing
+        _scope.IndWriteLine("}");
+        _scope.Append(_scope.Pop());
+        return name;
+    }
+
+    /// <inheritdoc/>
+    public override string Visit(Op expr)
+    {
+        return expr switch
+        {
+            Unary op => op.UnaryOp.ToString(),
+            Binary op => op.BinaryOp.ToString(),
+            Compare op => op.CompareOp.ToString(),
+            _ => expr.GetType().Name,
+        };
+    }
+
+    /// <inheritdoc/>
+    public override string Visit(Tuple expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        var fields = expr.Fields.Select(Visit).ToArray();
+        name = AllocateTempVar(expr);
+        _scope.IndWrite($"{name} = ({string.Join(", ", fields)})");
+        AppendCheckedType(expr.CheckedType);
+        _scope.IndWriteLine();
+        return name;
+    }
+
+    /// <inheritdoc/>
+    public override string Visit(Var expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        name = $"%{expr.Name}";
+        _names.Add(expr, name);
+        if (expr.CheckedType is IRType type)
+        {
+            name += $": {VisitType(type)}";
+        }
+
+        return name;
+    }
+
+    /// <inheritdoc/>
+    public override string Visit(None expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        name = $"None";
+        _names.Add(expr, name);
+        return name;
+    }
+
+    /// <inheritdoc/>
+    public override string Visit(Marker expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        var target = Visit(expr.Target);
+        var attr = Visit(expr.Attribute);
+        name = AllocateTempVar(expr);
+        _scope.IndWrite($"{name} = {target}@({expr.Name} = {attr})");
+        AppendCheckedType(expr.CheckedType);
+        return name;
+    }
+
+    /// <inheritdoc/>
+    public override string Visit(For expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        // the for loop will not used by other expression, so we need save the whole `For` il
+        _scope.Push();
+
+        // 1. For Loop signature
+        _scope.Append($"For {expr.Mode}({Visit(expr.LoopVar)} in Range({Visit(expr.Domain.Start)}, {Visit(expr.Domain.Stop)}, {Visit(expr.Domain.Step)})");
+        AppendCheckedType(expr.CheckedType, " {");
+
+        // 2. For Body
+        using (_scope.IndentUp())
+        {
+            Visit(expr.Body);
+        }
+
+        // 3. For closing
+        _scope.IndWriteLine("}");
+
+        // 4. extact whole il
+        _scope.IndWrite(_scope.Pop());
+        return string.Empty;
+    }
+
+    /// <inheritdoc/>
+    public override string Visit(Sequential expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        _scope.Push();
+
+        // 1. Sequential signature
+        _scope.Append($"Sequential");
+        AppendCheckedType(expr.CheckedType, " {", hasNewLine: true);
+
+        // 2. For Body
+        using (_scope.IndentUp())
+        {
+            foreach (var item in expr.Fields)
+            {
+                Visit(item);
+            }
+        }
+
+        // 3. For closing
+        _scope.IndWriteLine("}");
+
+        // 4. extact whole il
+        _scope.IndWrite(_scope.Pop());
+        return string.Empty;
+    }
+
+    /// <inheritdoc/>
+    public override string VisitType(AnyType type) => "any";
+
+    /// <inheritdoc/>
+    public override string VisitType(CallableType type) =>
+        $"({string.Join(", ", type.Parameters.Select(VisitType))}) -> {VisitType(type.ReturnType)}";
+
+    /// <inheritdoc/>
+    public override string VisitType(InvalidType type) => $"invalid:{type.Reason}";
+
+    /// <inheritdoc/>
+    public override string VisitType(NoneType type) => $"";
+
+    /// <inheritdoc/>
+    public override string VisitType(TensorType type) => type.DType switch
+    {
+        PrimType ptype => ptype.GetDisplayName() + (type.Shape.IsScalar ? string.Empty : type.Shape.ToString()),
+        PointerType { ElemType: PrimType etype } ptype => $"*{etype.GetDisplayName()}",
+        ValueType => $"{type.DType.ToString()}",
+        _ => throw new NotSupportedException(type.DType.GetType().Name),
+    };
+
+    /// <inheritdoc/>
+    public override string VisitType(TupleType type) =>
+        $"({string.Join(", ", type.Fields.Select(VisitType))})";
+
+    private string AllocateTempVar(Expr expr)
+    {
+        var name = $"%{_localId++}";
+        _names.Add(expr, name);
+        return name;
+    }
+
+    private void AppendCheckedType(IRType? type, string end = "", bool hasNewLine = true)
+    {
+        if (type is not null)
+        {
+            if (hasNewLine)
+            {
+                _scope.AppendLine($": // {VisitType(type)}{end}");
+            }
+            else
+            {
+                _scope.Append($": // {VisitType(type)}{end}");
+            }
+        }
+        else
+        {
+            _scope.Append("\n");
+        }
     }
 }

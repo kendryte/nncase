@@ -26,7 +26,7 @@ public abstract record IRType
     /// <summary>
     /// &lt; 0 − If this is inaccurate than rhs
     /// 0 − If this is the same as rhs
-    /// &gt; 0 − If this is more accurate than rhs
+    /// &gt; 0 − If this is more accurate than rhs.
     /// </summary>
     /// <param name="rhs"> ir type. </param>
     /// <returns> int value. </returns>
@@ -57,7 +57,7 @@ public abstract record IRType
                 0 => 0,
                 > 0 => 1,
                 < 0 => -1,
-            }
+            },
         },
         (InvalidType, _) => -1,
         (CallableType t1, CallableType t2) => (t1, t2) switch
@@ -68,15 +68,14 @@ public abstract record IRType
                 0 => 0,
                 > 0 => 1,
                 < 0 => -1,
-            }
+            },
         },
         (var x, var y) => (x, y) switch
         {
             var p when p.x.GetType() == p.y.GetType() => 0,
             _ => throw new NotSupportedException($"{this} with {rhs}"),
-        }
+        },
     };
-
 }
 
 /// <summary>
@@ -117,30 +116,30 @@ public sealed record TensorType(DataType DType, Shape Shape) : IRType
     /// <summary>
     /// Initialize a scalar tensor type.
     /// </summary>
-    /// <param name="DType">Data type.</param>
+    /// <param name="dType">Data type.</param>
     /// <returns>The scalar tensor type.</returns>
-    public static TensorType Scalar(DataType DType) => new(DType, Shape.Scalar);
+    public static TensorType Scalar(DataType dType) => new(dType, Shape.Scalar);
 
     /// <summary>
     /// Initialize an unranked tensor type.
     /// </summary>
-    /// <param name="DType">Data type.</param>
+    /// <param name="dType">Data type.</param>
     /// <returns>The unranked tensor type.</returns>
-    public static TensorType Unranked(DataType DType) => new(DType, Shape.Unranked);
+    public static TensorType Unranked(DataType dType) => new(dType, Shape.Unranked);
 
     /// <summary>
     /// Initialize an invalid tensor type.
     /// </summary>
-    /// <param name="DType">Data type.</param>
+    /// <param name="dType">Data type.</param>
     /// <returns>The invalid tensor type.</returns>
-    public static TensorType Invalid(DataType DType) => new(DType, Shape.Invalid);
+    public static TensorType Invalid(DataType dType) => new(dType, Shape.Invalid);
 
     /// <summary>
     /// Initialize an pointer tensor type.
     /// </summary>
-    /// <param name="ElemType"> the Pointed Element Type</param>
+    /// <param name="elemType"> the Pointed Element Type.</param>
     /// <returns>the pointer tensor type.</returns>
-    public static TensorType Pointer(DataType ElemType) => new(new PointerType(ElemType), Shape.Scalar);
+    public static TensorType Pointer(DataType elemType) => new(new PointerType(elemType), Shape.Scalar);
 }
 
 /// <summary>
@@ -154,16 +153,20 @@ public sealed record TupleType(IRArray<IRType> Fields) : IRType, IEnumerable<IRT
     public static readonly TupleType Void = new(ImmutableArray<IRType>.Empty);
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="TupleType"/> class.
     /// ctor.
     /// </summary>
-    /// <param name="Fields">sub fields.</param>
-    public TupleType(IEnumerable<IRType> Fields) : this(Fields.ToImmutableArray()) { }
-
-    /// <inheritdoc/>
-    public IRType this[int index] => ((IReadOnlyList<IRType>)Fields)[index];
+    /// <param name="fields">sub fields.</param>
+    public TupleType(IEnumerable<IRType> fields)
+        : this(fields.ToImmutableArray())
+    {
+    }
 
     /// <inheritdoc/>
     public int Count => ((IReadOnlyCollection<IRType>)Fields).Count;
+
+    /// <inheritdoc/>
+    public IRType this[int index] => ((IReadOnlyList<IRType>)Fields)[index];
 
     /// <inheritdoc/>
     public IEnumerator<IRType> GetEnumerator()

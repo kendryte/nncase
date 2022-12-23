@@ -20,26 +20,27 @@
 #include <nncase/ir/placeholders.h>
 #include <nncase/schedule/scheduler.h>
 
-namespace nncase::codegen::k210
-{
-class k210_module_builder : public module_builder
-{
-public:
-    k210_module_builder(std::string_view module_name, const module_builder_params &params);
+namespace nncase::codegen::k210 {
+class k210_module_builder : public module_builder {
+  public:
+    k210_module_builder(std::string_view module_name,
+                        const module_builder_params &params);
 
     module_type_t module_type() const noexcept override;
     uint32_t module_version() const noexcept override;
 
-protected:
+  protected:
     section_writer &text_writer();
 
-    void begin_emit_function(const schedule::function_schedule_result &function) override;
-    void end_emit_function(const schedule::function_schedule_result &function) override;
+    void begin_emit_function(
+        const schedule::function_schedule_result &function) override;
+    void end_emit_function(
+        const schedule::function_schedule_result &function) override;
     void emit(ir::node &node) override;
 
-private:
+  private:
 #define DEFINE_OP(op_) void emit(ir::op_ &op);
 #include "ops.def"
 #undef DEFINE_OP
 };
-}
+} // namespace nncase::codegen::k210

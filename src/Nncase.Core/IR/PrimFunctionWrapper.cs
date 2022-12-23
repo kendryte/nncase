@@ -16,7 +16,7 @@ namespace Nncase.IR;
 /// </summary>
 public sealed record PrimFunctionWrapper(string Name, PrimFunction Target, int ParametersCount) : BaseFunction(Name, StackVMModuleKind)
 {
-    private static int _globalFuncIndex = 0;
+    private static int _globalFuncIndex;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PrimFunctionWrapper"/> class.

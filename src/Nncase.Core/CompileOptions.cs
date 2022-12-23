@@ -7,12 +7,13 @@ using Nncase.Quantization;
 namespace Nncase;
 
 /// <summary>
-/// CompileOptions
+/// CompileOptions.
 /// </summary>
 public sealed class CompileOptions
 {
     /// <summary>
-    /// copy ctor
+    /// Initializes a new instance of the <see cref="CompileOptions"/> class.
+    /// copy ctor.
     /// </summary>
     public CompileOptions(CompileOptions other)
     {
@@ -28,7 +29,8 @@ public sealed class CompileOptions
     }
 
     /// <summary>
-    /// CompileOptions
+    /// Initializes a new instance of the <see cref="CompileOptions"/> class.
+    /// CompileOptions.
     /// </summary>
     public CompileOptions()
     {
@@ -44,7 +46,8 @@ public sealed class CompileOptions
     }
 
     /// <summary>
-    /// init 
+    /// Initializes a new instance of the <see cref="CompileOptions"/> class.
+    /// init.
     /// </summary>
     /// <param name="modelQuantMode"></param>
     public CompileOptions(ModelQuantMode modelQuantMode)
@@ -102,44 +105,43 @@ public sealed class CompileOptions
 //     /// </summary>
 //     public string InputFile { get; set; }
 
-//     /// <summary>
+// /// <summary>
 //     /// Gets or sets output file.
 //     /// </summary>
 //     public string OutputFile { get; set; }
 
-//     /// <summary>
+// /// <summary>
 //     /// Gets or sets the import model format.
 //     /// </summary>
 //     public string InputFormat { get; set; }
 
-//     /// <summary>
+// /// <summary>
 //     /// Gets or sets target.
 //     /// </summary>
 //     public string Target { get; set; }
 
-//     /// <summary>
+// /// <summary>
 //     /// Gets or sets the dump level.
 //     /// </summary>
 //     public int DumpLevel { get; set; }
 
-//     /// <summary>
+// /// <summary>
 //     /// Gets or sets the dump directory.
 //     /// </summary>
 //     public string DumpDir { get; set; }
 
-//     /// <summary>
+// /// <summary>
 //     /// weather use ptq
 //     /// </summary>
 //     public bool UsePTQ { get; set; }
 
-//     /// <summary>
+// /// <summary>
 //     /// Gets or sets quant type
 //     /// </summary>
 //     public DataType QuantType { get; set; }
 
-//     /// <summary>
+// /// <summary>
 //     /// Gets or sets quant mode
 //     /// </summary>
 //     public QuantMode QuantMode { get; set; }
 // }
-

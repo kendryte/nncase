@@ -24,6 +24,12 @@ namespace Nncase;
 public interface ICompilerServicesProvider
 {
     /// <summary>
+    /// Gets or sets get CompileOptions.
+    /// </summary>
+    /// <returns>CompileOptions.</returns>
+    CompileOptions CompileOptions { get; set; }
+
+    /// <summary>
     /// Inference type of the expression tree.
     /// </summary>
     /// <param name="expr">Expression.</param>
@@ -44,13 +50,13 @@ public interface ICompilerServicesProvider
     /// </summary>
     /// <param name="op">Target operator.</param>
     /// <param name="context">Context.</param>
-    /// <param name="ILmode">if is print is il or script.</param>
+    /// <param name="iLmode">if is print is il or script.</param>
     /// <returns>Result.</returns>
-    string PrintOp(Op op, IIRPrinterContext context, bool ILmode);
+    string PrintOp(Op op, IIRPrinterContext context, bool iLmode);
 
     /// <summary>
     /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.{ext}`
-    /// else write to {dumpPath}/{prefix}_{expr.Type.name}.il`
+    /// else write to {dumpPath}/{prefix}_{expr.Type.name}.il`.
     /// </summary>
     /// <param name="expr"></param>
     /// <param name="prefix"></param>
@@ -59,7 +65,7 @@ public interface ICompilerServicesProvider
     void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable);
 
     /// <summary>
-    /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.dot`
+    /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.dot`.
     /// <remarks>
     /// not support prim func/prim func wrapper.
     /// </remarks>
@@ -80,7 +86,7 @@ public interface ICompilerServicesProvider
     /// <summary>
     /// print ir type.
     /// </summary>
-    /// <param name="expr"> the expression </param>
+    /// <param name="expr"> the expression. </param>
     /// <returns>the string.</returns>
     string Print(Expr expr, bool useScript);
 
@@ -169,14 +175,8 @@ public interface ICompilerServicesProvider
     /// Get target.
     /// </summary>
     /// <param name="name">Target name.</param>
-    /// <returns>Target</returns>
+    /// <returns>Target.</returns>
     ITarget GetTarget(string name);
-
-    /// <summary>
-    /// Get CompileOptions.
-    /// </summary>
-    /// <returns>CompileOptions</returns>
-    CompileOptions CompileOptions { get; set; }
 
     /// <summary>
     /// Using EGraph rewrite expression.
@@ -193,154 +193,26 @@ internal interface ICompilerServicesProviderInternal
     IDataTypeServiceProvider DataTypeService { get; }
 }
 
-internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerServicesProviderInternal
-{
-    private readonly IEvaluateProvider _evaluateProvider;
-    private readonly ITypeInferenceProvider _typeInferenceProvider;
-    private readonly IIRPrinterProvider _irprinterProvider;
-    private readonly ICostEvaluateProvider _costEvaluateProvider;
-    private readonly IMatchProvider _matchProvider;
-    private readonly IRewriteProvider _rewriteProvider;
-    private readonly IEGraphMatchProvider _eGraphMatchProvider;
-    private readonly IEGraphRewriteProvider _eGraphrewriteProvider;
-    private readonly ITargetProvider _targetProvider;
-    private CompileOptions _compileOptions;
-
-    public CompilerServicesProvider(
-        // IOptions<CompileOptions> compileOptions,
-        IEvaluateProvider evaluateProvider,
-        ITypeInferenceProvider typeInferenceProvider,
-        IIRPrinterProvider irprinterProvider,
-        ICostEvaluateProvider costEvaluateProvider,
-        IDataTypeServiceProvider dataTypeServiceProvider,
-        IMatchProvider matchProvider,
-        IRewriteProvider rewriteProvider,
-        IEGraphMatchProvider eGraphMatchProvider,
-        IEGraphRewriteProvider eGraphrewriteProvider,
-        ITargetProvider targetProvider)
-    {
-        // _compileOptions = compileOptions.Value;
-        _evaluateProvider = evaluateProvider;
-        _typeInferenceProvider = typeInferenceProvider;
-        _irprinterProvider = irprinterProvider;
-        _costEvaluateProvider = costEvaluateProvider;
-        DataTypeService = dataTypeServiceProvider;
-        _matchProvider = matchProvider;
-        _rewriteProvider = rewriteProvider;
-        _eGraphMatchProvider = eGraphMatchProvider;
-        _eGraphrewriteProvider = eGraphrewriteProvider;
-        _targetProvider = targetProvider;
-    }
-
-    public IDataTypeServiceProvider DataTypeService { get; }
-
-    /// <inheritdoc/>
-    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
-    {
-        return _evaluateProvider.Evaluate(expr, varsValues, evaluator_cache);
-    }
-
-    /// <inheritdoc/>
-    public IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Type, IEvaluator>? evaluator_cache = null)
-    {
-        return _evaluateProvider.EvaluateOp(op, context, evaluator_cache);
-    }
-
-    /// <inheritdoc/>
-    public IRType InferenceOp(Op op, ITypeInferenceContext context, Dictionary<Type, ITypeInferencer> inferencer_cache)
-    {
-        return _typeInferenceProvider.InferenceOp(op, context, inferencer_cache);
-    }
-
-    /// <inheritdoc/>
-    public bool InferenceType(Expr expr)
-    {
-        return _typeInferenceProvider.InferenceType(expr);
-    }
-
-    /// <inheritdoc/>
-    public string PrintOp(Op op, IIRPrinterContext context, bool ILmode)
-    {
-        return _irprinterProvider.PrintOp(op, context, ILmode);
-    }
-
-    /// <inheritdoc/>
-    public void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable) =>
-      _irprinterProvider.DumpIR(expr, prefix, dumpPath, display_callable);
-
-    /// <inheritdoc/>
-    public void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable) =>
-    _irprinterProvider.DumpDotIR(expr, prefix, dumpPath, display_callable);
-
-    /// <inheritdoc/>
-    public string Print(IRType type) => _irprinterProvider.Print(type);
-
-    /// <inheritdoc/>
-    public string Print(Expr expr, bool useScript) => _irprinterProvider.Print(expr, useScript);
-
-    /// <inheritdoc/>
-    public bool TryMatch(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
-    {
-        return _matchProvider.TryMatch(expr, pattern, options, out result);
-    }
-
-    /// <inheritdoc/>
-    public bool TryMatchRoot(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
-    {
-        return _matchProvider.TryMatchRoot(expr, pattern, options, out result);
-    }
-
-    /// <inheritdoc/>
-    public Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
-    {
-        return _rewriteProvider.Rewrite(expr, rules, options);
-    }
-
-    /// <inheritdoc/>
-    public Cost EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null)
-    {
-        return _costEvaluateProvider.EvaluateCost(expr, varsValues);
-    }
-
-    /// <inheritdoc/>
-    public Cost EvaluateOpCost(Op op, ICostEvaluateContext context)
-    {
-        return _costEvaluateProvider.EvaluateOpCost(op, context);
-    }
-
-    public bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
-    {
-        return _eGraphMatchProvider.TryMatchRoot(enodes, pattern, out results);
-    }
-
-    public bool TryEMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
-    {
-        return _eGraphMatchProvider.TryEMatchRoot(expr, pattern, out results);
-    }
-
-    public ITarget GetTarget(string name)
-    {
-        return _targetProvider.GetTarget(name);
-    }
-
-    public Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
-    {
-        return _eGraphrewriteProvider.ERewrite(expr, rules, options);
-    }
-
-    public CompileOptions CompileOptions
-    {
-        get => _compileOptions;
-        set => _compileOptions = value;
-    }
-}
-
 /// <summary>
 /// Compiler services.
 /// </summary>
 public static class CompilerServices
 {
     private static ICompilerServicesProvider? _provider;
+
+    /// <summary>
+    /// Gets or sets get the compile options.
+    /// </summary>
+    /// <returns></returns>
+    public static CompileOptions CompileOptions
+    {
+        get { return Provider.CompileOptions; }
+        set { Provider.CompileOptions = value; }
+    }
+
+    public static string CompileTarget => CompileOptions.Target;
+
+    public static ITarget GetCompileTarget => GetTarget(CompileTarget);
 
     internal static IDataTypeServiceProvider DataTypeService => ((ICompilerServicesProviderInternal)Provider).DataTypeService;
 
@@ -539,16 +411,16 @@ public static class CompilerServices
     /// </summary>
     /// <param name="op">Target operator.</param>
     /// <param name="context">Context.</param>
-    /// <param name="ILmode">if is print is il or script.</param>
+    /// <param name="iLmode">if is print is il or script.</param>
     /// <returns>Result.</returns>
-    public static string PrintOp(Op op, IIRPrinterContext context, bool ILmode) => Provider.PrintOp(op, context, ILmode);
+    public static string PrintOp(Op op, IIRPrinterContext context, bool iLmode) => Provider.PrintOp(op, context, iLmode);
 
     /// <inheritdoc/>
     public static void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable = true) =>
       Provider.DumpIR(expr, prefix, dumpPath, display_callable);
 
     /// <summary>
-    /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.dot`
+    /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.dot`.
     /// <remarks>
     /// not support prim func/prim func wrapper.
     /// </remarks>
@@ -570,20 +442,149 @@ public static class CompilerServices
     /// Get target.
     /// </summary>
     /// <param name="name">Target name.</param>
-    /// <returns>Target</returns>
+    /// <returns>Target.</returns>
     public static ITarget GetTarget(string name) => Provider.GetTarget(name);
+}
 
-    /// <summary>
-    /// Get the compile options
-    /// </summary>
-    /// <returns></returns>
-    public static CompileOptions CompileOptions
+internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerServicesProviderInternal
+{
+    private readonly IEvaluateProvider _evaluateProvider;
+    private readonly ITypeInferenceProvider _typeInferenceProvider;
+    private readonly IIRPrinterProvider _irprinterProvider;
+    private readonly ICostEvaluateProvider _costEvaluateProvider;
+    private readonly IMatchProvider _matchProvider;
+    private readonly IRewriteProvider _rewriteProvider;
+    private readonly IEGraphMatchProvider _eGraphMatchProvider;
+    private readonly IEGraphRewriteProvider _eGraphrewriteProvider;
+    private readonly ITargetProvider _targetProvider;
+    private CompileOptions _compileOptions;
+
+    public CompilerServicesProvider(
+
+        // IOptions<CompileOptions> compileOptions,
+        IEvaluateProvider evaluateProvider,
+        ITypeInferenceProvider typeInferenceProvider,
+        IIRPrinterProvider irprinterProvider,
+        ICostEvaluateProvider costEvaluateProvider,
+        IDataTypeServiceProvider dataTypeServiceProvider,
+        IMatchProvider matchProvider,
+        IRewriteProvider rewriteProvider,
+        IEGraphMatchProvider eGraphMatchProvider,
+        IEGraphRewriteProvider eGraphrewriteProvider,
+        ITargetProvider targetProvider)
     {
-        get { return Provider.CompileOptions; }
-        set { Provider.CompileOptions = value; }
+        // _compileOptions = compileOptions.Value;
+        _evaluateProvider = evaluateProvider;
+        _typeInferenceProvider = typeInferenceProvider;
+        _irprinterProvider = irprinterProvider;
+        _costEvaluateProvider = costEvaluateProvider;
+        DataTypeService = dataTypeServiceProvider;
+        _matchProvider = matchProvider;
+        _rewriteProvider = rewriteProvider;
+        _eGraphMatchProvider = eGraphMatchProvider;
+        _eGraphrewriteProvider = eGraphrewriteProvider;
+        _targetProvider = targetProvider;
     }
 
-    public static string CompileTarget => CompileOptions.Target;
+    public IDataTypeServiceProvider DataTypeService { get; }
 
-    public static ITarget GetCompileTarget => GetTarget(CompileTarget);
+    public CompileOptions CompileOptions
+    {
+        get => _compileOptions;
+        set => _compileOptions = value;
+    }
+
+    /// <inheritdoc/>
+    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
+    {
+        return _evaluateProvider.Evaluate(expr, varsValues, evaluator_cache);
+    }
+
+    /// <inheritdoc/>
+    public IValue EvaluateOp(Op op, IEvaluateContext context, Dictionary<Type, IEvaluator>? evaluator_cache = null)
+    {
+        return _evaluateProvider.EvaluateOp(op, context, evaluator_cache);
+    }
+
+    /// <inheritdoc/>
+    public IRType InferenceOp(Op op, ITypeInferenceContext context, Dictionary<Type, ITypeInferencer> inferencer_cache)
+    {
+        return _typeInferenceProvider.InferenceOp(op, context, inferencer_cache);
+    }
+
+    /// <inheritdoc/>
+    public bool InferenceType(Expr expr)
+    {
+        return _typeInferenceProvider.InferenceType(expr);
+    }
+
+    /// <inheritdoc/>
+    public string PrintOp(Op op, IIRPrinterContext context, bool iLmode)
+    {
+        return _irprinterProvider.PrintOp(op, context, iLmode);
+    }
+
+    /// <inheritdoc/>
+    public void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable) =>
+      _irprinterProvider.DumpIR(expr, prefix, dumpPath, display_callable);
+
+    /// <inheritdoc/>
+    public void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable) =>
+    _irprinterProvider.DumpDotIR(expr, prefix, dumpPath, display_callable);
+
+    /// <inheritdoc/>
+    public string Print(IRType type) => _irprinterProvider.Print(type);
+
+    /// <inheritdoc/>
+    public string Print(Expr expr, bool useScript) => _irprinterProvider.Print(expr, useScript);
+
+    /// <inheritdoc/>
+    public bool TryMatch(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
+    {
+        return _matchProvider.TryMatch(expr, pattern, options, out result);
+    }
+
+    /// <inheritdoc/>
+    public bool TryMatchRoot(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
+    {
+        return _matchProvider.TryMatchRoot(expr, pattern, options, out result);
+    }
+
+    /// <inheritdoc/>
+    public Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
+    {
+        return _rewriteProvider.Rewrite(expr, rules, options);
+    }
+
+    /// <inheritdoc/>
+    public Cost EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null)
+    {
+        return _costEvaluateProvider.EvaluateCost(expr, varsValues);
+    }
+
+    /// <inheritdoc/>
+    public Cost EvaluateOpCost(Op op, ICostEvaluateContext context)
+    {
+        return _costEvaluateProvider.EvaluateOpCost(op, context);
+    }
+
+    public bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
+    {
+        return _eGraphMatchProvider.TryMatchRoot(enodes, pattern, out results);
+    }
+
+    public bool TryEMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
+    {
+        return _eGraphMatchProvider.TryEMatchRoot(expr, pattern, out results);
+    }
+
+    public ITarget GetTarget(string name)
+    {
+        return _targetProvider.GetTarget(name);
+    }
+
+    public Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
+    {
+        return _eGraphrewriteProvider.ERewrite(expr, rules, options);
+    }
 }

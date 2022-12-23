@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -21,21 +24,81 @@ public class UnitTestFusePadConv2D : TestFixture.UnitTestFixtrue
     public static IEnumerable<object[]> TestFusePadConv2DPositiveData =>
         new[]
         {
-            new object[] { new[] { 1, 1, 2, 2 }, new[,] { { 1, 0 },
-            { 0, 0 },
-            { 3, 3 },
-            { 4, 4 } }, new[,] { { 0, 0 },
-            { 0, 0 } }, new[] { 3, 1, 1, 1 } }, // fuse hw pad, keep n pad 
-            new object[] { new[] { 1, 3, 4, 1 }, new[,] { { 0, 0 },
-            { 0, 0 },
-            { 5, 0 },
-            { 1, 3 } }, new[,] { { 0, 2 },
-            { 3, 2 } }, new[] { 1, 3, 2, 2 } }, // fuse hw pad
-            new object[] { new[] { 1, 3, 4, 2 }, new[,] { { 0, 0 },
-            { 0, 0 },
-            { 0, 0 },
-            { 0, 0 } }, new[,] { { 0, 2 },
-            { 3, 2 } }, new[] { 1, 3, 2, 2 } }, // nop pad
+            new object[]
+            {
+                new[] { 1, 1, 2, 2 }, new[,]
+            {
+                { 1, 0 },
+                { 0, 0 },
+                { 3, 3 },
+                { 4, 4 },
+            }, new[,]
+            {
+                { 0, 0 },
+                { 0, 0 },
+            }, new[] { 3, 1, 1, 1 },
+            }, // fuse hw pad, keep n pad
+            new object[]
+            {
+                new[] { 1, 3, 4, 1 }, new[,]
+            {
+                { 0, 0 },
+                { 0, 0 },
+                { 5, 0 },
+                { 1, 3 },
+            }, new[,]
+            {
+                { 0, 2 },
+                { 3, 2 },
+            }, new[] { 1, 3, 2, 2 },
+            }, // fuse hw pad
+            new object[]
+            {
+                new[] { 1, 3, 4, 2 }, new[,]
+            {
+                { 0, 0 },
+                { 0, 0 },
+                { 0, 0 },
+                { 0, 0 },
+            }, new[,]
+            {
+                { 0, 2 },
+                { 3, 2 },
+            }, new[] { 1, 3, 2, 2 },
+            }, // nop pad
+        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
+
+    public static IEnumerable<object[]> TestFusePadConv2DNegativeData =>
+        new[]
+        {
+            new object[]
+            {
+                new[] { 1, 3, 4, 2 }, new[,]
+            {
+                { 1, 0 },
+                { 0, 0 },
+                { 0, 0 },
+                { 0, 0 },
+            }, new[,]
+            {
+                { 0, 2 },
+                { 3, 2 },
+            }, new[] { 2, 3, 2, 2 },
+            }, // can't fuse n pad
+            new object[]
+            {
+                new[] { 1, 3, 4, 2 }, new[,]
+            {
+                { 0, 0 },
+                { 0, 1 },
+                { 0, 0 },
+                { 0, 0 },
+            }, new[,]
+            {
+                { 0, 2 },
+                { 3, 2 },
+            }, new[] { 1, 4, 2, 2 },
+            }, // can't fuse c pad
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
@@ -47,15 +110,15 @@ public class UnitTestFusePadConv2D : TestFixture.UnitTestFixtrue
         var w = Random.Normal(DataTypes.Float32, 0, 1, 0, wShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { wShape[0] });
 
-        var ANormal = new Dictionary<Var, IValue>();
-        ANormal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, shape).Evaluate());
+        var aNormal = new Dictionary<Var, IValue>();
+        aNormal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, shape).Evaluate());
         var rootPre = NN.Conv2D(NN.Pad(a, pads1, PadMode.Constant, 0f), w, b, new[] { 1, 1 }, pads2, new[] { 1, 1 }, PadMode.Constant, 1);
         var rootMid = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new FoldConstCall(),
+
             // new FusePadConv2d(),
             // new FoldNopPad(),
-            
         }, caseOptions);
         var rootPost = CompilerServices.Rewrite(rootMid, new IRewriteRule[]
         {
@@ -63,27 +126,11 @@ public class UnitTestFusePadConv2D : TestFixture.UnitTestFixtrue
             new FusePadConv2d(),
             new FoldConstCall(),
             new FoldNopPad(),
-
         }, caseOptions);
 
         Assert.NotEqual(rootMid, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootMid, ANormal), CompilerServices.Evaluate(rootPost, ANormal));
+        Assert.Equal(CompilerServices.Evaluate(rootMid, aNormal), CompilerServices.Evaluate(rootPost, aNormal));
     }
-
-    public static IEnumerable<object[]> TestFusePadConv2DNegativeData =>
-        new[]
-        {
-            new object[] { new[] { 1, 3, 4, 2 }, new[,] { { 1, 0 },
-            { 0, 0 },
-            { 0, 0 },
-            { 0, 0 } }, new[,] { { 0, 2 },
-            { 3, 2 } }, new[] { 2, 3, 2, 2 } }, // can't fuse n pad
-            new object[] { new[] { 1, 3, 4, 2 }, new[,] { { 0, 0 },
-            { 0, 1 },
-            { 0, 0 },
-            { 0, 0 } }, new[,] { { 0, 2 },
-            { 3, 2 } }, new[] { 1, 4, 2, 2 } }, // can't fuse c pad
-        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
     [MemberData(nameof(TestFusePadConv2DNegativeData))]
@@ -94,8 +141,8 @@ public class UnitTestFusePadConv2D : TestFixture.UnitTestFixtrue
         var w = Random.Normal(DataTypes.Float32, 0, 1, 0, wShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { wShape[0] });
 
-        var ANormal = new Dictionary<Var, IValue>();
-        ANormal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, shape).Evaluate());
+        var aNormal = new Dictionary<Var, IValue>();
+        aNormal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, shape).Evaluate());
         var rootPre = NN.Conv2D(NN.Pad(a, pads1, PadMode.Constant, 0f), w, b, new[] { 1, 1 }, pads2, new[] { 1, 1 }, PadMode.Constant, 1);
 
         var rootMid = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
@@ -110,6 +157,6 @@ public class UnitTestFusePadConv2D : TestFixture.UnitTestFixtrue
         }, caseOptions);
 
         Assert.Equal(rootMid, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootMid, ANormal), CompilerServices.Evaluate(rootPost, ANormal));
+        Assert.Equal(CompilerServices.Evaluate(rootMid, aNormal), CompilerServices.Evaluate(rootPost, aNormal));
     }
 }

@@ -20,8 +20,7 @@
 
 BEGIN_NS_NNCASE_RUNTIME
 
-typedef enum _nnil_opcode
-{
+typedef enum _nnil_opcode {
     nnil_nop = 0x00,
     nnil_dup = 0x01,
     nnil_pop = 0x02,
@@ -58,37 +57,30 @@ typedef enum _nnil_opcode
     nnil_ret = 0xA0
 } nnil_opcode_t;
 
-typedef struct _nnil_ldc_r4
-{
+typedef struct _nnil_ldc_r4 {
     float r4;
 } nnil_ldc_r4_t;
 
-typedef struct _nnil_op
-{
+typedef struct _nnil_op {
     nnil_opcode_t opcode;
 
-    union
-    {
+    union {
         nnil_ldc_r4_t ldc_r4;
     };
 } nnil_op_t;
 
-class nnil_reader
-{
-public:
-    nnil_reader(span_reader &reader)
-        : reader_(reader) { }
+class nnil_reader {
+  public:
+    nnil_reader(span_reader &reader) : reader_(reader) {}
 
     bool avail() const noexcept { return !reader_.empty(); }
 
-    nnil_op_t next()
-    {
+    nnil_op_t next() {
         assert(avail());
         nnil_op_t op;
         op.opcode = (nnil_opcode_t)reader_.read<uint8_t>();
 
-        switch (op.opcode)
-        {
+        switch (op.opcode) {
         case nnil_ldc_r4:
             op.ldc_r4 = reader_.read_unaligned<nnil_ldc_r4_t>();
             break;
@@ -99,38 +91,31 @@ public:
         return op;
     }
 
-private:
+  private:
     span_reader &reader_;
 };
 
-class nnil_evalstack
-{
-public:
-    nnil_evalstack() noexcept
-        : top(0)
-    {
-    }
+class nnil_evalstack {
+  public:
+    nnil_evalstack() noexcept : top(0) {}
 
-    void push(float value)
-    {
+    void push(float value) {
         assert(top < _stack.size());
         _stack[top++] = value;
     }
 
-    float pop()
-    {
+    float pop() {
         assert(top > 0);
         return _stack[--top];
     }
 
-    void dup()
-    {
+    void dup() {
         assert(top > 0);
         _stack[top] = _stack[top - 1];
         top++;
     }
 
-private:
+  private:
     std::array<float, 64> _stack;
     size_t top;
 };

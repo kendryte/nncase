@@ -400,8 +400,8 @@ NNCASE_API result<void> tile(datatype_t dt, const gsl::byte *input,
                              const dims_t &repeats);
 
 NNCASE_API result<void>
-topk(typecode_t typecode, const gsl::byte *input, gsl::byte *output_values, int64_t *output_indices,
-     const dims_t &in_shape, const dims_t &in_strides,
+topk(typecode_t typecode, const gsl::byte *input, gsl::byte *output_values,
+     int64_t *output_indices, const dims_t &in_shape, const dims_t &in_strides,
      const dims_t &output_values_shape, const dims_t &output_values_strides,
      const dims_t &output_indices_shape, const dims_t &output_indices_strides,
      const int64_t k, const int32_t axis, const bool largest,

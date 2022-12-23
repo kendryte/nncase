@@ -19,7 +19,9 @@
 
 BEGIN_NS_NNCASE_RUNTIME
 
-gsl::span<const gsl::byte> find_section(const char *name, gsl::span<const gsl::byte> sections) noexcept;
-gsl::span<const gsl::byte> read_sections(span_reader &sr, size_t sections) noexcept;
+gsl::span<const gsl::byte>
+find_section(const char *name, gsl::span<const gsl::byte> sections) noexcept;
+gsl::span<const gsl::byte> read_sections(span_reader &sr,
+                                         size_t sections) noexcept;
 
 END_NS_NNCASE_RUNTIME

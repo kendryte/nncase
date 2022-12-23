@@ -30,6 +30,13 @@ public record struct ValueRange<T>(T Min, T Max)
     public static implicit operator ValueRange<T>((T Min, T Max) tuple) =>
         new ValueRange<T> { Min = tuple.Min, Max = tuple.Max };
 
+    public ValueRange<T> Union(ValueRange<T> range)
+    {
+        var min = Min.CompareTo(range.Min) < 0 ? Min : range.Min;
+        var max = Max.CompareTo(range.Max) > 0 ? Max : range.Max;
+        return (min, max);
+    }
+
     private static class Limits
     {
         public static T MinValue
@@ -48,12 +55,12 @@ public record struct ValueRange<T>(T Min, T Max)
 
                 if (typeof(T) == typeof(BFloat16))
                 {
-                    return (T)(object)(BFloat16.NegInfinity);
+                    return (T)(object)BFloat16.NegInfinity;
                 }
 
                 if (typeof(T) == typeof(Half))
                 {
-                    return (T)(object)(Half.NegativeInfinity);
+                    return (T)(object)Half.NegativeInfinity;
                 }
 
                 throw new NotSupportedException();
@@ -76,23 +83,16 @@ public record struct ValueRange<T>(T Min, T Max)
 
                 if (typeof(T) == typeof(BFloat16))
                 {
-                    return (T)(object)(BFloat16.Infinity);
+                    return (T)(object)BFloat16.Infinity;
                 }
 
                 if (typeof(T) == typeof(Half))
                 {
-                    return (T)(object)(Half.PositiveInfinity);
+                    return (T)(object)Half.PositiveInfinity;
                 }
 
                 throw new NotSupportedException();
             }
         }
-    }
-
-    public ValueRange<T> Union(ValueRange<T> range)
-    {
-        var min = Min.CompareTo(range.Min) < 0 ? Min : range.Min;
-        var max = Max.CompareTo(range.Max) > 0 ? Max : range.Max;
-        return (min, max);
     }
 }

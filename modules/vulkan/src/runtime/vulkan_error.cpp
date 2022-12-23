@@ -17,38 +17,30 @@
 using namespace nncase;
 using namespace vk;
 
-namespace
-{
-class vulkan_error_category : public std::error_category
-{
-public:
+namespace {
+class vulkan_error_category : public std::error_category {
+  public:
     static vulkan_error_category instance;
 
-    char const *name() const noexcept override
-    {
-        return "vulkan";
-    }
+    char const *name() const noexcept override { return "vulkan"; }
 
-    std::string message(int code) const override
-    {
+    std::string message(int code) const override {
         return vk::to_string((vk::Result)code);
     }
 
-    bool equivalent(NNCASE_UNUSED std::error_code const &code, NNCASE_UNUSED int condition) const noexcept override
-    {
+    bool equivalent(NNCASE_UNUSED std::error_code const &code,
+                    NNCASE_UNUSED int condition) const noexcept override {
         return false;
     }
 };
 
 vulkan_error_category vulkan_error_category::instance;
-}
+} // namespace
 
-const std::error_category &vk::vulkan_category() noexcept
-{
+const std::error_category &vk::vulkan_category() noexcept {
     return vulkan_error_category::instance;
 }
 
-std::error_condition vk::make_error_condition(vk::Result code)
-{
+std::error_condition vk::make_error_condition(vk::Result code) {
     return std::error_condition(static_cast<int>(code), vulkan_category());
 }

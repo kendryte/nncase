@@ -62,6 +62,7 @@ in_shapes = [
     [1, 3, 16, 16]
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_asinh(in_shape, request):
     model_def = _make_module(in_shape)

@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -46,7 +46,7 @@ public sealed record VArgsPattern(Func<IReadOnlyList<Expr>, IRArray<Pattern>> Fi
     public int Count => _fields.Count;
 
     /// <summary>
-    /// check the fields is empty
+    /// Gets a value indicating whether check the fields is empty.
     /// </summary>
     public bool IsDefaultOrEmpty => _fields.IsDefaultOrEmpty;
 
@@ -114,6 +114,7 @@ public partial class Utility
     /// <summary>
     /// <see cref="IsVArgsRepeat(string?, Func{Pattern})"/>.
     /// </summary>
+    /// <returns></returns>
     public static VArgsPattern IsVArgsRepeat(Func<Pattern> creator) => IsVArgsRepeat(null, creator);
 
     /// <summary>

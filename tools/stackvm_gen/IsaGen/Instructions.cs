@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -8,17 +11,6 @@ using BitFields;
 
 namespace IsaGen
 {
-    [System.AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = false)]
-    public sealed class EnumNameAttribute : Attribute
-    {
-        public string Name { get; }
-
-        public EnumNameAttribute(string name)
-        {
-            Name = name;
-        }
-    }
-
     [EnumName("opcode_t")]
     public enum OpCode : byte
     {
@@ -136,6 +128,17 @@ namespace IsaGen
         BREAK,
 
         TENSOR,
+    }
+
+    [System.AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = false)]
+    public sealed class EnumNameAttribute : Attribute
+    {
+        public EnumNameAttribute(string name)
+        {
+            Name = name;
+        }
+
+        public string Name { get; }
     }
 
     public abstract class Instruction

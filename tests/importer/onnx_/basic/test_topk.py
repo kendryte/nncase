@@ -21,6 +21,7 @@ from onnx_test_runner import OnnxTestRunner
 import numpy as np
 import copy
 
+
 def _make_module(in_shape, k, axis, largest, sorted):
     inputs = []
     outputs = []
@@ -86,6 +87,7 @@ def _make_module(in_shape, k, axis, largest, sorted):
 
     return model_def
 
+
 in_shapes = [
     [2, 3, 16, 16]
 ]
@@ -122,6 +124,7 @@ sorted_list = [
     # 0
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('k', ks)
 @pytest.mark.parametrize('axis', axes)
@@ -135,6 +138,7 @@ def test_topk(in_shape, k, axis, largest, sorted, request):
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_onnx_helper(model_def)
         runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_topk.py'])

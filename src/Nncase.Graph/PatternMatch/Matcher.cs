@@ -15,8 +15,8 @@ namespace Nncase.PatternMatch;
 
 internal sealed class Matcher
 {
+    private readonly MatchOptions _options;
     private MatchScope _currentScope = new MatchScope();
-    private MatchOptions _options;
 
     private Matcher(Expr root, MatchOptions options)
     {

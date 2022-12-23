@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 #include <iostream>
-#include <nncase/kernels/stackvm/ref_ops.h>
-#include <nncase/kernels/stackvm/opt_ops.h>
 #include <nncase/kernels/kernel_utils.h>
+#include <nncase/kernels/stackvm/opt_ops.h>
+#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #if __riscv_vector
 #include "utils.h"
@@ -28,34 +28,31 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
 
-namespace
-{
+namespace {
 #if __riscv_vector
 
-result<void> optimized_sigmoid_impl(const float *input, float *output, const dims_t &in_shape,
-    const dims_t &in_strides, const dims_t &out_strides) noexcept
-{
+result<void> optimized_sigmoid_impl(const float *input, float *output,
+                                    const dims_t &in_shape,
+                                    const dims_t &in_strides,
+                                    const dims_t &out_strides) noexcept {
 
-    if (get_default_strides(in_shape) != in_strides)
-    {
+    if (get_default_strides(in_shape) != in_strides) {
         size_t ndim = in_shape.size();
-        if (ndim > 1)
-        {
+        if (ndim > 1) {
             const float *ptr_input = input;
             float *ptr_output = output;
             dims_t new_in_shape(in_shape.begin() + 1, in_shape.end());
             dims_t new_in_strides(in_strides.begin() + 1, in_strides.end());
             dims_t new_out_strides(out_strides.begin() + 1, out_strides.end());
-            for (size_t i = 0; i < in_shape[0]; i++)
-            {
-                auto ret = optimized_sigmoid_impl(ptr_input, ptr_output, new_in_shape, new_in_strides, new_out_strides);
+            for (size_t i = 0; i < in_shape[0]; i++) {
+                auto ret =
+                    optimized_sigmoid_impl(ptr_input, ptr_output, new_in_shape,
+                                           new_in_strides, new_out_strides);
                 (void)ret;
                 ptr_input += in_strides[0];
                 ptr_output += out_strides[0];
             }
-        }
-        else
-        {
+        } else {
             // ndim == 1 with stride
             size_t n = compute_size(in_shape);
             size_t in_stride = in_strides[0];
@@ -63,8 +60,7 @@ result<void> optimized_sigmoid_impl(const float *input, float *output, const dim
             const float *ptr_input = input;
             float *ptr_output = output;
             float one = 1.f;
-            while (n)
-            {
+            while (n) {
                 auto vl = vsetvl_e32m8(n);
                 auto v_out = vlse32_v_f32m8(ptr_input, in_stride, vl);
                 v_out = vfneg_v_f32m8(v_out, vl);
@@ -78,15 +74,12 @@ result<void> optimized_sigmoid_impl(const float *input, float *output, const dim
                 n -= vl;
             }
         }
-    }
-    else
-    {
+    } else {
         size_t n = compute_size(in_shape);
         const float *ptr_input = input;
         float *ptr_output = output;
         float one = 1.f;
-        while (n)
-        {
+        while (n) {
             auto vl = vsetvl_e32m8(n);
             auto v_out = vle32_v_f32m8(ptr_input, vl);
             v_out = vfneg_v_f32m8(v_out, vl);
@@ -104,16 +97,19 @@ result<void> optimized_sigmoid_impl(const float *input, float *output, const dim
     return ok();
 }
 #endif
-}
+} // namespace
 
 template <typename T>
-result<void> optimized::sigmoid(const T *input, T *output, const dims_t &in_shape, const strides_t &in_strides, const dims_t &out_shape,               \
-                                const strides_t &out_strides,
-                                kernel_context &context) noexcept
-{
+result<void>
+optimized::sigmoid(const T *input, T *output, const dims_t &in_shape,
+                   const strides_t &in_strides, const dims_t &out_shape,
+                   const strides_t &out_strides,
+                   kernel_context &context) noexcept {
 #if __riscv_vector
-    return optimized_sigmoid_impl(input, output, in_shape, in_strides, out_strides);
+    return optimized_sigmoid_impl(input, output, in_shape, in_strides,
+                                  out_strides);
 #endif
 
-    return stackvm::reference::sigmoid(input, output, in_shape, in_strides, out_shape, out_strides, context);
+    return stackvm::reference::sigmoid(input, output, in_shape, in_strides,
+                                       out_shape, out_strides, context);
 }

@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,9 +29,9 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestENodeVarHash()
     {
-        var node1 = ENode.Create((Var)"x", new EClass[] { });
-        var node2 = ENode.Create((Var)"x", new EClass[] { });
-        var node3 = ENode.Create((Var)"y", new EClass[] { });
+        var node1 = ENode.Create((Var)"x", Array.Empty<EClass>());
+        var node2 = ENode.Create((Var)"x", Array.Empty<EClass>());
+        var node3 = ENode.Create((Var)"y", Array.Empty<EClass>());
         Assert.Equal(node1, node2);
         Assert.Equal(node1.GetHashCode(), node2.GetHashCode());
         Assert.NotEqual(node1, node3);
@@ -38,9 +41,9 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestENodeConstHash()
     {
-        var node1 = ENode.Create(1, new EClass[] { });
-        var node2 = ENode.Create(1, new EClass[] { });
-        var node3 = ENode.Create(11, new EClass[] { });
+        var node1 = ENode.Create(1, Array.Empty<EClass>());
+        var node2 = ENode.Create(1, Array.Empty<EClass>());
+        var node3 = ENode.Create(11, Array.Empty<EClass>());
         Assert.Equal(node1, node2);
         Assert.Equal(node1.GetHashCode(), node2.GetHashCode());
         Assert.NotEqual(node1, node3);
@@ -50,9 +53,9 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestENodeOpHash()
     {
-        var node1 = ENode.Create(new Binary(BinaryOp.Add), new EClass[] { });
-        var node2 = ENode.Create(new Binary(BinaryOp.Add), new EClass[] { });
-        var node3 = ENode.Create(new Unary(UnaryOp.Abs), new EClass[] { });
+        var node1 = ENode.Create(new Binary(BinaryOp.Add), Array.Empty<EClass>());
+        var node2 = ENode.Create(new Binary(BinaryOp.Add), Array.Empty<EClass>());
+        var node3 = ENode.Create(new Unary(UnaryOp.Abs), Array.Empty<EClass>());
         Assert.Equal(node1, node2);
         Assert.Equal(node1.GetHashCode(), node2.GetHashCode());
         Assert.NotEqual(node1, node3);
@@ -66,7 +69,7 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
         // the Enode must be equal
         var eclass = new EClass(1);
         var call1 = Binary(BinaryOp.Add, 4, 4);
-        var call2 = Binary(BinaryOp.Add, ((Const)1 + 3), ((Const)2 + 2));
+        var call2 = Binary(BinaryOp.Add, (Const)1 + 3, (Const)2 + 2);
         var node1 = ENode.Create(call1, new[] { eclass, eclass });
         var node2 = ENode.Create(call2, new[] { eclass, eclass });
         Assert.Equal(node1.GetHashCode(), node2.GetHashCode());
@@ -99,7 +102,7 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
         Expr a = (Const)1 + 2;
         Expr b = (Const)1 << 2;
         Expr c = a * b;
-        EGraph graph = new EGraph();
+        var graph = new EGraph();
         graph.Add(c);
         EGraphPrinter.DumpEgraphAsDot(graph, "example.dot");
     }
@@ -109,7 +112,7 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
     {
         Expr a = (Const)1 * 2;
         Expr b = (Const)1 * 2;
-        EGraph graph = new EGraph();
+        var graph = new EGraph();
         graph.Add(a);
         graph.Add(b);
         Assert.Equal(4, graph.Nodes.Count());
@@ -119,12 +122,12 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestEgraphDumpVieta()
     {
-        Var a = new Var("a");
-        Var b = new Var("b");
-        Var c = new Var("c");
+        var a = new Var("a");
+        var b = new Var("b");
+        var c = new Var("c");
         Expr d = (-b + Sqrt(Pow(b, 2) - (4 * a * c))) / (2 * a);
 
-        EGraph graph = new EGraph();
+        var graph = new EGraph();
         graph.Add(d);
         Assert.Equal(21, graph.Nodes.Count());
         EGraphPrinter.DumpEgraphAsDot(graph, "exampleVieta.dot");
@@ -133,8 +136,8 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestEgraphMerge()
     {
-        EGraph graph = new EGraph();
-        Var a = new Var("a");
+        var graph = new EGraph();
+        var a = new Var("a");
         Expr b = a * 2 / 2;
         var bId = graph.Add(b);
         EGraphPrinter.DumpEgraphAsDot(graph, "exampleMerge1.dot");
@@ -161,11 +164,12 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestEgraphMatch()
     {
-        //Given
-        Var x = new Var("x", new TensorType(DataTypes.Float32, Shape.Scalar));
-        Var y = new Var("y", new TensorType(DataTypes.Float32, Shape.Scalar));
-        Expr pattern = x + y;
-        //When
+        // Given
+        var x = new Var("x", new TensorType(DataTypes.Float32, Shape.Scalar));
+        var y = new Var("y", new TensorType(DataTypes.Float32, Shape.Scalar));
+        _ = x + y;
+
+        // When
         Expr e1 = (Expr)1.0f * 2 / 2;
         Expr e2 = e1 + 100.0f; /* will match */
         Expr e3 = e2 - 10 + 100; /* will match in subset */
@@ -176,8 +180,8 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestRebuildCanonicalizeEclass()
     {
-        // When (x*2)+1 match x<<1, the (x*2)<==(x<<1) will be merge, 
-        // but after rebuid, (x*2) is not in worklist, 
+        // When (x*2)+1 match x<<1, the (x*2)<==(x<<1) will be merge,
+        // but after rebuid, (x*2) is not in worklist,
         // so it's eclass in hashcon will not be update
         // should fix it.
         var passOptions = GetPassOptions();
@@ -208,7 +212,7 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
         var e2 = g.Add(x << 1);
         var e3 = g.Add(x * 4);
         var e4 = g.Add(x * 2 * 2);
-        var e5 = g.Add((x * 2) * (x * 4));
+        _ = g.Add(x * 2 * (x * 4));
         EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "before"));
         g.Union(e2, e1);
         EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "merge_lhs"));
@@ -226,5 +230,4 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
             }
         }
     }
-
 }

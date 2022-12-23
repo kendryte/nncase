@@ -12,15 +12,17 @@ using Nncase.IR;
 namespace Nncase.Runtime.Interop;
 
 /// <summary>
-/// the Runtime Value
+/// the Runtime Value.
 /// </summary>
 public abstract class RTValue : RTObject
 {
-    internal RTValue() : base(IntPtr.Zero)
+    internal RTValue()
+        : base(IntPtr.Zero)
     {
     }
 
-    internal RTValue(IntPtr handle) : base(handle)
+    internal RTValue(IntPtr handle)
+        : base(handle)
     {
     }
 
@@ -50,7 +52,7 @@ public abstract class RTValue : RTObject
     }
 
     /// <summary>
-    /// convert RT Value To IValue
+    /// convert RT Value To IValue.
     /// </summary>
     /// <returns></returns>
     public IValue ToValue() => this switch
@@ -98,7 +100,7 @@ public class RTTensor : RTValue
     }
 
     /// <summary>
-    /// Get the buffer slice
+    /// Gets get the buffer slice.
     /// </summary>
     public RTBufferSlice Buffer
     {
@@ -110,7 +112,7 @@ public class RTTensor : RTValue
     }
 
     /// <summary>
-    /// Get the dimensions
+    /// Gets get the dimensions.
     /// </summary>
     public unsafe ReadOnlySpan<uint> Dimensions
     {
@@ -134,7 +136,7 @@ public class RTTensor : RTValue
     }
 
     /// <summary>
-    /// Get the Strides
+    /// Gets get the Strides.
     /// </summary>
     public unsafe ReadOnlySpan<uint> Strides
     {
@@ -205,7 +207,7 @@ public class RTTensor : RTValue
     {
         var dtype = DataType.FromTypeCode(ElementType.TypeCode);
         var dims = MemoryMarshal.Cast<uint, int>(Dimensions);
-        var strides = MemoryMarshal.Cast<uint, int>(Strides);
+        _ = MemoryMarshal.Cast<uint, int>(Strides);
         var hostBuffer = Buffer.Buffer.AsHost()!;
         var owner = hostBuffer.Map(RTMapAccess.Read);
         return Tensor.FromBytes(new TensorType(dtype, new(dims.ToArray())), owner.Memory);

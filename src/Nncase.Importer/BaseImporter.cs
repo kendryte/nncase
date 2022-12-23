@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -23,8 +26,9 @@ public abstract class BaseImporter
     {
         var inputs = CreateInputs().ToArray();
         ConvertOp();
-        SupportedCheck(this.GetType().Name.Split("Importer")[0]);
+        SupportedCheck(GetType().Name.Split("Importer")[0]);
         var outputs = CreateOutputs();
+
         // todo:refactor
         var dumpDir = compileOptions?.DumpDir ?? CompilerServices.CompileOptions.DumpDir;
         if (!Directory.Exists(dumpDir))
@@ -84,15 +88,6 @@ public abstract class BaseImporter
 
     public abstract Expr CreateOutputs();
 
-    private IRModule CreateModule(Var[] inputs, Expr body)
-    {
-        var mainFunc = new Function("main", body, inputs);
-        var module = new IRModule();
-        module.Add(mainFunc);
-        module.Entry = mainFunc;
-        return module;
-    }
-
     protected Expr UnSupportedOp(string opType)
     {
         _unsupportedOp.Add(opType);
@@ -106,5 +101,14 @@ public abstract class BaseImporter
             throw new NotSupportedException(
                 $"Not Supported {name} op: {string.Join(',', _unsupportedOp)}");
         }
+    }
+
+    private IRModule CreateModule(Var[] inputs, Expr body)
+    {
+        var mainFunc = new Function("main", body, inputs);
+        var module = new IRModule();
+        module.Add(mainFunc);
+        module.Entry = mainFunc;
+        return module;
     }
 }

@@ -9,20 +9,33 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR.K210;
 
-/// <summary>
-/// KPU constants.
-/// </summary>
-public static class KPUConstants
+public record struct KPUBatchNormSegment
 {
-    /// <summary>
-    /// KPU RAM size.
-    /// </summary>
-    public const int RAMSize = 2 * 1024 * 1024; // 2MB
+    public int Mul { get; set; }
 
-    /// <summary>
-    /// BN output bits.
-    /// </summary>
-    public const int BNOutBits = 36;
+    public int Shift { get; set; }
+
+    public int Add { get; set; }
+}
+
+public record struct KPUActivationSegment
+{
+    public long StartX { get; set; }
+
+    public int Mul { get; set; }
+
+    public int Shift { get; set; }
+
+    public int Add { get; set; }
+}
+
+public record struct FakeKPUActivationSegment
+{
+    public float StartX { get; set; }
+
+    public float Mul { get; set; }
+
+    public float Add { get; set; }
 }
 
 /// <summary>
@@ -51,24 +64,20 @@ public enum KPUPoolType
     Max_2_S1 = 9,
 }
 
-public record struct KPUBatchNormSegment
+/// <summary>
+/// KPU constants.
+/// </summary>
+public static class KPUConstants
 {
-    public int Mul { get; set; }
+    /// <summary>
+    /// KPU RAM size.
+    /// </summary>
+    public const int RAMSize = 2 * 1024 * 1024; // 2MB
 
-    public int Shift { get; set; }
-
-    public int Add { get; set; }
-}
-
-public record struct KPUActivationSegment
-{
-    public long StartX { get; set; }
-
-    public int Mul { get; set; }
-
-    public int Shift { get; set; }
-
-    public int Add { get; set; }
+    /// <summary>
+    /// BN output bits.
+    /// </summary>
+    public const int BNOutBits = 36;
 }
 
 public class KPUActivationParameters
@@ -81,23 +90,13 @@ public class KPUBatchNormParameters
     public KPUBatchNormSegment[] Segments { get; } = Array.Empty<KPUBatchNormSegment>();
 }
 
-public class kpu_conv2d_quant_args
+public class Kpu_conv2d_quant_args
 {
-    private int arg_x;
-    private int shift_x;
-    private int arg_w;
-    private int shift_w;
-    private int arg_add;
-
-}
-
-public record struct FakeKPUActivationSegment
-{
-    public float StartX { get; set; }
-
-    public float Mul { get; set; }
-
-    public float Add { get; set; }
+    private readonly int _argX;
+    private readonly int _shiftX;
+    private readonly int _argW;
+    private readonly int _shiftW;
+    private readonly int _argAdd;
 }
 
 public record class FakeKPUActivationParameters

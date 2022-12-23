@@ -36,7 +36,7 @@ public interface IEvaluateContext
     }
 
     /// <summary>
-    /// Get argument value as Tensor{T}
+    /// Get argument value as Tensor{T}.
     /// </summary>
     /// <typeparam name="T">Scalar type.</typeparam>
     /// <param name="op">Operator.</param>
@@ -49,7 +49,7 @@ public interface IEvaluateContext
     }
 
     /// <summary>
-    /// Get argument value as Tensor
+    /// Get argument value as Tensor.
     /// </summary>
     /// <param name="op">Operator.</param>
     /// <param name="parameter">Parameter.</param>
@@ -60,7 +60,7 @@ public interface IEvaluateContext
     }
 
     /// <summary>
-    /// Get argmument value as Tensors
+    /// Get argmument value as Tensors.
     /// </summary>
     /// <param name="op"></param>
     /// <param name="parameter"></param>
@@ -86,8 +86,11 @@ public interface IEvaluateContext
     public T GetOptionArgumentValueAsScalar<T>(Op op, ParameterInfo parameter, T dft)
         where T : unmanaged, IEquatable<T>
     {
-        if (GetOptionalArgumentValue(op, parameter).Value != null && ((TensorType)(GetOptionalArgumentValue(op, parameter).Value.Type)).Shape.Size == 0)
+        if (GetOptionalArgumentValue(op, parameter).Value != null && ((TensorType)GetOptionalArgumentValue(op, parameter).Value.Type).Shape.Size == 0)
+        {
             return dft;
+        }
+
         return GetOptionalArgumentValue(op, parameter).Match(
             x => x.AsTensor().ToScalar<T>(),
             () => dft);

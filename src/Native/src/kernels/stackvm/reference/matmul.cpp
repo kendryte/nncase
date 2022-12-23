@@ -27,8 +27,8 @@ using namespace nncase::kernels;
 namespace {
 template <typename T>
 result<void> matmul_unit_impl(const T *input_a, const T *input_b, T *output,
-                         const dims_t &in_a_shape,
-                         const dims_t &in_b_shape) noexcept {
+                              const dims_t &in_a_shape,
+                              const dims_t &in_b_shape) noexcept {
     int32_t a_rows = static_cast<int32_t>(in_a_shape[0]);
     int32_t a_cols = static_cast<int32_t>(in_a_shape[1]);
     int32_t b_cols = static_cast<int32_t>(in_b_shape[1]);
@@ -71,12 +71,11 @@ result<void> matmul_impl(const T *input_a, const T *input_b, T *output,
         for (size_t c = 0; c < channels; ++c) {
             auto ac = new_a_shape[1] == 1 ? 0 : c;
             auto bc = new_b_shape[1] == 1 ? 0 : c;
-            try_(matmul_unit_impl(
-                input_a + an * ab_size + ac * a_unit_size,
-                input_b + bn * bb_size + bc * b_unit_size,
-                output + n * ob_size + c * out_unit_size,
-                dims_t{new_a_shape[2], new_a_shape[3]},
-                dims_t{new_b_shape[2], new_b_shape[3]}));
+            try_(matmul_unit_impl(input_a + an * ab_size + ac * a_unit_size,
+                                  input_b + bn * bb_size + bc * b_unit_size,
+                                  output + n * ob_size + c * out_unit_size,
+                                  dims_t{new_a_shape[2], new_a_shape[3]},
+                                  dims_t{new_b_shape[2], new_b_shape[3]}));
         }
     }
     return ok();
@@ -87,13 +86,15 @@ template result<void> matmul_impl<float>(const float *input_a,
                                          const dims_t &in_a_shape,
                                          const dims_t &in_b_shape) noexcept;
 
-#define MATMUL_IMPL(_ty) return matmul_impl(IN_CAST(_ty, input_a), \
-    IN_CAST(_ty, input_b), OUT_CAST(_ty, output), in_a_shape, in_b_shape);
+#define MATMUL_IMPL(_ty)                                                       \
+    return matmul_impl(IN_CAST(_ty, input_a), IN_CAST(_ty, input_b),           \
+                       OUT_CAST(_ty, output), in_a_shape, in_b_shape);
 
 } // namespace
 
-result<void> nncase::kernels::stackvm::reference::matmul(typecode_t typecode, const gsl::byte *input_a, const gsl::byte *input_b, gsl::byte *output,
-                                                         const dims_t &in_a_shape,
-                                                         const dims_t &in_b_shape, [[maybe_unused]] kernel_context &context) noexcept {
+result<void> nncase::kernels::stackvm::reference::matmul(
+    typecode_t typecode, const gsl::byte *input_a, const gsl::byte *input_b,
+    gsl::byte *output, const dims_t &in_a_shape, const dims_t &in_b_shape,
+    [[maybe_unused]] kernel_context &context) noexcept {
     TYPE_SELECT(typecode, MATMUL_IMPL);
 }

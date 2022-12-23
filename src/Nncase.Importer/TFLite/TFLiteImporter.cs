@@ -123,6 +123,17 @@ namespace Nncase.Importer.TFLite
             throw new NotSupportedException($"Unsupported tflite tensor type: {type}.");
         }
 
+        private static Dimension[] GetShapeArray(tflite.Tensor tensor)
+        {
+            if (tensor.ShapeSignatureLength == 0)
+            {
+                return tensor.GetShapeArray().Select(x => new Dimension(x)).ToArray();
+            }
+
+            return Enumerable.Range(0, tensor.ShapeLength).Select(i =>
+                tensor.Shape(i) == -1 ? Dimension.Unknown : tensor.Shape(i)).ToArray();
+        }
+
         private void Visit(in tflite.Operator op)
         {
             // Compatible with older version model
@@ -140,6 +151,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.ADD_N,
                 tflite.BuiltinOperator.ARG_MAX => VisitReduceArg(op, ReduceArgOp.ArgMax),
                 tflite.BuiltinOperator.ARG_MIN => VisitReduceArg(op, ReduceArgOp.ArgMin),
+
                 // tflite.BuiltinOperator.ASSIGN_VARIABLE,
                 tflite.BuiltinOperator.AVERAGE_POOL_2D => VisitReduceWindow2D(op, ReduceOp.Mean, 0f),
 
@@ -195,6 +207,7 @@ namespace Nncase.Importer.TFLite
 
                 tflite.BuiltinOperator.GREATER => VisitCompare(op, CompareOp.GreaterThan),
                 tflite.BuiltinOperator.GREATER_EQUAL => VisitCompare(op, CompareOp.GreaterOrEqual),
+
                 // tflite.BuiltinOperator.HARD_SWISH,
                 // tflite.BuiltinOperator.HASHTABLE,
                 // tflite.BuiltinOperator.HASHTABLE_FIND,
@@ -209,6 +222,7 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.LEAKY_RELU => VisitLeakyRelu(op),
 
                 tflite.BuiltinOperator.LESS => VisitCompare(op, CompareOp.LowerThan),
+
                 // tflite.BuiltinOperator.LESS_EQUAL,
                 // tflite.BuiltinOperator.LOCAL_RESPONSE_NORMALIZATION,
                 tflite.BuiltinOperator.LOG => VisitUnary(op, UnaryOp.Log),
@@ -249,6 +263,7 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.QUANTIZE => VisitQuantize(op),
 
                 tflite.BuiltinOperator.RANGE => VisitRange(op),
+
                 // tflite.BuiltinOperator.RANK,
                 // tflite.BuiltinOperator.READ_VARIABLE,
                 // tflite.BuiltinOperator.REAL,
@@ -288,6 +303,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.SPACE_TO_DEPTH,
                 // tflite.BuiltinOperator.SPARSE_TO_DENSE,
                 tflite.BuiltinOperator.SPLIT => VisitSplit(op),
+
                 // tflite.BuiltinOperator.SPLIT_V,
                 tflite.BuiltinOperator.SQRT => VisitUnary(op, UnaryOp.Sqrt),
                 tflite.BuiltinOperator.SQUARE => VisitUnary(op, UnaryOp.Square),
@@ -303,6 +319,7 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.TANH => VisitUnary(op, UnaryOp.Tanh),
 
                 tflite.BuiltinOperator.TILE => VisitTile(op),
+
                 // tflite.BuiltinOperator.TOPK_V2,
                 tflite.BuiltinOperator.TRANSPOSE => VisitTranspose(op),
                 tflite.BuiltinOperator.TRANSPOSE_CONV => VisitConv2DTranspose(op),
@@ -313,6 +330,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.UNPACK,
                 // tflite.BuiltinOperator.VAR_HANDLE,
                 tflite.BuiltinOperator.WHERE => VisitWhere(op),
+
                 // tflite.BuiltinOperator.WHILE,
                 // tflite.BuiltinOperator.ZEROS_LIKE,
                 _ => UnSupportedOp(builtinCode.ToString()),
@@ -320,22 +338,10 @@ namespace Nncase.Importer.TFLite
             AddToOutputs(_outputTensors, op.GetOutputsArray(), output);
         }
 
-        private static Dimension[] GetShapeArray(tflite.Tensor tensor)
-        {
-            if (tensor.ShapeSignatureLength == 0)
-            {
-                return tensor.GetShapeArray().Select(x => new Dimension(x)).ToArray();
-            }
-
-            return Enumerable.Range(0, tensor.ShapeLength).Select(i =>
-                tensor.Shape(i) == -1 ? Dimension.Unknown : tensor.Shape(i)
-            ).ToArray();
-        }
-
         private List<QuantParam> GetInputQuantParams(in tflite.Operator op, int index)
         {
             var id = op.Inputs(index);
-            List<QuantParam> quantParams = new List<QuantParam>();
+            var quantParams = new List<QuantParam>();
 
             if (id > _subGraph.TensorsLength)
             {
@@ -350,12 +356,13 @@ namespace Nncase.Importer.TFLite
             }
             else
             {
-                tflite.QuantizationParameters quantParam = (tflite.QuantizationParameters)tensor.Quantization;
+                var quantParam = (tflite.QuantizationParameters)tensor.Quantization;
+
                 // Only support by tensor quant now.
                 System.Diagnostics.Trace.Assert(quantParam.ZeroPointLength == 1);
                 for (var i = 0; i < quantParam.ZeroPointLength; i++)
                 {
-                    quantParams.Add(new QuantParam((int)(quantParam.GetZeroPointArray()[i]), quantParam.GetScaleArray()[i]));
+                    quantParams.Add(new QuantParam((int)quantParam.GetZeroPointArray()[i], quantParam.GetScaleArray()[i]));
                 }
 
                 return quantParams;
@@ -367,7 +374,7 @@ namespace Nncase.Importer.TFLite
         private List<QuantParam> GetOutputQuantParams(in tflite.Operator op, int index)
         {
             var id = op.Outputs(index);
-            List<QuantParam> quantParams = new List<QuantParam>();
+            var quantParams = new List<QuantParam>();
 
             if (id > _subGraph.TensorsLength)
             {
@@ -381,12 +388,13 @@ namespace Nncase.Importer.TFLite
             }
             else
             {
-                tflite.QuantizationParameters quantParam = (tflite.QuantizationParameters)tensor.Quantization;
+                var quantParam = (tflite.QuantizationParameters)tensor.Quantization;
+
                 // Only support by tensor quant now.
                 System.Diagnostics.Trace.Assert(quantParam.ZeroPointLength == 1);
                 for (var i = 0; i < quantParam.ZeroPointLength; i++)
                 {
-                    quantParams.Add(new QuantParam((int)(quantParam.GetZeroPointArray()[i]), quantParam.GetScaleArray()[i]));
+                    quantParams.Add(new QuantParam((int)quantParam.GetZeroPointArray()[i], quantParam.GetScaleArray()[i]));
                 }
 
                 return quantParams;

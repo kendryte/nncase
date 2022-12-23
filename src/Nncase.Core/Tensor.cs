@@ -346,7 +346,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     }
 
     /// <summary>
-    /// convert Const To Tensor
+    /// convert Const To Tensor.
     /// </summary>
     /// <param name="const"> const.</param>
     /// <returns> Tensor. </returns>
@@ -355,8 +355,8 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     public static Tensor FromConst(Const @const) => @const switch
     {
         TensorConst tc => tc.Value,
-        TupleConst tpc => throw new InvalidOperationException("Can't Convert TupleConst To Tensor!"),
-        _ => throw new NotSupportedException(@const.GetType().Name)
+        TupleConst => throw new InvalidOperationException("Can't Convert TupleConst To Tensor!"),
+        _ => throw new NotSupportedException(@const.GetType().Name),
     };
 
     /// <summary>
@@ -380,7 +380,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         where T : unmanaged, IEquatable<T>;
 
     /// <summary>
-    /// <see cref="Cast{T}(CastMode)"/>
+    /// <see cref="Cast{T}(CastMode)"/>.
     /// </summary>
     /// <param name="type"></param>
     /// <param name="castMode"></param>

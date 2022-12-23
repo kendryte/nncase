@@ -18,38 +18,25 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-evaluate_stack::evaluate_stack() noexcept
-    : top_(0)
-{
-    entries_.resize(64);
-}
+evaluate_stack::evaluate_stack() noexcept : top_(0) { entries_.resize(64); }
 
-bool evaluate_stack::empty() const noexcept
-{
-    return top_ == 0;
-}
+bool evaluate_stack::empty() const noexcept { return top_ == 0; }
 
-bool evaluate_stack::full() const noexcept
-{
-    return top_ == entries_.size();
-}
+bool evaluate_stack::full() const noexcept { return top_ == entries_.size(); }
 
-result<stack_entry> evaluate_stack::peek() noexcept
-{
+result<stack_entry> evaluate_stack::peek() noexcept {
     if (!empty())
         return ok(entries_[top_ - 1]);
     return err(nncase_errc::stackvm_stack_underflow);
 }
 
-result<stack_entry> evaluate_stack::pop() noexcept
-{
+result<stack_entry> evaluate_stack::pop() noexcept {
     if (!empty())
         return ok(entries_[--top_]);
     return err(nncase_errc::stackvm_stack_underflow);
 }
 
-result<void> evaluate_stack::push(stack_entry entry) noexcept
-{
+result<void> evaluate_stack::push(stack_entry entry) noexcept {
     if (full())
         entries_.resize(entries_.size() + 1);
 

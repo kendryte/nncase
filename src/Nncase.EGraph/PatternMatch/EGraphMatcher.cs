@@ -15,7 +15,7 @@ using Nncase.Transform;
 namespace Nncase.PatternMatch;
 
 /// <summary>
-/// egraph matcher
+/// egraph matcher.
 /// </summary>
 public sealed class EGraphMatcher
 {
@@ -278,7 +278,7 @@ public sealed class EGraphMatcher
                                            select en).CartesianProduct())
             {
                 var scopes = Visit(matchScopes, pattern, enodes.ToList());
-                if (scopes.Count() > 0)
+                if (scopes.Count > 0)
                 {
                     newScopes.AddRange(scopes);
                 }

@@ -47,12 +47,11 @@ dequantize_impl(const TQint *input, TFloat *output, const dims_t &in_shape,
                            reinterpret_cast<float_t *>(output), in_shape,      \
                            in_strides, out_strides, scale, bias, context)
 
-result<void> nncase::kernels::stackvm::reference::dequantize(datatype_t in_type, datatype_t out_type,
-                             const gsl::byte *input, gsl::byte *output,
-                             const dims_t &in_shape,
-                             const strides_t &in_strides,
-                             const strides_t &out_strides, float scale,
-                             float bias, kernel_context &context) noexcept {
+result<void> nncase::kernels::stackvm::reference::dequantize(
+    datatype_t in_type, datatype_t out_type, const gsl::byte *input,
+    gsl::byte *output, const dims_t &in_shape, const strides_t &in_strides,
+    const strides_t &out_strides, float scale, float bias,
+    kernel_context &context) noexcept {
     DEQUANTIZE_IMPL(uint8_t, float);
     DEQUANTIZE_IMPL(int8_t, float);
     return err(std::errc::not_supported);

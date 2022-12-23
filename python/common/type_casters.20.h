@@ -16,28 +16,24 @@
 #include <pybind11/pybind11.h>
 #include <span>
 
-namespace pybind11
-{
-namespace detail
-{
-    template <>
-    struct type_caster<std::span<const uint8_t>>
-    {
-    public:
-        PYBIND11_TYPE_CASTER(std::span<const uint8_t>, _("bytes"));
+namespace pybind11 {
+namespace detail {
+template <> struct type_caster<std::span<const uint8_t>> {
+  public:
+    PYBIND11_TYPE_CASTER(std::span<const uint8_t>, _("bytes"));
 
-        bool load(handle src, bool)
-        {
-            if (!py::isinstance<py::bytes>(src))
-                return false;
+    bool load(handle src, bool) {
+        if (!py::isinstance<py::bytes>(src))
+            return false;
 
-            uint8_t *buffer;
-            py::ssize_t length;
-            if (PyBytes_AsStringAndSize(src.ptr(), reinterpret_cast<char **>(&buffer), &length))
-                return false;
-            value = { buffer, (size_t)length };
-            return true;
-        }
-    };
-}
-}
+        uint8_t *buffer;
+        py::ssize_t length;
+        if (PyBytes_AsStringAndSize(
+                src.ptr(), reinterpret_cast<char **>(&buffer), &length))
+            return false;
+        value = {buffer, (size_t)length};
+        return true;
+    }
+};
+} // namespace detail
+} // namespace pybind11

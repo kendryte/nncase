@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -15,6 +15,7 @@ using static Nncase.IR.F.Tensors;
 using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.Utility;
 using Random = Nncase.IR.F.Random;
+
 namespace Nncase.Transform.Rules.Neutral;
 
 /// <summary>
@@ -59,6 +60,5 @@ public sealed partial class FusePadConv2d : IRewriteRule
         var convPads = Stack(new IR.Tuple(convPadsH, convPadsW), 0);
 
         return Conv2D(Pad(input, newPads, PadMode.Constant, 0f), weights, bias, stride, convPads, dilation, PadMode.Constant, groups, fusedClamp);
-
     }
 }

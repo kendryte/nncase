@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -25,8 +28,15 @@ public class UnitTestIntegralPromotion : TestFixture.UnitTestFixtrue
     public static IEnumerable<object[]> TestIntegralPromotionPositiveData =>
         new[]
         {
-            new object[] {DataTypes.Int32, DataTypes.Int64},
-            new object[] {DataTypes.Int64, DataTypes.Int32},
+            new object[] { DataTypes.Int32, DataTypes.Int64 },
+            new object[] { DataTypes.Int64, DataTypes.Int32 },
+        };
+
+    public static IEnumerable<object[]> TestIntegralPromotionNegativeData =>
+        new[]
+        {
+            new object[] { DataTypes.Int32, DataTypes.Int32 },
+            new object[] { DataTypes.Int64, DataTypes.Int64 },
         };
 
     [Theory]
@@ -44,13 +54,6 @@ public class UnitTestIntegralPromotion : TestFixture.UnitTestFixtrue
         Assert.True(CompilerServices.InferenceType(post));
         Assert.Equal(Value.FromTensor(3L), ((Function)post).Body.Evaluate());
     }
-
-    public static IEnumerable<object[]> TestIntegralPromotionNegativeData =>
-        new[]
-        {
-            new object[] {DataTypes.Int32, DataTypes.Int32},
-            new object[] {DataTypes.Int64, DataTypes.Int64},
-        };
 
     [Theory]
     [MemberData(nameof(TestIntegralPromotionNegativeData))]

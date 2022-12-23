@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Hosting;
@@ -32,24 +35,32 @@ public class UnitTypeInferBase : TestFixture.UnitTestFixtrue
         Assert.Equal(new TensorType(dt, shape), expr.CheckedType);
     }
 
-    public Var var(Shape shape, DataType dt) => new Var(new TensorType(dt, shape));
-    public Var var(Shape shape) => var(shape, DataTypes.Float32);
+    public Var Var(Shape shape, DataType dt) => new Var(new TensorType(dt, shape));
 
+    public Var Var(Shape shape) => Var(shape, DataTypes.Float32);
 }
 
 public class UnitTestTypeInfer : UnitTypeInferBase
 {
-    public UnitTestTypeInfer() : base()
+    public UnitTestTypeInfer()
+        : base()
     {
     }
+
+    public static IEnumerable<object[]> TestMatMulData =>
+        new[]
+        {
+            new object[] { new[] { 3, 10, 128 }, new[] { 128, 128 }, new[] { 3, 10, 128 } },
+            new object[] { new[] { 10, 128 }, new[] { 2, 128, 128 }, new[] { 2, 10, 128 } },
+        };
 
     [Fact]
     public void TestInferBinary()
     {
-        Var a = new Var(new TensorType(DataTypes.Float32, new[] { 1, 5, 1 }));
+        var a = new Var(new TensorType(DataTypes.Float32, new[] { 1, 5, 1 }));
         var b = Tensor.FromScalar(1.0f, new[] { 1, 5, 3 });
         var c = a + b;
-        var ctype = CompilerServices.InferenceType(c);
+        _ = CompilerServices.InferenceType(c);
 
         Assert.True(HasShape(new[] { 1, 5, 3 }).MatchLeaf(c.CheckedType));
     }
@@ -57,7 +68,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     [Fact]
     public void TestInferUnary()
     {
-        Var a = new Var(AnyType.Default);
+        var a = new Var(AnyType.Default);
         var c = Square(a);
         CompilerServices.InferenceType(c);
         Assert.IsType<AnyType>(c.CheckedType);
@@ -158,11 +169,6 @@ public class UnitTestTypeInfer : UnitTypeInferBase
             4, 5, 6, 1);
     }
 
-    void CheckReshape(Expr input, int[] reshapeArgs, int[] expectShape)
-    {
-        CheckInferShape(Reshape(input, reshapeArgs), expectShape);
-    }
-
     [Fact]
     public void TestInferReshape()
     {
@@ -192,21 +198,24 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     [Fact]
     public void TestResize()
     {
-        var resize = IR.F.Imaging.ResizeImage(ImageResizeMode.NearestNeighbor,
+        var resize = IR.F.Imaging.ResizeImage(
+            ImageResizeMode.NearestNeighbor,
             IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 1, 3, 34, 67 }),
             float.NaN,
             Const.FromShape(new[] { 32, 48 }));
         Assert.True(CompilerServices.InferenceType(resize));
         Assert.True(HasShape(new[] { 1, 3, 32, 48 }).MatchLeaf(resize.CheckedType!));
 
-        var resize2 = IR.F.Imaging.ResizeImage(ImageResizeMode.NearestNeighbor,
+        var resize2 = IR.F.Imaging.ResizeImage(
+            ImageResizeMode.NearestNeighbor,
             IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 3, 34, 67 }),
             float.NaN,
             Const.FromShape(new[] { 32, 48 }));
         Assert.True(CompilerServices.InferenceType(resize2));
         Assert.True(HasShape(new[] { 32, 48, 67 }).MatchLeaf(resize2.CheckedType!));
 
-        var resize3 = IR.F.Imaging.ResizeImage(ImageResizeMode.NearestNeighbor,
+        var resize3 = IR.F.Imaging.ResizeImage(
+            ImageResizeMode.NearestNeighbor,
             IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 34, 67 }),
             float.NaN,
             Const.FromShape(new[] { 32, 48 }));
@@ -231,32 +240,24 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         var begins = ones;
         var ends = Tensor.From<long>(new[] { 9223372036854775807 });
         var axes = ones;
-        var steps = ones;
         var s = Slice(input, begins, ends, axes, ones);
         CheckInferType(s, DataTypes.Float32, new Shape(1, 9, 256));
     }
-
-    public static IEnumerable<object[]> TestMatMulData =>
-        new[]
-        {
-            new object[] {new[] {3, 10, 128}, new[] {128, 128}, new[] {3, 10, 128}},
-            new object[] {new[] {10, 128}, new[] {2, 128, 128}, new[] {2, 10, 128}},
-        };
 
     [Theory]
     [MemberData(nameof(TestMatMulData))]
     public void TestMatMul(int[] lhsShape, int[] rhsShape, int[] expectShape)
     {
-        var lhs = var(lhsShape);
-        var rhs = var(rhsShape);
+        var lhs = Var(lhsShape);
+        var rhs = Var(rhsShape);
         CheckInferShape(IR.F.Math.MatMul(lhs, rhs), expectShape);
     }
 
     [Fact]
     public void TestConcat()
     {
-        var v1 = var(new[] { 1, 3, 16 });
-        var v2 = var(new[] { 1, 3, 16 });
+        var v1 = Var(new[] { 1, 3, 16 });
+        var v2 = Var(new[] { 1, 3, 16 });
         var cat = Concat(new Tuple(v1, v2), -1);
         CheckInferShape(cat, new[] { 1, 3, 32 });
     }
@@ -264,31 +265,32 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     [Fact]
     public void TestUnsqueeze()
     {
-        var v1 = var(new[] { 3 });
+        var v1 = Var(new[] { 3 });
         var us1 = Unsqueeze(v1, new[] { -1 });
         CheckInferShape(us1, new[] { 3, 1 });
         var us2 = Unsqueeze(v1, new[] { 0 });
         CheckInferShape(us2, new[] { 1, 3 });
     }
+
+    private void CheckReshape(Expr input, int[] reshapeArgs, int[] expectShape)
+    {
+        CheckInferShape(Reshape(input, reshapeArgs), expectShape);
+    }
 }
 
 public class UnitTestDynamicTypeInfer : UnitTypeInferBase
 {
-    public UnitTestDynamicTypeInfer() : base()
+    public UnitTestDynamicTypeInfer()
+        : base()
     {
-    }
-
-    public void CheckInferShape(Expr expr, params Dimension[] shapeDimensions)
-    {
-        CheckInferShape(expr, new Shape(shapeDimensions));
     }
 
     [Fact]
     public void TestRange()
     {
-        var begin = var(Shape.Scalar);
-        var end = var(Shape.Scalar);
-        var step = var(Shape.Scalar);
+        var begin = Var(Shape.Scalar);
+        var end = Var(Shape.Scalar);
+        var step = Var(Shape.Scalar);
         var r = Range(begin, end, step);
         CheckInferShape(r, Dimension.Unknown);
     }
@@ -296,9 +298,14 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
     [Fact]
     public void TestConcat()
     {
-        var in0 = var(Shape.Unranked);
-        var in1 = var(Shape.Unranked);
+        var in0 = Var(Shape.Unranked);
+        var in1 = Var(Shape.Unranked);
         var cat = Concat(new IR.Tuple(in0, in1), 0);
         CheckInferShape(cat, Shape.Unranked);
+    }
+
+    private void CheckInferShape(Expr expr, params Dimension[] shapeDimensions)
+    {
+        CheckInferShape(expr, new Shape(shapeDimensions));
     }
 }

@@ -21,18 +21,12 @@ using GiGraph.Dot.Types.Records;
 using GiGraph.Dot.Types.Styling;
 using Nncase.IR;
 
-
 namespace Nncase.IR;
 
 internal sealed class ILDotOption
 {
     private readonly DotNode? _dotNode;
     private readonly string? _str;
-
-    public DotNode DotNode => _dotNode!;
-    public string Str => _str!;
-
-    public bool IsDotNode => _dotNode is not null;
 
     public ILDotOption(DotNode dotNode)
     {
@@ -45,23 +39,29 @@ internal sealed class ILDotOption
         _dotNode = null;
         _str = str;
     }
+
+    public DotNode DotNode => _dotNode!;
+
+    public string Str => _str!;
+
+    public bool IsDotNode => _dotNode is not null;
 }
 
 internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
 {
-    private bool _display_callable;
-    private DotGraph _dotGraph;
-    private List<ValueTuple<string, DotGraph>> _subdotGraphs;
-    private int _IdCounter = 0;
+    private readonly bool _display_callable;
+    private readonly DotGraph _dotGraph;
+    private readonly List<ValueTuple<string, DotGraph>> _subdotGraphs;
+    private int _idCounter;
+
+    private BaseFunction? _entryBaseFunc;
 
     public ILDotPrintVisitor(bool display_callable)
     {
-        this._display_callable = display_callable;
+        _display_callable = display_callable;
         _dotGraph = new(directed: true);
         _subdotGraphs = new();
     }
-
-    private BaseFunction? _entryBaseFunc = null;
 
     /// <inheritdoc/>
     public override ILDotOption Visit(BaseFunction baseFunction)
@@ -75,11 +75,12 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
     {
         if (!ExpressionMemo.TryGetValue(expr, out var result))
         {
-            var id = _IdCounter++;
-            string exprId = "\"" + id.ToString() + "\"";
+            var id = _idCounter++;
+            _ = "\"" + id.ToString() + "\"";
             result = new(expr.Name);
             ExpressionMemo.Add(expr, result);
         }
+
         return result;
     }
 
@@ -88,11 +89,12 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
     {
         if (!ExpressionMemo.TryGetValue(expr, out var result))
         {
-            var id = _IdCounter++;
-            string exprId = "\"" + id.ToString() + "\"";
+            var id = _idCounter++;
+            _ = "\"" + id.ToString() + "\"";
             result = new(expr.Name);
             ExpressionMemo.Add(expr, result);
         }
+
         return result;
     }
 
@@ -109,8 +111,10 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
                 _subdotGraphs.Add((expr.Name, visitor._dotGraph));
                 _subdotGraphs.AddRange(visitor._subdotGraphs);
             }
+
             return new(expr.Name);
         }
+
         return base.Visit(expr);
     }
 
@@ -127,8 +131,10 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
                 _subdotGraphs.Add((expr.Name, visitor._dotGraph));
                 _subdotGraphs.AddRange(visitor._subdotGraphs);
             }
+
             return new(expr.Name);
         }
+
         return base.Visit(expr);
     }
 
@@ -146,7 +152,7 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
 
     public override ILDotOption VisitLeaf(Tuple expr)
     {
-        var id = _IdCounter++;
+        var id = _idCounter++;
         string exprId = "\"" + id.ToString() + "\"";
 
         var table = new DotHtmlTable
@@ -157,6 +163,7 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
         };
 
         var connect_list = new List<(Expr, string)>();
+
         // 1. the connect type.
         table.AddRow(row =>
         {
@@ -166,9 +173,11 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
             {
                 var childnode = Visit(child);
                 var portName = $"P{count++}";
-                row.AddCell(childnode.IsDotNode ? "" : childnode.Str, cell => cell.PortName = portName);
+                row.AddCell(childnode.IsDotNode ? string.Empty : childnode.Str, cell => cell.PortName = portName);
                 if (childnode.IsDotNode)
+                {
                     connect_list.Add((child, portName));
+                }
             }
         });
 
@@ -205,7 +214,7 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
 
     public override ILDotOption VisitLeaf(Marker expr)
     {
-        var id = _IdCounter++;
+        var id = _idCounter++;
         string exprId = "\"" + id.ToString() + "\"";
 
         var table = new DotHtmlTable
@@ -222,14 +231,22 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
         {
             row.AddCell("Marker"); // key wrods type.
             if (target.IsDotNode)
+            {
                 row.AddCell("Target", cell => cell.PortName = "P0"); // target.
+            }
             else
+            {
                 row.AddCell(target.Str, cell => cell.PortName = "P0");
+            }
 
             if (attr.IsDotNode)
+            {
                 row.AddCell("Attr", cell => cell.PortName = "P1"); // attr
+            }
             else
+            {
                 row.AddCell(attr.Str, cell => cell.PortName = "P1");
+            }
         });
         table.AddRow(row =>
         {
@@ -242,23 +259,27 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
 
         // 4. connect edge.
         if (target.IsDotNode)
+        {
             _dotGraph.Edges.Add(target.DotNode, dotNode, edge =>
             {
                 edge.Head.Endpoint.Port = new DotEndpointPort("P0");
             });
+        }
 
         if (attr.IsDotNode)
+        {
             _dotGraph.Edges.Add(attr.DotNode, dotNode, edge =>
             {
                 edge.Head.Endpoint.Port = new DotEndpointPort("P1");
             });
+        }
 
         return new(dotNode);
     }
 
     public override ILDotOption VisitLeaf(Var expr)
     {
-        var id = _IdCounter++;
+        var id = _idCounter++;
         string exprId = "\"" + id.ToString() + "\"";
         var dotNode = new DotNode(exprId) { Label = expr.Name, Shape = DotNodeShape.Rectangle };
         _dotGraph.Nodes.Add(dotNode);
@@ -267,7 +288,7 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
 
     public override ILDotOption VisitLeaf(Call expr)
     {
-        var id = _IdCounter++;
+        var id = _idCounter++;
         string exprId = "\"" + id.ToString() + "\"";
 
         var table = new DotHtmlTable
@@ -278,6 +299,7 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
         };
 
         var connect_list = new List<(Expr, string)>();
+
         // 1. the connect type.
         table.AddRow(row =>
         {
@@ -290,11 +312,14 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
                 Fusion fusion => fusion.Parameters.Select(v => v.Name),
                 Function func => func.Parameters.Select(v => v.Name),
                 PrimFunctionWrapper wrapper => wrapper.Target.Parameters.Select(b => b.Name),
-                _ => throw new ArgumentOutOfRangeException()
+                _ => throw new ArgumentOutOfRangeException(),
             }))
             {
                 if (child is Const or None)
+                {
                     continue;
+                }
+
                 var portName = $"P{count++}";
                 row.AddCell(arg_name, cell => cell.PortName = portName);
                 connect_list.Add((child, portName));
@@ -321,26 +346,26 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
         return new(dotNode);
     }
 
-    private static void saveToFileCore(DotGraph dotGraph, string name, string prefix, string dumpDir)
-    {
-        var nprefix = prefix.Any() ? prefix + "_" : prefix;
-        string dump_path = Path.Combine(dumpDir, $"{nprefix}{name}.dot");
-        dotGraph.Build();
-        dotGraph.SaveToFile(dump_path);
-    }
-
     /// <summary>
-    /// Save the dot to File
+    /// Save the dot to File.
     /// </summary>
     /// <param name="name">name.</param>
     /// <param name="prefix">prefix.</param>
     /// <param name="dumpDir">dump dir.</param>
     public void SaveToFile(string name, string prefix, string dumpDir)
     {
-        saveToFileCore(_dotGraph, name, prefix, dumpDir);
+        SaveToFileCore(_dotGraph, name, prefix, dumpDir);
         foreach (var (sub_name, subGraph) in _subdotGraphs)
         {
-            saveToFileCore(subGraph, name + "_" + sub_name, prefix, dumpDir);
+            SaveToFileCore(subGraph, name + "_" + sub_name, prefix, dumpDir);
         }
+    }
+
+    private static void SaveToFileCore(DotGraph dotGraph, string name, string prefix, string dumpDir)
+    {
+        var nprefix = prefix.Any() ? prefix + "_" : prefix;
+        string dump_path = Path.Combine(dumpDir, $"{nprefix}{name}.dot");
+        dotGraph.Build();
+        dotGraph.SaveToFile(dump_path);
     }
 }

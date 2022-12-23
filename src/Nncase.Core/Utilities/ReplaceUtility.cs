@@ -1,11 +1,13 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Fx = System.Func<Nncase.IR.Expr, Nncase.IR.Expr>;
 using ParameterInfo = Nncase.IR.ParameterInfo;
 using Tuple = Nncase.IR.Tuple;
+
 namespace Nncase.Utilities;
-
-using Fx = Func<Expr, Expr>;
-
 public class ReplaceUtility
 {
     public static Expr ReplaceOp(Call call, Op op)
@@ -42,7 +44,7 @@ public class ReplaceUtility
     /// usage:
     /// Call(FakeXXX, input, otherArg1, ...)
     /// newInput => Call(op, newInput, otherArg1, ...)
-    /// it's always used for Fake to NoFake Rule with IsWildcardCall
+    /// it's always used for Fake to NoFake Rule with IsWildcardCall.
     /// </summary>
     /// <param name="call"></param>
     /// <param name="op"></param>
@@ -62,11 +64,12 @@ public class ReplaceUtility
     {
         return call with
         {
-            Parameters = ReplacePos(call.Parameters.Select(p =>
+            Parameters = ReplacePos(
+                call.Parameters.Select(p =>
             {
                 matchOptions.TryUpdateWithRewrite(ref p);
                 return p;
-            }).ToList(), input, i)
+            }).ToList(), input, i),
         };
     }
 
@@ -102,7 +105,7 @@ public class ReplaceUtility
     ///
     /// posAndValue is not required to be in order
     ///
-    /// warning: call which returned should be type infer, because of with should keep the type infer
+    /// warning: call which returned should be type infer, because of with should keep the type infer.
     /// </summary>
     /// <param name="call"></param>
     /// <param name="posAndValue"></pxaram>
@@ -116,6 +119,12 @@ public class ReplaceUtility
     {
         return call with { Target = op, Parameters = ReplaceMulti(call.Parameters, posAndValue) };
     }
+
+    public static Expr ReplaceTarget(Expr root, Expr target, Expr expr, PatternMatch.MatchOptions matchOptions) =>
+        ReplaceTargetImpl(root, target, expr, matchOptions)
+            .Match(
+                x => x,
+                () => throw new InvalidOperationException("target not found"));
 
     private static Option<Expr> ReplaceTargetImpl(Expr root, Expr target, Expr expr, PatternMatch.MatchOptions matchOptions)
     {
@@ -143,12 +152,4 @@ public class ReplaceUtility
 
         return Option.None;
     }
-
-    public static Expr ReplaceTarget(Expr root, Expr target, Expr expr, PatternMatch.MatchOptions matchOptions) =>
-        ReplaceTargetImpl(root, target, expr, matchOptions)
-            .Match(
-                x => x,
-                () => throw new InvalidOperationException("target not found")
-            );
-
 }

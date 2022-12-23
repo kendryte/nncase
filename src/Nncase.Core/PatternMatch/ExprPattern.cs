@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -41,7 +41,7 @@ public static partial class Utility
     /// Get the current expr checked Shape.
     /// </summary>
     /// <param name="expr">expr.</param>
-    /// <returns>dimension</returns>
+    /// <returns>dimension.</returns>
     /// <exception cref="InvalidOperationException">e.</exception>
     public static List<Dimension> GetShape(Expr expr) => expr.CheckedType switch
     {
@@ -57,7 +57,7 @@ public static partial class Utility
     public static ExprPattern IsWildcard(string? name) => new ExprPattern(name);
 
     /// <summary>
-    /// <see cref="IsWildcard(string?)"/>
+    /// <see cref="IsWildcard(string?)"/>.
     /// </summary>
     /// <returns></returns>
     public static ExprPattern IsWildcard() => IsWildcard(null);
@@ -67,5 +67,4 @@ public static partial class Utility
     /// </summary>
     /// <returns></returns>
     public static ExprPattern IsNone() => new ExprPattern(e => e == None.Default, null);
-
 }

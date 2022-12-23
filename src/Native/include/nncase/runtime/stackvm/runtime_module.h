@@ -24,7 +24,8 @@ NNCASE_INLINE_VAR constexpr uint32_t stackvm_module_version = 1;
 NNCASE_API result<std::unique_ptr<runtime_module>>
 create_stackvm_runtime_module();
 
-NNCASE_API result<std::vector<std::pair<std::string, runtime_module::custom_call_type>>>
+NNCASE_API result<
+    std::vector<std::pair<std::string, runtime_module::custom_call_type>>>
 create_stackvm_custom_calls();
 
 END_NS_NNCASE_RT_MODULE

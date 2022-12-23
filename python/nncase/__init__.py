@@ -34,7 +34,7 @@ import _nncase
 from _nncase import RuntimeTensor, TensorDesc, Simulator
 
 
-def _check_env():#
+def _check_env():
     env = os.environ
     errors = []
     if not "NNCASE_COMPILER" in env:
@@ -50,7 +50,7 @@ def _initialize():
 
 
 _initialize()
-#_nncase.launch_debugger()
+# _nncase.launch_debugger()
 
 
 class ImportOptions:
@@ -160,8 +160,10 @@ class Compiler:
         self._import_module(model_content)
 
     def use_ptq(self, ptq_dataset_options: PTQTensorOptions) -> None:
-        dataset = [_nncase.RTValue.from_runtime_tensor(data) for data in ptq_dataset_options.cali_data]
-        provider = _nncase.CalibrationDatasetProvider(dataset, ptq_dataset_options.samples_count, self._module.entry.parameters)
+        dataset = [_nncase.RTValue.from_runtime_tensor(
+            data) for data in ptq_dataset_options.cali_data]
+        provider = _nncase.CalibrationDatasetProvider(
+            dataset, ptq_dataset_options.samples_count, self._module.entry.parameters)
         if not self._quantize_options:
             self._quantize_options = _nncase.QuantizeOptions()
             self._compile_options.quantize_options = self._quantize_options
@@ -200,21 +202,24 @@ class DumpRangeTensorOptions:
 
 
 class CalibMethod:
-  NoClip: int = 0
-  Kld: int = 1
-  Random: int = 2
+    NoClip: int = 0
+    Kld: int = 1
+    Random: int = 2
+
 
 class ModelQuantMode:
-  NoQuant: int = 0
-  UsePTQ: int = 1
-  UseQAT: int = 2
+    NoQuant: int = 0
+    UsePTQ: int = 1
+    UseQAT: int = 2
+
 
 class ClQuantizeOptions():
-  CalibrationDataset: object
-  CalibrationMethod: CalibMethod
-  BindQuantMethod: bool 
-  UseSquant: bool 
-  UseAdaRound  : bool 
+    CalibrationDataset: object
+    CalibrationMethod: CalibMethod
+    BindQuantMethod: bool
+    UseSquant: bool
+    UseAdaRound: bool
+
 
 class ClCompileOptions():
     InputFile: str

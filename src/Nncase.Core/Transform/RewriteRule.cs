@@ -26,7 +26,7 @@ public abstract class RewriteRule<TPattern> : IRewriteRule
     IPattern IRewriteRule.Pattern => Pattern;
 
     /// <inheritdoc/>
-    public bool IsMultiBranchSafe { get; init; } = false;
+    public bool IsMultiBranchSafe { get; init; }
 
     /// <inheritdoc/>
     bool IRewriteRule.IsMultiBranchSafe() => IsMultiBranchSafe;

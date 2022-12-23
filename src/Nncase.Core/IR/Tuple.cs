@@ -21,9 +21,15 @@ namespace Nncase.IR
         /// </summary>
         public static readonly TupleConst Void = new(ImmutableArray<Const>.Empty);
 
-        public Tuple(params Expr[] Fields) : this(ImmutableArray.Create<Expr>(Fields)) { }
+        public Tuple(params Expr[] fields)
+            : this(ImmutableArray.Create<Expr>(fields))
+        {
+        }
 
-        public Tuple(IEnumerable<Expr> Fields) : this(Fields.ToArray()) { }
+        public Tuple(IEnumerable<Expr> fields)
+            : this(fields.ToArray())
+        {
+        }
 
         /// <inheritdoc/>
         public int Count => Fields.Count;

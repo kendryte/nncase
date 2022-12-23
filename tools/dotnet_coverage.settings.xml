@@ -28,6 +28,10 @@
             </Exclude>
             <!-- Additional directories from .NET assemblies should be statically instrumented: -->
             <IncludeDirectories>
+                <!-- Build-time -->
+                <Directory Recursive="true">src</Directory>
+                <!-- CI-time -->
+                <Directory Recursive="true">install</Directory>
             </IncludeDirectories>
         </ModulePaths>
 
@@ -82,7 +86,7 @@
         </PublicKeyTokens>
 
         <EnableStaticManagedInstrumentation>True</EnableStaticManagedInstrumentation>
-        <EnableDynamicManagedInstrumentation>True</EnableDynamicManagedInstrumentation>
+        <EnableDynamicManagedInstrumentation>False</EnableDynamicManagedInstrumentation>
 
     </CodeCoverage>
 </Configuration>

@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -23,6 +26,20 @@ public class UnitTestFoldReshape : TestFixture.UnitTestFixtrue
             new object[] { new[] { 2, 3 }, new[] { 2, 3 } },
         };
 
+    public static IEnumerable<object[]> TestFoldNopReshapeNegativeData =>
+        new[]
+        {
+            new object[] { new[] { 4 }, new[] { 2, 2 } },
+            new object[] { new[] { 2, 3 }, new[] { 3, 2 } },
+        };
+
+    public static IEnumerable<object[]> TestFoldTwoReshapesPositiveData =>
+        new[]
+        {
+            new object[] { new[] { 4 }, new[] { 2, 2 }, new[] { 1, 4 } },
+            new object[] { new[] { 2, 4 }, new[] { 8 }, new[] { 4, 2 } },
+        };
+
     [Theory]
     [MemberData(nameof(TestFoldNopReshapePositiveData))]
     public void TestFoldNopReshapePositive(int[] shape, int[] newShape)
@@ -36,13 +53,6 @@ public class UnitTestFoldReshape : TestFixture.UnitTestFixtrue
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
 
-    public static IEnumerable<object[]> TestFoldNopReshapeNegativeData =>
-        new[]
-        {
-            new object[] { new[] { 4 }, new[] { 2, 2 } },
-            new object[] { new[] { 2, 3 }, new[] { 3, 2 } },
-        };
-
     [Theory]
     [MemberData(nameof(TestFoldNopReshapeNegativeData))]
     public void TestFoldNopReshapeNegative(int[] shape, int[] newShape)
@@ -55,13 +65,6 @@ public class UnitTestFoldReshape : TestFixture.UnitTestFixtrue
         Assert.Equal(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
-
-    public static IEnumerable<object[]> TestFoldTwoReshapesPositiveData =>
-        new[]
-        {
-            new object[] { new[] { 4 }, new[] { 2, 2 }, new[] { 1, 4 } },
-            new object[] { new[] { 2, 4 }, new[] { 8 }, new[] { 4, 2 } },
-        };
 
     [Theory]
     [MemberData(nameof(TestFoldTwoReshapesPositiveData))]

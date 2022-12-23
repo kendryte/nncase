@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -22,7 +22,7 @@ namespace Nncase.Importer.TFLite
             {
                 ReduceArgOp.ArgMin => op.BuiltinOptionsAsArgMaxOptions().OutputType,
                 ReduceArgOp.ArgMax => op.BuiltinOptionsAsArgMinOptions().OutputType,
-                _ => throw new ArgumentOutOfRangeException(nameof(reduceArgOp), reduceArgOp, null)
+                _ => throw new ArgumentOutOfRangeException(nameof(reduceArgOp), reduceArgOp, null),
             };
 
             return Cast(
@@ -34,7 +34,7 @@ namespace Nncase.Importer.TFLite
         {
             if (axis is TensorConst axisValue)
             {
-                // scalar to array 
+                // scalar to array
                 return axisValue.Value.ToArray<int>();
             }
 

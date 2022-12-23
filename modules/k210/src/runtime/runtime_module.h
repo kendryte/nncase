@@ -18,25 +18,23 @@
 
 BEGIN_NS_NNCASE_RT_MODULE(k210)
 
-class k210_runtime_module : public runtime_module
-{
-public:
+class k210_runtime_module : public runtime_module {
+  public:
     gsl::span<gsl::byte> data() const noexcept;
     gsl::span<const gsl::byte> rdata() const noexcept;
     gsl::span<gsl::byte> kpu_ram() noexcept;
 
 #if !NNCASE_SIMULATOR
-    uint32_t dma_ch() const noexcept
-    {
-        return dma_ch_;
-    }
+    uint32_t dma_ch() const noexcept { return dma_ch_; }
 #endif
 
-protected:
-    result<void> initialize_before_functions(runtime_module_init_context &context) noexcept override;
-    result<std::unique_ptr<runtime_function>> create_function() noexcept override;
+  protected:
+    result<void> initialize_before_functions(
+        runtime_module_init_context &context) noexcept override;
+    result<std::unique_ptr<runtime_function>>
+    create_function() noexcept override;
 
-private:
+  private:
     std::unique_ptr<gsl::byte[]> data_;
     gsl::span<const gsl::byte> rdata_;
     gsl::span<const gsl::byte> text_;

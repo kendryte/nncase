@@ -32,14 +32,14 @@ public static class Buffer
         new Call(new BaseMentOf(), input);
 
     /// <summary>
-    /// the placeholder for the expr's strides
+    /// the placeholder for the expr's strides.
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
     public static Call StrideOf(Expr input) => new Call(new StrideOf(), input);
 
     /// <summary>
-    /// create the uninitialized buffer
+    /// create the uninitialized buffer.
     /// </summary>
     /// <param name="dataType"></param>
     /// <param name="memoryLocation"></param>

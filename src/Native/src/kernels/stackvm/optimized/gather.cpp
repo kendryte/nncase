@@ -69,12 +69,11 @@ result<void> gather_impl(const T *input, T *output, const dims_t &in_shape,
                                indices_value, indices_shape, axis, context);   \
         });
 
-result<void>
-nncase::kernels::stackvm::optimized::gather(datatype_t type, const gsl::byte *input, gsl::byte *output,
-                  const dims_t &in_shape, const dims_t &out_shape,
-                  const dims_t &in_strides, const dims_t &out_strides,
-                  datatype_t indices_type, const gsl::byte *indices,
-                  const dims_t &indices_shape, size_t axis,
-                  kernel_context &context) noexcept {
+result<void> nncase::kernels::stackvm::optimized::gather(
+    datatype_t type, const gsl::byte *input, gsl::byte *output,
+    const dims_t &in_shape, const dims_t &out_shape, const dims_t &in_strides,
+    const dims_t &out_strides, datatype_t indices_type,
+    const gsl::byte *indices, const dims_t &indices_shape, size_t axis,
+    kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, GATHER_IMPL);
 }

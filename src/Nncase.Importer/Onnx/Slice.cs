@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -7,8 +7,8 @@ using LanguageExt.UnsafeValueAccess;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Onnx;
-using F = Nncase.IR.F;
 using static Nncase.IR.F.Tensors;
+using F = Nncase.IR.F;
 
 namespace Nncase.Importer
 {
@@ -35,8 +35,9 @@ namespace Nncase.Importer
         {
             var input = GetInputExpr(op, 0);
             var (starts, ends) = GetInputExprs(op, 1, 2);
+
             // not supported none step when starts is dynamic
-            // steps.size should eq starts.size 
+            // steps.size should eq starts.size
             starts.InferenceType();
             var axes = GetOptionInputExpr(op, 3).Or(ComputeDefaultAxes(input));
             var steps = GetOptionInputExpr(op, 4).Or(Expand(1, new[] { starts.CheckedShape.Size }));

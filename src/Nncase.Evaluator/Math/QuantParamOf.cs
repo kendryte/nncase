@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -28,7 +28,7 @@ public class QuantParamOfEvaluator : IEvaluator<QuantParamOf>, ITypeInferencer<Q
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, QuantParamOf target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, QuantParamOf.Range);
+        _ = context.CheckArgumentType<TensorType>(target, QuantParamOf.Range);
         return new TensorType(new QuantParamType(), Shape.Scalar);
     }
 

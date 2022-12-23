@@ -1,7 +1,5 @@
-
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -19,9 +17,9 @@ using static Nncase.IR.F.NN;
 using static Nncase.IR.F.RNN;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
+using static Nncase.PatternMatch.F.Imaging;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.NN;
-using static Nncase.PatternMatch.F.Imaging;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 using Binary = Nncase.IR.Math.Binary;
@@ -30,9 +28,8 @@ using Shape = Nncase.IR.Shape;
 namespace Nncase.Transform.Rules.Neutral;
 
 /// <summary>
-/// Insert RangeOf and RangeOfMarker
+/// Insert RangeOf and RangeOfMarker.
 /// </summary>
-
 [RuleGenerator]
 public sealed partial class AddRangeOfAndMarkerToBatchToSpace : IRewriteRule
 {
@@ -42,10 +39,11 @@ public sealed partial class AddRangeOfAndMarkerToBatchToSpace : IRewriteRule
             IsWildcard("input"),
             IsWildcard("blockshape"),
             IsWildcard("crops"));
+
     private Expr? GetReplace(BatchToSpace batchtospace, Call call, Expr input, Expr blockshape, TensorConst crops, RunPassOptions options)
     {
         var output = BatchToSpace(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), blockshape, crops);
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -56,13 +54,14 @@ public sealed partial class AddRangeOfAndMarkerToBinary : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
         IsBinary("binary", "call",
-            b => (b.BinaryOp != BinaryOp.LogicalAnd && b.BinaryOp != BinaryOp.LogicalOr && b.BinaryOp != BinaryOp.LogicalXor),
+            b => b.BinaryOp != BinaryOp.LogicalAnd && b.BinaryOp != BinaryOp.LogicalOr && b.BinaryOp != BinaryOp.LogicalXor,
             IsWildcard("lhs"),
             IsWildcard("rhs"));
+
     private Expr? GetReplace(Binary binary, Call call, Expr lhs, Expr rhs, RunPassOptions options)
     {
         var output = Nncase.IR.F.Math.Binary(binary.BinaryOp, IR.F.Math.RangeOfMarker(lhs, IR.F.Math.RangeOf(lhs)), IR.F.Math.RangeOfMarker(rhs, IR.F.Math.RangeOf(rhs)));
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -75,10 +74,11 @@ public sealed partial class AddRangeOfAndMarkerToBroadcast : IRewriteRule
         IsBroadcast("broadcast", _ => true,
             IsWildcard("input"),
             IsTensorConst("shape"));
+
     private Expr? GetReplace(Broadcast broadcast, Expr input, Expr shape, RunPassOptions options)
     {
         var output = Broadcast(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), shape);
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -95,7 +95,7 @@ public sealed partial class AddRangeOfAndMarkerToCelu : IRewriteRule
     private Expr? GetReplace(Celu celu, Call call, Expr input, Expr alpha, RunPassOptions options)
     {
         var output = Celu(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), alpha);
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -112,7 +112,7 @@ public sealed partial class AddRangeOfAndMarkerToCompare : IRewriteRule
     private Expr? GetReplace(Compare compare, Call call, Expr lhs, Expr rhs, RunPassOptions options)
     {
         var output = Compare(compare.CompareOp, IR.F.Math.RangeOfMarker(lhs, IR.F.Math.RangeOf(lhs)), IR.F.Math.RangeOfMarker(rhs, IR.F.Math.RangeOf(rhs)));
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -131,6 +131,7 @@ public sealed partial class AddRangeOfAndMarkerToConv2D : IRewriteRule
             IsTensorConst("dilation"),
             IsTensorConst("groups"),
             IsWildcard("fusedClamp"));
+
     private Expr? GetReplace(Conv2D conv, Call call, Expr input, Expr weights, TensorConst bias, Expr stride, Expr padding,
         Expr dilation, Expr groups, Expr fusedClamp)
     {
@@ -156,12 +157,13 @@ public sealed partial class AddRangeOfAndMarkerToConv2DTranspose : IRewriteRule
             IsTensorConst("dilation"),
             IsTensorConst("groups"),
             IsWildcard("fusedClamp"));
+
     private Expr? GetReplace(Conv2DTranspose conv2dTranspose, Expr input, Expr weights, TensorConst bias, Expr outShape, Expr stride, Expr padding,
         Expr outPadding, Expr dilation, Expr groups, Expr fusedClamp, RunPassOptions options)
     {
         var output = Conv2DTranspose(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), IR.F.Math.RangeOfMarker(weights, IR.F.Math.RangeOf(weights)),
             bias, outShape, stride, padding, outPadding, dilation, PadMode.Constant, groups);
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -178,7 +180,7 @@ public sealed partial class AddRangeOfAndMarkerToElu : IRewriteRule
     private Expr? GetReplace(Elu elu, Call call, Expr input, Expr alpha, RunPassOptions options)
     {
         var output = Elu(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), alpha);
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -191,10 +193,11 @@ public sealed partial class AddRangeOfAndMarkerToHardMax : IRewriteRule
         IsHardmax("hardmax", "call", _ => true,
             IsWildcard("input"),
             IsWildcard("axis"));
+
     private Expr? GetReplace(Hardmax hardmax, Call call, Expr input, Expr axis, RunPassOptions options)
     {
         var output = Hardmax(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), axis);
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -212,7 +215,7 @@ public sealed partial class AddRangeOfAndMarkerToHardSigmoid : IRewriteRule
     private Expr? GetReplace(HardSigmoid hardSigmoid, Call call, Expr input, Expr alpha, Expr beta, RunPassOptions options)
     {
         var output = HardSigmoid(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), alpha, beta);
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -228,7 +231,7 @@ public sealed partial class AddRangeOfAndMarkerToHardSwish : IRewriteRule
     private Expr? GetReplace(HardSwish hardSwish, Call call, Expr input, RunPassOptions options)
     {
         var output = HardSwish(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)));
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -260,7 +263,7 @@ public sealed partial class AddRangeOfAndMarkerToLSTM : IRewriteRule
     {
         var output = LSTM(lstm.Direction, lstm.Layout, lstm.Activations, IR.F.Math.RangeOfMarker(x, IR.F.Math.RangeOf(x)), w, r, b, sequencelens, initialh, initialc,
                          p, actalpha, actbeta, clip, hiddensize, inputforget, outputsize);
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -273,10 +276,11 @@ public sealed partial class AddRangeOfAndMarkerToMatMul : IRewriteRule
         IsMatMul("matmul", "call", _ => true,
             IsWildcard("lhs"),
             IsWildcard("rhs"));
+
     private Expr? GetReplace(MatMul matmul, Call call, Expr lhs, Expr rhs, RunPassOptions options)
     {
         var output = Nncase.IR.F.Math.MatMul(IR.F.Math.RangeOfMarker(lhs, IR.F.Math.RangeOf(lhs)), IR.F.Math.RangeOfMarker(rhs, IR.F.Math.RangeOf(rhs)));
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -294,10 +298,11 @@ public sealed partial class AddRangeOfAndMarkerToPad : IRewriteRule
     private Expr? GetReplace(Pad pad, Call call, Expr input, Expr pads, Expr value, RunPassOptions options)
     {
         var output = Pad(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), pads, pad.PadMode, value);
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
+
 [RuleGenerator]
 public sealed partial class AddRangeOfAndMarkerToPRelu : IRewriteRule
 {
@@ -310,7 +315,7 @@ public sealed partial class AddRangeOfAndMarkerToPRelu : IRewriteRule
     private Expr? GetReplace(PRelu prelu, Call call, Expr input, Expr slope, RunPassOptions options)
     {
         var output = PRelu(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), slope);
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -326,7 +331,7 @@ public sealed partial class AddRangeOfAndMarkerToRelu : IRewriteRule
     private Expr? GetReplace(Relu relu, Call call, Expr input, RunPassOptions options)
     {
         var output = Relu(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)));
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -345,7 +350,7 @@ public sealed partial class AddRangeOfAndMarkerToReduce : IRewriteRule
     private Expr? GetReplace(Reduce reduce, Expr input, TensorConst axis, Expr initValue, TensorConst keepDims, RunPassOptions options)
     {
         var output = Reduce(reduce.ReduceOp, IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), axis, initValue, keepDims);
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -369,7 +374,7 @@ public sealed partial class AddRangeOfAndMarkerToReduceWindow2D : IRewriteRule
         Expr dilation, Expr ceilmode, Expr countincludepad, RunPassOptions options)
     {
         var output = ReduceWindow2D(reduceWindow2D.ReduceOp, IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), initvalue, filter, stride, padding, dilation, ceilmode, countincludepad);
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -386,10 +391,11 @@ public sealed partial class AddRangeOfAndMarkerToResizeImage : IRewriteRule
             IsWildcard("cubiccoeffa"),
             IsWildcard("excludeOutside"),
             IsWildcard("extrapolationValue"));
+
     private Expr? GetReplace(ResizeImage resize, Call call, Expr input, Expr roi, TensorConst newSize, Expr cubiccoeffa, Expr excludeOutside, Expr extrapolationValue, RunPassOptions options)
     {
         var output = ResizeImage(resize.ResizeMode, resize.TransformationMode, resize.NearestMode, IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), roi, newSize, cubiccoeffa, excludeOutside, extrapolationValue, resize.IsTFResize);
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -407,7 +413,7 @@ public sealed partial class AddRangeOfAndMarkerToSelu : IRewriteRule
     private Expr? GetReplace(Selu selu, Call call, Expr input, Expr alpha, Expr gamma, RunPassOptions options)
     {
         var output = Selu(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), alpha, gamma);
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -419,10 +425,11 @@ public sealed partial class AddRangeOfAndMarkerToSigmoid : IRewriteRule
     public IPattern Pattern { get; } =
         IsSigmoid("sigmoid", "call", _ => true,
             IsWildcard("input"));
+
     private Expr? GetReplace(Sigmoid sigmoid, Call call, Expr input, RunPassOptions options)
     {
         var output = Sigmoid(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)));
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -436,10 +443,11 @@ public sealed partial class AddRangeOfAndMarkerToSpaceToBatch : IRewriteRule
             IsWildcard("input"),
             IsWildcard("blockshape"),
             IsWildcard("paddings"));
+
     private Expr? GetReplace(SpaceToBatch spacetobatch, Call call, Expr input, Expr blockshape, TensorConst paddings, RunPassOptions options)
     {
         var output = SpaceToBatch(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), blockshape, paddings);
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -456,7 +464,7 @@ public sealed partial class AddRangeOfAndMarkerToTranspose : IRewriteRule
     private Expr? GetReplace(Transpose transpose, Expr input, TensorConst perm, RunPassOptions options)
     {
         var output = Transpose(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), perm);
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -467,12 +475,13 @@ public sealed partial class AddRangeOfAndMarkerToUnary : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
         IsUnary("unary", "call",
-            u => (u.UnaryOp != UnaryOp.LogicalNot),
+            u => u.UnaryOp != UnaryOp.LogicalNot,
             IsWildcard("input"));
+
     private Expr? GetReplace(Unary unary, Call call, Expr input, RunPassOptions options)
     {
         var output = Nncase.IR.F.Math.Unary(unary.UnaryOp, IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)));
-        options.MatchOptions.SuppressPattern(output, Pattern); //only invoke once
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }

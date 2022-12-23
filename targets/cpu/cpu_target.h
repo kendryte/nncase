@@ -15,11 +15,9 @@
 #pragma once
 #include <nncase/targets/neutral_target.h>
 
-namespace nncase::targets
-{
-class cpu_target : public neutral_target
-{
-public:
+namespace nncase::targets {
+class cpu_target : public neutral_target {
+  public:
     using neutral_target::neutral_target;
 };
-}
+} // namespace nncase::targets

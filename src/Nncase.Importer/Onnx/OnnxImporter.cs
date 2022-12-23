@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -7,10 +7,10 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Nncase.IR;
 using Google.Protobuf;
 using Google.Protobuf.Collections;
 using LanguageExt;
+using Nncase.IR;
 using Nncase.IR.Tensors;
 using Onnx;
 using static Nncase.IR.F.Tensors;
@@ -185,7 +185,7 @@ public sealed partial class OnnxImporter : BaseImporter
             // "Upsample" => VisitUpsample(op),
             "Unsqueeze" => VisitUnsqueeze(op),
             "Where" => VisitWhere(op),
-            _ => UnSupportedOp(op.OpType)
+            _ => UnSupportedOp(op.OpType),
         };
         AddToOutputs(_outputTensors, op.Output.ToArray(), output);
     }

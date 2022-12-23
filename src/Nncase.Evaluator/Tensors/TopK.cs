@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -38,6 +38,19 @@ public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>, ICostEvalu
         return Visit(context, target, input, repeat);
     }
 
+    public Cost? Visit(ICostEvaluateContext context, TopK target)
+    {
+        var x = context.GetArgumentType<TensorType>(target, TopK.X);
+        var k = context.GetArgumentType<TensorType>(target, TopK.K);
+        var outputType = context.GetReturnType<TupleType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(x) + CostUtility.GetMemoryAccess(k),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType),
+        };
+    }
+
     private IRType Visit(ITypeInferenceContext context, TopK target, TensorType x, TensorType k)
     {
         if (x.Shape.IsUnranked)
@@ -56,8 +69,10 @@ public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>, ICostEvalu
         }
 
         // x: [a_1, a_2, ..., a_n, r]
-        var shape = new Shape();
-        // [a_1, a_2, ..., a_{axis-1}, k, a_{axis+1}, ... a_n] 
+        _ = new Shape();
+        Shape? shape;
+
+        // [a_1, a_2, ..., a_{axis-1}, k, a_{axis+1}, ... a_n]
         if (context.GetArgument(target, TopK.Axis) is TensorConst axisConst
             && context.GetArgument(target, TopK.K) is TensorConst kConst)
         {
@@ -72,18 +87,5 @@ public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>, ICostEvalu
         }
 
         return new TupleType(new[] { x with { Shape = shape }, new TensorType(DataTypes.Int64, shape) });
-    }
-
-    public Cost? Visit(ICostEvaluateContext context, TopK target)
-    {
-        var x = context.GetArgumentType<TensorType>(target, TopK.X);
-        var k = context.GetArgumentType<TensorType>(target, TopK.K);
-        var outputType = context.GetReturnType<TupleType>();
-        return new()
-        {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(x) + CostUtility.GetMemoryAccess(k),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType),
-        };
     }
 }

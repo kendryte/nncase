@@ -30,7 +30,8 @@ result<void> nncase::kernels::stackvm::reference::batchnorm(
         auto c = index[1];
         const auto x = input[offset(in_strides, index)];
         output[offset(out_strides, index)] =
-            (x - input_mean[c]) / std::sqrt(input_var[c] + epsilon) * scale[c] + bias[c];
+            (x - input_mean[c]) / std::sqrt(input_var[c] + epsilon) * scale[c] +
+            bias[c];
         return ok();
     });
 }

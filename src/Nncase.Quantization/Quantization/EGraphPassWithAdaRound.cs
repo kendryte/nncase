@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -11,7 +11,7 @@ using Nncase.Transform;
 namespace Nncase.Quantization;
 
 /// <summary>
-/// the quantization egraph pass 
+/// the quantization egraph pass.
 /// </summary>
 public class EGraphPassWithAdaRound : EGraphPass
 {
@@ -30,11 +30,11 @@ public class EGraphPassWithAdaRound : EGraphPass
 
     /// <summary>
     /// the callback on the rewirte finish.
-    /// 
+    ///
     /// </summary>
     /// <param name="graph"></param>
     /// <param name="options"></param>
-    /// <returns></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     protected override async Task OnPostRewrite(EGraph graph, RunPassOptions options)
     {
         var quantizerAdaRound = new QuantizerAdaRound(graph, options);

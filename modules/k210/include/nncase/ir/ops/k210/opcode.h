@@ -15,11 +15,11 @@
 #pragma once
 #include <nncase/ir/opcode.h>
 
-namespace nncase::ir::k210
-{
-#define DEFINE_OPCODE(target, id, name, value) NNCASE_INLINE_VAR constexpr node_opcode op_##target##_##id { value, #name };
+namespace nncase::ir::k210 {
+#define DEFINE_OPCODE(target, id, name, value)                                 \
+    NNCASE_INLINE_VAR constexpr node_opcode op_##target##_##id{value, #name};
 
 #include "opcode.def"
 
 #undef DEFINE_OPCODE
-}
+} // namespace nncase::ir::k210

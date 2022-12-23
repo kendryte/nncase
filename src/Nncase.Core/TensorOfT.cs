@@ -259,9 +259,13 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
                     }
 
                     if (includeWhitespace)
+                    {
                         builder.Append($"[{string.Join(",", indices)}]: {{");
+                    }
                     else
-                        builder.Append("{");
+                    {
+                        builder.Append('{');
+                    }
                 }
                 else
                 {
@@ -667,7 +671,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
         {
             _tensor = tensor;
             _index = 0;
-            Current = default(T);
+            Current = default;
         }
 
         /// <inheritdoc/>

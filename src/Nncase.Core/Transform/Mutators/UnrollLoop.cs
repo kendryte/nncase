@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -12,7 +12,7 @@ using Nncase.TIR;
 namespace Nncase.Transform.Mutators;
 
 /// <summary>
-/// unroll loop
+/// unroll loop.
 /// </summary>
 internal sealed class UnRollLoop : ExprMutator
 {
@@ -28,6 +28,7 @@ internal sealed class UnRollLoop : ExprMutator
             {
                 IsMutated = true;
                 ExpressionMemo[expr] = result;
+
                 // only unroll one for loop
                 return result;
             }
@@ -38,17 +39,12 @@ internal sealed class UnRollLoop : ExprMutator
         return result;
     }
 
-    bool IsCanUnroll(TIR.For for_loop)
-    {
-        return (for_loop.Domain.Start is TensorConst && for_loop.Domain.Stop is TensorConst && for_loop.Domain.Step is TensorConst && for_loop.Mode == LoopMode.Unrolled);
-    }
-
     /// <summary>
     /// convert the loop var to tensor const.
     /// </summary>
     /// <param name="loop"></param>
     /// <returns></returns>
-    static IEnumerable<TensorConst> MakeGrid(TIR.For loop)
+    private static IEnumerable<TensorConst> MakeGrid(TIR.For loop)
     {
         int start = ((TensorConst)loop.Domain.Start).Value.ToScalar<int>();
         int stop = ((TensorConst)loop.Domain.Stop).Value.ToScalar<int>();
@@ -60,23 +56,37 @@ internal sealed class UnRollLoop : ExprMutator
         }
     }
 
-    Expr TryUnroll(TIR.For expr)
+    private bool IsCanUnroll(TIR.For for_loop)
+    {
+        return for_loop.Domain.Start is TensorConst && for_loop.Domain.Stop is TensorConst && for_loop.Domain.Step is TensorConst && for_loop.Mode == LoopMode.Unrolled;
+    }
+
+    private Expr TryUnroll(TIR.For expr)
     {
         // try collect the all loops
         var nested_loops = new List<TIR.For>();
 
         var outter_for = expr;
         if (IsCanUnroll(outter_for))
+        {
             nested_loops.Add(outter_for);
+        }
         else
+        {
             return outter_for;
+        }
 
         while (outter_for.Body.Count == 1 && outter_for.Body[0] is TIR.For inner_for)
         {
             if (IsCanUnroll(inner_for))
+            {
                 nested_loops.Add(inner_for);
+            }
             else
+            {
                 break;
+            }
+
             outter_for = inner_for;
         }
 
@@ -151,7 +161,10 @@ internal sealed class UnRollLoop : ExprMutator
                 foreach (var (v, arg) in fn.Parameters.Zip(expr.Parameters))
                 {
                     if (Visit(arg) is not Const const_arg)
+                    {
                         return expr;
+                    }
+
                     arg_map.Add(v, Value.FromConst(const_arg));
                 }
 

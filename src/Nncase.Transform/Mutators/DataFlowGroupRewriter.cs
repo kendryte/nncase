@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -20,7 +20,7 @@ namespace Nncase.Transform;
 public sealed class DataFlowMergeRewriter
 {
     /// <summary>
-    /// Rewrite the merge rule
+    /// Rewrite the merge rule.
     /// </summary>
     /// <param name="expr"></param>
     /// <param name="rules"></param>
@@ -31,7 +31,6 @@ public sealed class DataFlowMergeRewriter
     public Expr Rewrite(Expr expr, IEnumerable<Mutators.IMergeRewriteRule> rules, Func<IUsedByResult, Mutators.IMergeRewriteRule, RunPassOptions, Mutators.FusionGroupMutator> mutator_creator, RunPassOptions options)
     {
         var post = expr;
-        var last = post;
         int count = 0;
         OnRewriteStart(expr, options, count);
         do
@@ -39,7 +38,8 @@ public sealed class DataFlowMergeRewriter
             bool isMutated = false;
             foreach (var rule in rules)
             {
-                last = post;
+                var last = post;
+
                 // todo reduce the mutator and rules dependence.
                 var visitor = mutator_creator(Analyser.AnalysisUsedBy(last), rule, options);
                 post = visitor.Visit(last);
@@ -55,7 +55,10 @@ public sealed class DataFlowMergeRewriter
             if (isMutated && !inferSuccess)
             {
                 if (options.DumpLevel > 1)
+                {
                     CompilerServices.DumpIR(post, $"InferShape_{count - 1}_Failed", options.DumpDir);
+                }
+
                 throw new InvalidOperationException($"After Rewrite {count - 1}, InferShape Failed For This Model!");
             }
 

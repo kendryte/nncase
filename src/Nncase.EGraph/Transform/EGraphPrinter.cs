@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -30,69 +30,83 @@ namespace Nncase.Transform;
 
 public partial class EGraphPrinter
 {
-    private readonly Dictionary<EClass, DotCluster> ClusterMaps = new Dictionary<EClass, DotCluster>();
-
-    private readonly Dictionary<EClass, string> OpMaps = new();
-
-    private readonly EGraph eGraph;
-
-    private ulong _IdCounter;
+    /// <summary>
+    /// Get the dot graph.
+    /// </summary>
+    public readonly DotGraph DotGraph;
 
     /// <summary>
     /// the expr map to the dot node and html table.
     /// </summary>
     protected readonly Dictionary<ENode, (DotNode, DotHtmlTable)> NodesMap = new(ReferenceEqualityComparer.Instance);
 
-    private readonly DotDumpVisitor visitor = new DotDumpVisitor();
+    private readonly Dictionary<EClass, DotCluster> _clusterMaps = new Dictionary<EClass, DotCluster>();
+
+    private readonly Dictionary<EClass, string> _opMaps = new();
+
+    private readonly EGraph _eGraph;
+
+    private readonly DotDumpVisitor _visitor = new DotDumpVisitor();
+
+    private ulong _idCounter;
 
     /// <summary>
-    /// Get the dot graph
-    /// </summary>
-    public readonly DotGraph dotGraph;
-
-    /// <summary>
-    /// ctor for egraph
+    /// Initializes a new instance of the <see cref="EGraphPrinter"/> class.
+    /// ctor for egraph.
     /// </summary>
     /// <param name="egraph"></param>
     public EGraphPrinter(EGraph egraph)
     {
-        _IdCounter = 0;
-        dotGraph = new(directed: true);
-        dotGraph.Clusters.AllowEdgeClipping = true;
-        eGraph = egraph;
-        foreach (var eclass in eGraph.Classes)
+        _idCounter = 0;
+        DotGraph = new(directed: true);
+        DotGraph.Clusters.AllowEdgeClipping = true;
+        _eGraph = egraph;
+        foreach (var eclass in _eGraph.Classes)
         {
             if (eclass.Nodes.Count == 1 && eclass.Nodes[0].Expr is Op op)
             {
-                if (!OpMaps.ContainsKey(eclass))
+                if (!_opMaps.ContainsKey(eclass))
                 {
-                    var name = visitor.Visit(op);
-                    OpMaps.Add(eclass, name);
+                    var name = _visitor.Visit(op);
+                    _opMaps.Add(eclass, name);
                 }
             }
         }
     }
 
     /// <summary>
-    /// convert the egraph to dot graph
+    /// dump egraph as dot graph.
+    /// </summary>
+    /// <param name="eGraph">egraph.</param>
+    /// <param name="file">path.</param>
+    /// <returns>Converted Graph.</returns>
+    public static DotGraph DumpEgraphAsDot(EGraph eGraph, string file)
+    {
+        var printer = new EGraphPrinter(eGraph);
+        printer.ConvertEGraphAsDot();
+        return printer.SaveToFile(file);
+    }
+
+    /// <summary>
+    /// convert the egraph to dot graph.
     /// </summary>
     /// <returns></returns>
     public DotGraph ConvertEGraphAsDot()
     {
-        foreach (var eClass in eGraph.Classes.Where(x => !OpMaps.ContainsKey(x)))
+        foreach (var eClass in _eGraph.Classes.Where(x => !_opMaps.ContainsKey(x)))
         {
             // make eClass as cluster
-            var eclassCluster = dotGraph.Clusters.Add($"{eClass.Id}", cluster =>
+            var eclassCluster = DotGraph.Clusters.Add($"{eClass.Id}", cluster =>
            {
                cluster.Style.BorderStyle = DotBorderStyle.Dotted;
                cluster.Label = $"{eClass.Id}";
                cluster.LabelAlignment.Horizontal = GiGraph.Dot.Types.Alignment.DotHorizontalAlignment.Left;
            });
-            ClusterMaps.Add(eClass, eclassCluster);
+            _clusterMaps.Add(eClass, eclassCluster);
 
             eclassCluster.Nodes.Add(new DotNode(eclassCluster.Id + "dummy"), node =>
               {
-                  node.Label = "";
+                  node.Label = string.Empty;
                   node.Style.Invisible = true;
                   node.Size.Height = 0;
                   node.Size.Width = 0;
@@ -101,8 +115,11 @@ public partial class EGraphPrinter
             foreach (var enode in eClass.Nodes)
             {
                 if (NodesMap.TryGetValue(enode, out var dotnode))
+                {
                     continue;
-                var id = _IdCounter++;
+                }
+
+                var id = _idCounter++;
                 string exprId = "\"" + id.ToString() + "\"";
 
                 var table = new DotHtmlTable
@@ -110,31 +127,32 @@ public partial class EGraphPrinter
                     BorderWidth = 0,
                     CellBorderWidth = 1,
                     CellSpacing = 0,
-                    CellPadding = 4
+                    CellPadding = 4,
                 };
 
                 // 1. the enode type and children.
                 table.AddRow(row =>
                 {
-                    row.AddCell(visitor.Visit(enode.Expr), font: enode.Expr switch
+                    row.AddCell(_visitor.Visit(enode.Expr), font: enode.Expr switch
                     {
                         IR.Const => new DotStyledFont(DotFontStyles.Normal, Color.DarkOrange),
                         IR.Call => new DotStyledFont(DotFontStyles.Normal, Color.DarkBlue),
                         IR.Var => new DotStyledFont(DotFontStyles.Normal, Color.BlueViolet),
                         IR.Fusion => new DotStyledFont(DotFontStyles.Normal, Color.MediumSeaGreen),
-                        _ => new DotStyledFont(DotFontStyles.Normal)
+                        _ => new DotStyledFont(DotFontStyles.Normal),
                     }); // key wrods type.
                     foreach (var (child, i) in enode.Children.Select((c, i) => (c, i)))
                     {
                         var label = $"{child.Find().Id}";
-                        if (OpMaps.ContainsKey(child))
+                        if (_opMaps.ContainsKey(child))
                         {
-                            label = $"({label.ToString()}) " + OpMaps[child];
+                            label = $"({label.ToString()}) " + _opMaps[child];
                         }
 
                         row.AddCell(label, cell => cell.PortName = $"P{i}");
                     }
                 });
+
                 // 2. when enode.Expr need show checked type.
                 if (enode.Expr is Call or Function or Var)
                 {
@@ -152,13 +170,13 @@ public partial class EGraphPrinter
 
                 for (int i = 0; i < enode.Children.Count; i++)
                 {
-                    if (OpMaps.ContainsKey(enode.Children[i]))
+                    if (_opMaps.ContainsKey(enode.Children[i]))
                     {
                         continue;
                     }
 
                     // var pnode =  from pnode in select
-                    dotGraph.Edges.Add($"{enode.Children[i].Find().Id}" + "dummy", exprNode, edge =>
+                    DotGraph.Edges.Add($"{enode.Children[i].Find().Id}" + "dummy", exprNode, edge =>
                      {
                          edge.Tail.ClusterId = $"{enode.Children[i].Id}";
                          edge.Head.Endpoint.Port = new DotEndpointPort($"P{i}");
@@ -167,11 +185,11 @@ public partial class EGraphPrinter
             }
         }
 
-        return dotGraph;
+        return DotGraph;
     }
 
     /// <summary>
-    /// Save the DotGraph into file
+    /// Save the DotGraph into file.
     /// </summary>
     /// <param name="file">file path.</param>
     /// <returns>this dot graph.</returns>
@@ -183,33 +201,19 @@ public partial class EGraphPrinter
         }
 
         var dirName = Path.GetDirectoryName(file);
-        if (dirName is not null && dirName != "")
+        if (dirName is not null && dirName != string.Empty)
         {
             Directory.CreateDirectory(dirName);
         }
 
-        dotGraph.Build();
-        dotGraph.SaveToFile(file);
-        return dotGraph;
-    }
-
-    /// <summary>
-    /// dump egraph as dot graph.
-    /// </summary>
-    /// <param name="eGraph">egraph.</param>
-    /// <param name="file">path.</param>
-    /// <returns>Converted Graph.</returns>
-    public static DotGraph DumpEgraphAsDot(EGraph eGraph, string file)
-    {
-        var printer = new EGraphPrinter(eGraph);
-        printer.ConvertEGraphAsDot();
-        return printer.SaveToFile(file);
+        DotGraph.Build();
+        DotGraph.SaveToFile(file);
+        return DotGraph;
     }
 
     private class DotDumpVisitor : ExprFunctor<string, string>
     {
-
-        private Dictionary<Const, string> _constNames = new();
+        private readonly Dictionary<Const, string> _constNames = new();
 
         public override string Visit(Call expr)
         {
@@ -218,11 +222,15 @@ public partial class EGraphPrinter
 
         public override string Visit(Const expr)
         {
-            if (_constNames.TryGetValue(expr, out var name)) { return name; }
+            if (_constNames.TryGetValue(expr, out var name))
+            {
+                return name;
+            }
+
             string valueStr = expr switch
             {
                 TensorConst tc => tc.Value.Shape.Size <= 8 ? tc.Value.GetArrayString(false) : string.Empty,
-                TupleConst tpc => string.Empty,
+                TupleConst => string.Empty,
                 _ => throw new ArgumentOutOfRangeException(),
             };
             valueStr = valueStr != string.Empty ? " : " + valueStr : string.Empty;

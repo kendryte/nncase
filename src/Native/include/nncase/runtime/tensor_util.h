@@ -1,8 +1,8 @@
 #pragma once
-#include <string>
 #include <cmath>
 #include <iostream>
 #include <nncase/runtime/simple_types.h>
+#include <string>
 
 namespace nncase::runtime {
 inline float dot(const float *v1, const float *v2, size_t size) {
@@ -26,4 +26,4 @@ inline void dump_shape(const dims_t &shape) {
     }
     std::cout << "\n";
 }
-}
+} // namespace nncase::runtime

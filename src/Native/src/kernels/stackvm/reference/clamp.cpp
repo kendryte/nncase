@@ -44,10 +44,10 @@ result<void> clamp_impl(const T *input, T min, T max, T *output,
                       *IN_CAST(type, max), OUT_CAST(type, output), in_shape,   \
                       in_strides, out_strides, context);
 
-result<void> nncase::kernels::stackvm::reference::clamp(typecode_t type, const gsl::byte *input,
-                   const gsl::byte *min, const gsl::byte *max,
-                   gsl::byte *output, const dims_t &in_shape,
-                   const strides_t &in_strides, const strides_t &out_strides,
-                   NNCASE_UNUSED kernel_context &context) noexcept {
+result<void> nncase::kernels::stackvm::reference::clamp(
+    typecode_t type, const gsl::byte *input, const gsl::byte *min,
+    const gsl::byte *max, gsl::byte *output, const dims_t &in_shape,
+    const strides_t &in_strides, const strides_t &out_strides,
+    NNCASE_UNUSED kernel_context &context) noexcept {
     TYPE_SELECT(type, CLAMP_IMPL);
 }

@@ -25,10 +25,6 @@ using namespace nncase;
 using namespace nncase::targets;
 using namespace nncase::runtime;
 
-extern "C"
-{
-    CPU_TARGET_API target *create_target()
-    {
-        return new cpu_target();
-    }
+extern "C" {
+CPU_TARGET_API target *create_target() { return new cpu_target(); }
 }
