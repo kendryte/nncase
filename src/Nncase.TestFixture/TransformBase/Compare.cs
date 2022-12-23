@@ -96,11 +96,6 @@ public static class Comparator
         return (float)(sum / (v1 * v2));
     }
 
-    private static float Prod(float[] data1, float[] data2)
-    {
-        return data1.Zip(data2).Aggregate(0f, (f, tuple) => f + (tuple.Item1 * tuple.Item2));
-    }
-
     public static bool AllEqual(Tensor a, Tensor b, float thresh)
     {
         var va = a.ToArray<float>();
@@ -112,6 +107,11 @@ public static class Comparator
         }
 
 <= thresh);
+    }
+
+    private static float Prod(float[] data1, float[] data2)
+    {
+        return data1.Zip(data2).Aggregate(0f, (f, tuple) => f + (tuple.Item1 * tuple.Item2));
     }
 
     public static bool TensorValueCompare(TensorValue pre, TensorValue post, float thresh)

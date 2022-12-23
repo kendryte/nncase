@@ -99,12 +99,6 @@ public static partial class Utility
         where T : Op
         => typeof(T).GetFields(BindingFlags.Public | BindingFlags.Static).Length;
 
-    private static VArgsPattern GenerateParameters(Pattern[] beginPatterns) =>
-        IsVArgsRepeat(list =>
-            beginPatterns
-                .Concat(Enumerable.Range(0, list.Count - beginPatterns.Length).Select(_ => IsWildcard(null)))
-                .ToArray());
-
     ///
     /// <returns></returns><summary>
     /// generate a vargs pattern everything is wildcard except for the specified index
@@ -125,6 +119,12 @@ public static partial class Utility
         var fields = ReplaceMulti(wildcards, specs);
         return new VArgsPattern(fields, null);
     }
+
+    private static VArgsPattern GenerateParameters(Pattern[] beginPatterns) =>
+        IsVArgsRepeat(list =>
+            beginPatterns
+                .Concat(Enumerable.Range(0, list.Count - beginPatterns.Length).Select(_ => IsWildcard(null)))
+                .ToArray());
 
     public static CallPattern IsCallWithSpec<T>(string callName, string opName, params (ParameterInfo, Pattern)[] specs)
         where T : Op =>

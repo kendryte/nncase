@@ -107,6 +107,17 @@ public class FusionGroupMutator : ExprMutator
     /// <inheritdoc/>
     public override Expr Visit(Fusion expr) => expr;
 
+    /// <inheritdoc/>
+    public override Expr MutateLeaf(Call expr)
+    {
+        if (TryMergeFusion(Rule, expr, out var merged_call))
+        {
+            return merged_call;
+        }
+
+        return expr;
+    }
+
     private sealed class FusionMergeCandidateComparer : IEqualityComparer<HashSet<Fusion>>
     {
         public bool Equals(HashSet<Fusion>? x, HashSet<Fusion>? y) => (x, y) switch
@@ -127,17 +138,6 @@ public class FusionGroupMutator : ExprMutator
 
             return hash.ToHashCode();
         }
-    }
-
-    /// <inheritdoc/>
-    public override Expr MutateLeaf(Call expr)
-    {
-        if (TryMergeFusion(Rule, expr, out var merged_call))
-        {
-            return merged_call;
-        }
-
-        return expr;
     }
 
     /// <inheritdoc/>

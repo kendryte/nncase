@@ -173,6 +173,11 @@ namespace Nncase.IR
         public int Rank => _dimensions.Length;
 
         /// <summary>
+        /// Gets get Total Elements.
+        /// </summary>
+        public int Size => Enumerable.Range(0, Rank).Aggregate(1, (size, i) => size * _dimensions[i].FixedValue);
+
+        /// <summary>
         /// Gets a shape with rank unknwon dimension.
         /// </summary>
         /// <param name="rank"></param>
@@ -181,11 +186,6 @@ namespace Nncase.IR
         {
             return new Shape(ShapeKind.HasUnknownDimension, Enumerable.Repeat(Dimension.Unknown, rank));
         }
-
-        /// <summary>
-        /// Gets get Total Elements.
-        /// </summary>
-        public int Size => Enumerable.Range(0, Rank).Aggregate(1, (size, i) => size * _dimensions[i].FixedValue);
 
         /// <inheritdoc/>
         public int Count => ((IReadOnlyCollection<Dimension>)_dimensions).Count;

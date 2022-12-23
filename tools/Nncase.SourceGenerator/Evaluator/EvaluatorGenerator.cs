@@ -63,16 +63,16 @@ public static class InterfaceKindExtensions
             { Name: "Const" } or { BaseType: { Name: "Const" } } => true,
             { Name: "IValue" } => true,
             _ => false,
-        }
-,
+        },
+
 
         InterfaceKind.ITypeInferencer => typeSymbol switch
         {
             { Name: "IRType" } => true,
             { BaseType: { Name: "IRType" } } => true,
             _ => false,
-        }
-,
+        },
+
 
         _ => throw new NotImplementedException($"CheckReturnTypeRange : {typeSymbol.Name} {interfaceKind}"),
     };
@@ -85,8 +85,8 @@ public static class InterfaceKindExtensions
             { Name: "Const" } or { BaseType: { Name: "Const" } } => $"Value.FromConst({visitStatement})",
             { Name: "IValue" } => visitStatement,
             _ => throw new ArgumentOutOfRangeException($"Can't Return {typeSymbol.ToDisplayString()} For {interfaceKind}!"),
-        }
-,
+        },
+
 
         InterfaceKind.ITypeInferencer => visitStatement,
         _ => throw new NotImplementedException(),
@@ -285,16 +285,16 @@ internal class EvaluatorGenerator : IIncrementalGenerator
                     { IsReferenceType: true } x when x.ToDisplayString().EndsWith("OrtKISharp.Tensor") => "GetOrtArgumentValue",
                     { IsUnmanagedType: true, IsValueType: true } x => $"GetArgumentValueAsScalar<{paramType.ToDisplayString()}>",
                     _ => throw new NotSupportedException($"Convert {cand.Class.Name} Params {paramType.ToDisplayString()} For IEvaluator Impl!")
-                }
-,
+                },
+
 
                 InterfaceKind.ITypeInferencer => paramType switch
                 {
                     { IsReferenceType: true } x when x.IsInheritFrom(IRTypeSymobl) => $"CheckArgumentType<{x}>",
                     var x when SymbolEqualityComparer.Default.Equals(x, ExprSymobl) => $"GetArgument",
                     _ => throw new NotSupportedException($"Convert {cand.Class.Name} Params {paramType.ToDisplayString()} For ITypeInferencer Impl!")
-                }
-,
+                },
+
 
                 _ => throw new NotSupportedException($"{paramType.ToDisplayString()} with {cand.Target}!")
             };

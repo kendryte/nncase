@@ -160,6 +160,18 @@ namespace Nncase.IR
             return result;
         }
 
+        /// <inheritdoc/>
+        public override TExprResult Visit(Var expr)
+        {
+            if (!_exprMemo.TryGetValue(expr, out var result))
+            {
+                result = VisitLeaf(expr);
+                _exprMemo.Add(expr, result);
+            }
+
+            return result;
+        }
+
         protected void RegisterAfterCallback(string name, Action<Expr> callback)
         {
             _callbacksAfterCall[name] = callback;
@@ -184,18 +196,6 @@ namespace Nncase.IR
             {
                 callback(expr);
             }
-        }
-
-        /// <inheritdoc/>
-        public override TExprResult Visit(Var expr)
-        {
-            if (!_exprMemo.TryGetValue(expr, out var result))
-            {
-                result = VisitLeaf(expr);
-                _exprMemo.Add(expr, result);
-            }
-
-            return result;
         }
 
         /// <inheritdoc/>

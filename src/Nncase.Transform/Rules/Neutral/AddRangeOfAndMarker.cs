@@ -54,7 +54,7 @@ public sealed partial class AddRangeOfAndMarkerToBinary : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
         IsBinary("binary", "call",
-            b => (b.BinaryOp != BinaryOp.LogicalAnd && b.BinaryOp != BinaryOp.LogicalOr && b.BinaryOp != BinaryOp.LogicalXor),
+            b => b.BinaryOp != BinaryOp.LogicalAnd && b.BinaryOp != BinaryOp.LogicalOr && b.BinaryOp != BinaryOp.LogicalXor,
             IsWildcard("lhs"),
             IsWildcard("rhs"));
 
@@ -475,7 +475,7 @@ public sealed partial class AddRangeOfAndMarkerToUnary : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
         IsUnary("unary", "call",
-            u => (u.UnaryOp != UnaryOp.LogicalNot),
+            u => u.UnaryOp != UnaryOp.LogicalNot,
             IsWildcard("input"));
 
     private Expr? GetReplace(Unary unary, Call call, Expr input, RunPassOptions options)

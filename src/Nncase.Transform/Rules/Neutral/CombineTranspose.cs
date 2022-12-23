@@ -217,17 +217,18 @@ public sealed partial class CombinePadTranspose : IRewriteRule
     public IPattern Pattern { get; } = IsTranspose(
         "transpose",
         x => true,
-        IsPad("pad", y => true, IsWildcard("input"), IsTensorConst
-        ("pads"), IsTensorConst("padValue")), IsTensorConst("perm"));
+        IsPad("pad", y => true, IsWildcard("input"), IsTensorConst(
+        "pads"), IsTensorConst("padValue")), IsTensorConst("perm"));
 
     private Expr GetReplace(Pad pad, Expr input, int[] perm, Expr pads, Expr padValue)
     {
-        List<int> newPads = new List<int>();
+        var newPads = new List<int>();
         for (int i = 0; i < perm.Length; i++)
         {
             newPads.Add(((TensorConst)pads).Value.ToArray<int>()[perm[i] * 2]);
-            newPads.Add(((TensorConst)pads).Value.ToArray<int>()[perm[i] * 2 + 1]);
+            newPads.Add(((TensorConst)pads).Value.ToArray<int>()[(perm[i] * 2) + 1]);
         }
+
         return Pad(Transpose(input, perm), Tensor.From<int>(newPads.ToArray(), pads.CheckedShape), pad.PadMode, padValue);
     }
 }
