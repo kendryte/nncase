@@ -13,32 +13,32 @@ public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
 {
     public static TheoryData<IDataFlowFusionCase> DataOne = new()
     {
-      new DataFlowType9FusionCase(),
+        new DataFlowType9FusionCase(),
     };
 
     public static TheoryData<IDataFlowFusionCase> DataAll = new()
     {
-      new DataFlowType0FusionCase(),
-      new DataFlowType0NotFusionCase(),
+        new DataFlowType0FusionCase(),
+        new DataFlowType0NotFusionCase(),
 
-      new DataFlowType1FusionCaseLeft(),
-      new DataFlowType2FusionCaseLeft(),
-      new DataFlowType3FusionCaseLeft(),
-      new DataFlowType4FusionCaseLeft(),
-      new DataFlowType5FusionCaseLeft(),
-      new DataFlowType6FusionCaseLeft(),
-      new DataFlowType6_1FusionCaseLeft(),
-      new DataFlowType7FusionCaseLeft(),
+        new DataFlowType1FusionCaseLeft(),
+        new DataFlowType2FusionCaseLeft(),
+        new DataFlowType3FusionCaseLeft(),
+        new DataFlowType4FusionCaseLeft(),
+        new DataFlowType5FusionCaseLeft(),
+        new DataFlowType6FusionCaseLeft(),
+        new DataFlowType6_1FusionCaseLeft(),
+        new DataFlowType7FusionCaseLeft(),
 
-      new DataFlowType1FusionCaseRight(),
-      new DataFlowType2FusionCaseRight(),
-      new DataFlowType3FusionCaseRight(),
-      new DataFlowType4FusionCaseRight(),
-      new DataFlowType5FusionCaseRight(),
-      new DataFlowType6FusionCaseRight(),
-      new DataFlowType6_1FusionCaseRight(),
-      new DataFlowType7FusionCaseRight(),
-      new DataFlowType8FusionCase(),
+        new DataFlowType1FusionCaseRight(),
+        new DataFlowType2FusionCaseRight(),
+        new DataFlowType3FusionCaseRight(),
+        new DataFlowType4FusionCaseRight(),
+        new DataFlowType5FusionCaseRight(),
+        new DataFlowType6FusionCaseRight(),
+        new DataFlowType6_1FusionCaseRight(),
+        new DataFlowType7FusionCaseRight(),
+        new DataFlowType8FusionCase(),
     };
 
     [Theory]

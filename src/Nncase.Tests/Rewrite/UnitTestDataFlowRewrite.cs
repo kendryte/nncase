@@ -25,15 +25,15 @@ public class UnitTestDataFlowRewriteFactory : TestFixture.UnitTestFixtrue
 {
     public static TheoryData<IRewriteCase> DataOne => new()
     {
-      new PadTransposeCase(),
+        new PadTransposeCase(),
     };
 
     public static TheoryData<IRewriteCase> DataAll => new()
     {
-      new TransposeLeakyRelu(),
-      new Conv2DPadsCase(),
-      new ReduceWindow2DPadsCase(),
-      new MobileNetV1TransposeCase(),
+        new TransposeLeakyRelu(),
+        new Conv2DPadsCase(),
+        new ReduceWindow2DPadsCase(),
+        new MobileNetV1TransposeCase(),
     };
 
     [Theory]
