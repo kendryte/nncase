@@ -15,6 +15,7 @@ using GiGraph.Dot.Types.Graphs;
 using GiGraph.Dot.Types.Nodes;
 using GiGraph.Dot.Types.Records;
 using GiGraph.Dot.Types.Styling;
+using Nncase.IR;
 using Nncase.PatternMatch;
 using Nncase.Transform;
 
@@ -55,9 +56,11 @@ public partial class EGraphPrinter
 
         DotGraph.Edges.Clear();
 
+        HashSet<EClass> eclassMemo = new();
+
         bool Dfs(EClass curclass, ENode? minCostEnode)
         {
-            if (_opMaps.ContainsKey(curclass) || minCostEnode is null)
+            if (eclassMemo.Contains(curclass) || _opMaps.ContainsKey(curclass) || minCostEnode is null)
             {
                 return false;
             }
@@ -80,6 +83,7 @@ public partial class EGraphPrinter
                 });
             }
 
+            eclassMemo.Add(curclass);
             return true;
         }
 
