@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Runtime.CompilerServices;
@@ -28,6 +28,7 @@ public static class T
     /// <param name="offset">The base expression.</param>
     /// <param name="stride">The stride of the ramp.</param>
     /// <param name="lanes">The lanes of the expression.</param>
+    /// <returns></returns>
     public static Call Ramp(Expr offset, Expr stride, int lanes) => new Call(new TIR.Ramp(lanes), offset, stride);
 
     /// <summary>
@@ -52,10 +53,11 @@ public static class T
     /// </summary>
     /// <param name="handle">The buffer handle variable in the load expression.</param>
     /// <param name="index">The index in the load.</param>
+    /// <returns></returns>
     public static Call Load(Var handle, Expr index) => new Call(new Load(), handle, index);
 
     /// <summary>
-    /// get the nop op
+    /// get the nop op.
     /// </summary>
     /// <returns></returns>
     public static Call Nop() => new Call(new Nop());
@@ -115,16 +117,16 @@ public static class T
     }
 
     /// <summary>
-    /// get the Serial For
+    /// get the Serial For.
     /// </summary>
     /// <param name="loopVar">out index var.</param>
     /// <param name="domain">ranges.</param>
     /// <param name="var_name">loop var name.</param>
-    /// <returns> the for loop </returns>
+    /// <returns> the for loop. </returns>
     public static ISequentialBuilder<For> Serial(out Var loopVar, Range domain, [CallerArgumentExpression("loopVar")] string var_name = "v") => ForLoop(out loopVar, domain, LoopMode.Serial, var_name);
 
     /// <summary>
-    /// make unroll for loop
+    /// make unroll for loop.
     /// </summary>
     /// <param name="loopVar">out index var.</param>
     /// <param name="domain">ranges.</param>
@@ -161,14 +163,14 @@ public static class T
         string[] names = { "i", "j", "k", "l" };
         var newLoopVars = loopVars = new Var[ranges.Length];
         return new NestBodyExprBuilder<For>(ranges.Select((rg, i) =>
-             T.ForLoop(out newLoopVars[i], rg, loopMode, names[i % 4] + (i / 4 == 0 ? string.Empty : (i / 4).ToString())).Body()
-        ).ToArray());
+             T.ForLoop(out newLoopVars[i], rg, loopMode, names[i % 4] + (i / 4 == 0 ? string.Empty : (i / 4).ToString())).Body()).ToArray());
     }
 
     /// <summary>
     /// a named variable represents a tensor index size.
     /// </summary>
     /// <param name="name"></param>
+    /// <returns></returns>
     public static Var SizeVar(string name)
     {
         return Var.SizeVar(name);
@@ -266,7 +268,7 @@ public static class T
     }
 
     /// <summary>
-    /// ctor for physical buffer
+    /// ctor for physical buffer.
     /// </summary>
     /// <param name="elem_type"></param>
     /// <param name="location"></param>
@@ -286,7 +288,7 @@ public static class T
     }
 
     /// <summary>
-    /// create buffer from const
+    /// create buffer from const.
     /// </summary>
     /// <param name="expr"></param>
     /// <param name="buffer"></param>
@@ -301,10 +303,15 @@ public static class T
 
         int size;
         if (expr is TensorConst tc)
+        {
             size = tc.Value.BytesBuffer.Length;
+        }
         else
+        {
             throw new NotSupportedException();
-        buffer = new PhysicalBuffer(name, Schedule.MemoryLocation.Rdata, ((TensorConst)expr), 0, size);
+        }
+
+        buffer = new PhysicalBuffer(name, Schedule.MemoryLocation.Rdata, (TensorConst)expr, 0, size);
         return buffer;
     }
 
@@ -322,19 +329,16 @@ public static class T
     //         buffer = null;
     //         return Nop();
     //     }
-
-    //     if (name.StartsWith("var "))
+    // if (name.StartsWith("var "))
     //     {
     //         name = name[4..];
     //     }
-
-    //     buffer = new Buffer(name, Schedule.MemoryLocation.Rdata, (TensorType)expr.ValueType)
+    // buffer = new Buffer(name, Schedule.MemoryLocation.Rdata, (TensorType)expr.ValueType)
     //     {
     //         Const = expr,
     //     };
     //     return buffer;
     // }
-
     public static ISequentialBuilder<For> ForSegment(out (Expr b, Expr e) seg, Expr low, Expr chunck, Expr high)
     {
         var count = IR.F.Tensors.Cast((high - low) / IR.F.Tensors.Cast(chunck, DataTypes.Float32), DataTypes.Int32);
@@ -368,5 +372,4 @@ public static class T
         value = creator();
         return Nop();
     }
-
 }

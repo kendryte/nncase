@@ -32,13 +32,12 @@ public partial class FoldConstCall : RewriteRule<CallPattern>
     public override CallPattern Pattern { get; } = IsCall(
         "call",
         IsOp<Op>(op => op.CanFoldConstCall),
-        IsVArgsRepeat("const_args", () => IsAlt(IsConst(), IsConstTuple()))
-      ) with
+        IsVArgsRepeat("const_args", () => IsAlt(IsConst(), IsConstTuple()))) with
     {
-        TypePattern = IsType(x => !(x is InvalidType))
+        TypePattern = IsType(x => !(x is InvalidType)),
     };
 
-    Const GetReplace(Call call)
+    private Const GetReplace(Call call)
     {
         return Const.FromValue(call.Evaluate());
     }
@@ -58,7 +57,7 @@ public partial class FoldShapeOf : RewriteRule<CallPattern>
     /// <inheritdoc/>
     public override CallPattern Pattern { get; } = IsShapeOf(IsWildcard("wc") with { TypePattern = HasFixedShape() });
 
-    Const GetReplace(Expr wc)
+    private Const GetReplace(Expr wc)
     {
         return Const.FromTensor(wc.CheckedShape.ToValueArray().Select(x => (long)x).ToArray());
     }

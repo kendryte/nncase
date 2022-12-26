@@ -13,7 +13,7 @@ using Nncase.Transform;
 
 namespace Nncase.Quantization;
 
-public class CalibrationEvaluator
+public class CalibrationEvaluator : IDisposable
 {
     private readonly IReadOnlyDictionary<Var, IValue> _inputs;
     private readonly IEnumerable<ENode> _awareEnodes;
@@ -35,7 +35,10 @@ public class CalibrationEvaluator
         if (_passOptions.DumpLevel >= 4)
         {
             if (!Directory.Exists(_passOptions.DumpDir))
+            {
                 Directory.CreateDirectory(_passOptions.DumpDir);
+            }
+
             var fileStream = File.Open(Path.Combine(_passOptions.DumpDir, "calibration_evaluator.il"), FileMode.Create, FileAccess.Write);
             _dumpWriter = new StreamWriter(fileStream);
             _dumpWriter.AutoFlush = true;
@@ -69,7 +72,7 @@ public class CalibrationEvaluator
                 }
             }
 
-            if (_awareEnodes.Count() > 0 && _values.Count == oldValues)
+            if (_awareEnodes.Any() && _values.Count == oldValues)
             {
                 throw new InvalidOperationException("Endless evaluation found.");
             }
@@ -77,6 +80,11 @@ public class CalibrationEvaluator
         while (!completed);
         _dumpWriter.Close();
         return awareTensors;
+    }
+
+    public void Dispose()
+    {
+        throw new NotImplementedException();
     }
 
     private IValue? Visit(EClass eclass)
@@ -115,17 +123,20 @@ public class CalibrationEvaluator
         };
     }
 
-    private bool shapeChecker(Shape current, Shape target)
+    private bool ShapeChecker(Shape current, Shape target)
     {
         if (current.Count != target.Count)
+        {
             return false;
+        }
+
         return current.Zip(target).All(p => p.Item2.IsUnknown ? true : p.Item2.FixedValue == p.Item1.FixedValue);
     }
 
-    private bool typeChecker(IRType cur_type, IRType target_type) => (cur_type, target_type) switch
+    private bool TypeChecker(IRType cur_type, IRType target_type) => (cur_type, target_type) switch
     {
-        (TensorType a, TensorType b) => a.DType == b.DType && shapeChecker(a.Shape, b.Shape),
-        (TupleType a, TupleType b) => a.Zip(b).All(p => typeChecker(p.Item1, p.Item2)),
+        (TensorType a, TensorType b) => a.DType == b.DType && ShapeChecker(a.Shape, b.Shape),
+        (TupleType a, TupleType b) => a.Zip(b).All(p => TypeChecker(p.Item1, p.Item2)),
         (_, _) => true,
     };
 
@@ -134,8 +145,11 @@ public class CalibrationEvaluator
         return VisitLeaf(enode, () =>
         {
             var value = _inputs[var];
-            if (!new TypePattern(cur => typeChecker(cur, var.CheckedType!), "Var Type Checker").MatchLeaf(value.Type))
+            if (!new TypePattern(cur => TypeChecker(cur, var.CheckedType!), "Var Type Checker").MatchLeaf(value.Type))
+            {
                 throw new InvalidOperationException("Feed Value Is Invalid!");
+            }
+
             return value;
         });
     }
@@ -186,13 +200,23 @@ public class CalibrationEvaluator
                 {
                     var context = new EGraphOpEvaluateContext(call, costs.Skip(1).ToArray());
                     if (_passOptions.DumpLevel >= 4)
+                    {
                         _dumpWriter.Write($"{op.GetType().Name}({string.Join(",", context.Arguments.Select(v => v.ToString()))})");
+                    }
+
                     if (op.CanFoldConstCall)
+                    {
                         value = CompilerServices.EvaluateOp(op, context);
+                    }
                     else
+                    {
                         value = NoneValue.Default;
+                    }
+
                     if (_passOptions.DumpLevel >= 4)
+                    {
                         _dumpWriter.WriteLine($" => {value.ToString()}");
+                    }
                 }
                 else
                 {

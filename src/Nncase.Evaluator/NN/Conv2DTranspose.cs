@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -26,6 +26,7 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
         var bias = context.GetOrtArgumentValue(conv, Conv2DTranspose.Bias);
         var stride = context.GetArgumentValueAsArray<long>(conv, Conv2DTranspose.Stride);
         var outputShape = context.GetArgumentValueAsArray<long>(conv, Conv2DTranspose.OutputShape);
+
         // [w:[left right] h:[top bottom]]
         var pads = context.GetArgumentValueAsArray<long>(conv, Conv2DTranspose.Padding);
         var outputPaddings = context.GetArgumentValueAsArray<long>(conv, Conv2DTranspose.OutputPadding);

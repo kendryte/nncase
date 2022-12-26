@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
@@ -61,11 +61,14 @@ public sealed partial class FoldTwoTransposes : IRewriteRule
                 for (int i = 0; i < p2.Length; i++)
                 {
                     np[i] = p1[p2[i]];
-                    is_nop &= (np[i] == i);
+                    is_nop &= np[i] == i;
                 }
 
                 if (is_nop)
+                {
                     return input;
+                }
+
                 return IR.F.Tensors.Transpose(input, np);
             }
 

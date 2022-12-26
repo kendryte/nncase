@@ -24,39 +24,6 @@ internal enum QuantType
     Int16,
 }
 
-internal sealed class CliCompileOptions
-{
-    /// <inheritdoc/>
-    public string InputFile { get; set; }
-
-    /// <inheritdoc/>
-    public string InputFormat { get; set; }
-
-    /// <inheritdoc/>
-    public string Target { get; set; }
-
-    /// <inheritdoc/>
-    public int DumpLevel { get; set; }
-
-    /// <inheritdoc/>
-    public string DumpDir { get; set; }
-
-    /// <inheritdoc/>
-    public QuantType QuantType { get; set; }
-
-    /// <inheritdoc/>
-    public QuantType WQuantType { get; set; }
-
-    /// <inheritdoc/>
-    public string OutputFile { get; set; }
-
-    /// <inheritdoc/>
-    public Quantization.ModelQuantMode ModelQuantMode { get; set; }
-
-    /// <inheritdoc/>
-    public Quantization.CalibMethod CalibMethod { get; set; }
-}
-
 /// <summary>
 /// Compile command.
 /// </summary>
@@ -72,8 +39,7 @@ public class Compile : Command
         AddArgument(new Argument("output-file"));
         AddOption(new Option<string>(
           aliases: new string[] { "-t", "--target" },
-          description: "target architecture, e.g. cpu, k210")
-        );
+          description: "target architecture, e.g. cpu, k210"));
         AddOption(new Option<string>(
           aliases: new[] { "-i", "--input-format" },
           description: "input format, e.g. tflite",
@@ -126,16 +92,17 @@ public class Compile : Command
                 QuantType.UInt8 => DataTypes.UInt8,
                 QuantType.Int8 => DataTypes.Int8,
                 QuantType.Int16 => DataTypes.Int16,
-                _ => throw new ArgumentOutOfRangeException()
+                _ => throw new ArgumentOutOfRangeException(),
             },
             WQuantType = cliOptions.WQuantType switch
             {
                 QuantType.UInt8 => DataTypes.UInt8,
                 QuantType.Int8 => DataTypes.Int8,
                 QuantType.Int16 => DataTypes.Int16,
-                _ => throw new ArgumentOutOfRangeException()
+                _ => throw new ArgumentOutOfRangeException(),
             },
             ModelQuantMode = cliOptions.ModelQuantMode,
+
             // todo add the quant options parser
             QuantizeOptions = quant_options,
         };
@@ -168,19 +135,48 @@ public class Compile : Command
     }
 }
 
+internal sealed class CliCompileOptions
+{
+    /// <inheritdoc/>
+    public string InputFile { get; set; }
+
+    /// <inheritdoc/>
+    public string InputFormat { get; set; }
+
+    /// <inheritdoc/>
+    public string Target { get; set; }
+
+    /// <inheritdoc/>
+    public int DumpLevel { get; set; }
+
+    /// <inheritdoc/>
+    public string DumpDir { get; set; }
+
+    /// <inheritdoc/>
+    public QuantType QuantType { get; set; }
+
+    /// <inheritdoc/>
+    public QuantType WQuantType { get; set; }
+
+    /// <inheritdoc/>
+    public string OutputFile { get; set; }
+
+    /// <inheritdoc/>
+    public Quantization.ModelQuantMode ModelQuantMode { get; set; }
+
+    /// <inheritdoc/>
+    public Quantization.CalibMethod CalibMethod { get; set; }
+}
+
 internal sealed class RandCalibrationDatasetProvider : Quantization.ICalibrationDatasetProvider
 {
-
-    private const int count = 5;
-    public int? Count => count;
-
-    public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples => _samples.ToAsyncEnumerable();
+    private const int CountValue = 5;
 
     private readonly IReadOnlyDictionary<Var, IValue>[] _samples;
 
     public RandCalibrationDatasetProvider(IEnumerable<Var> vars)
     {
-        _samples = Enumerable.Range(0, count).Select(i =>
+        _samples = Enumerable.Range(0, CountValue).Select(i =>
           {
               var values = new Dictionary<Var, IValue>();
               foreach (var var in vars)
@@ -190,7 +186,12 @@ internal sealed class RandCalibrationDatasetProvider : Quantization.ICalibration
                   var value = IR.F.Random.Normal(var.CheckedDataType, 0, 1, 0, shape).Evaluate();
                   values.Add(var, value);
               }
+
               return values;
           }).ToArray();
     }
+
+    public int? Count => CountValue;
+
+    public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples => _samples.ToAsyncEnumerable();
 }

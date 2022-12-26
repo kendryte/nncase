@@ -20,26 +20,23 @@
 using namespace nncase;
 using namespace nncase::kernels;
 
-namespace
-{
-struct default_kernel_context_holder
-{
+namespace {
+struct default_kernel_context_holder {
     kernel_context ctx;
 
-    default_kernel_context_holder()
-    {
+    default_kernel_context_holder() {
 #ifdef NNCASE_OPENMP
         ctx.num_threads = (uint32_t)omp_get_max_threads();
 #else
         ctx.num_threads = 1;
 #endif
-        ctx.dump_manager = std::shared_ptr<nncase::runtime::dump_manager>(nullptr);
+        ctx.dump_manager =
+            std::shared_ptr<nncase::runtime::dump_manager>(nullptr);
     }
 };
-}
+} // namespace
 
-kernel_context &kernels::default_kernel_context()
-{
+kernel_context &kernels::default_kernel_context() {
     static default_kernel_context_holder holder;
     return holder.ctx;
 }

@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -21,6 +21,7 @@ public class NormalLikeEvaluator : IEvaluator<NormalLike>, ITypeInferencer<Norma
         var mean = context.GetArgumentValueAsScalar<float>(random, NormalLike.Mean);
         var scale = context.GetArgumentValueAsScalar<float>(random, NormalLike.Scale);
         var seed = context.GetArgumentValueAsScalar<float>(random, NormalLike.Seed);
+
         // 1 is float, onnx only support float/half/double
         var t = OrtKI.RandomNormalLike(input, 1, mean, scale, seed);
         return Value.FromTensor(t.ToTensor().CastTo(random.Type));
@@ -39,7 +40,7 @@ public class NormalLikeEvaluator : IEvaluator<NormalLike>, ITypeInferencer<Norma
         var returnType = context.GetReturnType<TensorType>();
         return new()
         {
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType)
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
         };
     }
 

@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
@@ -6,20 +9,21 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-//using static Nncase.SourceGenerator.GeneratorUtil;
 
+// using static Nncase.SourceGenerator.GeneratorUtil;
 namespace Nncase.SourceGenerator.Rule;
 
 internal class RuleCandidate
 {
-    public ClassDeclarationSyntax classDeclaration;
-    public INamedTypeSymbol classSymobl;
-    public IMethodSymbol methodSymbol;
+    public ClassDeclarationSyntax ClassDeclaration;
+    public INamedTypeSymbol ClassSymobl;
+    public IMethodSymbol MethodSymbol;
+
     public RuleCandidate(ClassDeclarationSyntax class_declaration, INamedTypeSymbol class_symobl, IMethodSymbol method_symbol)
     {
-        classDeclaration = class_declaration;
-        classSymobl = class_symobl;
-        methodSymbol = method_symbol;
+        ClassDeclaration = class_declaration;
+        ClassSymobl = class_symobl;
+        MethodSymbol = method_symbol;
     }
 }
 
@@ -33,8 +37,7 @@ internal sealed class RuleGenerator : IIncrementalGenerator
     public INamedTypeSymbol? IRewriteRuleSymbol;
     public INamedTypeSymbol? QuantRuleSymbol;
 
-    //public void Initialize(GeneratorInitializationContext context) => context.RegisterForSyntaxNotifications(() => new RuleReceiver());
-
+    // public void Initialize(GeneratorInitializationContext context) => context.RegisterForSyntaxNotifications(() => new RuleReceiver());
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         // Do a simple filter for enums
@@ -48,12 +51,12 @@ internal sealed class RuleGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(candidates.Collect(), (spc, source) => Execute(spc, source));
     }
 
-    static bool IsSyntaxTargetForGeneration(SyntaxNode node)
+    private static bool IsSyntaxTargetForGeneration(SyntaxNode node)
     {
         return node is ClassDeclarationSyntax classDeclaration && classDeclaration.AttributeLists.Count > 0;
     }
 
-    RuleCandidate? GetSemanticTargetForGeneration(GeneratorSyntaxContext ctx)
+    private RuleCandidate? GetSemanticTargetForGeneration(GeneratorSyntaxContext ctx)
     {
         IRewriteRuleSymbol ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Transform.IRewriteRule")!;
         QuantRuleSymbol ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Transform.QuantRule")!;
@@ -68,41 +71,53 @@ internal sealed class RuleGenerator : IIncrementalGenerator
         {
             // 0. check inherit from base class;
             if (!classSymbol.AllInterfaces.Contains(IRewriteRuleSymbol))
+            {
                 return null;
-            //Diagnostics.Add(Diagnostic.Create(RecriverUtil.ClassNotFromBaseClassError, Location.None, classSymbol.ToDisplayString(), "RewriteRule"));
+            }
+
+            // Diagnostics.Add(Diagnostic.Create(RecriverUtil.ClassNotFromBaseClassError, Location.None, classSymbol.ToDisplayString(), "RewriteRule"));
 
             // 1. check is Partial
             if (!classDeclaration.Modifiers.Any(tok => tok.IsKind(SyntaxKind.PartialKeyword)))
+            {
                 return null;
-            //Diagnostics.Add(Diagnostic.Create(RecriverUtil.ClassNotPartialError, Location.None, classSymbol.ToDisplayString()));
+            }
+
+            // Diagnostics.Add(Diagnostic.Create(RecriverUtil.ClassNotPartialError, Location.None, classSymbol.ToDisplayString()));
 
             // 2. find the candidate method!
             var methods = classSymbol.GetMembers().OfType<IMethodSymbol>().Where(m =>
               m.Name == "GetReplace"
               && m.ReturnType.IsInheritFrom(ExprSymobl!)
-              && (m.Parameters.All(
+              && m.Parameters.All(
                   p => SymbolEqualityComparer.Default.Equals(p.Type, IMatchResultSymobl)
                        || SymbolEqualityComparer.Default.Equals(p.Type, RunPassOptionsSymobl)
                        || p.Type.IsInheritFrom(ExprSymobl) // Expr/ Const / Tuple ...
                        || p.Type.IsInheritFrom(TensorSymobl) // Tensor<?>
                        || (p.Type is INamedTypeSymbol { IsGenericType: true, Name: "IReadOnlyList" } gentype && gentype.TypeArguments[0].IsInheritFrom(ExprSymobl)) // IReadOnlyList<Expr>
                        || p.Type is { IsUnmanagedType: true, IsValueType: true } // int / float ...
-                       || p.Type is IArrayTypeSymbol { Rank: 1, ElementType: { IsUnmanagedType: true, IsValueType: true } } // int[] / float[] ...
-                  ))).ToArray();
+                       || p.Type is IArrayTypeSymbol { Rank: 1, ElementType: { IsUnmanagedType: true, IsValueType: true } })) // int[] / float[] ...
+                  .ToArray();
             if (methods.Length == 0)
+            {
                 return null;
+            }
 
             // 3. if have Override method, skip
             if (methods.Any(m =>
                 m.IsOverride
                 && m.Parameters.Length == 1
                 && SymbolEqualityComparer.Default.Equals(m.Parameters[0].Type, IMatchResultSymobl)))
+            {
                 return null;
+            }
 
-            // 4. if have more than one valid method 
+            // 4. if have more than one valid method
             if (methods.Length != 1)
-                //Diagnostics.Add(Diagnostic.Create(RecriverUtil.ClassMoreMethodError, Location.None, classSymbol.ToDisplayString()));
+            {
+                // Diagnostics.Add(Diagnostic.Create(RecriverUtil.ClassMoreMethodError, Location.None, classSymbol.ToDisplayString()));
                 return null;
+            }
 
             // 5. add to the Candidates
             var method = methods[0];
@@ -112,11 +127,11 @@ internal sealed class RuleGenerator : IIncrementalGenerator
         return null;
     }
 
-    void Execute(SourceProductionContext context, ImmutableArray<RuleCandidate> candidates)
+    private void Execute(SourceProductionContext context, ImmutableArray<RuleCandidate> candidates)
     {
-        //receiver.Diagnostics.ForEach(d => context.ReportDiagnostic(d));
+        // receiver.Diagnostics.ForEach(d => context.ReportDiagnostic(d));
         var grouped_classes = (from cand in candidates
-                               select cand.classSymobl.ContainingNamespace)
+                               select cand.ClassSymobl.ContainingNamespace)
                                .Distinct(SymbolEqualityComparer.Default)
                                .ToDictionary(s => s, s => new List<ClassDeclarationSyntax>(), SymbolEqualityComparer.Default);
 
@@ -124,7 +139,7 @@ internal sealed class RuleGenerator : IIncrementalGenerator
         {
             // 1. consturct statements
             var statements = new List<StatementSyntax>();
-            foreach (var parameterSymbol in cand.methodSymbol.Parameters)
+            foreach (var parameterSymbol in cand.MethodSymbol.Parameters)
             {
                 string rightExpr;
                 switch (parameterSymbol.Type)
@@ -154,16 +169,15 @@ internal sealed class RuleGenerator : IIncrementalGenerator
                         rightExpr = $"((Nncase.IR.TensorConst)__result[\"{parameterSymbol.Name}\"]).Value";
                         break;
                     default:
-                        context.ReportDiagnostic(Diagnostic.Create(RecriverUtil.MethodParamError, Location.None, cand.classSymobl.Name, parameterSymbol.Name, $"Type {parameterSymbol.Type.ToDisplayString()} Not Support For Generate!"));
+                        context.ReportDiagnostic(Diagnostic.Create(RecriverUtil.MethodParamError, Location.None, cand.ClassSymobl.Name, parameterSymbol.Name, $"Type {parameterSymbol.Type.ToDisplayString()} Not Support For Generate!"));
                         return;
                 }
 
                 statements.Add(
-                    ParseStatement($"var {parameterSymbol.Name} = {rightExpr};")
-                );
+                    ParseStatement($"var {parameterSymbol.Name} = {rightExpr};"));
             }
 
-            if (cand.classSymobl.IsInheritFrom(QuantRuleSymbol))
+            if (cand.ClassSymobl.IsInheritFrom(QuantRuleSymbol))
             {
                 statements.Add(ParseStatement($"Option = __options;"));
                 statements.Add(ParseStatement($"MatchResult = __result;"));
@@ -171,10 +185,9 @@ internal sealed class RuleGenerator : IIncrementalGenerator
             }
 
             statements.Add(
-              ParseStatement($"return {cand.methodSymbol.Name}({string.Join(",", cand.methodSymbol.Parameters.Select(p => p.Name))});")
-            );
+              ParseStatement($"return {cand.MethodSymbol.Name}({string.Join(",", cand.MethodSymbol.Parameters.Select(p => p.Name))});"));
 
-            var modifiers = cand.classSymobl.Interfaces is var interfaces && interfaces.Length == 1 && SymbolEqualityComparer.Default.Equals(interfaces[0], IRewriteRuleSymbol)
+            var modifiers = cand.ClassSymobl.Interfaces is var interfaces && interfaces.Length == 1 && SymbolEqualityComparer.Default.Equals(interfaces[0], IRewriteRuleSymbol)
                 ? TokenList(Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(ElasticSpace))
                 : TokenList(Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(ElasticSpace), Token(SyntaxKind.OverrideKeyword).WithTrailingTrivia(ElasticSpace));
 
@@ -190,35 +203,36 @@ internal sealed class RuleGenerator : IIncrementalGenerator
                         .WithLeadingTrivia(ElasticTab)
                         .WithTrailingTrivia(ElasticLineFeed);
 
-            // 3. add classes 
-            grouped_classes[cand.classSymobl.ContainingNamespace].Add(
-              cand.classDeclaration
-              .WithIdentifier(Identifier(cand.classSymobl.Name))
+            // 3. add classes
+            grouped_classes[cand.ClassSymobl.ContainingNamespace].Add(
+              cand.ClassDeclaration
+              .WithIdentifier(Identifier(cand.ClassSymobl.Name))
               .WithMembers(SingletonList<MemberDeclarationSyntax>(method))
               .WithAttributeLists(new SyntaxList<AttributeListSyntax>() { })
               .WithLeadingTrivia(ElasticTab)
-              .WithTrailingTrivia(ElasticLineFeed)
-              );
+              .WithTrailingTrivia(ElasticLineFeed));
         }
 
         if (grouped_classes.Count == 0)
+        {
             return;
+        }
 
-        var namespaces = (from kv in grouped_classes
-                          select GeneratorUtil.MakeNameSpace(kv.Key.ToDisplayString())
-                                .AddMembers(kv.Value.ToArray()));
+        var namespaces = from kv in grouped_classes
+                         select GeneratorUtil.MakeNameSpace(kv.Key.ToDisplayString())
+                               .AddMembers(kv.Value.ToArray());
         var compilationUnit = CompilationUnit().
                 WithUsings(new(new[]
                 {
                   GeneratorUtil.MakeUsing("Nncase"),
                   GeneratorUtil.MakeUsing("Nncase.IR"),
-                  GeneratorUtil.MakeUsing("Nncase.PatternMatch")
+                  GeneratorUtil.MakeUsing("Nncase.PatternMatch"),
                 })).
                 WithMembers(new(namespaces)).
                 WithLeadingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.DisableKeyword)).
                 WithTrailingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.RestoreKeyword));
         context.AddSource("Generated.Rules", SyntaxTree(compilationUnit, encoding: Encoding.UTF8).GetText());
-        //compilation.AddSyntaxTrees(SyntaxTree(compilationUnit, encoding: Encoding.UTF8));
-    }
 
+        // compilation.AddSyntaxTrees(SyntaxTree(compilationUnit, encoding: Encoding.UTF8));
+    }
 }

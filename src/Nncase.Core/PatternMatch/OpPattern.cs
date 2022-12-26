@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -50,23 +50,23 @@ public record OpPattern<TOp>(Func<TOp, bool> Condition, string? Name) : Pattern<
 public static partial class Utility
 {
     /// <summary>
-    /// is op pattern
+    /// is op pattern.
     /// </summary>
     /// <typeparam name="TOp"></typeparam>
     /// <param name="name"></param>
-    /// <param name="Condition"></param>
+    /// <param name="condition"></param>
     /// <returns></returns>
-    public static OpPattern<TOp> IsOp<TOp>(string? name, Func<TOp, bool> Condition)
+    public static OpPattern<TOp> IsOp<TOp>(string? name, Func<TOp, bool> condition)
        where TOp : Op
-       => new OpPattern<TOp>(Condition, name);
+       => new OpPattern<TOp>(condition, name);
 
     /// <summary>
-    /// is op pattern without name. <see cref="IsOp{TOp}(string?, Func{TOp, bool})"/>
+    /// is op pattern without name. <see cref="IsOp{TOp}(string?, Func{TOp, bool})"/>.
     /// </summary>
     /// <typeparam name="TOp"></typeparam>
-    /// <param name="Condition"></param>
+    /// <param name="condition"></param>
     /// <returns></returns>
-    public static OpPattern<TOp> IsOp<TOp>(Func<TOp, bool> Condition)
+    public static OpPattern<TOp> IsOp<TOp>(Func<TOp, bool> condition)
        where TOp : Op
-        => IsOp<TOp>(null, Condition);
+        => IsOp<TOp>(null, condition);
 }

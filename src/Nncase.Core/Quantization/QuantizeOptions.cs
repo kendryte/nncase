@@ -10,71 +10,74 @@ using System.Threading.Tasks;
 namespace Nncase.Quantization;
 
 /// <summary>
-/// Model Quant Mode
+/// Model Quant Mode.
 /// </summary>
 public enum ModelQuantMode : int
 {
     /// <summary>
-    /// no quant
+    /// no quant.
     /// </summary>
     NoQuant,
+
     /// <summary>
-    /// use ptq
+    /// use ptq.
     /// </summary>
     UsePTQ,
+
     /// <summary>
-    /// use qat
+    /// use qat.
     /// </summary>
-    UseQAT
+    UseQAT,
 }
 
-;
-
 /// <summary>
-/// Calibration Method
+/// Calibration Method.
 /// </summary>
 public enum CalibMethod
 {
     /// <summary>
-    /// no clip
+    /// no clip.
     /// </summary>
     NoClip,
+
     /// <summary>
-    /// kld
+    /// kld.
     /// </summary>
     Kld,
+
     /// <summary>
-    /// use random data only for test
+    /// use random data only for test.
     /// </summary>
-    Random
+    Random,
 }
 
 /// <summary>
-/// quantize options
+/// quantize options.
 /// </summary>
 public class QuantizeOptions
 {
     /// <summary>
-    /// CalibrationDataset
+    /// Gets or sets calibrationDataset.
     /// </summary>
     public ICalibrationDatasetProvider? CalibrationDataset { get; set; }
+
     /// <summary>
-    /// CalibMethod
+    /// Gets or sets calibMethod.
     /// </summary>
     public CalibMethod CalibrationMethod { get; set; } = CalibMethod.NoClip;
 
     /// <summary>
-    /// Enable the Auto bind quant method.
+    /// Gets or sets a value indicating whether enable the Auto bind quant method.
     /// </summary>
-    public bool BindQuantMethod { get; set; } = false;
+    public bool BindQuantMethod { get; set; }
 
     /// <summary>
-    /// Enable squant to fine tune weights.
+    /// Gets or sets a value indicating whether enable squant to fine tune weights.
     /// </summary>
-    public bool UseSquant { get; set; } = false;
+    public bool UseSquant { get; set; }
 
     /// <summary>
-    /// Enable adaround to fine tune weights.
+    /// Gets or sets a value indicating whether enable adaround to fine tune weights.
     /// </summary>
-    public bool UseAdaRound { get; set; } = false;
+    public bool UseAdaRound { get; set; }
 }

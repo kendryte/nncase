@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -26,7 +26,7 @@ internal sealed class ConvertBlocksToOpaque : ExprMutator
     {
         return expr with
         {
-            // the block realize 
+            // the block realize
             InitBody = (TIR.Sequential)Visit(expr.InitBody),
             Predicate = Visit(expr.Predicate),
             IterVars = new(),

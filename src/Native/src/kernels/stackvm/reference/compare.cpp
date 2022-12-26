@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <nncase/kernels/apply.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/tensor_ops.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/util.h>
-#include <nncase/kernels/apply.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -32,8 +32,10 @@ result<void> compare_impl(TOp &&op, const T *input_a, const T *input_b,
                           const dims_t &in_b_strides, const dims_t &out_shape,
                           const dims_t &out_strides) noexcept {
     return apply(out_shape, [&](const dims_t &index) -> result<void> {
-        const auto in_a_index = kernels::detail::get_reduced_offset(index, in_a_shape);
-        const auto in_b_index = kernels::detail::get_reduced_offset(index, in_b_shape);
+        const auto in_a_index =
+            kernels::detail::get_reduced_offset(index, in_a_shape);
+        const auto in_b_index =
+            kernels::detail::get_reduced_offset(index, in_b_shape);
         const auto a = input_a[offset(in_a_strides, in_a_index)];
         const auto b = input_b[offset(in_b_strides, in_b_index)];
         output[offset(out_strides, index)] = static_cast<bool>(op(a, b));
@@ -91,8 +93,8 @@ kernels::stackvm::compare(compare_op_t compare_op, value_t lhs, value_t rhs,
     }
 
     try_typecode(typecode, lhs_tensor);
-    auto out_shape = nncase::kernels::detail::get_binary_output_shape(lhs_tensor->shape(),
-                                                     rhs_tensor->shape());
+    auto out_shape = nncase::kernels::detail::get_binary_output_shape(
+        lhs_tensor->shape(), rhs_tensor->shape());
     try_output(out_mem, output, datatype_t::from_type<bool>(), out_shape);
     try_(compare_impl(
         typecode, compare_op, lhs_mem, rhs_mem, out_mem, lhs_tensor->shape(),

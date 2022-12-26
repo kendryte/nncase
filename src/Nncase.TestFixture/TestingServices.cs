@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.IO;
 using System.Linq;
@@ -14,7 +17,7 @@ namespace Nncase.TestFixture;
 public interface ITestingProvider
 {
     /// <summary>
-    /// get the nncase `tests_ouput` path
+    /// get the nncase `tests_ouput` path.
     /// <remarks>
     /// you can set the subPath for get the `xxx/tests_output/subPath`
     /// </remarks>
@@ -24,21 +27,13 @@ public interface ITestingProvider
     public string GetDumpDirPath(string subDir);
 }
 
-internal sealed class TestingProvider : ITestingProvider
-{
-    private readonly IDumpDirPathProvider _dumpDirPathProvider;
-
-    public TestingProvider(IDumpDirPathProvider dumpDirPathProvider)
-    {
-        _dumpDirPathProvider = dumpDirPathProvider;
-    }
-
-    /// <inheritdoc/>
-    public string GetDumpDirPath(string subDir) => _dumpDirPathProvider.GetDumpDirPath(subDir);
-}
-
 public static class Testing
 {
+    /// <summary>
+    /// the fixed rand generator, maybe need impl by each module.
+    /// </summary>
+    public static readonly Random RandGenerator = new System.Random(123);
+
     private static ITestingProvider? _provider;
 
     private static ITestingProvider Provider => _provider ?? throw new InvalidOperationException("Testing services provider must be set.");
@@ -53,12 +48,7 @@ public static class Testing
     }
 
     /// <summary>
-    /// the fixed rand generator, maybe need impl by each module.
-    /// </summary>
-    public static readonly Random RandGenerator = new System.Random(123);
-
-    /// <summary>
-    /// get the nncase `tests_ouput` path
+    /// get the nncase `tests_ouput` path.
     /// <remarks>
     /// you can set the subPath for get the `xxx/tests_output/subPath`
     /// </remarks>
@@ -69,7 +59,7 @@ public static class Testing
 
     /// <summary>
     /// give the unittest class name, then return the dumpdir path
-    /// <see cref="GetDumpDirPath(string)"/>
+    /// <see cref="GetDumpDirPath(string)"/>.
     /// </summary>
     /// <param name="type"></param>
     /// <returns></returns>
@@ -110,20 +100,36 @@ public static class Testing
         else
         {
             if (range.Min < -1e3f)
+            {
                 range.Min = -1e3f;
+            }
+
             if (range.Max > 1e3f)
+            {
                 range.Max = 1e3f;
+            }
+
             var r = range.Max - range.Min;
             if (r == 0)
+            {
                 r = 0.1f;
+            }
             else if (r < 0.01f)
+            {
                 r = 0.01f;
+            }
+
             range.Max = range.Min + r;
 
             if (range.Max < 0)
+            {
                 range.Max = 0;
+            }
+
             if (range.Min > 0)
+            {
                 range.Min = 0;
+            }
         }
 
         return range;
@@ -203,10 +209,17 @@ public static class Testing
     public static int AllClose(Tensor a, Tensor b, float tol = .003f)
     {
         if (a.Shape != b.Shape)
+        {
             throw new InvalidOperationException();
+        }
+
         if (a.ElementType != b.ElementType)
+        {
             throw new InvalidOperationException();
+        }
+
         int err_count = 0;
+
         // int offset = 0;
         foreach (var p in a.Cast<float>().Zip(b.Cast<float>()))
         {
@@ -242,12 +255,10 @@ public static class Testing
             default:
                 throw new ArgumentOutOfRangeException();
         }
-
-;
     }
 
     /// <summary>
-    /// dump value
+    /// dump value.
     /// </summary>
     /// <param name="v"></param>
     /// <param name="path"></param>
@@ -260,7 +271,7 @@ public static class Testing
     }
 
     /// <summary>
-    /// build kmodel
+    /// build kmodel.
     /// </summary>
     /// <param name="name">the dumped kmodel name.</param>
     /// <param name="module"></param>
@@ -268,10 +279,13 @@ public static class Testing
     /// <returns>kmodel_path and kmodel bytes.</returns>
     public static (string, byte[]) BuildKModel(string name, IR.IRModule module, CompileOptions compileOptions)
     {
-        CodeGen.ModelBuilder modelBuilder = new CodeGen.ModelBuilder(CompilerServices.GetTarget(compileOptions.Target), compileOptions);
+        var modelBuilder = new CodeGen.ModelBuilder(CompilerServices.GetTarget(compileOptions.Target), compileOptions);
         CodeGen.LinkedModel linkedModel = modelBuilder.Build(module);
         if (!Directory.Exists(compileOptions.DumpDir))
+        {
             Directory.CreateDirectory(compileOptions.DumpDir);
+        }
+
         var kmodel_path = Path.Combine(compileOptions.DumpDir, $"{name}.kmodel");
         using (var output = System.IO.File.Open(kmodel_path, System.IO.FileMode.Create))
         {
@@ -367,9 +381,9 @@ public class UnitTestFixtrue
 {
     public virtual CompileOptions GetCompileOptions([CallerMemberName] string member_name = "")
     {
-        string DumpDirPath = Path.Combine(Testing.GetDumpDirPath(this.GetType()), member_name);
+        string dumpDirPath = Path.Combine(Testing.GetDumpDirPath(GetType()), member_name);
         CompileOptions compileOptions = new(CompilerServices.CompileOptions);
-        compileOptions.DumpDir = DumpDirPath;
+        compileOptions.DumpDir = dumpDirPath;
         return compileOptions;
     }
 
@@ -388,4 +402,17 @@ public class UnitTestFixtrue
     {
         return filePath;
     }
+}
+
+internal sealed class TestingProvider : ITestingProvider
+{
+    private readonly IDumpDirPathProvider _dumpDirPathProvider;
+
+    public TestingProvider(IDumpDirPathProvider dumpDirPathProvider)
+    {
+        _dumpDirPathProvider = dumpDirPathProvider;
+    }
+
+    /// <inheritdoc/>
+    public string GetDumpDirPath(string subDir) => _dumpDirPathProvider.GetDumpDirPath(subDir);
 }

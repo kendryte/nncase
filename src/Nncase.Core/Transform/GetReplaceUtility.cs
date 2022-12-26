@@ -1,18 +1,19 @@
-using Nncase.IR;
-using Tuple = Nncase.IR.Tuple;
-using ParameterInfo = Nncase.IR.ParameterInfo;
-using NetFabric.Hyperlinq;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Reflection;
+using NetFabric.Hyperlinq;
+using Nncase.IR;
 using static Nncase.IR.F.Tensors;
+using Fx = System.Func<Nncase.IR.Expr, Nncase.IR.Expr>;
+using ParameterInfo = Nncase.IR.ParameterInfo;
+using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Transform;
-
-using Fx = Func<Expr, Expr>;
-
 public static class Utility
 {
     /// <summary>
-    /// apply a func with preprocess input
+    /// apply a func with preprocess input.
     /// </summary>
     /// <param name="func"></param>
     /// <param name="inputCtor"></param>
@@ -56,38 +57,37 @@ public static class Utility
     /// <summary>
     /// insert Cast before and after call
     /// Cast(inputCtor(Cast(input, BF16)), input.Datatype)
-    /// return a call like function that take a input and return a call
+    /// return a call like function that take a input and return a call.
     /// </summary>
-    /// <param name="inputCtor"> a function take a input </param>
-    /// <returns> return a call like function that only take a input args </returns>
-    public static Fx withTmpBF16(Fx inputCtor)
+    /// <param name="inputCtor"> a function take a input. </param>
+    /// <returns> return a call like function that only take a input args. </returns>
+    public static Fx WithTmpBF16(Fx inputCtor)
     {
-        Fx withTmpBF16Impl(Fx inCtor) => input => Cast(
+        Fx WithTmpBF16Impl(Fx inCtor) => input => Cast(
             inCtor(Cast(input, DataTypes.BFloat16)),
             input.CheckedDataType);
 
-        return Apply(withTmpBF16Impl, inputCtor);
+        return Apply(WithTmpBF16Impl, inputCtor);
     }
 
-    public static Fx withTmpType(Fx inputCtor, DataType dt)
+    public static Fx WithTmpType(Fx inputCtor, DataType dt)
     {
-        Fx withTmpTypeImpl(Fx inputCtor) => input =>
+        Fx WithTmpTypeImpl(Fx inputCtor) => input =>
             Cast(inputCtor(Cast(input, dt)), input.CheckedDataType);
 
-        return Apply(withTmpTypeImpl, inputCtor);
+        return Apply(WithTmpTypeImpl, inputCtor);
     }
 
-    public static Fx withTmp4DShape(Fx inputCtor, int[] originOutShape)
+    public static Fx WithTmp4DShape(Fx inputCtor, int[] originOutShape)
     {
-        Fx withTmpGNNEShape(Fx inCtor) =>
-            (input =>
+        Fx WithTmpGNNEShape(Fx inCtor) =>
+            input =>
                 ((Func<int[], Expr>)(shape =>
                         Reshape(
                             inCtor(Reshape(input, Get4DGNNEShape(shape))),
-                            originOutShape)
-                    ))(input.CheckedShape.ToValueArray()));
+                            originOutShape)))(input.CheckedShape.ToValueArray());
 
-        return Apply(withTmpGNNEShape, inputCtor);
+        return Apply(WithTmpGNNEShape, inputCtor);
     }
 
     internal static int[] Get4DGNNEShape(int[] dims)

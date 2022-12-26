@@ -26,10 +26,11 @@ namespace Nncase.Transform
             DumpLevel = compileOptions.DumpLevel;
             DumpDir = compileOptions.DumpDir;
             CompileOptions = compileOptions;
-            PassName = "";
+            PassName = string.Empty;
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="RunPassOptions"/> class.
         /// parameterless ctor.
         /// </summary>
         public RunPassOptions(ITarget target)
@@ -38,10 +39,11 @@ namespace Nncase.Transform
             DumpLevel = CompilerServices.CompileOptions.DumpLevel;
             DumpDir = CompilerServices.CompileOptions.DumpDir;
             CompileOptions = CompilerServices.CompileOptions;
-            PassName = "";
+            PassName = string.Empty;
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="RunPassOptions"/> class.
         /// constructor.
         /// </summary>
         /// <param name="target"> target device. </param>
@@ -53,7 +55,8 @@ namespace Nncase.Transform
         }
 
         /// <summary>
-        /// create the run pass options
+        /// Initializes a new instance of the <see cref="RunPassOptions"/> class.
+        /// create the run pass options.
         /// </summary>
         /// <param name="target"></param>
         /// <param name="dumpLevel"></param>
@@ -64,12 +67,13 @@ namespace Nncase.Transform
             Target = target;
             DumpLevel = dumpLevel;
             DumpDir = dumpDir;
-            PassName = "";
+            PassName = string.Empty;
             RewriteOnce = false;
             CompileOptions = options;
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="RunPassOptions"/> class.
         /// copy construct.
         /// </summary>
         /// <param name="other"></param>
@@ -85,45 +89,50 @@ namespace Nncase.Transform
         }
 
         /// <summary>
+        /// Gets the invalid pass.
+        /// </summary>
+        public static RunPassOptions Invalid => new RunPassOptions(null!, -1, string.Empty);
+
+        /// <summary>
         /// Gets target.
         /// </summary>
         public ITarget Target { get; }
 
         /// <summary>
-        /// Dump level 0 = do nothing
+        /// Gets dump level 0 = do nothing
         /// Dump level 1 = print to std output
         /// Dump level 2 = print dump to file.
         /// </summary>
-        public int DumpLevel { private set; get; }
+        public int DumpLevel { get; private set; }
 
         /// <summary>
-        /// Dump dir
+        /// Gets dump dir.
         /// </summary>
-        public string DumpDir { private set; get; }
+        public string DumpDir { get; private set; }
 
         /// <summary>
-        /// current pass name
+        /// Gets current pass name.
         /// </summary>
-        public string PassName { private set; get; }
+        public string PassName { get; private set; }
 
         /// <summary>
-        /// Control rewrite once or not.
+        /// Gets a value indicating whether control rewrite once or not.
         /// Default is false.
         /// </summary>
-        public bool RewriteOnce { private set; get; }
+        public bool RewriteOnce { get; private set; }
 
         /// <summary>
-        /// get the compile options
+        /// Gets or sets get the compile options.
         /// </summary>
-        public CompileOptions CompileOptions { set; get; }
+        public CompileOptions CompileOptions { get; set; }
 
         /// <summary>
-        /// the match option.
+        /// Gets or sets the match option.
         /// </summary>
         public MatchOptions MatchOptions { get; set; } = new MatchOptions();
 
         /// <summary>
-        /// set the pass name
+        /// set the pass name.
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
@@ -137,14 +146,14 @@ namespace Nncase.Transform
         public RunPassOptions SetDumpDir(string path) => new(Target, DumpLevel, path, CompileOptions) { PassName = PassName, MatchOptions = MatchOptions };
 
         /// <summary>
-        /// set the dump level
+        /// set the dump level.
         /// </summary>
         /// <param name="dumpLevel"></param>
         /// <returns></returns>
         public RunPassOptions SetDumpLevel(int dumpLevel) => new(Target, dumpLevel, DumpDir, CompileOptions) { PassName = PassName, MatchOptions = MatchOptions };
 
         /// <summary>
-        /// set the RewriteOnce
+        /// set the RewriteOnce.
         /// </summary>
         /// <param name="once"></param>
         /// <returns></returns>
@@ -156,10 +165,5 @@ namespace Nncase.Transform
         /// <param name="path"></param>
         /// <returns></returns>
         public RunPassOptions IndentDir(string path) => new(Target, DumpLevel, Path.Combine(DumpDir, path), CompileOptions) { PassName = PassName, MatchOptions = MatchOptions };
-
-        /// <summary>
-        /// the invalid pass 
-        /// </summary>
-        public static RunPassOptions Invalid => new RunPassOptions(null!, -1, "");
     }
 }

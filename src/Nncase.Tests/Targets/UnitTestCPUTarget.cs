@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -17,6 +20,13 @@ namespace Nncase.Tests.Targets;
 
 public class UnitTestCPUTarget
 {
+    public static IEnumerable<object[]> TestGetItemData =>
+        new[]
+        {
+            new object[] { new[] { 0, 1 } },
+            new object[] { new[] { 0, -1 } },
+        };
+
     [Fact]
     public void TestCreateCPUTarget()
     {
@@ -57,18 +67,6 @@ public class UnitTestCPUTarget
         TestCodeGen(new IR.Tuple(y, z), new[] { x });
     }
 
-    private void TestCodeGen(Expr body, Var[] vars, [CallerMemberName] string name = null)
-    {
-        var main = new Function("main", body, vars);
-        var module = new IRModule(main);
-        var target = CompilerServices.GetTarget("cpu");
-        var modelBuilder = new ModelBuilder(target);
-        var linkedModel = modelBuilder.Build(module);
-        using var output = File.Open($"{name}.kmodel", FileMode.Create);
-        linkedModel.Serialize(output);
-        Assert.NotEqual(0, output.Length);
-    }
-
     [Fact]
     public void TestSimpleBinary()
     {
@@ -107,13 +105,6 @@ public class UnitTestCPUTarget
         GenerateKModelAndRunFromFn(main, new[] { 1f }, new[] { (Tensor)2f, 3f, 4f });
     }
 
-    public static IEnumerable<object[]> TestGetItemData =>
-        new[]
-        {
-            new object[] { new[] { 0, 1 } },
-            new object[] { new[] { 0, -1 } },
-        };
-
     [Theory]
     [MemberData(nameof(TestGetItemData))]
     public void TestGetItem(int[] index)
@@ -139,6 +130,18 @@ public class UnitTestCPUTarget
         var module = new IRModule(main);
         module.Add(funcA);
         GenerateKModelAndRun(module, new[] { 1.0f }, new[] { 3.0f });
+    }
+
+    private void TestCodeGen(Expr body, Var[] vars, [CallerMemberName] string name = null)
+    {
+        var main = new Function("main", body, vars);
+        var module = new IRModule(main);
+        var target = CompilerServices.GetTarget("cpu");
+        var modelBuilder = new ModelBuilder(target);
+        var linkedModel = modelBuilder.Build(module);
+        using var output = File.Open($"{name}.kmodel", FileMode.Create);
+        linkedModel.Serialize(output);
+        Assert.NotEqual(0, output.Length);
     }
 
     private void GenerateKModelAndRun(IRModule module, Tensor input, Tensor[] expectedOutput, [CallerMemberName] string? name = null)

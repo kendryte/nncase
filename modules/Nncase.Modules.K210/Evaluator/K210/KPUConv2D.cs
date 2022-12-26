@@ -1,10 +1,13 @@
-﻿using NetFabric.Hyperlinq;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using NetFabric.Hyperlinq;
+using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.K210;
+using Nncase.IR.Math;
 using Nncase.TIR;
 using OrtKISharp;
-using Nncase.Evaluator;
-using Nncase.IR.Math;
 using Range = Nncase.TIR.Range;
 
 namespace Nncase.Evaluator.K210;
@@ -21,9 +24,11 @@ public class KPUConv2DEvaluator : IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv
         var stride = new long[] { 1, 1 };
         var pad = Enumerable.Repeat((long)KPUUtility.GetKPUPadding(target.FilterType), 4).ToArray();
         var dilation = new long[] { 1, 1 };
-        //var clamp = new long[] {1, 1};
+
+        // var clamp = new long[] {1, 1};
         var groups = 1L;
-        //var kernelShape = weights.Shape;
+
+        // var kernelShape = weights.Shape;
         var result = OrtKI.Conv(
             input.Cast(OrtDataType.Float), weights.Cast(OrtDataType.Float), EvaluatorUtil.DefaultBias(batchNorms, (int)weights.Shape[0]).Cast(OrtDataType.Float),
             "NOTSET", dilation.ToArray(),
@@ -52,5 +57,4 @@ public class KPUConv2DEvaluator : IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv
         var groups = 1;
         return TypeInference.Conv2DType(input, weights, stride, pad, dilation, groups);
     }
-
 }

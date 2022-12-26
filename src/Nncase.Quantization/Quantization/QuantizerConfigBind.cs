@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -40,7 +40,7 @@ internal partial class QuantizerConfigBind
         // Choose better quant method using cosine, and bind info with ir.
         if (quantOptions.BindQuantMethod)
         {
-            var info = await options.Target.BindQuantMethodCosine(quantOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs, _passOptions);
+            _ = await options.Target.BindQuantMethodCosine(quantOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs, _passOptions);
         }
 
         _graph.Rebuild();
@@ -56,11 +56,13 @@ internal partial class QuantizerConfigBind
             // there are no rangeOfs and childrenOfRangeOfs actually, rangeOfs has been folded into const, use these names here is because of old habit.
             foreach (var match in matches)
             {
-                var _rangeOfMarker = (ENode)match.Root;
-                //if (!_rangeOfs.Contains(_rangeOfMarker.Children[1].Nodes[0]))
-                _rangeOfs.Add(_rangeOfMarker.Children[1].Nodes[0]);
-                //if (!_childrenOfRangeOfs.Contains(_rangeOfMarker.Children[0].Nodes[0]))
-                _childrenOfRangeOfs.Add(_rangeOfMarker.Children[0].Nodes[0]);
+                var rangeOfMarker = (ENode)match.Root;
+
+                // if (!_rangeOfs.Contains(_rangeOfMarker.Children[1].Nodes[0]))
+                _rangeOfs.Add(rangeOfMarker.Children[1].Nodes[0]);
+
+                // if (!_childrenOfRangeOfs.Contains(_rangeOfMarker.Children[0].Nodes[0]))
+                _childrenOfRangeOfs.Add(rangeOfMarker.Children[0].Nodes[0]);
             }
         }
     }

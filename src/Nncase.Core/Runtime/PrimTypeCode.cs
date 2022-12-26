@@ -140,7 +140,7 @@ public static class PrimTypeCodes
     };
 
     /// <summary>
-    /// convert datatype to typecode
+    /// convert datatype to typecode.
     /// </summary>
     /// <param name="dataType">datatype.</param>
     /// <returns>primtype code.</returns>
@@ -150,7 +150,7 @@ public static class PrimTypeCodes
     }
 
     /// <summary>
-    /// convert primtype code to datatype
+    /// convert primtype code to datatype.
     /// </summary>
     /// <param name="typeCode">prim type code.</param>
     /// <returns>datatype.</returns>

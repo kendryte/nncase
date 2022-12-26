@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -11,7 +11,7 @@ using Nncase.TIR;
 namespace Nncase.Transform.Mutators;
 
 /// <summary>
-/// unroll loop
+/// unroll loop.
 /// </summary>
 internal sealed class FoldLet : ExprMutator
 {
@@ -23,10 +23,12 @@ internal sealed class FoldLet : ExprMutator
             return new Substitutor(e =>
               {
                   if (object.ReferenceEquals(e, expr.Var))
+                  {
                       return @const;
+                  }
+
                   return null;
-              }
-            ).Visit(expr.Body);
+              }).Visit(expr.Body);
         }
 
         return expr;

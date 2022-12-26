@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.CostModel;
@@ -41,7 +41,7 @@ public class BatchNormalizationEvaluator : IEvaluator<BatchNormalization>, IType
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType)
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
         };
     }
 
@@ -81,7 +81,7 @@ public class InstanceNormalizationEvaluator : IEvaluator<InstanceNormalization>,
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType)
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
         };
     }
 
@@ -122,7 +122,7 @@ public class LRNEvaluator : IEvaluator<LRN>, ITypeInferencer<LRN>, ICostEvaluato
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType)
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
         };
     }
 

@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using Nncase.IR;
 
 namespace Nncase.Schedule;
@@ -10,7 +13,7 @@ namespace Nncase.Schedule;
 //     /// <inheritdoc/>
 //     public IRModule Module { get; set; }
 
-//     /// <summary>
+// /// <summary>
 //     /// create instance
 //     /// </summary>
 //     /// <param name="target"></param>
@@ -21,7 +24,7 @@ namespace Nncase.Schedule;
 //         Module = module;
 //     }
 
-//     /// <inheritdoc/>
+// /// <inheritdoc/>
 //     public IRModel Schedule(bool skip_buffer_alias = false)
 //     {
 //         throw new NotImplementedException();

@@ -12,13 +12,6 @@ using Nncase.IR;
 namespace Nncase.Evaluator;
 
 /// <summary>
-/// this attribute mark the source generator auto generate ICostEvaluator's interface impl
-/// </summary>
-public class CostEvaluatorGeneratorAttribute : Attribute
-{
-}
-
-/// <summary>
 /// Cost evaluator interface.
 /// </summary>
 public interface ICostEvaluator
@@ -32,7 +25,6 @@ public interface ICostEvaluator
     Cost? Visit(ICostEvaluateContext context, Op target);
 }
 
-
 /// <summary>
 /// BaseFunction Evaluator Cost interface.
 /// </summary>
@@ -45,7 +37,6 @@ public interface IBaseFuncCostEvaluator
     /// <returns>The base function costs.</returns>
     Cost VisitLeaf(BaseFunction target);
 }
-
 
 /// <summary>
 /// Cost evaluator interface.
@@ -65,4 +56,11 @@ public interface ICostEvaluator<T> : ICostEvaluator
     {
         return Visit(context, (T)target);
     }
+}
+
+/// <summary>
+/// this attribute mark the source generator auto generate ICostEvaluator's interface impl.
+/// </summary>
+public sealed class CostEvaluatorGeneratorAttribute : Attribute
+{
 }

@@ -21,14 +21,17 @@
 
 BEGIN_NS_NNCASE_RUNTIME
 
-typedef void (*rt_module_activator_t)(result<std::unique_ptr<runtime_module>> &result);
-typedef void (*rt_module_collector_t)(result<std::vector<std::pair<std::string,runtime_module::custom_call_type>>> &result);
+typedef void (*rt_module_activator_t)(
+    result<std::unique_ptr<runtime_module>> &result);
+typedef void (*rt_module_collector_t)(
+    result<
+        std::vector<std::pair<std::string, runtime_module::custom_call_type>>>
+        &result);
 
 #define RUNTIME_MODULE_ACTIVATOR_NAME create_runtime_module
 #define RUNTIME_MODULE_COLLECTOR_NAME collect_custom_call
 
-struct runtime_registration
-{
+struct runtime_registration {
     module_kind_t id;
     rt_module_activator_t activator;
     rt_module_collector_t collector;

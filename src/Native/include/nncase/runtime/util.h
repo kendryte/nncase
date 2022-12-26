@@ -127,7 +127,8 @@ inline result<void> alloc_output<false, dims_t>(value_t &output,
     return ok();
 }
 
-inline result<void> check_tuple_shape(value_t& outputs, const std::vector<dims_t>& out_shapes) {
+inline result<void> check_tuple_shape(value_t &outputs,
+                                      const std::vector<dims_t> &out_shapes) {
     try_var(output_tuple, outputs.as<tuple>());
     try_(tuple_for_each_with_i(
         output_tuple, [&](auto &output, auto i) -> result<void> {
@@ -141,8 +142,9 @@ inline result<void> check_tuple_shape(value_t& outputs, const std::vector<dims_t
     return ok();
 }
 
-inline result<void> alloc_tuple_output(value_t &outputs, const std::vector<datatype_t> dtypes,
-                                        const std::vector<dims_t> &out_shapes) {
+inline result<void> alloc_tuple_output(value_t &outputs,
+                                       const std::vector<datatype_t> dtypes,
+                                       const std::vector<dims_t> &out_shapes) {
     if (outputs.empty()) {
         auto size = out_shapes.size();
         std::vector<value_t> fields(size);
@@ -157,7 +159,6 @@ inline result<void> alloc_tuple_output(value_t &outputs, const std::vector<datat
     }
     return ok();
 }
-
 
 template <>
 inline result<void>

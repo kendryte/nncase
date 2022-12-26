@@ -15,12 +15,12 @@ namespace Nncase.IR
     /// </summary>
     public sealed class IRModule
     {
-        private List<BaseFunction> _functions;
+        private readonly List<BaseFunction> _functions;
 
         /// <summary>
         /// the index of the entry function.
         /// </summary>
-        int _entryIndex;
+        private int _entryIndex;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IRModule"/> class.
@@ -34,6 +34,7 @@ namespace Nncase.IR
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="IRModule"/> class.
         /// the default IrModule ctor.
         /// </summary>
         public IRModule()

@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -33,10 +33,34 @@ namespace Nncase.Transform
         }
 
         /// <inheritdoc/>
+        public IEnumerator<Func<ExprMutator>> GetEnumerator()
+        {
+            return ((IEnumerable<Func<ExprMutator>>)MutatorCreators).GetEnumerator();
+        }
+
+        /// <inheritdoc/>
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return ((IEnumerable)MutatorCreators).GetEnumerator();
+        }
+
+        /// <summary>
+        /// add the mutator.
+        /// </summary>
+        /// <param name="mutator"></param>
+        public void Add(Func<ExprMutator> mutator)
+        {
+            MutatorCreators.Add(mutator);
+        }
+
+        /// <inheritdoc/>
         protected override Task<BaseFunction> RunCoreAsync(BaseFunction callable, RunPassOptions options)
         {
             if (callable is not PrimFunction)
+            {
                 return Task.FromResult(callable);
+            }
+
             var post = callable;
             var last = post;
             int count = 0;
@@ -55,55 +79,24 @@ namespace Nncase.Transform
                     {
                         typeinfer_ret = CompilerServices.InferenceType(post);
                         OnMutated(post, $"{count++}_{mutator.GetType().Name}", options);
-                        if (!typeinfer_ret) throw new InvalidOperationException($"{Name}: After Run Mutator {count - 1}_{mutator_name} , The Type Inference Failed!");
+                        if (!typeinfer_ret)
+                        {
+                            throw new InvalidOperationException($"{Name}: After Run Mutator {count - 1}_{mutator_name} , The Type Inference Failed!");
+                        }
+
                         break;
                     }
                 }
 
                 if (!isMutated)
+                {
                     break;
+                }
             }
             while (true);
 
             return Task.FromResult(post);
         }
-
-        void OnMutated(BaseFunction callable, string prefix, RunPassOptions options)
-        {
-            switch (options.DumpLevel)
-            {
-                case >= 2:
-                    CompilerServices.DumpIR((Expr)callable, prefix, options.DumpDir, false);
-                    break;
-                case >= 1:
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        /// <inheritdoc/>
-        public IEnumerator<Func<ExprMutator>> GetEnumerator()
-        {
-            return ((IEnumerable<Func<ExprMutator>>)MutatorCreators).GetEnumerator();
-
-        }
-
-        /// <inheritdoc/>
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return ((IEnumerable)MutatorCreators).GetEnumerator();
-        }
-
-        /// <summary>
-        /// add the mutator
-        /// </summary>
-        /// <param name="mutator"></param>
-        public void Add(Func<ExprMutator> mutator)
-        {
-            MutatorCreators.Add(mutator);
-        }
-
 
         /// <summary>
         /// the callback function you can custom process func with run pass options.
@@ -113,7 +106,10 @@ namespace Nncase.Transform
         protected override void OnPassStart(BaseFunction callable, RunPassOptions options)
         {
             if (callable is not PrimFunction)
+            {
                 return;
+            }
+
             base.OnPassStart(callable, options);
         }
 
@@ -125,8 +121,25 @@ namespace Nncase.Transform
         protected override void OnPassEnd(BaseFunction callable, RunPassOptions options)
         {
             if (callable is not PrimFunction)
+            {
                 return;
+            }
+
             base.OnPassEnd(callable, options);
+        }
+
+        private void OnMutated(BaseFunction callable, string prefix, RunPassOptions options)
+        {
+            switch (options.DumpLevel)
+            {
+                case >= 2:
+                    CompilerServices.DumpIR((Expr)callable, prefix, options.DumpDir, false);
+                    break;
+                case >= 1:
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }

@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Collections.Generic;
 using Nncase.IR;
 using Nncase.Transform;
@@ -6,24 +9,8 @@ using Xunit;
 
 namespace Nncase.Tests.ReWrite.FusionTest;
 
-internal sealed class TestFusionGroupMutator : Transform.Mutators.FusionGroupMutator
-{
-    public TestFusionGroupMutator(IUsedByResult usedByAnalysisReslut, IMergeRewriteRule preOrderfusionRule, RunPassOptions passOptions) : base(usedByAnalysisReslut, preOrderfusionRule, passOptions)
-    {
-    }
-
-    public override bool MergedFusionCheckCallBack(Fusion merged_fusion, HashSet<Fusion> candidate_fusions)
-    {
-        if (merged_fusion.Name.IndexOf("False") == -1)
-            return true;
-        return false;
-    }
-}
-
-
 public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
 {
-
     public static TheoryData<IDataFlowFusionCase> DataOne = new()
     {
       new DataFlowType9FusionCase(),
@@ -58,7 +45,11 @@ public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
     [MemberData(nameof(DataOne))]
     public void RunOne(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
 
-    public void RunCore(IDataFlowFusionCase fusionCase)
+    [Theory]
+    [MemberData(nameof(DataAll))]
+    public void RunAll(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
+
+    private void RunCore(IDataFlowFusionCase fusionCase)
     {
         var passOptions = GetPassOptions(fusionCase.GetType().Name);
         var compileOptions = passOptions.CompileOptions;
@@ -73,19 +64,21 @@ public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
         CompilerServices.DumpDotIR(main, "pre", passOptions.DumpDir);
 
         var rewriter = new DataFlowMergeRewriter();
-        var post = (Function)rewriter.Rewrite(main, new IMergeRewriteRule[]{
+        var post = (Function)rewriter.Rewrite(main, new IMergeRewriteRule[]
+        {
             new SameInputFusionMergeRule(),
             new MultiInputFusionMergeRule(),
             new ShortCutFusionMergeRule(),
-          }, (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
+        }, (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
           passOptions);
 
         CompilerServices.DumpIR(post, "post", passOptions.DumpDir);
         CompilerServices.DumpDotIR(post, "post", passOptions.DumpDir);
 
         var input_tensor = TestFixture.Testing.Rand<float>(1, 3, 224, 224);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance){
-          { input, Value.FromTensor(input_tensor) }
+        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        {
+          { input, Value.FromTensor(input_tensor) },
         };
 
         var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
@@ -95,16 +88,29 @@ public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
         var post_result = CompilerServices.Evaluate(post.Body, feed_dict);
         Assert.True(TestFixture.Comparator.AllEqual(pre_result, post_result));
     }
+}
 
-    [Theory]
-    [MemberData(nameof(DataAll))]
-    public void RunAll(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
+internal sealed class TestFusionGroupMutator : Transform.Mutators.FusionGroupMutator
+{
+    public TestFusionGroupMutator(IUsedByResult usedByAnalysisReslut, IMergeRewriteRule preOrderfusionRule, RunPassOptions passOptions)
+        : base(usedByAnalysisReslut, preOrderfusionRule, passOptions)
+    {
+    }
 
+    public override bool MergedFusionCheckCallBack(Fusion merged_fusion, HashSet<Fusion> candidate_fusions)
+    {
+        if (!merged_fusion.Name.Contains("False", System.StringComparison.CurrentCulture))
+        {
+            return true;
+        }
+
+        return false;
+    }
 }
 
 internal sealed class FusionCounterVisitor : ExprVisitor<int, IRType>
 {
-    public int Count { get; private set; } = 0;
+    public int Count { get; private set; }
 
     public override int DefaultVisitLeaf(Expr expr) => 0;
 

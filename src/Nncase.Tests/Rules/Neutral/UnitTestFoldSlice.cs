@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -19,11 +22,51 @@ public class UnitTestFoldSlice : TestFixture.UnitTestFixtrue
     public static IEnumerable<object[]> TestFoldNopSlicePositiveData =>
         new[]
         {
-            new object[] { new[] { 2}, new[] { 0 }, new[] { 2 }, new[] { 0 }, new[] { 1 } },
-            new object[] { new[] { 2, 4,}, new[] { 0 }, new[] { 4 }, new[] { 1 }, new[] { 1 } },
-            new object[] { new[] { 2, 4,}, new[] { 0, 0 }, new[] { 2,4 }, new[] { 0, 1 }, new[] { 1, 1 } },
+            new object[] { new[] { 2 }, new[] { 0 }, new[] { 2 }, new[] { 0 }, new[] { 1 } },
+            new object[] { new[] { 2, 4,  }, new[] { 0 }, new[] { 4 }, new[] { 1 }, new[] { 1 } },
+            new object[] { new[] { 2, 4,  }, new[] { 0, 0 }, new[] { 2, 4 }, new[] { 0, 1 }, new[] { 1, 1 } },
             new object[] { new[] { 2, 4, 6, 8 }, new[] { 0 }, new[] { 6 }, new[] { 2 }, new[] { 1 } },
             new object[] { new[] { 2, 4, 6, 8 }, new[] { 0, 0 }, new[] { 4, 6 }, new[] { 1, 2 }, new[] { 1, 1 } },
+        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
+
+    public static IEnumerable<object[]> TestFoldNopSliceNegativeData =>
+        new[]
+        {
+            new object[] { new[] { 2 }, new[] { 0 }, new[] { 1 }, new[] { 0 }, new[] { 1 } },
+            new object[] { new[] { 2, 4,  }, new[] { 0 }, new[] { 2 }, new[] { 1 }, new[] { 2 } },
+            new object[] { new[] { 2, 4,  }, new[] { 0, 2 }, new[] { 2, 4 }, new[] { 0, 1 }, new[] { 1, 3 } },
+            new object[] { new[] { 2, 4, 6, 8 }, new[] { 2 }, new[] { 6 }, new[] { 2 }, new[] { -1 } },
+            new object[] { new[] { 2, 4, 6, 8 }, new[] { 0, 1 }, new[] { 4, 6 }, new[] { 1, 2 }, new[] { 1, 1 } },
+            new object[] { new[] { 2, 4, 6, 8 }, new[] { 0, 0 }, new[] { -1, 6 }, new[] { 1, 2 }, new[] { -1, -1 } },
+        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
+
+    public static IEnumerable<object[]> TestFoldTwoSlicePositiveData =>
+        new[]
+        {
+            new object[]
+            {
+                new[] { 2, 4, 6, 8 },
+                new[] { 0 }, new[] { 6 }, new[] { 3 }, new[] { 2 },
+                new[] { 0 }, new[] { 2 }, new[] { 3 }, new[] { 1 },
+            }, // Naive Case
+            new object[]
+            {
+                new[] { 1, 4, 6, 8 },
+                new[] { 0 }, new[] { 6 }, new[] { 3 }, new[] { 3 },
+                new[] { 0 }, new[] { 4 }, new[] { 2 }, new[] { 2 },
+            }, // Diff axis
+            new object[]
+            {
+                new[] { 4, 4, 6, 8 },
+                new[] { 0 }, new[] { 6 }, new[] { 3 }, new[] { -3 },
+                new[] { 0 }, new[] { 4 }, new[] { 2 }, new[] { -2 },
+            }, // negative axis
+            new object[]
+            {
+                new[] { 3, 4, 6, 8 },
+                new[] { 0 }, new[] { -1 }, new[] { 3 }, new[] { -3 },
+                new[] { -5 }, new[] { 4 }, new[] { 2 }, new[] { -2 },
+            }, // negative begin|end
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
@@ -39,17 +82,6 @@ public class UnitTestFoldSlice : TestFixture.UnitTestFixtrue
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
 
-    public static IEnumerable<object[]> TestFoldNopSliceNegativeData =>
-        new[]
-        {
-            new object[] { new[] { 2}, new[] { 0 }, new[] { 1 }, new[] { 0 }, new[] { 1 } },
-            new object[] { new[] { 2, 4,}, new[] { 0 }, new[] { 2 }, new[] { 1 }, new[] { 2 } },
-            new object[] { new[] { 2, 4,}, new[] { 0, 2 }, new[] { 2,4 }, new[] { 0, 1 }, new[] { 1, 3 } },
-            new object[] { new[] { 2, 4, 6, 8 }, new[] { 2 }, new[] { 6 }, new[] { 2 }, new[] { -1 } },
-            new object[] { new[] { 2, 4, 6, 8 }, new[] { 0, 1 }, new[] { 4, 6 }, new[] { 1, 2 }, new[] { 1, 1 } },
-            new object[] { new[] { 2, 4, 6, 8 }, new[] { 0, 0 }, new[] { -1, 6 }, new[] { 1, 2 }, new[] { -1, -1 } },
-        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
-
     [Theory]
     [MemberData(nameof(TestFoldNopSliceNegativeData))]
     public void TestFoldNopSliceNegative(int[] shape, int[] begins, int[] ends, int[] axes, int[] strides, int index)
@@ -62,35 +94,6 @@ public class UnitTestFoldSlice : TestFixture.UnitTestFixtrue
         Assert.Equal(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
-
-    public static IEnumerable<object[]> TestFoldTwoSlicePositiveData =>
-        new[]
-        {
-            new object[]
-            {
-                new[] {2, 4, 6, 8},
-                new[] {0}, new[] {6}, new[] {3}, new[] {2},
-                new[] {0}, new[] {2}, new[] {3}, new[] {1}
-            }, // Naive Case
-            new object[]
-            {
-                new[] {1, 4, 6, 8},
-                new[] {0}, new[] {6}, new[] {3}, new[] {3},
-                new[] {0}, new[] {4}, new[] {2}, new[] {2}
-            }, // Diff axis
-            new object[]
-            {
-                new[] {4, 4, 6, 8},
-                new[] {0}, new[] {6}, new[] {3}, new[] {-3},
-                new[] {0}, new[] {4}, new[] {2}, new[] {-2}
-            }, // negative axis
-            new object[]
-            {
-                new[] {3, 4, 6, 8},
-                new[] {0}, new[] {-1}, new[] {3}, new[] {-3},
-                new[] {-5}, new[] {4}, new[] {2}, new[] {-2}
-            }, // negative begin|end
-        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
     [MemberData(nameof(TestFoldTwoSlicePositiveData))]

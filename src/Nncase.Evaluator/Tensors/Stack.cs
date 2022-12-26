@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -52,7 +52,6 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, 1),
         };
-
     }
 
     private IRType Visit(ITypeInferenceContext context, Stack target, TupleType inputs)

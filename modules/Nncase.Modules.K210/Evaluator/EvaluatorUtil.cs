@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using NetFabric.Hyperlinq;
@@ -113,11 +116,14 @@ public static class EvaluatorUtil
         return shape.Prod().FixedValue;
     }
 
-    public static int linear_index(int[] shape, int[] index)
+    public static int Linear_index(int[] shape, int[] index)
     {
         int newIndex = index[0];
         for (int i = 1; i < shape.Length; i++)
+        {
             newIndex = (newIndex * shape[i]) + index[i];
+        }
+
         return newIndex;
     }
 
@@ -141,7 +147,7 @@ public static class EvaluatorUtil
     public static Const ConcatOutput<T>(List<T[]> outputTmp, int[] outShape)
       where T : unmanaged, IEquatable<T>
     {
-        var init = new T[] { }.AsEnumerable();
+        var init = Array.Empty<T>().AsEnumerable();
         var outputData = outputTmp.Aggregate(init, (sum, output) => sum.Concat(output)).ToArray();
         return Const.FromTensor(Tensor.From<T>(outputData, outShape));
     }
@@ -165,7 +171,7 @@ public static class EvaluatorUtil
     }
 
     /// <summary>
-    /// nncase pads format to onnx pads format
+    /// nncase pads format to onnx pads format.
     /// </summary>
     /// <param name="pads"></param>
     /// <returns></returns>

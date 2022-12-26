@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -47,28 +50,28 @@ public interface IBlockBuilder : IExprBuilder<Block>
     IBlockBuilder Remap(out IterVar vi, For fi, char iterType);
 
     /// <summary>
-    /// alloctions
+    /// alloctions.
     /// </summary>
     /// <param name="buffers"></param>
     /// <returns></returns>
     IBlockBuilder Alloc(params object[] buffers);
 
     /// <summary>
-    /// reads
+    /// reads.
     /// </summary>
     /// <param name="buffer_regions"></param>
     /// <returns></returns>
     IBlockBuilder Reads(params object[] buffer_regions);
 
     /// <summary>
-    /// writes
+    /// writes.
     /// </summary>
     /// <param name="buffer_regions"></param>
     /// <returns></returns>
     IBlockBuilder Writes(params object[] buffer_regions);
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="predicate"></param>
     /// <returns></returns>
@@ -126,26 +129,6 @@ internal class BlockBuilder : IBlockBuilder
         return new(_name, Sequential.Flatten(_body), Sequential.Flatten(_init), new(_iterVars), new(_reads), new(_writes), new(_allocations), _predicate ?? true);
     }
 
-    private static void Add<T>(HashSet<T> set, IEnumerable<object> inputs)
-    {
-        if (inputs is null)
-            return;
-        foreach (var obj in inputs)
-        {
-            switch (obj)
-            {
-                case T item:
-                    set.Add(item);
-                    break;
-                case IEnumerable<object> items:
-                    Add(set, items);
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
-
     public IBlockBuilder Alloc(params object[] buffers)
     {
         HashSet<TIR.Buffer> set = new(ReferenceEqualityComparer.Instance);
@@ -174,5 +157,28 @@ internal class BlockBuilder : IBlockBuilder
     {
         _predicate ??= predicate;
         return this;
+    }
+
+    private static void Add<T>(HashSet<T> set, IEnumerable<object> inputs)
+    {
+        if (inputs is null)
+        {
+            return;
+        }
+
+        foreach (var obj in inputs)
+        {
+            switch (obj)
+            {
+                case T item:
+                    set.Add(item);
+                    break;
+                case IEnumerable<object> items:
+                    Add(set, items);
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 }

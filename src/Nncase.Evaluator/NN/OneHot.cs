@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -11,6 +11,7 @@ using OrtKISharp;
 using Tensorflow;
 using Tensorflow.NumPy;
 using static Tensorflow.Binding;
+
 namespace Nncase.Evaluator.NN;
 
 /// <summary>
@@ -26,28 +27,22 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>, ICos
             : TFOneHot(context, oneHot);
     }
 
-    private IValue OnnxOneHot(IEvaluateContext context, OneHot oneHot)
+    /// <inheritdoc/>
+    public IRType Visit(ITypeInferenceContext context, OneHot target)
     {
-        var indices = context.GetArgumentValueAsTensor<long>(oneHot, OneHot.Indices);
-        var depth = context.GetInt64OrtTensorArgumentValue(oneHot, OneHot.Depth);
-        var values = context.GetOrtArgumentValue(oneHot, OneHot.Values);
-        var axis = context.GetArgumentValueAsScalar<long>(oneHot, OneHot.Axis);
-        return OrtKI.OneHot(indices.ToOrtTensor(), depth, values, axis).ToValue();
+        var indices = context.CheckArgumentType<TensorType>(target, OneHot.Indices);
+        var values = context.CheckArgumentType<TensorType>(target, OneHot.Values);
+        return Visit(context, target, indices, values);
     }
 
-    private IValue TFOneHot(IEvaluateContext context, OneHot oneHot)
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, OneHot target)
     {
-        var depth = context.GetArgumentValueAsScalar<int>(oneHot, OneHot.Depth);
-        var indices = context.GetTFArgumentValue(oneHot, OneHot.Indices);
-        var values = context.GetTFArgumentValue(oneHot, OneHot.Values);
-        var axis = context.GetArgumentValueAsScalar<int>(oneHot, OneHot.Axis);
-        return TF_OneHot(
-            indices,
-            ops.convert_to_tensor(depth),
-            values[1],
-            values[0],
-            TF_DataType.TF_FLOAT,
-            axis);
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
+        };
     }
 
     private static IValue TF_OneHot(
@@ -81,12 +76,28 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>, ICos
             }).ToValue();
     }
 
-    /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, OneHot target)
+    private IValue OnnxOneHot(IEvaluateContext context, OneHot oneHot)
     {
-        var indices = context.CheckArgumentType<TensorType>(target, OneHot.Indices);
-        var values = context.CheckArgumentType<TensorType>(target, OneHot.Values);
-        return Visit(context, target, indices, values);
+        var indices = context.GetArgumentValueAsTensor<long>(oneHot, OneHot.Indices);
+        var depth = context.GetInt64OrtTensorArgumentValue(oneHot, OneHot.Depth);
+        var values = context.GetOrtArgumentValue(oneHot, OneHot.Values);
+        var axis = context.GetArgumentValueAsScalar<long>(oneHot, OneHot.Axis);
+        return OrtKI.OneHot(indices.ToOrtTensor(), depth, values, axis).ToValue();
+    }
+
+    private IValue TFOneHot(IEvaluateContext context, OneHot oneHot)
+    {
+        var depth = context.GetArgumentValueAsScalar<int>(oneHot, OneHot.Depth);
+        var indices = context.GetTFArgumentValue(oneHot, OneHot.Indices);
+        var values = context.GetTFArgumentValue(oneHot, OneHot.Values);
+        var axis = context.GetArgumentValueAsScalar<int>(oneHot, OneHot.Axis);
+        return TF_OneHot(
+            indices,
+            ops.convert_to_tensor(depth),
+            values[1],
+            values[0],
+            TF_DataType.TF_FLOAT,
+            axis);
     }
 
     private IRType Visit(ITypeInferenceContext context, OneHot target, TensorType indices, TensorType values)
@@ -100,15 +111,5 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>, ICos
         }
 
         return new InvalidType("OneHot axis or depth is not const");
-    }
-
-    /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, OneHot target)
-    {
-        var returnType = context.GetReturnType<TensorType>();
-        return new()
-        {
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
-        };
     }
 }

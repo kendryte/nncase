@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -20,9 +23,65 @@ public class UnitTestFoldPad : TestFixture.UnitTestFixtrue
         new[]
         {
             new object[] { new[] { 1 }, new[,] { { 0, 0 } } },
-            new object[] { new[] { 1, 1 }, new[,] { { 0, 0 },
-            { 0, 0 } } },
+            new object[]
+            {
+                new[] { 1, 1 }, new[,]
+            {
+                { 0, 0 },
+                { 0, 0 },
+            },
+            },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
+
+    public static IEnumerable<object[]> TestFoldNopPadNegativeData =>
+        new[]
+        {
+            new object[] { new[] { 1 }, new[,] { { 1, 0 } } },
+            new object[]
+            {
+                new[] { 1, 1 }, new[,]
+            {
+                { 0, 1 },
+                { 2, 0 },
+            },
+            },
+        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
+
+    public static IEnumerable<object[]> TestFoldTwoPadsPositiveData =>
+        new[]
+        {
+            new object[] { new[] { 1 }, new[,] { { 0, 1 } }, new[,] { { 2, 0 } } },
+            new object[]
+            {
+                new[] { 1, 1 }, new[,]
+            {
+                { 0, 1 },
+                { 1, 0 },
+            }, new[,]
+            {
+                { 1, 3 },
+                { 1, 2 },
+            },
+            },
+        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
+
+    public static IEnumerable<object[]> TestFoldTwoPadsNegativeData =>
+       new[]
+       {
+            new object[] { new[] { 1 }, new[,] { { 0, 1 } }, 1.0f, new[,] { { 2, 0 } }, 2.0f },
+            new object[]
+            {
+                new[] { 1, 1 }, new[,]
+            {
+                { 0, 1 },
+                { 1, 0 },
+            }, 1.0f, new[,]
+            {
+                { 1, 3 },
+                { 1, 2 },
+            }, 0.0f,
+            },
+       }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
     [MemberData(nameof(TestFoldNopPadPositiveData))]
@@ -37,14 +96,6 @@ public class UnitTestFoldPad : TestFixture.UnitTestFixtrue
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
 
-    public static IEnumerable<object[]> TestFoldNopPadNegativeData =>
-        new[]
-        {
-            new object[] { new[] { 1 }, new[,] { { 1, 0 } } },
-            new object[] { new[] { 1, 1 }, new[,] { { 0, 1 },
-            { 2, 0 } } },
-        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
-
     [Theory]
     [MemberData(nameof(TestFoldNopPadNegativeData))]
     public void TestFoldNopPadNegative(int[] shape, int[,] pads, int index)
@@ -58,15 +109,6 @@ public class UnitTestFoldPad : TestFixture.UnitTestFixtrue
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
 
-    public static IEnumerable<object[]> TestFoldTwoPadsPositiveData =>
-        new[]
-        {
-            new object[] { new[] { 1 }, new[,] { { 0, 1 } }, new[,] { { 2, 0 } } },
-            new object[] { new[] { 1, 1 }, new[,] { { 0, 1 },
-            { 1, 0 } }, new[,] { { 1, 3 },
-            { 1, 2 } } },
-        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
-
     [Theory]
     [MemberData(nameof(TestFoldTwoPadsPositiveData))]
     public void TestFoldTwoPadsPositive(int[] shape, int[,] pads1, int[,] pads2, int index)
@@ -79,15 +121,6 @@ public class UnitTestFoldPad : TestFixture.UnitTestFixtrue
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
-
-    public static IEnumerable<object[]> TestFoldTwoPadsNegativeData =>
-       new[]
-       {
-            new object[] { new[] { 1 }, new[,] { { 0, 1 } }, 1.0f ,new[,] { { 2, 0 } } , 2.0f},
-            new object[] { new[] { 1, 1 }, new[,] { { 0, 1 },
-            { 1, 0 } }, 1.0f, new[,] { { 1, 3 },
-            { 1, 2 } } ,0.0f},
-       }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
     [MemberData(nameof(TestFoldTwoPadsNegativeData))]

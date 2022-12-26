@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Nncase.IR;
-
 
 namespace Nncase.Transform;
 
@@ -22,4 +21,3 @@ public static class Analyser
     /// <returns>result.</returns>
     public static IUsedByResult AnalysisUsedBy(Expr entry) => Analyses.UsedByAnalysisVisitor.Analysis(entry);
 }
-

@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -11,39 +14,10 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Nncase.SourceGenerator.Pattern;
 
-internal class UsingComparer : IEqualityComparer<UsingDirectiveSyntax>
-{
-    public bool Equals(UsingDirectiveSyntax x, UsingDirectiveSyntax y)
-    {
-        return x.Name.GetFullName() == y.Name.GetFullName();
-    }
-
-    public int GetHashCode(UsingDirectiveSyntax obj)
-    {
-        return obj.Name.GetFullName().GetHashCode();
-    }
-}
-
-internal class GenerateCandidate
-{
-    public INamedTypeSymbol Op;
-    public IParameterSymbol[] AttrParams;
-    public ISymbol[] ExprParams;
-    public UsingDirectiveSyntax[] UsingSyntaxs;
-
-    public GenerateCandidate(INamedTypeSymbol syb, IParameterSymbol[] attrParams, ISymbol[] exprParams, UsingDirectiveSyntax[] usings)
-    {
-        Op = syb;
-        AttrParams = attrParams;
-        ExprParams = exprParams;
-        UsingSyntaxs = usings;
-    }
-}
-
 [Generator]
 public class PatternGenerator : IIncrementalGenerator
 {
-    //public void Initialize(GeneratorInitializationContext context) => context.RegisterForSyntaxNotifications(() => new PatternReceiver());
+    // public void Initialize(GeneratorInitializationContext context) => context.RegisterForSyntaxNotifications(() => new PatternReceiver());
     public INamedTypeSymbol? OpSymobl;
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -59,46 +33,19 @@ public class PatternGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(candidates.Collect(), static (spc, source) => Execute(spc, source));
     }
 
-    static bool IsSyntaxTargetForGeneration(SyntaxNode node)
+    private static bool IsSyntaxTargetForGeneration(SyntaxNode node)
     {
-        return (node is RecordDeclarationSyntax { BaseList: BaseListSyntax baseList } record && record.AttributeLists.Count == 1 && baseList.Types.Count == 1);
+        return node is RecordDeclarationSyntax { BaseList: BaseListSyntax baseList } record && record.AttributeLists.Count == 1 && baseList.Types.Count == 1;
     }
 
-    GenerateCandidate? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
-    {
-        OpSymobl ??= context.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Op");
-
-        var recordDeclaration = (RecordDeclarationSyntax)context.Node;
-        var op = context.SemanticModel.GetDeclaredSymbol(recordDeclaration);
-
-        if (op!.BaseType.IsInheritFrom(OpSymobl) &&
-            op!.GetAttributes().Any(attr => attr!.AttributeClass!.Name == "PatternFunctionalGeneratorAttribute"))
-        {
-            IParameterSymbol[] attrParams = recordDeclaration.ParameterList is null ?
-                    new IParameterSymbol[] { } :
-                    (from p in recordDeclaration.ParameterList.Parameters
-                     select context.SemanticModel.GetDeclaredSymbol(p)!).ToArray();
-            var exprParams = op.GetMembers()
-                .OfType<IFieldSymbol>()
-                .Where(f => f.Type.Name == "ParameterInfo")
-                .ToArray();
-            var unitRoot = context.Node.SyntaxTree.GetCompilationUnitRoot();
-            var usings = unitRoot.Usings.ToList();
-            usings.Add(UsingDirective(ParseName(op.ContainingNamespace.ToDisplayString())));
-            return new(op, attrParams, exprParams, usings.ToArray());
-        }
-
-        return null;
-    }
-
-    static void Execute(SourceProductionContext context, ImmutableArray<GenerateCandidate> receiveCandidates)
+    private static void Execute(SourceProductionContext context, ImmutableArray<GenerateCandidate> receiveCandidates)
     {
         var groupedCandidates = receiveCandidates.GroupBy(cand => cand.Op.ContainingNamespace, SymbolEqualityComparer.Default).Select(g => (g.Key, g.ToArray()));
 
         List<NamespaceDeclarationSyntax> namespaces = new();
         foreach (var (old_namespace, candidates) in groupedCandidates)
         {
-            List<MemberDeclarationSyntax> members = new List<MemberDeclarationSyntax>();
+            var members = new List<MemberDeclarationSyntax>();
 
             var pattern_name_params = new List<ParameterSyntax>()
                 {
@@ -110,9 +57,9 @@ public class PatternGenerator : IIncrementalGenerator
                 // build the three pattern functional.
                 foreach (var name_params in new List<List<ParameterSyntax?>>()
                 {
-                    new(){ null, null },
-                    new(){ pattern_name_params[0], null },
-                    new(){ pattern_name_params[0], pattern_name_params[1] }
+                    new() { null, null },
+                    new() { pattern_name_params[0], null },
+                    new() { pattern_name_params[0], pattern_name_params[1] },
                 })
                 {
                     { // 1. build normal method
@@ -128,15 +75,15 @@ public class PatternGenerator : IIncrementalGenerator
                                      .Concat(from f in cand.ExprParams
                                              select Parameter(Identifier(f.Name.ToLower()))
                                                     .WithType(ParseTypeName("Pattern ?").WithTrailingTrivia(ElasticSpace))
-                                                    .WithDefault(EqualsValueClause(LiteralExpression(SyntaxKind.NullLiteralExpression)))
-                                            );
+                                                    .WithDefault(EqualsValueClause(LiteralExpression(SyntaxKind.NullLiteralExpression))));
                         var statements = new List<StatementSyntax>();
                         {
                             // 1.2 build condition
                             var condition = string.Join("&&", (from p in cand.AttrParams select $"(x.{p.Name} == {p.Name})").DefaultIfEmpty("true"));
-                            var inputs = string.Join(", ", from f in cand.ExprParams select (f.Name.ToLower() + "?? Nncase.PatternMatch.Utility.IsWildcard()"));
+                            var inputs = string.Join(", ", from f in cand.ExprParams select f.Name.ToLower() + "?? Nncase.PatternMatch.Utility.IsWildcard()");
+
                             // 1.3 build method return
-                            //var x = name_params[0];
+                            // var x = name_params[0];
                             statements.Add(ParseStatement(@$"return new(
 new OpPattern<{cand.Op.ToDisplayString()}>(x => {condition}, {(name_params[0] != null ? "target_name" : "null")}), 
 new VArgsPattern (new[]{{ {inputs} }}, null),
@@ -165,17 +112,17 @@ new VArgsPattern (new[]{{ {inputs} }}, null),
                                      .Concat(new[]
                                     {
                                         Parameter(Identifier("condition"))
-                                             .WithType(ParseTypeName($"Func<{cand.Op.ToDisplayString()},bool>").WithTrailingTrivia(ElasticSpace))
+                                             .WithType(ParseTypeName($"Func<{cand.Op.ToDisplayString()},bool>").WithTrailingTrivia(ElasticSpace)),
                                     })
                                      .Concat(from f in cand.ExprParams
                                              select Parameter(Identifier(f.Name.ToLower()))
                                              .WithType(ParseTypeName("Pattern ?").WithTrailingTrivia(ElasticSpace))
-                                             .WithDefault(EqualsValueClause(LiteralExpression(SyntaxKind.NullLiteralExpression)))
-                                            );
+                                             .WithDefault(EqualsValueClause(LiteralExpression(SyntaxKind.NullLiteralExpression))));
                         var statements = new List<StatementSyntax>();
                         {
                             // 1.2 build condition
-                            var inputs = string.Join(", ", from f in cand.ExprParams select (f.Name.ToLower() + "?? Nncase.PatternMatch.Utility.IsWildcard()"));
+                            var inputs = string.Join(", ", from f in cand.ExprParams select f.Name.ToLower() + "?? Nncase.PatternMatch.Utility.IsWildcard()");
+
                             // 1.3 build method return
                             statements.Add(ParseStatement(@$"return new(
 new OpPattern<{cand.Op.ToDisplayString()}>(condition, {(name_params[0] != null ? "target_name" : "null")}),
@@ -214,7 +161,7 @@ new VArgsPattern( new [] {{ {inputs} }}, null ),
                 classes.Add(@class);
             }
 
-            //5. build namespace
+            // 5. build namespace
             var arr = old_namespace.ToDisplayString().Split('.');
             arr[arr.Length - 1] = "F";
             var @namespcae = GeneratorUtil.MakeNameSpace(string.Join(".", arr).Replace("IR", "PatternMatch"))
@@ -228,6 +175,63 @@ new VArgsPattern( new [] {{ {inputs} }}, null ),
                 WithTrailingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.RestoreKeyword));
 
         context.AddSource("Ops.Pattern", SyntaxTree(compilationUnit, encoding: Encoding.UTF8).GetText());
-        //compilation.AddSyntaxTrees(SyntaxTree(compilationUnit, encoding: Encoding.UTF8));
+
+        // compilation.AddSyntaxTrees(SyntaxTree(compilationUnit, encoding: Encoding.UTF8));
+    }
+
+    private GenerateCandidate? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
+    {
+        OpSymobl ??= context.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Op");
+
+        var recordDeclaration = (RecordDeclarationSyntax)context.Node;
+        var op = context.SemanticModel.GetDeclaredSymbol(recordDeclaration);
+
+        if (op!.BaseType.IsInheritFrom(OpSymobl) &&
+            op!.GetAttributes().Any(attr => attr!.AttributeClass!.Name == "PatternFunctionalGeneratorAttribute"))
+        {
+            IParameterSymbol[] attrParams = recordDeclaration.ParameterList is null ?
+                    new IParameterSymbol[] { } :
+                    (from p in recordDeclaration.ParameterList.Parameters
+                     select context.SemanticModel.GetDeclaredSymbol(p)!).ToArray();
+            var exprParams = op.GetMembers()
+                .OfType<IFieldSymbol>()
+                .Where(f => f.Type.Name == "ParameterInfo")
+                .ToArray();
+            var unitRoot = context.Node.SyntaxTree.GetCompilationUnitRoot();
+            var usings = unitRoot.Usings.ToList();
+            usings.Add(UsingDirective(ParseName(op.ContainingNamespace.ToDisplayString())));
+            return new(op, attrParams, exprParams, usings.ToArray());
+        }
+
+        return null;
+    }
+}
+
+internal class UsingComparer : IEqualityComparer<UsingDirectiveSyntax>
+{
+    public bool Equals(UsingDirectiveSyntax x, UsingDirectiveSyntax y)
+    {
+        return x.Name.GetFullName() == y.Name.GetFullName();
+    }
+
+    public int GetHashCode(UsingDirectiveSyntax obj)
+    {
+        return obj.Name.GetFullName().GetHashCode();
+    }
+}
+
+internal class GenerateCandidate
+{
+    public INamedTypeSymbol Op;
+    public IParameterSymbol[] AttrParams;
+    public ISymbol[] ExprParams;
+    public UsingDirectiveSyntax[] UsingSyntaxs;
+
+    public GenerateCandidate(INamedTypeSymbol syb, IParameterSymbol[] attrParams, ISymbol[] exprParams, UsingDirectiveSyntax[] usings)
+    {
+        Op = syb;
+        AttrParams = attrParams;
+        ExprParams = exprParams;
+        UsingSyntaxs = usings;
     }
 }

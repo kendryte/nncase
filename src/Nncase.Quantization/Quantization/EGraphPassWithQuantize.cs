@@ -11,7 +11,7 @@ using Nncase.Transform;
 namespace Nncase.Quantization;
 
 /// <summary>
-/// the quantization egraph pass 
+/// the quantization egraph pass.
 /// </summary>
 public class EGraphPassWithQuantize : EGraphPass
 {
@@ -30,11 +30,11 @@ public class EGraphPassWithQuantize : EGraphPass
 
     /// <summary>
     /// the callback on the rewirte finish.
-    /// 
+    ///
     /// </summary>
     /// <param name="graph"></param>
     /// <param name="options"></param>
-    /// <returns></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     protected override async Task OnPostRewrite(EGraph graph, RunPassOptions options)
     {
         var quantizer = new Quantizer(graph, options);

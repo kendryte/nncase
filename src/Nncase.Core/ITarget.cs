@@ -24,47 +24,49 @@ public interface ITarget
     string Kind { get; }
 
     /// <summary>
-    /// Bind Quant Method And Quant Cosine With IR
+    /// Bind Quant Method And Quant Cosine With IR.
     /// </summary>
     /// <param name="calibrationDataset">calibration dataset.</param>
     /// <param name="target">target.</param>
     /// <param name="rangeOfs">rangeOf nodes.</param>
     /// <param name="childrenOfRangeOfs">rangeOf nodes children.</param>
     /// <param name="runPassOptions">options.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task<Dictionary<ENode, List<Tuple<List<DataType>, List<List<QuantParam>>, float>>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassOptions runPassOptions);
 
     /// <summary>
-    /// AdaRound Weights
+    /// AdaRound Weights.
     /// </summary>
     /// <param name="calibrationDataset">calibration dataset.</param>
     /// <param name="target">target.</param>
     /// <param name="rangeOfs">rangeOf nodes.</param>
     /// <param name="childrenOfRangeOfs">rangeOf nodes children.</param>
     /// <param name="runPassOptions">options.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task AdaRoundWeights(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassOptions runPassOptions);
 
     /// <summary>
-    /// Parse Target Dependent Options 
+    /// Parse Target Dependent Options.
     /// </summary>
     /// <param name="configure"></param>
     void ParseTargetDependentOptions(IConfigurationSection configure);
 
     /// <summary>
-    /// Register Target Dependent Pass
+    /// Register Target Dependent Pass.
     /// </summary>
     /// <param name="passManager">pass manager.</param>
     /// <param name="options">compile options.</param>
     void RegisterTargetDependentPass(PassManager passManager, CompileOptions options);
 
     /// <summary>
-    /// Register Quantize Pass
+    /// Register Quantize Pass.
     /// </summary>
     /// <param name="passManager">pass manager.</param>
     /// <param name="options">compile options.</param>
     void RegisterQuantizePass(PassManager passManager, CompileOptions options);
 
     /// <summary>
-    /// Register Target Dependent After Quant Pass
+    /// Register Target Dependent After Quant Pass.
     /// </summary>
     /// <param name="passManager"></param>
     /// <param name="options">compile options.</param>

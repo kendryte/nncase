@@ -98,7 +98,7 @@ internal class StackVMFunctionBuilder : FunctionBuilder
 
     private class LocalsAllocator
     {
-        private SortedSet<ushort> _locals = new SortedSet<ushort>();
+        private readonly SortedSet<ushort> _locals = new SortedSet<ushort>();
 
         public ushort MaxCount { get; private set; }
 

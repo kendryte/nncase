@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -14,7 +17,6 @@ namespace Nncase.Tests.TransformTest;
 
 public sealed class UnitTestUsedByAnalysis : TestFixture.UnitTestFixtrue
 {
-
     [Fact]
     public void TestMultiInput()
     {
@@ -27,24 +29,20 @@ public sealed class UnitTestUsedByAnalysis : TestFixture.UnitTestFixtrue
         Assert.Equal(2, result.Get(input).Count);
     }
 
-
     [Fact]
     public void TestMultInputWithFusion()
     {
         var fusionCase = new ReWrite.FusionTest.DataFlowType7FusionCaseLeft();
         var passOptions = GetPassOptions(fusionCase.GetType().Name);
         var compileOptions = passOptions.CompileOptions;
-
-        var target = CompilerServices.GetTarget(compileOptions.Target);
+        _ = CompilerServices.GetTarget(compileOptions.Target);
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
         var main = new Function(fusionCase.BuildBody(input), input);
-
-        IRModule module = new(main);
         CompilerServices.InferenceType(main);
         CompilerServices.DumpIR(main, "pre", passOptions.DumpDir);
 
         var usedbyReslut = Analyser.AnalysisUsedBy(main);
-        
+
         Assert.Equal(2, usedbyReslut.Get(input).Count);
 
         foreach (var k in usedbyReslut.MeMo.Keys)

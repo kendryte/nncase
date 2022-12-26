@@ -20,6 +20,7 @@ import test_utils
 from inference import *
 from evaluator import *
 
+
 class Edict:
     def __init__(self, d: Dict[str, int]) -> None:
         assert(isinstance(d, dict)), "the Edict only accepct Dict for init"
@@ -175,6 +176,7 @@ DataFactory = {
 # if create compiler in each test, then will thorw exception: The configured user limit
 globalCompiler = nncase.Compiler()
 
+
 class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
     def __init__(self, case_name, targets=None, overwrite_configs: Union[Dict, str] = None) -> None:
         config_root = os.path.dirname(__file__)
@@ -215,7 +217,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     # onnx \ caffe
                     if (self.model_type == "onnx" or self.model_type == "caffe"):
                         new_value = np.transpose(value, [0, 3, 1, 2])
-    
+
                 if type == 'float32':
                     new_value = value.astype(np.float32)
                 elif type == 'uint8':
@@ -322,7 +324,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                                 resize_shape = value.shape[0], round(
                                     in_h * ratio), round(in_w * ratio), 3
                                 resize_data = cv2.resize(value[0], (resize_shape[2],
-                                                                   resize_shape[1]), interpolation=cv2.INTER_LINEAR)
+                                                                    resize_shape[1]), interpolation=cv2.INTER_LINEAR)
                                 dh = model_shape[1] - resize_shape[1]
                                 dw = model_shape[2] - resize_shape[2]
                                 dh /= 2
@@ -435,7 +437,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
 
             for infer_args in self.dispatch(cfg, cfg.infer):
                 infer_output_paths = self.run_inference(infer_args, cfg, case_dir, import_options,
-                                   compile_options, model_content, dict_args)
+                                                        compile_options, model_content, dict_args)
                 self.check_result(infer_output_paths, infer_args, 'infer')
 
     def translate_shape(self, shape):
@@ -468,15 +470,16 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
     def set_quant_opt(self, cfg, kwargs, preprocess, compiler: nncase.Compiler):
         if cfg.compile_opt.dump_import_op_range:
             dump_range_options = nncase.DumpRangeTensorOptions()
-            dump_range_options.set_tensor_data([self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data])
+            dump_range_options.set_tensor_data([self.transform_input(
+                sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data])
             dump_range_options.samples_count = cfg.generate_dump_range_data.numbers
             # compiler.dump_range_options(dump_range_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
-            ptq_options.set_tensor_data([self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs])
+            ptq_options.set_tensor_data([self.transform_input(
+                sample['data'], preprocess['input_type'], "infer") for sample in self.calibs])
             ptq_options.samples_count = cfg.generate_calibs.numbers
             compiler.use_ptq(ptq_options)
-
 
     def write_preprocess_opt(self, dict_args):
         if dict_args['preprocess'] == True:

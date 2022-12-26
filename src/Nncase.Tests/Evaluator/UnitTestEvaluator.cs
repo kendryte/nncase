@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -11,17 +14,14 @@ using NetFabric.Hyperlinq;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.F;
-using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.TestFixture;
 using Nncase.Utilities;
 using OrtKISharp;
 using Xunit;
-using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
 using static Nncase.Utilities.DumpUtility;
-using RangeOf = Nncase.IR.Math.RangeOf;
 using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Tests.EvaluatorTest;
@@ -46,14 +46,15 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
     {
         var a = Const.FromTensor(Tensor.From<int>(new[] { 1, 2, 3 }));
         var b = Const.FromTensor(Tensor.From<int>(new[] { 1, 2, 3 }));
+
         // var b = (Const) 2;
         a.InferenceType();
         b.InferenceType();
         var na = a.Value.ToOrtTensor();
         var nb = b.Value.ToOrtTensor();
         Assert.Equal(new[] { 1, 2, 3 }, na.ToArray<int>());
-        var v = na.Cast(OrtDataType.Float16).ToValue();
-        var f = na.Cast(OrtDataType.Float16).Cast(OrtDataType.Float);
+        _ = na.Cast(OrtDataType.Float16).ToValue();
+        _ = na.Cast(OrtDataType.Float16).Cast(OrtDataType.Float);
 
         var c = na + nb;
         Assert.Equal(new[] { 2, 4, 6 }, c.ToTensor().ToArray<int>());
@@ -127,6 +128,7 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
             var ret = expr.Evaluate().AsTensor();
             Assert.Equal(new[] { 1, 2, 2 }, ret.Shape.ToValueArray());
         }
+
         {
             var inputList = new Tuple(a);
             var expr = Tensors.Stack(inputList, 1);
@@ -134,6 +136,7 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
             var ret = expr.Evaluate().AsTensor();
             Assert.Equal(new[] { 2, 1, 2 }, ret.Shape.ToValueArray());
         }
+
         {
             var inputList = new Tuple(a);
             var expr = Tensors.Stack(inputList, 2);
@@ -157,14 +160,13 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
         Assert.True(expr.InferenceType());
         Assert.Equal(
             tResult,
-            expr.Evaluate().AsTensor().ToOrtTensor()
-            );
+            expr.Evaluate().AsTensor().ToOrtTensor());
     }
 
     [Fact]
     public void TestSlice2()
     {
-        var v0 = Slice((new long[3] { 4, 8, 8 }), (new[] { 0 }), (new[] { 1 }), (new[] { 0 }), (new[] { 1 })); // i64[1]
+        var v0 = Slice(new long[3] { 4, 8, 8 }, new[] { 0 }, new[] { 1 }, new[] { 0 }, new[] { 1 }); // i64[1]
         CompilerServices.InferenceType(v0);
         Assert.Equal(1, v0.CheckedShape.Rank);
         var ret = CompilerServices.Evaluate(v0).AsTensor();
@@ -205,7 +207,8 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
         var padw_before = Tensors.Cast(Tensor.From<float>(new[] { 3.0f }), Nncase.DataTypes.Int32);
         var padw_after = Tensors.Cast(Tensor.From<float>(new[] { 4.0f }), Nncase.DataTypes.Int32);
 
-        var expr = Tensors.Stack(new Tuple(
+        var expr = Tensors.Stack(
+            new Tuple(
           Tensors.Concat(new Tuple(padh_before, padh_after), 0),
           Tensors.Concat(new Tuple(padw_before, padw_after), 0)), 0);
         CompilerServices.InferenceType(expr);

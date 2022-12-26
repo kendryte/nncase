@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,7 +20,6 @@ namespace Nncase.TestFixture;
 // impl mixin by inherit interface with method had been impl
 public partial class TransformTestBase : UnitTestFixtrue
 {
-
     public override CompileOptions GetCompileOptions([CallerMemberName] string member_name = "")
     {
         var compileOptions = base.GetCompileOptions(member_name);
@@ -33,12 +35,14 @@ public partial class TransformTestBase : UnitTestFixtrue
         return passOptions;
     }
 
-    public virtual Expr TestMatched<T>(Expr pre, RunPassOptions passOptions) where T : IRewriteRule, new()
+    public virtual Expr TestMatched<T>(Expr pre, RunPassOptions passOptions)
+        where T : IRewriteRule, new()
     {
         return TestMatchedCore(pre, passOptions, new T());
     }
 
-    public void CondMatch<T>(bool cond, Expr expr, RunPassOptions passOptions) where T : IRewriteRule, new()
+    public void CondMatch<T>(bool cond, Expr expr, RunPassOptions passOptions)
+        where T : IRewriteRule, new()
     {
         if (cond)
         {
@@ -74,7 +78,8 @@ public partial class TransformTestBase : UnitTestFixtrue
         Assert.Equal(pre, post);
     }
 
-    public void TestNotMatch<T>(Expr pre, RunPassOptions passOptions) where T : IRewriteRule, new()
+    public void TestNotMatch<T>(Expr pre, RunPassOptions passOptions)
+        where T : IRewriteRule, new()
     {
         TestNotMatch(pre, passOptions, new T());
     }
@@ -84,14 +89,14 @@ public partial class TransformTestBase : UnitTestFixtrue
     //     TestMatched<T>(Binary(op, lhs, rhs));
     //     TestMatched<T>(Binary(op, rhs, lhs));
     // }
-
     public Expr RewriteOnceFalse(Func<RunPassOptions, Expr> f, RunPassOptions passOptions)
     {
         var result = f(passOptions.SetRewriteOnce(false));
         return result;
     }
 
-    public Expr Rewrite<T>(Expr pre, RunPassOptions passOptions) where T : IRewriteRule, new()
+    public Expr Rewrite<T>(Expr pre, RunPassOptions passOptions)
+        where T : IRewriteRule, new()
     {
         return CompilerServices.Rewrite(pre, new IRewriteRule[] { new T() }, passOptions);
     }
@@ -108,11 +113,12 @@ public partial class TransformTestBase : UnitTestFixtrue
         return f;
     }
 
-    public Expr FoldNop(Expr expr, RunPassOptions passOptions) => RewriteOnceFalse((RunPassOptions opt)
+    public Expr FoldNop(Expr expr, RunPassOptions passOptions) => RewriteOnceFalse(
+        (RunPassOptions opt)
       => CompilerServices.Rewrite(expr, new IRewriteRule[]
       {
           new FoldNopCast(),
-          new FoldNopReshape()
+          new FoldNopReshape(),
       }, opt), passOptions);
 
     public Expr RewriteWithSeq(Expr expr, RunPassOptions passOptions, IEnumerable<IRewriteRule> lower,
@@ -122,20 +128,24 @@ public partial class TransformTestBase : UnitTestFixtrue
         RewriteWithSeq(expr, passOptions, lower, new IRewriteRule[]
         {
             new FoldNopReshape(),
-            new FoldNopCast()
+            new FoldNopCast(),
         }, fuse);
 
-    public Expr TestMultiMatched<T>(Expr expr, RunPassOptions passOptions, int count) where T : IRewriteRule, new() =>
-        Enumerable.Range(0, count).Aggregate(expr, ((expr1, i) =>
+    public Expr TestMultiMatched<T>(Expr expr, RunPassOptions passOptions, int count)
+        where T : IRewriteRule, new()
+        =>
+        Enumerable.Range(0, count).Aggregate(expr, (expr1, i) =>
         {
             var ex = TestMatched<T>(expr1, passOptions);
             return ex;
-        }));
+        });
 
-    public Expr RewriteMultiTimes<T>(Expr expr, RunPassOptions passOptions, int count) where T : IRewriteRule, new() =>
-        Enumerable.Range(0, count).Aggregate(expr, ((expr1, i) =>
+    public Expr RewriteMultiTimes<T>(Expr expr, RunPassOptions passOptions, int count)
+        where T : IRewriteRule, new()
+        =>
+        Enumerable.Range(0, count).Aggregate(expr, (expr1, i) =>
         {
             var ex = Rewrite<T>(expr1, passOptions);
             return ex;
-        }));
+        });
 }

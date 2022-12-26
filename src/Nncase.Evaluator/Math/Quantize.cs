@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -47,7 +47,6 @@ public class QuantizeEvaluator : IEvaluator<Quantize>, ITypeInferencer<Quantize>
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(output),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(output, macPerElement) / macParallel,
         };
-
     }
 
     private IRType Visit(Quantize target, TensorType input, TensorType quantParam)

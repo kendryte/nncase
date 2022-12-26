@@ -27,8 +27,8 @@ def _make_module():
 
         @tf.function(input_signature=[tf.TensorSpec([1, 4, 4, 3], tf.float32)])
         def __call__(self, x):
-            out1 = tf.reshape(x[:, 2:4, :, :], [-1, 2])[:,0:1]
-            out2 = tf.reshape(x[:, 0:2, :, :], [-1, 2])[:,1:2]
+            out1 = tf.reshape(x[:, 2:4, :, :], [-1, 2])[:, 0:1]
+            out2 = tf.reshape(x[:, 0:2, :, :], [-1, 2])[:, 1:2]
             return (out1, out2)
     return Module()
 

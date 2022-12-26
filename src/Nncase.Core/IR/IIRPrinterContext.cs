@@ -23,7 +23,7 @@ public interface IIRPrinterContext
     IPrintSymbol GetArgument(Op op, ParameterInfo parameter);
 
     /// <summary>
-    /// get op
+    /// get op.
     /// </summary>
     /// <param name="op"></param>
     /// <returns></returns>
@@ -44,14 +44,14 @@ public interface IIRPrinterContext
     IPrintSymbol Visit(Expr expr);
 
     /// <summary>
-    /// get the default Serialize;
+    /// get the default Serialize.
     /// </summary>
     /// <param name="op">Operator.</param>
     /// <returns>string.</returns>/
     string GetDefault(Op op) => $"{Get(op)}({string.Join(", ", op.Parameters.Select(p => p.Name + ": " + GetArgument(op, p).Serialize()))})";
 
     /// <summary>
-    /// get indent string
+    /// get indent string.
     /// </summary>
     /// <returns></returns>
     string Indent();

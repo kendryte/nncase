@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.CostModel;
@@ -17,6 +17,7 @@ public class CumSumEvaluator : IEvaluator<CumSum>, ITypeInferencer<CumSum>, ICos
     public IValue Visit(IEvaluateContext context, CumSum cumSum)
     {
         var input = context.GetOrtArgumentValue(cumSum, CumSum.Input);
+
         // in onnx, CumSum.Axis is a input tensor with one value
         var axis = context.GetOrtArgumentValue(cumSum, CumSum.Axis);
         var exclusive = context.GetArgumentValueAsScalar<long>(cumSum, CumSum.Exclusive);

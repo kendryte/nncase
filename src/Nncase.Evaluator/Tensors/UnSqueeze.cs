@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Linq;
@@ -26,7 +26,7 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
     public IRType Visit(ITypeInferenceContext context, Unsqueeze target)
     {
         var input = context.CheckArgumentType<TensorType>(target, Unsqueeze.Input);
-        var dim = context.CheckArgumentType<TensorType>(target, Unsqueeze.Dim);
+        _ = context.CheckArgumentType<TensorType>(target, Unsqueeze.Dim);
         return Visit(context, target, input);
     }
 
@@ -60,6 +60,7 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
                 {
                     var index = System.Math.Max(outShape.Count + dimVal + 1, 0);
                     outShape.Insert(index, 1);
+
                     // count == 3, dimVal == -4
                 }
             }

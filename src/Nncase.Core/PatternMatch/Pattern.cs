@@ -46,7 +46,7 @@ public abstract partial record Pattern(string? Name) : IPattern
 }
 
 /// <summary>
-/// 
+///
 /// Pattern.
 /// </summary>
 /// <typeparam name="TExpr">Expression type.</typeparam>

@@ -19,11 +19,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::k210;
 
-result<void> op_visitor::next() noexcept
-{
+result<void> op_visitor::next() noexcept {
     auto opcode = static_cast<opcode_t>(reader_.peek_unaligned<uint8_t>());
-    switch (opcode)
-    {
+    switch (opcode) {
     case opcode_t::kpu_conv2d:
         return visit(reader_.read_unaligned<kpu_conv2d_options>());
     case opcode_t::kpu_download:
@@ -39,8 +37,7 @@ result<void> op_visitor::next() noexcept
     return err(nncase_k210_errc::k210_illegal_instruction);
 }
 
-result<void> op_visitor::visit(gsl::span<const gsl::byte> text) noexcept
-{
+result<void> op_visitor::visit(gsl::span<const gsl::byte> text) noexcept {
     reader_ = span_reader(text);
     interrupted_ = false;
 

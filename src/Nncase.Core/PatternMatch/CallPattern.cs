@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -37,7 +37,7 @@ public sealed record CallPattern(Pattern Target, VArgsPattern Parameters, string
 }
 
 /// <summary>
-/// PatternMatch Utility
+/// PatternMatch Utility.
 /// </summary>
 public static partial class Utility
 {
@@ -100,7 +100,9 @@ public static partial class Utility
     /// <param name="target">op target.</param>
     /// <param name="parameters">params.</param>
     /// <returns></returns>
-    public static CallPattern IsCall<T>(string name, OpPattern<T> target, params Pattern[] parameters) where T : Op => new CallPattern(target, new VArgsPattern(parameters, null), name);
+    public static CallPattern IsCall<T>(string name, OpPattern<T> target, params Pattern[] parameters)
+        where T : Op
+        => new CallPattern(target, new VArgsPattern(parameters, null), name);
 
     /// <summary>
     /// is call .
@@ -109,5 +111,7 @@ public static partial class Utility
     /// <param name="target">op target.</param>
     /// <param name="parameters">params.</param>
     /// <returns></returns>
-    public static CallPattern IsCall<T>(string name, OpPattern<T> target, VArgsPattern parameters) where T : Op => new CallPattern(target, parameters, name);
+    public static CallPattern IsCall<T>(string name, OpPattern<T> target, VArgsPattern parameters)
+        where T : Op
+        => new CallPattern(target, parameters, name);
 }

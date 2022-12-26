@@ -85,6 +85,7 @@ def _make_module(dtype, low, high, seed, shape):
 
     return model_def
 
+
 dtypes = [
     TensorProto.FLOAT,
 ]
@@ -109,6 +110,7 @@ shapes = [
     [1, 3, 16, 16]
 ]
 
+
 @pytest.mark.parametrize('dtype', dtypes)
 @pytest.mark.parametrize('low', lows)
 @pytest.mark.parametrize('high', highs)
@@ -120,6 +122,7 @@ def test_random_uniform(dtype, low, high, seed, shape, request):
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_random_uniform.py'])

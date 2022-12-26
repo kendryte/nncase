@@ -82,6 +82,7 @@ def _make_module(in_shape, input_dtype, output_dtype, mean, scale, seed):
 
     return model_def
 
+
 in_shapes = [
     [1, 3, 16, 16]
 ]
@@ -111,6 +112,7 @@ seeds = [
     1.0,
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('input_dtype', input_dtypes)
 @pytest.mark.parametrize('output_dtype', output_dtypes)
@@ -123,6 +125,7 @@ def test_random_normal_like(in_shape, input_dtype, output_dtype, mean, scale, se
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_random_normal_like.py'])

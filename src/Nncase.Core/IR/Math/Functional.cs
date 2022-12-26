@@ -330,7 +330,7 @@ namespace Nncase.IR.F
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
-        public static Call FloorMod(Expr lhs, Expr rhs) => Sub(lhs, (FloorDiv(lhs, rhs) * rhs));
+        public static Call FloorMod(Expr lhs, Expr rhs) => Sub(lhs, FloorDiv(lhs, rhs) * rhs);
 
         /// <summary>
         /// Call compare.
@@ -399,7 +399,7 @@ namespace Nncase.IR.F
         public static Call Select(Expr predicate, Expr true_value, Expr false_value) => new Call(new Select(), predicate, true_value, false_value);
 
         /// <summary>
-        /// call condition
+        /// call condition.
         /// </summary>
         /// <param name="predicate"></param>
         /// <param name="value"></param>

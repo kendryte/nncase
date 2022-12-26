@@ -19,7 +19,8 @@ public abstract class ModulePass : BasePass
     /// Initializes a new instance of the <see cref="ModulePass"/> class.
     /// </summary>
     /// <param name="name">Name.</param>
-    public ModulePass(string name) : base(name)
+    public ModulePass(string name)
+        : base(name)
     {
     }
 
@@ -28,6 +29,7 @@ public abstract class ModulePass : BasePass
     /// </summary>
     /// <param name="module">Target module.</param>
     /// <param name="options">Options.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task RunAsync(IRModule module, RunPassOptions options)
     {
         var new_options = options.IndentDir(Name);
@@ -41,6 +43,7 @@ public abstract class ModulePass : BasePass
     /// </summary>
     /// <param name="module">Target module.</param>
     /// <param name="options">Options.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     protected abstract Task RunCoreAsync(IRModule module, RunPassOptions options);
 
     /// <summary>
@@ -51,7 +54,10 @@ public abstract class ModulePass : BasePass
     protected virtual void OnPassStart(IRModule module, RunPassOptions options)
     {
         if (options.DumpLevel < 3)
+        {
             return;
+        }
+
         foreach (var (func, i) in module.Functions.Select((func, i) => (func, i)))
         {
             CompilerServices.DumpIR(func, $"fn_{i}", Path.Combine(options.DumpDir, "Start"));
@@ -66,7 +72,9 @@ public abstract class ModulePass : BasePass
     protected virtual void OnPassEnd(IRModule module, RunPassOptions options)
     {
         if (options.DumpLevel < 3)
+        {
             return;
+        }
 
         foreach (var (func, i) in module.Functions.Select((func, i) => (func, i)))
         {

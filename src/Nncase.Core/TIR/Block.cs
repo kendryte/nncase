@@ -32,9 +32,9 @@ namespace Nncase.TIR;
 /// </code>
 /// </summary>
 /// <param name="Name"> The name_hint of the block.</param>
-/// <param name="Body"> block body </param>
+/// <param name="Body"> block body. </param>
 /// <param name="InitBody">the Block init statement.</param>
-/// <param name="IterVars">The List Exprs contain the IterVars</param>
+/// <param name="IterVars">The List Exprs contain the IterVars.</param>
 /// <param name="Reads">The read buffer regions of the block.</param>
 /// <param name="Writes">The write buffer regions of the block.</param>
 /// <param name="AllocBuffers">The buffer allocated in the block.</param>

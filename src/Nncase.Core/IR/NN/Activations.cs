@@ -12,13 +12,11 @@ using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.NN;
 
-
 /// <summary>
-/// The base class
+/// The base class.
 /// </summary>
 public abstract record ActivationOp : Op
 {
-
 }
 
 /// <summary>

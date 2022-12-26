@@ -25,7 +25,6 @@ public interface IRewriteProvider
     Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options);
 }
 
-
 /// <summary>
 /// EGraph Rewrite provider interface.
 /// </summary>

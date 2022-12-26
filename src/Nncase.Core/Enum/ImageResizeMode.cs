@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 namespace Nncase;
@@ -22,27 +22,27 @@ public enum ImageResizeMode : byte
 public enum ImageResizeTransformationMode
 {
     /// <summary>
-    /// HalfPixel
+    /// HalfPixel.
     /// </summary>
     HalfPixel,
 
     /// <summary>
-    /// PytorchHalfPixel
+    /// PytorchHalfPixel.
     /// </summary>
     PytorchHalfPixel,
 
     /// <summary>
-    /// AlignCorners
+    /// AlignCorners.
     /// </summary>
     AlignCorners,
 
     /// <summary>
-    /// Asymmetric
+    /// Asymmetric.
     /// </summary>
     Asymmetric,
 
     /// <summary>
-    /// TFCropAndResize
+    /// TFCropAndResize.
     /// </summary>
     TFCropAndResize,
 }
@@ -50,24 +50,24 @@ public enum ImageResizeTransformationMode
 public enum ImageResizeNearestMode
 {
     /// <summary>
-    /// RoundPreferFloor 
+    /// RoundPreferFloor.
     /// </summary>
     RoundPreferFloor,
 
     /// <summary>
-    /// RoundPreferCeil 
+    /// RoundPreferCeil.
     /// </summary>
     RoundPreferCeil,
 
     /// <summary>
-    /// Floor
+    /// Floor.
     /// </summary>
     Floor,
 
     /// <summary>
-    /// Ceil
+    /// Ceil.
     /// </summary>
-    Ceil
+    Ceil,
 }
 
 public static class ResizeModeHelper
@@ -141,5 +141,4 @@ public static class ResizeModeHelper
             _ => throw new NotSupportedException($"Unsupported ResizeTransformationMode Mode {mode}"),
         };
     }
-
 }

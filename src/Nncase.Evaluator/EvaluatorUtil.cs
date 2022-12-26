@@ -1,13 +1,17 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using NetFabric.Hyperlinq;
 using OrtKISharp;
 using static Nncase.IR.F.Tensors;
+
 namespace Nncase.Evaluator;
 
 public static class EvaluatorUtil
 {
     /// <summary>
-    /// nncase pads format to onnx pads format
+    /// nncase pads format to onnx pads format.
     /// </summary>
     /// <param name="pads"></param>
     /// <returns></returns>

@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Linq;
@@ -43,12 +43,12 @@ public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInfere
 
     public Cost? Visit(ICostEvaluateContext context, ConstantOfShape target)
     {
-        var input = context.GetArgumentType<TensorType>(target, ConstantOfShape.Shape);
+        _ = context.GetArgumentType<TensorType>(target, ConstantOfShape.Shape);
         var ret = context.GetReturnType<TensorType>();
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret)
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
         };
     }
 }

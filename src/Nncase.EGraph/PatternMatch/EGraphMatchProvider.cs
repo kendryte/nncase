@@ -22,7 +22,7 @@ internal class EGraphMatchProvider : IEGraphMatchProvider
     public bool TryEMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
     {
         var egraph = new EGraph();
-        var root = egraph.Add(expr);
+        _ = egraph.Add(expr);
         return TryMatchRoot(egraph.Nodes, pattern, out results);
     }
 }

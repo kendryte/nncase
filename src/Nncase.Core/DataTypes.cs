@@ -109,7 +109,7 @@ public static class DataTypes
       srcType is PointerType;
 
     /// <summary>
-    /// display the datatype
+    /// display the datatype.
     /// </summary>
     /// <param name="dataType"></param>
     /// <returns> datatype name.</returns>

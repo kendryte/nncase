@@ -17,24 +17,18 @@
 #include <system_error>
 #include <vulkan/vulkan.hpp>
 
-namespace vk
-{
+namespace vk {
 NNCASE_MODULES_VULKAN_API const std::error_category &vulkan_category() noexcept;
-NNCASE_MODULES_VULKAN_API std::error_condition make_error_condition(vk::Result code);
-}
+NNCASE_MODULES_VULKAN_API std::error_condition
+make_error_condition(vk::Result code);
+} // namespace vk
 
-namespace std
-{
-template <>
-struct is_error_condition_enum<vk::Result> : true_type
-{
-};
-}
+namespace std {
+template <> struct is_error_condition_enum<vk::Result> : true_type {};
+} // namespace std
 
-namespace vk
-{
-inline nncase::result<void> to_result(vk::Result &&value) noexcept
-{
+namespace vk {
+inline nncase::result<void> to_result(vk::Result &&value) noexcept {
     if (value == vk::Result::eSuccess)
         return nncase::ok();
     else
@@ -42,11 +36,10 @@ inline nncase::result<void> to_result(vk::Result &&value) noexcept
 }
 
 template <class T>
-nncase::result<T> to_result(vk::ResultValue<T> &&value) noexcept
-{
+nncase::result<T> to_result(vk::ResultValue<T> &&value) noexcept {
     if (value.result == vk::Result::eSuccess)
         return nncase::ok(std::move(value.value));
     else
         return nncase::err(value.result);
 }
-}
+} // namespace vk

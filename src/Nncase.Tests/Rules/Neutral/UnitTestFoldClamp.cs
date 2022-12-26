@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -24,6 +27,14 @@ public class UnitTestFoldClamp : TestFixture.UnitTestFixtrue
             new object[] { double.NegativeInfinity, double.PositiveInfinity },
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
+    public static IEnumerable<object[]> TestFoldNopClampNegativeData =>
+        new[]
+        {
+            new object[] { float.MinValue, float.IsNormal(10) },
+            new object[] { float.IsNormal(-2), float.IsNormal(10) },
+            new object[] { float.IsNormal(-2), float.MaxValue },
+        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
+
     [Theory]
     [MemberData(nameof(TestFoldNopClampPositiveData))]
     public void TestFoldNopCastPositive(float min, float max, int index)
@@ -35,14 +46,6 @@ public class UnitTestFoldClamp : TestFixture.UnitTestFixtrue
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
-
-    public static IEnumerable<object[]> TestFoldNopClampNegativeData =>
-        new[]
-        {
-            new object[] { float.MinValue, float.IsNormal(10) },
-            new object[] { float.IsNormal(-2), float.IsNormal(10) },
-            new object[] { float.IsNormal(-2), float.MaxValue },
-        }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
 
     [Theory]
     [MemberData(nameof(TestFoldNopClampNegativeData))]

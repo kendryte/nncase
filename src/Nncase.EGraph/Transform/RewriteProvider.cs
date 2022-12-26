@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,7 +15,9 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
     public Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
     {
         if (expr.CheckedType is null)
+        {
             CompilerServices.InferenceType(expr);
+        }
 
         var graph = new EGraph();
         var root = graph.Add(expr);

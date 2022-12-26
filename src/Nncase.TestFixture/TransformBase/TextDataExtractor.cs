@@ -1,20 +1,24 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Collections;
 using System.Diagnostics;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.TIR;
 using Nncase.Utilities;
+using Xunit;
 using static Nncase.TestFixture.DumpPathExtractor;
 
 namespace Nncase.TestFixture;
 
 public record OriginValue(IValue Value, string Path)
 {
+    public string FileName => System.IO.Path.GetFileName(Path);
+
     public OriginTensor[] AsTensors() => Value.AsTensors().Select(t => new OriginTensor(t, Path)).ToArray();
 
     public OriginTensor AsTensor() => new OriginTensor(Value.AsTensor(), Path);
-
-    public string FileName => System.IO.Path.GetFileName(Path);
 }
 
 public record OriginTensor(Tensor Tensor, string Path) : OriginValue(Nncase.Value.FromTensor(Tensor), Path)
@@ -24,6 +28,7 @@ public record OriginTensor(Tensor Tensor, string Path) : OriginValue(Nncase.Valu
 public static class DumpPathExtractor
 {
     public static char Separator => '$';
+
     public static int GetCount(string file) => int.Parse(file.Split(Separator).Head());
 
     public static string GetOpName(string file) => file.Split(Separator)[1];
@@ -72,6 +77,7 @@ public class TextDataExtractor
     {
         var fs = Directory.GetFiles(dir).ToList();
         fs.Sort(FileNumSorter);
+
         // remove out shape list
         fs.RemoveAt(0);
         return fs;
@@ -83,10 +89,10 @@ public class TextDataExtractor
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="dir"></param>
-    /// <returns> dict:num$op_name -> num$op_name$param_name/returns>
+    /// <returns> dict:num$op_name -> num$op_name$param_name/returns>.
     public Dictionary<string, IEnumerable<string>> GetFilesByOrderNum(string dir)
     {
         return GetFilesByGroup(dir)
@@ -99,11 +105,11 @@ public class TextDataExtractor
             x => x.Select(s => s));
     }
 
-    public OriginValue[] ExtractValues(string dir, Func<string, bool> Extractor)
+    public OriginValue[] ExtractValues(string dir, Func<string, bool> extractor)
     {
         var fs = GetFilesByOrdered(dir);
         return fs
-            .Filter(filePath => Extractor(Path.GetFileName(filePath)))
+            .Filter(filePath => extractor(Path.GetFileName(filePath)))
             .Select(path => new OriginValue(DataGenerator.FromTextFile(path), path))
             .ToArray();
     }
@@ -113,11 +119,12 @@ public class TextDataExtractor
     public OriginValue GetComputeResult(string dir, int i)
     {
         var results = ExtractValues(dir, f => IsResultFile(f) && GetDumpFileNum(f) == i);
-        Trace.Assert(results.Length != 0);
+        Assert.NotEqual(results.Length, 0);
         return results.Head();
     }
 
-    public OriginValue[] GetParams(string dir, int count) => ExtractValues(dir,
+    public OriginValue[] GetParams(string dir, int count) => ExtractValues(
+        dir,
         file => IsParamFile(file) && GetCount(file) == count);
 
     public OriginValue[] GetValues(string dir)

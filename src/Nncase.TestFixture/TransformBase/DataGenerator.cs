@@ -1,16 +1,25 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Diagnostics;
 using LanguageExt.UnsafeValueAccess;
 using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
-using Random = Nncase.IR.F.Random;
+using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
+using Random = Nncase.IR.F.Random;
+
 namespace Nncase.TestFixture;
 
 public static class DataGenerator
 {
-    private static System.Random rand = new();
+    private static readonly System.Random Rand = new();
+
+    public static int DefaultChannel => 2;
+
+    public static int[] DefaultShape => new[] { 3, 2, 4, 8 };
 
     public static IEnumerable<T> EnumValues<T>()
     {
@@ -21,9 +30,6 @@ public static class DataGenerator
     {
         return DefaultRandom(DataTypes.Float32, new[] { 3, DefaultChannel, 4, 8 });
     }
-
-    public static int DefaultChannel => 2;
-    public static int[] DefaultShape => new[] { 3, 2, 4, 8 };
 
     public static Expr DefaultRandom(DataType dt)
     {
@@ -41,7 +47,6 @@ public static class DataGenerator
         // {
         //     return Testing.Rand(dt, shape);
         // }
-
         return
             Random.Normal(DataTypes.Float32, new Shape(shape)).Evaluate().AsTensor().CastTo(dt);
     }
@@ -66,7 +71,7 @@ public static class DataGenerator
     // nncase format DeQuantizeParam
     public static QuantParam RandomQuantParam()
     {
-        var qp = new QuantParam(rand.Next(1, 2), rand.Next(55, 255));
+        var qp = new QuantParam(Rand.Next(1, 2), Rand.Next(55, 255));
         return qp with { Scale = 1 / qp.Scale };
     }
 
@@ -77,8 +82,11 @@ public static class DataGenerator
         var bias = Random.Normal(DataTypes.Float32, new[] { 16 }).Evaluate();
         var stride = Tensor.From(new[] { 1, 1 }, new[] { 2 });
         var dilation = Tensor.From(new[] { 1, 1 }, new[] { 2 });
-        var padding = new[,] { { 0, 1 },
-        { 0, 0 } };
+        var padding = new[,]
+        {
+            { 0, 1 },
+            { 0, 0 },
+        };
 
         var conv = Conv2D(input, weights.AsTensor(), bias.AsTensor(), stride, padding,
             dilation,
@@ -96,8 +104,8 @@ public static class DataGenerator
         return result;
     }
 
-    public static IEnumerable<IEnumerable<T>> Product<T>
-        (this IEnumerable<IEnumerable<T>> sequences)
+    public static IEnumerable<IEnumerable<T>> Product<T>(
+        this IEnumerable<IEnumerable<T>> sequences)
     {
         IEnumerable<IEnumerable<T>> emptyProduct =
             new[] { Enumerable.Empty<T>() };
@@ -122,7 +130,7 @@ public static class DataGenerator
             }
             else
             {
-                Trace.Assert(data.Length == 1);
+                Assert.Equal(data.Length, 1);
                 return Value.FromTensor(ParseTensor(data.Head()));
             }
         }
@@ -137,7 +145,7 @@ public static class DataGenerator
         var opdata = data[$"{num}${opNameInFile}"];
         var parameters = op.Parameters
             .Select((param, i) => opdata.Find(dataPath => dataPath.Contains(param.Name)).ValueUnsafe())
-            .Select(path => (Expr)(FromTextFile(path).AsTensor())).ToArray();
+            .Select(path => (Expr)FromTextFile(path).AsTensor()).ToArray();
         return new Call(op, new IRArray<Expr>(parameters));
     }
 
@@ -163,7 +171,7 @@ public static class DataGenerator
         return dt switch
         {
             PointerType pointerType => throw new NotImplementedException(),
-            BooleanType booleanType => Tensor.From(data.Select(x => (int.Parse(x) >= 1)).ToArray(), shape),
+            BooleanType booleanType => Tensor.From(data.Select(x => int.Parse(x) >= 1).ToArray(), shape),
             Float16Type float16Type => Tensor.From(data.Select(x => (Half)ParseFloat(x)).ToArray(), shape),
             Float32Type float32Type => Tensor.From(data.Select(x => ParseFloat(x)).ToArray(), shape),
             Float64Type float64Type => Tensor.From(data.Select(x => double.Parse(x)).ToArray(), shape),
@@ -180,7 +188,7 @@ public static class DataGenerator
             PrimType primType => throw new NotImplementedException(),
             QuantParamType quantParamType => throw new NotImplementedException(),
             ValueType valueType => throw new NotImplementedException(),
-            _ => throw new ArgumentOutOfRangeException(nameof(dt))
+            _ => throw new ArgumentOutOfRangeException(nameof(dt)),
         };
     }
 
@@ -214,13 +222,14 @@ public static class DataGenerator
         return (ParseDataType(content[dtIndex]), ParseShape(content[shapeIndex]), data[..end], endIndexInContent);
     }
 
-    private record DumpData(DataType dt, int[] shape, string[] data)
+    private record DumpData(DataType Dt, int[] Shape, string[] Data)
     {
     }
 
     private static DumpData[] ParseDumpFile(string[] content)
     {
         int baseIndex = 0;
+
         // result
         if (!content[0].StartsWith("type"))
         {
