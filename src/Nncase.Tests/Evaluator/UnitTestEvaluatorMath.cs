@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -31,11 +34,14 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestBinaryScalarScalar()
     {
-        BinaryOp[] ops = new BinaryOp[] { BinaryOp.Add, BinaryOp.Sub, BinaryOp.Mul, BinaryOp.Div, BinaryOp.Mod, BinaryOp.Min, BinaryOp.Max, BinaryOp.Pow,
-            BinaryOp.LogicalAnd, BinaryOp.LogicalOr, BinaryOp.LogicalXor, BinaryOp.LeftShift, BinaryOp.RightShift };
+        var ops = new BinaryOp[]
+        {
+            BinaryOp.Add, BinaryOp.Sub, BinaryOp.Mul, BinaryOp.Div, BinaryOp.Mod, BinaryOp.Min, BinaryOp.Max, BinaryOp.Pow,
+            BinaryOp.LogicalAnd, BinaryOp.LogicalOr, BinaryOp.LogicalXor, BinaryOp.LeftShift, BinaryOp.RightShift,
+        };
 
         // bool
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = false;
             var b = true;
@@ -46,10 +52,11 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
 
         // uint
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = 1U;
             var b = 2U;
+
             // if (op != BinaryOp.LogicalAnd && op != BinaryOp.LogicalOr && op != BinaryOp.LogicalXor)
             if (op == BinaryOp.LeftShift || op == BinaryOp.RightShift)
             {
@@ -58,7 +65,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
 
         // float
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = 1f;
             var b = 2f;
@@ -69,7 +76,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
 
         // int
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = 1;
             var b = 2;
@@ -80,7 +87,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
 
         // long
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = 1L;
             var b = 2L;
@@ -94,25 +101,29 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestBinaryScalarTensor()
     {
-        BinaryOp[] ops = new BinaryOp[] { BinaryOp.Add, BinaryOp.Sub, BinaryOp.Mul, BinaryOp.Div, BinaryOp.Mod, BinaryOp.Min, BinaryOp.Max, BinaryOp.Pow,
-            BinaryOp.LogicalAnd, BinaryOp.LogicalOr, BinaryOp.LogicalXor, BinaryOp.LeftShift, BinaryOp.RightShift };
+        var ops = new BinaryOp[]
+        {
+            BinaryOp.Add, BinaryOp.Sub, BinaryOp.Mul, BinaryOp.Div, BinaryOp.Mod, BinaryOp.Min, BinaryOp.Max, BinaryOp.Pow,
+            BinaryOp.LogicalAnd, BinaryOp.LogicalOr, BinaryOp.LogicalXor, BinaryOp.LeftShift, BinaryOp.RightShift,
+        };
 
         // bool
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = true;
             var b = new bool[] { true, false, false, true, true, false, false, true };
-            if (op == BinaryOp.LogicalAnd || op == BinaryOp.LogicalOr || op == BinaryOp.LogicalXor && op != BinaryOp.LeftShift && op != BinaryOp.RightShift)
+            if (op == BinaryOp.LogicalAnd || op == BinaryOp.LogicalOr || (op == BinaryOp.LogicalXor && op != BinaryOp.LeftShift && op != BinaryOp.RightShift))
             {
                 TestBinaryRunNormal(op, OrtKISharp.Tensor.FromScalar(a), OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 }), a, Tensor.From(b, new[] { 2, 4 }));
             }
         }
 
         // uint
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = 2U;
             var b = new uint[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+
             // if (op != BinaryOp.LogicalAnd && op != BinaryOp.LogicalOr && op != BinaryOp.LogicalXor)
             if (op == BinaryOp.LeftShift || op == BinaryOp.RightShift)
             {
@@ -121,7 +132,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
 
         // float
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = 2f;
             var b = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
@@ -132,7 +143,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
 
         // int
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = 2;
             var b = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
@@ -143,7 +154,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
 
         // long
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = 2L;
             var b = new long[] { 1, 2, 3, 4, 5, 6, 7, 8 };
@@ -157,25 +168,29 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestBinaryTensorScalar()
     {
-        BinaryOp[] ops = new BinaryOp[] { BinaryOp.Add, BinaryOp.Sub, BinaryOp.Mul, BinaryOp.Div, BinaryOp.Mod, BinaryOp.Min, BinaryOp.Max, BinaryOp.Pow,
-            BinaryOp.LogicalAnd, BinaryOp.LogicalOr, BinaryOp.LogicalXor, BinaryOp.LeftShift, BinaryOp.RightShift };
+        var ops = new BinaryOp[]
+        {
+            BinaryOp.Add, BinaryOp.Sub, BinaryOp.Mul, BinaryOp.Div, BinaryOp.Mod, BinaryOp.Min, BinaryOp.Max, BinaryOp.Pow,
+            BinaryOp.LogicalAnd, BinaryOp.LogicalOr, BinaryOp.LogicalXor, BinaryOp.LeftShift, BinaryOp.RightShift,
+        };
 
         // bool
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = new bool[] { true, false, false, true, true, false, false, true };
             var b = true;
-            if (op == BinaryOp.LogicalAnd || op == BinaryOp.LogicalOr || op == BinaryOp.LogicalXor && op != BinaryOp.LeftShift && op != BinaryOp.RightShift)
+            if (op == BinaryOp.LogicalAnd || op == BinaryOp.LogicalOr || (op == BinaryOp.LogicalXor && op != BinaryOp.LeftShift && op != BinaryOp.RightShift))
             {
                 TestBinaryRunNormal(op, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 }), OrtKISharp.Tensor.FromScalar(b), Tensor.From(a, new[] { 2, 4 }), b);
             }
         }
 
         // uint
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = new uint[] { 1, 2, 3, 4, 5, 6, 7, 8 };
             var b = 2U;
+
             // if (op != BinaryOp.LogicalAnd && op != BinaryOp.LogicalOr && op != BinaryOp.LogicalXor)
             if (op == BinaryOp.LeftShift || op == BinaryOp.RightShift)
             {
@@ -184,7 +199,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
 
         // float
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
             var b = 2f;
@@ -195,7 +210,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
 
         // int
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
             var b = 2;
@@ -206,7 +221,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
 
         // long
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = new long[] { 1, 2, 3, 4, 5, 6, 7, 8 };
             var b = 2L;
@@ -220,11 +235,14 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestBinaryTensorTensor()
     {
-        BinaryOp[] ops = new BinaryOp[] { BinaryOp.Add, BinaryOp.Sub, BinaryOp.Mul, BinaryOp.Div, BinaryOp.Mod, BinaryOp.Min, BinaryOp.Max, BinaryOp.Pow,
-            BinaryOp.LogicalAnd, BinaryOp.LogicalOr, BinaryOp.LogicalXor, BinaryOp.LeftShift, BinaryOp.RightShift };
+        var ops = new BinaryOp[]
+        {
+            BinaryOp.Add, BinaryOp.Sub, BinaryOp.Mul, BinaryOp.Div, BinaryOp.Mod, BinaryOp.Min, BinaryOp.Max, BinaryOp.Pow,
+            BinaryOp.LogicalAnd, BinaryOp.LogicalOr, BinaryOp.LogicalXor, BinaryOp.LeftShift, BinaryOp.RightShift,
+        };
 
         // bool
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = new bool[] { true, false, false, true, true, false, false, true };
             var b = new bool[] { true, false, true, false, true, false, false, true };
@@ -236,10 +254,11 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
 
         // uint
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = new uint[] { 1, 2, 3, 4, 5, 6, 7, 8 };
             var b = new uint[] { 1, 1, 2, 2, 3, 3, 4, 4 };
+
             // if (op != BinaryOp.LogicalAnd && op != BinaryOp.LogicalOr && op != BinaryOp.LogicalXor)
             if (op == BinaryOp.LeftShift || op == BinaryOp.RightShift)
             {
@@ -249,7 +268,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
 
         // float
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
             var b = new float[] { 1, 1, 2, 2, 3, 3, 4, 4 };
@@ -261,7 +280,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
 
         // int
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
             var b = new int[] { 1, 1, 2, 2, 3, 3, 4, 4 };
@@ -273,7 +292,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
 
         // long
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             var a = new long[] { 1, 2, 3, 4, 5, 6, 7, 8 };
             var b = new long[] { 1, 1, 2, 2, 3, 3, 4, 4 };
@@ -285,108 +304,121 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
     }
 
-    private void TestBinaryRunNormal(BinaryOp op, OrtKISharp.Tensor ort_a, OrtKISharp.Tensor ort_b, Expr exp_a, Expr exp_b)
-    {
-        OrtKISharp.Tensor expect = ort_a;
-        switch (op)
-        {
-            case BinaryOp.Add:
-            {
-                expect = ort_a + ort_b;
-                break;
-            }
-            case BinaryOp.Sub:
-            {
-                expect = ort_a - ort_b;
-                break;
-            }
-
-            case BinaryOp.Mul:
-            {
-                expect = ort_a * ort_b;
-                break;
-            }
-            case BinaryOp.Div:
-            {
-                expect = ort_a / ort_b;
-                break;
-            }
-            case BinaryOp.Mod:
-            {
-                if (DataTypes.IsFloat(ort_a.DataType.ToDataType()) && DataTypes.IsFloat(ort_b.DataType.ToDataType()))
-                {
-                    expect = OrtKI.Mod(ort_a, ort_b, 1);
-                }
-                else
-                {
-                    expect = OrtKI.Mod(ort_a, ort_b, 0);
-                }
-                break;
-            }
-            case BinaryOp.Min:
-            {
-                expect = OrtKI.Min(new[] { ort_a, ort_b });
-                break;
-            }
-            case BinaryOp.Max:
-            {
-                expect = OrtKI.Max(new[] { ort_a, ort_b });
-                break;
-            }
-            case BinaryOp.Pow:
-            {
-                expect = OrtKI.Pow(ort_a, ort_b);
-                break;
-            }
-            case BinaryOp.LogicalAnd:
-            {
-                expect = OrtKI.And(ort_a, ort_b);
-                break;
-            }
-            case BinaryOp.LogicalOr:
-            {
-                expect = OrtKI.Or(ort_a, ort_b);
-                break;
-            }
-            case BinaryOp.LogicalXor:
-            {
-                expect = OrtKI.Xor(ort_a, ort_b);
-                break;
-            }
-            case BinaryOp.LeftShift:
-            {
-                expect = OrtKI.LeftShift(ort_a, ort_b);
-                break;
-            }
-            case BinaryOp.RightShift:
-            {
-                expect = OrtKI.RightShift(ort_a, ort_b);
-                break;
-            }
-            default:
-            {
-                throw new ArgumentOutOfRangeException(nameof(op));
-            }
-        }
-
-        var expr = IR.F.Math.Binary(op, exp_a, exp_b);
-        CompilerServices.InferenceType(expr);
-
-        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
-    }
-
     [Fact]
     public void TestBinaryRunInvalidType()
     {
         {
-            BinaryOp[] ops = new BinaryOp[] { BinaryOp.LogicalAnd, BinaryOp.LogicalOr, BinaryOp.LogicalXor, BinaryOp.LeftShift, BinaryOp.RightShift };
-            foreach(var op in ops)
+            var ops = new BinaryOp[] { BinaryOp.LogicalAnd, BinaryOp.LogicalOr, BinaryOp.LogicalXor, BinaryOp.LeftShift, BinaryOp.RightShift };
+            foreach (var op in ops)
             {
                 var expr = IR.F.Math.Binary(op, 1f, 2f);
                 CompilerServices.InferenceType(expr);
                 Assert.IsType<InvalidType>(expr.CheckedType);
             }
         }
+    }
+
+    private void TestBinaryRunNormal(BinaryOp op, OrtKISharp.Tensor ort_a, OrtKISharp.Tensor ort_b, Expr exp_a, Expr exp_b)
+    {
+        OrtKISharp.Tensor expect;
+        switch (op)
+        {
+            case BinaryOp.Add:
+                {
+                    expect = ort_a + ort_b;
+                    break;
+                }
+
+            case BinaryOp.Sub:
+                {
+                    expect = ort_a - ort_b;
+                    break;
+                }
+
+            case BinaryOp.Mul:
+                {
+                    expect = ort_a * ort_b;
+                    break;
+                }
+
+            case BinaryOp.Div:
+                {
+                    expect = ort_a / ort_b;
+                    break;
+                }
+
+            case BinaryOp.Mod:
+                {
+                    if (DataTypes.IsFloat(ort_a.DataType.ToDataType()) && DataTypes.IsFloat(ort_b.DataType.ToDataType()))
+                    {
+                        expect = OrtKI.Mod(ort_a, ort_b, 1);
+                    }
+                    else
+                    {
+                        expect = OrtKI.Mod(ort_a, ort_b, 0);
+                    }
+
+                    break;
+                }
+
+            case BinaryOp.Min:
+                {
+                    expect = OrtKI.Min(new[] { ort_a, ort_b });
+                    break;
+                }
+
+            case BinaryOp.Max:
+                {
+                    expect = OrtKI.Max(new[] { ort_a, ort_b });
+                    break;
+                }
+
+            case BinaryOp.Pow:
+                {
+                    expect = OrtKI.Pow(ort_a, ort_b);
+                    break;
+                }
+
+            case BinaryOp.LogicalAnd:
+                {
+                    expect = OrtKI.And(ort_a, ort_b);
+                    break;
+                }
+
+            case BinaryOp.LogicalOr:
+                {
+                    expect = OrtKI.Or(ort_a, ort_b);
+                    break;
+                }
+
+            case BinaryOp.LogicalXor:
+                {
+                    expect = OrtKI.Xor(ort_a, ort_b);
+                    break;
+                }
+
+            case BinaryOp.LeftShift:
+                {
+                    expect = OrtKI.LeftShift(ort_a, ort_b);
+                    break;
+                }
+
+            case BinaryOp.RightShift:
+                {
+                    expect = OrtKI.RightShift(ort_a, ort_b);
+                    break;
+                }
+
+            default:
+                {
+                    throw new ArgumentOutOfRangeException(nameof(op));
+                }
+        }
+
+        var expr = IR.F.Math.Binary(op, exp_a, exp_b);
+        CompilerServices.InferenceType(expr);
+
+        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
 
     [Fact]
@@ -398,7 +430,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         var expr = IR.F.Math.Clamp(Tensor.From(input, new[] { 2, 4 }), min, max);
         CompilerServices.InferenceType(expr);
 
-        var result = new float[] { 3, 3, 3, 4, 5, 6, 6, 6};
+        var result = new float[] { 3, 3, 3, 4, 5, 6, 6, 6 };
         var expect = Tensor.From(result, new[] { 2, 4 });
         Assert.Equal(expect, expr.Evaluate().AsTensor());
     }
@@ -429,7 +461,6 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
 
         Assert.False(CompilerServices.Evaluate((Expr)1 >= (Expr)10).AsTensor().ToScalar<bool>());
         Assert.True(CompilerServices.Evaluate((Expr)1 >= (Expr)0).AsTensor().ToScalar<bool>());
-
         {
             var ort_a = OrtKISharp.Tensor.FromScalar<int>(10);
             var ort_b = OrtKISharp.Tensor.FromScalar<int>(-2);
@@ -451,7 +482,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         {
             var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
             var b = new float[] { 4, 4, 4, 4, 4, 4, 4, 4 };
-            bool []result = { false, false, false, false, false, false, false, false };
+            bool[] result = { false, false, false, false, false, false, false, false };
 
             var ort_a = OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 });
             var ort_b = OrtKISharp.Tensor.MakeTensor(b, new long[] { 2, 4 });
@@ -460,43 +491,51 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
             var expr_b = Tensor.From(b, new[] { 2, 4 });
             var expect = Tensor.From(result, new[] { 2, 4 }).ToOrtTensor();
 
-            CompareOp []ops = new CompareOp[] { CompareOp.Equal, CompareOp.NotEqual, CompareOp.LowerThan, CompareOp.LowerOrEqual,
-                CompareOp.GreaterThan, CompareOp.GreaterOrEqual };
+            var ops = new CompareOp[]
+            {
+                CompareOp.Equal, CompareOp.NotEqual, CompareOp.LowerThan, CompareOp.LowerOrEqual,
+                CompareOp.GreaterThan, CompareOp.GreaterOrEqual,
+            };
 
-            foreach(var op in ops)
+            foreach (var op in ops)
             {
                 switch (op)
                 {
                     case CompareOp.NotEqual:
-                    {
-                        expect = OrtKI.Not(OrtKI.Equal(ort_a, ort_b));
-                        break;
-                    }
+                        {
+                            expect = OrtKI.Not(OrtKI.Equal(ort_a, ort_b));
+                            break;
+                        }
+
                     case CompareOp.Equal:
-                    {
-                        expect = OrtKI.Equal(ort_a, ort_b);
-                        break;
-                    }
+                        {
+                            expect = OrtKI.Equal(ort_a, ort_b);
+                            break;
+                        }
+
                     case CompareOp.LowerThan:
-                    {
-                        expect = OrtKI.Less(ort_a, ort_b);
-                        break;
-                    }
+                        {
+                            expect = OrtKI.Less(ort_a, ort_b);
+                            break;
+                        }
+
                     case CompareOp.LowerOrEqual:
-                    {
-                        expect = OrtKI.LessOrEqual(ort_a, ort_b);
-                        break;
-                    }
+                        {
+                            expect = OrtKI.LessOrEqual(ort_a, ort_b);
+                            break;
+                        }
+
                     case CompareOp.GreaterThan:
-                    {
-                        expect = OrtKI.Greater(ort_a, ort_b);
-                        break;
-                    }
+                        {
+                            expect = OrtKI.Greater(ort_a, ort_b);
+                            break;
+                        }
+
                     case CompareOp.GreaterOrEqual:
-                    {
-                        expect = OrtKI.GreaterOrEqual(ort_a, ort_b);
-                        break;
-                    }
+                        {
+                            expect = OrtKI.GreaterOrEqual(ort_a, ort_b);
+                            break;
+                        }
                 }
 
                 var expr = IR.F.Math.Compare(op, expr_a, expr_b);
@@ -577,7 +616,8 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         var scale = 0.01F;
 
         var expect = Tensor.From(input, new[] { 2, 4 });
-        var expr = IR.F.Math.FakeDequantize(Tensor.From(input, new[] { 2, 4 }),
+        var expr = IR.F.Math.FakeDequantize(
+            Tensor.From(input, new[] { 2, 4 }),
             new QuantParam(zero_point, scale), DataTypes.Float32);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor());
@@ -591,7 +631,8 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         var scale = 0.05F;
 
         var expect = Tensor.From(input, new[] { 2, 4 });
-        var expr = IR.F.Math.FakeQuantize(Tensor.From(input, new[] { 2, 4 }),
+        var expr = IR.F.Math.FakeQuantize(
+            Tensor.From(input, new[] { 2, 4 }),
             new QuantParam(zero_point, scale), DataTypes.UInt8);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor());
@@ -605,8 +646,8 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
             var m1_ort = OrtKISharp.Tensor.MakeTensor(input, new long[] { 2, 4 });
             var m2_ort = OrtKISharp.Tensor.MakeTensor(input, new long[] { 4, 2 });
 
-            var m1 = Tensor.From(input, new [] { 2, 4 });
-            var m2 = Tensor.From(input, new [] { 4, 2 });
+            var m1 = Tensor.From(input, new[] { 2, 4 });
+            var m2 = Tensor.From(input, new[] { 4, 2 });
             var expect = OrtKI.MatMul(m1_ort, m2_ort);
 
             var expr = IR.F.Math.MatMul(m1, m2);
@@ -621,8 +662,8 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
             var m1_ort = OrtKISharp.Tensor.MakeTensor(input1, new long[] { 2, 2, 4 });
             var m2_ort = OrtKISharp.Tensor.MakeTensor(input2, new long[] { 4, 2 });
 
-            var m1 = Tensor.From(input1, new [] { 2, 2, 4 });
-            var m2 = Tensor.From(input2, new [] { 4, 2 });
+            var m1 = Tensor.From(input1, new[] { 2, 2, 4 });
+            var m2 = Tensor.From(input2, new[] { 4, 2 });
             var expect = OrtKI.MatMul(m1_ort, m2_ort);
 
             var expr = IR.F.Math.MatMul(m1, m2);
@@ -637,8 +678,8 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         {
             var input1 = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
             var input2 = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-            var m1 = Tensor.From(input1, new [] { 2, 4 });
-            var m2 = Tensor.From(input2, new [] { 4, 2 });
+            var m1 = Tensor.From(input1, new[] { 2, 4 });
+            var m2 = Tensor.From(input2, new[] { 4, 2 });
 
             var expr = IR.F.Math.MatMul(m1, m2);
             CompilerServices.InferenceType(expr);
@@ -648,8 +689,8 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         {
             var input1 = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
             var input2 = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
-            var m1 = Tensor.From(input1, new [] { 2, 4 });
-            var m2 = Tensor.From(input2, new [] { 1, 8 });
+            var m1 = Tensor.From(input1, new[] { 2, 4 });
+            var m2 = Tensor.From(input2, new[] { 1, 8 });
 
             var expr = IR.F.Math.MatMul(m1, m2);
             CompilerServices.InferenceType(expr);
@@ -657,11 +698,10 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
     }
 
-
     [Fact]
     public void TestQuantParamOf()
     {
-        float []range = new float[] { 0F, 1F };
+        float[] range = new float[] { 0F, 1F };
         QuantMode mode = QuantMode.UnsignedMode;
         int bits = 8;
 
@@ -669,11 +709,6 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         var expr = IR.F.Math.QuantParamOf(mode, range, bits);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor());
-    }
-
-    private void AssertRangeOf(Expr input, float[] r)
-    {
-        Assert.Equal(r, RangeOf(input).Evaluate().AsTensor().ToArray<float>());
     }
 
     [Fact]
@@ -691,10 +726,15 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         AssertRangeOf(n2.ToArray(), r);
     }
 
- [Fact]
+    private void AssertRangeOf(Expr input, float[] r)
+    {
+        Assert.Equal(r, RangeOf(input).Evaluate().AsTensor().ToArray<float>());
+    }
+
+    [Fact]
     public void TestReduce()
     {
-        long []axes = { 0 };
+        long[] axes = { 0 };
         float initValue = 0F;
         long keepDims = 1;
         var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
@@ -703,51 +743,54 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         var expr_a = Tensor.From(a, new[] { 2, 4 });
         var expect = Tensor.From(result, new[] { 1, 4 }).ToOrtTensor();
 
-        ReduceOp []ops = new ReduceOp[] { ReduceOp.Max, ReduceOp.Min, ReduceOp.Mean, ReduceOp.Prod, ReduceOp.Sum };
+        var ops = new ReduceOp[] { ReduceOp.Max, ReduceOp.Min, ReduceOp.Mean, ReduceOp.Prod, ReduceOp.Sum };
 
-        foreach(var op in ops)
+        foreach (var op in ops)
         {
             switch (op)
             {
                 case ReduceOp.Max:
-                {
-                    expect = OrtKI.ReduceMax(ort_a, axes, keepDims);
-                    break;
-                }
+                    {
+                        expect = OrtKI.ReduceMax(ort_a, axes, keepDims);
+                        break;
+                    }
+
                 case ReduceOp.Min:
-                {
-                    expect = OrtKI.ReduceMin(ort_a, axes, keepDims);
-                    break;
-                }
+                    {
+                        expect = OrtKI.ReduceMin(ort_a, axes, keepDims);
+                        break;
+                    }
+
                 case ReduceOp.Mean:
-                {
-                    expect = OrtKI.ReduceMean(ort_a, axes, keepDims);
-                    break;
-                }
+                    {
+                        expect = OrtKI.ReduceMean(ort_a, axes, keepDims);
+                        break;
+                    }
+
                 case ReduceOp.Prod:
-                {
-                    expect = OrtKI.ReduceProd(ort_a, axes, keepDims);
-                    break;
-                }
+                    {
+                        expect = OrtKI.ReduceProd(ort_a, axes, keepDims);
+                        break;
+                    }
+
                 case ReduceOp.Sum:
-                {
-                    expect = OrtKI.ReduceSum(ort_a, axes, keepDims, 0L);
-                    break;
-                }
+                    {
+                        expect = OrtKI.ReduceSum(ort_a, axes, keepDims, 0L);
+                        break;
+                    }
             }
 
-            var expr = IR.F.Tensors.Reduce(op, expr_a, Tensor.From(axes, new [] { 1 }), initValue, keepDims);
+            var expr = IR.F.Tensors.Reduce(op, expr_a, Tensor.From(axes, new[] { 1 }), initValue, keepDims);
             CompilerServices.InferenceType(expr);
             Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
         }
     }
 
-
- [Fact]
+    [Fact]
     public void TestReduceArg()
     {
         long axis = 0L;
-        long []keepDims = { 0L, 1L };
+        long[] keepDims = { 0L, 1L };
         long select_last_idx = 0L;
         var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var result = new int[] { 5, 6, 7, 8 };
@@ -755,28 +798,31 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         var expr_a = Tensor.From(a, new[] { 2, 4 });
         var expect = Tensor.From(result, new[] { 1, 4 }).ToOrtTensor();
 
-        ReduceArgOp []ops = new ReduceArgOp[] { ReduceArgOp.ArgMax, ReduceArgOp.ArgMin };
+        var ops = new ReduceArgOp[] { ReduceArgOp.ArgMax, ReduceArgOp.ArgMin };
 
         foreach (var keepdims in keepDims)
-        foreach(var op in ops)
         {
-            switch (op)
+            foreach (var op in ops)
             {
-                case ReduceArgOp.ArgMax:
+                switch (op)
                 {
-                    expect = OrtKI.ArgMax(ort_a, axis, keepdims, select_last_idx);
-                    break;
-                }
-                case ReduceArgOp.ArgMin:
-                {
-                    expect = OrtKI.ArgMin(ort_a, axis, keepdims, select_last_idx);
-                    break;
-                }
-            }
+                    case ReduceArgOp.ArgMax:
+                        {
+                            expect = OrtKI.ArgMax(ort_a, axis, keepdims, select_last_idx);
+                            break;
+                        }
 
-            var expr = IR.F.Tensors.ReduceArg(op, expr_a, axis, keepdims, select_last_idx);
-            CompilerServices.InferenceType(expr);
-            Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+                    case ReduceArgOp.ArgMin:
+                        {
+                            expect = OrtKI.ArgMin(ort_a, axis, keepdims, select_last_idx);
+                            break;
+                        }
+                }
+
+                var expr = IR.F.Tensors.ReduceArg(op, expr_a, axis, keepdims, select_last_idx);
+                CompilerServices.InferenceType(expr);
+                Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+            }
         }
     }
 
@@ -799,6 +845,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
             CompilerServices.InferenceType(expr);
             Assert.Equal(expect1, expr.Evaluate().AsTensor());
         }
+
         {
             var expr = IR.F.Math.Select(false, expect1, expect2);
             CompilerServices.InferenceType(expr);
@@ -809,14 +856,16 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestUnary()
     {
-        UnaryOp[] ops = new UnaryOp[] { UnaryOp.Abs, UnaryOp.Acos, UnaryOp.Acosh, UnaryOp.Asin,
+        var ops = new UnaryOp[]
+        {
+            UnaryOp.Abs, UnaryOp.Acos, UnaryOp.Acosh, UnaryOp.Asin,
             UnaryOp.Asinh, UnaryOp.Ceil, UnaryOp.Cos, UnaryOp.Cosh, UnaryOp.Exp, UnaryOp.Floor,
             UnaryOp.Log, UnaryOp.Neg, UnaryOp.Round, UnaryOp.Rsqrt, UnaryOp.Sign, UnaryOp.Sin,
-            UnaryOp.Sinh, UnaryOp.Sqrt, UnaryOp.Square, UnaryOp.Tanh };
-
+            UnaryOp.Sinh, UnaryOp.Sqrt, UnaryOp.Square, UnaryOp.Tanh,
+        };
         {
             var f = 1F;
-            foreach(var op in ops)
+            foreach (var op in ops)
             {
                 TestUnaryNormal(op, OrtKISharp.Tensor.FromScalar(f), Tensor.FromScalar(f));
             }
@@ -824,135 +873,157 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
 
         {
             var f = new float[] { 1F, 1.1F, 1.2F, 1.3F };
-            foreach(var op in ops)
+            foreach (var op in ops)
             {
-                TestUnaryNormal(op, OrtKISharp.Tensor.MakeTensor(f, new long[] {2, 2}),
-                    Tensor.From(f, new[] {2, 2}));
+                TestUnaryNormal(op, OrtKISharp.Tensor.MakeTensor(f, new long[] { 2, 2 }),
+                    Tensor.From(f, new[] { 2, 2 }));
             }
         }
 
         {
             bool[] a = new bool[] { true, false, false, true };
-            TestUnaryNormal(UnaryOp.LogicalNot, OrtKISharp.Tensor.MakeTensor(a, new long[] {2, 2}),
-                Tensor.From(a, new[] {2, 2}));
+            TestUnaryNormal(UnaryOp.LogicalNot, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 2 }),
+                Tensor.From(a, new[] { 2, 2 }));
         }
     }
 
+    [Theory]
     public void TestUnaryNormal(UnaryOp op, OrtKISharp.Tensor ort, Expr e)
     {
-        var expect = ort;
-        switch(op)
+        OrtKISharp.Tensor? expect;
+        switch (op)
         {
             case UnaryOp.Abs:
-            {
-                expect = OrtKI.Abs(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Abs(ort);
+                    break;
+                }
+
             case UnaryOp.Acos:
-            {
-                expect = OrtKI.Acos(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Acos(ort);
+                    break;
+                }
+
             case UnaryOp.Acosh:
-            {
-                expect = OrtKI.Acosh(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Acosh(ort);
+                    break;
+                }
+
             case UnaryOp.Asin:
-            {
-                expect = OrtKI.Asin(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Asin(ort);
+                    break;
+                }
+
             case UnaryOp.Asinh:
-            {
-                expect = OrtKI.Asinh(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Asinh(ort);
+                    break;
+                }
+
             case UnaryOp.Cos:
-            {
-                expect = OrtKI.Cos(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Cos(ort);
+                    break;
+                }
+
             case UnaryOp.Cosh:
-            {
-                expect = OrtKI.Cosh(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Cosh(ort);
+                    break;
+                }
+
             case UnaryOp.Ceil:
-            {
-                expect = OrtKI.Ceil(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Ceil(ort);
+                    break;
+                }
+
             case UnaryOp.Exp:
-            {
-                expect = OrtKI.Exp(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Exp(ort);
+                    break;
+                }
+
             case UnaryOp.Floor:
-            {
-                expect = OrtKI.Floor(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Floor(ort);
+                    break;
+                }
+
             case UnaryOp.Log:
-            {
-                expect = OrtKI.Log(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Log(ort);
+                    break;
+                }
+
             case UnaryOp.LogicalNot:
-            {
-                expect = OrtKI.Not(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Not(ort);
+                    break;
+                }
+
             case UnaryOp.Neg:
-            {
-                expect = OrtKI.Neg(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Neg(ort);
+                    break;
+                }
+
             case UnaryOp.Round:
-            {
-                expect = OrtKI.Round(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Round(ort);
+                    break;
+                }
+
             case UnaryOp.Rsqrt:
-            {
-                expect = OrtKI.Rsqrt(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Rsqrt(ort);
+                    break;
+                }
+
             case UnaryOp.Sign:
-            {
-                expect = OrtKI.Sign(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Sign(ort);
+                    break;
+                }
+
             case UnaryOp.Sin:
-            {
-                expect = OrtKI.Sin(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Sin(ort);
+                    break;
+                }
+
             case UnaryOp.Sinh:
-            {
-                expect = OrtKI.Sinh(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Sinh(ort);
+                    break;
+                }
+
             case UnaryOp.Sqrt:
-            {
-                expect = OrtKI.Sqrt(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Sqrt(ort);
+                    break;
+                }
+
             case UnaryOp.Square:
-            {
-                expect = OrtKI.Square(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Square(ort);
+                    break;
+                }
+
             case UnaryOp.Tanh:
-            {
-                expect = OrtKI.Tanh(ort);
-                break;
-            }
+                {
+                    expect = OrtKI.Tanh(ort);
+                    break;
+                }
+
             default:
-            {
-                throw new ArgumentOutOfRangeException(nameof(op));
-                break;
-            }
+                {
+                    throw new ArgumentOutOfRangeException(nameof(op));
+                    break;
+                }
         }
 
         var expr = IR.F.Math.Unary(op, e);

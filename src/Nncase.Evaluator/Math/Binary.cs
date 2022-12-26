@@ -165,7 +165,8 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     {
         var a = lhs.ToOrtTensor();
         var b = rhs.ToOrtTensor();
-        Func<OrtKISharp.Tensor, OrtKISharp.Tensor, OrtKISharp.Tensor> mod = (a, b) => {
+        Func<OrtKISharp.Tensor, OrtKISharp.Tensor, OrtKISharp.Tensor> mod = (a, b) =>
+        {
             if (DataTypes.IsFloat(a.DataType.ToDataType()) && DataTypes.IsFloat(b.DataType.ToDataType()))
             {
                 return OrtKI.Mod(a, b, 1);
@@ -203,6 +204,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         {
             return new InvalidType("The Binary LeftShift RightShift Only Accept The UInt32 Datatype.");
         }
+
         if ((target.BinaryOp is BinaryOp.LogicalAnd || target.BinaryOp is BinaryOp.LogicalOr || target.BinaryOp is BinaryOp.LogicalXor) &&
             (lhs.DType != DataTypes.Boolean || rhs.DType != DataTypes.Boolean))
         {

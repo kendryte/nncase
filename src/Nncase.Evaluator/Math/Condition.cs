@@ -24,7 +24,10 @@ public partial class ConditionEvaluator : IEvaluator<Condition>, ITypeInferencer
         var value = context.GetArgumentValue(cond, Condition.Value);
         var b = predicate.ToScalar<bool>();
         if (!b)
+        {
             throw new ArgumentOutOfRangeException($"predicate = {b}");
+        }
+
         return value;
     }
 
