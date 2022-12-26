@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -318,9 +318,24 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
     }
 
+    [Fact]
+    public void TestClamp()
+    {
+        var input = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var min = 3f;
+        var max = 6f;
+        var expr = IR.F.Math.Clamp(Tensor.From(input, new[] { 2, 4 }), min, max);
+        CompilerServices.InferenceType(expr);
+
+        var result = new float[] { 3, 3, 3, 4, 5, 6, 6, 6 };
+        var expect = Tensor.From(result, new[] { 2, 4 });
+        Assert.Equal(expect, expr.Evaluate().AsTensor());
+    }
+
     private void TestBinaryRunNormal(BinaryOp op, OrtKISharp.Tensor ort_a, OrtKISharp.Tensor ort_b, Expr exp_a, Expr exp_b)
     {
-        Func<OrtKISharp.Tensor, OrtKISharp.Tensor, OrtKISharp.Tensor> mod = (a, b) => {
+        Func<OrtKISharp.Tensor, OrtKISharp.Tensor, OrtKISharp.Tensor> mod = (a, b) =>
+        {
             var fmod = DataTypes.IsFloat(a.DataType.ToDataType()) && DataTypes.IsFloat(b.DataType.ToDataType()) ? 1L : 0L;
             return OrtKI.Mod(a, b, fmod);
         };
@@ -346,20 +361,6 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         CompilerServices.InferenceType(expr);
 
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
-    }
-
-    [Fact]
-    public void TestClamp()
-    {
-        var input = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-        var min = 3f;
-        var max = 6f;
-        var expr = IR.F.Math.Clamp(Tensor.From(input, new[] { 2, 4 }), min, max);
-        CompilerServices.InferenceType(expr);
-
-        var result = new float[] { 3, 3, 3, 4, 5, 6, 6, 6 };
-        var expect = Tensor.From(result, new[] { 2, 4 });
-        Assert.Equal(expect, expr.Evaluate().AsTensor());
     }
 
     [Fact]
@@ -416,7 +417,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
 
             var expr_a = Tensor.From(a, new[] { 2, 4 });
             var expr_b = Tensor.From(b, new[] { 2, 4 });
-            var expect = Tensor.From(result, new[] { 2, 4 }).ToOrtTensor();
+            _ = Tensor.From(result, new[] { 2, 4 }).ToOrtTensor();
 
             var ops = new CompareOp[]
             {
@@ -426,7 +427,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
 
             foreach (var op in ops)
             {
-                expect = op switch
+                var expect = op switch
                 {
                     CompareOp.NotEqual => OrtKI.Not(OrtKI.Equal(ort_a, ort_b)),
                     CompareOp.Equal => OrtKI.Equal(ort_a, ort_b),
@@ -625,11 +626,6 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         AssertRangeOf(n2.ToArray(), r);
     }
 
-    private void AssertRangeOf(Expr input, float[] r)
-    {
-        Assert.Equal(r, RangeOf(input).Evaluate().AsTensor().ToArray<float>());
-    }
-
     [Fact]
     public void TestReduce()
     {
@@ -640,13 +636,13 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         var result = new float[] { 5, 6, 7, 8 };
         var ort_a = OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 });
         var expr_a = Tensor.From(a, new[] { 2, 4 });
-        var expect = Tensor.From(result, new[] { 1, 4 }).ToOrtTensor();
+        _ = Tensor.From(result, new[] { 1, 4 }).ToOrtTensor();
 
         var ops = new ReduceOp[] { ReduceOp.Max, ReduceOp.Min, ReduceOp.Mean, ReduceOp.Prod, ReduceOp.Sum };
 
         foreach (var op in ops)
         {
-            expect = op switch
+            var expect = op switch
             {
                 ReduceOp.Max => OrtKI.ReduceMax(ort_a, axes, keepDims),
                 ReduceOp.Min => OrtKI.ReduceMin(ort_a, axes, keepDims),
@@ -662,6 +658,11 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
     }
 
+    private void AssertRangeOf(Expr input, float[] r)
+    {
+        Assert.Equal(r, RangeOf(input).Evaluate().AsTensor().ToArray<float>());
+    }
+
     [Fact]
     public void TestReduceArg()
     {
@@ -672,15 +673,15 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         var result = new int[] { 5, 6, 7, 8 };
         var ort_a = OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 4 });
         var expr_a = Tensor.From(a, new[] { 2, 4 });
-        var expect = Tensor.From(result, new[] { 1, 4 }).ToOrtTensor();
+        _ = Tensor.From(result, new[] { 1, 4 }).ToOrtTensor();
 
         var ops = new ReduceArgOp[] { ReduceArgOp.ArgMax, ReduceArgOp.ArgMin };
 
         foreach (var keepdims in keepDims)
         {
-            foreach(var op in ops)
+            foreach (var op in ops)
             {
-                expect = op switch
+                var expect = op switch
                 {
                     ReduceArgOp.ArgMax => OrtKI.ArgMax(ort_a, axis, keepdims, select_last_idx),
                     ReduceArgOp.ArgMin => OrtKI.ArgMin(ort_a, axis, keepdims, select_last_idx),
@@ -755,6 +756,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
     }
 
+    [Theory]
     public void TestUnaryNormal(UnaryOp op, OrtKISharp.Tensor ort, Expr e)
     {
         var expect = op switch
