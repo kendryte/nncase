@@ -756,7 +756,6 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
     }
 
-    [Theory]
     public void TestUnaryNormal(UnaryOp op, OrtKISharp.Tensor ort, Expr e)
     {
         var expect = op switch
