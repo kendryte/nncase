@@ -254,7 +254,7 @@ public class FoldNopTransposeCase2 : IRewriteCase
 
 public class FoldNopTransposeCase3 : FoldNopTransposeCase2
 {
-    public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]
+    public new IEnumerable<IRewriteRule> Rules => new IRewriteRule[]
     {
         new Transform.Rules.Neutral.FoldTwoTransposes(),
         new Transform.Rules.Neutral.FoldNopTranspose(),
@@ -288,7 +288,7 @@ public class ClassicDemo : IRewriteCase
 
 public sealed class TransposeDemoCase : FoldNopTransposeCase3
 {
-    public Function PreExpr
+    public new Function PreExpr
     {
         get
         {
@@ -415,7 +415,7 @@ public class PadTransposeCase : IRewriteCase
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
-      { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
     };
 }
 

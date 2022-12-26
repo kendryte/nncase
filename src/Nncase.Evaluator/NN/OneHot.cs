@@ -63,8 +63,6 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>, ICos
             }),
             scope =>
             {
-                TF_DataType tfDataType1 = TF_DataType.DtInvalid;
-                TF_DataType tfDataType2 = TF_DataType.DtInvalid;
                 if (dtype == TF_DataType.DtInvalid)
                 {
                     dtype = TF_DataType.TF_FLOAT;

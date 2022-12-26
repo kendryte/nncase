@@ -65,7 +65,7 @@ public class UnitTestK210Target
         await TestCodeGen(y, new[] { x });
     }
 
-    private async Task TestCodeGen(Expr body, Var[] vars, [CallerMemberName] string name = null)
+    private async Task TestCodeGen(Expr body, Var[] vars, [CallerMemberName] string? name = null)
     {
         var main = new Function("main", body, vars);
         var module = new IRModule(main);
