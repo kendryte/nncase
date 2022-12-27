@@ -332,6 +332,17 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         Assert.Equal(expect, expr.Evaluate().AsTensor());
     }
 
+    [Fact]
+    public void TestClampInvalidType()
+    {
+        var input = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var min = 3U;
+        var max = 6L;
+        var expr = IR.F.Math.Clamp(Tensor.From(input, new[] { 2, 4 }), min, max);
+        CompilerServices.InferenceType(expr);
+        Assert.IsType<InvalidType>(expr.CheckedType);
+    }
+
     private void TestBinaryRunNormal(BinaryOp op, OrtKISharp.Tensor ort_a, OrtKISharp.Tensor ort_b, Expr exp_a, Expr exp_b)
     {
         Func<OrtKISharp.Tensor, OrtKISharp.Tensor, OrtKISharp.Tensor> mod = (a, b) =>
@@ -361,17 +372,6 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         CompilerServices.InferenceType(expr);
 
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
-    }
-
-    [Fact]
-    public void TestClampInvalidType()
-    {
-        var input = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-        var min = 3U;
-        var max = 6L;
-        var expr = IR.F.Math.Clamp(Tensor.From(input, new[] { 2, 4 }), min, max);
-        CompilerServices.InferenceType(expr);
-        Assert.IsType<InvalidType>(expr.CheckedType);
     }
 
     [Fact]
@@ -658,11 +658,6 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
     }
 
-    private void AssertRangeOf(Expr input, float[] r)
-    {
-        Assert.Equal(r, RangeOf(input).Evaluate().AsTensor().ToArray<float>());
-    }
-
     [Fact]
     public void TestReduceArg()
     {
@@ -693,6 +688,11 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
                 Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
             }
         }
+    }
+
+    private void AssertRangeOf(Expr input, float[] r)
+    {
+        Assert.Equal(r, RangeOf(input).Evaluate().AsTensor().ToArray<float>());
     }
 
     [Fact]
@@ -756,6 +756,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
     }
 
+    [Theory]
     public void TestUnaryNormal(UnaryOp op, OrtKISharp.Tensor ort, Expr e)
     {
         var expect = op switch
