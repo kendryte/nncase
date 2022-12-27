@@ -165,11 +165,11 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     {
         var a = lhs.ToOrtTensor();
         var b = rhs.ToOrtTensor();
-        Func<OrtKISharp.Tensor, OrtKISharp.Tensor, OrtKISharp.Tensor> mod = (a, b) =>
+        static OrtKISharp.Tensor Mod(OrtKISharp.Tensor a, OrtKISharp.Tensor b)
         {
             var fmod = DataTypes.IsFloat(a.DataType.ToDataType()) && DataTypes.IsFloat(b.DataType.ToDataType()) ? 1L : 0L;
             return OrtKI.Mod(a, b, fmod);
-        };
+        }
 
         return (binary.BinaryOp switch
         {
@@ -177,7 +177,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             BinaryOp.Sub => a - b,
             BinaryOp.Mul => a * b,
             BinaryOp.Div => a / b,
-            BinaryOp.Mod => mod(a, b),
+            BinaryOp.Mod => Mod(a, b),
             BinaryOp.Min => OrtKI.Min(new[] { a, b }),
             BinaryOp.Max => OrtKI.Max(new[] { a, b }),
             BinaryOp.Pow => OrtKI.Pow(a, b),
