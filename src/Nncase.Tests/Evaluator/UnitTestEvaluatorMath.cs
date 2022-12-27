@@ -441,6 +441,24 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
 
+    [Fact]
+    public void TestDequantize()
+    {
+        var input = new byte[] { 127, 128, 150, 160, 170, 180, 200, 205 };
+        var axis = 0;
+        byte zero_point = 127;
+        var scale = 0.01F;
+
+        var input1 = OrtKISharp.Tensor.MakeTensor(input, new long[] { 2, 4 });
+        var expect = OrtKI.DequantizeLinear(input1, scale, zero_point, axis);
+
+        var quant_param = new QuantParam(zero_point, scale);
+        var input2 = Tensor.From(input, new[] { 2, 4 });
+        var expr = IR.F.Math.Dequantize(input2, quant_param, DataTypes.Float32);
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+    }
+
     private void TestBinaryRunNormal(BinaryOp op, OrtKISharp.Tensor ort_a, OrtKISharp.Tensor ort_b, Expr exp_a, Expr exp_b)
     {
         static OrtKISharp.Tensor Mod(OrtKISharp.Tensor a, OrtKISharp.Tensor b)
@@ -470,24 +488,6 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         var expr = IR.F.Math.Binary(op, exp_a, exp_b);
         CompilerServices.InferenceType(expr);
 
-        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
-    }
-
-    [Fact]
-    public void TestDequantize()
-    {
-        var input = new byte[] { 127, 128, 150, 160, 170, 180, 200, 205 };
-        var axis = 0;
-        byte zero_point = 127;
-        var scale = 0.01F;
-
-        var input1 = OrtKISharp.Tensor.MakeTensor(input, new long[] { 2, 4 });
-        var expect = OrtKI.DequantizeLinear(input1, scale, zero_point, axis);
-
-        var quant_param = new QuantParam(zero_point, scale);
-        var input2 = Tensor.From(input, new[] { 2, 4 });
-        var expr = IR.F.Math.Dequantize(input2, quant_param, DataTypes.Float32);
-        CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
 
