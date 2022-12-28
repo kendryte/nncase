@@ -567,6 +567,19 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
     }
 
+    [Fact]
+    public void TestQuantParamOf()
+    {
+        float[] range = new float[] { 0F, 1F };
+        QuantMode mode = QuantMode.UnsignedMode;
+        int bits = 8;
+
+        var expect = Tensor.FromScalar(QuantUtility.GetQuantParam((range[0], range[1]), bits, mode));
+        var expr = IR.F.Math.QuantParamOf(mode, range, bits);
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor());
+    }
+
     private void TestBinaryRunNormal(BinaryOp op, OrtKISharp.Tensor ort_a, OrtKISharp.Tensor ort_b, Expr exp_a, Expr exp_b)
     {
         static OrtKISharp.Tensor Mod(OrtKISharp.Tensor a, OrtKISharp.Tensor b)
@@ -597,19 +610,6 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         CompilerServices.InferenceType(expr);
 
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
-    }
-
-    [Fact]
-    public void TestQuantParamOf()
-    {
-        float[] range = new float[] { 0F, 1F };
-        QuantMode mode = QuantMode.UnsignedMode;
-        int bits = 8;
-
-        var expect = Tensor.FromScalar(QuantUtility.GetQuantParam((range[0], range[1]), bits, mode));
-        var expr = IR.F.Math.QuantParamOf(mode, range, bits);
-        CompilerServices.InferenceType(expr);
-        Assert.Equal(expect, expr.Evaluate().AsTensor());
     }
 
     [Fact]
