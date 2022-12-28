@@ -174,13 +174,6 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
         Assert.Equal(4, visitor.Count);
     }
 
-    private Expr WrapperWith(Func<Expr[], Expr> ctor, params Expr[] inputs)
-    {
-        var new_inputs = inputs.Select(i => Quantize(i, new QuantParam(0, 1), DataTypes.BFloat16)).ToArray();
-        var output = ctor(new_inputs);
-        return Dequantize(output, new QuantParam(0, 1), DataTypes.Float32);
-    }
-
     [Fact]
     public async void TestMakeDoubleInputWithConstFusion()
     {
@@ -211,6 +204,13 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
         var visitor = new FusionCounterVisitor();
         visitor.Visit(post.Body);
         Assert.Equal(5, visitor.Count);
+    }
+
+    private Expr WrapperWith(Func<Expr[], Expr> ctor, params Expr[] inputs)
+    {
+        var new_inputs = inputs.Select(i => Quantize(i, new QuantParam(0, 1), DataTypes.BFloat16)).ToArray();
+        var output = ctor(new_inputs);
+        return Dequantize(output, new QuantParam(0, 1), DataTypes.Float32);
     }
 }
 

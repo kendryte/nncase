@@ -492,6 +492,21 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         Assert.Equal(expect, expr.Evaluate().AsTensor());
     }
 
+    [Fact]
+    public void TestFakeQuantize()
+    {
+        var input = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
+        byte zero_point = 127;
+        var scale = 0.05F;
+
+        var expect = Tensor.From(input, new[] { 2, 4 });
+        var expr = IR.F.Math.FakeQuantize(
+            Tensor.From(input, new[] { 2, 4 }),
+            new QuantParam(zero_point, scale), DataTypes.UInt8);
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor());
+    }
+
     private void TestBinaryRunNormal(BinaryOp op, OrtKISharp.Tensor ort_a, OrtKISharp.Tensor ort_b, Expr exp_a, Expr exp_b)
     {
         static OrtKISharp.Tensor Mod(OrtKISharp.Tensor a, OrtKISharp.Tensor b)
@@ -522,21 +537,6 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         CompilerServices.InferenceType(expr);
 
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
-    }
-
-    [Fact]
-    public void TestFakeQuantize()
-    {
-        var input = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
-        byte zero_point = 127;
-        var scale = 0.05F;
-
-        var expect = Tensor.From(input, new[] { 2, 4 });
-        var expr = IR.F.Math.FakeQuantize(
-            Tensor.From(input, new[] { 2, 4 }),
-            new QuantParam(zero_point, scale), DataTypes.UInt8);
-        CompilerServices.InferenceType(expr);
-        Assert.Equal(expect, expr.Evaluate().AsTensor());
     }
 
     [Fact]
