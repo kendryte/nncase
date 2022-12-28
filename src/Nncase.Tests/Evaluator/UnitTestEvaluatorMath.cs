@@ -507,38 +507,6 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         Assert.Equal(expect, expr.Evaluate().AsTensor());
     }
 
-    private void TestBinaryRunNormal(BinaryOp op, OrtKISharp.Tensor ort_a, OrtKISharp.Tensor ort_b, Expr exp_a, Expr exp_b)
-    {
-        static OrtKISharp.Tensor Mod(OrtKISharp.Tensor a, OrtKISharp.Tensor b)
-        {
-            var fmod = DataTypes.IsFloat(a.DataType.ToDataType()) && DataTypes.IsFloat(b.DataType.ToDataType()) ? 1L : 0L;
-            return OrtKI.Mod(a, b, fmod);
-        }
-
-        OrtKISharp.Tensor expect = op switch
-        {
-            BinaryOp.Add => ort_a + ort_b,
-            BinaryOp.Sub => ort_a - ort_b,
-            BinaryOp.Mul => ort_a * ort_b,
-            BinaryOp.Div => ort_a / ort_b,
-            BinaryOp.Mod => Mod(ort_a, ort_b),
-            BinaryOp.Min => OrtKI.Min(new[] { ort_a, ort_b }),
-            BinaryOp.Max => OrtKI.Max(new[] { ort_a, ort_b }),
-            BinaryOp.Pow => OrtKI.Pow(ort_a, ort_b),
-            BinaryOp.LogicalAnd => OrtKI.And(ort_a, ort_b),
-            BinaryOp.LogicalOr => OrtKI.Or(ort_a, ort_b),
-            BinaryOp.LogicalXor => OrtKI.Xor(ort_a, ort_b),
-            BinaryOp.LeftShift => OrtKI.LeftShift(ort_a, ort_b),
-            BinaryOp.RightShift => OrtKI.RightShift(ort_a, ort_b),
-            _ => throw new ArgumentOutOfRangeException(nameof(op)),
-        };
-
-        var expr = IR.F.Math.Binary(op, exp_a, exp_b);
-        CompilerServices.InferenceType(expr);
-
-        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
-    }
-
     [Fact]
     public void TestMatmul()
     {
@@ -571,6 +539,38 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
             CompilerServices.InferenceType(expr);
             Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
         }
+    }
+
+    private void TestBinaryRunNormal(BinaryOp op, OrtKISharp.Tensor ort_a, OrtKISharp.Tensor ort_b, Expr exp_a, Expr exp_b)
+    {
+        static OrtKISharp.Tensor Mod(OrtKISharp.Tensor a, OrtKISharp.Tensor b)
+        {
+            var fmod = DataTypes.IsFloat(a.DataType.ToDataType()) && DataTypes.IsFloat(b.DataType.ToDataType()) ? 1L : 0L;
+            return OrtKI.Mod(a, b, fmod);
+        }
+
+        OrtKISharp.Tensor expect = op switch
+        {
+            BinaryOp.Add => ort_a + ort_b,
+            BinaryOp.Sub => ort_a - ort_b,
+            BinaryOp.Mul => ort_a * ort_b,
+            BinaryOp.Div => ort_a / ort_b,
+            BinaryOp.Mod => Mod(ort_a, ort_b),
+            BinaryOp.Min => OrtKI.Min(new[] { ort_a, ort_b }),
+            BinaryOp.Max => OrtKI.Max(new[] { ort_a, ort_b }),
+            BinaryOp.Pow => OrtKI.Pow(ort_a, ort_b),
+            BinaryOp.LogicalAnd => OrtKI.And(ort_a, ort_b),
+            BinaryOp.LogicalOr => OrtKI.Or(ort_a, ort_b),
+            BinaryOp.LogicalXor => OrtKI.Xor(ort_a, ort_b),
+            BinaryOp.LeftShift => OrtKI.LeftShift(ort_a, ort_b),
+            BinaryOp.RightShift => OrtKI.RightShift(ort_a, ort_b),
+            _ => throw new ArgumentOutOfRangeException(nameof(op)),
+        };
+
+        var expr = IR.F.Math.Binary(op, exp_a, exp_b);
+        CompilerServices.InferenceType(expr);
+
+        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
 
     [Fact]

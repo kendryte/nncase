@@ -118,29 +118,29 @@ public class ReplaceUtility
     /// <summary>
     /// find the old input in old args and replace it with new_input.
     /// </summary>
-    /// <param name="old_params">matched old args.</param>
+    /// <param name="oldParams">matched old args.</param>
     /// <param name="target">matched old input.</param>
-    /// <param name="new_param">created new_input.</param>
+    /// <param name="newParam">created new_input.</param>
     /// <returns>new args list.</returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static List<Expr> ReplaceParams(IReadOnlyList<Expr> old_params, Expr target, Expr new_param)
+    public static List<Expr> ReplaceParams(IReadOnlyList<Expr> oldParams, Expr target, Expr newParam)
     {
-        return ReplaceParams(old_params, new List<Expr>() { target }, new List<Expr>() { new_param });
+        return ReplaceParams(oldParams, new List<Expr>() { target }, new List<Expr>() { newParam });
     }
 
     /// <summary>
     ///  find the old input in old args and replace it with new_input.
     /// </summary>
-    /// <param name="old_params">matched old args.</param>
+    /// <param name="oldParams">matched old args.</param>
     /// <param name="targets">matched old inputs.</param>
-    /// <param name="new_params">created new_inputs.</param>
+    /// <param name="newParams">created new_inputs.</param>
     /// <returns>new args list.</returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static List<Expr> ReplaceParams(IReadOnlyList<Expr> old_params, IReadOnlyList<Expr> targets, IReadOnlyList<Expr> new_params)
+    public static List<Expr> ReplaceParams(IReadOnlyList<Expr> oldParams, IReadOnlyList<Expr> targets, IReadOnlyList<Expr> newParams)
     {
-        var new_args = new List<Expr>(old_params);
+        var new_args = new List<Expr>(oldParams);
         Dictionary<int, Expr> candidates = new();
-        for (int i = 0; i < old_params.Count; i++)
+        for (int i = 0; i < oldParams.Count; i++)
         {
             for (int j = 0; j < targets.Count; j++)
             {
@@ -148,11 +148,11 @@ public class ReplaceUtility
                 {
                     if (!candidates.TryGetValue(i, out var last_matched))
                     {
-                        last_matched = new_params[j];
+                        last_matched = newParams[j];
                         candidates.Add(i, last_matched);
                     }
 
-                    if (!object.ReferenceEquals(last_matched, new_params[j]))
+                    if (!object.ReferenceEquals(last_matched, newParams[j]))
                     {
                         throw new InvalidDataException("The same arg can't replace with two new pararmeter!");
                     }
