@@ -580,6 +580,21 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         Assert.Equal(expect, expr.Evaluate().AsTensor());
     }
 
+    [Fact]
+    public void TestRangeOf()
+    {
+        var input = Enumerable.Range(0, 32).Select(x => (float)x);
+        var r = new[] { 0f, 31 };
+        AssertRangeOf(input.ToArray(), r);
+        var n1 = input.ToList();
+        n1.Add(float.NaN);
+        AssertRangeOf(n1.ToArray(), r);
+        var n2 = input.ToList();
+        n2.Add(float.PositiveInfinity);
+        n2.Add(float.NegativeInfinity);
+        AssertRangeOf(n2.ToArray(), r);
+    }
+
     private void TestBinaryRunNormal(BinaryOp op, OrtKISharp.Tensor ort_a, OrtKISharp.Tensor ort_b, Expr exp_a, Expr exp_b)
     {
         static OrtKISharp.Tensor Mod(OrtKISharp.Tensor a, OrtKISharp.Tensor b)
@@ -610,21 +625,6 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         CompilerServices.InferenceType(expr);
 
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
-    }
-
-    [Fact]
-    public void TestRangeOf()
-    {
-        var input = Enumerable.Range(0, 32).Select(x => (float)x);
-        var r = new[] { 0f, 31 };
-        AssertRangeOf(input.ToArray(), r);
-        var n1 = input.ToList();
-        n1.Add(float.NaN);
-        AssertRangeOf(n1.ToArray(), r);
-        var n2 = input.ToList();
-        n2.Add(float.PositiveInfinity);
-        n2.Add(float.NegativeInfinity);
-        AssertRangeOf(n2.ToArray(), r);
     }
 
     [Fact]

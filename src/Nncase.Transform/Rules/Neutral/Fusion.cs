@@ -74,7 +74,7 @@ public partial class DoubleInputFusion<T, BeginT, EndT> : FusionMaker
     {
         var new_args = new List<Var>();
         var newParams = new List<Expr>();
-        var replace_pairs = new List<(Expr,Expr)>();
+        var replace_pairs = new List<(Expr, Expr)>();
         if (lhs is not TensorConst)
         {
             var arg = new Var(lhs.CheckedType!);
