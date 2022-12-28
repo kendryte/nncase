@@ -74,8 +74,7 @@ public partial class DoubleInputFusion<T, BeginT, EndT> : FusionMaker
     {
         var new_args = new List<Var>();
         var newParams = new List<Expr>();
-        var new_beginCalls = new List<Expr>();
-        var old_beginCalls = new List<Expr>();
+        var replace_pairs = new List<(Expr,Expr)>();
         if (lhs is not TensorConst)
         {
             var arg = new Var(lhs.CheckedType!);
@@ -83,8 +82,7 @@ public partial class DoubleInputFusion<T, BeginT, EndT> : FusionMaker
             var new_beginLhsCall = beginLhsCall with { Parameters = new(new_beginLhsCallParams) };
             new_args.Add(arg);
             newParams.Add(lhs);
-            old_beginCalls.Add(beginLhsCall);
-            new_beginCalls.Add(new_beginLhsCall);
+            replace_pairs.Add((beginLhsCall, new_beginLhsCall));
         }
 
         if (rhs is not TensorConst)
@@ -94,11 +92,10 @@ public partial class DoubleInputFusion<T, BeginT, EndT> : FusionMaker
             var new_beginRhsCall = beginRhsCall with { Parameters = new(new_beginRhsCallParams) };
             new_args.Add(arg);
             newParams.Add(rhs);
-            old_beginCalls.Add(beginRhsCall);
-            new_beginCalls.Add(new_beginRhsCall);
+            replace_pairs.Add((beginRhsCall, new_beginRhsCall));
         }
 
-        var new_midCallParams = ReplaceParams(midCallParams, old_beginCalls, new_beginCalls);
+        var new_midCallParams = ReplaceParams(midCallParams, replace_pairs);
         var new_midCall = midCall with { Parameters = new(new_midCallParams) };
 
         var new_endCallParams = ReplaceParams(endCallParams, midCall, new_midCall);
