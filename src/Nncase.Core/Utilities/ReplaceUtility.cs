@@ -108,7 +108,7 @@ public class ReplaceUtility
     /// warning: call which returned should be type infer, because of with should keep the type infer.
     /// </summary>
     /// <param name="call"></param>
-    /// <param name="posAndValue"></pxaram>
+    /// <param name="posAndValue"></param>
     /// <returns></returns>
     public static Call ReplaceParams(Call call, params (ParameterInfo, Expr)[] posAndValue)
     {
@@ -118,41 +118,41 @@ public class ReplaceUtility
     /// <summary>
     /// find the old input in old args and replace it with new_input.
     /// </summary>
-    /// <param name="oldParams">matched old args.</param>
+    /// <param name="list">matched old args.</param>
     /// <param name="target">matched old input.</param>
-    /// <param name="newParam">created new_input.</param>
+    /// <param name="value">created new_input.</param>
     /// <returns>new args list.</returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static List<Expr> ReplaceParams(IReadOnlyList<Expr> oldParams, Expr target, Expr newParam)
+    public static List<Expr> ReplaceParams(IReadOnlyList<Expr> list, Expr target, Expr value)
     {
-        return ReplaceParams(oldParams, new List<Expr>() { target }, new List<Expr>() { newParam });
+        return ReplaceParams(list, new List<(Expr, Expr)>() { (target, value) });
     }
 
     /// <summary>
     ///  find the old input in old args and replace it with new_input.
     /// </summary>
-    /// <param name="oldParams">matched old args.</param>
-    /// <param name="targets">matched old inputs.</param>
-    /// <param name="newParams">created new_inputs.</param>
+    /// <param name="list">matched exprsession list.</param>
+    /// <param name="pairs">target value pair.</param>
     /// <returns>new args list.</returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static List<Expr> ReplaceParams(IReadOnlyList<Expr> oldParams, IReadOnlyList<Expr> targets, IReadOnlyList<Expr> newParams)
+    public static List<Expr> ReplaceParams(IReadOnlyList<Expr> list, IReadOnlyList<(Expr target, Expr value)> pairs)
     {
-        var new_args = new List<Expr>(oldParams);
+        var new_args = new List<Expr>(list);
+
         Dictionary<int, Expr> candidates = new();
-        for (int i = 0; i < oldParams.Count; i++)
+        for (int i = 0; i < list.Count; i++)
         {
-            for (int j = 0; j < targets.Count; j++)
+            for (int j = 0; j < pairs.Count; j++)
             {
-                if (object.ReferenceEquals(new_args[i], targets[j]))
+                if (object.ReferenceEquals(new_args[i], pairs[j].target))
                 {
                     if (!candidates.TryGetValue(i, out var last_matched))
                     {
-                        last_matched = newParams[j];
+                        last_matched = pairs[j].value;
                         candidates.Add(i, last_matched);
                     }
 
-                    if (!object.ReferenceEquals(last_matched, newParams[j]))
+                    if (!object.ReferenceEquals(last_matched, pairs[j].value))
                     {
                         throw new InvalidDataException("The same arg can't replace with two new pararmeter!");
                     }

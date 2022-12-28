@@ -49,37 +49,10 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
                 new TestUnaryFusion(),
                 new TestTransposeFusion(),
             };
-        _ = await pass.RunAsync(pre, caseOptions);
-    }
+        var post = await pass.RunAsync(pre, caseOptions);
 
-    [Fact]
-    public async void TestFuseMultiFusion()
-    {
-        var caseOptions = GetPassOptions();
-        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
-        Function pre;
-        {
-            var v0 = Quantize(input, new QuantParam(0, 1), DataTypes.BFloat16); // bf16[1,24,32,3]
-            var v1 = Transpose(v0, new[] { 0, 3, 1, 2 }); // bf16[1,3,24,32]
-            var v2 = Dequantize(v1, new QuantParam(0, 1), DataTypes.Float32); // f32[1,3,24,32]
-            var v3 = v2 + IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 24, 32 });
-            var v4 = Quantize(v3, new QuantParam(0, 1), DataTypes.BFloat16); // bf16[1,3,24,32]
-            var v5 = Unary(UnaryOp.Abs, v4); // bf16[1,3,24,32]
-            var v6 = Dequantize(v5, new QuantParam(0, 1), DataTypes.Float32); // f32[1,3,24,32]
-            var v8 = Quantize(v6, new QuantParam(0, 1), DataTypes.BFloat16); // bf16[1,3,24,32]
-            var v9 = Transpose(v8, new[] { 0, 2, 3, 1 }); // bf16[1,24,32,3]
-            var v10 = Dequantize(v9, new QuantParam(0, 1), DataTypes.Float32); // f32[1,24,32,3]
-            pre = new Function("main", v10, new Var[] { input });
-        }
-
-        CompilerServices.InferenceType(pre);
-
-        var pass = new DataflowPass("Fusion")
-            {
-                new TestUnaryFusion(),
-                new TestTransposeFusion(),
-            };
-        _ = await pass.RunAsync(pre, caseOptions);
+        var isMatch = CompilerServices.TryMatch(post, IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
+        Assert.True(isMatch);
     }
 
     [Fact]

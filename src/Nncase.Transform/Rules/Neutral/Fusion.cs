@@ -30,26 +30,26 @@ public partial class SingleInputFusion<T, BeginT, EndT> : FusionMaker
     where EndT : Op
 {
     /// <inheritdoc/>
-    public override Pattern Pattern { get; } = IsWildcardCall<EndT>("end_call", "end_op",
-        IsWildcardCall<T>("mid_call", "mid_op",
-            IsWildcardCall<BeginT>("begin_call", "begin_op", IsWildcard("input"))));
+    public override Pattern Pattern { get; } = IsWildcardCall<EndT>("endCall", null!,
+        IsWildcardCall<T>("midCall", null!,
+            IsWildcardCall<BeginT>("beginCall", null!, IsWildcard("input"))));
 
-    protected virtual Call? GetReplace(Call end_call, IReadOnlyList<Expr> end_call_params,
-                             Call mid_call, IReadOnlyList<Expr> mid_call_params,
-                             Call begin_call, IReadOnlyList<Expr> begin_call_params,
+    protected virtual Call? GetReplace(Call endCall, IReadOnlyList<Expr> endCallParams,
+                             Call midCall, IReadOnlyList<Expr> midCallParams,
+                             Call beginCall, IReadOnlyList<Expr> beginCallParams,
                              Expr input)
     {
         var new_input = new Var(input.CheckedType!);
-        var new_begin_call_params = ReplaceParams(begin_call_params, input, new_input);
-        var new_begin_call = begin_call with { Parameters = new(new_begin_call_params) };
+        var new_beginCallParams = ReplaceParams(beginCallParams, input, new_input);
+        var new_beginCall = beginCall with { Parameters = new(new_beginCallParams) };
 
-        var new_mid_call_params = ReplaceParams(mid_call_params, begin_call, new_begin_call);
-        var new_mid_call = mid_call with { Parameters = new(new_mid_call_params) };
+        var new_midCallParams = ReplaceParams(midCallParams, beginCall, new_beginCall);
+        var new_midCall = midCall with { Parameters = new(new_midCallParams) };
 
-        var new_end_call_params = ReplaceParams(end_call_params, mid_call, new_mid_call);
-        var new_end_call = end_call with { Parameters = new(new_end_call_params) };
+        var new_endCallParams = ReplaceParams(endCallParams, midCall, new_midCall);
+        var new_endCall = endCall with { Parameters = new(new_endCallParams) };
 
-        var fusion = new Call(new Fusion(FullName, ModuleKind, new_end_call, new[] { new_input }), input);
+        var fusion = new Call(new Fusion(FullName, ModuleKind, new_endCall, new[] { new_input }), input);
         return fusion;
     }
 }
@@ -61,50 +61,50 @@ public partial class DoubleInputFusion<T, BeginT, EndT> : FusionMaker
     where EndT : Op
 {
     /// <inheritdoc/>
-    public override Pattern Pattern { get; } = IsWildcardCall<EndT>("end_call", "end_op",
-        IsWildcardCall<T>("mid_call", "mid_op",
-            IsWildcardCall<BeginT>("begin_lhs_call", "begin_lhs_op", IsWildcard("lhs")),
-            IsWildcardCall<BeginT>("begin_rhs_call", "begin_rhs_op", IsWildcard("rhs"))));
+    public override Pattern Pattern { get; } = IsWildcardCall<EndT>("endCall", null!,
+        IsWildcardCall<T>("midCall", null!,
+            IsWildcardCall<BeginT>("beginLhsCall", null!, IsWildcard("lhs")),
+            IsWildcardCall<BeginT>("beginRhsCall", null!, IsWildcard("rhs"))));
 
-    private Call GetReplace(Call end_call, IReadOnlyList<Expr> end_call_params,
-                            Call mid_call, IReadOnlyList<Expr> mid_call_params,
-                            Call begin_lhs_call, IReadOnlyList<Expr> begin_lhs_call_params,
-                            Call begin_rhs_call, IReadOnlyList<Expr> begin_rhs_call_params,
+    private Call GetReplace(Call endCall, IReadOnlyList<Expr> endCallParams,
+                            Call midCall, IReadOnlyList<Expr> midCallParams,
+                            Call beginLhsCall, IReadOnlyList<Expr> beginLhsCallParams,
+                            Call beginRhsCall, IReadOnlyList<Expr> beginRhsCallParams,
                             Expr lhs, Expr rhs)
     {
         var new_args = new List<Var>();
-        var new_params = new List<Expr>();
-        var new_begin_calls = new List<Expr>();
-        var old_begin_calls = new List<Expr>();
+        var newParams = new List<Expr>();
+        var new_beginCalls = new List<Expr>();
+        var old_beginCalls = new List<Expr>();
         if (lhs is not TensorConst)
         {
             var arg = new Var(lhs.CheckedType!);
-            var new_begin_lhs_call_params = ReplaceParams(begin_lhs_call_params, lhs, arg);
-            var new_begin_lhs_call = begin_lhs_call with { Parameters = new(new_begin_lhs_call_params) };
+            var new_beginLhsCallParams = ReplaceParams(beginLhsCallParams, lhs, arg);
+            var new_beginLhsCall = beginLhsCall with { Parameters = new(new_beginLhsCallParams) };
             new_args.Add(arg);
-            new_params.Add(lhs);
-            old_begin_calls.Add(begin_lhs_call);
-            new_begin_calls.Add(new_begin_lhs_call);
+            newParams.Add(lhs);
+            old_beginCalls.Add(beginLhsCall);
+            new_beginCalls.Add(new_beginLhsCall);
         }
 
         if (rhs is not TensorConst)
         {
             var arg = new Var(rhs.CheckedType!);
-            var new_begin_rhs_call_params = ReplaceParams(begin_rhs_call_params, rhs, arg);
-            var new_begin_rhs_call = begin_rhs_call with { Parameters = new(new_begin_rhs_call_params) };
+            var new_beginRhsCallParams = ReplaceParams(beginRhsCallParams, rhs, arg);
+            var new_beginRhsCall = beginRhsCall with { Parameters = new(new_beginRhsCallParams) };
             new_args.Add(arg);
-            new_params.Add(rhs);
-            old_begin_calls.Add(begin_rhs_call);
-            new_begin_calls.Add(new_begin_rhs_call);
+            newParams.Add(rhs);
+            old_beginCalls.Add(beginRhsCall);
+            new_beginCalls.Add(new_beginRhsCall);
         }
 
-        var new_mid_call_params = ReplaceParams(mid_call_params, old_begin_calls, new_begin_calls);
-        var new_mid_call = mid_call with { Parameters = new(new_mid_call_params) };
+        var new_midCallParams = ReplaceParams(midCallParams, old_beginCalls, new_beginCalls);
+        var new_midCall = midCall with { Parameters = new(new_midCallParams) };
 
-        var new_end_call_params = ReplaceParams(end_call_params, mid_call, new_mid_call);
-        var new_end_call = end_call with { Parameters = new(new_end_call_params) };
+        var new_endCallParams = ReplaceParams(endCallParams, midCall, new_midCall);
+        var new_endCall = endCall with { Parameters = new(new_endCallParams) };
 
-        var fusion = new Call(new Fusion(FullName, ModuleKind, new_end_call, new_args.ToArray()), new_params.ToArray());
+        var fusion = new Call(new Fusion(FullName, ModuleKind, new_endCall, new_args.ToArray()), newParams.ToArray());
         return fusion;
     }
 }
@@ -115,23 +115,23 @@ public partial class DataTransferFusion<LoadT, StoreT> : FusionMaker
     where StoreT : Op
 {
     /// <inheritdoc/>
-    public override Pattern Pattern { get; } = IsWildcardCall<StoreT>("st_call", "st",
-        IsWildcardCall<LoadT>("ld_call", "ld", IsWildcard("input")));
+    public override Pattern Pattern { get; } = IsWildcardCall<StoreT>("stCall", null!,
+        IsWildcardCall<LoadT>("ldCall", null!, IsWildcard("input")));
 
     // replace input with var
-    private Call? GetReplace(Call st_call, IReadOnlyList<Expr> st_call_params,
-                             Call ld_call, IReadOnlyList<Expr> ld_call_params,
+    private Call? GetReplace(Call stCall, IReadOnlyList<Expr> stCallParams,
+                             Call ldCall, IReadOnlyList<Expr> ldCallParams,
                              Expr input)
     {
         var new_arg = new Var(input.CheckedType!);
 
-        var new_ld_call_params = ReplaceParams(ld_call_params, input, new_arg);
-        var new_ld_call = ld_call with { Parameters = new(new_ld_call_params) };
+        var new_ldCallParams = ReplaceParams(ldCallParams, input, new_arg);
+        var new_ldCall = ldCall with { Parameters = new(new_ldCallParams) };
 
-        var new_st_call_params = ReplaceParams(st_call_params, ld_call, new_ld_call);
-        var new_st_call = st_call with { Parameters = new(new_st_call_params) };
+        var new_stCallParams = ReplaceParams(stCallParams, ldCall, new_ldCall);
+        var new_stCall = stCall with { Parameters = new(new_stCallParams) };
 
-        var fusion = new Call(new Fusion(FullName, ModuleKind, new_st_call, new[] { new_arg }), input);
+        var fusion = new Call(new Fusion(FullName, ModuleKind, new_stCall, new[] { new_arg }), input);
         return fusion;
     }
 }

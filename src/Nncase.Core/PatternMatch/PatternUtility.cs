@@ -26,7 +26,7 @@ public static partial class Utility
         IsBinary(targetName, callName, condition, rhs, lhs));
 
     /// <summary>
-    /// Generate VArgsPattern with name = "pre_fix"+"_params".
+    /// Generate VArgsPattern with name = "pre_fix"+"Params".
     /// </summary>
     /// <param name="prefix">prefix.</param>
     /// <param name="inputPattern">input pattern.</param>
@@ -239,7 +239,7 @@ public static partial class Utility
         IsSwappableWildcardCall<OpT>(callName, null!, input, swappableOther));
 
     private static VArgsPattern GenerateParameters(string prefix, Pattern[] beginPatterns) =>
-        IsVArgsRepeat(prefix + "_params", list =>
+        IsVArgsRepeat(prefix + "Params", list =>
             beginPatterns
                 .Concat(Enumerable.Range(0, list.Count - beginPatterns.Length).Select(_ => IsWildcard(null)))
                 .ToArray());
