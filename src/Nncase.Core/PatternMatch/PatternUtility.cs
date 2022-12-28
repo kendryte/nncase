@@ -249,5 +249,4 @@ public static partial class Utility
         where OpT : Op => IsAlt(
         IsWildcardCall<OpT>(callName, null!, input),
         IsSwappableWildcardCall<OpT>(callName, null!, input, swappableOther));
-
 }
