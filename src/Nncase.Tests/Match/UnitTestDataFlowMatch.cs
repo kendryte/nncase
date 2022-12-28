@@ -9,6 +9,7 @@ using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using Nncase.Transform;
+using Nncase.Transform.Mutators;
 using Nncase.Transform.Rules.Neutral;
 using Xunit;
 using static Nncase.IR.F.Math;
@@ -233,12 +234,6 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
             };
 
         var post = await pass.RunAsync(pre, caseOptions);
-
-        var pass2 = new DataflowPass("FuseFusion")
-        {
-          new SimpleFuseTwoFusion(),
-        };
-        _ = await pass2.RunAsync(post, caseOptions);
     }
 
     [Fact]
@@ -267,11 +262,15 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
 
         var post = await pass.RunAsync(pre, caseOptions);
 
-        var pass2 = new DataflowPass("FuseFusion")
+        var rewriter = new DataFlowMergeRewriter();
+        var post2 = (Function)rewriter.Rewrite(post, new IMergeRewriteRule[]
         {
-            new SimpleFuseTwoFusion(),
-        };
-        var post2 = await pass2.RunAsync(post, caseOptions);
+            new SameInputFusionMergeRule(),
+            new MultiInputFusionMergeRule(),
+            new ShortCutFusionMergeRule(),
+        }, (usedby, rule, option) => new FusionGroupMutator(usedby, rule, option),
+          caseOptions);
+
         var isMatch = CompilerServices.TryMatch(post2, IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
         Assert.True(isMatch);
     }
@@ -331,18 +330,6 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
         var lhs = (Call)result["lhs"];
         Assert.True(object.ReferenceEquals(root_inputs[0], lhs));
         Assert.True(lhs is Call { Target: Unary { UnaryOp: UnaryOp.Tanh } });
-    }
-
-    [RuleGenerator]
-    public class SimpleFuseTwoFusion : Transform.Rules.Neutral.FuseTwoFusion
-    {
-        public override Expr EliminateRedundancy(Expr newBodyWithRedundancy, RunPassOptions passOptions)
-        {
-            return CompilerServices.Rewrite(newBodyWithRedundancy, new[]
-            {
-              new Transform.Rules.Neutral.FoldDeQuantQuant(),
-            }, passOptions.SetDumpLevel(0));
-        }
     }
 
     private sealed class SimpleRule : IRewriteRule

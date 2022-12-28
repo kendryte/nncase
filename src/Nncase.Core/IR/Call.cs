@@ -45,8 +45,6 @@ namespace Nncase.IR
         /// </summary>
         public Tuple<List<DataType>, List<List<QuantParam>>, float> EnodeBestQuantConfigWithCosine;
 
-        public CallAttr Attribute = CallAttr.None;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="Call"/> class.
         /// </summary>

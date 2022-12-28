@@ -25,8 +25,14 @@ public static partial class Utility
         IsBinary(targetName, callName, condition, lhs, rhs),
         IsBinary(targetName, callName, condition, rhs, lhs));
 
-    public static VArgsPattern GenerateParameters(Pattern inputPattern) =>
-        GenerateParameters(new[] { inputPattern });
+    /// <summary>
+    /// Generate VArgsPattern with name = "pre_fix"+"_params".
+    /// </summary>
+    /// <param name="prefix">prefix.</param>
+    /// <param name="inputPattern">input pattern.</param>
+    /// <returns></returns>
+    public static VArgsPattern GenerateParameters(string prefix, Pattern inputPattern) =>
+        GenerateParameters(prefix, new[] { inputPattern });
 
     /// <summary>
     /// match a call with op type T
@@ -44,7 +50,7 @@ public static partial class Utility
     public static CallPattern IsWildcardCall<T>(string callName, string opName, Pattern inputPattern)
         where T : Op
         =>
-        IsCall(callName, IsOp<T>(opName, _ => true), GenerateParameters(inputPattern))
+        IsCall(callName, IsOp<T>(opName, _ => true), GenerateParameters(callName, inputPattern))
             with
         {
             TypePattern = IsType(x => !(x is InvalidType)),
@@ -52,7 +58,7 @@ public static partial class Utility
 
     public static CallPattern IsWildcardCall<T>(string callName, string opName, Pattern lhsPattern, Pattern rhsPattern)
         where T : Op =>
-        IsCall(callName, IsOp<T>(opName, _ => true), GenerateParameters(new[] { lhsPattern, rhsPattern }))
+        IsCall(callName, IsOp<T>(opName, _ => true), GenerateParameters(callName, new[] { lhsPattern, rhsPattern }))
             with
         {
             TypePattern = IsType(x => !(x is InvalidType)),
@@ -67,7 +73,7 @@ public static partial class Utility
             IsWildcardCall<T>(callName, opName, rhsPattern, lhsPattern));
 
     public static CallPattern IsWildcardCall(string callName, Pattern firstInputPattern) =>
-        IsCall(callName, IsWildcard(), GenerateParameters(firstInputPattern))
+        IsCall(callName, IsWildcard(), GenerateParameters(callName, firstInputPattern))
             with
         {
             TypePattern = IsType(x => !(x is InvalidType)),
@@ -232,8 +238,8 @@ public static partial class Utility
         IsWildcardCall<OpT>(callName, null!, input),
         IsSwappableWildcardCall<OpT>(callName, null!, input, swappableOther));
 
-    private static VArgsPattern GenerateParameters(Pattern[] beginPatterns) =>
-        IsVArgsRepeat(list =>
+    private static VArgsPattern GenerateParameters(string prefix, Pattern[] beginPatterns) =>
+        IsVArgsRepeat(prefix + "_params", list =>
             beginPatterns
                 .Concat(Enumerable.Range(0, list.Count - beginPatterns.Length).Select(_ => IsWildcard(null)))
                 .ToArray());
