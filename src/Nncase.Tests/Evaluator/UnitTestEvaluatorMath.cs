@@ -541,6 +541,32 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         }
     }
 
+    [Fact]
+    public void TestMatmulInvalidType()
+    {
+        {
+            var input1 = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
+            var input2 = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+            var m1 = Tensor.From(input1, new[] { 2, 4 });
+            var m2 = Tensor.From(input2, new[] { 4, 2 });
+
+            var expr = IR.F.Math.MatMul(m1, m2);
+            CompilerServices.InferenceType(expr);
+            Assert.IsType<InvalidType>(expr.CheckedType);
+        }
+
+        {
+            var input1 = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
+            var input2 = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
+            var m1 = Tensor.From(input1, new[] { 2, 4 });
+            var m2 = Tensor.From(input2, new[] { 1, 8 });
+
+            var expr = IR.F.Math.MatMul(m1, m2);
+            CompilerServices.InferenceType(expr);
+            Assert.IsType<InvalidType>(expr.CheckedType);
+        }
+    }
+
     private void TestBinaryRunNormal(BinaryOp op, OrtKISharp.Tensor ort_a, OrtKISharp.Tensor ort_b, Expr exp_a, Expr exp_b)
     {
         static OrtKISharp.Tensor Mod(OrtKISharp.Tensor a, OrtKISharp.Tensor b)
@@ -571,32 +597,6 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         CompilerServices.InferenceType(expr);
 
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
-    }
-
-    [Fact]
-    public void TestMatmulInvalidType()
-    {
-        {
-            var input1 = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
-            var input2 = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-            var m1 = Tensor.From(input1, new[] { 2, 4 });
-            var m2 = Tensor.From(input2, new[] { 4, 2 });
-
-            var expr = IR.F.Math.MatMul(m1, m2);
-            CompilerServices.InferenceType(expr);
-            Assert.IsType<InvalidType>(expr.CheckedType);
-        }
-
-        {
-            var input1 = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
-            var input2 = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
-            var m1 = Tensor.From(input1, new[] { 2, 4 });
-            var m2 = Tensor.From(input2, new[] { 1, 8 });
-
-            var expr = IR.F.Math.MatMul(m1, m2);
-            CompilerServices.InferenceType(expr);
-            Assert.IsType<InvalidType>(expr.CheckedType);
-        }
     }
 
     [Fact]
