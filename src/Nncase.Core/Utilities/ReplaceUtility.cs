@@ -151,13 +151,19 @@ public class ReplaceUtility
                         last_matched = new_params[j];
                         candidates.Add(i, last_matched);
                     }
+
                     if (!object.ReferenceEquals(last_matched, new_params[j]))
+                    {
                         throw new InvalidDataException("The same arg can't replace with two new pararmeter!");
+                    }
                 }
             }
         }
+
         if (candidates.Count == 0)
+        {
             throw new InvalidOperationException("Not find the replace param");
+        }
 
         foreach (var (i, new_input) in candidates)
             new_args[i] = new_input;

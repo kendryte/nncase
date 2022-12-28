@@ -72,29 +72,33 @@ public partial class DoubleInputFusion<T, BeginT, EndT> : FusionMaker
                             Call begin_rhs_call, IReadOnlyList<Expr> begin_rhs_call_params,
                             Expr lhs, Expr rhs)
     {
-        var varIndex = 0;
         var new_args = new List<Var>();
         var new_params = new List<Expr>();
         var new_begin_calls = new List<Expr>();
+        var old_begin_calls = new List<Expr>();
         if (lhs is not TensorConst)
         {
-            var arg = new Var($"input{varIndex++}", lhs.CheckedType!);
+            var arg = new Var(lhs.CheckedType!);
             var new_begin_lhs_call_params = ReplaceParams(begin_lhs_call_params, lhs, arg);
             var new_begin_lhs_call = begin_lhs_call with { Parameters = new(new_begin_lhs_call_params) };
-            new_params.Add(arg);
+            new_args.Add(arg);
             new_params.Add(lhs);
+            old_begin_calls.Add(begin_lhs_call);
+            new_begin_calls.Add(new_begin_lhs_call);
         }
 
         if (rhs is not TensorConst)
         {
-            var arg = new Var($"input{varIndex++}", rhs.CheckedType!);
+            var arg = new Var(rhs.CheckedType!);
             var new_begin_rhs_call_params = ReplaceParams(begin_rhs_call_params, rhs, arg);
             var new_begin_rhs_call = begin_rhs_call with { Parameters = new(new_begin_rhs_call_params) };
-            new_params.Add(arg);
+            new_args.Add(arg);
             new_params.Add(rhs);
+            old_begin_calls.Add(begin_rhs_call);
+            new_begin_calls.Add(new_begin_rhs_call);
         }
 
-        var new_mid_call_params = ReplaceParams(mid_call_params, new List<Expr>() { begin_lhs_call, begin_rhs_call }, new_begin_calls);
+        var new_mid_call_params = ReplaceParams(mid_call_params, old_begin_calls, new_begin_calls);
         var new_mid_call = mid_call with { Parameters = new(new_mid_call_params) };
 
         var new_end_call_params = ReplaceParams(end_call_params, mid_call, new_mid_call);
