@@ -31,6 +31,18 @@ public static partial class Utility
     /// <param name="prefix">prefix.</param>
     /// <param name="inputPattern">input pattern.</param>
     /// <returns></returns>
+    public static VArgsPattern GenerateParameters(string prefix, Pattern[] beginPatterns) =>
+        IsVArgsRepeat(prefix + "Params", list =>
+            beginPatterns
+                .Concat(Enumerable.Range(0, list.Count - beginPatterns.Length).Select(_ => IsWildcard(null)))
+                .ToArray());
+
+    /// <summary>
+    /// Generate VArgsPattern with name = "pre_fix"+"Params".
+    /// </summary>
+    /// <param name="prefix">prefix.</param>
+    /// <param name="inputPattern">input pattern.</param>
+    /// <returns></returns>
     public static VArgsPattern GenerateParameters(string prefix, Pattern inputPattern) =>
         GenerateParameters(prefix, new[] { inputPattern });
 
@@ -237,10 +249,4 @@ public static partial class Utility
         where OpT : Op => IsAlt(
         IsWildcardCall<OpT>(callName, null!, input),
         IsSwappableWildcardCall<OpT>(callName, null!, input, swappableOther));
-
-    private static VArgsPattern GenerateParameters(string prefix, Pattern[] beginPatterns) =>
-        IsVArgsRepeat(prefix + "Params", list =>
-            beginPatterns
-                .Concat(Enumerable.Range(0, list.Count - beginPatterns.Length).Select(_ => IsWildcard(null)))
-                .ToArray());
 }
