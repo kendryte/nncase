@@ -470,9 +470,31 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         var input1 = OrtKISharp.Tensor.MakeTensor(input, new long[] { 2, 4 });
         var expect = OrtKI.QuantizeLinear(input1, scale, zero_point, axis);
 
-        var quant_param = new QuantParam(zero_point, scale);
+        var quantParam = new QuantParam(zero_point, scale);
         var input2 = Tensor.From(input, new[] { 2, 4 });
-        var expr = IR.F.Math.Quantize(input2, quant_param, DataTypes.UInt8);
+        var expr = IR.F.Math.Quantize(input2, quantParam, DataTypes.UInt8);
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+    }
+
+    [Fact]
+    public void TestInt16Quantize()
+    {
+        var input = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
+        var axis = 0;
+        sbyte zeroPoint = 62;
+        var scale = 0.05F;
+
+        var input1 = OrtKISharp.Tensor.MakeTensor(input, new long[] { 2, 4 });
+
+        // onnxruntime does not support quantize to i16, result of kernel is i8
+        var expect = OrtKI.Cast(
+            OrtKI.QuantizeLinear(input1, scale, zeroPoint, axis),
+            (int)DataTypes.Int16.ToOrtType());
+
+        var quantParam = new QuantParam(zeroPoint, scale);
+        var input2 = Tensor.From(input, new[] { 2, 4 });
+        var expr = IR.F.Math.Quantize(input2, quantParam, DataTypes.Int16);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
