@@ -486,6 +486,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         var scale = 0.05F;
 
         var input1 = OrtKISharp.Tensor.MakeTensor(input, new long[] { 2, 4 });
+
         // onnxruntime does not support quantize to i16, result of kernel is i8
         var expect = OrtKI.Cast(
             OrtKI.QuantizeLinear(input1, scale, zeroPoint, axis),
@@ -495,7 +496,7 @@ public class UnitTestEvaluatorMath : TestFixture.UnitTestFixtrue
         var input2 = Tensor.From(input, new[] { 2, 4 });
         var expr = IR.F.Math.Quantize(input2, quantParam, DataTypes.Int16);
         CompilerServices.InferenceType(expr);
-        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor(););
+        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor(); )
     }
 
     [Fact]

@@ -21,6 +21,7 @@ public class QuantizeEvaluator : IEvaluator<Quantize>, ITypeInferencer<Quantize>
         var input = context.GetOrtArgumentValue(target, Quantize.Input);
         var quantParam = context.GetArgumentValueAsScalar<QuantParam>(target, Quantize.QuantParam);
         var zeroPoint = Tensor.FromScalar(quantParam.ZeroPoint).CastTo(target.TargetType);
+
         // only support qint8 in onnx
         if (input.DataType == OrtDataType.Float && target.TargetType == DataTypes.Int16)
         {
@@ -29,6 +30,7 @@ public class QuantizeEvaluator : IEvaluator<Quantize>, ITypeInferencer<Quantize>
                 result,
                 input.Shape.ToInts()));
         }
+
         return OrtKI.QuantizeLinear(input, quantParam.Scale, zeroPoint.ToOrtTensor(), 0).ToValue();
     }
 
