@@ -25,10 +25,7 @@ public class QuantizeEvaluator : IEvaluator<Quantize>, ITypeInferencer<Quantize>
         // only support qint8 in onnx
         if (input.DataType == OrtDataType.Float && target.TargetType == DataTypes.Int16)
         {
-            var result = input.ToArray<float>().Select(x => (short)((x / quantParam.Scale) + quantParam.ZeroPoint)).ToArray();
-            return Value.FromTensor(Tensor.From(
-                result,
-                input.Shape.ToInts()));
+            return OrtKI.Cast((input / quantParam.Scale) + (float)quantParam.ZeroPoint, (int)OrtDataType.Int16).ToValue();
         }
 
         return OrtKI.QuantizeLinear(input, quantParam.Scale, zeroPoint.ToOrtTensor(), 0).ToValue();
