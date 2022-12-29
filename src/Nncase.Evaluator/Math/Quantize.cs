@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
@@ -20,6 +21,14 @@ public class QuantizeEvaluator : IEvaluator<Quantize>, ITypeInferencer<Quantize>
         var input = context.GetOrtArgumentValue(target, Quantize.Input);
         var quantParam = context.GetArgumentValueAsScalar<QuantParam>(target, Quantize.QuantParam);
         var zeroPoint = Tensor.FromScalar(quantParam.ZeroPoint).CastTo(target.TargetType);
+        // only support qint8 in onnx
+        if (input.DataType == OrtDataType.Float && target.TargetType == DataTypes.Int16)
+        {
+            var result = input.ToArray<float>().Select(x => (short)((x / quantParam.Scale) + quantParam.ZeroPoint)).ToArray();
+            return Value.FromTensor(Tensor.From(
+                result,
+                input.Shape.ToInts()));
+        }
         return OrtKI.QuantizeLinear(input, quantParam.Scale, zeroPoint.ToOrtTensor(), 0).ToValue();
     }
 
