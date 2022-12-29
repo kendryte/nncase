@@ -572,7 +572,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     path_list.append(
                         (os.path.join(case_dir, name, f'{name}_{n}_{i}.bin'),
                          os.path.join(case_dir, name, f'{name}_{n}_{i}.txt')))
-                    data.tofile(path_list[-1][0])z
+                    data.tofile(path_list[-1][0])
                     self.totxtfile(path_list[-1][1], data)
                 samples.append(data)
             i += 1
