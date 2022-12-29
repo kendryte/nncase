@@ -555,6 +555,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
 
     def generate_data(self, cfg, case_dir: str, inputs: List[Dict], path_list: List[str], name: str, preprocess_opt):
         i = 0
+        os.mkdir(os.path.join(case_dir, name))
         for input in inputs:
             samples = []
             shape = copy.deepcopy(input['model_shape'])
@@ -569,9 +570,9 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 data = DataFactory[cfg.name](shape, input['dtype'], n, cfg.batch_size, **cfg.kwargs)
                 if not test_utils.in_ci():
                     path_list.append(
-                        (os.path.join(case_dir, f'{name}_{n}_{i}.bin'),
-                         os.path.join(case_dir, f'{name}_{n}_{i}.txt')))
-                    data.tofile(path_list[-1][0])
+                        (os.path.join(case_dir, name, f'{name}_{n}_{i}.bin'),
+                         os.path.join(case_dir, name, f'{name}_{n}_{i}.txt')))
+                    data.tofile(path_list[-1][0])z
                     self.totxtfile(path_list[-1][1], data)
                 samples.append(data)
             i += 1
