@@ -19,7 +19,7 @@ public sealed record Pad(PadMode PadMode) : Op
     public static readonly ParameterInfo Input = new(typeof(Pad), 0, "input");
 
     /// <summary>
-    /// [1, 2, 3, 4] [[0, 0, 1, 2, 0, 0, 1, 2]] ⇒ [1, 2, 5, 8].
+    /// [1, 2, 3, 4] [[0, 0, 0, 0, 1, 1, 2, 2]] ⇒ [1, 2, 5, 8].
     /// </summary>
     public static readonly ParameterInfo Pads = new(typeof(Pad), 1, "pads", HasRank(1) & IsIntegral());
 
