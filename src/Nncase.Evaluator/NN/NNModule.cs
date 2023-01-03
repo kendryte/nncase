@@ -20,6 +20,7 @@ public class NNModule : Module
         builder.RegisterType<LeakyReluEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<PReluEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<ReluEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<Relu6Evaluator>().AsImplementedInterfaces();
         builder.RegisterType<SeluEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<SigmoidEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<HardSigmoidEvaluator>().AsImplementedInterfaces();

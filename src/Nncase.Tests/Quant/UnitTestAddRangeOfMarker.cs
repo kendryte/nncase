@@ -62,6 +62,54 @@ public class UnitTestAddRangeOfMarker : UnitTestFixtrue
         Assert.Equal(1.00005388f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[6]).Value.ToArray<float>()[1]);
     }
 
+    [Fact]
+    public void TestAddRangeOfMarkerToRelu6()
+    {
+        var caseOptions = GetPassOptions();
+        var compileOptions = caseOptions.CompileOptions;
+        compileOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
+        compileOptions.QuantType = DataTypes.UInt8;
+        compileOptions.WQuantType = DataTypes.UInt8;
+
+        RunPassOptions passOptions = new(compileOptions);
+        _ = CompilerServices.GetTarget(compileOptions.Target);
+
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
+
+        var relu6 = Relu6(input);
+
+        var output = relu6;
+        var module = new IRModule(new Function("main", output, new Var[] { input }));
+
+        PassManager pmgr = new(module, passOptions);
+
+        compileOptions.QuantizeOptions = new()
+        {
+            CalibrationDataset = new SolidCalibrationDatasetProvider(new Var[] { input }),
+            CalibrationMethod = CalibMethod.Kld,
+        };
+
+        // 0. TargetIndependentPass
+        pmgr.Add(new DataflowPass("0_TargetInDependent")
+        {
+            new AddRangeOfAndMarkerToRelu6(),
+        });
+
+        // 1. AssignRanges
+        pmgr.Add(new EGraphPassWithQuantize("1_AssignRanges", compileOptions.QuantizeOptions!));
+
+        pmgr.RunAsync();
+
+        System.Console.WriteLine(CompilerServices.Print((Function)module.Functions[0]));
+        var dumpVisitor = new DumpVisitor();
+        dumpVisitor.Visit(module.Functions[0]);
+
+        Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0], -1.0001221f);
+        Assert.Equal(1.0001087f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[1]);
+        Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[0], -6.103435E-05f);
+        Assert.Equal(1.0000478f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[1]);
+    }
+
     public sealed class DumpVisitor : ExprVisitor<int, IRType>
     {
         public override int DefaultVisitLeaf(Expr expr) => 0;

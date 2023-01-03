@@ -237,6 +237,23 @@ public sealed partial class AddRangeOfAndMarkerToHardSwish : IRewriteRule
 }
 
 [RuleGenerator]
+public sealed partial class AddRangeOfAndMarkerToLeakyRelu : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } =
+        IsLeakyRelu("leaky", "call", _ => true,
+            IsWildcard("input"),
+            IsWildcard("alpha"));
+
+    private Expr? GetReplace(LeakyRelu leaky, Call call, Expr input, Expr alpha, RunPassOptions options)
+    {
+        var output = LeakyRelu(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), alpha);
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
+        return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
+    }
+}
+
+[RuleGenerator]
 public sealed partial class AddRangeOfAndMarkerToLSTM : IRewriteRule
 {
     /// <inheritdoc/>
@@ -337,17 +354,16 @@ public sealed partial class AddRangeOfAndMarkerToRelu : IRewriteRule
 }
 
 [RuleGenerator]
-public sealed partial class AddRangeOfAndMarkerToLeakyRelu : IRewriteRule
+public sealed partial class AddRangeOfAndMarkerToRelu6 : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsLeakyRelu("leaky", "call", _ => true,
-            IsWildcard("input"),
-            IsWildcard("alpha"));
+        IsRelu6("relu6", "call", _ => true,
+            IsWildcard("input"));
 
-    private Expr? GetReplace(LeakyRelu leaky, Call call, Expr input, Expr alpha, RunPassOptions options)
+    private Expr? GetReplace(Relu6 relu6, Call call, Expr input, RunPassOptions options)
     {
-        var output = LeakyRelu(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), alpha);
+        var output = Relu6(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)));
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
