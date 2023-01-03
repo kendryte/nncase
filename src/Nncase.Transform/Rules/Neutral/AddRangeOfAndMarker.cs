@@ -354,7 +354,7 @@ public sealed partial class AddRangeOfAndMarkerToLeakyRelu : IRewriteRule
 }
 
 [RuleGenerator]
-public sealed partial class AddRangeOfAndMarkerToRedece : IRewriteRule
+public sealed partial class AddRangeOfAndMarkerToReduce : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
