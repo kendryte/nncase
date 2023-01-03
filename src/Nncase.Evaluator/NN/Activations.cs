@@ -25,6 +25,13 @@ public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>, IC
         };
     }
 
+    public IValue Visit(IEvaluateContext context, Celu target)
+    {
+        var input = context.GetOrtArgumentValue(target, Celu.Input);
+        var alpha = context.GetArgumentValueAsScalar<float>(target, Celu.Alpha);
+        return Visit(input, alpha);
+    }
+
     private IValue Visit(OrtKISharp.Tensor input, float alpha)
     {
         return OrtKI.Celu(input, alpha).ToValue();

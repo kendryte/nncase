@@ -336,7 +336,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
     [RuleGenerator]
     public class SimpleFuseTwoFusion : Transform.Rules.Neutral.FuseTwoFusion
     {
-        public override Expr EliminateRedundancy(Expr newBodyWithRedundancy, RunPassOptions passOptions)
+        public override Expr EliminateRedundancy(Expr newBodyWithRedundancy, RunPassContext passOptions)
         {
             return CompilerServices.Rewrite(newBodyWithRedundancy, new[]
             {
@@ -349,7 +349,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
     {
         public IPattern Pattern { get; } = IsBinary(BinaryOp.Add, IsWildcard("lhs"), IsWildcard("rhs"));
 
-        public Expr? GetReplace(IMatchResult result, RunPassOptions options)
+        public Expr? GetReplace(IMatchResult result, RunPassContext options)
         {
             return (Expr)result["lhs"] - (Expr)result["rhs"];
         }

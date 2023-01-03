@@ -27,23 +27,21 @@ public interface ITarget
     /// Bind Quant Method And Quant Cosine With IR.
     /// </summary>
     /// <param name="calibrationDataset">calibration dataset.</param>
-    /// <param name="target">target.</param>
     /// <param name="rangeOfs">rangeOf nodes.</param>
     /// <param name="childrenOfRangeOfs">rangeOf nodes children.</param>
-    /// <param name="runPassOptions">options.</param>
+    /// <param name="quantizeOptions">options.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task<Dictionary<ENode, List<Tuple<List<DataType>, List<List<QuantParam>>, float>>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassOptions runPassOptions);
+    Task<Dictionary<ENode, List<Tuple<List<DataType>, List<List<QuantParam>>, float>>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, QuantizeOptions quantizeOptions);
 
     /// <summary>
     /// AdaRound Weights.
     /// </summary>
     /// <param name="calibrationDataset">calibration dataset.</param>
-    /// <param name="target">target.</param>
     /// <param name="rangeOfs">rangeOf nodes.</param>
     /// <param name="childrenOfRangeOfs">rangeOf nodes children.</param>
-    /// <param name="runPassOptions">options.</param>
+    /// <param name="quantizeOptions">options.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task AdaRoundWeights(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassOptions runPassOptions);
+    Task AdaRoundWeights(ICalibrationDatasetProvider calibrationDataset, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, QuantizeOptions quantizeOptions);
 
     /// <summary>
     /// Parse Target Dependent Options.

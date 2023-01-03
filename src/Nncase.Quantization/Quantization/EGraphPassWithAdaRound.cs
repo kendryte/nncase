@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Evaluator;
 using Nncase.Transform;
 
 namespace Nncase.Quantization;
@@ -15,29 +16,10 @@ namespace Nncase.Quantization;
 /// </summary>
 public class EGraphPassWithAdaRound : EGraphPass
 {
-    private readonly QuantizeOptions _quantizeOptions;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="EGraphPassWithAdaRound"/> class.
-    /// </summary>
-    /// <param name="name">Pass name.</param>
-    /// <param name="quantizeOptions">options.</param>
-    public EGraphPassWithAdaRound(string name, QuantizeOptions quantizeOptions)
-        : base(name)
+    /// <inheritdoc/>
+    protected override async Task OnPostRewriteAsync(EGraph graph, RunPassContext options)
     {
-        _quantizeOptions = quantizeOptions;
-    }
-
-    /// <summary>
-    /// the callback on the rewirte finish.
-    ///
-    /// </summary>
-    /// <param name="graph"></param>
-    /// <param name="options"></param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    protected override async Task OnPostRewrite(EGraph graph, RunPassOptions options)
-    {
-        var quantizerAdaRound = new QuantizerAdaRound(graph, options);
-        await quantizerAdaRound.RunAsync(options);
+        var quantizerAdaRound = new QuantizerAdaRound(graph, CompileSession);
+        await quantizerAdaRound.RunAsync();
     }
 }

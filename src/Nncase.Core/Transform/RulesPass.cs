@@ -7,22 +7,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Nncase.IR;
 
 namespace Nncase.Transform;
 
-public abstract class RulesPass : FunctionPass, IEnumerable<IRewriteRule>
+/// <summary>
+/// Pass contains rewrite rules.
+/// </summary>
+public abstract class RulesPass : FunctionPass
 {
     private readonly List<IRewriteRule> _rules = new();
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="RulesPass"/> class.
-    /// </summary>
-    /// <param name="name">Name.</param>
-    public RulesPass(string name)
-        : base(name)
-    {
-    }
 
     /// <summary>
     /// Gets rules.
@@ -30,69 +25,19 @@ public abstract class RulesPass : FunctionPass, IEnumerable<IRewriteRule>
     public IReadOnlyList<IRewriteRule> Rules => _rules;
 
     /// <summary>
-    /// add the pattern rule.
+    /// Add the rewrite rule.
     /// </summary>
-    /// <param name="rule">Rule.</param>
-    public void Add(IRewriteRule rule) => _rules.Add(rule);
-
-    /// <summary>
-    /// add the pattern rules.
-    /// </summary>
-    /// <param name="rules">Rules.</param>
-    public void Add(params IRewriteRule[] rules) => _rules.AddRange(rules);
-
-    /// <summary>
-    /// <see cref="Add(IRewriteRule[])"/>.
-    /// </summary>
-    /// <param name="rules">Rules.</param>
-    public void Add(IEnumerable<IRewriteRule> rules) => _rules.AddRange(rules);
-
-    /// <inheritdoc/>
-    public IEnumerator<IRewriteRule> GetEnumerator()
+    /// <typeparam name="T">Rule type.</typeparam>
+    /// <param name="configureRule">Configure rule action.</param>
+    /// <param name="parameters">Rule's constructor parameters.</param>
+    /// <returns>This rule pass.</returns>
+    public RulesPass Add<T>(Action<T>? configureRule, params object[] parameters)
+        where T : class, IRewriteRule
     {
-        return _rules.GetEnumerator();
-    }
-
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
-
-    /// <summary>
-    /// the callback function you can custom process func with run pass options.
-    /// </summary>
-    /// <param name="callable"> func without run pass.</param>
-    /// <param name="options">Options.</param>
-    protected override void OnPassStart(BaseFunction callable, RunPassOptions options)
-    {
-        switch (options.DumpLevel)
-        {
-            case >= 2:
-                CompilerServices.DumpIR((Expr)callable, "Start", options.DumpDir);
-                break;
-            case >= 1:
-                break;
-            default:
-                break;
-        }
-    }
-
-    /// <summary>
-    /// the callback function you can custom process func with run pass options.
-    /// </summary>
-    /// <param name="callable"> func with rewrited. </param>
-    /// <param name="options">Options.</param>
-    protected override void OnPassEnd(BaseFunction callable, RunPassOptions options)
-    {
-        switch (options.DumpLevel)
-        {
-            case >= 2:
-                CompilerServices.DumpIR((Expr)callable, "End", options.DumpDir);
-                break;
-            case >= 1:
-                break;
-            default:
-                break;
-        }
+        using var scope = new CompileSessionScope(CompileSession);
+        var rule = ActivatorUtilities.CreateInstance<T>(CompileSession.ServiceProvider, parameters);
+        configureRule?.Invoke(rule);
+        _rules.Add(rule);
+        return this;
     }
 }

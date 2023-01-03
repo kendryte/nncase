@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.PatternMatch;
@@ -18,37 +19,38 @@ namespace Nncase.Quantization;
 internal partial class Quantizer
 {
     private readonly EGraph _graph;
+    private readonly QuantizeOptions _quantizeOptions;
     private readonly List<ENode> _rangeOfs = new List<ENode>();
     private readonly List<ENode> _childrenOfRangeOfs = new List<ENode>();
-    private readonly RunPassOptions _passOptions;
+    private readonly IDumpper _dumpper;
 
-    public Quantizer(EGraph graph, RunPassOptions passOptions)
+    public Quantizer(EGraph graph, QuantizeOptions quantizeOptions, IDumpper dummper)
     {
         _graph = graph;
-        _passOptions = passOptions;
+        _quantizeOptions = quantizeOptions;
+        _dumpper = dummper;
         MarkRangeOfs();
     }
 
-    public async Task RunAsync(RunPassOptions options)
+    public async Task RunAsync(RunPassContext options)
     {
         int srcBinSize = 8192;
         int dstBinSize = 256;
-        var quantOptions = options.CompileOptions.QuantizeOptions!;
-        if (quantOptions.CalibrationDataset == null)
+        if (_quantizeOptions.CalibrationDataset == null)
         {
-            throw new ArgumentNullException(nameof(quantOptions.CalibrationDataset));
+            throw new InvalidOperationException($"{nameof(_quantizeOptions.CalibrationDataset)} is not set");
         }
 
         // 1.0 Get ranges
-        var ranges = await GetRangesAsync(quantOptions.CalibrationDataset);
+        var ranges = await GetRangesAsync(_quantizeOptions.CalibrationDataset);
 
-        if (quantOptions.CalibrationMethod is CalibMethod.Kld)
+        if (_quantizeOptions.CalibrationMethod is CalibMethod.Kld)
         {
             // 1.1. Get histograms
-            var histograms = await GetHistogramsAsync(quantOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
+            var histograms = await GetHistogramsAsync(_quantizeOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
 
             // 1.2. Select best ranges
-            var optRanges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, quantOptions.CalibrationMethod);
+            var optRanges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, _quantizeOptions.CalibrationMethod);
 
             // 1.3. Assign ranges
             AssignRanges(optRanges);
@@ -61,7 +63,7 @@ internal partial class Quantizer
         // // 3. Choose better quant method using cosine, and bind info with ir.
         // if (quantOptions.BindQuantMethod)
         // {
-        //     var info = await options.Target.BindQuantMethodCosine(quantOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs, _passOptions);
+        //     var info = await options.Target.BindQuantMethodCosine(quantOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs, _context);
         // }
         _graph.Rebuild();
     }
@@ -70,9 +72,9 @@ internal partial class Quantizer
     {
         await foreach (var sample in calibrationDataset.Samples)
         {
-            var evaluator = new CalibrationEvaluator(sample, _rangeOfs, _passOptions.SetPassName(_passOptions.PassName + "/ep1"));
+            var evaluator = new CalibrationEvaluator(sample, _rangeOfs, _dumpper.CreateSubDummper("ep1"));
             var values = evaluator.Evaluate();
-            var childrenEvaluator = new CalibrationEvaluator(sample, _childrenOfRangeOfs, _passOptions.SetPassName(_passOptions.PassName + "/ep2"));
+            var childrenEvaluator = new CalibrationEvaluator(sample, _childrenOfRangeOfs, _dumpper.CreateSubDummper("ep2"));
             var childrenValues = childrenEvaluator.Evaluate();
 
             // values are children op range values(only two scalars for each value: Min and Max), childrenValues are children op tensor values.
@@ -84,7 +86,7 @@ internal partial class Quantizer
     {
         await foreach (var sample in calibrationDataset.Samples)
         {
-            var evaluator = new CalibrationEvaluator(sample, _rangeOfs, _passOptions.SetPassName(_passOptions.PassName + "/ep1"));
+            var evaluator = new CalibrationEvaluator(sample, _rangeOfs, _dumpper.CreateSubDummper("ep1"));
             var values = evaluator.Evaluate();
             func(values);
         }

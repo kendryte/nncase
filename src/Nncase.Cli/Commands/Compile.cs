@@ -7,7 +7,6 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
 using System.Linq;
-using Autofac;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Nncase.CodeGen;
@@ -74,41 +73,38 @@ public class Compile : Command
 
     private void Run(CliCompileOptions cliOptions, IHost host)
     {
-        var provider = host.Services.GetRequiredService<ICompilerServicesProvider>();
-        CompilerServices.Configure(provider);
+        CompilerServices.Configure(host.Services);
 
         // 1. setup the options
-        Quantization.QuantizeOptions quant_options = new() { CalibrationMethod = cliOptions.CalibMethod };
-        var compileOptions = new CompileOptions()
-        {
-            InputFile = cliOptions.InputFile,
-            OutputFile = cliOptions.OutputFile,
-            Target = cliOptions.Target,
-            InputFormat = cliOptions.InputFormat,
-            DumpLevel = cliOptions.DumpLevel,
-            DumpDir = cliOptions.DumpDir,
-            QuantType = cliOptions.QuantType switch
+        var compileOptions = new CompileOptions(
+            InputFile: cliOptions.InputFile,
+            InputFormat: cliOptions.InputFormat,
+            DumpLevel: cliOptions.DumpLevel,
+            DumpDir: cliOptions.DumpDir,
+            QuantizeOptions: new()
             {
-                QuantType.UInt8 => DataTypes.UInt8,
-                QuantType.Int8 => DataTypes.Int8,
-                QuantType.Int16 => DataTypes.Int16,
-                _ => throw new ArgumentOutOfRangeException(),
-            },
-            WQuantType = cliOptions.WQuantType switch
-            {
-                QuantType.UInt8 => DataTypes.UInt8,
-                QuantType.Int8 => DataTypes.Int8,
-                QuantType.Int16 => DataTypes.Int16,
-                _ => throw new ArgumentOutOfRangeException(),
-            },
-            ModelQuantMode = cliOptions.ModelQuantMode,
-
-            // todo add the quant options parser
-            QuantizeOptions = quant_options,
-        };
+                CalibrationMethod = cliOptions.CalibMethod,
+                QuantType = cliOptions.QuantType switch
+                {
+                    QuantType.UInt8 => DataTypes.UInt8,
+                    QuantType.Int8 => DataTypes.Int8,
+                    QuantType.Int16 => DataTypes.Int16,
+                    _ => throw new ArgumentException("Invalid quant type"),
+                },
+                WQuantType = cliOptions.WQuantType switch
+                {
+                    QuantType.UInt8 => DataTypes.UInt8,
+                    QuantType.Int8 => DataTypes.Int8,
+                    QuantType.Int16 => DataTypes.Int16,
+                    _ => throw new ArgumentException("Invalid weights quant type"),
+                },
+                ModelQuantMode = cliOptions.ModelQuantMode,
+            });
 
         // 2. import the model
-        var compiler = new Compiler.Compiler(compileOptions);
+        var target = CompilerServices.GetTarget(cliOptions.Target);
+        using var compileSession = CompileSession.Create(target, compileOptions);
+        var compiler = compileSession.Compiler;
         IRModule module;
         using (var model_stream = File.OpenRead(compileOptions.InputFile))
         {
@@ -116,11 +112,11 @@ public class Compile : Command
         }
 
         // 3. create the calib dataset
-        if (compileOptions.ModelQuantMode == Quantization.ModelQuantMode.UsePTQ)
+        if (compileOptions.QuantizeOptions.ModelQuantMode == Quantization.ModelQuantMode.UsePTQ)
         {
-            if (quant_options.CalibrationMethod == Quantization.CalibMethod.Random)
+            if (compileOptions.QuantizeOptions.CalibrationMethod == Quantization.CalibMethod.Random)
             {
-                quant_options.CalibrationDataset = new RandCalibrationDatasetProvider(((Function)module.Entry!).Parameters.ToArray());
+                compileOptions.QuantizeOptions.CalibrationDataset = new RandCalibrationDatasetProvider(((Function)module.Entry!).Parameters.ToArray());
             }
         }
 
@@ -128,7 +124,7 @@ public class Compile : Command
         compiler.Compile();
 
         // 5. code gen
-        using (var os = File.OpenWrite(compileOptions.OutputFile))
+        using (var os = File.OpenWrite(cliOptions.OutputFile))
         {
             compiler.Gencode(os);
         }

@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Nncase.CostModel;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.PatternMatch;
 using static Nncase.PatternMatch.F.Math;
@@ -25,9 +26,9 @@ public static class EGraphExtractExtensions
     /// <param name="eGraph">eGraph.</param>
     /// <param name="root">Root eclass.</param>
     /// <param name="basefunc_cost_evaluator">base func cost evaluator.</param>
-    /// <param name="options">Options.</param>
+    /// <param name="context">Context.</param>
     /// <returns>Extracted root expression.</returns>
-    public static Expr Extract(this EGraph eGraph, EClass root, Evaluator.IBaseFuncCostEvaluator? basefunc_cost_evaluator, RunPassOptions options)
+    public static Expr Extract(this EGraph eGraph, EClass root, Evaluator.IBaseFuncCostEvaluator? basefunc_cost_evaluator, RunPassContext context)
     {
         // 1. set the all expr checked shape
         foreach (var eclass in eGraph.Classes)
@@ -43,10 +44,10 @@ public static class EGraphExtractExtensions
 
         // 2. start the cost evaluator
         var costModel = new EGraphCostEvaluator(root.Find(), basefunc_cost_evaluator).Evaluate();
-        if (options.DumpLevel > 2)
+        if (context.Dumpper.IsEnabled(DumpFlags.EGraphCost))
         {
-            // TODO: dump graph
-            EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, root.Find(), Path.Combine(options.DumpDir, "Costs", $"V{eGraph.Version}"));
+            using var fs = context.Dumpper.OpenWrite(Path.Combine("Costs", $"V{eGraph.Version}"));
+            EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, root.Find(), fs);
         }
 
         return new EGraphExtractor(costModel).Extract(root.Find());

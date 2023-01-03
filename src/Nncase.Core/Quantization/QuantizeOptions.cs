@@ -57,6 +57,11 @@ public enum CalibMethod
 public class QuantizeOptions
 {
     /// <summary>
+    /// Gets no quantization options.
+    /// </summary>
+    public static readonly QuantizeOptions NoQuant = new QuantizeOptions();
+
+    /// <summary>
     /// Gets or sets calibrationDataset.
     /// </summary>
     public ICalibrationDatasetProvider? CalibrationDataset { get; set; }
@@ -80,4 +85,19 @@ public class QuantizeOptions
     /// Gets or sets a value indicating whether enable adaround to fine tune weights.
     /// </summary>
     public bool UseAdaRound { get; set; }
+
+    /// <summary>
+    /// Gets or sets quant type.
+    /// </summary>
+    public DataType QuantType { get; set; } = DataTypes.UInt8;
+
+    /// <summary>
+    /// Gets or sets weights quant type.
+    /// </summary>
+    public DataType WQuantType { get; set; } = DataTypes.UInt8;
+
+    /// <summary>
+    /// Gets or sets model quant mode.
+    /// </summary>
+    public ModelQuantMode ModelQuantMode { get; set; } = ModelQuantMode.NoQuant;
 }

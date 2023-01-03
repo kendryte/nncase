@@ -13,8 +13,6 @@ using LanguageExt;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Onnx;
-using static Nncase.IR.F.Tensors;
-using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Importer;
 
@@ -23,17 +21,20 @@ public sealed partial class OnnxImporter : BaseImporter
     private readonly ModelProto _model;
     private readonly GraphProto _graph;
     private readonly Dictionary<string, long> _opSetMap;
-    private Dictionary<string, Expr> _outputTensors;
-    private Dictionary<string, TensorProto> _constTensors;
+    private Dictionary<string, Expr>? _outputTensors;
+    private Dictionary<string, TensorProto>? _constTensors;
 
-    public OnnxImporter(byte[] onnxModel)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OnnxImporter"/> class.
+    /// </summary>
+    /// <param name="onnxModel">Onnx model stream.</param>
+    /// <param name="compileSession">Compile session.</param>
+    public OnnxImporter(Stream onnxModel, CompileSession compileSession)
+        : base(compileSession)
     {
         _opSetMap = new Dictionary<string, long>();
-        var m = new MessageParser<ModelProto>(
-            () => new ModelProto());
+        _model = ModelProto.Parser.ParseFrom(new CodedInputStream(onnxModel, true));
 
-        // todo:how to check valid?
-        _model = m.ParseFrom(onnxModel);
         foreach (var opSet in _model.OpsetImport)
         {
             _opSetMap.Add(opSet.Domain, opSet.Version);
@@ -42,7 +43,8 @@ public sealed partial class OnnxImporter : BaseImporter
         _graph = _model.Graph;
     }
 
-    public override IEnumerable<Var> CreateInputs()
+    /// <inheritdoc/>
+    protected override IEnumerable<Var> CreateInputs()
     {
         _constTensors = _graph.Initializer
             .ToDictionary(tensor => tensor.Name, tensor => tensor);
@@ -55,22 +57,26 @@ public sealed partial class OnnxImporter : BaseImporter
         return createdInputs;
     }
 
-    public override void ConvertOp()
+    /// <inheritdoc/>
+    protected override void ConvertOp()
     {
-        _graph.Node.ToList().ForEach(Visit);
+        foreach (var node in _graph.Node)
+        {
+            Visit(node);
+        }
     }
 
-    public override Expr CreateOutputs()
+    /// <inheritdoc/>
+    protected override Expr CreateOutputs()
     {
-        var outputs = _graph.Output.Select(o => _outputTensors[o.Name]).ToArray();
+        var outputs = _graph.Output.Select(o => _outputTensors![o.Name]).ToArray();
         var body = outputs.Length > 1 ? new IR.Tuple(outputs) : outputs[0];
         return body;
     }
 
     private void Visit(NodeProto op)
     {
-        // Console.WriteLine(op.OpType);
-        _opsInModel.Add(op.OpType);
+        AddOpInModel(op.OpType);
         var output = op.OpType switch
         {
             "Abs" => VisitUnary(op, UnaryOp.Abs),
@@ -187,7 +193,7 @@ public sealed partial class OnnxImporter : BaseImporter
             "Where" => VisitWhere(op),
             _ => UnSupportedOp(op.OpType),
         };
-        AddToOutputs(_outputTensors, op.Output.ToArray(), output);
+        AddToOutputs(_outputTensors!, op.Output.ToArray(), output);
     }
 
     // about op set: https://github.com/onnx/onnx/issues/3678

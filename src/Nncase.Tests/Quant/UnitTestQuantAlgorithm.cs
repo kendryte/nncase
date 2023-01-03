@@ -49,7 +49,7 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
         compileOptions.QuantType = DataTypes.UInt8;
         compileOptions.WQuantType = DataTypes.UInt8;
 
-        Transform.RunPassOptions passOptions = new(compileOptions);
+        Transform.RunPassContext passOptions = new(compileOptions);
         _ = CompilerServices.GetTarget(compileOptions.Target);
 
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));

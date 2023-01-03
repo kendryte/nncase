@@ -57,7 +57,7 @@ public class UnitTestFoldQuant : TestFixture.UnitTestFixtrue
         }
     }
 
-    private void CheckMatchPositive<T>(RunPassOptions passOptions, Expr pre)
+    private void CheckMatchPositive<T>(RunPassContext passOptions, Expr pre)
       where T : IRewriteRule, new()
     {
         var post = CompilerServices.Rewrite(pre, new IRewriteRule[] { new T() }, passOptions);
@@ -65,7 +65,7 @@ public class UnitTestFoldQuant : TestFixture.UnitTestFixtrue
         Assert.Equal(CompilerServices.Evaluate(pre), CompilerServices.Evaluate(post));
     }
 
-    private void CheckMatchNegative<T>(RunPassOptions passOptions, Expr pre)
+    private void CheckMatchNegative<T>(RunPassContext passOptions, Expr pre)
       where T : IRewriteRule, new()
     {
         var post = CompilerServices.Rewrite(pre, new IRewriteRule[] { new T() }, passOptions);

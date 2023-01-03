@@ -28,20 +28,20 @@ public partial class TransformTestBase : UnitTestFixtrue
         return compileOptions;
     }
 
-    public override RunPassOptions GetPassOptions([CallerMemberName] string member_name = "")
+    public override RunPassContext GetPassOptions([CallerMemberName] string member_name = "")
     {
         var passOptions = base.GetPassOptions(member_name);
         passOptions = passOptions.SetRewriteOnce(true);
         return passOptions;
     }
 
-    public virtual Expr TestMatched<T>(Expr pre, RunPassOptions passOptions)
+    public virtual Expr TestMatched<T>(Expr pre, RunPassContext passOptions)
         where T : IRewriteRule, new()
     {
         return TestMatchedCore(pre, passOptions, new T());
     }
 
-    public void CondMatch<T>(bool cond, Expr expr, RunPassOptions passOptions)
+    public void CondMatch<T>(bool cond, Expr expr, RunPassContext passOptions)
         where T : IRewriteRule, new()
     {
         if (cond)
@@ -54,7 +54,7 @@ public partial class TransformTestBase : UnitTestFixtrue
         }
     }
 
-    public Expr TestMatchedCore(Expr pre, RunPassOptions passOptions, params IRewriteRule[] rules)
+    public Expr TestMatchedCore(Expr pre, RunPassContext passOptions, params IRewriteRule[] rules)
     {
         Assert.True(pre.InferenceType(), "TestInferFailed:" + pre.CheckedType);
         if (rules.Length == 0)
@@ -71,14 +71,14 @@ public partial class TransformTestBase : UnitTestFixtrue
         return post;
     }
 
-    public void TestNotMatch(Expr pre, RunPassOptions passOptions, params IRewriteRule[] rules)
+    public void TestNotMatch(Expr pre, RunPassContext passOptions, params IRewriteRule[] rules)
     {
         pre.InferenceType();
         var post = CompilerServices.Rewrite(pre, rules, passOptions);
         Assert.Equal(pre, post);
     }
 
-    public void TestNotMatch<T>(Expr pre, RunPassOptions passOptions)
+    public void TestNotMatch<T>(Expr pre, RunPassContext passOptions)
         where T : IRewriteRule, new()
     {
         TestNotMatch(pre, passOptions, new T());
@@ -89,49 +89,49 @@ public partial class TransformTestBase : UnitTestFixtrue
     //     TestMatched<T>(Binary(op, lhs, rhs));
     //     TestMatched<T>(Binary(op, rhs, lhs));
     // }
-    public Expr RewriteOnceFalse(Func<RunPassOptions, Expr> f, RunPassOptions passOptions)
+    public Expr RewriteOnceFalse(Func<RunPassContext, Expr> f, RunPassContext passOptions)
     {
         var result = f(passOptions.SetRewriteOnce(false));
         return result;
     }
 
-    public Expr Rewrite<T>(Expr pre, RunPassOptions passOptions)
+    public Expr Rewrite<T>(Expr pre, RunPassContext passOptions)
         where T : IRewriteRule, new()
     {
         return CompilerServices.Rewrite(pre, new IRewriteRule[] { new T() }, passOptions);
     }
 
-    public Expr RewriteWithSeq(Expr expr, RunPassOptions passOptions, IEnumerable<IRewriteRule> rules) =>
+    public Expr RewriteWithSeq(Expr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> rules) =>
         rules.Aggregate(expr, (expr1, rule) => CompilerServices.Rewrite(expr1, new[] { rule }, passOptions));
 
-    public Expr RewriteWithSeq(Expr expr, RunPassOptions passOptions, IEnumerable<IRewriteRule> lower,
+    public Expr RewriteWithSeq(Expr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> lower,
         IEnumerable<IRewriteRule> folds, IEnumerable<IRewriteRule> fuse)
     {
         var l = RewriteWithSeq(expr, passOptions, lower);
-        var s = RewriteOnceFalse((RunPassOptions opt) => RewriteWithSeq(l, opt, folds), passOptions);
+        var s = RewriteOnceFalse((RunPassContext opt) => RewriteWithSeq(l, opt, folds), passOptions);
         var f = RewriteWithSeq(s, passOptions, fuse);
         return f;
     }
 
-    public Expr FoldNop(Expr expr, RunPassOptions passOptions) => RewriteOnceFalse(
-        (RunPassOptions opt)
+    public Expr FoldNop(Expr expr, RunPassContext passOptions) => RewriteOnceFalse(
+        (RunPassContext opt)
       => CompilerServices.Rewrite(expr, new IRewriteRule[]
       {
           new FoldNopCast(),
           new FoldNopReshape(),
       }, opt), passOptions);
 
-    public Expr RewriteWithSeq(Expr expr, RunPassOptions passOptions, IEnumerable<IRewriteRule> lower,
+    public Expr RewriteWithSeq(Expr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> lower,
         IRewriteRule fold, IEnumerable<IRewriteRule> fuse) => RewriteWithSeq(expr, passOptions, lower, new[] { fold }, fuse);
 
-    public Expr RewriteWithSeq(Expr expr, RunPassOptions passOptions, IEnumerable<IRewriteRule> lower, IEnumerable<IRewriteRule> fuse) =>
+    public Expr RewriteWithSeq(Expr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> lower, IEnumerable<IRewriteRule> fuse) =>
         RewriteWithSeq(expr, passOptions, lower, new IRewriteRule[]
         {
             new FoldNopReshape(),
             new FoldNopCast(),
         }, fuse);
 
-    public Expr TestMultiMatched<T>(Expr expr, RunPassOptions passOptions, int count)
+    public Expr TestMultiMatched<T>(Expr expr, RunPassContext passOptions, int count)
         where T : IRewriteRule, new()
         =>
         Enumerable.Range(0, count).Aggregate(expr, (expr1, i) =>
@@ -140,7 +140,7 @@ public partial class TransformTestBase : UnitTestFixtrue
             return ex;
         });
 
-    public Expr RewriteMultiTimes<T>(Expr expr, RunPassOptions passOptions, int count)
+    public Expr RewriteMultiTimes<T>(Expr expr, RunPassContext passOptions, int count)
         where T : IRewriteRule, new()
         =>
         Enumerable.Range(0, count).Aggregate(expr, (expr1, i) =>

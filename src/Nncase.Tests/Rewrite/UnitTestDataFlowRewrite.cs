@@ -364,7 +364,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         /// <inheritdoc/>
         public IPattern Pattern { get; } = IsWildcard("x") + IsWildcard("y");
 
-        public Expr? GetReplace(IMatchResult result, RunPassOptions options)
+        public Expr? GetReplace(IMatchResult result, RunPassContext options)
         {
             var x = (Expr)result["x"];
             var y = (Expr)result["y"];

@@ -10,6 +10,8 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Nncase.Hosting;
 using Nncase.IR;
 using Nncase.Quantization;
 using Nncase.Runtime;
@@ -229,7 +231,9 @@ public static unsafe class CApi
     [UnmanagedCallersOnly]
     private static void CompilerInitialize()
     {
-        Compiler.Initialize();
+        var iHost = CompilerHost.CreateHostBuilder().Build();
+        var provider = iHost.Services.GetRequiredService<ICompilerServicesProvider>();
+        CompilerServices.Configure(provider);
     }
 
     [UnmanagedCallersOnly]

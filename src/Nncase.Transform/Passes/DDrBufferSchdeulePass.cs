@@ -31,7 +31,7 @@ public sealed class DDrBufferSchdeulePass : ModulePass
     }
 
     /// <inheritdoc/>
-    protected override Task RunCoreAsync(IRModule module, RunPassOptions options)
+    protected override Task RunCoreAsync(IRModule module, RunPassContext options)
     {
         for (int i = 0; i < module.Functions.Count; i++)
         {
@@ -50,13 +50,13 @@ public sealed class DDrBufferSchdeulePass : ModulePass
     }
 
     /// <inheritdoc/>
-    protected override void OnPassStart(IRModule module, RunPassOptions options)
+    protected override void OnPassStart(IRModule module, RunPassContext options)
     {
         return;
     }
 
     /// <inheritdoc/>
-    protected override void OnPassEnd(IRModule module, RunPassOptions options)
+    protected override void OnPassEnd(IRModule module, RunPassContext options)
     {
         return;
     }

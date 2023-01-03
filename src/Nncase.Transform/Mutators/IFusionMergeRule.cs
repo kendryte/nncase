@@ -41,7 +41,7 @@ public interface IMergeRewriteRule
       Func<Fusion, HashSet<Fusion>, bool> mergedFusionCheckCallBack,
       Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack,
       Action<HashSet<Fusion>> candidateFusionRecordCallBack,
-      IUsedByResult usedByReslut, IMatchResult result, RunPassOptions options);
+      IUsedByResult usedByReslut, IMatchResult result, RunPassContext options);
 }
 
 /// <summary>
@@ -102,7 +102,7 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
       Func<Fusion, HashSet<Fusion>, bool> mergedFusionCheckCallBack,
       Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack,
       Action<HashSet<Fusion>> candidateFusionRecordCallBack,
-      IUsedByResult usedByReslut, IMatchResult result, RunPassOptions options)
+      IUsedByResult usedByReslut, IMatchResult result, RunPassContext options)
     {
         var caller = (Call)result["caller"];
         var callee = (Call)result["callee"];
@@ -231,7 +231,7 @@ public class ShortCutFusionMergeRule : IMergeRewriteRule
       Func<Fusion, HashSet<Fusion>, bool> mergedFusionCheckCallBack,
       Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack,
       Action<HashSet<Fusion>> candidateFusionRecordCallBack,
-      IUsedByResult usedByReslut, IMatchResult result, RunPassOptions options)
+      IUsedByResult usedByReslut, IMatchResult result, RunPassContext options)
     {
         var caller = (Call)result["caller"];
         var callee = (Call)result["callee"];
@@ -397,7 +397,7 @@ public class SameInputFusionMergeRule : IMergeRewriteRule
       Func<Fusion, HashSet<Fusion>, bool> mergedFusionCheckCallBack,
       Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack,
       Action<HashSet<Fusion>> candidateFusionRecordCallBack,
-      IUsedByResult usedByReslut, IMatchResult result, RunPassOptions options)
+      IUsedByResult usedByReslut, IMatchResult result, RunPassContext options)
     {
         var caller = (Expr)result["caller"];
         var caller_fusion = (Fusion)result["caller_fusion"];

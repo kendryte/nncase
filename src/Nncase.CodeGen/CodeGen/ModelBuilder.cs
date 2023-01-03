@@ -28,16 +28,6 @@ public sealed class ModelBuilder
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ModelBuilder"/> class.
-    /// ctor from the global compile options.
-    /// </summary>
-    /// <param name="target"></param>
-    public ModelBuilder(ITarget target)
-        : this(target, CompilerServices.CompileOptions)
-    {
-    }
-
-    /// <summary>
     /// Gets get the Target.
     /// </summary>
     public ITarget Target { get; }
@@ -47,7 +37,7 @@ public sealed class ModelBuilder
     /// </summary>
     public CompileOptions CompileOptions { get; }
 
-    public LinkedModel Build(IRModule module)
+    public ILinkedModel Build(IRModule module)
     {
         var functionsByKind = module.Functions.GroupBy(x => x.ModuleKind).ToList();
         var functionIds = MakeFunctionsIds(functionsByKind);

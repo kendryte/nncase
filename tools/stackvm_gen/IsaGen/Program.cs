@@ -37,7 +37,7 @@ namespace IsaGen
                       where t.IsEnum && t.IsDefined(typeof(EnumNameAttribute))
                       orderby t.MetadataToken
                       select t).ToList();
-            _tensorInsts = (from t in typeof(Nncase.CoreModule).Assembly.ExportedTypes
+            _tensorInsts = (from t in typeof(Nncase.CoreApplicationPart).Assembly.ExportedTypes
                             where !t.IsAbstract && t.IsAssignableTo(typeof(Nncase.IR.Op))
                             where t.Namespace.StartsWith("Nncase.IR.")
                             where t.Namespace != "Nncase.IR.Buffer"

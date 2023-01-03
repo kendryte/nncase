@@ -245,7 +245,7 @@ internal sealed class SingleInputFusionMergeRule : IRewriteRule
           IsFusion("callee_fusion", Callable.StackVMModuleKind, IsWildcard(), IsVArgs(IsVar())),
           IsWildcard("callee_input")));
 
-    public static Fusion MergeSingleInputFusion(Call caller, Call callee, Fusion caller_fusion, Fusion callee_fusion, RunPassOptions passOptions)
+    public static Fusion MergeSingleInputFusion(Call caller, Call callee, Fusion caller_fusion, Fusion callee_fusion, RunPassContext passOptions)
     {
         if (callee_fusion.Parameters.Count != 1 || caller_fusion.Parameters.Count != 1)
         {
@@ -262,7 +262,7 @@ internal sealed class SingleInputFusionMergeRule : IRewriteRule
         return new_fusion;
     }
 
-    public Expr? GetReplace(IMatchResult result, RunPassOptions passOptions)
+    public Expr? GetReplace(IMatchResult result, RunPassContext passOptions)
     {
         var caller = (Call)result["caller"];
         var callee = (Call)result["callee"];
@@ -319,7 +319,7 @@ internal sealed class TwoInputFusionMergeRule : IRewriteRule
           IsFusion("rhs_callee_fusion", Callable.StackVMModuleKind, IsWildcard(), IsVArgs(IsVar())),
           _input));
 
-    public static Fusion MergeTwoInputFusion(Call caller, Call lhs_callee, Call rhs_callee, Fusion caller_fusion, Fusion lhs_callee_fusion, Fusion rhs_callee_fusion, RunPassOptions passOptions)
+    public static Fusion MergeTwoInputFusion(Call caller, Call lhs_callee, Call rhs_callee, Fusion caller_fusion, Fusion lhs_callee_fusion, Fusion rhs_callee_fusion, RunPassContext passOptions)
     {
         // 1. replace the caller_fusion input_var with the callee_fusion body
         var new_fusion_body = Transform.Mutator.Substitute(e =>
@@ -344,14 +344,14 @@ internal sealed class TwoInputFusionMergeRule : IRewriteRule
         return new_fusion;
     }
 
-    public Expr? GetReplace(IMatchResult result, RunPassOptions options)
+    public Expr? GetReplace(IMatchResult result, RunPassContext options)
     {
         return GetReplace(
           (Call)result["caller"], (Call)result["lhs_callee"], (Call)result["rhs_callee"], (Fusion)result["caller_fusion"], (Fusion)result["lhs_callee_fusion"], (Fusion)result["rhs_callee_fusion"], (Expr)result["input"],
           options);
     }
 
-    private Expr? GetReplace(Call caller, Call lhs_callee, Call rhs_callee, Fusion caller_fusion, Fusion lhs_callee_fusion, Fusion rhs_callee_fusion, Expr input, RunPassOptions passOptions)
+    private Expr? GetReplace(Call caller, Call lhs_callee, Call rhs_callee, Fusion caller_fusion, Fusion lhs_callee_fusion, Fusion rhs_callee_fusion, Expr input, RunPassContext passOptions)
     {
         // note manual pruning
         if ((caller_fusion.Name.Split("_").Length +

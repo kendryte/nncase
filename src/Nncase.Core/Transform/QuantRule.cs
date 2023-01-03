@@ -20,7 +20,7 @@ public abstract class QuantRule : RewriteRule<Pattern>
     /// <summary>
     /// NOTE the option will be set by SourceGenerator when the GetReplace called.
     /// </summary>
-    public RunPassOptions Option = null!;
+    public RunPassContext Option = null!;
 
     /// <summary>
     /// the match result
@@ -36,22 +36,22 @@ public abstract class QuantRule : RewriteRule<Pattern>
     /// <summary>
     /// Gets get ModelQuantMode.
     /// </summary>
-    public ModelQuantMode ModelQuantMode => Option.CompileOptions.ModelQuantMode;
+    public ModelQuantMode ModelQuantMode => CompileSession.CompileOptions.QuantizeOptions.ModelQuantMode;
 
     /// <summary>
     /// Gets get QuantType.
     /// </summary>
-    public DataType QuantType => Option.CompileOptions.QuantType;
+    public DataType QuantType => CompileSession.CompileOptions.QuantizeOptions.QuantType;
 
     /// <summary>
     /// Gets get WQuantType.
     /// </summary>
-    public DataType WQuantType => Option.CompileOptions.WQuantType;
+    public DataType WQuantType => CompileSession.CompileOptions.QuantizeOptions.WQuantType;
 
     /// <summary>
     /// Gets a value indicating whether get UseMixQuant flag.
     /// </summary>
-    public bool UseMixQuant => Option.CompileOptions.QuantizeOptions.BindQuantMethod;
+    public bool UseMixQuant => CompileSession.CompileOptions.QuantizeOptions.BindQuantMethod;
 
     /// <summary>
     /// check the datatype is the quant type.

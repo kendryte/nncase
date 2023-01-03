@@ -92,7 +92,7 @@ public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
 
 internal sealed class TestFusionGroupMutator : Transform.Mutators.FusionGroupMutator
 {
-    public TestFusionGroupMutator(IUsedByResult usedByAnalysisReslut, IMergeRewriteRule preOrderfusionRule, RunPassOptions passOptions)
+    public TestFusionGroupMutator(IUsedByResult usedByAnalysisReslut, IMergeRewriteRule preOrderfusionRule, RunPassContext passOptions)
         : base(usedByAnalysisReslut, preOrderfusionRule, passOptions)
     {
     }

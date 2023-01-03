@@ -29,11 +29,11 @@ public sealed class ShapeInferPass : DataflowPass
     }
 
     /// <inheritdoc/>
-    protected override Task<BaseFunction> RunCoreAsync(BaseFunction pre, RunPassOptions options)
+    protected override Task<BaseFunction> RunCoreAsync(BaseFunction pre, RunPassContext options)
     {
         BaseFunction post;
         int count = 0;
-        RunPassOptions new_options = new(options);
+        RunPassContext new_options = new(options);
         new_options.SetDumpDir(options.DumpDir);
         while (true)
         {

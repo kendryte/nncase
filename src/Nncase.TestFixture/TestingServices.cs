@@ -302,7 +302,7 @@ public static class Testing
     /// <param name="input_tensors"></param>
     /// <param name="caseOptions"></param>
     /// <exception cref="ArgumentOutOfRangeException"></exception>
-    public static void DumpInterpModel(string kmodel_path, Tensor[] input_tensors, Transform.RunPassOptions caseOptions)
+    public static void DumpInterpModel(string kmodel_path, Tensor[] input_tensors, Transform.RunPassContext caseOptions)
     {
         string input_pool_path = Path.Combine(caseOptions.DumpDir, "input_pool.bin");
         var output_pool_path = Path.Combine(caseOptions.DumpDir, "output_pool.bin");
@@ -387,7 +387,7 @@ public class UnitTestFixtrue
         return compileOptions;
     }
 
-    public virtual RunPassOptions GetPassOptions([CallerMemberName] string member_name = "")
+    public virtual RunPassContext GetPassOptions([CallerMemberName] string member_name = "")
     {
         var options = GetCompileOptions(member_name);
         return new RunPassOptions(options);

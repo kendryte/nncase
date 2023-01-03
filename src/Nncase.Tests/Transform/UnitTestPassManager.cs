@@ -44,7 +44,7 @@ public sealed class UnitTestPassManager : TestFixture.UnitTestFixtrue
         module.Add(prim_wrapper);
         module.Add(prim_func_1);
 
-        var mutator = new DependenceMutator(functions_update);
+        var mutator = new FunctionReplacer(functions_update);
         var post = mutator.Visit(module.Entry!);
 
         CompilerServices.DumpIR(module.Entry, "pre", passOptions.DumpDir);
@@ -101,7 +101,7 @@ public sealed class UnitTestPassManager : TestFixture.UnitTestFixtrue
         module.Add(func_2);
         module.Add(prim_func_2);
 
-        var mutator = new DependenceMutator(functions_update);
+        var mutator = new FunctionReplacer(functions_update);
         var post = mutator.Visit(module.Entry!);
 
         CompilerServices.DumpIR(module.Entry, "pre", passOptions.DumpDir);

@@ -35,7 +35,7 @@ public partial class SingleInputFusion<T, BeginT, EndT> : FusionMaker
             IsWildcardCall<BeginT>(null!, null!, IsWildcard("input"))));
 
     // replace input with var
-    private Call? GetReplace(Call st, Expr input, RunPassOptions passOptions)
+    private Call? GetReplace(Call st, Expr input, RunPassContext passOptions)
     {
         var arg = new Var("input0", input.CheckedType!);
         var body = ReplaceTarget(st, input, arg, passOptions.MatchOptions);
@@ -60,7 +60,7 @@ public partial class DoubleInputFusion<T, BeginT, EndT> : FusionMaker
             IsWildcardCall<BeginT>(null!, null!, IsWildcard("rhs"))));
 
     // replace input with var
-    private Call GetReplace(Call st, Expr lhs, Expr rhs, RunPassOptions passOptions)
+    private Call GetReplace(Call st, Expr lhs, Expr rhs, RunPassContext passOptions)
     {
         var varIndex = 0;
         Expr tmpBody = st;
@@ -98,7 +98,7 @@ public partial class DataTransferFusion<LoadT, StoreT> : FusionMaker
         IsWildcardCall<LoadT>(null!, null!, IsWildcard("input")));
 
     // replace input with var
-    private Call? GetReplace(Call st, Expr input, RunPassOptions passOptions)
+    private Call? GetReplace(Call st, Expr input, RunPassContext passOptions)
     {
         if ((st.Attribute & CallAttr.Fusion) != 0)
         {
@@ -151,7 +151,7 @@ public partial class FuseTwoFusion : FusionMaker
     /// <param name="passOptions"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public virtual Expr EliminateRedundancy(Expr newBodyWithRedundancy, RunPassOptions passOptions)
+    public virtual Expr EliminateRedundancy(Expr newBodyWithRedundancy, RunPassContext passOptions)
     {
         throw new InvalidOperationException("EliminateRedundancy Not Impl");
     }
@@ -234,7 +234,7 @@ public partial class FuseTwoFusion : FusionMaker
     }
 
     // caller(callee, args..)
-    private Call GetReplace(Call caller, Call callee, Fusion calleeFuse, Fusion callerFuse, RunPassOptions passOptions)
+    private Call GetReplace(Call caller, Call callee, Fusion calleeFuse, Fusion callerFuse, RunPassContext passOptions)
     {
         // find callee pos index in caller
         // input0  input1

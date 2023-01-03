@@ -28,7 +28,7 @@ public sealed class DataFlowMergeRewriter
     /// <param name="options"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public Expr Rewrite(Expr expr, IEnumerable<Mutators.IMergeRewriteRule> rules, Func<IUsedByResult, Mutators.IMergeRewriteRule, RunPassOptions, Mutators.FusionGroupMutator> mutator_creator, RunPassOptions options)
+    public Expr Rewrite(Expr expr, IEnumerable<Mutators.IMergeRewriteRule> rules, Func<IUsedByResult, Mutators.IMergeRewriteRule, RunPassContext, Mutators.FusionGroupMutator> mutator_creator, RunPassContext options)
     {
         var post = expr;
         int count = 0;
@@ -74,7 +74,7 @@ public sealed class DataFlowMergeRewriter
     /// <summary>
     /// callback for rewrite start.
     /// </summary>
-    private void OnRewriteStart(Expr expr, RunPassOptions options, int count)
+    private void OnRewriteStart(Expr expr, RunPassContext options, int count)
     {
         switch (options.DumpLevel)
         {
@@ -91,7 +91,7 @@ public sealed class DataFlowMergeRewriter
     /// <summary>
     /// call back for rewrite end.
     /// </summary>
-    private void OnRewriteEnd(Expr expr, RunPassOptions options, int count)
+    private void OnRewriteEnd(Expr expr, RunPassContext options, int count)
     {
         switch (options.DumpLevel)
         {

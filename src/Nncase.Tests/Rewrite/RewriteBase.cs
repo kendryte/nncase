@@ -51,7 +51,7 @@ public static class DummyOp
 
 public class RewriteFixtrue : TestFixture.UnitTestFixtrue
 {
-    public async Task<Expr> RunShapeInferPass(string name, RunPassOptions caseOptions, Expr expr, params Var[] parameters)
+    public async Task<Expr> RunShapeInferPass(string name, RunPassContext caseOptions, Expr expr, params Var[] parameters)
     {
         expr.InferenceType();
         var f = new Function(expr, parameters);
@@ -60,7 +60,7 @@ public class RewriteFixtrue : TestFixture.UnitTestFixtrue
         return ((Function)await new ShapeInferPass($"ShapeInfer_{name}").RunAsync(f, caseOptions)).Body;
     }
 
-    public Expr ApplyFoldConstCallRewrite(Expr expr, RunPassOptions caseOptions) =>
+    public Expr ApplyFoldConstCallRewrite(Expr expr, RunPassContext caseOptions) =>
         CompilerServices.Rewrite(expr, new[] { new Transform.Rules.Neutral.FoldConstCall() }, caseOptions);
 }
 

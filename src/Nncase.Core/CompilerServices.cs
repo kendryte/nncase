@@ -8,7 +8,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
@@ -23,12 +22,6 @@ namespace Nncase;
 /// </summary>
 public interface ICompilerServicesProvider
 {
-    /// <summary>
-    /// Gets or sets get CompileOptions.
-    /// </summary>
-    /// <returns>CompileOptions.</returns>
-    CompileOptions CompileOptions { get; set; }
-
     /// <summary>
     /// Inference type of the expression tree.
     /// </summary>
@@ -151,7 +144,7 @@ public interface ICompilerServicesProvider
     /// <param name="rules">Rewrite rules.</param>
     /// <param name="options">Options.</param>
     /// <returns>Rewrited expression.</returns>
-    Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options);
+    Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options);
 
     /// <summary>
     /// Match enodes as root.
@@ -185,7 +178,7 @@ public interface ICompilerServicesProvider
     /// <param name="rules">Rewrite rules.</param>
     /// <param name="options">Options.</param>
     /// <returns>Rewrited expression.</returns>
-    Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options);
+    Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options);
 }
 
 internal interface ICompilerServicesProviderInternal
@@ -198,21 +191,10 @@ internal interface ICompilerServicesProviderInternal
 /// </summary>
 public static class CompilerServices
 {
+    private static IServiceProvider? _serviceProvider;
     private static ICompilerServicesProvider? _provider;
 
-    /// <summary>
-    /// Gets or sets get the compile options.
-    /// </summary>
-    /// <returns></returns>
-    public static CompileOptions CompileOptions
-    {
-        get { return Provider.CompileOptions; }
-        set { Provider.CompileOptions = value; }
-    }
-
-    public static string CompileTarget => CompileOptions.Target;
-
-    public static ITarget GetCompileTarget => GetTarget(CompileTarget);
+    internal static IServiceProvider ServiceProvider => _serviceProvider ?? throw new InvalidOperationException("Compiler services provider must be set.");
 
     internal static IDataTypeServiceProvider DataTypeService => ((ICompilerServicesProviderInternal)Provider).DataTypeService;
 
@@ -221,10 +203,11 @@ public static class CompilerServices
     /// <summary>
     /// Configure compiler services.
     /// </summary>
-    /// <param name="provider">Service provider.</param>
-    public static void Configure(ICompilerServicesProvider provider)
+    /// <param name="serviceProvider">Root service provider.</param>
+    public static void Configure(IServiceProvider serviceProvider)
     {
-        _provider = provider;
+        _serviceProvider = serviceProvider;
+        _provider = serviceProvider.GetRequiredService<ICompilerServicesProvider>();
     }
 
     /// <summary>
@@ -353,7 +336,7 @@ public static class CompilerServices
     /// <param name="rules">Rewrite rules.</param>
     /// <param name="options">Options.</param>
     /// <returns>Rewrited expression.</returns>
-    public static Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
+    public static Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options)
     {
         return Provider.Rewrite(expr, rules, options);
     }
@@ -365,7 +348,7 @@ public static class CompilerServices
     /// <param name="rules">Rewrite rules.</param>
     /// <param name="options">Options.</param>
     /// <returns>Rewrited expression.</returns>
-    public static Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
+    public static Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options)
     {
         return Provider.ERewrite(expr, rules, options);
     }
@@ -457,11 +440,8 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     private readonly IEGraphMatchProvider _eGraphMatchProvider;
     private readonly IEGraphRewriteProvider _eGraphrewriteProvider;
     private readonly ITargetProvider _targetProvider;
-    private CompileOptions _compileOptions;
 
     public CompilerServicesProvider(
-
-        // IOptions<CompileOptions> compileOptions,
         IEvaluateProvider evaluateProvider,
         ITypeInferenceProvider typeInferenceProvider,
         IIRPrinterProvider irprinterProvider,
@@ -487,12 +467,6 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     }
 
     public IDataTypeServiceProvider DataTypeService { get; }
-
-    public CompileOptions CompileOptions
-    {
-        get => _compileOptions;
-        set => _compileOptions = value;
-    }
 
     /// <inheritdoc/>
     public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
@@ -551,19 +525,19 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     }
 
     /// <inheritdoc/>
-    public Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
+    public Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options)
     {
         return _rewriteProvider.Rewrite(expr, rules, options);
     }
 
     /// <inheritdoc/>
-    public Cost EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null)
+    public Cost? EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null)
     {
         return _costEvaluateProvider.EvaluateCost(expr, varsValues);
     }
 
     /// <inheritdoc/>
-    public Cost EvaluateOpCost(Op op, ICostEvaluateContext context)
+    public Cost? EvaluateOpCost(Op op, ICostEvaluateContext context)
     {
         return _costEvaluateProvider.EvaluateOpCost(op, context);
     }
@@ -583,7 +557,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         return _targetProvider.GetTarget(name);
     }
 
-    public Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
+    public Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options)
     {
         return _eGraphrewriteProvider.ERewrite(expr, rules, options);
     }
