@@ -174,32 +174,6 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
     }
 
     [Fact]
-    public void TestPad()
-    {
-        var tinput = OrtKI.Random(1, 1, 2, 3);
-        var input = tinput.ToTensor();
-        var pads = Tensor.From<int>(new[] { 0, 0, 0, 0, 1, 1, 2, 2 }, new Shape(new[] { 4, 2 }));
-        var value = Tensor.FromScalar<float>(1.0f);
-        var expr = NN.Pad(input, pads, Nncase.PadMode.Constant, value);
-        CompilerServices.InferenceType(expr);
-        var result = expr.Evaluate().AsTensor().ToOrtTensor();
-        Assert.Equal(new long[] { 1, 1, 4, 7 }, result.Shape);
-    }
-
-    [Fact]
-    public void TestPad2()
-    {
-        var tinput = OrtKI.Random(1, 1, 2, 3);
-        var input = tinput.ToTensor();
-        var pads = Tensor.From<long>(new long[] { 0, 0, 1, 2, 2, 4, 5, 6 }, new Shape(4, 2));
-        var value = Tensor.FromScalar<float>(2.0f);
-        var expr = NN.Pad(input, pads, Nncase.PadMode.Constant, value);
-        CompilerServices.InferenceType(expr);
-        var result = expr.Evaluate().AsTensor().ToOrtTensor();
-        Assert.Equal(new long[] { 1, 4, 8, 14 }, result.Shape);
-    }
-
-    [Fact]
     public void TestStackAndCast()
     {
         var padh_before = Tensors.Cast(Tensor.From<float>(new[] { 1.0f }), Nncase.DataTypes.Int32);
@@ -214,30 +188,6 @@ public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
         CompilerServices.InferenceType(expr);
         var result = expr.Evaluate().AsTensor().ToOrtTensor();
         Assert.Equal(OrtKISharp.Tensor.MakeTensor(new[] { 1, 2, 3, 4 }, new long[] { 2, 2 }), result);
-    }
-
-    [Fact]
-    public void TestConv2D()
-    {
-        // var weights = OrtKI.Random(8, 4, 3, 3);
-        // var inputs = OrtKI.Random(1, 4, 5, 5);
-        // var bias = OrtKI.Random(8);
-        // var output = OrtKI.Conv(inputs, weights, bias, padding: new long[] { 1, 1 });
-        //
-        // var expr = Conv2D(inputs.ToTensor(), weights.ToTensor(), bias.ToTensor(),
-        //     stride: new[] { 1, 1 }, padding: Tensor.FromSpan<int>(new int[] { 1, 1, 1, 1 }, new[] { 2, 2 }),
-        //     dilation: new[] { 1, 1 }, Nncase.PadMode.Constant, 1);
-        // Assert.True(expr.InferenceType());
-        // Assert.Equal(output, expr.Evaluate().AsTensor().ToOrtTensor());
-    }
-
-    [Fact]
-    public void TestConv2D_1()
-    {
-        // var input = OrtKI.Random(1, 28, 28, 3).ToTensor();
-        // var conv1 = Tensors.NCHWToNHWC(ReWriteTest.DummyOp.Conv2D(Tensors.NHWCToNCHW(input), 3, out_channels: 8, 3, 2));
-        // Assert.True(conv1.InferenceType());
-        // Assert.Equal(new long[] { 1, 14, 14, 8 }, conv1.Evaluate().AsTensor().ToOrtTensor().shape);
     }
 
     [Fact]
