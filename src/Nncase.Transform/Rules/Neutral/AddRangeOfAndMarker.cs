@@ -337,6 +337,23 @@ public sealed partial class AddRangeOfAndMarkerToRelu : IRewriteRule
 }
 
 [RuleGenerator]
+public sealed partial class AddRangeOfAndMarkerToLeakyRelu : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } =
+        IsLeakyRelu("leaky", "call", _ => true,
+            IsWildcard("input"),
+            IsWildcard("alpha"));
+
+    private Expr? GetReplace(LeakyRelu leaky, Call call, Expr input, Expr alpha, RunPassOptions options)
+    {
+        var output = LeakyRelu(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), alpha);
+        options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
+        return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
+    }
+}
+
+[RuleGenerator]
 public sealed partial class AddRangeOfAndMarkerToReduce : IRewriteRule
 {
     /// <inheritdoc/>
