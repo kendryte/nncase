@@ -62,7 +62,6 @@ public class UnitTestAddRangeOfMarker : UnitTestFixtrue
         Assert.Equal(1.00005388f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[6]).Value.ToArray<float>()[1]);
     }
 
-
     public sealed class DumpVisitor : ExprVisitor<int, IRType>
     {
         public override int DefaultVisitLeaf(Expr expr) => 0;
