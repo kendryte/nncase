@@ -30,6 +30,11 @@ public record struct ValueRange<T>(T Min, T Max)
     public static implicit operator ValueRange<T>((T Min, T Max) tuple) =>
         new ValueRange<T> { Min = tuple.Min, Max = tuple.Max };
 
+    /// <summary>
+    /// translate ValueRange to tensor{Min, Max}.
+    /// </summary>
+    public Tensor ToTensor => Tensor.FromArray(new[] { Min, Max });
+
     public ValueRange<T> Union(ValueRange<T> range)
     {
         var min = Min.CompareTo(range.Min) < 0 ? Min : range.Min;
