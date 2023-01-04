@@ -14,8 +14,7 @@ namespace Nncase.Tests.QuantTest;
 
 public class UnitTestAddRangeOfMarker : UnitTestFixtrue
 {
-    [Fact]
-    public void TestAddRangeOfMarkerToLeaky()
+    public DumpVisitor TestAddRangeOfMarkerMainPasses(Var input, Expr output)
     {
         var caseOptions = GetPassOptions();
         var compileOptions = caseOptions.CompileOptions;
@@ -26,11 +25,6 @@ public class UnitTestAddRangeOfMarker : UnitTestFixtrue
         RunPassOptions passOptions = new(compileOptions);
         _ = CompilerServices.GetTarget(compileOptions.Target);
 
-        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
-
-        var leaky = LeakyRelu(input, 0.1);
-
-        var output = leaky;
         var module = new IRModule(new Function("main", output, new Var[] { input }));
 
         PassManager pmgr = new(module, passOptions);
@@ -44,6 +38,7 @@ public class UnitTestAddRangeOfMarker : UnitTestFixtrue
         // 0. TargetIndependentPass
         pmgr.Add(new DataflowPass("0_TargetInDependent")
         {
+            new AddRangeOfAndMarkerToRelu6(),
             new AddRangeOfAndMarkerToLeakyRelu(),
         });
 
@@ -55,11 +50,35 @@ public class UnitTestAddRangeOfMarker : UnitTestFixtrue
         System.Console.WriteLine(CompilerServices.Print((Function)module.Functions[0]));
         var dumpVisitor = new DumpVisitor();
         dumpVisitor.Visit(module.Functions[0]);
+        return dumpVisitor;
+    }
+
+    [Fact]
+    public void TestAddRangeOfMarkerToLeaky()
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
+        var leaky = LeakyRelu(input, 0.1);
+        var output = leaky;
+        var dumpVisitor = TestAddRangeOfMarkerMainPasses(input, output);
 
         Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0], -1.0001221f);
         Assert.Equal(1.0001087f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[1]);
         Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[6]).Value.ToArray<float>()[0], -0.100067139f);
         Assert.Equal(1.00005388f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[6]).Value.ToArray<float>()[1]);
+    }
+
+    [Fact]
+    public void TestAddRangeOfMarkerToRelu6()
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
+        var relu6 = Relu6(input);
+        var output = relu6;
+        var dumpVisitor = TestAddRangeOfMarkerMainPasses(input, output);
+
+        Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0], -1.0001221f);
+        Assert.Equal(1.0001087f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[1]);
+        Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[0], -6.103435E-05f);
+        Assert.Equal(1.0000478f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[1]);
     }
 
     public sealed class DumpVisitor : ExprVisitor<int, IRType>
