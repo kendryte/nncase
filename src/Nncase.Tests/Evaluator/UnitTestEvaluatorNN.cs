@@ -93,6 +93,17 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     }
 
     [Fact]
+    public void TestActivationRelu6()
+    {
+        var ort_tensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        var input = ort_tensor.ToTensor();
+        var expect = OrtKI.Clip(ort_tensor, 0F, 6F);
+        var expr = IR.F.NN.Relu6(input);
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+    }
+
+    [Fact]
     public void TestActivationSelu()
     {
         var ort_tensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
@@ -221,6 +232,34 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     }
 
     [Fact]
+    public void TestL2Normalization()
+    {
+        var size = 16;
+        var input = OrtKI.Random(new long[] { size });
+        var a = input.ToArray<float>();
+        var sum = 0F;
+
+        foreach (var i in a)
+        {
+            sum += i * i;
+        }
+
+        var max = System.Math.Max(sum, 1e-10F);
+        var sqrt = System.MathF.Sqrt(max);
+        var b = new float[size];
+        for (int i = 0; i < size; i++)
+        {
+            b[i] = a[i] / sqrt;
+        }
+
+        var expect = OrtKISharp.Tensor.MakeTensor(b, new long[] { size });
+
+        var expr = IR.F.NN.L2Normalization(input.ToTensor());
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+    }
+
+    [Fact]
     public void TestBatchNormalization()
     {
         var input_shape = new long[] { 1, 3, 16, 16 };
@@ -256,6 +295,16 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
             ort_b.ToTensor(), epsilon);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+    }
+
+    [Fact]
+    public void TestLpNormalization()
+    {
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        DoLpNormalization(input, 0, 1);
+        DoLpNormalization(input, 0, 2);
+        DoLpNormalization(input, 1, 1);
+        DoLpNormalization(input, 1, 2);
     }
 
     [Fact]
@@ -521,6 +570,14 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     {
         var expect = OrtKI.Softmax(ort_tensor, axis);
         var expr = IR.F.NN.Softmax(input_tensor, axis);
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+    }
+
+    private void DoLpNormalization(OrtKISharp.Tensor input, long axis, long p)
+    {
+        var expect = OrtKI.LpNormalization(input, axis, p);
+        var expr = IR.F.NN.LpNormalization(input.ToTensor(), axis, p);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
