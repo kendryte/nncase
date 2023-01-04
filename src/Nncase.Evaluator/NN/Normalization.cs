@@ -19,7 +19,7 @@ public class L2NormalizationEvaluator : IEvaluator<L2Normalization>, ITypeInfere
         var input = context.GetOrtArgumentValue(norm, L2Normalization.Input);
         var square = input * input;
 
-        var size = input.Shape.Rank == 1 ? 1 : input.Shape.Rank - 1;
+        var size = input.Rank == 1 ? 1 : input.Rank - 1;
         var axes = new long[size];
         if (size == 1)
         {
@@ -29,7 +29,7 @@ public class L2NormalizationEvaluator : IEvaluator<L2Normalization>, ITypeInfere
         {
             for (int i = 1; i <= size; i++)
             {
-                axes[i] = i;
+                axes[i - 1] = i;
             }
         }
 

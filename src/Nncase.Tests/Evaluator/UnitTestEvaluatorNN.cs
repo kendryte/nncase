@@ -234,30 +234,19 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestL2Normalization()
     {
-        var size = 16;
-        var input = OrtKI.Random(new long[] { size });
-        var a = input.ToArray<float>();
-        var sum = 0F;
-
-        foreach (var i in a)
+        var a = new float[] { 0F, 2F, 3F, 2F, 2F, 2F };
+        var b = new float[] { 0F, 0.4F, 0.6F, 0.4F, 0.4F, 0.4F };
         {
-            sum += i * i;
+            var expect = Tensor.From(b, new[] { 6 });
+            var input = Tensor.From(a, new[] { 6 });
+            DoL2Normalization(expect, input);
         }
 
-        var max = System.MathF.Max(sum, 1e-10F);
-        var sqrt = System.MathF.Sqrt(max);
-        var expect = new float[size];
-        for (int i = 0; i < size; i++)
         {
-            expect[i] = a[i] / sqrt;
+            var expect = Tensor.From(b, new[] { 1, 2, 3 });
+            var input = Tensor.From(a, new[] { 1, 2, 3 });
+            DoL2Normalization(expect, input);
         }
-
-        var expr = IR.F.NN.L2Normalization(input.ToTensor());
-        CompilerServices.InferenceType(expr);
-
-        // fix precision issue on Macos
-        var cos = Comparator.CosSimilarity(expect, expr.Evaluate().AsTensor().ToArray<float>());
-        Assert.True(cos > 0.999F);
     }
 
     [Fact]
@@ -573,6 +562,16 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
         var expr = IR.F.NN.Softmax(input_tensor, axis);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+    }
+
+    private void DoL2Normalization(Tensor expect, Tensor input)
+    {
+        var expr = IR.F.NN.L2Normalization(input);
+        CompilerServices.InferenceType(expr);
+
+        // fix precision issue on Macos
+        var cos = Comparator.CosSimilarity(expect, expr.Evaluate().AsTensor());
+        Assert.True(cos > 0.999F);
     }
 
     private void DoLpNormalization(OrtKISharp.Tensor input, long axis, long p)
