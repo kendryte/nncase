@@ -24,16 +24,16 @@ public record struct ValueRange<T>(T Min, T Max)
     public bool IsFull => this == Full;
 
     /// <summary>
+    /// Gets translate ValueRange to tensor{Min, Max}.
+    /// </summary>
+    public Tensor ToTensor => Tensor.FromArray(new[] { Min, Max });
+
+    /// <summary>
     /// Convert 2 elements tuple to <see cref="ValueRange{T}"/>.
     /// </summary>
     /// <param name="tuple">Tuple.</param>
     public static implicit operator ValueRange<T>((T Min, T Max) tuple) =>
         new ValueRange<T> { Min = tuple.Min, Max = tuple.Max };
-
-    /// <summary>
-    /// translate ValueRange to tensor{Min, Max}.
-    /// </summary>
-    public Tensor ToTensor => Tensor.FromArray(new[] { Min, Max });
 
     public ValueRange<T> Union(ValueRange<T> range)
     {
