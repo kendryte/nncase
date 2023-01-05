@@ -31,12 +31,10 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestActivationCelu()
     {
-        var ort_tensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
-        var input = ort_tensor.ToTensor();
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
         var alpha = 0.8F;
-
-        var expect = OrtKI.Celu(ort_tensor, alpha);
-        var expr = IR.F.NN.Celu(input, alpha);
+        var expect = OrtKI.Celu(input, alpha);
+        var expr = IR.F.NN.Celu(input.ToTensor(), alpha);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -44,12 +42,10 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestActivationElu()
     {
-        var ort_tensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
-        var input = ort_tensor.ToTensor();
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
         var alpha = 0.8F;
-
-        var expect = OrtKI.Elu(ort_tensor, alpha);
-        var expr = IR.F.NN.Elu(input, alpha);
+        var expect = OrtKI.Elu(input, alpha);
+        var expr = IR.F.NN.Elu(input.ToTensor(), alpha);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -57,13 +53,11 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestActivationHardSwish()
     {
-        var ort_tensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
-        var input = ort_tensor.ToTensor();
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
         var alpha = 1F / 6F;
         var beta = 0.5F;
-
-        var expect = ort_tensor * OrtKI.HardSigmoid(ort_tensor, alpha, beta);
-        var expr = IR.F.NN.HardSwish(input);
+        var expect = input * OrtKI.HardSigmoid(input, alpha, beta);
+        var expr = IR.F.NN.HardSwish(input.ToTensor());
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -71,12 +65,10 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestActivationLeakyRelu()
     {
-        var ort_tensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
-        var input = ort_tensor.ToTensor();
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
         var alpha = 0.6F;
-
-        var expect = OrtKI.LeakyRelu(ort_tensor, alpha);
-        var expr = IR.F.NN.LeakyRelu(input, alpha);
+        var expect = OrtKI.LeakyRelu(input, alpha);
+        var expr = IR.F.NN.LeakyRelu(input.ToTensor(), alpha);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -84,10 +76,9 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestActivationRelu()
     {
-        var ort_tensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
-        var input = ort_tensor.ToTensor();
-        var expect = OrtKI.Relu(ort_tensor);
-        var expr = IR.F.NN.Relu(input);
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        var expect = OrtKI.Relu(input);
+        var expr = IR.F.NN.Relu(input.ToTensor());
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -95,10 +86,9 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestActivationRelu6()
     {
-        var ort_tensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
-        var input = ort_tensor.ToTensor();
-        var expect = OrtKI.Clip(ort_tensor, 0F, 6F);
-        var expr = IR.F.NN.Relu6(input);
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        var expect = OrtKI.Clip(input, 0F, 6F);
+        var expr = IR.F.NN.Relu6(input.ToTensor());
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -106,12 +96,11 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestActivationSelu()
     {
-        var ort_tensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
-        var input = ort_tensor.ToTensor();
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
         var alpha = 1.2F;
         var gamma = 1.3F;
-        var expect = OrtKI.Selu(ort_tensor, alpha, gamma);
-        var expr = IR.F.NN.Selu(input, alpha, gamma);
+        var expect = OrtKI.Selu(input, alpha, gamma);
+        var expr = IR.F.NN.Selu(input.ToTensor(), alpha, gamma);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -119,10 +108,9 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestActivationSigmoid()
     {
-        var ort_tensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
-        var input = ort_tensor.ToTensor();
-        var expect = OrtKI.Sigmoid(ort_tensor);
-        var expr = IR.F.NN.Sigmoid(input);
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        var expect = OrtKI.Sigmoid(input);
+        var expr = IR.F.NN.Sigmoid(input.ToTensor());
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -130,12 +118,11 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestActivationHardSigmoid()
     {
-        var ort_tensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
-        var input = ort_tensor.ToTensor();
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
         var alpha = 1.2F;
         var gamma = 1.3F;
-        var expect = OrtKI.HardSigmoid(ort_tensor, alpha, gamma);
-        var expr = IR.F.NN.HardSigmoid(input, alpha, gamma);
+        var expect = OrtKI.HardSigmoid(input, alpha, gamma);
+        var expr = IR.F.NN.HardSigmoid(input.ToTensor(), alpha, gamma);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -143,11 +130,10 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestActivationPRelu()
     {
-        var ort_tensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
-        var input = ort_tensor.ToTensor();
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
         var slope = 0.2F;
-        var expect = OrtKI.PRelu(ort_tensor, slope);
-        var expr = IR.F.NN.PRelu(input, slope);
+        var expect = OrtKI.PRelu(input, slope);
+        var expr = IR.F.NN.PRelu(input.ToTensor(), slope);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -155,14 +141,13 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestBatchToSpace()
     {
-        var input = new float[] { 1, 3, 9, 11, 2, 4, 10, 12, 5, 7, 13, 15, 6, 8, 14, 16 };
-        var input_tensor = Tensor.From(input, new[] { 4, 1, 2, 2 });
-        var block_shape = new long[] { 2, 2 };
-
-        var output = new float[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
-        var expect = Tensor.From(output, new[] { 1, 1, 4, 4 });
+        var a = new float[] { 1, 3, 9, 11, 2, 4, 10, 12, 5, 7, 13, 15, 6, 8, 14, 16 };
+        var input = Tensor.From(a, new[] { 4, 1, 2, 2 });
+        var shape = new long[] { 2, 2 };
+        var b = new float[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+        var expect = Tensor.From(b, new[] { 1, 1, 4, 4 });
         var crops = new long[] { 0, 0, 0, 0 };
-        var expr = IR.F.NN.BatchToSpace(input_tensor, Tensor.From(block_shape, new[] { 2 }),
+        var expr = IR.F.NN.BatchToSpace(input, Tensor.From(shape, new[] { 2 }),
             Tensor.From(crops, new[] { 2, 2 }));
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor());
@@ -225,10 +210,10 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestHardmax()
     {
-        var ort_input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
-        var input = ort_input.ToTensor();
-        DoHardmax(ort_input, input, -1L);
-        DoHardmax(ort_input, input, 1L);
+        var ortTensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        var nncaseTensor = ortTensor.ToTensor();
+        DoHardmax(ortTensor, nncaseTensor, -1L);
+        DoHardmax(ortTensor, nncaseTensor, 1L);
     }
 
     [Fact]
@@ -252,20 +237,17 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestBatchNormalization()
     {
-        var input_shape = new long[] { 1, 3, 16, 16 };
-        var ort_x = OrtKI.Random(input_shape);
-        var ort_scale = OrtKI.Random(new long[] { input_shape[1] });
-        var ort_b = OrtKI.Random(new long[] { input_shape[1] });
-        var ort_mean = OrtKI.Random(new long[] { input_shape[1] });
-        var ort_var = OrtKI.Random(new long[] { input_shape[1] });
+        var shape = new long[] { 1, 3, 16, 16 };
+        var x = OrtKI.Random(shape);
+        var scale = OrtKI.Random(new long[] { shape[1] });
+        var b = OrtKI.Random(new long[] { shape[1] });
+        var mean = OrtKI.Random(new long[] { shape[1] });
+        var var = OrtKI.Random(new long[] { shape[1] });
         var epsilon = 0.01F;
         var momentum = 0.5F;
 
-        var expect = OrtKI.BatchNormalization(ort_x, ort_scale, ort_b,
-            ort_mean, ort_var, epsilon, momentum);
-        var expr = IR.F.NN.BatchNormalization(ort_x.ToTensor(), ort_scale.ToTensor(),
-            ort_b.ToTensor(), ort_mean.ToTensor(), ort_var.ToTensor(),
-            epsilon, momentum);
+        var expect = OrtKI.BatchNormalization(x, scale, b, mean, var, epsilon, momentum);
+        var expr = IR.F.NN.BatchNormalization(x.ToTensor(), scale.ToTensor(), b.ToTensor(), mean.ToTensor(), var.ToTensor(), epsilon, momentum);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -273,16 +255,14 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestInstanceNormalization()
     {
-        var input_shape = new long[] { 1, 3, 16, 16 };
-        var ort_x = OrtKI.Random(input_shape);
-        var ort_scale = OrtKI.Random(new long[] { input_shape[1] });
-        var ort_b = OrtKI.Random(new long[] { input_shape[1] });
+        var shape = new long[] { 1, 3, 16, 16 };
+        var x = OrtKI.Random(shape);
+        var scale = OrtKI.Random(new long[] { shape[1] });
+        var b = OrtKI.Random(new long[] { shape[1] });
         var epsilon = 0.01F;
 
-        var expect = OrtKI.InstanceNormalization(ort_x, ort_scale, ort_b,
-            epsilon);
-        var expr = IR.F.NN.InstanceNormalization(ort_x.ToTensor(), ort_scale.ToTensor(),
-            ort_b.ToTensor(), epsilon);
+        var expect = OrtKI.InstanceNormalization(x, scale, b, epsilon);
+        var expr = IR.F.NN.InstanceNormalization(x.ToTensor(), scale.ToTensor(), b.ToTensor(), epsilon);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -300,15 +280,15 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestLRN()
     {
-        var input_shape = new long[] { 1, 3, 16, 16 };
-        var ort_x = OrtKI.Random(input_shape);
+        var shape = new long[] { 1, 3, 16, 16 };
+        var input = OrtKI.Random(shape);
         var alpha = 0.001F;
         var beta = 0.5F;
         var bias = 0.8F;
         var size = 3L;
 
-        var expect = OrtKI.LRN(ort_x, alpha, beta, bias, size);
-        var expr = IR.F.NN.LRN(ort_x.ToTensor(), alpha, beta, bias, size);
+        var expect = OrtKI.LRN(input, alpha, beta, bias, size);
+        var expr = IR.F.NN.LRN(input.ToTensor(), alpha, beta, bias, size);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -375,16 +355,13 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestPadConstant()
     {
-        var input_shape = new long[] { 1, 3, 16, 16 };
-        var ort_input = OrtKI.Random(input_shape);
-        var ort_pads = OrtKISharp.Tensor.MakeTensor(new long[] { 0, 0, 1, 1, 0, 0, 1, 1 }, new long[] { 8 });
-        var ort_constant = OrtKISharp.Tensor.FromScalar(1F);
-        var expect = OrtKI.Pad(ort_input, ort_pads, ort_constant, "constant");
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        var ortPads = OrtKISharp.Tensor.MakeTensor(new long[] { 0, 0, 1, 1, 0, 0, 1, 1 }, new long[] { 8 });
+        var constant = OrtKISharp.Tensor.FromScalar(1F);
+        var expect = OrtKI.Pad(input, ortPads, constant, "constant");
 
-        var input = ort_input.ToTensor();
-        var pads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new Shape(4, 2));
-        var constant = ort_constant.ToTensor();
-        var expr = NN.Pad(input, pads, Nncase.PadMode.Constant, constant);
+        var nncaesPads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new Shape(4, 2));
+        var expr = NN.Pad(input.ToTensor(), nncaesPads, Nncase.PadMode.Constant, constant.ToTensor());
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -392,16 +369,13 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestPadReflect()
     {
-        var input_shape = new long[] { 1, 3, 16, 16 };
-        var ort_input = OrtKI.Random(input_shape);
-        var ort_pads = OrtKISharp.Tensor.MakeTensor(new long[] { 0, 0, 1, 1, 0, 0, 1, 1 }, new long[] { 8 });
-        var ort_constant = OrtKISharp.Tensor.FromScalar(1F);
-        var expect = OrtKI.Pad(ort_input, ort_pads, ort_constant, "reflect");
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        var ortPads = OrtKISharp.Tensor.MakeTensor(new long[] { 0, 0, 1, 1, 0, 0, 1, 1 }, new long[] { 8 });
+        var constant = OrtKISharp.Tensor.FromScalar(1F);
+        var expect = OrtKI.Pad(input, ortPads, constant, "reflect");
 
-        var input = ort_input.ToTensor();
-        var pads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new Shape(4, 2));
-        var constant = ort_constant.ToTensor();
-        var expr = NN.Pad(input, pads, Nncase.PadMode.Reflect, constant);
+        var nncasePads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new Shape(4, 2));
+        var expr = NN.Pad(input.ToTensor(), nncasePads, Nncase.PadMode.Reflect, constant.ToTensor());
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -424,16 +398,13 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestPadEdge()
     {
-        var input_shape = new long[] { 1, 3, 16, 16 };
-        var ort_input = OrtKI.Random(input_shape);
-        var ort_pads = OrtKISharp.Tensor.MakeTensor(new long[] { 0, 0, 1, 1, 0, 0, 1, 1 }, new long[] { 8 });
-        var ort_constant = OrtKISharp.Tensor.FromScalar(1F);
-        var expect = OrtKI.Pad(ort_input, ort_pads, ort_constant, "edge");
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        var ortPads = OrtKISharp.Tensor.MakeTensor(new long[] { 0, 0, 1, 1, 0, 0, 1, 1 }, new long[] { 8 });
+        var constant = OrtKISharp.Tensor.FromScalar(1F);
+        var expect = OrtKI.Pad(input, ortPads, constant, "edge");
 
-        var input = ort_input.ToTensor();
-        var pads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new Shape(4, 2));
-        var constant = ort_constant.ToTensor();
-        var expr = NN.Pad(input, pads, Nncase.PadMode.Edge, constant);
+        var nncaePads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new Shape(4, 2));
+        var expr = NN.Pad(input.ToTensor(), nncaePads, Nncase.PadMode.Edge, constant.ToTensor());
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -441,27 +412,26 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestLogSoftmax()
     {
-        var ort_tensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
-        var input_tensor = ort_tensor.ToTensor();
-        DoLogSoftmax(ort_tensor, input_tensor, -1L);
-        DoLogSoftmax(ort_tensor, input_tensor, 1L);
+        var ortTensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        var nncaseTensor = ortTensor.ToTensor();
+        DoLogSoftmax(ortTensor, nncaseTensor, -1L);
+        DoLogSoftmax(ortTensor, nncaseTensor, 1L);
     }
 
     [Fact]
     public void TestReduceWindow2DMean()
     {
-        var ort_input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
         var ceilMode = false;
         var countIncludePad = false;
         var dilations = new long[] { 1, 1 };
         var filter = new long[] { 3, 3 };
         var stride = new long[] { 1, 1 };
         var onnxPads = new long[] { 1, 1, 1, 1 };
-        var expect = OrtKI.AveragePool(ort_input, "NOTSET", ceilMode ? 1 : 0, countIncludePad ? 1 : 0,
+        var expect = OrtKI.AveragePool(input, "NOTSET", ceilMode ? 1 : 0, countIncludePad ? 1 : 0,
             filter, onnxPads, stride);
 
-        var input = ort_input.ToTensor();
-        var expr = IR.F.NN.ReduceWindow2D(ReduceOp.Mean, input, 0.0f, filter, stride, new[,]
+        var expr = IR.F.NN.ReduceWindow2D(ReduceOp.Mean, input.ToTensor(), 0.0f, filter, stride, new[,]
             {
                 { 1, 1 },
                 { 1, 1 },
@@ -473,18 +443,17 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestReduceWindow2DMax()
     {
-        var ort_input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
         var ceilMode = false;
         var dilations = new long[] { 1, 1 };
         var filter = new long[] { 3, 3 };
         var stride = new long[] { 1, 1 };
         var onnxPads = new long[] { 1, 1, 1, 1 };
-        var storage_order = 0L;
-        var expect = OrtKI.MaxPool(ort_input, "NOTSET", ceilMode ? 1 : 0, dilations,
-            filter, onnxPads, storage_order, stride)[0];
+        var storageOrder = 0L;
+        var expect = OrtKI.MaxPool(input, "NOTSET", ceilMode ? 1 : 0, dilations,
+            filter, onnxPads, storageOrder, stride)[0];
 
-        var input = ort_input.ToTensor();
-        var expr = IR.F.NN.ReduceWindow2D(ReduceOp.Max, input, 0.0f, filter, stride, new[,]
+        var expr = IR.F.NN.ReduceWindow2D(ReduceOp.Max, input.ToTensor(), 0.0f, filter, stride, new[,]
             {
                 { 1, 1 },
                 { 1, 1 },
@@ -496,19 +465,18 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestSoftmax()
     {
-        var ort_tensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
-        var input_tensor = ort_tensor.ToTensor();
-        DoSoftmax(ort_tensor, input_tensor, -1);
-        DoSoftmax(ort_tensor, input_tensor, 1);
+        var ortTensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        var nncaseTensor = ortTensor.ToTensor();
+        DoSoftmax(ortTensor, nncaseTensor, -1);
+        DoSoftmax(ortTensor, nncaseTensor, 1);
     }
 
     [Fact]
     public void TestSoftplus()
     {
-        var ort_tensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
-        var input_tensor = ort_tensor.ToTensor();
-        var expect = OrtKI.Softplus(ort_tensor);
-        var expr = IR.F.NN.Softplus(input_tensor);
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        var expect = OrtKI.Softplus(input);
+        var expr = IR.F.NN.Softplus(input.ToTensor());
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -516,10 +484,9 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestSoftsign()
     {
-        var ort_tensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
-        var input_tensor = ort_tensor.ToTensor();
-        var expect = OrtKI.Softsign(ort_tensor);
-        var expr = IR.F.NN.Softsign(input_tensor);
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        var expect = OrtKI.Softsign(input);
+        var expr = IR.F.NN.Softsign(input.ToTensor());
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -527,39 +494,39 @@ public class UnitTestEvaluatorNN : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestSpaceToBatch()
     {
-        var input = new float[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
-        var input_tensor = Tensor.From(input, new[] { 1, 4, 4, 1 });
-        var block_shape = new long[] { 2, 2 };
+        var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+        var input = Tensor.From(a, new[] { 1, 4, 4, 1 });
+        var shape = new long[] { 2, 2 };
 
         var output = new float[] { 1, 3, 9, 11, 2, 4, 10, 12, 5, 7, 13, 15, 6, 8, 14, 16 };
         var expect = Tensor.From(output, new[] { 4, 2, 2, 1 });
         var crops = new long[] { 0, 0, 0, 0 };
-        var expr = IR.F.NN.SpaceToBatch(input_tensor, Tensor.From(block_shape, new[] { 2 }),
+        var expr = IR.F.NN.SpaceToBatch(input, Tensor.From(shape, new[] { 2 }),
             Tensor.From(crops, new[] { 2, 2 }));
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor());
     }
 
-    private void DoHardmax(OrtKISharp.Tensor ort_tensor, Tensor input_tensor, long axis)
+    private void DoHardmax(OrtKISharp.Tensor ortTensor, Tensor nncaseTensor, long axis)
     {
-        var expect = OrtKI.Hardmax(ort_tensor, axis);
-        var expr = IR.F.NN.Hardmax(input_tensor, axis);
+        var expect = OrtKI.Hardmax(ortTensor, axis);
+        var expr = IR.F.NN.Hardmax(nncaseTensor, axis);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
 
-    private void DoLogSoftmax(OrtKISharp.Tensor ort_tensor, Tensor input_tensor, long axis)
+    private void DoLogSoftmax(OrtKISharp.Tensor ortTensor, Tensor nncaseTensor, long axis)
     {
-        var expect = OrtKI.LogSoftmax(ort_tensor, axis);
-        var expr = IR.F.NN.LogSoftmax(input_tensor, axis);
+        var expect = OrtKI.LogSoftmax(ortTensor, axis);
+        var expr = IR.F.NN.LogSoftmax(nncaseTensor, axis);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
 
-    private void DoSoftmax(OrtKISharp.Tensor ort_tensor, Tensor input_tensor, int axis)
+    private void DoSoftmax(OrtKISharp.Tensor ortTensor, Tensor nncaseTensor, int axis)
     {
-        var expect = OrtKI.Softmax(ort_tensor, axis);
-        var expr = IR.F.NN.Softmax(input_tensor, axis);
+        var expect = OrtKI.Softmax(ortTensor, axis);
+        var expr = IR.F.NN.Softmax(nncaseTensor, axis);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
