@@ -30,8 +30,10 @@ public class NNModule : Module
         builder.RegisterType<Conv2DTransposeEvaluator>().AsImplementedInterfaces();
 
         // Normalization
+        builder.RegisterType<L2NormalizationEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<BatchNormalizationEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<InstanceNormalizationEvaluator>().AsImplementedInterfaces();
+        builder.RegisterType<LpNormalizationEvaluator>().AsImplementedInterfaces();
         builder.RegisterType<LRNEvaluator>().AsImplementedInterfaces();
 
         // ReduceWindow
