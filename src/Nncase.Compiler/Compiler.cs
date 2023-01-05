@@ -78,6 +78,7 @@ public class Compiler
           new Transform.Rules.Neutral.CombineTransposeUnary(),
           new Transform.Rules.Neutral.CombineTransposePad(),
           new Transform.Rules.Neutral.CombineTransposeBinary(),
+          new Transform.Rules.Neutral.CombineTransposeConstBinary(),
           new Transform.Rules.Neutral.CombineTransposeReduce(),
           new Transform.Rules.Neutral.CombineTransposeActivations(),
           new Transform.Rules.Neutral.CombinePadTranspose(),
