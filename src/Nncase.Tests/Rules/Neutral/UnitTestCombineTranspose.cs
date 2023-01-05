@@ -215,7 +215,7 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
         Expr permExpr = perm;
         var rootPre = Math.Binary(BinaryOp.Add, Tensors.Transpose(a, permExpr), b);
         CompilerServices.InferenceType(rootPre);
-        var rootPost = CompilerServices.Rewrite(rootPre, new [] {new CombineTransposeConstBinary()}, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new CombineTransposeConstBinary() }, caseOptions);
 
         Assert.Equal(rootPre, rootPost);
     }
