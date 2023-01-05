@@ -40,6 +40,13 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
             new object[] { new[] { 1, 3, 2, 4 }, new[] { 1, 3, 2, 4 }, new[] { 0, 2, 3, 1 } },
         };
 
+    public static IEnumerable<object[]> TestCombineTransposeConstBinaryNotMatchData =>
+        new[]
+        {
+            new object[] { new[] { 1, 3, 2, 4 }, new[] { 2, 3 }, new[] { 0, 3, 2, 1 } },
+            new object[] { new[] { 1, 3, 2, 4 }, new[] { 2, 4, 3 }, new[] { 0, 2, 3, 1 } },
+        };
+
     public static IEnumerable<object[]> TestCombineTransposeRConstBinaryPositiveData =>
         new[]
         {
@@ -195,6 +202,22 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.True(TestFixture.Comparator.AllEqual(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal)));
+    }
+
+    [Theory]
+    [MemberData(nameof(TestCombineTransposeConstBinaryNotMatchData))]
+    public void TestCombineTransposeConstNotMatch(int[] lShape, int[] rShape, int[] perm)
+    {
+        var caseOptions = GetPassOptions();
+        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, lShape);
+        var b = Tensor.From<float>(Random.Normal(DataTypes.Float32, 0, 1, 0, rShape).Evaluate().AsTensor().ToArray<float>(), rShape);
+
+        Expr permExpr = perm;
+        var rootPre = Math.Binary(BinaryOp.Add, Tensors.Transpose(a, permExpr), b);
+        CompilerServices.InferenceType(rootPre);
+        var rootPost = CompilerServices.Rewrite(rootPre, new [] {new CombineTransposeConstBinary()}, caseOptions);
+
+        Assert.Equal(rootPre, rootPost);
     }
 
     [Theory]

@@ -61,7 +61,7 @@ public sealed partial class CombineTransposeConstBinary : IRewriteRule
     public CombineTransposeConstBinary()
     {
         var perm = IsWildcard("perm");
-        Pattern = IsAlt(IsBinary("binary", _ => true, IsTranspose(IsWildcard("x"), perm), IsConst("y", y => y.CheckedShape.Count == 1)), IsBinary("binary", _ => true, IsConst("x", x => x.CheckedShape.Count == 1), IsTranspose(IsWildcard("y"), perm)));
+        Pattern = IsAlt(IsBinary("binary", _ => true, IsTranspose(IsWildcard("x"), perm), IsConst("y") with { TypePattern = HasRank(1) }), IsBinary("binary", _ => true, IsConst("x") with { TypePattern = HasRank(1) }, IsTranspose(IsWildcard("y"), perm)));
     }
 
     /// <inheritdoc/>
