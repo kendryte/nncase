@@ -49,7 +49,7 @@ public sealed partial class CombineTransposeBinary : IRewriteRule
 }
 
 /// <summary>
-/// Combine Transpose with Const Binary
+/// Combine Transpose with Const Binary, if Const has rank 1.
 /// binary(transpose(a,p),const(b)) => transpose(binary(a,const(b)),p) or binary(const(a),transpose(b,p)) => transpose(binary(const(a),b),p).
 /// </summary>
 [RuleGenerator]
@@ -61,7 +61,7 @@ public sealed partial class CombineTransposeConstBinary : IRewriteRule
     public CombineTransposeConstBinary()
     {
         var perm = IsWildcard("perm");
-        Pattern = IsAlt(IsBinary("binary", _ => true, IsTranspose(IsWildcard("x"), perm), IsConst("y")), IsBinary("binary", _ => true, IsConst("x"), IsTranspose(IsWildcard("y"), perm)));
+        Pattern = IsAlt(IsBinary("binary", _ => true, IsTranspose(IsWildcard("x"), perm), IsConst("y") with { TypePattern = HasRank(1) }), IsBinary("binary", _ => true, IsConst("x") with { TypePattern = HasRank(1) }, IsTranspose(IsWildcard("y"), perm)));
     }
 
     /// <inheritdoc/>
@@ -218,7 +218,7 @@ public sealed partial class CombinePadTranspose : IRewriteRule
         "transpose",
         x => true,
         IsPad("pad", y => true, IsWildcard("input"), IsTensorConst(
-        "pads"), IsTensorConst("padValue")), IsTensorConst("perm"));
+            "pads"), IsTensorConst("padValue")), IsTensorConst("perm"));
 
     private Expr GetReplace(Pad pad, Expr input, int[] perm, Expr pads, Expr padValue)
     {
@@ -308,15 +308,15 @@ public sealed partial class CombineTransposeUnary : IRewriteRule
 public sealed partial class CombineTransposeActivations : IRewriteRule
 {
     public IPattern Pattern { get; } =
-      IsTranspose(
-       IsCall(IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("parameters", () => IsWildcard())),
-       IsWildcard("perm"));
+        IsTranspose(
+            IsCall(IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("parameters", () => IsWildcard())),
+            IsWildcard("perm"));
 
     private Expr GetReplace(ActivationOp activation, IReadOnlyList<Expr> parameters, Expr perm)
     {
         return new Call(
             activation,
             new Expr[] { Transpose(parameters[0], perm) }
-            .Concat(parameters.Skip(1)).ToArray());
+                .Concat(parameters.Skip(1)).ToArray());
     }
 }
