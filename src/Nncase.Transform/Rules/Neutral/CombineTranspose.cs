@@ -108,31 +108,6 @@ public sealed partial class CombineTransposeConstBinary : IRewriteRule
 }
 
 /// <summary>
-/// Combine Transpose with Relu
-/// relu(transpose(a,p)) => transpose(relu(a),p).
-/// </summary>
-[RuleGenerator]
-public sealed partial class CombineTransposeRelu : IRewriteRule
-{
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CombineTransposeRelu"/> class.
-    /// </summary>
-    public CombineTransposeRelu()
-    {
-        var perm = IsWildcard("perm");
-        Pattern = IsRelu("relu", x => true, IsTranspose(IsWildcard("x"), perm));
-    }
-
-    /// <inheritdoc/>
-    public IPattern Pattern { get; init; }
-
-    private Expr? GetReplace(Relu relu, Expr x, Expr perm)
-    {
-        return Transpose(Relu(x), perm);
-    }
-}
-
-/// <summary>
 /// Combine Transpose with Concat
 /// concat((transpose(x,p),...), a) => transpose(concat((x,...), p[a]), p).
 /// </summary>
@@ -318,5 +293,67 @@ public sealed partial class CombineTransposeActivations : IRewriteRule
             activation,
             new Expr[] { Transpose(parameters[0], perm) }
                 .Concat(parameters.Skip(1)).ToArray());
+    }
+}
+
+/// <summary>
+/// activations(transpose(input,p),args...) => transpose(activations(input,args...),p).
+/// </summary>
+[RuleGenerator]
+public sealed partial class CombineActivationsTranspose : IRewriteRule
+{
+    public IPattern Pattern { get; } =
+      IsCall(IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("parameters", (inputs) =>
+      {
+          var patterns = new Pattern[inputs.Count];
+          patterns[0] = IsTranspose(IsWildcard("input"), IsWildcard("perm"));
+          for (int i = 1; i < inputs.Count; i++)
+          {
+              patterns[i] = IsWildcard();
+          }
+
+          return patterns;
+      }));
+
+    private Expr? GetReplace(ActivationOp activation, Expr input, IReadOnlyList<Expr> parameters, Expr perm)
+    {
+        // note the prelu scope can be broadcast with inputs.
+        if (activation is PRelu && parameters[1].CheckedShape.Rank > 1)
+        {
+            if (perm is not TensorConst const_perm || parameters[1] is not TensorConst slope)
+            {
+                return null;
+            }
+
+            // eg. transpose(input,perm) shape = [1,32,32,8], scope = [1,1,8]
+            Expr new_slope;
+            var perms = const_perm.Value.ToArray<int>();
+            if (slope.Value.Shape.Rank == input.CheckedShape.Rank - 1)
+            {
+                if (perms[0] != 0)
+                {
+                    return null;
+                }
+
+                var inv_perm = perms.Skip(1).Select((p, i) => (p - 1, i)).OrderBy(tp => tp.Item1).Select(tp => tp.i).ToArray();
+                new_slope = Const.FromValue(Transpose(slope, inv_perm).Evaluate());
+                return Transpose(new Call(activation, input, new_slope), perm);
+            }
+            else if (slope.Value.Shape.Rank == input.CheckedShape.Rank)
+            {
+                var inv_perm = perms.Select((p, i) => (p, i)).OrderBy(tp => tp.p).Select(tp => tp.i).ToArray();
+                new_slope = Const.FromValue(Transpose(slope, inv_perm).Evaluate());
+            }
+            else
+            {
+                return null;
+            }
+
+            return Transpose(new Call(activation, input, new_slope), perm);
+        }
+
+        return Transpose(
+          new Call(activation, new Expr[] { input }.Concat(parameters.Skip(1)).ToArray()),
+          perm);
     }
 }
