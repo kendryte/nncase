@@ -311,6 +311,7 @@ public sealed partial class CombineActivationsTranspose : IRewriteRule
           {
               patterns[i] = IsWildcard();
           }
+
           return patterns;
       }));
 
@@ -318,6 +319,6 @@ public sealed partial class CombineActivationsTranspose : IRewriteRule
     {
         return Transpose(
           new Call(activation, new Expr[] { input }.Concat(parameters.Skip(1)).ToArray()),
-        perm);
+          perm);
     }
 }

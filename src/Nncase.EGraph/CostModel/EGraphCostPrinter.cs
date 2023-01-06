@@ -73,13 +73,19 @@ public partial class EGraphPrinter
 
                 var minCostEnode = parent.Nodes.MinBy(x => costModel[x])!;
                 if (markerEclassMemo.Contains(parent)) // when this marker ecalss has been visited, skip it.
+                {
                     minCostEnode = parent.Nodes.Where(n => n.Expr is not Marker).MinBy(x => costModel[x])!;
+                }
+
                 var (minCostDotnode, table) = NodesMap[minCostEnode];
                 minCostDotnode.Color = Color.DeepSkyBlue;
                 foreach (var (child, i) in minCostEnode.Children.Select((c, i) => (c, i)))
                 {
                     if (_opMaps.ContainsKey(child))
+                    {
                         continue;
+                    }
+
                     // note when marker child is it's self need select other node.
                     if (minCostEnode.Expr is Marker && child == parent)
                     {
@@ -102,10 +108,14 @@ public partial class EGraphPrinter
                             edge.Color = Color.SpringGreen;
                         });
                     }
+
                     stack.Push(child);
                 }
+
                 if (!markerEclassMemo.Contains(parent))
+                {
                     eclassMemo.Add(parent);
+                }
             }
         }
 

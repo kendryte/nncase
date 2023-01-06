@@ -85,12 +85,12 @@ internal class EGraphExtractor
 
             switch (minCostEnode.Expr)
             {
-                case (Var or TensorConst or TupleConst or Op or Fusion or None):
+                case Var or TensorConst or TupleConst or Op or Fusion or None:
                     expr = minCostEnode.Expr;
                     _eclassMemo.Add(eclass, expr);
                     stack.Pop();
                     break;
-                case (Function or Call or IR.Tuple or Marker):
+                case Function or Call or IR.Tuple or Marker:
                     var children_exprs = new List<Expr>();
                     foreach (var child in minCostEnode.Children)
                     {
@@ -104,36 +104,50 @@ internal class EGraphExtractor
                                     stack.Push((eclass, eclass.Nodes.Where(n => n.Expr is not Marker).MinBy(x => _costModel[x])!));
                                 }
                                 else
+                                {
                                     children_exprs.Add(marker_input_expr);
+                                }
                             }
                             else
+                            {
                                 stack.Push((child, child.Nodes.MinBy(x => _costModel[x])!));
+                            }
                         }
                         else
+                        {
                             children_exprs.Add(child_expr);
+                        }
                     }
+
                     if (children_exprs.Count != minCostEnode.Children.Count)
                     {
                         break;
                     }
+
                     expr = minCostEnode.Expr switch
                     {
                         Function function => Visit(minCostEnode, function, new(children_exprs)),
                         Call call => Visit(minCostEnode, call, new(children_exprs)),
                         IR.Tuple tuple => Visit(minCostEnode, tuple, new(children_exprs)),
                         Marker marker => Visit(minCostEnode, marker, new(children_exprs)),
-                        _ => throw new ArgumentException("Unsupported expression type.")
+                        _ => throw new ArgumentException("Unsupported expression type."),
                     };
                     if (markerEclassSet.Contains(eclass) && minCostEnode.Expr is not Marker)
+                    {
                         _markerEclassMemo.Add(eclass, expr);
+                    }
                     else
+                    {
                         _eclassMemo.Add(eclass, expr);
+                    }
+
                     stack.Pop();
                     break;
                 default:
                     throw new ArgumentException("Unsupported expression type.");
             }
         }
+
         // var callPattern = IsCall(IsWildcard(), IsWildcard());
         // var isCallExpr = callPattern.MatchLeaf(expr);
         // if (isCallExpr == true)
@@ -152,7 +166,7 @@ internal class EGraphExtractor
         //                     System.Console.Write(((Call)expr).EnodeQuantConfigWithCosine[i].Item1[j] + "  ");
         //                 }
 
-        //                 System.Console.WriteLine(((Call)expr).EnodeQuantConfigWithCosine[i].Item3);
+        // System.Console.WriteLine(((Call)expr).EnodeQuantConfigWithCosine[i].Item3);
         //             }
         //         }
         //     }
