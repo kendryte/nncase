@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.Transform.Rules;
 
@@ -19,13 +20,11 @@ public sealed class ShapeInferPass : DataflowPass
     /// <summary>
     /// Initializes a new instance of the <see cref="ShapeInferPass"/> class.
     /// </summary>
-    /// <param name="name">Name.</param>
-    public ShapeInferPass(string name = "ShapeInfer")
-        : base(name)
+    public ShapeInferPass()
     {
-        Add(new Rules.Neutral.IntegralPromotion());
-        Add(new Rules.Neutral.FoldConstCall());
-        Add(new Rules.Neutral.FoldShapeOf());
+        Add<Rules.Neutral.IntegralPromotion>();
+        Add<Rules.Neutral.FoldConstCall>();
+        Add<Rules.Neutral.FoldShapeOf>();
     }
 
     /// <inheritdoc/>
@@ -33,11 +32,11 @@ public sealed class ShapeInferPass : DataflowPass
     {
         BaseFunction post;
         int count = 0;
-        RunPassContext new_options = new(options);
-        new_options.SetDumpDir(options.DumpDir);
+
         while (true)
         {
-            post = (BaseFunction)CompilerServices.Rewrite(pre, Rules, new_options.SetPassName($"{Name}/Run_{count}"));
+            using var dumpScope = new DumpScope($"Run_{count}");
+            post = (BaseFunction)CompilerServices.Rewrite(pre, Rules, options);
             if (post == pre)
             {
                 break;
@@ -46,6 +45,6 @@ public sealed class ShapeInferPass : DataflowPass
             pre = post;
         }
 
-        return Task.FromResult<BaseFunction>(post);
+        return Task.FromResult(post);
     }
 }

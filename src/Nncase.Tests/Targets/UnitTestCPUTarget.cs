@@ -8,18 +8,27 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Nncase.CodeGen;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Nncase.Runtime.Interop;
+using Nncase.Targets;
+using Nncase.Tests.TestFixture;
 using Xunit;
 using static Nncase.IR.F.Tensors;
 using GetItem = Nncase.IR.Tensors.GetItem;
 
 namespace Nncase.Tests.Targets;
 
-public class UnitTestCPUTarget
+[AutoSetupTestMethod(InitSession = true)]
+public class UnitTestCPUTarget : TestClassBase
 {
+    public UnitTestCPUTarget()
+    {
+        DefaultTargetName = CPUTarget.Kind;
+    }
+
     public static IEnumerable<object[]> TestGetItemData =>
         new[]
         {
@@ -28,17 +37,25 @@ public class UnitTestCPUTarget
         };
 
     [Fact]
-    public void TestCreateCPUTarget()
+    [AutoSetupTestMethod(InitSession = false)]
+    public void TestCPUTargetKind()
     {
-        var target = CompilerServices.GetTarget("cpu");
-        Assert.NotNull(target);
+        Assert.Equal("cpu", CPUTarget.Kind);
     }
 
     [Fact]
-    public void TestCreateStackVMModuleBuilder()
+    [AutoSetupTestMethod(InitSession = false)]
+    public void TestCreateCPUTarget()
     {
-        var target = CompilerServices.GetTarget("cpu");
-        var moduleBuilder = target.CreateModuleBuilder("stackvm", CompilerServices.CompileOptions);
+        var target = CompilerServices.GetTarget(CPUTarget.Kind);
+        Assert.NotNull(target);
+    }
+
+    [Theory]
+    [CombinatorialData]
+    public void TestCreateStackVMModuleBuilder([CombinatorialValues("stackvm")] string moduleKind)
+    {
+        var moduleBuilder = CompileSession.Target.CreateModuleBuilder(moduleKind, CompileOptions);
         Assert.NotNull(moduleBuilder);
     }
 
@@ -136,8 +153,7 @@ public class UnitTestCPUTarget
     {
         var main = new Function("main", body, vars);
         var module = new IRModule(main);
-        var target = CompilerServices.GetTarget("cpu");
-        var modelBuilder = new ModelBuilder(target);
+        var modelBuilder = CompileSession.GetRequiredService<IModelBuilder>();
         var linkedModel = modelBuilder.Build(module);
         using var output = File.Open($"{name}.kmodel", FileMode.Create);
         linkedModel.Serialize(output);
@@ -146,8 +162,7 @@ public class UnitTestCPUTarget
 
     private void GenerateKModelAndRun(IRModule module, Tensor input, Tensor[] expectedOutput, [CallerMemberName] string? name = null)
     {
-        var target = CompilerServices.GetTarget("cpu");
-        var modelBuilder = new ModelBuilder(target);
+        var modelBuilder = CompileSession.GetRequiredService<IModelBuilder>();
         var linkedModel = modelBuilder.Build(module);
         using (var output = File.Open($"{name}.kmodel", FileMode.Create))
         {
@@ -165,9 +180,10 @@ public class UnitTestCPUTarget
         var interp = RTInterpreter.Create();
         interp.LoadModel(kmodel);
         var entry = interp.Entry;
+        Assert.NotNull(entry);
 
         var rtInput = RTTensor.FromTensor(input);
-        var rtOutput = entry.Invoke(rtInput);
+        var rtOutput = entry!.Invoke(rtInput);
         var rtOutputs = rtOutput is RTTensor t ? new[] { t } : ((RTTuple)rtOutput).Fields.Cast<RTTensor>().ToArray();
         Assert.Equal(expectedOutput.Length, rtOutputs.Length);
 

@@ -32,36 +32,37 @@ public class K210Target : ITarget
     }
 
     /// <inheritdoc/>
-    public void RegisterTargetDependentPass(PassManager passManager, CompileOptions options)
+    public void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options)
     {
-        if (options.ModelQuantMode == ModelQuantMode.UsePTQ)
+        if (options.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
-            passManager.Add(new EGraphPassWithQuantize("lowering_kpu", options.QuantizeOptions!)
+            passManager.Add<EGraphPassWithQuantize>().Configure(p =>
             {
-                new LowerConv2D(),
+                p.Name = "lowering_kpu";
+                p.Add<LowerConv2D>();
             });
         }
     }
 
     /// <inheritdoc/>
-    public Task<Dictionary<ENode, List<Tuple<List<DataType>, List<List<QuantParam>>, float>>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassContext runPassOptions)
+    public Task<Dictionary<ENode, List<Tuple<List<DataType>, List<List<QuantParam>>, float>>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, QuantizeOptions quantizeOptions)
     {
-        return null;
+        return Task.FromResult(new Dictionary<ENode, List<Tuple<List<DataType>, List<List<QuantParam>>, float>>>());
     }
 
     /// <inheritdoc/>
-    public Task AdaRoundWeights(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassContext runPassOptions)
+    public Task AdaRoundWeights(ICalibrationDatasetProvider calibrationDataset, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, QuantizeOptions quantizeOptions)
     {
-        return null;
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc/>
-    public void RegisterQuantizePass(PassManager passManager, CompileOptions options)
+    public void RegisterQuantizePass(IPassManager passManager, CompileOptions options)
     {
     }
 
     /// <inheritdoc/>
-    public void RegisterTargetDependentAfterQuantPass(PassManager passManager, CompileOptions options)
+    public void RegisterTargetDependentAfterQuantPass(IPassManager passManager, CompileOptions options)
     {
     }
 

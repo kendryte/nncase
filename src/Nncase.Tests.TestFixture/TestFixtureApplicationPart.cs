@@ -7,22 +7,24 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using DryIoc;
+using Nncase.Hosting;
+using Nncase.Tests;
 
 namespace Nncase;
 
 /// <summary>
-/// EGraph application part extensions.
+/// Test fixture application part extensions.
 /// </summary>
 public static class TestFixtureApplicationPart
 {
     /// <summary>
-    /// Add egraph assembly.
+    /// Add test fixture assembly.
     /// </summary>
-    /// <param name="assemblies">Assembly collection.</param>
-    /// <returns>Updated assembly collection.</returns>
-    public static IList<Assembly> AddTestFixture(this IList<Assembly> assemblies)
+    /// <param name="registrator">Service registrator.</param>
+    /// <returns>Configured service registrator.</returns>
+    public static IRegistrator AddTestFixture(this IRegistrator registrator)
     {
-        assemblies.Add(typeof(TestFixture.UnitTestFixtrue).Assembly);
-        return assemblies;
+        return registrator.RegisterModule<TestFixtureModule>();
     }
 }

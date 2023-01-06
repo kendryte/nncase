@@ -23,25 +23,35 @@ public enum DumpFlags
     /// <summary>
     /// Dump import ops.
     /// </summary>
-    ImportOps = 1,
+    ImportOps = 1 << 1,
 
     /// <summary>
     /// Dump pass pre and post ir.
     /// </summary>
-    PassIR = 2,
+    PassIR = 1 << 2,
 
     /// <summary>
     /// Dump egraph costs.
     /// </summary>
-    EGraphCost = 4,
+    EGraphCost = 1 << 3,
 
     /// <summary>
     /// Dump rewrite.
     /// </summary>
-    Rewrite = 8,
+    Rewrite = 1 << 4,
 
     /// <summary>
     /// Dump calibration.
     /// </summary>
-    Calibration = 16,
+    Calibration = 1 << 5,
+
+    /// <summary>
+    /// Dump evaluator values.
+    /// </summary>
+    Evaluator = 1 << 6,
+
+    /// <summary>
+    /// Dump compile stages.
+    /// </summary>
+    Compile,
 }

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.TIR;
 
@@ -17,21 +18,16 @@ namespace Nncase.Transform;
 public interface IPass
 {
     /// <summary>
-    /// Gets pass name.
+    /// Gets or sets pass name.
     /// </summary>
-    string Name { get; }
-}
-
-internal interface IPassIntern : IPass
-{
-    void SetName(string name);
+    string Name { get; set; }
 }
 
 /// <summary>
 /// IR or TIR transformer.
 /// </summary>
 /// <typeparam name="T">Type to transform.</typeparam>
-public abstract class Pass<T> : IPass, IPassIntern
+public abstract class Pass<T> : IPass
     where T : class
 {
     private string? _name;
@@ -41,11 +37,15 @@ public abstract class Pass<T> : IPass, IPassIntern
     /// </summary>
     internal Pass()
     {
-        CompileSession = CompileSessionScope.Current;
+        CompileSession = CompileSessionScope.GetCurrentThrowIfNull();
     }
 
     /// <inheritdoc/>
-    public string Name => _name ??= GetType().Name;
+    public string Name
+    {
+        get => _name ??= GetType().Name;
+        set => _name = value;
+    }
 
     /// <summary>
     /// Gets compile session.
@@ -60,15 +60,14 @@ public abstract class Pass<T> : IPass, IPassIntern
     /// <returns>Output object.</returns>
     public async Task<T> RunAsync(T input, RunPassContext context)
     {
+        using var sessionScope = new CompileSessionScope(CompileSession);
+        using var dumpScope = new DumpScope(Path.Join($"{context.Index}_{Name}", GetDumpRelativePass(input)));
+
         await OnPassStartAsync(input, context);
         var output = await RunCoreAsync(input, context);
         await OnPassEndAsync(output, context);
         return output;
     }
-
-    void IPassIntern.SetName(string name) => _name = name;
-
-    internal virtual string? GetDumpRelativePass(T input) => null;
 
     /// <summary>
     /// Run pass implementation for derived class.
@@ -93,4 +92,6 @@ public abstract class Pass<T> : IPass, IPassIntern
     /// <param name="context">Run pass context.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     protected abstract Task OnPassEndAsync(T post, RunPassContext context);
+
+    private protected virtual string? GetDumpRelativePass(T input) => null;
 }

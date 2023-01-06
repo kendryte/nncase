@@ -28,7 +28,7 @@ public class EGraphPass : RulesPass
     /// <param name="baseFuncCostEvaluator">Extenal cost evaluator.</param>
     public EGraphPass(Evaluator.IBaseFuncCostEvaluator? baseFuncCostEvaluator = null)
     {
-        _rewriteProvider = CompileSession.ServiceProvider.GetRequiredService<IEGraphRewriteProvider>();
+        _rewriteProvider = CompileSession.GetRequiredService<IEGraphRewriteProvider>();
         _baseFuncCostEvaluator = baseFuncCostEvaluator;
     }
 
@@ -41,7 +41,7 @@ public class EGraphPass : RulesPass
         await OnPostRewriteStartAsync(graph, context);
         await OnPostRewriteAsync(graph, context);
         await OnPostRewriteEndAsync(graph, context);
-        var post = graph.Extract(root, _baseFuncCostEvaluator, context);
+        var post = graph.Extract(root, _baseFuncCostEvaluator);
         CompilerServices.InferenceType(post);
         return (BaseFunction)post;
     }
@@ -65,9 +65,9 @@ public class EGraphPass : RulesPass
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     protected virtual Task OnPostRewriteStartAsync(EGraph eGraph, RunPassContext context)
     {
-        if (context.Dumpper.IsEnabled(DumpFlags.PassIR))
+        if (DumpScope.Current.IsEnabled(DumpFlags.PassIR))
         {
-            using var fs = context.Dumpper.OpenWrite(Path.Combine("PostRewriteStart", $"V{eGraph.Version}.dot"));
+            using var fs = DumpScope.Current.OpenFile(Path.Combine("PostRewriteStart", $"V{eGraph.Version}.dot"));
             EGraphPrinter.DumpEgraphAsDot(eGraph, null, fs);
         }
 
@@ -82,9 +82,9 @@ public class EGraphPass : RulesPass
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     protected virtual Task OnPostRewriteEndAsync(EGraph eGraph, RunPassContext context)
     {
-        if (context.Dumpper.IsEnabled(DumpFlags.PassIR))
+        if (DumpScope.Current.IsEnabled(DumpFlags.PassIR))
         {
-            using var fs = context.Dumpper.OpenWrite(Path.Combine("PostRewriteEnd", $"V{eGraph.Version}.dot"));
+            using var fs = DumpScope.Current.OpenFile(Path.Combine("PostRewriteEnd", $"V{eGraph.Version}.dot"));
             EGraphPrinter.DumpEgraphAsDot(eGraph, null, fs);
         }
 

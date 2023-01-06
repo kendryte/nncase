@@ -26,9 +26,8 @@ public static class EGraphExtractExtensions
     /// <param name="eGraph">eGraph.</param>
     /// <param name="root">Root eclass.</param>
     /// <param name="basefunc_cost_evaluator">base func cost evaluator.</param>
-    /// <param name="context">Context.</param>
     /// <returns>Extracted root expression.</returns>
-    public static Expr Extract(this EGraph eGraph, EClass root, Evaluator.IBaseFuncCostEvaluator? basefunc_cost_evaluator, RunPassContext context)
+    public static Expr Extract(this EGraph eGraph, EClass root, Evaluator.IBaseFuncCostEvaluator? basefunc_cost_evaluator)
     {
         // 1. set the all expr checked shape
         foreach (var eclass in eGraph.Classes)
@@ -44,9 +43,9 @@ public static class EGraphExtractExtensions
 
         // 2. start the cost evaluator
         var costModel = new EGraphCostEvaluator(root.Find(), basefunc_cost_evaluator).Evaluate();
-        if (context.Dumpper.IsEnabled(DumpFlags.EGraphCost))
+        if (DumpScope.Current.IsEnabled(DumpFlags.EGraphCost))
         {
-            using var fs = context.Dumpper.OpenWrite(Path.Combine("Costs", $"V{eGraph.Version}"));
+            using var fs = DumpScope.Current.OpenFile(Path.Combine("Costs", $"V{eGraph.Version}"));
             EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, root.Find(), fs);
         }
 

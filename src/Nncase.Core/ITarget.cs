@@ -54,21 +54,21 @@ public interface ITarget
     /// </summary>
     /// <param name="passManager">pass manager.</param>
     /// <param name="options">compile options.</param>
-    void RegisterTargetDependentPass(PassManager passManager, CompileOptions options);
+    void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options);
 
     /// <summary>
     /// Register Quantize Pass.
     /// </summary>
     /// <param name="passManager">pass manager.</param>
     /// <param name="options">compile options.</param>
-    void RegisterQuantizePass(PassManager passManager, CompileOptions options);
+    void RegisterQuantizePass(IPassManager passManager, CompileOptions options);
 
     /// <summary>
     /// Register Target Dependent After Quant Pass.
     /// </summary>
     /// <param name="passManager"></param>
     /// <param name="options">compile options.</param>
-    void RegisterTargetDependentAfterQuantPass(PassManager passManager, CompileOptions options);
+    void RegisterTargetDependentAfterQuantPass(IPassManager passManager, CompileOptions options);
 
     /// <summary>
     /// Create module builder.

@@ -24,14 +24,12 @@ public abstract class FunctionPass : Pass<BaseFunction>
     {
     }
 
-    internal override string? GetDumpRelativePass(BaseFunction input) => input.Name;
-
     /// <inheritdoc/>
     protected override Task OnPassStartAsync(BaseFunction input, RunPassContext context)
     {
-        if (context.Dumpper.IsEnabled(DumpFlags.PassIR))
+        if (DumpScope.Current.IsEnabled(DumpFlags.PassIR))
         {
-            context.Dumpper.DumpIR(input, "Start");
+            DumpScope.Current.DumpIR(input, "Start");
         }
 
         return Task.CompletedTask;
@@ -40,11 +38,13 @@ public abstract class FunctionPass : Pass<BaseFunction>
     /// <inheritdoc/>
     protected override Task OnPassEndAsync(BaseFunction post, RunPassContext context)
     {
-        if (context.Dumpper.IsEnabled(DumpFlags.PassIR))
+        if (DumpScope.Current.IsEnabled(DumpFlags.PassIR))
         {
-            context.Dumpper.DumpIR(post, "End");
+            DumpScope.Current.DumpIR(post, "End");
         }
 
         return Task.CompletedTask;
     }
+
+    private protected override string? GetDumpRelativePass(BaseFunction input) => input.Name;
 }

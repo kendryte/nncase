@@ -8,9 +8,9 @@ using Nncase.IR;
 using Nncase.TIR;
 using Nncase.Utilities;
 using Xunit;
-using static Nncase.TestFixture.DumpPathExtractor;
+using static Nncase.Tests.DumpPathExtractor;
 
-namespace Nncase.TestFixture;
+namespace Nncase.Tests;
 
 public record OriginValue(IValue Value, string Path)
 {

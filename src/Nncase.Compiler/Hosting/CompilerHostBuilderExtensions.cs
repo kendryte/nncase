@@ -14,40 +14,46 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Nncase;
+using Nncase.Compiler;
+using Nncase.Compiler.Hosting;
+using Nncase.Hosting;
 
-namespace Nncase.Hosting;
+namespace Microsoft.Extensions.Hosting;
 
 /// <summary>
-/// Compiler host helper.
+/// Compiler host builder extentensions.
 /// </summary>
-public static class CompilerHost
+public static class CompilerHostBuilderExtensions
 {
     /// <summary>
-    /// Create compiler host builder.
+    /// Configure compiler host builder.
     /// </summary>
-    /// <param name="args">Commandline arguments.</param>
-    /// <param name="configureHost">Configure host builder.</param>
+    /// <param name="hostBuilder">Host builder.</param>
+    /// <param name="configureCompiler">Configure compiler builder.</param>
     /// <returns>Created host builder.</returns>
-    public static IHostBuilder CreateHostBuilder(string[]? args = null, Action<IHostBuilder>? configureHost = null)
+    public static IHostBuilder ConfigureCompiler(this IHostBuilder hostBuilder, Action<ICompilerBuilder>? configureCompiler = null)
     {
-        var host = Host.CreateDefaultBuilder(args);
-        host.UseServiceProviderFactory(new DryIocServiceProviderFactory());
-
-        configureHost?.Invoke(host);
-        host.ConfigureContainer<Container>(ConfigureBuiltinModules)
+        hostBuilder.UseServiceProviderFactory(new DryIocServiceProviderFactory())
+            .ConfigureContainer<Container>(ConfigureBuiltinModules)
             .ConfigureServices(ConfigureServices)
-            .ConfigureLogging(ConfigureLogging)
-            .ConfigureContainer<Container>(ConfigurePlugins);
-        return host;
+            .ConfigureLogging(ConfigureLogging);
+
+        hostBuilder.ConfigureContainer<Container>(x => configureCompiler?.Invoke(new CompilerBuilder(x)));
+        hostBuilder.ConfigureContainer<Container>(ConfigurePlugins);
+        return hostBuilder;
     }
 
     private static void ConfigureBuiltinModules(Container builder)
     {
         builder.AddCore()
+                .AddDiagnostics()
                 .AddEvaluator()
                 .AddGraph()
                 .AddEGraph()
-                .AddStackVM();
+                .AddCodeGen()
+                .AddStackVM()
+                .AddK210();
     }
 
     private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
@@ -55,7 +61,7 @@ public static class CompilerHost
         services.AddLogging();
 
         services.AddSingleton<PluginLoader>();
-        services.AddScoped<ICompiler, Compiler.Compiler>();
+        services.AddScoped<ICompiler, Compiler>();
     }
 
     private static void ConfigureLogging(ILoggingBuilder loggingBuilder)

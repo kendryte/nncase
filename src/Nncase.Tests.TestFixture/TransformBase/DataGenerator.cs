@@ -11,7 +11,7 @@ using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using Random = Nncase.IR.F.Random;
 
-namespace Nncase.TestFixture;
+namespace Nncase.Tests;
 
 public static class DataGenerator
 {

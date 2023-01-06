@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.Quantization;
 using Nncase.Transform;
@@ -15,24 +16,22 @@ using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using Random = Nncase.IR.F.Random;
 
-namespace Nncase.TestFixture;
+namespace Nncase.Tests;
 
 // impl mixin by inherit interface with method had been impl
-public partial class TransformTestBase : UnitTestFixtrue
+public partial class TransformTestBase : TestClassBase
 {
-    public override CompileOptions GetCompileOptions([CallerMemberName] string member_name = "")
+    public TransformTestBase()
     {
-        var compileOptions = base.GetCompileOptions(member_name);
-        compileOptions.QuantType = DataTypes.UInt8;
-        compileOptions.WQuantType = DataTypes.UInt8;
-        return compileOptions;
+        CompileOptions.QuantizeOptions.QuantType = DataTypes.UInt8;
+        CompileOptions.QuantizeOptions.WQuantType = DataTypes.UInt8;
     }
 
-    public override RunPassContext GetPassOptions([CallerMemberName] string member_name = "")
+    protected virtual Task<T> RunPassAsync<T>(Pass<T> pass, T input, bool rewriteOnce = true)
+        where T : class
     {
-        var passOptions = base.GetPassOptions(member_name);
-        passOptions = passOptions.SetRewriteOnce(true);
-        return passOptions;
+        var context = new RunPassContext { RewriteOnce = rewriteOnce };
+        return pass.RunAsync(input, context);
     }
 
     public virtual Expr TestMatched<T>(Expr pre, RunPassContext passOptions)
@@ -89,11 +88,6 @@ public partial class TransformTestBase : UnitTestFixtrue
     //     TestMatched<T>(Binary(op, lhs, rhs));
     //     TestMatched<T>(Binary(op, rhs, lhs));
     // }
-    public Expr RewriteOnceFalse(Func<RunPassContext, Expr> f, RunPassContext passOptions)
-    {
-        var result = f(passOptions.SetRewriteOnce(false));
-        return result;
-    }
 
     public Expr Rewrite<T>(Expr pre, RunPassContext passOptions)
         where T : IRewriteRule, new()
@@ -104,25 +98,25 @@ public partial class TransformTestBase : UnitTestFixtrue
     public Expr RewriteWithSeq(Expr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> rules) =>
         rules.Aggregate(expr, (expr1, rule) => CompilerServices.Rewrite(expr1, new[] { rule }, passOptions));
 
-    public Expr RewriteWithSeq(Expr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> lower,
-        IEnumerable<IRewriteRule> folds, IEnumerable<IRewriteRule> fuse)
+    public Expr RewriteWithSeq(Expr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> lower, IEnumerable<IRewriteRule> folds, IEnumerable<IRewriteRule> fuse)
     {
         var l = RewriteWithSeq(expr, passOptions, lower);
-        var s = RewriteOnceFalse((RunPassContext opt) => RewriteWithSeq(l, opt, folds), passOptions);
+        var s = RewriteWithSeq(l, passOptions with { RewriteOnce = false }, folds);
         var f = RewriteWithSeq(s, passOptions, fuse);
         return f;
     }
 
-    public Expr FoldNop(Expr expr, RunPassContext passOptions) => RewriteOnceFalse(
-        (RunPassContext opt)
-      => CompilerServices.Rewrite(expr, new IRewriteRule[]
-      {
-          new FoldNopCast(),
-          new FoldNopReshape(),
-      }, opt), passOptions);
+    public Expr FoldNop(Expr expr, RunPassContext passOptions) =>
+        CompilerServices.Rewrite(
+            expr,
+            new IRewriteRule[]
+            {
+                new FoldNopCast(),
+                new FoldNopReshape(),
+            },
+            passOptions with { RewriteOnce = false });
 
-    public Expr RewriteWithSeq(Expr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> lower,
-        IRewriteRule fold, IEnumerable<IRewriteRule> fuse) => RewriteWithSeq(expr, passOptions, lower, new[] { fold }, fuse);
+    public Expr RewriteWithSeq(Expr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> lower, IRewriteRule fold, IEnumerable<IRewriteRule> fuse) => RewriteWithSeq(expr, passOptions, lower, new[] { fold }, fuse);
 
     public Expr RewriteWithSeq(Expr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> lower, IEnumerable<IRewriteRule> fuse) =>
         RewriteWithSeq(expr, passOptions, lower, new IRewriteRule[]

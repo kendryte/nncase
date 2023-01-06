@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nncase.CodeGen;
+using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.Hosting;
 using Nncase.IR;
@@ -17,140 +18,127 @@ using Nncase.Utilities;
 
 namespace Nncase.Compiler;
 
-public class Compiler : ICompiler
+internal class Compiler : ICompiler
 {
     private readonly CompileSession _compileSession;
+    private readonly IModelBuilder _modelBuilder;
+    private readonly IDumpper _dumpper;
     private IRModule? _module;
 
-    public Compiler(CompileSession compileSession)
+    public Compiler(CompileSession compileSession, IModelBuilder modelBuilder, IDumpperFactory dumpperFactory)
     {
         _compileSession = compileSession;
+        _modelBuilder = modelBuilder;
+        _dumpper = dumpperFactory.Root;
     }
 
-    public IRModule ImportModule(Stream content)
+    public IRModule Module => _module ?? throw new InvalidOperationException("Module has not been imported");
+
+    public async Task<IRModule> ImportModuleAsync(Stream content)
     {
-        CompilerServices.CompileOptions = _compileSession;
-
-        // Console.WriteLine($"Target: {options.Target}");
         var module = ImportModel(content);
-        DumpModule(module, "ir_import");
+        if (_dumpper.IsEnabled(DumpFlags.Compile))
+        {
+            _dumpper.DumpModule(module, "IRImport");
+        }
 
-        // Console.WriteLine("Infer Shape...");
-        if (_compileSession.DumpLevel > 4)
-        {
-            DumpManager.RunWithDump("EvaluatorInShapeInfer", () => RunPass(pmg => pmg.Add(new ShapeInferPass()), "ShapeInferAfterImport"));
-        }
-        else
-        {
-            RunPass(pmg => pmg.Add(new ShapeInferPass()), "ShapeInferAfterImport");
-        }
+        await RunPassAsync(pmg => pmg.Add<ShapeInferPass>(), "ShapeInferAfterImport");
 
         var inferSucc = CompilerServices.InferenceType(module.Entry!);
-        DumpModule(module, "ir_infertype");
         if (!inferSucc)
         {
             throw new InvalidOperationException("InferShape Failed For This Model!");
         }
 
-        // Console.WriteLine("ImportModule successful!");
         return module;
     }
 
-    public void TargetIndependentPass(PassManager passManager)
+    public void TargetIndependentPass(IPassManager passManager)
     {
-        if (_compileSession.ModelQuantMode == ModelQuantMode.UsePTQ)
+        var quantMode = _compileSession.CompileOptions.QuantizeOptions.ModelQuantMode;
+        if (quantMode == ModelQuantMode.UsePTQ)
         {
-            passManager.Add(new EGraphPass("1_NeutralOptimize")
-            {
-          new Transform.Rules.Neutral.FoldConstCall(),
-          new Transform.Rules.Neutral.FoldNopTranspose(),
-          new Transform.Rules.Neutral.FoldTwoTransposes(),
-          new Transform.Rules.Neutral.CombineTransposeUnary(),
-          new Transform.Rules.Neutral.CombineTransposePad(),
-          new Transform.Rules.Neutral.CombineTransposeBinary(),
-          new Transform.Rules.Neutral.CombineTransposeReduce(),
-          new Transform.Rules.Neutral.CombineTransposeActivations(),
-          new Transform.Rules.Neutral.CombinePadTranspose(),
-          new Transform.Rules.Neutral.FoldNopPad(),
-          new Transform.Rules.Neutral.FoldConv2DPads(),
-          new Transform.Rules.Neutral.FoldReduceWindow2DPads(),
-            });
+            passManager.Add<EGraphPass>()
+                .Configure(p =>
+                {
+                    p.Name = "NeutralOptimize";
+                    p.Add<Transform.Rules.Neutral.FoldConstCall>()
+                     .Add<Transform.Rules.Neutral.FoldNopTranspose>()
+                     .Add<Transform.Rules.Neutral.FoldTwoTransposes>()
+                     .Add<Transform.Rules.Neutral.CombineTransposeUnary>()
+                     .Add<Transform.Rules.Neutral.CombineTransposePad>()
+                     .Add<Transform.Rules.Neutral.CombineTransposeBinary>()
+                     .Add<Transform.Rules.Neutral.CombineTransposeReduce>()
+                     .Add<Transform.Rules.Neutral.CombineTransposeActivations>()
+                     .Add<Transform.Rules.Neutral.CombinePadTranspose>()
+                     .Add<Transform.Rules.Neutral.FoldNopPad>()
+                     .Add<Transform.Rules.Neutral.FoldConv2DPads>()
+                     .Add<Transform.Rules.Neutral.FoldReduceWindow2DPads>();
+                });
         }
 
-        if (_compileSession.ModelQuantMode == ModelQuantMode.UsePTQ)
+        if (quantMode == ModelQuantMode.UsePTQ)
         {
-            passManager.Add(new DataflowPass("2_AddRangeOfMarker")
-            {
-                new Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2D(),
-                new Transform.Rules.Neutral.AddRangeOfAndMarkerToMatMul(),
-
-                // new Transform.Rules.Neutral.AddRangeOfAndMarkerToReduceWindow2D(),
-                // new Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2DTranspose(),
-                // new Transform.Rules.Neutral.AddRangeOfAndMarkerToBinary(),
-            });
-            passManager.Add(new Quantization.EGraphPassWithQuantize("3_AssignRanges", _compileSession.QuantizeOptions!));
+            passManager.Add<EGraphPass>()
+                .Configure(p =>
+                {
+                    p.Name = "AddRangeOfMarker";
+                    p.Add<Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2D>()
+                     .Add<Transform.Rules.Neutral.AddRangeOfAndMarkerToMatMul>();
+                });
+            passManager.Add<EGraphPassWithQuantize>().Configure(p => p.Name = "AssignRanges");
         }
     }
 
-    public void Compile()
+    public async Task CompileAsync()
     {
-        var t = CompilerServices.GetTarget(_compileSession.Target);
-        if (_compileSession.DumpLevel > 4)
-        {
-            DumpManager.RunWithDump("TargetIndependentEval", () => RunPass(p => TargetIndependentPass(p), "TargetIndependentPass"));
-        }
-        else
-        {
-            RunPass(p => TargetIndependentPass(p), "TargetIndependentPass");
-        }
+        var target = _compileSession.Target;
+        await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
+        await RunPassAsync(p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions), "TargetIndependentPass");
 
-        RunPass(p => t.RegisterTargetDependentPass(p, _compileSession), "TargetDependentPass");
-
-        // RunPass(p => p.Add(new Quantization.EGraphPassWithBindQuantizeConfig("2.5_BindQuantizeConfig", options.QuantizeOptions!)));
-        if (_compileSession.ModelQuantMode == ModelQuantMode.UsePTQ)
+        if (_compileSession.CompileOptions.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
-            RunPass(p => t.RegisterQuantizePass(p, _compileSession), "QuantizePass");
-            RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, _compileSession), "TargetDependentAfterQuantPass");
-            RunPass(t => t.Add(new DataflowPass("ClearMarker") { new RemoveMarker() }), "RemoveMarker");
+            await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
+            await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions), "TargetDependentAfterQuantPass");
+            await RunPassAsync(
+                pmgr => pmgr.Add<DataflowPass>().Configure(p =>
+                {
+                    p.Name = "ClearMarker";
+                    p.Add<RemoveMarker>();
+                }),
+                "RemoveMarker");
         }
 
         // fold constant
-        RunPass(p => p.Add(new Transform.Passes.ShapeInferPass()), "ShapeInferAfterCompile");
-
-        // Console.WriteLine("Compile successful");
+        await RunPassAsync(p => p.Add<ShapeInferPass>(), "ShapeInferAfterCompile");
     }
 
     public void Gencode(Stream output)
     {
-        var target = CompilerServices.GetTarget(_compileSession.Target);
-        var moduleBuilder = new ModelBuilder(target, _compileSession);
-        var linkedModel = moduleBuilder.Build(_module);
+        var linkedModel = _modelBuilder.Build(Module);
         linkedModel.Serialize(output);
-
-        // Console.WriteLine("Gencode successful");
     }
 
     private IRModule ImportModel(Stream content)
     {
-        _module = _compileSession.InputFormat switch
+        _module = _compileSession.CompileOptions.InputFormat switch
         {
             "tflite" => Importers.ImportTFLite(content, _compileSession),
             "onnx" => Importers.ImportOnnx(content, _compileSession),
-            _ => throw new NotImplementedException($"Not Implement {_compileSession.InputFormat} Impoter!"),
+            var inputFormat => throw new NotImplementedException($"Not Implement {inputFormat} Importer!"),
         };
         return _module;
     }
 
-    private void DumpModule(IRModule module, string prefix)
+    private async Task RunPassAsync(Action<IPassManager> register, string name)
     {
-        var dumpPath = Path.Combine(_compileSession.DumpDir, "dump", prefix);
-        CompilerServices.DumpIR(module.Entry!, prefix, dumpPath);
-    }
-
-    private void RunPass(Action<PassManager> register, string dirName)
-    {
-        var pmgr = new PassManager(_module, new RunPassOptions(CompilerServices.GetTarget(_compileSession.Target), _compileSession.DumpLevel, Path.Join(_compileSession.DumpDir, dirName), _compileSession));
+        var pmgr = _compileSession.CreatePassManager(name);
         register(pmgr);
-        pmgr.RunAsync().Wait();
+        _module = await pmgr.RunAsync(Module).ConfigureAwait(false);
+
+        if (_dumpper.IsEnabled(DumpFlags.Compile))
+        {
+            _dumpper.DumpModule(_module, name);
+        }
     }
 }

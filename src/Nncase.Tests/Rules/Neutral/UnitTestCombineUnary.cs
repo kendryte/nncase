@@ -26,7 +26,7 @@ using Tuple = System.Tuple;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestCombineUnary : TestFixture.UnitTestFixtrue
+public class UnitTestCombineUnary : TestClassBase
 {
     // TODO: CombinePadUnary
     public static IEnumerable<object[]> TestCombinePadUnaryPositiveData =>
@@ -97,7 +97,6 @@ public class UnitTestCombineUnary : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestCombinePadUnaryPositiveData))]
     public void TestCombinePadUnaryPositive(UnaryOp opType, int[] inShape, int[,] paddings, PadMode padM, float padValue)
     {
-        var caseOptions = GetPassOptions();
         var a = new Var();
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
@@ -105,7 +104,7 @@ public class UnitTestCombineUnary : TestFixture.UnitTestFixtrue
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new CombinePadUnary(),
-        }, caseOptions);
+        }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal));
@@ -115,7 +114,6 @@ public class UnitTestCombineUnary : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestCombineSliceUnaryPositiveData))]
     public void TestCombineSliceUnaryPositive(UnaryOp opType, int[] inShape, int[] begins, int[] ends, int[] axes, int[] strides)
     {
-        var caseOptions = GetPassOptions();
         var a = new Var();
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
@@ -123,7 +121,7 @@ public class UnitTestCombineUnary : TestFixture.UnitTestFixtrue
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new CombineSliceUnary(),
-        }, caseOptions);
+        }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal));
@@ -133,7 +131,6 @@ public class UnitTestCombineUnary : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestCombineReshapeUnaryPositiveData))]
     public void TestCombineReshapeUnaryPositive(UnaryOp opType, int[] inShape, int[] outShape)
     {
-        var caseOptions = GetPassOptions();
         var a = new Var();
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
@@ -141,7 +138,7 @@ public class UnitTestCombineUnary : TestFixture.UnitTestFixtrue
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new CombineReshapeUnary(),
-        }, caseOptions);
+        }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal));

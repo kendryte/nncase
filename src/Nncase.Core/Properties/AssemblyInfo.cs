@@ -9,3 +9,4 @@ using System.Text;
 using System.Threading.Tasks;
 
 [assembly: InternalsVisibleTo("Nncase.Tests")]
+[assembly: InternalsVisibleTo("Nncase.Tests.TestFixture")]

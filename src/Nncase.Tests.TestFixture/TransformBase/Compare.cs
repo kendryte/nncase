@@ -6,11 +6,11 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.Utilities;
 using Xunit;
-using static Nncase.TestFixture.TensorUtil;
+using static Nncase.Tests.TensorUtil;
 using static Nncase.Utilities.DumpUtility;
 using Tuple = Nncase.IR.Tuple;
 
-namespace Nncase.TestFixture;
+namespace Nncase.Tests;
 
 public static class TensorUtil
 {
@@ -318,10 +318,10 @@ public static class DetailComparator
 
     public static void GenerateFullCompareInfo(IEnumerable<(OriginValue, OriginValue)> data, string resultRoot)
     {
-        var counter = new Counter(1);
+        int id = 0;
         foreach (var (originD, k230D) in data)
         {
-            counter.Run(count => GenerateFullCompareInfo(resultRoot, originD, k230D, count));
+            GenerateFullCompareInfo(resultRoot, originD, k230D, id++);
         }
     }
 

@@ -16,6 +16,7 @@ namespace Nncase.IR;
 public sealed class IRModule
 {
     private readonly List<BaseFunction> _functions;
+    private int? _entryIndex;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="IRModule"/> class.
@@ -24,7 +25,7 @@ public sealed class IRModule
     public IRModule(BaseFunction main)
     {
         _functions = new() { main };
-        Entry = main;
+        _entryIndex = 0;
     }
 
     /// <summary>
@@ -44,7 +45,11 @@ public sealed class IRModule
     /// <summary>
     /// Gets or sets entry function.
     /// </summary>
-    public BaseFunction? Entry { get; set; }
+    public BaseFunction? Entry
+    {
+        get => _entryIndex.HasValue ? _functions[_entryIndex.Value] : null;
+        set => _entryIndex = value != null ? _functions.FindIndex(x => object.ReferenceEquals(x, value)) : null;
+    }
 
     /// <summary>
     /// Add function.
@@ -56,11 +61,11 @@ public sealed class IRModule
     }
 
     /// <summary>
-    /// update the entry function defination.
+    /// Replace the function defination.
     /// </summary>
     /// <param name="index">function index.</param>
     /// <param name="function">the entry function defination.</param>
-    public void Update(int index, BaseFunction function)
+    public void Replace(int index, BaseFunction function)
     {
         var old = _functions[index];
 
@@ -72,20 +77,16 @@ public sealed class IRModule
 
         for (int i = 0; i < _functions.Count; i++)
         {
-            if (replacer.ExpressionMemo.TryGetValue(_functions[i], out var replace))
+            var originFunc = _functions[i];
+            if (replacer.ExpressionMemo.TryGetValue(originFunc, out var replace))
             {
                 _functions[i] = (BaseFunction)replace;
             }
         }
-
-        if (object.ReferenceEquals(old, Entry))
-        {
-            Entry = function;
-        }
     }
 
     /// <summary>
-    /// Update the function call dependencer.
+    /// Replace the function call dependencer.
     /// </summary>
     private sealed class FunctionReplacer : DeepExprMutator
     {

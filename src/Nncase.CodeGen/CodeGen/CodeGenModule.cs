@@ -2,18 +2,19 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using DryIoc;
+using Nncase.CodeGen;
 using Nncase.Diagnostics;
 using Nncase.Hosting;
 
-namespace Nncase;
+namespace Nncase.Diagnostics;
 
 /// <summary>
-/// Diagnostics module.
+/// CodeGen module.
 /// </summary>
-internal class DiagnosticsModule : IApplicationPart
+internal class CodeGenModule : IApplicationPart
 {
     public void ConfigureServices(IRegistrator registrator)
     {
-        registrator.Register<IDumpManager, DumpManager>(reuse: Reuse.Scoped);
+        registrator.Register<IModelBuilder, ModelBuilder>(reuse: Reuse.Scoped);
     }
 }

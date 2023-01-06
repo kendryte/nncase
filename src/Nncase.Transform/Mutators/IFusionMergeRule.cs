@@ -14,7 +14,7 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Transform.Mutators;
 
 /// <summary>
-/// The Fusion Merge Rule.
+/// The Fusion Merge Pass.
 /// </summary>
 public interface IMergeRewriteRule
 {

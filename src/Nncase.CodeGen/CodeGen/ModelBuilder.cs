@@ -13,7 +13,7 @@ namespace Nncase.CodeGen;
 /// <summary>
 /// The Kmodel Builder.
 /// </summary>
-public sealed class ModelBuilder
+public sealed class ModelBuilder : IModelBuilder
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ModelBuilder"/> class.

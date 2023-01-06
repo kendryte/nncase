@@ -6,17 +6,12 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using Autofac;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using NetFabric.Hyperlinq;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
-using Nncase.TestFixture;
 using Nncase.Utilities;
 using OrtKISharp;
 using Xunit;
@@ -29,7 +24,7 @@ using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Tests.EvaluatorTest;
 
-public class UnitTestEvaluator : TestFixture.UnitTestFixtrue
+public class UnitTestEvaluator : TestClassBase
 {
     [Fact]
     public void TestEvalFuncCall()

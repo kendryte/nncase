@@ -58,9 +58,9 @@ internal class RewriteProvider : IRewriteProvider
     /// </summary>
     private void OnRewriteStart(Expr expr, RunPassContext context, int count)
     {
-        if (context.Dumpper.IsEnabled(DumpFlags.Rewrite))
+        if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
         {
-            context.Dumpper.DumpIR(expr, $"{count}_Start", "Rewrite");
+            DumpScope.Current.DumpIR(expr, $"{count}_Start", "Rewrite");
         }
     }
 
@@ -69,9 +69,9 @@ internal class RewriteProvider : IRewriteProvider
     /// </summary>
     private void OnRewriteEnd(Expr expr, RunPassContext context, int count)
     {
-        if (context.Dumpper.IsEnabled(DumpFlags.Rewrite))
+        if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
         {
-            context.Dumpper.DumpIR(expr, $"{count}_End", "Rewrite");
+            DumpScope.Current.DumpIR(expr, $"{count}_End", "Rewrite");
         }
     }
 }

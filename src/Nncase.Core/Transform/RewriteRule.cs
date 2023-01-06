@@ -23,7 +23,7 @@ public abstract class RewriteRule<TPattern> : IRewriteRule
     /// </summary>
     public RewriteRule()
     {
-        CompileSession = CompileSessionScope.Current;
+        CompileSession = CompileSessionScope.GetCurrentThrowIfNull();
     }
 
     /// <summary>

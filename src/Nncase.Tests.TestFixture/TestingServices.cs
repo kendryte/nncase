@@ -6,26 +6,14 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Autofac;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Nncase.CodeGen;
+using Nncase.Diagnostics;
 using Nncase.Transform;
 
-namespace Nncase.TestFixture;
-
-public interface ITestingProvider
-{
-    /// <summary>
-    /// get the nncase `tests_ouput` path.
-    /// <remarks>
-    /// you can set the subPath for get the `xxx/tests_output/subPath`
-    /// </remarks>
-    /// </summary>
-    /// <param name="subDir">sub directory.</param>
-    /// <returns> full path string. </returns>
-    public string GetDumpDirPath(string subDir);
-}
+namespace Nncase.Tests;
 
 public static class Testing
 {
@@ -33,56 +21,6 @@ public static class Testing
     /// the fixed rand generator, maybe need impl by each module.
     /// </summary>
     public static readonly Random RandGenerator = new System.Random(123);
-
-    private static ITestingProvider? _provider;
-
-    private static ITestingProvider Provider => _provider ?? throw new InvalidOperationException("Testing services provider must be set.");
-
-    /// <summary>
-    /// Configure testing services.
-    /// </summary>
-    /// <param name="provider">Service provider.</param>
-    public static void Configure(ITestingProvider provider)
-    {
-        _provider = provider;
-    }
-
-    /// <summary>
-    /// get the nncase `tests_ouput` path.
-    /// <remarks>
-    /// you can set the subPath for get the `xxx/tests_output/subPath`
-    /// </remarks>
-    /// </summary>
-    /// <param name="subDir">sub directory.</param>
-    /// <returns> full path string. </returns>
-    public static string GetDumpDirPath(string subDir = "") => Provider.GetDumpDirPath(subDir);
-
-    /// <summary>
-    /// give the unittest class name, then return the dumpdir path
-    /// <see cref="GetDumpDirPath(string)"/>.
-    /// </summary>
-    /// <param name="type"></param>
-    /// <returns></returns>
-    public static string GetDumpDirPath(System.Type type)
-    {
-        var namespace_name = type.Namespace!.Split(".")[^1];
-        if (!namespace_name.EndsWith("Test") || !type.Name.StartsWith("UnitTest"))
-        {
-            throw new System.ArgumentOutOfRangeException($"We Need NameSpace is `xxxTest`, Class is `UnitTestxxx`, But given namespace is {namespace_name}, class is {type.Name}");
-        }
-
-        return GetDumpDirPath(Path.Combine(namespace_name, type.Name));
-    }
-
-    /// <summary>
-    /// Get the caller file path.
-    /// </summary>
-    /// <param name="path"></param>
-    /// <returns></returns>
-    public static string GetCallerFilePath([CallerFilePath] string path = "")
-    {
-        return path;
-    }
 
     /// <summary>
     /// fixup the seq rand tensor into gived range.
@@ -275,18 +213,14 @@ public static class Testing
     /// </summary>
     /// <param name="name">the dumped kmodel name.</param>
     /// <param name="module"></param>
-    /// <param name="compileOptions"></param>
+    /// <param name="compileSession"></param>
     /// <returns>kmodel_path and kmodel bytes.</returns>
-    public static (string, byte[]) BuildKModel(string name, IR.IRModule module, CompileOptions compileOptions)
+    public static (string, byte[]) BuildKModel(string name, IR.IRModule module, CompileSession compileSession)
     {
-        var modelBuilder = new CodeGen.ModelBuilder(CompilerServices.GetTarget(compileOptions.Target), compileOptions);
-        CodeGen.LinkedModel linkedModel = modelBuilder.Build(module);
-        if (!Directory.Exists(compileOptions.DumpDir))
-        {
-            Directory.CreateDirectory(compileOptions.DumpDir);
-        }
+        var modelBuilder = compileSession.GetRequiredService<IModelBuilder>();
+        var linkedModel = modelBuilder.Build(module);
 
-        var kmodel_path = Path.Combine(compileOptions.DumpDir, $"{name}.kmodel");
+        var kmodel_path = Path.Combine(compileSession.CompileOptions.DumpDir, $"{name}.kmodel");
         using (var output = System.IO.File.Open(kmodel_path, System.IO.FileMode.Create))
         {
             linkedModel.Serialize(output);
@@ -300,54 +234,48 @@ public static class Testing
     /// </summary>
     /// <param name="kmodel_path"></param>
     /// <param name="input_tensors"></param>
-    /// <param name="caseOptions"></param>
+    /// <param name="dumpper"></param>
     /// <exception cref="ArgumentOutOfRangeException"></exception>
-    public static void DumpInterpModel(string kmodel_path, Tensor[] input_tensors, Transform.RunPassContext caseOptions)
+    public static void DumpInterpModel(string kmodel_path, Tensor[] input_tensors, IDumpper dumpper)
     {
-        string input_pool_path = Path.Combine(caseOptions.DumpDir, "input_pool.bin");
-        var output_pool_path = Path.Combine(caseOptions.DumpDir, "output_pool.bin");
-        using (var args_writer = new System.IO.StreamWriter(
-          System.IO.File.Open(
-            System.IO.Path.Join(caseOptions.DumpDir, "args.txt"),
-            System.IO.FileMode.Create),
-          System.Text.Encoding.ASCII))
-        {
-            args_writer.WriteLine(kmodel_path);
-            args_writer.WriteLine(input_pool_path);
-            args_writer.WriteLine(output_pool_path);
+        string input_pool_path = Path.Join(dumpper.Directory, "input_pool.bin");
+        var output_pool_path = Path.Join(dumpper.Directory, "output_pool.bin");
+        using var args_writer = new StreamWriter(dumpper.OpenFile("args.txt"));
+        args_writer.WriteLine(kmodel_path);
+        args_writer.WriteLine(input_pool_path);
+        args_writer.WriteLine(output_pool_path);
 
-            uint start = 0;
-            uint size = 0;
-            args_writer.WriteLine(input_tensors.Length);
-            using (var pool_writer = new BinaryWriter(File.OpenWrite(input_pool_path)))
+        uint start = 0;
+        uint size = 0;
+        args_writer.WriteLine(input_tensors.Length);
+        using (var pool_writer = new BinaryWriter(File.OpenWrite(input_pool_path)))
+        {
+            foreach (var in_tensor in input_tensors)
             {
-                foreach (var in_tensor in input_tensors)
+                pool_writer.Write(in_tensor.BytesBuffer);
+                size = checked((uint)in_tensor.BytesBuffer.Length);
+                byte dt_code = in_tensor.ElementType switch
                 {
-                    pool_writer.Write(in_tensor.BytesBuffer);
-                    size = checked((uint)in_tensor.BytesBuffer.Length);
-                    byte dt_code = in_tensor.ElementType switch
-                    {
-                        var x when x == DataTypes.Boolean => 0x00,
-                        var x when x == DataTypes.Int8 => 0x02,
-                        var x when x == DataTypes.Int16 => 0x03,
-                        var x when x == DataTypes.Int32 => 0x04,
-                        var x when x == DataTypes.Int64 => 0x05,
-                        var x when x == DataTypes.UInt8 => 0x06,
-                        var x when x == DataTypes.UInt16 => 0x07,
-                        var x when x == DataTypes.UInt32 => 0x08,
-                        var x when x == DataTypes.UInt64 => 0x09,
-                        var x when x == DataTypes.Float16 => 0x0A,
-                        var x when x == DataTypes.Float32 => 0x0B,
-                        var x when x == DataTypes.Float64 => 0x0C,
-                        var x when x == DataTypes.BFloat16 => 0x0D,
-                        _ => throw new ArgumentOutOfRangeException(),
-                    };
-                    args_writer.WriteLine($"{dt_code}");
-                    args_writer.WriteLine(in_tensor.Shape.Count);
-                    args_writer.WriteLine($"{string.Join(' ', in_tensor.Shape)}");
-                    args_writer.WriteLine($"{start} {size}");
-                    start += size;
-                }
+                    var x when x == DataTypes.Boolean => 0x00,
+                    var x when x == DataTypes.Int8 => 0x02,
+                    var x when x == DataTypes.Int16 => 0x03,
+                    var x when x == DataTypes.Int32 => 0x04,
+                    var x when x == DataTypes.Int64 => 0x05,
+                    var x when x == DataTypes.UInt8 => 0x06,
+                    var x when x == DataTypes.UInt16 => 0x07,
+                    var x when x == DataTypes.UInt32 => 0x08,
+                    var x when x == DataTypes.UInt64 => 0x09,
+                    var x when x == DataTypes.Float16 => 0x0A,
+                    var x when x == DataTypes.Float32 => 0x0B,
+                    var x when x == DataTypes.Float64 => 0x0C,
+                    var x when x == DataTypes.BFloat16 => 0x0D,
+                    _ => throw new ArgumentOutOfRangeException(),
+                };
+                args_writer.WriteLine($"{dt_code}");
+                args_writer.WriteLine(in_tensor.Shape.Count);
+                args_writer.WriteLine($"{string.Join(' ', in_tensor.Shape)}");
+                args_writer.WriteLine($"{start} {size}");
+                start += size;
             }
         }
     }
@@ -375,44 +303,4 @@ public static class Testing
             return entry.Invoke(input_tensors).ToValue();
         }
     }
-}
-
-public class UnitTestFixtrue
-{
-    public virtual CompileOptions GetCompileOptions([CallerMemberName] string member_name = "")
-    {
-        string dumpDirPath = Path.Combine(Testing.GetDumpDirPath(GetType()), member_name);
-        CompileOptions compileOptions = new(CompilerServices.CompileOptions);
-        compileOptions.DumpDir = dumpDirPath;
-        return compileOptions;
-    }
-
-    public virtual RunPassContext GetPassOptions([CallerMemberName] string member_name = "")
-    {
-        var options = GetCompileOptions(member_name);
-        return new RunPassOptions(options);
-    }
-
-    public string GetSolutionDirectory()
-    {
-        return Path.Combine(Path.GetDirectoryName(GetCurrentFileName())!, "../../");
-    }
-
-    private static string GetCurrentFileName([CallerFilePath] string filePath = "")
-    {
-        return filePath;
-    }
-}
-
-internal sealed class TestingProvider : ITestingProvider
-{
-    private readonly IDumpDirPathProvider _dumpDirPathProvider;
-
-    public TestingProvider(IDumpDirPathProvider dumpDirPathProvider)
-    {
-        _dumpDirPathProvider = dumpDirPathProvider;
-    }
-
-    /// <inheritdoc/>
-    public string GetDumpDirPath(string subDir) => _dumpDirPathProvider.GetDumpDirPath(subDir);
 }

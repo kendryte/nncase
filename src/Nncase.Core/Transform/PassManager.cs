@@ -17,19 +17,109 @@ using Nncase.TIR;
 namespace Nncase.Transform;
 
 /// <summary>
+/// Passes addable.
+/// </summary>
+public interface IPassesAddable
+{
+    /// <summary>
+    /// Add pass.
+    /// </summary>
+    /// <typeparam name="T">Pass type.</typeparam>
+    /// <param name="parameters">Pass constructor parameters.</param>
+    /// <returns>Add result.</returns>
+    AddPassResult<T> Add<T>(params object[] parameters)
+        where T : class, IPass;
+
+    /// <summary>
+    /// Add pass with name.
+    /// </summary>
+    /// <typeparam name="T">Pass type.</typeparam>
+    /// <param name="name">Pass name.</param>
+    /// <param name="parameters">Pass constructor parameters.</param>
+    /// <returns>Add result.</returns>
+    AddPassResult<T> AddWithName<T>(string name, params object[] parameters)
+        where T : class, IPass;
+}
+
+/// <summary>
 /// Pass manager.
 /// </summary>
-public sealed class PassManager
+public interface IPassManager : IPassesAddable
+{
+    /// <summary>
+    /// Gets name.
+    /// </summary>
+    public string Name { get; }
+
+    /// <summary>
+    /// Gets passes.
+    /// </summary>
+    public IReadOnlyList<IPass> Passes { get; }
+
+    /// <summary>
+    /// Run passes and update the module.
+    /// </summary>
+    /// <param name="module">Input module.</param>
+    /// <returns>A <see cref="Task{IRModule}"/> representing the asynchronous operation.</returns>
+    Task<IRModule> RunAsync(IRModule module);
+}
+
+/// <summary>
+/// Add pass result.
+/// </summary>
+/// <typeparam name="T">Pass type.</typeparam>
+public struct AddPassResult<T> : IPassesAddable
+    where T : class, IPass
+{
+    private readonly PassManager _passManager;
+
+    internal AddPassResult(PassManager passManager, T pass)
+    {
+        _passManager = passManager;
+        Pass = pass;
+    }
+
+    /// <summary>
+    /// Gets pass.
+    /// </summary>
+    public T Pass { get; }
+
+    /// <inheritdoc/>
+    public AddPassResult<TPass> Add<TPass>(params object[] parameters)
+        where TPass : class, IPass => _passManager.Add<TPass>(parameters);
+
+    /// <inheritdoc/>
+    public AddPassResult<TPass> AddWithName<TPass>(string name, params object[] parameters)
+        where TPass : class, IPass => _passManager.AddWithName<TPass>(name, parameters);
+
+    /// <summary>
+    /// Configure pass.
+    /// </summary>
+    /// <param name="configureRule">Configure pass action.</param>
+    /// <returns>This add result.</returns>
+    public AddPassResult<T> Configure(Action<T> configureRule)
+    {
+        configureRule(Pass);
+        return this;
+    }
+}
+
+internal sealed class PassManager : IPassManager
 {
     private readonly CompileSession _compileSession;
-    private readonly IDumpperFactory _dumpperFactory;
+    private readonly IDumpper _dummper;
     private readonly List<IPass> _passes = new List<IPass>();
 
-    internal PassManager(string name, CompileSession compileSession, IDumpperFactory dumpperFactory)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PassManager"/> class.
+    /// </summary>
+    /// <param name="name">Pass manager name.</param>
+    /// <param name="compileSession">Compile session.</param>
+    public PassManager(string name, CompileSession compileSession)
     {
         Name = name;
         _compileSession = compileSession;
-        _dumpperFactory = dumpperFactory;
+        _dummper = DumpScope.GetCurrent(compileSession).CreateSubDummper(name);
     }
 
     /// <summary>
@@ -42,32 +132,32 @@ public sealed class PassManager
     /// </summary>
     public IReadOnlyList<IPass> Passes => _passes;
 
-    /// <summary>
-    /// Add pass.
-    /// </summary>
-    /// <typeparam name="T">Pass type.</typeparam>
-    /// <param name="name">Pass name.</param>
-    /// <param name="configurePass">Configure pass action.</param>
-    /// <param name="parameters">Pass constructor parameters.</param>
-    /// <returns>This pass manager.</returns>
-    public PassManager Add<T>(string name, Action<T>? configurePass = null, params object[] parameters)
+    /// <inheritdoc/>
+    public AddPassResult<T> Add<T>(params object[] parameters)
         where T : class, IPass
     {
         using var scope = new CompileSessionScope(_compileSession);
-        var pass = ActivatorUtilities.CreateInstance<T>(_compileSession.ServiceProvider, parameters);
-        ((IPassIntern)pass).SetName(name);
-        configurePass?.Invoke(pass);
+        using var dumpScope = new DumpScope(_dummper);
+        var pass = ActivatorUtilities.CreateInstance<T>(_compileSession, parameters);
         _passes.Add(pass);
-        return this;
+        return new(this, pass);
     }
 
-    /// <summary>
-    /// Run passes and update the module.
-    /// </summary>
-    /// <param name="module">Input module.</param>
-    /// <returns>A <see cref="Task{IRModule}"/> representing the asynchronous operation.</returns>
+    /// <inheritdoc/>
+    public AddPassResult<T> AddWithName<T>(string name, params object[] parameters)
+        where T : class, IPass
+    {
+        using var scope = new CompileSessionScope(_compileSession);
+        using var dumpScope = new DumpScope(_dummper);
+        var result = Add<T>(parameters);
+        result.Configure(p => p.Name = name);
+        return result;
+    }
+
+    /// <inheritdoc/>
     public async Task<IRModule> RunAsync(IRModule module)
     {
+        using var dumpScope = new DumpScope(_dummper);
         for (int i = 0; i < _passes.Count; i++)
         {
             var task = _passes[i] switch
@@ -89,12 +179,11 @@ public sealed class PassManager
         for (int i = 0; i < module.Functions.Count; i++)
         {
             var pre = module.Functions[i];
-            var dumpper = _dumpperFactory.CreateDummper(Path.Join(Name, $"{passIndex}_{pass.Name}", pass.GetDumpRelativePass(pre)));
-            var context = new RunPassContext(dumpper);
+            var context = new RunPassContext { Index = passIndex };
             var post = await pass.RunAsync(pre, context);
             if (!object.ReferenceEquals(pre, post))
             {
-                module.Update(i, post);
+                module.Replace(i, post);
             }
         }
 
@@ -108,12 +197,11 @@ public sealed class PassManager
             var pre = module.Functions[i];
             if (pre is PrimFunction pf)
             {
-                var dumpper = _dumpperFactory.CreateDummper(Path.Join(Name, $"{passIndex}_{pass.Name}", pass.GetDumpRelativePass(pf)));
-                var context = new RunPassContext(dumpper);
+                var context = new RunPassContext { Index = passIndex };
                 var post = await pass.RunAsync(pf, context);
                 if (!object.ReferenceEquals(pre, post))
                 {
-                    module.Update(i, post);
+                    module.Replace(i, post);
                 }
             }
         }
@@ -123,8 +211,7 @@ public sealed class PassManager
 
     private async Task<IRModule> RunAsync(IRModule module, int passIndex, ModulePass pass)
     {
-        var dumpper = _dumpperFactory.CreateDummper(Path.Join(Name, $"{passIndex}_{pass.Name}", pass.GetDumpRelativePass(module)));
-        var context = new RunPassContext(dumpper);
+        var context = new RunPassContext { Index = passIndex };
         return await pass.RunAsync(module, context);
     }
 }

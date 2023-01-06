@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Nncase.IR
 {
@@ -52,7 +53,7 @@ namespace Nncase.IR
     /// <summary>
     /// Variable expression.
     /// </summary>
-    public record Var : Expr
+    public record Var : Expr, IEquatable<Var>
     {
         private static int _globalVarIndex;
 
@@ -64,9 +65,10 @@ namespace Nncase.IR
         /// <param name="typeAnnotation"></param>
         public Var(string name, IRType typeAnnotation)
         {
-            Name = name;
             TypeAnnotation = typeAnnotation;
             CheckedType = TypeAnnotation;
+            GlobalVarIndex = GetNextId();
+            Name = name;
         }
 
         /// <summary>
@@ -74,8 +76,11 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="typeAnnotation">Type annotation.</param>
         public Var(IRType typeAnnotation)
-            : this($"var_{_globalVarIndex++}", typeAnnotation)
         {
+            TypeAnnotation = typeAnnotation;
+            CheckedType = TypeAnnotation;
+            GlobalVarIndex = GetNextId();
+            Name = $"var_{GlobalVarIndex}";
         }
 
         /// <summary>
@@ -92,14 +97,14 @@ namespace Nncase.IR
         /// Initializes a new instance of the <see cref="Var"/> class.
         /// </summary>
         public Var()
-            : this($"var_{_globalVarIndex++}", AnyType.Default)
+            : this(AnyType.Default)
         {
         }
 
         /// <summary>
-        /// Gets get the global var index.
+        /// Gets the global var index.
         /// </summary>
-        private int GlobalVarIndex => _globalVarIndex;
+        public int GlobalVarIndex { get; }
 
         /// <summary>
         /// Gets name.
@@ -140,5 +145,24 @@ namespace Nncase.IR
         /// <param name="name"></param>
         /// <returns></returns>
         public static Var SizeVar(string name) => Scalar(name, DataTypes.Int32);
+
+        /// <inheritdoc/>
+        public virtual bool Equals(Var? other)
+        {
+            if (other == null)
+            {
+                return false;
+            }
+
+            return GlobalVarIndex == other.GlobalVarIndex;
+        }
+
+        /// <inheritdoc/>
+        public override int GetHashCode() => GlobalVarIndex.GetHashCode();
+
+        private static int GetNextId()
+        {
+            return Interlocked.Increment(ref _globalVarIndex);
+        }
     }
 }

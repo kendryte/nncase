@@ -22,13 +22,11 @@ internal partial class Quantizer
     private readonly QuantizeOptions _quantizeOptions;
     private readonly List<ENode> _rangeOfs = new List<ENode>();
     private readonly List<ENode> _childrenOfRangeOfs = new List<ENode>();
-    private readonly IDumpper _dumpper;
 
-    public Quantizer(EGraph graph, QuantizeOptions quantizeOptions, IDumpper dummper)
+    public Quantizer(EGraph graph, QuantizeOptions quantizeOptions)
     {
         _graph = graph;
         _quantizeOptions = quantizeOptions;
-        _dumpper = dummper;
         MarkRangeOfs();
     }
 
@@ -72,10 +70,18 @@ internal partial class Quantizer
     {
         await foreach (var sample in calibrationDataset.Samples)
         {
-            var evaluator = new CalibrationEvaluator(sample, _rangeOfs, _dumpper.CreateSubDummper("ep1"));
-            var values = evaluator.Evaluate();
-            var childrenEvaluator = new CalibrationEvaluator(sample, _childrenOfRangeOfs, _dumpper.CreateSubDummper("ep2"));
-            var childrenValues = childrenEvaluator.Evaluate();
+            IReadOnlyDictionary<ENode, Tensor> values, childrenValues;
+            using (var dumpScope = new DumpScope("ep1"))
+            {
+                var evaluator = new CalibrationEvaluator(sample, _rangeOfs);
+                values = evaluator.Evaluate();
+            }
+
+            using (var dumpScope2 = new DumpScope("ep2"))
+            {
+                var childrenEvaluator = new CalibrationEvaluator(sample, _childrenOfRangeOfs);
+                childrenValues = childrenEvaluator.Evaluate();
+            }
 
             // values are children op range values(only two scalars for each value: Min and Max), childrenValues are children op tensor values.
             func(values, childrenValues);
@@ -86,7 +92,8 @@ internal partial class Quantizer
     {
         await foreach (var sample in calibrationDataset.Samples)
         {
-            var evaluator = new CalibrationEvaluator(sample, _rangeOfs, _dumpper.CreateSubDummper("ep1"));
+            using var dumpScope = new DumpScope("ep1");
+            var evaluator = new CalibrationEvaluator(sample, _rangeOfs);
             var values = evaluator.Evaluate();
             func(values);
         }

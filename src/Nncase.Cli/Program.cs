@@ -17,7 +17,7 @@ internal partial class Program
     public static async Task<int> Main(string[] args)
     {
         return await BuildCommandLine()
-            .UseHost(args => CompilerHost.CreateHostBuilder(args, ConfigureHost))
+            .UseHost(ConfigureHost)
             .UseDefaults()
             .Build().InvokeAsync(args);
     }
@@ -25,7 +25,8 @@ internal partial class Program
     private static void ConfigureHost(IHostBuilder hostBuilder)
     {
         hostBuilder.ConfigureAppConfiguration(ConfigureAppConfiguration)
-            .UseConsoleLifetime();
+            .UseConsoleLifetime()
+            .ConfigureCompiler();
     }
 
     private static void ConfigureAppConfiguration(HostBuilderContext context, IConfigurationBuilder builder)

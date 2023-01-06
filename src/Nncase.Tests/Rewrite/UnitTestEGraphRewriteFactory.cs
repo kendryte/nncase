@@ -3,7 +3,9 @@
 
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using Nncase.IR;
+using Nncase.Tests.TestFixture;
 using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Tensors;
@@ -11,7 +13,8 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.ReWriteTest;
 
-public sealed class UnitTestEGraphRewriteFactory : TestFixture.UnitTestFixtrue
+[AutoSetupTestMethod(InitSession = true)]
+public sealed class UnitTestEGraphRewriteFactory : TestClassBase
 {
     public static TheoryData<IRewriteCase> DataOne => new()
     {
@@ -39,11 +42,11 @@ public sealed class UnitTestEGraphRewriteFactory : TestFixture.UnitTestFixtrue
 
     [Theory]
     [MemberData(nameof(DataOne))]
-    public void RunOne(IRewriteCase @case) => RunCore(@case);
+    public Task RunOneAsync(IRewriteCase @case) => RunCoreAsync(@case);
 
     [Theory]
     [MemberData(nameof(DataAll))]
-    public void RunAll(IRewriteCase @case) => RunCore(@case);
+    public Task RunAllAsync(IRewriteCase @case) => RunCoreAsync(@case);
 
     private static long CountRunTicks(Function pre, IReadOnlyDictionary<Var, IValue> feed_dict, out IValue ret)
     {
@@ -56,20 +59,22 @@ public sealed class UnitTestEGraphRewriteFactory : TestFixture.UnitTestFixtrue
         return pre_time;
     }
 
-    private async void RunCore(IRewriteCase @case)
+    private async Task RunCoreAsync(IRewriteCase @case)
     {
-        var caseOptions = GetPassOptions().IndentDir(@case.Name);
         var pre = @case.PreExpr;
         var infered = pre.InferenceType();
-        CompilerServices.DumpIR(pre, "pre", caseOptions.DumpDir);
         Assert.True(infered);
-        var pass = new EGraphPass("EGraphOptimize");
-        pass.Add(@case.Rules);
-        var post = (Function)await pass.RunAsync(pre, caseOptions);
+        var pass = new EGraphPass { Name = "EGraphOptimize" };
+        foreach (var rule in @case.Rules)
+        {
+            pass.Add(rule);
+        }
+
+        var post = (Function)await pass.RunAsync(pre, new());
         Assert.True(post.InferenceType());
         _ = CountRunTicks(pre, @case.FeedDict, out var pre_ret);
         _ = CountRunTicks(post, @case.FeedDict, out var post_ret);
-        Assert.True(TestFixture.Comparator.AllEqual(pre_ret, post_ret));
+        Assert.True(Comparator.AllEqual(pre_ret, post_ret));
 
         // note the parallel test will cause the time count error.
         // Assert.True(pre_time >= post_time);

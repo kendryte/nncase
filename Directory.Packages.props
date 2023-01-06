@@ -6,13 +6,14 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="AnyTensorFlow.NET" Version="0.70.1" />
-    <PackageVersion Include="Autofac" Version="6.3.0" />
-    <PackageVersion Include="Autofac.Extensions.DependencyInjection" Version="7.2.0" />
     <PackageVersion Include="BitFields" Version="0.1.0" />
     <PackageVersion Include="coverlet.collector" Version="3.0.2" />
     <PackageVersion Include="DryIoc.dll" Version="5.3.1" />
     <PackageVersion Include="DryIoc.Microsoft.DependencyInjection" Version="6.1.0" />
     <PackageVersion Include="Extension.Mathematics" Version="1.2.12" />
+    <PackageVersion Include="Fody">
+      <Version>6.6.4</Version>
+    </PackageVersion>
     <PackageVersion Include="GiGraph.Dot" Version="2.0.0" />
     <PackageVersion Include="Google.Protobuf" Version="3.19.1" />
     <PackageVersion Include="Grpc.Tools" Version="2.42.0" />
@@ -27,6 +28,12 @@
     <!-- <PackageVersion Include="libtorch-cuda-11.3-win-x64" Version="1.11.0.1" /> -->
     <PackageVersion Include="MagicalTensorflowLib" Version="0.0.2" />
     <PackageVersion Include="MagicalTensorflowLibOSX-ARM64" Version="0.0.4" />
+    <PackageVersion Include="MethodBoundaryAspect.Fody">
+      <Version>2.0.148</Version>
+    </PackageVersion>
+    <PackageVersion Include="MethodDecorator.Fody">
+      <Version>1.1.1</Version>
+    </PackageVersion>
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
@@ -47,6 +54,9 @@
     <PackageVersion Include="TorchSharp" Version="0.99.0" />
     <PackageVersion Include="xunit" Version="2.4.1" />
     <PackageVersion Include="xunit.assert" Version="2.4.1" />
+    <PackageVersion Include="Xunit.Combinatorial">
+      <Version>1.5.25</Version>
+    </PackageVersion>
     <PackageVersion Include="Xunit.DependencyInjection" Version="8.3.0" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.4.3" />
   </ItemGroup>

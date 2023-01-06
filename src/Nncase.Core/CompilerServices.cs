@@ -3,10 +3,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DryIoc;
 using Microsoft.Extensions.DependencyInjection;
 using Nncase.CostModel;
 using Nncase.Evaluator;
@@ -194,6 +197,9 @@ public static class CompilerServices
     private static IServiceProvider? _serviceProvider;
     private static ICompilerServicesProvider? _provider;
 
+    /// <summary>
+    /// Gets root services.
+    /// </summary>
     internal static IServiceProvider ServiceProvider => _serviceProvider ?? throw new InvalidOperationException("Compiler services provider must be set.");
 
     internal static IDataTypeServiceProvider DataTypeService => ((ICompilerServicesProviderInternal)Provider).DataTypeService;
@@ -427,6 +433,22 @@ public static class CompilerServices
     /// <param name="name">Target name.</param>
     /// <returns>Target.</returns>
     public static ITarget GetTarget(string name) => Provider.GetTarget(name);
+
+    internal static DryIoc.IContainer CreateScope()
+    {
+        var container = (DryIoc.IContainer)_serviceProvider!;
+        var childDefaultServiceKey = new object();
+        var rules = container.Rules
+            .WithDefaultRegistrationServiceKey(childDefaultServiceKey)
+            .WithFactorySelector(Rules.SelectKeyedOverDefaultFactory(childDefaultServiceKey));
+        return container!.With(
+            container.Parent,
+            rules,
+            container.ScopeContext,
+            RegistrySharing.CloneButKeepCache,
+            container.SingletonScope.Clone(false),
+            Scope.Of(container.OwnCurrentScope));
+    }
 }
 
 internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerServicesProviderInternal

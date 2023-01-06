@@ -22,12 +22,12 @@ public class CalibrationEvaluator : IDisposable
     private readonly Dictionary<EClass, IValue> _eclassValues = new();
     private readonly StreamWriter? _dumpWriter;
 
-    public CalibrationEvaluator(IReadOnlyDictionary<Var, IValue> inputs, IEnumerable<ENode> awareEnodes, IDumpper dumpper)
+    public CalibrationEvaluator(IReadOnlyDictionary<Var, IValue> inputs, IEnumerable<ENode> awareEnodes)
     {
         _inputs = inputs;
         _awareEnodes = awareEnodes;
-        _dumpWriter = dumpper.IsEnabled(DumpFlags.Calibration)
-            ? new StreamWriter(dumpper.OpenWrite("calibration_evaluator.il")) { AutoFlush = true }
+        _dumpWriter = DumpScope.Current.IsEnabled(DumpFlags.Calibration)
+            ? new StreamWriter(DumpScope.Current.OpenFile("calibration_evaluator.il")) { AutoFlush = true }
             : null;
     }
 

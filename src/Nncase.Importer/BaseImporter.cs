@@ -10,7 +10,6 @@ using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
-using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase;
 
@@ -29,7 +28,7 @@ public abstract class BaseImporter
     public BaseImporter(CompileSession compileSession)
     {
         CompileSession = compileSession;
-        Dumpper = compileSession.DumpperFactory.CreateDummper("Import");
+        Dumpper = DumpScope.GetCurrent(compileSession).CreateSubDummper("Import");
     }
 
     /// <summary>
@@ -55,7 +54,7 @@ public abstract class BaseImporter
 
         if (Dumpper.IsEnabled(DumpFlags.ImportOps))
         {
-            DumpOpsInModel(Dumpper.OpenWrite("OpsInModel.txt"));
+            DumpOpsInModel(Dumpper.OpenFile("OpsInModel.txt"));
         }
 
         var module = CreateModule(inputs.ToArray(), outputs);
@@ -96,7 +95,7 @@ public abstract class BaseImporter
         }
     }
 
-    private void DumpOpsInModel(FileStream path)
+    private void DumpOpsInModel(Stream path)
     {
         using var sr = new StreamWriter(path);
         foreach (var op in _opsInModel)
@@ -134,8 +133,7 @@ public abstract class BaseImporter
     private IRModule CreateModule(Var[] inputs, Expr body)
     {
         var mainFunc = new Function("main", body, inputs);
-        var module = new IRModule();
-        module.Add(mainFunc);
+        var module = new IRModule(mainFunc);
         return module;
     }
 }

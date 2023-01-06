@@ -5,19 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Toolkit.HighPerformance;
-using Microsoft.Toolkit.HighPerformance;
-using NetFabric.Hyperlinq;
 using Nncase.IR;
-using Nncase.IR.Math;
-using Nncase.IR.Tensors;
-using Nncase.PatternMatch;
+using Nncase.Tests.TestFixture;
 using Nncase.Transform;
 using Nncase.Transform.Rules.Neutral;
-using Tensorflow;
 using Xunit;
 using static Nncase.IR.F.NN;
 using ITuple = Nncase.IR.ITuple;
@@ -28,7 +19,8 @@ using Tuple = System.Tuple;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
+[AutoSetupTestMethod(InitSession = true)]
+public class UnitTestCombineTranspose : TestClassBase
 {
     public static IEnumerable<object[]> TestCombineTransposeBinaryPositiveData =>
         new[]
@@ -176,7 +168,6 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestCombineTransposeBinaryPositiveData))]
     public void TestCombineTransposeBinaryPositive(int[] lShape, int[] rShape, int[] perm)
     {
-        var caseOptions = GetPassOptions();
         var a = new Var("a", new TensorType(DataTypes.Float32, lShape));
         var b = new Var("b", new TensorType(DataTypes.Float32, rShape));
 
@@ -191,17 +182,16 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new CombineTransposeBinary(),
-        }, caseOptions);
+        }, new());
 
         Assert.NotEqual(rootPre, rootPost);
-        Assert.True(TestFixture.Comparator.AllEqual(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal)));
+        Assert.True(Comparator.AllEqual(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal)));
     }
 
     [Theory]
     [MemberData(nameof(TestCombineTransposeRConstBinaryPositiveData))]
     public void TestCombineTransposeRConstBinaryPositive(int[] lShape, int[] rShape, int[] perm)
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, lShape);
         var b = Tensor.From<float>(Random.Normal(DataTypes.Float32, 0, 1, 0, rShape).Evaluate().AsTensor().ToArray<float>(), rShape);
 
@@ -211,17 +201,16 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new CombineTransposeConstBinary(),
-        }, caseOptions);
+        }, new());
 
         Assert.NotEqual(rootPre, rootPost);
-        Assert.True(TestFixture.Comparator.AllEqual(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost)));
+        Assert.True(Comparator.AllEqual(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost)));
     }
 
     [Theory]
     [MemberData(nameof(TestCombineTransposeLConstBinaryPositiveData))]
     public void TestCombineTransposeLConstBinaryPositive(int[] lShape, int[] rShape, int[] perm)
     {
-        var caseOptions = GetPassOptions();
         var a = Tensor.From<float>(Random.Normal(DataTypes.Float32, 0, 1, 0, lShape).Evaluate().AsTensor().ToArray<float>(), lShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, rShape);
 
@@ -231,19 +220,18 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new CombineTransposeConstBinary(),
-        }, caseOptions);
+        }, new());
 
         Assert.NotEqual(rootPre, rootPost);
-        Assert.True(TestFixture.Comparator.AllEqual(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost)));
+        Assert.True(Comparator.AllEqual(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost)));
     }
 
     [Fact]
     public void TestCombineTransposeRelu()
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Relu(Tensors.Transpose(a, new[] { 0, 3, 1, 2 }));
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new CombineTransposeRelu() }, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new CombineTransposeRelu() }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -253,7 +241,6 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestCombineTransposePadPositiveData))]
     public void TestCombineTransposePadPositive(int[] inShape, int[] perm, int[,] paddings, PadMode padM, float padValue)
     {
-        var caseOptions = GetPassOptions();
         var a = new Var("input", new TensorType(DataTypes.Float32, inShape));
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
@@ -262,19 +249,18 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
         {
             new FoldConstCall(),
             new CombineTransposePad(),
-        }, caseOptions);
+        }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         var vpre = rootPre.Evaluate(normal);
         var vpost = rootPost.Evaluate(normal);
-        Assert.True(TestFixture.Comparator.AllEqual(vpre, vpost));
+        Assert.True(Comparator.AllEqual(vpre, vpost));
     }
 
     [Theory]
     [MemberData(nameof(TestCombineTransposePadPositiveData))]
     public void TestCombinePadTransposePositive(int[] inShape, int[] perm, int[,] paddings, PadMode padM, float padValue)
     {
-        var caseOptions = GetPassOptions();
         var a = new Var("input", new TensorType(DataTypes.Float32, inShape));
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
@@ -283,19 +269,18 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
         {
             new FoldConstCall(),
             new CombinePadTranspose(),
-        }, caseOptions);
+        }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         var vpre = rootPre.Evaluate(normal);
         var vpost = rootPost.Evaluate(normal);
-        Assert.True(TestFixture.Comparator.AllEqual(vpre, vpost));
+        Assert.True(Comparator.AllEqual(vpre, vpost));
     }
 
     [Theory]
     [MemberData(nameof(TestCombineTransposeReducePositiveData))]
     public void TestCombineTransposeReducePositive(int[] inShape, int[] perm, int axis, int initValue, bool keepDims)
     {
-        var caseOptions = GetPassOptions();
         var a = new Var();
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
@@ -303,17 +288,16 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new CombineTransposeReduce(),
-        }, caseOptions);
+        }, new());
 
         Assert.NotEqual(rootPre, rootPost);
-        Assert.True(TestFixture.Comparator.AllEqual(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal)));
+        Assert.True(Comparator.AllEqual(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal)));
     }
 
     [Theory]
     [MemberData(nameof(TestCombineTransposeUnaryPositiveData))]
     public void TestCombineTransposeUnaryPositive(UnaryOp opType, int[] inShape, int[] perm)
     {
-        var caseOptions = GetPassOptions();
         var a = new Var();
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
@@ -321,9 +305,9 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new CombineTransposeUnary(),
-        }, caseOptions);
+        }, new());
 
         Assert.NotEqual(rootPre, rootPost);
-        Assert.True(TestFixture.Comparator.AllEqual(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal)));
+        Assert.True(Comparator.AllEqual(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal)));
     }
 }

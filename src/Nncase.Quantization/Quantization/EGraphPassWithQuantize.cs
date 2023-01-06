@@ -19,7 +19,7 @@ public class EGraphPassWithQuantize : EGraphPass
     /// <inheritdoc/>
     protected override async Task OnPostRewriteAsync(EGraph graph, RunPassContext context)
     {
-        var quantizer = new Quantizer(graph, CompileSession.CompileOptions.QuantizeOptions, context.Dumpper);
+        var quantizer = new Quantizer(graph, CompileSession.CompileOptions.QuantizeOptions);
         await quantizer.RunAsync(context);
     }
 }

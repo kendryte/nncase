@@ -193,7 +193,7 @@ internal sealed class RuleGenerator : IIncrementalGenerator
 
             // 2. consturct wrapper method.
             var method = MethodDeclaration(ParseTypeName("Nncase.IR.Expr?"), Identifier("GetReplace").WithLeadingTrivia(ElasticSpace))
-                        .WithParameterList(ParseParameterList("(IMatchResult __result, RunPassOptions __context)"))
+                        .WithParameterList(ParseParameterList("(IMatchResult __result, RunPassContext __context)"))
                         .WithModifiers(modifiers)
                         .WithBody(Block(statements.Select(s => s
                                 .WithLeadingTrivia(ElasticTab)

@@ -20,12 +20,12 @@ public interface ICompiler
     /// </summary>
     /// <param name="content">Model content.</param>
     /// <returns>Imported ir module.</returns>
-    IRModule ImportModule(Stream content);
+    Task<IRModule> ImportModuleAsync(Stream content);
 
     /// <summary>
     /// Compile module.
     /// </summary>
-    void Compile();
+    Task CompileAsync();
 
     /// <summary>
     /// Generate code to stream.

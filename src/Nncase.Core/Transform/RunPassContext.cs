@@ -15,8 +15,13 @@ namespace Nncase.Transform;
 /// <summary>
 /// Options for running pass.
 /// </summary>
-public sealed record RunPassContext(IDumpper Dumpper)
+public sealed record RunPassContext
 {
+    /// <summary>
+    /// Gets or sets pass index in a <see cref="PassManager"/>.
+    /// </summary>
+    public int Index { get; set; }
+
     /// <summary>
     /// Gets or sets a value indicating whether control rewrite once or not.
     /// Default is false.

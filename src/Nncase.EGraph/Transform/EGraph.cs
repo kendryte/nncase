@@ -171,7 +171,7 @@ public sealed partial class EGraph : IEGraph
                 _nodes.Remove(enode);
                 originalClass.RemoveNode(enode);
 
-                // 2. Update node's children
+                // 2. Replace node's children
                 var newNode = enode.Canonicalize();
 
                 if (_nodes.TryGetValue(newNode, out var existingEntry))

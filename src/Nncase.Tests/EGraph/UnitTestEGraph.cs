@@ -8,13 +8,15 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.Tests.TestFixture;
 using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Math;
 
 namespace Nncase.Tests.EGraphTest;
 
-public class UnitTestEGraph : TestFixture.UnitTestFixtrue
+[AutoSetupTestMethod(InitSession = false)]
+public class UnitTestEGraph : TestClassBase
 {
     [Fact]
     public void TestEqualEClass()
@@ -32,8 +34,8 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
         var node1 = ENode.Create((Var)"x", Array.Empty<EClass>());
         var node2 = ENode.Create((Var)"x", Array.Empty<EClass>());
         var node3 = ENode.Create((Var)"y", Array.Empty<EClass>());
-        Assert.Equal(node1, node2);
-        Assert.Equal(node1.GetHashCode(), node2.GetHashCode());
+        Assert.NotEqual(node1, node2);
+        Assert.NotEqual(node1.GetHashCode(), node2.GetHashCode());
         Assert.NotEqual(node1, node3);
         Assert.NotEqual(node1.GetHashCode(), node3.GetHashCode());
     }
@@ -93,7 +95,6 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
 
         var e5 = egraph.Add(call2);
         Assert.StrictEqual(e5.Find(), e4.Find());
-        EGraphPrinter.DumpEgraphAsDot(egraph, $"{nameof(TestENodeCallHashEGraph)}.dot");
     }
 
     [Fact]
@@ -184,20 +185,16 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
         // but after rebuid, (x*2) is not in worklist,
         // so it's eclass in hashcon will not be update
         // should fix it.
-        var passOptions = GetPassOptions();
         var g = new EGraph();
         Var x = "x";
         var e1 = g.Add(x * 2);
         var e2 = g.Add(x << 1);
         var e3 = g.Add((x * 2) + 1 + 3);
         var e4 = g.Add((x << 1) + 1 + 3);
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "before"));
 
         g.Union(e1, e2);
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "merge"));
 
         g.Rebuild();
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "rebuild"));
 
         Assert.StrictEqual(e3.Find(), e4.Find());
     }
@@ -205,7 +202,6 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestRebuildUpdateUsed()
     {
-        var passOptions = GetPassOptions();
         var g = new EGraph();
         Var x = "x";
         var e1 = g.Add(x * 2);
@@ -213,15 +209,10 @@ public class UnitTestEGraph : TestFixture.UnitTestFixtrue
         var e3 = g.Add(x * 4);
         var e4 = g.Add(x * 2 * 2);
         _ = g.Add(x * 2 * (x * 4));
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "before"));
         g.Union(e2, e1);
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "merge_lhs"));
         g.Rebuild();
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "rebuild_lhs"));
         g.Union(e4, e3);
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "merge_rhs"));
         g.Rebuild();
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.DumpDir, "rebuild_rhs"));
         foreach (var enode in g.Nodes)
         {
             foreach (var child in enode.Children)

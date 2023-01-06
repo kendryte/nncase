@@ -3,11 +3,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Nncase;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
+using Nncase.Tests.TestFixture;
 using Nncase.Transform;
 using Nncase.Transform.Rules.Neutral;
 using Xunit;
@@ -20,7 +22,8 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.MatchTest;
 
-public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
+[AutoSetupTestMethod(InitSession = false)]
+public class UnitTestDataFlowMatch : TestClassBase
 {
     [Fact]
     public void TestMatchDataFlowCallCommutive()
@@ -89,6 +92,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
     }
 
     [Fact]
+    [AutoSetupTestMethod(InitSession = true)]
     public void TestNotMatchFoldConstCall()
     {
         var rule = new Transform.Rules.Neutral.FoldConstCall();
@@ -98,6 +102,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
     }
 
     [Fact]
+    [AutoSetupTestMethod(InitSession = true)]
     public void TestMatchFoldConstCallTupleWithConst()
     {
         var rule = new Transform.Rules.Neutral.FoldConstCall();
@@ -108,6 +113,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
     }
 
     [Fact]
+    [AutoSetupTestMethod(InitSession = true)]
     public void TestMatchFoldConstCallTwiceFalse()
     {
         var rule = new Transform.Rules.Neutral.FoldConstCall();
@@ -134,6 +140,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
     }
 
     [Fact]
+    [AutoSetupTestMethod(InitSession = true)]
     public void TestMatchMultiBranch()
     {
         /*
@@ -141,7 +148,6 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
             1. 但是实际上如果 ((a - (b + c)) + (c * d)) 修改了b + c => b - c, 然后 b + c添加到rewrite memo中了,但是后续的a - (b+c)是mutator自动构造出来的, 此时在遍历老的expr的时候还是看到是a - (b+c), 并没有起到rewrite memo的作用
             2. 我理解应该是类似egraph, 如果遍历的是被替换过的新节点, 那么之间visit 新节点, 否则应该match老节点的类型, 然后leaf节点则匹配自动update 的ExprMemo中的节点.
          */
-        var caseOptions = GetPassOptions();
         Expr a = 1;
         Expr b = 2;
         Expr c = 3;
@@ -149,10 +155,9 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
         var pre = a - (b + c) + (c * d);
         CompilerServices.InferenceType(pre);
 
-        var visitor = new DataFlowRewriteVisitor(new SimpleRule(), caseOptions);
+        var visitor = new DataFlowRewriteVisitor(new SimpleRule(), new());
         var post = visitor.Visit(pre);
         Assert.True(visitor.IsMutated);
-        CompilerServices.DumpIR(post, "post", caseOptions.DumpDir);
 
         if (post is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub } } root_call)
         {
@@ -168,7 +173,8 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
     }
 
     [Fact]
-    public async void TestMultiFusion()
+    [AutoSetupTestMethod(InitSession = true)]
+    public async Task TestMultiFusion()
     {
         /*
           之前fusion的逻辑是匹配 input -> op -> output 三个节点,然后在ouput上找到对应的 input替换成新的var
@@ -176,7 +182,6 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
           todo 主要问题是get replace得到的root节点是没有更新过的, 但是他的叶节点是更新过的, 带来了思维上的不一致, 如果可以在进入get replace之前构造一个更新后的root, 这样让别人在get replace里面手动遍历节点也不会出错了.
           note 目前是手动在所有fusion的逻辑里面更新一下, 需要修改的地方有点多.
          */
-        var caseOptions = GetPassOptions();
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
         Function pre;
         {
@@ -194,20 +199,18 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
             pre = new Function("main", v10, new Var[] { input });
         }
 
-        CompilerServices.InferenceType(pre);
+        Assert.True(CompilerServices.InferenceType(pre));
 
-        var pass = new DataflowPass("Fusion")
-            {
-                new UnaryFusion(),
-                new TransposeFusion(),
-            };
-        _ = await pass.RunAsync(pre, caseOptions);
+        var pass = new DataflowPass { Name = "Fusion" };
+        pass.Add<UnaryFusion>();
+        pass.Add<TransposeFusion>();
+        await pass.RunAsync(pre, new());
     }
 
     [Fact]
-    public async void TestFuseMultiFusion()
+    [AutoSetupTestMethod(InitSession = true)]
+    public async Task TestFuseMultiFusion()
     {
-        var caseOptions = GetPassOptions();
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
         Function pre;
         {
@@ -224,27 +227,22 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
             pre = new Function("main", v10, new Var[] { input });
         }
 
-        CompilerServices.InferenceType(pre);
+        Assert.True(CompilerServices.InferenceType(pre));
 
-        var pass = new DataflowPass("Fusion")
-            {
-                new UnaryFusion(),
-                new TransposeFusion(),
-            };
+        var pass = new DataflowPass { Name = "Fusion" };
+        pass.Add<UnaryFusion>();
+        pass.Add<TransposeFusion>();
+        var post = await pass.RunAsync(pre, new());
 
-        var post = await pass.RunAsync(pre, caseOptions);
-
-        var pass2 = new DataflowPass("FuseFusion")
-        {
-          new SimpleFuseTwoFusion(),
-        };
-        _ = await pass2.RunAsync(post, caseOptions);
+        var pass2 = new DataflowPass { Name = "FuseFusion" };
+        pass.Add<SimpleFuseTwoFusion>();
+        _ = await pass2.RunAsync(post, new());
     }
 
     [Fact]
-    public async void TestMatchPairLayerFusion()
+    [AutoSetupTestMethod(InitSession = true)]
+    public async Task TestMatchPairLayerFusion()
     {
-        var caseOptions = GetPassOptions();
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
         Function pre;
         {
@@ -257,29 +255,25 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
             pre = new Function("main", v10, new Var[] { input });
         }
 
-        CompilerServices.InferenceType(pre);
+        Assert.True(CompilerServices.InferenceType(pre));
 
-        var pass = new DataflowPass("Fusion")
-        {
-            new UnaryFusion(),
-            new TransposeFusion(),
-        };
+        var pass = new DataflowPass { Name = "Fusion" };
+        pass.Add<UnaryFusion>();
+        pass.Add<TransposeFusion>();
+        var post = await pass.RunAsync(pre, new());
 
-        var post = await pass.RunAsync(pre, caseOptions);
+        var pass2 = new DataflowPass { Name = "FuseFusion" };
+        pass.Add<SimpleFuseTwoFusion>();
+        var post2 = await pass2.RunAsync(post, new());
 
-        var pass2 = new DataflowPass("FuseFusion")
-        {
-            new SimpleFuseTwoFusion(),
-        };
-        var post2 = await pass2.RunAsync(post, caseOptions);
         var isMatch = CompilerServices.TryMatch(post2, IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
         Assert.True(isMatch);
     }
 
     [Fact]
-    public async void TestMatchPairLayerFusionForSingleFusion()
+    [AutoSetupTestMethod(InitSession = true)]
+    public async Task TestMatchPairLayerFusionForSingleFusion()
     {
-        var caseOptions = GetPassOptions();
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
         Function pre;
         {
@@ -289,17 +283,15 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
             pre = new Function("main", v6, new Var[] { input });
         }
 
-        CompilerServices.InferenceType(pre);
-        var pass = new DataflowPass("Fusion")
-        {
-            new UnaryFusion(),
-        };
-        var result = await pass.RunAsync(pre, caseOptions);
+        var pass = new DataflowPass { Name = "Fusion" };
+        pass.Add<UnaryFusion>();
+        var result = await pass.RunAsync(pre, new());
         var isMatch = CompilerServices.TryMatch(result, IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
         Assert.True(isMatch);
     }
 
     [Fact]
+    [AutoSetupTestMethod(InitSession = true)]
     public void TestMatchUpdatedVargs()
     {
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 3, 4 });
@@ -321,13 +313,13 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
         var pattern = IsCall("root", IsWildcard(), IsVArgs(
             "root_inputs",
             new Pattern[]
-                                                            {
-                                                                IsUnary(null, "lhs", _ => true, IsWildcard()),
-                                                                IsUnary(null, "rhs", _ => true, IsWildcard()),
-                                                            }));
+            {
+                IsUnary(null, "lhs", _ => true, IsWildcard()),
+                IsUnary(null, "rhs", _ => true, IsWildcard()),
+            }));
 
         Assert.True(CompilerServices.TryMatchRoot(pre, pattern, new() { RewriteMemo = dict }, out var result));
-        var root_inputs = (IReadOnlyList<Expr>)result["root_inputs"];
+        var root_inputs = (IReadOnlyList<Expr>)result!["root_inputs"];
         var lhs = (Call)result["lhs"];
         Assert.True(object.ReferenceEquals(root_inputs[0], lhs));
         Assert.True(lhs is Call { Target: Unary { UnaryOp: UnaryOp.Tanh } });
@@ -338,10 +330,10 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
     {
         public override Expr EliminateRedundancy(Expr newBodyWithRedundancy, RunPassContext passOptions)
         {
-            return CompilerServices.Rewrite(newBodyWithRedundancy, new[]
-            {
-              new Transform.Rules.Neutral.FoldDeQuantQuant(),
-            }, passOptions.SetDumpLevel(0));
+            return CompilerServices.Rewrite(
+                newBodyWithRedundancy,
+                new[] { new FoldDeQuantQuant() },
+                passOptions);
         }
     }
 

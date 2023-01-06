@@ -20,7 +20,7 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
 {
     private readonly ILogger _logger;
 
-    public EGraphRewriteProvider(ILogger logger)
+    public EGraphRewriteProvider(ILogger<EGraphRewriteProvider> logger)
     {
         _logger = logger;
     }
@@ -35,7 +35,7 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
         var graph = new EGraph();
         var root = graph.Add(expr);
         ERewrite(graph, rules, options);
-        var post = graph.Extract(root, null, options);
+        var post = graph.Extract(root, null);
         return post;
     }
 
@@ -53,9 +53,9 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
                 {
                     matches.Add((rule, results));
 
-                    if (context.Dumpper.IsEnabled(DumpFlags.Rewrite) && results.Count != 0)
+                    if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite) && results.Count != 0)
                     {
-                        using var fs = context.Dumpper.OpenWrite(Path.Combine("Matches", $"V{eGraph.Version}_{count++}_{rule.GetType().Name}.dot"));
+                        using var fs = DumpScope.Current.OpenFile(Path.Combine("Matches", $"V{eGraph.Version}_{count++}_{rule.GetType().Name}.dot"));
                         EGraphPrinter.DumpEgraphAsDot(eGraph, results, fs);
                     }
                 }
@@ -94,9 +94,9 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
             }
 
             eGraph.Rebuild();
-            if (context.Dumpper.IsEnabled(DumpFlags.Rewrite))
+            if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
             {
-                using var fs = context.Dumpper.OpenWrite(Path.Combine("Rebuild", $"V{eGraph.Version}.dot"));
+                using var fs = DumpScope.Current.OpenFile(Path.Combine("Rebuild", $"V{eGraph.Version}.dot"));
                 EGraphPrinter.DumpEgraphAsDot(eGraph, fs);
             }
         }

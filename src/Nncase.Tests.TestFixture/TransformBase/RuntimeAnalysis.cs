@@ -4,7 +4,7 @@
 using Nncase.IR;
 using Nncase.Utilities;
 
-namespace Nncase.TestFixture;
+namespace Nncase.Tests;
 
 /// <summary>
 /// dump output shape group by op.

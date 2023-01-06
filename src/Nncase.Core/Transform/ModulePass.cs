@@ -26,11 +26,11 @@ public abstract class ModulePass : Pass<IRModule>
     /// <inheritdoc/>
     protected override Task OnPassStartAsync(IRModule input, RunPassContext context)
     {
-        if (context.Dumpper.IsEnabled(DumpFlags.PassIR))
+        if (DumpScope.Current.IsEnabled(DumpFlags.PassIR))
         {
             foreach (var func in input.Functions)
             {
-                context.Dumpper.DumpIR(func, func.Name, "Start");
+                DumpScope.Current.DumpIR(func, func.Name, "Start");
             }
         }
 
@@ -40,11 +40,11 @@ public abstract class ModulePass : Pass<IRModule>
     /// <inheritdoc/>
     protected override Task OnPassEndAsync(IRModule post, RunPassContext context)
     {
-        if (context.Dumpper.IsEnabled(DumpFlags.PassIR))
+        if (DumpScope.Current.IsEnabled(DumpFlags.PassIR))
         {
             foreach (var func in post.Functions)
             {
-                context.Dumpper.DumpIR(func, func.Name, "End");
+                DumpScope.Current.DumpIR(func, func.Name, "End");
             }
         }
 

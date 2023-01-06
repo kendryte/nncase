@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Nncase.Diagnostics;
 using Nncase.IR;
 
 namespace Nncase.Evaluator;
@@ -22,7 +23,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
         _context = new EvaluateContext(ExpressionMemo);
         _evaluator_cache = evaluator_cache;
         _varsValues = varsValues;
-        _dumpManager = new EvaluatorDumpManager(expr => _context.GetValue(expr).AsTensors());
+        _dumpManager = new EvaluatorDumpManager(DumpScope.Current.CreateSubDummper("Evaluate"), expr => _context.GetValue(expr).AsTensors());
         _dumpManager.RegisterDumpCallbacks(RegisterBeforeCallback, RegisterAfterCallback);
     }
 

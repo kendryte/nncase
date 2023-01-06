@@ -8,7 +8,9 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Diagnostics;
 using Nncase.IR.F;
+using Nncase.Tests.TestFixture;
 using Nncase.Transform;
 using Nncase.Transform.Rules.Neutral;
 using Xunit;
@@ -17,7 +19,8 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFoldTranspose : TestFixture.UnitTestFixtrue
+[AutoSetupTestMethod(InitSession = true)]
+public class UnitTestFoldTranspose : TestClassBase
 {
     public static IEnumerable<object[]> TestFoldNopTransposePositiveData =>
         new[]
@@ -59,10 +62,9 @@ public class UnitTestFoldTranspose : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopTransposePositiveData))]
     public void TestFoldNopTransposePositive(int[] shape, int[] perm)
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Transpose(a, perm);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopTranspose() }, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopTranspose() }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -72,10 +74,9 @@ public class UnitTestFoldTranspose : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldTwoTransposesPositiveData))]
     public void TestFoldTwoTransposesPositive(int count, int[] shape, int[] perm1, int[] perm2)
     {
-        var caseOptions = GetPassOptions().IndentDir(count.ToString());
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Transpose(Tensors.Transpose(a, perm1), perm2);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoTransposes() }, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoTransposes() }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -85,14 +86,13 @@ public class UnitTestFoldTranspose : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestTransposeToReshapePositiveData))]
     public void TestTransposeToReshapePositive(int[] shape, int[] perm)
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Transpose(a, perm);
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new FoldShapeOf(),
             new TransposeToReshape(),
-        }, caseOptions);
+        }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -102,12 +102,12 @@ public class UnitTestFoldTranspose : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestCombineTransposeActivationsPositiveData))]
     public void TestCombineTransposeActivationsPositive((int count, IR.Expr act, int[] perm) param)
     {
-        var caseOptions = GetPassOptions().IndentDir(param.count.ToString());
+        using var dumpScope = new DumpScope($"{param.count}");
         var rootPre = Tensors.Transpose(param.act, param.perm);
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new CombineTransposeActivations(),
-        }, caseOptions);
+        }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -117,12 +117,12 @@ public class UnitTestFoldTranspose : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestCombineTransposeActivationsNegativeData))]
     public void TestCombineTransposeActivationsNegative((int count, IR.Expr act, int[] perm) param)
     {
-        var caseOptions = GetPassOptions().IndentDir(param.count.ToString());
+        using var dumpScope = new DumpScope($"{param.count}");
         var rootPre = Tensors.Transpose(param.act, param.perm);
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new CombineTransposeActivations(),
-        }, caseOptions);
+        }, new());
 
         Assert.Equal(rootPre, rootPost);
     }

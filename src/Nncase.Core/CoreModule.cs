@@ -3,6 +3,7 @@
 
 using DryIoc;
 using Nncase.Hosting;
+using Nncase.IR;
 
 namespace Nncase;
 
@@ -14,9 +15,8 @@ internal class CoreModule : IApplicationPart
     public void ConfigureServices(IRegistrator registrator)
     {
         registrator.RegisterManyInterface<CompilerServicesProvider>(reuse: Reuse.Singleton);
-        registrator.RegisterManyInterface<DataTypeServiceProvider>(reuse: Reuse.Singleton);
-        registrator.RegisterManyInterface<IR.IRPrinterProvider>(reuse: Reuse.Singleton);
-        registrator.RegisterManyInterface<CompileOptions>(reuse: Reuse.Singleton);
+        registrator.Register<IDataTypeServiceProvider, DataTypeServiceProvider>(reuse: Reuse.Singleton);
+        registrator.Register<IIRPrinterProvider, IRPrinterProvider>(reuse: Reuse.Singleton);
 
         // Prim types
         registrator.Register<PrimType, BooleanType>(reuse: Reuse.Singleton);

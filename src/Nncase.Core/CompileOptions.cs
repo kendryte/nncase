@@ -10,6 +10,30 @@ namespace Nncase;
 /// <summary>
 /// Compile options.
 /// </summary>
-public sealed record CompileOptions(string InputFile, string InputFormat, DumpFlags DumpFlags, string DumpDir, QuantizeOptions QuantizeOptions)
+public sealed record CompileOptions
 {
+    /// <summary>
+    /// Gets or sets input file.
+    /// </summary>
+    public string InputFile { get; set; } = "<stream>";
+
+    /// <summary>
+    /// Gets or sets the import model format.
+    /// </summary>
+    public string InputFormat { get; set; } = "onnx";
+
+    /// <summary>
+    /// Gets or sets the dump flags.
+    /// </summary>
+    public DumpFlags DumpFlags { get; set; } = DumpFlags.None;
+
+    /// <summary>
+    /// Gets or sets the dump directory.
+    /// </summary>
+    public string DumpDir { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets quant options.
+    /// </summary>
+    public QuantizeOptions QuantizeOptions { get; set; } = QuantizeOptions.CreateNoQuant();
 }

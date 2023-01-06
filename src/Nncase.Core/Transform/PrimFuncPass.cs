@@ -49,8 +49,6 @@ public class PrimFuncPass : Pass<PrimFunction>
         return this;
     }
 
-    internal override string? GetDumpRelativePass(PrimFunction input) => input.Name;
-
     /// <inheritdoc/>
     protected override Task<PrimFunction> RunCoreAsync(PrimFunction input, RunPassContext context)
     {
@@ -69,9 +67,9 @@ public class PrimFuncPass : Pass<PrimFunction>
                 if (isMutated)
                 {
                     var typeInferSuccess = CompilerServices.InferenceType(post);
-                    if (context.Dumpper.IsEnabled(DumpFlags.PassIR))
+                    if (DumpScope.Current.IsEnabled(DumpFlags.PassIR))
                     {
-                        context.Dumpper.DumpIR(post, $"{count++}_{mutator.GetType().Name}");
+                        DumpScope.Current.DumpIR(post, $"{count++}_{mutator.GetType().Name}");
                     }
 
                     Trace.Assert(typeInferSuccess);
@@ -95,6 +93,8 @@ public class PrimFuncPass : Pass<PrimFunction>
     /// <inheritdoc/>
     protected override Task OnPassEndAsync(PrimFunction post, RunPassContext context) => Task.CompletedTask;
 
+    private protected override string? GetDumpRelativePass(PrimFunction input) => input.Name;
+
     private struct MutatorDescriptor
     {
         public ObjectFactory Factory;
@@ -104,7 +104,7 @@ public class PrimFuncPass : Pass<PrimFunction>
         public ExprMutator Activate(CompileSession compileSession)
         {
             using var scope = new CompileSessionScope(compileSession);
-            var mutator = (ExprMutator)Factory(compileSession.ServiceProvider, Arguments);
+            var mutator = (ExprMutator)Factory(compileSession, Arguments);
             Configure?.Invoke(mutator);
             return mutator;
         }

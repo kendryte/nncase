@@ -18,14 +18,12 @@ namespace Nncase;
 /// <summary>
 /// Compile session.
 /// </summary>
-public sealed class CompileSession : IDisposable
+public sealed class CompileSession : IServiceProvider, IDisposable
 {
     private readonly IResolverContext _serviceProvider;
 
     private bool _disposedValue;
     private ICompiler? _compiler;
-    private IDumpperFactory? _dumpperFactory;
-    private IModelBuilder? _modelBuilder;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CompileSession"/> class.
@@ -41,11 +39,6 @@ public sealed class CompileSession : IDisposable
     }
 
     /// <summary>
-    /// Gets service provider.
-    /// </summary>
-    public IServiceProvider ServiceProvider => _serviceProvider;
-
-    /// <summary>
     /// Gets target.
     /// </summary>
     public ITarget Target { get; }
@@ -58,17 +51,7 @@ public sealed class CompileSession : IDisposable
     /// <summary>
     /// Gets compiler.
     /// </summary>
-    public ICompiler Compiler => _compiler ??= ServiceProvider.GetRequiredService<ICompiler>();
-
-    /// <summary>
-    /// Gets model builder.
-    /// </summary>
-    public IModelBuilder ModelBuilder => _modelBuilder ??= ServiceProvider.GetRequiredService<IModelBuilder>();
-
-    /// <summary>
-    /// Gets dumpper factory.
-    /// </summary>
-    public IDumpperFactory DumpperFactory => _dumpperFactory ??= ServiceProvider.GetRequiredService<IDumpperFactory>();
+    public ICompiler Compiler => _compiler ??= this.GetRequiredService<ICompiler>();
 
     /// <summary>
     /// Create new compile session.
@@ -78,8 +61,7 @@ public sealed class CompileSession : IDisposable
     /// <returns>Created compile session.</returns>
     public static CompileSession Create(ITarget target, CompileOptions compileOptions)
     {
-        var rootContainer = (IContainer)CompilerServices.ServiceProvider;
-        var childContainer = rootContainer.CreateChild(RegistrySharing.CloneButKeepCache, new object());
+        var childContainer = CompilerServices.CreateScope();
         childContainer.RegisterInstance(target);
         childContainer.RegisterInstance(compileOptions);
 
@@ -88,14 +70,17 @@ public sealed class CompileSession : IDisposable
         return session;
     }
 
+    /// <inheritdoc/>
+    public object? GetService(Type serviceType) => _serviceProvider.GetService(serviceType);
+
     /// <summary>
     /// Create new pass manager.
     /// </summary>
     /// <param name="name">Name.</param>
     /// <returns>Created pass manager.</returns>
-    public PassManager CreatePassManager(string name)
+    public IPassManager CreatePassManager(string name)
     {
-        return ActivatorUtilities.CreateInstance<PassManager>(ServiceProvider, name);
+        return new PassManager(name, this);
     }
 
     /// <inheritdoc/>
