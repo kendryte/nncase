@@ -1,26 +1,39 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Nncase.PatternMatch;
 using Nncase.Transform;
 using Nncase.Transform.Mutators;
 using Nncase.Transform.Rules.Neutral;
+using Nncase.Utilities;
 using Xunit;
+using Xunit.Abstractions;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.Utility;
+using static Nncase.TestFixture.DataGenerator;
 
 namespace Nncase.Tests.ReWrite.FusionTest;
 
 public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
 {
+    private readonly ITestOutputHelper _testOutputHelper;
+
+    public UnitTestFusionMaker(ITestOutputHelper testOutputHelper)
+    {
+        _testOutputHelper = testOutputHelper;
+    }
+
     [Fact]
     public async void TestMultiFusion()
     {
@@ -44,14 +57,11 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
 
         CompilerServices.InferenceType(pre);
 
-        var pass = new DataflowPass("Fusion")
-            {
-                new TestUnaryFusion(),
-                new TestTransposeFusion(),
-            };
+        var pass = new DataflowPass("Fusion") { new TestUnaryFusion(), new TestTransposeFusion(), };
         var post = await pass.RunAsync(pre, caseOptions);
 
-        var isMatch = CompilerServices.TryMatch(post, IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
+        var isMatch = CompilerServices.TryMatch(post,
+            IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
         Assert.True(isMatch);
     }
 
@@ -73,24 +83,20 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
 
         CompilerServices.InferenceType(pre);
 
-        var pass = new DataflowPass("Fusion")
-        {
-            new TestUnaryFusion(),
-            new TestTransposeFusion(),
-        };
+        var pass = new DataflowPass("Fusion") { new TestUnaryFusion(), new TestTransposeFusion(), };
 
         var post = await pass.RunAsync(pre, caseOptions);
 
         var rewriter = new DataFlowMergeRewriter();
-        var post2 = (Function)rewriter.Rewrite(post, new IMergeRewriteRule[]
-        {
-            new SameInputFusionMergeRule(),
-            new MultiInputFusionMergeRule(),
-            new ShortCutFusionMergeRule(),
-        }, (usedby, rule, option) => new FusionGroupMutator(usedby, rule, option),
-          caseOptions);
+        var post2 = (Function)rewriter.Rewrite(post,
+            new IMergeRewriteRule[]
+            {
+                new SameInputFusionMergeRule(), new MultiInputFusionMergeRule(), new ShortCutFusionMergeRule(),
+            }, (usedby, rule, option) => new FusionGroupMutator(usedby, rule, option),
+            caseOptions);
 
-        var isMatch = CompilerServices.TryMatch(post2, IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
+        var isMatch = CompilerServices.TryMatch(post2,
+            IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
         Assert.True(isMatch);
     }
 
@@ -108,12 +114,10 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
         }
 
         CompilerServices.InferenceType(pre);
-        var pass = new DataflowPass("Fusion")
-        {
-            new TestUnaryFusion(),
-        };
+        var pass = new DataflowPass("Fusion") { new TestUnaryFusion(), };
         var result = await pass.RunAsync(pre, caseOptions);
-        var isMatch = CompilerServices.TryMatch(result, IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
+        var isMatch = CompilerServices.TryMatch(result,
+            IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
         Assert.True(isMatch);
     }
 
@@ -125,7 +129,8 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
         Function pre;
         {
             var v1 = WrapperWith(x => Transpose(x[0], new[] { 0, 3, 1, 2 }), input); // f32[1,3,24,32]
-            var v3 = WrapperWith(x => x[0] + x[1], v1, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 24, 32 }));
+            var v3 = WrapperWith(x => x[0] + x[1], v1,
+                IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 24, 32 }));
             var v5 = WrapperWith(x => Unary(UnaryOp.Abs, x[0]), v3); // f32[1,3,24,32]
             var v9 = WrapperWith(x => Transpose(x[0], new[] { 0, 2, 3, 1 }), v5); // f32[1,24,32,3]
             pre = new Function("main", v9, new Var[] { input });
@@ -134,11 +139,9 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
         CompilerServices.InferenceType(pre);
 
         var pass = new DataflowPass("Fusion")
-            {
-                new TestUnaryFusion(),
-                new TestTransposeFusion(),
-                new TestBinaryFusion(),
-            };
+        {
+            new TestUnaryFusion(), new TestTransposeFusion(), new TestBinaryFusion(),
+        };
 
         var post = (Function)await pass.RunAsync(pre, caseOptions);
         CompilerServices.DumpDotIR(post, string.Empty, caseOptions.DumpDir);
@@ -155,7 +158,8 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
         Function pre;
         {
             var v1 = WrapperWith(x => Transpose(x[0], new[] { 0, 3, 1, 2 }), input); // f32[1,3,24,32]
-            var v3 = WrapperWith(x => x[0] + x[1], IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 24, 32 }).Evaluate().AsTensor(), v1);
+            var v3 = WrapperWith(x => x[0] + x[1],
+                IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 24, 32 }).Evaluate().AsTensor(), v1);
             var v5 = WrapperWith(x => Unary(UnaryOp.Abs, x[0]), v3); // f32[1,3,24,32]
             var v6 = WrapperWith(x => x[0], v5);
             var v9 = WrapperWith(x => Transpose(x[0], new[] { 0, 2, 3, 1 }), v6); // f32[1,24,32,3]
@@ -165,12 +169,9 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
         CompilerServices.InferenceType(pre);
 
         var pass = new DataflowPass("Fusion")
-            {
-                new TestUnaryFusion(),
-                new TestTransposeFusion(),
-                new TestBinaryFusion(),
-                new TestDataTransFusion(),
-            };
+        {
+            new TestUnaryFusion(), new TestTransposeFusion(), new TestBinaryFusion(), new TestDataTransFusion(),
+        };
 
         var post = (Function)await pass.RunAsync(pre, caseOptions);
         CompilerServices.DumpDotIR(post, string.Empty, caseOptions.DumpDir);
@@ -185,6 +186,86 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
         var output = ctor(new_inputs);
         return Dequantize(output, new QuantParam(0, 1), DataTypes.Float32);
     }
+
+    [Fact]
+    public async void TestComplexFusion()
+    {
+        Call WrapInput(Var var)
+        {
+            return Quantize(var, default(QuantParam), DataTypes.Int8);
+        }
+
+        IR.Tuple WrapOutput(Call call)
+        {
+            var outputs = Enumerable.Range(0, 2).Select(i => GetItem(call, i)).ToArray();
+            var exprs = outputs.Select(f => (Expr)Dequantize(f, default(QuantParam), DataTypes.Float32)).ToArray();
+            return new IR.Tuple(exprs);
+        }
+
+        var inputSize = 2;
+        var hiddenSize = 3;
+        var numberOfGates = 4;
+        var x = new Var(new TensorType(DataTypes.Float32, new[] { 1, 3, 2 }));
+        var w = new Var(new TensorType(DataTypes.Float32, new[] { 1, numberOfGates * hiddenSize, inputSize }));
+        var r = new Var(new TensorType(DataTypes.Float32, new[] { 1, numberOfGates * hiddenSize, hiddenSize }));
+        var b = DefaultRandom(new[] { 1, 1, 1, 1 });
+        var init_h = DefaultRandom(new[] { 1, 1, 1, 1 });
+        var init_c = DefaultRandom(new[] { 1, 1, 1, 1 });
+        var dt = DataTypes.Int8;
+        var lstm = IR.F.RNN.LSTM(LSTMDirection.Bidirectional, LSTMLayout.One, new[] { "act" },
+            WrapInput(x),
+            WrapInput(w),
+            WrapInput(r),
+            b,
+            0, init_h,
+            init_c,
+            0, 0, 0, 0, hiddenSize, 0, 2);
+
+        var tuple = WrapOutput(lstm);
+        Assert.True(tuple.InferenceType());
+        var f = new Function("main", tuple, new[] { x, w, r });
+        var pass = new DataflowPass("TestComplexFusion");
+        pass.Add(new LSTMFusion());
+        var caseOptions = GetPassOptions();
+        var afterCall = (Call)((Function)await pass.RunAsync(f, caseOptions)).Body;
+
+        var newVars = ((Fusion)afterCall.Target).Parameters;
+        var nv0 = newVars[0];
+        var nv1 = newVars[1];
+        var nv2 = newVars[2];
+        var expectLSTM = ReplaceUtility.ReplaceParams(lstm, (LSTM.X, WrapInput(nv0)), (LSTM.W, WrapInput(nv1)), (LSTM.R, WrapInput(nv2)));
+        var expectBody = WrapOutput(expectLSTM);
+        var expectCall = new Call(new Fusion("FusionMaker_0", "StackVM", expectBody, new[]{nv0, nv1, nv2}), x, w, r);
+        expectCall.InferenceType();
+        CompilerServices.DumpIR(afterCall, "actual", "/Users/homura/Code/nncase");
+        CompilerServices.DumpIR(expectCall, "expect", "/Users/homura/Code/nncase");
+        // var fusionBody = ((Fusion)afterCallf.Target).Body;
+        var oldDeq = tuple[0];
+        var oldGetItem = ((Call)oldDeq).Parameters[0];
+        var oldLSTM = ((Call)oldGetItem).Parameters[0];
+        var oldQuant = ((Call)oldLSTM).Parameters[0];
+        var oldVar = ((Call)oldQuant).Parameters[0];
+        var expectQuant = ((Call)expectLSTM).Parameters[0];
+        var expectVar = ((Call)expectQuant).Parameters[0];
+        Assert.Equal(oldVar, expectVar);
+        Assert.Equal(oldQuant, expectQuant);
+        Assert.Equal(oldLSTM, expectLSTM);
+        var expectDeq = ((IR.Tuple)expectBody).Fields[0];
+        var expectGetItem = ((Call)expectDeq).Parameters[0];
+        Assert.Equal(oldGetItem, expectGetItem);
+        Assert.Equal(oldDeq, expectDeq);
+        Assert.Equal(((Call)tuple.Fields[0]).Parameters[0], oldGetItem);
+        Assert.Equal(afterCall, expectCall);
+    }
+
+    internal sealed class LSTMFusion : ComplexFusion<LSTM, Quantize, Dequantize, LSTMFusion.FusionCondMaker>
+    {
+        public class FusionCondMaker
+        {
+            public static (ParameterInfo, Pattern)[] InputsPattern =
+                GenerateInputsPattern<Quantize>(new[] { LSTM.X, LSTM.W, LSTM.R });
+        }
+    }
 }
 
 internal sealed class TestDataTransFusion : DataTransferFusion<IR.Math.Quantize, IR.Math.Dequantize>
@@ -197,7 +278,8 @@ internal sealed class TestUnaryFusion : SingleInputFusion<IR.Math.Unary, IR.Math
     public override string Name { get; } = "UnaryFusion";
 }
 
-internal sealed class TestTransposeFusion : SingleInputFusion<IR.Tensors.Transpose, IR.Math.Quantize, IR.Math.Dequantize>
+internal sealed class
+    TestTransposeFusion : SingleInputFusion<IR.Tensors.Transpose, IR.Math.Quantize, IR.Math.Dequantize>
 {
     public override string Name { get; } = "TransposeFusion";
 }
