@@ -260,18 +260,6 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
         Assert.True(TestFixture.Comparator.AllEqual(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost)));
     }
 
-    [Fact]
-    public void TestCombineTransposeRelu()
-    {
-        var caseOptions = GetPassOptions();
-        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
-        var rootPre = Relu(Tensors.Transpose(a, new[] { 0, 3, 1, 2 }));
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new CombineTransposeRelu() }, caseOptions);
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
-    }
-
     [Theory]
     [MemberData(nameof(TestCombineTransposePadPositiveData))]
     public void TestCombineTransposePadPositive(int[] inShape, int[] perm, int[,] paddings, PadMode padM, float padValue)

@@ -45,7 +45,6 @@ public static class EGraphExtractExtensions
         var costModel = new EGraphCostEvaluator(root.Find(), basefunc_cost_evaluator).Evaluate();
         if (options.DumpLevel > 2)
         {
-            // TODO: dump graph
             EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, root.Find(), Path.Combine(options.DumpDir, "Costs", $"V{eGraph.Version}"));
         }
 
@@ -57,6 +56,7 @@ internal class EGraphExtractor
 {
     private readonly EGraphCostModel _costModel;
     private readonly Dictionary<EClass, Expr> _eclassMemo = new();
+    private readonly Dictionary<EClass, Expr> _markerEclassMemo = new();
 
     public EGraphExtractor(EGraphCostModel costModel)
     {
@@ -65,91 +65,124 @@ internal class EGraphExtractor
 
     public Expr Extract(EClass root)
     {
-        return Visit(root);
+        Visit(root);
+        return _eclassMemo[root];
     }
 
-    private Expr Visit(EClass eclass)
+    private void Visit(EClass eclass)
     {
-        if (!_eclassMemo.TryGetValue(eclass, out var expr))
+        var stack = new Stack<(EClass, ENode)>();
+        stack.Push((eclass, eclass.Nodes.MinBy(x => _costModel[x])!));
+        var markerEclassSet = new HashSet<EClass>();
+        while (stack.Any())
         {
-            var minCostEnode = eclass.Nodes.MinBy(x => _costModel[x]);
-            expr = minCostEnode!.Expr switch
+            (eclass, var minCostEnode) = stack.Peek();
+            if (_eclassMemo.TryGetValue(eclass, out var expr))
             {
-                Var var => VisitLeaf(minCostEnode, var),
-                TensorConst con => VisitLeaf(minCostEnode, con),
-                TupleConst con => VisitLeaf(minCostEnode, con),
-                Function func => Visit(minCostEnode, func),
-                Call call => Visit(minCostEnode, call),
-                IR.Tuple tuple => Visit(minCostEnode, tuple),
-                Op op => VisitLeaf(minCostEnode, op),
-                Marker marker => Visit(minCostEnode, marker),
-                None none => Visit(minCostEnode, none),
-                Fusion fusion => VisitLeaf(minCostEnode, fusion),
-                _ => throw new ArgumentException("Unsupported expression type."),
-            };
-            _eclassMemo.Add(eclass, expr);
-        }
+                stack.Pop();
+                continue;
+            }
 
-        var callPattern = IsCall(IsWildcard(), IsWildcard());
-        var isCallExpr = callPattern.MatchLeaf(expr);
-        if (isCallExpr == true)
-        {
-            if (((Call)expr).EnodeQuantConfigWithCosine != null)
+            switch (minCostEnode.Expr)
             {
-                var pattern = IsCall(IsWildcard(), IsWildcard());
-                var isCall = pattern.MatchLeaf(expr);
-                if (isCall == true)
-                {
-                    System.Console.WriteLine(expr + "  " + expr.CheckedType);
-                    for (int i = 0; i < ((Call)expr).EnodeQuantConfigWithCosine.Count; i++)
+                case (Var or TensorConst or TupleConst or Op or Fusion or None):
+                    expr = minCostEnode.Expr;
+                    _eclassMemo.Add(eclass, expr);
+                    stack.Pop();
+                    break;
+                case (Function or Call or IR.Tuple or Marker):
+                    var children_exprs = new List<Expr>();
+                    foreach (var child in minCostEnode.Children)
                     {
-                        for (int j = 0; j < ((Call)expr).EnodeQuantConfigWithCosine[i].Item1.Count; j++)
+                        if (!_eclassMemo.TryGetValue(child, out var child_expr))
                         {
-                            System.Console.Write(((Call)expr).EnodeQuantConfigWithCosine[i].Item1[j] + "  ");
+                            if (minCostEnode.Expr is Marker && child == eclass)
+                            {
+                                if (!_markerEclassMemo.TryGetValue(eclass, out var marker_input_expr))
+                                {
+                                    markerEclassSet.Add(eclass);
+                                    stack.Push((eclass, eclass.Nodes.Where(n => n.Expr is not Marker).MinBy(x => _costModel[x])!));
+                                }
+                                else
+                                    children_exprs.Add(marker_input_expr);
+                            }
+                            else
+                                stack.Push((child, child.Nodes.MinBy(x => _costModel[x])!));
                         }
-
-                        System.Console.WriteLine(((Call)expr).EnodeQuantConfigWithCosine[i].Item3);
+                        else
+                            children_exprs.Add(child_expr);
                     }
-                }
+                    if (children_exprs.Count != minCostEnode.Children.Count)
+                    {
+                        break;
+                    }
+                    expr = minCostEnode.Expr switch
+                    {
+                        Function function => Visit(minCostEnode, function, new(children_exprs)),
+                        Call call => Visit(minCostEnode, call, new(children_exprs)),
+                        IR.Tuple tuple => Visit(minCostEnode, tuple, new(children_exprs)),
+                        Marker marker => Visit(minCostEnode, marker, new(children_exprs)),
+                        _ => throw new ArgumentException("Unsupported expression type.")
+                    };
+                    if (markerEclassSet.Contains(eclass) && minCostEnode.Expr is not Marker)
+                        _markerEclassMemo.Add(eclass, expr);
+                    else
+                        _eclassMemo.Add(eclass, expr);
+                    stack.Pop();
+                    break;
+                default:
+                    throw new ArgumentException("Unsupported expression type.");
             }
         }
+        // var callPattern = IsCall(IsWildcard(), IsWildcard());
+        // var isCallExpr = callPattern.MatchLeaf(expr);
+        // if (isCallExpr == true)
+        // {
+        //     if (((Call)expr).EnodeQuantConfigWithCosine != null)
+        //     {
+        //         var pattern = IsCall(IsWildcard(), IsWildcard());
+        //         var isCall = pattern.MatchLeaf(expr);
+        //         if (isCall == true)
+        //         {
+        //             System.Console.WriteLine(expr + "  " + expr.CheckedType);
+        //             for (int i = 0; i < ((Call)expr).EnodeQuantConfigWithCosine.Count; i++)
+        //             {
+        //                 for (int j = 0; j < ((Call)expr).EnodeQuantConfigWithCosine[i].Item1.Count; j++)
+        //                 {
+        //                     System.Console.Write(((Call)expr).EnodeQuantConfigWithCosine[i].Item1[j] + "  ");
+        //                 }
 
-        return expr;
+        //                 System.Console.WriteLine(((Call)expr).EnodeQuantConfigWithCosine[i].Item3);
+        //             }
+        //         }
+        //     }
+        // }
+
+        // return expr;
     }
 
-    private Expr VisitLeaf(ENode enode, Expr expr)
+    private Marker Visit(ENode enode, Marker marker, IRArray<Expr> children)
     {
-        return expr;
-    }
-
-    private Marker Visit(ENode enode, Marker marker)
-    {
-        var target = Visit(enode.Children[0]);
-        var attr = Visit(enode.Children[1]);
+        var target = children[0];
+        var attr = children[1];
         return marker with { Target = target, Attribute = attr };
     }
 
-    private None Visit(ENode enode, None none)
+    private Function Visit(ENode enode, Function func, IRArray<Expr> children)
     {
-        return none;
-    }
-
-    private Function Visit(ENode enode, Function func)
-    {
-        var body = Visit(enode.Children[0]);
+        var body = children[0];
         return func with { Body = body };
     }
 
-    private IR.Tuple Visit(ENode enode, IR.Tuple tuple)
+    private IR.Tuple Visit(ENode enode, IR.Tuple tuple, IRArray<Expr> children)
     {
-        var fields = enode.Children.Select(Visit);
-        return tuple with { Fields = new(fields) };
+        return tuple with { Fields = children };
     }
 
-    private Call Visit(ENode enode, Call call)
+    private Call Visit(ENode enode, Call call, IRArray<Expr> children)
     {
-        var target = Visit(enode.Children[0]);
-        var parameters = enode.Children.Skip(1).Select(Visit);
+        var target = children[0];
+        var parameters = children.Skip(1);
         return call with { Target = target, Parameters = new(parameters) };
     }
 }

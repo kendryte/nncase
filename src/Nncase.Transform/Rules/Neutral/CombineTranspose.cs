@@ -108,31 +108,6 @@ public sealed partial class CombineTransposeConstBinary : IRewriteRule
 }
 
 /// <summary>
-/// Combine Transpose with Relu
-/// relu(transpose(a,p)) => transpose(relu(a),p).
-/// </summary>
-[RuleGenerator]
-public sealed partial class CombineTransposeRelu : IRewriteRule
-{
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CombineTransposeRelu"/> class.
-    /// </summary>
-    public CombineTransposeRelu()
-    {
-        var perm = IsWildcard("perm");
-        Pattern = IsRelu("relu", x => true, IsTranspose(IsWildcard("x"), perm));
-    }
-
-    /// <inheritdoc/>
-    public IPattern Pattern { get; init; }
-
-    private Expr? GetReplace(Relu relu, Expr x, Expr perm)
-    {
-        return Transpose(Relu(x), perm);
-    }
-}
-
-/// <summary>
 /// Combine Transpose with Concat
 /// concat((transpose(x,p),...), a) => transpose(concat((x,...), p[a]), p).
 /// </summary>
@@ -318,5 +293,31 @@ public sealed partial class CombineTransposeActivations : IRewriteRule
             activation,
             new Expr[] { Transpose(parameters[0], perm) }
                 .Concat(parameters.Skip(1)).ToArray());
+    }
+}
+
+/// <summary>
+/// activations(transpose(input,p),args...) => transpose(activations(input,args...),p).
+/// </summary>
+[RuleGenerator]
+public sealed partial class CombineActivationsTranspose : IRewriteRule
+{
+    public IPattern Pattern { get; } =
+      IsCall(IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("parameters", (inputs) =>
+      {
+          var patterns = new Pattern[inputs.Count];
+          patterns[0] = IsTranspose(IsWildcard("input"), IsWildcard("perm"));
+          for (int i = 1; i < inputs.Count; i++)
+          {
+              patterns[i] = IsWildcard();
+          }
+          return patterns;
+      }));
+
+    private Expr GetReplace(ActivationOp activation, Expr input, IReadOnlyList<Expr> parameters, Expr perm)
+    {
+        return Transpose(
+          new Call(activation, new Expr[] { input }.Concat(parameters.Skip(1)).ToArray()),
+        perm);
     }
 }
