@@ -149,7 +149,7 @@ public class UnitTestCPUTarget : TestClassBase
         GenerateKModelAndRun(module, new[] { 1.0f }, new[] { 3.0f });
     }
 
-    private void TestCodeGen(Expr body, Var[] vars, [CallerMemberName] string name = null)
+    private void TestCodeGen(Expr body, Var[] vars, [CallerMemberName] string? name = null)
     {
         var main = new Function("main", body, vars);
         var module = new IRModule(main);

@@ -16,6 +16,7 @@ using GiGraph.Dot.Types.Graphs;
 using GiGraph.Dot.Types.Nodes;
 using GiGraph.Dot.Types.Records;
 using GiGraph.Dot.Types.Styling;
+using Nncase.IR;
 using Nncase.PatternMatch;
 using Nncase.Transform;
 
@@ -56,35 +57,70 @@ public partial class EGraphPrinter
 
         DotGraph.Edges.Clear();
 
-        bool Dfs(EClass curclass, ENode? minCostEnode)
-        {
-            if (_opMaps.ContainsKey(curclass) || minCostEnode is null)
-            {
-                return false;
-            }
+        HashSet<EClass> eclassMemo = new();
+        HashSet<EClass> markerEclassMemo = new();
 
-            var (minCostDotnode, table) = NodesMap[minCostEnode];
-            minCostDotnode.Color = Color.DeepSkyBlue;
-            foreach (var (child, i) in minCostEnode.Children.Select((c, i) => (c, i)))
+        void Dfs(EClass curclass)
+        {
+            var stack = new Stack<EClass>();
+            stack.Push(curclass);
+            while (stack.Any())
             {
-                var childEnode = child.Find().Nodes.MinBy(x => costModel[x]);
-                if (!Dfs(child.Find(), childEnode))
+                var parent = stack.Pop();
+                if (eclassMemo.Contains(parent) || _opMaps.ContainsKey(parent))
                 {
                     continue;
                 }
 
-                var (childDotNode, _) = NodesMap[childEnode!];
-                DotGraph.Edges.Add(childDotNode, minCostDotnode, edge =>
+                var minCostEnode = parent.Nodes.MinBy(x => costModel[x])!;
+                if (markerEclassMemo.Contains(parent)) // when this marker ecalss has been visited, skip it.
                 {
-                    edge.Head.Endpoint.Port = new DotEndpointPort($"P{i}");
-                    edge.Color = Color.SpringGreen;
-                });
-            }
+                    minCostEnode = parent.Nodes.Where(n => n.Expr is not Marker).MinBy(x => costModel[x])!;
+                }
 
-            return true;
+                var (minCostDotnode, table) = NodesMap[minCostEnode];
+                minCostDotnode.Color = Color.DeepSkyBlue;
+                foreach (var (child, i) in minCostEnode.Children.Select((c, i) => (c, i)))
+                {
+                    if (_opMaps.ContainsKey(child))
+                    {
+                        continue;
+                    }
+
+                    // note when marker child is it's self need select other node.
+                    if (minCostEnode.Expr is Marker && child == parent)
+                    {
+                        markerEclassMemo.Add(child);
+                        var otherminCostENode = child.Nodes.Where(n => n.Expr is not Marker).MinBy(x => costModel[x])!;
+                        var (childDotNode, _) = NodesMap[otherminCostENode];
+                        DotGraph.Edges.Add(childDotNode, minCostDotnode, edge =>
+                        {
+                            edge.Head.Endpoint.Port = new DotEndpointPort($"P{i}");
+                            edge.Color = Color.SpringGreen;
+                        });
+                    }
+                    else
+                    {
+                        var childEnode = child.Find().Nodes.MinBy(x => costModel[x])!;
+                        var (childDotNode, _) = NodesMap[childEnode];
+                        DotGraph.Edges.Add(childDotNode, minCostDotnode, edge =>
+                        {
+                            edge.Head.Endpoint.Port = new DotEndpointPort($"P{i}");
+                            edge.Color = Color.SpringGreen;
+                        });
+                    }
+
+                    stack.Push(child);
+                }
+
+                if (!markerEclassMemo.Contains(parent))
+                {
+                    eclassMemo.Add(parent);
+                }
+            }
         }
 
-        Dfs(entry.Find(), entry.Find().Nodes.MinBy(x => costModel[x]));
+        Dfs(entry.Find());
         return DotGraph;
     }
 }

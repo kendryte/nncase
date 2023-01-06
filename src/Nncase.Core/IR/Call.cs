@@ -45,17 +45,15 @@ public sealed record Call(Expr Target, IRArray<Expr> Parameters) : Expr, IParame
     /// </summary>
     public Tuple<List<DataType>, List<List<QuantParam>>, float> EnodeBestQuantConfigWithCosine;
 
-    public CallAttr Attribute = CallAttr.None;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Call"/> class.
-    /// </summary>
-    /// <param name="target">Call target.</param>
-    /// <param name="parameters">Parameters.</param>
-    public Call(Expr target, params Expr[] parameters)
-        : this(target, new IRArray<Expr>(parameters.ToImmutableArray()))
-    {
-    }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Call"/> class.
+        /// </summary>
+        /// <param name="target">Call target.</param>
+        /// <param name="parameters">Parameters.</param>
+        public Call(Expr target, params Expr[] parameters)
+            : this(target, new IRArray<Expr>(parameters.ToImmutableArray()))
+        {
+        }
 
     /// <summary>
     /// get param expr.

@@ -32,6 +32,13 @@ public class UnitTestCombineTranspose : TestClassBase
             new object[] { new[] { 1, 3, 2, 4 }, new[] { 1, 3, 2, 4 }, new[] { 0, 2, 3, 1 } },
         };
 
+    public static IEnumerable<object[]> TestCombineTransposeConstBinaryNotMatchData =>
+        new[]
+        {
+            new object[] { new[] { 1, 3, 2, 4 }, new[] { 2, 3 }, new[] { 0, 3, 2, 1 } },
+            new object[] { new[] { 1, 3, 2, 4 }, new[] { 2, 4, 3 }, new[] { 0, 2, 3, 1 } },
+        };
+
     public static IEnumerable<object[]> TestCombineTransposeRConstBinaryPositiveData =>
         new[]
         {
@@ -189,6 +196,22 @@ public class UnitTestCombineTranspose : TestClassBase
     }
 
     [Theory]
+    [MemberData(nameof(TestCombineTransposeConstBinaryNotMatchData))]
+    public void TestCombineTransposeConstNotMatch(int[] lShape, int[] rShape, int[] perm)
+    {
+        var caseOptions = GetPassOptions();
+        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, lShape);
+        var b = Tensor.From<float>(Random.Normal(DataTypes.Float32, 0, 1, 0, rShape).Evaluate().AsTensor().ToArray<float>(), rShape);
+
+        Expr permExpr = perm;
+        var rootPre = Math.Binary(BinaryOp.Add, Tensors.Transpose(a, permExpr), b);
+        CompilerServices.InferenceType(rootPre);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new CombineTransposeConstBinary() }, caseOptions);
+
+        Assert.Equal(rootPre, rootPost);
+    }
+
+    [Theory]
     [MemberData(nameof(TestCombineTransposeRConstBinaryPositiveData))]
     public void TestCombineTransposeRConstBinaryPositive(int[] lShape, int[] rShape, int[] perm)
     {
@@ -224,17 +247,6 @@ public class UnitTestCombineTranspose : TestClassBase
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.True(Comparator.AllEqual(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost)));
-    }
-
-    [Fact]
-    public void TestCombineTransposeRelu()
-    {
-        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
-        var rootPre = Relu(Tensors.Transpose(a, new[] { 0, 3, 1, 2 }));
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new CombineTransposeRelu() }, new());
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
 
     [Theory]

@@ -14,18 +14,18 @@ namespace Nncase.Tests.Rules.NeutralTest;
 public class UnitTestFoldQuant : TestClassBase
 {
     public static TheoryData<int, bool, int[], DataType, QuantParam, DataType, QuantParam, DataType> FoldQuantDequantData => new()
-      {
+    {
         { 0, true, new[] { 1, 2, 3 }, DataTypes.Float32, new QuantParam(0, 0.0474f), DataTypes.UInt8, new QuantParam(0, 0.0474f), DataTypes.Float32 },
         { 1, false, new[] { 1, 2, 3, 4 }, DataTypes.Float32, new QuantParam(0, 0.043f), DataTypes.UInt8, new QuantParam(0, 0.333f), DataTypes.Float32 },
         { 2, false, new[] { 1, 2, 3, 4 }, DataTypes.Float32, new QuantParam(0, 0.043f), DataTypes.UInt8, new QuantParam(0, 0.043f), DataTypes.Float16 },
-      };
+    };
 
     public static TheoryData<int, bool, int[], DataType, QuantParam, DataType, QuantParam, DataType> FoldDequantQuantData => new()
-      {
+    {
         { 0, true, new[] { 1, 2, 3 }, DataTypes.UInt8, new QuantParam(0, 0.0474f), DataTypes.Float32, new QuantParam(0, 0.0474f), DataTypes.UInt8 },
         { 1, false, new[] { 1, 2, 3, 4 }, DataTypes.UInt8, new QuantParam(0, 0.043f), DataTypes.UInt8, new QuantParam(0, 0.333f), DataTypes.UInt8 },
         { 2, false, new[] { 1, 2, 3, 4 }, DataTypes.UInt8, new QuantParam(0, 0.043f), DataTypes.UInt8, new QuantParam(0, 0.043f), DataTypes.Int8 },
-      };
+    };
 
     [Theory]
     [MemberData(nameof(FoldQuantDequantData))]

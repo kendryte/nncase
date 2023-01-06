@@ -58,35 +58,36 @@ internal class Compiler : ICompiler
         var quantMode = _compileSession.CompileOptions.QuantizeOptions.ModelQuantMode;
         if (quantMode == ModelQuantMode.UsePTQ)
         {
-            passManager.Add<EGraphPass>()
-                .Configure(p =>
-                {
-                    p.Name = "NeutralOptimize";
-                    p.Add<Transform.Rules.Neutral.FoldConstCall>()
-                     .Add<Transform.Rules.Neutral.FoldNopTranspose>()
-                     .Add<Transform.Rules.Neutral.FoldTwoTransposes>()
-                     .Add<Transform.Rules.Neutral.CombineTransposeUnary>()
-                     .Add<Transform.Rules.Neutral.CombineTransposePad>()
-                     .Add<Transform.Rules.Neutral.CombineTransposeBinary>()
-                     .Add<Transform.Rules.Neutral.CombineTransposeReduce>()
-                     .Add<Transform.Rules.Neutral.CombineTransposeActivations>()
-                     .Add<Transform.Rules.Neutral.CombinePadTranspose>()
-                     .Add<Transform.Rules.Neutral.FoldNopPad>()
-                     .Add<Transform.Rules.Neutral.FoldConv2DPads>()
-                     .Add<Transform.Rules.Neutral.FoldReduceWindow2DPads>();
-                });
+            passManager.Add(new EGraphPass("1_NeutralOptimize")
+            {
+              new Transform.Rules.Neutral.FoldConstCall(),
+              new Transform.Rules.Neutral.FoldNopTranspose(),
+              new Transform.Rules.Neutral.FoldTwoTransposes(),
+              new Transform.Rules.Neutral.CombineTransposeUnary(),
+              new Transform.Rules.Neutral.CombineTransposePad(),
+              new Transform.Rules.Neutral.CombinePadTranspose(),
+              new Transform.Rules.Neutral.CombineTransposeBinary(),
+              new Transform.Rules.Neutral.CombineTransposeConstBinary(),
+              new Transform.Rules.Neutral.CombineTransposeReduce(),
+              new Transform.Rules.Neutral.CombineTransposeActivations(),
+              new Transform.Rules.Neutral.CombineActivationsTranspose(),
+              new Transform.Rules.Neutral.FoldNopPad(),
+              new Transform.Rules.Neutral.FoldConv2DPads(),
+              new Transform.Rules.Neutral.FoldReduceWindow2DPads(),
+            });
         }
 
         if (quantMode == ModelQuantMode.UsePTQ)
         {
-            passManager.Add<EGraphPass>()
-                .Configure(p =>
-                {
-                    p.Name = "AddRangeOfMarker";
-                    p.Add<Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2D>()
-                     .Add<Transform.Rules.Neutral.AddRangeOfAndMarkerToMatMul>();
-                });
-            passManager.Add<EGraphPassWithQuantize>().Configure(p => p.Name = "AssignRanges");
+            passManager.Add(new DataflowPass("2_AddRangeOfMarker")
+            {
+                new Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2D(),
+                new Transform.Rules.Neutral.AddRangeOfAndMarkerToMatMul(),
+                new Transform.Rules.Neutral.AddRangeOfAndMarkerToReduceWindow2D(),
+                new Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2DTranspose(),
+                new Transform.Rules.Neutral.AddRangeOfAndMarkerToBinary(),
+            });
+            passManager.Add(new Quantization.EGraphPassWithQuantize("3_AssignRanges", _compileOptions.QuantizeOptions!));
         }
     }
 

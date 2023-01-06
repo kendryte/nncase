@@ -174,6 +174,37 @@ public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>, ICostEvalu
 }
 
 /// <summary>
+/// Evaluator for <see cref="Relu6"/>.
+/// </summary>
+public class Relu6Evaluator : IEvaluator<Relu6>, ITypeInferencer<Relu6>, ICostEvaluator<Relu6>
+{
+    /// <inheritdoc/>
+    public IValue Visit(IEvaluateContext context, Relu6 relu6)
+    {
+        var input = context.GetOrtArgumentValue(relu6, Relu6.Input);
+        return OrtKI.Clip(input, 0.0f, 6.0f).ToValue();
+    }
+
+    /// <inheritdoc/>
+    public IRType Visit(ITypeInferenceContext context, Relu6 target)
+    {
+        var input = context.CheckArgumentType<TensorType>(target, Relu6.Input);
+        return Visit(input);
+    }
+
+    public Cost? Visit(ICostEvaluateContext context, Relu6 target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, Relu6.Input);
+        return CostUtility.GetActivationCost(inputType, CostUtility.GetCPUCyclesOfMax());
+    }
+
+    private IRType Visit(TensorType input)
+    {
+        return input;
+    }
+}
+
+/// <summary>
 /// Evaluator for <see cref="Selu"/>.
 /// </summary>
 public class SeluEvaluator : IEvaluator<Selu>, ITypeInferencer<Selu>, ICostEvaluator<Selu>

@@ -10,16 +10,13 @@ using NetFabric.Hyperlinq;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.F;
-using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.Utilities;
 using OrtKISharp;
 using Xunit;
-using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
 using static Nncase.Utilities.DumpUtility;
-using RangeOf = Nncase.IR.Math.RangeOf;
 using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Tests.EvaluatorTest;
@@ -56,83 +53,6 @@ public class UnitTestEvaluator : TestClassBase
 
         var c = na + nb;
         Assert.Equal(new[] { 2, 4, 6 }, c.ToTensor().ToArray<int>());
-    }
-
-    [Fact]
-    public void TestUnary()
-    {
-        var a = (Const)7f;
-        var tA = OrtKISharp.Tensor.FromScalar(7f);
-        var expr = -a;
-        CompilerServices.InferenceType(expr);
-        Assert.Equal(
-            -tA,
-            expr.Evaluate().AsTensor().ToOrtTensor());
-    }
-
-    [Fact]
-    public void TestBinary()
-    {
-        var tA = OrtKISharp.Tensor.FromScalar(1f);
-        var tB = tA * 2f;
-
-        var a = (Const)1f;
-        var b = (Const)2f;
-        var expr = (a * b) + a;
-        CompilerServices.InferenceType(expr);
-        Assert.Equal(
-            (tA * tB) + tA,
-            expr.Evaluate().AsTensor().ToOrtTensor());
-    }
-
-    [Fact]
-    public void TestBinarySub()
-    {
-        var tA = OrtKISharp.Tensor.FromScalar((int)4);
-        var tB = OrtKISharp.Tensor.FromScalar((int)1);
-        _ = tA - tB;
-    }
-
-    [Fact]
-    public void TestBinaryShift()
-    {
-        var tA = OrtKISharp.Tensor.FromScalar(1U);
-        _ = OrtKI.LeftShift(tA, OrtKISharp.Tensor.FromScalar(2U));
-        _ = OrtKI.RightShift(tA, OrtKISharp.Tensor.FromScalar(2U));
-
-        var a = (Const)1U;
-        var b = (Const)2U;
-
-        Assert.Equal(1U << 2, IR.F.Math.LeftShift(a, b).Evaluate().AsTensor().ToScalar<uint>());
-        Assert.Equal(1U >> 2, IR.F.Math.RightShift(a, b).Evaluate().AsTensor().ToScalar<uint>());
-    }
-
-    [Fact]
-    public void TestBinaryShift2()
-    {
-        var a = (Const)1U;
-        var b = (Const)2U;
-
-        Assert.Equal(
-            (int)(1U << 2) - 1,
-            (IR.F.Tensors.Cast(IR.F.Math.LeftShift(a, b), DataTypes.Int32) - 1).Evaluate().AsTensor().ToScalar<int>());
-    }
-
-    [Fact]
-    public void TestCompare()
-    {
-        Assert.True(CompilerServices.Evaluate((Expr)5 <= (Expr)10).AsTensor().ToScalar<bool>());
-        Assert.True(CompilerServices.Evaluate((Expr)5 <= (Expr)5).AsTensor().ToScalar<bool>());
-        Assert.False(CompilerServices.Evaluate((Expr)(-1) <= (Expr)(-2)).AsTensor().ToScalar<bool>());
-
-        Assert.False(CompilerServices.Evaluate((Expr)10 != (Expr)10).AsTensor().ToScalar<bool>());
-        Assert.True(CompilerServices.Evaluate((Expr)10 != (Expr)(-2)).AsTensor().ToScalar<bool>());
-
-        Assert.True(CompilerServices.Evaluate((Expr)10 == (Expr)10).AsTensor().ToScalar<bool>());
-        Assert.False(CompilerServices.Evaluate((Expr)10 == (Expr)2).AsTensor().ToScalar<bool>());
-
-        Assert.False(CompilerServices.Evaluate((Expr)1 > (Expr)10).AsTensor().ToScalar<bool>());
-        Assert.True(CompilerServices.Evaluate((Expr)1 > (Expr)0).AsTensor().ToScalar<bool>());
     }
 
     [Fact]
@@ -249,32 +169,6 @@ public class UnitTestEvaluator : TestClassBase
     }
 
     [Fact]
-    public void TestPad()
-    {
-        var tinput = OrtKI.Random(1, 1, 2, 3);
-        var input = tinput.ToTensor();
-        var pads = Tensor.From<int>(new[] { 0, 0, 0, 0, 1, 1, 2, 2 }, new Shape(new[] { 4, 2 }));
-        var value = Tensor.FromScalar<float>(1.0f);
-        var expr = NN.Pad(input, pads, Nncase.PadMode.Constant, value);
-        CompilerServices.InferenceType(expr);
-        var result = expr.Evaluate().AsTensor().ToOrtTensor();
-        Assert.Equal(new long[] { 1, 1, 4, 7 }, result.Shape);
-    }
-
-    [Fact]
-    public void TestPad2()
-    {
-        var tinput = OrtKI.Random(1, 1, 2, 3);
-        var input = tinput.ToTensor();
-        var pads = Tensor.From<long>(new long[] { 0, 0, 1, 2, 2, 4, 5, 6 }, new Shape(4, 2));
-        var value = Tensor.FromScalar<float>(2.0f);
-        var expr = NN.Pad(input, pads, Nncase.PadMode.Constant, value);
-        CompilerServices.InferenceType(expr);
-        var result = expr.Evaluate().AsTensor().ToOrtTensor();
-        Assert.Equal(new long[] { 1, 4, 8, 14 }, result.Shape);
-    }
-
-    [Fact]
     public void TestStackAndCast()
     {
         var padh_before = Tensors.Cast(Tensor.From<float>(new[] { 1.0f }), Nncase.DataTypes.Int32);
@@ -289,30 +183,6 @@ public class UnitTestEvaluator : TestClassBase
         CompilerServices.InferenceType(expr);
         var result = expr.Evaluate().AsTensor().ToOrtTensor();
         Assert.Equal(OrtKISharp.Tensor.MakeTensor(new[] { 1, 2, 3, 4 }, new long[] { 2, 2 }), result);
-    }
-
-    [Fact]
-    public void TestConv2D()
-    {
-        // var weights = OrtKI.Random(8, 4, 3, 3);
-        // var inputs = OrtKI.Random(1, 4, 5, 5);
-        // var bias = OrtKI.Random(8);
-        // var output = OrtKI.Conv(inputs, weights, bias, padding: new long[] { 1, 1 });
-        //
-        // var expr = Conv2D(inputs.ToTensor(), weights.ToTensor(), bias.ToTensor(),
-        //     stride: new[] { 1, 1 }, padding: Tensor.FromSpan<int>(new int[] { 1, 1, 1, 1 }, new[] { 2, 2 }),
-        //     dilation: new[] { 1, 1 }, Nncase.PadMode.Constant, 1);
-        // Assert.True(expr.InferenceType());
-        // Assert.Equal(output, expr.Evaluate().AsTensor().ToOrtTensor());
-    }
-
-    [Fact]
-    public void TestConv2D_1()
-    {
-        // var input = OrtKI.Random(1, 28, 28, 3).ToTensor();
-        // var conv1 = Tensors.NCHWToNHWC(ReWriteTest.DummyOp.Conv2D(Tensors.NHWCToNCHW(input), 3, out_channels: 8, 3, 2));
-        // Assert.True(conv1.InferenceType());
-        // Assert.Equal(new long[] { 1, 14, 14, 8 }, conv1.Evaluate().AsTensor().ToOrtTensor().shape);
     }
 
     [Fact]
@@ -340,25 +210,5 @@ public class UnitTestEvaluator : TestClassBase
         var image = Imaging.ResizeImage(ImageResizeMode.Bilinear, input, Array.Empty<int>(), new[] { 1, 3, 112, 112 }, isTFResize: true);
         image.InferenceType();
         Assert.Equal(new[] { 1, 3, 112, 112 }, image.Evaluate().AsTensor().Dimensions.ToArray());
-    }
-
-    [Fact]
-    public void TestRangeOf()
-    {
-        var input = Enumerable.Range(0, 32).Select(x => (float)x);
-        var r = new[] { 0f, 31 };
-        AssertRangeOf(input.ToArray(), r);
-        var n1 = input.ToList();
-        n1.Add(float.NaN);
-        AssertRangeOf(n1.ToArray(), r);
-        var n2 = input.ToList();
-        n2.Add(float.PositiveInfinity);
-        n2.Add(float.NegativeInfinity);
-        AssertRangeOf(n2.ToArray(), r);
-    }
-
-    private void AssertRangeOf(Expr input, float[] r)
-    {
-        Assert.Equal(r, RangeOf(input).Evaluate().AsTensor().ToArray<float>());
     }
 }

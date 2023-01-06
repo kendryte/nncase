@@ -18,26 +18,32 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
 {
     public static TheoryData<IRewriteCase> DataOne => new()
     {
-      new PadTransposeCaseEgraph(),
+        new ActivationsTransposePRelu(),
+        new ActivationsTransposePRelu2(),
+        new ActivationsTransposePRelu3(),
     };
 
     public static TheoryData<IRewriteCase> DataAll => new()
     {
-      new PadTransposeCase(),
-      new MobileNetV1TransposeCase(),
-      new Conv2DPadsCase(),
-      new ReduceWindow2DPadsCase(),
-      new TransposeLeakyRelu(),
-      new FoldReshapeCase(),
-      new FoldTransposePadCase(),
-      new FoldNopClampCase(),
-      new FoldNopReshapeCase(),
-      new TransposeDemoCase(),
-      new ClassicDemo(),
-      new FoldNopTransposeCase3(),
-      new FoldNopTransposeCase2(),
-      new FoldNopTransposeCase1(),
-      new FoldTransposeCase(),
+        new RemoveMarkerCaseEgraph(),
+        new ActivationsTranspose(),
+        new ActivationsTranspose2(),
+        new PadTransposeCase(),
+        new MobileNetV1TransposeCase(),
+        new Conv2DPadsCase(),
+        new ReduceWindow2DPadsCase(),
+        new TransposeLeakyRelu(),
+        new FoldReshapeCase(),
+        new FoldTransposePadCase(),
+        new FoldNopClampCase(),
+        new FoldNopReshapeCase(),
+        new TransposeDemoCase(),
+        new ClassicDemo(),
+        new FoldNopTransposeCase3(),
+        new FoldNopTransposeCase2(),
+        new FoldNopTransposeCase1(),
+        new FoldTransposeCase(),
+        new PadTransposeCaseEgraph(),
     };
 
     [Theory]

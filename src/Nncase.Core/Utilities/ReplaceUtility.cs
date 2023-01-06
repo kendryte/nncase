@@ -108,11 +108,66 @@ public class ReplaceUtility
     /// warning: call which returned should be type infer, because of with should keep the type infer.
     /// </summary>
     /// <param name="call"></param>
-    /// <param name="posAndValue"></pxaram>
+    /// <param name="posAndValue"></param>
     /// <returns></returns>
     public static Call ReplaceParams(Call call, params (ParameterInfo, Expr)[] posAndValue)
     {
         return call with { Parameters = ReplaceMulti(call.Parameters, posAndValue) };
+    }
+
+    /// <summary>
+    /// find the old input in old args and replace it with new_input.
+    /// </summary>
+    /// <param name="list">matched old args.</param>
+    /// <param name="target">matched old input.</param>
+    /// <param name="value">created new_input.</param>
+    /// <returns>new args list.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public static List<Expr> ReplaceParams(IReadOnlyList<Expr> list, Expr target, Expr value)
+    {
+        return ReplaceParams(list, new List<(Expr, Expr)>() { (target, value) });
+    }
+
+    /// <summary>
+    ///  find the old input in old args and replace it with new_input.
+    /// </summary>
+    /// <param name="list">matched exprsession list.</param>
+    /// <param name="pairs">target value pair.</param>
+    /// <returns>new args list.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public static List<Expr> ReplaceParams(IReadOnlyList<Expr> list, IReadOnlyList<(Expr target, Expr value)> pairs)
+    {
+        var new_args = new List<Expr>(list);
+
+        Dictionary<int, Expr> candidates = new();
+        for (int i = 0; i < list.Count; i++)
+        {
+            for (int j = 0; j < pairs.Count; j++)
+            {
+                if (object.ReferenceEquals(new_args[i], pairs[j].target))
+                {
+                    if (!candidates.TryGetValue(i, out var last_matched))
+                    {
+                        last_matched = pairs[j].value;
+                        candidates.Add(i, last_matched);
+                    }
+
+                    if (!object.ReferenceEquals(last_matched, pairs[j].value))
+                    {
+                        throw new InvalidDataException("The same arg can't replace with two new pararmeter!");
+                    }
+                }
+            }
+        }
+
+        if (candidates.Count == 0)
+        {
+            throw new InvalidOperationException("Not find the replace param");
+        }
+
+        foreach (var (i, new_input) in candidates)
+            new_args[i] = new_input;
+        return new_args;
     }
 
     public static Call ReplaceOpAndParams(Call call, Op op, params (ParameterInfo, Expr)[] posAndValue)
