@@ -71,11 +71,13 @@ public interface IPassManager : IPassesAddable
 public struct AddPassResult<T> : IPassesAddable
     where T : class, IPass
 {
-    private readonly PassManager _passManager;
+    private readonly IPassManager _passManager;
+    private readonly CompileSession _compileSession;
 
-    internal AddPassResult(PassManager passManager, T pass)
+    internal AddPassResult(IPassManager passManager, CompileSession compileSession, T pass)
     {
         _passManager = passManager;
+        _compileSession = compileSession;
         Pass = pass;
     }
 
@@ -99,6 +101,7 @@ public struct AddPassResult<T> : IPassesAddable
     /// <returns>This add result.</returns>
     public AddPassResult<T> Configure(Action<T> configureRule)
     {
+        using var scope = new CompileSessionScope(_compileSession);
         configureRule(Pass);
         return this;
     }
@@ -140,15 +143,13 @@ internal sealed class PassManager : IPassManager
         using var dumpScope = new DumpScope(_dummper);
         var pass = ActivatorUtilities.CreateInstance<T>(_compileSession, parameters);
         _passes.Add(pass);
-        return new(this, pass);
+        return new(this, _compileSession, pass);
     }
 
     /// <inheritdoc/>
     public AddPassResult<T> AddWithName<T>(string name, params object[] parameters)
         where T : class, IPass
     {
-        using var scope = new CompileSessionScope(_compileSession);
-        using var dumpScope = new DumpScope(_dummper);
         var result = Add<T>(parameters);
         result.Configure(p => p.Name = name);
         return result;

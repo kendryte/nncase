@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using LanguageExt.ClassInstances;
 using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.IR;
@@ -49,26 +50,36 @@ public static class EGraphExtractExtensions
             EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, root.Find(), fs);
         }
 
-        return new EGraphExtractor(costModel, options).Extract(root.Find());
+        return new EGraphExtractor(costModel).Extract(root.Find());
     }
 }
 
 internal class EGraphExtractor
 {
     private readonly EGraphCostModel _costModel;
-    private readonly RunPassOptions _options;
     private readonly Dictionary<EClass, Expr> _eclassMemo = new();
     private readonly Dictionary<EClass, Expr> _markerEclassMemo = new();
+    private StreamWriter? _dumpWriter;
 
-    public EGraphExtractor(EGraphCostModel costModel, RunPassOptions options)
+    public EGraphExtractor(EGraphCostModel costModel)
     {
         _costModel = costModel;
-        _options = options;
     }
 
     public Expr Extract(EClass root)
     {
-        Visit(root);
+        _dumpWriter = DumpScope.Current.IsEnabled(DumpFlags.EGraphCost)
+            ? new StreamWriter(DumpScope.Current.OpenFile($"{nameof(EGraphExtractor)}_Class_{root.Id}"))
+            : null;
+        try
+        {
+            Visit(root);
+        }
+        finally
+        {
+            _dumpWriter?.Dispose();
+        }
+
         return _eclassMemo[root];
     }
 
@@ -176,17 +187,17 @@ internal class EGraphExtractor
         var parameters = children.Skip(1);
 
         // for mix quant debug.
-        if (call.EnodeQuantConfigWithCosine != null && _options.DumpLevel > 3)
+        if (call.EnodeQuantConfigWithCosine != null && _dumpWriter != null)
         {
-            Console.WriteLine(call + "  " + call.CheckedType);
+            _dumpWriter.WriteLine(call + "  " + call.CheckedType);
             for (int i = 0; i < call.EnodeQuantConfigWithCosine.Count; i++)
             {
                 for (int j = 0; j < call.EnodeQuantConfigWithCosine[i].Item1.Count; j++)
                 {
-                    Console.Write(call.EnodeQuantConfigWithCosine[i].Item1[j] + "  ");
+                    _dumpWriter.Write(call.EnodeQuantConfigWithCosine[i].Item1[j] + "  ");
                 }
 
-                Console.WriteLine(call.EnodeQuantConfigWithCosine[i].Item3);
+                _dumpWriter.WriteLine(call.EnodeQuantConfigWithCosine[i].Item3);
             }
         }
 

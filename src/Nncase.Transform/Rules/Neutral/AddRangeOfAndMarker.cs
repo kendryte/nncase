@@ -245,7 +245,7 @@ public sealed partial class AddRangeOfAndMarkerToLeakyRelu : IRewriteRule
             IsWildcard("input"),
             IsWildcard("alpha"));
 
-    private Expr? GetReplace(LeakyRelu leaky, Call call, Expr input, Expr alpha, RunPassOptions options)
+    private Expr? GetReplace(LeakyRelu leaky, Call call, Expr input, Expr alpha, RunPassContext options)
     {
         var output = LeakyRelu(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), alpha);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
@@ -361,7 +361,7 @@ public sealed partial class AddRangeOfAndMarkerToRelu6 : IRewriteRule
         IsRelu6("relu6", "call", _ => true,
             IsWildcard("input"));
 
-    private Expr? GetReplace(Relu6 relu6, Call call, Expr input, RunPassOptions options)
+    private Expr? GetReplace(Relu6 relu6, Call call, Expr input, RunPassContext options)
     {
         var output = Relu6(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)));
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once

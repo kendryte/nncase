@@ -504,12 +504,12 @@ public class ActivationsTranspose : IRewriteCase
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[]
+    public IEnumerable<Type> Rules { get; } = new Type[]
     {
-        new Transform.Rules.Neutral.FoldConstCall(),
-        new Transform.Rules.Neutral.FoldNopTranspose(),
-        new Transform.Rules.Neutral.FoldTwoTransposes(),
-        new Transform.Rules.Neutral.CombineActivationsTranspose(),
+        typeof(Transform.Rules.Neutral.FoldConstCall),
+        typeof(Transform.Rules.Neutral.FoldNopTranspose),
+        typeof(Transform.Rules.Neutral.FoldTwoTransposes),
+        typeof(Transform.Rules.Neutral.CombineActivationsTranspose),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
@@ -641,13 +641,13 @@ public sealed class RemoveMarkerCaseEgraph : IRewriteCase
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[]
+    public IEnumerable<Type> Rules { get; } = new Type[]
     {
-        new Transform.Rules.Lower.RemoveMarker(),
-        new Transform.Rules.Neutral.FoldConstCall(),
-        new Transform.Rules.Neutral.FoldNopTranspose(),
-        new Transform.Rules.Neutral.FoldTwoTransposes(),
-        new Transform.Rules.Neutral.CombineTransposeActivations(),
+        typeof(Transform.Rules.Lower.RemoveMarker),
+        typeof(Transform.Rules.Neutral.FoldConstCall),
+        typeof(Transform.Rules.Neutral.FoldNopTranspose),
+        typeof(Transform.Rules.Neutral.FoldTwoTransposes),
+        typeof(Transform.Rules.Neutral.CombineTransposeActivations),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()

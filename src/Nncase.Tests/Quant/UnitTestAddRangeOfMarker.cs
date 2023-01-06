@@ -2,9 +2,11 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.Quantization;
-using Nncase.TestFixture;
+using Nncase.Tests.TestFixture;
 using Nncase.Transform;
 using Nncase.Transform.Rules.Neutral;
 using Xunit;
@@ -12,54 +14,17 @@ using static Nncase.IR.F.NN;
 
 namespace Nncase.Tests.QuantTest;
 
-public class UnitTestAddRangeOfMarker : UnitTestFixtrue
+[AutoSetupTestMethod(InitSession = true)]
+public class UnitTestAddRangeOfMarker : TestClassBase
 {
-    public DumpVisitor TestAddRangeOfMarkerMainPasses(Var input, Expr output)
-    {
-        var caseOptions = GetPassOptions();
-        var compileOptions = caseOptions.CompileOptions;
-        compileOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
-        compileOptions.QuantType = DataTypes.UInt8;
-        compileOptions.WQuantType = DataTypes.UInt8;
-
-        RunPassOptions passOptions = new(compileOptions);
-        _ = CompilerServices.GetTarget(compileOptions.Target);
-
-        var module = new IRModule(new Function("main", output, new Var[] { input }));
-
-        PassManager pmgr = new(module, passOptions);
-
-        compileOptions.QuantizeOptions = new()
-        {
-            CalibrationDataset = new SolidCalibrationDatasetProvider(new Var[] { input }),
-            CalibrationMethod = CalibMethod.Kld,
-        };
-
-        // 0. TargetIndependentPass
-        pmgr.Add(new DataflowPass("0_TargetInDependent")
-        {
-            new AddRangeOfAndMarkerToRelu6(),
-            new AddRangeOfAndMarkerToLeakyRelu(),
-        });
-
-        // 1. AssignRanges
-        pmgr.Add(new EGraphPassWithQuantize("1_AssignRanges", compileOptions.QuantizeOptions!));
-
-        pmgr.RunAsync();
-
-        System.Console.WriteLine(CompilerServices.Print((Function)module.Functions[0]));
-        var dumpVisitor = new DumpVisitor();
-        dumpVisitor.Visit(module.Functions[0]);
-        return dumpVisitor;
-    }
 
     [Fact]
-    public void TestAddRangeOfMarkerToLeaky()
+    public async Task TestAddRangeOfMarkerToLeaky()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
         var leaky = LeakyRelu(input, 0.1);
         var output = leaky;
-        var dumpVisitor = TestAddRangeOfMarkerMainPasses(input, output);
+        var dumpVisitor = await TestAddRangeOfMarkerMainPassesAsync(input, output);
 
         Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0], -1.0001221f);
         Assert.Equal(1.0001087f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[1]);
@@ -68,17 +33,47 @@ public class UnitTestAddRangeOfMarker : UnitTestFixtrue
     }
 
     [Fact]
-    public void TestAddRangeOfMarkerToRelu6()
+    public async Task TestAddRangeOfMarkerToRelu6()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
         var relu6 = Relu6(input);
         var output = relu6;
-        var dumpVisitor = TestAddRangeOfMarkerMainPasses(input, output);
+        var dumpVisitor = await TestAddRangeOfMarkerMainPassesAsync(input, output);
 
         Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0], -1.0001221f);
         Assert.Equal(1.0001087f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[1]);
         Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[0], -6.103435E-05f);
         Assert.Equal(1.0000478f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[1]);
+    }
+
+    private async Task<DumpVisitor> TestAddRangeOfMarkerMainPassesAsync(Var input, Expr output)
+    {
+        CompileOptions.QuantizeOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
+        CompileOptions.QuantizeOptions.QuantType = DataTypes.UInt8;
+        CompileOptions.QuantizeOptions.WQuantType = DataTypes.UInt8;
+
+        var module = new IRModule(new Function("main", output, new Var[] { input }));
+
+        var pmgr = CompileSession.CreatePassManager("Passes");
+
+        CompileOptions.QuantizeOptions.CalibrationDataset = new SolidCalibrationDatasetProvider(new Var[] { input });
+        CompileOptions.QuantizeOptions.CalibrationMethod = CalibMethod.Kld;
+
+        // 0. TargetIndependentPass
+        pmgr.AddWithName<DataflowPass>("TargetInDependent").Configure(p =>
+        {
+            p.Add<AddRangeOfAndMarkerToRelu6>();
+            p.Add<AddRangeOfAndMarkerToLeakyRelu>();
+        });
+
+        // 1. AssignRanges
+        pmgr.AddWithName<EGraphPassWithQuantize>("AssignRanges");
+
+        await pmgr.RunAsync(module);
+
+        var dumpVisitor = new DumpVisitor();
+        dumpVisitor.Visit(module.Functions[0]);
+        return dumpVisitor;
     }
 
     public sealed class DumpVisitor : ExprVisitor<int, IRType>

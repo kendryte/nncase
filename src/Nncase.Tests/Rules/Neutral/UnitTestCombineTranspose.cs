@@ -199,14 +199,13 @@ public class UnitTestCombineTranspose : TestClassBase
     [MemberData(nameof(TestCombineTransposeConstBinaryNotMatchData))]
     public void TestCombineTransposeConstNotMatch(int[] lShape, int[] rShape, int[] perm)
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, lShape);
         var b = Tensor.From<float>(Random.Normal(DataTypes.Float32, 0, 1, 0, rShape).Evaluate().AsTensor().ToArray<float>(), rShape);
 
         Expr permExpr = perm;
         var rootPre = Math.Binary(BinaryOp.Add, Tensors.Transpose(a, permExpr), b);
         CompilerServices.InferenceType(rootPre);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new CombineTransposeConstBinary() }, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new CombineTransposeConstBinary() }, new());
 
         Assert.Equal(rootPre, rootPost);
     }

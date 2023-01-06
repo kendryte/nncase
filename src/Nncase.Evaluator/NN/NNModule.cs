@@ -14,27 +14,27 @@ internal class NNModule : IApplicationPart
     public void ConfigureServices(IRegistrator registrator)
     {
         // Activation
-        builder.RegisterType<CeluEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<EluEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<HardSwishEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<LeakyReluEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<PReluEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<ReluEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<Relu6Evaluator>().AsImplementedInterfaces();
-        builder.RegisterType<SeluEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<SigmoidEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<HardSigmoidEvaluator>().AsImplementedInterfaces();
+        registrator.RegisterManyInterface<CeluEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<EluEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<HardSwishEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<LeakyReluEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<PReluEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<ReluEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<Relu6Evaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<SeluEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<SigmoidEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<HardSigmoidEvaluator>(reuse: Reuse.Singleton);
 
         // Convolution
         registrator.RegisterManyInterface<Conv2DEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<Conv2DTransposeEvaluator>(reuse: Reuse.Singleton);
 
         // Normalization
-        builder.RegisterType<L2NormalizationEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<BatchNormalizationEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<InstanceNormalizationEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<LpNormalizationEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<LRNEvaluator>().AsImplementedInterfaces();
+        registrator.RegisterManyInterface<L2NormalizationEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<BatchNormalizationEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<InstanceNormalizationEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<LpNormalizationEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<LRNEvaluator>(reuse: Reuse.Singleton);
 
         // ReduceWindow
         registrator.RegisterManyInterface<ReduceWindow2DEvaluator>(reuse: Reuse.Singleton);

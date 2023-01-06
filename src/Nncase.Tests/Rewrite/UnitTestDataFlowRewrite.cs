@@ -77,7 +77,7 @@ public class UnitTestDataFlowRewrite : RewriteFixtrue
     //     var rhs = (Const)1;
     //     var pre = (lhs + rhs) * 10;
 
-    // var post = CompilerServices.Rewrite(pre, new[] { new SwapXY() }, RunPassOptions.Invalid);
+    // var post = CompilerServices.Rewrite(pre, new[] { new SwapXY() }, RunPassContext.Invalid);
     //     Assert.Equal(post, (rhs + lhs) * 10);
     // }
 
@@ -88,7 +88,7 @@ public class UnitTestDataFlowRewrite : RewriteFixtrue
     //     var rhs = torch.rand(1, 6, 3, torch.ScalarType.Float32).ToTensor();
     //     var pre = ShapeOf(lhs + rhs);
     //     Assert.True(CompilerServices.InferenceType(pre));
-    //     var post = CompilerServices.Rewrite(pre, new[] { new Transform.Pass.FoldShapeOp() }, RunPassOptions.Invalid);
+    //     var post = CompilerServices.Rewrite(pre, new[] { new Transform.Pass.FoldShapeOp() }, RunPassContext.Invalid);
     //     Assert.Equal(new[] { 1, 6, 3 }, ((TensorConst)post).Value.Cast<int>().ToArray());
     // }
     [Fact]
@@ -152,7 +152,7 @@ public class UnitTestDataFlowRewrite : RewriteFixtrue
     //     Assert.True(CompilerServices.InferenceType(input));
     //     var computeShape = ShapeOf(input);
     //     var shapeRewrite = CompilerServices.Rewrite(computeShape,
-    //         new IRewriteRule[] { new Transform.Pass.FoldShapeOp() }, RunPassOptions.Invalid);
+    //         new IRewriteRule[] { new Transform.Pass.FoldShapeOp() }, RunPassContext.Invalid);
     //     var shapePass = RunShapeInferPass("", computeShape, input);
     //     Assert.Equal(shapeRewrite, shapePass);
     // }
