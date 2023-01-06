@@ -173,6 +173,7 @@ internal class EGraphExtractor
     {
         var target = children[0];
         var parameters = children.Skip(1);
+
         // for mix quant debug.
         if (call.EnodeQuantConfigWithCosine != null && _options.DumpLevel > 3)
         {
@@ -187,6 +188,7 @@ internal class EGraphExtractor
                 Console.WriteLine(call.EnodeQuantConfigWithCosine[i].Item3);
             }
         }
+
         return call with { Target = target, Parameters = new(parameters) };
     }
 }
