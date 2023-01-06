@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Nncase.Evaluator;
 using Nncase.IR;
@@ -483,7 +484,7 @@ public class ActivationsTranspose : IRewriteCase
         _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 16, 15, 20 }));
     }
 
-    public Function PreExpr
+    public virtual Function PreExpr
     {
         get
         {
@@ -518,12 +519,84 @@ public class ActivationsTranspose : IRewriteCase
 
 public sealed class ActivationsTranspose2 : ActivationsTranspose
 {
-    public new Function PreExpr
+    public override Function PreExpr
     {
         get
         {
             var v_5 = Transpose(_input, new[] { 0, 2, 3, 1 }); // f32[1,15,20,16]
             var v_6 = Relu(v_5); // f32[1,15,20,16]
+            var v_7 = Transpose(v_6, new[] { 0, 3, 1, 2 }); // f32[1,16,15,20]
+            var v_8 = Conv2D(
+                v_7,
+                Normal(DataTypes.Float32, 0, 1, 1, new[] { 16, 16, 3, 3 }).Evaluate().AsTensor(),
+                Normal(DataTypes.Float32, 0, 1, 1, new[] { 16 }).Evaluate().AsTensor(), new[] { 1, 1 }, new[,]
+                {
+                    { 1, 1 },
+                    { 1, 1 },
+                }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { 0.0f, 6.0f }); // f32[1,16,15,20]
+            return new Function(v_8, new Var[] { _input });
+        }
+    }
+}
+
+/// <summary>
+/// note the prelu scope also need transpose.
+/// </summary>
+public sealed class ActivationsTransposePRelu : ActivationsTranspose
+{
+    public override Function PreExpr
+    {
+        get
+        {
+            var v_5 = Transpose(_input, new[] { 0, 2, 3, 1 }); // f32[1,15,20,16]
+            var v_6 = PRelu(v_5, Tensor.From(Enumerable.Repeat(0.2f, 16).ToArray(), new[] { 1, 1, 16 })); // f32[1,15,20,16]
+            var v_7 = Transpose(v_6, new[] { 0, 3, 1, 2 }); // f32[1,16,15,20]
+            var v_8 = Conv2D(
+                v_7,
+                Normal(DataTypes.Float32, 0, 1, 1, new[] { 16, 16, 3, 3 }).Evaluate().AsTensor(),
+                Normal(DataTypes.Float32, 0, 1, 1, new[] { 16 }).Evaluate().AsTensor(), new[] { 1, 1 }, new[,]
+                {
+                    { 1, 1 },
+                    { 1, 1 },
+                }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { 0.0f, 6.0f }); // f32[1,16,15,20]
+            return new Function(v_8, new Var[] { _input });
+        }
+    }
+}
+
+public sealed class ActivationsTransposePRelu2 : ActivationsTranspose
+{
+    public override Function PreExpr
+    {
+        get
+        {
+            var v_5 = Transpose(_input, new[] { 0, 2, 3, 1 }); // f32[1,15,20,16]
+            var v_6 = PRelu(v_5, Tensor.From(Enumerable.Repeat(0.2f, 16).ToArray(), new[] { 1, 1, 1, 16 })); // f32[1,15,20,16]
+            var v_7 = Transpose(v_6, new[] { 0, 3, 1, 2 }); // f32[1,16,15,20]
+            var v_8 = Conv2D(
+                v_7,
+                Normal(DataTypes.Float32, 0, 1, 1, new[] { 16, 16, 3, 3 }).Evaluate().AsTensor(),
+                Normal(DataTypes.Float32, 0, 1, 1, new[] { 16 }).Evaluate().AsTensor(), new[] { 1, 1 }, new[,]
+                {
+                    { 1, 1 },
+                    { 1, 1 },
+                }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { 0.0f, 6.0f }); // f32[1,16,15,20]
+            return new Function(v_8, new Var[] { _input });
+        }
+    }
+}
+
+/// <summary>
+/// test for prelu slope is scalar.
+/// </summary>
+public sealed class ActivationsTransposePRelu3 : ActivationsTranspose
+{
+    public override Function PreExpr
+    {
+        get
+        {
+            var v_5 = Transpose(_input, new[] { 0, 2, 3, 1 }); // f32[1,15,20,16]
+            var v_6 = PRelu(v_5, Tensor.FromScalar(0.2f)); // f32[1,15,20,16]
             var v_7 = Transpose(v_6, new[] { 0, 3, 1, 2 }); // f32[1,16,15,20]
             var v_8 = Conv2D(
                 v_7,

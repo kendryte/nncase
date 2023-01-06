@@ -91,21 +91,21 @@ internal class EGraphExtractor
                     stack.Pop();
                     break;
                 case Function or Call or IR.Tuple or Marker:
-                    var children_exprs = new List<Expr>();
+                    var childrenExprs = new List<Expr>();
                     foreach (var child in minCostEnode.Children)
                     {
-                        if (!_eclassMemo.TryGetValue(child, out var child_expr))
+                        if (!_eclassMemo.TryGetValue(child, out var childExpr))
                         {
                             if (minCostEnode.Expr is Marker && child == eclass)
                             {
-                                if (!_markerEclassMemo.TryGetValue(eclass, out var marker_input_expr))
+                                if (!_markerEclassMemo.TryGetValue(eclass, out var markerInputExpr))
                                 {
                                     markerEclassSet.Add(eclass);
                                     stack.Push((eclass, eclass.Nodes.Where(n => n.Expr is not Marker).MinBy(x => _costModel[x])!));
                                 }
                                 else
                                 {
-                                    children_exprs.Add(marker_input_expr);
+                                    childrenExprs.Add(markerInputExpr);
                                 }
                             }
                             else
@@ -115,21 +115,21 @@ internal class EGraphExtractor
                         }
                         else
                         {
-                            children_exprs.Add(child_expr);
+                            childrenExprs.Add(childExpr);
                         }
                     }
 
-                    if (children_exprs.Count != minCostEnode.Children.Count)
+                    if (childrenExprs.Count != minCostEnode.Children.Count)
                     {
                         break;
                     }
 
                     expr = minCostEnode.Expr switch
                     {
-                        Function function => Visit(minCostEnode, function, new(children_exprs)),
-                        Call call => Visit(minCostEnode, call, new(children_exprs)),
-                        IR.Tuple tuple => Visit(minCostEnode, tuple, new(children_exprs)),
-                        Marker marker => Visit(minCostEnode, marker, new(children_exprs)),
+                        Function function => Visit(minCostEnode, function, new(childrenExprs)),
+                        Call call => Visit(minCostEnode, call, new(childrenExprs)),
+                        IR.Tuple tuple => Visit(minCostEnode, tuple, new(childrenExprs)),
+                        Marker marker => Visit(minCostEnode, marker, new(childrenExprs)),
                         _ => throw new ArgumentException("Unsupported expression type."),
                     };
                     if (markerEclassSet.Contains(eclass) && minCostEnode.Expr is not Marker)
