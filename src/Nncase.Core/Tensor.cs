@@ -371,6 +371,32 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
       => FromConst(@const).Cast<T>(castMode);
 
     /// <summary>
+    /// Return a tensor of given shape and type, filled with zeros..
+    /// </summary>
+    /// <typeparam name="T">unmanaged type.</typeparam>
+    /// <param name="shape">shape.</param>
+    /// <returns>Tensor{T}.</returns>
+    public static Tensor Zeros<T>(Shape shape)
+        where T : unmanaged, IEquatable<T>
+    {
+        var value = (T)Convert.ChangeType(0, typeof(T));
+        return Tensor.FromValues<T>(shape, value);
+    }
+
+    /// <summary>
+    /// Return a tensor of given shape and type, filled with ones..
+    /// </summary>
+    /// <typeparam name="T">unmanaged type.</typeparam>
+    /// <param name="shape">shape.</param>
+    /// <returns>Tensor{T}.</returns>
+    public static Tensor Ones<T>(Shape shape)
+        where T : unmanaged, IEquatable<T>
+    {
+        var value = (T)Convert.ChangeType(1, typeof(T));
+        return Tensor.FromValues<T>(shape, value);
+    }
+
+    /// <summary>
     /// Cast to typed tensor.
     /// </summary>
     /// <typeparam name="T">Element type.</typeparam>
@@ -490,5 +516,11 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     {
         var mmgr = new ArrayMemoryManager<T>(array);
         return new Tensor<T>(mmgr.Memory, dimensions);
+    }
+
+    private static Tensor FromValues<T>(Shape shape, T value)
+        where T : unmanaged, IEquatable<T>
+    {
+        return Tensor.From(Enumerable.Repeat(value, shape.Prod().FixedValue).ToArray(), shape);
     }
 }
