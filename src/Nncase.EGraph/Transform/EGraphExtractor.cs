@@ -48,19 +48,21 @@ public static class EGraphExtractExtensions
             EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, root.Find(), Path.Combine(options.DumpDir, "Costs", $"V{eGraph.Version}"));
         }
 
-        return new EGraphExtractor(costModel).Extract(root.Find());
+        return new EGraphExtractor(costModel, options).Extract(root.Find());
     }
 }
 
 internal class EGraphExtractor
 {
     private readonly EGraphCostModel _costModel;
+    private readonly RunPassOptions _options;
     private readonly Dictionary<EClass, Expr> _eclassMemo = new();
     private readonly Dictionary<EClass, Expr> _markerEclassMemo = new();
 
-    public EGraphExtractor(EGraphCostModel costModel)
+    public EGraphExtractor(EGraphCostModel costModel, RunPassOptions options)
     {
         _costModel = costModel;
+        _options = options;
     }
 
     public Expr Extract(EClass root)
@@ -147,32 +149,6 @@ internal class EGraphExtractor
                     throw new ArgumentException("Unsupported expression type.");
             }
         }
-
-        // var callPattern = IsCall(IsWildcard(), IsWildcard());
-        // var isCallExpr = callPattern.MatchLeaf(expr);
-        // if (isCallExpr == true)
-        // {
-        //     if (((Call)expr).EnodeQuantConfigWithCosine != null)
-        //     {
-        //         var pattern = IsCall(IsWildcard(), IsWildcard());
-        //         var isCall = pattern.MatchLeaf(expr);
-        //         if (isCall == true)
-        //         {
-        //             System.Console.WriteLine(expr + "  " + expr.CheckedType);
-        //             for (int i = 0; i < ((Call)expr).EnodeQuantConfigWithCosine.Count; i++)
-        //             {
-        //                 for (int j = 0; j < ((Call)expr).EnodeQuantConfigWithCosine[i].Item1.Count; j++)
-        //                 {
-        //                     System.Console.Write(((Call)expr).EnodeQuantConfigWithCosine[i].Item1[j] + "  ");
-        //                 }
-
-        // System.Console.WriteLine(((Call)expr).EnodeQuantConfigWithCosine[i].Item3);
-        //             }
-        //         }
-        //     }
-        // }
-
-        // return expr;
     }
 
     private Marker Visit(ENode enode, Marker marker, IRArray<Expr> children)
@@ -197,6 +173,20 @@ internal class EGraphExtractor
     {
         var target = children[0];
         var parameters = children.Skip(1);
+        // for mix quant debug.
+        if (call.EnodeQuantConfigWithCosine != null && _options.DumpLevel > 3)
+        {
+            Console.WriteLine(call + "  " + call.CheckedType);
+            for (int i = 0; i < call.EnodeQuantConfigWithCosine.Count; i++)
+            {
+                for (int j = 0; j < call.EnodeQuantConfigWithCosine[i].Item1.Count; j++)
+                {
+                    Console.Write(call.EnodeQuantConfigWithCosine[i].Item1[j] + "  ");
+                }
+
+                Console.WriteLine(call.EnodeQuantConfigWithCosine[i].Item3);
+            }
+        }
         return call with { Target = target, Parameters = new(parameters) };
     }
 }
