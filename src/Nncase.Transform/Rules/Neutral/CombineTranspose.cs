@@ -315,33 +315,43 @@ public sealed partial class CombineActivationsTranspose : IRewriteRule
           return patterns;
       }));
 
-    Expr? GetReplace(ActivationOp activation, Expr input, IReadOnlyList<Expr> parameters, Expr perm)
+    private Expr? GetReplace(ActivationOp activation, Expr input, IReadOnlyList<Expr> parameters, Expr perm)
     {
         // note the prelu scope can be broadcast with inputs.
         if (activation is PRelu && parameters[1].CheckedShape.Rank > 1)
         {
             if (perm is not TensorConst const_perm || parameters[1] is not TensorConst slope)
+            {
                 return null;
+            }
+
             // eg. transpose(input,perm) shape = [1,32,32,8], scope = [1,1,8]
             Expr new_slope;
             var perms = const_perm.Value.ToArray<int>();
             if (slope.Value.Shape.Rank == input.CheckedShape.Rank - 1)
             {
                 if (perms[0] != 0)
+                {
                     return null;
-                var inv_perm = perms.Skip(1).Select((p, i) => (p - 1, i)).OrderBy(tp => tp.Item1).Select(tp => tp.Item2).ToArray();
+                }
+
+                var inv_perm = perms.Skip(1).Select((p, i) => (p - 1, i)).OrderBy(tp => tp.Item1).Select(tp => tp.i).ToArray();
                 new_slope = Const.FromValue(Transpose(slope, inv_perm).Evaluate());
                 return Transpose(new Call(activation, input, new_slope), perm);
             }
             else if (slope.Value.Shape.Rank == input.CheckedShape.Rank)
             {
-                var inv_perm = perms.Select((p, i) => (p, i)).OrderBy(tp => tp.Item1).Select(tp => tp.i).ToArray();
+                var inv_perm = perms.Select((p, i) => (p, i)).OrderBy(tp => tp.p).Select(tp => tp.i).ToArray();
                 new_slope = Const.FromValue(Transpose(slope, inv_perm).Evaluate());
             }
             else
+            {
                 return null;
+            }
+
             return Transpose(new Call(activation, input, new_slope), perm);
         }
+
         return Transpose(
           new Call(activation, new Expr[] { input }.Concat(parameters.Skip(1)).ToArray()),
           perm);
