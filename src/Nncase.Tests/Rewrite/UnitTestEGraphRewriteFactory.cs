@@ -15,9 +15,9 @@ public sealed class UnitTestEGraphRewriteFactory : TestFixture.UnitTestFixtrue
 {
     public static TheoryData<IRewriteCase> DataOne => new()
     {
-      new ActivationsTransposePRelu(),
-      new ActivationsTransposePRelu2(),
-      new ActivationsTransposePRelu3(),
+        new ActivationsTransposePRelu(),
+        new ActivationsTransposePRelu2(),
+        new ActivationsTransposePRelu3(),
     };
 
     public static TheoryData<IRewriteCase> DataAll => new()
