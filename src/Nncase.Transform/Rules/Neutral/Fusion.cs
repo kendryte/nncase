@@ -11,12 +11,11 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
+using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.Utility;
 using static Nncase.Utilities.ReplaceUtility;
-using static Nncase.IR.TypePatternUtility;
 using ParameterInfo = Nncase.IR.ParameterInfo;
 using Tuple = System.Tuple;
-
 
 namespace Nncase.Transform.Rules.Neutral;
 
@@ -47,7 +46,7 @@ public abstract class FusionMaker : RewriteRule<Pattern>
 /// but something not support
 /// 1. not TensorConst
 /// 2. Swappable Binary
-/// in these cases you should use DoubleInputFusion
+/// in these cases you should use DoubleInputFusion.
 ///
 /// </summary>
 /// <typeparam name="OpT">OpT.</typeparam>
@@ -55,21 +54,25 @@ public abstract class FusionMaker : RewriteRule<Pattern>
 /// <typeparam name="EndT">End process for output.</typeparam>
 /// <typeparam name="DataMaker">Used for set detail pattern.
 /// In DataMaker, you should impl your own member
-/// which signature is same as "public static (ParameterInfo, Pattern)[] InputsPattern" </typeparam>
+/// which signature is same as "public static (ParameterInfo, Pattern)[] InputsPattern". </typeparam>
 [RuleGenerator]
 public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
     where OpT : Op
     where BeginT : Op
     where EndT : Op
 {
+    public static string OutputName = "output";
+
+    public static Pattern ComputePattern { get; } = IsCallWithSpecInput<OpT>("midCall", null!,
+        InputsPattern);
+
     public override Pattern Pattern { get; } = IsAlt(
+
         // if multi output, then the name by generated should be set null to avoid name conflict
         // if single output, then use the OutputName
         // designed for fusion single output and multi output by only one rule
         MultiOutPattern(ComputePattern, OutputName),
         EndPattern(OutputName));
-
-    public static string OutputName = "output";
 
     /// <summary>
     /// Generate multi output pattern, wrap with GetItem.
@@ -82,17 +85,13 @@ public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
                 IsWildcardCall<GetItem>(null!, null!, inputPattern))),
         outputName);
 
-
     public static Pattern EndPattern(string endCallName) => IsWildcardCall<EndT>(endCallName, null!, ComputePattern);
-
-    public static Pattern ComputePattern { get; } = IsCallWithSpecInput<OpT>("midCall", null!,
-        InputsPattern);
 
     public static (ParameterInfo, Pattern)[] InputsPattern =>
         typeof(DataMaker).GetField("InputsPattern").GetValue(null) as (ParameterInfo, Pattern)[];
 
     /// <summary>
-    /// Used for construct wildcard Pattern for inputs from ParameterInfo[]
+    /// Used for construct wildcard Pattern for inputs from ParameterInfo[].
     /// </summary>
     /// <param name="infos">Parameter Infos.</param>
     /// <typeparam name="BeginT" />
@@ -122,6 +121,7 @@ public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
     {
         var newFields = tupleOut.Fields.Select(end =>
                 ReplaceFirst((Call)end, (Expr)ReplaceCallParam(
+
                     // end is a GetItem(Call(OpT, params))
                     // then end[0] is Call(OpT, params)
                     (Call)((Call)end).Parameters[0],
@@ -133,11 +133,13 @@ public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
     protected virtual Call? GetReplace(Expr output, Call midCall, IReadOnlyList<Expr> midCallParams)
     {
         int idx = 0;
+
         // get inputs for spec
         var oldInputs = InputsPattern
             .Select(x => x.Item1.Index)
             .Select(i => midCallParams[i])
             .ToArray();
+
         // update old input and accumulate new begin and new input
         var (newBegins, newInputs) = oldInputs
             .Aggregate(
@@ -149,12 +151,12 @@ public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
                     var newBegin = ReplaceCallParam((Call)begin, new[] { (input, (Expr)newInput) });
                     return (
                         tuple.Item1.Append(newBegin).ToArray(),
-                        tuple.Item2.Append(newInput).ToArray()
-                    );
+                        tuple.Item2.Append(newInput).ToArray());
                 });
 
         // update compute
         var newMidCall = ReplaceCallParam(midCall, midCallParams.Zip(newBegins).ToArray());
+
         // update end
         Expr newBody = output switch
         {
@@ -248,7 +250,8 @@ public partial class DoubleInputFusion<T, BeginT, EndT> : FusionMaker
         var new_endCallParams = ReplaceParams(endCallParams, midCall, new_midCall);
         var new_endCall = endCall with { Parameters = new(new_endCallParams) };
 
-        var fusion = new Call(new Fusion(FullName, ModuleKind, new_endCall, new_args.ToArray()),
+        var fusion = new Call(
+            new Fusion(FullName, ModuleKind, new_endCall, new_args.ToArray()),
             newParams.ToArray());
         return fusion;
     }

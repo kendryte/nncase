@@ -62,7 +62,8 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
         var pass = new DataflowPass("Fusion") { new TestUnaryFusion(), new TestTransposeFusion(), };
         var post = await pass.RunAsync(pre, caseOptions);
 
-        var isMatch = CompilerServices.TryMatch(post,
+        var isMatch = CompilerServices.TryMatch(
+            post,
             IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
         Assert.True(isMatch);
     }
@@ -90,14 +91,16 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
         var post = await pass.RunAsync(pre, caseOptions);
 
         var rewriter = new DataFlowMergeRewriter();
-        var post2 = (Function)rewriter.Rewrite(post,
+        var post2 = (Function)rewriter.Rewrite(
+            post,
             new IMergeRewriteRule[]
             {
                 new SameInputFusionMergeRule(), new MultiInputFusionMergeRule(), new ShortCutFusionMergeRule(),
             }, (usedby, rule, option) => new FusionGroupMutator(usedby, rule, option),
             caseOptions);
 
-        var isMatch = CompilerServices.TryMatch(post2,
+        var isMatch = CompilerServices.TryMatch(
+            post2,
             IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
         Assert.True(isMatch);
     }
@@ -118,7 +121,8 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
         CompilerServices.InferenceType(pre);
         var pass = new DataflowPass("Fusion") { new TestUnaryFusion(), };
         var result = await pass.RunAsync(pre, caseOptions);
-        var isMatch = CompilerServices.TryMatch(result,
+        var isMatch = CompilerServices.TryMatch(
+            result,
             IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
         Assert.True(isMatch);
     }
@@ -160,7 +164,8 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
         Function pre;
         {
             var v1 = WrapperWith(x => Transpose(x[0], new[] { 0, 3, 1, 2 }), input); // f32[1,3,24,32]
-            var v3 = WrapperWith(x => x[0] + x[1],
+            var v3 = WrapperWith(
+                x => x[0] + x[1],
                 IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 24, 32 }).Evaluate().AsTensor(), v1);
             var v5 = WrapperWith(x => Unary(UnaryOp.Abs, x[0]), v3); // f32[1,3,24,32]
             var v6 = WrapperWith(x => x[0], v5);
@@ -182,14 +187,6 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
         Assert.Equal(5, visitor.Count);
     }
 
-    private Expr WrapperWith(Func<Expr[], Expr> ctor, params Expr[] inputs)
-    {
-        var new_inputs = inputs.Select(i => Quantize(i, new QuantParam(0, 1), DataTypes.BFloat16)).ToArray();
-        var output = ctor(new_inputs);
-        return Dequantize(output, new QuantParam(0, 1), DataTypes.Float32);
-    }
-
-
     [Fact]
     public async void TestComplexFusionSingleOutput()
     {
@@ -210,15 +207,11 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
         Assert.Equal(newFusion.Body, expectBody);
     }
 
-    internal sealed class
-        TestTransposeComplexFusionSingleOutput : ComplexFusion<Transpose, Quantize, Dequantize,
-            TestTransposeComplexFusionSingleOutput.TransposeDataMaker>
+    private Expr WrapperWith(Func<Expr[], Expr> ctor, params Expr[] inputs)
     {
-        public class TransposeDataMaker
-        {
-            public static (ParameterInfo, Pattern)[] InputsPattern =
-                GenerateInputsPattern(Transpose.Input);
-        }
+        var new_inputs = inputs.Select(i => Quantize(i, new QuantParam(0, 1), DataTypes.BFloat16)).ToArray();
+        var output = ctor(new_inputs);
+        return Dequantize(output, new QuantParam(0, 1), DataTypes.Float32);
     }
 
     [Fact]
@@ -288,8 +281,10 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
 
         var newVars = ((Fusion)afterCall.Target).Parameters;
         var newVarNames = newVars.Select(v => v.Name).ToArray();
+
         // check var name
         Assert.Equal(newVarNames, new[] { "input_0", "input_1", "input_2" });
+
         // construct a expect Tuple
         // avoiding the error of comparing var, because comparing var is by ref
         var newVar0 = x;
@@ -297,11 +292,22 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
         var newVar2 = r;
         var expectLSTM = ReplaceUtility.ReplaceParams(lstm, (LSTM.X, WrapInput(newVar0)), (LSTM.W, WrapInput(newVar1)), (LSTM.R, WrapInput(newVar2)));
         var expectBody = WrapOutput(expectLSTM);
-        var expectCall = new Call(new Fusion("FusionMaker_0", "StackVM", expectBody, new[]{newVar0, newVar1, newVar2}), x, w, r);
+        var expectCall = new Call(new Fusion("FusionMaker_0", "StackVM", expectBody, new[] { newVar0, newVar1, newVar2 }), x, w, r);
         expectCall.InferenceType();
         for (int i = 0; i < outputSize; i++)
         {
-            Compare(oldBody,  expectBody, i);
+            Compare(oldBody, expectBody, i);
+        }
+    }
+
+    internal sealed class
+        TestTransposeComplexFusionSingleOutput : ComplexFusion<Transpose, Quantize, Dequantize,
+            TestTransposeComplexFusionSingleOutput.TransposeDataMaker>
+    {
+        public class TransposeDataMaker
+        {
+            public static (ParameterInfo, Pattern)[] InputsPattern =
+                GenerateInputsPattern(Transpose.Input);
         }
     }
 

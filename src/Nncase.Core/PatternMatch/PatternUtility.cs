@@ -33,8 +33,9 @@ public static partial class Utility
     /// <param name="inputPattern">input pattern.</param>
     /// <returns></returns>
     public static VArgsPattern GenerateParameters(string prefix, Pattern[] beginPatterns) =>
-        IsVArgsRepeat(prefix != null ? prefix + "Params" : null!
-            , list =>
+        IsVArgsRepeat(
+            prefix != null ? prefix + "Params" : null!,
+            list =>
                 beginPatterns
                     .Concat(Enumerable.Range(0, list.Count - beginPatterns.Length).Select(_ => IsWildcard(null)))
                     .ToArray());
@@ -66,17 +67,17 @@ public static partial class Utility
         =>
             IsCall(callName, IsOp<T>(opName, _ => true), GenerateParameters(callName, inputPattern))
                 with
-                {
-                    TypePattern = IsType(x => !(x is InvalidType)),
-                };
+            {
+                TypePattern = IsType(x => !(x is InvalidType)),
+            };
 
     public static CallPattern IsWildcardCall<T>(string callName, string opName, Pattern lhsPattern, Pattern rhsPattern)
         where T : Op =>
         IsCall(callName, IsOp<T>(opName, _ => true), GenerateParameters(callName, new[] { lhsPattern, rhsPattern }))
             with
-            {
-                TypePattern = IsType(x => !(x is InvalidType)),
-            };
+        {
+            TypePattern = IsType(x => !(x is InvalidType)),
+        };
 
     public static Pattern IsSwappableWildcardCall<T>(string callName, string opName, Pattern lhsPattern,
         Pattern rhsPattern)
@@ -89,9 +90,9 @@ public static partial class Utility
     public static CallPattern IsWildcardCall(string callName, Pattern firstInputPattern) =>
         IsCall(callName, IsWildcard(), GenerateParameters(callName, firstInputPattern))
             with
-            {
-                TypePattern = IsType(x => !(x is InvalidType)),
-            };
+        {
+            TypePattern = IsType(x => !(x is InvalidType)),
+        };
 
     public static VArgsPattern GenerateRepeatParameters(Func<Pattern> pGenerator) =>
         IsVArgsRepeat(list =>
@@ -177,9 +178,9 @@ public static partial class Utility
         where T : Op =>
         IsCall(callName, IsOp<T>(opName, _ => true), ArgsPattern<T>(specs))
             with
-            {
-                TypePattern = IsType(x => !(x is InvalidType)),
-            };
+        {
+            TypePattern = IsType(x => !(x is InvalidType)),
+        };
 
     /// <summary>
     /// e.g.
@@ -236,7 +237,8 @@ public static partial class Utility
         where T : Op
         where BeginT : Op
         where EndT : Op => IsFusion(fusionName, module_kind,
-        IsAlt(IsSIFusionBody<T, BeginT, EndT>(mid_name, inputName, callName, beginName, endName),
+        IsAlt(
+            IsSIFusionBody<T, BeginT, EndT>(mid_name, inputName, callName, beginName, endName),
             IsDIFusionBody<T, BeginT, EndT>(callName)),
         WildcardVArgsPattern);
 

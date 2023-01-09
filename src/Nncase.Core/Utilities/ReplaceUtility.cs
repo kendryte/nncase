@@ -171,7 +171,7 @@ public class ReplaceUtility
     }
 
     /// <summary>
-    /// Make a call with replace param
+    /// Make a call with replace param.
     /// </summary>
     /// <param name="call">Old Call.</param>
     /// <param name="pairs">Pair of old param and new param.</param>
