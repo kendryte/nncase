@@ -217,7 +217,7 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
         public class TransposeDataMaker
         {
             public static (ParameterInfo, Pattern)[] InputsPattern =
-                GenerateInputsPattern<Quantize>(Transpose.Input);
+                GenerateInputsPattern(Transpose.Input);
         }
     }
 
@@ -310,7 +310,7 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
         public class FusionCondMaker
         {
             public static (ParameterInfo, Pattern)[] InputsPattern =
-                GenerateInputsPattern<Quantize>(LSTM.X, LSTM.W, LSTM.R);
+                GenerateInputsPattern(LSTM.X, LSTM.W, LSTM.R);
         }
     }
 }

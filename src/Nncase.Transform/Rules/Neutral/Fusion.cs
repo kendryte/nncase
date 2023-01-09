@@ -48,11 +48,14 @@ public abstract class FusionMaker : RewriteRule<Pattern>
 /// 1. not TensorConst
 /// 2. Swappable Binary
 /// in these cases you should use DoubleInputFusion
+///
 /// </summary>
 /// <typeparam name="OpT">OpT.</typeparam>
 /// <typeparam name="BeginT">Begin process for input.</typeparam>
 /// <typeparam name="EndT">End process for output.</typeparam>
-/// <typeparam name="DataMaker">Used for set detail pattern.</typeparam>
+/// <typeparam name="DataMaker">Used for set detail pattern.
+/// In DataMaker, you should impl your own member
+/// which signature is same as "public static (ParameterInfo, Pattern)[] InputsPattern" </typeparam>
 [RuleGenerator]
 public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
     where OpT : Op
