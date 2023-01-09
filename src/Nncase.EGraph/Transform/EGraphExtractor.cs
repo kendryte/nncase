@@ -50,6 +50,44 @@ public static class EGraphExtractExtensions
 
         return new EGraphExtractor(costModel, options).Extract(root.Find());
     }
+
+    /// <summary>
+    /// find the minCostEnode in eclass.
+    /// <remarks>
+    /// the marker first.
+    /// </remarks>
+    /// </summary>
+    /// <param name="eClass"></param>
+    /// <param name="costModel"></param>
+    /// <returns></returns>
+    internal static ENode MinByWithMarker(this EClass eClass, CostModel.EGraphCostModel costModel)
+    {
+        return eClass.Nodes.OrderBy(e => e.Expr, ENodeTypeComparer.Instance).MinBy(x => costModel[x])!;
+    }
+
+    /// <summary>
+    /// find the minCostEnode in eclass skip marker.
+    /// </summary>
+    /// <param name="eClass"></param>
+    /// <param name="costModel"></param>
+    /// <returns></returns>
+    internal static ENode MinByWithOutMarker(this EClass eClass, CostModel.EGraphCostModel costModel)
+    {
+        return eClass.Nodes.Where(e => e.Expr is not Marker).MinBy(x => costModel[x])!;
+    }
+
+    private sealed class ENodeTypeComparer : IComparer<Expr>
+    {
+        public static ENodeTypeComparer Instance = new();
+
+        public int Compare(Expr? x, Expr? y) => (x, y) switch
+        {
+            (Marker, Marker) => 0,
+            (Marker, _) => -1,
+            (_, Marker) => 1,
+            (_, _) => 0,
+        };
+    }
 }
 
 internal class EGraphExtractor
@@ -74,7 +112,7 @@ internal class EGraphExtractor
     private void Visit(EClass eclass)
     {
         var stack = new Stack<(EClass, ENode)>();
-        stack.Push((eclass, eclass.Nodes.MinBy(x => _costModel[x])!));
+        stack.Push((eclass, eclass.MinByWithMarker(_costModel)));
         var markerEclassSet = new HashSet<EClass>();
         while (stack.Any())
         {
@@ -85,12 +123,11 @@ internal class EGraphExtractor
                 continue;
             }
 
+            expr = null;
             switch (minCostEnode.Expr)
             {
                 case Var or TensorConst or TupleConst or Op or Fusion or None:
                     expr = minCostEnode.Expr;
-                    _eclassMemo.Add(eclass, expr);
-                    stack.Pop();
                     break;
                 case Function or Call or IR.Tuple or Marker:
                     var childrenExprs = new List<Expr>();
@@ -103,7 +140,7 @@ internal class EGraphExtractor
                                 if (!_markerEclassMemo.TryGetValue(eclass, out var markerInputExpr))
                                 {
                                     markerEclassSet.Add(eclass);
-                                    stack.Push((eclass, eclass.Nodes.Where(n => n.Expr is not Marker).MinBy(x => _costModel[x])!));
+                                    stack.Push((eclass, eclass.MinByWithOutMarker(_costModel)));
                                 }
                                 else
                                 {
@@ -112,7 +149,7 @@ internal class EGraphExtractor
                             }
                             else
                             {
-                                stack.Push((child, child.Nodes.MinBy(x => _costModel[x])!));
+                                stack.Push((child, child.MinByWithMarker(_costModel)));
                             }
                         }
                         else
@@ -134,20 +171,27 @@ internal class EGraphExtractor
                         Marker marker => Visit(minCostEnode, marker, new(childrenExprs)),
                         _ => throw new ArgumentException("Unsupported expression type."),
                     };
-                    if (markerEclassSet.Contains(eclass) && minCostEnode.Expr is not Marker)
-                    {
-                        _markerEclassMemo.Add(eclass, expr);
-                    }
-                    else
-                    {
-                        _eclassMemo.Add(eclass, expr);
-                    }
 
-                    stack.Pop();
                     break;
                 default:
                     throw new ArgumentException("Unsupported expression type.");
             }
+
+            if (expr is null)
+            {
+                continue;
+            }
+
+            if (markerEclassSet.Contains(eclass) && minCostEnode.Expr is not Marker)
+            {
+                _markerEclassMemo.Add(eclass, expr);
+            }
+            else
+            {
+                _eclassMemo.Add(eclass, expr);
+            }
+
+            stack.Pop();
         }
     }
 

@@ -35,10 +35,6 @@ public class UninitializedEvaluator : IEvaluator<Uninitialized>, ITypeInferencer
     /// <inheritdoc/>
     public Cost? Visit(ICostEvaluateContext context, Uninitialized target)
     {
-        var outputType = context.GetReturnType<TensorType>();
-        return new()
-        {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
-        };
+        return Cost.Zero;
     }
 }
