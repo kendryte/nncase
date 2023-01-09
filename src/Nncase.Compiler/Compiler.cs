@@ -117,7 +117,7 @@ public class Compiler
 
         RunPass(p => t.RegisterTargetDependentPass(p, _compileOptions), "TargetDependentPass");
 
-        RunPass(p => p.Add(new Quantization.EGraphPassWithBindQuantizeConfig("2.5_BindQuantizeConfig", options.QuantizeOptions!)));
+        // RunPass(p => p.Add(new Quantization.EGraphPassWithBindQuantizeConfig("2.5_BindQuantizeConfig", options.QuantizeOptions!)));
         if (_compileOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
             RunPass(p => t.RegisterQuantizePass(p, _compileOptions), "QuantizePass");
