@@ -786,7 +786,10 @@ public sealed class MergeBinaryBeforeConv2DCase : IRewriteCase
                   }, new[] { 1, 1 }, PadMode.Constant, 1,
                   new[] { 0.0f, 6.0f }); // f32[1,256,56,56]
             var v_6 = v_5; // f32[1,256,56,56]
-            var v_7 = Pad(v_6, new[,] { { 0, 0 }, { 0, 0 }, { 1, 1 }, { 1, 1 } }, PadMode.Constant, 0.0f); // f32[1,256,58,58]
+            var v_7 = Pad(v_6, new[,] { { 0, 0 },
+            { 0, 0 },
+            { 1, 1 },
+            { 1, 1 } }, PadMode.Constant, 0.0f); // f32[1,256,58,58]
             var v_8 = v_7;
             var v_9 = Conv2D(v_8, Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, 256, 3, 3 }).Evaluate().AsTensor(),
                   Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor(), new[] { 1, 1 },
@@ -814,7 +817,8 @@ public sealed class MergeBinaryBeforeConv2DCase : IRewriteCase
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[]{
+    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[]
+    {
         new Transform.Rules.Neutral.FoldConstCall(),
         new Transform.Rules.Neutral.FoldConv2DMulAdd(),
     };

@@ -25,7 +25,7 @@ public class UnitTestDataFlowRewriteFactory : TestFixture.UnitTestFixtrue
 {
     public static TheoryData<IRewriteCase> DataOne => new()
     {
-      new MergeBinaryBeforeConv2DCase(),
+        new MergeBinaryBeforeConv2DCase(),
     };
 
     public static TheoryData<IRewriteCase> DataAll => new()

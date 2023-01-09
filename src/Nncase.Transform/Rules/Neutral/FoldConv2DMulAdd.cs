@@ -18,23 +18,23 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Transform.Rules.Neutral;
 
 /// <summary>
-/// 
-///  input     const      
-///    |     /            
-///    add()   const         
-///    |     /       
-///    mul()         
-///   |              
-/// conv2d(,w,bias)  
+///
+///  input     const
+///    |     /
+///    add()   const
+///    |     /
+///    mul()
+///   |
+/// conv2d(,w,bias)
 /// ---------------------
 ///   input
-///   |   mul(w,mulConst)           
-///   |    /                
-///   |   |   
-///   |   |  
+///   |   mul(w,mulConst)
+///   |    /
+///   |   |
+///   |   |
 ///   |   |  conv2d(addConst,w,zero_bias)
 ///   |  |   /
-/// conv2d( )           
+/// conv2d( ).
 /// <remarks>
 ///  input can't be conv2d.
 /// </remarks>
@@ -42,20 +42,24 @@ namespace Nncase.Transform.Rules.Neutral;
 [RuleGenerator]
 public sealed partial class FoldConv2DMulAdd : IRewriteRule
 {
-    private static bool checkConstTensor(Tensor t)
+    private static readonly Pattern _mulConst = IsTensorConst("mulConst", c => CheckConstTensor(c.Value));
+
+    private static bool CheckConstTensor(Tensor t)
     {
         if (t.ElementType != DataTypes.Float32)
+        {
             return false;
+        }
 
         if (!(t.Rank == 1 || (t.Rank == 4 && t.Shape[0].FixedValue == 1 && t.Shape[2].FixedValue == 1 && t.Shape[3].FixedValue == 1)))
+        {
             return false;
+        }
 
         return true;
     }
 
-    private static readonly Pattern _mulConst = IsTensorConst("mulConst", c => checkConstTensor(c.Value));
-
-    private static readonly Pattern _addConst = IsTensorConst("addConst", c => checkConstTensor(c.Value));
+    private static readonly Pattern _addConst = IsTensorConst("addConst", c => CheckConstTensor(c.Value));
 
     private static readonly Pattern _inputPattern = IsCall("inputCall", IsWildcard("inputTarget"), IsVArgsRepeat(() => IsWildcard()));
 
