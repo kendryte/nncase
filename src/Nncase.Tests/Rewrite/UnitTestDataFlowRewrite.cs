@@ -358,7 +358,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         /// <inheritdoc/>
         public IPattern Pattern { get; } = SInputPattern / SInputPattern;
 
-        public Expr? GetReplace(IMatchResult result, RunPassOptions options)
+        public Expr? GetReplace(IMatchResult result, RunPassContext options)
         {
             var x = (Expr)result["x"];
             return Tensor.FromScalar<int>(1).CastTo(x.CheckedDataType, CastMode.KDefault);
