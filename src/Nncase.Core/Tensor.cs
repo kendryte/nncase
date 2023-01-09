@@ -371,29 +371,29 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
       => FromConst(@const).Cast<T>(castMode);
 
     /// <summary>
-    /// Return a tensor of given shape and type, filled with zeros..
+    /// Return a tensor of given shape and type, filled with zeros.
     /// </summary>
     /// <typeparam name="T">unmanaged type.</typeparam>
-    /// <param name="shape">shape.</param>
+    /// <param name="dimensions">dimensions.</param>
     /// <returns>Tensor{T}.</returns>
-    public static Tensor Zeros<T>(Shape shape)
+    public static Tensor Zeros<T>(ReadOnlySpan<int> dimensions)
         where T : unmanaged, IEquatable<T>
     {
         var value = (T)Convert.ChangeType(0, typeof(T));
-        return Tensor.FromValues<T>(shape, value);
+        return Tensor.FromScalar<T>(value, dimensions);
     }
 
     /// <summary>
-    /// Return a tensor of given shape and type, filled with ones..
+    /// Return a tensor of given shape and type, filled with ones.
     /// </summary>
     /// <typeparam name="T">unmanaged type.</typeparam>
-    /// <param name="shape">shape.</param>
+    /// <param name="dimensions">dimensions.</param>
     /// <returns>Tensor{T}.</returns>
-    public static Tensor Ones<T>(Shape shape)
+    public static Tensor Ones<T>(ReadOnlySpan<int> dimensions)
         where T : unmanaged, IEquatable<T>
     {
         var value = (T)Convert.ChangeType(1, typeof(T));
-        return Tensor.FromValues<T>(shape, value);
+        return Tensor.FromScalar<T>(value, dimensions);
     }
 
     /// <summary>
@@ -516,11 +516,5 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     {
         var mmgr = new ArrayMemoryManager<T>(array);
         return new Tensor<T>(mmgr.Memory, dimensions);
-    }
-
-    private static Tensor FromValues<T>(Shape shape, T value)
-        where T : unmanaged, IEquatable<T>
-    {
-        return Tensor.From(Enumerable.Repeat(value, shape.Prod().FixedValue).ToArray(), shape);
     }
 }
