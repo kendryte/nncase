@@ -92,10 +92,10 @@ public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
     /// Used for construct wildcard Pattern for inputs from ParameterInfo[]
     /// </summary>
     /// <param name="infos">Parameter Infos.</param>
-    /// <typeparam name="T" />
+    /// <typeparam name="BeginT" />
     /// <returns></returns>
-    public static (ParameterInfo, Pattern)[] GenerateInputsPattern<T>(ParameterInfo[] infos) where T : Op =>
-        infos.Select(x => (x, (Pattern)IsWildcardCall<T>(null, null, (string)null))).ToArray();
+    public static (ParameterInfo, Pattern)[] GenerateInputsPattern<BeginT>(params ParameterInfo[] infos) where BeginT : Op =>
+        infos.Select(x => (x, (Pattern)IsWildcardCall<BeginT>(null, null, (string)null))).ToArray();
 
     /// <summary>
     /// Get input Expr from expr of BeginT.
@@ -135,7 +135,7 @@ public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
             .Select(x => x.Item1.Index)
             .Select(i => midCallParams[i])
             .ToArray();
-        // update begin
+        // update old input and accumulate new begin and new input
         var (newBegins, newInputs) = oldInputs
             .Aggregate(
                 (Array.Empty<Expr>(), Array.Empty<Var>()),
@@ -149,6 +149,7 @@ public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
                         tuple.Item2.Append(newInput).ToArray()
                     );
                 });
+
         // update compute
         var newMidCall = ReplaceCallParam(midCall, midCallParams.Zip(newBegins).ToArray());
         // update end
