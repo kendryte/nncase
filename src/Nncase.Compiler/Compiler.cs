@@ -72,19 +72,20 @@ public class Compiler
         {
             passManager.Add(new EGraphPass("1_NeutralOptimize")
             {
-          new Transform.Rules.Neutral.FoldConstCall(),
-          new Transform.Rules.Neutral.FoldNopTranspose(),
-          new Transform.Rules.Neutral.FoldTwoTransposes(),
-          new Transform.Rules.Neutral.CombineTransposeUnary(),
-          new Transform.Rules.Neutral.CombineTransposePad(),
-          new Transform.Rules.Neutral.CombineTransposeBinary(),
-          new Transform.Rules.Neutral.CombineTransposeConstBinary(),
-          new Transform.Rules.Neutral.CombineTransposeReduce(),
-          new Transform.Rules.Neutral.CombineTransposeActivations(),
-          new Transform.Rules.Neutral.CombinePadTranspose(),
-          new Transform.Rules.Neutral.FoldNopPad(),
-          new Transform.Rules.Neutral.FoldConv2DPads(),
-          new Transform.Rules.Neutral.FoldReduceWindow2DPads(),
+              new Transform.Rules.Neutral.FoldConstCall(),
+              new Transform.Rules.Neutral.FoldNopTranspose(),
+              new Transform.Rules.Neutral.FoldTwoTransposes(),
+              new Transform.Rules.Neutral.CombineTransposeUnary(),
+              new Transform.Rules.Neutral.CombineTransposePad(),
+              new Transform.Rules.Neutral.CombinePadTranspose(),
+              new Transform.Rules.Neutral.CombineTransposeBinary(),
+              new Transform.Rules.Neutral.CombineTransposeConstBinary(),
+              new Transform.Rules.Neutral.CombineTransposeReduce(),
+              new Transform.Rules.Neutral.CombineTransposeActivations(),
+              new Transform.Rules.Neutral.CombineActivationsTranspose(),
+              new Transform.Rules.Neutral.FoldNopPad(),
+              new Transform.Rules.Neutral.FoldConv2DPads(),
+              new Transform.Rules.Neutral.FoldReduceWindow2DPads(),
             });
         }
 

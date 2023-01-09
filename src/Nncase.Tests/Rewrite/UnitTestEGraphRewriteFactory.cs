@@ -15,11 +15,16 @@ public sealed class UnitTestEGraphRewriteFactory : TestFixture.UnitTestFixtrue
 {
     public static TheoryData<IRewriteCase> DataOne => new()
     {
-        new PadTransposeCaseEgraph(),
+        new ActivationsTransposePRelu(),
+        new ActivationsTransposePRelu2(),
+        new ActivationsTransposePRelu3(),
     };
 
     public static TheoryData<IRewriteCase> DataAll => new()
     {
+        new RemoveMarkerCaseEgraph(),
+        new ActivationsTranspose(),
+        new ActivationsTranspose2(),
         new PadTransposeCase(),
         new MobileNetV1TransposeCase(),
         new Conv2DPadsCase(),
@@ -35,6 +40,7 @@ public sealed class UnitTestEGraphRewriteFactory : TestFixture.UnitTestFixtrue
         new FoldNopTransposeCase2(),
         new FoldNopTransposeCase1(),
         new FoldTransposeCase(),
+        new PadTransposeCaseEgraph(),
     };
 
     [Theory]
