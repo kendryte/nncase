@@ -103,18 +103,18 @@ public sealed partial class FoldConv2DMulAdd : IRewriteRule
             return null;
         }
 
-        var new_weights = IR.F.Math.Mul(weights, Reshape(mulConst, new[] { 1, ic, 1, 1 }));
+        var newWeights = IR.F.Math.Mul(weights, Reshape(mulConst, new[] { 1, ic, 1, 1 }));
 
-        var add_conv = Conv2D(Reshape(addConst, new[] { 1, ic, 1, 1 }), weights, Tensor.FromScalar<float>(0.0f, weights.Shape[0].FixedValue), strides, paddings, dilation, conv2d.PadMode, groups, new float[]
+        var addConv = Conv2D(Reshape(addConst, new[] { 1, ic, 1, 1 }), weights, Tensor.FromScalar<float>(0.0f, weights.Shape[0].FixedValue), strides, paddings, dilation, conv2d.PadMode, groups, new float[]
         {
           ValueRange<float>.Full.Min,
           ValueRange<float>.Full.Max,
         });
 
-        var add_bias = add_conv + Reshape(bias, new[] { 1, bias.Shape[0].FixedValue, 1, 1 });
+        var addBias = addConv + Reshape(bias, new[] { 1, bias.Shape[0].FixedValue, 1, 1 });
 
-        var new_conv = Conv2D(inputCall, new_weights, Reshape(add_bias, new[] { bias.Shape[0].FixedValue }), strides, paddings, dilation, conv2d.PadMode, groups, fusedClamp);
+        var newConv = Conv2D(inputCall, newWeights, Reshape(addBias, new[] { bias.Shape[0].FixedValue }), strides, paddings, dilation, conv2d.PadMode, groups, fusedClamp);
 
-        return new_conv;
+        return newConv;
     }
 }
