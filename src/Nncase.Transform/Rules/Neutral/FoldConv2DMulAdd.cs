@@ -46,21 +46,6 @@ public sealed partial class FoldConv2DMulAdd : IRewriteRule
 
     private static readonly Pattern _addConst = IsTensorConst("addConst", c => CheckConstTensor(c.Value));
 
-    private static bool CheckConstTensor(Tensor t)
-    {
-        if (t.ElementType != DataTypes.Float32)
-        {
-            return false;
-        }
-
-        if (!(t.Rank == 1 || (t.Rank == 4 && t.Shape[0].FixedValue == 1 && t.Shape[2].FixedValue == 1 && t.Shape[3].FixedValue == 1)))
-        {
-            return false;
-        }
-
-        return true;
-    }
-
     private static readonly Pattern _inputPattern = IsCall("inputCall", IsWildcard("inputTarget"), IsVArgsRepeat(() => IsWildcard()));
 
     private static readonly Pattern _mulPattern =
@@ -86,6 +71,21 @@ public sealed partial class FoldConv2DMulAdd : IRewriteRule
         IsWildcard("dilation"),
         IsWildcard("groups"),
         IsWildcard("fusedClamp"));
+
+    private static bool CheckConstTensor(Tensor t)
+    {
+        if (t.ElementType != DataTypes.Float32)
+        {
+            return false;
+        }
+
+        if (!(t.Rank == 1 || (t.Rank == 4 && t.Shape[0].FixedValue == 1 && t.Shape[2].FixedValue == 1 && t.Shape[3].FixedValue == 1)))
+        {
+            return false;
+        }
+
+        return true;
+    }
 
     private Expr? GetReplace(Call conv2dCall, IR.NN.Conv2D conv2d,
       Tensor<float> weights, Tensor<float> bias, Expr strides,

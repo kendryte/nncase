@@ -117,16 +117,16 @@ public class Compiler
 
         RunPass(p => t.RegisterTargetDependentPass(p, _compileOptions), "TargetDependentPass");
 
-        // RunPass(p => p.Add(new Quantization.EGraphPassWithBindQuantizeConfig("2.5_BindQuantizeConfig", options.QuantizeOptions!)));
-        // if (_compileOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
-        // {
-        //     RunPass(p => t.RegisterQuantizePass(p, _compileOptions), "QuantizePass");
-        //     RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, _compileOptions), "TargetDependentAfterQuantPass");
-        //     RunPass(t => t.Add(new DataflowPass("ClearMarker") { new RemoveMarker() }), "RemoveMarker");
-        // }
+        RunPass(p => p.Add(new Quantization.EGraphPassWithBindQuantizeConfig("2.5_BindQuantizeConfig", options.QuantizeOptions!)));
+        if (_compileOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
+        {
+            RunPass(p => t.RegisterQuantizePass(p, _compileOptions), "QuantizePass");
+            RunPass(p => t.RegisterTargetDependentAfterQuantPass(p, _compileOptions), "TargetDependentAfterQuantPass");
+            RunPass(t => t.Add(new DataflowPass("ClearMarker") { new RemoveMarker() }), "RemoveMarker");
+        }
 
         // fold constant
-        // RunPass(p => p.Add(new Transform.Passes.ShapeInferPass()), "ShapeInferAfterCompile");
+        RunPass(p => p.Add(new Transform.Passes.ShapeInferPass()), "ShapeInferAfterCompile");
 
         // Console.WriteLine("Compile successful");
     }
