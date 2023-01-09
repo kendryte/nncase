@@ -44,6 +44,8 @@ public sealed partial class FoldConv2DMulAdd : IRewriteRule
 {
     private static readonly Pattern _mulConst = IsTensorConst("mulConst", c => CheckConstTensor(c.Value));
 
+    private static readonly Pattern _addConst = IsTensorConst("addConst", c => CheckConstTensor(c.Value));
+
     private static bool CheckConstTensor(Tensor t)
     {
         if (t.ElementType != DataTypes.Float32)
@@ -58,8 +60,6 @@ public sealed partial class FoldConv2DMulAdd : IRewriteRule
 
         return true;
     }
-
-    private static readonly Pattern _addConst = IsTensorConst("addConst", c => CheckConstTensor(c.Value));
 
     private static readonly Pattern _inputPattern = IsCall("inputCall", IsWildcard("inputTarget"), IsVArgsRepeat(() => IsWildcard()));
 
