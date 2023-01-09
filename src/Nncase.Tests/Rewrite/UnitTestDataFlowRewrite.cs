@@ -358,10 +358,10 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
 
     private sealed class DivToConst : Transform.IRewriteRule
     {
-        private static readonly Pattern S_inputPattern = IsWildcard("x");
+        private static readonly Pattern SInputPattern = IsWildcard("x");
 
         /// <inheritdoc/>
-        public IPattern Pattern { get; } = S_inputPattern / S_inputPattern;
+        public IPattern Pattern { get; } = SInputPattern / SInputPattern;
 
         public Expr? GetReplace(IMatchResult result, RunPassOptions options)
         {
