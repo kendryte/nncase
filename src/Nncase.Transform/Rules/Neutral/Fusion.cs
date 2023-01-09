@@ -94,7 +94,7 @@ public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
     /// <param name="infos">Parameter Infos.</param>
     /// <typeparam name="BeginT" />
     /// <returns></returns>
-    public static (ParameterInfo, Pattern)[] GenerateInputsPattern<BeginT>(params ParameterInfo[] infos) where BeginT : Op =>
+    public static (ParameterInfo, Pattern)[] GenerateInputsPattern(params ParameterInfo[] infos) =>
         infos.Select(x => (x, (Pattern)IsWildcardCall<BeginT>(null, null, (string)null))).ToArray();
 
     /// <summary>
