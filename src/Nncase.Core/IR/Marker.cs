@@ -28,16 +28,10 @@ public class MixQuantInfo
 /// <param name="Attribute"> expr attribute. </param>
 public sealed record Marker(string Name, Expr Target, Expr Attribute) : Expr
 {
-    public MixQuantInfo MixQuantInfo;
-
     /// <summary>
-    /// Gets Target.
+    /// Gets or set the mix quant info.
     /// </summary>
-    /// <returns></returns>
-    public Expr MarkerTarget()
-    {
-        return Target;
-    }
+    public MixQuantInfo MixQuantInfo;
 }
 
 /// <summary>
