@@ -344,7 +344,7 @@ public static unsafe class CApi
     [UnmanagedCallersOnly]
     private static IntPtr RTValueFromHandle(IntPtr handle)
     {
-        var rtValue = RTValue.FromHandle(handle);
+        var rtValue = RTValue.FromHandle(handle, true);
         return GCHandle.ToIntPtr(GCHandle.Alloc(rtValue));
     }
 

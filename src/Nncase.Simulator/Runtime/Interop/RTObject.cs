@@ -37,6 +37,6 @@ public abstract class RTObject : SafeHandle
     /// <inheritdoc/>
     protected override bool ReleaseHandle()
     {
-        return Native.ObjectFree(handle).IsSuccess;
+        return Native.ObjectRelease(handle).IsSuccess;
     }
 }

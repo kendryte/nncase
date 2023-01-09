@@ -51,7 +51,7 @@ public sealed partial class OnnxImporter : BaseImporter
 
         var createdInputs = _graph.Input
             .Where(n => !_constTensors.ContainsKey(n.Name))
-            .Select(n => new Var(n.Name, GetIRType(n)));
+            .Select(n => new Var(n.Name, GetIRType(n))).ToArray();
 
         _outputTensors = createdInputs.ToDictionary(n => n.Name, n => (Expr)n);
         return createdInputs;

@@ -97,7 +97,7 @@ class GraphEvaluator:
         return self._outputs[index]
 
     def run(self):
-        self._outputs = self._func.body.evaluate(self._inputs, self._params).to_runtime_tensors()
+        self._outputs = self._func.body.evaluate(self._params, self._inputs).to_runtime_tensors()
 
     @ property
     def outputs_size(self) -> int:
@@ -117,18 +117,19 @@ class IRModule():
 
 
 class Compiler:
+    _target : _nncase.Target
+    _session : _nncase.CompileSession
     _compiler: _nncase.Compiler
     _compile_options: _nncase.CompileOptions
     _quantize_options: _nncase.QuantizeOptions
     _module: IRModule
 
-    def __init__(self) -> None:
+    def __init__(self, compile_options: CompileOptions) -> None:
         self._compile_options = _nncase.CompileOptions()
-        self._compiler = _nncase.Compiler(self._compile_options)
-        self._quantize_options = None
-
-    def set_compile_options(self, compile_options: CompileOptions):
         self.__process_compile_options(compile_options)
+        self._session = _nncase.CompileSession(self._target, self._compile_options)
+        self._compiler = self._session.compiler
+        self._quantize_options = None
 
     def compile(self) -> None:
         self._compiler.compile()
@@ -168,14 +169,14 @@ class Compiler:
             self._quantize_options = _nncase.QuantizeOptions()
             self._compile_options.quantize_options = self._quantize_options
         self._quantize_options.calibration_dataset = provider
-        self._compile_options.model_quant_mode = _nncase.ModelQuantMode.UsePTQ
+        self._quantize_options.model_quant_mode = _nncase.ModelQuantMode.UsePTQ
 
     def dump_range_options(self) -> DumpRangeTensorOptions:
         raise NotImplementedError("dump_range_options")
 
     def __process_compile_options(self, compile_options: CompileOptions) -> ClCompileOptions:
-        self._compile_options.target = compile_options.target
-        self._compile_options.dump_level = 3 if compile_options.dump_ir == True else 0
+        self._target = _nncase.Target(compile_options.target)
+        self._compile_options.dump_flags = _nncase.DumpFlags.Nothing
         self._compile_options.dump_dir = compile_options.dump_dir
 
     def _import_module(self, model_content: bytes | io.RawIOBase) -> None:
@@ -188,7 +189,7 @@ def check_target(target: str):
         return target in ["cpu", "k510", "k230"]
 
     def target_exists(target: str):
-        return _nncase.target_exists(target)
+        return _nncase.Target.exists(target)
 
     return test_target(target) and target_exists(target)
 
