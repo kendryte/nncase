@@ -25,13 +25,14 @@ public class UnitTestDataFlowRewriteFactory : TestFixture.UnitTestFixtrue
 {
     public static TheoryData<IRewriteCase> DataOne => new()
     {
-        new ActivationsTransposePRelu(),
-        new ActivationsTransposePRelu2(),
-        new ActivationsTransposePRelu3(),
+        new MergeBinaryBeforeConv2DCase(),
     };
 
     public static TheoryData<IRewriteCase> DataAll => new()
     {
+        new ActivationsTransposePRelu(),
+        new ActivationsTransposePRelu2(),
+        new ActivationsTransposePRelu3(),
         new ActivationsTranspose(),
         new ActivationsTranspose2(),
         new PadTransposeCase(),
@@ -58,7 +59,7 @@ public class UnitTestDataFlowRewriteFactory : TestFixture.UnitTestFixtrue
         var post = (Function)await pass.RunAsync(pre, caseOptions);
         Assert.NotEqual(pre, post);
         var feed_dict = @case.FeedDict;
-        Assert.True(TestFixture.Comparator.AllEqual(pre.Body.Evaluate(feed_dict), post.Body.Evaluate(feed_dict)));
+        Assert.True(TestFixture.Comparator.Compare(pre.Body.Evaluate(feed_dict), post.Body.Evaluate(feed_dict)));
     }
 }
 

@@ -15,14 +15,14 @@ public sealed class UnitTestEGraphRewriteFactory : TestFixture.UnitTestFixtrue
 {
     public static TheoryData<IRewriteCase> DataOne => new()
     {
-        new ActivationsTransposePRelu(),
-        new ActivationsTransposePRelu2(),
-        new ActivationsTransposePRelu3(),
+        new RemoveMarkerCaseEgraph(),
     };
 
     public static TheoryData<IRewriteCase> DataAll => new()
     {
-        new RemoveMarkerCaseEgraph(),
+        new ActivationsTransposePRelu(),
+        new ActivationsTransposePRelu2(),
+        new ActivationsTransposePRelu3(),
         new ActivationsTranspose(),
         new ActivationsTranspose2(),
         new PadTransposeCase(),

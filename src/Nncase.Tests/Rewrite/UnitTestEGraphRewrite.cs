@@ -2,10 +2,14 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.IO;
+using Nncase.CostModel;
+using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.PatternMatch;
 using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Tensors;
+using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.ReWriteTest;
@@ -84,5 +88,51 @@ public class UnitTestEGraphRewrite : TestFixture.UnitTestFixtrue
 
         Assert.True(post.InferenceType());
         Assert.Equal(pre.Evaluate(), post.Evaluate());
+    }
+
+    [Fact]
+    public void TestEgraphRemoveMarkerPreserveConstMarker()
+    {
+        var caseOptions = GetPassOptions().SetDumpLevel(4);
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 224, 224, 3 }));
+        Expr pre;
+        {
+            var v_0 = Transpose(input, new[] { 0, 3, 1, 2 }); // f32[1,3,224,224]
+            var v_1 = IR.F.Math.RangeOfMarker(v_0, new[] { -4.91261, 4.4099503 });
+            var v_2 = IR.F.Math.RangeOfMarker(Const.FromValue(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 224, 224 }).Evaluate()), new[] { -1.0, 1.0 });
+            var v_3 = v_1 * v_2;
+            var v_4 = IR.F.Math.RangeOfMarker(v_3, new[] { -6.8198624, 7.4711213 });
+            pre = v_4;
+        }
+
+        Assert.True(pre.InferenceType());
+        CompilerServices.DumpIR(pre, "pre", caseOptions.DumpDir);
+
+        var post = CompilerServices.ERewrite(pre, new IRewriteRule[]
+        {
+              new Transform.Rules.Lower.RemoveMarker(),
+              new TestMulToAdd(),
+        }, caseOptions);
+
+        Assert.True(post.InferenceType());
+        CompilerServices.DumpIR(post, "post", caseOptions.DumpDir);
+
+        Assert.True(
+          post is Marker { Target: Call { Parameters: IRArray<Expr> param } } &&
+          param.Count == 2 &&
+          param[1] is Marker);
+    }
+}
+
+public sealed class TestMulToAdd : RewriteRule<Pattern>
+{
+    /// <inheritdoc/>
+    public override Pattern Pattern { get; } = IsBinary(op => op.BinaryOp == BinaryOp.Mul, IsWildcard("lhs"), IsWildcard("rhs"));
+
+    public override Expr? GetReplace(IMatchResult result, RunPassOptions options)
+    {
+        var lhs = (Expr)result["lhs"];
+        var rhs = (Expr)result["rhs"];
+        return lhs + rhs;
     }
 }
