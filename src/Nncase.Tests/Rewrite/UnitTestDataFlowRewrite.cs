@@ -331,51 +331,60 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
     }
 
     [Fact]
-    public void TestWithAnalysisInfoRewriteOnce()
+    public async void TestWithAnalysisInfoRewriteOnce()
     {
         var caseOptions = GetPassOptions();
         var x = new Var(TensorType.Scalar(DataTypes.Int32));
         var y = new Var(TensorType.Scalar(DataTypes.Int32));
         var z = new Var(TensorType.Scalar(DataTypes.Int32));
         var m = new Var(TensorType.Scalar(DataTypes.Int32));
-        var pre = m + (x + (z + (x + y)));
+        var pre = new Function(m + (x + (z + (x + (y / y)))), new[] { x, y, z, m });
         CompilerServices.InferenceType(pre);
 
-        Expr last = pre;
-        while (true)
+        var pass = new DataflowWithUsdByPass("DataflowWithUsdByPass")
         {
-            var usedyResult = Transform.Analyser.AnalysisUsedBy(last);
-            var post = CompilerServices.Rewrite(last, new[] { new AnalysisReassociateAdd(usedyResult) }, caseOptions.SetRewriteOnce(true));
-            if (object.ReferenceEquals(post, last))
-            {
-                break;
-            }
+          new AnalysisReassociateAdd(),
+          new DivToConst(),
+        };
+        var post = (Function)await pass.RunAsync(pre, caseOptions);
 
-            last = post;
+        Assert.True(post.Body is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub }, Parameters: var param0 } && // m - (x + (z - (x + (1))))
+                    param0[1] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Add }, Parameters: var param1 } && // x + (z - (x + (1)))
+                    param1[1] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub }, Parameters: var param2 } && // z - (x + (1))
+                    param2[1] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Add }, Parameters: var param3 } && // x + (1)
+                    param3[1] is TensorConst);
+    }
+
+    private sealed class DivToConst : Transform.IRewriteRule
+    {
+        private static readonly Pattern S_inputPattern = IsWildcard("x");
+
+        /// <inheritdoc/>
+        public IPattern Pattern { get; } = S_inputPattern / S_inputPattern;
+
+        public Expr? GetReplace(IMatchResult result, RunPassOptions options)
+        {
+            var x = (Expr)result["x"];
+            return Tensor.FromScalar<int>(1).CastTo(x.CheckedDataType, CastMode.KDefault);
         }
     }
 
-    private sealed class AnalysisReassociateAdd : Transform.IRewriteRule
+    private sealed class AnalysisReassociateAdd : Transform.IRewriteRule, Transform.IRewriteRuleWithUsdBy
     {
-        private readonly Transform.IUsedByResult _usedByResult;
-        private bool _matched;
-
-        public AnalysisReassociateAdd(Transform.IUsedByResult usedByResult)
-        {
-            _usedByResult = usedByResult;
-            _matched = false;
-        }
+        private Transform.IUsedByResult? _usedByResult;
 
         /// <inheritdoc/>
         public IPattern Pattern { get; } = IsWildcard("x") + IsWildcard("y");
+
+        /// <inheritdoc/>
+        public IUsedByResult UsedByResult { get => _usedByResult!; set => _usedByResult = value; }
 
         public Expr? GetReplace(IMatchResult result, RunPassOptions options)
         {
             var x = (Expr)result["x"];
             var y = (Expr)result["y"];
-            if (_matched == false && _usedByResult.Get(x).Count == 1 && _usedByResult.Get(y).Count == 1)
+            if (UsedByResult.Get(x).Count == 1 && UsedByResult.Get(y).Count == 1)
             {
-                _matched = true;
                 return x - y;
             }
 
