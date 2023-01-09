@@ -114,38 +114,37 @@ public sealed partial class CombineTransposeConstBinary : IRewriteRule
 [RuleGenerator]
 public sealed partial class CombineTransposeConcat : IRewriteRule
 {
-    private ExprPattern[]? _inputsPat;
+    private string[]? _inputs;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CombineTransposeConcat"/> class.
     /// </summary>
     public CombineTransposeConcat()
     {
-        var perm = IsWildcard("perm");
+        var perm = IsTensorConst("perm");
         Pattern = IsConcat(
             IsTuple(IsVArgsRepeat(exprs =>
             {
-                _inputsPat = new ExprPattern[exprs.Count];
+                _inputs = new string[exprs.Count];
                 var patterns = new Pattern[exprs.Count];
 
-                for (var i = 0; i < _inputsPat.Length; i++)
+                for (var i = 0; i < _inputs.Length; i++)
                 {
-                    var input = IsWildcard();
-                    _inputsPat[i] = input;
-                    patterns[i] = IsTranspose(input, perm);
+                    _inputs[i] = "input_" + i;
+                    patterns[i] = IsTranspose(IsWildcard(_inputs[i]), perm);
                 }
 
                 return patterns;
             })),
-            IsWildcard("axis"));
+            IsTensorConst("axis"));
     }
 
     /// <inheritdoc/>
     public IPattern Pattern { get; }
 
-    private Expr? GetReplace(IMatchResult mr, Expr perm, Expr axis)
+    private Expr? GetReplace(IMatchResult mr, Tensor<int> perm, int axis)
     {
-        var inputs = _inputsPat!.Select(x => mr.Get(x)).ToArray();
+        var inputs = _inputs!.Select(x => (Expr)mr[x]).ToArray();
         return Transpose(Concat(new IR.Tuple(inputs), perm[axis]), perm);
     }
 }
