@@ -123,6 +123,7 @@ public sealed partial class CombineTransposeConcat : IRewriteRule
                    {
                        patterns[i] = IsTranspose(IsWildcard($"input_{i}"), IsTensorConst($"perm_{i}"));
                    }
+
                    return patterns;
                })),
                IsTensorConst("axis"));
@@ -134,9 +135,13 @@ public sealed partial class CombineTransposeConcat : IRewriteRule
 
         Tensor<int> perm;
         if (perms.Count == 1)
+        {
             perm = perms.Single();
+        }
         else
+        {
             return null;
+        }
 
         return Transpose(Concat(new IR.Tuple(inputs), perm[axis]), perm);
     }
