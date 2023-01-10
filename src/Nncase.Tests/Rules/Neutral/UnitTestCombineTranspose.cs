@@ -12,6 +12,7 @@ using Microsoft.Toolkit.HighPerformance;
 using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.IR.F;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
@@ -69,6 +70,13 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
             new object[] {new[] {1, 3, 2, 4}, new[] {0, 2, 3, 1}, 2, 2},
         };
 
+    public static IEnumerable<object[]> TestCombineTransposeConcatNegativeData =>
+        new[]
+        {
+            new object[] { new[] { 4, 4 }, new[] { new[] { 1, 0 }, new[] { 0, 1 } }, 1, 2, true },
+            new object[] { new[] { 1, 3, 2, 4 }, new[] { new[] { 0, 2, 3, 1 }, new[] { 0, 2, 3, 1 } }, 2, 2, false },
+        };
+
     [Theory]
     [MemberData(nameof(TestCombineTransposeConcatPositiveData))]
     public void TestCombineTransposeConcatPositive(int[] inShape, int[] perm, int axis, int concatNum)
@@ -103,6 +111,42 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
         // Assert.Equal(CompilerServices.Evaluate(rootPre, Normal), CompilerServices.Evaluate(rootPost, Normal));
+    }
+
+    [Theory]
+    [MemberData(nameof(TestCombineTransposeConcatNegativeData))]
+    public void TestCombineTransposeConcatNegative(int[] inShape, int[][] perm, int axis, int concatNum, bool lastInputIsTp)
+    {
+        var caseOptions = GetPassOptions();
+        var inputList = new List<Call>();
+        foreach (var i in Enumerable.Range(0, concatNum - 1))
+        {
+            var b = Random.Normal(DataTypes.Float32, 0, 1, 0, inShape);
+            inputList.Add(Tensors.Transpose(b, perm[i]));
+        }
+
+        if (lastInputIsTp)
+        {
+            var b = Random.Normal(DataTypes.Float32, 0, 1, 0, inShape);
+            inputList.Add(Tensors.Transpose(b, perm[concatNum - 1]));
+        }
+        else
+        {
+            var b = Random.Normal(DataTypes.Float32, 0, 1, 0, inShape);
+            inputList.Add(Math.Unary(UnaryOp.Neg, b));
+        }
+
+        var input = Enumerable.Range(0, concatNum).Select(i => inputList[i]);
+        var rootPre = Tensors.Concat(new IR.Tuple(input), axis);
+        CompilerServices.InferenceType(rootPre);
+        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
+        {
+            new CombineTransposeConcat(),
+            // Should not open constant fold.
+            // new FoldConstCall(),
+        }, caseOptions);
+
+        Assert.Equal(rootPre, rootPost);
     }
 
     public static IEnumerable<object[]> TestCombineTransposePadPositiveData =>
