@@ -28,7 +28,7 @@ class Inference:
         self.set_quant_opt(cfg, kwargs, preprocess, self.compiler)
         self.compiler.compile()
         kmodel = self.compiler.gencode_tobytes()
-        os.makedirs(infer_dir)
+        os.makedirs(infer_dir, exist_ok=True)
         with open(os.path.join(infer_dir, 'test.kmodel'), 'wb') as f:
             f.write(kmodel)
         sim = nncase.Simulator()
