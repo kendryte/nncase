@@ -16,14 +16,15 @@ public class BitcastEvaluator : IEvaluator<Bitcast>, ITypeInferencer<Bitcast>, I
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Bitcast cast)
     {
-        var input = context.GetArgumentValue(cast, Cast.Input).AsTensor();
-        return Value.FromTensor(input.CastTo(cast.NewType));
+        var input = context.GetArgumentValue(cast, Bitcast.Input).AsTensor();
+        var shape = context.GetArgumentValueAsArray<long>(cast, Bitcast.NewShape);
+        return OrtKI.Reshape(input.CastTo(cast.NewType).ToOrtTensor(), shape, 0).ToValue();
     }
 
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Bitcast target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Cast.Input);
+        var input = context.CheckArgumentType<TensorType>(target, Bitcast.Input);
         return Visit(target, input);
     }
 

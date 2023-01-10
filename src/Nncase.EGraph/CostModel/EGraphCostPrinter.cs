@@ -72,10 +72,10 @@ public partial class EGraphPrinter
                     continue;
                 }
 
-                var minCostEnode = parent.Nodes.MinBy(x => costModel[x])!;
+                var minCostEnode = parent.MinByWithMarker(costModel);
                 if (markerEclassMemo.Contains(parent)) // when this marker ecalss has been visited, skip it.
                 {
-                    minCostEnode = parent.Nodes.Where(n => n.Expr is not Marker).MinBy(x => costModel[x])!;
+                    minCostEnode = parent.MinByWithOutMarker(costModel);
                 }
 
                 var (minCostDotnode, table) = NodesMap[minCostEnode];
@@ -91,7 +91,7 @@ public partial class EGraphPrinter
                     if (minCostEnode.Expr is Marker && child == parent)
                     {
                         markerEclassMemo.Add(child);
-                        var otherminCostENode = child.Nodes.Where(n => n.Expr is not Marker).MinBy(x => costModel[x])!;
+                        var otherminCostENode = child.MinByWithOutMarker(costModel);
                         var (childDotNode, _) = NodesMap[otherminCostENode];
                         DotGraph.Edges.Add(childDotNode, minCostDotnode, edge =>
                         {
@@ -101,7 +101,7 @@ public partial class EGraphPrinter
                     }
                     else
                     {
-                        var childEnode = child.Find().Nodes.MinBy(x => costModel[x])!;
+                        var childEnode = child.Find().MinByWithMarker(costModel);
                         var (childDotNode, _) = NodesMap[childEnode];
                         DotGraph.Edges.Add(childDotNode, minCostDotnode, edge =>
                         {

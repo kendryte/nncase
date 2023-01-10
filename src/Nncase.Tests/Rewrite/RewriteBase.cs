@@ -631,8 +631,8 @@ public sealed class RemoveMarkerCaseEgraph : IRewriteCase
             var v_8 = RangeOfMarker(
                 Conv2D(
                 v_7,
-                Normal(DataTypes.Float32, 0, 1, 1, new[] { 16, 16, 3, 3 }).Evaluate().AsTensor(),
-                Normal(DataTypes.Float32, 0, 1, 1, new[] { 16 }).Evaluate().AsTensor(), new[] { 1, 1 }, new[,]
+                RangeOfMarker(Normal(DataTypes.Float32, 0, 1, 1, new[] { 16, 16, 3, 3 }).Evaluate().AsTensor(), new float[] { -1.0f, 1.0f }),
+                RangeOfMarker(Normal(DataTypes.Float32, 0, 1, 1, new[] { 16 }).Evaluate().AsTensor(), new float[] { -1.0f, 1.0f }), new[] { 1, 1 }, new[,]
                 {
                     { 1, 1 },
                     { 1, 1 },
@@ -755,5 +755,81 @@ public sealed class ReduceWindow2DPadsCase : IRewriteCase
     public Dictionary<Var, IValue> FeedDict => new()
     {
         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+    };
+}
+
+public sealed class MergeBinaryBeforeConv2DCase : IRewriteCase
+{
+    private readonly Var _input_lhs;
+    private readonly Var _input_rhs;
+
+    public MergeBinaryBeforeConv2DCase()
+    {
+        _input_lhs = new Var("_input_lhs", new TensorType(DataTypes.Float32, new[] { 1, 256, 56, 56 }));
+        _input_rhs = new Var("_input_rhs", new TensorType(DataTypes.Float32, new[] { 1, 256, 56, 56 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var v_0 = _input_lhs + _input_rhs;
+            var v_1 = v_0 * Normal(DataTypes.Float32, 0, 1, 1, new[] { 1, 256, 1, 1 }).Evaluate().AsTensor();
+            var v_2 = v_1 + Normal(DataTypes.Float32, 0, 1, 1, new[] { 1, 256, 1, 1 }).Evaluate().AsTensor();
+            var v_3 = v_2; // 1, 56, 56, 256
+            var v_4 = v_3;
+            var v_5 = Conv2D(v_4, Normal(DataTypes.Float32, 0, 1, 1, new[] { 256, 256, 1, 1 }).Evaluate().AsTensor(),
+                  Normal(DataTypes.Float32, 0, 1, 1, new[] { 256 }).Evaluate().AsTensor(), new[] { 1, 1 },
+                  new[,]
+                  {
+                    { 0, 0 },
+                    { 0, 0 },
+                  }, new[] { 1, 1 }, PadMode.Constant, 1,
+                  new[] { 0.0f, 6.0f }); // f32[1,256,56,56]
+            var v_6 = v_5; // f32[1,256,56,56]
+            var v_7 = Pad(v_6, new[,]
+            {
+                { 0, 0 },
+                { 0, 0 },
+                { 1, 1 },
+                { 1, 1 },
+            }, PadMode.Constant, 0.0f); // f32[1,256,58,58]
+            var v_8 = v_7;
+            var v_9 = Conv2D(v_8, Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, 256, 3, 3 }).Evaluate().AsTensor(),
+                  Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor(), new[] { 1, 1 },
+                  new[,]
+                  {
+                    { 0, 0 },
+                    { 0, 0 },
+                  }, new[] { 1, 1 }, PadMode.Constant, 1,
+                  new[] { 0.0f, 6.0f }); // f32[1,64,56,56]
+            var v_10 = v_9; // f32[1,64,56,56]
+
+            var v_11 = v_10;
+            var v_12 = Conv2D(v_11, Normal(DataTypes.Float32, 0, 1, 1, new[] { 256, 64, 1, 1 }).Evaluate().AsTensor(),
+                  Normal(DataTypes.Float32, 0, 1, 1, new[] { 256 }).Evaluate().AsTensor(), new[] { 1, 1 },
+                  new[,]
+                  {
+                    { 0, 0 },
+                    { 0, 0 },
+                  }, new[] { 1, 1 }, PadMode.Constant, 1,
+                  new[] { 0.0f, 6.0f }); // f32[1,256,56,56]
+            var v_13 = v_12; // f32[1,256,56,56]
+            var v_16 = v_0 + v_13;
+
+            return new Function(v_16, new Var[] { _input_lhs, _input_rhs });
+        }
+    }
+
+    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[]
+    {
+        new Transform.Rules.Neutral.FoldConstCall(),
+        new Transform.Rules.Neutral.FoldConv2DMulAdd(),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new()
+    {
+        { _input_lhs, Normal(DataTypes.Float32, 0, 1, 1, _input_lhs.CheckedShape.ToValueArray()).Evaluate() },
+        { _input_rhs, Normal(DataTypes.Float32, 0, 1, 1, _input_rhs.CheckedShape.ToValueArray()).Evaluate() },
     };
 }

@@ -26,5 +26,5 @@ public sealed record Tile() : Op
     /// <summary>
     /// Gets repeats.
     /// </summary>
-    public static readonly ParameterInfo Repeats = new(typeof(Tile), 1, "repeats");
+    public static readonly ParameterInfo Repeats = new(typeof(Tile), 1, "repeats", HasRank(1) & HasDataType(DataTypes.Int64));
 }
