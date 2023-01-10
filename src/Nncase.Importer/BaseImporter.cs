@@ -95,6 +95,8 @@ public abstract class BaseImporter
         }
     }
 
+    protected abstract IEnumerable<Var> CreateInputs();
+
     private void DumpOpsInModel(Stream path)
     {
         using var sr = new StreamWriter(path);
@@ -103,8 +105,6 @@ public abstract class BaseImporter
             sr.WriteLine(op);
         }
     }
-
-    protected abstract IEnumerable<Var> CreateInputs();
 
     protected abstract void ConvertOp();
 

@@ -117,8 +117,8 @@ class IRModule():
 
 
 class Compiler:
-    _target : _nncase.Target
-    _session : _nncase.CompileSession
+    _target: _nncase.Target
+    _session: _nncase.CompileSession
     _compiler: _nncase.Compiler
     _compile_options: _nncase.CompileOptions
     _quantize_options: _nncase.QuantizeOptions

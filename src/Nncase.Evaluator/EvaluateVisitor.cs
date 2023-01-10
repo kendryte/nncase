@@ -11,7 +11,7 @@ using Nncase.IR;
 
 namespace Nncase.Evaluator;
 
-internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
+internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>, IDisposable
 {
     private readonly EvaluateContext _context;
     private readonly IReadOnlyDictionary<Var, IValue> _varsValues;
@@ -115,5 +115,10 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
         }
 
         return result;
+    }
+
+    public void Dispose()
+    {
+        throw new NotImplementedException();
     }
 }

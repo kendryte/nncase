@@ -27,17 +27,17 @@ public partial class TransformTestBase : TestClassBase
         CompileOptions.QuantizeOptions.WQuantType = DataTypes.UInt8;
     }
 
+    public virtual Expr TestMatched<T>(Expr pre, RunPassContext passOptions)
+        where T : IRewriteRule, new()
+    {
+        return TestMatchedCore(pre, passOptions, new T());
+    }
+
     protected virtual Task<T> RunPassAsync<T>(Pass<T> pass, T input, bool rewriteOnce = true)
         where T : class
     {
         var context = new RunPassContext { RewriteOnce = rewriteOnce };
         return pass.RunAsync(input, context);
-    }
-
-    public virtual Expr TestMatched<T>(Expr pre, RunPassContext passOptions)
-        where T : IRewriteRule, new()
-    {
-        return TestMatchedCore(pre, passOptions, new T());
     }
 
     public void CondMatch<T>(bool cond, Expr expr, RunPassContext passOptions)
@@ -88,7 +88,6 @@ public partial class TransformTestBase : TestClassBase
     //     TestMatched<T>(Binary(op, lhs, rhs));
     //     TestMatched<T>(Binary(op, rhs, lhs));
     // }
-
     public Expr Rewrite<T>(Expr pre, RunPassContext passOptions)
         where T : IRewriteRule, new()
     {

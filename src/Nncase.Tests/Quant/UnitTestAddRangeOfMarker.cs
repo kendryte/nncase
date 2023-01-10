@@ -17,7 +17,6 @@ namespace Nncase.Tests.QuantTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestAddRangeOfMarker : TestClassBase
 {
-
     [Fact]
     public async Task TestAddRangeOfMarkerToLeaky()
     {

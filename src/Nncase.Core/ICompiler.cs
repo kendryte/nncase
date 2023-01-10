@@ -25,6 +25,7 @@ public interface ICompiler
     /// <summary>
     /// Compile module.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     Task CompileAsync();
 
     /// <summary>
