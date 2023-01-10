@@ -144,6 +144,15 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
             new object[] { new[] { 1, 3, 4, 5 }, new[] { 0, 2, 3, 1 }, 2, 1, true },
         };
 
+    public static IEnumerable<object[]> TestCombineTransposeUnaryPositiveData =>
+        new[]
+        {
+            new object[] { UnaryOp.Exp, new[] { 1, 3, 4 }, new[] { 0, 2, 1 } },
+            new object[] { UnaryOp.Sqrt, new[] { 1, 3, 4 }, new[] { 0, 2, 1 } },
+            new object[] { UnaryOp.Log, new[] { 1, 3, 4, 5 }, new[] { 0, 2, 3, 1 } },
+            new object[] { UnaryOp.Abs, new[] { 1, 3, 4, 5 }, new[] { 0, 2, 3, 1 } },
+        };
+
     [Theory]
     [MemberData(nameof(TestCombineTransposeConcatPositiveData))]
     public void TestCombineTransposeConcatPositive(int[] inShape, int[] perm, int axis, int concatNum)
@@ -219,15 +228,6 @@ public class UnitTestCombineTranspose : TestFixture.UnitTestFixtrue
 
         Assert.Equal(rootPre, rootPost);
     }
-
-    public static IEnumerable<object[]> TestCombineTransposeUnaryPositiveData =>
-        new[]
-        {
-            new object[] { UnaryOp.Exp, new[] { 1, 3, 4 }, new[] { 0, 2, 1 } },
-            new object[] { UnaryOp.Sqrt, new[] { 1, 3, 4 }, new[] { 0, 2, 1 } },
-            new object[] { UnaryOp.Log, new[] { 1, 3, 4, 5 }, new[] { 0, 2, 3, 1 } },
-            new object[] { UnaryOp.Abs, new[] { 1, 3, 4, 5 }, new[] { 0, 2, 3, 1 } },
-        };
 
     [Theory]
     [MemberData(nameof(TestCombineTransposeBinaryPositiveData))]
