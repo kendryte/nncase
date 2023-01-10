@@ -6,6 +6,7 @@ using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.PatternMatch;
+using Nncase.Tests.TestFixture;
 using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Tensors;
@@ -80,9 +81,9 @@ public class UnitTestEGraphRewrite : TestClassBase
     }
 
     [Fact]
+    [AutoSetupTestMethod(InitSession = true)]
     public void TestEgraphRemoveMarkerPreserveConstMarker()
     {
-        var caseOptions = GetPassOptions().SetDumpLevel(4);
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 224, 224, 3 }));
         Expr pre;
         {
@@ -95,16 +96,14 @@ public class UnitTestEGraphRewrite : TestClassBase
         }
 
         Assert.True(pre.InferenceType());
-        CompilerServices.DumpIR(pre, "pre", caseOptions.DumpDir);
 
         var post = CompilerServices.ERewrite(pre, new IRewriteRule[]
         {
               new Transform.Rules.Lower.RemoveMarker(),
               new TestMulToAdd(),
-        }, caseOptions);
+        }, new());
 
         Assert.True(post.InferenceType());
-        CompilerServices.DumpIR(post, "post", caseOptions.DumpDir);
 
         Assert.True(
           post is Marker { Target: Call { Parameters: IRArray<Expr> param } } &&
@@ -118,7 +117,7 @@ public sealed class TestMulToAdd : RewriteRule<Pattern>
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsBinary(op => op.BinaryOp == BinaryOp.Mul, IsWildcard("lhs"), IsWildcard("rhs"));
 
-    public override Expr? GetReplace(IMatchResult result, RunPassOptions options)
+    public override Expr? GetReplace(IMatchResult result, RunPassContext options)
     {
         var lhs = (Expr)result["lhs"];
         var rhs = (Expr)result["rhs"];

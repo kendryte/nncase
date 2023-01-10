@@ -64,7 +64,7 @@ public class UnitTestDataFlowRewriteFactory : TestClassBase
         var post = (Function)await pass.RunAsync(pre, new());
         Assert.NotEqual(pre, post);
         var feed_dict = @case.FeedDict;
-        Assert.True(TestFixture.Comparator.Compare(pre.Body.Evaluate(feed_dict), post.Body.Evaluate(feed_dict)));
+        Assert.True(Comparator.Compare(pre.Body.Evaluate(feed_dict), post.Body.Evaluate(feed_dict)));
     }
 }
 

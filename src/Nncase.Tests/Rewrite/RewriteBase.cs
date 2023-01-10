@@ -821,10 +821,10 @@ public sealed class MergeBinaryBeforeConv2DCase : IRewriteCase
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[]
+    public IEnumerable<Type> Rules { get; } = new Type[]
     {
-        new Transform.Rules.Neutral.FoldConstCall(),
-        new Transform.Rules.Neutral.FoldConv2DMulAdd(),
+        typeof(Transform.Rules.Neutral.FoldConstCall),
+        typeof(Transform.Rules.Neutral.FoldConv2DMulAdd),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
