@@ -14,11 +14,11 @@
  */
 #include "cpu_target.h"
 #include <nncase/plugin_loader.h>
+#include <nncase/transforms/neutral/add_quant_checkpoints.h>
 #include <nncase/transforms/neutral/fold_constant.h>
 #include <nncase/transforms/neutral/fuse_unary.h>
 #include <nncase/transforms/neutral/fused_unary_to_lookup1d.h>
 #include <nncase/transforms/neutral/lstm_transform.h>
-#include <nncase/transforms/neutral/add_quant_checkpoints.h>
 #include <nncase/transforms/pass.h>
 
 #if defined(_MSC_VER)
