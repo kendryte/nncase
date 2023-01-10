@@ -45,8 +45,6 @@ typedef enum {
 
 typedef enum { nncase_dump_flags_none = 0 } nncase_dump_flags_t;
 
-DEFINE_ENUM_BITMASK_OPERATORS(nncase_dump_flags_t)
-
 typedef struct {
     void (*add_ref)(nncase_stream_handle_t handle);
     void (*release)(nncase_stream_handle_t handle);
@@ -132,6 +130,8 @@ NNCASE_API nncase_api_mt_t *nncase_clr_api();
 NNCASE_API int nncase_clr_initialize(const char *root_assembly_path);
 NNCASE_API int nncase_clr_uninitialize();
 }
+
+DEFINE_ENUM_BITMASK_OPERATORS(nncase_dump_flags_t)
 
 namespace nncase::clr {
 class clr_object_ptr {
