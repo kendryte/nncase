@@ -397,7 +397,7 @@ class compile_session : public clr_object_base {
                                                         options.get());
     }
 
-    compiler compiler() {
+    clr::compiler compiler() {
         return {std::in_place,
                 nncase_clr_api()->compile_session_get_compiler(obj_.get())};
     }
