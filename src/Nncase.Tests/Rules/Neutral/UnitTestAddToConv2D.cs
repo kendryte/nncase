@@ -15,16 +15,15 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestAddToConv2D : TestFixture.UnitTestFixtrue
+public class UnitTestAddToConv2D : TestClassBase
 {
     [Fact]
     public void TestElementwiseAdd()
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = a + b;
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new AddToConv2D() }, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new AddToConv2D() }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -33,11 +32,10 @@ public class UnitTestAddToConv2D : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestNegElementwiseAdd()
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 1, 8, 8 });
         var rootPre = a + b;
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new AddToConv2D() }, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new AddToConv2D() }, new());
 
         Assert.Equal(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));

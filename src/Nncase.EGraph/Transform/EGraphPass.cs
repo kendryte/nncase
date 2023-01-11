@@ -7,6 +7,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.PatternMatch;
 
@@ -17,90 +19,75 @@ namespace Nncase.Transform;
 /// </summary>
 public class EGraphPass : RulesPass
 {
-    private readonly List<IRewriteRule> _rules = new();
+    private readonly IEGraphRewriteProvider _rewriteProvider;
     private readonly Evaluator.IBaseFuncCostEvaluator? _baseFuncCostEvaluator;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EGraphPass"/> class.
     /// </summary>
-    /// <param name="name">Name.</param>
-    public EGraphPass(string name)
-        : base(name)
-    {
-        _baseFuncCostEvaluator = null;
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="EGraphPass"/> class.
-    /// </summary>
-    /// <param name="name">Pass Name.</param>
     /// <param name="baseFuncCostEvaluator">Extenal cost evaluator.</param>
-    public EGraphPass(string name, Evaluator.IBaseFuncCostEvaluator baseFuncCostEvaluator)
-        : base(name)
+    public EGraphPass(Evaluator.IBaseFuncCostEvaluator? baseFuncCostEvaluator = null)
     {
+        _rewriteProvider = CompileSession.GetRequiredService<IEGraphRewriteProvider>();
         _baseFuncCostEvaluator = baseFuncCostEvaluator;
     }
 
     /// <inheritdoc/>
-    protected override async Task<BaseFunction> RunCoreAsync(BaseFunction function, RunPassOptions options)
+    protected override async Task<BaseFunction> RunCoreAsync(BaseFunction function, RunPassContext context)
     {
         var graph = new EGraph();
         var root = graph.Add(function);
-        EGraphRewriter.Rewrite(graph, Rules, options);
-        OnPostRewriteStart(graph, options);
-        await OnPostRewrite(graph, options);
-        OnPostRewriteEnd(graph, options);
-        var post = graph.Extract(root, _baseFuncCostEvaluator, options);
+        _rewriteProvider.ERewrite(graph, Rules, context);
+        await OnPostRewriteStartAsync(graph, context);
+        await OnPostRewriteAsync(graph, context);
+        await OnPostRewriteEndAsync(graph, context);
+        var post = graph.Extract(root, _baseFuncCostEvaluator);
         CompilerServices.InferenceType(post);
         return (BaseFunction)post;
     }
 
-    protected virtual Task OnPostRewrite(EGraph graph, RunPassOptions options)
+    /// <summary>
+    /// The callback after egraph rewrite.
+    /// </summary>
+    /// <param name="eGraph">EGraph after rewrite.</param>
+    /// <param name="context">Run pass context.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    protected virtual Task OnPostRewriteAsync(EGraph eGraph, RunPassContext context)
     {
         return Task.CompletedTask;
     }
 
     /// <summary>
-    /// the callback function you can custom process func with run pass options.
+    /// The callback function you can custom process func with run pass options.
     /// </summary>
-    /// <param name="eGraph"> egraph without run pass.</param>
-    /// <param name="options">Options.</param>
-    protected virtual void OnPostRewriteStart(EGraph eGraph, RunPassOptions options)
+    /// <param name="eGraph">EGraph after rewrite.</param>
+    /// <param name="context">Run pass context.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    protected virtual Task OnPostRewriteStartAsync(EGraph eGraph, RunPassContext context)
     {
-        switch (options.DumpLevel)
+        if (DumpScope.Current.IsEnabled(DumpFlags.PassIR))
         {
-            case >= 4:
-                EGraphPrinter.DumpEgraphAsDot(
-                    eGraph,
-                    null,
-                    Path.Combine(options.DumpDir, options.PassName, "PostRewriteStart", $"V{eGraph.Version}"));
-                break;
-            case >= 1:
-                break;
-            default:
-                break;
+            using var fs = DumpScope.Current.OpenFile(Path.Combine("PostRewriteStart", $"V{eGraph.Version}.dot"));
+            EGraphPrinter.DumpEgraphAsDot(eGraph, null, fs);
         }
+
+        return Task.CompletedTask;
     }
 
     /// <summary>
-    /// the callback function you can custom process func with run pass options.
+    /// The callback function you can custom process func with run pass options.
     /// </summary>
-    /// <param name="eGraph"> egraph with rewrited. </param>
-    /// <param name="options">Options.</param>
-    protected virtual void OnPostRewriteEnd(EGraph eGraph, RunPassOptions options)
+    /// <param name="eGraph">EGraph after post rewrite.</param>
+    /// <param name="context">Run pass context.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    protected virtual Task OnPostRewriteEndAsync(EGraph eGraph, RunPassContext context)
     {
-        switch (options.DumpLevel)
+        if (DumpScope.Current.IsEnabled(DumpFlags.PassIR))
         {
-            case >= 4:
-                EGraphPrinter.DumpEgraphAsDot(
-                    eGraph,
-                    null,
-                    Path.Combine(options.DumpDir, options.PassName, "PostRewriteEnd", $"V{eGraph.Version}"));
-                break;
-            case >= 1:
-                break;
-            default:
-                break;
+            using var fs = DumpScope.Current.OpenFile(Path.Combine("PostRewriteEnd", $"V{eGraph.Version}.dot"));
+            EGraphPrinter.DumpEgraphAsDot(eGraph, null, fs);
         }
+
+        return Task.CompletedTask;
     }
 }

@@ -37,16 +37,16 @@ public abstract class RTValue : RTObject
         _ => throw new ArgumentOutOfRangeException(),
     };
 
-    public static RTValue FromHandle(IntPtr handle)
+    public static RTValue FromHandle(IntPtr handle, bool addRef = false)
     {
         try
         {
             Native.ValueIsTensor(handle, out var isTensor).ThrowIfFailed();
-            return isTensor ? new RTTensor(handle) : new RTTuple(handle);
+            return isTensor ? new RTTensor(handle, addRef) : new RTTuple(handle, addRef);
         }
         catch
         {
-            Native.ObjectFree(handle);
+            Native.ObjectRelease(handle);
             throw;
         }
     }
@@ -77,9 +77,13 @@ public class RTTensor : RTValue
     {
     }
 
-    internal RTTensor(IntPtr handle)
+    internal RTTensor(IntPtr handle, bool addRef = false)
         : base(handle)
     {
+        if (addRef)
+        {
+            Native.ObjectAddRef(handle);
+        }
     }
 
     /// <summary>

@@ -16,7 +16,7 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.CoreTest;
 
-public class UnitTypeInferBase : TestFixture.UnitTestFixtrue
+public class UnitTypeInferBase : TestClassBase
 {
     public void CheckInferShape(Expr expr, params int[] shapeDimensions)
     {

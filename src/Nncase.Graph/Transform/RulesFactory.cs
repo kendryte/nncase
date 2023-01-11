@@ -61,13 +61,7 @@ public class TemplateRule : IRewriteRule
     public IPattern Pattern { get; }
 
     /// <inheritdoc/>
-    public bool IsMultiBranchSafe { get; init; }
-
-    /// <inheritdoc/>
-    bool IRewriteRule.IsMultiBranchSafe() => IsMultiBranchSafe;
-
-    /// <inheritdoc/>
-    public Expr? GetReplace(IMatchResult result, RunPassOptions options)
+    public Expr? GetReplace(IMatchResult result, RunPassContext options)
     {
         var converter = new ExprGeneratorVisitor(result);
         if (_predicate is null || (_predicate is not null && converter.Visit(_predicate).Evaluate().AsTensor().ToScalar<bool>()))

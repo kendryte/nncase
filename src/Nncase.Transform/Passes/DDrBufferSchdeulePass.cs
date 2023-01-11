@@ -20,18 +20,8 @@ public sealed class DDrBufferSchdeulePass : ModulePass
     private readonly Dictionary<string, Dictionary<Schedule.MemoryLocation, int>> _module_usage = new();
     private readonly Dictionary<string, HashSet<TIR.Buffer>> _module_hashset = new();
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DDrBufferSchdeulePass"/> class.
-    /// ctor.
-    /// </summary>
-    /// <param name="name"></param>
-    public DDrBufferSchdeulePass(string name)
-        : base(name)
-    {
-    }
-
     /// <inheritdoc/>
-    protected override Task RunCoreAsync(IRModule module, RunPassOptions options)
+    protected override Task<IRModule> RunCoreAsync(IRModule module, RunPassContext options)
     {
         for (int i = 0; i < module.Functions.Count; i++)
         {
@@ -40,25 +30,13 @@ public sealed class DDrBufferSchdeulePass : ModulePass
                 if (!prim_func.SchedResult.IsScheduled)
                 {
                     var ddr_allocator = new DDrBufferAllocator(_module_usage, _module_hashset);
-                    ddr_allocator.Visit(prim_func); // changed ddr buffer .
+                    ddr_allocator.Visit(prim_func); // changed ddr buffer.
                     prim_func.SchedResult.IsScheduled = ddr_allocator.Changed;
                 }
             }
         }
 
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc/>
-    protected override void OnPassStart(IRModule module, RunPassOptions options)
-    {
-        return;
-    }
-
-    /// <inheritdoc/>
-    protected override void OnPassEnd(IRModule module, RunPassOptions options)
-    {
-        return;
+        return Task.FromResult(module);
     }
 }
 

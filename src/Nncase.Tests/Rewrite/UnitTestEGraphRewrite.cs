@@ -6,6 +6,7 @@ using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.PatternMatch;
+using Nncase.Tests.TestFixture;
 using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Tensors;
@@ -14,12 +15,11 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.ReWriteTest;
 
-public class UnitTestEGraphRewrite : TestFixture.UnitTestFixtrue
+public class UnitTestEGraphRewrite : TestClassBase
 {
     [Fact]
     public void RewriteNoSenceAdd()
     {
-        var passOptions = GetPassOptions();
         Var x = "a";
         var lhs = x + (100 / 120.0f) - 100;
         var y = lhs + 0;
@@ -30,7 +30,6 @@ public class UnitTestEGraphRewrite : TestFixture.UnitTestFixtrue
         var root = egraph.Add(y);
 
         Assert.True(CompilerServices.TryMatchRoot(root.Nodes, pattern, out var eResults));
-        EGraphPrinter.DumpEgraphAsDot(egraph, eResults, Path.Combine(passOptions.DumpDir, "Ematch"));
         Assert.Single(eResults);
         var wcxv = (Expr)eResults[0][pattern.Parameters[0]];
         Assert.Equal(wcxv, lhs);
@@ -39,18 +38,15 @@ public class UnitTestEGraphRewrite : TestFixture.UnitTestFixtrue
           lhs + 0 <=> lhs
          */
         egraph.Union(to_eid, root);
-        EGraphPrinter.DumpEgraphAsDot(egraph, Path.Combine(passOptions.DumpDir, "Merge"));
         egraph.Rebuild();
-        EGraphPrinter.DumpEgraphAsDot(egraph, Path.Combine(passOptions.DumpDir, "ReBuild"));
     }
 
     [Fact]
     public void TestReassociate()
     {
-        var caseOptions = GetPassOptions();
         Expr pre = (Const)10 * 11 * 12;
         var rule = new Transform.Rules.Neutral.ReassociateMul();
-        CompilerServices.ERewrite(pre, new[] { rule }, caseOptions);
+        CompilerServices.ERewrite(pre, new[] { rule }, new());
 
         // Assert.Equal(newExpr, 10 * ((Const)11 * 12));
     }
@@ -58,24 +54,18 @@ public class UnitTestEGraphRewrite : TestFixture.UnitTestFixtrue
     [Fact]
     public void TestClassicDemo()
     {
-        var caseOptions = GetPassOptions();
         var g = new EGraph();
         Var x = "x";
         var e1 = g.Add(x * 2);
         _ = g.Add(x * 2 / 2);
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(caseOptions.DumpDir, "befroe"));
         var e2 = g.Add(x << 1);
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(caseOptions.DumpDir, "added"));
         g.Union(e2, e1);
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(caseOptions.DumpDir, "merge"));
         g.Rebuild();
-        EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(caseOptions.DumpDir, "rebuild"));
     }
 
     [Fact]
     public void TestTransposeBinaryMotion()
     {
-        var caseOptions = GetPassOptions().SetDumpLevel(5);
         var c0 = (Call)NHWCToNCHW(Tensor.FromScalar(1, new[] { 2, 2, 3, 4 }));
         var c1 = (Call)NHWCToNCHW(Tensor.FromScalar(1, new[] { 2, 2, 1, 1 }));
         Assert.Equal(c0.Parameters[1].GetHashCode(), c1.Parameters[1].GetHashCode());
@@ -84,16 +74,16 @@ public class UnitTestEGraphRewrite : TestFixture.UnitTestFixtrue
 
         Assert.True(pre.InferenceType());
 
-        var post = CompilerServices.ERewrite(pre, new[] { new Transform.Rules.Neutral.CombineTransposeBinary() }, caseOptions);
+        var post = CompilerServices.ERewrite(pre, new[] { new Transform.Rules.Neutral.CombineTransposeBinary() }, new());
 
         Assert.True(post.InferenceType());
         Assert.Equal(pre.Evaluate(), post.Evaluate());
     }
 
     [Fact]
+    [AutoSetupTestMethod(InitSession = true)]
     public void TestEgraphRemoveMarkerPreserveConstMarker()
     {
-        var caseOptions = GetPassOptions().SetDumpLevel(4);
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 224, 224, 3 }));
         Expr pre;
         {
@@ -106,16 +96,14 @@ public class UnitTestEGraphRewrite : TestFixture.UnitTestFixtrue
         }
 
         Assert.True(pre.InferenceType());
-        CompilerServices.DumpIR(pre, "pre", caseOptions.DumpDir);
 
         var post = CompilerServices.ERewrite(pre, new IRewriteRule[]
         {
               new Transform.Rules.Lower.RemoveMarker(),
               new TestMulToAdd(),
-        }, caseOptions);
+        }, new());
 
         Assert.True(post.InferenceType());
-        CompilerServices.DumpIR(post, "post", caseOptions.DumpDir);
 
         Assert.True(
           post is Marker { Target: Call { Parameters: IRArray<Expr> param } } &&
@@ -129,7 +117,7 @@ public sealed class TestMulToAdd : RewriteRule<Pattern>
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsBinary(op => op.BinaryOp == BinaryOp.Mul, IsWildcard("lhs"), IsWildcard("rhs"));
 
-    public override Expr? GetReplace(IMatchResult result, RunPassOptions options)
+    public override Expr? GetReplace(IMatchResult result, RunPassContext options)
     {
         var lhs = (Expr)result["lhs"];
         var rhs = (Expr)result["rhs"];

@@ -13,7 +13,7 @@ namespace Nncase.Tests.TIRTest;
 /// <summary>
 /// test the tir construct define.
 /// </summary>
-public class UnitTestConstructor : TestFixture.UnitTestFixtrue
+public class UnitTestConstructor : TestClassBase
 {
     [Fact]
     public void TestExprConstructor()

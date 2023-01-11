@@ -67,13 +67,16 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Modules.K210", "modu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Quantization", "src\Nncase.Quantization\Nncase.Quantization.csproj", "{317C0D8F-75B3-4248-83E8-17AADDCF247A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.TestFixture", "src\Nncase.TestFixture\Nncase.TestFixture.csproj", "{FF67E6C1-205B-49D6-BA83-2DC536F0D414}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "root", "root", "{EF1F8779-2B98-4E6F-A3DC-CA3FD2CADAD8}"
 	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
 		Directory.Packages.props = Directory.Packages.props
 		NuGet.Config = NuGet.Config
 	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Diagnostics", "src\Nncase.Diagnostics\Nncase.Diagnostics.csproj", "{E365B1B1-4D13-4839-9763-A7A7C5F32FD4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Tests.TestFixture", "src\Nncase.Tests.TestFixture\Nncase.Tests.TestFixture.csproj", "{98A03405-CA53-4EC4-9B18-94D1C8DF9453}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -165,10 +168,14 @@ Global
 		{317C0D8F-75B3-4248-83E8-17AADDCF247A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{317C0D8F-75B3-4248-83E8-17AADDCF247A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{317C0D8F-75B3-4248-83E8-17AADDCF247A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FF67E6C1-205B-49D6-BA83-2DC536F0D414}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FF67E6C1-205B-49D6-BA83-2DC536F0D414}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FF67E6C1-205B-49D6-BA83-2DC536F0D414}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FF67E6C1-205B-49D6-BA83-2DC536F0D414}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E365B1B1-4D13-4839-9763-A7A7C5F32FD4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E365B1B1-4D13-4839-9763-A7A7C5F32FD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E365B1B1-4D13-4839-9763-A7A7C5F32FD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E365B1B1-4D13-4839-9763-A7A7C5F32FD4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{98A03405-CA53-4EC4-9B18-94D1C8DF9453}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{98A03405-CA53-4EC4-9B18-94D1C8DF9453}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{98A03405-CA53-4EC4-9B18-94D1C8DF9453}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{98A03405-CA53-4EC4-9B18-94D1C8DF9453}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -198,9 +205,10 @@ Global
 		{70D3FA34-B0B6-488F-812D-7E076CC0DFB3} = {9859F5E8-5504-4AFE-B955-9497A0A0CD66}
 		{7390DF41-E804-4F12-B441-6EB5119C81BF} = {9859F5E8-5504-4AFE-B955-9497A0A0CD66}
 		{317C0D8F-75B3-4248-83E8-17AADDCF247A} = {BCA74168-F015-4B5B-B4CD-C83AE06B9822}
-		{FF67E6C1-205B-49D6-BA83-2DC536F0D414} = {E5A4516C-4080-4346-991D-57A7AA76ADA6}
+		{E365B1B1-4D13-4839-9763-A7A7C5F32FD4} = {BCA74168-F015-4B5B-B4CD-C83AE06B9822}
+		{98A03405-CA53-4EC4-9B18-94D1C8DF9453} = {E5A4516C-4080-4346-991D-57A7AA76ADA6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {B251C48E-7D05-4662-8DFF-20843CB2DB99}
+		SolutionGuid = {9492E141-292E-4D60-9C6E-3738AB234DB2}
 	EndGlobalSection
 EndGlobal

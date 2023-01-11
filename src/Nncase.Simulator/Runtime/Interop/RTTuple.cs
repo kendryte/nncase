@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR.Buffer;
 
 namespace Nncase.Runtime.Interop;
 
@@ -22,9 +23,13 @@ public class RTTuple : RTValue
     {
     }
 
-    internal RTTuple(IntPtr handle)
+    internal RTTuple(IntPtr handle, bool addRef = false)
         : base(handle)
     {
+        if (addRef)
+        {
+            Native.ObjectAddRef(handle);
+        }
     }
 
     /// <summary>

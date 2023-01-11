@@ -14,8 +14,11 @@ internal static class Native
 {
     public const string LibraryName = "Nncase.Runtime.Native";
 
-    [DllImport(LibraryName, EntryPoint = "nncase_object_free")]
-    public static extern ErrorCode ObjectFree(IntPtr obj);
+    [DllImport(LibraryName, EntryPoint = "nncase_object_add_ref")]
+    public static extern ErrorCode ObjectAddRef(IntPtr obj);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_object_release")]
+    public static extern ErrorCode ObjectRelease(IntPtr obj);
 
     [DllImport(LibraryName, EntryPoint = "nncase_interp_create")]
     public static extern ErrorCode InterpCreate(out RTInterpreter interp);
