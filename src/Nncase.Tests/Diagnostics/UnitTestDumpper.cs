@@ -52,11 +52,11 @@ public sealed class UnitTestDumpper : TestClassBase
         var y = new Var("y", new TensorType(DataTypes.Float32, new[] { 3, 2 }));
         var z = x + y;
         var tuple = new IR.Tuple(x, y, z);
-        var module = new IRModule(new Function(tuple, x, y));
+        var module = new IRModule(new Function("main", tuple, new[] { x, y }));
         CompilerServices.InferenceType(module.Entry!);
 
         Dumpper.DumpModule(module);
-        Assert.True(File.Exists(Path.Join(Dumpper.Directory, "func_0.il")));
+        Assert.True(File.Exists(Path.Join(Dumpper.Directory, "main.il")));
     }
 
     [Fact]
@@ -78,8 +78,8 @@ public sealed class UnitTestDumpper : TestClassBase
         var weights = new Var("weights", new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
         _ = Util.ShapeIndex(weights, 0);
         var expand = Expand(0f, Cast(Util.ShapeIndex(weights, 0), DataTypes.Int64));
-        await RunShapeInferPass(string.Empty, expand, weights);
-        Assert.True(File.Exists(Path.Join(Dumpper.Directory, "0_ShapeInfer_", "func_0", "Start_func_0.il")));
+        await RunShapeInferPass("main", expand, weights);
+        Assert.True(File.Exists(Path.Join(Dumpper.Directory, "0_ShapeInfer_main", "main", "Start_main.il")));
     }
 
     [Fact]
@@ -104,12 +104,12 @@ public sealed class UnitTestDumpper : TestClassBase
               new TestMulToAdd(),
         }, new());
 
-        Assert.True(File.Exists(Path.Join(Dumpper.Directory, "Costs", "V1.dot")));
+        Assert.True(File.Exists(Path.Join(Dumpper.Directory, "Costs", "V4.dot")));
     }
 
     private async Task<Expr> RunShapeInferPass(string name, Expr expr, params Var[] parameters)
     {
-        var f = new Function(expr, parameters);
+        var f = new Function(name, expr, parameters);
         var result = ((Function)await new ShapeInferPass { Name = $"ShapeInfer_{name}" }.RunAsync(f, new())).Body;
         Assert.True(CompilerServices.InferenceType(CompilerServices.InferenceType(f)));
         return result;
