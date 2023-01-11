@@ -7,12 +7,14 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
 using System.Linq;
-using Autofac;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Nncase.CodeGen;
 using Nncase.Compiler;
+using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.Quantization;
 using Nncase.Transform;
 
 namespace Nncase.Cli.Commands;
@@ -69,66 +71,83 @@ public class Compile : Command
           description: "model quant options, default is Random",
           getDefaultValue: () => Quantization.CalibMethod.Random));
 
-        Handler = CommandHandler.Create<CliCompileOptions, IHost>(Run);
+        Handler = CommandHandler.Create<CliCompileOptions, IHost>(RunAsync);
     }
 
-    private void Run(CliCompileOptions cliOptions, IHost host)
+    private static DumpFlags DumpLevelToFlags(int dumpLevel)
     {
-        var provider = host.Services.GetRequiredService<ICompilerServicesProvider>();
-        CompilerServices.Configure(provider);
+        return dumpLevel switch
+        {
+            0 => DumpFlags.None,
+            1 => DumpLevelToFlags(0) | DumpFlags.Compile,
+            2 => DumpLevelToFlags(1) | DumpFlags.PassIR,
+            3 => DumpLevelToFlags(2) | DumpFlags.Rewrite,
+            4 => DumpLevelToFlags(3) | DumpFlags.EGraphCost,
+            5 => DumpLevelToFlags(4) | DumpFlags.Evaluator,
+            6 => DumpLevelToFlags(5) | DumpFlags.Calibration,
+            7 => DumpLevelToFlags(6) | DumpFlags.Tiling,
+            8 => DumpLevelToFlags(7) | DumpFlags.Schedule,
+            >= 9 => DumpLevelToFlags(8) | DumpFlags.CodeGen,
+            _ => throw new ArgumentOutOfRangeException(nameof(dumpLevel)),
+        };
+    }
+
+    private async Task RunAsync(CliCompileOptions cliOptions, IHost host)
+    {
+        CompilerServices.Configure(host.Services);
 
         // 1. setup the options
-        Quantization.QuantizeOptions quant_options = new() { CalibrationMethod = cliOptions.CalibMethod };
-        var compileOptions = new CompileOptions()
+        var compileOptions = new CompileOptions
         {
             InputFile = cliOptions.InputFile,
-            OutputFile = cliOptions.OutputFile,
-            Target = cliOptions.Target,
             InputFormat = cliOptions.InputFormat,
-            DumpLevel = cliOptions.DumpLevel,
+            DumpFlags = DumpLevelToFlags(cliOptions.DumpLevel),
             DumpDir = cliOptions.DumpDir,
-            QuantType = cliOptions.QuantType switch
+            QuantizeOptions = new()
             {
-                QuantType.UInt8 => DataTypes.UInt8,
-                QuantType.Int8 => DataTypes.Int8,
-                QuantType.Int16 => DataTypes.Int16,
-                _ => throw new ArgumentOutOfRangeException(),
+                CalibrationMethod = cliOptions.CalibMethod,
+                QuantType = cliOptions.QuantType switch
+                {
+                    QuantType.UInt8 => DataTypes.UInt8,
+                    QuantType.Int8 => DataTypes.Int8,
+                    QuantType.Int16 => DataTypes.Int16,
+                    _ => throw new ArgumentException("Invalid quant type"),
+                },
+                WQuantType = cliOptions.WQuantType switch
+                {
+                    QuantType.UInt8 => DataTypes.UInt8,
+                    QuantType.Int8 => DataTypes.Int8,
+                    QuantType.Int16 => DataTypes.Int16,
+                    _ => throw new ArgumentException("Invalid weights quant type"),
+                },
+                ModelQuantMode = cliOptions.ModelQuantMode,
             },
-            WQuantType = cliOptions.WQuantType switch
-            {
-                QuantType.UInt8 => DataTypes.UInt8,
-                QuantType.Int8 => DataTypes.Int8,
-                QuantType.Int16 => DataTypes.Int16,
-                _ => throw new ArgumentOutOfRangeException(),
-            },
-            ModelQuantMode = cliOptions.ModelQuantMode,
-
-            // todo add the quant options parser
-            QuantizeOptions = quant_options,
         };
 
         // 2. import the model
-        var compiler = new Compiler.Compiler(compileOptions);
+        var target = CompilerServices.GetTarget(cliOptions.Target);
+        using var compileSession = CompileSession.Create(target, compileOptions);
+        var compiler = compileSession.Compiler;
         IRModule module;
         using (var model_stream = File.OpenRead(compileOptions.InputFile))
         {
-            module = compiler.ImportModule(model_stream);
+            module = await compiler.ImportModuleAsync(model_stream);
         }
 
         // 3. create the calib dataset
-        if (compileOptions.ModelQuantMode == Quantization.ModelQuantMode.UsePTQ)
+        if (compileOptions.QuantizeOptions.ModelQuantMode == Quantization.ModelQuantMode.UsePTQ)
         {
-            if (quant_options.CalibrationMethod == Quantization.CalibMethod.Random)
+            if (compileOptions.QuantizeOptions.CalibrationMethod == Quantization.CalibMethod.Random)
             {
-                quant_options.CalibrationDataset = new RandCalibrationDatasetProvider(((Function)module.Entry!).Parameters.ToArray());
+                compileOptions.QuantizeOptions.CalibrationDataset = new RandomCalibrationDatasetProvider(((Function)module.Entry!).Parameters.ToArray(), 5);
             }
         }
 
         // 4. compile
-        compiler.Compile();
+        await compiler.CompileAsync();
 
         // 5. code gen
-        using (var os = File.OpenWrite(compileOptions.OutputFile))
+        using (var os = File.OpenWrite(cliOptions.OutputFile))
         {
             compiler.Gencode(os);
         }
@@ -166,32 +185,4 @@ internal sealed class CliCompileOptions
 
     /// <inheritdoc/>
     public Quantization.CalibMethod CalibMethod { get; set; }
-}
-
-internal sealed class RandCalibrationDatasetProvider : Quantization.ICalibrationDatasetProvider
-{
-    private const int CountValue = 5;
-
-    private readonly IReadOnlyDictionary<Var, IValue>[] _samples;
-
-    public RandCalibrationDatasetProvider(IEnumerable<Var> vars)
-    {
-        _samples = Enumerable.Range(0, CountValue).Select(i =>
-          {
-              var values = new Dictionary<Var, IValue>();
-              foreach (var var in vars)
-              {
-                  CompilerServices.InferenceType(var);
-                  var shape = var.CheckedShape.Select(d => d.IsUnknown ? 1 : d.FixedValue).ToArray();
-                  var value = IR.F.Random.Normal(var.CheckedDataType, 0, 1, 0, shape).Evaluate();
-                  values.Add(var, value);
-              }
-
-              return values;
-          }).ToArray();
-    }
-
-    public int? Count => CountValue;
-
-    public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples => _samples.ToAsyncEnumerable();
 }

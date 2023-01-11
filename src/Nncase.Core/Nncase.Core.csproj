@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac" />
+    <PackageReference Include="DryIoc.dll" />
     <PackageReference Include="libtorch-cpu-linux-x64" />
     <PackageReference Include="libtorch-cpu-osx-x64" />
     <PackageReference Include="libtorch-cpu-win-x64" />
@@ -19,6 +19,7 @@
     <!-- <PackageReference Include="libtorch-cuda-11.3-linux-x64" /> -->
     <!-- <PackageReference Include="libtorch-cuda-11.3-win-x64" /> -->
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.Toolkit.HighPerformance" />
     <PackageReference Include="NetFabric.Hyperlinq" />

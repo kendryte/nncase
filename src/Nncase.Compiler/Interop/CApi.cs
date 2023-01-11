@@ -10,11 +10,14 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Nncase.Diagnostics;
+using Nncase.Hosting;
 using Nncase.IR;
 using Nncase.Quantization;
 using Nncase.Runtime;
 using Nncase.Runtime.Interop;
-using static Nncase.Compiler.PythonHelper;
 
 namespace Nncase.Compiler.Interop;
 
@@ -41,14 +44,12 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr> CompileOptionsCreatePtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetInputFilePtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetInputFormatPtr;
-    public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetTargetPtr;
-    public delegate* unmanaged<IntPtr, int, void> CompileOptionsSetDumpLevelPtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetDumpDirPtr;
+    public delegate* unmanaged<IntPtr, DumpFlags, void> CompileOptionsSetDumpFlagsPtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> CompileOptionsSetQuantizeOptionsPtr;
-    public delegate* unmanaged<IntPtr, IntPtr, void> CompileOptionsSetQuantTypePtr;
-    public delegate* unmanaged<IntPtr, ModelQuantMode, void> CompileOptionsSetModelQuantModePtr;
+    public delegate* unmanaged<IntPtr, IntPtr, IntPtr> CompileSessionCreatePtr;
+    public delegate* unmanaged<IntPtr, IntPtr> CompileSessionGetCompilerPtr;
     public delegate* unmanaged<void> CompilerInitializePtr;
-    public delegate* unmanaged<IntPtr, IntPtr> CompilerCreatePtr;
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr> CompilerImportModulePtr;
     public delegate* unmanaged<IntPtr, void> CompilerCompilePtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> CompilerGencodePtr;
@@ -61,9 +62,12 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr> QuantizeOptionsCreatePtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> QuantizeOptionsSetCalibrationDatasetPtr;
     public delegate* unmanaged<IntPtr, CalibMethod, void> QuantizeOptionsSetCalibrationMethodPtr;
+    public delegate* unmanaged<IntPtr, ModelQuantMode, void> QuantizeOptionsSetModelQuantModePtr;
+    public delegate* unmanaged<IntPtr, IntPtr, void> QuantizeOptionsSetQuantTypePtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueFromHandlePtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueGetHandlePtr;
     public delegate* unmanaged<CStreamMT*, IntPtr, IntPtr> StreamCreatePtr;
+    public delegate* unmanaged<byte*, nuint, IntPtr> TargetCreatePtr;
     public delegate* unmanaged<byte*, nuint, byte> TargetExistsPtr;
 }
 
@@ -83,14 +87,12 @@ public static unsafe class CApi
         mt->CompileOptionsCreatePtr = &CompileOptionsCreate;
         mt->CompileOptionsSetInputFilePtr = &CompileOptionsSetInputFile;
         mt->CompileOptionsSetInputFormatPtr = &CompileOptionsSetInputFormat;
-        mt->CompileOptionsSetTargetPtr = &CompileOptionsSetTarget;
-        mt->CompileOptionsSetDumpLevelPtr = &CompileOptionsSetDumpLevel;
         mt->CompileOptionsSetDumpDirPtr = &CompileOptionsSetDumpDir;
+        mt->CompileOptionsSetDumpFlagsPtr = &CompileOptionsSetDumpFlags;
         mt->CompileOptionsSetQuantizeOptionsPtr = &CompileOptionsSetQuantizeOptions;
-        mt->CompileOptionsSetQuantTypePtr = &CompileOptionsSetQuantType;
-        mt->CompileOptionsSetModelQuantModePtr = &CompileOptionsSetModelQuantMode;
+        mt->CompileSessionCreatePtr = &CompileSessionCreate;
+        mt->CompileSessionGetCompilerPtr = &CompileSessionGetCompiler;
         mt->CompilerInitializePtr = &CompilerInitialize;
-        mt->CompilerCreatePtr = &CompilerCreate;
         mt->CompilerImportModulePtr = &CompilerImportModule;
         mt->CompilerCompilePtr = &CompilerCompile;
         mt->CompilerGencodePtr = &CompilerGencode;
@@ -103,9 +105,12 @@ public static unsafe class CApi
         mt->QuantizeOptionsCreatePtr = &QuantizeOptionsCreate;
         mt->QuantizeOptionsSetCalibrationDatasetPtr = &QuantizeOptionsSetCalibrationDataset;
         mt->QuantizeOptionsSetCalibrationMethodPtr = &QuantizeOptionsSetCalibrationMethod;
+        mt->QuantizeOptionsSetModelQuantModePtr = &QuantizeOptionsSetModelQuantMode;
+        mt->QuantizeOptionsSetQuantTypePtr = &QuantizeOptionsSetQuantType;
         mt->RTValueFromHandlePtr = &RTValueFromHandle;
         mt->RTValueGetHandlePtr = &RTValueGetHandle;
         mt->StreamCreatePtr = &StreamCreate;
+        mt->TargetCreatePtr = &TargetCreate;
         mt->TargetExistsPtr = &TargetExists;
     }
 
@@ -191,15 +196,9 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
-    private static void CompileOptionsSetTarget(IntPtr compileOptionsHandle, byte* targetPtr, nuint targetLength)
+    private static void CompileOptionsSetDumpFlags(IntPtr compileOptionsHandle, DumpFlags dumpFlags)
     {
-        Get<CompileOptions>(compileOptionsHandle).Target = ToString(targetPtr, targetLength);
-    }
-
-    [UnmanagedCallersOnly]
-    private static void CompileOptionsSetDumpLevel(IntPtr compileOptionsHandle, int dumpLevel)
-    {
-        Get<CompileOptions>(compileOptionsHandle).DumpLevel = dumpLevel;
+        Get<CompileOptions>(compileOptionsHandle).DumpFlags = dumpFlags;
     }
 
     [UnmanagedCallersOnly]
@@ -215,27 +214,27 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
-    private static void CompileOptionsSetQuantType(IntPtr compileOptionsHandle, IntPtr quantTypeHandle)
+    private static IntPtr CompileSessionCreate(IntPtr targetHandle, IntPtr compileOptionsHandle)
     {
-        Get<CompileOptions>(compileOptionsHandle).QuantType = Get<DataType>(quantTypeHandle);
+        var target = Get<ITarget>(targetHandle);
+        var compileOptions = Get<CompileOptions>(compileOptionsHandle);
+        return GCHandle.ToIntPtr(GCHandle.Alloc(CompileSession.Create(target, compileOptions)));
     }
 
     [UnmanagedCallersOnly]
-    private static void CompileOptionsSetModelQuantMode(IntPtr compileOptionsHandle, ModelQuantMode quantMode)
+    private static IntPtr CompileSessionGetCompiler(IntPtr compileSessionHandle)
     {
-        Get<CompileOptions>(compileOptionsHandle).ModelQuantMode = quantMode;
+        var compileSession = Get<CompileSession>(compileSessionHandle);
+        return GCHandle.ToIntPtr(GCHandle.Alloc(compileSession.Compiler));
     }
 
     [UnmanagedCallersOnly]
     private static void CompilerInitialize()
     {
-        Compiler.Initialize();
-    }
-
-    [UnmanagedCallersOnly]
-    private static IntPtr CompilerCreate(IntPtr compileOptionsHandle)
-    {
-        return GCHandle.ToIntPtr(GCHandle.Alloc(new Compiler(Get<CompileOptions>(compileOptionsHandle))));
+        var host = Host.CreateDefaultBuilder()
+            .ConfigureCompiler()
+            .Build();
+        CompilerServices.Configure(host.Services);
     }
 
     [UnmanagedCallersOnly]
@@ -243,7 +242,7 @@ public static unsafe class CApi
     {
         var compiler = Get<Compiler>(compilerHandle);
         var stream = Get<CStream>(streamHandle);
-        var module = compiler.ImportModule(stream);
+        var module = compiler.ImportModuleAsync(stream).Result;
         return GCHandle.ToIntPtr(GCHandle.Alloc(module));
     }
 
@@ -251,7 +250,7 @@ public static unsafe class CApi
     private static void CompilerCompile(IntPtr compilerHandle)
     {
         var compiler = Get<Compiler>(compilerHandle);
-        compiler.Compile();
+        compiler.CompileAsync().Wait();
     }
 
     [UnmanagedCallersOnly]
@@ -331,9 +330,21 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
+    private static void QuantizeOptionsSetModelQuantMode(IntPtr quantizeOptionsHandle, ModelQuantMode quantMode)
+    {
+        Get<QuantizeOptions>(quantizeOptionsHandle).ModelQuantMode = quantMode;
+    }
+
+    [UnmanagedCallersOnly]
+    private static void QuantizeOptionsSetQuantType(IntPtr quantizeOptionsHandle, IntPtr quantTypeHandle)
+    {
+        Get<QuantizeOptions>(quantizeOptionsHandle).QuantType = Get<DataType>(quantTypeHandle);
+    }
+
+    [UnmanagedCallersOnly]
     private static IntPtr RTValueFromHandle(IntPtr handle)
     {
-        var rtValue = RTValue.FromHandle(handle);
+        var rtValue = RTValue.FromHandle(handle, true);
         return GCHandle.ToIntPtr(GCHandle.Alloc(rtValue));
     }
 
@@ -348,6 +359,13 @@ public static unsafe class CApi
     private static IntPtr StreamCreate(CStreamMT* mt, IntPtr handle)
     {
         return GCHandle.ToIntPtr(GCHandle.Alloc(new CStream(mt, handle)));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr TargetCreate(byte* targetNamePtr, nuint targetNameLength)
+    {
+        var targetName = ToString(targetNamePtr, targetNameLength);
+        return GCHandle.ToIntPtr(GCHandle.Alloc(CompilerServices.GetTarget(targetName)));
     }
 
     [UnmanagedCallersOnly]

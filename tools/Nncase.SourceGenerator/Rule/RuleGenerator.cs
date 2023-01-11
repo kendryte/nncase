@@ -33,7 +33,7 @@ internal sealed class RuleGenerator : IIncrementalGenerator
     public INamedTypeSymbol? ExprSymobl;
     public INamedTypeSymbol? TensorSymobl;
     public INamedTypeSymbol? IMatchResultSymobl;
-    public INamedTypeSymbol? RunPassOptionsSymobl;
+    public INamedTypeSymbol? RunPassContextSymobl;
     public INamedTypeSymbol? IRewriteRuleSymbol;
     public INamedTypeSymbol? QuantRuleSymbol;
 
@@ -63,7 +63,7 @@ internal sealed class RuleGenerator : IIncrementalGenerator
         ExprSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Expr");
         TensorSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Tensor");
         IMatchResultSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.PatternMatch.IMatchResult");
-        RunPassOptionsSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Transform.RunPassOptions");
+        RunPassContextSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Transform.RunPassContext");
 
         var classDeclaration = (ClassDeclarationSyntax)ctx.Node;
         var classSymbol = ctx.SemanticModel.GetDeclaredSymbol(classDeclaration);
@@ -91,7 +91,7 @@ internal sealed class RuleGenerator : IIncrementalGenerator
               && m.ReturnType.IsInheritFrom(ExprSymobl!)
               && m.Parameters.All(
                   p => SymbolEqualityComparer.Default.Equals(p.Type, IMatchResultSymobl)
-                       || SymbolEqualityComparer.Default.Equals(p.Type, RunPassOptionsSymobl)
+                       || SymbolEqualityComparer.Default.Equals(p.Type, RunPassContextSymobl)
                        || p.Type.IsInheritFrom(ExprSymobl) // Expr/ Const / Tuple ...
                        || p.Type.IsInheritFrom(TensorSymobl) // Tensor<?>
                        || (p.Type is INamedTypeSymbol { IsGenericType: true, Name: "IReadOnlyList" } gentype && gentype.TypeArguments[0].IsInheritFrom(ExprSymobl)) // IReadOnlyList<Expr>
@@ -159,8 +159,8 @@ internal sealed class RuleGenerator : IIncrementalGenerator
                     case ITypeSymbol x when SymbolEqualityComparer.Default.Equals(x, IMatchResultSymobl):
                         rightExpr = $"__result";
                         break;
-                    case ITypeSymbol x when SymbolEqualityComparer.Default.Equals(x, RunPassOptionsSymobl):
-                        rightExpr = $"__options";
+                    case ITypeSymbol x when SymbolEqualityComparer.Default.Equals(x, RunPassContextSymobl):
+                        rightExpr = $"__context";
                         break;
                     case INamedTypeSymbol { IsGenericType: true, Name: "IReadOnlyList" } x when x.TypeArguments[0].IsInheritFrom(ExprSymobl):
                         rightExpr = $"((System.Collections.Generic.IReadOnlyList<Nncase.IR.Expr>)__result[\"{parameterSymbol.Name}\"])";
@@ -179,7 +179,7 @@ internal sealed class RuleGenerator : IIncrementalGenerator
 
             if (cand.ClassSymobl.IsInheritFrom(QuantRuleSymbol))
             {
-                statements.Add(ParseStatement($"Option = __options;"));
+                statements.Add(ParseStatement($"Option = __context;"));
                 statements.Add(ParseStatement($"MatchResult = __result;"));
                 statements.Add(ParseStatement($"Init();"));
             }
@@ -193,7 +193,7 @@ internal sealed class RuleGenerator : IIncrementalGenerator
 
             // 2. consturct wrapper method.
             var method = MethodDeclaration(ParseTypeName("Nncase.IR.Expr?"), Identifier("GetReplace").WithLeadingTrivia(ElasticSpace))
-                        .WithParameterList(ParseParameterList("(IMatchResult __result, RunPassOptions __options)"))
+                        .WithParameterList(ParseParameterList("(IMatchResult __result, RunPassContext __context)"))
                         .WithModifiers(modifiers)
                         .WithBody(Block(statements.Select(s => s
                                 .WithLeadingTrivia(ElasticTab)

@@ -8,44 +8,39 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Nncase.CodeGen;
 using Nncase.IR;
 using Nncase.Quantization;
 using Nncase.Runtime.Interop;
+using Nncase.Tests.TestFixture;
 using Nncase.Transform;
 using Xunit;
 
 namespace Nncase.Tests.Targets;
 
-public class UnitTestK210Target
+[AutoSetupTestMethod(InitSession = true)]
+public class UnitTestK210Target : TestClassBase
 {
     public UnitTestK210Target()
     {
-        CompileOptions = new CompileOptions(ModelQuantMode.UsePTQ);
+        DefaultTargetName = "k210";
+        CompileOptions.QuantizeOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
     }
 
-    public CompileOptions CompileOptions { get; }
-
     [Fact]
+    [AutoSetupTestMethod(InitSession = false)]
     public void TestCreateK210Target()
     {
         var target = CompilerServices.GetTarget("k210");
         Assert.NotNull(target);
     }
 
-    [Fact]
-    public void TestCreateStackVMModuleBuilder()
+    [Theory]
+    [CombinatorialData]
+    public void TestCreateModuleBuilders([CombinatorialValues("stackvm", "kpu")] string moduleKind)
     {
-        var target = CompilerServices.GetTarget("k210");
-        var moduleBuilder = target.CreateModuleBuilder("stackvm", CompilerServices.CompileOptions);
-        Assert.NotNull(moduleBuilder);
-    }
-
-    [Fact]
-    public void TestCreateKPUModuleBuilder()
-    {
-        var target = CompilerServices.GetTarget("k210");
-        var moduleBuilder = target.CreateModuleBuilder("kpu", CompilerServices.CompileOptions);
+        var moduleBuilder = CompileSession.Target.CreateModuleBuilder(moduleKind, CompileSession.CompileOptions);
         Assert.NotNull(moduleBuilder);
     }
 
@@ -62,26 +57,21 @@ public class UnitTestK210Target
             { 0, 0 },
             { 0, 0 },
         }, new[] { 1, 1 }, PadMode.Constant, 1);
-        await TestCodeGen(y, new[] { x });
+        await TestCodeGenAsync(y, new[] { x });
     }
 
-    private async Task TestCodeGen(Expr body, Var[] vars, [CallerMemberName] string? name = null)
+    private async Task TestCodeGenAsync(Expr body, Var[] vars)
     {
         var main = new Function("main", body, vars);
         var module = new IRModule(main);
-        var target = CompilerServices.GetTarget("k210");
-        var dumpDir = "k210_" + name;
-        var passOptions = new RunPassOptions(target, 2, dumpDir, CompileOptions);
-        if (Directory.Exists(dumpDir))
-        {
-            Directory.Delete(dumpDir, true);
-        }
 
         // 1. Optimize target dependent
-        CompileOptions.QuantizeOptions = new QuantizeOptions { CalibrationDataset = new RandomCalibrationDatasetProvider(vars), CalibrationMethod = CalibMethod.Kld };
-        var pmgr = new PassManager(module, passOptions);
-        target.RegisterTargetDependentPass(pmgr, CompileOptions);
-        await pmgr.RunAsync();
+        CompileOptions.QuantizeOptions.CalibrationDataset = new RandomCalibrationDatasetProvider(vars, 1);
+        CompileOptions.QuantizeOptions.CalibrationMethod = CalibMethod.Kld;
+
+        var pmgr = CompileSession.CreatePassManager("Passes");
+        CompileSession.Target.RegisterTargetDependentPass(pmgr, CompileOptions);
+        await pmgr.RunAsync(module);
 
         // var modelBuilder = new ModelBuilder(target);
         // var linkedModel = modelBuilder.Build(module);
@@ -92,8 +82,7 @@ public class UnitTestK210Target
 
     private void GenerateKModelAndRun(IRModule module, Tensor input, Tensor[] expectedOutput, [CallerMemberName] string? name = null)
     {
-        var target = CompilerServices.GetTarget("cpu");
-        var modelBuilder = new ModelBuilder(target);
+        var modelBuilder = CompileSession.GetRequiredService<IModelBuilder>();
         var linkedModel = modelBuilder.Build(module);
         using (var output = File.Open($"{name}.kmodel", FileMode.Create))
         {
@@ -113,7 +102,7 @@ public class UnitTestK210Target
         var entry = interp.Entry;
 
         var rtInput = RTTensor.FromTensor(input);
-        var rtOutput = entry.Invoke(rtInput);
+        var rtOutput = entry!.Invoke(rtInput);
         var rtOutputs = rtOutput is RTTensor t ? new[] { t } : ((RTTuple)rtOutput).Fields.Cast<RTTensor>().ToArray();
         Assert.Equal(expectedOutput.Length, rtOutputs.Length);
 
@@ -130,25 +119,5 @@ public class UnitTestK210Target
     private void GenerateKModelAndRun(IRModule module, Tensor input, Tensor expectedOutput, [CallerMemberName] string? name = null)
     {
         GenerateKModelAndRun(module, input, new[] { expectedOutput }, name);
-    }
-
-    private class RandomCalibrationDatasetProvider : ICalibrationDatasetProvider
-    {
-        public RandomCalibrationDatasetProvider(IReadOnlyList<Var> vars)
-        {
-            var values = new Dictionary<Var, IValue>();
-            foreach (var var in vars)
-            {
-                CompilerServices.InferenceType(var);
-                var value = IR.F.Random.Normal(var.CheckedDataType, var.CheckedShape).Evaluate();
-                values.Add(var, value);
-            }
-
-            Samples = new[] { values }.ToAsyncEnumerable();
-        }
-
-        public int? Count => 1;
-
-        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
     }
 }

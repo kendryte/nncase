@@ -49,7 +49,7 @@ public static partial class Utility
     /// <summary>
     /// match a call with op type T
     /// auto set first param
-    /// it's always used for Fake to NoFake Rule with ReplaceCall.
+    /// it's always used for Fake to NoFake Pass with ReplaceCall.
     /// </summary>ReplaceParams
     /// <param name="callName"></param>
     /// <param name="opName"></param>

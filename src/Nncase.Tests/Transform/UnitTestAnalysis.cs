@@ -15,7 +15,7 @@ using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Tests.TransformTest;
 
-public sealed class UnitTestUsedByAnalysis : TestFixture.UnitTestFixtrue
+public sealed class UnitTestUsedByAnalysis : TestClassBase
 {
     [Fact]
     public void TestMultiInput()
@@ -33,13 +33,9 @@ public sealed class UnitTestUsedByAnalysis : TestFixture.UnitTestFixtrue
     public void TestMultInputWithFusion()
     {
         var fusionCase = new ReWrite.FusionTest.DataFlowType7FusionCaseLeft();
-        var passOptions = GetPassOptions(fusionCase.GetType().Name);
-        var compileOptions = passOptions.CompileOptions;
-        _ = CompilerServices.GetTarget(compileOptions.Target);
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
         var main = new Function(fusionCase.BuildBody(input), input);
         CompilerServices.InferenceType(main);
-        CompilerServices.DumpIR(main, "pre", passOptions.DumpDir);
 
         var usedbyReslut = Analyser.AnalysisUsedBy(main);
 

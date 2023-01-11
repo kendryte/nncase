@@ -17,10 +17,10 @@ namespace Nncase.Transform;
 internal sealed class DataFlowRewriteVisitor : ExprMutator
 {
     private readonly IRewriteRule _rule;
-    private readonly RunPassOptions _options;
+    private readonly RunPassContext _options;
     private readonly HashSet<Expr> _dontInheritExprs = new HashSet<Expr>(ReferenceEqualityComparer.Instance);
 
-    public DataFlowRewriteVisitor(IRewriteRule rule, RunPassOptions options)
+    public DataFlowRewriteVisitor(IRewriteRule rule, RunPassContext options)
     {
         _rule = rule;
         _options = options;

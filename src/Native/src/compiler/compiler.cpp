@@ -38,67 +38,6 @@
 #define UNMANAGEDCALLERSONLY_METHOD ((const char_t *)-1)
 
 namespace {
-struct c_api_mt {
-    clr_object_handle_t (*array_create)(nncase_array_element_kind_t kind,
-                                        const clr_object_handle_t *elements,
-                                        size_t count);
-    clr_object_handle_t (*array_get_item)(clr_object_handle_t array,
-                                          size_t index);
-    size_t (*array_get_length)(clr_object_handle_t array);
-    clr_object_handle_t (*calibration_dataset_provider_create)(
-        clr_object_handle_t dataset, size_t samplesCount,
-        clr_object_handle_t fn_params);
-    void (*handle_free)(clr_object_handle_t handle);
-    clr_object_handle_t (*compile_options_create)();
-    void (*compile_options_set_input_file)(clr_object_handle_t compile_options,
-                                           const char *input_file,
-                                           size_t input_file_length);
-    void (*compile_options_set_input_format)(
-        clr_object_handle_t compile_options, const char *input_format,
-        size_t input_format_length);
-    void (*compile_options_set_target)(clr_object_handle_t compile_options,
-                                       const char *target,
-                                       size_t target_length);
-    void (*compile_options_set_dump_level)(clr_object_handle_t compile_options,
-                                           int32_t dump_level);
-    void (*compile_options_set_dump_dir)(clr_object_handle_t compile_options,
-                                         const char *dump_dir,
-                                         size_t dump_dir_length);
-    void (*compile_options_set_quantize_options)(
-        clr_object_handle_t compile_options,
-        clr_object_handle_t quantize_options);
-    void (*compile_options_set_quant_type)(clr_object_handle_t compile_options,
-                                           clr_object_handle_t quant_type);
-    void (*compile_options_set_model_quant_mode)(
-        clr_object_handle_t compile_options,
-        nncase_model_quant_mode_t model_quant_mode);
-    void (*compiler_initialize)();
-    clr_object_handle_t (*compiler_create)(clr_object_handle_t compile_options);
-    clr_object_handle_t (*compiler_import_module)(clr_object_handle_t compiler,
-                                                  clr_object_handle_t stream);
-    void (*compiler_compile)(clr_object_handle_t compiler);
-    void (*compiler_gencode)(clr_object_handle_t compiler,
-                             clr_object_handle_t stream);
-    clr_object_handle_t (*datatype_from_typecode)(nncase::typecode_t typecode);
-    clr_object_handle_t (*expr_evaluate)(clr_object_handle_t expr,
-                                         clr_object_handle_t parameters,
-                                         clr_object_handle_t inputs);
-    clr_object_handle_t (*function_get_body)(clr_object_handle_t function);
-    clr_object_handle_t (*function_get_parameters)(
-        clr_object_handle_t function);
-    clr_object_handle_t (*ir_module_get_entry)(clr_object_handle_t module);
-    void (*luanch_debugger)();
-    clr_object_handle_t (*quantize_options_create)();
-    void (*quantize_options_set_calibration_dataset)(
-        clr_object_handle_t quantize_options, clr_object_handle_t dataset);
-    void (*quantize_options_set_calibration_method)(
-        clr_object_handle_t quantize_options, nncase_calib_method_t method);
-    clr_object_handle_t (*rtvalue_from_handle)(nncase::value_node *value);
-    nncase::value_node *(*rtvalue_get_handle)(clr_object_handle_t rtvalue);
-    clr_object_handle_t (*stream_create)(const nncase_stream_mt_t *mt,
-                                         void *handle);
-    bool (*target_exists)(const char *target_name, size_t target_name_length);
-};
 
 typedef int (*get_function_pointer_fn)(const char_t *type_name,
                                        const char_t *method_name,
@@ -106,7 +45,7 @@ typedef int (*get_function_pointer_fn)(const char_t *type_name,
                                        void *load_context, void *reserved,
                                        /*out*/ void **delegate);
 
-typedef void (*c_api_initialize_fn)(c_api_mt *mt);
+typedef void (*c_api_initialize_fn)(nncase_api_mt_t *mt);
 
 #ifdef WIN32
 #define THROW_WIN32_IF_NOT(x)                                                  \
@@ -295,14 +234,16 @@ load_compiler_c_api_initializer(const char *root_assembly_path) {
     return c_api_initialize;
 }
 
-c_api_mt g_c_api_mt;
+nncase_api_mt_t g_nncase_api_mt;
 } // namespace
 
+nncase_api_mt_t *nncase_clr_api() { return &g_nncase_api_mt; }
+
 int nncase_clr_initialize(const char *root_assembly_path) {
-    if (!g_c_api_mt.handle_free) {
+    if (!g_nncase_api_mt.handle_free) {
         auto init = load_compiler_c_api_initializer(root_assembly_path);
-        init(&g_c_api_mt);
-        g_c_api_mt.compiler_initialize();
+        init(&g_nncase_api_mt);
+        g_nncase_api_mt.compiler_initialize();
         // SetUnhandledExceptionFilter(MyUnhandledExceptionFilter);
     }
 
@@ -310,200 +251,6 @@ int nncase_clr_initialize(const char *root_assembly_path) {
 }
 
 int nncase_clr_uninitialize() {
-    g_c_api_mt = {};
+    g_nncase_api_mt = {};
     return 0;
-}
-
-int nncase_clr_array_create(nncase_array_element_kind_t kind,
-                            const clr_object_handle_t *elements, size_t count,
-                            clr_object_handle_t *array) {
-    *array = g_c_api_mt.array_create(kind, elements, count);
-    return 0;
-}
-
-int nncase_clr_array_get_item(clr_object_handle_t array, size_t index,
-                              clr_object_handle_t *item) {
-    *item = g_c_api_mt.array_get_item(array, index);
-    return 0;
-}
-
-int nncase_clr_array_get_length(clr_object_handle_t array, size_t *length) {
-    *length = g_c_api_mt.array_get_length(array);
-    return 0;
-}
-
-int nncase_clr_calibration_dataset_provider_create(
-    clr_object_handle_t dataset, size_t samplesCount,
-    clr_object_handle_t fn_params, clr_object_handle_t *provider) {
-    *provider = g_c_api_mt.calibration_dataset_provider_create(
-        dataset, samplesCount, fn_params);
-    return 0;
-}
-
-int nncase_clr_handle_free([[maybe_unused]] clr_object_handle_t handle) {
-    if (g_c_api_mt.handle_free)
-        g_c_api_mt.handle_free(handle);
-    return 0;
-}
-
-int nncase_clr_compile_options_create(clr_object_handle_t *compile_options) {
-    *compile_options = g_c_api_mt.compile_options_create();
-    return 0;
-}
-
-int nncase_clr_compile_options_set_inputfile(
-    clr_object_handle_t compile_options, const char *input_file,
-    size_t input_file_length) {
-    g_c_api_mt.compile_options_set_input_file(compile_options, input_file,
-                                              input_file_length);
-    return 0;
-}
-
-int nncase_clr_compile_options_set_input_format(
-    clr_object_handle_t compile_options, const char *input_format,
-    size_t input_format_length) {
-    g_c_api_mt.compile_options_set_input_format(compile_options, input_format,
-                                                input_format_length);
-    return 0;
-}
-
-int nncase_clr_compile_options_set_target(clr_object_handle_t compile_options,
-                                          const char *target,
-                                          size_t target_length) {
-    g_c_api_mt.compile_options_set_target(compile_options, target,
-                                          target_length);
-    return 0;
-}
-
-int nncase_clr_compile_options_set_dump_level(
-    clr_object_handle_t compile_options, int32_t dump_level) {
-    g_c_api_mt.compile_options_set_dump_level(compile_options, dump_level);
-    return 0;
-}
-
-int nncase_clr_compile_options_set_dump_dir(clr_object_handle_t compile_options,
-                                            const char *dump_dir,
-                                            size_t dump_dir_length) {
-    g_c_api_mt.compile_options_set_dump_dir(compile_options, dump_dir,
-                                            dump_dir_length);
-    return 0;
-}
-
-int nncase_clr_compile_options_set_quantize_options(
-    clr_object_handle_t compile_options, clr_object_handle_t quantize_options) {
-    g_c_api_mt.compile_options_set_quantize_options(compile_options,
-                                                    quantize_options);
-    return 0;
-}
-
-int nncase_clr_compile_options_set_model_quant_mode(
-    clr_object_handle_t compile_options,
-    nncase_model_quant_mode_t model_quant_mode) {
-    g_c_api_mt.compile_options_set_model_quant_mode(compile_options,
-                                                    model_quant_mode);
-    return 0;
-}
-
-int nncase_clr_compiler_create(clr_object_handle_t compile_options,
-                               clr_object_handle_t *compiler) {
-    *compiler = g_c_api_mt.compiler_create(compile_options);
-    return 0;
-}
-
-int nncase_clr_compiler_import_module(clr_object_handle_t compiler,
-                                      clr_object_handle_t stream,
-                                      clr_object_handle_t *module) {
-    *module = g_c_api_mt.compiler_import_module(compiler, stream);
-    return 0;
-}
-
-int nncase_clr_compiler_compile(clr_object_handle_t compiler) {
-    g_c_api_mt.compiler_compile(compiler);
-    return 0;
-}
-
-int nncase_clr_compiler_gencode(clr_object_handle_t compiler,
-                                clr_object_handle_t stream) {
-    g_c_api_mt.compiler_gencode(compiler, stream);
-    return 0;
-}
-
-int nncase_clr_datatype_from_typecode(nncase::typecode_t typecode,
-                                      clr_object_handle_t *datatype) {
-    *datatype = g_c_api_mt.datatype_from_typecode(typecode);
-    return 0;
-}
-
-int nncase_clr_expr_evaluate(clr_object_handle_t expr,
-                             clr_object_handle_t inputs,
-                             clr_object_handle_t parameters,
-                             clr_object_handle_t *result) {
-    *result = g_c_api_mt.expr_evaluate(expr, parameters, inputs);
-    return 0;
-}
-
-int nncase_clr_function_get_body(clr_object_handle_t function,
-                                 clr_object_handle_t *body) {
-    *body = g_c_api_mt.function_get_body(function);
-    return 0;
-}
-
-int nncase_clr_function_get_parameters(clr_object_handle_t function,
-                                       clr_object_handle_t *parameters) {
-    *parameters = g_c_api_mt.function_get_parameters(function);
-    return 0;
-}
-
-int nncase_clr_ir_module_get_entry(clr_object_handle_t module,
-                                   clr_object_handle_t *entry) {
-    *entry = g_c_api_mt.ir_module_get_entry(module);
-    return 0;
-}
-
-int nncase_clr_launch_debugger() {
-    g_c_api_mt.luanch_debugger();
-    return 0;
-}
-
-int nncase_clr_quantize_options_create(clr_object_handle_t *quantize_options) {
-    *quantize_options = g_c_api_mt.quantize_options_create();
-    return 0;
-}
-
-int nncase_clr_quantize_options_set_calibration_dataset(
-    clr_object_handle_t quantize_options, clr_object_handle_t dataset) {
-    g_c_api_mt.quantize_options_set_calibration_dataset(quantize_options,
-                                                        dataset);
-    return 0;
-}
-
-int nncase_clr_quantize_options_set_calibration_method(
-    clr_object_handle_t quantize_options, nncase_calib_method_t method) {
-    g_c_api_mt.quantize_options_set_calibration_method(quantize_options,
-                                                       method);
-    return 0;
-}
-
-int nncase_clr_rtvalue_from_handle(nncase::value_node *value,
-                                   clr_object_handle_t *rtvalue) {
-    *rtvalue = g_c_api_mt.rtvalue_from_handle(nncase::value_t(value).detach());
-    return 0;
-}
-
-int nncase_clr_rtvalue_get_handle(clr_object_handle_t rtvalue,
-                                  nncase::value_node **value) {
-    nncase::value_t v(g_c_api_mt.rtvalue_get_handle(rtvalue));
-    *value = v.detach();
-    return 0;
-}
-
-int nncase_clr_stream_create(const nncase_stream_mt_t *mt, void *handle,
-                             clr_object_handle_t *stream) {
-    *stream = g_c_api_mt.stream_create(mt, handle);
-    return 0;
-}
-
-bool nncase_clr_target_exists(const char *target_name,
-                              size_t target_name_length) {
-    return g_c_api_mt.target_exists(target_name, target_name_length);
 }

@@ -172,10 +172,6 @@ DataFactory = {
     'generate_image_dataset': generate_image_dataset
 }
 
-# singleton
-# if create compiler in each test, then will thorw exception: The configured user limit
-globalCompiler = nncase.Compiler()
-
 
 class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
     def __init__(self, case_name, targets=None, overwrite_configs: Union[Dict, str] = None) -> None:
@@ -418,8 +414,6 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         pass
 
     def run_single(self, cfg, case_dir: str, model_file: Union[List[str], str]):
-        # todo: move to run
-        self.compiler = globalCompiler
         if not self.inputs:
             self.parse_model_input_output(model_file)
         for dict_args in self.make_args(cfg.preprocess_opt):

@@ -48,11 +48,7 @@ PYBIND11_MODULE(_nncase, m) {
                          true, std::memory_order_release);
                  }));
     m.def("initialize", nncase_clr_initialize);
-    m.def("launch_debugger", nncase_clr_launch_debugger);
-    m.def("target_exists", [](std::string_view target_name) {
-        return nncase_clr_target_exists(target_name.data(),
-                                        target_name.length());
-    });
+    m.def("launch_debugger", []() { nncase_clr_api()->luanch_debugger(); });
 
 #include "runtime_tensor.inl"
 
@@ -61,28 +57,29 @@ PYBIND11_MODULE(_nncase, m) {
         .value("UsePTQ", nncase_mqm_use_ptq)
         .value("UseQAT", nncase_mqm_use_qat);
 
+    py::enum_<nncase_dump_flags_t>(m, "DumpFlags")
+        .value("Nothing", nncase_dump_flags_none);
+
     py::class_<compile_options>(m, "CompileOptions")
         .def(py::init())
         .def_property(
             "input_format", py::overload_cast<>(&compile_options::input_format),
             py::overload_cast<std::string_view>(&compile_options::input_format))
         .def_property(
-            "target", py::overload_cast<>(&compile_options::target),
-            py::overload_cast<std::string_view>(&compile_options::target))
-        .def_property("dump_level",
-                      py::overload_cast<>(&compile_options::dump_level),
-                      py::overload_cast<int32_t>(&compile_options::dump_level))
-        .def_property(
             "dump_dir", py::overload_cast<>(&compile_options::dump_dir),
             py::overload_cast<std::string_view>(&compile_options::dump_dir))
+        .def_property("dump_flags",
+                      py::overload_cast<>(&compile_options::dump_flags),
+                      py::overload_cast<nncase_dump_flags_t>(
+                          &compile_options::dump_flags))
         .def_property("quantize_options",
                       py::overload_cast<>(&compile_options::quantize_options),
                       py::overload_cast<const quantize_options &>(
-                          &compile_options::quantize_options))
-        .def_property("model_quant_mode",
-                      py::overload_cast<>(&compile_options::model_quant_mode),
-                      py::overload_cast<nncase_model_quant_mode_t>(
-                          &compile_options::model_quant_mode));
+                          &compile_options::quantize_options));
+
+    py::class_<target>(m, "Target")
+        .def(py::init<std::string_view>())
+        .def_static("exists", &target::exists);
 
     py::class_<quantize_options>(m, "QuantizeOptions")
         .def(py::init())
@@ -90,7 +87,11 @@ PYBIND11_MODULE(_nncase, m) {
             "calibration_dataset",
             py::overload_cast<>(&quantize_options::calibration_dataset),
             py::overload_cast<const calibration_dataset_provider &>(
-                &quantize_options::calibration_dataset));
+                &quantize_options::calibration_dataset))
+        .def_property("model_quant_mode",
+                      py::overload_cast<>(&quantize_options::model_quant_mode),
+                      py::overload_cast<nncase_model_quant_mode_t>(
+                          &quantize_options::model_quant_mode));
 
     py::class_<calibration_dataset_provider>(m, "CalibrationDatasetProvider")
         .def(py::init([](py::list dataset, size_t samples_count,
@@ -138,21 +139,21 @@ PYBIND11_MODULE(_nncase, m) {
             }
         });
 
-    py::class_<expr>(m, "Expr").def("evaluate", [](expr &expr, py::list inputs,
-                                                   py::list params) {
-        std::vector<clr_object_handle_t> input_handles(inputs.size());
+    py::class_<expr>(m, "Expr").def("evaluate", [](expr &expr, py::list params,
+                                                   py::list inputs) {
         std::vector<clr_object_handle_t> param_handles(params.size());
-        for (size_t i = 0; i < input_handles.size(); i++) {
-            input_handles[i] = inputs[i].cast<rtvalue &>().get();
-        }
+        std::vector<clr_object_handle_t> input_handles(inputs.size());
         for (size_t i = 0; i < param_handles.size(); i++) {
             param_handles[i] = params[i].cast<var &>().get();
         }
+        for (size_t i = 0; i < input_handles.size(); i++) {
+            input_handles[i] = inputs[i].cast<rtvalue &>().get();
+        }
 
+        array params_arr(nncase_array_var, param_handles.data(), inputs.size());
         array inputs_arr(nncase_array_rtvalue, input_handles.data(),
                          inputs.size());
-        array params_arr(nncase_array_var, param_handles.data(), inputs.size());
-        return expr.evaluate(inputs_arr, params_arr);
+        return expr.evaluate(params_arr, inputs_arr);
     });
 
     py::class_<var, expr>(m, "Var");
@@ -167,10 +168,13 @@ PYBIND11_MODULE(_nncase, m) {
         .def_property_readonly("entry", &ir_module::entry);
 
     py::class_<compiler>(m, "Compiler")
-        .def(py::init<const compile_options &>())
         .def("import_module", &compiler::import_module)
         .def("compile", &compiler::compile)
         .def("gencode", &compiler::gencode);
+
+    py::class_<compile_session>(m, "CompileSession")
+        .def(py::init<const target &, const compile_options &>())
+        .def_property_readonly("compiler", &compile_session::compiler);
 
     py::class_<interpreter>(m, "Simulator")
         .def(py::init())

@@ -21,7 +21,7 @@ public class FusionGroupMutator : ExprMutator
     /// <summary>
     /// Get the run pass options.
     /// </summary>
-    public readonly RunPassOptions PassOptions;
+    public readonly RunPassContext PassOptions;
 
     /// <summary>
     /// Get the Pre Order Rules.
@@ -42,7 +42,7 @@ public class FusionGroupMutator : ExprMutator
     /// <param name="usedByAnalysisReslut">the usedby analysis.</param>
     /// <param name="fusionRule">pre order rule. </param>
     /// <param name="passOptions">pass options. </param>
-    public FusionGroupMutator(IUsedByResult usedByAnalysisReslut, IMergeRewriteRule fusionRule, RunPassOptions passOptions)
+    public FusionGroupMutator(IUsedByResult usedByAnalysisReslut, IMergeRewriteRule fusionRule, RunPassContext passOptions)
     {
         _usedByReslut = usedByAnalysisReslut;
         Rule = fusionRule;

@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using Nncase;
 using Nncase.IR;
 using Nncase.Quantization;
-using Nncase.TestFixture;
+using Nncase.Tests.TestFixture;
 using Nncase.Transform;
 using Nncase.Transform.Rules.Neutral;
 using Nncase.Utilities;
@@ -24,12 +24,12 @@ using static Nncase.IR.F.Tensors;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 using static Nncase.Quantization.Utility;
-using static Nncase.TestFixture.DataGenerator;
+using static Nncase.Tests.DataGenerator;
 using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.QuantTest;
 
-public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
+public class UnitTestKLQuant : TestClassBase
 {
     [Fact]
     public void TestQuantFunction()
@@ -41,16 +41,12 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
     }
 
     [Fact]
-    public void TestKLQuant()
+    [AutoSetupTestMethod(InitSession = true)]
+    public async Task TestKLQuant()
     {
-        var caseOptions = GetPassOptions();
-        var compileOptions = caseOptions.CompileOptions;
-        compileOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
-        compileOptions.QuantType = DataTypes.UInt8;
-        compileOptions.WQuantType = DataTypes.UInt8;
-
-        Transform.RunPassOptions passOptions = new(compileOptions);
-        _ = CompilerServices.GetTarget(compileOptions.Target);
+        CompileOptions.QuantizeOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
+        CompileOptions.QuantizeOptions.QuantType = DataTypes.UInt8;
+        CompileOptions.QuantizeOptions.WQuantType = DataTypes.UInt8;
 
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
 
@@ -76,28 +72,22 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
 
         var output = conv;
         var module = new IRModule(new Function("main", output, new Var[] { input }));
-        _ = (weights.Shape.Size / weights.Shape[0]).FixedValue;
 
-        Transform.PassManager pmgr = new(module, passOptions);
+        CompileOptions.QuantizeOptions.CalibrationDataset = new SolidCalibrationDatasetProvider(new Var[] { input });
+        CompileOptions.QuantizeOptions.CalibrationMethod = CalibMethod.Kld;
 
-        compileOptions.QuantizeOptions = new()
-        {
-            CalibrationDataset = new SolidCalibrationDatasetProvider(new Var[] { input }),
-            CalibrationMethod = CalibMethod.Kld,
-        };
+        var pmgr = CompileSession.CreatePassManager("Passes");
 
         // 0. TargetIndependentPass
-        pmgr.Add(new Transform.DataflowPass("0_TargetInDependent")
+        pmgr.AddWithName<DataflowPass>("TargetInDependent").Configure(p =>
         {
-            new Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2D(),
+            p.Add<AddRangeOfAndMarkerToConv2D>();
         });
 
         // 1. AssignRanges
-        pmgr.Add(new Quantization.EGraphPassWithQuantize("1_AssignRanges", compileOptions.QuantizeOptions!));
+        pmgr.AddWithName<EGraphPassWithQuantize>("AssignRanges");
+        await pmgr.RunAsync(module);
 
-        pmgr.RunAsync();
-
-        System.Console.WriteLine(CompilerServices.Print((Function)module.Functions[0]));
         var dumpVisitor = new DumpVisitor();
         dumpVisitor.Visit(module.Functions[0]);
 
@@ -143,7 +133,7 @@ public class UnitTestKLQuant : TestFixture.UnitTestFixtrue
                 }
 
                 return values;
-            }).ToAsyncEnumerable();
+            }).ToArray().ToAsyncEnumerable();
         }
 
         public int? Count => CountValue;
