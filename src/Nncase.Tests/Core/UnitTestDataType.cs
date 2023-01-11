@@ -11,7 +11,7 @@ namespace Nncase.Tests.CoreTest;
 public sealed class UnitTestDataType
 {
     [Fact]
-    public unsafe void TestPointerType()
+    public void TestPointerType()
     {
         var pType = new PointerType(DataTypes.Float32);
         Assert.True(pType.SizeInBytes == 8);

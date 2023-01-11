@@ -3,7 +3,7 @@
 
 using System;
 using Nncase;
-using Nncase.TestFixture;
+using Nncase.Tests.TestFixture;
 using Xunit;
 
 namespace Nncase.Tests.CoreTest;

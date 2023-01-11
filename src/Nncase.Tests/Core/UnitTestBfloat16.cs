@@ -2,7 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase;
-using Nncase.TestFixture;
+using Nncase.Tests.TestFixture;
 using Xunit;
 
 namespace Nncase.Tests.CoreTest;
@@ -13,21 +13,21 @@ public sealed class UnitTestBfloat16
     public void TestInfinity()
     {
         var positiveInfinity = (BFloat16)1F / (BFloat16)0F;
-        Assert.True(positiveInfinity == BFloat16.Infinity);
+        Assert.Equal(positiveInfinity, BFloat16.Infinity);
     }
 
     [Fact]
     public void TestNegInfinity()
     {
         var negInfinity = (BFloat16)(-1F) / (BFloat16)0F;
-        Assert.True(negInfinity == BFloat16.NegInfinity);
+        Assert.Equal(negInfinity, BFloat16.NegInfinity);
     }
 
     [Fact]
     public void TestNan()
     {
         var nan = (BFloat16)(0F / 0F);
-        Assert.True(nan == BFloat16.NaN);
+        Assert.Equal(nan, BFloat16.NaN);
     }
 
     [Fact]
@@ -45,9 +45,9 @@ public sealed class UnitTestBfloat16
         Assert.True(c > b);
         Assert.True(c >= b);
 
-        Assert.True(a.Equals(b));
-        Assert.False(a.Equals(c));
-        Assert.False(a.Equals(f));
+        Assert.Equal(a, b);
+        Assert.NotEqual(a, c);
+        Assert.NotEqual(a, f);
         Assert.True(a.Equals((object)b));
     }
 
