@@ -7,92 +7,102 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Nncase.IR;
+using Microsoft.Extensions.DependencyInjection;
+using Nncase.TIR;
 
 namespace Nncase.Transform;
 
-public abstract class RulesPass : FunctionPass, IEnumerable<IRewriteRule>
+/// <summary>
+/// Rules addable.
+/// </summary>
+public interface IRulesAddable
 {
-    private readonly List<IRewriteRule> _rules = new();
+    /// <summary>
+    /// Add the rewrite rule.
+    /// </summary>
+    /// <typeparam name="T">Rule type.</typeparam>
+    /// <param name="parameters">Rule's constructor parameters.</param>
+    /// <returns>Add result.</returns>
+    RulesPass.AddResult<T> Add<T>(params object[] parameters)
+        where T : class, IRewriteRule;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="RulesPass"/> class.
+    /// Add the rewrite rule.
     /// </summary>
-    /// <param name="name">Name.</param>
-    public RulesPass(string name)
-        : base(name)
-    {
-    }
+    /// <param name="ruleType">Rule type.</param>
+    /// <param name="parameters">Rule's constructor parameters.</param>
+    /// <returns>Add result.</returns>
+    RulesPass.AddResult<IRewriteRule> Add(Type ruleType, params object[] parameters);
+}
+
+/// <summary>
+/// Pass contains rewrite rules.
+/// </summary>
+public abstract class RulesPass : FunctionPass, IRulesAddable
+{
+    private readonly List<IRewriteRule> _rules = new();
 
     /// <summary>
     /// Gets rules.
     /// </summary>
     public IReadOnlyList<IRewriteRule> Rules => _rules;
 
-    /// <summary>
-    /// add the pattern rule.
-    /// </summary>
-    /// <param name="rule">Rule.</param>
-    public void Add(IRewriteRule rule) => _rules.Add(rule);
-
-    /// <summary>
-    /// add the pattern rules.
-    /// </summary>
-    /// <param name="rules">Rules.</param>
-    public void Add(params IRewriteRule[] rules) => _rules.AddRange(rules);
-
-    /// <summary>
-    /// <see cref="Add(IRewriteRule[])"/>.
-    /// </summary>
-    /// <param name="rules">Rules.</param>
-    public void Add(IEnumerable<IRewriteRule> rules) => _rules.AddRange(rules);
+    /// <inheritdoc/>
+    public AddResult<T> Add<T>(params object[] parameters)
+        where T : class, IRewriteRule
+    {
+        using var scope = new CompileSessionScope(CompileSession);
+        var rule = ActivatorUtilities.CreateInstance<T>(CompileSession, parameters);
+        _rules.Add(rule);
+        return new(this, rule);
+    }
 
     /// <inheritdoc/>
-    public IEnumerator<IRewriteRule> GetEnumerator()
+    public AddResult<IRewriteRule> Add(Type ruleType, params object[] parameters)
     {
-        return _rules.GetEnumerator();
-    }
-
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
+        using var scope = new CompileSessionScope(CompileSession);
+        var rule = (IRewriteRule)ActivatorUtilities.CreateInstance(CompileSession, ruleType, parameters);
+        _rules.Add(rule);
+        return new(this, rule);
     }
 
     /// <summary>
-    /// the callback function you can custom process func with run pass options.
+    /// Add rule result.
     /// </summary>
-    /// <param name="callable"> func without run pass.</param>
-    /// <param name="options">Options.</param>
-    protected override void OnPassStart(BaseFunction callable, RunPassOptions options)
+    /// <typeparam name="T">Pass type.</typeparam>
+    public struct AddResult<T> : IRulesAddable
+        where T : class, IRewriteRule
     {
-        switch (options.DumpLevel)
+        private readonly RulesPass _rulesPass;
+
+        internal AddResult(RulesPass rulesPass, T rule)
         {
-            case >= 2:
-                CompilerServices.DumpIR((Expr)callable, "Start", options.DumpDir);
-                break;
-            case >= 1:
-                break;
-            default:
-                break;
+            _rulesPass = rulesPass;
+            Rule = rule;
         }
-    }
 
-    /// <summary>
-    /// the callback function you can custom process func with run pass options.
-    /// </summary>
-    /// <param name="callable"> func with rewrited. </param>
-    /// <param name="options">Options.</param>
-    protected override void OnPassEnd(BaseFunction callable, RunPassOptions options)
-    {
-        switch (options.DumpLevel)
+        /// <summary>
+        /// Gets rule.
+        /// </summary>
+        public T Rule { get; }
+
+        /// <inheritdoc/>
+        public AddResult<TRule> Add<TRule>(params object[] parameters)
+            where TRule : class, IRewriteRule => _rulesPass.Add<TRule>(parameters);
+
+        /// <inheritdoc/>
+        public AddResult<IRewriteRule> Add(Type ruleType, params object[] parameters)
+            => _rulesPass.Add(ruleType, parameters);
+
+        /// <summary>
+        /// Configure rule.
+        /// </summary>
+        /// <param name="configureRule">Configure rule action.</param>
+        /// <returns>This add result.</returns>
+        public AddResult<T> Configure(Action<T> configureRule)
         {
-            case >= 2:
-                CompilerServices.DumpIR((Expr)callable, "End", options.DumpDir);
-                break;
-            case >= 1:
-                break;
-            default:
-                break;
+            configureRule(Rule);
+            return this;
         }
     }
 }

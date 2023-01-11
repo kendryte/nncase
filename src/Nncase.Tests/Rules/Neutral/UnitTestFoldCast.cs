@@ -16,7 +16,7 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFoldCast : TestFixture.UnitTestFixtrue
+public class UnitTestFoldCast : TestClassBase
 {
     public static IEnumerable<object[]> TestFoldTwoCastsPositiveData =>
         new[]
@@ -68,10 +68,9 @@ public class UnitTestFoldCast : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldTwoCastsPositiveData))]
     public void TestFoldTwoCastsPositive(DataType preType, DataType middleType, DataType postType)
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(preType, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Tensors.Cast(Tensors.Cast(a, middleType), postType);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoCasts() }, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoCasts() }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -81,10 +80,9 @@ public class UnitTestFoldCast : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldTwoCastsNegativeData))]
     public void TestFoldTwoCastsNegative(DataType preType, DataType middleType, DataType postType)
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(preType, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Tensors.Cast(Tensors.Cast(a, middleType), postType);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoCasts() }, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoCasts() }, new());
 
         Assert.Equal(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -94,10 +92,9 @@ public class UnitTestFoldCast : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopCastPositiveData))]
     public void TestFoldNopCastPositive(DataType preType, DataType postType)
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(preType, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Tensors.Cast(a, postType);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopCast() }, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopCast() }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -107,10 +104,9 @@ public class UnitTestFoldCast : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopCastNegativeData))]
     public void TestFoldNopCastNegative(DataType preType, DataType postType)
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(preType, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Tensors.Cast(a, postType);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopCast() }, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopCast() }, new());
 
         Assert.Equal(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));

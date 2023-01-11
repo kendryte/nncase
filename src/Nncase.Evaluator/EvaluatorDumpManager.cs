@@ -2,24 +2,55 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Diagnostics.Metrics;
+using System.IO;
 using System.Linq;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.Utilities;
+using static TorchSharp.torch;
 using CallbacksRegister = System.Action<string, System.Action<Nncase.IR.Expr>>;
 using TensorGetter = System.Func<Nncase.IR.Expr, Nncase.Tensor[]>;
 
 namespace Nncase.Evaluator;
 
-public class EvaluatorDumpManager : DumpManager
+internal sealed class EvaluatorDumpManager : IDisposable
 {
+    private readonly IDumpper _dumpper;
     private readonly TensorGetter _tensorGetter;
+    private readonly StreamWriter? _shapeWriter;
 
-    public EvaluatorDumpManager(TensorGetter tensorGetter)
+    private int _count;
+    private bool _disposedValue;
+
+    public EvaluatorDumpManager(IDumpper dumpper, TensorGetter tensorGetter)
     {
+        _dumpper = dumpper;
         _tensorGetter = tensorGetter;
+
+        if (_dumpper.IsEnabled(DumpFlags.Evaluator))
+        {
+            _shapeWriter = new StreamWriter(_dumpper.OpenFile("!out_shape_list"));
+        }
     }
 
-    public void DumpCallArgs(Call call)
+    public void RegisterDumpCallbacks(CallbacksRegister regBefore, CallbacksRegister regAfter)
+    {
+        if (_dumpper.IsEnabled(DumpFlags.Evaluator))
+        {
+            regBefore("DumpResult", expr => DumpCallArgs((Call)expr));
+            regAfter("DumpResult", expr => DumpCall((Call)expr));
+        }
+    }
+
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void DumpCallArgs(Call call)
     {
         var target = DumpUtility.SnakeName(call.Target.GetType().Name);
         var paramsInfo = ((Op)call.Target).Parameters.ToArray();
@@ -34,9 +65,9 @@ public class EvaluatorDumpManager : DumpManager
         });
     }
 
-    public void DumpCall(Call call, string root)
+    private void DumpCall(Call call)
     {
-        var target = call.Target.GetType().Name.ToLower();
+        var target = call.Target.ToString();
 
         // a bad tmp change
         var shape = !(call.CheckedType is TensorType) ? Shape.Scalar : call.CheckedShape;
@@ -48,12 +79,36 @@ public class EvaluatorDumpManager : DumpManager
         });
     }
 
-    public void RegisterDumpCallbacks(CallbacksRegister regBefore, CallbacksRegister regAfter)
+    private void UpdateOrder(string target, Shape shape)
     {
-        if (OpenDump)
+        _shapeWriter?.WriteLine($"{target}: {DumpUtility.SerializeShape(shape)}");
+    }
+
+    private void DumpCallParam(string target, ParameterInfo info, Action<StreamWriter> f)
+    {
+        using var sw = new StreamWriter(_dumpper.OpenFile($"{_count}${target}${info.Name}"));
+        f(sw);
+    }
+
+    private void DumpCall(string target, Shape shape, Action<StreamWriter> f)
+    {
+        using var sw = new StreamWriter(_dumpper.OpenFile($"{_count}${target}"));
+        f(sw);
+
+        UpdateOrder(target, shape);
+        ++_count;
+    }
+
+    private void Dispose(bool disposing)
+    {
+        if (!_disposedValue)
         {
-            regBefore("DumpResult", expr => DumpCallArgs((Call)expr));
-            regAfter("DumpResult", expr => DumpCall((Call)expr, GetMaybeDumpDir()));
+            if (disposing)
+            {
+                _shapeWriter?.Dispose();
+            }
+
+            _disposedValue = true;
         }
     }
 }

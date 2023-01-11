@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Nncase.Tests.ReWrite.FusionTest;
 
-public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
+public class UnitTestFusionGroup : TestClassBase
 {
     public static TheoryData<IDataFlowFusionCase> DataOne = new()
     {
@@ -51,17 +51,11 @@ public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
 
     private void RunCore(IDataFlowFusionCase fusionCase)
     {
-        var passOptions = GetPassOptions(fusionCase.GetType().Name);
-        var compileOptions = passOptions.CompileOptions;
-
-        var target = CompilerServices.GetTarget(compileOptions.Target);
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
         var main = new Function(fusionCase.BuildBody(input), input);
 
         IRModule module = new(main);
         CompilerServices.InferenceType(main);
-        CompilerServices.DumpIR(main, "pre", passOptions.DumpDir);
-        CompilerServices.DumpDotIR(main, "pre", passOptions.DumpDir);
 
         var rewriter = new DataFlowMergeRewriter();
         var post = (Function)rewriter.Rewrite(main, new IMergeRewriteRule[]
@@ -70,12 +64,9 @@ public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
             new MultiInputFusionMergeRule(),
             new ShortCutFusionMergeRule(),
         }, (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
-          passOptions);
+          new());
 
-        CompilerServices.DumpIR(post, "post", passOptions.DumpDir);
-        CompilerServices.DumpDotIR(post, "post", passOptions.DumpDir);
-
-        var input_tensor = TestFixture.Testing.Rand<float>(1, 3, 224, 224);
+        var input_tensor = Testing.Rand<float>(1, 3, 224, 224);
         var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
         {
           { input, Value.FromTensor(input_tensor) },
@@ -86,13 +77,13 @@ public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
         visitor.Visit(post.Body);
         Assert.Equal(fusionCase.FinalFusionCount, visitor.Count);
         var post_result = CompilerServices.Evaluate(post.Body, feed_dict);
-        Assert.True(TestFixture.Comparator.AllEqual(pre_result, post_result));
+        Assert.True(Comparator.AllEqual(pre_result, post_result));
     }
 }
 
 internal sealed class TestFusionGroupMutator : Transform.Mutators.FusionGroupMutator
 {
-    public TestFusionGroupMutator(IUsedByResult usedByAnalysisReslut, IMergeRewriteRule preOrderfusionRule, RunPassOptions passOptions)
+    public TestFusionGroupMutator(IUsedByResult usedByAnalysisReslut, IMergeRewriteRule preOrderfusionRule, RunPassContext passOptions)
         : base(usedByAnalysisReslut, preOrderfusionRule, passOptions)
     {
     }

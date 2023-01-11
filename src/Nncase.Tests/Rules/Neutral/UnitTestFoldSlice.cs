@@ -17,7 +17,7 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFoldSlice : TestFixture.UnitTestFixtrue
+public class UnitTestFoldSlice : TestClassBase
 {
     public static IEnumerable<object[]> TestFoldNopSlicePositiveData =>
         new[]
@@ -73,10 +73,9 @@ public class UnitTestFoldSlice : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopSlicePositiveData))]
     public void TestFoldNopSlicePositive(int[] shape, int[] begins, int[] ends, int[] axes, int[] strides, int index)
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Slice(a, begins, ends, axes, strides);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopSlice() }, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopSlice() }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -86,10 +85,9 @@ public class UnitTestFoldSlice : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopSliceNegativeData))]
     public void TestFoldNopSliceNegative(int[] shape, int[] begins, int[] ends, int[] axes, int[] strides, int index)
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Slice(a, begins, ends, axes, strides);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopSlice() }, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopSlice() }, new());
 
         Assert.Equal(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -99,11 +97,10 @@ public class UnitTestFoldSlice : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldTwoSlicePositiveData))]
     public void TestFoldTwoSlicePositive(int[] shape, int[] begins1, int[] ends1, int[] axes1, int[] strides1, int[] begins2, int[] ends2, int[] axes2, int[] strides2, int index)
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var first_slice = Tensors.Slice(a, begins1, ends1, axes1, strides1);
         var rootPre = Tensors.Slice(first_slice, begins2, ends2, axes2, strides2);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoSlices() }, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoSlices() }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));

@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using GiGraph.Dot.Entities.Clusters;
 using GiGraph.Dot.Entities.Graphs;
@@ -23,12 +24,12 @@ namespace Nncase.Transform;
 
 public partial class EGraphPrinter
 {
-    internal static DotGraph DumpEgraphAsDot(EGraph eGraph, CostModel.EGraphCostModel costModel, EClass entry, string file)
+    internal static DotGraph DumpEgraphAsDot(EGraph eGraph, CostModel.EGraphCostModel costModel, EClass entry, Stream file)
     {
         var printer = new EGraphPrinter(eGraph);
         printer.ConvertEGraphAsDot();
         printer.AttachEGraphCost(costModel, entry);
-        return printer.SaveToFile(file);
+        return printer.SaveToStream(file);
     }
 
     private DotGraph AttachEGraphCost(CostModel.EGraphCostModel costModel, EClass entry)

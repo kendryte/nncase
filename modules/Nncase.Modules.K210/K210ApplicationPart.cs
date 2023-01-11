@@ -7,6 +7,8 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using DryIoc;
+using Nncase.Hosting;
 
 namespace Nncase;
 
@@ -18,11 +20,10 @@ public static class K210ApplicationPart
     /// <summary>
     /// Add k210 assembly.
     /// </summary>
-    /// <param name="assemblies">Assembly collection.</param>
-    /// <returns>Updated assembly collection.</returns>
-    public static IList<Assembly> AddK210(this IList<Assembly> assemblies)
+    /// <param name="registrator">Service registrator.</param>
+    /// <returns>Configured service registrator.</returns>
+    public static IRegistrator AddK210(this IRegistrator registrator)
     {
-        assemblies.Add(typeof(K210ApplicationPart).Assembly);
-        return assemblies;
+        return registrator.RegisterModule<K210Module>();
     }
 }
