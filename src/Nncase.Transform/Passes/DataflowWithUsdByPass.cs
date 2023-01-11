@@ -10,7 +10,6 @@ using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.PatternMatch;
 
-
 namespace Nncase.Transform;
 
 /// <summary>
