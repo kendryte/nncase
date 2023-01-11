@@ -53,5 +53,20 @@ public enum DumpFlags
     /// <summary>
     /// Dump compile stages.
     /// </summary>
-    Compile,
+    Compile = 1 << 7,
+
+    /// <summary>
+    /// Dump tiling.
+    /// </summary>
+    Tiling = 1 << 8,
+
+    /// <summary>
+    /// Dump schedule.
+    /// </summary>
+    Schedule = 1 << 9,
+
+    /// <summary>
+    /// Dump codegen.
+    /// </summary>
+    CodeGen = 1 << 10,
 }

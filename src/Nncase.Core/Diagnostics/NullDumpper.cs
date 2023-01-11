@@ -31,6 +31,10 @@ public sealed class NullDumpper : IDumpper
     {
     }
 
+    public void DumpDotIR(Expr expr, string prefix, string? reletivePath = null)
+    {
+    }
+
     /// <inheritdoc/>
     public void DumpModule(IRModule module, string? reletivePath = null)
     {

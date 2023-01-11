@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,8 +13,10 @@ using Nncase.IR;
 using Nncase.PatternMatch;
 using Nncase.Tests.ReWriteTest;
 using Nncase.Tests.TestFixture;
+using Nncase.TIR;
 using Nncase.Transform;
 using Nncase.Transform.Passes;
+using Tensorboard;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
@@ -43,6 +46,32 @@ public sealed class UnitTestDumpper : TestClassBase
 
         Dumpper.DumpIR(tuple, "main");
         Assert.True(File.Exists(Path.Join(Dumpper.Directory, "main_Tuple.il")));
+    }
+
+    [Fact]
+    public void TestDumpFusion()
+    {
+        var fusionCase = new ReWrite.FusionTest.DataFlowType7FusionCaseLeft();
+        var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
+        var main = new Function("main", fusionCase.BuildBody(input), new[] { input });
+        CompilerServices.InferenceType(main);
+
+        Dumpper.DumpIR(main, string.Empty);
+        Assert.True(File.Exists(Path.Join(Dumpper.Directory, "main.il")));
+
+        Dumpper.DumpDotIR(main, string.Empty);
+        Assert.True(File.Exists(Path.Join(Dumpper.Directory, "main.dot")));
+    }
+
+    [Fact]
+    public void TestDumpScript()
+    {
+        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 2, 3, 4 }, out _), T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Output, new[] { 1, 2, 3, 4 }, out _)).Body(T.Nop()).Build();
+
+        Assert.True(CompilerServices.InferenceType(prim_func_1));
+
+        Dumpper.DumpIR(prim_func_1, string.Empty);
+        Assert.True(File.Exists(Path.Join(Dumpper.Directory, "prim_func_1.script")));
     }
 
     [Fact]

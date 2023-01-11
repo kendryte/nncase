@@ -79,12 +79,15 @@ public class Compile : Command
         return dumpLevel switch
         {
             0 => DumpFlags.None,
-            1 => DumpFlags.ImportOps | DumpFlags.Compile,
-            2 => DumpFlags.ImportOps | DumpFlags.Compile | DumpFlags.PassIR,
-            3 => DumpFlags.ImportOps | DumpFlags.Compile | DumpFlags.PassIR | DumpFlags.Rewrite,
-            4 => DumpFlags.ImportOps | DumpFlags.Compile | DumpFlags.PassIR | DumpFlags.Rewrite | DumpFlags.EGraphCost,
-            5 => DumpFlags.ImportOps | DumpFlags.Compile | DumpFlags.PassIR | DumpFlags.Rewrite | DumpFlags.EGraphCost | DumpFlags.Evaluator,
-            >= 6 => DumpFlags.ImportOps | DumpFlags.Compile | DumpFlags.PassIR | DumpFlags.Rewrite | DumpFlags.EGraphCost | DumpFlags.Evaluator | DumpFlags.Calibration,
+            1 => DumpLevelToFlags(0) | DumpFlags.Compile,
+            2 => DumpLevelToFlags(1) | DumpFlags.PassIR,
+            3 => DumpLevelToFlags(2) | DumpFlags.Rewrite,
+            4 => DumpLevelToFlags(3) | DumpFlags.EGraphCost,
+            5 => DumpLevelToFlags(4) | DumpFlags.Evaluator,
+            6 => DumpLevelToFlags(5) | DumpFlags.Calibration,
+            7 => DumpLevelToFlags(6) | DumpFlags.Tiling,
+            8 => DumpLevelToFlags(7) | DumpFlags.Schedule,
+            >= 9 => DumpLevelToFlags(8) | DumpFlags.CodeGen,
             _ => throw new ArgumentOutOfRangeException(nameof(dumpLevel)),
         };
     }
