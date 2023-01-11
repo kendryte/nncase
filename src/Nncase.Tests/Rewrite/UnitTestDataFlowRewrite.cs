@@ -337,11 +337,9 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var pre = new Function(m + (x + (z + (x + (y / y)))), new[] { x, y, z, m });
         CompilerServices.InferenceType(pre);
 
-        var pass = new DataflowWithUsdByPass("DataflowWithUsdByPass")
-        {
-          new AnalysisReassociateAdd(),
-          new DivToConst(),
-        };
+        var pass = new DataflowWithUsdByPass() { Name = "DataflowWithUsdByPass" };
+        pass.Add<AnalysisReassociateAdd>();
+        pass.Add<DivToConst>();
         var post = (Function)await pass.RunAsync(pre, new());
 
         Assert.True(post.Body is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub }, Parameters: var param0 } && // m - (x + (z - (x + (1))))
