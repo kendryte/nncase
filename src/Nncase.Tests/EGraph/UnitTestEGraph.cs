@@ -98,17 +98,6 @@ public class UnitTestEGraph : TestClassBase
     }
 
     [Fact]
-    public void TestEgraphDump()
-    {
-        Expr a = (Const)1 + 2;
-        Expr b = (Const)1 << 2;
-        Expr c = a * b;
-        var graph = new EGraph();
-        graph.Add(c);
-        EGraphPrinter.DumpEgraphAsDot(graph, "example.dot");
-    }
-
-    [Fact]
     public void TestEgraphDumpAddSame()
     {
         Expr a = (Const)1 * 2;

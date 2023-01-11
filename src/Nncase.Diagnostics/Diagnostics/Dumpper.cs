@@ -38,7 +38,7 @@ internal sealed class Dumpper : IDumpper
     {
         foreach (var func in module.Functions)
         {
-            DumpIR(func, func.Name, reletivePath);
+            DumpIR(func, string.Empty, reletivePath);
         }
     }
 

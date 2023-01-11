@@ -33,13 +33,6 @@ public partial class TransformTestBase : TestClassBase
         return TestMatchedCore(pre, passOptions, new T());
     }
 
-    protected virtual Task<T> RunPassAsync<T>(Pass<T> pass, T input, bool rewriteOnce = true)
-        where T : class
-    {
-        var context = new RunPassContext { RewriteOnce = rewriteOnce };
-        return pass.RunAsync(input, context);
-    }
-
     public void CondMatch<T>(bool cond, Expr expr, RunPassContext passOptions)
         where T : IRewriteRule, new()
     {
@@ -141,4 +134,11 @@ public partial class TransformTestBase : TestClassBase
             var ex = Rewrite<T>(expr1, passOptions);
             return ex;
         });
+
+    protected virtual Task<T> RunPassAsync<T>(Pass<T> pass, T input, bool rewriteOnce = true)
+        where T : class
+    {
+        var context = new RunPassContext { RewriteOnce = rewriteOnce };
+        return pass.RunAsync(input, context);
+    }
 }

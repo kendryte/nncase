@@ -46,7 +46,7 @@ public static class EGraphExtractExtensions
         var costModel = new EGraphCostEvaluator(root.Find(), basefunc_cost_evaluator).Evaluate();
         if (DumpScope.Current.IsEnabled(DumpFlags.EGraphCost))
         {
-            using var fs = DumpScope.Current.OpenFile(Path.Combine("Costs", $"V{eGraph.Version}"));
+            using var fs = DumpScope.Current.OpenFile(Path.Combine("Costs", $"V{eGraph.Version}.dot"));
             EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, root.Find(), fs);
         }
 
@@ -107,7 +107,7 @@ internal class EGraphExtractor
     public Expr Extract(EClass root)
     {
         _dumpWriter = DumpScope.Current.IsEnabled(DumpFlags.EGraphCost)
-            ? new StreamWriter(DumpScope.Current.OpenFile($"{nameof(EGraphExtractor)}_Class_{root.Id}"))
+            ? new StreamWriter(DumpScope.Current.OpenFile($"{nameof(EGraphExtractor)}_Class_{root.Id}.txt"))
             : null;
         try
         {

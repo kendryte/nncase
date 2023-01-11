@@ -97,15 +97,6 @@ public abstract class BaseImporter
 
     protected abstract IEnumerable<Var> CreateInputs();
 
-    private void DumpOpsInModel(Stream path)
-    {
-        using var sr = new StreamWriter(path);
-        foreach (var op in _opsInModel)
-        {
-            sr.WriteLine(op);
-        }
-    }
-
     protected abstract void ConvertOp();
 
     protected abstract Expr CreateOutputs();
@@ -135,5 +126,14 @@ public abstract class BaseImporter
         var mainFunc = new Function("main", body, inputs);
         var module = new IRModule(mainFunc);
         return module;
+    }
+
+    private void DumpOpsInModel(Stream path)
+    {
+        using var sr = new StreamWriter(path);
+        foreach (var op in _opsInModel)
+        {
+            sr.WriteLine(op);
+        }
     }
 }

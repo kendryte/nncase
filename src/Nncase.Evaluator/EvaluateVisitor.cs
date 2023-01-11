@@ -119,6 +119,6 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>, IDisposable
 
     public void Dispose()
     {
-        throw new NotImplementedException();
+        _dumpManager.Dispose();
     }
 }

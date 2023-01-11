@@ -34,7 +34,7 @@ internal sealed class EvaluateProvider : IEvaluateProvider
             throw new InvalidOperationException("Expr in Evaluator need a valid type");
         }
 
-        var evaluatorVisitor = new EvaluateVisitor(varsValues ?? new Dictionary<Var, IValue>(), evaluator_cache ?? new());
+        using var evaluatorVisitor = new EvaluateVisitor(varsValues ?? new Dictionary<Var, IValue>(), evaluator_cache ?? new());
         return evaluatorVisitor.Visit(expr);
     }
 
