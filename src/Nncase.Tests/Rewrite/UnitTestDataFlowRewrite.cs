@@ -27,11 +27,11 @@ public class UnitTestDataFlowRewriteFactory : TestClassBase
 {
     public static TheoryData<IRewriteCase> DataOne => new()
     {
-        new MergeBinaryBeforeConv2DCase(),
     };
 
     public static TheoryData<IRewriteCase> DataAll => new()
     {
+        new MergeBinaryBeforeConv2DCase(),
         new ActivationsTransposePRelu(),
         new ActivationsTransposePRelu2(),
         new ActivationsTransposePRelu3(),

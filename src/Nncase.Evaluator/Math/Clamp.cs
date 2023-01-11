@@ -23,7 +23,7 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEv
         var input = context.GetOrtArgumentValue(clamp, Clamp.Input);
         var min = context.GetOrtArgumentValue(clamp, Clamp.Min);
         var max = context.GetOrtArgumentValue(clamp, Clamp.Max);
-        return OrtKI.Clip(input, min, max).ToValue();
+        return OrtKI.Min(new[] { OrtKI.Max(new[] { input, min }), max }).ToValue();
     }
 
     /// <inheritdoc/>
@@ -59,6 +59,14 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEv
 
     private IRType Visit(TensorType input, TensorType min, TensorType max)
     {
+        if (TypeInference.BroadcastType(input, min) is InvalidType invalidMin)
+            return invalidMin;
+        if (TypeInference.BroadcastType(input, max) is InvalidType invalidMax)
+            return invalidMax;
+
+        if (min.Shape != max.Shape)
+            return new InvalidType($"The min.Shape {min.Shape} != max.Shape {max.Shape}");
+
         return input;
     }
 }

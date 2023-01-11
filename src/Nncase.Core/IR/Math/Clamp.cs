@@ -24,12 +24,12 @@ public sealed record Clamp() : Op
     public static readonly ParameterInfo Input = new(typeof(Clamp), 0, "input");
 
     /// <summary>
-    /// Gets min.
+    /// Gets min. 
     /// </summary>
-    public static readonly ParameterInfo Min = new(typeof(Clamp), 1, "min", IsScalar());
+    public static readonly ParameterInfo Min = new(typeof(Clamp), 1, "min");
 
     /// <summary>
     /// Gets max.
     /// </summary>
-    public static readonly ParameterInfo Max = new(typeof(Clamp), 2, "max", IsScalar());
+    public static readonly ParameterInfo Max = new(typeof(Clamp), 2, "max");
 }
