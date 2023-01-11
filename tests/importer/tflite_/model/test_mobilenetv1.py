@@ -40,20 +40,55 @@ alphas = [
 def test_mobilenetv1(in_shape, alpha, request):
     module = _make_module(in_shape, alpha)
     overwrite_cfg = """
-     judge:
-       specifics:
-         - matchs:
-             target: [cpu, k510]
-             ptq: true
-           threshold: 0.98
-         - matchs:
-             target: [k210]
-             ptq: true
-           threshold: 0.94
-         - matchs:
-             target: [k510]
-             ptq: false
-           threshold: 0.99
+    case: 
+      preprocess_opt:
+        - name: preprocess
+          values:
+            - true
+        - name: swapRB
+          values:
+            - false
+        - name: input_shape
+          values:
+            - [1,224,224,3]
+        - name: mean
+          values:
+            - [0.5,0.5,0.5]
+        - name: std
+          values:
+            - [0.5,0.5,0.5]
+        - name: input_range
+          values:
+            - [0,1]
+        - name: input_type
+          values:
+            - float32
+        - name: model_layout
+          values:
+            - NHWC
+        - name: input_layout
+          values:
+            - NHWC
+        - name: output_layout
+          values:
+            - NHWC
+        - name: letterbox_value
+          values:
+            - 0.
+    judge:
+      specifics:
+        - matchs:
+            target: [cpu, k510]
+            ptq: true
+          threshold: 0.97
+        - matchs:
+            target: [k210]
+            ptq: true
+          threshold: 0.94
+        - matchs:
+            target: [k510]
+            ptq: false
+          threshold: 0.99
      """
     runner = TfliteTestRunner(request.node.name, overwrite_configs=overwrite_cfg)
     model_file = runner.from_tensorflow(module)
