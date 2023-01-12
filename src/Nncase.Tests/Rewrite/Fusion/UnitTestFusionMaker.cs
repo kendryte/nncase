@@ -9,6 +9,7 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
+using Nncase.Tests.TestFixture;
 using Nncase.Transform;
 using Nncase.Transform.Mutators;
 using Nncase.Transform.Rules.Neutral;
@@ -192,7 +193,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
         var v1 = WrapperWith(x => Transpose(x[0], new[] { 0, 3, 1, 2 }), input); // f32[1,3,24,32]
         var pre = new Function("main", v1, new Var[] { input });
         var pass = new DataflowPass { Name = "Fusion" };
-        pass.Add<TestTransposeComplexFusionSingleOutput>;
+        pass.Add<TestTransposeComplexFusionSingleOutput>();
         var post = (Function)await pass.RunAsync(pre, new());
         var newFusion = (Fusion)((Call)post.Body).Target;
         Assert.Single(newFusion.Parameters);
@@ -247,9 +248,9 @@ public sealed class UnitTestFusionMaker : TestClassBase
         var x = new Var(new TensorType(DataTypes.Float32, new[] { 1, 3, 2 }));
         var w = new Var(new TensorType(DataTypes.Float32, new[] { 1, numberOfGates * hiddenSize, inputSize }));
         var r = new Var(new TensorType(DataTypes.Float32, new[] { 1, numberOfGates * hiddenSize, hiddenSize }));
-        var b = DefaultRandom(new[] { 1, 1, 1, 1 });
-        var init_h = DefaultRandom(new[] { 1, 1, 1, 1 });
-        var init_c = DefaultRandom(new[] { 1, 1, 1, 1 });
+        var b = DataGenerator.DefaultRandom(new[] { 1, 1, 1, 1 });
+        var init_h = DataGenerator.DefaultRandom(new[] { 1, 1, 1, 1 });
+        var init_c = DataGenerator.DefaultRandom(new[] { 1, 1, 1, 1 });
         var dt = DataTypes.Int8;
         var lstm = IR.F.RNN.LSTM(LSTMDirection.Bidirectional, LSTMLayout.One, new[] { "act" },
             WrapInput(x),
@@ -264,7 +265,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
         Assert.True(oldBody.InferenceType());
         var f = new Function("main", oldBody, new[] { x, w, r });
         var pass = new DataflowPass { Name = "TestComplexFusion" };
-        pass.Add<LSTMFusion>;
+        pass.Add<LSTMFusion>();
         var afterCall = (Call)((Function)await pass.RunAsync(f, new())).Body;
 
         var newVars = ((Fusion)afterCall.Target).Parameters;
