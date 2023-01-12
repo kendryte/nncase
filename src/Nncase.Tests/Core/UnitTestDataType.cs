@@ -17,6 +17,6 @@ public sealed class UnitTestDataType
         Assert.True(pType.SizeInBytes == 8);
 
         var t = DataType.FromType(typeof(Pointer<int>));
-        Assert.True(t.SizeInBytes == 8);
+        Assert.Equal(8, t.SizeInBytes);
     }
 }

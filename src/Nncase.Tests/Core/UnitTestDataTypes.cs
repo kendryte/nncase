@@ -59,22 +59,21 @@ public sealed class UnitTestDataTypes
     public void TestGetDisplayName()
     {
         var a = new QuantParamType();
-        Assert.True(DataTypes.GetDisplayName(a) == a.ToString());
-        Assert.True(DataTypes.GetDisplayName(new PointerType(DataTypes.Float32)) == "(f32*)");
-
-        Assert.True(DataTypes.GetDisplayName(DataTypes.Boolean) == DataTypes.Boolean.ShortName);
-        Assert.True(DataTypes.GetDisplayName(DataTypes.Utf8Char) == DataTypes.Utf8Char.ShortName);
-        Assert.True(DataTypes.GetDisplayName(DataTypes.Int8) == DataTypes.Int8.ShortName);
-        Assert.True(DataTypes.GetDisplayName(DataTypes.UInt8) == DataTypes.UInt8.ShortName);
-        Assert.True(DataTypes.GetDisplayName(DataTypes.Int16) == DataTypes.Int16.ShortName);
-        Assert.True(DataTypes.GetDisplayName(DataTypes.UInt16) == DataTypes.UInt16.ShortName);
-        Assert.True(DataTypes.GetDisplayName(DataTypes.Int32) == DataTypes.Int32.ShortName);
-        Assert.True(DataTypes.GetDisplayName(DataTypes.UInt32) == DataTypes.UInt32.ShortName);
-        Assert.True(DataTypes.GetDisplayName(DataTypes.Int64) == DataTypes.Int64.ShortName);
-        Assert.True(DataTypes.GetDisplayName(DataTypes.UInt64) == DataTypes.UInt64.ShortName);
-        Assert.True(DataTypes.GetDisplayName(DataTypes.Float16) == DataTypes.Float16.ShortName);
-        Assert.True(DataTypes.GetDisplayName(DataTypes.Float32) == DataTypes.Float32.ShortName);
-        Assert.True(DataTypes.GetDisplayName(DataTypes.Float64) == DataTypes.Float64.ShortName);
-        Assert.True(DataTypes.GetDisplayName(DataTypes.BFloat16) == DataTypes.BFloat16.ShortName);
+        Assert.Equal(a.ToString(), DataTypes.GetDisplayName(a));
+        Assert.Equal("(f32*)", DataTypes.GetDisplayName(new PointerType(DataTypes.Float32)));
+        Assert.Equal(DataTypes.Boolean.ShortName, DataTypes.GetDisplayName(DataTypes.Boolean));
+        Assert.Equal(DataTypes.Utf8Char.ShortName, DataTypes.GetDisplayName(DataTypes.Utf8Char));
+        Assert.Equal(DataTypes.Int8.ShortName, DataTypes.GetDisplayName(DataTypes.Int8));
+        Assert.Equal(DataTypes.UInt8.ShortName, DataTypes.GetDisplayName(DataTypes.UInt8));
+        Assert.Equal(DataTypes.Int16.ShortName, DataTypes.GetDisplayName(DataTypes.Int16));
+        Assert.Equal(DataTypes.UInt16.ShortName, DataTypes.GetDisplayName(DataTypes.UInt16));
+        Assert.Equal(DataTypes.Int32.ShortName, DataTypes.GetDisplayName(DataTypes.Int32));
+        Assert.Equal(DataTypes.UInt32.ShortName, DataTypes.GetDisplayName(DataTypes.UInt32));
+        Assert.Equal(DataTypes.Int64.ShortName, DataTypes.GetDisplayName(DataTypes.Int64));
+        Assert.Equal(DataTypes.UInt64.ShortName, DataTypes.GetDisplayName(DataTypes.UInt64));
+        Assert.Equal(DataTypes.Float16.ShortName, DataTypes.GetDisplayName(DataTypes.Float16));
+        Assert.Equal(DataTypes.Float32.ShortName, DataTypes.GetDisplayName(DataTypes.Float32));
+        Assert.Equal(DataTypes.Float64.ShortName, DataTypes.GetDisplayName(DataTypes.Float64));
+        Assert.Equal(DataTypes.BFloat16.ShortName, DataTypes.GetDisplayName(DataTypes.BFloat16));
     }
 }

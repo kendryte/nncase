@@ -16,16 +16,17 @@ public sealed class UnitTestIRArray
     {
         var a = new IR.IRArray<float>();
         Assert.True(a.IsDefaultOrEmpty);
-        Assert.True(a.Count == 0);
-        Assert.True(a.IsReadOnly == true);
+        Assert.Empty(a);
+        Assert.True(a.IsReadOnly);
     }
 
     [Fact]
     public void TestSpan()
     {
         var array = new IR.IRArray<int>(Enumerable.Range(1, 100));
-        Assert.True(array[0] == 1 && array[99] == 100);
-        Assert.True(array[new Range(1, 3)].ToArray().Length == 2);
+        Assert.Equal(1, array[0]);
+        Assert.Equal(100, array[99]);
+        Assert.Equal(2, array[new Range(1, 3)].ToArray().Length);
     }
 
     [Fact]
@@ -45,15 +46,15 @@ public sealed class UnitTestIRArray
     public void TestContains()
     {
         var a = new IR.IRArray<int>(Enumerable.Range(1, 100));
-        Assert.True(a.Contains(1) == true);
-        Assert.False(a.Contains(1000) == true);
+        Assert.Contains(1, a);
+        Assert.False(a.Contains(1000));
     }
 
     [Fact]
     public void TestIndexOf()
     {
         var a = new IR.IRArray<int>(Enumerable.Range(1, 100));
-        Assert.True(a.IndexOf(1) == 0);
+        Assert.Equal(0, a.IndexOf(1));
     }
 
     [Fact]
