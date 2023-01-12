@@ -195,8 +195,8 @@ public sealed class UnitTestFusionMaker : TestClassBase
         var input = new Var("input", new TensorType(DataTypes.Float32, inShape));
         var v1 = WrapperWith(x => Transpose(x[0], new[] { 0, 3, 1, 2 }), input); // f32[1,3,24,32]
         var pre = new Function("main", v1, new Var[] { input });
-        var pass = new DataflowPass("Fusion");
-        pass.Add(new TestTransposeComplexFusionSingleOutput());
+        var pass = new DataflowPass { Name = "Fusion" };
+        pass.Add<TestTransposeComplexFusionSingleOutput>;
         var post = (Function)await pass.RunAsync(pre, caseOptions);
         var newFusion = (Fusion)((Call)post.Body).Target;
         Assert.Single(newFusion.Parameters);
@@ -274,8 +274,8 @@ public sealed class UnitTestFusionMaker : TestClassBase
         var oldBody = WrapOutput(lstm);
         Assert.True(oldBody.InferenceType());
         var f = new Function("main", oldBody, new[] { x, w, r });
-        var pass = new DataflowPass("TestComplexFusion");
-        pass.Add(new LSTMFusion());
+        var pass = new DataflowPass { Name = "TestComplexFusion" };
+        pass.Add<LSTMFusion>;
         var caseOptions = GetPassOptions();
         var afterCall = (Call)((Function)await pass.RunAsync(f, caseOptions)).Body;
 
