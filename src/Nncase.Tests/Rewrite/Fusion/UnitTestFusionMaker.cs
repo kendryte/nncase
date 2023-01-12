@@ -85,7 +85,6 @@ public sealed class UnitTestFusionMaker : TestClassBase
 
         CompilerServices.InferenceType(pre);
 
-
         var pass = new DataflowPass { Name = "Fusion" };
         pass.Add<TestUnaryFusion>();
         pass.Add<TestTransposeFusion>();
@@ -120,7 +119,6 @@ public sealed class UnitTestFusionMaker : TestClassBase
         }
 
         CompilerServices.InferenceType(pre);
-
 
         var pass = new DataflowPass { Name = "Fusion" };
         pass.Add<TestUnaryFusion>();
@@ -206,13 +204,6 @@ public sealed class UnitTestFusionMaker : TestClassBase
         Assert.Equal(newFusion.Body, expectBody);
     }
 
-    private Expr WrapperWith(Func<Expr[], Expr> ctor, params Expr[] inputs)
-    {
-        var new_inputs = inputs.Select(i => Quantize(i, new QuantParam(0, 1), DataTypes.BFloat16)).ToArray();
-        var output = ctor(new_inputs);
-        return Dequantize(output, new QuantParam(0, 1), DataTypes.Float32);
-    }
-
     [Fact]
     public async void TestComplexFusionMultiOutput()
     {
@@ -296,6 +287,13 @@ public sealed class UnitTestFusionMaker : TestClassBase
         {
             Compare(oldBody, expectBody, i);
         }
+    }
+
+    private Expr WrapperWith(Func<Expr[], Expr> ctor, params Expr[] inputs)
+    {
+        var new_inputs = inputs.Select(i => Quantize(i, new QuantParam(0, 1), DataTypes.BFloat16)).ToArray();
+        var output = ctor(new_inputs);
+        return Dequantize(output, new QuantParam(0, 1), DataTypes.Float32);
     }
 
     internal sealed class

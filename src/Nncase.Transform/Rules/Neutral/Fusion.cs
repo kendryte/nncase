@@ -66,6 +66,9 @@ public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
     public static Pattern ComputePattern { get; } = IsCallWithSpecInput<OpT>("midCall", null!,
         InputsPattern);
 
+    public static (ParameterInfo, Pattern)[] InputsPattern =>
+        typeof(DataMaker).GetField("InputsPattern").GetValue(null) as (ParameterInfo, Pattern)[];
+
     public override Pattern Pattern { get; } = IsAlt(
 
         // if multi output, then the name by generated should be set null to avoid name conflict
@@ -86,9 +89,6 @@ public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
         outputName);
 
     public static Pattern EndPattern(string endCallName) => IsWildcardCall<EndT>(endCallName, null!, ComputePattern);
-
-    public static (ParameterInfo, Pattern)[] InputsPattern =>
-        typeof(DataMaker).GetField("InputsPattern").GetValue(null) as (ParameterInfo, Pattern)[];
 
     /// <summary>
     /// Used for construct wildcard Pattern for inputs from ParameterInfo[].
