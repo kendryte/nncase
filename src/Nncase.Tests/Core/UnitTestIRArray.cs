@@ -47,7 +47,7 @@ public sealed class UnitTestIRArray
     {
         var a = new IR.IRArray<int>(Enumerable.Range(1, 100));
         Assert.Contains(1, a);
-        Assert.False(a.Contains(1000));
+        Assert.DoesNotContain(1000, a);
     }
 
     [Fact]
