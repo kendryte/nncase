@@ -6,41 +6,65 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
+using Nncase.Diagnostics;
 using Nncase.IR;
-using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase;
 
+/// <summary>
+/// Importer base.
+/// </summary>
 public abstract class BaseImporter
 {
-    protected SortedSet<string> _opsInModel = new SortedSet<string>();
-    protected SortedSet<string> _unsupportedOp = new SortedSet<string>();
+    private readonly SortedSet<string> _opsInModel = new();
+    private readonly SortedSet<string> _unsupportedOp = new();
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BaseImporter"/> class.
+    /// </summary>
+    /// <param name="compileSession">Compile session.</param>
+    public BaseImporter(CompileSession compileSession)
+    {
+        CompileSession = compileSession;
+        Dumpper = DumpScope.GetCurrent(compileSession).CreateSubDummper("Import");
+    }
+
+    /// <summary>
+    /// Gets compile session.
+    /// </summary>
+    protected CompileSession CompileSession { get; }
+
+    /// <summary>
+    /// Gets dumpper.
+    /// </summary>
+    protected IDumpper Dumpper { get; }
 
     /// <summary>
     /// import the model.
     /// </summary>
-    /// <param name="compileOptions"></param>
     /// <returns>IRModule.</returns>
-    public IRModule Import(CompileOptions? compileOptions = null)
+    public IRModule Import()
     {
         var inputs = CreateInputs().ToArray();
         ConvertOp();
         SupportedCheck(GetType().Name.Split("Importer")[0]);
         var outputs = CreateOutputs();
 
-        // todo:refactor
-        var dumpDir = compileOptions?.DumpDir ?? CompilerServices.CompileOptions.DumpDir;
-        if (!Directory.Exists(dumpDir))
+        if (Dumpper.IsEnabled(DumpFlags.ImportOps))
         {
-            Directory.CreateDirectory(dumpDir);
+            DumpOpsInModel(Dumpper.OpenFile("OpsInModel.txt"));
         }
 
-        DumpOpsInModel(Path.Join(dumpDir, "OpsInModel.txt"));
-        return CreateModule(inputs.ToArray(), outputs);
+        var module = CreateModule(inputs.ToArray(), outputs);
+
+        // GC here as large models often leave much garbage.
+        GC.Collect();
+        return module;
     }
 
-    public void AddToOutputs<TKey, TNode>(Dictionary<TKey, Expr> outTensors, TKey[] opOutputs, TNode output)
+    protected void AddToOutputs<TKey, TNode>(Dictionary<TKey, Expr> outTensors, TKey[] opOutputs, TNode output)
     {
         var outLength = opOutputs.Length;
         if (output is Expr expr)
@@ -71,27 +95,21 @@ public abstract class BaseImporter
         }
     }
 
-    public void DumpOpsInModel(string path)
-    {
-        using (var sr = new StreamWriter(path))
-        {
-            foreach (var op in _opsInModel)
-            {
-                sr.WriteLine(op);
-            }
-        }
-    }
+    protected abstract IEnumerable<Var> CreateInputs();
 
-    public abstract IEnumerable<Var> CreateInputs();
+    protected abstract void ConvertOp();
 
-    public abstract void ConvertOp();
-
-    public abstract Expr CreateOutputs();
+    protected abstract Expr CreateOutputs();
 
     protected Expr UnSupportedOp(string opType)
     {
         _unsupportedOp.Add(opType);
         return None.Default;
+    }
+
+    protected void AddOpInModel(string opType)
+    {
+        _opsInModel.Add(opType);
     }
 
     protected void SupportedCheck(string name)
@@ -106,9 +124,16 @@ public abstract class BaseImporter
     private IRModule CreateModule(Var[] inputs, Expr body)
     {
         var mainFunc = new Function("main", body, inputs);
-        var module = new IRModule();
-        module.Add(mainFunc);
-        module.Entry = mainFunc;
+        var module = new IRModule(mainFunc);
         return module;
+    }
+
+    private void DumpOpsInModel(Stream path)
+    {
+        using var sr = new StreamWriter(path);
+        foreach (var op in _opsInModel)
+        {
+            sr.WriteLine(op);
+        }
     }
 }

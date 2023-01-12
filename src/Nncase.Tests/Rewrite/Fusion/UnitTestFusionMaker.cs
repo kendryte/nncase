@@ -8,7 +8,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
-using Nncase.PatternMatch;
+using Nncase.Tests.TestFixture;
 using Nncase.Transform;
 using Nncase.Transform.Mutators;
 using Nncase.Transform.Rules.Neutral;
@@ -27,7 +27,8 @@ using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Tests.ReWrite.FusionTest;
 
-public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
+[AutoSetupTestMethod(InitSession = true)]
+public sealed class UnitTestFusionMaker : TestClassBase
 {
     private readonly ITestOutputHelper _testOutputHelper;
 
@@ -39,7 +40,6 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
     [Fact]
     public async void TestMultiFusion()
     {
-        var caseOptions = GetPassOptions();
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
         Function pre;
         {
@@ -59,19 +59,18 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
 
         CompilerServices.InferenceType(pre);
 
-        var pass = new DataflowPass("Fusion") { new TestUnaryFusion(), new TestTransposeFusion(), };
-        var post = await pass.RunAsync(pre, caseOptions);
+        var pass = new DataflowPass { Name = "Fusion" };
+        pass.Add<TestUnaryFusion>();
+        pass.Add<TestTransposeFusion>();
 
-        var isMatch = CompilerServices.TryMatch(
-            post,
-            IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
+        var post = await pass.RunAsync(pre, new());
+        var isMatch = CompilerServices.TryMatch(post, IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
         Assert.True(isMatch);
     }
 
     [Fact]
     public async void TestMatchPairLayerFusion()
     {
-        var caseOptions = GetPassOptions();
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
         Function pre;
         {
@@ -86,18 +85,21 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
 
         CompilerServices.InferenceType(pre);
 
-        var pass = new DataflowPass("Fusion") { new TestUnaryFusion(), new TestTransposeFusion(), };
 
-        var post = await pass.RunAsync(pre, caseOptions);
+        var pass = new DataflowPass { Name = "Fusion" };
+        pass.Add<TestUnaryFusion>();
+        pass.Add<TestTransposeFusion>();
+
+        var post = await pass.RunAsync(pre, new());
 
         var rewriter = new DataFlowMergeRewriter();
-        var post2 = (Function)rewriter.Rewrite(
-            post,
-            new IMergeRewriteRule[]
-            {
-                new SameInputFusionMergeRule(), new MultiInputFusionMergeRule(), new ShortCutFusionMergeRule(),
-            }, (usedby, rule, option) => new FusionGroupMutator(usedby, rule, option),
-            caseOptions);
+        var post2 = (Function)rewriter.Rewrite(post, new IMergeRewriteRule[]
+        {
+            new SameInputFusionMergeRule(),
+            new MultiInputFusionMergeRule(),
+            new ShortCutFusionMergeRule(),
+        }, (usedby, rule, option) => new FusionGroupMutator(usedby, rule, option),
+          new());
 
         var isMatch = CompilerServices.TryMatch(
             post2,
@@ -108,7 +110,6 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
     [Fact]
     public async void TestMatchPairLayerFusionForSingleFusion()
     {
-        var caseOptions = GetPassOptions();
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
         Function pre;
         {
@@ -119,18 +120,19 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
         }
 
         CompilerServices.InferenceType(pre);
-        var pass = new DataflowPass("Fusion") { new TestUnaryFusion(), };
-        var result = await pass.RunAsync(pre, caseOptions);
-        var isMatch = CompilerServices.TryMatch(
-            result,
-            IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
+
+
+        var pass = new DataflowPass { Name = "Fusion" };
+        pass.Add<TestUnaryFusion>();
+
+        var post = await pass.RunAsync(pre, new());
+        var isMatch = CompilerServices.TryMatch(post, IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
         Assert.True(isMatch);
     }
 
     [Fact]
     public async void TestMakeDoubleInputFusion()
     {
-        var caseOptions = GetPassOptions();
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
         Function pre;
         {
@@ -144,13 +146,12 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
 
         CompilerServices.InferenceType(pre);
 
-        var pass = new DataflowPass("Fusion")
-        {
-            new TestUnaryFusion(), new TestTransposeFusion(), new TestBinaryFusion(),
-        };
+        var pass = new DataflowPass { Name = "Fusion" };
+        pass.Add<TestUnaryFusion>();
+        pass.Add<TestTransposeFusion>();
+        pass.Add<TestBinaryFusion>();
 
-        var post = (Function)await pass.RunAsync(pre, caseOptions);
-        CompilerServices.DumpDotIR(post, string.Empty, caseOptions.DumpDir);
+        var post = (Function)await pass.RunAsync(pre, new());
         var visitor = new FusionCounterVisitor();
         visitor.Visit(post.Body);
         Assert.Equal(4, visitor.Count);
@@ -159,7 +160,6 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
     [Fact]
     public async void TestMakeDoubleInputWithConstFusion()
     {
-        var caseOptions = GetPassOptions();
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
         Function pre;
         {
@@ -175,13 +175,13 @@ public sealed class UnitTestFusionMaker : TestFixture.UnitTestFixtrue
 
         CompilerServices.InferenceType(pre);
 
-        var pass = new DataflowPass("Fusion")
-        {
-            new TestUnaryFusion(), new TestTransposeFusion(), new TestBinaryFusion(), new TestDataTransFusion(),
-        };
+        var pass = new DataflowPass { Name = "Fusion" };
+        pass.Add<TestUnaryFusion>();
+        pass.Add<TestTransposeFusion>();
+        pass.Add<TestBinaryFusion>();
+        pass.Add<TestDataTransFusion>();
 
-        var post = (Function)await pass.RunAsync(pre, caseOptions);
-        CompilerServices.DumpDotIR(post, string.Empty, caseOptions.DumpDir);
+        var post = (Function)await pass.RunAsync(pre, new());
         var visitor = new FusionCounterVisitor();
         visitor.Visit(post.Body);
         Assert.Equal(5, visitor.Count);

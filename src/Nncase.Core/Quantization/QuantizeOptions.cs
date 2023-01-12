@@ -80,4 +80,25 @@ public class QuantizeOptions
     /// Gets or sets a value indicating whether enable adaround to fine tune weights.
     /// </summary>
     public bool UseAdaRound { get; set; }
+
+    /// <summary>
+    /// Gets or sets quant type.
+    /// </summary>
+    public DataType QuantType { get; set; } = DataTypes.UInt8;
+
+    /// <summary>
+    /// Gets or sets weights quant type.
+    /// </summary>
+    public DataType WQuantType { get; set; } = DataTypes.UInt8;
+
+    /// <summary>
+    /// Gets or sets model quant mode.
+    /// </summary>
+    public ModelQuantMode ModelQuantMode { get; set; } = ModelQuantMode.NoQuant;
+
+    /// <summary>
+    /// Creates no quantization options.
+    /// </summary>
+    /// <returns>No quant options.</returns>
+    public static QuantizeOptions CreateNoQuant() => new QuantizeOptions();
 }

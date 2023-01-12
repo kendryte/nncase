@@ -6,11 +6,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Nncase.Diagnostics;
 using Nncase.IR;
 
 namespace Nncase.Evaluator;
 
-internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
+internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>, IDisposable
 {
     private readonly EvaluateContext _context;
     private readonly IReadOnlyDictionary<Var, IValue> _varsValues;
@@ -22,7 +23,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
         _context = new EvaluateContext(ExpressionMemo);
         _evaluator_cache = evaluator_cache;
         _varsValues = varsValues;
-        _dumpManager = new EvaluatorDumpManager(expr => _context.GetValue(expr).AsTensors());
+        _dumpManager = new EvaluatorDumpManager(DumpScope.Current.CreateSubDummper("Evaluate"), expr => _context.GetValue(expr).AsTensors());
         _dumpManager.RegisterDumpCallbacks(RegisterBeforeCallback, RegisterAfterCallback);
     }
 
@@ -114,5 +115,10 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
         }
 
         return result;
+    }
+
+    public void Dispose()
+    {
+        _dumpManager.Dispose();
     }
 }

@@ -17,7 +17,7 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFoldClamp : TestFixture.UnitTestFixtrue
+public class UnitTestFoldClamp : TestClassBase
 {
     public static IEnumerable<object[]> TestFoldNopClampPositiveData =>
         new[]
@@ -39,10 +39,9 @@ public class UnitTestFoldClamp : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopClampPositiveData))]
     public void TestFoldNopCastPositive(float min, float max, int index)
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Math.Clamp(a, min, max);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopClamp() }, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopClamp() }, new());
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
     }
@@ -51,10 +50,9 @@ public class UnitTestFoldClamp : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopClampNegativeData))]
     public void TestFoldNopCastNegative(float min, float max, int index)
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Math.Clamp(a, min, max);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopClamp() }, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopClamp() }, new());
 
         Assert.Equal(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));

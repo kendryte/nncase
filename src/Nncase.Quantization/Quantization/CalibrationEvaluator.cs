@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.Transform;
@@ -19,31 +20,19 @@ public class CalibrationEvaluator : IDisposable
     private readonly IEnumerable<ENode> _awareEnodes;
     private readonly Dictionary<ENode, IValue> _values = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<EClass, IValue> _eclassValues = new();
-    private readonly RunPassOptions _passOptions;
-    private StreamWriter _dumpWriter;
+    private readonly StreamWriter? _dumpWriter;
 
-    public CalibrationEvaluator(IReadOnlyDictionary<Var, IValue> inputs, IEnumerable<ENode> awareEnodes, RunPassOptions passOptions)
+    public CalibrationEvaluator(IReadOnlyDictionary<Var, IValue> inputs, IEnumerable<ENode> awareEnodes)
     {
         _inputs = inputs;
         _awareEnodes = awareEnodes;
-        _passOptions = passOptions;
-        _dumpWriter = StreamWriter.Null;
+        _dumpWriter = DumpScope.Current.IsEnabled(DumpFlags.Calibration)
+            ? new StreamWriter(DumpScope.Current.OpenFile("calibration_evaluator.il")) { AutoFlush = true }
+            : null;
     }
 
     public IReadOnlyDictionary<ENode, Tensor> Evaluate()
     {
-        if (_passOptions.DumpLevel >= 4)
-        {
-            if (!Directory.Exists(_passOptions.DumpDir))
-            {
-                Directory.CreateDirectory(_passOptions.DumpDir);
-            }
-
-            var fileStream = File.Open(Path.Combine(_passOptions.DumpDir, "calibration_evaluator.il"), FileMode.Create, FileAccess.Write);
-            _dumpWriter = new StreamWriter(fileStream);
-            _dumpWriter.AutoFlush = true;
-        }
-
         bool completed;
         var awareTensors = new Dictionary<ENode, Tensor>();
 
@@ -78,13 +67,13 @@ public class CalibrationEvaluator : IDisposable
             }
         }
         while (!completed);
-        _dumpWriter.Close();
         return awareTensors;
     }
 
+    /// <inheritdoc/>
     public void Dispose()
     {
-        throw new NotImplementedException();
+        _dumpWriter?.Dispose();
     }
 
     private IValue? Visit(EClass eclass)
@@ -199,10 +188,7 @@ public class CalibrationEvaluator : IDisposable
                 if (targetEnode.Expr is Op op)
                 {
                     var context = new EGraphOpEvaluateContext(call, costs.Skip(1).ToArray());
-                    if (_passOptions.DumpLevel >= 4)
-                    {
-                        _dumpWriter.Write($"{op.GetType().Name}({string.Join(",", context.Arguments.Select(v => v.ToString()))})");
-                    }
+                    _dumpWriter?.Write($"{op.GetType().Name}({string.Join(",", context.Arguments.Select(v => v.ToString()))})");
 
                     if (op.CanFoldConstCall)
                     {
@@ -213,10 +199,7 @@ public class CalibrationEvaluator : IDisposable
                         value = NoneValue.Default;
                     }
 
-                    if (_passOptions.DumpLevel >= 4)
-                    {
-                        _dumpWriter.WriteLine($" => {value.ToString()}");
-                    }
+                    _dumpWriter?.WriteLine($" => {value}");
                 }
                 else
                 {

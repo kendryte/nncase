@@ -218,7 +218,7 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// Get Pord.
+        /// Get Prod.
         /// </summary>
         /// <returns></returns>
         public Dimension Prod()

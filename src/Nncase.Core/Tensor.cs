@@ -257,6 +257,18 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     }
 
     /// <summary>
+    /// Create tensor from an array, Set the shape as [n].
+    /// </summary>
+    /// <typeparam name="T">CLR type.</typeparam>
+    /// <param name="array">Array.</param>
+    /// <returns>Created tensor.</returns>
+    public static Tensor<T> From<T>(T[] array)
+        where T : unmanaged, IEquatable<T>
+    {
+        return From(array.AsMemory());
+    }
+
+    /// <summary>
     /// Create tensor from an array, Set the shape as provided.
     /// </summary>
     /// <typeparam name="T">CLR type.</typeparam>
@@ -266,7 +278,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     public static Tensor<T> From<T>(T[] array, ReadOnlySpan<int> dimensions)
         where T : unmanaged, IEquatable<T>
     {
-        return new Tensor<T>(array, dimensions);
+        return From(array.AsMemory(), dimensions);
     }
 
     /// <summary>
@@ -369,6 +381,32 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     public static Tensor<T> FromConst<T>(Const @const, CastMode castMode = CastMode.KDefault)
       where T : unmanaged, IEquatable<T>
       => FromConst(@const).Cast<T>(castMode);
+
+    /// <summary>
+    /// Return a tensor of given shape and type, filled with zeros.
+    /// </summary>
+    /// <typeparam name="T">unmanaged type.</typeparam>
+    /// <param name="dimensions">dimensions.</param>
+    /// <returns>Tensor{T}.</returns>
+    public static Tensor Zeros<T>(ReadOnlySpan<int> dimensions)
+        where T : unmanaged, IEquatable<T>
+    {
+        var value = (T)Convert.ChangeType(0, typeof(T));
+        return Tensor.FromScalar<T>(value, dimensions);
+    }
+
+    /// <summary>
+    /// Return a tensor of given shape and type, filled with ones.
+    /// </summary>
+    /// <typeparam name="T">unmanaged type.</typeparam>
+    /// <param name="dimensions">dimensions.</param>
+    /// <returns>Tensor{T}.</returns>
+    public static Tensor Ones<T>(ReadOnlySpan<int> dimensions)
+        where T : unmanaged, IEquatable<T>
+    {
+        var value = (T)Convert.ChangeType(1, typeof(T));
+        return Tensor.FromScalar<T>(value, dimensions);
+    }
 
     /// <summary>
     /// Cast to typed tensor.

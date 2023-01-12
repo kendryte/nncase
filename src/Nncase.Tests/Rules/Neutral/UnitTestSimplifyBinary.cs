@@ -21,7 +21,7 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestSimplifyBinary : TestFixture.UnitTestFixtrue
+public class UnitTestSimplifyBinary : TestClassBase
 {
     public static IEnumerable<object[]> TestReassociateMulPositiveData =>
         new[]
@@ -51,7 +51,6 @@ public class UnitTestSimplifyBinary : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestReassociateMulPositiveData))]
     public void TestReassociateMulPositive(int[] aShape, int index)
     {
-        var caseOptions = GetPassOptions();
         var a = new Var();
         var b = new Var();
         var c = new Var();
@@ -64,7 +63,7 @@ public class UnitTestSimplifyBinary : TestFixture.UnitTestFixtrue
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new ReassociateMul(),
-        }, caseOptions);
+        }, new());
 
         // rootPre.InferenceType();
         Assert.NotEqual(rootPre, rootPost);
@@ -75,7 +74,6 @@ public class UnitTestSimplifyBinary : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestReassociateDivPositiveData))]
     public void TestReassociateDivPositive(int[] aShape, int index)
     {
-        var caseOptions = GetPassOptions();
         var a = new Var();
         var b = new Var();
         var c = Random.Normal(DataTypes.Float32, 0, 1, 0, aShape); // Can't get Var's datatype. Pattern will not pass
@@ -87,7 +85,7 @@ public class UnitTestSimplifyBinary : TestFixture.UnitTestFixtrue
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new ReassociateDiv(),
-        }, caseOptions);
+        }, new());
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal));
     }
@@ -96,7 +94,6 @@ public class UnitTestSimplifyBinary : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestXDivXPositiveData))]
     public void TestXDivXPositive(int[] aShape, int index)
     {
-        var caseOptions = GetPassOptions();
         var a = new Var();
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
@@ -105,7 +102,7 @@ public class UnitTestSimplifyBinary : TestFixture.UnitTestFixtrue
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new XDivX(),
-        }, caseOptions);
+        }, new());
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal));
     }
@@ -114,8 +111,6 @@ public class UnitTestSimplifyBinary : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestCommutateMulPositiveData))]
     public void TestCommutateMulPositive(int[] aShape, int index)
     {
-        var caseOptions = GetPassOptions();
-        caseOptions = caseOptions.SetRewriteOnce(true);
         var a = new Var();
         var b = new Var();
         var normal = new Dictionary<Var, IValue>();
@@ -125,7 +120,7 @@ public class UnitTestSimplifyBinary : TestFixture.UnitTestFixtrue
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new CommutateMul(),
-        }, caseOptions);
+        }, new() { RewriteOnce = true });
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal));
     }

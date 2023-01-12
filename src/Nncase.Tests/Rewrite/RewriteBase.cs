@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,6 +11,7 @@ using Nncase.IR;
 using Nncase.Transform;
 using Nncase.Transform.Passes;
 using OrtKISharp;
+using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Random;
@@ -32,7 +34,7 @@ public interface IRewriteCase
     /// <summary>
     /// Gets get rules.
     /// </summary>
-    IEnumerable<IRewriteRule> Rules { get; }
+    IEnumerable<Type> Rules { get; }
 
     /// <summary>
     /// Gets the eval inputs dict.
@@ -50,19 +52,18 @@ public static class DummyOp
     }
 }
 
-public class RewriteFixtrue : TestFixture.UnitTestFixtrue
+public class RewriteFixtrue : TestClassBase
 {
-    public async Task<Expr> RunShapeInferPass(string name, RunPassOptions caseOptions, Expr expr, params Var[] parameters)
+    public async Task<Expr> RunShapeInferPass(string name, Expr expr, params Var[] parameters)
     {
-        expr.InferenceType();
         var f = new Function(expr, parameters);
-        _ = CompilerServices.InferenceType(f);
-        CompilerServices.DumpIR(f, "before", Path.Combine(caseOptions.DumpDir, $"ShapeInfer_{name}"));
-        return ((Function)await new ShapeInferPass($"ShapeInfer_{name}").RunAsync(f, caseOptions)).Body;
+        var result = ((Function)await new ShapeInferPass { Name = $"ShapeInfer_{name}" }.RunAsync(f, new())).Body;
+        Assert.True(CompilerServices.InferenceType(CompilerServices.InferenceType(f)));
+        return result;
     }
 
-    public Expr ApplyFoldConstCallRewrite(Expr expr, RunPassOptions caseOptions) =>
-        CompilerServices.Rewrite(expr, new[] { new Transform.Rules.Neutral.FoldConstCall() }, caseOptions);
+    public Expr ApplyFoldConstCallRewrite(Expr expr) =>
+        CompilerServices.Rewrite(expr, new[] { new Transform.Rules.Neutral.FoldConstCall() }, new());
 }
 
 // public sealed class TransposeConstBinaryCase : IRewriteCase
@@ -94,9 +95,9 @@ public sealed class FoldReshapeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]
+    public IEnumerable<Type> Rules => new Type[]
     {
-        new Transform.Rules.Neutral.FoldTwoReshapes(),
+        typeof(Transform.Rules.Neutral.FoldTwoReshapes),
     };
 
     public Dictionary<Var, IValue> FeedDict => new();
@@ -114,9 +115,9 @@ public sealed class FoldNopReshapeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]
+    public IEnumerable<Type> Rules => new Type[]
     {
-        new Transform.Rules.Neutral.FoldNopReshape(),
+        typeof(Transform.Rules.Neutral.FoldNopReshape),
     };
 
     public Dictionary<Var, IValue> FeedDict => new();
@@ -134,9 +135,9 @@ public sealed class FoldNopClampCase : IRewriteCase
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]
+    public IEnumerable<Type> Rules => new Type[]
     {
-        new Transform.Rules.Neutral.FoldNopClamp(),
+        typeof(Transform.Rules.Neutral.FoldNopClamp),
     };
 
     public Dictionary<Var, IValue> FeedDict => new();
@@ -156,9 +157,9 @@ public class FoldTransposeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]
+    public IEnumerable<Type> Rules => new Type[]
     {
-        new Transform.Rules.Neutral.FoldTwoTransposes(),
+        typeof(Transform.Rules.Neutral.FoldTwoTransposes),
     };
 
     public Dictionary<Var, IValue> FeedDict => new();
@@ -194,11 +195,11 @@ public class FoldTransposePadCase : IRewriteCase
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]
+    public IEnumerable<Type> Rules => new Type[]
     {
-        new Transform.Rules.Neutral.FoldTwoTransposes(),
-        new Transform.Rules.Neutral.CombineTransposePad(),
-        new Transform.Rules.Neutral.FoldConstCall(),
+        typeof(Transform.Rules.Neutral.FoldTwoTransposes),
+        typeof(Transform.Rules.Neutral.CombineTransposePad),
+        typeof(Transform.Rules.Neutral.FoldConstCall),
     };
 
     public Dictionary<Var, IValue> FeedDict => new(ReferenceEqualityComparer.Instance)
@@ -221,9 +222,9 @@ public class FoldNopTransposeCase1 : IRewriteCase
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]
+    public IEnumerable<Type> Rules => new Type[]
     {
-        new Transform.Rules.Neutral.FoldTwoTransposes(),
+        typeof(Transform.Rules.Neutral.FoldTwoTransposes),
     };
 
     public Dictionary<Var, IValue> FeedDict => new();
@@ -244,10 +245,10 @@ public class FoldNopTransposeCase2 : IRewriteCase
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]
+    public IEnumerable<Type> Rules => new Type[]
     {
-        new Transform.Rules.Neutral.FoldTwoTransposes(),
-        new Transform.Rules.Neutral.FoldNopTranspose(),
+        typeof(Transform.Rules.Neutral.FoldTwoTransposes),
+        typeof(Transform.Rules.Neutral.FoldNopTranspose),
     };
 
     public Dictionary<Var, IValue> FeedDict => new();
@@ -274,14 +275,14 @@ public class ClassicDemo : IRewriteCase
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]
+    public IEnumerable<Type> Rules => new Type[]
     {
-        new Transform.Rules.Neutral.Xmul1(),
-        new Transform.Rules.Neutral.ReassociateDiv(),
-        new Transform.Rules.Neutral.ReassociateMul(),
+        typeof(Transform.Rules.Neutral.Xmul1),
+        typeof(Transform.Rules.Neutral.ReassociateDiv),
+        typeof(Transform.Rules.Neutral.ReassociateMul),
 
         // new Transform.Rules.Neutral.Reassociate(),
-        new Transform.Rules.Neutral.XDivX(),
+        typeof(Transform.Rules.Neutral.XDivX),
     };
 
     public Dictionary<Var, IValue> FeedDict => new();
@@ -351,12 +352,12 @@ public class MobileNetV1TransposeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[]
+    public IEnumerable<Type> Rules { get; } = new Type[]
     {
-        new Transform.Rules.Neutral.FoldConstCall(),
-        new Transform.Rules.Neutral.FoldNopTranspose(),
-        new Transform.Rules.Neutral.FoldTwoTransposes(),
-        new Transform.Rules.Neutral.CombineTransposePad(),
+        typeof(Transform.Rules.Neutral.FoldConstCall),
+        typeof(Transform.Rules.Neutral.FoldNopTranspose),
+        typeof(Transform.Rules.Neutral.FoldTwoTransposes),
+        typeof(Transform.Rules.Neutral.CombineTransposePad),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
@@ -408,10 +409,10 @@ public class PadTransposeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[]
+    public virtual IEnumerable<Type> Rules { get; } = new Type[]
     {
-        new Transform.Rules.Neutral.FoldConstCall(),
-        new Transform.Rules.Neutral.CombinePadTranspose(),
+        typeof(Transform.Rules.Neutral.FoldConstCall),
+        typeof(Transform.Rules.Neutral.CombinePadTranspose),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
@@ -425,11 +426,11 @@ public class PadTransposeCase : IRewriteCase
 /// </summary>
 public sealed class PadTransposeCaseEgraph : PadTransposeCase
 {
-    public new IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[]
+    public override IEnumerable<Type> Rules { get; } = new Type[]
     {
-        new Transform.Rules.Neutral.FoldConstCall(),
-        new Transform.Rules.Neutral.CombinePadTranspose(),
-        new Transform.Rules.Neutral.CombineTransposePad(),
+        typeof(Transform.Rules.Neutral.FoldConstCall),
+        typeof(Transform.Rules.Neutral.CombinePadTranspose),
+        typeof(Transform.Rules.Neutral.CombineTransposePad),
     };
 }
 
@@ -461,12 +462,12 @@ public sealed class TransposeLeakyRelu : IRewriteCase
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[]
+    public IEnumerable<Type> Rules { get; } = new Type[]
     {
-        new Transform.Rules.Neutral.FoldConstCall(),
-        new Transform.Rules.Neutral.FoldNopTranspose(),
-        new Transform.Rules.Neutral.FoldTwoTransposes(),
-        new Transform.Rules.Neutral.CombineTransposeActivations(),
+        typeof(Transform.Rules.Neutral.FoldConstCall),
+        typeof(Transform.Rules.Neutral.FoldNopTranspose),
+        typeof(Transform.Rules.Neutral.FoldTwoTransposes),
+        typeof(Transform.Rules.Neutral.CombineTransposeActivations),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
@@ -503,12 +504,12 @@ public class ActivationsTranspose : IRewriteCase
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[]
+    public IEnumerable<Type> Rules { get; } = new Type[]
     {
-        new Transform.Rules.Neutral.FoldConstCall(),
-        new Transform.Rules.Neutral.FoldNopTranspose(),
-        new Transform.Rules.Neutral.FoldTwoTransposes(),
-        new Transform.Rules.Neutral.CombineActivationsTranspose(),
+        typeof(Transform.Rules.Neutral.FoldConstCall),
+        typeof(Transform.Rules.Neutral.FoldNopTranspose),
+        typeof(Transform.Rules.Neutral.FoldTwoTransposes),
+        typeof(Transform.Rules.Neutral.CombineActivationsTranspose),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
@@ -630,8 +631,8 @@ public sealed class RemoveMarkerCaseEgraph : IRewriteCase
             var v_8 = RangeOfMarker(
                 Conv2D(
                 v_7,
-                Normal(DataTypes.Float32, 0, 1, 1, new[] { 16, 16, 3, 3 }).Evaluate().AsTensor(),
-                Normal(DataTypes.Float32, 0, 1, 1, new[] { 16 }).Evaluate().AsTensor(), new[] { 1, 1 }, new[,]
+                RangeOfMarker(Normal(DataTypes.Float32, 0, 1, 1, new[] { 16, 16, 3, 3 }).Evaluate().AsTensor(), new float[] { -1.0f, 1.0f }),
+                RangeOfMarker(Normal(DataTypes.Float32, 0, 1, 1, new[] { 16 }).Evaluate().AsTensor(), new float[] { -1.0f, 1.0f }), new[] { 1, 1 }, new[,]
                 {
                     { 1, 1 },
                     { 1, 1 },
@@ -640,13 +641,13 @@ public sealed class RemoveMarkerCaseEgraph : IRewriteCase
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[]
+    public IEnumerable<Type> Rules { get; } = new Type[]
     {
-        new Transform.Rules.Lower.RemoveMarker(),
-        new Transform.Rules.Neutral.FoldConstCall(),
-        new Transform.Rules.Neutral.FoldNopTranspose(),
-        new Transform.Rules.Neutral.FoldTwoTransposes(),
-        new Transform.Rules.Neutral.CombineTransposeActivations(),
+        typeof(Transform.Rules.Lower.RemoveMarker),
+        typeof(Transform.Rules.Neutral.FoldConstCall),
+        typeof(Transform.Rules.Neutral.FoldNopTranspose),
+        typeof(Transform.Rules.Neutral.FoldTwoTransposes),
+        typeof(Transform.Rules.Neutral.CombineTransposeActivations),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
@@ -697,9 +698,9 @@ public sealed class Conv2DPadsCase : IRewriteCase
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[]
+    public IEnumerable<Type> Rules { get; } = new Type[]
     {
-        new Transform.Rules.Neutral.FoldConv2DPads(),
+        typeof(Transform.Rules.Neutral.FoldConv2DPads),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
@@ -746,13 +747,89 @@ public sealed class ReduceWindow2DPadsCase : IRewriteCase
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[]
+    public IEnumerable<Type> Rules { get; } = new Type[]
     {
-        new Transform.Rules.Neutral.FoldReduceWindow2DPads(),
+        typeof(Transform.Rules.Neutral.FoldReduceWindow2DPads),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+    };
+}
+
+public sealed class MergeBinaryBeforeConv2DCase : IRewriteCase
+{
+    private readonly Var _input_lhs;
+    private readonly Var _input_rhs;
+
+    public MergeBinaryBeforeConv2DCase()
+    {
+        _input_lhs = new Var("_input_lhs", new TensorType(DataTypes.Float32, new[] { 1, 256, 56, 56 }));
+        _input_rhs = new Var("_input_rhs", new TensorType(DataTypes.Float32, new[] { 1, 256, 56, 56 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var v_0 = _input_lhs + _input_rhs;
+            var v_1 = v_0 * Normal(DataTypes.Float32, 0, 1, 1, new[] { 1, 256, 1, 1 }).Evaluate().AsTensor();
+            var v_2 = v_1 + Normal(DataTypes.Float32, 0, 1, 1, new[] { 1, 256, 1, 1 }).Evaluate().AsTensor();
+            var v_3 = v_2; // 1, 56, 56, 256
+            var v_4 = v_3;
+            var v_5 = Conv2D(v_4, Normal(DataTypes.Float32, 0, 1, 1, new[] { 256, 256, 1, 1 }).Evaluate().AsTensor(),
+                  Normal(DataTypes.Float32, 0, 1, 1, new[] { 256 }).Evaluate().AsTensor(), new[] { 1, 1 },
+                  new[,]
+                  {
+                    { 0, 0 },
+                    { 0, 0 },
+                  }, new[] { 1, 1 }, PadMode.Constant, 1,
+                  new[] { 0.0f, 6.0f }); // f32[1,256,56,56]
+            var v_6 = v_5; // f32[1,256,56,56]
+            var v_7 = Pad(v_6, new[,]
+            {
+                { 0, 0 },
+                { 0, 0 },
+                { 1, 1 },
+                { 1, 1 },
+            }, PadMode.Constant, 0.0f); // f32[1,256,58,58]
+            var v_8 = v_7;
+            var v_9 = Conv2D(v_8, Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, 256, 3, 3 }).Evaluate().AsTensor(),
+                  Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor(), new[] { 1, 1 },
+                  new[,]
+                  {
+                    { 0, 0 },
+                    { 0, 0 },
+                  }, new[] { 1, 1 }, PadMode.Constant, 1,
+                  new[] { 0.0f, 6.0f }); // f32[1,64,56,56]
+            var v_10 = v_9; // f32[1,64,56,56]
+
+            var v_11 = v_10;
+            var v_12 = Conv2D(v_11, Normal(DataTypes.Float32, 0, 1, 1, new[] { 256, 64, 1, 1 }).Evaluate().AsTensor(),
+                  Normal(DataTypes.Float32, 0, 1, 1, new[] { 256 }).Evaluate().AsTensor(), new[] { 1, 1 },
+                  new[,]
+                  {
+                    { 0, 0 },
+                    { 0, 0 },
+                  }, new[] { 1, 1 }, PadMode.Constant, 1,
+                  new[] { 0.0f, 6.0f }); // f32[1,256,56,56]
+            var v_13 = v_12; // f32[1,256,56,56]
+            var v_16 = v_0 + v_13;
+
+            return new Function(v_16, new Var[] { _input_lhs, _input_rhs });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = new Type[]
+    {
+        typeof(Transform.Rules.Neutral.FoldConstCall),
+        typeof(Transform.Rules.Neutral.FoldConv2DMulAdd),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new()
+    {
+        { _input_lhs, Normal(DataTypes.Float32, 0, 1, 1, _input_lhs.CheckedShape.ToValueArray()).Evaluate() },
+        { _input_rhs, Normal(DataTypes.Float32, 0, 1, 1, _input_rhs.CheckedShape.ToValueArray()).Evaluate() },
     };
 }

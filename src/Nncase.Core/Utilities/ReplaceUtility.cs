@@ -44,7 +44,7 @@ public class ReplaceUtility
     /// usage:
     /// Call(FakeXXX, input, otherArg1, ...)
     /// newInput => Call(op, newInput, otherArg1, ...)
-    /// it's always used for Fake to NoFake Rule with IsWildcardCall.
+    /// it's always used for Fake to NoFake Pass with IsWildcardCall.
     /// </summary>
     /// <param name="call"></param>
     /// <param name="op"></param>

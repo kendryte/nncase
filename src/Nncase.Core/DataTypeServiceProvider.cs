@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Autofac;
+using DryIoc;
 
 namespace Nncase;
 
@@ -28,27 +28,27 @@ internal class DataTypeServiceProvider : IDataTypeServiceProvider
     private readonly Dictionary<RuntimeTypeHandle, PrimType> _primTypes = new();
     private readonly Dictionary<Runtime.TypeCode, PrimType> _typeCodeToPrimTypes = new();
     private readonly Dictionary<RuntimeTypeHandle, ValueType> _valueTypes = new();
-    private readonly IComponentContext _componentContext;
+    private readonly IResolver _resolver;
 
-    public DataTypeServiceProvider(PrimType[] primTypes, ValueType[] valueTypes, IComponentContext componentContext)
+    public DataTypeServiceProvider(PrimType[] primTypes, ValueType[] valueTypes, IResolver resolver)
     {
         _primTypes = primTypes.ToDictionary(x => x.CLRType.TypeHandle);
         _typeCodeToPrimTypes = primTypes.Where(x => x.TypeCode < Runtime.TypeCode.ValueType).ToDictionary(x => x.TypeCode);
         _valueTypes = valueTypes.ToDictionary(x => x.CLRType.TypeHandle);
-        _componentContext = componentContext;
+        _resolver = resolver;
     }
 
     public ISpanConverter GetConverter(Type fromType, Type toType)
     {
         if (fromType.IsGenericType && fromType.GetGenericTypeDefinition() == typeof(Pointer<>))
         {
-            var converter = _componentContext.Resolve(typeof(IPointerSpanConverter<>).MakeGenericType(toType));
+            var converter = _resolver.Resolve(typeof(IPointerSpanConverter<>).MakeGenericType(toType));
             var wrapperType = typeof(PointerSpanConverter<,>).MakeGenericType(fromType.GenericTypeArguments[0], toType);
             return (ISpanConverter)Activator.CreateInstance(wrapperType, converter)!;
         }
         else
         {
-            return (ISpanConverter)_componentContext.Resolve(typeof(ISpanConverter<,>).MakeGenericType(fromType, toType));
+            return (ISpanConverter)_resolver.Resolve(typeof(ISpanConverter<,>).MakeGenericType(fromType, toType));
         }
     }
 

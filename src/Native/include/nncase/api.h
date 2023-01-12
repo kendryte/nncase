@@ -40,7 +40,8 @@ struct nncase_buffer_slice {
     uint32_t size_bytes;
 };
 
-NNCASE_API int nncase_object_free(nncase::object_node *node);
+NNCASE_API int nncase_object_add_ref(nncase::object_node *node);
+NNCASE_API int nncase_object_release(nncase::object_node *node);
 
 NNCASE_API int nncase_interp_create(nncase::runtime::interpreter **interp);
 NNCASE_API int nncase_interp_free(nncase::runtime::interpreter *interp);

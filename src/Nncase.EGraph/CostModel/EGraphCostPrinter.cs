@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using GiGraph.Dot.Entities.Clusters;
 using GiGraph.Dot.Entities.Graphs;
@@ -23,12 +24,12 @@ namespace Nncase.Transform;
 
 public partial class EGraphPrinter
 {
-    internal static DotGraph DumpEgraphAsDot(EGraph eGraph, CostModel.EGraphCostModel costModel, EClass entry, string file)
+    internal static DotGraph DumpEgraphAsDot(EGraph eGraph, CostModel.EGraphCostModel costModel, EClass entry, Stream file)
     {
         var printer = new EGraphPrinter(eGraph);
         printer.ConvertEGraphAsDot();
         printer.AttachEGraphCost(costModel, entry);
-        return printer.SaveToFile(file);
+        return printer.SaveToStream(file);
     }
 
     private DotGraph AttachEGraphCost(CostModel.EGraphCostModel costModel, EClass entry)
@@ -71,10 +72,10 @@ public partial class EGraphPrinter
                     continue;
                 }
 
-                var minCostEnode = parent.Nodes.MinBy(x => costModel[x])!;
+                var minCostEnode = parent.MinByWithMarker(costModel);
                 if (markerEclassMemo.Contains(parent)) // when this marker ecalss has been visited, skip it.
                 {
-                    minCostEnode = parent.Nodes.Where(n => n.Expr is not Marker).MinBy(x => costModel[x])!;
+                    minCostEnode = parent.MinByWithOutMarker(costModel);
                 }
 
                 var (minCostDotnode, table) = NodesMap[minCostEnode];
@@ -90,7 +91,7 @@ public partial class EGraphPrinter
                     if (minCostEnode.Expr is Marker && child == parent)
                     {
                         markerEclassMemo.Add(child);
-                        var otherminCostENode = child.Nodes.Where(n => n.Expr is not Marker).MinBy(x => costModel[x])!;
+                        var otherminCostENode = child.MinByWithOutMarker(costModel);
                         var (childDotNode, _) = NodesMap[otherminCostENode];
                         DotGraph.Edges.Add(childDotNode, minCostDotnode, edge =>
                         {
@@ -100,7 +101,7 @@ public partial class EGraphPrinter
                     }
                     else
                     {
-                        var childEnode = child.Find().Nodes.MinBy(x => costModel[x])!;
+                        var childEnode = child.Find().MinByWithMarker(costModel);
                         var (childDotNode, _) = NodesMap[childEnode];
                         DotGraph.Edges.Add(childDotNode, minCostDotnode, edge =>
                         {
