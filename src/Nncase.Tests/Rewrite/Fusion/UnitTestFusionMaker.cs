@@ -8,7 +8,6 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
-using Nncase.Tests.TestFixture;
 using Nncase.Transform;
 using Nncase.Transform.Mutators;
 using Nncase.Transform.Rules.Neutral;
@@ -21,7 +20,7 @@ using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.Utility;
-using static Nncase.TestFixture.DataGenerator;
+using Nncase.PatternMatch;
 using Transpose = Nncase.IR.Tensors.Transpose;
 using Tuple = Nncase.IR.Tuple;
 
