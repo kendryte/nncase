@@ -33,11 +33,11 @@ public sealed class UnitTestPrimTypes
     [MemberData(nameof(TestPrimTypesData))]
     public void TestPrimTypes(PrimType a, PrimTypeAttributes attr, string fullName, string shortName, Type clrType, int sizeInBytes, Runtime.TypeCode typeCode)
     {
-        Assert.True(a.Attributes == attr);
-        Assert.True(a.FullName == fullName);
-        Assert.True(a.ShortName == shortName);
-        Assert.True(a.CLRType == clrType);
-        Assert.True(a.SizeInBytes == sizeInBytes);
-        Assert.True(a.TypeCode == typeCode);
+        Assert.Equal(attr, a.Attributes);
+        Assert.Equal(fullName, a.FullName);
+        Assert.Equal(shortName, a.ShortName);
+        Assert.Equal(clrType, a.CLRType);
+        Assert.Equal(sizeInBytes, a.SizeInBytes);
+        Assert.Equal(typeCode, a.TypeCode);
     }
 }

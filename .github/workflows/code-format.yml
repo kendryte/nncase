@@ -1,6 +1,6 @@
 name: code-format
 
-on: [pull_request, pull_request_target]
+on: [pull_request]
 
 jobs:
   code-format:

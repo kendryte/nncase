@@ -13,12 +13,34 @@ namespace Nncase.Tests.CoreTest;
 
 public sealed class UnitTestIValue
 {
+    public static IEnumerable<object[]> TestTensorValueCountData =>
+        new[]
+        {
+            new object[] { Tensor.Ones<float>(new int[] { 1, 3, 16, 16 }) },
+            new object[] { Tensor.Zeros<float>(new int[] { 1, 3, 16, 16 }) },
+            new object[] { Tensor.From(new int[] { 1, 2, 3, 4 }, new int[] { 2, 2 }) },
+        };
+
+    public static IEnumerable<object[]> TestTupleValueCountData =>
+        new[]
+        {
+            new object[] { new Tensor[] { Tensor.Ones<float>(new int[] { 1, 3, 16, 16 }) } },
+            new object[] { new Tensor[] { Tensor.Ones<float>(new int[] { 1, 3, 16, 16 }), Tensor.Zeros<float>(new int[] { 1, 3, 16, 16 }) } },
+            new object[] { new Tensor[] { Tensor.Ones<float>(new int[] { 1, 3, 16, 16 }), Tensor.Zeros<float>(new int[] { 1, 3, 16, 16 }), Tensor.From(new int[] { 1, 2, 3, 4 }, new int[] { 2, 2 }) } },
+        };
+
     [Fact]
-    public void TestNoneValue()
+    public void TestNoneValueType()
+    {
+        var a = Value.None;
+        Assert.Equal(NoneType.Default, a.Type);
+    }
+
+    [Fact]
+    public void TestNoneValueException()
     {
         var a = Value.None;
         var b = (IEnumerable)a;
-        Assert.Equal(NoneType.Default, a.Type);
         Assert.Throws<InvalidOperationException>(() => a.Count);
         Assert.Throws<InvalidOperationException>(() => a[0]);
         Assert.Throws<InvalidOperationException>(() => a.AsTensor());
@@ -28,11 +50,18 @@ public sealed class UnitTestIValue
     }
 
     [Fact]
-    public void TestTensorValue()
+    public void TestTensorValueType()
     {
         var dims = new int[] { 1, 3, 16, 16 };
         var a = new TensorValue(Tensor.Ones<float>(dims));
         Assert.Equal(new TensorType(DataTypes.Float32, dims), a.Type);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestTensorValueCountData))]
+    public void TestTensorValueCount(Tensor t)
+    {
+        var a = new TensorValue(t);
         Assert.True(a.Count == 1);
     }
 
@@ -58,7 +87,6 @@ public sealed class UnitTestIValue
     {
         var ones = Tensor.Ones<float>(new int[] { 1, 3, 16, 16 });
         var a = new TensorValue(ones);
-        Assert.Single(a.AsTensors());
         Assert.Equal(ones, a.AsTensors()[0]);
     }
 
@@ -93,7 +121,7 @@ public sealed class UnitTestIValue
     }
 
     [Fact]
-    public void TestTupleValue()
+    public void TestTupleValueType()
     {
         var dims = new int[] { 1, 3, 16, 16 };
         var tensor1 = Tensor.Ones<float>(dims);
@@ -101,6 +129,13 @@ public sealed class UnitTestIValue
         var tensors = new Tensor[] { tensor1, tensor2 };
         var a = Value.FromTensors(tensors);
         Assert.Equal(new TupleType(tensors.Select(x => new TensorType(x.ElementType, x.Shape))), a.Type);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestTupleValueCountData))]
+    public void TestTupleValueCount(Tensor[] tensors)
+    {
+        var a = Value.FromTensors(tensors);
         Assert.Equal(tensors.Length, a.Count);
     }
 

@@ -14,7 +14,7 @@ public sealed class UnitTestDataType
     public void TestPointerType()
     {
         var pType = new PointerType(DataTypes.Float32);
-        Assert.True(pType.SizeInBytes == 8);
+        Assert.Equal(8, pType.SizeInBytes);
 
         var t = DataType.FromType(typeof(Pointer<int>));
         Assert.Equal(8, t.SizeInBytes);

@@ -15,22 +15,26 @@ public sealed class UnitTestValueRange
     {
         {
             var full = ValueRange<byte>.Full;
-            Assert.True(full.Min == byte.MinValue && full.Max == byte.MaxValue);
+            Assert.Equal(byte.MinValue, full.Min);
+            Assert.Equal(byte.MaxValue, full.Max);
         }
 
         {
             var full = ValueRange<float>.Full;
-            Assert.True(full.Min == float.NegativeInfinity && full.Max == float.PositiveInfinity);
+            Assert.Equal(float.NegativeInfinity, full.Min);
+            Assert.Equal(float.PositiveInfinity, full.Max);
         }
 
         {
             var full = ValueRange<Half>.Full;
-            Assert.True(Half.NegativeInfinity == full.Min && Half.PositiveInfinity == full.Max);
+            Assert.Equal(Half.NegativeInfinity, full.Min);
+            Assert.Equal(Half.PositiveInfinity, full.Max);
         }
 
         {
             var full = ValueRange<BFloat16>.Full;
-            Assert.True(BFloat16.NegInfinity == full.Min && BFloat16.Infinity == full.Max);
+            Assert.Equal(BFloat16.NegInfinity, full.Min);
+            Assert.Equal(BFloat16.Infinity, full.Max);
         }
     }
 
@@ -76,6 +80,7 @@ public sealed class UnitTestValueRange
         var a = new ValueRange<byte>(1, 100);
         var b = new ValueRange<byte>(0, 90);
         var c = a.Union(b);
-        Assert.True(c.Min == 0 && c.Max == 100);
+        Assert.Equal(0, c.Min);
+        Assert.Equal(100, c.Max);
     }
 }
