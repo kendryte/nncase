@@ -17,8 +17,8 @@ public sealed class UnitTestPointer
         var value = 2023;
         var addr = (ulong)&value;
         var p = new Pointer<int>(addr);
-        Assert.True(p.Value == addr);
-        Assert.True(Pointer<int>.ElemSize == sizeof(int));
+        Assert.Equal(addr, p.Value);
+        Assert.Equal(sizeof(int), Pointer<int>.ElemSize);
     }
 
     [Fact]
@@ -35,8 +35,8 @@ public sealed class UnitTestPointer
         Assert.True(a != c);
         Assert.True(b != c);
 
-        Assert.True(a.Equals(b));
-        Assert.False(a.Equals(c));
+        Assert.Equal(a, b);
+        Assert.NotEqual(a, c);
         Assert.False(a.Equals(f1));
         Assert.True(a.Equals((object)b));
     }
@@ -47,7 +47,7 @@ public sealed class UnitTestPointer
         var f = 1.234F;
         var addr = (ulong)&f;
         var p = new Pointer<float>(addr);
-        Assert.True(p.GetHashCode() == addr.GetHashCode());
-        Assert.False(p.GetHashCode() == f.GetHashCode());
+        Assert.Equal(addr.GetHashCode(), p.GetHashCode());
+        Assert.NotEqual(f.GetHashCode(), p.GetHashCode());
     }
 }
