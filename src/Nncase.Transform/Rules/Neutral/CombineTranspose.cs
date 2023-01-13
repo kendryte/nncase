@@ -114,38 +114,35 @@ public sealed partial class CombineTransposeConstBinary : IRewriteRule
 [RuleGenerator]
 public sealed partial class CombineTransposeConcat : IRewriteRule
 {
-    private ExprPattern[]? _inputsPat;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CombineTransposeConcat"/> class.
-    /// </summary>
-    public CombineTransposeConcat()
-    {
-        var perm = IsWildcard("perm");
-        Pattern = IsConcat(
-            IsTuple(IsVArgsRepeat(exprs =>
-            {
-                _inputsPat = new ExprPattern[exprs.Count];
-                var patterns = new Pattern[exprs.Count];
-
-                for (var i = 0; i < _inputsPat.Length; i++)
-                {
-                    var input = IsWildcard();
-                    _inputsPat[i] = input;
-                    patterns[i] = IsTranspose(input, perm);
-                }
-
-                return patterns;
-            })),
-            IsWildcard("axis"));
-    }
-
     /// <inheritdoc/>
-    public IPattern Pattern { get; }
+    public IPattern Pattern { get; } = IsConcat(
+               IsTuple(IsVArgsRepeat("tupleInputs", exprs =>
+               {
+                   var patterns = new Pattern[exprs.Count];
+                   for (var i = 0; i < patterns.Length; i++)
+                   {
+                       patterns[i] = IsTranspose(IsWildcard($"input_{i}"), IsTensorConst($"perm_{i}"));
+                   }
 
-    private Expr? GetReplace(IMatchResult mr, Expr perm, Expr axis)
+                   return patterns;
+               })),
+               IsTensorConst("axis"));
+
+    private Expr? GetReplace(IReadOnlyList<Expr> tupleInputs, int axis, IMatchResult matchResult)
     {
-        var inputs = _inputsPat!.Select(x => mr.Get(x)).ToArray();
+        var inputs = Enumerable.Range(0, tupleInputs.Count).Select(i => (Expr)matchResult[$"input_{i}"]);
+        var perms = new HashSet<Tensor<int>>(Enumerable.Range(0, tupleInputs.Count).Select(i => ((TensorConst)matchResult[$"perm_{i}"]).Value.Cast<int>(CastMode.KDefault)));
+
+        Tensor<int> perm;
+        if (perms.Count == 1)
+        {
+            perm = perms.Single();
+        }
+        else
+        {
+            return null;
+        }
+
         return Transpose(Concat(new IR.Tuple(inputs), perm[axis]), perm);
     }
 }
