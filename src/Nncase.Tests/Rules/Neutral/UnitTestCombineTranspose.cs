@@ -204,7 +204,7 @@ public class UnitTestCombineTranspose : TestClassBase
         }
         else
         {
-            var b = Random.Normal(DataTypes.Float32, 0, 1, 0, perm[concatNum - 1].Select(p =>inShape[p]).ToArray());
+            var b = Random.Normal(DataTypes.Float32, 0, 1, 0, perm[concatNum - 1].Select(p => inShape[p]).ToArray());
             inputList.Add(Math.Unary(UnaryOp.Neg, b));
         }
 
