@@ -546,15 +546,14 @@ internal class DataFlowType9FusionCase : IDataFlowFusionCase
     }
 }
 
-
 /// <summary>
 /// ShortCutFusionCase
 ///           x
-///          /         
+///          /
 /// v0 = fusion_0(x)      y
 ///          \           /
 ///            \       /
-///     v1 = fusion_1(v0,y)  
+///     v1 = fusion_1(v0,y).
 /// </summary>
 internal class DataFlowType10FusionCaseLeft : IDataFlowFusionCase
 {
@@ -574,7 +573,7 @@ internal class DataFlowType10FusionCaseLeft : IDataFlowFusionCase
 }
 
 /// <summary>
-/// right version <see cref="DataFlowType10FusionCaseLeft"/>
+/// right version <see cref="DataFlowType10FusionCaseLeft"/>.
 /// </summary>
 internal sealed class DataFlowType10FusionCaseRight : IDataFlowFusionCase
 {
@@ -589,11 +588,11 @@ internal sealed class DataFlowType10FusionCaseRight : IDataFlowFusionCase
 /// <summary>
 /// ShortCutFusionCase
 ///                x
-///              /    \   
+///              /    \
 /// v0 = fusion_0(x)    \
 ///          \           |
 ///            \         /
-///     v1 = fusion_1(v0,x)
+///     v1 = fusion_1(v0,x).
 /// </summary>
 internal class DataFlowType11FusionCaseLeft : IDataFlowFusionCase
 {
@@ -625,17 +624,17 @@ internal sealed class DataFlowType11FusionCaseRight : IDataFlowFusionCase
 /// <summary>
 /// ShortCutFusionCase
 ///                            y
-///           x              |   \ 
+///           x              |   \
 ///          /         fusion_0() \
 ///          /               |     |
-/// v0 = fusion_0(x)   fusion_0( ,y)   
+/// v0 = fusion_0(x)   fusion_0( ,y)
 ///          \           /
 ///            \       /
-///     v1 = fusion_1(v0,y)  
-///               |        \  
+///     v1 = fusion_1(v0,y)
+///               |        \
 ///     v2 = fusion_2(v1)   |
 ///               |        /
-///     v3 = fusion_3(v2,v1)
+///     v3 = fusion_3(v2,v1).
 /// </summary>
 internal class DataFlowType12FusionCaseLeft : IDataFlowFusionCase
 {
@@ -672,8 +671,8 @@ internal class DataFlowType12FusionCaseRight : IDataFlowFusionCase
 ///    v0 = fusion0(x)
 ///      |           |
 ///      |     v1 =fusion1(v0)
-///    v2 = fusion2(v0,v1)
-///      
+///    v2 = fusion2(v0,v1).
+///
 /// </summary>
 internal class DataFlowType13FusionCaseLeft : IDataFlowFusionCase
 {
@@ -681,7 +680,6 @@ internal class DataFlowType13FusionCaseLeft : IDataFlowFusionCase
 
     public static Expr BuildBodyCore(Expr input, bool left)
     {
-
         var v0 = new Call(FusionBuilder.MakeConv2DFusion(true), input);
         var v1 = new Call(FusionBuilder.MakeConv2DFusion(true), v0);
         var v2 = new Call(FusionBuilder.MakeBinaryFusion(BinaryOp.Sub, true), left ? new[] { v0, v1 } : new[] { v1, v0 });

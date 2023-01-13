@@ -175,7 +175,7 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
 }
 
 /// <summary>
-/// <see cref="ShortCutFusionMergeRuleLeft"/>
+/// <see cref="ShortCutFusionMergeRuleLeft"/>.
 /// </summary>
 public class ShortCutFusionMergeRuleRight : ShortCutFusionMergeRuleLeft
 {
@@ -183,21 +183,20 @@ public class ShortCutFusionMergeRuleRight : ShortCutFusionMergeRuleLeft
     public override Pattern CreatePattern(string targetModuleKind) => CreatePattern(targetModuleKind, false);
 }
 
-
 /// <summary>
 ///              x                       x
 ///         |         \                  |
-///  v1 = fusion1(x)   |         => fusion2_1(x) 
-///          \          |       
-///            \       /        
-///         v2 = fusion2(v1,x). 
+///  v1 = fusion1(x)   |         => fusion2_1(x)
+///          \          |
+///            \       /
+///         v2 = fusion2(v1,x).
 /// ---------------------------
-///         x                             x        y 
+///         x                             x        y
 ///         |                             |       /
 ///  v1 = fusion1(x)     y       =>  fusion2_1(x,y)
-///          \          |          
-///            \       /           
-///         v2 = fusion2(v1,y).    
+///          \          |
+///            \       /
+///         v2 = fusion2(v1,y).
 /// </summary>
 public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
 {
@@ -210,6 +209,9 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
 
     /// <inheritdoc/>
     public IPattern Pattern => _pattern ?? CreatePattern(ModuleKind);
+
+    /// <inheritdoc/>
+    public virtual Pattern CreatePattern(string targetModuleKind) => CreatePattern(targetModuleKind, true);
 
     /// <summary>
     /// create Pattern with position.
@@ -246,11 +248,7 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
               IsVArgs(IsWildcard(), IsWildcard())),
           IsVArgs("caller_inputs", new Pattern[] { callerOtherInput, calleePattern }));
         return left ? IsAlt(callerPatternLeft, callerPatternRight) : IsAlt(callerPatternRight, callerPatternLeft);
-
     }
-
-    /// <inheritdoc/>
-    public virtual Pattern CreatePattern(string targetModuleKind) => CreatePattern(targetModuleKind, true);
 
     /// <inheritdoc/>
     public Expr? GetReplace(
@@ -283,6 +281,7 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
             {
                 return null;
             }
+
             if (!callee_input_users.Remove(callee) || !callee_input_users.Remove(caller))
             {
                 return null;
@@ -332,7 +331,10 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
             // 3. reset the input usedby
             usedByReslut.Add(callee_input, new_call);
             if (!object.ReferenceEquals(callee_input, caller_other_input))
+            {
                 usedByReslut.Add(caller_other_input, new_call);
+            }
+
             usedByReslut.Add(merged_fusion, new_call);
             return new_call;
         }
@@ -393,6 +395,7 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
                 callParams.Insert(0, callerOtherInput);
             }
         }
+
         return (new Fusion($"{callerFusion.Name}_{calleeFusion.Name}", ModuleKind,
                            merged_fusion_body, ImmutableArray.CreateRange(fusionParams)),
                 callParams);
