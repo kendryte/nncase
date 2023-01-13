@@ -175,14 +175,31 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
 }
 
 /// <summary>
-///              x
-///         |         \
-///  v1 = fusion1(x)   |
-///          \          |
-///            \       /
-///         v2 = fusion2(v1,x).
+/// <see cref="ShortCutFusionMergeRuleLeft"/>
 /// </summary>
-public class ShortCutFusionMergeRule : IMergeRewriteRule
+public class ShortCutFusionMergeRuleRight : ShortCutFusionMergeRuleLeft
+{
+    /// <inheritdoc/>
+    public override Pattern CreatePattern(string targetModuleKind) => CreatePattern(targetModuleKind, false);
+}
+
+
+/// <summary>
+///              x                       x
+///         |         \                  |
+///  v1 = fusion1(x)   |         => fusion2_1(x) 
+///          \          |       
+///            \       /        
+///         v2 = fusion2(v1,x). 
+/// ---------------------------
+///         x                             x        y 
+///         |                             |       /
+///  v1 = fusion1(x)     y       =>  fusion2_1(x,y)
+///          \          |          
+///            \       /           
+///         v2 = fusion2(v1,y).    
+/// </summary>
+public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
 {
     private readonly Pattern? _pattern;
 
@@ -194,36 +211,46 @@ public class ShortCutFusionMergeRule : IMergeRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern => _pattern ?? CreatePattern(ModuleKind);
 
-    /// <inheritdoc/>
-    public virtual Pattern CreatePattern(string target_module_kind)
+    /// <summary>
+    /// create Pattern with position.
+    /// </summary>
+    /// <param name="targetModuleKind">module kind.</param>
+    /// <param name="left">position.</param>
+    /// <returns></returns>
+    protected Pattern CreatePattern(string targetModuleKind, bool left)
     {
-        var input = IsWildcard("callee_input");
-        var CalleePattern = IsCall(
+        var calleeInput = IsWildcard("callee_input");
+        var callerOtherInput = IsWildcard("caller_other_input");
+        var calleePattern = IsCall(
           "callee",
           IsFusion(
               "callee_fusion",
-              target_module_kind,
+              targetModuleKind,
               IsWildcard(),
               IsVArgs(IsWildcard())),
-          input);
-        var CallerPattern_left = IsCall(
+          calleeInput);
+        var callerPatternLeft = IsCall(
           "caller",
           IsFusion(
               "caller_fusion",
-              target_module_kind,
+              targetModuleKind,
               IsWildcard(),
               IsVArgs(IsWildcard(), IsWildcard())),
-          IsVArgs("caller_inputs", new Pattern[] { CalleePattern, input }));
-        var CallerPattern_right = IsCall(
+          IsVArgs("caller_inputs", new Pattern[] { calleePattern, callerOtherInput }));
+        var callerPatternRight = IsCall(
           "caller",
           IsFusion(
               "caller_fusion",
-              target_module_kind,
+              targetModuleKind,
               IsWildcard(),
               IsVArgs(IsWildcard(), IsWildcard())),
-          IsVArgs("caller_inputs", new Pattern[] { input, CalleePattern }));
-        return IsAlt(CallerPattern_left, CallerPattern_right);
+          IsVArgs("caller_inputs", new Pattern[] { callerOtherInput, calleePattern }));
+        return left ? IsAlt(callerPatternLeft, callerPatternRight) : IsAlt(callerPatternRight, callerPatternLeft);
+
     }
+
+    /// <inheritdoc/>
+    public virtual Pattern CreatePattern(string targetModuleKind) => CreatePattern(targetModuleKind, true);
 
     /// <inheritdoc/>
     public Expr? GetReplace(
@@ -245,17 +272,30 @@ public class ShortCutFusionMergeRule : IMergeRewriteRule
         }
 
         var callee_input = (Expr)result["callee_input"];
+        var caller_other_input = (Expr)result["caller_other_input"];
 
-        // 1. callee input only usedby callee and caller
         var callee_input_users = new HashSet<Expr>(usedByReslut.Get(callee_input), ReferenceEqualityComparer.Instance);
-        if (callee_input_users.Count != 2)
+        if (object.ReferenceEquals(callee_input, caller_other_input))
         {
-            return null;
+            // case : caller(callee(x),x)
+            // 1. callee input only usedby callee and caller
+            if (callee_input_users.Count != 2)
+            {
+                return null;
+            }
+            if (!callee_input_users.Remove(callee) || !callee_input_users.Remove(caller))
+            {
+                return null;
+            }
         }
-
-        if (!callee_input_users.Remove(callee) || !callee_input_users.Remove(caller))
+        else
         {
-            return null;
+            // case : caller(callee(x),y)
+            // 1. callee input only usedby callee
+            if (callee_input_users.Count != 1 || !callee_input_users.Remove(callee))
+            {
+                return null;
+            }
         }
 
         // 2. callee only usedby caller
@@ -273,11 +313,11 @@ public class ShortCutFusionMergeRule : IMergeRewriteRule
         }
 
         // 1. merge new fusion
-        var merged_fusion = ProcessMergeFusion(mergedFusionRewriteCallBack, caller, callee, caller_fusion, callee_fusion, callee_in_left);
+        var (merged_fusion, callParams) = ProcessMergeFusion(mergedFusionRewriteCallBack, callee_input, caller_other_input, caller, callee, caller_fusion, callee_fusion, callee_in_left);
 
         if (mergedFusionCheckCallBack(merged_fusion, candidate_fusions))
         {
-            var new_call = new Call(merged_fusion, ImmutableArray.Create(callee_input));
+            var new_call = new Call(merged_fusion, ImmutableArray.CreateRange(callParams));
 
             // 1. transfer the caller usedby info to new_call
             usedByReslut.Transfer(caller, new_call);
@@ -285,11 +325,14 @@ public class ShortCutFusionMergeRule : IMergeRewriteRule
             // 2. clear all caller's and callee's usedy info
             usedByReslut.Clear(caller_fusion, caller);
             usedByReslut.Clear(callee, caller);
+            usedByReslut.Clear(caller_other_input, caller);
             usedByReslut.Clear(callee_fusion, callee);
             usedByReslut.Clear(callee_input, callee);
 
             // 3. reset the input usedby
             usedByReslut.Add(callee_input, new_call);
+            if (!object.ReferenceEquals(callee_input, caller_other_input))
+                usedByReslut.Add(caller_other_input, new_call);
             usedByReslut.Add(merged_fusion, new_call);
             return new_call;
         }
@@ -298,30 +341,34 @@ public class ShortCutFusionMergeRule : IMergeRewriteRule
         return null;
     }
 
-    private Fusion ProcessMergeFusion(Func<Expr, Expr> mergedFusionRewriteCallBack, Call caller, Call callee, Fusion caller_fusion, Fusion callee_fusion, bool callee_in_left)
+    private (Fusion, List<Expr>) ProcessMergeFusion(Func<Expr, Expr> mergedFusionRewriteCallBack, Expr calleeInput, Expr callerOtherInput, Call caller, Call callee, Fusion callerFusion, Fusion calleeFusion, bool calleeInLeft)
     {
         // 1. replace the caller_fusion input_var with the callee_fusion body
         var merged_fusion_body = Transform.Mutator.Substitute(
           e =>
           {
-              if (object.ReferenceEquals(e, callee_in_left ? caller_fusion.Parameters[0] : caller_fusion.Parameters[1]))
+              if (object.ReferenceEquals(e, calleeInLeft ? callerFusion.Parameters[0] : callerFusion.Parameters[1]))
               {
-                  return callee_fusion.Body;
+                  return calleeFusion.Body;
               }
 
               return null;
-          })().Visit(caller_fusion.Body);
+          })().Visit(callerFusion.Body);
 
-        merged_fusion_body = Transform.Mutator.Substitute(
-          e =>
-          {
-              if (object.ReferenceEquals(e, callee_in_left ? caller_fusion.Parameters[1] : caller_fusion.Parameters[0]))
+        if (object.ReferenceEquals(calleeInput, callerOtherInput))
+        {
+            // when call(fusion(x),x) only preserve one var as parmeters
+            merged_fusion_body = Transform.Mutator.Substitute(
+              e =>
               {
-                  return callee_fusion.Parameters[0];
-              }
+                  if (object.ReferenceEquals(e, calleeInLeft ? callerFusion.Parameters[1] : callerFusion.Parameters[0]))
+                  {
+                      return calleeFusion.Parameters[0];
+                  }
 
-              return null;
-          })().Visit(merged_fusion_body);
+                  return null;
+              })().Visit(merged_fusion_body);
+        }
 
         // 2. run call back.
         merged_fusion_body = mergedFusionRewriteCallBack(merged_fusion_body);
@@ -330,7 +377,25 @@ public class ShortCutFusionMergeRule : IMergeRewriteRule
             throw new InvalidOperationException("Merged Fusion Type Infer Error!");
         }
 
-        return new Fusion($"{caller_fusion.Name}_{callee_fusion.Name}", ModuleKind, merged_fusion_body, callee_fusion.Parameters);
+        var callerOtherParam = calleeInLeft ? callerFusion.Parameters[1] : callerFusion.Parameters[0];
+        var callParams = new List<Expr>() { calleeInput };
+        var fusionParams = new List<Var>() { calleeFusion.Parameters[0] };
+        if (!object.ReferenceEquals(calleeInput, callerOtherInput))
+        {
+            if (calleeInLeft)
+            {
+                fusionParams.Add(callerFusion.Parameters[1]);
+                callParams.Add(callerOtherInput);
+            }
+            else
+            {
+                fusionParams.Insert(0, callerFusion.Parameters[0]);
+                callParams.Insert(0, callerOtherInput);
+            }
+        }
+        return (new Fusion($"{callerFusion.Name}_{calleeFusion.Name}", ModuleKind,
+                           merged_fusion_body, ImmutableArray.CreateRange(fusionParams)),
+                callParams);
     }
 }
 

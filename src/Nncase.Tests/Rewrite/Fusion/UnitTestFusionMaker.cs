@@ -97,7 +97,8 @@ public sealed class UnitTestFusionMaker : TestClassBase
         {
             new SameInputFusionMergeRule(),
             new MultiInputFusionMergeRule(),
-            new ShortCutFusionMergeRule(),
+            new ShortCutFusionMergeRuleLeft(),
+            new ShortCutFusionMergeRuleRight(),
         }, (usedby, rule, option) => new FusionGroupMutator(usedby, rule, option),
           new());
 
