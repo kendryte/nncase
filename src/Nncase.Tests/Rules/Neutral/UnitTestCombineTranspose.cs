@@ -158,7 +158,7 @@ public class UnitTestCombineTranspose : TestClassBase
             inputList.Add(new Var());
         }
 
-        var Normal = new Dictionary<Var, IValue>();
+        var normal = new Dictionary<Var, IValue>();
         var tpList = new List<Call>();
         foreach (Var a in inputList)
         {

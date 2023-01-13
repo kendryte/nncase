@@ -279,6 +279,7 @@ public sealed partial class CombineTransposeUnary : IRewriteRule
 [RuleGenerator]
 public sealed partial class CombineTransposeActivations : IRewriteRule
 {
+    /// <inheritdoc/>
     public IPattern Pattern { get; } =
         IsTranspose(
             IsCall(IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("parameters", () => IsWildcard())),
@@ -299,6 +300,7 @@ public sealed partial class CombineTransposeActivations : IRewriteRule
 [RuleGenerator]
 public sealed partial class CombineActivationsTranspose : IRewriteRule
 {
+    /// <inheritdoc/>
     public IPattern Pattern { get; } =
       IsCall(IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("parameters", (inputs) =>
       {
