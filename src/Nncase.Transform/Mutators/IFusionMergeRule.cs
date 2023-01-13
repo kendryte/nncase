@@ -213,43 +213,6 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
     /// <inheritdoc/>
     public virtual Pattern CreatePattern(string targetModuleKind) => CreatePattern(targetModuleKind, true);
 
-    /// <summary>
-    /// create Pattern with position.
-    /// </summary>
-    /// <param name="targetModuleKind">module kind.</param>
-    /// <param name="left">position.</param>
-    /// <returns></returns>
-    protected Pattern CreatePattern(string targetModuleKind, bool left)
-    {
-        var calleeInput = IsWildcard("callee_input");
-        var callerOtherInput = IsWildcard("caller_other_input");
-        var calleePattern = IsCall(
-          "callee",
-          IsFusion(
-              "callee_fusion",
-              targetModuleKind,
-              IsWildcard(),
-              IsVArgs(IsWildcard())),
-          calleeInput);
-        var callerPatternLeft = IsCall(
-          "caller",
-          IsFusion(
-              "caller_fusion",
-              targetModuleKind,
-              IsWildcard(),
-              IsVArgs(IsWildcard(), IsWildcard())),
-          IsVArgs("caller_inputs", new Pattern[] { calleePattern, callerOtherInput }));
-        var callerPatternRight = IsCall(
-          "caller",
-          IsFusion(
-              "caller_fusion",
-              targetModuleKind,
-              IsWildcard(),
-              IsVArgs(IsWildcard(), IsWildcard())),
-          IsVArgs("caller_inputs", new Pattern[] { callerOtherInput, calleePattern }));
-        return left ? IsAlt(callerPatternLeft, callerPatternRight) : IsAlt(callerPatternRight, callerPatternLeft);
-    }
-
     /// <inheritdoc/>
     public Expr? GetReplace(
       Func<Expr, Expr> mergedFusionRewriteCallBack,
@@ -341,6 +304,43 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
 
         candidateFusionRecordCallBack(candidate_fusions);
         return null;
+    }
+
+    /// <summary>
+    /// create Pattern with position.
+    /// </summary>
+    /// <param name="targetModuleKind">module kind.</param>
+    /// <param name="left">position.</param>
+    /// <returns></returns>
+    protected Pattern CreatePattern(string targetModuleKind, bool left)
+    {
+        var calleeInput = IsWildcard("callee_input");
+        var callerOtherInput = IsWildcard("caller_other_input");
+        var calleePattern = IsCall(
+          "callee",
+          IsFusion(
+              "callee_fusion",
+              targetModuleKind,
+              IsWildcard(),
+              IsVArgs(IsWildcard())),
+          calleeInput);
+        var callerPatternLeft = IsCall(
+          "caller",
+          IsFusion(
+              "caller_fusion",
+              targetModuleKind,
+              IsWildcard(),
+              IsVArgs(IsWildcard(), IsWildcard())),
+          IsVArgs("caller_inputs", new Pattern[] { calleePattern, callerOtherInput }));
+        var callerPatternRight = IsCall(
+          "caller",
+          IsFusion(
+              "caller_fusion",
+              targetModuleKind,
+              IsWildcard(),
+              IsVArgs(IsWildcard(), IsWildcard())),
+          IsVArgs("caller_inputs", new Pattern[] { callerOtherInput, calleePattern }));
+        return left ? IsAlt(callerPatternLeft, callerPatternRight) : IsAlt(callerPatternRight, callerPatternLeft);
     }
 
     private (Fusion, List<Expr>) ProcessMergeFusion(Func<Expr, Expr> mergedFusionRewriteCallBack, Expr calleeInput, Expr callerOtherInput, Call caller, Call callee, Fusion callerFusion, Fusion calleeFusion, bool calleeInLeft)
