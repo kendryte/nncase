@@ -6,7 +6,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using LanguageExt.ClassInstances;
 using Nncase.CostModel;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.PatternMatch;
 using static Nncase.PatternMatch.F.Math;
@@ -25,9 +27,8 @@ public static class EGraphExtractExtensions
     /// <param name="eGraph">eGraph.</param>
     /// <param name="root">Root eclass.</param>
     /// <param name="basefunc_cost_evaluator">base func cost evaluator.</param>
-    /// <param name="options">Options.</param>
     /// <returns>Extracted root expression.</returns>
-    public static Expr Extract(this EGraph eGraph, EClass root, Evaluator.IBaseFuncCostEvaluator? basefunc_cost_evaluator, RunPassOptions options)
+    public static Expr Extract(this EGraph eGraph, EClass root, Evaluator.IBaseFuncCostEvaluator? basefunc_cost_evaluator)
     {
         // 1. set the all expr checked shape
         foreach (var eclass in eGraph.Classes)
@@ -43,12 +44,13 @@ public static class EGraphExtractExtensions
 
         // 2. start the cost evaluator
         var costModel = new EGraphCostEvaluator(root.Find(), basefunc_cost_evaluator).Evaluate();
-        if (options.DumpLevel > 2)
+        if (DumpScope.Current.IsEnabled(DumpFlags.EGraphCost))
         {
-            EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, root.Find(), Path.Combine(options.DumpDir, "Costs", $"V{eGraph.Version}"));
+            using var fs = DumpScope.Current.OpenFile(Path.Combine("Costs", $"V{eGraph.Version}.dot"));
+            EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, root.Find(), fs);
         }
 
-        return new EGraphExtractor(costModel, options).Extract(root.Find());
+        return new EGraphExtractor(costModel).Extract(root.Find());
     }
 
     /// <summary>
@@ -93,19 +95,29 @@ public static class EGraphExtractExtensions
 internal class EGraphExtractor
 {
     private readonly EGraphCostModel _costModel;
-    private readonly RunPassOptions _options;
     private readonly Dictionary<EClass, Expr> _eclassMemo = new();
     private readonly Dictionary<EClass, Expr> _markerEclassMemo = new();
+    private StreamWriter? _dumpWriter;
 
-    public EGraphExtractor(EGraphCostModel costModel, RunPassOptions options)
+    public EGraphExtractor(EGraphCostModel costModel)
     {
         _costModel = costModel;
-        _options = options;
     }
 
     public Expr Extract(EClass root)
     {
-        Visit(root);
+        _dumpWriter = DumpScope.Current.IsEnabled(DumpFlags.EGraphCost)
+            ? new StreamWriter(DumpScope.Current.OpenFile($"{nameof(EGraphExtractor)}_Class_{root.Id}.txt"))
+            : null;
+        try
+        {
+            Visit(root);
+        }
+        finally
+        {
+            _dumpWriter?.Dispose();
+        }
+
         return _eclassMemo[root];
     }
 
@@ -219,17 +231,17 @@ internal class EGraphExtractor
         var parameters = children.Skip(1);
 
         // for mix quant debug.
-        if (call.EnodeQuantConfigWithCosine != null && _options.DumpLevel > 3)
+        if (call.EnodeQuantConfigWithCosine != null && _dumpWriter != null)
         {
-            Console.WriteLine(call + "  " + call.CheckedType);
+            _dumpWriter.WriteLine(call + "  " + call.CheckedType);
             for (int i = 0; i < call.EnodeQuantConfigWithCosine.Count; i++)
             {
                 for (int j = 0; j < call.EnodeQuantConfigWithCosine[i].Item1.Count; j++)
                 {
-                    Console.Write(call.EnodeQuantConfigWithCosine[i].Item1[j] + "  ");
+                    _dumpWriter.Write(call.EnodeQuantConfigWithCosine[i].Item1[j] + "  ");
                 }
 
-                Console.WriteLine(call.EnodeQuantConfigWithCosine[i].Item3);
+                _dumpWriter.WriteLine(call.EnodeQuantConfigWithCosine[i].Item3);
             }
         }
 

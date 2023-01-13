@@ -21,8 +21,12 @@ namespace Nncase.Targets;
 /// </summary>
 public class CPUTarget : ITarget
 {
-    /// <inheritdoc/>
-    public string Kind => "cpu";
+    /// <summary>
+    /// Gets kind.
+    /// </summary>
+    public static readonly string Kind = "cpu";
+
+    string ITarget.Kind => Kind;
 
     /// <inheritdoc/>
     public void ParseTargetDependentOptions(IConfigurationSection configure)
@@ -30,30 +34,30 @@ public class CPUTarget : ITarget
     }
 
     /// <inheritdoc/>
-    public void RegisterTargetDependentPass(PassManager passManager, CompileOptions options)
+    public void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options)
     {
     }
 
     /// <inheritdoc/>
-    public Task<Dictionary<ENode, List<Tuple<List<DataType>, List<List<QuantParam>>, float>>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassOptions runPassOptions)
+    public Task<Dictionary<ENode, List<Tuple<List<DataType>, List<List<QuantParam>>, float>>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, QuantizeOptions quantizeOptions)
     {
         var enodeQuantCosineDict = new Dictionary<ENode, List<Tuple<List<DataType>, List<List<QuantParam>>, float>>>();
         return Task.FromResult(enodeQuantCosineDict);
     }
 
     /// <inheritdoc/>
-    public Task AdaRoundWeights(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassOptions runPassOptions)
+    public Task AdaRoundWeights(ICalibrationDatasetProvider calibrationDataset, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, QuantizeOptions quantizeOptions)
     {
-        return null;
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc/>
-    public void RegisterQuantizePass(PassManager passManager, CompileOptions options)
+    public void RegisterQuantizePass(IPassManager passManager, CompileOptions options)
     {
     }
 
     /// <inheritdoc/>
-    public void RegisterTargetDependentAfterQuantPass(PassManager passManager, CompileOptions options)
+    public void RegisterTargetDependentAfterQuantPass(IPassManager passManager, CompileOptions options)
     {
     }
 

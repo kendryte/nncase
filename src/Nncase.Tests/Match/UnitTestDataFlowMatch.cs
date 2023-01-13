@@ -3,11 +3,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Nncase;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
+using Nncase.Tests.TestFixture;
 using Nncase.Transform;
 using Nncase.Transform.Mutators;
 using Nncase.Transform.Rules.Neutral;
@@ -21,7 +23,8 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.MatchTest;
 
-public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
+[AutoSetupTestMethod(InitSession = false)]
+public class UnitTestDataFlowMatch : TestClassBase
 {
     [Fact]
     public void TestMatchDataFlowCallCommutive()
@@ -90,6 +93,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
     }
 
     [Fact]
+    [AutoSetupTestMethod(InitSession = true)]
     public void TestNotMatchFoldConstCall()
     {
         var rule = new Transform.Rules.Neutral.FoldConstCall();
@@ -99,6 +103,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
     }
 
     [Fact]
+    [AutoSetupTestMethod(InitSession = true)]
     public void TestMatchFoldConstCallTupleWithConst()
     {
         var rule = new Transform.Rules.Neutral.FoldConstCall();
@@ -109,6 +114,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
     }
 
     [Fact]
+    [AutoSetupTestMethod(InitSession = true)]
     public void TestMatchFoldConstCallTwiceFalse()
     {
         var rule = new Transform.Rules.Neutral.FoldConstCall();
@@ -135,6 +141,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
     }
 
     [Fact]
+    [AutoSetupTestMethod(InitSession = true)]
     public void TestMatchMultiBranch()
     {
         /*
@@ -142,7 +149,6 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
             1. 但是实际上如果 ((a - (b + c)) + (c * d)) 修改了b + c => b - c, 然后 b + c添加到rewrite memo中了,但是后续的a - (b+c)是mutator自动构造出来的, 此时在遍历老的expr的时候还是看到是a - (b+c), 并没有起到rewrite memo的作用
             2. 我理解应该是类似egraph, 如果遍历的是被替换过的新节点, 那么之间visit 新节点, 否则应该match老节点的类型, 然后leaf节点则匹配自动update 的ExprMemo中的节点.
          */
-        var caseOptions = GetPassOptions();
         Expr a = 1;
         Expr b = 2;
         Expr c = 3;
@@ -150,10 +156,9 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
         var pre = a - (b + c) + (c * d);
         CompilerServices.InferenceType(pre);
 
-        var visitor = new DataFlowRewriteVisitor(new SimpleRule(), caseOptions);
+        var visitor = new DataFlowRewriteVisitor(new SimpleRule(), new());
         var post = visitor.Visit(pre);
         Assert.True(visitor.IsMutated);
-        CompilerServices.DumpIR(post, "post", caseOptions.DumpDir);
 
         if (post is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub } } root_call)
         {
@@ -190,13 +195,13 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
         var pattern = IsCall("root", IsWildcard(), IsVArgs(
             "root_inputs",
             new Pattern[]
-                                                            {
-                                                                IsUnary(null, "lhs", _ => true, IsWildcard()),
-                                                                IsUnary(null, "rhs", _ => true, IsWildcard()),
-                                                            }));
+            {
+                IsUnary(null, "lhs", _ => true, IsWildcard()),
+                IsUnary(null, "rhs", _ => true, IsWildcard()),
+            }));
 
         Assert.True(CompilerServices.TryMatchRoot(pre, pattern, new() { RewriteMemo = dict }, out var result));
-        var root_inputs = (IReadOnlyList<Expr>)result["root_inputs"];
+        var root_inputs = (IReadOnlyList<Expr>)result!["root_inputs"];
         var lhs = (Call)result["lhs"];
         Assert.True(object.ReferenceEquals(root_inputs[0], lhs));
         Assert.True(lhs is Call { Target: Unary { UnaryOp: UnaryOp.Tanh } });
@@ -206,7 +211,7 @@ public class UnitTestDataFlowMatch : TestFixture.UnitTestFixtrue
     {
         public IPattern Pattern { get; } = IsBinary(BinaryOp.Add, IsWildcard("lhs"), IsWildcard("rhs"));
 
-        public Expr? GetReplace(IMatchResult result, RunPassOptions options)
+        public Expr? GetReplace(IMatchResult result, RunPassContext options)
         {
             return (Expr)result["lhs"] - (Expr)result["rhs"];
         }

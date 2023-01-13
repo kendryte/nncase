@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.IR.F;
+using Nncase.Tests.TestFixture;
 using Nncase.Transform;
 using Nncase.Transform.Rules.Neutral;
 using Xunit;
@@ -19,7 +20,8 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFusePadConv2D : TestFixture.UnitTestFixtrue
+[AutoSetupTestMethod(InitSession = true)]
+public class UnitTestFusePadConv2D : TestClassBase
 {
     public static IEnumerable<object[]> TestFusePadConv2DPositiveData =>
         new[]
@@ -105,7 +107,6 @@ public class UnitTestFusePadConv2D : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFusePadConv2DPositiveData))]
     public void TestFusePadConv2DPositive(int[] shape, int[,] pads1, int[,] pads2, int[] wShape, int index)
     {
-        var caseOptions = GetPassOptions();
         var a = new Var();
         var w = Random.Normal(DataTypes.Float32, 0, 1, 0, wShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { wShape[0] });
@@ -119,14 +120,14 @@ public class UnitTestFusePadConv2D : TestFixture.UnitTestFixtrue
 
             // new FusePadConv2d(),
             // new FoldNopPad(),
-        }, caseOptions);
+        }, new());
         var rootPost = CompilerServices.Rewrite(rootMid, new IRewriteRule[]
         {
             // new FoldConstCall(),
             new FusePadConv2d(),
             new FoldConstCall(),
             new FoldNopPad(),
-        }, caseOptions);
+        }, new());
 
         Assert.NotEqual(rootMid, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootMid, aNormal), CompilerServices.Evaluate(rootPost, aNormal));
@@ -136,7 +137,6 @@ public class UnitTestFusePadConv2D : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFusePadConv2DNegativeData))]
     public void TestFusePadConv2DNegative(int[] shape, int[,] pads1, int[,] pads2, int[] wShape, int index)
     {
-        var caseOptions = GetPassOptions();
         var a = new Var();
         var w = Random.Normal(DataTypes.Float32, 0, 1, 0, wShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { wShape[0] });
@@ -148,13 +148,13 @@ public class UnitTestFusePadConv2D : TestFixture.UnitTestFixtrue
         var rootMid = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new FoldConstCall(),
-        }, caseOptions);
+        }, new());
 
         var rootPost = CompilerServices.Rewrite(rootMid, new IRewriteRule[]
         {
             new FusePadConv2d(),
             new FoldNopPad(),
-        }, caseOptions);
+        }, new());
 
         Assert.Equal(rootMid, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootMid, aNormal), CompilerServices.Evaluate(rootPost, aNormal));

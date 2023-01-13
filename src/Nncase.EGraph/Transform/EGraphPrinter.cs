@@ -44,7 +44,7 @@ public partial class EGraphPrinter
 
     private readonly Dictionary<EClass, string> _opMaps = new();
 
-    private readonly EGraph _eGraph;
+    private readonly IEGraph _eGraph;
 
     private readonly DotDumpVisitor _visitor = new DotDumpVisitor();
 
@@ -55,7 +55,7 @@ public partial class EGraphPrinter
     /// ctor for egraph.
     /// </summary>
     /// <param name="egraph"></param>
-    public EGraphPrinter(EGraph egraph)
+    public EGraphPrinter(IEGraph egraph)
     {
         _idCounter = 0;
         DotGraph = new(directed: true);
@@ -78,9 +78,22 @@ public partial class EGraphPrinter
     /// dump egraph as dot graph.
     /// </summary>
     /// <param name="eGraph">egraph.</param>
+    /// <param name="output">Output stream.</param>
+    /// <returns>Converted Graph.</returns>
+    public static DotGraph DumpEgraphAsDot(IEGraph eGraph, Stream output)
+    {
+        var printer = new EGraphPrinter(eGraph);
+        printer.ConvertEGraphAsDot();
+        return printer.SaveToStream(output);
+    }
+
+    /// <summary>
+    /// dump egraph as dot graph.
+    /// </summary>
+    /// <param name="eGraph">egraph.</param>
     /// <param name="file">path.</param>
     /// <returns>Converted Graph.</returns>
-    public static DotGraph DumpEgraphAsDot(EGraph eGraph, string file)
+    public static DotGraph DumpEgraphAsDot(IEGraph eGraph, string file)
     {
         var printer = new EGraphPrinter(eGraph);
         printer.ConvertEGraphAsDot();
@@ -189,9 +202,20 @@ public partial class EGraphPrinter
     }
 
     /// <summary>
+    /// Save the DotGraph into stream.
+    /// </summary>
+    /// <param name="output">Output stream.</param>
+    /// <returns>this dot graph.</returns>
+    public DotGraph SaveToStream(Stream output)
+    {
+        DotGraph.Build(new StreamWriter(output, leaveOpen: true));
+        return DotGraph;
+    }
+
+    /// <summary>
     /// Save the DotGraph into file.
     /// </summary>
-    /// <param name="file">file path.</param>
+    /// <param name="file">Output file.</param>
     /// <returns>this dot graph.</returns>
     public DotGraph SaveToFile(string file)
     {

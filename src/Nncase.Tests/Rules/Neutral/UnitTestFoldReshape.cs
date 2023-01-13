@@ -17,7 +17,7 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFoldReshape : TestFixture.UnitTestFixtrue
+public class UnitTestFoldReshape : TestClassBase
 {
     public static IEnumerable<object[]> TestFoldNopReshapePositiveData =>
         new[]
@@ -44,10 +44,9 @@ public class UnitTestFoldReshape : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopReshapePositiveData))]
     public void TestFoldNopReshapePositive(int[] shape, int[] newShape)
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Reshape(a, newShape);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopReshape() }, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopReshape() }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -57,10 +56,9 @@ public class UnitTestFoldReshape : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopReshapeNegativeData))]
     public void TestFoldNopReshapeNegative(int[] shape, int[] newShape)
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Reshape(a, newShape);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopReshape() }, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopReshape() }, new());
 
         Assert.Equal(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -70,10 +68,9 @@ public class UnitTestFoldReshape : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldTwoReshapesPositiveData))]
     public void TestFoldTwoReshapesPositive(int[] shape, int[] newShape1, int[] newShape2)
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Reshape(Tensors.Reshape(a, newShape1), newShape2);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoReshapes() }, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoReshapes() }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));

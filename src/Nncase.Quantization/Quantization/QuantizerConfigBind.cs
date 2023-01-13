@@ -20,18 +20,18 @@ internal partial class QuantizerConfigBind
     private readonly EGraph _graph;
     private readonly List<ENode> _rangeOfs = new List<ENode>();
     private readonly List<ENode> _childrenOfRangeOfs = new List<ENode>();
-    private readonly RunPassOptions _passOptions;
+    private readonly CompileSession _compileSession;
 
-    public QuantizerConfigBind(EGraph graph, RunPassOptions passOptions)
+    public QuantizerConfigBind(EGraph graph, CompileSession compileSession)
     {
         _graph = graph;
-        _passOptions = passOptions;
+        _compileSession = compileSession;
         MarkRangeOfs();
     }
 
-    public async Task RunAsync(RunPassOptions options)
+    public async Task RunAsync()
     {
-        var quantOptions = options.CompileOptions.QuantizeOptions!;
+        var quantOptions = _compileSession.CompileOptions.QuantizeOptions;
         if (quantOptions.CalibrationDataset == null)
         {
             throw new ArgumentNullException(nameof(quantOptions.CalibrationDataset));
@@ -40,7 +40,7 @@ internal partial class QuantizerConfigBind
         // Choose better quant method using cosine, and bind info with ir.
         if (quantOptions.BindQuantMethod)
         {
-            _ = await options.Target.BindQuantMethodCosine(quantOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs, _passOptions);
+            _ = await _compileSession.Target.BindQuantMethodCosine(quantOptions.CalibrationDataset, _rangeOfs, _childrenOfRangeOfs, quantOptions);
         }
 
         _graph.Rebuild();

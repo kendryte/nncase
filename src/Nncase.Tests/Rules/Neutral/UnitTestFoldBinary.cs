@@ -21,7 +21,7 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFoldBinary : TestFixture.UnitTestFixtrue
+public class UnitTestFoldBinary : TestClassBase
 {
     public static IEnumerable<object[]> TestFoldNopBinaryNegativeData =>
       new[]
@@ -51,7 +51,6 @@ public class UnitTestFoldBinary : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopBinaryNegativeData))]
     public void TestFoldNopBinaryNegative(BinaryOp binaryOp, int[] aShape, float bValue, int index)
     {
-        var caseOptions = GetPassOptions();
         var a = new Var();
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
@@ -60,7 +59,7 @@ public class UnitTestFoldBinary : TestFixture.UnitTestFixtrue
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new FoldNopBinary(),
-        }, caseOptions);
+        }, new());
 
         // rootPre.InferenceType();
         Assert.Equal(rootPre, rootPost);
@@ -71,7 +70,6 @@ public class UnitTestFoldBinary : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestFoldNopBinaryPositiveData))]
     public void TestFoldNopBinaryPositive(BinaryOp binaryOp, int[] aShape, float bValue, int index)
     {
-        var caseOptions = GetPassOptions();
         var a = new Var();
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
@@ -79,7 +77,7 @@ public class UnitTestFoldBinary : TestFixture.UnitTestFixtrue
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
             new FoldNopBinary(),
-        }, caseOptions);
+        }, new());
 
         // rootPre.InferenceType();
         Assert.NotEqual(rootPre, rootPost);

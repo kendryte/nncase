@@ -22,16 +22,7 @@ public interface IRewriteRule
     /// </summary>
     /// <param name="result">Match result.</param>
     /// <returns>Replace expression or null if nothing changed.</returns>
-    Expr? GetReplace(IMatchResult result, RunPassOptions options);
-
-    /// <summary>
-    /// check this pattern can be modify in multi branch.
-    /// </summary>
-    /// <returns></returns>
-    bool IsMultiBranchSafe()
-    {
-        return false;
-    }
+    Expr? GetReplace(IMatchResult result, RunPassContext options);
 }
 
 /// <summary>

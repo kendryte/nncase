@@ -13,6 +13,7 @@ using Nncase.IR.F;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
+using Nncase.Tests.TestFixture;
 using Nncase.Transform;
 using Nncase.Transform.Passes;
 using Nncase.Transform.Rules.Neutral;
@@ -23,7 +24,8 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestIntegralPromotion : TestFixture.UnitTestFixtrue
+[AutoSetupTestMethod(InitSession = true)]
+public class UnitTestIntegralPromotion : TestClassBase
 {
     public static IEnumerable<object[]> TestIntegralPromotionPositiveData =>
         new[]
@@ -43,14 +45,12 @@ public class UnitTestIntegralPromotion : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestIntegralPromotionPositiveData))]
     public async Task TestIntegralPromotionPositive(DataType aType, DataType bType)
     {
-        var passOptions = GetPassOptions();
         var expr = Tensors.Cast(1, aType) + Tensors.Cast(2, bType);
         expr.InferenceType();
         var f = new Function(expr);
         var result = CompilerServices.InferenceType(f);
         Assert.False(result);
-        CompilerServices.DumpIR(f, "before", Path.Combine(passOptions.DumpDir, "TypePromotion"));
-        var post = await new ShapeInferPass("TypePromotion").RunAsync(f, passOptions);
+        var post = await new ShapeInferPass { Name = "TypePromotion" }.RunAsync(f, new());
         Assert.True(CompilerServices.InferenceType(post));
         Assert.Equal(Value.FromTensor(3L), ((Function)post).Body.Evaluate());
     }
@@ -59,14 +59,12 @@ public class UnitTestIntegralPromotion : TestFixture.UnitTestFixtrue
     [MemberData(nameof(TestIntegralPromotionNegativeData))]
     public async Task TestIntegralPromotionNegative(DataType aType, DataType bType)
     {
-        var passOptions = GetPassOptions();
         var expr = Tensors.Cast(1, aType) + Tensors.Cast(2, bType);
         expr.InferenceType();
         var f = new Function(expr);
         var result = CompilerServices.InferenceType(f);
         Assert.True(result);
-        CompilerServices.DumpIR(f, "before", Path.Combine(passOptions.DumpDir, "TypePromotion"));
-        var post = await new ShapeInferPass("TypePromotion").RunAsync(f, passOptions);
+        var post = await new ShapeInferPass { Name = "TypePromotion" }.RunAsync(f, new());
         Assert.True(CompilerServices.InferenceType(post));
         Assert.Equal(Value.FromTensor(3L), ((Function)post).Body.Evaluate());
     }

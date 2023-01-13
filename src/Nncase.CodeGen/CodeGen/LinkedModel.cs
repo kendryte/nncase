@@ -11,7 +11,7 @@ using Extension.Mathematics;
 
 namespace Nncase.CodeGen;
 
-public sealed class LinkedModel
+internal sealed class LinkedModel : ILinkedModel
 {
     private const int _minAlignmnet = 8;
 
