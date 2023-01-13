@@ -152,7 +152,6 @@ public class UnitTestCombineTranspose : TestClassBase
     [MemberData(nameof(TestCombineTransposeConcatPositiveData))]
     public void TestCombineTransposeConcatPositive(int[] inShape, int[] perm, int axis, int concatNum)
     {
-        var caseOptions = GetPassOptions();
         var inputList = new List<Var>();
         for (int i = 0; i < concatNum; i++)
         {
@@ -179,7 +178,7 @@ public class UnitTestCombineTranspose : TestClassBase
 
             // Should not open constant fold.
             // new FoldConstCall(),
-        }, caseOptions);
+        }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -191,7 +190,6 @@ public class UnitTestCombineTranspose : TestClassBase
     [MemberData(nameof(TestCombineTransposeConcatNegativeData))]
     public void TestCombineTransposeConcatNegative(int[] inShape, int[][] perm, int axis, int concatNum, bool lastInputIsTp)
     {
-        var caseOptions = GetPassOptions();
         var inputList = new List<Call>();
         foreach (var i in Enumerable.Range(0, concatNum - 1))
         {
@@ -219,7 +217,7 @@ public class UnitTestCombineTranspose : TestClassBase
 
             // Should not open constant fold.
             // new FoldConstCall(),
-        }, caseOptions);
+        }, new());
 
         Assert.Equal(rootPre, rootPost);
     }
