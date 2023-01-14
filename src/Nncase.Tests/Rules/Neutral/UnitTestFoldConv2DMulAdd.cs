@@ -77,8 +77,8 @@ public class UnitTestFoldConv2DMulAdd : TestClassBase
         Expr rootPre;
         {
             var v0 = input + input;
-            var v1 = v0 * IR.F.Random.Normal(DataTypes.Float32, 0, 1, 5, new[] { 1, shape[1], 1, 1 });
-            var v2 = v1 + IR.F.Random.Normal(DataTypes.Float32, 0, 1, 5, new[] { 1, shape[1], 1, 1 });
+            var v1 = v0 * new Var(new TensorType(DataTypes.Float32, new[] { 1, shape[1], 1, 1 }));
+            var v2 = v1 + new Var(new TensorType(DataTypes.Float32, new[] { 1, shape[1], 1, 1 }));
             var v3 = IR.F.NN.Conv2D(
                 v2,
                 IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, shape[1], kernel.Item1, kernel.Item2 }).Evaluate().AsTensor(),

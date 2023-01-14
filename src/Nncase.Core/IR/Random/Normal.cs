@@ -33,6 +33,4 @@ public sealed record Normal(DataType Type) : Op
     /// </summary>
     public static readonly ParameterInfo Shape = new(typeof(Normal), 3, "shape", IsIntegral() & HasRank(1));
 
-    /// <inheritdoc/>
-    public override bool CanFoldConstCall => false;
 }
