@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -14,144 +14,166 @@ using Xunit;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestCombineBinary : TestFixture.UnitTestFixtrue
+public class UnitTestCombineBinary
 {
+    public static TheoryData<int[], Tensor<float>, Tensor<float>, Tensor<float>> CombineClampBinaryPositiveData2 = new()
+    {
+        {
+            new[] { 1, 4, 3, 3 },
+            Tensor.From(new float[] { 0.23068452f, 0.8913302f, 0.36510944f, -2.4865444f }),
+            Tensor.From(new float[] { 0.64266944f, -0.61224914f, -0.61040306f, 0.16890381f }),
+            Tensor.From(new float[] { float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity })
+        },
+    };
+
     public static IEnumerable<object[]> CombineClampBinaryPositiveData
     {
         get
         {
-            var inputShapes = new object[]{
-              new []{1,32,24,24},
+            var inputShapes = new object[]
+            {
+              new[] { 1, 32, 24, 24 },
             };
-            var constShapes = new object[]{
-              new []{32},
-              new []{24,24,32}
+            var constTensor = new object[]
+            {
+              IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 32 }).Evaluate().AsTensor().Cast<float>(),
+              IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 24, 24, 32 }).Evaluate().AsTensor().Cast<float>(),
             };
-            var clampShapes = new object[]{
+            var clampShapes = new object[]
+            {
               Array.Empty<int>(),
-              new []{32},
-              new []{24,24,32}
+              new[] { 32 },
+              new[] { 24, 24, 32 },
             };
-            var mins = new object[]{
-              0.0f,float.NegativeInfinity
+            var mins = new object[]
+            {
+              0.0f, float.NegativeInfinity,
             };
-            var maxs = new object[]{
-              1.0f,float.PositiveInfinity
+            var maxs = new object[]
+            {
+              1.0f, float.PositiveInfinity,
             };
-            return LinqExtensions.CartesianProduct(new[] { inputShapes, constShapes, clampShapes, mins, maxs }).Select(
-              p => p.ToArray());
+            return LinqExtensions.CartesianProduct(new[] { inputShapes, constTensor, clampShapes, mins, maxs }).
+              Select(p => p.ToArray()).
+              Select(p => new object[]
+                {
+                p[0],
+                p[1],
+                Tensor.FromScalar<float>((float)p[3],  (int[])p[2]), // min
+                Tensor.FromScalar<float>((float)p[4],  (int[])p[2]), // max
+                });
         }
     }
 
-    private (Var, Expr) GetCombineClampBinaryCase(BinaryOp op, int[] inputShape, int[] constShape, int[] clampShape, float min, float max)
+    [Theory]
+    [MemberData(nameof(CombineClampBinaryPositiveData))]
+    public void TestCombineClampAddPositive(int[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
+    {
+        var (input, rootPre) = GetCombineClampBinaryCase(BinaryOp.Add, inputShape, constTensor, min, max);
+
+        var feedDict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        {
+          { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, inputShape).Evaluate() },
+        };
+
+        CompilerServices.InferenceType(rootPre);
+        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
+        {
+            new Transform.Rules.Neutral.CombineClampAdd(),
+        }, new());
+
+        Assert.NotEqual(rootPre, rootPost);
+        Assert.True(Comparator.Compare(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict)));
+    }
+
+    [Theory]
+    [MemberData(nameof(CombineClampBinaryPositiveData))]
+    [MemberData(nameof(CombineClampBinaryPositiveData2))]
+    public void TestCombineClampMulPositive(int[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
+    {
+        var (input, rootPre) = GetCombineClampBinaryCase(BinaryOp.Mul, inputShape, constTensor, min, max);
+
+        var feedDict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        {
+          { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inputShape).Evaluate() },
+        };
+
+        CompilerServices.InferenceType(rootPre);
+        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
+        {
+            new Transform.Rules.Neutral.CombineClampMul(),
+        }, new());
+
+        Assert.NotEqual(rootPre, rootPost);
+        Assert.True(Comparator.Compare(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict)));
+    }
+
+    [Theory]
+    [MemberData(nameof(CombineClampBinaryPositiveData))]
+    public void TestCombineClampAddNegative(int[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
+    {
+        var (input, constInput, rootPre) = GetCombineClampBinaryNegativeCase(BinaryOp.Add, inputShape, constTensor, min, max);
+        _ = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        {
+          { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, inputShape).Evaluate() },
+          { constInput, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, constTensor.Shape).Evaluate() },
+        };
+
+        CompilerServices.InferenceType(rootPre);
+        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
+        {
+            new Transform.Rules.Neutral.CombineClampAdd(),
+        }, new());
+
+        Assert.Equal(rootPre, rootPost);
+    }
+
+    [Theory]
+    [MemberData(nameof(CombineClampBinaryPositiveData))]
+    public void TestCombineClampMulNegative(int[] inputShape, Tensor<float> constTensor, float min, float max)
+    {
+        var (input, constInput, rootPre) = GetCombineClampBinaryNegativeCase(BinaryOp.Mul, inputShape, constTensor, min, max);
+        _ = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        {
+          { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inputShape).Evaluate() },
+          { constInput, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, constTensor.Shape).Evaluate() },
+        };
+
+        CompilerServices.InferenceType(rootPre);
+        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
+        {
+            new Transform.Rules.Neutral.CombineClampMul(),
+        }, new());
+
+        Assert.Equal(rootPre, rootPost);
+    }
+
+    private (Var, Expr) GetCombineClampBinaryCase(BinaryOp op, int[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
     {
         Expr rootPre;
         var input = new Var("input", new TensorType(DataTypes.Float32, inputShape));
         {
             var v0 = IR.F.Tensors.NCHWToNHWC(input);
-            var v1 = IR.F.Math.Binary(op, v0, Const.FromValue(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, constShape).Evaluate()));
-            var v2 = IR.F.Math.Clamp(v1, Tensor.FromScalar<float>(min, clampShape), Tensor.FromScalar<float>(max, clampShape));
+            var v1 = IR.F.Math.Binary(op, v0, constTensor);
+            var v2 = IR.F.Math.Clamp(v1, min, max);
             rootPre = v2;
         }
+
         return (input, rootPre);
     }
 
-    private (Var, Var, Expr) GetCombineClampBinaryNegativeCase(BinaryOp op, int[] inputShape, int[] constShape, int[] clampShape, float min, float max)
+    private (Var, Var, Expr) GetCombineClampBinaryNegativeCase(BinaryOp op, int[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
     {
         Expr rootPre;
         var input = new Var("input", new TensorType(DataTypes.Float32, inputShape));
-        var constInput = new Var("constInput", new TensorType(DataTypes.Float32, constShape));
+        var constInput = new Var("constInput", new TensorType(DataTypes.Float32, constTensor.Shape));
         {
             var v0 = IR.F.Tensors.NCHWToNHWC(input);
             var v1 = IR.F.Math.Binary(op, v0, constInput);
-            var v2 = IR.F.Math.Clamp(v1, Tensor.FromScalar<float>(min, clampShape), Tensor.FromScalar<float>(max, clampShape));
+            var v2 = IR.F.Math.Clamp(v1, min, max);
             rootPre = v2;
         }
+
         return (input, constInput, rootPre);
     }
-
-    [Theory]
-    [MemberData(nameof(CombineClampBinaryPositiveData))]
-    public void TestCombineClampAddPositive(int[] inputShape, int[] constShape, int[] clampShape, float min, float max)
-    {
-        var caseOptions = GetPassOptions();
-        var (input, rootPre) = GetCombineClampBinaryCase(BinaryOp.Add, inputShape, constShape, clampShape, min, max);
-
-        var feedDict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance){
-          {input,IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, inputShape).Evaluate()}
-        };
-
-        CompilerServices.InferenceType(rootPre);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new Transform.Rules.Neutral.CombineClampAdd(),
-        }, caseOptions);
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.True(TestFixture.Comparator.Compare(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict)));
-    }
-
-    [Theory]
-    [MemberData(nameof(CombineClampBinaryPositiveData))]
-    public void TestCombineClampMulPositive(int[] inputShape, int[] constShape, int[] clampShape, float min, float max)
-    {
-        var caseOptions = GetPassOptions();
-        var (input, rootPre) = GetCombineClampBinaryCase(BinaryOp.Mul, inputShape, constShape, clampShape, min, max);
-
-        var feedDict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance){
-          {input,IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inputShape).Evaluate()}
-        };
-
-        CompilerServices.InferenceType(rootPre);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new Transform.Rules.Neutral.CombineClampMul(),
-        }, caseOptions);
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.True(TestFixture.Comparator.Compare(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict)));
-    }
-
-    [Theory]
-    [MemberData(nameof(CombineClampBinaryPositiveData))]
-    public void TestCombineClampAddNegative(int[] inputShape, int[] constShape, int[] clampShape, float min, float max)
-    {
-        var caseOptions = GetPassOptions();
-        var (input, constInput, rootPre) = GetCombineClampBinaryNegativeCase(BinaryOp.Add, inputShape, constShape, clampShape, min, max);
-
-        var feedDict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance){
-          {input,IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, inputShape).Evaluate()},
-          {constInput,IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, constShape).Evaluate()}
-        };
-
-        CompilerServices.InferenceType(rootPre);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new Transform.Rules.Neutral.CombineClampAdd(),
-        }, caseOptions);
-
-        Assert.Equal(rootPre, rootPost);
-    }
-
-    [Theory]
-    [MemberData(nameof(CombineClampBinaryPositiveData))]
-    public void TestCombineClampMulNegative(int[] inputShape, int[] constShape, int[] clampShape, float min, float max)
-    {
-        var caseOptions = GetPassOptions();
-        var (input, constInput, rootPre) = GetCombineClampBinaryNegativeCase(BinaryOp.Mul, inputShape, constShape, clampShape, min, max);
-
-        var feedDict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance){
-          {input,IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inputShape).Evaluate()},
-          {constInput,IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, constShape).Evaluate()}
-        };
-
-        CompilerServices.InferenceType(rootPre);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new Transform.Rules.Neutral.CombineClampMul(),
-        }, caseOptions);
-
-        Assert.Equal(rootPre, rootPost);
-    }
-
 }

@@ -32,8 +32,9 @@ public interface IDumpper
     /// Create sub dummper.
     /// </summary>
     /// <param name="subDirectory">Sub directory.</param>
+    /// <param name="dumpFlags">Sub dumpFlags.</param>
     /// <returns>Sub dummper.</returns>
-    IDumpper CreateSubDummper(string subDirectory);
+    IDumpper CreateSubDummper(string subDirectory, DumpFlags? dumpFlags);
 
     void DumpIR(Expr expr, string prefix, string? reletivePath = null);
 

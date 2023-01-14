@@ -60,12 +60,19 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEv
     private IRType Visit(TensorType input, TensorType min, TensorType max)
     {
         if (TypeInference.BroadcastType(input, min) is InvalidType invalidMin)
+        {
             return invalidMin;
+        }
+
         if (TypeInference.BroadcastType(input, max) is InvalidType invalidMax)
+        {
             return invalidMax;
+        }
 
         if (min.Shape != max.Shape)
+        {
             return new InvalidType($"The min.Shape {min.Shape} != max.Shape {max.Shape}");
+        }
 
         return input;
     }

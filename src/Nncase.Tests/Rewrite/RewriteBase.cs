@@ -40,6 +40,13 @@ public interface IRewriteCase
     /// Gets the eval inputs dict.
     /// </summary>
     Dictionary<Var, IValue> FeedDict { get; }
+
+    /// <summary>
+    /// check rewrite post callback.
+    /// </summary>
+    /// <param name="post"></param>
+    /// <returns></returns>
+    bool CheckPostCallBack(Function post) => true;
 }
 
 public static class DummyOp
@@ -66,22 +73,6 @@ public class RewriteFixtrue : TestClassBase
         CompilerServices.Rewrite(expr, new[] { new Transform.Rules.Neutral.FoldConstCall() }, new());
 }
 
-// public sealed class TransposeConstBinaryCase : IRewriteCase
-// {
-//     public Function PreExpr
-//     {
-//         get
-//         {
-//             var c = IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 2, 3, 4 }).Evaluate().AsTensor();
-//             var input = IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 3, 1, 2 }).Evaluate().AsTensor();
-//             var b = NHWCToNCHW(input) + c;
-//             return new Function(b, new Var[] { });
-//         }
-//     }
-
-// public IEnumerable<IRewriteRule> Rules => new IRewriteRule[]{
-//     };
-// }
 public sealed class FoldReshapeCase : IRewriteCase
 {
     public Function PreExpr
@@ -260,7 +251,7 @@ public class FoldNopTransposeCase3 : FoldNopTransposeCase2
     {
         new Transform.Rules.Neutral.FoldTwoTransposes(),
         new Transform.Rules.Neutral.FoldNopTranspose(),
-        new Transform.Rules.Neutral.CombineTransposeBinary(),
+        new Transform.Rules.Neutral.CombineBinaryTranspose(),
     };
 }
 
@@ -834,71 +825,127 @@ public sealed class MergeBinaryBeforeConv2DCase : IRewriteCase
     };
 }
 
-public sealed class CombineClampBinaryCase : IRewriteCase
+public sealed class CombineClampAddMul : IRewriteCase
 {
+    private const int _channels = 4; // 256
+    private const int _featrueMap = 3; // 56
     private readonly Var _input_lhs;
     private readonly Var _input_rhs;
 
-    public CombineClampBinaryCase()
+    public CombineClampAddMul()
     {
-        _input_lhs = new Var("_input_lhs", new TensorType(DataTypes.Float32, new[] { 1, 56, 56, 256 }));
-        _input_rhs = new Var("_input_rhs", new TensorType(DataTypes.Float32, new[] { 1, 56, 56, 256 }));
+        _input_lhs = new Var("_input_lhs", new TensorType(DataTypes.Float32, new[] { 1, _featrueMap, _featrueMap, _channels }));
+        _input_rhs = new Var("_input_rhs", new TensorType(DataTypes.Float32, new[] { 1, _featrueMap, _featrueMap, _channels }));
     }
 
     public Function PreExpr
     {
         get
         {
-            var v_0 = _input_lhs + _input_rhs; // [1,56,56,256]
-            var v_1 = v_0 * Normal(DataTypes.Float32, 0, 1, 1, new[] { 256 }).Evaluate().AsTensor();
-            var v_2 = v_1 + Normal(DataTypes.Float32, 0, 1, 1, new[] { 256 }).Evaluate().AsTensor();
+            var v_0 = _input_lhs + _input_rhs; // [1,_featrueMap,_featrueMap,_channels]
+            var v_1 = v_0 * Normal(DataTypes.Float32, 0, 1, 1, new[] { _channels }).Evaluate().AsTensor();
+            var v_2 = v_1 + Normal(DataTypes.Float32, 0, 1, 2, new[] { _channels }).Evaluate().AsTensor();
+            var v_3 = Relu(v_2);
+            return new Function(v_3, new Var[] { _input_lhs, _input_rhs });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = new Type[]
+    {
+      typeof(Transform.Rules.Neutral.ReluToClamp),
+      typeof(Transform.Rules.Neutral.CombineClampAdd),
+      typeof(Transform.Rules.Neutral.CombineClampMul),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new()
+    {
+        { _input_lhs, Normal(DataTypes.Float32, 0, 1, 5, _input_lhs.CheckedShape.ToValueArray()).Evaluate() },
+        { _input_rhs, Normal(DataTypes.Float32, 0, 1, 6, _input_rhs.CheckedShape.ToValueArray()).Evaluate() },
+    };
+
+    public bool CheckPostCallBack(Function post)
+    {
+        return true;
+    }
+}
+
+public sealed class FoldConv2DBnCase : IRewriteCase
+{
+    private const int _channels = 16; // 256
+    private const int _featrueMap = 8; // 56
+    private readonly Var _input_lhs;
+    private readonly Var _input_rhs;
+
+    public FoldConv2DBnCase()
+    {
+        _input_lhs = new Var("_input_lhs", new TensorType(DataTypes.Float32, new[] { 1, _featrueMap, _featrueMap, _channels }));
+        _input_rhs = new Var("_input_rhs", new TensorType(DataTypes.Float32, new[] { 1, _featrueMap, _featrueMap, _channels }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var v_0 = _input_lhs + _input_rhs; // [1,_featrueMap,_featrueMap,_channels]
+            var v_1 = v_0 * Normal(DataTypes.Float32, 0, 1, 1, new[] { _channels }).Evaluate().AsTensor();
+            var v_2 = v_1 + Normal(DataTypes.Float32, 0, 1, 2, new[] { _channels }).Evaluate().AsTensor();
             var v_3 = Relu(v_2);
             var v_4 = NHWCToNCHW(v_3);
-            var v_5 = Conv2D(v_4, Normal(DataTypes.Float32, 0, 1, 1, new[] { 256, 256, 1, 1 }).Evaluate().AsTensor(),
-                  Normal(DataTypes.Float32, 0, 1, 1, new[] { 256 }).Evaluate().AsTensor(), new[] { 1, 1 },
+            var v_5 = Conv2D(v_4, Normal(DataTypes.Float32, 0, 1, 3, new[] { _channels, _channels, 1, 1 }).Evaluate().AsTensor(),
+                  Normal(DataTypes.Float32, 0, 1, 1, new[] { _channels }).Evaluate().AsTensor(), new[] { 1, 1 },
                   new[,]
                   {
                     { 0, 0 },
                     { 0, 0 },
                   }, new[] { 1, 1 }, PadMode.Constant, 1,
-                  new[] { 0.0f, 6.0f }); // f32[1,256,56,56]
-            var v_6 = NCHWToNHWC(v_5); // f32[1,56,56,256]
+                  new[] { 0.0f, 6.0f }); // f32[1,_channels,_featrueMap,_featrueMap]
+            var v_6 = NCHWToNHWC(v_5); // f32[1,_featrueMap,_featrueMap,_channels]
             var v_7 = Pad(v_6, new[,]
             {
                 { 0, 0 },
                 { 1, 1 },
                 { 1, 1 },
                 { 0, 0 },
-            }, PadMode.Constant, 0.0f); // f32[1,58,58,256]
+            }, PadMode.Constant, 0.0f); // f32[1,58,58,_channels]
             var v_8 = NHWCToNCHW(v_7);
-            var v_9 = Conv2D(v_8, Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, 256, 3, 3 }).Evaluate().AsTensor(),
-                  Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor(), new[] { 1, 1 },
+            var v_9 = Conv2D(v_8, Normal(DataTypes.Float32, 0, 1, 4, new[] { 64, _channels, 3, 3 }).Evaluate().AsTensor(),
+                  Normal(DataTypes.Float32, 0, 1, 5, new[] { 64 }).Evaluate().AsTensor(), new[] { 1, 1 },
                   new[,]
                   {
                     { 0, 0 },
                     { 0, 0 },
                   }, new[] { 1, 1 }, PadMode.Constant, 1,
-                  new[] { 0.0f, 6.0f }); // f32[1,64,56,56]
-            var v_10 = NCHWToNHWC(v_9); // f32[1,56,56,64]
+                  new[] { 0.0f, 6.0f }); // f32[1,64,_featrueMap,_featrueMap]
+            var v_10 = NCHWToNHWC(v_9); // f32[1,_featrueMap,_featrueMap,64]
             var v_11 = NHWCToNCHW(v_10);
-            var v_12 = Conv2D(v_11, Normal(DataTypes.Float32, 0, 1, 1, new[] { 256, 64, 1, 1 }).Evaluate().AsTensor(),
-                  Normal(DataTypes.Float32, 0, 1, 1, new[] { 256 }).Evaluate().AsTensor(), new[] { 1, 1 },
+            var v_12 = Conv2D(v_11, Normal(DataTypes.Float32, 0, 1, 6, new[] { _channels, 64, 1, 1 }).Evaluate().AsTensor(),
+                  Normal(DataTypes.Float32, 0, 1, 7, new[] { _channels }).Evaluate().AsTensor(), new[] { 1, 1 },
                   new[,]
                   {
                     { 0, 0 },
                     { 0, 0 },
                   }, new[] { 1, 1 }, PadMode.Constant, 1,
-                  new[] { 0.0f, 6.0f }); // f32[1,256,56,56]
-            var v_13 = NCHWToNHWC(v_12); // f32[1,56,56,256]
+                  new[] { 0.0f, 6.0f }); // f32[1,_channels,_featrueMap,_featrueMap]
+            var v_13 = NCHWToNHWC(v_12); // f32[1,_featrueMap,_featrueMap,_channels]
             var v_16 = v_0 + v_13;
 
             return new Function(v_16, new Var[] { _input_lhs, _input_rhs });
         }
     }
 
-    public IEnumerable<IRewriteRule> Rules { get; } = new IRewriteRule[]
+    public IEnumerable<Type> Rules { get; } = new Type[]
     {
-        // new Transform.Analyser
+      typeof(Transform.Rules.Neutral.ReluToClamp),
+      typeof(Transform.Rules.Neutral.CombineClampAdd),
+      typeof(Transform.Rules.Neutral.CombineClampMul),
+      typeof(Transform.Rules.Neutral.FoldTwoTransposes),
+      typeof(Transform.Rules.Neutral.FoldNopTranspose),
+      typeof(Transform.Rules.Neutral.CombineBinaryTranspose),
+      typeof(Transform.Rules.Neutral.CombineTransposeActivations),
+      typeof(Transform.Rules.Neutral.CombineConstBinaryTranspose),
+      typeof(Transform.Rules.Neutral.CombineTransposeConstBinary),
+      typeof(Transform.Rules.Neutral.FoldConv2DMulAdd),
+      typeof(Transform.Rules.Neutral.FoldConstCall),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
@@ -906,4 +953,9 @@ public sealed class CombineClampBinaryCase : IRewriteCase
         { _input_lhs, Normal(DataTypes.Float32, 0, 1, 1, _input_lhs.CheckedShape.ToValueArray()).Evaluate() },
         { _input_rhs, Normal(DataTypes.Float32, 0, 1, 1, _input_rhs.CheckedShape.ToValueArray()).Evaluate() },
     };
+
+    public bool CheckPostCallBack(Function post)
+    {
+        return true;
+    }
 }

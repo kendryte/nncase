@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.Tests.TestFixture;
 using Nncase.Transform;
@@ -18,7 +19,7 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
 {
     public static TheoryData<IRewriteCase> DataOne => new()
     {
-        new RemoveMarkerCaseEgraph(),
+        new FoldConv2DBnCase(),
     };
 
     public static TheoryData<IRewriteCase> DataAll => new()
@@ -44,6 +45,7 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
         new FoldNopTransposeCase1(),
         new FoldTransposeCase(),
         new PadTransposeCaseEgraph(),
+        new RemoveMarkerCaseEgraph(),
     };
 
     [Theory]
@@ -67,20 +69,29 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
 
     private async Task RunCoreAsync(IRewriteCase @case)
     {
+        using var dumpScope = new DumpScope($"../{@case.Name}", DumpFlags.EGraphCost);
         var pre = @case.PreExpr;
         var infered = pre.InferenceType();
         Assert.True(infered);
+
         var pass = new EGraphPass { Name = "EGraphOptimize" };
         foreach (var rule in @case.Rules)
         {
             pass.Add(rule);
         }
 
-        var post = (Function)await pass.RunAsync(pre, new());
+        Function post;
+        post = (Function)await pass.RunAsync(pre, new());
         Assert.True(post.InferenceType());
-        _ = CountRunTicks(pre, @case.FeedDict, out var pre_ret);
-        _ = CountRunTicks(post, @case.FeedDict, out var post_ret);
-        Assert.True(Comparator.AllEqual(pre_ret, post_ret));
+
+        DumpScope.Current.DumpIR(post, "post");
+        Assert.True(@case.CheckPostCallBack(post));
+
+        IValue pre_ret, post_ret;
+        var feedDict = @case.FeedDict;
+        _ = CountRunTicks(pre, feedDict, out pre_ret);
+        _ = CountRunTicks(post, feedDict, out post_ret);
+        Assert.True(Comparator.Compare(pre_ret, post_ret));
 
         // note the parallel test will cause the time count error.
         // Assert.True(pre_time >= post_time);

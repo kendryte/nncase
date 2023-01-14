@@ -28,7 +28,7 @@ public abstract class BaseImporter
     public BaseImporter(CompileSession compileSession)
     {
         CompileSession = compileSession;
-        Dumpper = DumpScope.GetCurrent(compileSession).CreateSubDummper("Import");
+        Dumpper = DumpScope.GetCurrent(compileSession).CreateSubDummper("Import", null);
     }
 
     /// <summary>

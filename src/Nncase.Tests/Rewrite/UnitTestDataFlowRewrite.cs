@@ -23,75 +23,8 @@ using Tuple = Nncase.IR.Tuple;
 namespace Nncase.Tests.ReWriteTest;
 
 [AutoSetupTestMethod(InitSession = true)]
-public class UnitTestDataFlowRewriteFactory : TestClassBase
-{
-    public static TheoryData<IRewriteCase> DataOne => new()
-    {
-    };
-
-    public static TheoryData<IRewriteCase> DataAll => new()
-    {
-        new MergeBinaryBeforeConv2DCase(),
-        new ActivationsTransposePRelu(),
-        new ActivationsTransposePRelu2(),
-        new ActivationsTransposePRelu3(),
-        new ActivationsTranspose(),
-        new ActivationsTranspose2(),
-        new PadTransposeCase(),
-        new TransposeLeakyRelu(),
-        new Conv2DPadsCase(),
-        new ReduceWindow2DPadsCase(),
-        new MobileNetV1TransposeCase(),
-    };
-
-    [Theory]
-    [MemberData(nameof(DataOne))]
-    public Task RunOneAsync(IRewriteCase @case) => RunCoreAsync(@case);
-
-    [Theory]
-    [MemberData(nameof(DataAll))]
-    public Task RunAllAsync(IRewriteCase @case) => RunCoreAsync(@case);
-
-    private async Task RunCoreAsync(IRewriteCase @case)
-    {
-        var pre = @case.PreExpr;
-        var pass = new DataflowPass { Name = "DataFlowOptimize" };
-        foreach (var rule in @case.Rules)
-        {
-            pass.Add(rule);
-        }
-
-        var post = (Function)await pass.RunAsync(pre, new());
-        Assert.NotEqual(pre, post);
-        var feed_dict = @case.FeedDict;
-        Assert.True(Comparator.Compare(pre.Body.Evaluate(feed_dict), post.Body.Evaluate(feed_dict)));
-    }
-}
-
-[AutoSetupTestMethod(InitSession = true)]
 public class UnitTestDataFlowRewrite : RewriteFixtrue
 {
-    // [Fact]
-    // public void TestSwapXY()
-    // {
-    //     var lhs = (Var)"x";
-    //     var rhs = (Const)1;
-    //     var pre = (lhs + rhs) * 10;
-
-    // var post = CompilerServices.Rewrite(pre, new[] { new SwapXY() }, RunPassContext.Invalid);
-    //     Assert.Equal(post, (rhs + lhs) * 10);
-    // }
-
-    // [Fact]
-    // public void TestRemoveShapeOp()
-    // {
-    //     var lhs = new Var("x", new TensorType(DataTypes.Float32, new[] { 1, 1, 3 }));
-    //     var rhs = torch.rand(1, 6, 3, torch.ScalarType.Float32).ToTensor();
-    //     var pre = ShapeOf(lhs + rhs);
-    //     Assert.True(CompilerServices.InferenceType(pre));
-    //     var post = CompilerServices.Rewrite(pre, new[] { new Transform.Pass.FoldShapeOp() }, RunPassContext.Invalid);
-    //     Assert.Equal(new[] { 1, 6, 3 }, ((TensorConst)post).Value.Cast<int>().ToArray());
-    // }
     [Fact]
     public void TestFoldConstCall()
     {

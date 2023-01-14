@@ -24,7 +24,7 @@ public sealed record Clamp() : Op
     public static readonly ParameterInfo Input = new(typeof(Clamp), 0, "input");
 
     /// <summary>
-    /// Gets min. 
+    /// Gets min.
     /// </summary>
     public static readonly ParameterInfo Min = new(typeof(Clamp), 1, "min");
 

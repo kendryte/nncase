@@ -23,9 +23,9 @@ internal sealed class Dumpper : IDumpper
 
     public string Directory => _dumpDirectory;
 
-    public IDumpper CreateSubDummper(string subDirectory)
+    public IDumpper CreateSubDummper(string subDirectory, DumpFlags? dumpFlags)
     {
-        return new Dumpper(_dumpFlags, Path.Join(_dumpDirectory, subDirectory));
+        return new Dumpper(dumpFlags ?? _dumpFlags, Path.Join(_dumpDirectory, subDirectory));
     }
 
     public void DumpIR(Expr expr, string prefix, string? reletivePath = null)

@@ -208,7 +208,11 @@ public partial class EGraphPrinter
     /// <returns>this dot graph.</returns>
     public DotGraph SaveToStream(Stream output)
     {
-        DotGraph.Build(new StreamWriter(output, leaveOpen: true));
+        using (var writer = new StreamWriter(output))
+        {
+            DotGraph.Build(writer);
+        }
+
         return DotGraph;
     }
 

@@ -26,7 +26,18 @@ namespace Nncase.Tests.Rules.NeutralTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestCombineTranspose : TestClassBase
 {
-    public static IEnumerable<object[]> TestCombineTransposeBinaryPositiveData =>
+    public static TheoryData<BinaryOp, int[], int[], int[], bool> CombineTransposeConstBinaryPositiveData = new()
+    {
+        // BinaryOp binaryOp, int[] lShape, int[] rShape, int[] perm, bool leftConst
+        { BinaryOp.Add, new[] { 1, 32, 32, 64, }, new[] { 64 }, new[] { 0, 3, 1, 2 }, false },
+        { BinaryOp.Sub, new[] { 1, 32, 32, 64, }, new[] { 32, 64 }, new[] { 0, 3, 1, 2 }, false },
+        { BinaryOp.Mul, new[] { 1, 32, 32, 64, }, new[] { 1, 1, 1, 64 }, new[] { 0, 3, 1, 2 }, false },
+        { BinaryOp.Div, new[] { 64 }, new[] { 1, 32, 32, 64, }, new[] { 0, 3, 1, 2 }, true },
+        { BinaryOp.Sub, new[] { 32, 64 }, new[] { 1, 32, 32, 64, }, new[] { 0, 3, 1, 2 }, true },
+        { BinaryOp.Mul, new[] { 1, 1, 1, 64 }, new[] { 1, 32, 32, 64, }, new[] { 0, 3, 1, 2 }, true },
+    };
+
+    public static IEnumerable<object[]> CombineBinaryTransposePositiveData =>
         new[]
         {
             new object[] { new[] { 5, 4 }, new[] { 5, 4 }, new[] { 1, 0 } },
@@ -36,21 +47,21 @@ public class UnitTestCombineTranspose : TestClassBase
             new object[] { new[] { 1, 3, 2, 4 }, new[] { 1, 3, 2, 4 }, new[] { 0, 2, 3, 1 } },
         };
 
-    public static IEnumerable<object[]> TestCombineTransposeConstBinaryNotMatchData =>
+    public static IEnumerable<object[]> CombineConstBinaryTransposeNotMatchData =>
         new[]
         {
             new object[] { new[] { 1, 3, 2, 4 }, new[] { 2, 3 }, new[] { 0, 3, 2, 1 } },
             new object[] { new[] { 1, 3, 2, 4 }, new[] { 2, 4, 3 }, new[] { 0, 2, 3, 1 } },
         };
 
-    public static IEnumerable<object[]> TestCombineTransposeRConstBinaryPositiveData =>
+    public static IEnumerable<object[]> CombineRConstBinaryTransposePositiveData =>
         new[]
         {
             new object[] { new[] { 1, 3, 2, 4 }, new[] { 3 }, new[] { 0, 3, 2, 1 } },
             new object[] { new[] { 1, 3, 2, 4 }, new[] { 3 }, new[] { 0, 2, 3, 1 } },
         };
 
-    public static IEnumerable<object[]> TestCombineTransposeLConstBinaryPositiveData =>
+    public static IEnumerable<object[]> CombineLConstBinaryTransposePositiveData =>
         new[]
         {
             new object[] { new[] { 3 }, new[] { 1, 3, 2, 4 }, new[] { 0, 3, 2, 1 } },
@@ -223,8 +234,39 @@ public class UnitTestCombineTranspose : TestClassBase
     }
 
     [Theory]
-    [MemberData(nameof(TestCombineTransposeBinaryPositiveData))]
-    public void TestCombineTransposeBinaryPositive(int[] lShape, int[] rShape, int[] perm)
+    [MemberData(nameof(CombineTransposeConstBinaryPositiveData))]
+    public void TestCombineTransposeConstBinaryPositive(BinaryOp binaryOp, int[] lShape, int[] rShape, int[] perm, bool leftConst)
+    {
+        Expr lhs = leftConst ?
+          Const.FromValue(Random.Normal(DataTypes.Float32, 0, 1, 3, lShape).Evaluate()) :
+          new Var("lhs", new TensorType(DataTypes.Float32, lShape));
+        Expr rhs = leftConst ? new Var("b", new TensorType(DataTypes.Float32, rShape)) :
+          Const.FromValue(Random.Normal(DataTypes.Float32, 0, 1, 4, rShape).Evaluate());
+
+        var feedDict = new Dictionary<Var, IValue>();
+        if (leftConst)
+        {
+            feedDict.Add((Var)rhs, Random.Normal(DataTypes.Float32, 0, 1, 1, rShape).Evaluate());
+        }
+        else
+        {
+            feedDict.Add((Var)lhs, Random.Normal(DataTypes.Float32, 0, 1, 2, lShape).Evaluate());
+        }
+
+        var rootPre = Tensors.Transpose(Math.Binary(BinaryOp.Add, lhs, rhs), perm);
+        CompilerServices.InferenceType(rootPre);
+        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
+        {
+            new CombineTransposeConstBinary(),
+        }, new());
+
+        Assert.NotEqual(rootPre, rootPost);
+        Assert.True(Comparator.AllEqual(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict)));
+    }
+
+    [Theory]
+    [MemberData(nameof(CombineBinaryTransposePositiveData))]
+    public void TestCombineBinaryTransposePositive(int[] lShape, int[] rShape, int[] perm)
     {
         var a = new Var("a", new TensorType(DataTypes.Float32, lShape));
         var b = new Var("b", new TensorType(DataTypes.Float32, rShape));
@@ -239,7 +281,7 @@ public class UnitTestCombineTranspose : TestClassBase
         CompilerServices.InferenceType(rootPre);
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
-            new CombineTransposeBinary(),
+            new CombineBinaryTranspose(),
         }, new());
 
         Assert.NotEqual(rootPre, rootPost);
@@ -247,8 +289,8 @@ public class UnitTestCombineTranspose : TestClassBase
     }
 
     [Theory]
-    [MemberData(nameof(TestCombineTransposeConstBinaryNotMatchData))]
-    public void TestCombineTransposeConstNotMatch(int[] lShape, int[] rShape, int[] perm)
+    [MemberData(nameof(CombineConstBinaryTransposeNotMatchData))]
+    public void TestCombineConstTransposeNotMatch(int[] lShape, int[] rShape, int[] perm)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, lShape);
         var b = Tensor.From<float>(Random.Normal(DataTypes.Float32, 0, 1, 0, rShape).Evaluate().AsTensor().ToArray<float>(), rShape);
@@ -256,13 +298,13 @@ public class UnitTestCombineTranspose : TestClassBase
         Expr permExpr = perm;
         var rootPre = Math.Binary(BinaryOp.Add, Tensors.Transpose(a, permExpr), b);
         CompilerServices.InferenceType(rootPre);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new CombineTransposeConstBinary() }, new());
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new CombineConstBinaryTranspose() }, new());
 
         Assert.Equal(rootPre, rootPost);
     }
 
     [Theory]
-    [MemberData(nameof(TestCombineTransposeRConstBinaryPositiveData))]
+    [MemberData(nameof(CombineRConstBinaryTransposePositiveData))]
     public void TestCombineTransposeRConstBinaryPositive(int[] lShape, int[] rShape, int[] perm)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, lShape);
@@ -273,7 +315,7 @@ public class UnitTestCombineTranspose : TestClassBase
         CompilerServices.InferenceType(rootPre);
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
-            new CombineTransposeConstBinary(),
+            new CombineConstBinaryTranspose(),
         }, new());
 
         Assert.NotEqual(rootPre, rootPost);
@@ -281,8 +323,8 @@ public class UnitTestCombineTranspose : TestClassBase
     }
 
     [Theory]
-    [MemberData(nameof(TestCombineTransposeLConstBinaryPositiveData))]
-    public void TestCombineTransposeLConstBinaryPositive(int[] lShape, int[] rShape, int[] perm)
+    [MemberData(nameof(CombineLConstBinaryTransposePositiveData))]
+    public void TestCombineLConstBinaryTransposePositive(int[] lShape, int[] rShape, int[] perm)
     {
         var a = Tensor.From<float>(Random.Normal(DataTypes.Float32, 0, 1, 0, lShape).Evaluate().AsTensor().ToArray<float>(), lShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, rShape);
@@ -292,7 +334,7 @@ public class UnitTestCombineTranspose : TestClassBase
         CompilerServices.InferenceType(rootPre);
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
         {
-            new CombineTransposeConstBinary(),
+            new CombineConstBinaryTranspose(),
         }, new());
 
         Assert.NotEqual(rootPre, rootPost);

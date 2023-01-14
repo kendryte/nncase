@@ -343,7 +343,7 @@ namespace IsaGen
                 return CppFieldType(f.PropertyType) + "::" + v.ToString();
             }
 
-            return v.ToString();
+            return v.ToString()!;
         }
 
         private uint FieldLength(Type t)

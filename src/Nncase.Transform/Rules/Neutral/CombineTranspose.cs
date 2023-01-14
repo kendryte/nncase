@@ -28,12 +28,12 @@ namespace Nncase.Transform.Rules.Neutral;
 /// binary(transpose(a,p),transpose(b,p)) => transpose(binary(a,b),p).
 /// </summary>
 [RuleGenerator]
-public sealed partial class CombineTransposeBinary : IRewriteRule
+public sealed partial class CombineBinaryTranspose : IRewriteRule
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="CombineTransposeBinary"/> class.
+    /// Initializes a new instance of the <see cref="CombineBinaryTranspose"/> class.
     /// </summary>
-    public CombineTransposeBinary()
+    public CombineBinaryTranspose()
     {
         var perm = IsWildcard("perm");
         Pattern = IsBinary("binary", x => true, IsTranspose(IsWildcard("x"), perm), IsTranspose(IsWildcard("y"), perm));
@@ -53,12 +53,12 @@ public sealed partial class CombineTransposeBinary : IRewriteRule
 /// binary(transpose(a,p),const(b)) => transpose(binary(a,const(b)),p) or binary(const(a),transpose(b,p)) => transpose(binary(const(a),b),p).
 /// </summary>
 [RuleGenerator]
-public sealed partial class CombineTransposeConstBinary : IRewriteRule
+public sealed partial class CombineConstBinaryTranspose : IRewriteRule
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="CombineTransposeConstBinary"/> class.
+    /// Initializes a new instance of the <see cref="CombineConstBinaryTranspose"/> class.
     /// </summary>
-    public CombineTransposeConstBinary()
+    public CombineConstBinaryTranspose()
     {
         var perm = IsWildcard("perm");
         Pattern = IsAlt(IsBinary("binary", _ => true, IsTranspose(IsWildcard("x"), perm), IsConst("y") with { TypePattern = HasRank(1) }), IsBinary("binary", _ => true, IsConst("x") with { TypePattern = HasRank(1) }, IsTranspose(IsWildcard("y"), perm)));
@@ -101,6 +101,50 @@ public sealed partial class CombineTransposeConstBinary : IRewriteRule
             var newConst = Tensor.From<float>(((TensorConst)y).Value.ToArray<float>(), new Nncase.IR.Shape(newShape));
 
             return Transpose(Binary(binary.BinaryOp, x, newConst), perm);
+        }
+
+        return null;
+    }
+}
+
+/// <summary>
+/// transpose(binary(x,const),p) => binary(transpose(x,p),new_const).
+/// </summary>
+[RuleGenerator]
+public sealed partial class CombineTransposeConstBinary : RewriteRule<CallPattern>
+{
+    public override CallPattern Pattern { get; } =
+      IsTranspose(
+        IsAlt(
+          IsBinary("binary", _ => true, IsWildcard("x", x => x is not Const), IsTensorConst("y")),
+          IsBinary("binary", _ => true, IsTensorConst("y"), IsWildcard("x", x => x is not Const))),
+        IsTensorConst("perm"));
+
+    private Const GetNewConst(TensorConst oldConst, Expr input, TensorConst perm)
+    {
+        int[] newConstShape;
+        if (oldConst.Value.Shape.Rank < input.CheckedShape.Rank)
+        {
+            newConstShape = Enumerable.Repeat(1, input.CheckedShape.Rank - oldConst.Value.Shape.Rank).Concat(oldConst.Value.Shape.ToValueArray()).ToArray();
+        }
+        else
+        {
+            newConstShape = oldConst.Value.Shape.ToValueArray();
+        }
+
+        var newConst = Const.FromValue(Transpose(Tensor.FromBytes(oldConst.Value.ElementType, oldConst.Value.BytesBuffer.ToArray(), newConstShape), perm).Evaluate());
+        return newConst;
+    }
+
+    private Expr? GetReplace(Binary binary, Expr x, Expr y, TensorConst perm)
+    {
+        if (x is TensorConst constX)
+        {
+            return Binary(binary.BinaryOp, GetNewConst(constX, y, perm), Transpose(y, perm));
+        }
+        else if (y is TensorConst constY)
+        {
+            return Binary(binary.BinaryOp, Transpose(x, perm), GetNewConst(constY, x, perm));
         }
 
         return null;
