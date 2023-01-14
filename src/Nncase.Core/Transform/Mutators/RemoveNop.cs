@@ -10,7 +10,7 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// remove the nop call from the body.
 /// </summary>
-internal sealed class RemoveNop : ExprMutator
+public sealed class RemoveNop : ExprMutator
 {
     public override Expr MutateLeaf(TIR.Sequential expr)
     {
