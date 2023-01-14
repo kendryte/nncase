@@ -56,7 +56,9 @@ public class UnitTestFoldConv2DMulAdd : TestClassBase
            new FoldConstCall(),
         }, new());
 
+#if DEBUG
         Dumpper.DumpIR(rootPost, "post");
+#endif
 
         var feedDict = new Dictionary<Var, IValue>()
         {

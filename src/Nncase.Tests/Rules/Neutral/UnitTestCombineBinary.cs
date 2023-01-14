@@ -130,7 +130,7 @@ public class UnitTestCombineBinary
 
     [Theory]
     [MemberData(nameof(CombineClampBinaryPositiveData))]
-    public void TestCombineClampMulNegative(int[] inputShape, Tensor<float> constTensor, float min, float max)
+    public void TestCombineClampMulNegative(int[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
     {
         var (input, constInput, rootPre) = GetCombineClampBinaryNegativeCase(BinaryOp.Mul, inputShape, constTensor, min, max);
         _ = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)

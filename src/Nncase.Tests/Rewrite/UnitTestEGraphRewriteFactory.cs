@@ -69,7 +69,11 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
 
     private async Task RunCoreAsync(IRewriteCase @case)
     {
-        using var dumpScope = new DumpScope($"../{@case.Name}", DumpFlags.EGraphCost);
+        DumpFlags dumpFlag = DumpFlags.None;
+#if DEBUG
+        dumpFlag = DumpFlags.EGraphCost;
+#endif
+        using var dumpScope = new DumpScope($"../{@case.Name}", dumpFlag);
         var pre = @case.PreExpr;
         var infered = pre.InferenceType();
         Assert.True(infered);
@@ -84,7 +88,9 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
         post = (Function)await pass.RunAsync(pre, new());
         Assert.True(post.InferenceType());
 
+#if DEBUG
         DumpScope.Current.DumpIR(post, "post");
+#endif
         Assert.True(@case.CheckPostCallBack(post));
 
         IValue pre_ret, post_ret;

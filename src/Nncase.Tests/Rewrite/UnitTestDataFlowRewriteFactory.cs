@@ -46,7 +46,9 @@ public class UnitTestDataFlowRewriteFactory : TestClassBase
         var _ = new DumpScope($"../{@case.Name}", DumpFlags.None);
         var pre = @case.PreExpr;
         CompilerServices.InferenceType(pre);
+#if DEBUG
         DumpScope.Current.DumpIR(pre, "pre");
+#endif
         var pass = new DataflowPass { Name = "DataFlowOptimize" };
         foreach (var rule in @case.Rules)
         {
@@ -54,7 +56,9 @@ public class UnitTestDataFlowRewriteFactory : TestClassBase
         }
 
         var post = (Function)await pass.RunAsync(pre, new());
+#if DEBUG
         DumpScope.Current.DumpIR(post, "post");
+#endif
         Assert.NotEqual(pre, post);
         var feed_dict = @case.FeedDict;
         IValue preValue, postValue;
