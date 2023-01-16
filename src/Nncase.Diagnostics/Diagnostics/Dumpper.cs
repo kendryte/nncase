@@ -25,7 +25,13 @@ internal sealed class Dumpper : IDumpper
 
     public IDumpper CreateSubDummper(string subDirectory, DumpFlags? dumpFlags)
     {
-        return new Dumpper(dumpFlags ?? _dumpFlags, Path.Join(_dumpDirectory, subDirectory));
+        DumpFlags subDumpFlags = _dumpFlags;
+        if (dumpFlags is DumpFlags flags)
+        {
+            subDumpFlags &= flags; // the sub dumpFlags must less than parents.
+        }
+
+        return new Dumpper(subDumpFlags, Path.Join(_dumpDirectory, subDirectory));
     }
 
     public void DumpIR(Expr expr, string prefix, string? reletivePath = null)
