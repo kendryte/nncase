@@ -12,8 +12,8 @@ jobs:
     strategy:
       matrix:
         config:
-          - {name: x86_64-macos, os: macos-latest}
-          - {name: x86_64-linux, os: ubuntu-latest}
+          - {name: x86_64-macos, os: macos-11}
+          - {name: x86_64-linux, os: ubuntu-20.04}
           - {name: x86_64-windows, os: windows-latest, arch: x64}
 
     steps:
