@@ -12,7 +12,7 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// Substitute vars and collect the reuse mapping of opaque blocks.
 /// </summary>
-internal sealed class SubstituteVarAndCollectOpaqueBlock : ExprMutator
+public sealed class SubstituteVarAndCollectOpaqueBlock : ExprMutator
 {
     private readonly Func<Var, Expr?> _varMaper;
     private readonly Dictionary<Block, Block> _opaqueBlocks;

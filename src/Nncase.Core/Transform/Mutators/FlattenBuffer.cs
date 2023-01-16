@@ -13,7 +13,7 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// Flatten the multi-dimensional BufferLoad and BufferStore to single dimensional Load/Store. Also remove Block to ensure that the flattened TIR can not be scheduled again.
 /// </summary>
-internal sealed class FlattenBuffer : ExprMutator
+public sealed class FlattenBuffer : ExprMutator
 {
     /// <inheritdoc/>
     public override Expr MutateLeaf(Block expr)

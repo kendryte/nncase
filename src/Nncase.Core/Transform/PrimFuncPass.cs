@@ -15,11 +15,34 @@ using Nncase.TIR;
 namespace Nncase.Transform;
 
 /// <summary>
+/// Mutators addable.
+/// </summary>
+public interface IMutatorsAddable
+{
+    /// <summary>
+    /// Add the muatator.
+    /// </summary>
+    /// <typeparam name="T">Muatator type.</typeparam>
+    /// <param name="parameters">Muatator's constructor parameters.</param>
+    /// <returns>Add result.</returns>
+    PrimFuncPass.AddResult<T> Add<T>(params object[] parameters)
+        where T : ExprMutator;
+
+    /// <summary>
+    /// Add the muatator.
+    /// </summary>
+    /// <param name="mutatorType">Muatator type.</param>
+    /// <param name="parameters">Muatator's constructor parameters.</param>
+    /// <returns>Add result.</returns>
+    PrimFuncPass.AddResult<ExprMutator> Add(Type mutatorType, params object[] parameters);
+}
+
+/// <summary>
 /// TIR Mutator Pass.
 /// NOTE only apply on prim func
 /// Because of we will mutate the expression multiple times, so use MutatorCreator create the new mutator.
 /// </summary>
-public class PrimFuncPass : Pass<PrimFunction>
+public class PrimFuncPass : Pass<PrimFunction>, IMutatorsAddable
 {
     private readonly List<MutatorDescriptor> _mutatorDescriptors = new();
 
@@ -30,23 +53,21 @@ public class PrimFuncPass : Pass<PrimFunction>
     {
     }
 
-    /// <summary>
-    /// Add mutator.
-    /// </summary>
-    /// <typeparam name="T">Mutator type.</typeparam>
-    /// <param name="configureMutator">Configure mutator action.</param>
-    /// <param name="arguments">Mutator's constructor arguments.</param>
-    /// <returns>This primfunc pass.</returns>
-    public PrimFuncPass Add<T>(Action<T>? configureMutator, params object[] arguments)
+    /// <inheritdoc/>
+    public AddResult<T> Add<T>(params object[] parameters)
         where T : ExprMutator
     {
-        _mutatorDescriptors.Add(new()
-        {
-            Factory = ActivatorUtilities.CreateFactory(typeof(T), arguments.Select(x => x.GetType()).ToArray()),
-            Configure = configureMutator == null ? null : x => configureMutator?.Invoke((T)x),
-            Arguments = arguments,
-        });
-        return this;
+        var descriptor = new MutatorDescriptor(ActivatorUtilities.CreateFactory(typeof(T), parameters.Select(x => x.GetType()).ToArray()), null, parameters);
+        _mutatorDescriptors.Add(descriptor);
+        return new(this, descriptor);
+    }
+
+    /// <inheritdoc/>
+    public AddResult<ExprMutator> Add(Type mutatorType, params object[] parameters)
+    {
+        var descriptor = new MutatorDescriptor(ActivatorUtilities.CreateFactory(mutatorType, parameters.Select(x => x.GetType()).ToArray()), null, parameters);
+        _mutatorDescriptors.Add(descriptor);
+        return new(this, descriptor);
     }
 
     /// <inheritdoc/>
@@ -95,11 +116,60 @@ public class PrimFuncPass : Pass<PrimFunction>
 
     private protected override string? GetDumpRelativePass(PrimFunction input) => input.Name;
 
-    private struct MutatorDescriptor
+    /// <summary>
+    /// Add muatator result.
+    /// </summary>
+    /// <typeparam name="T">Muatator type.</typeparam>
+    public struct AddResult<T> : IMutatorsAddable
+        where T : ExprMutator
     {
-        public ObjectFactory Factory;
-        public Action<ExprMutator>? Configure;
-        public object[] Arguments;
+        private readonly PrimFuncPass _primFuncPass;
+
+        internal AddResult(PrimFuncPass primFuncPass, MutatorDescriptor descriptor)
+        {
+            _primFuncPass = primFuncPass;
+            Descriptor = descriptor;
+        }
+
+        /// <summary>
+        /// Gets descriptor.
+        /// </summary>
+        internal MutatorDescriptor Descriptor { get; }
+
+        /// <inheritdoc/>
+        public AddResult<T1> Add<T1>(params object[] parameters)
+            where T1 : ExprMutator => _primFuncPass.Add<T1>(parameters);
+
+        /// <inheritdoc/>
+        public AddResult<ExprMutator> Add(Type mutatorType, params object[] parameters)
+            => _primFuncPass.Add(mutatorType, parameters);
+
+        /// <summary>
+        /// Configure descriptor.
+        /// </summary>
+        /// <param name="configureRule">Configure descriptor action.</param>
+        /// <returns>This add result.</returns>
+        public AddResult<T> Configure(Action<T> configureRule)
+        {
+            Descriptor.Configure = (Action<ExprMutator>)Delegate.Combine(Descriptor.Configure, configureRule);
+            return this;
+        }
+    }
+
+    internal sealed class MutatorDescriptor
+    {
+        public MutatorDescriptor(ObjectFactory factory, Action<ExprMutator>? configure, object[] arguments)
+        {
+            Factory = factory;
+            Configure = configure;
+            Arguments = arguments;
+        }
+
+        public ObjectFactory Factory { get; }
+
+        public Action<ExprMutator>? Configure { get; set; }
+
+        public object[] Arguments { get; }
 
         public ExprMutator Activate(CompileSession compileSession)
         {
