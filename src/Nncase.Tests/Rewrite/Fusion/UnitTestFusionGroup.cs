@@ -9,11 +9,13 @@ using Xunit;
 
 namespace Nncase.Tests.ReWrite.FusionTest;
 
+[TestFixture.AutoSetupTestMethod(InitSession = true)]
 public class UnitTestFusionGroup : TestClassBase
 {
     public static TheoryData<IDataFlowFusionCase> DataOne = new()
     {
-        new DataFlowType9FusionCase(),
+        new DataFlowType13FusionCaseLeft(),
+        new DataFlowType13FusionCaseRight(),
     };
 
     public static TheoryData<IDataFlowFusionCase> DataAll = new()
@@ -29,6 +31,9 @@ public class UnitTestFusionGroup : TestClassBase
         new DataFlowType6FusionCaseLeft(),
         new DataFlowType6_1FusionCaseLeft(),
         new DataFlowType7FusionCaseLeft(),
+        new DataFlowType10FusionCaseLeft(),
+        new DataFlowType11FusionCaseLeft(),
+        new DataFlowType12FusionCaseLeft(),
 
         new DataFlowType1FusionCaseRight(),
         new DataFlowType2FusionCaseRight(),
@@ -39,6 +44,10 @@ public class UnitTestFusionGroup : TestClassBase
         new DataFlowType6_1FusionCaseRight(),
         new DataFlowType7FusionCaseRight(),
         new DataFlowType8FusionCase(),
+        new DataFlowType9FusionCase(),
+        new DataFlowType10FusionCaseRight(),
+        new DataFlowType11FusionCaseRight(),
+        new DataFlowType12FusionCaseRight(),
     };
 
     [Theory]
@@ -56,15 +65,22 @@ public class UnitTestFusionGroup : TestClassBase
 
         IRModule module = new(main);
         CompilerServices.InferenceType(main);
+#if DEBUG
+        Dumpper.DumpDotIR(main, "pre");
+#endif
 
         var rewriter = new DataFlowMergeRewriter();
         var post = (Function)rewriter.Rewrite(main, new IMergeRewriteRule[]
         {
             new SameInputFusionMergeRule(),
             new MultiInputFusionMergeRule(),
-            new ShortCutFusionMergeRule(),
+            new ShortCutFusionMergeRuleLeft(),
+            new ShortCutFusionMergeRuleRight(),
         }, (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
           new());
+#if DEBUG
+        Dumpper.DumpDotIR(post, "post");
+#endif
 
         var input_tensor = Testing.Rand<float>(1, 3, 224, 224);
         var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)

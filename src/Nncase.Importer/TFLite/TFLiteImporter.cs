@@ -341,7 +341,7 @@ public sealed partial class TFLiteImporter : BaseImporter
         AddToOutputs(_outputTensors, op.GetOutputsArray(), output);
     }
 
-    private List<QuantParam> GetInputQuantParams(in tflite.Operator op, int index)
+    private List<QuantParam>? GetInputQuantParams(in tflite.Operator op, int index)
     {
         var id = op.Inputs(index);
         var quantParams = new List<QuantParam>();
@@ -374,7 +374,7 @@ public sealed partial class TFLiteImporter : BaseImporter
         return null;
     }
 
-    private List<QuantParam> GetOutputQuantParams(in tflite.Operator op, int index)
+    private List<QuantParam>? GetOutputQuantParams(in tflite.Operator op, int index)
     {
         var id = op.Outputs(index);
         var quantParams = new List<QuantParam>();
