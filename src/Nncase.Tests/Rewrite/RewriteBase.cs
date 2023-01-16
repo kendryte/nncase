@@ -310,27 +310,27 @@ public class MobileNetV1TransposeCase : IRewriteCase
     {
         get
         {
-            var v_5 = Transpose(_input, new[] { 0, 2, 3, 1 }); // f32[1,112,112,32]
-            var v_6 = Transpose(v_5, new[] { 0, 3, 1, 2 }); // f32[1,32,112,112]
-            var v_7 = Conv2D(
-                v_6,
+            var v5 = Transpose(_input, new[] { 0, 2, 3, 1 }); // f32[1,112,112,32]
+            var v6 = Transpose(v5, new[] { 0, 3, 1, 2 }); // f32[1,32,112,112]
+            var v7 = Conv2D(
+                v6,
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, 32, 1, 1 }).Evaluate().AsTensor(),
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor(), new[] { 1, 1 }, new[,]
                 {
                     { 0, 0 },
                     { 0, 0 },
                 }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { 0.0f, 6.0f }); // f32[1,64,112,112]
-            var v_8 = Transpose(v_7, new[] { 0, 2, 3, 1 }); // f32[1,112,112,64]
-            var v_9 = Pad(v_8, new[,]
+            var v8 = Transpose(v7, new[] { 0, 2, 3, 1 }); // f32[1,112,112,64]
+            var v9 = Pad(v8, new[,]
             {
                 { 0, 0 },
                 { 0, 1 },
                 { 0, 1 },
                 { 0, 0 },
             }, PadMode.Constant, 0.0f); // f32[1,113,113,64]
-            var v_10 = Transpose(v_9, new[] { 0, 3, 1, 2 }); // f32[1,64,113,113]
-            var v_11 = Conv2D(
-                v_10,
+            var v10 = Transpose(v9, new[] { 0, 3, 1, 2 }); // f32[1,64,113,113]
+            var v11 = Conv2D(
+                v10,
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, 1, 3, 3 }).Evaluate().AsTensor(),
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor(),
                 new[] { 2, 2 }, new[,]
@@ -339,7 +339,7 @@ public class MobileNetV1TransposeCase : IRewriteCase
                     { 0, 0 },
                 }, new[] { 1, 1 }, PadMode.Constant, 64,
                 new[] { 0.0f, 6.0f }); // f32[1,64,56,56]
-            return new Function(v_11, new Var[] { _input });
+            return new Function(v11, new Var[] { _input });
         }
     }
 
@@ -373,30 +373,30 @@ public class PadTransposeCase : IRewriteCase
     {
         get
         {
-            var v_0 = Pad(_input, new[,]
+            var v0 = Pad(_input, new[,]
             {
                 { 0, 0 },
                 { 2, 2 },
                 { 2, 2 },
                 { 0, 0 },
             }, PadMode.Constant, 0.0f); // f32[1,14,14,16]
-            var v_1 = Transpose(v_0, new[] { 0, 3, 1, 2 }); // f32[1,16,14,14]
-            var v_2 = Conv2D(
-                v_1,
+            var v1 = Transpose(v0, new[] { 0, 3, 1, 2 }); // f32[1,16,14,14]
+            var v2 = Conv2D(
+                v1,
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, 16, 3, 3 }).Evaluate().AsTensor(),
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor(), new[] { 1, 1 }, new[,]
                 {
                     { 0, 0 },
                     { 0, 0 },
                 }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { 0.0f, 6.0f }); // f32[1,64,12,12]
-            var v_3 = Pad(v_2, new[,]
+            var v3 = Pad(v2, new[,]
             {
                 { 0, 0 },
                 { 0, 0 },
                 { 0, 0 },
                 { 0, 0 },
             }, PadMode.Constant, 0.0f); // f32[1,64,12,12]
-            return new Function(v_3, new Var[] { _input });
+            return new Function(v3, new Var[] { _input });
         }
     }
 
@@ -438,18 +438,18 @@ public sealed class TransposeLeakyRelu : IRewriteCase
     {
         get
         {
-            var v_5 = Transpose(_input, new[] { 0, 2, 3, 1 }); // f32[1,15,20,16]
-            var v_6 = LeakyRelu(v_5, 0.1f); // f32[1,15,20,16]
-            var v_7 = Transpose(v_6, new[] { 0, 3, 1, 2 }); // f32[1,16,15,20]
-            var v_8 = Conv2D(
-                v_7,
+            var v5 = Transpose(_input, new[] { 0, 2, 3, 1 }); // f32[1,15,20,16]
+            var v6 = LeakyRelu(v5, 0.1f); // f32[1,15,20,16]
+            var v7 = Transpose(v6, new[] { 0, 3, 1, 2 }); // f32[1,16,15,20]
+            var v8 = Conv2D(
+                v7,
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 16, 16, 3, 3 }).Evaluate().AsTensor(),
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 16 }).Evaluate().AsTensor(), new[] { 1, 1 }, new[,]
                 {
                     { 1, 1 },
                     { 1, 1 },
                 }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { 0.0f, 6.0f }); // f32[1,16,15,20]
-            return new Function(v_8, new Var[] { _input });
+            return new Function(v8, new Var[] { _input });
         }
     }
 
@@ -480,18 +480,18 @@ public class ActivationsTranspose : IRewriteCase
     {
         get
         {
-            var v_5 = Transpose(_input, new[] { 0, 2, 3, 1 }); // f32[1,15,20,16]
-            var v_6 = LeakyRelu(v_5, 0.1f); // f32[1,15,20,16]
-            var v_7 = Transpose(v_6, new[] { 0, 3, 1, 2 }); // f32[1,16,15,20]
-            var v_8 = Conv2D(
-                v_7,
+            var v5 = Transpose(_input, new[] { 0, 2, 3, 1 }); // f32[1,15,20,16]
+            var v6 = LeakyRelu(v5, 0.1f); // f32[1,15,20,16]
+            var v7 = Transpose(v6, new[] { 0, 3, 1, 2 }); // f32[1,16,15,20]
+            var v8 = Conv2D(
+                v7,
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 16, 16, 3, 3 }).Evaluate().AsTensor(),
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 16 }).Evaluate().AsTensor(), new[] { 1, 1 }, new[,]
                 {
                     { 1, 1 },
                     { 1, 1 },
                 }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { 0.0f, 6.0f }); // f32[1,16,15,20]
-            return new Function(v_8, new Var[] { _input });
+            return new Function(v8, new Var[] { _input });
         }
     }
 
@@ -515,18 +515,18 @@ public sealed class ActivationsTranspose2 : ActivationsTranspose
     {
         get
         {
-            var v_5 = Transpose(_input, new[] { 0, 2, 3, 1 }); // f32[1,15,20,16]
-            var v_6 = Relu(v_5); // f32[1,15,20,16]
-            var v_7 = Transpose(v_6, new[] { 0, 3, 1, 2 }); // f32[1,16,15,20]
-            var v_8 = Conv2D(
-                v_7,
+            var v5 = Transpose(_input, new[] { 0, 2, 3, 1 }); // f32[1,15,20,16]
+            var v6 = Relu(v5); // f32[1,15,20,16]
+            var v7 = Transpose(v6, new[] { 0, 3, 1, 2 }); // f32[1,16,15,20]
+            var v8 = Conv2D(
+                v7,
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 16, 16, 3, 3 }).Evaluate().AsTensor(),
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 16 }).Evaluate().AsTensor(), new[] { 1, 1 }, new[,]
                 {
                     { 1, 1 },
                     { 1, 1 },
                 }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { 0.0f, 6.0f }); // f32[1,16,15,20]
-            return new Function(v_8, new Var[] { _input });
+            return new Function(v8, new Var[] { _input });
         }
     }
 }
@@ -540,18 +540,18 @@ public sealed class ActivationsTransposePRelu : ActivationsTranspose
     {
         get
         {
-            var v_5 = Transpose(_input, new[] { 0, 2, 3, 1 }); // f32[1,15,20,16]
-            var v_6 = PRelu(v_5, Tensor.From(Enumerable.Repeat(0.2f, 16).ToArray(), new[] { 1, 1, 16 })); // f32[1,15,20,16]
-            var v_7 = Transpose(v_6, new[] { 0, 3, 1, 2 }); // f32[1,16,15,20]
-            var v_8 = Conv2D(
-                v_7,
+            var v5 = Transpose(_input, new[] { 0, 2, 3, 1 }); // f32[1,15,20,16]
+            var v6 = PRelu(v5, Tensor.From(Enumerable.Repeat(0.2f, 16).ToArray(), new[] { 1, 1, 16 })); // f32[1,15,20,16]
+            var v7 = Transpose(v6, new[] { 0, 3, 1, 2 }); // f32[1,16,15,20]
+            var v8 = Conv2D(
+                v7,
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 16, 16, 3, 3 }).Evaluate().AsTensor(),
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 16 }).Evaluate().AsTensor(), new[] { 1, 1 }, new[,]
                 {
                     { 1, 1 },
                     { 1, 1 },
                 }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { 0.0f, 6.0f }); // f32[1,16,15,20]
-            return new Function(v_8, new Var[] { _input });
+            return new Function(v8, new Var[] { _input });
         }
     }
 }
@@ -562,18 +562,18 @@ public sealed class ActivationsTransposePRelu2 : ActivationsTranspose
     {
         get
         {
-            var v_5 = Transpose(_input, new[] { 0, 2, 3, 1 }); // f32[1,15,20,16]
-            var v_6 = PRelu(v_5, Tensor.From(Enumerable.Repeat(0.2f, 16).ToArray(), new[] { 1, 1, 1, 16 })); // f32[1,15,20,16]
-            var v_7 = Transpose(v_6, new[] { 0, 3, 1, 2 }); // f32[1,16,15,20]
-            var v_8 = Conv2D(
-                v_7,
+            var v5 = Transpose(_input, new[] { 0, 2, 3, 1 }); // f32[1,15,20,16]
+            var v6 = PRelu(v5, Tensor.From(Enumerable.Repeat(0.2f, 16).ToArray(), new[] { 1, 1, 1, 16 })); // f32[1,15,20,16]
+            var v7 = Transpose(v6, new[] { 0, 3, 1, 2 }); // f32[1,16,15,20]
+            var v8 = Conv2D(
+                v7,
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 16, 16, 3, 3 }).Evaluate().AsTensor(),
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 16 }).Evaluate().AsTensor(), new[] { 1, 1 }, new[,]
                 {
                     { 1, 1 },
                     { 1, 1 },
                 }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { 0.0f, 6.0f }); // f32[1,16,15,20]
-            return new Function(v_8, new Var[] { _input });
+            return new Function(v8, new Var[] { _input });
         }
     }
 }
@@ -587,18 +587,18 @@ public sealed class ActivationsTransposePRelu3 : ActivationsTranspose
     {
         get
         {
-            var v_5 = Transpose(_input, new[] { 0, 2, 3, 1 }); // f32[1,15,20,16]
-            var v_6 = PRelu(v_5, Tensor.FromScalar(0.2f)); // f32[1,15,20,16]
-            var v_7 = Transpose(v_6, new[] { 0, 3, 1, 2 }); // f32[1,16,15,20]
-            var v_8 = Conv2D(
-                v_7,
+            var v5 = Transpose(_input, new[] { 0, 2, 3, 1 }); // f32[1,15,20,16]
+            var v6 = PRelu(v5, Tensor.FromScalar(0.2f)); // f32[1,15,20,16]
+            var v7 = Transpose(v6, new[] { 0, 3, 1, 2 }); // f32[1,16,15,20]
+            var v8 = Conv2D(
+                v7,
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 16, 16, 3, 3 }).Evaluate().AsTensor(),
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 16 }).Evaluate().AsTensor(), new[] { 1, 1 }, new[,]
                 {
                     { 1, 1 },
                     { 1, 1 },
                 }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { 0.0f, 6.0f }); // f32[1,16,15,20]
-            return new Function(v_8, new Var[] { _input });
+            return new Function(v8, new Var[] { _input });
         }
     }
 }
@@ -616,19 +616,19 @@ public sealed class RemoveMarkerCaseEgraph : IRewriteCase
     {
         get
         {
-            var v_5 = RangeOfMarker(Transpose(_input, new[] { 0, 2, 3, 1 }), new float[] { float.NegativeInfinity, float.PositiveInfinity }); // f32[1,15,20,16]
-            var v_6 = RangeOfMarker(Relu6(v_5), new float[] { 0.0f, 6.0f }); // f32[1,15,20,16]
-            var v_7 = RangeOfMarker(Transpose(v_6, new[] { 0, 3, 1, 2 }), new float[] { 0.0f, 6.0f }); // f32[1,16,15,20]
-            var v_8 = RangeOfMarker(
+            var v5 = RangeOfMarker(Transpose(_input, new[] { 0, 2, 3, 1 }), new float[] { float.NegativeInfinity, float.PositiveInfinity }); // f32[1,15,20,16]
+            var v6 = RangeOfMarker(Relu6(v5), new float[] { 0.0f, 6.0f }); // f32[1,15,20,16]
+            var v7 = RangeOfMarker(Transpose(v6, new[] { 0, 3, 1, 2 }), new float[] { 0.0f, 6.0f }); // f32[1,16,15,20]
+            var v8 = RangeOfMarker(
                 Conv2D(
-                v_7,
+                v7,
                 RangeOfMarker(Normal(DataTypes.Float32, 0, 1, 1, new[] { 16, 16, 3, 3 }).Evaluate().AsTensor(), new float[] { -1.0f, 1.0f }),
                 RangeOfMarker(Normal(DataTypes.Float32, 0, 1, 1, new[] { 16 }).Evaluate().AsTensor(), new float[] { -1.0f, 1.0f }), new[] { 1, 1 }, new[,]
                 {
                     { 1, 1 },
                     { 1, 1 },
                 }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { 0.0f, 6.0f }), new float[] { 0.0f, 6.0f }); // f32[1,16,15,20]
-            return new Function(v_8, new Var[] { _input });
+            return new Function(v8, new Var[] { _input });
         }
     }
 
@@ -660,7 +660,7 @@ public sealed class Conv2DPadsCase : IRewriteCase
     {
         get
         {
-            var v_12 = Conv2D(
+            var v12 = Conv2D(
                 _input,
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 96, 16, 1, 1 }).Evaluate().AsTensor(),
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 96 }).Evaluate().AsTensor(), new[] { 1, 1 },
@@ -670,14 +670,14 @@ public sealed class Conv2DPadsCase : IRewriteCase
                     { 0, 0 },
                 }, new[] { 1, 1 }, PadMode.Constant, 1,
                 new[] { 0.0f, 6.0f }); // f32[1,96,56,56]
-            var v_13 = Pad(v_12, new[,]
+            var v13 = Pad(v12, new[,]
             {
                 { 0, 0 },
                 { 0, 0 },
                 { 0, 1 },
                 { 0, 1 },
             }, PadMode.Constant, 0.0f); // f32[1,96,57,57]
-            var v_14 = Conv2D(v_13, Normal(DataTypes.Float32, 0, 1, 1, new[] { 96, 1, 3, 3 }).Evaluate().AsTensor(),
+            var v14 = Conv2D(v13, Normal(DataTypes.Float32, 0, 1, 1, new[] { 96, 1, 3, 3 }).Evaluate().AsTensor(),
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 96 }).Evaluate().AsTensor(), new[] { 2, 2 },
                 new[,]
                 {
@@ -685,7 +685,7 @@ public sealed class Conv2DPadsCase : IRewriteCase
                     { 0, 0 },
                 }, new[] { 1, 1 }, PadMode.Constant, 96,
                 new[] { 0.0f, 6.0f }); // f32[1,96,28,28]
-            return new Function(v_14, new Var[] { _input });
+            return new Function(v14, new Var[] { _input });
         }
     }
 
@@ -713,7 +713,7 @@ public sealed class ReduceWindow2DPadsCase : IRewriteCase
     {
         get
         {
-            var v_0 = Conv2D(_input, Normal(DataTypes.Float32, 0, 1, 1, new[] { 96, 16, 1, 1 }).Evaluate().AsTensor(),
+            var v0 = Conv2D(_input, Normal(DataTypes.Float32, 0, 1, 1, new[] { 96, 16, 1, 1 }).Evaluate().AsTensor(),
                 Normal(DataTypes.Float32, 0, 1, 1, new[] { 96 }).Evaluate().AsTensor(), new[] { 1, 1 },
                 new[,]
                 {
@@ -721,20 +721,20 @@ public sealed class ReduceWindow2DPadsCase : IRewriteCase
                     { 0, 0 },
                 }, new[] { 1, 1 }, PadMode.Constant, 1,
                 new[] { 0.0f, 6.0f }); // f32[1,96,56,56]
-            var v_1 = Pad(v_0, new[,]
+            var v1 = Pad(v0, new[,]
             {
                 { 0, 0 },
                 { 0, 0 },
                 { 0, 1 },
                 { 0, 1 },
             }, PadMode.Constant, 0.0f); // f32[1,96,57,57]
-            var v_2 = ReduceWindow2D(ReduceOp.Max, v_1, 0, new[] { 3, 3 }, new[] { 2, 2 },
+            var v2 = ReduceWindow2D(ReduceOp.Max, v1, 0, new[] { 3, 3 }, new[] { 2, 2 },
                 new[,]
                 {
                     { 0, 0 },
                     { 0, 0 },
                 }, new[] { 1, 1 }, false, false); // f32[1,96,28,28]
-            return new Function(v_2, new Var[] { _input });
+            return new Function(v2, new Var[] { _input });
         }
     }
 
@@ -751,25 +751,25 @@ public sealed class ReduceWindow2DPadsCase : IRewriteCase
 
 public sealed class MergeBinaryBeforeConv2DCase : IRewriteCase
 {
-    private readonly Var _input_lhs;
-    private readonly Var _input_rhs;
+    private readonly Var _inputLhs;
+    private readonly Var _inputRhs;
 
     public MergeBinaryBeforeConv2DCase()
     {
-        _input_lhs = new Var("_input_lhs", new TensorType(DataTypes.Float32, new[] { 1, 256, 56, 56 }));
-        _input_rhs = new Var("_input_rhs", new TensorType(DataTypes.Float32, new[] { 1, 256, 56, 56 }));
+        _inputLhs = new Var("_inputLhs", new TensorType(DataTypes.Float32, new[] { 1, 256, 56, 56 }));
+        _inputRhs = new Var("_inputRhs", new TensorType(DataTypes.Float32, new[] { 1, 256, 56, 56 }));
     }
 
     public Function PreExpr
     {
         get
         {
-            var v_0 = _input_lhs + _input_rhs;
-            var v_1 = v_0 * Normal(DataTypes.Float32, 0, 1, 1, new[] { 1, 256, 1, 1 }).Evaluate().AsTensor();
-            var v_2 = v_1 + Normal(DataTypes.Float32, 0, 1, 1, new[] { 1, 256, 1, 1 }).Evaluate().AsTensor();
-            var v_3 = v_2; // 1, 56, 56, 256
-            var v_4 = v_3;
-            var v_5 = Conv2D(v_4, Normal(DataTypes.Float32, 0, 1, 1, new[] { 256, 256, 1, 1 }).Evaluate().AsTensor(),
+            var v0 = _inputLhs + _inputRhs;
+            var v1 = v0 * Normal(DataTypes.Float32, 0, 1, 1, new[] { 1, 256, 1, 1 }).Evaluate().AsTensor();
+            var v2 = v1 + Normal(DataTypes.Float32, 0, 1, 1, new[] { 1, 256, 1, 1 }).Evaluate().AsTensor();
+            var v3 = v2; // 1, 56, 56, 256
+            var v4 = v3;
+            var v5 = Conv2D(v4, Normal(DataTypes.Float32, 0, 1, 1, new[] { 256, 256, 1, 1 }).Evaluate().AsTensor(),
                   Normal(DataTypes.Float32, 0, 1, 1, new[] { 256 }).Evaluate().AsTensor(), new[] { 1, 1 },
                   new[,]
                   {
@@ -777,16 +777,16 @@ public sealed class MergeBinaryBeforeConv2DCase : IRewriteCase
                     { 0, 0 },
                   }, new[] { 1, 1 }, PadMode.Constant, 1,
                   new[] { 0.0f, 6.0f }); // f32[1,256,56,56]
-            var v_6 = v_5; // f32[1,256,56,56]
-            var v_7 = Pad(v_6, new[,]
+            var v6 = v5; // f32[1,256,56,56]
+            var v7 = Pad(v6, new[,]
             {
                 { 0, 0 },
                 { 0, 0 },
                 { 1, 1 },
                 { 1, 1 },
             }, PadMode.Constant, 0.0f); // f32[1,256,58,58]
-            var v_8 = v_7;
-            var v_9 = Conv2D(v_8, Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, 256, 3, 3 }).Evaluate().AsTensor(),
+            var v8 = v7;
+            var v9 = Conv2D(v8, Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, 256, 3, 3 }).Evaluate().AsTensor(),
                   Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor(), new[] { 1, 1 },
                   new[,]
                   {
@@ -794,10 +794,10 @@ public sealed class MergeBinaryBeforeConv2DCase : IRewriteCase
                     { 0, 0 },
                   }, new[] { 1, 1 }, PadMode.Constant, 1,
                   new[] { 0.0f, 6.0f }); // f32[1,64,56,56]
-            var v_10 = v_9; // f32[1,64,56,56]
+            var v10 = v9; // f32[1,64,56,56]
 
-            var v_11 = v_10;
-            var v_12 = Conv2D(v_11, Normal(DataTypes.Float32, 0, 1, 1, new[] { 256, 64, 1, 1 }).Evaluate().AsTensor(),
+            var v11 = v10;
+            var v12 = Conv2D(v11, Normal(DataTypes.Float32, 0, 1, 1, new[] { 256, 64, 1, 1 }).Evaluate().AsTensor(),
                   Normal(DataTypes.Float32, 0, 1, 1, new[] { 256 }).Evaluate().AsTensor(), new[] { 1, 1 },
                   new[,]
                   {
@@ -805,10 +805,10 @@ public sealed class MergeBinaryBeforeConv2DCase : IRewriteCase
                     { 0, 0 },
                   }, new[] { 1, 1 }, PadMode.Constant, 1,
                   new[] { 0.0f, 6.0f }); // f32[1,256,56,56]
-            var v_13 = v_12; // f32[1,256,56,56]
-            var v_16 = v_0 + v_13;
+            var v13 = v12; // f32[1,256,56,56]
+            var v16 = v0 + v13;
 
-            return new Function(v_16, new Var[] { _input_lhs, _input_rhs });
+            return new Function(v16, new Var[] { _inputLhs, _inputRhs });
         }
     }
 
@@ -820,8 +820,8 @@ public sealed class MergeBinaryBeforeConv2DCase : IRewriteCase
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
-        { _input_lhs, Normal(DataTypes.Float32, 0, 1, 1, _input_lhs.CheckedShape.ToValueArray()).Evaluate() },
-        { _input_rhs, Normal(DataTypes.Float32, 0, 1, 1, _input_rhs.CheckedShape.ToValueArray()).Evaluate() },
+        { _inputLhs, Normal(DataTypes.Float32, 0, 1, 1, _inputLhs.CheckedShape.ToValueArray()).Evaluate() },
+        { _inputRhs, Normal(DataTypes.Float32, 0, 1, 1, _inputRhs.CheckedShape.ToValueArray()).Evaluate() },
     };
 }
 
@@ -829,24 +829,24 @@ public sealed class CombineClampAddMul : IRewriteCase
 {
     private const int _channels = 4; // 256
     private const int _featrueMap = 3; // 56
-    private readonly Var _input_lhs;
-    private readonly Var _input_rhs;
+    private readonly Var _inputLhs;
+    private readonly Var _inputRhs;
 
     public CombineClampAddMul()
     {
-        _input_lhs = new Var("_input_lhs", new TensorType(DataTypes.Float32, new[] { 1, _featrueMap, _featrueMap, _channels }));
-        _input_rhs = new Var("_input_rhs", new TensorType(DataTypes.Float32, new[] { 1, _featrueMap, _featrueMap, _channels }));
+        _inputLhs = new Var("_inputLhs", new TensorType(DataTypes.Float32, new[] { 1, _featrueMap, _featrueMap, _channels }));
+        _inputRhs = new Var("_inputRhs", new TensorType(DataTypes.Float32, new[] { 1, _featrueMap, _featrueMap, _channels }));
     }
 
     public Function PreExpr
     {
         get
         {
-            var v_0 = _input_lhs + _input_rhs; // [1,_featrueMap,_featrueMap,_channels]
-            var v_1 = v_0 * Normal(DataTypes.Float32, 0, 1, 1, new[] { _channels }).Evaluate().AsTensor();
-            var v_2 = v_1 + Normal(DataTypes.Float32, 0, 1, 2, new[] { _channels }).Evaluate().AsTensor();
-            var v_3 = Relu(v_2);
-            return new Function(v_3, new Var[] { _input_lhs, _input_rhs });
+            var v0 = _inputLhs + _inputRhs; // [1,_featrueMap,_featrueMap,_channels]
+            var v1 = v0 * Normal(DataTypes.Float32, 0, 1, 1, new[] { _channels }).Evaluate().AsTensor();
+            var v2 = v1 + Normal(DataTypes.Float32, 0, 1, 2, new[] { _channels }).Evaluate().AsTensor();
+            var v3 = Relu(v2);
+            return new Function(v3, new Var[] { _inputLhs, _inputRhs });
         }
     }
 
@@ -859,8 +859,8 @@ public sealed class CombineClampAddMul : IRewriteCase
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
-        { _input_lhs, Normal(DataTypes.Float32, 0, 1, 5, _input_lhs.CheckedShape.ToValueArray()).Evaluate() },
-        { _input_rhs, Normal(DataTypes.Float32, 0, 1, 6, _input_rhs.CheckedShape.ToValueArray()).Evaluate() },
+        { _inputLhs, Normal(DataTypes.Float32, 0, 1, 5, _inputLhs.CheckedShape.ToValueArray()).Evaluate() },
+        { _inputRhs, Normal(DataTypes.Float32, 0, 1, 6, _inputRhs.CheckedShape.ToValueArray()).Evaluate() },
     };
 
     public bool CheckPostCallBack(Function post)
@@ -873,25 +873,25 @@ public sealed class FoldConv2DBnCase : IRewriteCase
 {
     private const int _channels = 16; // 256
     private const int _featrueMap = 8; // 56
-    private readonly Var _input_lhs;
-    private readonly Var _input_rhs;
+    private readonly Var _inputLhs;
+    private readonly Var _inputRhs;
 
     public FoldConv2DBnCase()
     {
-        _input_lhs = new Var("_input_lhs", new TensorType(DataTypes.Float32, new[] { 1, _featrueMap, _featrueMap, _channels }));
-        _input_rhs = new Var("_input_rhs", new TensorType(DataTypes.Float32, new[] { 1, _featrueMap, _featrueMap, _channels }));
+        _inputLhs = new Var("_inputLhs", new TensorType(DataTypes.Float32, new[] { 1, _featrueMap, _featrueMap, _channels }));
+        _inputRhs = new Var("_inputRhs", new TensorType(DataTypes.Float32, new[] { 1, _featrueMap, _featrueMap, _channels }));
     }
 
     public Function PreExpr
     {
         get
         {
-            var v_0 = _input_lhs + _input_rhs; // [1,_featrueMap,_featrueMap,_channels]
-            var v_1 = v_0 * Normal(DataTypes.Float32, 0, 1, 1, new[] { _channels }).Evaluate().AsTensor();
-            var v_2 = v_1 + Normal(DataTypes.Float32, 0, 1, 2, new[] { _channels }).Evaluate().AsTensor();
-            var v_3 = Relu(v_2);
-            var v_4 = NHWCToNCHW(v_3);
-            var v_5 = Conv2D(v_4, Normal(DataTypes.Float32, 0, 1, 3, new[] { _channels, _channels, 1, 1 }).Evaluate().AsTensor(),
+            var v0 = _inputLhs + _inputRhs; // [1,_featrueMap,_featrueMap,_channels]
+            var v1 = v0 * Normal(DataTypes.Float32, 0, 1, 1, new[] { _channels }).Evaluate().AsTensor();
+            var v2 = v1 + Normal(DataTypes.Float32, 0, 1, 2, new[] { _channels }).Evaluate().AsTensor();
+            var v3 = Relu(v2);
+            var v4 = NHWCToNCHW(v3);
+            var v5 = Conv2D(v4, Normal(DataTypes.Float32, 0, 1, 3, new[] { _channels, _channels, 1, 1 }).Evaluate().AsTensor(),
                   Normal(DataTypes.Float32, 0, 1, 1, new[] { _channels }).Evaluate().AsTensor(), new[] { 1, 1 },
                   new[,]
                   {
@@ -899,16 +899,16 @@ public sealed class FoldConv2DBnCase : IRewriteCase
                     { 0, 0 },
                   }, new[] { 1, 1 }, PadMode.Constant, 1,
                   new[] { 0.0f, 6.0f }); // f32[1,_channels,_featrueMap,_featrueMap]
-            var v_6 = NCHWToNHWC(v_5); // f32[1,_featrueMap,_featrueMap,_channels]
-            var v_7 = Pad(v_6, new[,]
+            var v6 = NCHWToNHWC(v5); // f32[1,_featrueMap,_featrueMap,_channels]
+            var v7 = Pad(v6, new[,]
             {
                 { 0, 0 },
                 { 1, 1 },
                 { 1, 1 },
                 { 0, 0 },
             }, PadMode.Constant, 0.0f); // f32[1,58,58,_channels]
-            var v_8 = NHWCToNCHW(v_7);
-            var v_9 = Conv2D(v_8, Normal(DataTypes.Float32, 0, 1, 4, new[] { 64, _channels, 3, 3 }).Evaluate().AsTensor(),
+            var v8 = NHWCToNCHW(v7);
+            var v9 = Conv2D(v8, Normal(DataTypes.Float32, 0, 1, 4, new[] { 64, _channels, 3, 3 }).Evaluate().AsTensor(),
                   Normal(DataTypes.Float32, 0, 1, 5, new[] { 64 }).Evaluate().AsTensor(), new[] { 1, 1 },
                   new[,]
                   {
@@ -916,9 +916,9 @@ public sealed class FoldConv2DBnCase : IRewriteCase
                     { 0, 0 },
                   }, new[] { 1, 1 }, PadMode.Constant, 1,
                   new[] { 0.0f, 6.0f }); // f32[1,64,_featrueMap,_featrueMap]
-            var v_10 = NCHWToNHWC(v_9); // f32[1,_featrueMap,_featrueMap,64]
-            var v_11 = NHWCToNCHW(v_10);
-            var v_12 = Conv2D(v_11, Normal(DataTypes.Float32, 0, 1, 6, new[] { _channels, 64, 1, 1 }).Evaluate().AsTensor(),
+            var v10 = NCHWToNHWC(v9); // f32[1,_featrueMap,_featrueMap,64]
+            var v11 = NHWCToNCHW(v10);
+            var v12 = Conv2D(v11, Normal(DataTypes.Float32, 0, 1, 6, new[] { _channels, 64, 1, 1 }).Evaluate().AsTensor(),
                   Normal(DataTypes.Float32, 0, 1, 7, new[] { _channels }).Evaluate().AsTensor(), new[] { 1, 1 },
                   new[,]
                   {
@@ -926,10 +926,10 @@ public sealed class FoldConv2DBnCase : IRewriteCase
                     { 0, 0 },
                   }, new[] { 1, 1 }, PadMode.Constant, 1,
                   new[] { 0.0f, 6.0f }); // f32[1,_channels,_featrueMap,_featrueMap]
-            var v_13 = NCHWToNHWC(v_12); // f32[1,_featrueMap,_featrueMap,_channels]
-            var v_16 = v_0 + v_13;
+            var v13 = NCHWToNHWC(v12); // f32[1,_featrueMap,_featrueMap,_channels]
+            var v16 = v0 + v13;
 
-            return new Function(v_16, new Var[] { _input_lhs, _input_rhs });
+            return new Function(v16, new Var[] { _inputLhs, _inputRhs });
         }
     }
 
@@ -950,8 +950,8 @@ public sealed class FoldConv2DBnCase : IRewriteCase
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
-        { _input_lhs, Normal(DataTypes.Float32, 0, 1, 1, _input_lhs.CheckedShape.ToValueArray()).Evaluate() },
-        { _input_rhs, Normal(DataTypes.Float32, 0, 1, 1, _input_rhs.CheckedShape.ToValueArray()).Evaluate() },
+        { _inputLhs, Normal(DataTypes.Float32, 0, 1, 1, _inputLhs.CheckedShape.ToValueArray()).Evaluate() },
+        { _inputRhs, Normal(DataTypes.Float32, 0, 1, 1, _inputRhs.CheckedShape.ToValueArray()).Evaluate() },
     };
 
     public bool CheckPostCallBack(Function post)

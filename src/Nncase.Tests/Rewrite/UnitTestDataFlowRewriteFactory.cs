@@ -43,7 +43,7 @@ public class UnitTestDataFlowRewriteFactory : TestClassBase
 
     private async Task RunCoreAsync(IRewriteCase @case)
     {
-        var _ = new DumpScope($"../{@case.Name}", DumpFlags.None);
+        using var dumpScope = new DumpScope($"../{@case.Name}", DumpFlags.None);
         var pre = @case.PreExpr;
         CompilerServices.InferenceType(pre);
 #if DEBUG
