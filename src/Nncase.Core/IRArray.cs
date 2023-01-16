@@ -64,7 +64,7 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
     /// <inheritdoc/>
     public ReadOnlySpan<T> this[Range range] => _array.AsSpan()[range];
 
-    T IList<T>.this[int index] { get => ((IList<T>)_array)[index]; set => ((IList<T>)_array)[index] = value; }
+    T IList<T>.this[int index] { get => ((IList<T>)_array)[index]; set => throw new InvalidOperationException("IRArray Can't be modified!"); }
 
     /// <inheritdoc/>
     public static implicit operator IRArray<T>(ImmutableArray<T> array) =>
@@ -155,19 +155,19 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
     /// <inheritdoc/>
     public void Insert(int index, T item)
     {
-        ((IList<T>)_array).Insert(index, item);
+        throw new InvalidOperationException("IRArray Can't Insert Item!");
     }
 
     /// <inheritdoc/>
     public bool Remove(T item)
     {
-        return ((ICollection<T>)_array).Remove(item);
+        throw new InvalidOperationException("IRArray Can't Remove Item!");
     }
 
     /// <inheritdoc/>
     public void RemoveAt(int index)
     {
-        ((IList<T>)_array).RemoveAt(index);
+        throw new InvalidOperationException("IRArray Can't Remove Item!");
     }
 
     IEnumerator IEnumerable.GetEnumerator()

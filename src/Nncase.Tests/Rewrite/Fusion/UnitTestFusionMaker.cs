@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NetFabric.Hyperlinq;
+using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
@@ -38,7 +39,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
     }
 
     [Fact]
-    public async void TestMultiFusion()
+    public async Task TestMultiFusion()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
         Function pre;
@@ -69,7 +70,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
     }
 
     [Fact]
-    public async void TestMatchPairLayerFusion()
+    public async Task TestMatchPairLayerFusion()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
         Function pre;
@@ -107,7 +108,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
     }
 
     [Fact]
-    public async void TestMatchPairLayerFusionForSingleFusion()
+    public async Task TestMatchPairLayerFusionForSingleFusion()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
         Function pre;
@@ -129,7 +130,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
     }
 
     [Fact]
-    public async void TestMakeDoubleInputFusion()
+    public async Task TestMakeDoubleInputFusion()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
         Function pre;
@@ -156,7 +157,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
     }
 
     [Fact]
-    public async void TestMakeDoubleInputWithConstFusion()
+    public async Task TestMakeDoubleInputWithConstFusion()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
         Function pre;
