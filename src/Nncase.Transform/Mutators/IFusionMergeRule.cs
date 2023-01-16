@@ -223,29 +223,29 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
     {
         var caller = (Call)result["caller"];
         var callee = (Call)result["callee"];
-        var caller_fusion = (Fusion)result["caller_fusion"];
-        var callee_fusion = (Fusion)result["callee_fusion"];
-        var caller_inputs = (IReadOnlyList<Expr>)result["caller_inputs"];
-        bool callee_in_left = false;
-        if (object.ReferenceEquals(caller_inputs[0], callee))
+        var callerFusion = (Fusion)result["callerFusion"];
+        var calleeFusion = (Fusion)result["calleeFusion"];
+        var callerInputs = (IReadOnlyList<Expr>)result["callerInputs"];
+        bool calleeInLeft = false;
+        if (object.ReferenceEquals(callerInputs[0], callee))
         {
-            callee_in_left = true;
+            calleeInLeft = true;
         }
 
-        var callee_input = (Expr)result["callee_input"];
-        var caller_other_input = (Expr)result["caller_other_input"];
+        var calleeInput = (Expr)result["calleeInput"];
+        var callerOtherInput = (Expr)result["callerOtherInput"];
 
-        var callee_input_users = new HashSet<Expr>(usedByReslut.Get(callee_input), ReferenceEqualityComparer.Instance);
-        if (object.ReferenceEquals(callee_input, caller_other_input))
+        var calleeInputUsers = new HashSet<Expr>(usedByReslut.Get(calleeInput), ReferenceEqualityComparer.Instance);
+        if (object.ReferenceEquals(calleeInput, callerOtherInput))
         {
             // case : caller(callee(x),x)
             // 1. callee input only usedby callee and caller
-            if (callee_input_users.Count != 2)
+            if (calleeInputUsers.Count != 2)
             {
                 return null;
             }
 
-            if (!callee_input_users.Remove(callee) || !callee_input_users.Remove(caller))
+            if (!calleeInputUsers.Remove(callee) || !calleeInputUsers.Remove(caller))
             {
                 return null;
             }
@@ -254,55 +254,55 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
         {
             // case : caller(callee(x),y)
             // 1. callee input only usedby callee
-            if (callee_input_users.Count != 1 || !callee_input_users.Remove(callee))
+            if (calleeInputUsers.Count != 1 || !calleeInputUsers.Remove(callee))
             {
                 return null;
             }
         }
 
         // 2. callee only usedby caller
-        var callee_users = new HashSet<Expr>(usedByReslut.Get(callee), ReferenceEqualityComparer.Instance);
-        if (callee_users.Count != 1)
+        var calleeUsers = new HashSet<Expr>(usedByReslut.Get(callee), ReferenceEqualityComparer.Instance);
+        if (calleeUsers.Count != 1)
         {
             return null;
         }
 
-        var candidate_fusions = new HashSet<Fusion>() { caller_fusion, callee_fusion };
+        var candidateFusions = new HashSet<Fusion>() { callerFusion, calleeFusion };
 
-        if (!candidateFusionCheckCallBack(candidate_fusions))
+        if (!candidateFusionCheckCallBack(candidateFusions))
         {
             return null;
         }
 
         // 1. merge new fusion
-        var (merged_fusion, callParams) = ProcessMergeFusion(mergedFusionRewriteCallBack, callee_input, caller_other_input, caller, callee, caller_fusion, callee_fusion, callee_in_left);
+        var (mergedFusion, callParams) = ProcessMergeFusion(mergedFusionRewriteCallBack, calleeInput, callerOtherInput, caller, callee, callerFusion, calleeFusion, calleeInLeft);
 
-        if (mergedFusionCheckCallBack(merged_fusion, candidate_fusions))
+        if (mergedFusionCheckCallBack(mergedFusion, candidateFusions))
         {
-            var new_call = new Call(merged_fusion, ImmutableArray.CreateRange(callParams));
+            var newCall = new Call(mergedFusion, ImmutableArray.CreateRange(callParams));
 
             // 1. transfer the caller usedby info to new_call
-            usedByReslut.Transfer(caller, new_call);
+            usedByReslut.Transfer(caller, newCall);
 
             // 2. clear all caller's and callee's usedy info
-            usedByReslut.Clear(caller_fusion, caller);
+            usedByReslut.Clear(callerFusion, caller);
             usedByReslut.Clear(callee, caller);
-            usedByReslut.Clear(caller_other_input, caller);
-            usedByReslut.Clear(callee_fusion, callee);
-            usedByReslut.Clear(callee_input, callee);
+            usedByReslut.Clear(callerOtherInput, caller);
+            usedByReslut.Clear(calleeFusion, callee);
+            usedByReslut.Clear(calleeInput, callee);
 
             // 3. reset the input usedby
-            usedByReslut.Add(callee_input, new_call);
-            if (!object.ReferenceEquals(callee_input, caller_other_input))
+            usedByReslut.Add(calleeInput, newCall);
+            if (!object.ReferenceEquals(calleeInput, callerOtherInput))
             {
-                usedByReslut.Add(caller_other_input, new_call);
+                usedByReslut.Add(callerOtherInput, newCall);
             }
 
-            usedByReslut.Add(merged_fusion, new_call);
-            return new_call;
+            usedByReslut.Add(mergedFusion, newCall);
+            return newCall;
         }
 
-        candidateFusionRecordCallBack(candidate_fusions);
+        candidateFusionRecordCallBack(candidateFusions);
         return null;
     }
 
@@ -314,12 +314,12 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
     /// <returns></returns>
     protected Pattern CreatePattern(string targetModuleKind, bool left)
     {
-        var calleeInput = IsWildcard("callee_input");
-        var callerOtherInput = IsWildcard("caller_other_input");
+        var calleeInput = IsWildcard("calleeInput");
+        var callerOtherInput = IsWildcard("callerOtherInput");
         var calleePattern = IsCall(
           "callee",
           IsFusion(
-              "callee_fusion",
+              "calleeFusion",
               targetModuleKind,
               IsWildcard(),
               IsVArgs(IsWildcard())),
@@ -327,19 +327,19 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
         var callerPatternLeft = IsCall(
           "caller",
           IsFusion(
-              "caller_fusion",
+              "callerFusion",
               targetModuleKind,
               IsWildcard(),
               IsVArgs(IsWildcard(), IsWildcard())),
-          IsVArgs("caller_inputs", new Pattern[] { calleePattern, callerOtherInput }));
+          IsVArgs("callerInputs", new Pattern[] { calleePattern, callerOtherInput }));
         var callerPatternRight = IsCall(
           "caller",
           IsFusion(
-              "caller_fusion",
+              "callerFusion",
               targetModuleKind,
               IsWildcard(),
               IsVArgs(IsWildcard(), IsWildcard())),
-          IsVArgs("caller_inputs", new Pattern[] { callerOtherInput, calleePattern }));
+          IsVArgs("callerInputs", new Pattern[] { callerOtherInput, calleePattern }));
         return left ? IsAlt(callerPatternLeft, callerPatternRight) : IsAlt(callerPatternRight, callerPatternLeft);
     }
 

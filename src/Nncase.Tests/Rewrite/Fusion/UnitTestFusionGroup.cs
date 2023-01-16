@@ -65,7 +65,9 @@ public class UnitTestFusionGroup : TestClassBase
 
         IRModule module = new(main);
         CompilerServices.InferenceType(main);
+#if DEBUG
         Dumpper.DumpDotIR(main, "pre");
+#endif
 
         var rewriter = new DataFlowMergeRewriter();
         var post = (Function)rewriter.Rewrite(main, new IMergeRewriteRule[]
@@ -76,7 +78,9 @@ public class UnitTestFusionGroup : TestClassBase
             new ShortCutFusionMergeRuleRight(),
         }, (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
           new());
+#if DEBUG
         Dumpper.DumpDotIR(post, "post");
+#endif
 
         var input_tensor = Testing.Rand<float>(1, 3, 224, 224);
         var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
