@@ -91,7 +91,7 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
 #if DEBUG
         DumpScope.Current.DumpIR(post, "post");
 #endif
-        Assert.True(@case.CheckPostCallBack(post));
+        Assert.True(@case.ChecksPostCallBack(post));
 
         IValue pre_ret, post_ret;
         var feedDict = @case.FeedDict;

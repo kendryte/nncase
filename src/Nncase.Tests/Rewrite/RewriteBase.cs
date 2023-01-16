@@ -46,7 +46,7 @@ public interface IRewriteCase
     /// </summary>
     /// <param name="post"></param>
     /// <returns></returns>
-    bool CheckPostCallBack(Function post) => true;
+    bool ChecksPostCallBack(Function post) => true;
 }
 
 public static class DummyOp
@@ -863,7 +863,7 @@ public sealed class CombineClampAddMul : IRewriteCase
         { _inputRhs, Normal(DataTypes.Float32, 0, 1, 6, _inputRhs.CheckedShape.ToValueArray()).Evaluate() },
     };
 
-    public bool CheckPostCallBack(Function post)
+    public bool ChecksPostCallBack(Function post)
     {
         return true;
     }
@@ -954,7 +954,7 @@ public sealed class FoldConv2DBnCase : IRewriteCase
         { _inputRhs, Normal(DataTypes.Float32, 0, 1, 1, _inputRhs.CheckedShape.ToValueArray()).Evaluate() },
     };
 
-    public bool CheckPostCallBack(Function post)
+    public bool ChecksPostCallBack(Function post)
     {
         return true;
     }
