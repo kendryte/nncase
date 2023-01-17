@@ -25,6 +25,13 @@ namespace Nncase.Tests.EvaluatorTest;
 
 public class UnitTestEvaluatorMath : TestClassBase
 {
+    public static TheoryData<int[], int[], int[]> ClampInvalidTypeData = new()
+    {
+        { new[] { 1, 2, 3, 4 }, new[] { 8 }, new[] { 8 } },
+        { new[] { 1, 2, 3, 4 }, new[] { 4 }, new[] { 8 } },
+        { new[] { 1, 2, 3, 4 }, new[] { 4 }, new[] { 1 } },
+    };
+
     [Fact]
     public void TestBinaryScalarScalar()
     {
@@ -333,6 +340,18 @@ public class UnitTestEvaluatorMath : TestClassBase
         var min = 3U;
         var max = 6L;
         var expr = IR.F.Math.Clamp(Tensor.From(input, new[] { 2, 4 }), min, max);
+        CompilerServices.InferenceType(expr);
+        Assert.IsType<InvalidType>(expr.CheckedType);
+    }
+
+    [Theory]
+    [MemberData(nameof(ClampInvalidTypeData))]
+    public void TestClampInvalidType2(int[] inputShape, int[] minShape, int[] maxShape)
+    {
+        var input = Tensor.FromScalar<float>(3.3f, inputShape);
+        var min = Tensor.FromScalar<float>(0.0f, minShape);
+        var max = Tensor.FromScalar<float>(6.0f, maxShape);
+        var expr = IR.F.Math.Clamp(input, min, max);
         CompilerServices.InferenceType(expr);
         Assert.IsType<InvalidType>(expr.CheckedType);
     }

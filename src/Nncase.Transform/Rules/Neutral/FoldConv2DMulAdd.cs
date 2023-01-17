@@ -40,13 +40,13 @@ namespace Nncase.Transform.Rules.Neutral;
 /// </remarks>
 /// </summary>
 [RuleGenerator]
-public sealed partial class FoldConv2DMulAdd : IRewriteRule
+public sealed partial class FoldConv2DMulAdd : RewriteRule<CallPattern>
 {
     private static readonly Pattern _mulConst = IsTensorConst("mulConst", c => CheckConstTensor(c.Value));
 
     private static readonly Pattern _addConst = IsTensorConst("addConst", c => CheckConstTensor(c.Value));
 
-    private static readonly Pattern _inputPattern = IsCall("inputCall", IsWildcard("inputTarget"), IsVArgsRepeat(() => IsWildcard()));
+    private static readonly Pattern _inputPattern = IsWildcard("input", x => x is not Const);
 
     private static readonly Pattern _mulPattern =
       IsAlt(
@@ -59,7 +59,7 @@ public sealed partial class FoldConv2DMulAdd : IRewriteRule
         IsBinary("add", "addCall", op => op.BinaryOp == BinaryOp.Add, _mulPattern, _addConst));
 
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsConv2D(
+    public override CallPattern Pattern { get; } = IsConv2D(
         "conv2d",
         "conv2dCall",
         op => true,
@@ -90,13 +90,8 @@ public sealed partial class FoldConv2DMulAdd : IRewriteRule
     private Expr? GetReplace(Call conv2dCall, IR.NN.Conv2D conv2d,
       Tensor<float> weights, Tensor<float> bias, Expr strides,
       Expr paddings, Expr dilation, Expr groups, Expr fusedClamp,
-      Tensor<float> addConst, Tensor<float> mulConst, Call inputCall, Expr inputTarget)
+      Tensor<float> addConst, Tensor<float> mulConst, Expr input)
     {
-        if (inputTarget is IR.NN.Conv2D)
-        {
-            return null;
-        }
-
         int ic = weights.Shape[1].FixedValue;
         if (mulConst.Length != ic || addConst.Length != ic)
         {
@@ -113,8 +108,6 @@ public sealed partial class FoldConv2DMulAdd : IRewriteRule
 
         var addBias = addConv + Reshape(bias, new[] { 1, bias.Shape[0].FixedValue, 1, 1 });
 
-        var newConv = Conv2D(inputCall, newWeights, Reshape(addBias, new[] { bias.Shape[0].FixedValue }), strides, paddings, dilation, conv2d.PadMode, groups, fusedClamp);
-
-        return newConv;
+        return Conv2D(input, newWeights, Reshape(addBias, new[] { bias.Shape[0].FixedValue }), strides, paddings, dilation, conv2d.PadMode, groups, fusedClamp);
     }
 }

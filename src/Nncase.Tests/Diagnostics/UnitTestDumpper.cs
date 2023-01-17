@@ -136,6 +136,53 @@ public sealed class UnitTestDumpper : TestClassBase
         Assert.True(File.Exists(Path.Join(Dumpper.Directory, "Costs", "V4.dot")));
     }
 
+    [Fact]
+    public async Task TestSubDumperDumpFlags()
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
+        Function main;
+        {
+            var weights = Const.FromValue(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 64, 3, 3, 3 }).Evaluate());
+            var (inH, inW) = Util.GetHW(input);
+            var (fH, fW) = Util.GetHW(weights);
+            var strideH = 2;
+            var strideW = 2;
+            var dilationH = 1;
+            var dilationW = 1;
+            var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, true);
+            var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, true);
+            var padding = Stack(
+              new IR.Tuple(
+                Stack(new IR.Tuple(new Expr[] { 0, 0 }), 0),
+                Stack(new IR.Tuple(new Expr[] { 0, 0 }), 0),
+                Stack(new IR.Tuple(padH), 0),
+                Stack(new IR.Tuple(padW), 0)),
+              0);
+            var body = IR.F.NN.Pad(input, padding, PadMode.Constant, 0.0f);
+            main = new Function("main", body, ImmutableArray.Create(input));
+        }
+
+        var pass = new ShapeInferPass { Name = $"ShapeInfer" };
+
+        using (var _ = new DumpScope("DisableEvaluator", DumpFlags.ImportOps | DumpFlags.EGraphCost
+            | DumpFlags.Calibration | DumpFlags.Compile | DumpFlags.PassIR | DumpFlags.Rewrite))
+        {
+            var post = (Function)await pass.RunAsync(main, new());
+        }
+
+        Assert.False(Directory.Exists(Path.Join(Dumpper.Directory, "DisableEvaluator", "0_ShapeInfer", "main", "Run_0", "Evaluate")));
+        Assert.True(Directory.Exists(Path.Join(Dumpper.Directory, "DisableEvaluator", "0_ShapeInfer", "main", "Run_0", "Rewrite")));
+
+        using (var _ = new DumpScope("DisableRewrite", DumpFlags.ImportOps | DumpFlags.EGraphCost | DumpFlags.Evaluator
+            | DumpFlags.Calibration | DumpFlags.Compile | DumpFlags.PassIR))
+        {
+            var post = (Function)await pass.RunAsync(main, new());
+        }
+
+        Assert.True(Directory.Exists(Path.Join(Dumpper.Directory, "DisableRewrite", "0_ShapeInfer", "main", "Run_0", "Evaluate")));
+        Assert.False(Directory.Exists(Path.Join(Dumpper.Directory, "DisableRewrite", "0_ShapeInfer", "main", "Run_0", "Rewrite")));
+    }
+
     private async Task<Expr> RunShapeInferPass(string name, Expr expr, params Var[] parameters)
     {
         var f = new Function(name, expr, parameters);

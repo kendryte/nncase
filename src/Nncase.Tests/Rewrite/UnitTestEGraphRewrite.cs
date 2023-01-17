@@ -74,7 +74,7 @@ public class UnitTestEGraphRewrite : TestClassBase
 
         Assert.True(pre.InferenceType());
 
-        var post = CompilerServices.ERewrite(pre, new[] { new Transform.Rules.Neutral.CombineTransposeBinary() }, new());
+        var post = CompilerServices.ERewrite(pre, new[] { new Transform.Rules.Neutral.CombineBinaryTranspose() }, new());
 
         Assert.True(post.InferenceType());
         Assert.Equal(pre.Evaluate(), post.Evaluate());

@@ -24,12 +24,13 @@ public struct DumpScope : IDisposable
     /// Initializes a new instance of the <see cref="DumpScope"/> struct.
     /// </summary>
     /// <param name="subDirectory">Sub directory.</param>
+    /// <param name="dumpFlags">new dump Flags.</param>
     /// <param name="serviceProvider">Service provider.</param>
-    public DumpScope(string subDirectory, IServiceProvider? serviceProvider = null)
+    public DumpScope(string subDirectory, DumpFlags? dumpFlags = null, IServiceProvider? serviceProvider = null)
     {
         _initialized = true;
         _originalDumpper = GetCurrent(serviceProvider);
-        _dumpper.Value = _originalDumpper.CreateSubDummper(subDirectory);
+        _dumpper.Value = _originalDumpper.CreateSubDummper(subDirectory, dumpFlags);
     }
 
     /// <summary>

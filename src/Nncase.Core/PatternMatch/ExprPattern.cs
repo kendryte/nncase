@@ -50,11 +50,19 @@ public static partial class Utility
     };
 
     /// <summary>
-    /// fast utility for build wildcard pattern.
+    /// build wildcard pattern.
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
+    public static ExprPattern IsWildcard(string? name) => new ExprPattern(name);
+
+    /// <summary>
+    /// fast utitlty for build condition.
     /// </summary>
     /// <param name="name">name.</param>
-    /// <returns> Returns. </returns>
-    public static ExprPattern IsWildcard(string? name) => new ExprPattern(name);
+    /// <param name="condition">conditions.</param>
+    /// <returns></returns>
+    public static ExprPattern IsWildcard(string? name, Func<Expr, bool> condition) => new ExprPattern(condition, name);
 
     /// <summary>
     /// <see cref="IsWildcard(string?)"/>.
