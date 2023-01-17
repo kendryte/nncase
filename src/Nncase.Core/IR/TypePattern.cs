@@ -175,7 +175,7 @@ namespace Nncase.IR
         /// </summary>
         /// <returns></returns>
         public static TypePattern IsPointer() => new TypePattern(
-          x => x is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType { } } }, "IsPointer");
+          x => x is TensorType { IsScalar: true, DType: PointerType }, "IsPointer");
 
         /// <summary>
         /// check the datatype is scalar.

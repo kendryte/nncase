@@ -10,7 +10,7 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// fold math calc operator.
 /// </summary>
-internal sealed class FoldMathCall : ExprMutator
+public sealed class FoldMathCall : ExprMutator
 {
     /// <inheritdoc/>
     public override Expr MutateLeaf(Call expr)
