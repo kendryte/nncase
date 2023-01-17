@@ -79,6 +79,7 @@ public sealed class PluginLoader
         // Is reference assembly
         if ((from cah in metaReader.CustomAttributes
              let ca = metaReader.GetCustomAttribute(cah)
+             where ca.Constructor.Kind is MemberReferenceKind
              let ctor = metaReader.GetMemberReference((MemberReferenceHandle)ca.Constructor)
              let attrType = metaReader.GetTypeReference((TypeReferenceHandle)ctor.Parent)
              where metaReader.GetString(attrType.Namespace) == nameof(System.Runtime.CompilerServices)
