@@ -45,7 +45,7 @@
     <PackageVersion Include="NetFabric.Hyperlinq" Version="3.0.0-beta48" />
     <PackageVersion Include="Nncase.FlatBuffers" Version="2.0.0" />
     <PackageVersion Include="OrtKISharp" Version="0.0.2" />
-    <PackageVersion Include="RazorLight" Version="2.0.0-rc.2" />
+    <PackageVersion Include="RazorLight" Version="2.3.0" />
     <PackageVersion Include="Singulink.Collections.Weak" Version="1.0.2" />
     <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.435" />
     <PackageVersion Include="System.CommandLine.Hosting" Version="0.3.0-alpha.21216.1" />

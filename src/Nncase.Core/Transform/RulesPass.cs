@@ -20,8 +20,8 @@ public interface IRulesAddable
     /// <summary>
     /// Add the rewrite rule.
     /// </summary>
-    /// <typeparam name="T">Rule type.</typeparam>
-    /// <param name="parameters">Rule's constructor parameters.</param>
+    /// <typeparam name="T">Descriptor type.</typeparam>
+    /// <param name="parameters">Descriptor's constructor parameters.</param>
     /// <returns>Add result.</returns>
     RulesPass.AddResult<T> Add<T>(params object[] parameters)
         where T : class, IRewriteRule;
@@ -29,8 +29,8 @@ public interface IRulesAddable
     /// <summary>
     /// Add the rewrite rule.
     /// </summary>
-    /// <param name="ruleType">Rule type.</param>
-    /// <param name="parameters">Rule's constructor parameters.</param>
+    /// <param name="ruleType">Descriptor type.</param>
+    /// <param name="parameters">Descriptor's constructor parameters.</param>
     /// <returns>Add result.</returns>
     RulesPass.AddResult<IRewriteRule> Add(Type ruleType, params object[] parameters);
 }
@@ -69,7 +69,7 @@ public abstract class RulesPass : FunctionPass, IRulesAddable
     /// <summary>
     /// Add rule result.
     /// </summary>
-    /// <typeparam name="T">Pass type.</typeparam>
+    /// <typeparam name="T">Descriptor type.</typeparam>
     public struct AddResult<T> : IRulesAddable
         where T : class, IRewriteRule
     {

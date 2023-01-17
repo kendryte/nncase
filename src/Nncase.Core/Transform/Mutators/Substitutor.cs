@@ -15,7 +15,7 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// substitutor will not substitute the other function.
 /// </summary>
-internal sealed class Substitutor : ExprMutator
+public sealed class Substitutor : ExprMutator
 {
     private readonly Func<Expr, Expr?> _maper;
 

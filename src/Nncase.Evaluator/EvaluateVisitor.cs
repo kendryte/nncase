@@ -23,7 +23,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>, IDisposable
         _context = new EvaluateContext(ExpressionMemo);
         _evaluator_cache = evaluator_cache;
         _varsValues = varsValues;
-        _dumpManager = new EvaluatorDumpManager(DumpScope.Current.CreateSubDummper("Evaluate"), expr => _context.GetValue(expr).AsTensors());
+        _dumpManager = new EvaluatorDumpManager(DumpScope.Current.CreateSubDummper("Evaluate", null), expr => _context.GetValue(expr).AsTensors());
         _dumpManager.RegisterDumpCallbacks(RegisterBeforeCallback, RegisterAfterCallback);
     }
 

@@ -24,13 +24,14 @@ public sealed class NullDumpper : IDumpper
     public string Directory => System.IO.Directory.GetCurrentDirectory();
 
     /// <inheritdoc/>
-    public IDumpper CreateSubDummper(string subDirectory) => this;
+    public IDumpper CreateSubDummper(string subDirectory, DumpFlags? dumpFlags) => this;
 
     /// <inheritdoc/>
     public void DumpIR(Expr expr, string prefix, string? reletivePath = null)
     {
     }
 
+    /// <inheritdoc/>
     public void DumpDotIR(Expr expr, string prefix, string? reletivePath = null)
     {
     }

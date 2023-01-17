@@ -129,13 +129,13 @@ internal class EGraphExtractor
         while (stack.Any())
         {
             (eclass, var minCostEnode) = stack.Peek();
-            if (_eclassMemo.TryGetValue(eclass, out var expr))
+            if (_eclassMemo.ContainsKey(eclass))
             {
                 stack.Pop();
                 continue;
             }
 
-            expr = null;
+            Expr? expr = null;
             switch (minCostEnode.Expr)
             {
                 case Var or TensorConst or TupleConst or Op or Fusion or None:

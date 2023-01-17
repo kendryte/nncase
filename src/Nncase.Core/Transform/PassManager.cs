@@ -122,7 +122,7 @@ internal sealed class PassManager : IPassManager
     {
         Name = name;
         _compileSession = compileSession;
-        _dummper = DumpScope.GetCurrent(compileSession).CreateSubDummper(name);
+        _dummper = DumpScope.GetCurrent(compileSession).CreateSubDummper(name, null);
     }
 
     /// <summary>

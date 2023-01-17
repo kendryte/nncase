@@ -66,14 +66,19 @@ internal class Compiler : ICompiler
                 p.Add<Transform.Rules.Neutral.CombineTransposeUnary>();
                 p.Add<Transform.Rules.Neutral.CombineTransposePad>();
                 p.Add<Transform.Rules.Neutral.CombinePadTranspose>();
-                p.Add<Transform.Rules.Neutral.CombineTransposeBinary>();
+                p.Add<Transform.Rules.Neutral.CombineBinaryTranspose>();
+                p.Add<Transform.Rules.Neutral.CombineConstBinaryTranspose>();
                 p.Add<Transform.Rules.Neutral.CombineTransposeConstBinary>();
                 p.Add<Transform.Rules.Neutral.CombineTransposeReduce>();
                 p.Add<Transform.Rules.Neutral.CombineTransposeActivations>();
                 p.Add<Transform.Rules.Neutral.CombineActivationsTranspose>();
                 p.Add<Transform.Rules.Neutral.FoldNopPad>();
                 p.Add<Transform.Rules.Neutral.FoldConv2DPads>();
+                p.Add<Transform.Rules.Neutral.FoldConv2DMulAdd>();
                 p.Add<Transform.Rules.Neutral.FoldReduceWindow2DPads>();
+                p.Add<Transform.Rules.Neutral.ReluToClamp>();
+                p.Add<Transform.Rules.Neutral.CombineClampAdd>();
+                p.Add<Transform.Rules.Neutral.CombineClampMul>();
             });
         }
 
