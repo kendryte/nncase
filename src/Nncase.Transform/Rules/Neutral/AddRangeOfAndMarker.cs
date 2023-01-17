@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -40,7 +41,8 @@ public sealed partial class AddRangeOfAndMarkerToBatchToSpace : IRewriteRule
             IsWildcard("blockshape"),
             IsWildcard("crops"));
 
-    private Expr? GetReplace(BatchToSpace batchtospace, Call call, Expr input, Expr blockshape, TensorConst crops, RunPassContext options)
+    private Expr? GetReplace(BatchToSpace batchtospace, Call call, Expr input, Expr blockshape, TensorConst crops,
+        RunPassOptions options)
     {
         var output = BatchToSpace(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), blockshape, crops);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
@@ -54,13 +56,15 @@ public sealed partial class AddRangeOfAndMarkerToBinary : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
         IsBinary("binary", "call",
-            b => b.BinaryOp != BinaryOp.LogicalAnd && b.BinaryOp != BinaryOp.LogicalOr && b.BinaryOp != BinaryOp.LogicalXor,
+            b => b.BinaryOp != BinaryOp.LogicalAnd && b.BinaryOp != BinaryOp.LogicalOr &&
+                 b.BinaryOp != BinaryOp.LogicalXor,
             IsWildcard("lhs"),
             IsWildcard("rhs"));
 
-    private Expr? GetReplace(Binary binary, Call call, Expr lhs, Expr rhs, RunPassContext options)
+    private Expr? GetReplace(Binary binary, Call call, Expr lhs, Expr rhs, RunPassOptions options)
     {
-        var output = Nncase.IR.F.Math.Binary(binary.BinaryOp, IR.F.Math.RangeOfMarker(lhs, IR.F.Math.RangeOf(lhs)), IR.F.Math.RangeOfMarker(rhs, IR.F.Math.RangeOf(rhs)));
+        var output = Nncase.IR.F.Math.Binary(binary.BinaryOp, IR.F.Math.RangeOfMarker(lhs, IR.F.Math.RangeOf(lhs)),
+            IR.F.Math.RangeOfMarker(rhs, IR.F.Math.RangeOf(rhs)));
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
@@ -75,7 +79,7 @@ public sealed partial class AddRangeOfAndMarkerToBroadcast : IRewriteRule
             IsWildcard("input"),
             IsTensorConst("shape"));
 
-    private Expr? GetReplace(Broadcast broadcast, Expr input, Expr shape, RunPassContext options)
+    private Expr? GetReplace(Broadcast broadcast, Expr input, Expr shape, RunPassOptions options)
     {
         var output = Broadcast(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), shape);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
@@ -92,7 +96,7 @@ public sealed partial class AddRangeOfAndMarkerToCelu : IRewriteRule
             IsWildcard("input"),
             IsWildcard("alpha"));
 
-    private Expr? GetReplace(Celu celu, Call call, Expr input, Expr alpha, RunPassContext options)
+    private Expr? GetReplace(Celu celu, Call call, Expr input, Expr alpha, RunPassOptions options)
     {
         var output = Celu(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), alpha);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
@@ -109,9 +113,10 @@ public sealed partial class AddRangeOfAndMarkerToCompare : IRewriteRule
             IsWildcard("lhs"),
             IsWildcard("rhs"));
 
-    private Expr? GetReplace(Compare compare, Call call, Expr lhs, Expr rhs, RunPassContext options)
+    private Expr? GetReplace(Compare compare, Call call, Expr lhs, Expr rhs, RunPassOptions options)
     {
-        var output = Compare(compare.CompareOp, IR.F.Math.RangeOfMarker(lhs, IR.F.Math.RangeOf(lhs)), IR.F.Math.RangeOfMarker(rhs, IR.F.Math.RangeOf(rhs)));
+        var output = Compare(compare.CompareOp, IR.F.Math.RangeOfMarker(lhs, IR.F.Math.RangeOf(lhs)),
+            IR.F.Math.RangeOfMarker(rhs, IR.F.Math.RangeOf(rhs)));
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
@@ -132,10 +137,12 @@ public sealed partial class AddRangeOfAndMarkerToConv2D : IRewriteRule
             IsTensorConst("groups"),
             IsWildcard("fusedClamp"));
 
-    private Expr? GetReplace(Conv2D conv, Call call, Expr input, Expr weights, TensorConst bias, Expr stride, Expr padding,
+    private Expr? GetReplace(Conv2D conv, Call call, Expr input, Expr weights, TensorConst bias, Expr stride,
+        Expr padding,
         Expr dilation, Expr groups, Expr fusedClamp)
     {
-        var output = Conv2D(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), IR.F.Math.RangeOfMarker(weights, IR.F.Math.RangeOf(weights)),
+        var output = Conv2D(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)),
+            IR.F.Math.RangeOfMarker(weights, IR.F.Math.RangeOf(weights)),
             bias, stride, padding, dilation, PadMode.Constant, groups, fusedClamp);
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
@@ -158,10 +165,12 @@ public sealed partial class AddRangeOfAndMarkerToConv2DTranspose : IRewriteRule
             IsTensorConst("groups"),
             IsWildcard("fusedClamp"));
 
-    private Expr? GetReplace(Conv2DTranspose conv2dTranspose, Expr input, Expr weights, TensorConst bias, Expr outShape, Expr stride, Expr padding,
-        Expr outPadding, Expr dilation, Expr groups, Expr fusedClamp, RunPassContext options)
+    private Expr? GetReplace(Conv2DTranspose conv2dTranspose, Expr input, Expr weights, TensorConst bias, Expr outShape,
+        Expr stride, Expr padding,
+        Expr outPadding, Expr dilation, Expr groups, Expr fusedClamp, RunPassOptions options)
     {
-        var output = Conv2DTranspose(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), IR.F.Math.RangeOfMarker(weights, IR.F.Math.RangeOf(weights)),
+        var output = Conv2DTranspose(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)),
+            IR.F.Math.RangeOfMarker(weights, IR.F.Math.RangeOf(weights)),
             bias, outShape, stride, padding, outPadding, dilation, PadMode.Constant, groups);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
@@ -177,7 +186,7 @@ public sealed partial class AddRangeOfAndMarkerToElu : IRewriteRule
             IsWildcard("input"),
             IsWildcard("alpha"));
 
-    private Expr? GetReplace(Elu elu, Call call, Expr input, Expr alpha, RunPassContext options)
+    private Expr? GetReplace(Elu elu, Call call, Expr input, Expr alpha, RunPassOptions options)
     {
         var output = Elu(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), alpha);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
@@ -194,7 +203,7 @@ public sealed partial class AddRangeOfAndMarkerToHardMax : IRewriteRule
             IsWildcard("input"),
             IsWildcard("axis"));
 
-    private Expr? GetReplace(Hardmax hardmax, Call call, Expr input, Expr axis, RunPassContext options)
+    private Expr? GetReplace(Hardmax hardmax, Call call, Expr input, Expr axis, RunPassOptions options)
     {
         var output = Hardmax(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), axis);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
@@ -212,7 +221,8 @@ public sealed partial class AddRangeOfAndMarkerToHardSigmoid : IRewriteRule
             IsWildcard("alpha"),
             IsWildcard("beta"));
 
-    private Expr? GetReplace(HardSigmoid hardSigmoid, Call call, Expr input, Expr alpha, Expr beta, RunPassContext options)
+    private Expr? GetReplace(HardSigmoid hardSigmoid, Call call, Expr input, Expr alpha, Expr beta,
+        RunPassOptions options)
     {
         var output = HardSigmoid(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), alpha, beta);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
@@ -228,7 +238,7 @@ public sealed partial class AddRangeOfAndMarkerToHardSwish : IRewriteRule
         IsHardSwish("hardSwish", "call", _ => true,
             IsWildcard("input"));
 
-    private Expr? GetReplace(HardSwish hardSwish, Call call, Expr input, RunPassContext options)
+    private Expr? GetReplace(HardSwish hardSwish, Call call, Expr input, RunPassOptions options)
     {
         var output = HardSwish(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)));
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
@@ -245,7 +255,7 @@ public sealed partial class AddRangeOfAndMarkerToLeakyRelu : IRewriteRule
             IsWildcard("input"),
             IsWildcard("alpha"));
 
-    private Expr? GetReplace(LeakyRelu leaky, Call call, Expr input, Expr alpha, RunPassContext options)
+    private Expr? GetReplace(LeakyRelu leaky, Call call, Expr input, Expr alpha, RunPassOptions options)
     {
         var output = LeakyRelu(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), alpha);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
@@ -274,12 +284,17 @@ public sealed partial class AddRangeOfAndMarkerToLSTM : IRewriteRule
             IsTensorConst("inputforget"),
             IsTensorConst("outputsize"));
 
-    private Expr? GetReplace(IR.Tensors.LSTM lstm, Call call, Expr x, TensorConst w, TensorConst r, TensorConst b, TensorConst sequencelens,
-                            TensorConst initialh, TensorConst initialc, TensorConst p, TensorConst actalpha, TensorConst actbeta,
-                            TensorConst clip, TensorConst hiddensize, TensorConst inputforget, TensorConst outputsize, RunPassContext options)
+    private Expr? GetReplace(IR.Tensors.LSTM lstm, Call call, Expr x, TensorConst w, TensorConst r, TensorConst b,
+        TensorConst sequencelens,
+        TensorConst initialh, TensorConst initialc, TensorConst p, TensorConst actalpha, TensorConst actbeta,
+        TensorConst clip, TensorConst hiddensize, TensorConst inputforget, TensorConst outputsize,
+        RunPassOptions options)
     {
-        var output = LSTM(lstm.Direction, lstm.Layout, lstm.Activations, IR.F.Math.RangeOfMarker(x, IR.F.Math.RangeOf(x)), w, r, b, sequencelens, initialh, initialc,
-                         p, actalpha, actbeta, clip, hiddensize, inputforget, outputsize);
+        var output = LSTM(lstm.Direction, lstm.Layout, lstm.Activations,
+            RangeOfMarker(x, IR.F.Math.RangeOf(x)), IR.F.Math.RangeOfMarker(w, IR.F.Math.RangeOf(w)),
+            IR.F.Math.RangeOfMarker(r, IR.F.Math.RangeOf(r)), IR.F.Math.RangeOfMarker(b, IR.F.Math.RangeOf(b)),
+            sequencelens, initialh, initialc,
+            p, actalpha, actbeta, clip, hiddensize, inputforget, outputsize);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
@@ -294,9 +309,10 @@ public sealed partial class AddRangeOfAndMarkerToMatMul : IRewriteRule
             IsWildcard("lhs"),
             IsWildcard("rhs"));
 
-    private Expr? GetReplace(MatMul matmul, Call call, Expr lhs, Expr rhs, RunPassContext options)
+    private Expr? GetReplace(MatMul matmul, Call call, Expr lhs, Expr rhs, RunPassOptions options)
     {
-        var output = Nncase.IR.F.Math.MatMul(IR.F.Math.RangeOfMarker(lhs, IR.F.Math.RangeOf(lhs)), IR.F.Math.RangeOfMarker(rhs, IR.F.Math.RangeOf(rhs)));
+        var output = Nncase.IR.F.Math.MatMul(IR.F.Math.RangeOfMarker(lhs, IR.F.Math.RangeOf(lhs)),
+            IR.F.Math.RangeOfMarker(rhs, IR.F.Math.RangeOf(rhs)));
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
@@ -312,7 +328,7 @@ public sealed partial class AddRangeOfAndMarkerToPad : IRewriteRule
             IsWildcard("pads"),
             IsWildcard("value"));
 
-    private Expr? GetReplace(Pad pad, Call call, Expr input, Expr pads, Expr value, RunPassContext options)
+    private Expr? GetReplace(Pad pad, Call call, Expr input, Expr pads, Expr value, RunPassOptions options)
     {
         var output = Pad(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), pads, pad.PadMode, value);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
@@ -329,7 +345,7 @@ public sealed partial class AddRangeOfAndMarkerToPRelu : IRewriteRule
             IsWildcard("input"),
             IsWildcard("slope"));
 
-    private Expr? GetReplace(PRelu prelu, Call call, Expr input, Expr slope, RunPassContext options)
+    private Expr? GetReplace(PRelu prelu, Call call, Expr input, Expr slope, RunPassOptions options)
     {
         var output = PRelu(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), slope);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
@@ -345,7 +361,7 @@ public sealed partial class AddRangeOfAndMarkerToRelu : IRewriteRule
         IsRelu("relu", "call", _ => true,
             IsWildcard("input"));
 
-    private Expr? GetReplace(Relu relu, Call call, Expr input, RunPassContext options)
+    private Expr? GetReplace(Relu relu, Call call, Expr input, RunPassOptions options)
     {
         var output = Relu(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)));
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
@@ -361,7 +377,7 @@ public sealed partial class AddRangeOfAndMarkerToRelu6 : IRewriteRule
         IsRelu6("relu6", "call", _ => true,
             IsWildcard("input"));
 
-    private Expr? GetReplace(Relu6 relu6, Call call, Expr input, RunPassContext options)
+    private Expr? GetReplace(Relu6 relu6, Call call, Expr input, RunPassOptions options)
     {
         var output = Relu6(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)));
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
@@ -380,9 +396,11 @@ public sealed partial class AddRangeOfAndMarkerToReduce : IRewriteRule
             IsWildcard("initValue"),
             IsTensorConst("keepDims"));
 
-    private Expr? GetReplace(Reduce reduce, Expr input, TensorConst axis, Expr initValue, TensorConst keepDims, RunPassContext options)
+    private Expr? GetReplace(Reduce reduce, Expr input, TensorConst axis, Expr initValue, TensorConst keepDims,
+        RunPassOptions options)
     {
-        var output = Reduce(reduce.ReduceOp, IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), axis, initValue, keepDims);
+        var output = Reduce(reduce.ReduceOp, IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), axis, initValue,
+            keepDims);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
@@ -403,10 +421,12 @@ public sealed partial class AddRangeOfAndMarkerToReduceWindow2D : IRewriteRule
             IsWildcard("ceilmode"),
             IsWildcard("countincludepad"));
 
-    private Expr? GetReplace(ReduceWindow2D reduceWindow2D, Expr input, Expr initvalue, Expr filter, Expr stride, Expr padding,
-        Expr dilation, Expr ceilmode, Expr countincludepad, RunPassContext options)
+    private Expr? GetReplace(ReduceWindow2D reduceWindow2D, Expr input, Expr initvalue, Expr filter, Expr stride,
+        Expr padding,
+        Expr dilation, Expr ceilmode, Expr countincludepad, RunPassOptions options)
     {
-        var output = ReduceWindow2D(reduceWindow2D.ReduceOp, IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), initvalue, filter, stride, padding, dilation, ceilmode, countincludepad);
+        var output = ReduceWindow2D(reduceWindow2D.ReduceOp, IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)),
+            initvalue, filter, stride, padding, dilation, ceilmode, countincludepad);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
@@ -425,9 +445,12 @@ public sealed partial class AddRangeOfAndMarkerToResizeImage : IRewriteRule
             IsWildcard("excludeOutside"),
             IsWildcard("extrapolationValue"));
 
-    private Expr? GetReplace(ResizeImage resize, Call call, Expr input, Expr roi, TensorConst newSize, Expr cubiccoeffa, Expr excludeOutside, Expr extrapolationValue, RunPassContext options)
+    private Expr? GetReplace(ResizeImage resize, Call call, Expr input, Expr roi, TensorConst newSize, Expr cubiccoeffa,
+        Expr excludeOutside, Expr extrapolationValue, RunPassOptions options)
     {
-        var output = ResizeImage(resize.ResizeMode, resize.TransformationMode, resize.NearestMode, IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), roi, newSize, cubiccoeffa, excludeOutside, extrapolationValue, resize.IsTFResize);
+        var output = ResizeImage(resize.ResizeMode, resize.TransformationMode, resize.NearestMode,
+            IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), roi, newSize, cubiccoeffa, excludeOutside,
+            extrapolationValue, resize.IsTFResize);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
@@ -443,7 +466,7 @@ public sealed partial class AddRangeOfAndMarkerToSelu : IRewriteRule
             IsWildcard("alpha"),
             IsWildcard("gamma"));
 
-    private Expr? GetReplace(Selu selu, Call call, Expr input, Expr alpha, Expr gamma, RunPassContext options)
+    private Expr? GetReplace(Selu selu, Call call, Expr input, Expr alpha, Expr gamma, RunPassOptions options)
     {
         var output = Selu(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), alpha, gamma);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
@@ -459,7 +482,7 @@ public sealed partial class AddRangeOfAndMarkerToSigmoid : IRewriteRule
         IsSigmoid("sigmoid", "call", _ => true,
             IsWildcard("input"));
 
-    private Expr? GetReplace(Sigmoid sigmoid, Call call, Expr input, RunPassContext options)
+    private Expr? GetReplace(Sigmoid sigmoid, Call call, Expr input, RunPassOptions options)
     {
         var output = Sigmoid(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)));
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
@@ -477,7 +500,8 @@ public sealed partial class AddRangeOfAndMarkerToSpaceToBatch : IRewriteRule
             IsWildcard("blockshape"),
             IsWildcard("paddings"));
 
-    private Expr? GetReplace(SpaceToBatch spacetobatch, Call call, Expr input, Expr blockshape, TensorConst paddings, RunPassContext options)
+    private Expr? GetReplace(SpaceToBatch spacetobatch, Call call, Expr input, Expr blockshape, TensorConst paddings,
+        RunPassOptions options)
     {
         var output = SpaceToBatch(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), blockshape, paddings);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
@@ -494,7 +518,7 @@ public sealed partial class AddRangeOfAndMarkerToTranspose : IRewriteRule
             IsWildcard("input"),
             IsTensorConst("perm"));
 
-    private Expr? GetReplace(Transpose transpose, Expr input, TensorConst perm, RunPassContext options)
+    private Expr? GetReplace(Transpose transpose, Expr input, TensorConst perm, RunPassOptions options)
     {
         var output = Transpose(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), perm);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
@@ -511,7 +535,7 @@ public sealed partial class AddRangeOfAndMarkerToUnary : IRewriteRule
             u => u.UnaryOp != UnaryOp.LogicalNot,
             IsWildcard("input"));
 
-    private Expr? GetReplace(Unary unary, Call call, Expr input, RunPassContext options)
+    private Expr? GetReplace(Unary unary, Call call, Expr input, RunPassOptions options)
     {
         var output = Nncase.IR.F.Math.Unary(unary.UnaryOp, IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)));
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
