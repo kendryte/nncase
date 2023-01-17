@@ -141,7 +141,8 @@ public sealed partial class AddRangeOfAndMarkerToConv2D : IRewriteRule
         Expr padding,
         Expr dilation, Expr groups, Expr fusedClamp)
     {
-        var output = Conv2D(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)),
+        var output = Conv2D(
+            IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)),
             IR.F.Math.RangeOfMarker(weights, IR.F.Math.RangeOf(weights)),
             bias, stride, padding, dilation, PadMode.Constant, groups, fusedClamp);
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
@@ -169,7 +170,8 @@ public sealed partial class AddRangeOfAndMarkerToConv2DTranspose : IRewriteRule
         Expr stride, Expr padding,
         Expr outPadding, Expr dilation, Expr groups, Expr fusedClamp, RunPassOptions options)
     {
-        var output = Conv2DTranspose(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)),
+        var output = Conv2DTranspose(
+            IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)),
             IR.F.Math.RangeOfMarker(weights, IR.F.Math.RangeOf(weights)),
             bias, outShape, stride, padding, outPadding, dilation, PadMode.Constant, groups);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
@@ -311,7 +313,8 @@ public sealed partial class AddRangeOfAndMarkerToMatMul : IRewriteRule
 
     private Expr? GetReplace(MatMul matmul, Call call, Expr lhs, Expr rhs, RunPassOptions options)
     {
-        var output = Nncase.IR.F.Math.MatMul(IR.F.Math.RangeOfMarker(lhs, IR.F.Math.RangeOf(lhs)),
+        var output = Nncase.IR.F.Math.MatMul(
+            IR.F.Math.RangeOfMarker(lhs, IR.F.Math.RangeOf(lhs)),
             IR.F.Math.RangeOfMarker(rhs, IR.F.Math.RangeOf(rhs)));
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
