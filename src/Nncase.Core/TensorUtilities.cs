@@ -235,12 +235,12 @@ public static class TensorUtilities
         // Scalar
         if (strides.Length == 0)
         {
-            if (indices.Length != 1 || indices[0] != (Expr)0)
+            if (indices.Length != 1)
             {
                 throw new IndexOutOfRangeException();
             }
 
-            return 0;
+            return IR.F.Math.Require(IR.F.Math.Equal(indices[0], 0), 0);
         }
 
         Trace.Assert(strides.Length == indices.Length);

@@ -214,11 +214,10 @@ public sealed class UnitTestTensorUtilities
         var stride1 = Array.Empty<Expr>();
         var indices = new Expr[] { 0 };
         var actual1 = TensorUtilities.GetIndex(stride1, indices);
-        Assert.Equal(0, actual1);
+        Assert.Equal(0, actual1.Evaluate().AsTensor().ToScalar<int>());
 
         // exception
         Assert.Throws<IndexOutOfRangeException>(() => TensorUtilities.GetIndex(stride1, new Expr[] { 0, 1 }));
-        Assert.Throws<IndexOutOfRangeException>(() => TensorUtilities.GetIndex(stride1, new Expr[] { 1 }));
     }
 
     [Theory]
