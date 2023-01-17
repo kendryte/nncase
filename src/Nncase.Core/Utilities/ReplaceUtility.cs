@@ -170,6 +170,18 @@ public class ReplaceUtility
         return new_args;
     }
 
+    /// <summary>
+    /// Make a call with replace param.
+    /// </summary>
+    /// <param name="call">Old Call.</param>
+    /// <param name="pairs">Pair of old param and new param.</param>
+    /// <returns>New Call.</returns>
+    public static Call ReplaceCallParam(Call call, IReadOnlyList<(Expr, Expr)> pairs)
+    {
+        var newParams = ReplaceParams(call.Parameters, pairs).ToArray();
+        return call with { Parameters = newParams };
+    }
+
     public static Call ReplaceOpAndParams(Call call, Op op, params (ParameterInfo, Expr)[] posAndValue)
     {
         return call with { Target = op, Parameters = ReplaceMulti(call.Parameters, posAndValue) };

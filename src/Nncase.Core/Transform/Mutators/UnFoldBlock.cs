@@ -13,7 +13,7 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// unroll loop.
 /// </summary>
-internal sealed class UnFoldBlock : ExprMutator
+public sealed class UnFoldBlock : ExprMutator
 {
     /// <inheritdoc/>
     public override Expr MutateLeaf(TIR.Block expr)

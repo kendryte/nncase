@@ -13,7 +13,7 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// Substitute all the block vars with the PrimExprs they are bound to, indicated by the corresponding iter_values in BlockRealize, for opaque blocks by removing all . the iter_values in BlockRealize and iter_vars in Block.
 /// </summary>
-internal sealed class ConvertBlocksToOpaque : ExprMutator
+public sealed class ConvertBlocksToOpaque : ExprMutator
 {
     /// <inheritdoc/>
     public override Expr MutateLeaf(IterVar expr)

@@ -328,7 +328,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
     }
 
     [Fact]
-    public async void TestWithAnalysisInfoRewriteOnce()
+    public async Task TestWithAnalysisInfoRewriteOnce()
     {
         var x = new Var(TensorType.Scalar(DataTypes.Int32));
         var y = new Var(TensorType.Scalar(DataTypes.Int32));

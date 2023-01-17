@@ -31,22 +31,22 @@ public sealed class DataflowWithUsdByPass : RulesPass
     private readonly List<IRewriteRule> _rules = new();
 
     /// <inheritdoc/>
-    protected override Task<BaseFunction> RunCoreAsync(BaseFunction function, RunPassContext context)
+    protected override Task<BaseFunction> RunCoreAsync(BaseFunction function, RunPassContext options)
     {
-        return Task.FromResult((BaseFunction)Rewrite(function, Rules, context));
+        return Task.FromResult((BaseFunction)Rewrite(function, Rules, options));
     }
 
-    private Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext context)
+    private Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options)
     {
         var post = expr;
         int count = 0;
-        OnRewriteStart(expr, context, count);
+        OnRewriteStart(expr, options, count);
         do
         {
             bool isMutated = false;
             foreach (var rule in rules)
             {
-                var visitor = new DataflowWithUsdByVisitor(rule, context);
+                var visitor = new DataflowWithUsdByVisitor(rule, options);
                 var last = post;
                 if (rule is IRewriteRuleWithUsdBy usedbyRule)
                 {
@@ -62,18 +62,18 @@ public sealed class DataflowWithUsdByPass : RulesPass
             }
 
             var inferSuccess = CompilerServices.InferenceType(post);
-            OnRewriteEnd(post, context, count++);
+            OnRewriteEnd(post, options, count++);
             if (isMutated && !inferSuccess)
             {
                 if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
                 {
-                    CompilerServices.DumpIR(post, $"InferShape_{count - 1}_Failed", "Rewrite");
+                    DumpScope.Current.DumpIR(post, $"InferShape_{count - 1}_Failed", "RewriteFailed");
                 }
 
                 throw new InvalidOperationException($"After Rewrite {count - 1}, InferShape Failed For This Model!");
             }
 
-            if (!isMutated || context.RewriteOnce)
+            if (!isMutated || options.RewriteOnce)
             {
                 break;
             }
@@ -85,18 +85,18 @@ public sealed class DataflowWithUsdByPass : RulesPass
     /// <summary>
     /// callback for rewrite start.
     /// </summary>
-    private void OnRewriteStart(Expr expr, RunPassContext context, int count)
+    private void OnRewriteStart(Expr expr, RunPassContext options, int count)
     {
         if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
         {
-            CompilerServices.DumpIR(expr, $"{count}_Start", "Rewrite");
+            DumpScope.Current.DumpIR(expr, $"{count}_Start", "Rewrite");
         }
     }
 
     /// <summary>
     /// call back for rewrite end.
     /// </summary>
-    private void OnRewriteEnd(Expr expr, RunPassContext context, int count)
+    private void OnRewriteEnd(Expr expr, RunPassContext options, int count)
     {
         if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
         {
@@ -114,10 +114,10 @@ internal sealed class DataflowWithUsdByVisitor : ExprMutator
     private readonly RunPassContext _options;
     private readonly HashSet<Expr> _dontInheritExprs = new HashSet<Expr>(ReferenceEqualityComparer.Instance);
 
-    public DataflowWithUsdByVisitor(IRewriteRule rule, RunPassContext context)
+    public DataflowWithUsdByVisitor(IRewriteRule rule, RunPassContext options)
     {
         _rule = rule;
-        _options = context;
+        _options = options;
         _options.MatchOptions.RewriteMemo = ExpressionMemo;
     }
 

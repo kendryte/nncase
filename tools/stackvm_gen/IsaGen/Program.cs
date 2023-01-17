@@ -331,7 +331,7 @@ namespace IsaGen
             return fields.ToList();
         }
 
-        private string CppFieldValueText(PropertyInfo f, object v)
+        private string? CppFieldValueText(PropertyInfo f, object v)
         {
             if (f.SetMethod != null)
             {

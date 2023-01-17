@@ -252,14 +252,14 @@ internal sealed class DataFlowType3FusionCaseRight : DataFlowType3FusionCaseLeft
 ///        |      v1 = fusion2(v0)                    |           |
 ///        |      v2 = fusion3(v1)                    |      v2 = fusion3(v1)
 ///        |      v3 = fusion4(v2)                    |           |
-///        |      v4 = fusion5(v3)                    |      v4 = fusion5_4(v2)
+///        |      v4 = fusion5(v3)                    |          |
 ///         \        /                                 \        /
 ///          \     /                                    \     /
-///     fusion6(input,v4)            =>              fusion6(input,v4).
+///     fusion6(input,v4)            =>              fusion6_5_4(input,v2).
 /// </summary>
 internal class DataFlowType4FusionCaseLeft : IDataFlowFusionCase
 {
-    public int FinalFusionCount => 4;
+    public int FinalFusionCount => 3;
 
     public static Expr BuildBodyCore(Expr input, bool left)
     {
@@ -543,5 +543,161 @@ internal class DataFlowType9FusionCase : IDataFlowFusionCase
     public Expr BuildBody(Var input)
     {
         return BuildBodyCore(input, true);
+    }
+}
+
+/// <summary>
+/// ShortCutFusionCase
+///           x
+///          /
+/// v0 = fusion_0(x)      y
+///          \           /
+///            \       /
+///     v1 = fusion_1(v0,y).
+/// </summary>
+internal class DataFlowType10FusionCaseLeft : IDataFlowFusionCase
+{
+    public int FinalFusionCount => 1;
+
+    public static Expr BuildBodyCore(Expr inputLhs, Expr inputRhs, bool left)
+    {
+        var v0 = new Call(FusionBuilder.MakeConv2DFusion(true), inputLhs);
+        var v1 = new Call(FusionBuilder.MakeBinaryFusion(BinaryOp.Add, true), left ? new[] { v0, inputRhs } : new[] { inputRhs, v0, });
+        return v1;
+    }
+
+    public Expr BuildBody(Var input)
+    {
+        return BuildBodyCore(input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 224, 224 }), true);
+    }
+}
+
+/// <summary>
+/// right version <see cref="DataFlowType10FusionCaseLeft"/>.
+/// </summary>
+internal sealed class DataFlowType10FusionCaseRight : IDataFlowFusionCase
+{
+    public int FinalFusionCount => 1;
+
+    public Expr BuildBody(Var input)
+    {
+        return DataFlowType10FusionCaseLeft.BuildBodyCore(input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 224, 224 }), false);
+    }
+}
+
+/// <summary>
+/// ShortCutFusionCase
+///                x
+///              /    \
+/// v0 = fusion_0(x)    \
+///          \           |
+///            \         /
+///     v1 = fusion_1(v0,x).
+/// </summary>
+internal class DataFlowType11FusionCaseLeft : IDataFlowFusionCase
+{
+    public int FinalFusionCount => 1;
+
+    public static Expr BuildBodyCore(Expr input, bool left)
+    {
+        var v0 = new Call(FusionBuilder.MakeConv2DFusion(true), input);
+        var v1 = new Call(FusionBuilder.MakeBinaryFusion(BinaryOp.Add, true), left ? new[] { v0, input } : new[] { input, v0, });
+        return v1;
+    }
+
+    public Expr BuildBody(Var input)
+    {
+        return BuildBodyCore(input, true);
+    }
+}
+
+internal sealed class DataFlowType11FusionCaseRight : IDataFlowFusionCase
+{
+    public int FinalFusionCount => 1;
+
+    public Expr BuildBody(Var input)
+    {
+        return DataFlowType11FusionCaseLeft.BuildBodyCore(input, false);
+    }
+}
+
+/// <summary>
+/// ShortCutFusionCase
+///                            y
+///           x              |   \
+///          /         fusion_0() \
+///          /               |     |
+/// v0 = fusion_0(x)   fusion_0( ,y)
+///          \           /
+///            \       /
+///     v1 = fusion_1(v0,y)
+///               |        \
+///     v2 = fusion_2(v1)   |
+///               |        /
+///     v3 = fusion_3(v2,v1).
+/// </summary>
+internal class DataFlowType12FusionCaseLeft : IDataFlowFusionCase
+{
+    public int FinalFusionCount => 1;
+
+    public static Expr BuildBodyCore(Expr input, bool left)
+    {
+        var y = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 224, 224 });
+        var inputRhs = DataFlowType11FusionCaseLeft.BuildBodyCore(y, !left);
+        var v1 = DataFlowType10FusionCaseLeft.BuildBodyCore(input, inputRhs, left);
+        var v2 = DataFlowType11FusionCaseLeft.BuildBodyCore(v1, !left);
+        return v2;
+    }
+
+    public Expr BuildBody(Var input)
+    {
+        return BuildBodyCore(input, true);
+    }
+}
+
+internal class DataFlowType12FusionCaseRight : IDataFlowFusionCase
+{
+    public int FinalFusionCount => 1;
+
+    public Expr BuildBody(Var input)
+    {
+        return DataFlowType12FusionCaseLeft.BuildBodyCore(input, false);
+    }
+}
+
+/// <summary>
+///       x
+///       |
+///    v0 = fusion0(x)
+///      |           |
+///      |     v1 =fusion1(v0)
+///    v2 = fusion2(v0,v1).
+///
+/// </summary>
+internal class DataFlowType13FusionCaseLeft : IDataFlowFusionCase
+{
+    public int FinalFusionCount => 1;
+
+    public static Expr BuildBodyCore(Expr input, bool left)
+    {
+        var v0 = new Call(FusionBuilder.MakeConv2DFusion(true), input);
+        var v1 = new Call(FusionBuilder.MakeConv2DFusion(true), v0);
+        var v2 = new Call(FusionBuilder.MakeBinaryFusion(BinaryOp.Sub, true), left ? new[] { v0, v1 } : new[] { v1, v0 });
+        return v2;
+    }
+
+    public Expr BuildBody(Var input)
+    {
+        return BuildBodyCore(input, true);
+    }
+}
+
+internal class DataFlowType13FusionCaseRight : IDataFlowFusionCase
+{
+    public int FinalFusionCount => 1;
+
+    public Expr BuildBody(Var input)
+    {
+        return DataFlowType13FusionCaseLeft.BuildBodyCore(input, false);
     }
 }

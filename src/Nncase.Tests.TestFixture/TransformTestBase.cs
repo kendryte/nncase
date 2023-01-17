@@ -27,26 +27,26 @@ public partial class TransformTestBase : TestClassBase
         CompileOptions.QuantizeOptions.WQuantType = DataTypes.UInt8;
     }
 
-    public virtual Expr TestMatched<T>(Expr pre, RunPassContext passOptions)
+    public virtual Expr TestMatched<T>(Expr pre)
         where T : IRewriteRule, new()
     {
-        return TestMatchedCore(pre, passOptions, new T());
+        return TestMatchedCore(pre, new T());
     }
 
-    public void CondMatch<T>(bool cond, Expr expr, RunPassContext passOptions)
+    public void CondMatch<T>(bool cond, Expr expr)
         where T : IRewriteRule, new()
     {
         if (cond)
         {
-            TestMatched<T>(expr, passOptions);
+            TestMatched<T>(expr);
         }
         else
         {
-            TestNotMatch<T>(expr, passOptions);
+            TestNotMatch<T>(expr);
         }
     }
 
-    public Expr TestMatchedCore(Expr pre, RunPassContext passOptions, params IRewriteRule[] rules)
+    public Expr TestMatchedCore(Expr pre, params IRewriteRule[] rules)
     {
         Assert.True(pre.InferenceType(), "TestInferFailed:" + pre.CheckedType);
         if (rules.Length == 0)
@@ -54,7 +54,7 @@ public partial class TransformTestBase : TestClassBase
             throw new InvalidOperationException("Rules should not be empty");
         }
 
-        var post = CompilerServices.Rewrite(pre, rules, passOptions);
+        var post = CompilerServices.Rewrite(pre, rules, new());
         Assert.NotEqual(pre, post);
         var v1 = pre.Evaluate();
         var v2 = post.Evaluate();
@@ -63,17 +63,17 @@ public partial class TransformTestBase : TestClassBase
         return post;
     }
 
-    public void TestNotMatch(Expr pre, RunPassContext passOptions, params IRewriteRule[] rules)
+    public void TestNotMatch(Expr pre, params IRewriteRule[] rules)
     {
         pre.InferenceType();
-        var post = CompilerServices.Rewrite(pre, rules, passOptions);
+        var post = CompilerServices.Rewrite(pre, rules, new());
         Assert.Equal(pre, post);
     }
 
-    public void TestNotMatch<T>(Expr pre, RunPassContext passOptions)
+    public void TestNotMatch<T>(Expr pre)
         where T : IRewriteRule, new()
     {
-        TestNotMatch(pre, passOptions, new T());
+        TestNotMatch(pre, new T());
     }
 
     // public void TestSwappableBinary<T>(BinaryOp op, Expr lhs, Expr rhs) where T : IRewriteRule, new()
@@ -117,21 +117,21 @@ public partial class TransformTestBase : TestClassBase
             new FoldNopCast(),
         }, fuse);
 
-    public Expr TestMultiMatched<T>(Expr expr, RunPassContext passOptions, int count)
+    public Expr TestMultiMatched<T>(Expr expr, int count)
         where T : IRewriteRule, new()
         =>
         Enumerable.Range(0, count).Aggregate(expr, (expr1, i) =>
         {
-            var ex = TestMatched<T>(expr1, passOptions);
+            var ex = TestMatched<T>(expr1);
             return ex;
         });
 
-    public Expr RewriteMultiTimes<T>(Expr expr, RunPassContext passOptions, int count)
+    public Expr RewriteMultiTimes<T>(Expr expr, int count)
         where T : IRewriteRule, new()
         =>
         Enumerable.Range(0, count).Aggregate(expr, (expr1, i) =>
         {
-            var ex = Rewrite<T>(expr1, passOptions);
+            var ex = Rewrite<T>(expr1, new());
             return ex;
         });
 

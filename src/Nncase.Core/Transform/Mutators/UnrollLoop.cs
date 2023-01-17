@@ -14,7 +14,7 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// unroll loop.
 /// </summary>
-internal sealed class UnRollLoop : ExprMutator
+public sealed class UnRollLoop : ExprMutator
 {
     private readonly Dictionary<Type, Evaluator.IEvaluator> _evaluator_cache = new();
 
