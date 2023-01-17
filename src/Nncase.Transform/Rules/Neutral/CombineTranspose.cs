@@ -117,7 +117,7 @@ public sealed partial class CombineTransposeConstBinary : RewriteRule<CallPatter
       IsTranspose(
         IsAlt(
           IsBinary("binary", _ => true, IsWildcard("x", x => x is not Const), IsTensorConst("y")),
-          IsBinary("binary", _ => true, IsTensorConst("y"), IsWildcard("x", x => x is not Const))),
+          IsBinary("binary", _ => true, IsTensorConst("x"), IsWildcard("y", x => x is not Const))),
         IsTensorConst("perm"));
 
     private Const GetNewConst(TensorConst oldConst, Expr input, TensorConst perm)
@@ -142,12 +142,9 @@ public sealed partial class CombineTransposeConstBinary : RewriteRule<CallPatter
         {
             return Binary(binary.BinaryOp, GetNewConst(constX, y, perm), Transpose(y, perm));
         }
-        else if (y is TensorConst constY)
-        {
-            return Binary(binary.BinaryOp, Transpose(x, perm), GetNewConst(constY, x, perm));
-        }
 
-        return null;
+        var constY = (TensorConst)y;
+        return Binary(binary.BinaryOp, Transpose(x, perm), GetNewConst(constY, x, perm));
     }
 }
 
