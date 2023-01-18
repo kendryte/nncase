@@ -58,7 +58,17 @@ PYBIND11_MODULE(_nncase, m) {
         .value("UseQAT", nncase_mqm_use_qat);
 
     py::enum_<nncase_dump_flags_t>(m, "DumpFlags")
-        .value("Nothing", nncase_dump_flags_none);
+        .value("Nothing", nncase_dump_flags_none)
+        .value("ImportOps", nncase_dump_flags_import_ops)
+        .value("PassIR", nncase_dump_flags_pass_ir)
+        .value("EGraphCost", nncase_dump_flags_egraph_cost)
+        .value("Rewrite", nncase_dump_flags_rewrite)
+        .value("Calibration", nncase_dump_flags_calibration)
+        .value("Evaluator", nncase_dump_flags_evaluator)
+        .value("Compile", nncase_dump_flags_compile)
+        .value("Tiling", nncase_dump_flags_tiling)
+        .value("Schedule", nncase_dump_flags_schedule)
+        .value("CodeGen", nncase_dump_flags_codegen);
 
     py::class_<compile_options>(m, "CompileOptions")
         .def(py::init())

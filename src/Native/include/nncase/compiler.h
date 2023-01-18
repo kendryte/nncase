@@ -43,7 +43,19 @@ typedef enum {
     nncase_calib_kld = 1
 } nncase_calib_method_t;
 
-typedef enum { nncase_dump_flags_none = 0 } nncase_dump_flags_t;
+typedef enum {
+    nncase_dump_flags_none = 0 ,
+    nncase_dump_flags_import_ops = 1 << 1,
+    nncase_dump_flags_pass_ir = 1 << 2,
+    nncase_dump_flags_egraph_cost = 1 << 3,
+    nncase_dump_flags_rewrite = 1 << 4,
+    nncase_dump_flags_calibration = 1 << 5,
+    nncase_dump_flags_evaluator = 1 << 6,
+    nncase_dump_flags_compile = 1 << 7,
+    nncase_dump_flags_tiling = 1 << 8,
+    nncase_dump_flags_schedule = 1 << 9,
+    nncase_dump_flags_codegen = 1 << 10
+} nncase_dump_flags_t;
 
 typedef struct {
     void (*add_ref)(nncase_stream_handle_t handle);
