@@ -15,15 +15,10 @@ using Nncase.TIR;
 namespace Nncase.IR;
 
 /// <summary>
-/// a TextWirter, it's have Scope data struct.
+/// a TextWirter, it's have _scope data struct.
 /// </summary>
 public sealed class ScopeWriter
 {
-    /// <summary>
-    /// indent level.
-    /// </summary>
-    public int IndentLevel;
-
     private readonly TextWriter _rootWriter;
 
     /// <summary>
@@ -61,6 +56,11 @@ public sealed class ScopeWriter
     }
 
     /// <summary>
+    /// Gets or sets indent level.
+    /// </summary>
+    public int IndentLevel { get; set; }
+
+    /// <summary>
     /// Gets current VarNamelist.
     /// </summary>
     private List<IPrintSymbol> VarSymbolList => _varSymbolStack.Peek();
@@ -81,8 +81,6 @@ public sealed class ScopeWriter
     /// <summary>
     /// get current frame string.
     /// </summary>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
     public StringBuilder Pop()
     {
         var (builder, writer) = _scopeStack.Pop();
@@ -112,49 +110,41 @@ public sealed class ScopeWriter
     /// <summary>
     /// insert indent and write.
     /// </summary>
-    /// <param name="value"></param>
     public void IndWrite(string? value) => Indent().Write(value);
 
     /// <summary>
     /// write the string builder.
     /// </summary>
-    /// <param name="value"></param>
     public void IndWrite(StringBuilder? value) => Indent().Write(value);
 
     /// <summary>
     /// insert indent and write line.
     /// </summary>
-    /// <param name="value"></param>
     public void IndWriteLine(string? value = null) => Indent().WriteLine(value);
 
     /// <summary>
     /// wrtie string builder.
     /// </summary>
-    /// <param name="value"></param>
     public void IndWriteLine(StringBuilder? value) => Indent().WriteLine(value);
 
     /// <summary>
     /// Append the current line tail, without the indent.
     /// </summary>
-    /// <param name="value"></param>
     public void Append(string value) => _writer.Write(value);
 
     /// <summary>
     /// wrtie string builder.
     /// </summary>
-    /// <param name="value"></param>
     public void Append(StringBuilder value) => _writer.Write(value);
 
     /// <summary>
     /// Append the current line tail, without the indent, but add new line.
     /// </summary>
-    /// <param name="value"></param>
     public void AppendLine(string value) => _writer.WriteLine(value);
 
     /// <summary>
     /// wrtie string builder.
     /// </summary>
-    /// <param name="value"></param>
     public void AppendLine(StringBuilder value) => _writer.WriteLine(value);
 
     /// <summary>
@@ -169,8 +159,6 @@ public sealed class ScopeWriter
     /// <summary>
     /// add the indent level, return the indent mananger for auto indent down.
     /// </summary>
-    /// <param name="indent_diff"></param>
-    /// <returns></returns>
     public IndentMananger IndentUp(int indent_diff = 2)
     {
         return new(this, indent_diff);
@@ -181,7 +169,6 @@ public sealed class ScopeWriter
     /// </summary>
     /// <param name="var">var name.</param>
     /// <param name="prefix">prefix name.</param>
-    /// <returns></returns>
     public IPrintSymbol GetUniqueVarSymbol(Var @var, string prefix = "")
     {
         if (!_globalVarCountMap.TryGetValue(prefix + @var.Name, out var count))
@@ -198,7 +185,6 @@ public sealed class ScopeWriter
     /// <summary>
     /// insert the indent.
     /// </summary>
-    /// <returns></returns>
     private TextWriter Indent()
     {
         for (int i = 0; i < IndentLevel; i++)
@@ -229,8 +215,6 @@ public sealed class IndentMananger : IDisposable
     /// Initializes a new instance of the <see cref="IndentMananger"/> class.
     /// <see cref="IndentMananger"/>.
     /// </summary>
-    /// <param name="parent"></param>
-    /// <param name="level_diff"></param>
     public IndentMananger(ScopeWriter parent, int level_diff = 1)
     {
         _parent = parent;
@@ -290,7 +274,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         {
             TensorConst tc => tc.Value.Shape.Size <= 8 ? tc.Value.GetArrayString(false) : string.Empty,
             TupleConst => string.Empty,
-            _ => throw new ArgumentOutOfRangeException(),
+            _ => throw new ArgumentOutOfRangeException(nameof(expr)),
         };
         valueStr = valueStr != string.Empty ? " : " + valueStr : string.Empty;
         name = $"const({(expr.CheckedType is null ? string.Empty : VisitType(expr.CheckedType))}{valueStr})";
@@ -381,7 +365,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         _scope.Push();
 
         // 1. Function signature
-        _scope.IndWrite($"{name} = prim_wrapper({string.Join(", ", expr.ParameterTypes.Select(VisitType))})");
+        _scope.IndWrite($"{name} = prim_wrapper({string.Join(", ", expr.ParameterTypes.Select(x => x == null ? string.Empty : VisitType(x)))})");
         AppendCheckedType(expr.CheckedType, " {");
 
         // 2. Function body

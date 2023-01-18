@@ -66,6 +66,6 @@ public partial class EGraphPrinter
 
         // count++;
         // }
-        return DotGraph;
+        return _dotGraph;
     }
 }

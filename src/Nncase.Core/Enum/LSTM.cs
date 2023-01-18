@@ -38,7 +38,7 @@ public static class LSTMHelper
         {
             0 => LSTMLayout.Zero,
             1 => LSTMLayout.One,
-            _ => throw new ArgumentOutOfRangeException($"ErrorLSTMLayoutValue:{nameof(n)} Valid value:0/1", n, null),
+            _ => throw new ArgumentOutOfRangeException(nameof(n), $"ErrorLSTMLayoutValue:{nameof(n)} Valid value:0/1"),
         };
     }
 

@@ -77,19 +77,45 @@ public class UnitTestEGraphFusion : TestClassBase
             var v_0 = new Call(fusion_1, input); // 1,3,224,224
 
             var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
-            var fusion_2 = new Fusion("fusion_2", Callable.StackVMModuleKind, IR.F.NN.ReduceWindow2D(ReduceOp.Max, fusion_2_input, 0.0f, new[] { 3, 3 }, new[] { 2, 2 }, new[,]
-            {
-                { 1, 1 },
-                { 1, 1 },
-            }, new[] { 1, 1 }, false, false), new[] { fusion_2_input });
+            var fusion_2 = new Fusion(
+                "fusion_2",
+                Callable.StackVMModuleKind,
+                IR.F.NN.ReduceWindow2D(
+                    ReduceOp.Max,
+                    fusion_2_input,
+                    0.0f,
+                    new[] { 3, 3 },
+                    new[] { 2, 2 },
+                    new[,]
+                    {
+                        { 1, 1 },
+                        { 1, 1 },
+                    },
+                    new[] { 1, 1 },
+                    false,
+                    false),
+                new[] { fusion_2_input });
             var v_1 = new Call(fusion_2, v_0); // 1,3,112,112
 
             var fusion_3_input = new Var("fusion_3_input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 }));
-            var fusion_3 = new Fusion("fusion_3", Callable.StackVMModuleKind, IR.F.NN.ReduceWindow2D(ReduceOp.Mean, fusion_3_input, 0.0f, new[] { 3, 3 }, new[] { 1, 1 }, new[,]
-            {
-                { 1, 1 },
-                { 1, 1 },
-            }, new[] { 1, 1 }, false, false), new[] { fusion_3_input });
+            var fusion_3 = new Fusion(
+                "fusion_3",
+                Callable.StackVMModuleKind,
+                IR.F.NN.ReduceWindow2D(
+                    ReduceOp.Mean,
+                    fusion_3_input,
+                    0.0f,
+                    new[] { 3, 3 },
+                    new[] { 1, 1 },
+                    new[,]
+                    {
+                        { 1, 1 },
+                        { 1, 1 },
+                    },
+                    new[] { 1, 1 },
+                    false,
+                    false),
+                new[] { fusion_3_input });
             var v_2 = new Call(fusion_3, v_1); // 1,3,112,112
 
             var fusion_4_input = new Var[] { new("fusion_4_input_0", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 })), new("fusion_4_input_1", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 })) };
@@ -326,8 +352,7 @@ internal sealed class TwoInputFusionMergeRule : IRewriteRule
     public Expr? GetReplace(IMatchResult result, RunPassContext options)
     {
         return GetReplace(
-          (Call)result["caller"], (Call)result["lhs_callee"], (Call)result["rhs_callee"], (Fusion)result["caller_fusion"], (Fusion)result["lhs_callee_fusion"], (Fusion)result["rhs_callee_fusion"], (Expr)result["input"],
-          options);
+          (Call)result["caller"], (Call)result["lhs_callee"], (Call)result["rhs_callee"], (Fusion)result["caller_fusion"], (Fusion)result["lhs_callee_fusion"], (Fusion)result["rhs_callee_fusion"], (Expr)result["input"], options);
     }
 
     private Expr? GetReplace(Call caller, Call lhs_callee, Call rhs_callee, Fusion caller_fusion, Fusion lhs_callee_fusion, Fusion rhs_callee_fusion, Expr input, RunPassContext passOptions)

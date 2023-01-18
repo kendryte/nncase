@@ -39,7 +39,7 @@ public sealed class LowerBlockInit : ExprMutator
         {
             if (iterVar.Mode == IterationMode.CommReduce)
             {
-                conds.Append(IR.F.Math.Equal(iterVar, iterVar.Dom.Start));
+                conds.Add(IR.F.Math.Equal(iterVar, iterVar.Dom.Start));
             }
         }
 

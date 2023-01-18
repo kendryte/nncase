@@ -12,13 +12,13 @@ namespace Nncase.Tests.ReWrite.FusionTest;
 [TestFixture.AutoSetupTestMethod(InitSession = true)]
 public class UnitTestFusionGroup : TestClassBase
 {
-    public static TheoryData<IDataFlowFusionCase> DataOne = new()
+    public static readonly TheoryData<IDataFlowFusionCase> DataOne = new()
     {
         new DataFlowType13FusionCaseLeft(),
         new DataFlowType13FusionCaseRight(),
     };
 
-    public static TheoryData<IDataFlowFusionCase> DataAll = new()
+    public static readonly TheoryData<IDataFlowFusionCase> DataAll = new()
     {
         new DataFlowType0FusionCase(),
         new DataFlowType0NotFusionCase(),
@@ -70,14 +70,17 @@ public class UnitTestFusionGroup : TestClassBase
 #endif
 
         var rewriter = new DataFlowMergeRewriter();
-        var post = (Function)rewriter.Rewrite(main, new IMergeRewriteRule[]
-        {
-            new SameInputFusionMergeRule(),
-            new MultiInputFusionMergeRule(),
-            new ShortCutFusionMergeRuleLeft(),
-            new ShortCutFusionMergeRuleRight(),
-        }, (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
-          new());
+        var post = (Function)rewriter.Rewrite(
+            main,
+            new IMergeRewriteRule[]
+            {
+                new SameInputFusionMergeRule(),
+                new MultiInputFusionMergeRule(),
+                new ShortCutFusionMergeRuleLeft(),
+                new ShortCutFusionMergeRuleRight(),
+            },
+            (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
+            new());
 #if DEBUG
         Dumpper.DumpDotIR(post, "post");
 #endif

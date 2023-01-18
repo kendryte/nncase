@@ -45,8 +45,7 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
         };
     }
 
-    private IRType Visit(ITypeInferenceContext context, Gather target, TensorType input, TensorType axis,
-        TensorType index)
+    private IRType Visit(ITypeInferenceContext context, Gather target, TensorType input, TensorType axis, TensorType index)
     {
         if (input.Shape.IsUnranked)
         {

@@ -54,10 +54,6 @@ public interface IIRPrinterProvider
     /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.{ext}`
     /// else write to {dumpPath}/{prefix}_{expr.Type.name}.il`.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <param name="prefix"></param>
-    /// <param name="dumpPath"></param>
-    /// <param name="display_callable"></param>
     void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable);
 
     /// <summary>
@@ -66,17 +62,11 @@ public interface IIRPrinterProvider
     /// not support prim func/prim func wrapper.
     /// </remarks>
     /// </summary>
-    /// <param name="expr"></param>
-    /// <param name="prefix"></param>
-    /// <param name="dumpPath"></param>
-    /// <param name="display_callable"></param>
     void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable);
 
     /// <summary>
     /// print ir type.
     /// </summary>
-    /// <param name="type"></param>
-    /// <returns></returns>
     string Print(IRType type);
 
     /// <summary>

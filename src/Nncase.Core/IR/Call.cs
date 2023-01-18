@@ -13,14 +13,11 @@ namespace Nncase.IR;
 /// <summary>
 /// the interface that we can use parameterinfo the parameter.
 /// </summary>
-/// <typeparam name="T"></typeparam>
 public interface IParameterList<T>
 {
     /// <summary>
     /// get parameter info.
     /// </summary>
-    /// <param name="parameter"></param>
-    /// <returns></returns>
     public T this[ParameterInfo parameter] { get; }
 }
 
@@ -29,22 +26,6 @@ public interface IParameterList<T>
 /// </summary>
 public sealed record Call(Expr Target, IRArray<Expr> Parameters) : Expr, IParameterList<Expr>
 {
-    // /// <summary>
-    // /// used by fake ir, represents that whether this op permit int 16 quant.
-    // /// </summary>
-    // public bool PermitInt16Quant = false;
-
-    /// <summary>
-    /// quant config with cosine, List of DataType represents data types for each input might be quantized, List of QuantParam represents quant params for each input.
-    /// may be deleted in the future since there is EnodeBestQuantConfigWithCosine, reserve it now for debug and for unexpected usage when EnodeBestQuantConfigWithCosine is not enough.
-    /// </summary>
-    public List<Tuple<List<DataType>, List<List<QuantParam>>, float>> EnodeQuantConfigWithCosine;
-
-    /// <summary>
-    /// quant config with cosine, List of DataType represents data types for each input might be quantized, List of QuantParam represents quant params for each input.
-    /// </summary>
-    public Tuple<List<DataType>, List<List<QuantParam>>, float> EnodeBestQuantConfigWithCosine;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="Call"/> class.
     /// </summary>
@@ -55,12 +36,25 @@ public sealed record Call(Expr Target, IRArray<Expr> Parameters) : Expr, IParame
     {
     }
 
+    // /// <summary>
+    // /// used by fake ir, represents that whether this op permit int 16 quant.
+    // /// </summary>
+    // public bool PermitInt16Quant = false;
+
+    /// <summary>
+    /// Gets or sets quant config with cosine, List of DataType represents data types for each input might be quantized, List of QuantParam represents quant params for each input.
+    /// may be deleted in the future since there is EnodeBestQuantConfigWithCosine, reserve it now for debug and for unexpected usage when EnodeBestQuantConfigWithCosine is not enough.
+    /// </summary>
+    public List<Tuple<List<DataType>, List<List<QuantParam>>, float>>? EnodeQuantConfigWithCosine { get; set; }
+
+    /// <summary>
+    /// Gets or sets quant config with cosine, List of DataType represents data types for each input might be quantized, List of QuantParam represents quant params for each input.
+    /// </summary>
+    public Tuple<List<DataType>, List<List<QuantParam>>, float>? EnodeBestQuantConfigWithCosine { get; set; }
+
     /// <summary>
     /// get param expr.
     /// </summary>
-    /// <param name="parameter"></param>
-    /// <returns></returns>
-    /// <exception cref="ArgumentOutOfRangeException"></exception>
     public Expr this[ParameterInfo parameter]
     {
         get

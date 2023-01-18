@@ -7,14 +7,10 @@ using System.Collections.Generic;
 using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
-using Nncase.CostModel;
-using Nncase.IR;
 using Nncase.IR;
 using Nncase.IR.K210;
-using Nncase.IR.K210;
 using OrtKISharp;
-using OrtKISharp;
-using static Nncase.Evaluator.EvaluatorUtil;
+using static Nncase.Evaluator.K210EvaluatorUtil;
 
 namespace Nncase.Evaluator.K210;
 

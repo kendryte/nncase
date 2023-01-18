@@ -51,7 +51,7 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
 {
     private readonly bool _display_callable;
     private readonly DotGraph _dotGraph;
-    private readonly List<ValueTuple<string, DotGraph>> _subdotGraphs;
+    private readonly List<(string, DotGraph)> _subdotGraphs;
     private int _idCounter;
 
     private BaseFunction? _entryBaseFunc;
@@ -312,7 +312,7 @@ internal sealed class ILDotPrintVisitor : ExprVisitor<ILDotOption, string>
                 Fusion fusion => fusion.Parameters.Select(v => v.Name),
                 Function func => func.Parameters.Select(v => v.Name),
                 PrimFunctionWrapper wrapper => wrapper.Target.Parameters.Select(b => b.Name),
-                _ => throw new ArgumentOutOfRangeException(),
+                _ => throw new NotSupportedException($"Target type {expr.Target.GetType()} is not supported."),
             }))
             {
                 if (child is Const or None)

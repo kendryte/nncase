@@ -42,7 +42,6 @@ public static class Value
     /// <summary>
     /// Gets get the None Value.
     /// </summary>
-    /// <returns></returns>
     public static IValue None => Nncase.NoneValue.Default;
 
     /// <summary>
@@ -156,7 +155,7 @@ public sealed class TensorValue : IValue, IEquatable<TensorValue?>
     public IRType Type { get; }
 
     /// <inheritdoc/>
-    public IValue this[int index] => index == 0 ? this : throw new IndexOutOfRangeException();
+    public IValue this[int index] => index == 0 ? this : throw new ArgumentOutOfRangeException(nameof(index));
 
     /// <inheritdoc/>
     public IEnumerator<IValue> GetEnumerator()

@@ -2,7 +2,12 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)/tools/StyleCopAnalyzers.ruleset</CodeAnalysisRuleSet>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Nullable>enable</Nullable>
+    <NoWarn>$(NoWarn);MSB3270</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="AnyTensorFlow.NET" Version="0.70.1" />
@@ -53,12 +58,15 @@
     <PackageVersion Include="Tomlyn.Extensions.Configuration" Version="1.0.5" />
     <PackageVersion Include="TorchSharp" Version="0.99.0" />
     <PackageVersion Include="xunit" Version="2.4.1" />
+    <PackageVersion Include="xunit.analyzers" Version="1.1.0" />
     <PackageVersion Include="xunit.assert" Version="2.4.1" />
     <PackageVersion Include="Xunit.Combinatorial">
       <Version>1.5.25</Version>
     </PackageVersion>
+    <PackageVersion Include="xunit.core" Version="2.4.2" />
     <PackageVersion Include="Xunit.DependencyInjection" Version="8.3.0" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.4.3" />
+    <PackageVersion Include="xunit.v3.assert" Version="0.1.1-pre.121" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="StyleCop.Analyzers">

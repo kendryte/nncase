@@ -33,12 +33,7 @@ public partial class EGraphPrinter
     /// <summary>
     /// Get the dot graph.
     /// </summary>
-    public readonly DotGraph DotGraph;
-
-    /// <summary>
-    /// the expr map to the dot node and html table.
-    /// </summary>
-    protected readonly Dictionary<ENode, (DotNode, DotHtmlTable)> NodesMap = new(ReferenceEqualityComparer.Instance);
+    private readonly DotGraph _dotGraph;
 
     private readonly Dictionary<EClass, DotCluster> _clusterMaps = new Dictionary<EClass, DotCluster>();
 
@@ -54,12 +49,11 @@ public partial class EGraphPrinter
     /// Initializes a new instance of the <see cref="EGraphPrinter"/> class.
     /// ctor for egraph.
     /// </summary>
-    /// <param name="egraph"></param>
     public EGraphPrinter(IEGraph egraph)
     {
         _idCounter = 0;
-        DotGraph = new(directed: true);
-        DotGraph.Clusters.AllowEdgeClipping = true;
+        _dotGraph = new(directed: true);
+        _dotGraph.Clusters.AllowEdgeClipping = true;
         _eGraph = egraph;
         foreach (var eclass in _eGraph.Classes)
         {
@@ -73,6 +67,11 @@ public partial class EGraphPrinter
             }
         }
     }
+
+    /// <summary>
+    /// Gets the expr map to the dot node and html table.
+    /// </summary>
+    protected Dictionary<ENode, (DotNode Node, DotHtmlTable Table)> NodesMap { get; } = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>
     /// dump egraph as dot graph.
@@ -103,13 +102,12 @@ public partial class EGraphPrinter
     /// <summary>
     /// convert the egraph to dot graph.
     /// </summary>
-    /// <returns></returns>
     public DotGraph ConvertEGraphAsDot()
     {
         foreach (var eClass in _eGraph.Classes.Where(x => !_opMaps.ContainsKey(x)))
         {
             // make eClass as cluster
-            var eclassCluster = DotGraph.Clusters.Add($"{eClass.Id}", cluster =>
+            var eclassCluster = _dotGraph.Clusters.Add($"{eClass.Id}", cluster =>
            {
                cluster.Style.BorderStyle = DotBorderStyle.Dotted;
                cluster.Label = $"{eClass.Id}";
@@ -146,14 +144,15 @@ public partial class EGraphPrinter
                 // 1. the enode type and children.
                 table.AddRow(row =>
                 {
-                    row.AddCell(_visitor.Visit(enode.Expr), font: enode.Expr switch
+                    var font = enode.Expr switch
                     {
                         IR.Const => new DotStyledFont(DotFontStyles.Normal, Color.DarkOrange),
                         IR.Call => new DotStyledFont(DotFontStyles.Normal, Color.DarkBlue),
                         IR.Var => new DotStyledFont(DotFontStyles.Normal, Color.BlueViolet),
                         IR.Fusion => new DotStyledFont(DotFontStyles.Normal, Color.MediumSeaGreen),
                         _ => new DotStyledFont(DotFontStyles.Normal),
-                    }); // key wrods type.
+                    };
+                    row.AddCell(_visitor.Visit(enode.Expr), font); // key wrods type.
                     foreach (var (child, i) in enode.Children.Select((c, i) => (c, i)))
                     {
                         var label = $"{child.Find().Id}";
@@ -189,7 +188,7 @@ public partial class EGraphPrinter
                     }
 
                     // var pnode =  from pnode in select
-                    DotGraph.Edges.Add($"{enode.Children[i].Find().Id}" + "dummy", exprNode, edge =>
+                    _dotGraph.Edges.Add($"{enode.Children[i].Find().Id}" + "dummy", exprNode, edge =>
                      {
                          edge.Tail.ClusterId = $"{enode.Children[i].Id}";
                          edge.Head.Endpoint.Port = new DotEndpointPort($"P{i}");
@@ -198,11 +197,11 @@ public partial class EGraphPrinter
             }
         }
 
-        return DotGraph;
+        return _dotGraph;
     }
 
     /// <summary>
-    /// Save the DotGraph into stream.
+    /// Save the _dotGraph into stream.
     /// </summary>
     /// <param name="output">Output stream.</param>
     /// <returns>this dot graph.</returns>
@@ -210,14 +209,14 @@ public partial class EGraphPrinter
     {
         using (var writer = new StreamWriter(output, leaveOpen: true))
         {
-            DotGraph.Build(writer);
+            _dotGraph.Build(writer);
         }
 
-        return DotGraph;
+        return _dotGraph;
     }
 
     /// <summary>
-    /// Save the DotGraph into file.
+    /// Save the _dotGraph into file.
     /// </summary>
     /// <param name="file">Output file.</param>
     /// <returns>this dot graph.</returns>
@@ -234,9 +233,9 @@ public partial class EGraphPrinter
             Directory.CreateDirectory(dirName);
         }
 
-        DotGraph.Build();
-        DotGraph.SaveToFile(file);
-        return DotGraph;
+        _dotGraph.Build();
+        _dotGraph.SaveToFile(file);
+        return _dotGraph;
     }
 
     private class DotDumpVisitor : ExprFunctor<string, string>
@@ -259,7 +258,7 @@ public partial class EGraphPrinter
             {
                 TensorConst tc => tc.Value.Shape.Size <= 8 ? tc.Value.GetArrayString(false) : string.Empty,
                 TupleConst => string.Empty,
-                _ => throw new ArgumentOutOfRangeException(),
+                _ => throw new ArgumentOutOfRangeException(nameof(expr)),
             };
             valueStr = valueStr != string.Empty ? " : " + valueStr : string.Empty;
             name = $"{CompilerServices.Print(expr.CheckedType!)}{valueStr}";

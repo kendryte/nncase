@@ -26,7 +26,7 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
         {
             ReduceArgOp.ArgMax => OrtKI.ArgMax(input, axis, keepDims, selectLastIndex),
             ReduceArgOp.ArgMin => OrtKI.ArgMin(input, axis, keepDims, selectLastIndex),
-            _ => throw new ArgumentOutOfRangeException(nameof(reduceArg.ReduceArgOp)),
+            _ => throw new ArgumentOutOfRangeException(nameof(reduceArg)),
         }).ToValue();
     }
 

@@ -168,9 +168,15 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, new[] { 2 });
         var padding = Util.ConcatPadding(padH, padW);
 
-        var conv = NN.Conv2D(NHWCToNCHW(input), NHWCToNCHW(weights), bias, stride, padding,
+        var conv = NN.Conv2D(
+            NHWCToNCHW(input),
+            NHWCToNCHW(weights),
+            bias,
+            stride,
+            padding,
             dilation,
-            PadMode.Constant, 1);
+            PadMode.Constant,
+            1);
         var convAfterTranspose = NCHWToNHWC(Clamp(conv, 0, 1));
 
         var postConvAfterTranspose = await RunShapeInferPass("convAfterTranspose", convAfterTranspose);
@@ -246,7 +252,8 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
             new IR.Tuple(
                 ShapeOf(v),
                 new long[] { 1 },
-                new long[] { 1 }), 0);
+                new long[] { 1 }),
+            0);
         var afterShape = await RunShapeInferPass("Shape", shape);
         Assert.True(afterShape.InferenceType());
         Assert.Equal(new long[] { 3, 1, 1 }, afterShape);

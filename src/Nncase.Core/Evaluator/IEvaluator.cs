@@ -47,6 +47,7 @@ public interface IEvaluator<T> : IEvaluator
 /// <summary>
 /// this attribute mark the source generator auto generate IEvaluator's interface impl.
 /// </summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
 public sealed class EvaluatorGeneratorAttribute : Attribute
 {
 }

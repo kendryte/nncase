@@ -258,13 +258,13 @@ public class CalibrationEvaluator : IDisposable
 
     private sealed class EGraphOpEvaluateContext : IEvaluateContext
     {
-        public readonly IValue[] Arguments;
-
         public EGraphOpEvaluateContext(Call currentCall, IValue[] arguments)
         {
             CurrentCall = currentCall;
             Arguments = arguments;
         }
+
+        public IValue[] Arguments { get; }
 
         public Call CurrentCall { get; }
 

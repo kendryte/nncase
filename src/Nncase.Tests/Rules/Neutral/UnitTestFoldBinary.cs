@@ -56,10 +56,13 @@ public class UnitTestFoldBinary : TestClassBase
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
 
         var rootPre = Math.Binary(binaryOp, Math.Binary(binaryOp, a, bValue), bValue);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new FoldNopBinary(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new FoldNopBinary(),
+            },
+            new());
 
         // rootPre.InferenceType();
         Assert.Equal(rootPre, rootPost);
@@ -74,10 +77,13 @@ public class UnitTestFoldBinary : TestClassBase
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
         var rootPre = Math.Binary(binaryOp, Math.Binary(binaryOp, a, bValue), bValue);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new FoldNopBinary(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new FoldNopBinary(),
+            },
+            new());
 
         // rootPre.InferenceType();
         Assert.NotEqual(rootPre, rootPost);

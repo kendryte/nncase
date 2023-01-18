@@ -42,7 +42,6 @@ public sealed record ENode
     /// </summary>
     /// <param name="expr">expression.</param>
     /// <param name="children">parameters.</param>
-    /// <returns></returns>
     public static ENode Create(Expr expr, IRArray<EClass> children) => new ENode(expr, children);
 
     /// <summary>

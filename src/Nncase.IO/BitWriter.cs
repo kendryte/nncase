@@ -41,9 +41,6 @@ namespace Nncase.IO
         /// <summary>
         /// writhe the unmanaged value.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="value"></param>
-        /// <param name="bits"></param>
         public void Write<T>(T value, int bits)
             where T : unmanaged
         {
@@ -85,8 +82,6 @@ namespace Nncase.IO
         /// <summary>
         /// write the value less then 8.
         /// </summary>
-        /// <param name="value"></param>
-        /// <param name="bits"></param>
         private void Write_bits_le8(byte value, int bits)
         {
             Trace.Assert(bits <= 8);
@@ -128,7 +123,6 @@ namespace Nncase.IO
         /// <summary>
         /// get current written bits.
         /// </summary>
-        /// <returns></returns>
         private int Buffer_written_bits()
         {
             return (int)((sizeof(ulong) * 8) - _avail);

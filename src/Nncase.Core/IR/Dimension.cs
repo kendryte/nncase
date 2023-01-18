@@ -41,12 +41,11 @@ namespace Nncase.IR
         /// <param name="value">Dimension value.</param>
         public Dimension(int value)
         {
-            // if (value == 0)
-            // {
-            //     Console.WriteLine("zero dimension");
+            if (value == 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), "Dimension should not be 0");
+            }
 
-            // throw new InvalidOperationException("Dimension should not be 0");
-            // }
             Kind = DimensionKind.Fixed;
             Value = value;
         }
@@ -86,43 +85,36 @@ namespace Nncase.IR
         /// <param name="value">Dimension value.</param>
         public static implicit operator Dimension(int value) => new(value);
 
-        /// <inheritdoc/>
         public static bool operator ==(Dimension left, Dimension right)
         {
             return left.Equals(right);
         }
 
-        /// <inheritdoc/>
         public static bool operator !=(Dimension left, Dimension right)
         {
             return !(left == right);
         }
 
-        /// <inheritdoc/>
         public static Dimension operator +(Dimension lhs, Dimension rhs) => (lhs.IsFixed, lhs.IsFixed) switch
         {
             (true, true) => lhs.FixedValue + rhs.FixedValue,
             (_, _) => Dimension.Unknown,
         };
 
-        /// <inheritdoc/>
         public static Dimension operator +(Dimension lhs, int rhs) => lhs.IsFixed ? lhs.FixedValue + rhs : Unknown;
 
-        /// <inheritdoc/>
         public static Dimension operator -(Dimension lhs, Dimension rhs) => (lhs.IsFixed, lhs.IsFixed) switch
         {
             (true, true) => lhs.FixedValue - rhs.FixedValue,
             (_, _) => Dimension.Unknown,
         };
 
-        /// <inheritdoc/>
         public static Dimension operator *(Dimension lhs, Dimension rhs) => (lhs.IsFixed, lhs.IsFixed) switch
         {
             (true, true) => lhs.FixedValue * rhs.FixedValue,
             (_, _) => Dimension.Unknown,
         };
 
-        /// <inheritdoc/>
         public static Dimension operator /(Dimension lhs, Dimension rhs) => (lhs.IsFixed, lhs.IsFixed) switch
         {
             (true, true) => lhs.FixedValue / rhs.FixedValue,

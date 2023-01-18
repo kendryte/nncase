@@ -468,9 +468,6 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     /// <summary>
     /// Verify the expression sub field type is valid.
     /// </summary>
-    /// <param name="parent"></param>
-    /// <param name="field"></param>
-    /// <param name="exprMsg"></param>
     private void VerifySubField(Expr parent, Expr field, TypePattern? pattern = null, [CallerArgumentExpression("field")] string? exprMsg = null)
     {
         pattern ??= TypePatternUtility.IsIRType();
@@ -491,8 +488,6 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     /// <summary>
     /// set expr's current type.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <param name="type"></param>
     private void SetCheckedType(Expr expr, IRType type)
     {
         // note can't determine whether to update checkedtype

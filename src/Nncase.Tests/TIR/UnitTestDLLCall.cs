@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using Nncase.IR;
+using Nncase.TIR;
 using Xunit;
 
 namespace Nncase.Tests.TIRTest;
@@ -24,6 +25,7 @@ public class UnitTestDLLCall
         Assert.NotNull(cls_type.GetMember("Declf"));
         Assert.NotNull(cls_type.GetNestedType("Declf"));
         var t = cls_type.GetNestedType("Declf");
+        Assert.NotNull(t);
         Assert.Equal(typeof(MulticastDelegate), t.BaseType);
         ConstructorInfo ctor = t.GetConstructors()[0];
         Console.Write(ctor.GetMethodImplementationFlags());
@@ -38,11 +40,13 @@ public class UnitTestDLLCall
 
         // For a single-module assembly, the module name is usually
         // the assembly name plus an extension.
+        Assert.NotNull(aName.Name);
         ModuleBuilder mb = ab.DefineDynamicModule(aName.Name);
         TypeBuilder tb = mb.DefineType("MyDynamicType", TypeAttributes.Public);
 
         // Add a private field of delegate
         var created_class = tb.CreateType();
+        Assert.NotNull(created_class);
 
         Console.WriteLine(created_class.GetMember("delfunc"));
     }
@@ -51,6 +55,7 @@ public class UnitTestDLLCall
     {
         var aName = new AssemblyName("DynamicAssemblyExample");
         var ab = AssemblyBuilder.DefineDynamicAssembly(aName, AssemblyBuilderAccess.RunAndCollect);
+        Assert.NotNull(aName.Name);
         ModuleBuilder mb = ab.DefineDynamicModule(aName.Name);
         TypeBuilder tb = mb.DefineType("MyDynamicType", TypeAttributes.Public | TypeAttributes.Sealed, typeof(MulticastDelegate));
         ConstructorBuilder ctor = tb.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, CallingConventions.Standard | CallingConventions.HasThis, new[] { typeof(object), typeof(IntPtr) });
@@ -64,7 +69,9 @@ public class UnitTestDLLCall
 
         var endInvoke = tb.DefineMethod("EndInvoke", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.NewSlot, CallingConventions.Standard | CallingConventions.HasThis, typeof(float), new[] { typeof(IAsyncResult) });
         endInvoke.SetImplementationFlags(MethodImplAttributes.Runtime | MethodImplAttributes.Managed);
-        return tb.CreateType();
+        var type = tb.CreateType();
+        Assert.NotNull(type);
+        return type;
     }
 
     public class CustomType

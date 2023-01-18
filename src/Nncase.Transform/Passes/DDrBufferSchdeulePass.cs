@@ -45,12 +45,10 @@ public sealed class DDrBufferSchdeulePass : ModulePass
 /// </summary>
 internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
 {
-    public readonly Dictionary<string, Dictionary<Schedule.MemoryLocation, int>> ModuleUsage;
-    public readonly Dictionary<string, HashSet<TIR.Buffer>> ModuleHashSet;
-    public bool Changed;
-    public PrimFunction? _entry;
     private readonly Dictionary<Schedule.MemoryLocation, int> _functionUsage;
     private readonly HashSet<TIR.Buffer> _functionHashset;
+
+    private PrimFunction? _entry;
 
     public DDrBufferAllocator(Dictionary<string, Dictionary<Schedule.MemoryLocation, int>> module_usage, Dictionary<string, HashSet<TIR.Buffer>> module_hashset)
     {
@@ -61,10 +59,15 @@ internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
         Changed = false;
     }
 
+    public Dictionary<string, Dictionary<Schedule.MemoryLocation, int>> ModuleUsage { get; }
+
+    public Dictionary<string, HashSet<TIR.Buffer>> ModuleHashSet { get; }
+
+    public bool Changed { get; private set; }
+
     /// <remarks>
     /// only visit one prim func.
     /// </remarks>
-    /// <returns></returns>
     public override bool Visit(PrimFunction primFunction)
     {
         _entry ??= primFunction;

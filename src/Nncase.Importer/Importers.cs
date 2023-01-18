@@ -36,7 +36,7 @@ public static class Importers
     /// Import onnx model.
     /// </summary>
     /// <param name="onnx">onnx model contents.</param>
-    /// <param name="options">compile session.</param>
+    /// <param name="compileSession">compile session.</param>
     /// <returns>Imported IR module.</returns>
     public static IRModule ImportOnnx(Stream onnx, CompileSession compileSession)
     {

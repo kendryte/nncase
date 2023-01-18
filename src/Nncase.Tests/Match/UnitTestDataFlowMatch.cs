@@ -136,7 +136,7 @@ public class UnitTestDataFlowMatch : TestClassBase
 
         var input = (Expr)new[] { 1, 2, 3, 4 };
         var expr = input * IR.F.NN.Sigmoid(input);
-        CompilerServices.TryMatch(expr, pat, out var res);
+        Assert.True(CompilerServices.TryMatch(expr, pat, out var res));
         Assert.NotNull(res["input"]);
     }
 

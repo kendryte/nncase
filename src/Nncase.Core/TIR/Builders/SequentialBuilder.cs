@@ -33,7 +33,6 @@ public interface ISequentialBuilder<out T> : IExprBuilder<T>
     /// <summary>
     /// Insert the expr items to body.
     /// </summary>
-    /// <returns></returns>
     ISequentialBuilder<T> InsertBody(int index, params object[] exprOrBuilders);
 }
 

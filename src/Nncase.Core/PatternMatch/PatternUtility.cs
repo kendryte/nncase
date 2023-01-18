@@ -21,8 +21,7 @@ public static partial class Utility
         => IsSwappableBinary(targetName, null, condition, lhs, rhs);
 
     public static Pattern
-        IsSwappableBinary(string targetName, string? callName, Func<Binary, bool> condition, Pattern lhs,
-            Pattern rhs) => IsAlt(
+        IsSwappableBinary(string targetName, string? callName, Func<Binary, bool> condition, Pattern lhs, Pattern rhs) => IsAlt(
         IsBinary(targetName, callName, condition, lhs, rhs),
         IsBinary(targetName, callName, condition, rhs, lhs));
 
@@ -30,9 +29,8 @@ public static partial class Utility
     /// Generate VArgsPattern with name = "pre_fix"+"Params".
     /// </summary>
     /// <param name="prefix">prefix.</param>
-    /// <param name="inputPattern">input pattern.</param>
-    /// <returns></returns>
-    public static VArgsPattern GenerateParameters(string prefix, Pattern[] beginPatterns) =>
+    /// <param name="beginPatterns">input pattern.</param>
+    public static VArgsPattern GenerateParameters(string? prefix, Pattern[] beginPatterns) =>
         IsVArgsRepeat(
             prefix != null ? prefix + "Params" : null!,
             list =>
@@ -45,24 +43,20 @@ public static partial class Utility
     /// </summary>
     /// <param name="prefix">prefix.</param>
     /// <param name="inputPattern">input pattern.</param>
-    /// <returns></returns>
-    public static VArgsPattern GenerateParameters(string prefix, Pattern inputPattern) =>
+    public static VArgsPattern GenerateParameters(string? prefix, Pattern inputPattern) =>
         GenerateParameters(prefix, new[] { inputPattern });
 
     /// <summary>
     /// match a call with op type T
     /// auto set first param
     /// it's always used for Fake to NoFake Pass with ReplaceCall.
-    /// </summary>ReplaceParams
-    /// <param name="callName"></param>
-    /// <param name="opName"></param>
+    /// </summary>
     /// <typeparam name="T">Op Type.</typeparam>
-    /// <returns></returns>
-    public static CallPattern IsWildcardCall<T>(string callName, string opName, string inputName = "input")
+    public static CallPattern IsWildcardCall<T>(string? callName, string? opName, string? inputName = "input")
         where T : Op =>
         IsWildcardCall<T>(callName, opName, IsWildcard(inputName));
 
-    public static CallPattern IsWildcardCall<T>(string callName, string opName, Pattern inputPattern)
+    public static CallPattern IsWildcardCall<T>(string? callName, string? opName, Pattern inputPattern)
         where T : Op
         =>
             IsCall(callName, IsOp<T>(opName, _ => true), GenerateParameters(callName, inputPattern))
@@ -71,7 +65,7 @@ public static partial class Utility
                 TypePattern = IsType(x => !(x is InvalidType)),
             };
 
-    public static CallPattern IsWildcardCall<T>(string callName, string opName, Pattern lhsPattern, Pattern rhsPattern)
+    public static CallPattern IsWildcardCall<T>(string? callName, string? opName, Pattern lhsPattern, Pattern rhsPattern)
         where T : Op =>
         IsCall(callName, IsOp<T>(opName, _ => true), GenerateParameters(callName, new[] { lhsPattern, rhsPattern }))
             with
@@ -79,15 +73,14 @@ public static partial class Utility
             TypePattern = IsType(x => !(x is InvalidType)),
         };
 
-    public static Pattern IsSwappableWildcardCall<T>(string callName, string opName, Pattern lhsPattern,
-        Pattern rhsPattern)
+    public static Pattern IsSwappableWildcardCall<T>(string? callName, string? opName, Pattern lhsPattern, Pattern rhsPattern)
         where T : Op
         =>
             IsAlt(
                 IsWildcardCall<T>(callName, opName, lhsPattern, rhsPattern),
                 IsWildcardCall<T>(callName, opName, rhsPattern, lhsPattern));
 
-    public static CallPattern IsWildcardCall(string callName, Pattern firstInputPattern) =>
+    public static CallPattern IsWildcardCall(string? callName, Pattern firstInputPattern) =>
         IsCall(callName, IsWildcard(), GenerateParameters(callName, firstInputPattern))
             with
         {
@@ -109,20 +102,17 @@ public static partial class Utility
                 // force match failed
                 ? Enumerable.Repeat(IsWildcard(), fields.Count + 1).ToArray()
                 : ReplacePos(fields.Select(_ => IsWildcard()).ToArray(), argPattern, i);
-        }, null);
+        },
+        null);
 
-    public static CallPattern IsWildcardCall<T>(string opName = null!)
+    public static CallPattern IsWildcardCall<T>(string? opName = null!)
         where T : Op
-        =>
-            IsWildcardCall<T>("call", opName);
+        => IsWildcardCall<T>("call", opName);
 
     /// <summary>
     /// GenerateParameters for spec multi param.
     /// </summary>
-    /// <param name="prefix"></param>
-    /// <param name="specPattern"></param>
-    /// <returns></returns>
-    public static VArgsPattern GenerateParameters(string prefix, (ParameterInfo, Pattern)[] specPattern) =>
+    public static VArgsPattern GenerateParameters(string? prefix, (ParameterInfo, Pattern)[] specPattern) =>
         IsVArgsRepeat(
             prefix != null ? prefix + "Params" : null!,
             list =>
@@ -136,13 +126,7 @@ public static partial class Utility
     /// <summary>
     /// Call pattern with spec multi input pattern.
     /// </summary>
-    /// <param name="callName"></param>
-    /// <param name="opName"></param>
-    /// <param name="inputPattern"></param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    public static CallPattern IsCallWithSpecInput<T>(string callName, string opName,
-        (ParameterInfo, Pattern)[] inputPattern)
+    public static CallPattern IsCallWithSpecInput<T>(string? callName, string? opName, (ParameterInfo, Pattern)[] inputPattern)
         where T : Op => IsCall(callName, IsOp<T>(opName, _ => true), GenerateParameters(callName, inputPattern))
         with
         {
@@ -153,18 +137,14 @@ public static partial class Utility
         where T : Op
         => typeof(T).GetFields(BindingFlags.Public | BindingFlags.Static).Length;
 
-    ///
-    /// <returns></returns><summary>
+    /// <summary>
     /// generate a vargs pattern everything is wildcard except for the specified index
     /// e.g.
-    /// ArgsPattern.<GNNEConv2D>(
+    /// ArgsPattern.&lt;GNNEConv2D&gt;(
     ///     (GNNEConv2D.Weights, IsTensorConst()),
     ///     (GNNEConv2D.PSum, IsNone())
-    /// )
+    /// ).
     /// </summary>
-    /// <param name="specs"></param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
     public static VArgsPattern ArgsPattern<T>(params (ParameterInfo, Pattern)[] specs)
         where T : Op
     {
@@ -188,9 +168,6 @@ public static partial class Utility
     ///  \    |    /
     ///    concat.
     /// </summary>
-    /// <param name="p"></param>
-    /// <param name="name"></param>
-    /// <returns></returns>
     public static Pattern IsRepeatTuple(Func<Pattern> pGenerator, string? name = null) => IsTuple(
         new VArgsPattern(
             fields => FieldsPatternGenerator(pGenerator, fields.Count), null),
@@ -204,90 +181,83 @@ public static partial class Utility
     /// <summary>
     /// is single input body.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <typeparam name="BeginT"></typeparam>
-    /// <typeparam name="EndT"></typeparam>
-    /// <returns></returns>
-    public static Pattern IsSIFusionBody<T, BeginT, EndT>(string mid_name, string inputName = "input",
-        string callName = "call", string beginName = "ld", string endName = "st")
+    public static Pattern IsSIFusionBody<T, TBegin, TEnd>(string mid_name, string inputName = "input", string callName = "call", string beginName = "ld", string endName = "st")
         where T : Op
-        where BeginT : Op
-        where EndT : Op => IsWildcardCall<EndT>(endName, null!,
-        IsWildcardCall<T>(callName, mid_name,
-            IsWildcardCall<BeginT>(beginName, null!, IsWildcard(inputName))));
+        where TBegin : Op
+        where TEnd : Op => IsWildcardCall<TEnd>(
+            endName,
+            null!,
+            IsWildcardCall<T>(callName, mid_name, IsWildcardCall<TBegin>(beginName, null!, IsWildcard(inputName))));
 
     /// <summary>
     /// is double input fusion body.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <typeparam name="T"></typeparam>
-    /// <typeparam name="BeginT"></typeparam>
-    /// <typeparam name="EndT"></typeparam>
-    /// <returns></returns>
-    public static Pattern IsDIFusionBody<T, BeginT, EndT>(string callName = "call")
+    public static Pattern IsDIFusionBody<T, TBegin, TEnd>(string callName = "call")
         where T : Op
-        where BeginT : Op
-        where EndT : Op => IsWildcardCall<EndT>("st", null!,
-        IsWildcardCall<T>(callName, null!,
-            IsWildcardCall<BeginT>(null!, null!, IsWildcard("lhs")),
-            IsWildcardCall<BeginT>(null!, null!, IsWildcard("rhs"))));
+        where TBegin : Op
+        where TEnd : Op => IsWildcardCall<TEnd>(
+            "st",
+            null!,
+            IsWildcardCall<T>(
+                callName,
+                null!,
+                IsWildcardCall<TBegin>(null!, null!, IsWildcard("lhs")),
+                IsWildcardCall<TBegin>(null!, null!, IsWildcard("rhs"))));
 
-    public static Pattern IsFusion<T, BeginT, EndT>(string mid_name, string module_kind, string inputName = "input",
-        string callName = "call", string beginName = "ld", string endName = "st", string fusionName = "fusion")
+    public static Pattern IsFusion<T, TBegin, TEnd>(string mid_name, string module_kind, string inputName = "input", string callName = "call", string beginName = "ld", string endName = "st", string fusionName = "fusion")
         where T : Op
-        where BeginT : Op
-        where EndT : Op => IsFusion(fusionName, module_kind,
-        IsAlt(
-            IsSIFusionBody<T, BeginT, EndT>(mid_name, inputName, callName, beginName, endName),
-            IsDIFusionBody<T, BeginT, EndT>(callName)),
-        WildcardVArgsPattern);
+        where TBegin : Op
+        where TEnd : Op => IsFusion(
+            fusionName,
+            module_kind,
+            IsAlt(
+                IsSIFusionBody<T, TBegin, TEnd>(mid_name, inputName, callName, beginName, endName),
+                IsDIFusionBody<T, TBegin, TEnd>(callName)),
+            WildcardVArgsPattern);
 
     public static Pattern IsFusion(string module_kind, Pattern body)
-        => IsFusion(null, module_kind, body,
-            IsVArgsRepeat(null, () => IsVar()));
+        => IsFusion(null, module_kind, body, IsVArgsRepeat(null, () => IsVar()));
 
-    // Fusion: BeginT -> FirstOp -> SecondOp -> EndT
+    // Fusion: TBegin -> FirstOp -> SecondOp -> TEnd
     public static PatternCtor IsAlt(PatternCtor patternCtorA, PatternCtor patternCtorB) => input =>
         IsAlt(patternCtorA(input), patternCtorB(input));
 
-    public static Pattern IsPairWildcardCall<FirstOpT, SecondOpT>(string firstCallName, string secondCallName,
-        Pattern input)
-        where FirstOpT : Op
-        where SecondOpT : Op => IsMaybeSwappableWildcardCall<SecondOpT>(
+    public static Pattern IsPairWildcardCall<TFirstOp, TSecondOp>(string firstCallName, string secondCallName, Pattern input)
+        where TFirstOp : Op
+        where TSecondOp : Op => IsMaybeSwappableWildcardCall<TSecondOp>(
         secondCallName,
-        IsMaybeSwappableWildcardCall<FirstOpT>(
+        IsMaybeSwappableWildcardCall<TFirstOp>(
             firstCallName, input));
 
-    public static Pattern IsPairLayerFusion<FirstOpT, SecondOpT, BeginT, EndT>(
+    public static Pattern IsPairLayerFusion<TFirstOp, TSecondOp, TBegin, TEnd>(
         string moduleKind,
         string firstCallName)
-        where FirstOpT : Op
-        where SecondOpT : Op
-        where BeginT : Op
-        where EndT : Op =>
-        IsPairLayerFusion<FirstOpT, SecondOpT, BeginT, EndT>(moduleKind, "ld", firstCallName, "st");
+        where TFirstOp : Op
+        where TSecondOp : Op
+        where TBegin : Op
+        where TEnd : Op =>
+        IsPairLayerFusion<TFirstOp, TSecondOp, TBegin, TEnd>(moduleKind, "ld", firstCallName, "st");
 
-    public static Pattern IsPairLayerFusion<FirstOpT, SecondOpT, BeginT, EndT>(
-        string moduleKind,
-        string beginCallName, string firstCallName, string endCallName)
-        where FirstOpT : Op
-        where SecondOpT : Op
-        where BeginT : Op
-        where EndT : Op => IsFusion(
+    public static Pattern IsPairLayerFusion<TFirstOp, TSecondOp, TBegin, TEnd>(string moduleKind, string beginCallName, string firstCallName, string endCallName)
+        where TFirstOp : Op
+        where TSecondOp : Op
+        where TBegin : Op
+        where TEnd : Op => IsFusion(
         moduleKind,
-        IsWildcardCall<EndT>(endCallName, null!,
-
-            // we can't use secondCallName in getReplace because of it's optional
+        IsWildcardCall<TEnd>(
+            endCallName,
+            null!,
+            /* we can't use secondCallName in getReplace because of it's optional */
             IsAlt(
-                input => IsPairWildcardCall<FirstOpT, SecondOpT>(firstCallName, null!, input),
-                input => IsMaybeSwappableWildcardCall<FirstOpT>(firstCallName, input))(
-                IsWildcardCall<BeginT>(beginCallName, null!, (string)null!))));
+                input => IsPairWildcardCall<TFirstOp, TSecondOp>(firstCallName, null!, input),
+                input => IsMaybeSwappableWildcardCall<TFirstOp>(firstCallName, input))(
+                IsWildcardCall<TBegin>(beginCallName, null!, (string)null!))));
 
-    public static Pattern IsMaybeSwappableWildcardCall<OpT>(string callName, Pattern input)
-        where OpT : Op => IsMaybeSwappableWildcardCall<OpT>(callName, input, IsWildcard());
+    public static Pattern IsMaybeSwappableWildcardCall<TOp>(string callName, Pattern input)
+        where TOp : Op => IsMaybeSwappableWildcardCall<TOp>(callName, input, IsWildcard());
 
-    public static Pattern IsMaybeSwappableWildcardCall<OpT>(string callName, Pattern input, Pattern swappableOther)
-        where OpT : Op => IsAlt(
-        IsWildcardCall<OpT>(callName, null!, input),
-        IsSwappableWildcardCall<OpT>(callName, null!, input, swappableOther));
+    public static Pattern IsMaybeSwappableWildcardCall<TOp>(string callName, Pattern input, Pattern swappableOther)
+        where TOp : Op => IsAlt(
+        IsWildcardCall<TOp>(callName, null!, input),
+        IsSwappableWildcardCall<TOp>(callName, null!, input, swappableOther));
 }

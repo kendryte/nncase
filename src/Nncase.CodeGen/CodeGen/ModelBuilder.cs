@@ -19,8 +19,6 @@ public sealed class ModelBuilder : IModelBuilder
     /// Initializes a new instance of the <see cref="ModelBuilder"/> class.
     /// default ctor.
     /// </summary>
-    /// <param name="target"></param>
-    /// <param name="compileOptions"></param>
     public ModelBuilder(ITarget target, CompileOptions compileOptions)
     {
         Target = target;

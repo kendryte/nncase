@@ -80,8 +80,7 @@ namespace Nncase.Importer
                 : F.Tensors.Expand(0f, Util.ShapeIndex(weights, biasSizeIndex));
         }
 
-        private Expr AutoPad(NodeProto op, string autoPad, Expr input, Expr weights,
-            long[] strides, long[] dilation) => autoPad switch
+        private Expr AutoPad(NodeProto op, string autoPad, Expr input, Expr weights, long[] strides, long[] dilation) => autoPad switch
             {
                 "NOTSET" => GetPadsAttribute(op),
                 "SAME_UPPER" => Util.GetPaddings(input, weights, strides, dilation, true),

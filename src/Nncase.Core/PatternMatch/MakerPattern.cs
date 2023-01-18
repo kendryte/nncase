@@ -26,11 +26,6 @@ public sealed record MarkerPattern(Func<string, bool> NameCondition, Pattern Tar
     {
     }
 
-    /// <summary>
-    ///
-    /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     protected override bool MatchLeafCore(Marker expr) => NameCondition(expr.Name);
 }
 

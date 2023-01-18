@@ -18,20 +18,21 @@ namespace Nncase.Transform;
 public abstract class QuantRule : RewriteRule<Pattern>
 {
     /// <summary>
+    /// Gets or sets context.
     /// NOTE the option will be set by SourceGenerator when the GetReplace called.
     /// </summary>
-    public RunPassContext Option = null!;
+    public RunPassContext? Option { get; set; }
 
     /// <summary>
-    /// the match result
+    /// Gets or sets the match result.
     /// NOTE the MatchResult will be set by SourceGenerator when the GetReplace called.
     /// </summary>
-    public IMatchResult MatchResult = null!;
+    public IMatchResult? MatchResult { get; set; }
 
     /// <summary>
     /// Gets whole expr be matched.
     /// </summary>
-    public Expr Root => (Expr)MatchResult[Pattern];
+    public Expr Root => (Expr)MatchResult![Pattern];
 
     /// <summary>
     /// Gets get ModelQuantMode.
@@ -56,8 +57,6 @@ public abstract class QuantRule : RewriteRule<Pattern>
     /// <summary>
     /// check the datatype is the quant type.
     /// </summary>
-    /// <param name="dt"></param>
-    /// <returns></returns>
     public bool IsQuantType(DataType dt) => dt == DataTypes.Int8 || dt == DataTypes.UInt8;
 
     /// <summary>

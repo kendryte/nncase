@@ -62,9 +62,6 @@ public interface IEvaluateContext
     /// <summary>
     /// Get argmument value as Tensors.
     /// </summary>
-    /// <param name="op"></param>
-    /// <param name="parameter"></param>
-    /// <returns></returns>
     public Tensor[] GetArgumentValueAsTensors(Op op, ParameterInfo parameter)
     {
         return GetArgumentValue(op, parameter).AsTensors();

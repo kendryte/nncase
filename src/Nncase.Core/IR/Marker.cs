@@ -8,16 +8,24 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Nncase.IR;
+
 public class MixQuantInfo
 {
-    public bool HasBindedMixQuantInfo;
-    public DataType MarkerQuantType = DataTypes.Float32;
-    public List<QuantParam> QuantParameter = new List<QuantParam>();
-    public bool DoSquant;
-    public TensorConst U8FineTunedWeights;
-    public TensorConst U8FineTunedWeightsRangesByChannel;
-    public TensorConst I8FineTunedWeights;
-    public TensorConst I8FineTunedWeightsRangesByChannel;
+    public bool HasBindedMixQuantInfo { get; set; }
+
+    public DataType MarkerQuantType { get; set; } = DataTypes.Float32;
+
+    public List<QuantParam> QuantParameter { get; set; } = new List<QuantParam>();
+
+    public bool DoSquant { get; set; }
+
+    public TensorConst? U8FineTunedWeights { get; set; }
+
+    public TensorConst? U8FineTunedWeightsRangesByChannel { get; set; }
+
+    public TensorConst? I8FineTunedWeights { get; set; }
+
+    public TensorConst? I8FineTunedWeightsRangesByChannel { get; set; }
 }
 
 public class AdaQuantInfo
@@ -35,9 +43,9 @@ public class AdaQuantInfo
 public sealed record Marker(string Name, Expr Target, Expr Attribute) : Expr
 {
     /// <summary>
-    /// Gets or set the mix quant info.
+    /// Gets or sets the mix quant info.
     /// </summary>
-    public MixQuantInfo MixQuantInfo;
+    public MixQuantInfo? MixQuantInfo { get; set; }
 
     /// <summary>
     /// Gets or set the ada quant info.

@@ -30,15 +30,21 @@ public class KPUConv2DEvaluator : IEvaluator<KPUConv2D>, ITypeInferencer<KPUConv
 
         // var kernelShape = weights.Shape;
         var result = OrtKI.Conv(
-            input.Cast(OrtDataType.Float), weights.Cast(OrtDataType.Float), EvaluatorUtil.DefaultBias(batchNorms, (int)weights.Shape[0]).Cast(OrtDataType.Float),
-            "NOTSET", dilation.ToArray(),
-            groups, new long[] { weights.Shape[2], weights.Shape[3] }, EvaluatorUtil.ToOnnxPadFormat(pad), stride.ToArray());
+            input.Cast(OrtDataType.Float),
+            weights.Cast(OrtDataType.Float),
+            K210EvaluatorUtil.DefaultBias(batchNorms, (int)weights.Shape[0]).Cast(OrtDataType.Float),
+            "NOTSET",
+            dilation.ToArray(),
+            groups,
+            new long[] { weights.Shape[2], weights.Shape[3] },
+            K210EvaluatorUtil.ToOnnxPadFormat(pad),
+            stride.ToArray());
         if (batchNorms != Value.None)
         {
             result = result + batchNorms.AsTensor().ToOrtTensor();
         }
 
-        return EvaluatorUtil.Act(result.ToTensor(), activition, new[] { float.MinValue, float.MaxValue });
+        return K210EvaluatorUtil.Act(result.ToTensor(), activition, new[] { float.MinValue, float.MaxValue });
     }
 
     /// <inheritdoc/>
