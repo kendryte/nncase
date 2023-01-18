@@ -18,7 +18,6 @@ namespace Nncase.Transform.Mutators;
 /// </summary>
 public class FusionGroupMutator : ExprMutator
 {
-    private readonly RunPassContext _passOptions;
 
     private readonly IUsedByResult _usedByReslut;
 
@@ -38,7 +37,7 @@ public class FusionGroupMutator : ExprMutator
     {
         _usedByReslut = usedByAnalysisReslut;
         Rule = fusionRule;
-        _passOptions = passOptions;
+        PassOptions = passOptions;
         _candidateFusionCache = new(new FusionMergeCandidateComparer());
     }
 
@@ -46,6 +45,8 @@ public class FusionGroupMutator : ExprMutator
     /// Gets the Pre Order Rules.
     /// </summary>
     public IMergeRewriteRule Rule { get; }
+
+    protected RunPassContext PassOptions { get; }
 
     /// <summary>
     /// Gets get the merge check cache result.
@@ -96,7 +97,7 @@ public class FusionGroupMutator : ExprMutator
             CandidateFusionRecordCallBack,
             _usedByReslut,
             result,
-            _passOptions) is Call replaced_call)
+            PassOptions) is Call replaced_call)
         {
             new_call = replaced_call;
             return true;

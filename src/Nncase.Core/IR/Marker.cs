@@ -30,8 +30,9 @@ public class MixQuantInfo
 
 public class AdaQuantInfo
 {
-    public QuantParam InputQuantParameter = new QuantParam(0, 1.0f);
-    public Tensor AdaRoundRefTensor;
+    public QuantParam InputQuantParameter { get; set; } = new QuantParam(0, 1.0f);
+
+    public Tensor? AdaRoundRefTensor { get; set; }
 }
 
 /// <summary>
@@ -48,9 +49,9 @@ public sealed record Marker(string Name, Expr Target, Expr Attribute) : Expr
     public MixQuantInfo? MixQuantInfo { get; set; }
 
     /// <summary>
-    /// Gets or set the ada quant info.
+    /// Gets or sets the ada quant info.
     /// </summary>
-    public AdaQuantInfo AdaQuantInfo;
+    public AdaQuantInfo? AdaQuantInfo { get; set; }
 }
 
 /// <summary>
