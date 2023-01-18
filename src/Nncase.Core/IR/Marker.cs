@@ -20,6 +20,12 @@ public class MixQuantInfo
     public TensorConst I8FineTunedWeightsRangesByChannel;
 }
 
+public class AdaQuantInfo
+{
+    public QuantParam InputQuantParameter = new QuantParam(0, 1.0f);
+    public Tensor AdaRoundRefTensor;
+}
+
 /// <summary>
 /// The marker expression, it's can attach the attribute on the target.
 /// </summary>
@@ -32,6 +38,11 @@ public sealed record Marker(string Name, Expr Target, Expr Attribute) : Expr
     /// Gets or set the mix quant info.
     /// </summary>
     public MixQuantInfo MixQuantInfo;
+
+    /// <summary>
+    /// Gets or set the ada quant info.
+    /// </summary>
+    public AdaQuantInfo AdaQuantInfo;
 }
 
 /// <summary>
