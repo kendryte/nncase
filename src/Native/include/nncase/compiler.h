@@ -44,7 +44,7 @@ typedef enum {
 } nncase_calib_method_t;
 
 typedef enum {
-    nncase_dump_flags_none = 0 ,
+    nncase_dump_flags_none = 0,
     nncase_dump_flags_import_ops = 1 << 1,
     nncase_dump_flags_pass_ir = 1 << 2,
     nncase_dump_flags_egraph_cost = 1 << 3,
