@@ -23,6 +23,7 @@ public class MixQuantInfo
 public class AdaQuantInfo
 {
     public QuantParam InputQuantParameter = new QuantParam(0, 1.0f);
+    public Tensor AdaRoundRefTensor;
 }
 
 /// <summary>

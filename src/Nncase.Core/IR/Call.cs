@@ -46,11 +46,6 @@ public sealed record Call(Expr Target, IRArray<Expr> Parameters) : Expr, IParame
     public Tuple<List<DataType>, List<List<QuantParam>>, float> EnodeBestQuantConfigWithCosine;
 
     /// <summary>
-    /// adaround tmp output.
-    /// </summary>
-    public Tensor AdaRoundOutput;
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="Call"/> class.
     /// </summary>
     /// <param name="target">Call target.</param>
