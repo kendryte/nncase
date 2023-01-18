@@ -24,12 +24,23 @@ using namespace nncase::runtime::stackvm;
 
 gsl::span<gsl::byte> stackvm_runtime_module::data() const noexcept
 {
-    return { data_.get(), mempool(mem_data).size };
+    if (!data_.empty())
+    {
+        auto &block = static_cast<const detail::host_runtime_tensor_impl *>(data_tensor().impl())->memory_block();
+        return block.virtual_buffer();
+    }
+
+    return {};
 }
 
 gsl::span<const gsl::byte> stackvm_runtime_module::rdata() const noexcept
 {
     return rdata_;
+}
+
+const runtime_tensor &stackvm_runtime_module::data_tensor() const noexcept
+{
+    return data_;
 }
 
 result<void> stackvm_runtime_module::initialize_before_functions(runtime_module_init_context &context) noexcept
@@ -38,9 +49,7 @@ result<void> stackvm_runtime_module::initialize_before_functions(runtime_module_
     auto data_pool = mempool(mem_data);
     if (data_pool.size)
     {
-        data_.reset(new (std::nothrow) gsl::byte[data_pool.size]);
-        if (!data_)
-            return err(std::errc::not_enough_memory);
+        try_set(data_, hrt::create(dt_uint8, { data_pool.size }, hrt::pool_shared));
     }
 
     rdata_ = context.section(".rdata");
