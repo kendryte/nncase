@@ -57,7 +57,7 @@ PYBIND11_MODULE(_nncase, m) {
         .value("UsePTQ", nncase_mqm_use_ptq)
         .value("UseQAT", nncase_mqm_use_qat);
 
-    py::enum_<nncase_dump_flags_t>(m, "DumpFlags")
+    py::enum_<nncase_dump_flags_t>(m, "DumpFlags", py::arithmetic())
         .value("Nothing", nncase_dump_flags_none)
         .value("ImportOps", nncase_dump_flags_import_ops)
         .value("PassIR", nncase_dump_flags_pass_ir)
