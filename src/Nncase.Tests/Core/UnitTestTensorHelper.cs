@@ -35,20 +35,16 @@ public sealed class UnitTestTensorHelper
     }
 
     [Fact]
-    public void TestToStr1()
+    public void TestToStr()
     {
         var utf8 = new UTF8Encoding();
         string expected = "hello, world!";
         var bytes = utf8.GetBytes(expected);
 
-        var t = Tensor.FromBytes(DataTypes.Utf8Char, new Memory<byte>(bytes), new int[] { bytes.Length });
-        Assert.Equal(expected, t.ToStr());
-    }
+        var t1 = Tensor.FromBytes(DataTypes.Utf8Char, new Memory<byte>(bytes), new int[] { bytes.Length });
+        Assert.Equal(expected, t1.ToStr());
 
-    [Fact]
-    public void TestToStr2()
-    {
-        var t = Tensor.Ones<float>(new int[] { 1, 3, 16, 16 });
-        Assert.Throws<InvalidCastException>(() => t.ToStr());
+        var t2 = Tensor.Ones<float>(new int[] { 1, 3, 16, 16 });
+        Assert.Throws<InvalidCastException>(() => t2.ToStr());
     }
 }

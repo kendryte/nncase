@@ -12,7 +12,7 @@ namespace Nncase.Tests.CoreTest;
 
 public sealed class UnitTestTensorUtilities
 {
-    public static unsafe IEnumerable<object[]> TestGetIndex2Data =>
+    public static unsafe IEnumerable<object[]> TestGetIndexOverload1Data =>
         new[]
         {
             new object[] { 23, new int[] { 24, 12, 4, 1 }, new int[] { 0, 1, 2, 3 }, 0 },
@@ -21,7 +21,7 @@ public sealed class UnitTestTensorUtilities
             new object[] { 3, new int[] { 24, 12, 4, 1 }, new int[] { 0, 1, 2, 3 }, 3 },
         };
 
-    public static unsafe IEnumerable<object[]> TestGetIndex4Data =>
+    public static unsafe IEnumerable<object[]> TestGetIndexOverload2Data =>
         new[]
         {
             new object[] { 23, new Expr[] { 24, 12, 4, 1 }, new Expr[] { 0, 1, 2, 3 }, 0 },
@@ -94,8 +94,9 @@ public sealed class UnitTestTensorUtilities
               new[] { 0..1, 0..1, 0..1, 10..15 }));
     }
 
+    // long GetProduct(ReadOnlySpan<int> dimensions, int startIndex = 0)
     [Fact]
-    public void TestGetProduct1()
+    public void TestGetProductOverload1()
     {
         var a = new int[] { 1, 3, 16, 16 };
         Assert.Equal(a.Aggregate(1L, (x, y) => x * y), TensorUtilities.GetProduct(a));
@@ -104,8 +105,9 @@ public sealed class UnitTestTensorUtilities
         Assert.Throws<ArgumentOutOfRangeException>(() => TensorUtilities.GetProduct(b));
     }
 
+    // IR.Expr GetProduct(IEnumerable<IR.Expr> dimensions, int startIndex = 0)
     [Fact]
-    public void TestGetProduct2()
+    public void TestGetProductOverload2()
     {
         var dims1 = Array.Empty<Expr>();
         var actual1 = TensorUtilities.GetProduct(dims1);
@@ -144,8 +146,9 @@ public sealed class UnitTestTensorUtilities
         Assert.True(TensorUtilities.IsDescending(c));
     }
 
+    // int[] GetStrides(ReadOnlySpan<int> dimensions, bool reverseStride = false)
     [Fact]
-    public void TestGetStrides1()
+    public void TestGetStridesOverload1()
     {
         // dimensions.IsEmpty
         var dims1 = Array.Empty<int>();
@@ -155,28 +158,29 @@ public sealed class UnitTestTensorUtilities
         var dims2 = new int[] { 1, 2, 3, 4 };
         var expect1 = new int[] { 24, 12, 4, 1 };
         var actual1 = TensorUtilities.GetStrides(dims2);
-        Assert.True(Enumerable.SequenceEqual(expect1, actual1));
+        Assert.Equal(expect1, actual1);
 
         // reverseStride == true
         var expect2 = new int[] { 1, 1, 2, 6 };
         var actual2 = TensorUtilities.GetStrides(dims2, true);
-        Assert.True(Enumerable.SequenceEqual(expect2, actual2));
+        Assert.Equal(expect2, actual2);
     }
 
+    // IEnumerable<IR.Expr> GetStrides(IEnumerable<IR.Expr> dimensions, bool reverseStride = false)
     [Fact]
-    public void TestGetStrides2()
+    public void TestGetStridesOverload2()
     {
         var a = new Expr[] { 1, 2, 3, 4 };
 
         // reverseStride == false
         var expect1 = new int[] { 24, 12, 4, 1 };
         var actual1 = TensorUtilities.GetStrides(a).Select(x => x.Evaluate().AsTensor().ToScalar<int>()).ToArray<int>();
-        Assert.True(Enumerable.SequenceEqual(expect1, actual1));
+        Assert.Equal(expect1, actual1);
 
         // reverseStride == true
         var expect2 = new int[] { 1, 4, 12, 24 };
         var actual2 = TensorUtilities.GetStrides(a, true).Select(x => x.Evaluate().AsTensor().ToScalar<int>()).ToArray<int>();
-        Assert.True(Enumerable.SequenceEqual(expect2, actual2));
+        Assert.Equal(expect2, actual2);
     }
 
     [Theory]
@@ -184,12 +188,13 @@ public sealed class UnitTestTensorUtilities
     public void TestSplitStrides(int[] expectNewStrides, int[] expectSplitStrides, int[] strides, int[] splitAxes, int[] newStrides, int stridesOffset, int[] splitStrides, int splitStridesOffset)
     {
         TensorUtilities.SplitStrides(strides, splitAxes, newStrides, stridesOffset, splitStrides, splitStridesOffset);
-        Assert.True(Enumerable.SequenceEqual(expectNewStrides, newStrides));
-        Assert.True(Enumerable.SequenceEqual(expectSplitStrides, splitStrides));
+        Assert.Equal(expectNewStrides, newStrides);
+        Assert.Equal(expectSplitStrides, splitStrides);
     }
 
+    // int GetIndex(ReadOnlySpan<int> strides, ReadOnlySpan<int> indices, int startFromDimension = 0)
     [Fact]
-    public void TestGetIndex1()
+    public void TestGetIndexOverload1Exception()
     {
         // stride is empty
         var stride1 = Array.Empty<int>();
@@ -201,14 +206,15 @@ public sealed class UnitTestTensorUtilities
     }
 
     [Theory]
-    [MemberData(nameof(TestGetIndex2Data))]
-    public void TestGetIndex2(int expect, int[] strides, int[] indices, int startFromDimension)
+    [MemberData(nameof(TestGetIndexOverload1Data))]
+    public void TestGetIndexOverload1(int expect, int[] strides, int[] indices, int startFromDimension)
     {
         Assert.Equal(expect, TensorUtilities.GetIndex(strides, indices, startFromDimension));
     }
 
+    // IR.Expr GetIndex(ReadOnlySpan<IR.Expr> strides, ReadOnlySpan<IR.Expr> indices, int startFromDimension = 0)
     [Fact]
-    public void TestGetIndex3()
+    public void TestGetIndexOverload2Exception()
     {
         // stride is empty
         var stride1 = Array.Empty<Expr>();
@@ -221,8 +227,8 @@ public sealed class UnitTestTensorUtilities
     }
 
     [Theory]
-    [MemberData(nameof(TestGetIndex4Data))]
-    public void TestGetIndex4(Expr expect, Expr[] strides, Expr[] indices, int startFromDimension)
+    [MemberData(nameof(TestGetIndexOverload2Data))]
+    public void TestGetIndexOverload2(Expr expect, Expr[] strides, Expr[] indices, int startFromDimension)
     {
         var expr = TensorUtilities.GetIndex(strides, indices, startFromDimension);
         var actual = expr.Evaluate().AsTensor().ToScalar<int>();

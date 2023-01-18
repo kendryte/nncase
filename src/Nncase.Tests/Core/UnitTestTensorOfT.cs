@@ -14,8 +14,9 @@ public sealed class UnitTestTensorOfT
     public static unsafe IEnumerable<object[]> TestSetValueData =>
         new[]
         {
-            new object[] { 0, 100 },
-            new object[] { 1, 200 },
+            new object[] { 0, 0 },
+            new object[] { 1, 100 },
+            new object[] { 2, 200 },
             new object[] { 3, 300 },
             new object[] { 4, 400 },
             new object[] { 5, 500 },
@@ -26,24 +27,24 @@ public sealed class UnitTestTensorOfT
     [Fact]
     public void TestICollection()
     {
-        var array1 = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-        var momory = new Memory<int>(array1);
-        var t = new Tensor<int>(momory, new int[] { 1, 1, 2, 4 });
+        var a1 = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var memory = new Memory<int>(a1);
+        var t = new Tensor<int>(memory, new int[] { 1, 1, 2, 4 });
         ICollection<int> c = t;
-        Assert.Equal(array1.Length, c.Count);
+        Assert.Equal(a1.Length, c.Count);
         Assert.False(c.IsReadOnly);
 
         Assert.Throws<InvalidOperationException>(() => c.Add(100));
         Assert.Throws<InvalidOperationException>(() => c.Remove(8));
 
-        var array2 = new int[array1.Length];
-        c.CopyTo(array2, 0);
-        Assert.True(Enumerable.SequenceEqual(array1, array2));
+        var a2 = new int[a1.Length];
+        c.CopyTo(a2, 0);
+        Assert.True(Enumerable.SequenceEqual(a1, a2));
 
         c.Clear();
 
-        Assert.Equal(array1.Length, c.Count);
-        for (int i = 0; i < array1.Length; i++)
+        Assert.Equal(a1.Length, c.Count);
+        for (int i = 0; i < a1.Length; i++)
         {
             Assert.Equal(0, t.GetValue(i));
         }
@@ -53,38 +54,40 @@ public sealed class UnitTestTensorOfT
     public void TestIReadOnlyCollection()
     {
         var length = 100;
-        var tensor = new Tensor<float>(length);
-        var a = (IReadOnlyCollection<float>)tensor;
-        Assert.Equal(length, a.Count);
+        var a = new float[length];
+        var t = new Tensor<float>(length);
+        var c = (IReadOnlyCollection<float>)t;
+        Assert.Equal(length, c.Count);
+        Assert.Equal(a, c.ToArray<float>());
     }
 
     [Fact]
     public void TestIReadOnlyList()
     {
-        var array = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-        var momory = new Memory<int>(array);
-        var tensor = new Tensor<int>(momory, new int[] { 8 });
-        var list = (IReadOnlyList<int>)tensor;
-        for (int i = 0; i < array.Length; i++)
+        var a = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var memory = new Memory<int>(a);
+        var t = new Tensor<int>(memory, new int[] { 8 });
+        var list = (IReadOnlyList<int>)t;
+        for (int i = 0; i < a.Length; i++)
         {
-            Assert.Equal(array[i], list[i]);
+            Assert.Equal(a[i], list[i]);
         }
     }
 
     [Fact]
     public void TestIList()
     {
-        var array = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-        var momory = new Memory<int>(array);
-        var tensor = new Tensor<int>(momory, new int[] { 8 });
-        var list = (IList<int>)tensor;
+        var a = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var memory = new Memory<int>(a);
+        var t = new Tensor<int>(memory, new int[] { 8 });
+        var list = (IList<int>)t;
 
-        for (int i = 0; i < array.Length; i++)
+        for (int i = 0; i < a.Length; i++)
         {
             list[i] = i;
         }
 
-        for (int i = 0; i < array.Length; i++)
+        for (int i = 0; i < a.Length; i++)
         {
             Assert.Equal(i, list[i]);
         }
@@ -105,14 +108,12 @@ public sealed class UnitTestTensorOfT
     [Fact]
     public void TestClone()
     {
-        var array = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-        var momory = new Memory<int>(array);
-        var t1 = new Tensor<int>(momory, new int[] { 8 });
+        var a = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var memory = new Memory<int>(a);
+        var t1 = new Tensor<int>(memory, new int[] { 8 });
         var t2 = t1.Clone();
-        for (int i = 0; i < array.Length; i++)
-        {
-            Assert.Equal(t1[i], t2[i]);
-        }
+        Assert.Equal(t1, t2);
+        Assert.NotSame(t1, t2);
     }
 
     [Fact]
@@ -127,20 +128,21 @@ public sealed class UnitTestTensorOfT
     [Fact]
     public void TestGetValue()
     {
-        var array = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-        var momory = new Memory<int>(array);
-        var t = new Tensor<int>(momory, new int[] { 2, 4 });
+        var a = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var memory = new Memory<int>(a);
+        var t = new Tensor<int>(memory, new int[] { 2, 4 });
         Assert.Equal(2, t.GetValue(1));
         Assert.Equal(7, t.GetValue(6));
+        Assert.Throws<IndexOutOfRangeException>(() => t.GetValue(a.Length));
     }
 
     [Fact]
     public void TestReshape()
     {
-        var array = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-        var momory = new Memory<int>(array);
+        var a = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var memory = new Memory<int>(a);
 
-        var t1 = new Tensor<int>(momory, new int[] { 1, 1, 2, 4 });
+        var t1 = new Tensor<int>(memory, new int[] { 1, 1, 2, 4 });
         Assert.Throws<ArgumentException>(() => t1.Reshape(new int[] { 1, 1, 4, 3 }));
 
         var t2 = t1.Reshape(new int[] { 1, 1, 4, 2 });
@@ -151,22 +153,23 @@ public sealed class UnitTestTensorOfT
     [MemberData(nameof(TestSetValueData))]
     public void TestSetValue(int index, int value)
     {
-        var array = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-        var momory = new Memory<int>(array);
-        var t = new Tensor<int>(momory, new int[] { 2, 4 });
+        var a = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var memory = new Memory<int>(a);
+        var t = new Tensor<int>(memory, new int[] { 2, 4 });
         t.SetValue(index, value);
         Assert.Equal(value, t.GetValue(index));
+        Assert.Throws<IndexOutOfRangeException>(() => t.SetValue(a.Length, 9));
     }
 
     [Fact]
     public void TestFill()
     {
-        var array = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-        var momory = new Memory<int>(array);
-        var t = new Tensor<int>(momory, new int[] { 2, 4 });
+        var a = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var memory = new Memory<int>(a);
+        var t = new Tensor<int>(memory, new int[] { 2, 4 });
         int value = 100;
         t.Fill(value);
-        for (int i = 0; i < array.Length; i++)
+        for (int i = 0; i < a.Length; i++)
         {
             Assert.Equal(value, t.GetValue(i));
         }
@@ -175,9 +178,9 @@ public sealed class UnitTestTensorOfT
     [Fact]
     public void TestContains()
     {
-        var array = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-        var momory = new Memory<int>(array);
-        var t = new Tensor<int>(momory, new int[] { 2, 4 });
+        var a = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var memory = new Memory<int>(a);
+        var t = new Tensor<int>(memory, new int[] { 2, 4 });
         Assert.Contains(1, t);
         Assert.Contains(8, t);
     }
@@ -185,9 +188,9 @@ public sealed class UnitTestTensorOfT
     [Fact]
     public void TestTryGetIndicesOf()
     {
-        var array = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-        var momory = new Memory<int>(array);
-        var t = new Tensor<int>(momory, new int[] { 1, 1, 2, 4 });
+        var a = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var memory = new Memory<int>(a);
+        var t = new Tensor<int>(memory, new int[] { 1, 1, 2, 4 });
 
         var indices1 = new int[] { 1, 1, 1, 1 };
         Assert.True(t.TryGetIndicesOf(7, indices1));
@@ -203,44 +206,44 @@ public sealed class UnitTestTensorOfT
         Assert.False(t.TryGetIndicesOf(100, indices3));
     }
 
+    // bool Equals(object? obj)
     [Fact]
-    public void TestEquals1()
+    public void TestEqualsOverload1()
     {
-        var array = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-        var momory = new Memory<int>(array);
+        var a = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var memory = new Memory<int>(a);
 
-        var t1 = new Tensor<int>(momory, new int[] { 1, 1, 2, 4 });
-        Tensor<int> n = null;
-
-        // Assert.NotEqual(t1, n);
-        Assert.False(t1.Equals(n));
-
-        var t2 = new Tensor<int>(momory, new int[] { 2, 4 });
-        Assert.NotEqual(t1, t2);
-
-        var t3 = new Tensor<int>(momory, new int[] { 1, 1, 4, 2 });
-        Assert.NotEqual(t1, t3);
-
-        var t4 = new Tensor<int>(momory, new int[] { 1, 1, 2, 4 });
-        Assert.Equal(t1, t4);
-    }
-
-    [Fact]
-    public void TestEquals2()
-    {
-        var array = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-        var momory = new Memory<int>(array);
-
-        var t1 = new Tensor<int>(momory, new int[] { 1, 1, 2, 4 });
-        var t2 = new Tensor<int>(momory, new int[] { 2, 4 });
+        var t1 = new Tensor<int>(memory, new int[] { 1, 1, 2, 4 });
+        var t2 = new Tensor<int>(memory, new int[] { 2, 4 });
         Assert.False(t1.Equals((object)t2));
 
-        var t3 = new Tensor<int>(momory, new int[] { 1, 1, 4, 2 });
+        var t3 = new Tensor<int>(memory, new int[] { 1, 1, 4, 2 });
         Assert.False(t1.Equals((object)t3));
 
-        var t4 = new Tensor<int>(momory, new int[] { 1, 1, 2, 4 });
+        var t4 = new Tensor<int>(memory, new int[] { 1, 1, 2, 4 });
         Assert.True(t1.Equals((object)t4));
 
-        Assert.Throws<ArgumentException>(() => t1.Equals((object)array));
+        Assert.Throws<ArgumentException>(() => t1.Equals((object)a));
+    }
+
+    // bool Equals(Tensor<T>? other)
+    [Fact]
+    public void TestEqualsOverload2()
+    {
+        var a = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var memory = new Memory<int>(a);
+
+        var t1 = new Tensor<int>(memory, new int[] { 1, 1, 2, 4 });
+        Tensor<int> n = null;
+        Assert.NotEqual(t1, n);
+
+        var t2 = new Tensor<int>(memory, new int[] { 2, 4 });
+        Assert.NotEqual(t1, t2);
+
+        var t3 = new Tensor<int>(memory, new int[] { 1, 1, 4, 2 });
+        Assert.NotEqual(t1, t3);
+
+        var t4 = new Tensor<int>(memory, new int[] { 1, 1, 2, 4 });
+        Assert.Equal(t1, t4);
     }
 }

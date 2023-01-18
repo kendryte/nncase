@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
 using Nncase;
 using Xunit;
 
@@ -201,10 +202,11 @@ public sealed class UnitTestTensorConversions
     [Fact]
     public void TestTensorMemoryHalf()
     {
-        var a = new Half[] { (Half)1, (Half)2, (Half)3, (Half)4, (Half)5, (Half)6, (Half)7, (Half)8 };
-        var t = (Tensor)new Memory<Half>(a);
-        Assert.Equal(a.Length, t.Length);
-        Assert.Equal(a, t.ToArray<Half>());
+        var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var b = a.Select(x => (Half)x).ToArray<Half>();
+        var t = (Tensor)new Memory<Half>(b);
+        Assert.Equal(b.Length, t.Length);
+        Assert.Equal(b, t.ToArray<Half>());
     }
 
     [Fact]
@@ -228,10 +230,11 @@ public sealed class UnitTestTensorConversions
     [Fact]
     public void TestTensorMemoryBFloat16()
     {
-        var a = new BFloat16[] { (BFloat16)1, (BFloat16)2, (BFloat16)3, (BFloat16)4, (BFloat16)5, (BFloat16)6, (BFloat16)7, (BFloat16)8 };
-        var t = (Tensor)new Memory<BFloat16>(a);
-        Assert.Equal(a.Length, t.Length);
-        Assert.Equal(a, t.ToArray<BFloat16>());
+        var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var b = a.Select(x => (BFloat16)x).ToArray<BFloat16>();
+        var t = (Tensor)new Memory<BFloat16>(b);
+        Assert.Equal(b.Length, t.Length);
+        Assert.Equal(b, t.ToArray<BFloat16>());
     }
 
     [Fact]

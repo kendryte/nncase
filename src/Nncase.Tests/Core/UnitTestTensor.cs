@@ -37,7 +37,7 @@ public sealed class UnitTestTensor
 
         list.Clear();
         var expected = Tensor.Zeros<float>(new int[] { 1, 1, 2, 4 });
-        Assert.Equal(expected.ToArray<float>(), t.ToArray<float>());
+        Assert.Equal(expected, t);
     }
 
     [Fact]
@@ -51,8 +51,9 @@ public sealed class UnitTestTensor
         Assert.Equal(700, t[new int[] { 0, 0, 1, 2 }]);
     }
 
+    // Tensor<T> FromBytes<T>(Memory<byte> memory, ReadOnlySpan<int> dimensions)
     [Fact]
-    public void TestFromBytes1()
+    public void TestFromBytesOverload1()
     {
         var a = new byte[] { 0x00, 0x00, 0x80, 0x3f, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x40, 0x40, 0x00, 0x00, 0x80, 0x40 };
         var expected = new float[] { 1, 2, 3, 4 };
@@ -61,8 +62,9 @@ public sealed class UnitTestTensor
         Assert.Equal(expected, t.ToArray<float>());
     }
 
+    // Tensor FromBytes(DataType type, Memory<byte> memory, ReadOnlySpan<int> dimensions)
     [Fact]
-    public void TestFromBytes2()
+    public void TestFromBytesOverload2()
     {
         var a = new byte[] { 0x00, 0x00, 0x80, 0x3f, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x40, 0x40, 0x00, 0x00, 0x80, 0x40 };
         var expected = new float[] { 1, 2, 3, 4 };
@@ -71,8 +73,9 @@ public sealed class UnitTestTensor
         Assert.Equal(expected, t.ToArray<float>());
     }
 
+    // Tensor FromBytes(TensorType type, Memory<byte> buffer)
     [Fact]
-    public void TestFromBytes3()
+    public void TestFromBytesOverload3()
     {
         var a = new byte[] { 0x00, 0x00, 0x80, 0x3f, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x40, 0x40, 0x00, 0x00, 0x80, 0x40 };
         var expected = new float[] { 1, 2, 3, 4 };
@@ -98,8 +101,9 @@ public sealed class UnitTestTensor
         Assert.NotEqual(p2, t.ToScalar<Pointer<int>>());
     }
 
+    // Tensor FromConst(Const @const)
     [Fact]
-    public unsafe void TestFromConst1()
+    public unsafe void TestFromConstOverload1()
     {
         var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var t = Tensor.From(a, new int[] { 1, 1, 2, 4 });
@@ -110,12 +114,13 @@ public sealed class UnitTestTensor
         Assert.Equal(t, Tensor.FromConst(tensorConst1));
 
         // TupleConst
-        var tupleConst = new TupleConst(ImmutableArray.Create<Const>(tensorConst1, tensorConst2));
+        var tupleConst = new TupleConst(new[] { tensorConst1, tensorConst2 });
         Assert.Throws<InvalidOperationException>(() => Tensor.FromConst(tupleConst));
     }
 
+    // Tensor<T> FromConst<T>(Const @const, CastMode castMode = CastMode.KDefault)
     [Fact]
-    public unsafe void TestFromConst2()
+    public unsafe void TestFromConstOverload2()
     {
         var a = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var t1 = Tensor.From(a, new int[] { 1, 1, 2, 4 });
@@ -136,7 +141,6 @@ public sealed class UnitTestTensor
         Assert.Throws<InvalidOperationException>(() => t.Insert(0, 100));
         Assert.Throws<InvalidOperationException>(() => t.Remove(8));
         Assert.Throws<InvalidOperationException>(() => t.RemoveAt(7));
-
         Assert.Throws<NotImplementedException>(() => t.Contains(8));
         Assert.Throws<NotImplementedException>(() => t.IndexOf(8));
     }

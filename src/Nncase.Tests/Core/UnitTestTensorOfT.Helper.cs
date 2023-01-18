@@ -20,17 +20,14 @@ public sealed class UnitTestTensorOfTHelper
     }
 
     [Fact]
-    public void TestToScalar1()
+    public void TestToScalar()
     {
         var scalar = 1F;
-        var t = (Tensor<float>)scalar;
-        Assert.Equal(scalar, t.ToScalar());
-    }
 
-    [Fact]
-    public void TestToScalar2()
-    {
-        var t = new Tensor<float>(new int[] { 1, 3, 16, 16 });
-        Assert.Throws<InvalidOperationException>(() => t.ToScalar());
+        var t1 = (Tensor<float>)scalar;
+        Assert.Equal(scalar, t1.ToScalar());
+
+        var t2 = new Tensor<float>(new int[] { 1, 3, 16, 16 });
+        Assert.Throws<InvalidOperationException>(() => t2.ToScalar());
     }
 }
