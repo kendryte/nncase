@@ -18,7 +18,6 @@ namespace Nncase.Transform.Mutators;
 /// </summary>
 public class FusionGroupMutator : ExprMutator
 {
-
     private readonly IUsedByResult _usedByReslut;
 
     /// <summary>
@@ -46,12 +45,12 @@ public class FusionGroupMutator : ExprMutator
     /// </summary>
     public IMergeRewriteRule Rule { get; }
 
-    protected RunPassContext PassOptions { get; }
-
     /// <summary>
     /// Gets get the merge check cache result.
     /// </summary>
     public IReadOnlyDictionary<HashSet<Fusion>, bool> FusionMergeCandidateCache => _candidateFusionCache;
+
+    protected RunPassContext PassOptions { get; }
 
     /// <summary>
     /// check the merged fusion is valid.
