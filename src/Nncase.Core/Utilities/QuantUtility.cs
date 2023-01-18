@@ -295,7 +295,7 @@ public static class QuantUtility
         // return inputWeights;
     }
 
-    public static Span<float> AdaRoundWeights(Span<float> inputWeights, Expr inputWeightsRanges, Nncase.IR.Shape inputWeightsShape, List<Tensor> layerInput, List<Tensor> layerOutputGT, QuantMode quantMode, int bits, bool isByChannel, Expr paddings, Expr strides, Expr dilations, Expr groups, int startB, int endB, int iters, int deviceID, float warmup, float weightParam, AdaMode adamode)
+    public static Span<float> AdaRoundWeights(Span<float> inputWeights, Expr inputWeightsRanges, Nncase.IR.Shape inputWeightsShape, List<Tensor> layerInput, List<Tensor> layerOutputGT, QuantMode quantMode, int bits, bool isByChannel, Expr paddings, Expr strides, Expr dilations, Expr groups, float startB, float endB, int iters, int deviceID, float warmup, float weightParam, AdaMode adamode)
     {
         // adamode = AdaMode.Linear;
         // bits = 4;
