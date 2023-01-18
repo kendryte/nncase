@@ -10,6 +10,7 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.PatternMatch;
 using Nncase.Transform;
+using Nncase.Transform.Mutators;
 using Xunit;
 using static Nncase.IR.F.Tensors;
 using static Nncase.PatternMatch.Utility;
@@ -695,6 +696,52 @@ internal class DataFlowType13FusionCaseLeft : IDataFlowFusionCase
 internal class DataFlowType13FusionCaseRight : IDataFlowFusionCase
 {
     public int FinalFusionCount => 1;
+
+    public Expr BuildBody(Var input)
+    {
+        return DataFlowType13FusionCaseLeft.BuildBodyCore(input, false);
+    }
+}
+
+
+/// <summary>
+///         x
+///         |
+///       conv2d_f
+///       /  \
+///       |   conv2d_f
+///       |    |
+///       |   conv2d_f
+///       |    |
+///       |   conv2d_t
+///        \ /
+///       add_f
+/// </summary>
+internal class DataFlowType14FusionCaseLeft : IDataFlowFusionCase
+{
+    public int FinalFusionCount => 4;
+
+    public static Expr BuildBodyCore(Expr input, bool left)
+    {
+        var v0 = new Call(FusionBuilder.MakeConv2DFusion(false), input);
+
+        var v1 = new Call(FusionBuilder.MakeConv2DFusion(false), v0);
+        var v2 = new Call(FusionBuilder.MakeConv2DFusion(false), v1);
+        var v3 = new Call(FusionBuilder.MakeConv2DFusion(true), v2);
+
+        var v4 = new Call(FusionBuilder.MakeBinaryFusion(BinaryOp.Sub, true), left ? new[] { v0, v3 } : new[] { v3, v0 });
+        return v4;
+    }
+
+    public Expr BuildBody(Var input)
+    {
+        return BuildBodyCore(input, true);
+    }
+}
+
+internal class DataFlowType14FusionCaseRight : IDataFlowFusionCase
+{
+    public int FinalFusionCount => 4;
 
     public Expr BuildBody(Var input)
     {

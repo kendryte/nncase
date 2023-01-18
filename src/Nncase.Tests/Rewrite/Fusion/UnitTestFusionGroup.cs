@@ -14,8 +14,8 @@ public class UnitTestFusionGroup : TestClassBase
 {
     public static TheoryData<IDataFlowFusionCase> DataOne = new()
     {
-        new DataFlowType13FusionCaseLeft(),
-        new DataFlowType13FusionCaseRight(),
+        new DataFlowType14FusionCaseLeft(),
+        new DataFlowType14FusionCaseRight(),
     };
 
     public static TheoryData<IDataFlowFusionCase> DataAll = new()
@@ -34,6 +34,7 @@ public class UnitTestFusionGroup : TestClassBase
         new DataFlowType10FusionCaseLeft(),
         new DataFlowType11FusionCaseLeft(),
         new DataFlowType12FusionCaseLeft(),
+        new DataFlowType13FusionCaseLeft(),
 
         new DataFlowType1FusionCaseRight(),
         new DataFlowType2FusionCaseRight(),
@@ -48,15 +49,12 @@ public class UnitTestFusionGroup : TestClassBase
         new DataFlowType10FusionCaseRight(),
         new DataFlowType11FusionCaseRight(),
         new DataFlowType12FusionCaseRight(),
+        new DataFlowType13FusionCaseRight(),
     };
 
     [Theory]
     [MemberData(nameof(DataOne))]
     public void RunOne(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
-
-    [Theory]
-    [MemberData(nameof(DataAll))]
-    public void RunAll(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
 
     private void RunCore(IDataFlowFusionCase fusionCase)
     {
@@ -95,6 +93,11 @@ public class UnitTestFusionGroup : TestClassBase
         var post_result = CompilerServices.Evaluate(post.Body, feed_dict);
         Assert.True(Comparator.AllEqual(pre_result, post_result));
     }
+
+
+    [Theory]
+    [MemberData(nameof(DataAll))]
+    public void RunAll(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
 }
 
 internal sealed class TestFusionGroupMutator : Transform.Mutators.FusionGroupMutator
