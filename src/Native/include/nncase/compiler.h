@@ -95,6 +95,7 @@ typedef struct {
     void (*compile_options_set_dump_dir)(clr_object_handle_t compile_options,
                                          const char *dump_dir,
                                          size_t dump_dir_length);
+    nncase_dump_flags_t (*compile_options_get_dump_flags)(clr_object_handle_t compile_options);
     void (*compile_options_set_dump_flags)(clr_object_handle_t compile_options,
                                            nncase_dump_flags_t dump_flags);
     void (*compile_options_set_quantize_options)(
@@ -303,7 +304,7 @@ class compile_options : public clr_object_base {
                                                        value.length());
     }
 
-    nncase_dump_flags_t dump_flags() { return nncase_dump_flags_none; }
+    nncase_dump_flags_t dump_flags() { return nncase_clr_api()->compile_options_get_dump_flags(obj_.get()); }
     void dump_flags(nncase_dump_flags_t value) {
         nncase_clr_api()->compile_options_set_dump_flags(obj_.get(), value);
     }

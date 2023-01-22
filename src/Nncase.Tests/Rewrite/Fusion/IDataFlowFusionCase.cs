@@ -745,6 +745,6 @@ internal class DataFlowType14FusionCaseRight : IDataFlowFusionCase
 
     public Expr BuildBody(Var input)
     {
-        return DataFlowType13FusionCaseLeft.BuildBodyCore(input, false);
+        return DataFlowType14FusionCaseLeft.BuildBodyCore(input, false);
     }
 }

@@ -84,7 +84,7 @@ public class UnitTestDataFlowMatch : TestClassBase
         Var x = "x", y = "y";
         var z = x + y;
         var tuple = new IR.Tuple(x, y, z);
-        var tuplepat = PatternMatch.Utility.IsTuple(new Pattern[] { IsVar(), IsWildcard(), IsBinary(BinaryOp.Add, IsWildcard(), IsWildcard()) }, "tp");
+        var tuplepat = PatternMatch.Utility.IsTuple("tp", new Pattern[] { IsVar(), IsWildcard(), IsBinary(BinaryOp.Add, IsWildcard(), IsWildcard()) });
 
         Assert.True(CompilerServices.TryMatchRoot(tuple, tuplepat, out var _));
 

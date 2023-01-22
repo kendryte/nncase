@@ -61,8 +61,7 @@ public class UnitTestAddRangeOfMarker : TestClassBase
         // 0. TargetIndependentPass
         pmgr.AddWithName<DataflowPass>("TargetInDependent").Configure(p =>
         {
-            p.Add<AddRangeOfAndMarkerToRelu6>();
-            p.Add<AddRangeOfAndMarkerToLeakyRelu>();
+            p.Add<AddRangeOfAndMarkerSingleInput>();
         });
 
         // 1. AssignRanges

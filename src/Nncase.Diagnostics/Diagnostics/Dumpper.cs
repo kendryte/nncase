@@ -71,6 +71,8 @@ internal sealed class Dumpper : IDumpper
         System.IO.Directory.CreateDirectory(directory);
         return path;
     }
+
+    public override string ToString() => $"Dumpper({_dumpFlags})";
 }
 
 internal sealed class DumpperFactory : IDumpperFactory

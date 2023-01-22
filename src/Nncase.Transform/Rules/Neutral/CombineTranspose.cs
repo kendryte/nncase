@@ -157,7 +157,7 @@ public sealed partial class CombineTransposeConcat : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsConcat(
-               IsTuple(IsVArgsRepeat("tupleInputs", exprs =>
+               PatternMatch.Utility.IsTuple(null, IsVArgsRepeat("tupleInputs", exprs =>
                {
                    var patterns = new Pattern[exprs.Count];
                    for (var i = 0; i < patterns.Length; i++)

@@ -23,12 +23,13 @@ namespace Nncase.Transform.Rules.Neutral;
 public sealed partial class FoldNopClamp : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsClamp(IsWildcard("input"), IsTensorConst("min", IsScalar()), IsTensorConst("max", IsScalar()));
+    public IPattern Pattern { get; } = IsClamp(IsWildcard("input"),
+      IsTensorConst("min", HasDataType(DataTypes.Float32)),
+      IsTensorConst("max", HasDataType(DataTypes.Float32)));
 
-    private Expr? GetReplace(Expr input, TensorConst min, TensorConst max)
+    private Expr? GetReplace(Expr input, Tensor<float> min, Tensor<float> max)
     {
-        if (min.Value.ToScalar<float>() <= float.MinValue &&
-            max.Value.ToScalar<float>() >= float.MaxValue)
+        if (min.All(v => v <= float.MinValue) && max.All(v => v >= float.MaxValue))
         {
             return input;
         }

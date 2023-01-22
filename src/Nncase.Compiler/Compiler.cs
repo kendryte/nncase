@@ -58,7 +58,7 @@ internal class Compiler : ICompiler
         var quantMode = _compileSession.CompileOptions.QuantizeOptions.ModelQuantMode;
         if (quantMode == ModelQuantMode.UsePTQ)
         {
-            passManager.AddWithName<EGraphPass>("NeutralOptimize").Configure(p =>
+            passManager.AddWithName<EGraphPass>("NeutralOptimizeTranspose").Configure(p =>
             {
                 p.Add<Transform.Rules.Neutral.FoldConstCall>();
                 p.Add<Transform.Rules.Neutral.FoldNopTranspose>();
@@ -74,11 +74,17 @@ internal class Compiler : ICompiler
                 p.Add<Transform.Rules.Neutral.CombineActivationsTranspose>();
                 p.Add<Transform.Rules.Neutral.FoldNopPad>();
                 p.Add<Transform.Rules.Neutral.FoldConv2DPads>();
-                p.Add<Transform.Rules.Neutral.FoldConv2DMulAdd>();
                 p.Add<Transform.Rules.Neutral.FoldReduceWindow2DPads>();
+            });
+            passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
+            {
+                p.Add<Transform.Rules.Neutral.FoldConstCall>();
+                p.Add<Transform.Rules.Neutral.FoldConv2DAddMul>();
                 p.Add<Transform.Rules.Neutral.ReluToClamp>();
+                p.Add<Transform.Rules.Neutral.Relu6ToClamp>();
                 p.Add<Transform.Rules.Neutral.CombineClampAdd>();
                 p.Add<Transform.Rules.Neutral.CombineClampMul>();
+                p.Add<Transform.Rules.Neutral.FoldNopClamp>();
             });
         }
 
@@ -86,11 +92,8 @@ internal class Compiler : ICompiler
         {
             passManager.AddWithName<DataflowPass>("AddRangeOfMarker").Configure(p =>
             {
-                p.Add<Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2D>();
-                p.Add<Transform.Rules.Neutral.AddRangeOfAndMarkerToMatMul>();
-                p.Add<Transform.Rules.Neutral.AddRangeOfAndMarkerToReduceWindow2D>();
-                p.Add<Transform.Rules.Neutral.AddRangeOfAndMarkerToConv2DTranspose>();
-                p.Add<Transform.Rules.Neutral.AddRangeOfAndMarkerToBinary>();
+                p.Add<Transform.Rules.Neutral.AddRangeOfAndMarkerSingleInput>();
+                p.Add<Transform.Rules.Neutral.AddRangeOfAndMarkerDoubleInput>();
             });
             passManager.AddWithName<EGraphPassWithQuantize>("AssignRanges");
         }
@@ -105,18 +108,18 @@ internal class Compiler : ICompiler
         if (_compileSession.CompileOptions.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
             await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
-            await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions), "TargetDependentAfterQuantPass");
-            await RunPassAsync(
-                pmgr => pmgr.Add<DataflowPass>().Configure(p =>
-                {
-                    p.Name = "ClearMarker";
-                    p.Add<RemoveMarker>();
-                }),
-                "RemoveMarker");
+            // await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions), "TargetDependentAfterQuantPass");
+            // await RunPassAsync(
+            //     pmgr => pmgr.Add<DataflowPass>().Configure(p =>
+            //     {
+            //         p.Name = "ClearMarker";
+            //         p.Add<RemoveMarker>();
+            //     }),
+            //     "RemoveMarker");
         }
 
         // fold constant
-        await RunPassAsync(p => p.Add<ShapeInferPass>(), "ShapeInferAfterCompile");
+        // await RunPassAsync(p => p.Add<ShapeInferPass>(), "ShapeInferAfterCompile");
     }
 
     public void Gencode(Stream output)

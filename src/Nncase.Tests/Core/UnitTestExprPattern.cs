@@ -140,12 +140,12 @@ public class UnitTestExprPattern
     {
         var wc1 = IsWildcard();
         var wc2 = IsWildcard();
-        var t = IsTuple(new[] { wc1, wc2 });
+        var t = PatternMatch.Utility.IsTuple(null, new[] { wc1, wc2 });
         Assert.IsType<TuplePattern>(t);
         Assert.IsType<ExprPattern>(t.Fields[0]);
         Assert.IsType<ExprPattern>(t.Fields[1]);
 
-        var t2 = IsTuple(IsVArgs(new[] { wc1, wc2 }));
+        var t2 = PatternMatch.Utility.IsTuple(IsVArgs(new[] { wc1, wc2 }));
         Assert.IsType<TuplePattern>(t2);
         Assert.IsType<ExprPattern>(t2.Fields[0]);
         Assert.IsType<ExprPattern>(t2.Fields[1]);
