@@ -703,7 +703,6 @@ internal class DataFlowType13FusionCaseRight : IDataFlowFusionCase
     }
 }
 
-
 /// <summary>
 ///         x
 ///         |
@@ -715,7 +714,7 @@ internal class DataFlowType13FusionCaseRight : IDataFlowFusionCase
 ///       |    |
 ///       |   conv2d_t
 ///        \ /
-///       add_f
+///       add_f.
 /// </summary>
 internal class DataFlowType14FusionCaseLeft : IDataFlowFusionCase
 {

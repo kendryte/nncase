@@ -81,8 +81,7 @@ public sealed partial class FoldConv2DAddMul : RewriteRule<CallPattern>
 
         if (!(t.Rank == 1 ||
              (t.Rank == 4 && t.Shape[0].FixedValue == 1 && t.Shape[2].FixedValue == 1 && t.Shape[3].FixedValue == 1) ||
-             (t.Rank == 3 && t.Shape[1].FixedValue == 1 && t.Shape[2].FixedValue == 1
-             )))
+             (t.Rank == 3 && t.Shape[1].FixedValue == 1 && t.Shape[2].FixedValue == 1)))
         {
             return false;
         }

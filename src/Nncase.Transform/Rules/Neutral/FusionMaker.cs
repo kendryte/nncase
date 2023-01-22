@@ -61,6 +61,22 @@ public partial class ComplexFusion<MidT, BeginT, EndT> : FusionMaker
     where BeginT : Op
     where EndT : Op
 {
+    public ComplexFusion()
+    {
+        Pattern computePattern = IsCallSpecific("midCall", IsOp<MidT>("midCallOp"), InputPatterns.Select(p => (p.Item1, (Pattern)p.Item2)).ToArray());
+        Pattern = IsAlt(
+          MultiEndPattern("output", computePattern),
+          SingleEndPattern("output", computePattern));
+    }
+
+    public virtual (ParameterInfo, CallPattern)[] InputPatterns { get; } = Array.Empty<(ParameterInfo, CallPattern)>();
+
+    /// <summary>
+    /// Gets if multi output, then the name by generated should be set null to avoid name conflict
+    /// if single output, then use the OutputName
+    /// designed for fusion single output and multi output by only one rule.
+    /// </summary>
+    public override Pattern Pattern { get; }
 
     /// <summary>
     /// useful Util.
@@ -70,30 +86,12 @@ public partial class ComplexFusion<MidT, BeginT, EndT> : FusionMaker
     public static (ParameterInfo, CallPattern)[] GenerateInputPatterns(params ParameterInfo[] infos) =>
       infos.Select(x => (x, IsCallWildcard(null, IsOp<BeginT>(null, x => true), IsWildcard()))).ToArray();
 
-    public virtual (ParameterInfo, CallPattern)[] InputPatterns { get; } = Array.Empty<(ParameterInfo, CallPattern)>();
-
-    public ComplexFusion()
-    {
-        Pattern computePattern = IsCallSpecific("midCall", IsOp<MidT>("midCallOp"), InputPatterns);
-        Pattern = IsAlt(
-          MultiEndPattern("output", computePattern),
-          SingleEndPattern("output", computePattern)
-        );
-    }
-
-    /// <summary>
-    /// if multi output, then the name by generated should be set null to avoid name conflict
-    /// if single output, then use the OutputName
-    /// designed for fusion single output and multi output by only one rule
-    /// </summary>
-    public override Pattern Pattern { get; }
-
     /// <summary>
     /// match :
     ///  tuple(
     ///   call(endOp, getitem(input,0),..),
     ///   call(endOp, getitem(input,1),..),
-    ///   ..) 
+    ///   ..)
     /// </summary>
     /// <param name="endName">end call name.</param>
     /// <param name="inputPattern">input pattern.</param>
@@ -106,24 +104,20 @@ public partial class ComplexFusion<MidT, BeginT, EndT> : FusionMaker
               return fields.Select((_, i) =>
                 IsCallWildcard(endName + $"_{i}", IsOp<EndT>(endName + $"Op_{i}"),
                   IsCallWildcard($"getItem_{i}", IsOp<GetItem>(name: null),
-                    inputPattern)
-                )
-              ).ToArray();
-          })
-        );
+                    inputPattern)))
+              .ToArray();
+          }));
 
     /// <summary>
-    /// match call(endOp,input)
+    /// match call(endOp,input).
     /// </summary>
     /// <param name="endCall">end call name.</param>
     /// <param name="inputPattern">input pattern.</param>
     /// <returns>end call pattern.</returns>
     public static Pattern SingleEndPattern(string endCall, Pattern inputPattern) => IsCallWildcard(endCall, IsOp<EndT>(endCall + "Op"), inputPattern);
 
-
     protected virtual Call? GetReplace(Call midCall, Op midCallOp, IReadOnlyList<Expr> midCallParams, Expr output, IMatchResult result)
     {
-
         var newInputs = new List<Var>();
         var newParams = new List<Expr>();
 
@@ -158,12 +152,10 @@ public partial class ComplexFusion<MidT, BeginT, EndT> : FusionMaker
     {
         return new IR.Tuple(ImmutableArray.CreateRange(
           tuple.Fields.Select((_, i) =>
-            (Expr)ReplaceCallParams(new GetItem(),
-              (IReadOnlyList<Expr>)result[$"getItem_{i}Params"],
-              (midCall, newMidCall)
-            )
-          ))
-        );
+            (Expr)ReplaceCallParams(
+                new GetItem(),
+                (IReadOnlyList<Expr>)result[$"getItem_{i}Params"],
+                (midCall, newMidCall)))));
     }
 }
 
@@ -193,7 +185,6 @@ public partial class SingleInputFusion<T, BeginT, EndT> : FusionMaker
         return fusion;
     }
 }
-
 
 [RuleGenerator]
 public partial class DoubleInputFusion<T, BeginT, EndT> : FusionMaker

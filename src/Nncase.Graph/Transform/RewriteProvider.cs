@@ -46,6 +46,7 @@ internal class RewriteProvider : IRewriteProvider
             {
                 DumpScope.Current.DumpIR(expr, $"{count}_End_InferFailed", "Rewrite");
             }
+
             Trace.Assert(inferSuccess);
 
             if (!isMutated || context.RewriteOnce)

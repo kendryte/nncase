@@ -45,6 +45,16 @@ public class UnitTestAddRangeOfMarker : TestClassBase
         Assert.Equal(1.0000478f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[1]);
     }
 
+    [Fact]
+    public async Task TestAddRangeOfMarkerToBinary()
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 2048, 7, 7 }));
+        var v0 = IR.F.Tensors.NCHWToNHWC(input);
+        var v1 = v0 * Testing.Rand<float>(2048);
+        var output = v1;
+        _ = await TestAddRangeOfMarkerMainPassesAsync(input, output);
+    }
+
     private async Task<DumpVisitor> TestAddRangeOfMarkerMainPassesAsync(Var input, Expr output)
     {
         CompileOptions.QuantizeOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
@@ -61,7 +71,7 @@ public class UnitTestAddRangeOfMarker : TestClassBase
         // 0. TargetIndependentPass
         pmgr.AddWithName<DataflowPass>("TargetInDependent").Configure(p =>
         {
-            p.Add<AddRangeOfAndMarkerSingleInput>();
+            p.Add<AddRangeOfAndMarker>();
         });
 
         // 1. AssignRanges

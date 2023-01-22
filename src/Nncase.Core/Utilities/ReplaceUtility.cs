@@ -11,7 +11,7 @@ using Tuple = Nncase.IR.Tuple;
 namespace Nncase.Utilities;
 
 /// <summary>
-/// Pattern Match Replace Utility
+/// Pattern Match Replace Utility.
 /// </summary>
 public static class ReplaceUtility
 {
@@ -41,7 +41,7 @@ public static class ReplaceUtility
     //         }
     //     }
 
-    //     return Option.None;
+    // return Option.None;
     // }
 
     /// <summary>
@@ -91,7 +91,7 @@ public static class ReplaceUtility
     //         data[parameterInfo.Index] = v;
     //     }
 
-    //     return data;
+    // return data;
     // }
 
     /// <summary>
@@ -162,8 +162,9 @@ public static class ReplaceUtility
         return new_args;
     }
 
-    /// <summary>
-    /// replace items with param info
+    ///
+    /// <returns></returns><summary>
+    /// replace items with param info.
     /// <param name="list">expr list.</param>
     /// <param name="pairs">pairs.</param>
     /// <returns>replaced list.</returns>
@@ -196,7 +197,6 @@ public static class ReplaceUtility
         return new Call(target, ImmutableArray.CreateRange(ReplaceItems(oldParams, pairs)));
     }
 
-
     // public static Call ReplaceOpAndParams(Call call, Op op, params (ParameterInfo, Expr)[] posAndValue)
     // {
     //     return call with { Target = op, Parameters = ReplaceMulti(call.Parameters, posAndValue) };
@@ -215,12 +215,12 @@ public static class ReplaceUtility
     //         return Option.Some(expr);
     //     }
 
-    //     if (root is not Call)
+    // if (root is not Call)
     //     {
     //         return Option.None;
     //     }
 
-    //     var rootCall = (Call)root;
+    // var rootCall = (Call)root;
     //     for (var i = 0; i < rootCall.Parameters.Count; i++)
     //     {
     //         var param = rootCall.Parameters[i];
@@ -232,6 +232,6 @@ public static class ReplaceUtility
     //         }
     //     }
 
-    //     return Option.None;
+    // return Option.None;
     // }
 }

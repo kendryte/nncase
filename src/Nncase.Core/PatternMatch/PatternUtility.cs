@@ -15,7 +15,6 @@ namespace Nncase.PatternMatch;
 public static partial class Utility
 {
     // public static VArgsPattern WildcardVArgsPattern => GenerateRepeatParameters(IsWildcard);
-
     public static Pattern
         IsSwappableBinary(string targetName, Func<Binary, bool> condition, Pattern lhs, Pattern rhs)
         => IsSwappableBinary(targetName, null, condition, lhs, rhs);
@@ -32,13 +31,13 @@ public static partial class Utility
     /// <param name="prefix">prefix.</param>
     /// <param name="patterns">input patterns.</param>
     /// <returns></returns>
-    public static VArgsPattern GenerateParameters<T>(string? prefix, params T[] patterns)
-      where T : Pattern =>
-        IsVArgsRepeat((prefix is not null && prefix != string.Empty) ? prefix + "Params" : null,
+    public static VArgsPattern GenerateParameters(string? prefix, params Pattern[] patterns)
+      => IsVArgsRepeat(
+          (prefix is not null && prefix != string.Empty) ? prefix + "Params" : null,
           list => patterns.Concat(
             Enumerable.Range(0, list.Count - patterns.Length).
-            Select(_ => (Pattern)IsWildcard(null))
-          ).ToArray());
+            Select(_ => (Pattern)IsWildcard(null)))
+          .ToArray());
 
     /// <summary>
     /// generate postion specific vargs pattern.
@@ -47,9 +46,9 @@ public static partial class Utility
     /// <param name="inputPatterns"></param>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
-    public static VArgsPattern GenerateParameters<T>(string prefix, (ParameterInfo info, T pattern)[] inputPatterns)
-      where T : Pattern =>
-        IsVArgsRepeat((prefix is not null && prefix != string.Empty) ? prefix + "Params" : null,
+    public static VArgsPattern GenerateParameters(string prefix, (ParameterInfo info, Pattern pattern)[] inputPatterns)
+      => IsVArgsRepeat(
+          (prefix is not null && prefix != string.Empty) ? prefix + "Params" : null,
           list =>
           {
               var patterns = Enumerable.Range(0, list.Count).Select(_ => (Pattern)IsWildcard()).ToArray();
@@ -57,12 +56,12 @@ public static partial class Utility
               {
                   patterns[info.Index] = pattern;
               }
+
               return patterns;
-          }
-        );
+          });
 
     /// <summary>
-    /// is call wildcard inputs
+    /// is call wildcard inputs.
     /// <remarks>
     /// will generate callName+Params for matched inputs.
     /// </remarks>
@@ -74,10 +73,10 @@ public static partial class Utility
     public static CallPattern IsCallWildcard(string? callName, Pattern targetPattern, params Pattern[] patterns) =>
         IsCall(callName, targetPattern, GenerateParameters(callName, patterns));
 
-    public static Pattern IsCallWildcardSwappable<T>(string callName, string opName, Pattern lhsPattern, Pattern rhsPattern)
-      where T : Op =>
-        IsAlt(IsCallWildcard(callName, IsOp<T>(opName), lhsPattern, rhsPattern),
-              IsCallWildcard(callName, IsOp<T>(opName), rhsPattern, lhsPattern));
+    public static Pattern IsCallWildcardSwappable(string callName, Pattern targetPattern, Pattern lhsPattern, Pattern rhsPattern) =>
+        IsAlt(
+            IsCallWildcard(callName, targetPattern, lhsPattern, rhsPattern),
+            IsCallWildcard(callName, targetPattern, rhsPattern, lhsPattern));
 
     // public static CallPattern IsWildcardCall(string callName, Pattern firstInputPattern) =>
     //     IsCall(callName, IsWildcard(), GenerateParameters(callName, firstInputPattern))
@@ -98,7 +97,7 @@ public static partial class Utility
     //         var i = fieldList.FindIndex(f => CompilerServices.TryMatch(f, argPattern, out var s));
     //         return i == -1
 
-    //             // force match failed
+    // // force match failed
     //             ? Enumerable.Repeat(IsWildcard(), fields.Count + 1).ToArray()
     //             : ReplacePos(fields.Select(_ => IsWildcard()).ToArray(), argPattern, i);
     //     }, null);
@@ -127,10 +126,9 @@ public static partial class Utility
     /// <param name="targetPattern"></param>
     /// <param name="inputPatterns"> postions pattern pairs</param>
     /// <returns></returns>
-    public static CallPattern IsCallSpecific<T>(string callName, Pattern targetPattern,
-        params (ParameterInfo info, T pattern)[] inputPatterns)
-          where T : Pattern
-        => IsCall(callName, targetPattern, GenerateParameters<T>(callName, inputPatterns));
+    public static CallPattern IsCallSpecific(string callName, Pattern targetPattern,
+        params (ParameterInfo info, Pattern pattern)[] inputPatterns)
+        => IsCall(callName, targetPattern, GenerateParameters(callName, inputPatterns));
 
     // public static int Count<T>()
     //     where T : Op
@@ -203,23 +201,23 @@ public static partial class Utility
     /// <typeparam name="BeginT"></typeparam>
     /// <typeparam name="EndT"></typeparam>
     /// <returns></returns>
-    // public static Pattern IsDIFusionBody<T, BeginT, EndT>(string callName = "call")
-    //     where T : Op
-    //     where BeginT : Op
-    //     where EndT : Op => IsCallWildcard<EndT>("st", null!,
-    //     IsCallWildcard<T>(callName, null!,
-    //         IsCallWildcard<BeginT>(null!, null!, IsWildcard("lhs")),
-    //         IsCallWildcard<BeginT>(null!, null!, IsWildcard("rhs"))));
+    public static Pattern IsDIFusionBody<T, BeginT, EndT>(string callName = "call")
+        where T : Op
+        where BeginT : Op
+        where EndT : Op => IsCallWildcard("st", IsOp<EndT>(name: null),
+        IsCallWildcard(callName, IsOp<T>(name: null),
+            IsCallWildcard(null!, IsOp<BeginT>(name: null), IsWildcard("lhs")),
+            IsCallWildcard(null!, IsOp<BeginT>(name: null), IsWildcard("rhs"))));
 
-    // public static Pattern IsFusion<T, BeginT, EndT>(string mid_name, string module_kind, string inputName = "input",
-    //     string callName = "call", string beginName = "ld", string endName = "st", string fusionName = "fusion")
-    //     where T : Op
-    //     where BeginT : Op
-    //     where EndT : Op => IsFusion(fusionName, module_kind,
-    //     IsAlt(
-    //         IsSIFusionBody<T, BeginT, EndT>(mid_name, inputName, callName, beginName, endName),
-    //         IsDIFusionBody<T, BeginT, EndT>(callName)),
-    //     WildcardVArgsPattern);
+    public static Pattern IsFusion<T, BeginT, EndT>(string mid_name, string module_kind, string inputName = "input",
+        string callName = "call", string beginName = "ld", string endName = "st", string fusionName = "fusion")
+        where T : Op
+        where BeginT : Op
+        where EndT : Op => IsFusion(fusionName, module_kind,
+      IsAlt(
+        IsSIFusionBody<T, BeginT, EndT>(mid_name, inputName, callName, beginName, endName),
+        IsDIFusionBody<T, BeginT, EndT>(callName)),
+      IsVArgsRepeat(() => IsWildcard()));
 
     public static Pattern IsFusion(string module_kind, Pattern body)
         => IsFusion(null, module_kind, body,
@@ -248,7 +246,7 @@ public static partial class Utility
         where EndT : Op => IsFusion(
         moduleKind,
         IsCallWildcard(endCallName, IsOp<EndT>(endCallName + "Op"),
-            IsAlt( // we can't use secondCallName in getReplace because of it's optional
+            IsAlt(// we can't use secondCallName in getReplace because of it's optional
                 input => IsPairWildcardCall<FirstOpT, SecondOpT>(firstCallName, null!, input),
                 input => IsCallWildcardMaybeSwappable<FirstOpT>(firstCallName, input))(
                 IsCallWildcard(beginCallName, IsOp<BeginT>(beginCallName + "Op"), IsWildcard()))));
@@ -260,5 +258,5 @@ public static partial class Utility
     public static Pattern IsCallWildcardMaybeSwappable<OpT>(string callName, Pattern input, Pattern swappableOther)
         where OpT : Op => IsAlt(
         IsCallWildcard(callName, IsOp<OpT>(callName + "Op"), input),
-        IsCallWildcardSwappable<OpT>(callName, null!, input, swappableOther));
+        IsCallWildcardSwappable(callName, IsOp<OpT>(callName + "Op"), input, swappableOther));
 }

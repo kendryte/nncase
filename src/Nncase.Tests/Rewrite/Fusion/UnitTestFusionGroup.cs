@@ -56,6 +56,10 @@ public class UnitTestFusionGroup : TestClassBase
     [MemberData(nameof(DataOne))]
     public void RunOne(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
 
+    [Theory]
+    [MemberData(nameof(DataAll))]
+    public void RunAll(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
+
     private void RunCore(IDataFlowFusionCase fusionCase)
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
@@ -93,11 +97,6 @@ public class UnitTestFusionGroup : TestClassBase
         var post_result = CompilerServices.Evaluate(post.Body, feed_dict);
         Assert.True(Comparator.AllEqual(pre_result, post_result));
     }
-
-
-    [Theory]
-    [MemberData(nameof(DataAll))]
-    public void RunAll(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
 }
 
 internal sealed class TestFusionGroupMutator : Transform.Mutators.FusionGroupMutator

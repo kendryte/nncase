@@ -65,14 +65,14 @@ internal sealed class Dumpper : IDumpper
         return File.Open(EnsureWritable(path), fileMode);
     }
 
+    public override string ToString() => $"Dumpper({_dumpFlags})";
+
     private static string EnsureWritable(string path)
     {
         var directory = Path.GetDirectoryName(path) ?? throw new ArgumentException($"Invalid path: {path}");
         System.IO.Directory.CreateDirectory(directory);
         return path;
     }
-
-    public override string ToString() => $"Dumpper({_dumpFlags})";
 }
 
 internal sealed class DumpperFactory : IDumpperFactory

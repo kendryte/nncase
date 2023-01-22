@@ -43,6 +43,7 @@ public sealed partial class ClampToBinary : RewriteRule<CallPattern>
                 return IR.F.Math.Max(input, min);
             }
         }
+
         if (min.All(v => v <= float.MinValue))
         {
             var distinct = max.Distinct().ToArray();
@@ -55,6 +56,7 @@ public sealed partial class ClampToBinary : RewriteRule<CallPattern>
                 return IR.F.Math.Min(input, min);
             }
         }
+
         return IR.F.Math.Max(IR.F.Math.Min(input, max), min);
     }
 }

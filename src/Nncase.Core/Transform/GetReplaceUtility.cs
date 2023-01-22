@@ -10,6 +10,10 @@ using ParameterInfo = Nncase.IR.ParameterInfo;
 using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Transform;
+
+/// <summary>
+/// todo merge this and RelaceUtility.
+/// </summary>
 public static class Utility
 {
     /// <summary>
@@ -36,21 +40,6 @@ public static class Utility
             }
 
             return func(inputCtor)(input);
-        };
-    }
-
-    public static Func<Expr, Tuple> ApplyTuple(Fx inputCtor)
-    {
-        return input =>
-        {
-            if (input is Tuple inputs)
-            {
-                return new Tuple(inputs.Fields.Select(inputCtor));
-            }
-            else
-            {
-                throw new InvalidOperationException("Apply Tuple only support tuple input");
-            }
         };
     }
 

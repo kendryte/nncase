@@ -25,50 +25,66 @@ namespace Nncase.Transform.Rules.Neutral;
 /// </summary>
 /// <typeparam name="T"></typeparam>
 [RuleGenerator]
-public partial class AddRangeOfAndMarkerSingleInput : RewriteRule<Pattern>
+public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
 {
+    private static readonly Dictionary<RuntimeTypeHandle, int> _Dict = new()
+    {
+        { typeof(Transpose).TypeHandle, 1 },
+        { typeof(SpaceToBatch).TypeHandle, 1 },
+        { typeof(Sigmoid).TypeHandle, 1 },
+        { typeof(Relu).TypeHandle, 1 },
+        { typeof(Relu6).TypeHandle, 1 },
+        { typeof(PRelu).TypeHandle, 1 },
+        { typeof(LeakyRelu).TypeHandle, 1 },
+        { typeof(Celu).TypeHandle, 1 },
+        { typeof(Selu).TypeHandle, 1 },
+        { typeof(Elu).TypeHandle, 1 },
+        { typeof(HardSwish).TypeHandle, 1 },
+        { typeof(HardSigmoid).TypeHandle, 1 },
+        { typeof(ResizeImage).TypeHandle, 1 },
+        { typeof(ReduceWindow2D).TypeHandle, 1 },
+        { typeof(Reduce).TypeHandle, 1 },
+        { typeof(Pad).TypeHandle, 1 },
+        { typeof(BatchToSpace).TypeHandle, 1 },
+        { typeof(Broadcast).TypeHandle, 1 },
+        { typeof(LSTM).TypeHandle, 1 },
+        { typeof(MatMul).TypeHandle, 2 },
+        { typeof(Conv2D).TypeHandle, 2 },
+        { typeof(Conv2DTranspose).TypeHandle, 2 },
+        { typeof(Compare).TypeHandle, 2 },
+        { typeof(Binary).TypeHandle, 2 },
+        { typeof(Clamp).TypeHandle, 3 },
+    };
+
     /// <inheritdoc/>
     public override Pattern Pattern { get; } =
-      IsCallWildcard("call",
-        IsOp<Op>("op", op => op switch
-        {
-            (Transpose or SpaceToBatch or ActivationOp or
-            ResizeImage or ReduceWindow2D or Reduce or
-            Pad or BatchToSpace or Broadcast or Clamp or
-            LSTM) => true,
-            _ => false,
-        }),
-        IsWildcard("input"));
+      IsCallWildcard(
+          "call",
+          IsOp<Op>("op"),
+          IsWildcard("input"));
 
-    Expr? GetReplace(Call call, Op op, Expr input, IReadOnlyList<Expr> callParams, RunPassContext context)
+    private Expr? GetReplace(Call call, Op op, IReadOnlyList<Expr> callParams, RunPassContext context)
     {
-        var newCall = ReplaceCallParams(op, callParams, (input, IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input))));
-        context.MatchOptions.SuppressPattern(newCall, Pattern); // only invoke once
-        return IR.F.Math.RangeOfMarker(newCall, IR.F.Math.RangeOf(newCall));
-    }
-}
-
-[RuleGenerator]
-public partial class AddRangeOfAndMarkerDoubleInput : RewriteRule<Pattern>
-{
-    /// <inheritdoc/>
-    public override Pattern Pattern { get; } =
-      IsCallWildcard("call",
-        IsOp<Op>("op", op => op switch
+        if (!_Dict.TryGetValue(op.GetType().TypeHandle, out var length))
         {
-            (MatMul or Conv2D or Conv2DTranspose or
-            Compare or Binary) => true,
-            _ => false,
-        }),
-        IsWildcard("lhs"),
-        IsWildcard("rhs"));
+            return null;
+        }
 
-    Expr? GetReplace(Call call, Op op, Expr lhs, Expr rhs, IReadOnlyList<Expr> callParams, RunPassContext context)
-    {
-        var newCall = ReplaceCallParams(op, callParams,
-          (lhs, IR.F.Math.RangeOfMarker(lhs, IR.F.Math.RangeOf(lhs))),
-          (rhs, IR.F.Math.RangeOfMarker(rhs, IR.F.Math.RangeOf(rhs))));
-        context.MatchOptions.SuppressPattern(newCall, Pattern); // only invoke once
+        var pairs = new List<(Expr, Expr)>();
+        for (int i = 0; i < length; i++)
+        {
+            if (callParams[i] is not Marker)
+            {
+                pairs.Add((callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i]))));
+            }
+        }
+
+        if (pairs.Count == 0)
+        {
+            return null;
+        }
+
+        var newCall = ReplaceCallParams(op, callParams, pairs.ToArray());
         return IR.F.Math.RangeOfMarker(newCall, IR.F.Math.RangeOf(newCall));
     }
 }

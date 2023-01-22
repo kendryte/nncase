@@ -35,12 +35,15 @@ public abstract record BaseFunction(string Name, string ModuleKind) : Callable(N
     /// Gets parameter types.
     /// </summary>
     public abstract IEnumerable<IRType?> ParameterTypes { get; }
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => base.GetHashCode();
 }
 
 /// <summary>
 /// Function expression.
 /// </summary>
-public record Function(string Name, Expr Body, IRArray<Var> Parameters) : BaseFunction(Name, StackVMModuleKind)
+public sealed record Function(string Name, Expr Body, IRArray<Var> Parameters) : BaseFunction(Name, StackVMModuleKind)
 {
     private static int _globalFuncIndex;
 

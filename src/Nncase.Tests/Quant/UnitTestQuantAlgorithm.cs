@@ -81,8 +81,7 @@ public class UnitTestKLQuant : TestClassBase
         // 0. TargetIndependentPass
         pmgr.AddWithName<DataflowPass>("TargetInDependent").Configure(p =>
         {
-            p.Add<AddRangeOfAndMarkerSingleInput>();
-            p.Add<AddRangeOfAndMarkerDoubleInput>();
+            p.Add<AddRangeOfAndMarker>();
         });
 
         // 1. AssignRanges

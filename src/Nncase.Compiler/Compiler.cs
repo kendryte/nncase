@@ -92,8 +92,7 @@ internal class Compiler : ICompiler
         {
             passManager.AddWithName<DataflowPass>("AddRangeOfMarker").Configure(p =>
             {
-                p.Add<Transform.Rules.Neutral.AddRangeOfAndMarkerSingleInput>();
-                p.Add<Transform.Rules.Neutral.AddRangeOfAndMarkerDoubleInput>();
+                p.Add<Transform.Rules.Neutral.AddRangeOfAndMarker>();
             });
             passManager.AddWithName<EGraphPassWithQuantize>("AssignRanges");
         }
@@ -105,20 +104,20 @@ internal class Compiler : ICompiler
         await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
         await RunPassAsync(p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions), "TargetDependentPass");
 
-        if (_compileSession.CompileOptions.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
-        {
-            await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
-            // await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions), "TargetDependentAfterQuantPass");
-            // await RunPassAsync(
-            //     pmgr => pmgr.Add<DataflowPass>().Configure(p =>
-            //     {
-            //         p.Name = "ClearMarker";
-            //         p.Add<RemoveMarker>();
-            //     }),
-            //     "RemoveMarker");
-        }
+        // if (_compileSession.CompileOptions.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
+        // {
+        //     await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
+        //     await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions), "TargetDependentAfterQuantPass");
+        //     await RunPassAsync(
+        //         pmgr => pmgr.Add<DataflowPass>().Configure(p =>
+        //         {
+        //             p.Name = "ClearMarker";
+        //             p.Add<RemoveMarker>();
+        //         }),
+        //         "RemoveMarker");
+        // }
 
-        // fold constant
+        // // fold constant
         // await RunPassAsync(p => p.Add<ShapeInferPass>(), "ShapeInferAfterCompile");
     }
 

@@ -69,7 +69,6 @@ public sealed partial class CombineClampMul : IRewriteRule
         // {
         //     return null;
         // }
-
         var tmulConst = mulConst.ToOrtTensor();
         var mint = min.ToOrtTensor();
         var maxt = max.ToOrtTensor();
