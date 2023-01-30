@@ -230,8 +230,13 @@ public sealed partial class CombinePadTranspose : IRewriteRule
     public IPattern Pattern { get; } = IsTranspose(
         "transpose",
         x => true,
-        IsPad("pad", y => true, IsWildcard("input"), IsTensorConst(
-            "pads"), IsTensorConst("padValue")), IsTensorConst("perm"));
+        IsPad(
+            "pad",
+            y => true,
+            IsWildcard("input"),
+            IsTensorConst("pads"),
+            IsTensorConst("padValue")),
+        IsTensorConst("perm"));
 
     private Expr GetReplace(Pad pad, Expr input, int[] perm, Expr pads, Expr padValue)
     {

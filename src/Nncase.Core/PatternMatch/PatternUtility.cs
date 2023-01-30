@@ -20,8 +20,7 @@ public static partial class Utility
         => IsSwappableBinary(targetName, null, condition, lhs, rhs);
 
     public static Pattern
-        IsSwappableBinary(string targetName, string? callName, Func<Binary, bool> condition, Pattern lhs,
-            Pattern rhs) => IsAlt(
+        IsSwappableBinary(string targetName, string? callName, Func<Binary, bool> condition, Pattern lhs, Pattern rhs) => IsAlt(
         IsBinary(targetName, callName, condition, lhs, rhs),
         IsBinary(targetName, callName, condition, rhs, lhs));
 
@@ -134,14 +133,13 @@ public static partial class Utility
     //     where T : Op
     //     => typeof(T).GetFields(BindingFlags.Public | BindingFlags.Static).Length;
 
-    ///
-    /// <returns></returns><summary>
+    /// <summary>
     /// generate a vargs pattern everything is wildcard except for the specified index
     /// e.g.
-    /// ArgsPattern.<GNNEConv2D>(
+    /// ArgsPattern.&lt;GNNEConv2D&gt;(
     ///     (GNNEConv2D.Weights, IsTensorConst()),
     ///     (GNNEConv2D.PSum, IsNone())
-    /// )
+    /// ).
     /// </summary>
     /// <param name="specs"></param>
     /// <typeparam name="T"></typeparam>
@@ -181,49 +179,37 @@ public static partial class Utility
     /// <summary>
     /// is single input body.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <typeparam name="BeginT"></typeparam>
-    /// <typeparam name="EndT"></typeparam>
-    /// <returns></returns>
-    public static Pattern IsSIFusionBody<T, BeginT, EndT>(string mid_name, string inputName = "input",
-        string callName = "call", string beginName = "ld", string endName = "st")
+    public static Pattern IsSIFusionBody<T, TBegin, TEnd>(string mid_name, string inputName = "input", string callName = "call", string beginName = "ld", string endName = "st")
         where T : Op
-        where BeginT : Op
-        where EndT : Op => IsCallWildcard(endName, IsOp<EndT>(endName + "Op"),
+        where TBegin : Op
+        where TEnd : Op => IsCallWildcard(endName, IsOp<TEnd>(endName + "Op"),
         IsCallWildcard(callName, IsOp<T>(mid_name + "Op"),
-            IsCallWildcard(beginName, IsOp<BeginT>(beginName + "Op"), IsWildcard(inputName))));
+            IsCallWildcard(beginName, IsOp<TBegin>(beginName + "Op"), IsWildcard(inputName))));
 
     /// <summary>
     /// is double input fusion body.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <typeparam name="T"></typeparam>
-    /// <typeparam name="BeginT"></typeparam>
-    /// <typeparam name="EndT"></typeparam>
-    /// <returns></returns>
-    public static Pattern IsDIFusionBody<T, BeginT, EndT>(string callName = "call")
+    public static Pattern IsDIFusionBody<T, TBegin, TEnd>(string callName = "call")
         where T : Op
-        where BeginT : Op
-        where EndT : Op => IsCallWildcard("st", IsOp<EndT>(name: null),
+        where TBegin : Op
+        where TEnd : Op => IsCallWildcard("st", IsOp<TEnd>(name: null),
         IsCallWildcard(callName, IsOp<T>(name: null),
-            IsCallWildcard(null!, IsOp<BeginT>(name: null), IsWildcard("lhs")),
-            IsCallWildcard(null!, IsOp<BeginT>(name: null), IsWildcard("rhs"))));
+            IsCallWildcard(null!, IsOp<TBegin>(name: null), IsWildcard("lhs")),
+            IsCallWildcard(null!, IsOp<TBegin>(name: null), IsWildcard("rhs"))));
 
-    public static Pattern IsFusion<T, BeginT, EndT>(string mid_name, string module_kind, string inputName = "input",
-        string callName = "call", string beginName = "ld", string endName = "st", string fusionName = "fusion")
+    public static Pattern IsFusion<T, TBegin, TEnd>(string mid_name, string module_kind, string inputName = "input", string callName = "call", string beginName = "ld", string endName = "st", string fusionName = "fusion")
         where T : Op
-        where BeginT : Op
-        where EndT : Op => IsFusion(fusionName, module_kind,
+        where TBegin : Op
+        where TEnd : Op => IsFusion(fusionName, module_kind,
       IsAlt(
-        IsSIFusionBody<T, BeginT, EndT>(mid_name, inputName, callName, beginName, endName),
-        IsDIFusionBody<T, BeginT, EndT>(callName)),
+        IsSIFusionBody<T, TBegin, TEnd>(mid_name, inputName, callName, beginName, endName),
+        IsDIFusionBody<T, TBegin, TEnd>(callName)),
       IsVArgsRepeat(() => IsWildcard()));
 
     public static Pattern IsFusion(string module_kind, Pattern body)
-        => IsFusion(null, module_kind, body,
-            IsVArgsRepeat(null, () => IsVar()));
+        => IsFusion(null, module_kind, body, IsVArgsRepeat(null, () => IsVar()));
 
-    // Fusion: BeginT -> FirstOp -> SecondOp -> EndT
+    // Fusion: TBegin -> FirstOp -> SecondOp -> TEnd
     public static PatternCtor IsAlt(PatternCtor patternCtorA, PatternCtor patternCtorB) => input =>
         IsAlt(patternCtorA(input), patternCtorB(input));
 

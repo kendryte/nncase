@@ -111,11 +111,16 @@ public partial class TransformTestBase : TestClassBase
     public Expr RewriteWithSeq(Expr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> lower, IRewriteRule fold, IEnumerable<IRewriteRule> fuse) => RewriteWithSeq(expr, passOptions, lower, new[] { fold }, fuse);
 
     public Expr RewriteWithSeq(Expr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> lower, IEnumerable<IRewriteRule> fuse) =>
-        RewriteWithSeq(expr, passOptions, lower, new IRewriteRule[]
-        {
-            new FoldNopReshape(),
-            new FoldNopCast(),
-        }, fuse);
+        RewriteWithSeq(
+            expr,
+            passOptions,
+            lower,
+            new IRewriteRule[]
+            {
+                new FoldNopReshape(),
+                new FoldNopCast(),
+            },
+            fuse);
 
     public Expr TestMultiMatched<T>(Expr expr, int count)
         where T : IRewriteRule, new()

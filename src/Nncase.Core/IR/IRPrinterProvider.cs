@@ -37,9 +37,9 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
         string ext = expr is PrimFunction ? "script" : "il";
         string name = expr is Callable c ? c.Name : expr.GetType().Name;
         string file_path = Path.Combine(dumpPath, $"{nprefix}{name}.{ext}");
-        if (dumpPath == string.Empty)
+        if (string.IsNullOrEmpty(dumpPath))
         {
-            throw new ArgumentNullException("The dumpPath Is Empty!");
+            throw new ArgumentException("The dumpPath Is Empty!", nameof(dumpPath));
         }
 
         Directory.CreateDirectory(dumpPath);
@@ -60,9 +60,9 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
     /// <inheritdoc/>
     public void DumpDotIR(Expr expr, string prefix, string dumpDir, bool display_callable)
     {
-        if (dumpDir == string.Empty)
+        if (string.IsNullOrEmpty(dumpDir))
         {
-            throw new ArgumentNullException("The dumpPath Is Empty!");
+            throw new ArgumentException("The dumpPath Is Empty!", nameof(dumpDir));
         }
 
         Directory.CreateDirectory(dumpDir);
@@ -87,13 +87,13 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
     {
         var sb = new StringBuilder();
         using var dumpWriter = new StringWriter(sb);
-        var _ = expr is PrimFunction || useScript
+        var text = expr is PrimFunction || useScript
             ? new ScriptPrintVisitor(dumpWriter, true).Visit(expr).Serialize()
             : new ILPrintVisitor(dumpWriter, true, 0).Visit(expr);
 
-        return useScript ? _ : expr switch
+        return useScript ? text : expr switch
         {
-            Const or None or Var or Op => _,
+            Const or None or Var or Op => text,
             _ => sb.ToString(),
         };
     }

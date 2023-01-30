@@ -11,7 +11,12 @@
       "variables": {
         "licenseName": "Apache",
         "licenseFile": "LICENSE"
-      }
+      },
+      "documentExposedElements": false,
+      "documentInterfaces": false,
+      "documentInternalElements": false,
+      "documentPrivateElements": false,
+      "documentPrivateFields": false
     },
     "spacingRules": {
 

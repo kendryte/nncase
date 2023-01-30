@@ -50,8 +50,8 @@ public static partial class Utility
     /// <summary>
     /// create the TensorConstPattern.
     /// </summary>
-    /// <param name="cond">condition.</param>
     /// <param name="name">name.</param>
+    /// <param name="cond">condition.</param>
     /// <returns>TensorConstPattern.</returns>
     public static TensorConstPattern IsTensorConst(string? name, Func<TensorConst, bool> cond) => new TensorConstPattern(cond, name);
 
@@ -60,8 +60,8 @@ public static partial class Utility
     /// <summary>
     /// create the TensorConstPattern.
     /// </summary>
-    /// <param name="typePattern">tyeppattern.</param>
     /// <param name="name">name.</param>
+    /// <param name="typePattern">tyeppattern.</param>
     /// <returns>TensorConstPattern.</returns>
     public static TensorConstPattern IsTensorConst(string? name, TypePattern typePattern) => new TensorConstPattern(x => typePattern.MatchLeaf(x.ValueType), name);
 

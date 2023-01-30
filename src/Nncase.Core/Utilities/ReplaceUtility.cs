@@ -127,7 +127,7 @@ public static class ReplaceUtility
     /// <param name="pairs">target value pair.</param>
     /// <returns>new args list.</returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static List<Expr> ReplaceItems(IReadOnlyList<Expr> list, params (Expr target, Expr value)[] pairs)
+    public static List<Expr> ReplaceItems(IReadOnlyList<Expr> list, params (Expr Target, Expr Value)[] pairs)
     {
         var new_args = new List<Expr>(list);
 
@@ -136,15 +136,15 @@ public static class ReplaceUtility
         {
             for (int j = 0; j < pairs.Length; j++)
             {
-                if (object.ReferenceEquals(new_args[i], pairs[j].target))
+                if (object.ReferenceEquals(new_args[i], pairs[j].Target))
                 {
                     if (!candidates.TryGetValue(i, out var last_matched))
                     {
-                        last_matched = pairs[j].value;
+                        last_matched = pairs[j].Value;
                         candidates.Add(i, last_matched);
                     }
 
-                    if (!object.ReferenceEquals(last_matched, pairs[j].value))
+                    if (!object.ReferenceEquals(last_matched, pairs[j].Value))
                     {
                         throw new InvalidDataException("The same arg can't replace with two new pararmeter!");
                     }

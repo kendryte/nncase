@@ -59,7 +59,7 @@ internal unsafe class NativeMemoryManager<T> : MemoryManager<T>
     {
         if ((uint)elementIndex > (uint)_length)
         {
-            throw new IndexOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(elementIndex));
         }
 
         return new MemoryHandle(Unsafe.Add<T>((void*)_pointer, elementIndex), default, this);

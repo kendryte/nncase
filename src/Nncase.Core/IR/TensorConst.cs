@@ -121,7 +121,7 @@ public sealed record TensorConst(Tensor Value) : Const(new TensorType(Value.Elem
     /// <inheritdoc/>
     public override int GetHashCode()
     {
-        return _hashcode ??= HashCode.Combine(
+        return HashCodeCache ??= HashCode.Combine(
             EqualityComparer<Type>.Default.GetHashCode(EqualityContract),
             Value.GetHashCode());
     }

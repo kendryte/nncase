@@ -109,8 +109,6 @@ public abstract record Const(IRType ValueType) : Expr
     /// <summary>
     /// convert shape to const expr.
     /// </summary>
-    /// <param name="shape"></param>
-    /// <returns></returns>
     public static Const FromShape(Shape shape) => FromTensor(Tensor.From<int>(shape.ToValueArray()));
 
     /// <summary>

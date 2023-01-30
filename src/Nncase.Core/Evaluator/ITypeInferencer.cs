@@ -47,6 +47,7 @@ public interface ITypeInferencer<T> : ITypeInferencer
 /// <summary>
 /// this attribute mark the source generator auto generate ITypeInferencer's interface impl.
 /// </summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
 public sealed class TypeInferGeneratorAttribute : Attribute
 {
 }

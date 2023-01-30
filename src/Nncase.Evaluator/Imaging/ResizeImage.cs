@@ -42,7 +42,7 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
             var pattern = IsRangeOfMarker(IsWildcard(), IsWildcard());
             if (pattern.MatchLeaf(context.CurrentCall.Parameters.ToArray()[0]) && ((Nncase.IR.Marker)context.CurrentCall.Parameters.ToArray()[0]).MixQuantInfo?.HasBindedMixQuantInfo == true)
             {
-                var quantParam = ((Nncase.IR.Marker)context.CurrentCall.Parameters.ToArray()[0]).MixQuantInfo.QuantParameter;
+                var quantParam = ((Nncase.IR.Marker)context.CurrentCall.Parameters.ToArray()[0]).MixQuantInfo!.QuantParameter;
 
                 // input feature map quantParam count should be 1 since input feature map quant is by tensor.
                 Trace.Assert(quantParam.Count == 1);
@@ -71,8 +71,7 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
         var output = target.ResizeMode switch
         {
             ImageResizeMode.Bilinear => tf.image.resize_bilinear(input, size, alignCorners, halfPixelCenter),
-            ImageResizeMode.NearestNeighbor => tf.image.resize_nearest_neighbor(input, size, alignCorners, string.Empty,
-                halfPixelCenter),
+            ImageResizeMode.NearestNeighbor => tf.image.resize_nearest_neighbor(input, size, alignCorners, string.Empty, halfPixelCenter),
             _ => throw new NotSupportedException($"TFResize Not suppoprted {target.ResizeMode}"),
         };
         return tf.transpose(output, new[] { 0, 3, 1, 2 }).ToValue();
@@ -93,7 +92,7 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
             var pattern = IsRangeOfMarker(IsWildcard(), IsWildcard());
             if (pattern.MatchLeaf(context.CurrentCall.Parameters.ToArray()[0]) && ((Nncase.IR.Marker)context.CurrentCall.Parameters.ToArray()[0]).MixQuantInfo?.HasBindedMixQuantInfo == true)
             {
-                var quantParam = ((Nncase.IR.Marker)context.CurrentCall.Parameters.ToArray()[0]).MixQuantInfo.QuantParameter;
+                var quantParam = ((Nncase.IR.Marker)context.CurrentCall.Parameters.ToArray()[0]).MixQuantInfo!.QuantParameter;
 
                 // input feature map quantParam count should be 1 since input feature map quant is by tensor.
                 Trace.Assert(quantParam.Count == 1);
@@ -114,9 +113,14 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
             }
         }
 
-        return OrtKI.ResizeWithSizes(input, roi, sizes,
+        return OrtKI.ResizeWithSizes(
+            input,
+            roi,
+            sizes,
             ResizeModeHelper.ToString(target.TransformationMode),
-            cubicCoeffA, excludeOutside, extrapolationValue,
+            cubicCoeffA,
+            excludeOutside,
+            extrapolationValue,
             ResizeModeHelper.ToString(target.ResizeMode),
             ResizeModeHelper.ToString(target.NearestMode)).ToValue();
     }

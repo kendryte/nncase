@@ -25,8 +25,6 @@ public interface IIRPrinterContext
     /// <summary>
     /// get op.
     /// </summary>
-    /// <param name="op"></param>
-    /// <returns></returns>
     IPrintSymbol Get(Op op);
 
     /// <summary>
@@ -53,6 +51,5 @@ public interface IIRPrinterContext
     /// <summary>
     /// get indent string.
     /// </summary>
-    /// <returns></returns>
     string Indent();
 }

@@ -34,7 +34,7 @@ public sealed partial class FoldNopSlice : IRewriteRule
         {
             var axis = axes[i];
             if (begins[i] != 0
-                || ends[i] != inShape[axis]
+                || ends[i] != inShape[axis].FixedValue
                 || strides[i] != 1)
             {
                 return null;

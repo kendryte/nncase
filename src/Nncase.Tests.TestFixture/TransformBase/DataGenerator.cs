@@ -88,9 +88,7 @@ public static class DataGenerator
             { 0, 0 },
         };
 
-        var conv = Conv2D(input, weights.AsTensor(), bias.AsTensor(), stride, padding,
-            dilation,
-            PadMode.Constant, 1);
+        var conv = Conv2D(input, weights.AsTensor(), bias.AsTensor(), stride, padding, dilation, PadMode.Constant, 1);
         return conv;
     }
 
@@ -139,12 +137,12 @@ public static class DataGenerator
     public static Call AutoConstructor(string root, string opNameInFile, int num)
     {
         var opTy = new IR.Tensors.Broadcast().GetType().Assembly.DefinedTypes
-            .Find(ty => ty.Name.ToUpper().Contains(opNameInFile.ToUpper())).ValueUnsafe();
-        var op = (Op)Activator.CreateInstance(opTy);
+            .Find(ty => ty.Name.Contains(opNameInFile, StringComparison.OrdinalIgnoreCase)).ValueUnsafe();
+        var op = (Op)Activator.CreateInstance(opTy)!;
         var data = new TextDataExtractor().GetFilesByOrderNum(root);
         var opdata = data[$"{num}${opNameInFile}"];
         var parameters = op.Parameters
-            .Select((param, i) => opdata.Find(dataPath => dataPath.Contains(param.Name)).ValueUnsafe())
+            .Select((param, i) => opdata.Find(dataPath => dataPath.Contains(param.Name, StringComparison.OrdinalIgnoreCase)).ValueUnsafe())
             .Select(path => (Expr)FromTextFile(path).AsTensor()).ToArray();
         return new Call(op, new IRArray<Expr>(parameters));
     }
@@ -188,7 +186,7 @@ public static class DataGenerator
             PrimType primType => throw new NotImplementedException(),
             QuantParamType quantParamType => throw new NotImplementedException(),
             ValueType valueType => throw new NotImplementedException(),
-            _ => throw new ArgumentOutOfRangeException(nameof(dt)),
+            _ => throw new ArgumentOutOfRangeException(nameof(dumpData), $"Invalid dataype: {dt}."),
         };
     }
 
@@ -212,7 +210,7 @@ public static class DataGenerator
     // data[1]
     // ...
     // data[n]
-    private static (DataType dt, int[] shape, string[] data, int endIndex) ParseDumpFile(string[] content, int baseIndex)
+    private static (DataType DataType, int[] Shape, string[] Data, int EndIndex) ParseDumpFile(string[] content, int baseIndex)
     {
         var dtIndex = baseIndex;
         var shapeIndex = baseIndex + 1;
@@ -220,10 +218,6 @@ public static class DataGenerator
         var end = data.Find(d => d.StartsWith("type")).Match(x => data.ToList().IndexOf(x), () => data.Length);
         var endIndexInContent = end + shapeIndex + 1;
         return (ParseDataType(content[dtIndex]), ParseShape(content[shapeIndex]), data[..end], endIndexInContent);
-    }
-
-    private record DumpData(DataType Dt, int[] Shape, string[] Data)
-    {
     }
 
     private static DumpData[] ParseDumpFile(string[] content)
@@ -268,4 +262,8 @@ public static class DataGenerator
     }
 
     private static DataType ParseDataType(string dt) => DataType.FromTypeCode((Runtime.TypeCode)int.Parse(dt.Split(":")[1]));
+
+    private record DumpData(DataType Dt, int[] Shape, string[] Data)
+    {
+    }
 }

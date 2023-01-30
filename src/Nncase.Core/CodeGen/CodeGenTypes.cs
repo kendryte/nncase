@@ -25,8 +25,6 @@ public struct ModuleType
     /// <summary>
     /// create the modult type by name.
     /// </summary>
-    /// <param name="name"></param>
-    /// <returns></returns>
     public static ModuleType Create(string name)
     {
         var mt = default(ModuleType);

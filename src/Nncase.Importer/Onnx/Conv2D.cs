@@ -80,18 +80,17 @@ namespace Nncase.Importer
                 : F.Tensors.Expand(0f, Util.ShapeIndex(weights, biasSizeIndex));
         }
 
-        private Expr AutoPad(NodeProto op, string autoPad, Expr input, Expr weights,
-            long[] strides, long[] dilation) => autoPad switch
-            {
-                "NOTSET" => GetPadsAttribute(op),
-                "SAME_UPPER" => Util.GetPaddings(input, weights, strides, dilation, true),
-                "SAME_LOWER" => Util.GetPaddings(input, weights, strides, dilation, true, true),
-                "VALID" => GetPadsAttribute(op),
+        private Expr AutoPad(NodeProto op, string autoPad, Expr input, Expr weights, long[] strides, long[] dilation) => autoPad switch
+        {
+            "NOTSET" => GetPadsAttribute(op),
+            "SAME_UPPER" => Util.GetPaddings(input, weights, strides, dilation, true),
+            "SAME_LOWER" => Util.GetPaddings(input, weights, strides, dilation, true, true),
+            "VALID" => GetPadsAttribute(op),
 
-                // when VALID, I'm not sure this is correct
-                // in onnx doc, not spec when VALID value
-                // https://github.com/onnx/onnx/blob/master/docs/Operators.md#Conv
-                _ => throw new InvalidDataException($"invalid AutoPad Value: {autoPad}"),
-            };
+            // when VALID, I'm not sure this is correct
+            // in onnx doc, not spec when VALID value
+            // https://github.com/onnx/onnx/blob/master/docs/Operators.md#Conv
+            _ => throw new InvalidDataException($"invalid AutoPad Value: {autoPad}"),
+        };
     }
 }

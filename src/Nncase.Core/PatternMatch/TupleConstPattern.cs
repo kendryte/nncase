@@ -46,7 +46,7 @@ public static partial class Utility
     public static TupleConstPattern IsTupleConst(string? name = null) => new(x => true, name);
 
     /// <summary>
-    ///
+    /// create the tupleconst pattern.
     /// </summary>
     /// <param name="cond">condition.</param>
     /// <param name="name">name.</param>
@@ -54,7 +54,7 @@ public static partial class Utility
     public static TupleConstPattern IsTupleConst(Func<TupleConst, bool> cond, string? name = null) => new(cond, name);
 
     /// <summary>
-    ///
+    /// create the tupleconst pattern.
     /// </summary>
     /// <param name="typePattern">typepattern. </param>
     /// <param name="name">name.</param>

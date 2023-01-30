@@ -21,8 +21,6 @@ public interface IUsedByResult
     /// <summary>
     /// get the which parent used child expr node.
     /// </summary>
-    /// <param name="child"></param>
-    /// <returns></returns>
     HashSet<Expr> Get(Expr child);
 
     /// <summary>
@@ -42,7 +40,5 @@ public interface IUsedByResult
     /// <summary>
     /// transfer the usedy information.
     /// </summary>
-    /// <param name="old_expr"></param>
-    /// <param name="new_expr"></param>
     void Transfer(Expr old_expr, Expr new_expr);
 }

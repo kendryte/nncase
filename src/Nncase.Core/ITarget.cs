@@ -46,7 +46,6 @@ public interface ITarget
     /// <summary>
     /// Parse Target Dependent Options.
     /// </summary>
-    /// <param name="configure"></param>
     void ParseTargetDependentOptions(IConfigurationSection configure);
 
     /// <summary>
@@ -66,7 +65,7 @@ public interface ITarget
     /// <summary>
     /// Register Target Dependent After Quant Pass.
     /// </summary>
-    /// <param name="passManager"></param>
+    /// <param name="passManager">Pass manager.</param>
     /// <param name="options">compile options.</param>
     void RegisterTargetDependentAfterQuantPass(IPassManager passManager, CompileOptions options);
 

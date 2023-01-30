@@ -51,7 +51,6 @@ namespace Nncase.IR
         /// Visit Basefunction expression.
         /// </summary>
         /// <param name="baseFunction"> base function. </param>
-        /// <returns></returns>
         public virtual TExprResult Visit(BaseFunction baseFunction) => baseFunction switch
         {
             Function func => Visit(func),
@@ -86,7 +85,6 @@ namespace Nncase.IR
         /// Visit fusion expression.
         /// </summary>
         /// <param name="expr">Fusion Expression.</param>
-        /// <returns></returns>
         public virtual TExprResult Visit(Fusion expr) => DefaultVisit(expr);
 
         /// <summary>
@@ -211,15 +209,11 @@ namespace Nncase.IR
         /// <summary>
         /// Visit visitable.
         /// </summary>
-        /// <param name="visitable"></param>
-        /// <returns></returns>
         public virtual object Visit(IVisitable visitable) => DefaultVisit(visitable);
 
         /// <summary>
         /// Default Visit IVisitable.
         /// </summary>
-        /// <param name="visitable"></param>
-        /// <returns></returns>
         public virtual object DefaultVisit(IVisitable visitable)
         {
             return visitable.Visit<TExprResult, TTypeResult>(this);

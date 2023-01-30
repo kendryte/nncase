@@ -43,7 +43,8 @@ namespace Nncase.Importer.TFLite
                     Array.Empty<float>(),
                     MakeResizeSizes(input, newSize),
                     tranMode,
-                    nearestMode, true));
+                    nearestMode,
+                    true));
         }
 
         private ImageResizeTransformationMode GetResizeOptions(in tflite.Operator op)

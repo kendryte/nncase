@@ -97,11 +97,14 @@ public class UnitTestEGraphRewrite : TestClassBase
 
         Assert.True(pre.InferenceType());
 
-        var post = CompilerServices.ERewrite(pre, new IRewriteRule[]
-        {
-              new Transform.Rules.Lower.RemoveMarker(),
-              new TestMulToAdd(),
-        }, new());
+        var post = CompilerServices.ERewrite(
+            pre,
+            new IRewriteRule[]
+            {
+                  new Transform.Rules.Lower.RemoveMarker(),
+                  new TestMulToAdd(),
+            },
+            new());
 
         Assert.True(post.InferenceType());
 

@@ -60,10 +60,13 @@ public class UnitTestSimplifyBinary : TestClassBase
         normal.Add(c, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
 
         var rootPre = a * b * c; // Math.Binary(binaryOp, Math.Binary(binaryOp, a, bValue), bValue);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new ReassociateMul(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new ReassociateMul(),
+            },
+            new());
 
         // rootPre.InferenceType();
         Assert.NotEqual(rootPre, rootPost);
@@ -82,10 +85,13 @@ public class UnitTestSimplifyBinary : TestClassBase
         normal.Add(b, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
 
         var rootPre = a * b / c;
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new ReassociateDiv(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new ReassociateDiv(),
+            },
+            new());
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal));
     }
@@ -99,10 +105,13 @@ public class UnitTestSimplifyBinary : TestClassBase
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
 
         var rootPre = a / a;
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new XDivX(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new XDivX(),
+            },
+            new());
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal));
     }
@@ -117,10 +126,13 @@ public class UnitTestSimplifyBinary : TestClassBase
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
         normal.Add(b, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
         var rootPre = a * b;
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new CommutateMul(),
-        }, new() { RewriteOnce = true });
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new CommutateMul(),
+            },
+            new() { RewriteOnce = true });
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal));
     }

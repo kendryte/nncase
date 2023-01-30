@@ -45,14 +45,14 @@ public class UnitTestFoldTranspose : TestClassBase
             new object[] { new[] { 2, 1, 6, 1 }, new[] { 1, 0, 3, 2 } },
         };
 
-    public static TheoryData<(int count, IR.Expr act, int[] perm)> TestCombineTransposeActivationsPositiveData => new()
+    public static TheoryData<(int Count, IR.Expr Act, int[] Perm)> TestCombineTransposeActivationsPositiveData => new()
     {
         (1, IR.F.NN.Relu(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 2, 4 })), new int[] { 1, 0, 2 }),
         (2, IR.F.NN.Celu(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 4, 2, 1 }), 0.6f), new int[] { 1, 0, 2 }),
         (3, IR.F.NN.HardSigmoid(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 4, 2, 1 }), 0.6f, 0.3f), new int[] { 1, 0, 2 }),
     };
 
-    public static TheoryData<(int count, IR.Expr act, int[] perm)> TestCombineTransposeActivationsNegativeData => new()
+    public static TheoryData<(int Count, IR.Expr Act, int[] Perm)> TestCombineTransposeActivationsNegativeData => new()
     {
         (1, IR.F.NN.Softplus(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 2, 4 })), new int[] { 1, 0, 2 }),
         (2, IR.F.NN.Softsign(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 4, 2, 1 })), new int[] { 1, 0, 2 }),
@@ -88,11 +88,14 @@ public class UnitTestFoldTranspose : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Transpose(a, perm);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new FoldShapeOf(),
-            new TransposeToReshape(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new FoldShapeOf(),
+                new TransposeToReshape(),
+            },
+            new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -100,14 +103,17 @@ public class UnitTestFoldTranspose : TestClassBase
 
     [Theory]
     [MemberData(nameof(TestCombineTransposeActivationsPositiveData))]
-    public void TestCombineTransposeActivationsPositive((int count, IR.Expr act, int[] perm) param)
+    public void TestCombineTransposeActivationsPositive((int Count, IR.Expr Act, int[] Perm) param)
     {
-        using var dumpScope = new DumpScope($"{param.count}");
-        var rootPre = Tensors.Transpose(param.act, param.perm);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new CombineTransposeActivations(),
-        }, new());
+        using var dumpScope = new DumpScope($"{param.Count}");
+        var rootPre = Tensors.Transpose(param.Act, param.Perm);
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new CombineTransposeActivations(),
+            },
+            new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -115,14 +121,17 @@ public class UnitTestFoldTranspose : TestClassBase
 
     [Theory]
     [MemberData(nameof(TestCombineTransposeActivationsNegativeData))]
-    public void TestCombineTransposeActivationsNegative((int count, IR.Expr act, int[] perm) param)
+    public void TestCombineTransposeActivationsNegative((int Count, IR.Expr Act, int[] Perm) param)
     {
-        using var dumpScope = new DumpScope($"{param.count}");
-        var rootPre = Tensors.Transpose(param.act, param.perm);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new CombineTransposeActivations(),
-        }, new());
+        using var dumpScope = new DumpScope($"{param.Count}");
+        var rootPre = Tensors.Transpose(param.Act, param.Perm);
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new CombineTransposeActivations(),
+            },
+            new());
 
         Assert.Equal(rootPre, rootPost);
     }

@@ -73,9 +73,6 @@ public static partial class Utility
     /// <summary>
     /// is op pattern without name. <see cref="IsOp{TOp}(string?, Func{TOp, bool})"/>.
     /// </summary>
-    /// <typeparam name="TOp"></typeparam>
-    /// <param name="condition"></param>
-    /// <returns></returns>
     public static OpPattern<TOp> IsOp<TOp>(Func<TOp, bool> condition)
        where TOp : Op
         => IsOp<TOp>(null, condition);

@@ -17,8 +17,6 @@ namespace Nncase.Runtime.Interop;
 public sealed class RTInterpreter : SafeHandle
 {
     private MemoryHandle _pinnedModelBuffer;
-
-    // private bool _disposedValue;
     private RTFunction? _entry;
 
     /// <summary>
@@ -33,14 +31,6 @@ public sealed class RTInterpreter : SafeHandle
         : base(handle, true)
     {
     }
-
-    /// <summary>
-    /// Gets finalizes an instance of the <see cref="RTInterpreter"/> class.
-    /// </summary>
-    // ~RTInterpreter()
-    // {
-    //     Dispose(disposing: false);
-    // }
 
     /// <summary>
     /// Gets entry function.
@@ -65,7 +55,6 @@ public sealed class RTInterpreter : SafeHandle
     /// <summary>
     /// Create the Interpreter.
     /// </summary>
-    /// <returns></returns>
     public static RTInterpreter Create()
     {
         Native.InterpCreate(out var interp).ThrowIfFailed();
@@ -103,25 +92,4 @@ public sealed class RTInterpreter : SafeHandle
         _pinnedModelBuffer.Dispose();
         return Native.InterpFree(handle).IsSuccess;
     }
-
-    /// <inheritdoc/>
-    // public void Dispose()
-    // {
-    //     Dispose(disposing: true);
-    //     GC.SuppressFinalize(this);
-    // }
-
-    // private void Dispose(bool disposing)
-    // {
-    //     if (!_disposedValue)
-    //     {
-    //         if (disposing)
-    //         {
-    //             _pinnedModelBuffer.Dispose();
-    //         }
-
-    // Native.InterpFree(_handle);
-    //         _disposedValue = true;
-    //     }
-    // }
 }

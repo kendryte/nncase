@@ -27,10 +27,10 @@ public static partial class Utility
     /// <summary>
     /// Create the Fusion pattern.
     /// </summary>
-    /// <param name="body">body.</param>
-    /// <param name="module_kind">module kind.</param>
-    /// <param name="parameters">params.</param>
     /// <param name="name">name.</param>
+    /// <param name="module_kind">module kind.</param>
+    /// <param name="body">body.</param>
+    /// <param name="parameters">params.</param>
     /// <returns>FusionPattern .</returns>
     public static FusionPattern IsFusion(string? name, string module_kind, Pattern body, VArgsPattern parameters) => new FusionPattern(body, module_kind, parameters, name);
 }

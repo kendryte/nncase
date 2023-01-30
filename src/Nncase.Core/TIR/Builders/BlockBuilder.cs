@@ -32,49 +32,28 @@ public interface IBlockBuilder : IExprBuilder<Block>
     /// <summary>
     /// create the iterVar and bind the value.
     /// </summary>
-    /// <param name="vi"></param>
-    /// <param name="domain"></param>
-    /// <param name="mode"></param>
-    /// <param name="value"></param>
-    /// <returns></returns>
     IBlockBuilder Bind(out IterVar vi, Range domain, IterationMode mode, Var value);
 
     /// <summary>
     /// bind the itervar with for loop.
     /// </summary>
-    /// <param name="vi"></param>
-    /// <param name="fi"></param>
-    /// <param name="iterType"></param>
-    /// <returns></returns>
-    /// <exception cref="NotSupportedException"></exception>
     IBlockBuilder Remap(out IterVar vi, For fi, char iterType);
 
     /// <summary>
     /// alloctions.
     /// </summary>
-    /// <param name="buffers"></param>
-    /// <returns></returns>
     IBlockBuilder Alloc(params object[] buffers);
 
     /// <summary>
     /// reads.
     /// </summary>
-    /// <param name="buffer_regions"></param>
-    /// <returns></returns>
     IBlockBuilder Reads(params object[] buffer_regions);
 
     /// <summary>
     /// writes.
     /// </summary>
-    /// <param name="buffer_regions"></param>
-    /// <returns></returns>
     IBlockBuilder Writes(params object[] buffer_regions);
 
-    /// <summary>
-    ///
-    /// </summary>
-    /// <param name="predicate"></param>
-    /// <returns></returns>
     IBlockBuilder Predicate(Expr predicate);
 }
 

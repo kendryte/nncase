@@ -23,6 +23,7 @@ public static class TIRExtensions
     /// <returns> Sequential. </returns>
     public static Sequential ToSequential(this IEnumerable<Expr> enumerable) => new Sequential(new IRArray<Expr>(enumerable));
 
+#if false
     /// <summary>
     /// get the total elements bytes count.
     /// </summary>
@@ -37,13 +38,13 @@ public static class TIRExtensions
     // public static int Size<T>(this IBufferView<T> view)
     //   where T : class
     // => view.Shape.ToArray().Aggregate(1, (acc, dim) => acc * dim);
+#endif
 
     /// <summary>
-    /// print the tensorview string
+    /// print the tensorview string.
     /// </summary>
-    /// <typeparam name="T">type</typeparam>
+    /// <typeparam name="T">type.</typeparam>
     /// <param name="view">view.</param>
-    /// <returns></returns>
     public static string View<T>(this IBufferView<T> view)
       where T : class
     => $"[{string.Join(", ", view.SelectedRanges.ToArray().Select(rg => $"{rg.Start}:{rg.End}"))}]";

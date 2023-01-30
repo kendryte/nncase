@@ -115,6 +115,7 @@ public sealed record Cost : IComparable<Cost>, IEquatable<Cost>
         return (int)(Score - other?.Score ?? 0);
     }
 
+    /// <inheritdoc/>
     public bool Equals(Cost? other)
     {
         if (other == null)
@@ -144,6 +145,11 @@ public sealed record Cost : IComparable<Cost>, IEquatable<Cost>
 
         return true;
     }
+
+    public override int GetHashCode()
+    {
+        return Factors.GetHashCode();
+    }
 }
 
 /// <summary>
@@ -156,9 +162,9 @@ public static class CostExtensions
     /// </summary>
     /// <param name="costs">Source.</param>
     /// <returns>Result.</returns>
-    public static Cost? Sum(this IEnumerable<Cost?> costs)
+    public static Cost Sum(this IEnumerable<Cost?> costs)
     {
-        return costs.Aggregate((Cost?)Cost.Zero, (x, y) => y == null ? null : x + y);
+        return costs.Aggregate((Cost?)Cost.Zero, (x, y) => y == null ? null : x! + y)!;
     }
 }
 

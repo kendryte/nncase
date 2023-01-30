@@ -52,13 +52,9 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         };
     }
 
-    /// <summary>
-    ///
-    /// </summary>
-    /// <param name="axisConst"></param>
-    /// <param name="input"></param>
+    /// <param name="axisConst">Axis.</param>
+    /// <param name="input">Input type.</param>
     /// <param name="f">(index in axis, axis, inDim) -> outDim.</param>
-    /// <returns></returns>
     private Shape ApplyAxis(TensorConst axisConst, TensorType input, Func<int, int, int, Dimension> f)
     {
         if (input.Shape.IsUnranked)

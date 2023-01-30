@@ -99,8 +99,7 @@ public sealed partial class TFLiteImporter : BaseImporter
     /// <summary>
     /// Create IR type from tflite shape and tensor type.
     /// </summary>
-    /// <param name="shape">Shape.</param>
-    /// <param name="type">Tensor type.</param>
+    /// <param name="tensor">Tensor.</param>
     /// <returns>Created IR type.</returns>
     private static TensorType GetIRType(tflite.Tensor tensor)
     {
@@ -353,16 +352,17 @@ public sealed partial class TFLiteImporter : BaseImporter
 
         // Maybe constant
         var tensor = _subGraph.Tensors(id) ?? throw new InvalidDataException($"Cannot find tensor (id:{id}).");
-        if (((tflite.QuantizationParameters)tensor.Quantization).QuantizedDimension == 0)
+        if (!tensor.Quantization.HasValue
+            || tensor.Quantization.Value.QuantizedDimension == 0)
         {
             return null;
         }
         else
         {
-            var quantParam = (tflite.QuantizationParameters)tensor.Quantization;
+            var quantParam = tensor.Quantization.Value;
 
             // Only support by tensor quant now.
-            System.Diagnostics.Trace.Assert(quantParam.ZeroPointLength == 1);
+            Trace.Assert(quantParam.ZeroPointLength == 1);
             for (var i = 0; i < quantParam.ZeroPointLength; i++)
             {
                 quantParams.Add(new QuantParam((int)quantParam.GetZeroPointArray()[i], quantParam.GetScaleArray()[i]));
@@ -370,8 +370,6 @@ public sealed partial class TFLiteImporter : BaseImporter
 
             return quantParams;
         }
-
-        return null;
     }
 
     private List<QuantParam>? GetOutputQuantParams(in tflite.Operator op, int index)
@@ -385,13 +383,14 @@ public sealed partial class TFLiteImporter : BaseImporter
         }
 
         var tensor = _subGraph.Tensors(id) ?? throw new InvalidDataException($"Cannot find tensor (id:{id}).");
-        if (((tflite.QuantizationParameters)tensor.Quantization).QuantizedDimension == 0)
+        if (!tensor.Quantization.HasValue
+            || tensor.Quantization.Value.QuantizedDimension == 0)
         {
             return null;
         }
         else
         {
-            var quantParam = (tflite.QuantizationParameters)tensor.Quantization;
+            var quantParam = tensor.Quantization.Value;
 
             // Only support by tensor quant now.
             System.Diagnostics.Trace.Assert(quantParam.ZeroPointLength == 1);
@@ -402,8 +401,6 @@ public sealed partial class TFLiteImporter : BaseImporter
 
             return quantParams;
         }
-
-        return null;
     }
 
     private Expr GetInputExprs(in tflite.Operator op, int index)

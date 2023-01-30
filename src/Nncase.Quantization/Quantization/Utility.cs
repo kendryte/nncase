@@ -44,13 +44,6 @@ public static class Utility
     /// <summary>
     /// get fixed mul struct instance.
     /// </summary>
-    /// <param name="value"></param>
-    /// <param name="max_bits"></param>
-    /// <param name="max_shift"></param>
-    /// <param name="is_signed"></param>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
-    /// <exception cref="ArgumentOutOfRangeException"></exception>
     public static FixedMul GetFixedMul(float value, int max_bits, byte max_shift, bool is_signed)
     {
         if (!(is_signed || value >= 0))
@@ -84,28 +77,22 @@ public static class Utility
 
         if (!(Math.Abs(mul) < Math.Pow(2.0f, (float)bits)))
         {
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(value));
         }
 
         if (!(shift >= 0 && shift <= max_shift))
         {
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(value));
         }
 
         if (!(Math.Abs(value - (mul * Math.Pow(2.0f, (float)-shift))) <= Math.E))
         {
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(value));
         }
 
         return new(mul, checked((sbyte)shift));
     }
 
-    /// <summary>
-    ///
-    /// </summary>
-    /// <param name="x"></param>
-    /// <param name="e"></param>
-    /// <returns></returns>
     private static double Frexp(double x, ref int e)
     {
         // union { double d; uint64_t i; }

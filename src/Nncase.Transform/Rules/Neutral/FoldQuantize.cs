@@ -16,18 +16,21 @@ namespace Nncase.Transform.Rules.Neutral;
 public sealed partial class FoldQuantDeQuant : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsDequantize("dequantize", "output", x => true,
-                                        IsQuantize("q", string.Empty, x => true,
-                                          IsWildcard("input"),
-                                          IsTensorConst("q_param")),
-                                        IsTensorConst("deq_param"));
+    public IPattern Pattern { get; } = IsDequantize(
+        "dequantize",
+        "output",
+        x => true,
+        IsQuantize(
+            "q",
+            string.Empty,
+            x => true,
+            IsWildcard("input"),
+            IsTensorConst("q_param")),
+        IsTensorConst("deq_param"));
 
     /// <summary>
     /// the quant param almost equal.
     /// </summary>
-    /// <param name="lhs"></param>
-    /// <param name="rhs"></param>
-    /// <returns></returns>
     public static bool AlmostEqual(QuantParam lhs, QuantParam rhs)
     {
         return lhs.ZeroPoint == rhs.ZeroPoint && System.MathF.Abs(lhs.Scale - rhs.Scale) <= float.Epsilon;
@@ -51,11 +54,17 @@ public sealed partial class FoldQuantDeQuant : IRewriteRule
 public sealed partial class FoldDeQuantQuant : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsQuantize("quantize", "output", x => true,
-                                        IsDequantize("deq", string.Empty, x => true,
-                                          IsWildcard("input"),
-                                          IsTensorConst("deq_param")),
-                                        IsTensorConst("q_param"));
+    public IPattern Pattern { get; } = IsQuantize(
+        "quantize",
+        "output",
+        x => true,
+        IsDequantize(
+            "deq",
+            string.Empty,
+            x => true,
+            IsWildcard("input"),
+            IsTensorConst("deq_param")),
+        IsTensorConst("q_param"));
 
     private Expr? GetReplace(Expr input, QuantParam q_param, QuantParam deq_param, IR.Math.Quantize quantize)
     {

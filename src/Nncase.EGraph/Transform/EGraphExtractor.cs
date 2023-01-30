@@ -59,9 +59,6 @@ public static class EGraphExtractExtensions
     /// the marker first.
     /// </remarks>
     /// </summary>
-    /// <param name="eClass"></param>
-    /// <param name="costModel"></param>
-    /// <returns></returns>
     internal static ENode MinByWithMarker(this EClass eClass, CostModel.EGraphCostModel costModel)
     {
         return eClass.Nodes.OrderBy(e => e.Expr, ENodeTypeComparer.Instance).MinBy(x => costModel[x])!;
@@ -70,9 +67,6 @@ public static class EGraphExtractExtensions
     /// <summary>
     /// find the minCostEnode in eclass skip marker.
     /// </summary>
-    /// <param name="eClass"></param>
-    /// <param name="costModel"></param>
-    /// <returns></returns>
     internal static ENode MinByWithOutMarker(this EClass eClass, CostModel.EGraphCostModel costModel)
     {
         return eClass.Nodes.Where(e => e.Expr is not Marker).MinBy(x => costModel[x])!;
@@ -80,7 +74,7 @@ public static class EGraphExtractExtensions
 
     private sealed class ENodeTypeComparer : IComparer<Expr>
     {
-        public static ENodeTypeComparer Instance = new();
+        public static readonly ENodeTypeComparer Instance = new();
 
         public int Compare(Expr? x, Expr? y) => (x, y) switch
         {

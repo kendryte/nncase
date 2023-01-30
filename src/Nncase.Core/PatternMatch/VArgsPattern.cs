@@ -114,14 +114,13 @@ public partial class Utility
     /// <summary>
     /// <see cref="IsVArgsRepeat(string?, Func{Pattern})"/>.
     /// </summary>
-    /// <returns></returns>
     public static VArgsPattern IsVArgsRepeat(Func<Pattern> creator) => IsVArgsRepeat(null, creator);
 
     /// <summary>
     /// Create repeated Vargs match pattern, it will manual clear the inner container.
     /// </summary>
-    /// <param name="creator">the int mean matched params nums, list[pattern] is inner params contianer. </param>
     /// <param name="name">name.</param>
+    /// <param name="creator">the int mean matched params nums, list[pattern] is inner params contianer. </param>
     /// <returns>VArgsPattern.</returns>
     public static VArgsPattern IsVArgsRepeat(string? name, Func<IReadOnlyList<Expr>, IRArray<Pattern>> creator)
       => new VArgsPattern(creator, name);

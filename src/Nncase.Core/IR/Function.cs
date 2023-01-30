@@ -29,7 +29,7 @@ public abstract record BaseFunction(string Name, string ModuleKind) : Callable(N
     /// <summary>
     /// Gets sched result.
     /// </summary>
-    public readonly Schedule.SchedFunctionResult SchedResult = new();
+    public Schedule.SchedFunctionResult SchedResult { get; } = new();
 
     /// <summary>
     /// Gets parameter types.
@@ -61,8 +61,6 @@ public sealed record Function(string Name, Expr Body, IRArray<Var> Parameters) :
     /// Initializes a new instance of the <see cref="Function"/> class.
     /// build function.
     /// </summary>
-    /// <param name="body"></param>
-    /// <param name="parameters"></param>
     public Function(Expr body, params Var[] parameters)
         : this($"func_{_globalFuncIndex++}", body, new(parameters))
     {
