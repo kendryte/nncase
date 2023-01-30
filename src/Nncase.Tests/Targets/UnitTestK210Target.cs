@@ -52,11 +52,19 @@ public class UnitTestK210Target : TestClassBase
         var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1, inChannels, 4, 4 }));
         var w = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { outChannels, inChannels, 1, 1 }).Evaluate().AsTensor();
         var b = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { outChannels }).Evaluate().AsTensor();
-        var y = IR.F.NN.Conv2D(x, w, b, new[] { 1, 1 }, new[,]
-        {
-            { 0, 0 },
-            { 0, 0 },
-        }, new[] { 1, 1 }, PadMode.Constant, 1);
+        var y = IR.F.NN.Conv2D(
+            x,
+            w,
+            b,
+            new[] { 1, 1 },
+            new[,]
+            {
+                { 0, 0 },
+                { 0, 0 },
+            },
+            new[] { 1, 1 },
+            PadMode.Constant,
+            1);
         await TestCodeGenAsync(y, new[] { x });
     }
 

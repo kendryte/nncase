@@ -35,7 +35,10 @@ public sealed partial class AddRangeOfAndMarkerToBatchToSpace : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsBatchToSpace("batchtospace", "call", _ => true,
+        IsBatchToSpace(
+            "batchtospace",
+            "call",
+            _ => true,
             IsWildcard("input"),
             IsWildcard("blockshape"),
             IsWildcard("crops"));
@@ -53,7 +56,9 @@ public sealed partial class AddRangeOfAndMarkerToBinary : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsBinary("binary", "call",
+        IsBinary(
+            "binary",
+            "call",
             b => b.BinaryOp != BinaryOp.LogicalAnd && b.BinaryOp != BinaryOp.LogicalOr && b.BinaryOp != BinaryOp.LogicalXor,
             IsWildcard("lhs"),
             IsWildcard("rhs"));
@@ -71,7 +76,9 @@ public sealed partial class AddRangeOfAndMarkerToBroadcast : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsBroadcast("broadcast", _ => true,
+        IsBroadcast(
+            "broadcast",
+            _ => true,
             IsWildcard("input"),
             IsTensorConst("shape"));
 
@@ -88,7 +95,10 @@ public sealed partial class AddRangeOfAndMarkerToCelu : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsCelu("celu", "call", _ => true,
+        IsCelu(
+            "celu",
+            "call",
+            _ => true,
             IsWildcard("input"),
             IsWildcard("alpha"));
 
@@ -105,7 +115,10 @@ public sealed partial class AddRangeOfAndMarkerToCompare : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsCompare("compare", "call", _ => true,
+        IsCompare(
+            "compare",
+            "call",
+            _ => true,
             IsWildcard("lhs"),
             IsWildcard("rhs"));
 
@@ -122,7 +135,10 @@ public sealed partial class AddRangeOfAndMarkerToConv2D : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsConv2D("conv", "call", _ => true,
+        IsConv2D(
+            "conv",
+            "call",
+            _ => true,
             IsWildcard("input"),
             IsTensorConst("weights"),
             IsTensorConst("bias"),
@@ -132,11 +148,9 @@ public sealed partial class AddRangeOfAndMarkerToConv2D : IRewriteRule
             IsTensorConst("groups"),
             IsWildcard("fusedClamp"));
 
-    private Expr? GetReplace(Conv2D conv, Call call, Expr input, Expr weights, TensorConst bias, Expr stride, Expr padding,
-        Expr dilation, Expr groups, Expr fusedClamp)
+    private Expr? GetReplace(Conv2D conv, Call call, Expr input, Expr weights, TensorConst bias, Expr stride, Expr padding, Expr dilation, Expr groups, Expr fusedClamp)
     {
-        var output = Conv2D(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), IR.F.Math.RangeOfMarker(weights, IR.F.Math.RangeOf(weights)),
-            bias, stride, padding, dilation, PadMode.Constant, groups, fusedClamp);
+        var output = Conv2D(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), IR.F.Math.RangeOfMarker(weights, IR.F.Math.RangeOf(weights)), bias, stride, padding, dilation, PadMode.Constant, groups, fusedClamp);
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
 }
@@ -146,7 +160,10 @@ public sealed partial class AddRangeOfAndMarkerToConv2DTranspose : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsConv2DTranspose("conv2dTranspose", "call", _ => true,
+        IsConv2DTranspose(
+            "conv2dTranspose",
+            "call",
+            _ => true,
             IsWildcard("input"),
             IsTensorConst("weights"),
             IsTensorConst("bias"),
@@ -158,11 +175,9 @@ public sealed partial class AddRangeOfAndMarkerToConv2DTranspose : IRewriteRule
             IsTensorConst("groups"),
             IsWildcard("fusedClamp"));
 
-    private Expr? GetReplace(Conv2DTranspose conv2dTranspose, Expr input, Expr weights, TensorConst bias, Expr outShape, Expr stride, Expr padding,
-        Expr outPadding, Expr dilation, Expr groups, Expr fusedClamp, RunPassContext options)
+    private Expr? GetReplace(Conv2DTranspose conv2dTranspose, Expr input, Expr weights, TensorConst bias, Expr outShape, Expr stride, Expr padding, Expr outPadding, Expr dilation, Expr groups, Expr fusedClamp, RunPassContext options)
     {
-        var output = Conv2DTranspose(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), IR.F.Math.RangeOfMarker(weights, IR.F.Math.RangeOf(weights)),
-            bias, outShape, stride, padding, outPadding, dilation, PadMode.Constant, groups);
+        var output = Conv2DTranspose(IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), IR.F.Math.RangeOfMarker(weights, IR.F.Math.RangeOf(weights)), bias, outShape, stride, padding, outPadding, dilation, PadMode.Constant, groups);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
@@ -173,7 +188,10 @@ public sealed partial class AddRangeOfAndMarkerToElu : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsElu("elu", "call", _ => true,
+        IsElu(
+            "elu",
+            "call",
+            _ => true,
             IsWildcard("input"),
             IsWildcard("alpha"));
 
@@ -190,7 +208,10 @@ public sealed partial class AddRangeOfAndMarkerToHardMax : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsHardmax("hardmax", "call", _ => true,
+        IsHardmax(
+            "hardmax",
+            "call",
+            _ => true,
             IsWildcard("input"),
             IsWildcard("axis"));
 
@@ -207,7 +228,10 @@ public sealed partial class AddRangeOfAndMarkerToHardSigmoid : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsHardSigmoid("hardSigmoid", "call", _ => true,
+        IsHardSigmoid(
+            "hardSigmoid",
+            "call",
+            _ => true,
             IsWildcard("input"),
             IsWildcard("alpha"),
             IsWildcard("beta"));
@@ -225,7 +249,10 @@ public sealed partial class AddRangeOfAndMarkerToHardSwish : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsHardSwish("hardSwish", "call", _ => true,
+        IsHardSwish(
+            "hardSwish",
+            "call",
+            _ => true,
             IsWildcard("input"));
 
     private Expr? GetReplace(HardSwish hardSwish, Call call, Expr input, RunPassContext options)
@@ -241,7 +268,10 @@ public sealed partial class AddRangeOfAndMarkerToLeakyRelu : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsLeakyRelu("leaky", "call", _ => true,
+        IsLeakyRelu(
+            "leaky",
+            "call",
+            _ => true,
             IsWildcard("input"),
             IsWildcard("alpha"));
 
@@ -258,7 +288,10 @@ public sealed partial class AddRangeOfAndMarkerToLSTM : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsLSTM("lstm", "call", _ => true,
+        IsLSTM(
+            "lstm",
+            "call",
+            _ => true,
             IsWildcard("x"),
             IsTensorConst("w"),
             IsTensorConst("r"),
@@ -274,12 +307,9 @@ public sealed partial class AddRangeOfAndMarkerToLSTM : IRewriteRule
             IsTensorConst("inputforget"),
             IsTensorConst("outputsize"));
 
-    private Expr? GetReplace(IR.Tensors.LSTM lstm, Call call, Expr x, TensorConst w, TensorConst r, TensorConst b, TensorConst sequencelens,
-                            TensorConst initialh, TensorConst initialc, TensorConst p, TensorConst actalpha, TensorConst actbeta,
-                            TensorConst clip, TensorConst hiddensize, TensorConst inputforget, TensorConst outputsize, RunPassContext options)
+    private Expr? GetReplace(IR.Tensors.LSTM lstm, Call call, Expr x, TensorConst w, TensorConst r, TensorConst b, TensorConst sequencelens, TensorConst initialh, TensorConst initialc, TensorConst p, TensorConst actalpha, TensorConst actbeta, TensorConst clip, TensorConst hiddensize, TensorConst inputforget, TensorConst outputsize, RunPassContext options)
     {
-        var output = LSTM(lstm.Direction, lstm.Layout, lstm.Activations, IR.F.Math.RangeOfMarker(x, IR.F.Math.RangeOf(x)), w, r, b, sequencelens, initialh, initialc,
-                         p, actalpha, actbeta, clip, hiddensize, inputforget, outputsize);
+        var output = LSTM(lstm.Direction, lstm.Layout, lstm.Activations, IR.F.Math.RangeOfMarker(x, IR.F.Math.RangeOf(x)), w, r, b, sequencelens, initialh, initialc, p, actalpha, actbeta, clip, hiddensize, inputforget, outputsize);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
         return IR.F.Math.RangeOfMarker(output, IR.F.Math.RangeOf(output));
     }
@@ -290,7 +320,10 @@ public sealed partial class AddRangeOfAndMarkerToMatMul : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsMatMul("matmul", "call", _ => true,
+        IsMatMul(
+            "matmul",
+            "call",
+            _ => true,
             IsWildcard("lhs"),
             IsWildcard("rhs"));
 
@@ -307,7 +340,10 @@ public sealed partial class AddRangeOfAndMarkerToPad : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsPad("pad", "call", _ => true,
+        IsPad(
+            "pad",
+            "call",
+            _ => true,
             IsWildcard("input"),
             IsWildcard("pads"),
             IsWildcard("value"));
@@ -325,7 +361,10 @@ public sealed partial class AddRangeOfAndMarkerToPRelu : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsPRelu("prelu", "call", _ => true,
+        IsPRelu(
+            "prelu",
+            "call",
+            _ => true,
             IsWildcard("input"),
             IsWildcard("slope"));
 
@@ -342,7 +381,10 @@ public sealed partial class AddRangeOfAndMarkerToRelu : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsRelu("relu", "call", _ => true,
+        IsRelu(
+            "relu",
+            "call",
+            _ => true,
             IsWildcard("input"));
 
     private Expr? GetReplace(Relu relu, Call call, Expr input, RunPassContext options)
@@ -358,7 +400,10 @@ public sealed partial class AddRangeOfAndMarkerToRelu6 : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsRelu6("relu6", "call", _ => true,
+        IsRelu6(
+            "relu6",
+            "call",
+            _ => true,
             IsWildcard("input"));
 
     private Expr? GetReplace(Relu6 relu6, Call call, Expr input, RunPassContext options)
@@ -374,7 +419,10 @@ public sealed partial class AddRangeOfAndMarkerToReduce : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsReduce("reduce", "call", _ => true,
+        IsReduce(
+            "reduce",
+            "call",
+            _ => true,
             IsWildcard("input"),
             IsTensorConst("axis"),
             IsWildcard("initValue"),
@@ -393,7 +441,10 @@ public sealed partial class AddRangeOfAndMarkerToReduceWindow2D : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsReduceWindow2D("reduceWindow2D", "call", _ => true,
+        IsReduceWindow2D(
+            "reduceWindow2D",
+            "call",
+            _ => true,
             IsWildcard("input"),
             IsWildcard("initvalue"),
             IsWildcard("filter"),
@@ -403,8 +454,7 @@ public sealed partial class AddRangeOfAndMarkerToReduceWindow2D : IRewriteRule
             IsWildcard("ceilmode"),
             IsWildcard("countincludepad"));
 
-    private Expr? GetReplace(ReduceWindow2D reduceWindow2D, Expr input, Expr initvalue, Expr filter, Expr stride, Expr padding,
-        Expr dilation, Expr ceilmode, Expr countincludepad, RunPassContext options)
+    private Expr? GetReplace(ReduceWindow2D reduceWindow2D, Expr input, Expr initvalue, Expr filter, Expr stride, Expr padding, Expr dilation, Expr ceilmode, Expr countincludepad, RunPassContext options)
     {
         var output = ReduceWindow2D(reduceWindow2D.ReduceOp, IR.F.Math.RangeOfMarker(input, IR.F.Math.RangeOf(input)), initvalue, filter, stride, padding, dilation, ceilmode, countincludepad);
         options.MatchOptions.SuppressPattern(output, Pattern); // only invoke once
@@ -417,7 +467,10 @@ public sealed partial class AddRangeOfAndMarkerToResizeImage : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsResizeImage("resize", "call", _ => true,
+        IsResizeImage(
+            "resize",
+            "call",
+            _ => true,
             IsWildcard("input"),
             IsWildcard("roi"),
             IsTensorConst("newSize"),
@@ -438,7 +491,10 @@ public sealed partial class AddRangeOfAndMarkerToSelu : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsSelu("selu", "call", _ => true,
+        IsSelu(
+            "selu",
+            "call",
+            _ => true,
             IsWildcard("input"),
             IsWildcard("alpha"),
             IsWildcard("gamma"));
@@ -456,7 +512,10 @@ public sealed partial class AddRangeOfAndMarkerToSigmoid : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsSigmoid("sigmoid", "call", _ => true,
+        IsSigmoid(
+            "sigmoid",
+            "call",
+            _ => true,
             IsWildcard("input"));
 
     private Expr? GetReplace(Sigmoid sigmoid, Call call, Expr input, RunPassContext options)
@@ -472,7 +531,10 @@ public sealed partial class AddRangeOfAndMarkerToSpaceToBatch : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsSpaceToBatch("spacetobatch", "call", _ => true,
+        IsSpaceToBatch(
+            "spacetobatch",
+            "call",
+            _ => true,
             IsWildcard("input"),
             IsWildcard("blockshape"),
             IsWildcard("paddings"));
@@ -490,7 +552,10 @@ public sealed partial class AddRangeOfAndMarkerToTranspose : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsTranspose("transpose", "call", _ => true,
+        IsTranspose(
+            "transpose",
+            "call",
+            _ => true,
             IsWildcard("input"),
             IsTensorConst("perm"));
 
@@ -507,7 +572,9 @@ public sealed partial class AddRangeOfAndMarkerToUnary : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsUnary("unary", "call",
+        IsUnary(
+            "unary",
+            "call",
             u => u.UnaryOp != UnaryOp.LogicalNot,
             IsWildcard("input"));
 

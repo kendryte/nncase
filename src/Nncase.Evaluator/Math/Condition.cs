@@ -39,7 +39,6 @@ public partial class ConditionEvaluator : IEvaluator<Condition>, ITypeInferencer
         return $"Condition({condition}, {true_value})";
     }
 
-    /// <inheritdoc/>
     private IRType Visit(TensorType predicate, TensorType value)
     {
         if (!predicate.IsScalar && predicate.DType != DataTypes.Boolean)

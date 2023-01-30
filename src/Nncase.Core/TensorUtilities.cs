@@ -29,10 +29,6 @@ public static class TensorUtilities
     /// <summary>
     /// get the product from the start index on the dimensions.
     /// </summary>
-    /// <param name="dimensions"></param>
-    /// <param name="startIndex"></param>
-    /// <returns></returns>
-    /// <exception cref="ArgumentOutOfRangeException"></exception>
     public static long GetProduct(ReadOnlySpan<int> dimensions, int startIndex = 0)
     {
         if (dimensions.Length == 0)
@@ -62,9 +58,6 @@ public static class TensorUtilities
     /// <summary>
     /// Get the Expr Product.
     /// </summary>
-    /// <param name="dimensions"></param>
-    /// <param name="startIndex"></param>
-    /// <returns></returns>
     public static IR.Expr GetProduct(IEnumerable<IR.Expr> dimensions, int startIndex = 0)
     {
         if (!dimensions.Any())
@@ -110,9 +103,6 @@ public static class TensorUtilities
     /// <summary>
     /// Gets the set of strides that can be used to calculate the offset of n-dimensions in a 1-dimensional layout.
     /// </summary>
-    /// <param name="dimensions"></param>
-    /// <param name="reverseStride"></param>
-    /// <returns></returns>
     public static int[] GetStrides(ReadOnlySpan<int> dimensions, bool reverseStride = false)
     {
         if (dimensions.IsEmpty)
@@ -146,9 +136,6 @@ public static class TensorUtilities
     /// <summary>
     /// get strides.
     /// </summary>
-    /// <param name="dimensions"></param>
-    /// <param name="reverseStride"></param>
-    /// <returns></returns>
     public static IEnumerable<IR.Expr> GetStrides(IEnumerable<IR.Expr> dimensions, bool reverseStride = false)
     {
         List<IR.Expr> strides = new();
@@ -194,10 +181,6 @@ public static class TensorUtilities
     /// <summary>
     /// Calculates the 1-d index for n-d indices in layout specified by strides.
     /// </summary>
-    /// <param name="strides"></param>
-    /// <param name="indices"></param>
-    /// <param name="startFromDimension"></param>
-    /// <returns></returns>
     public static int GetIndex(ReadOnlySpan<int> strides, ReadOnlySpan<int> indices, int startFromDimension = 0)
     {
         // Scalar
@@ -205,7 +188,7 @@ public static class TensorUtilities
         {
             if (indices.Length != 1 || indices[0] != 0)
             {
-                throw new IndexOutOfRangeException();
+                throw new ArgumentOutOfRangeException(nameof(indices));
             }
 
             return 0;
@@ -225,11 +208,6 @@ public static class TensorUtilities
     /// <summary>
     /// get index.
     /// </summary>
-    /// <param name="strides"></param>
-    /// <param name="indices"></param>
-    /// <param name="startFromDimension"></param>
-    /// <returns></returns>
-    /// <exception cref="IndexOutOfRangeException"></exception>
     public static IR.Expr GetIndex(ReadOnlySpan<IR.Expr> strides, ReadOnlySpan<IR.Expr> indices, int startFromDimension = 0)
     {
         // Scalar
@@ -237,7 +215,7 @@ public static class TensorUtilities
         {
             if (indices.Length != 1)
             {
-                throw new IndexOutOfRangeException();
+                throw new ArgumentOutOfRangeException(nameof(indices));
             }
 
             return IR.F.Math.Require(IR.F.Math.Equal(indices[0], 0), 0);
@@ -257,11 +235,6 @@ public static class TensorUtilities
     /// <summary>
     /// Calculates the n-d indices from the 1-d index in a layout specificed by strides.
     /// </summary>
-    /// <param name="strides"></param>
-    /// <param name="reverseStride"></param>
-    /// <param name="index"></param>
-    /// <param name="indices"></param>
-    /// <param name="startFromDimension"></param>
     public static void GetIndices(ReadOnlySpan<int> strides, bool reverseStride, int index, int[] indices, int startFromDimension = 0)
     {
         Trace.Assert(reverseStride ? IsAscending(strides) : IsDescending(strides), "Index decomposition requires ordered strides");
@@ -282,11 +255,6 @@ public static class TensorUtilities
     /// <summary>
     /// Calculates the n-d indices from the 1-d index in a layout specificed by strides.
     /// </summary>
-    /// <param name="strides"></param>
-    /// <param name="reverseStride"></param>
-    /// <param name="index"></param>
-    /// <param name="indices"></param>
-    /// <param name="startFromDimension"></param>
     public static void GetIndices(ReadOnlySpan<int> strides, bool reverseStride, int index, Span<int> indices, int startFromDimension = 0)
     {
         Trace.Assert(reverseStride ? IsAscending(strides) : IsDescending(strides), "Index decomposition requires ordered strides");
@@ -307,7 +275,6 @@ public static class TensorUtilities
     /// <summary>
     /// Takes an 1-d index over n-d sourceStrides and recalculates it assuming same n-d coordinates over a different n-d strides.
     /// </summary>
-    /// <returns></returns>
     public static int TransformIndexByStrides(int index, int[] sourceStrides, bool sourceReverseStride, int[] transformStrides)
     {
         Trace.Assert(index >= 0);
@@ -335,9 +302,6 @@ public static class TensorUtilities
     /// <summary>
     /// check this dimension and strides is contiguous.
     /// </summary>
-    /// <param name="dimensions"></param>
-    /// <param name="strides"></param>
-    /// <returns></returns>
     public static bool IsContiguous(ReadOnlySpan<int> dimensions, ReadOnlySpan<int> strides)
     {
         return System.Collections.StructuralComparisons.StructuralEqualityComparer.Equals(GetStrides(dimensions), strides.ToArray());
@@ -346,10 +310,6 @@ public static class TensorUtilities
     /// <summary>
     /// check the dimensions selected range is contiguous.
     /// </summary>
-    /// <param name="dimensions"></param>
-    /// <param name="slices"></param>
-    /// <returns></returns>
-    /// <exception cref="NotSupportedException"></exception>
     public static bool IsContiguousSlice(ReadOnlySpan<int> dimensions, ReadOnlySpan<System.Range> slices)
     {
         if (dimensions.Length != slices.Length)

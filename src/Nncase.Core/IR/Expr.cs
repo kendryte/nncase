@@ -17,14 +17,9 @@ namespace Nncase.IR;
 public abstract partial record Expr
 {
     /// <summary>
-    /// hash code cache.
+    /// Gets or sets checked type.
     /// </summary>
-    protected int? _hashcode;
-
-    /// <summary>
-    /// checked type.
-    /// </summary>
-    public IRType? CheckedType;
+    public IRType? CheckedType { get; set; }
 
     /// <summary>
     /// Gets checked shape.
@@ -45,6 +40,11 @@ public abstract partial record Expr
         _ => throw new InvalidOperationException("Expr don't have a valid tensor type"),
     };
 
+    /// <summary>
+    /// Gets or sets hash code cache.
+    /// </summary>
+    protected int? HashCodeCache { get; set; }
+
     /// <inheritdoc/>
     public virtual bool Equals(Expr? other)
     {
@@ -54,10 +54,10 @@ public abstract partial record Expr
     /// <inheritdoc/>
     public override int GetHashCode()
     {
-        return _hashcode ??= EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
+        return HashCodeCache ??= EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
     }
 
-    protected virtual bool PrintMembers(System.Text.StringBuilder builder)
+    protected virtual bool PrintMembers(StringBuilder builder)
     {
         return false;
     }

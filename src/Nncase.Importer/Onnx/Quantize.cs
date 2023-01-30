@@ -18,7 +18,9 @@ namespace Nncase.Importer
             var bias = GetOptionInputExpr(op, 2, 0);
             if (scale is TensorConst scaleConst && bias is TensorConst biasConst)
             {
-                return Quantize(input, new QuantParam(
+                return Quantize(
+                    input,
+                    new QuantParam(
                         biasConst.Value.ToScalar<int>(),
                         scaleConst.Value.ToScalar<float>()),
                     ((TensorConst)bias).ValueType.DType);
@@ -35,9 +37,9 @@ namespace Nncase.Importer
             {
                 var scaleV = scaleConst.Value.ToScalar<float>();
                 var biasV = biasConst.Value.ToScalar<int>();
-                return Dequantize(input, new QuantParam(
-                        biasV,
-                        scaleV),
+                return Dequantize(
+                    input,
+                    new QuantParam(biasV, scaleV),
                     DataTypes.Float32);
             }
 

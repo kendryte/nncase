@@ -18,10 +18,6 @@ public interface IVisitable
     /// <summary>
     /// accept the visit.
     /// </summary>
-    /// <typeparam name="TExprResult"></typeparam>
-    /// <typeparam name="TTypeResult"></typeparam>
-    /// <param name="functor"></param>
-    /// <returns></returns>
     object Visit<TExprResult, TTypeResult>(ExprFunctor<TExprResult, TTypeResult> functor);
 }
 
@@ -30,6 +26,7 @@ public interface IVisitable
 /// </summary>
 public interface IMutatable : IVisitable
 {
+#if false
     /// <summary>
     /// mutate the current object.
     /// NOTE In order to ensure the consistency of coding, please return a new object.
@@ -37,12 +34,12 @@ public interface IMutatable : IVisitable
     /// <param name="mutator">ExprMutator.</param>
     /// <returns> new instance. </returns>
     // object MutateLeaf(ExprMutator mutator);
+#endif
 
     /// <summary>
-    /// recursive build new object
+    /// recursive build new object.
     /// </summary>
     /// <param name="mutator">ExprMutator.</param>
-    /// <returns></returns>
     object WithNew(ExprVisitor<Expr, IRType> mutator);
 }
 
@@ -541,141 +538,101 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     /// <summary>
     /// defulat mutate leaf is not mutate.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr DefaultMutateLeaf(Expr expr) => expr;
 
     /// <summary>
     /// default mutate leaf is not mutate.
     /// </summary>
-    /// <param name="mutatable"></param>
-    /// <returns></returns>
     public virtual IMutatable DefaultMutateLeaf(IMutatable mutatable) => mutatable;
 
     /// <summary>
     /// mutate the call.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr MutateLeaf(Call expr) => DefaultMutateLeaf(expr);
 
     /// <summary>
     /// mutate the const.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr MutateLeaf(Const expr) => DefaultMutateLeaf(expr);
 
     /// <summary>
     /// mutate the function.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr MutateLeaf(Function expr) => DefaultMutateLeaf(expr);
 
     /// <summary>
     /// mutate the fusion.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr MutateLeaf(Fusion expr) => DefaultMutateLeaf(expr);
 
     /// <summary>
     /// mutate the prim function wrapper.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr MutateLeaf(PrimFunctionWrapper expr) => DefaultMutateLeaf(expr);
 
     /// <summary>
     /// mutate the prim function.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr MutateLeaf(TIR.PrimFunction expr) => DefaultMutateLeaf(expr);
 
     /// <summary>
     /// mutate the op.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr MutateLeaf(Op expr) => DefaultMutateLeaf(expr);
 
     /// <summary>
     /// mutate the tuple.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr MutateLeaf(Tuple expr) => DefaultMutateLeaf(expr);
 
     /// <summary>
     /// mutate the var.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr MutateLeaf(Var expr) => DefaultMutateLeaf(expr);
 
     /// <summary>
     /// mutate the var.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr MutateLeaf(None expr) => DefaultMutateLeaf(expr);
 
     /// <summary>
     /// mutate the marker.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr MutateLeaf(Marker expr) => DefaultMutateLeaf(expr);
 
     /// <summary>
     /// mutate the itervar.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr MutateLeaf(TIR.IterVar expr) => DefaultMutateLeaf(expr);
 
     /// <summary>
     /// mutate the sequential.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr MutateLeaf(TIR.Sequential expr) => DefaultMutateLeaf(expr);
 
     /// <summary>
     /// mutate the for.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr MutateLeaf(TIR.For expr) => DefaultMutateLeaf(expr);
 
     /// <summary>
     /// mutate the for.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr MutateLeaf(TIR.IfThenElse expr) => DefaultMutateLeaf(expr);
 
     /// <summary>
     /// mutate the block.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr MutateLeaf(TIR.Block expr) => DefaultMutateLeaf(expr);
 
     /// <summary>
     /// mutate the bufferstore.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr MutateLeaf(TIR.BufferStore expr) => DefaultMutateLeaf(expr);
 
     /// <summary>
     /// mutate the buffer load.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr MutateLeaf(TIR.BufferLoad expr) => DefaultMutateLeaf(expr);
 
     /// <summary>
@@ -709,11 +666,6 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     /// <summary>
     /// Mutate IRArray.
     /// </summary>
-    /// <typeparam name="TInput"></typeparam>
-    /// <typeparam name="TResult"></typeparam>
-    /// <param name="array"></param>
-    /// <param name="visitor"></param>
-    /// <returns></returns>
     public virtual IRArray<TResult> MutateArray<TInput, TResult>(IRArray<TInput> array, Func<TInput, TResult> visitor)
     {
         return new(array.Select(visitor));
@@ -722,8 +674,6 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     /// <summary>
     /// fold the expr by struct comparer.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     public virtual Expr StructEqualFolding(Expr expr)
     {
         if (!_exprSEqualMemo.TryGetValue(expr, out var folded))

@@ -15,27 +15,34 @@ namespace Nncase.SourceGenerator.Rule;
 
 internal class RuleCandidate
 {
-    public ClassDeclarationSyntax ClassDeclaration;
-    public INamedTypeSymbol ClassSymobl;
-    public IMethodSymbol MethodSymbol;
-
     public RuleCandidate(ClassDeclarationSyntax class_declaration, INamedTypeSymbol class_symobl, IMethodSymbol method_symbol)
     {
         ClassDeclaration = class_declaration;
         ClassSymobl = class_symobl;
         MethodSymbol = method_symbol;
     }
+
+    public ClassDeclarationSyntax ClassDeclaration { get; set; }
+
+    public INamedTypeSymbol ClassSymobl { get; set; }
+
+    public IMethodSymbol MethodSymbol { get; set; }
 }
 
 [Generator]
 internal sealed class RuleGenerator : IIncrementalGenerator
 {
-    public INamedTypeSymbol? ExprSymobl;
-    public INamedTypeSymbol? TensorSymobl;
-    public INamedTypeSymbol? IMatchResultSymobl;
-    public INamedTypeSymbol? RunPassContextSymobl;
-    public INamedTypeSymbol? IRewriteRuleSymbol;
-    public INamedTypeSymbol? QuantRuleSymbol;
+    public INamedTypeSymbol? ExprSymobl { get; set; }
+
+    public INamedTypeSymbol? TensorSymobl { get; set; }
+
+    public INamedTypeSymbol? IMatchResultSymobl { get; set; }
+
+    public INamedTypeSymbol? RunPassContextSymobl { get; set; }
+
+    public INamedTypeSymbol? IRewriteRuleSymbol { get; set; }
+
+    public INamedTypeSymbol? QuantRuleSymbol { get; set; }
 
     // public void Initialize(GeneratorInitializationContext context) => context.RegisterForSyntaxNotifications(() => new RuleReceiver());
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -221,16 +228,16 @@ internal sealed class RuleGenerator : IIncrementalGenerator
         var namespaces = from kv in grouped_classes
                          select GeneratorUtil.MakeNameSpace(kv.Key.ToDisplayString())
                                .AddMembers(kv.Value.ToArray());
-        var compilationUnit = CompilationUnit().
-                WithUsings(new(new[]
-                {
-                  GeneratorUtil.MakeUsing("Nncase"),
-                  GeneratorUtil.MakeUsing("Nncase.IR"),
-                  GeneratorUtil.MakeUsing("Nncase.PatternMatch"),
-                })).
-                WithMembers(new(namespaces)).
-                WithLeadingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.DisableKeyword)).
-                WithTrailingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.RestoreKeyword));
+        var compilationUnit = CompilationUnit()
+            .WithUsings(new(new[]
+            {
+              GeneratorUtil.MakeUsing("Nncase"),
+              GeneratorUtil.MakeUsing("Nncase.IR"),
+              GeneratorUtil.MakeUsing("Nncase.PatternMatch"),
+            }))
+            .WithMembers(new(namespaces))
+            .WithLeadingTrivia(Comment(Constants.GeneratedFileHeader), GeneratorUtil.MakeWarningTrivid(SyntaxKind.DisableKeyword))
+            .WithTrailingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.RestoreKeyword));
         context.AddSource("Generated.Rules", SyntaxTree(compilationUnit, encoding: Encoding.UTF8).GetText());
 
         // compilation.AddSyntaxTrees(SyntaxTree(compilationUnit, encoding: Encoding.UTF8));

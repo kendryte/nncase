@@ -140,7 +140,9 @@ public class UnitTestEvaluatorNN : TestClassBase
         var b = new float[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
         var expect = Tensor.From(b, new[] { 1, 1, 4, 4 });
         var crops = new long[] { 0, 0, 0, 0 };
-        var expr = IR.F.NN.BatchToSpace(input, Tensor.From(shape, new[] { 2 }),
+        var expr = IR.F.NN.BatchToSpace(
+            input,
+            Tensor.From(shape, new[] { 2 }),
             Tensor.From(crops, new[] { 2, 2 }));
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor());
@@ -152,12 +154,26 @@ public class UnitTestEvaluatorNN : TestClassBase
         var input = OrtKI.Random(1, 4, 5, 5);
         var weight = OrtKI.Random(8, 4, 3, 3);
         var bias = OrtKI.Random(8);
-        var expect = OrtKI.Conv(input, weight, bias, "NOTSET", new long[] { 1, 1 }, 1,
-            new long[] { 3, 3 }, new long[] { 1, 1, 1, 1 }, new long[] { 1, 1 });
+        var expect = OrtKI.Conv(
+            input,
+            weight,
+            bias,
+            "NOTSET",
+            new long[] { 1, 1 },
+            1,
+            new long[] { 3, 3 },
+            new long[] { 1, 1, 1, 1 },
+            new long[] { 1, 1 });
 
-        var expr = IR.F.NN.Conv2D(input.ToTensor(), weight.ToTensor(), bias.ToTensor(),
-            stride: new[] { 1, 1 }, padding: Tensor.From<int>(new int[] { 1, 1, 1, 1 }, new[] { 2, 2 }),
-            dilation: new[] { 1, 1 }, Nncase.PadMode.Constant, 1);
+        var expr = IR.F.NN.Conv2D(
+            input.ToTensor(),
+            weight.ToTensor(),
+            bias.ToTensor(),
+            stride: new[] { 1, 1 },
+            padding: Tensor.From<int>(new int[] { 1, 1, 1, 1 }, new[] { 2, 2 }),
+            dilation: new[] { 1, 1 },
+            PadMode.Constant,
+            1);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -170,13 +186,28 @@ public class UnitTestEvaluatorNN : TestClassBase
         var bias = OrtKI.Random(8);
         var min = 0.5F;
         var max = 1F;
-        var conv = OrtKI.Conv(input, weight, bias, "NOTSET", new long[] { 1, 1 }, 1,
-            new long[] { 3, 3 }, new long[] { 1, 1, 1, 1 }, new long[] { 1, 1 });
+        var conv = OrtKI.Conv(
+            input,
+            weight,
+            bias,
+            "NOTSET",
+            new long[] { 1, 1 },
+            1,
+            new long[] { 3, 3 },
+            new long[] { 1, 1, 1, 1 },
+            new long[] { 1, 1 });
         var expect = OrtKI.Clip(conv, min, max);
 
-        var expr = IR.F.NN.Conv2D(input.ToTensor(), weight.ToTensor(), bias.ToTensor(),
-            stride: new[] { 1, 1 }, padding: Tensor.From<int>(new int[] { 1, 1, 1, 1 }, new[] { 2, 2 }),
-            dilation: new[] { 1, 1 }, Nncase.PadMode.Constant, 1, new[] { min, max });
+        var expr = IR.F.NN.Conv2D(
+            input.ToTensor(),
+            weight.ToTensor(),
+            bias.ToTensor(),
+            stride: new[] { 1, 1 },
+            padding: Tensor.From<int>(new int[] { 1, 1, 1, 1 }, new[] { 2, 2 }),
+            dilation: new[] { 1, 1 },
+            Nncase.PadMode.Constant,
+            1,
+            new[] { min, max });
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -187,15 +218,31 @@ public class UnitTestEvaluatorNN : TestClassBase
         var input = OrtKI.Random(1, 1, 5, 5);
         var weight = OrtKI.Random(1, 2, 3, 3);
         var bias = OrtKI.Random(2);
-        var expect = OrtKI.ConvTranspose(input, weight, bias, "NOTSET", new long[] { 1, 1 }, 1,
-            kernel_shape: new long[] { 3, 3 }, output_padding: new long[] { 0, 0 }, output_shape: new long[] { 1, 2, 5, 5 },
-            pads: new long[] { 1, 1, 1, 1 }, strides: new long[] { 1, 1 });
+        var expect = OrtKI.ConvTranspose(
+            input,
+            weight,
+            bias,
+            "NOTSET",
+            new long[] { 1, 1 },
+            1,
+            kernel_shape: new long[] { 3, 3 },
+            output_padding: new long[] { 0, 0 },
+            output_shape: new long[] { 1, 2, 5, 5 },
+            pads: new long[] { 1, 1, 1, 1 },
+            strides: new long[] { 1, 1 });
 
         var outShape = Tensor.From(new long[] { 1, 2, 5, 5 }, new Shape(4));
-        var expr = IR.F.NN.Conv2DTranspose(input.ToTensor(), weight.ToTensor(), bias.ToTensor(), outShape,
-            stride: new[] { 1, 1 }, padding: Tensor.From<long>(new long[] { 1, 1, 1, 1 }, new[] { 4 }),
+        var expr = IR.F.NN.Conv2DTranspose(
+            input.ToTensor(),
+            weight.ToTensor(),
+            bias.ToTensor(),
+            outShape,
+            stride: new[] { 1, 1 },
+            padding: Tensor.From<long>(new long[] { 1, 1, 1, 1 }, new[] { 4 }),
             outputPadding: Tensor.From<long>(new long[] { 0, 0 }, new[] { 2 }),
-            dilation: new[] { 1, 1 }, Nncase.PadMode.Constant, 1);
+            dilation: new[] { 1, 1 },
+            PadMode.Constant,
+            1);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -421,14 +468,29 @@ public class UnitTestEvaluatorNN : TestClassBase
         var filter = new long[] { 3, 3 };
         var stride = new long[] { 1, 1 };
         var onnxPads = new long[] { 1, 1, 1, 1 };
-        var expect = OrtKI.AveragePool(input, "NOTSET", ceilMode ? 1 : 0, countIncludePad ? 1 : 0,
-            filter, onnxPads, stride);
+        var expect = OrtKI.AveragePool(
+            input,
+            "NOTSET",
+            ceilMode ? 1 : 0,
+            countIncludePad ? 1 : 0,
+            filter,
+            onnxPads,
+            stride);
 
-        var expr = IR.F.NN.ReduceWindow2D(ReduceOp.Mean, input.ToTensor(), 0.0f, filter, stride, new[,]
+        var expr = IR.F.NN.ReduceWindow2D(
+            ReduceOp.Mean,
+            input.ToTensor(),
+            0.0f,
+            filter,
+            stride,
+            new[,]
             {
                 { 1, 1 },
                 { 1, 1 },
-            }, dilations, false, false);
+            },
+            dilations,
+            false,
+            false);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -443,14 +505,30 @@ public class UnitTestEvaluatorNN : TestClassBase
         var stride = new long[] { 1, 1 };
         var onnxPads = new long[] { 1, 1, 1, 1 };
         var storageOrder = 0L;
-        var expect = OrtKI.MaxPool(input, "NOTSET", ceilMode ? 1 : 0, dilations,
-            filter, onnxPads, storageOrder, stride)[0];
+        var expect = OrtKI.MaxPool(
+            input,
+            "NOTSET",
+            ceilMode ? 1 : 0,
+            dilations,
+            filter,
+            onnxPads,
+            storageOrder,
+            stride)[0];
 
-        var expr = IR.F.NN.ReduceWindow2D(ReduceOp.Max, input.ToTensor(), 0.0f, filter, stride, new[,]
+        var expr = IR.F.NN.ReduceWindow2D(
+            ReduceOp.Max,
+            input.ToTensor(),
+            0.0f,
+            filter,
+            stride,
+            new[,]
             {
                 { 1, 1 },
                 { 1, 1 },
-            }, dilations, false, false);
+            },
+            dilations,
+            false,
+            false);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -494,7 +572,9 @@ public class UnitTestEvaluatorNN : TestClassBase
         var output = new float[] { 1, 3, 9, 11, 2, 4, 10, 12, 5, 7, 13, 15, 6, 8, 14, 16 };
         var expect = Tensor.From(output, new[] { 4, 2, 2, 1 });
         var crops = new long[] { 0, 0, 0, 0 };
-        var expr = IR.F.NN.SpaceToBatch(input, Tensor.From(shape, new[] { 2 }),
+        var expr = IR.F.NN.SpaceToBatch(
+            input,
+            Tensor.From(shape, new[] { 2 }),
             Tensor.From(crops, new[] { 2, 2 }));
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor());

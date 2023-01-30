@@ -78,22 +78,22 @@ public sealed partial class FoldTwoPads : IRewriteRule
 public sealed partial class FoldConv2DPads : IRewriteRule
 {
     public IPattern Pattern { get; } = IsConv2D(
-    "conv", conv => conv.PadMode == PadMode.Constant,
-    IsPad(
+        "conv",
+        conv => conv.PadMode == PadMode.Constant,
+        IsPad(
             pad => pad.PadMode == PadMode.Constant,
             IsWildcard("input"),
             IsTensorConst("ext_pad"),
             IsTensorConst("ext_pad_init")),
-    IsWildcard("weights"),
-    IsWildcard("bias"),
-    IsWildcard("stride"),
-    IsTensorConst("padding"),
-    IsWildcard("dilation"),
-    IsWildcard("groups"),
-    IsWildcard("fusedClamp"));
+        IsWildcard("weights"),
+        IsWildcard("bias"),
+        IsWildcard("stride"),
+        IsTensorConst("padding"),
+        IsWildcard("dilation"),
+        IsWildcard("groups"),
+        IsWildcard("fusedClamp"));
 
-    private Expr? GetReplace(Conv2D conv, Expr input, Expr weights, Expr bias, Expr stride, Tensor<int> padding,
-        Expr dilation, Expr groups, Expr fusedClamp, Tensor<int> ext_pad, float ext_pad_init)
+    private Expr? GetReplace(Conv2D conv, Expr input, Expr weights, Expr bias, Expr stride, Tensor<int> padding, Expr dilation, Expr groups, Expr fusedClamp, Tensor<int> ext_pad, float ext_pad_init)
     {
         if (!(ext_pad[0, 0] == 0 && ext_pad[0, 1] == 0 &&
               ext_pad[1, 0] == 0 && ext_pad[1, 1] == 0))
@@ -117,22 +117,22 @@ public sealed partial class FoldConv2DPads : IRewriteRule
 public sealed partial class FoldReduceWindow2DPads : IRewriteRule
 {
     public IPattern Pattern { get; } = IsReduceWindow2D(
-    "pdp", _ => true,
-    IsPad(
+        "pdp",
+        _ => true,
+        IsPad(
             pad => pad.PadMode == PadMode.Constant,
             IsWildcard("input"),
             IsTensorConst("ext_pad"),
             IsTensorConst("ext_pad_init")),
-    IsWildcard("initValue"),
-    IsWildcard("filter"),
-    IsWildcard("stride"),
-    IsTensorConst("padding"),
-    IsWildcard("dilation"),
-    IsWildcard("ceilMode"),
-    IsWildcard("countIncludePad"));
+        IsWildcard("initValue"),
+        IsWildcard("filter"),
+        IsWildcard("stride"),
+        IsTensorConst("padding"),
+        IsWildcard("dilation"),
+        IsWildcard("ceilMode"),
+        IsWildcard("countIncludePad"));
 
-    private Expr? GetReplace(ReduceWindow2D pdp, Expr input, Expr initValue, Expr filter, Expr stride, Tensor<int> padding,
-        Expr dilation, Expr ceilMode, Expr countIncludePad, Tensor<int> ext_pad, float ext_pad_init)
+    private Expr? GetReplace(ReduceWindow2D pdp, Expr input, Expr initValue, Expr filter, Expr stride, Tensor<int> padding, Expr dilation, Expr ceilMode, Expr countIncludePad, Tensor<int> ext_pad, float ext_pad_init)
     {
         if (!(ext_pad[0, 0] == 0 && ext_pad[0, 1] == 0 &&
               ext_pad[1, 0] == 0 && ext_pad[1, 1] == 0))

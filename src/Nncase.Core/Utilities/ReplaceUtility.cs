@@ -46,9 +46,6 @@ public class ReplaceUtility
     /// newInput => Call(op, newInput, otherArg1, ...)
     /// it's always used for Fake to NoFake Pass with IsWildcardCall.
     /// </summary>
-    /// <param name="call"></param>
-    /// <param name="op"></param>
-    /// <returns></returns>
     public static Fx ReplaceOpAndFirst(Call call, Op op) => input =>
     {
         return call with { Target = op, Parameters = ReplaceFirst(call.Parameters, input) };
@@ -66,10 +63,12 @@ public class ReplaceUtility
         {
             Parameters = ReplacePos(
                 call.Parameters.Select(p =>
-            {
-                matchOptions.TryUpdateWithRewrite(ref p);
-                return p;
-            }).ToList(), input, i),
+                {
+                    matchOptions.TryUpdateWithRewrite(ref p);
+                    return p;
+                }).ToList(),
+                input,
+                i),
         };
     }
 
@@ -107,9 +106,6 @@ public class ReplaceUtility
     ///
     /// warning: call which returned should be type infer, because of with should keep the type infer.
     /// </summary>
-    /// <param name="call"></param>
-    /// <param name="posAndValue"></param>
-    /// <returns></returns>
     public static Call ReplaceParams(Call call, params (ParameterInfo, Expr)[] posAndValue)
     {
         return call with { Parameters = ReplaceMulti(call.Parameters, posAndValue) };
@@ -122,7 +118,6 @@ public class ReplaceUtility
     /// <param name="target">matched old input.</param>
     /// <param name="value">created new_input.</param>
     /// <returns>new args list.</returns>
-    /// <exception cref="InvalidOperationException"></exception>
     public static List<Expr> ReplaceParams(IReadOnlyList<Expr> list, Expr target, Expr value)
     {
         return ReplaceParams(list, new List<(Expr, Expr)>() { (target, value) });
@@ -134,8 +129,7 @@ public class ReplaceUtility
     /// <param name="list">matched exprsession list.</param>
     /// <param name="pairs">target value pair.</param>
     /// <returns>new args list.</returns>
-    /// <exception cref="InvalidOperationException"></exception>
-    public static List<Expr> ReplaceParams(IReadOnlyList<Expr> list, IReadOnlyList<(Expr target, Expr value)> pairs)
+    public static List<Expr> ReplaceParams(IReadOnlyList<Expr> list, IReadOnlyList<(Expr Target, Expr Value)> pairs)
     {
         var new_args = new List<Expr>(list);
 
@@ -144,15 +138,15 @@ public class ReplaceUtility
         {
             for (int j = 0; j < pairs.Count; j++)
             {
-                if (object.ReferenceEquals(new_args[i], pairs[j].target))
+                if (object.ReferenceEquals(new_args[i], pairs[j].Target))
                 {
                     if (!candidates.TryGetValue(i, out var last_matched))
                     {
-                        last_matched = pairs[j].value;
+                        last_matched = pairs[j].Value;
                         candidates.Add(i, last_matched);
                     }
 
-                    if (!object.ReferenceEquals(last_matched, pairs[j].value))
+                    if (!object.ReferenceEquals(last_matched, pairs[j].Value))
                     {
                         throw new InvalidDataException("The same arg can't replace with two new pararmeter!");
                     }
@@ -176,7 +170,7 @@ public class ReplaceUtility
     /// <param name="call">Old Call.</param>
     /// <param name="pairs">Pair of old param and new param.</param>
     /// <returns>New Call.</returns>
-    public static Call ReplaceCallParam(Call call, IReadOnlyList<(Expr, Expr)> pairs)
+    public static Call ReplaceCallParam(Call call, IReadOnlyList<(Expr Target, Expr Value)> pairs)
     {
         var newParams = ReplaceParams(call.Parameters, pairs).ToArray();
         return call with { Parameters = newParams };

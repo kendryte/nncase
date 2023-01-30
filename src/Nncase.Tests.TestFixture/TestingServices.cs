@@ -25,9 +25,6 @@ public static class Testing
     /// <summary>
     /// fixup the seq rand tensor into gived range.
     /// </summary>
-    /// <param name="range"></param>
-    /// <param name="symmetric"></param>
-    /// <returns></returns>
     public static ValueRange<float> FixupRange(ValueRange<float> range, bool symmetric = false)
     {
         if (symmetric)
@@ -76,9 +73,6 @@ public static class Testing
     /// <summary>
     /// create the rand value by gived datatype.
     /// </summary>
-    /// <param name="dataType"></param>
-    /// <param name="shape"></param>
-    /// <returns></returns>
     public static Tensor Rand(DataType dataType, params int[] shape)
     {
         return IR.F.Random.Normal(dataType, 0, 1, 1, shape).Evaluate().AsTensor();
@@ -87,9 +81,6 @@ public static class Testing
     /// <summary>
     /// create the rand value by gived datatype.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="shape"></param>
-    /// <returns></returns>
     public static Tensor<T> Rand<T>(params int[] shape)
         where T : unmanaged, IEquatable<T>
     {
@@ -99,9 +90,6 @@ public static class Testing
     /// <summary>
     /// create the seq value by gived datatype.
     /// </summary>
-    /// <param name="dataType"></param>
-    /// <param name="shape"></param>
-    /// <returns></returns>
     public static Tensor Seq(DataType dataType, params int[] shape)
     {
         return (Tensor)typeof(Testing).GetMethod("Seq", new[] { typeof(int[]) })!.MakeGenericMethod(dataType.CLRType).Invoke(null, new object[] { shape })!;
@@ -110,9 +98,6 @@ public static class Testing
     /// <summary>
     /// create the seq value by gived datatype.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="shape"></param>
-    /// <returns></returns>
     public static Tensor<T> Seq<T>(params int[] shape)
         where T : unmanaged, IEquatable<T>
     {
@@ -123,10 +108,6 @@ public static class Testing
     /// <summary>
     /// NOTE 映射一个sequence到新的range.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="t"></param>
-    /// <param name="range"></param>
-    /// <returns></returns>
     public static Tensor<T> ReArangeSeq<T>(Tensor<T> t, ValueRange<float> range)
       where T : unmanaged, System.IEquatable<T>
     {
@@ -139,11 +120,6 @@ public static class Testing
     /// <summary>
     /// check all value close.
     /// </summary>
-    /// <param name="a"></param>
-    /// <param name="b"></param>
-    /// <param name="tol"></param>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
     public static int AllClose(Tensor a, Tensor b, float tol = .003f)
     {
         if (a.Shape != b.Shape)
@@ -173,9 +149,6 @@ public static class Testing
     /// <summary>
     /// dump value.
     /// </summary>
-    /// <param name="v"></param>
-    /// <param name="writer"></param>
-    /// <exception cref="ArgumentOutOfRangeException"></exception>
     public static void DumpValue(IValue v, StreamWriter writer)
     {
         switch (v)
@@ -191,15 +164,13 @@ public static class Testing
 
                 break;
             default:
-                throw new ArgumentOutOfRangeException();
+                throw new ArgumentOutOfRangeException(nameof(v));
         }
     }
 
     /// <summary>
     /// dump value.
     /// </summary>
-    /// <param name="v"></param>
-    /// <param name="path"></param>
     public static void DumpValue(IValue v, string path)
     {
         using (var sw = new StreamWriter(File.Open(path, FileMode.Create, FileAccess.Write)))
@@ -212,10 +183,10 @@ public static class Testing
     /// build kmodel.
     /// </summary>
     /// <param name="name">the dumped kmodel name.</param>
-    /// <param name="module"></param>
-    /// <param name="compileSession"></param>
+    /// <param name="module">Module.</param>
+    /// <param name="compileSession">Compile session.</param>
     /// <returns>kmodel_path and kmodel bytes.</returns>
-    public static (string, byte[]) BuildKModel(string name, IR.IRModule module, CompileSession compileSession)
+    public static (string KModelPath, byte[] KModel) BuildKModel(string name, IR.IRModule module, CompileSession compileSession)
     {
         var modelBuilder = compileSession.GetRequiredService<IModelBuilder>();
         var linkedModel = modelBuilder.Build(module);
@@ -233,10 +204,6 @@ public static class Testing
     /// <summary>
     /// dump kmodel args and bin for cli interp.
     /// </summary>
-    /// <param name="kmodel_path"></param>
-    /// <param name="input_tensors"></param>
-    /// <param name="dumpper"></param>
-    /// <exception cref="ArgumentOutOfRangeException"></exception>
     public static void DumpInterpModel(string kmodel_path, Tensor[] input_tensors, IDumpper dumpper)
     {
         string input_pool_path = Path.Join(dumpper.Directory, "input_pool.bin");
@@ -270,7 +237,7 @@ public static class Testing
                     var x when x == DataTypes.Float32 => 0x0B,
                     var x when x == DataTypes.Float64 => 0x0C,
                     var x when x == DataTypes.BFloat16 => 0x0D,
-                    _ => throw new ArgumentOutOfRangeException(),
+                    var x => throw new NotSupportedException($"Data type {x} is not supported."),
                 };
                 args_writer.WriteLine($"{dt_code}");
                 args_writer.WriteLine(in_tensor.Shape.Count);

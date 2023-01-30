@@ -3,6 +3,7 @@
 
 using Nncase.IR;
 using Nncase.Utilities;
+using static Tensorflow.tensorflow;
 
 namespace Nncase.Tests;
 
@@ -17,13 +18,13 @@ public static class RuntimeDumpAnalysis
         PrintOutShapeList(data);
     }
 
-    public static IEnumerable<IGrouping<string, (string, int)>> MakeData(string dumpResultRoot)
+    public static IEnumerable<IGrouping<string, (string Shape, int Index)>> MakeData(string dumpResultRoot)
     {
         using var stream = new StreamReader(Path.Join(dumpResultRoot, "!out_shape_list"));
         return GroupByOp(stream.ReadToEnd());
     }
 
-    public static void PrintOutShapeList(IEnumerable<IGrouping<string, (string, int)>> data)
+    public static void PrintOutShapeList(IEnumerable<IGrouping<string, (string Shape, int Index)>> data)
     {
         foreach (var valueTuples in data)
         {
@@ -35,7 +36,7 @@ public static class RuntimeDumpAnalysis
         }
     }
 
-    private static IEnumerable<IGrouping<string, (string, int)>> GroupByOp(string str)
+    private static IEnumerable<IGrouping<string, (string Shape, int Index)>> GroupByOp(string str)
     {
         return str.Trim().Split("\n")
             .Select((x, i) => (x, i))
@@ -50,9 +51,6 @@ public static class RuntimeDumpAnalysis
 /// </summary>
 public static class RuntimeResultAnalysis
 {
-    /// <summary>
-    ///
-    /// </summary>
     /// <param name="dir">dump data dir.</param>
     /// <param name="resultPath">resultPath for write cos.</param>
     /// <param name="ctor">call constructor.</param>

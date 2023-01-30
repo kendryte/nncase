@@ -16,7 +16,7 @@ namespace Nncase.Tests.Rules.NeutralTest;
 
 public class UnitTestCombineBinary
 {
-    public static TheoryData<int[], Tensor<float>, Tensor<float>, Tensor<float>> CombineClampBinaryPositiveData2 = new()
+    public static readonly TheoryData<int[], Tensor<float>, Tensor<float>, Tensor<float>> CombineClampBinaryPositiveData2 = new()
     {
         {
             new[] { 1, 4, 3, 3 },
@@ -77,10 +77,13 @@ public class UnitTestCombineBinary
         };
 
         CompilerServices.InferenceType(rootPre);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new Transform.Rules.Neutral.CombineClampAdd(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new Transform.Rules.Neutral.CombineClampAdd(),
+            },
+            new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.True(Comparator.Compare(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict)));
@@ -99,10 +102,13 @@ public class UnitTestCombineBinary
         };
 
         CompilerServices.InferenceType(rootPre);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new Transform.Rules.Neutral.CombineClampMul(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new Transform.Rules.Neutral.CombineClampMul(),
+            },
+            new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.True(Comparator.Compare(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict)));
@@ -120,10 +126,13 @@ public class UnitTestCombineBinary
         };
 
         CompilerServices.InferenceType(rootPre);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new Transform.Rules.Neutral.CombineClampAdd(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new Transform.Rules.Neutral.CombineClampAdd(),
+            },
+            new());
 
         Assert.Equal(rootPre, rootPost);
     }
@@ -140,15 +149,18 @@ public class UnitTestCombineBinary
         };
 
         CompilerServices.InferenceType(rootPre);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new Transform.Rules.Neutral.CombineClampMul(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new Transform.Rules.Neutral.CombineClampMul(),
+            },
+            new());
 
         Assert.Equal(rootPre, rootPost);
     }
 
-    private (Var, Expr) GetCombineClampBinaryCase(BinaryOp op, int[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
+    private (Var Input, Expr Root) GetCombineClampBinaryCase(BinaryOp op, int[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
     {
         Expr rootPre;
         var input = new Var("input", new TensorType(DataTypes.Float32, inputShape));
@@ -162,7 +174,7 @@ public class UnitTestCombineBinary
         return (input, rootPre);
     }
 
-    private (Var, Var, Expr) GetCombineClampBinaryNegativeCase(BinaryOp op, int[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
+    private (Var Input, Var ConstInput, Expr Root) GetCombineClampBinaryNegativeCase(BinaryOp op, int[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
     {
         Expr rootPre;
         var input = new Var("input", new TensorType(DataTypes.Float32, inputShape));

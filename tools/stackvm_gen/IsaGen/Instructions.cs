@@ -990,11 +990,11 @@ namespace IsaGen
 
         [DisplayName("registered_name")]
         [Description("Global Registered Name")]
-        public string RegisteredName { get; set; }
+        public string RegisteredName { get; set; } = string.Empty;
 
         [DisplayName("fields_span")]
         [Description("Fields Span")]
-        public byte[] FieldsSpan { get; set; }
+        public byte[] FieldsSpan { get; set; } = Array.Empty<byte>();
 
         [DisplayName("args")]
         [Description("Arguments count")]

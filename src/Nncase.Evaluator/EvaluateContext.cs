@@ -25,8 +25,7 @@ public static class EvaluateContextExtensions
             () => tensor).ToOrtTensor();
     }
 
-    public static OrtKISharp.Tensor GetInt64OrtTensorArgumentValue(this IEvaluateContext context, Op op,
-        ParameterInfo parameter)
+    public static OrtKISharp.Tensor GetInt64OrtTensorArgumentValue(this IEvaluateContext context, Op op, ParameterInfo parameter)
     {
         var tensor = context.GetArgumentValue(op, parameter).AsTensor().Cast<long>();
         return tensor.Shape.IsScalar ? tensor.ScalarToOrtTensor() : tensor.ToOrtTensor();

@@ -127,11 +127,14 @@ public sealed class UnitTestDumpper : TestClassBase
 
         Assert.True(pre.InferenceType());
 
-        _ = CompilerServices.ERewrite(pre, new IRewriteRule[]
-        {
-              new Transform.Rules.Lower.RemoveMarker(),
-              new TestMulToAdd(),
-        }, new());
+        _ = CompilerServices.ERewrite(
+            pre,
+            new IRewriteRule[]
+            {
+                  new Transform.Rules.Lower.RemoveMarker(),
+                  new TestMulToAdd(),
+            },
+            new());
 
         Assert.True(File.Exists(Path.Join(Dumpper.Directory, "Costs", "V4.dot")));
     }
@@ -164,8 +167,7 @@ public sealed class UnitTestDumpper : TestClassBase
 
         var pass = new ShapeInferPass { Name = $"ShapeInfer" };
 
-        using (var _ = new DumpScope("DisableEvaluator", DumpFlags.ImportOps | DumpFlags.EGraphCost
-            | DumpFlags.Calibration | DumpFlags.Compile | DumpFlags.PassIR | DumpFlags.Rewrite))
+        using (_ = new DumpScope("DisableEvaluator", DumpFlags.ImportOps | DumpFlags.EGraphCost | DumpFlags.Calibration | DumpFlags.Compile | DumpFlags.PassIR | DumpFlags.Rewrite))
         {
             var post = (Function)await pass.RunAsync(main, new());
         }
@@ -173,8 +175,7 @@ public sealed class UnitTestDumpper : TestClassBase
         Assert.False(Directory.Exists(Path.Join(Dumpper.Directory, "DisableEvaluator", "0_ShapeInfer", "main", "Run_0", "Evaluate")));
         Assert.True(Directory.Exists(Path.Join(Dumpper.Directory, "DisableEvaluator", "0_ShapeInfer", "main", "Run_0", "Rewrite")));
 
-        using (var _ = new DumpScope("DisableRewrite", DumpFlags.ImportOps | DumpFlags.EGraphCost | DumpFlags.Evaluator
-            | DumpFlags.Calibration | DumpFlags.Compile | DumpFlags.PassIR))
+        using (_ = new DumpScope("DisableRewrite", DumpFlags.ImportOps | DumpFlags.EGraphCost | DumpFlags.Evaluator | DumpFlags.Calibration | DumpFlags.Compile | DumpFlags.PassIR))
         {
             var post = (Function)await pass.RunAsync(main, new());
         }

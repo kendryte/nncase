@@ -17,12 +17,22 @@ public static class GeneratorUtil
 
     public static NamespaceDeclarationSyntax MakeNameSpace(string name) => SyntaxFactory.NamespaceDeclaration(default, default, SyntaxFactory.Token(SyntaxKind.NamespaceKeyword).WithTrailingTrivia(ElasticSpace), ParseName(name), SyntaxFactory.Token(SyntaxKind.OpenBraceToken).WithLeadingTrivia(ElasticLineFeed).WithTrailingTrivia(ElasticLineFeed), default, default, default, SyntaxFactory.Token(SyntaxKind.CloseBraceToken).WithTrailingTrivia(ElasticLineFeed), default);
 
-    public static ClassDeclarationSyntax MakeClass(string identifier) => SyntaxFactory.ClassDeclaration(default, default, SyntaxFactory.Token(SyntaxKind.ClassKeyword).WithTrailingTrivia(ElasticSpace), Identifier(identifier), default, default, default, SyntaxFactory.Token(SyntaxKind.OpenBraceToken).
-        WithTrailingTrivia(ElasticLineFeed), default,
-      SyntaxFactory.Token(SyntaxKind.CloseBraceToken).
-        WithLeadingTrivia(ElasticTab).
-        WithTrailingTrivia(ElasticLineFeed), default)
-      .WithTrailingTrivia(ElasticLineFeed);
+    public static ClassDeclarationSyntax MakeClass(string identifier) =>
+        SyntaxFactory.ClassDeclaration(
+            default,
+            default,
+            SyntaxFactory.Token(SyntaxKind.ClassKeyword).WithTrailingTrivia(ElasticSpace),
+            Identifier(identifier),
+            default,
+            default,
+            default,
+            SyntaxFactory.Token(SyntaxKind.OpenBraceToken).WithTrailingTrivia(ElasticLineFeed),
+            default,
+            SyntaxFactory.Token(SyntaxKind.CloseBraceToken)
+            .WithLeadingTrivia(ElasticTab)
+            .WithTrailingTrivia(ElasticLineFeed),
+            default)
+        .WithTrailingTrivia(ElasticLineFeed);
 
     public static MethodDeclarationSyntax MakeMethod(TypeSyntax returnType, string identifier) =>
         SyntaxFactory.MethodDeclaration(default, default, returnType, default, SyntaxFactory.Identifier(identifier), default, SyntaxFactory.ParameterList(), default, default, default, default);
@@ -39,7 +49,7 @@ public static class GeneratorUtil
 
 public static class RecriverUtil
 {
-    public static DiagnosticDescriptor MethodParamError = new DiagnosticDescriptor(
+    public static readonly DiagnosticDescriptor MethodParamError = new DiagnosticDescriptor(
         id: "EvalGen005",
         title: "The Method Parameters Is Not Valid!",
         messageFormat: "This Class '{0}' Method Parameters Is ('{1}'), Because the `'{2}'`!",
@@ -98,9 +108,6 @@ public static class RecriverUtil
     /// <summary>
     /// check the class attrs.
     /// </summary>
-    /// <param name="attrLists"></param>
-    /// <param name="target_attr_name"></param>
-    /// <returns></returns>
     public static bool CheckAttributes(SyntaxList<AttributeListSyntax> attrLists, string target_attr_name)
     {
         foreach (var attributeList in attrLists)
@@ -121,9 +128,6 @@ public static class RecriverUtil
     /// <summary>
     /// get full name from the name syntax.
     /// </summary>
-    /// <param name="name"></param>
-    /// <returns></returns>
-    /// <exception cref="NotSupportedException"></exception>
     public static string GetFullName(this NameSyntax name) => name switch
     {
         QualifiedNameSyntax qualifiedName => GetFullName(qualifiedName.Left) + "." + GetFullName(qualifiedName.Right),
@@ -134,9 +138,6 @@ public static class RecriverUtil
     /// <summary>
     /// check this type is inherit from other type or equal base type.
     /// </summary>
-    /// <param name="typeSymbol"></param>
-    /// <param name="baseSymbol"></param>
-    /// <returns></returns>
     public static bool IsInheritFrom(this ITypeSymbol? typeSymbol, ITypeSymbol? baseSymbol)
     {
         if (typeSymbol is null || baseSymbol is null)

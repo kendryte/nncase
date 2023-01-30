@@ -34,7 +34,7 @@ public sealed partial class MatMulToConv2D : IRewriteRule
         var bShape = b.CheckedShape;
         if (aShape[1] != bShape[0])
         {
-            throw new Exception("Matmul need aShape[1] same with bShape[0]");
+            return null;
         }
 
         var if_shape = new Shape(new[] { aShape[0].FixedValue, aShape[1].FixedValue, 1, 1 });

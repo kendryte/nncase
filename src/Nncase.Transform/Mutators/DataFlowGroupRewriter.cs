@@ -24,12 +24,6 @@ public sealed class DataFlowMergeRewriter
     /// <summary>
     /// Rewrite the merge rule.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <param name="rules"></param>
-    /// <param name="mutator_creator"></param>
-    /// <param name="options"></param>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
     public Expr Rewrite(Expr expr, IEnumerable<Mutators.IMergeRewriteRule> rules, Func<IUsedByResult, Mutators.IMergeRewriteRule, RunPassContext, Mutators.FusionGroupMutator> mutator_creator, RunPassContext options)
     {
         var post = expr;

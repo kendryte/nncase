@@ -93,18 +93,22 @@ public sealed class UnitTestFusionMaker : TestClassBase
         var post = await pass.RunAsync(pre, new());
 
         var rewriter = new DataFlowMergeRewriter();
-        var post2 = (Function)rewriter.Rewrite(post, new IMergeRewriteRule[]
-        {
-            new SameInputFusionMergeRule(),
-            new MultiInputFusionMergeRule(),
-            new ShortCutFusionMergeRuleLeft(),
-            new ShortCutFusionMergeRuleRight(),
-        }, (usedby, rule, option) => new FusionGroupMutator(usedby, rule, option),
-          new());
+        var post2 = (Function)rewriter.Rewrite(
+            post,
+            new IMergeRewriteRule[]
+            {
+                new SameInputFusionMergeRule(),
+                new MultiInputFusionMergeRule(),
+                new ShortCutFusionMergeRuleLeft(),
+                new ShortCutFusionMergeRuleRight(),
+            },
+            (usedby, rule, option) => new FusionGroupMutator(usedby, rule, option),
+            new());
 
         var isMatch = CompilerServices.TryMatch(
             post2,
-            IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
+            IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"),
+            out _);
         Assert.True(isMatch);
     }
 
@@ -137,7 +141,9 @@ public sealed class UnitTestFusionMaker : TestClassBase
         Function pre;
         {
             var v1 = WrapperWith(x => Transpose(x[0], new[] { 0, 3, 1, 2 }), input); // f32[1,3,24,32]
-            var v3 = WrapperWith(x => x[0] + x[1], v1,
+            var v3 = WrapperWith(
+                x => x[0] + x[1],
+                v1,
                 IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 24, 32 }));
             var v5 = WrapperWith(x => Unary(UnaryOp.Abs, x[0]), v3); // f32[1,3,24,32]
             var v9 = WrapperWith(x => Transpose(x[0], new[] { 0, 2, 3, 1 }), v5); // f32[1,24,32,3]
@@ -166,7 +172,8 @@ public sealed class UnitTestFusionMaker : TestClassBase
             var v1 = WrapperWith(x => Transpose(x[0], new[] { 0, 3, 1, 2 }), input); // f32[1,3,24,32]
             var v3 = WrapperWith(
                 x => x[0] + x[1],
-                IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 24, 32 }).Evaluate().AsTensor(), v1);
+                IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 24, 32 }).Evaluate().AsTensor(),
+                v1);
             var v5 = WrapperWith(x => Unary(UnaryOp.Abs, x[0]), v3); // f32[1,3,24,32]
             var v6 = WrapperWith(x => x[0], v5);
             var v9 = WrapperWith(x => Transpose(x[0], new[] { 0, 2, 3, 1 }), v6); // f32[1,24,32,3]
@@ -254,14 +261,24 @@ public sealed class UnitTestFusionMaker : TestClassBase
         var init_h = DataGenerator.DefaultRandom(new[] { 1, 1, 1, 1 });
         var init_c = DataGenerator.DefaultRandom(new[] { 1, 1, 1, 1 });
         var dt = DataTypes.Int8;
-        var lstm = IR.F.RNN.LSTM(LSTMDirection.Bidirectional, LSTMLayout.One, new[] { "act" },
+        var lstm = IR.F.RNN.LSTM(
+            LSTMDirection.Bidirectional,
+            LSTMLayout.One,
+            new[] { "act" },
             WrapInput(x),
             WrapInput(w),
             WrapInput(r),
             b,
-            0, init_h,
+            0,
+            init_h,
             init_c,
-            0, 0, 0, 0, hiddenSize, 0, outputSize);
+            0,
+            0,
+            0,
+            0,
+            hiddenSize,
+            0,
+            outputSize);
 
         var oldBody = WrapOutput(lstm);
         Assert.True(oldBody.InferenceType());
@@ -304,7 +321,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
     {
         public class TransposeDataMaker
         {
-            public static (ParameterInfo, Pattern)[] InputsPattern =
+            public static readonly (ParameterInfo, Pattern)[] InputsPattern =
                 GenerateInputsPattern(Transpose.Input);
         }
     }
@@ -313,7 +330,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
     {
         public class FusionCondMaker
         {
-            public static (ParameterInfo, Pattern)[] InputsPattern =
+            public static readonly (ParameterInfo, Pattern)[] InputsPattern =
                 GenerateInputsPattern(LSTM.X, LSTM.W, LSTM.R);
         }
     }

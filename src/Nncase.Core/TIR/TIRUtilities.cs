@@ -18,9 +18,6 @@ public static class TIRUtilities
     /// <summary>
     /// give the bounds and shape, compute paddings.
     /// </summary>
-    /// <param name="bounds"></param>
-    /// <param name="shape"></param>
-    /// <returns></returns>
     public static IEnumerable<(IR.Expr Before, IR.Expr After)> ComputePaddings(IEnumerable<TIR.Range> bounds, IR.Shape shape) =>
     bounds.Select((bound, i) =>
       ((IR.Expr)IR.F.Math.Max(-bound.Start, 0), (IR.Expr)IR.F.Math.Max(bound.Stop - shape[i].FixedValue, 0)));
@@ -28,9 +25,6 @@ public static class TIRUtilities
     /// <summary>
     /// give two bounds compute paddings.
     /// </summary>
-    /// <param name="bounds"></param>
-    /// <param name="target_bounds"></param>
-    /// <returns></returns>
     public static IEnumerable<(IR.Expr Before, IR.Expr After)> ComputePaddings(IEnumerable<TIR.Range> bounds, IEnumerable<TIR.Range> target_bounds)
       => bounds.Zip(target_bounds).
         Select(it =>
@@ -40,9 +34,6 @@ public static class TIRUtilities
     /// <summary>
     /// compute the no padding bounds.
     /// </summary>
-    /// <param name="bounds"></param>
-    /// <param name="paddings"></param>
-    /// <returns></returns>
     public static IEnumerable<TIR.Range> ComputeNoPadBounds(IEnumerable<TIR.Range> bounds, IEnumerable<(IR.Expr Before, IR.Expr After)> paddings) =>
       bounds.Zip(paddings).Select(t =>
       {
@@ -58,9 +49,7 @@ public static class TIRUtilities
     /// <summary>
     /// Compute the sub no pad bounds.
     /// </summary>
-    /// <returns></returns>
-    public static IEnumerable<TIR.Range> ComputeSubNoPadBounds(IEnumerable<TIR.Range> bounds, IEnumerable<TIR.Range> sub_bounds, IEnumerable<(IR.Expr Before, IR.Expr After)> paddings,
-    IEnumerable<(IR.Expr Before, IR.Expr After)> sub_paddings) =>
+    public static IEnumerable<TIR.Range> ComputeSubNoPadBounds(IEnumerable<TIR.Range> bounds, IEnumerable<TIR.Range> sub_bounds, IEnumerable<(IR.Expr Before, IR.Expr After)> paddings, IEnumerable<(IR.Expr Before, IR.Expr After)> sub_paddings) =>
       bounds.Zip(sub_bounds).Zip(paddings, sub_paddings).Select(t =>
       {
           var (bound, sub_bounds) = t.First;
@@ -74,10 +63,6 @@ public static class TIRUtilities
     /// <summary>
     /// give the sub no pad bounds, then get the current bounds.
     /// </summary>
-    /// <param name="sub_no_pad_bounds"></param>
-    /// <param name="bounds"></param>
-    /// <param name="paddings"></param>
-    /// <returns></returns>
     public static IEnumerable<TIR.Range> ComputeBounds(IEnumerable<TIR.Range> sub_no_pad_bounds, IEnumerable<TIR.Range> bounds, IEnumerable<(IR.Expr Before, IR.Expr After)> paddings)
     {
         return sub_no_pad_bounds.Zip(bounds, paddings).Select(t =>
@@ -94,9 +79,6 @@ public static class TIRUtilities
     /// <summary>
     /// clamp bounds by given shape.
     /// </summary>
-    /// <param name="bounds"></param>
-    /// <param name="shape"></param>
-    /// <returns></returns>
     public static IEnumerable<TIR.Range> ClampBounds(IEnumerable<TIR.Range> bounds, IR.Shape shape) =>
       bounds.Zip(shape).Select(
         t => new TIR.Range(

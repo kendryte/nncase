@@ -37,7 +37,7 @@ public class ReduceWindow2DEvaluator : IEvaluator<ReduceWindow2D>, ITypeInferenc
             var pattern = IsRangeOfMarker(IsWildcard(), IsWildcard());
             if (pattern.MatchLeaf(context.CurrentCall.Parameters.ToArray()[0]) && ((Nncase.IR.Marker)context.CurrentCall.Parameters.ToArray()[0]).MixQuantInfo?.HasBindedMixQuantInfo == true)
             {
-                var quantParam = ((Nncase.IR.Marker)context.CurrentCall.Parameters.ToArray()[0]).MixQuantInfo.QuantParameter;
+                var quantParam = ((Nncase.IR.Marker)context.CurrentCall.Parameters.ToArray()[0]).MixQuantInfo!.QuantParameter;
 
                 // input feature map quantParam count should be 1 since input feature map quant is by tensor.
                 Trace.Assert(quantParam.Count == 1);
@@ -62,7 +62,7 @@ public class ReduceWindow2DEvaluator : IEvaluator<ReduceWindow2D>, ITypeInferenc
         {
             ReduceOp.Mean => OrtKI.AveragePool(input, "NOTSET", ceilMode, countIncludePad, kernelSize, onnxPads, stride),
             ReduceOp.Max => OrtKI.MaxPool(input, "NOTSET", ceilMode, dilation, kernelSize, onnxPads, countIncludePad, stride)[0],
-            _ => throw new ArgumentOutOfRangeException(nameof(r.ReduceOp)),
+            _ => throw new ArgumentOutOfRangeException(nameof(r)),
         }).ToValue();
     }
 

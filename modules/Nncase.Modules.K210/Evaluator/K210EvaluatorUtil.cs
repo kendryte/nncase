@@ -15,7 +15,7 @@ using Shape = Nncase.IR.Shape;
 
 namespace Nncase.Evaluator;
 
-public static class EvaluatorUtil
+public static class K210EvaluatorUtil
 {
     public static T BoxCast<T>(float v, DataType dt)
     {
@@ -173,8 +173,6 @@ public static class EvaluatorUtil
     /// <summary>
     /// nncase pads format to onnx pads format.
     /// </summary>
-    /// <param name="pads"></param>
-    /// <returns></returns>
     public static long[] ToOnnxPadFormat(OrtKISharp.Tensor pads)
     {
         if (pads.Rank != 2)

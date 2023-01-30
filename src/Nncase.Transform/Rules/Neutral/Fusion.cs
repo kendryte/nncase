@@ -49,31 +49,29 @@ public abstract class FusionMaker : RewriteRule<Pattern>
 /// in these cases you should use DoubleInputFusion.
 ///
 /// </summary>
-/// <typeparam name="OpT">OpT.</typeparam>
-/// <typeparam name="BeginT">Begin process for input.</typeparam>
-/// <typeparam name="EndT">End process for output.</typeparam>
-/// <typeparam name="DataMaker">Used for set detail pattern.
-/// In DataMaker, you should impl your own member
+/// <typeparam name="TOp">TOp.</typeparam>
+/// <typeparam name="TBegin">Begin process for input.</typeparam>
+/// <typeparam name="TEnd">End process for output.</typeparam>
+/// <typeparam name="TDataMaker">Used for set detail pattern.
+/// In TDataMaker, you should impl your own member
 /// which signature is same as "public static (ParameterInfo, Pattern)[] InputsPattern". </typeparam>
 [RuleGenerator]
-public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
-    where OpT : Op
-    where BeginT : Op
-    where EndT : Op
+public partial class ComplexFusion<TOp, TBegin, TEnd, TDataMaker> : FusionMaker
+    where TOp : Op
+    where TBegin : Op
+    where TEnd : Op
 {
-    public static string OutputName = "output";
+    private static readonly string OutputName = "output";
 
-    public static Pattern ComputePattern { get; } = IsCallWithSpecInput<OpT>("midCall", null!,
-        InputsPattern);
+    public static Pattern ComputePattern { get; } = IsCallWithSpecInput<TOp>("midCall", null, InputsPattern);
 
     public static (ParameterInfo, Pattern)[] InputsPattern =>
-        typeof(DataMaker).GetField("InputsPattern").GetValue(null) as (ParameterInfo, Pattern)[];
+        ((ParameterInfo, Pattern)[])typeof(TDataMaker).GetField("InputsPattern")!.GetValue(null)!;
 
+    // if multi output, then the name by generated should be set null to avoid name conflict
+    // if single output, then use the OutputName
+    // designed for fusion single output and multi output by only one rule
     public override Pattern Pattern { get; } = IsAlt(
-
-        // if multi output, then the name by generated should be set null to avoid name conflict
-        // if single output, then use the OutputName
-        // designed for fusion single output and multi output by only one rule
         MultiOutPattern(ComputePattern, OutputName),
         EndPattern(OutputName));
 
@@ -81,30 +79,29 @@ public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
     /// Generate multi output pattern, wrap with GetItem.
     /// </summary>
     /// <param name="inputPattern">Target of GetItem.</param>
+    /// <param name="outputName">Output name.</param>
     /// <returns>TuplePattern.</returns>
-    public static Pattern MultiOutPattern(Pattern inputPattern, string outputName) => IsTuple(
+    public static Pattern MultiOutPattern(Pattern inputPattern, string? outputName) => IsTuple(
         GenerateRepeatParameters(
-            () => IsWildcardCall<EndT>(null!, null!,
-                IsWildcardCall<GetItem>(null!, null!, inputPattern))),
+            () => IsWildcardCall<TEnd>(
+                null!,
+                null!,
+                IsWildcardCall<GetItem>(null, null, inputPattern))),
         outputName);
 
-    public static Pattern EndPattern(string endCallName) => IsWildcardCall<EndT>(endCallName, null!, ComputePattern);
+    public static Pattern EndPattern(string? endCallName) => IsWildcardCall<TEnd>(endCallName, null, ComputePattern);
 
     /// <summary>
     /// Used for construct wildcard Pattern for inputs from ParameterInfo[].
     /// </summary>
     /// <param name="infos">Parameter Infos.</param>
-    /// <typeparam name="BeginT" />
-    /// <returns></returns>
     public static (ParameterInfo, Pattern)[] GenerateInputsPattern(params ParameterInfo[] infos) =>
-        infos.Select(x => (x, (Pattern)IsWildcardCall<BeginT>(null, null, (string)null))).ToArray();
+        infos.Select(x => (x, (Pattern)IsWildcardCall<TBegin>(null, null, (string?)null))).ToArray();
 
     /// <summary>
-    /// Get input Expr from expr of BeginT.
+    /// Get input Expr from expr of TBegin.
     /// When you want to modify default behavior, you should override it.
     /// </summary>
-    /// <param name="begin"></param>
-    /// <returns></returns>
     public virtual Expr GetInputFromBegin(Expr begin)
     {
         return ((Call)begin).Parameters[0];
@@ -113,19 +110,15 @@ public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
     /// <summary>
     /// Replace the old expr with new expr for each field.
     /// </summary>
-    /// <param name="oldExpr"></param>
-    /// <param name="tupleOut"></param>
-    /// <param name="newExpr"></param>
-    /// <returns></returns>
     public virtual IR.Tuple ReplaceTupleFields(Expr oldExpr, IR.Tuple tupleOut, Expr newExpr)
     {
         var newFields = tupleOut.Fields.Select(end =>
-                ReplaceFirst((Call)end, (Expr)ReplaceCallParam(
 
-                    // end is a GetItem(Call(OpT, params))
-                    // then end[0] is Call(OpT, params)
-                    (Call)((Call)end).Parameters[0],
-                    new[] { (oldExpr, newExpr) })))
+                // end is a GetItem(Call(TOp, params))
+                // then end[0] is Call(TOp, params)
+                ReplaceFirst(
+                    (Call)end,
+                    (Expr)ReplaceCallParam((Call)((Call)end).Parameters[0], new[] { (oldExpr, newExpr) })))
             .ToArray();
         return tupleOut with { Fields = newFields };
     }
@@ -173,19 +166,27 @@ public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
 }
 
 [RuleGenerator]
-public partial class SingleInputFusion<T, BeginT, EndT> : FusionMaker
+public partial class SingleInputFusion<T, TBegin, TEnd> : FusionMaker
     where T : Op
-    where BeginT : Op
-    where EndT : Op
+    where TBegin : Op
+    where TEnd : Op
 {
     /// <inheritdoc/>
-    public override Pattern Pattern { get; } = IsWildcardCall<EndT>("endCall", null!,
-        IsWildcardCall<T>("midCall", null!,
-            IsWildcardCall<BeginT>("beginCall", null!, IsWildcard("input"))));
+    public override Pattern Pattern { get; } = IsWildcardCall<TEnd>(
+        "endCall",
+        null,
+        IsWildcardCall<T>(
+            "midCall",
+            null,
+            IsWildcardCall<TBegin>("beginCall", null, IsWildcard("input"))));
 
-    protected virtual Call? GetReplace(Call endCall, IReadOnlyList<Expr> endCallParams,
-        Call midCall, IReadOnlyList<Expr> midCallParams,
-        Call beginCall, IReadOnlyList<Expr> beginCallParams,
+    protected virtual Call? GetReplace(
+        Call endCall,
+        IReadOnlyList<Expr> endCallParams,
+        Call midCall,
+        IReadOnlyList<Expr> midCallParams,
+        Call beginCall,
+        IReadOnlyList<Expr> beginCallParams,
         Expr input)
     {
         var new_input = new Var(input.CheckedType!);
@@ -204,22 +205,32 @@ public partial class SingleInputFusion<T, BeginT, EndT> : FusionMaker
 }
 
 [RuleGenerator]
-public partial class DoubleInputFusion<T, BeginT, EndT> : FusionMaker
+public partial class DoubleInputFusion<T, TBegin, TEnd> : FusionMaker
     where T : Op
-    where BeginT : Op
-    where EndT : Op
+    where TBegin : Op
+    where TEnd : Op
 {
     /// <inheritdoc/>
-    public override Pattern Pattern { get; } = IsWildcardCall<EndT>("endCall", null!,
-        IsWildcardCall<T>("midCall", null!,
-            IsWildcardCall<BeginT>("beginLhsCall", null!, IsWildcard("lhs")),
-            IsWildcardCall<BeginT>("beginRhsCall", null!, IsWildcard("rhs"))));
+    public override Pattern Pattern { get; } = IsWildcardCall<TEnd>(
+        "endCall",
+        null!,
+        IsWildcardCall<T>(
+            "midCall",
+            null,
+            IsWildcardCall<TBegin>("beginLhsCall", null, IsWildcard("lhs")),
+            IsWildcardCall<TBegin>("beginRhsCall", null, IsWildcard("rhs"))));
 
-    private Call GetReplace(Call endCall, IReadOnlyList<Expr> endCallParams,
-        Call midCall, IReadOnlyList<Expr> midCallParams,
-        Call beginLhsCall, IReadOnlyList<Expr> beginLhsCallParams,
-        Call beginRhsCall, IReadOnlyList<Expr> beginRhsCallParams,
-        Expr lhs, Expr rhs)
+    private Call GetReplace(
+        Call endCall,
+        IReadOnlyList<Expr> endCallParams,
+        Call midCall,
+        IReadOnlyList<Expr> midCallParams,
+        Call beginLhsCall,
+        IReadOnlyList<Expr> beginLhsCallParams,
+        Call beginRhsCall,
+        IReadOnlyList<Expr> beginRhsCallParams,
+        Expr lhs,
+        Expr rhs)
     {
         var new_args = new List<Var>();
         var newParams = new List<Expr>();
@@ -258,17 +269,22 @@ public partial class DoubleInputFusion<T, BeginT, EndT> : FusionMaker
 }
 
 [RuleGenerator]
-public partial class DataTransferFusion<LoadT, StoreT> : FusionMaker
-    where LoadT : Op
-    where StoreT : Op
+public partial class DataTransferFusion<TLoad, TStore> : FusionMaker
+    where TLoad : Op
+    where TStore : Op
 {
     /// <inheritdoc/>
-    public override Pattern Pattern { get; } = IsWildcardCall<StoreT>("stCall", null!,
-        IsWildcardCall<LoadT>("ldCall", null!, IsWildcard("input")));
+    public override Pattern Pattern { get; } = IsWildcardCall<TStore>(
+        "stCall",
+        null,
+        IsWildcardCall<TLoad>("ldCall", null, IsWildcard("input")));
 
     // replace input with var
-    private Call? GetReplace(Call stCall, IReadOnlyList<Expr> stCallParams,
-        Call ldCall, IReadOnlyList<Expr> ldCallParams,
+    private Call? GetReplace(
+        Call stCall,
+        IReadOnlyList<Expr> stCallParams,
+        Call ldCall,
+        IReadOnlyList<Expr> ldCallParams,
         Expr input)
     {
         var new_arg = new Var(input.CheckedType!);

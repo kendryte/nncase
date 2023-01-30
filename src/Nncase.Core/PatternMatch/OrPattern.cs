@@ -26,18 +26,12 @@ public static partial class Utility
     /// <summary>
     /// create or pattern.
     /// </summary>
-    /// <param name="name"></param>
-    /// <param name="condition_a"></param>
-    /// <param name="condition_b"></param>
-    /// <returns></returns>
     public static OrPattern IsAlt(string? name, Pattern condition_a, Pattern condition_b)
         => IsAltImpl(name, condition_a, condition_b);
 
     /// <summary>
     /// create or pattern without name.
     /// </summary>
-    /// <param name="patterns"></param>
-    /// <returns></returns>
     public static OrPattern IsAlt(params Pattern[] patterns)
         => (OrPattern)patterns
             .Aggregate(

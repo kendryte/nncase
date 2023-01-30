@@ -379,8 +379,6 @@ namespace Nncase.IR
         /// <summary>
         /// visit ivisitable.
         /// </summary>
-        /// <param name="visitable"></param>
-        /// <returns></returns>
         public override object Visit(IVisitable visitable)
         {
             if (!_visitableMemo.TryGetValue(visitable, out var result))
@@ -572,16 +570,11 @@ namespace Nncase.IR
         /// <summary>
         /// Visit leaf ifunctable.
         /// </summary>
-        /// <param name="visitable"></param>
-        /// <returns></returns>
         public virtual object VisitLeaf(IVisitable visitable) => DefaultVisitLeaf(visitable);
 
         /// <summary>
         /// Default leaf visit routine.
         /// </summary>
-        /// <param name="visitable"></param>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
         public virtual object DefaultVisitLeaf(IVisitable visitable)
         {
             throw new NotImplementedException($"Unhandled visit leaf routine for {visitable.GetType()}.");

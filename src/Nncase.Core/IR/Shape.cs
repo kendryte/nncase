@@ -186,22 +186,17 @@ namespace Nncase.IR
                 ? ((IReadOnlyList<Dimension>)_dimensions)[index]
                 : ((IReadOnlyList<Dimension>)_dimensions)[Rank + index];
 
-        /// <inheritdoc/>
         public static implicit operator ReadOnlySpan<int>(Shape shape) => shape._dimensions.Select(x => (int)(x.Value ?? -1)).ToArray();
 
-        /// <inheritdoc/>
         public static implicit operator Shape(Dimension[] dimensions) => new Shape(dimensions);
 
-        /// <inheritdoc/>
         public static implicit operator Shape(int[] dimensions) => new Shape(dimensions);
 
-        /// <inheritdoc/>
         public static bool operator ==(Shape lhs, Shape rhs)
         {
             return lhs.Equals(rhs);
         }
 
-        /// <inheritdoc/>
         public static bool operator !=(Shape lhs, Shape rhs)
         {
             return !(lhs == rhs);
@@ -210,8 +205,6 @@ namespace Nncase.IR
         /// <summary>
         /// Gets a shape with rank unknwon dimension.
         /// </summary>
-        /// <param name="rank"></param>
-        /// <returns></returns>
         public static Shape Unknown(int rank)
         {
             return new Shape(ShapeKind.HasUnknownDimension, Enumerable.Repeat(Dimension.Unknown, rank));
@@ -220,7 +213,6 @@ namespace Nncase.IR
         /// <summary>
         /// Get Prod.
         /// </summary>
-        /// <returns></returns>
         public Dimension Prod()
         {
             return _dimensions.Aggregate(new Dimension(1), (x, y) => x * y);
@@ -229,9 +221,6 @@ namespace Nncase.IR
         /// <summary>
         /// return new shape after insert dim.
         /// </summary>
-        /// <param name="index"></param>
-        /// <param name="dim"></param>
-        /// <returns></returns>
         public Shape InsertAndClone(int index, Dimension dim)
         {
             var l = _dimensions.ToList();
@@ -242,9 +231,6 @@ namespace Nncase.IR
         /// <summary>
         /// return new shape after insert dim.
         /// </summary>
-        /// <param name="index"></param>
-        /// <param name="dims"></param>
-        /// <returns></returns>
         public Shape InsertAndClone(int index, IEnumerable<Dimension> dims)
         {
             var l = _dimensions.ToList();
@@ -259,7 +245,6 @@ namespace Nncase.IR
         /// <summary>
         /// convert to the int list.
         /// </summary>
-        /// <returns></returns>
         public List<int> ToValueList()
         {
             return _dimensions.Select(dim => dim.FixedValue).ToList();
@@ -268,7 +253,6 @@ namespace Nncase.IR
         /// <summary>
         /// convert the int array.
         /// </summary>
-        /// <returns></returns>
         public int[] ToValueArray()
         {
             return _dimensions.Select(dim => dim.FixedValue).ToArray();

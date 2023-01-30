@@ -9,7 +9,7 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.K210;
 using OrtKISharp;
-using static Nncase.Evaluator.EvaluatorUtil;
+using static Nncase.Evaluator.K210EvaluatorUtil;
 
 namespace Nncase.Evaluator.K210;
 

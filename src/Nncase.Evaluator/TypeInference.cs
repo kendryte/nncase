@@ -29,8 +29,7 @@ public static class TypeInference
     /// <param name="parameter">Parameter.</param>
     /// <param name="reason">Reason text if not satisfied.</param>
     /// <returns>The desired type.</returns>
-    public static T CheckArgumentType<T>(this ITypeInferenceContext context, Op op, ParameterInfo parameter,
-        string? reason = null)
+    public static T CheckArgumentType<T>(this ITypeInferenceContext context, Op op, ParameterInfo parameter, string? reason = null)
         where T : IRType
     {
         T WrapperException(T t)
@@ -163,9 +162,7 @@ public static class TypeInference
     /// <summary>
     /// Conv2D Type Infer.
     /// </summary>
-    /// <returns></returns>
-    public static IRType Conv2DType(TensorType input, TensorType weights, Expr stride, Expr padding, Expr dilation,
-        Expr groups)
+    public static IRType Conv2DType(TensorType input, TensorType weights, Expr stride, Expr padding, Expr dilation, Expr groups)
     {
         if (input.Shape.IsUnranked)
         {
@@ -195,10 +192,16 @@ public static class TypeInference
 
             outShape[2] = GetWindowedOutputSize(
                 input.Shape[2].FixedValue + ts_padding[0, 0] + ts_padding[0, 1],
-                weights.Shape[2].FixedValue, ts_stride[0], ts_dilation[0], false);
+                weights.Shape[2].FixedValue,
+                ts_stride[0],
+                ts_dilation[0],
+                false);
             outShape[3] = GetWindowedOutputSize(
                 input.Shape[3].FixedValue + ts_padding[1, 0] + ts_padding[1, 1],
-                weights.Shape[3].FixedValue, ts_stride[1], ts_dilation[1], false);
+                weights.Shape[3].FixedValue,
+                ts_stride[1],
+                ts_dilation[1],
+                false);
         }
         else
         {
@@ -211,7 +214,6 @@ public static class TypeInference
     /// <summary>
     /// Pad Type Infer.
     /// </summary>
-    /// <returns></returns>
     public static IRType PadType(TensorType input, Expr pads, Expr pad)
     {
         if (pad.CheckedType is TensorType padValueType)
@@ -244,7 +246,6 @@ public static class TypeInference
     /// <summary>
     /// ReduceWindow2D Type Infer.
     /// </summary>
-    /// <returns></returns>
     public static IRType ReduceWindow2DType(TensorType input, Expr filter, Expr stride, Expr padding, Expr ceilMode)
     {
         var outShape = input.Shape.ToList();
@@ -267,12 +268,10 @@ public static class TypeInference
             var padw = ts_padding[1, 0] + ts_padding[1, 1];
             outShape[2] = input.Shape[2].IsUnknown
                 ? Dimension.Unknown
-                : GetWindowedOutputSize(input.Shape[2].FixedValue + padh, ts_filter[0], ts_stride[0], 1, false,
-                    ceilModeV);
+                : GetWindowedOutputSize(input.Shape[2].FixedValue + padh, ts_filter[0], ts_stride[0], 1, false, ceilModeV);
             outShape[3] = input.Shape[3].IsUnknown
                 ? Dimension.Unknown
-                : GetWindowedOutputSize(input.Shape[3].FixedValue + padw, ts_filter[1], ts_stride[1], 1, false,
-                    ceilModeV);
+                : GetWindowedOutputSize(input.Shape[3].FixedValue + padw, ts_filter[1], ts_stride[1], 1, false, ceilModeV);
 
             return input with { Shape = new Shape(outShape) };
         }
@@ -283,7 +282,6 @@ public static class TypeInference
     /// <summary>
     /// Reduce Type Infer.
     /// </summary>
-    /// <returns></returns>
     public static IRType ReduceType(TensorType input, Expr keepDims, Expr axis)
     {
         if (input.Shape.IsUnranked)
@@ -331,7 +329,6 @@ public static class TypeInference
     /// <summary>
     /// Transpose Type Infer.
     /// </summary>
-    /// <returns></returns>
     public static IRType TransposeType(TensorType input, Expr perm)
     {
         if (perm is TensorConst permValue)
@@ -352,7 +349,6 @@ public static class TypeInference
     /// <summary>
     /// Resize Type Infer.
     /// </summary>
-    /// <returns></returns>
     public static IRType ResizeType(TensorType input, Expr newSize, TensorType? inputbbox)
     {
         var out_shape = input.Shape.ToArray();
@@ -386,7 +382,8 @@ public static class TypeInference
             }
         }
 
-        if (inputbbox is not null && out_shape.Length == 4) // for roi amount.
+        // for roi amount.
+        if (inputbbox is not null && out_shape.Length == 4)
         {
             out_shape[0] = out_shape[0] * inputbbox.Shape[0].FixedValue;
         }
@@ -397,8 +394,6 @@ public static class TypeInference
     /// <summary>
     /// input x is -1?.
     /// </summary>
-    /// <param name="x"></param>
-    /// <returns></returns>
     public static bool IsMinus1(int x) => x == -1;
 
     public static Shape ReshapeTo(TensorType tensorType)

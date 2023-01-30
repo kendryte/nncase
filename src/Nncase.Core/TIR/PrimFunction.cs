@@ -34,8 +34,6 @@ public sealed record PrimFunction(string Name, string ModuleKind, Sequential Bod
     /// Initializes a new instance of the <see cref="PrimFunction"/> class.
     /// build function.
     /// </summary>
-    /// <param name="body"></param>
-    /// <param name="parameters"></param>
     public PrimFunction(string moduleKind, Sequential body, params PhysicalBuffer[] parameters)
         : this($"primfunc_{_globalFuncIndex++}", moduleKind, body, new(parameters))
     {

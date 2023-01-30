@@ -42,7 +42,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
             var indices = new int[tensor.Rank];
             var indexTensor = index.AsTensor().Cast<int>();
             indexTensor.Buffer.CopyTo(indices);
-            var indicesValue = indices.Select((x, i) => (x < 0 ? x + tensor.Shape[i] : x).FixedValue).ToArray();
+            var indicesValue = indices.Select((x, i) => x < 0 ? x + tensor.Shape[i].FixedValue : x).ToArray();
             var linearIndex =
                 TensorUtilities.GetIndex(tensor.Strides, indicesValue);
             var returnDims = tensor.Dimensions.AsValueEnumerable().Skip(indexTensor.Length).ToArray();
@@ -66,16 +66,15 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
                     return input;
                 }
 
-                ret = new TensorType(
-                    tensorType.DType,
-                    index.Shape switch
-                    {
-                        { IsScalar: true } => new Shape(tensorType.Shape.Skip(1)),
-                        { IsFixed: true } => index.Shape[0].FixedValue == tensorType.Shape.Rank ?
-                                             Shape.Scalar :
-                                             new Shape(tensorType.Shape.Skip(index.Shape[0].FixedValue)),
-                        _ => Shape.Unranked,
-                    });
+                var shape = index.Shape switch
+                {
+                    { IsScalar: true } => new Shape(tensorType.Shape.Skip(1)),
+                    { IsFixed: true } => index.Shape[0].FixedValue == tensorType.Shape.Rank ?
+                                         Shape.Scalar :
+                                         new Shape(tensorType.Shape.Skip(index.Shape[0].FixedValue)),
+                    _ => Shape.Unranked,
+                };
+                ret = new TensorType(tensorType.DType, shape);
                 break;
             case TupleType tupleType:
                 if (context.GetArgument(target, GetItem.Index) is TensorConst @const)

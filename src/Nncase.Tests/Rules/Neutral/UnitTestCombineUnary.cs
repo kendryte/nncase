@@ -101,10 +101,13 @@ public class UnitTestCombineUnary : TestClassBase
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = IR.F.Math.Unary(opType, Pad(a, paddings, padM, padValue));
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new CombinePadUnary(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new CombinePadUnary(),
+            },
+            new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal));
@@ -118,10 +121,13 @@ public class UnitTestCombineUnary : TestClassBase
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = IR.F.Math.Unary(opType, Tensors.Slice(a, begins, ends, axes, strides));
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new CombineSliceUnary(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new CombineSliceUnary(),
+            },
+            new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal));
@@ -135,10 +141,13 @@ public class UnitTestCombineUnary : TestClassBase
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = IR.F.Math.Unary(opType, Tensors.Reshape(a, outShape));
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new CombineReshapeUnary(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new CombineReshapeUnary(),
+            },
+            new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal));

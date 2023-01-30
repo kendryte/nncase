@@ -70,7 +70,7 @@ public class LeafExprEqualityComparer : IEqualityComparer<Expr>
             Tuple x => x.Count.GetHashCode(),
             Call x => x.Parameters.Count.GetHashCode(),
             Op x => x.GetHashCode(),
-            Marker x => x.Name.GetHashCode(),
+            Marker x => x.Name.GetHashCode(StringComparison.InvariantCulture),
             None x => x.GetHashCode(),
             _ => throw new InvalidOperationException("Invalid expression type."),
         };

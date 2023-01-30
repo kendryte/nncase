@@ -393,7 +393,7 @@ public class UnitTestExpression
                 return Expression.Constant(tc.Value[0], tc.Value.ElementType.CLRType);
             }
 
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(expr));
         }
 
         public override Expression VisitLeaf(Var expr)
@@ -403,7 +403,7 @@ public class UnitTestExpression
                 return Expression.Parameter(expr.CheckedDataType.CLRType, expr.Name);
             }
 
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(expr));
         }
 
         public override Expression VisitLeaf(Call expr)
@@ -415,13 +415,13 @@ public class UnitTestExpression
                     return binary.BinaryOp switch
                     {
                         BinaryOp.Add => Expression.Add(Visit(expr.Parameters[0]), Visit(expr.Parameters[1])),
-                        _ => throw new ArgumentOutOfRangeException(),
+                        _ => throw new ArgumentOutOfRangeException(nameof(expr)),
                     };
                 default:
                     break;
             }
 
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(expr));
         }
 
         public override Expression VisitLeaf(Function expr)

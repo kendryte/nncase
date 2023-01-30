@@ -29,12 +29,11 @@ public abstract class RTValue : RTObject
     /// <summary>
     /// convert IValue Value To RTValue.
     /// </summary>
-    /// <returns></returns>
     public static RTValue FromValue(IValue value) => value switch
     {
         TensorValue tv => RTTensor.FromTensor(tv.AsTensor()),
         TupleValue tv => RTTuple.FromTuple(tv),
-        _ => throw new ArgumentOutOfRangeException(),
+        _ => throw new ArgumentOutOfRangeException(nameof(value)),
     };
 
     public static RTValue FromHandle(IntPtr handle, bool addRef = false)
@@ -54,7 +53,6 @@ public abstract class RTValue : RTObject
     /// <summary>
     /// convert RT Value To IValue.
     /// </summary>
-    /// <returns></returns>
     public IValue ToValue() => this switch
     {
         RTTensor rTTensor => new TensorValue(rTTensor.ToTensor()),

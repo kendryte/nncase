@@ -4,6 +4,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using LanguageExt;
 using Nncase.IR;
 using Onnx;
@@ -34,20 +35,17 @@ namespace Nncase.Importer
                     });
         }
 
-        private T GetAttrSafe<T>(NodeProto n, string attr, AttributeType type,
-            Func<AttributeProto, T> func, T defaultValue)
+        private T GetAttrSafe<T>(NodeProto n, string attr, AttributeType type, Func<AttributeProto, T> func, T defaultValue)
         {
             return GetAttr(n, attr, type, func).Match(x => x, () => defaultValue);
         }
 
-        private Option<T> GetAttrOption<T>(NodeProto n, string attr, AttributeType type,
-            Func<AttributeProto, T> func)
+        private Option<T> GetAttrOption<T>(NodeProto n, string attr, AttributeType type, Func<AttributeProto, T> func)
         {
             return GetAttr(n, attr, type, func);
         }
 
-        private T GetAttrUnSafe<T>(NodeProto n, string attr, AttributeType type,
-            Func<AttributeProto, T> func)
+        private T GetAttrUnSafe<T>(NodeProto n, string attr, AttributeType type, Func<AttributeProto, T> func)
         {
             return GetAttr(n, attr, type, func)
                 .Match(
@@ -109,8 +107,7 @@ namespace Nncase.Importer
 
         private Option<string[]> GetOptionStringsAttribute(NodeProto n, string attr)
         {
-            return GetAttrOption(n, attr, AttributeType.Strings,
-                x => x.Strings.Select(x => x.ToString()).ToArray());
+            return GetAttrOption(n, attr, AttributeType.Strings, x => x.Strings.Select(x => x.ToString(Encoding.UTF8)).ToArray());
         }
 
         private Option<long> GetOptionIntAttribute(NodeProto n, string attr)
@@ -125,20 +122,17 @@ namespace Nncase.Importer
 
         private Option<string> GetOptionStringAttribute(NodeProto n, string attr)
         {
-            return GetAttrOption(n, attr, AttributeType.String,
-                x => x.S.ToString());
+            return GetAttrOption(n, attr, AttributeType.String, x => x.S.ToString(Encoding.UTF8));
         }
 
         private long[] GetIntsAttribute(NodeProto n, string attr, int[] defaultValue)
         {
-            return GetAttrSafe(n, attr, AttributeType.Ints, x => x.Ints.ToArray(),
-                defaultValue.Select(x => (long)x).ToArray());
+            return GetAttrSafe(n, attr, AttributeType.Ints, x => x.Ints.ToArray(), defaultValue.Select(x => (long)x).ToArray());
         }
 
         private long[] GetIntsAttribute(NodeProto n, string attr, int defaultValue, int count)
         {
-            return GetAttrSafe(n, attr, AttributeType.Ints, x => x.Ints.ToArray(),
-                Enumerable.Repeat<long>(defaultValue, count).ToArray());
+            return GetAttrSafe(n, attr, AttributeType.Ints, x => x.Ints.ToArray(), Enumerable.Repeat<long>(defaultValue, count).ToArray());
         }
 
         private string GetStringAttribute(NodeProto n, string attr, string defaultValue)

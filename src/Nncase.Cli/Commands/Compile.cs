@@ -154,35 +154,30 @@ public class Compile : Command
     }
 }
 
+// Validate null in command line parser.
+#pragma warning disable CS8618
+
 internal sealed class CliCompileOptions
 {
-    /// <inheritdoc/>
     public string InputFile { get; set; }
 
-    /// <inheritdoc/>
     public string InputFormat { get; set; }
 
-    /// <inheritdoc/>
     public string Target { get; set; }
 
-    /// <inheritdoc/>
     public int DumpLevel { get; set; }
 
-    /// <inheritdoc/>
     public string DumpDir { get; set; }
 
-    /// <inheritdoc/>
     public QuantType QuantType { get; set; }
 
-    /// <inheritdoc/>
     public QuantType WQuantType { get; set; }
 
-    /// <inheritdoc/>
     public string OutputFile { get; set; }
 
-    /// <inheritdoc/>
-    public Quantization.ModelQuantMode ModelQuantMode { get; set; }
+    public ModelQuantMode ModelQuantMode { get; set; }
 
-    /// <inheritdoc/>
-    public Quantization.CalibMethod CalibMethod { get; set; }
+    public CalibMethod CalibMethod { get; set; }
 }
+
+#pragma warning restore CS8618

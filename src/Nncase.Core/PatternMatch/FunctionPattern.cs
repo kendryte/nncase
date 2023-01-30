@@ -44,9 +44,9 @@ public static partial class Utility
     /// <summary>
     /// Create the function pattern.
     /// </summary>
+    /// <param name="name">name.</param>
     /// <param name="body">body.</param>
     /// <param name="parameters">params.</param>
-    /// <param name="name">name.</param>
     /// <returns>FunctionPattern .</returns>
     public static FunctionPattern IsFunction(string? name, Pattern body, VArgsPattern parameters) => new FunctionPattern(body, parameters, name);
 

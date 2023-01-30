@@ -189,7 +189,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             BinaryOp.LogicalXor => OrtKI.Xor(a, b),
             BinaryOp.LeftShift => OrtKI.LeftShift(a, b),
             BinaryOp.RightShift => OrtKI.RightShift(a, b),
-            _ => throw new ArgumentOutOfRangeException(nameof(binary.BinaryOp)),
+            _ => throw new ArgumentOutOfRangeException(nameof(binary)),
         }).ToValue();
     }
 

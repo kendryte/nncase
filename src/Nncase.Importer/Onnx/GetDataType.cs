@@ -19,7 +19,7 @@ namespace Nncase.Importer
                     GetDataType,
                     () =>
                     {
-                        if (_constTensors.TryGetValue(name, out var tensor))
+                        if (_constTensors!.TryGetValue(name, out var tensor))
                         {
                             return GetDataType(tensor);
                         }

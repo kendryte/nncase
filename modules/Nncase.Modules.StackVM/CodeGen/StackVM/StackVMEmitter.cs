@@ -55,8 +55,6 @@ public sealed partial class StackVMEmitter
     /// <summary>
     /// write data type.
     /// </summary>
-    /// <param name="value"></param>
-    /// <exception cref="ArgumentException"></exception>
     public void Write(DataType value)
     {
         // TODO: Support generic datatype.

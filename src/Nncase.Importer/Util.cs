@@ -38,10 +38,11 @@ namespace Nncase
                     input,
                     StackScalar(index),
                     StackScalar(index + 1),
-                    1), new[] { 0L });
+                    1),
+                new[] { 0L });
         }
 
-        public static (Expr, Expr) GetHW(in Expr input)
+        public static (Expr H, Expr W) GetHW(in Expr input)
         {
             return (ShapeIndex(input, 2), ShapeIndex(input, 3));
         }
@@ -49,8 +50,6 @@ namespace Nncase
         /// <summary>
         /// onnx format pads to nncase format(same as tf).
         /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
         public static Expr PadTranslate(Expr pads)
         {
             return Transpose(Reshape(pads, new[] { -1, 2 }), new[] { 1, 0 });
@@ -61,20 +60,17 @@ namespace Nncase
             return new TensorConst(Tensor.From<int>(new[] { 0 }));
         }
 
-        /// <summary>
-        ///
-        /// </summary>
-        /// <param name="padH"> [before, after]. </param>
-        /// <param name="padW"> [before, after]. </param>
-        /// <returns></returns>
+        /// <param name="padH">H [before, after]. </param>
+        /// <param name="padW">W [before, after]. </param>
         public static Expr ConcatPadding(Expr[] padH, Expr[] padW)
         {
             // return [[padh_before, padh_after],
             //         [padw_before, padw_after]]
             return Stack(
                 new Tuple(
-                Stack(new Tuple(padH), 0),
-                Stack(new Tuple(padW), 0)), 0);
+                    Stack(new Tuple(padH), 0),
+                    Stack(new Tuple(padW), 0)),
+                0);
         }
 
         // todo:refactor and set private this
@@ -101,9 +97,7 @@ namespace Nncase
         public static Expr ComputeSplit(Expr input, long outputSize, long axis)
         {
             return F.Tensors.Expand(
-
-                // Util.DynamicShapeIndex(input, Cast(axis, DataTypes.Int32)) / outputSize,
-                Util.ShapeIndex(input, (int)axis) / outputSize,
+                Util.ShapeIndex(input, (int)axis) / outputSize, // Util.DynamicShapeIndex(input, Cast(axis, DataTypes.Int32)) / outputSize
                 Stack(new Tuple(outputSize), 0));
         }
 

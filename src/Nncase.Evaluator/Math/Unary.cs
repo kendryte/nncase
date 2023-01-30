@@ -56,7 +56,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
             UnaryOp.Tanh => OrtKI.Tanh(input),
             UnaryOp.BitwiseNot => throw new NotSupportedException("NotSupported UnaryOp BitwiseNot"),
             UnaryOp.LogicalNot => OrtKI.Not(input),
-            _ => throw new ArgumentOutOfRangeException(nameof(unary.UnaryOp)),
+            _ => throw new ArgumentOutOfRangeException(nameof(unary)),
         };
         return result.ToValue();
     }
@@ -104,7 +104,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         UnaryOp.Ceil => input,
         UnaryOp.Floor => input,
         UnaryOp.Neg => -input,
-        _ => throw new ArgumentOutOfRangeException($"NotSupported {nameof(op)} For Int"),
+        _ => throw new ArgumentOutOfRangeException(nameof(op), $"NotSupported {nameof(op)} For Int"),
     };
 
     private float Compute_float(float input, UnaryOp op) => op switch
@@ -129,7 +129,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         UnaryOp.Sqrt => System.MathF.Sqrt(input),
         UnaryOp.Square => input * input,
         UnaryOp.Tanh => System.MathF.Tanh(input),
-        _ => throw new ArgumentOutOfRangeException($"NotSupported {nameof(op)} For Float"),
+        _ => throw new ArgumentOutOfRangeException(nameof(op), $"NotSupported {nameof(op)} For Float"),
     };
 
     private IRType Visit(TensorType input)

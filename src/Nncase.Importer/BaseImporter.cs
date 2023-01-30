@@ -65,6 +65,7 @@ public abstract class BaseImporter
     }
 
     protected void AddToOutputs<TKey, TNode>(Dictionary<TKey, Expr> outTensors, TKey[] opOutputs, TNode output)
+        where TKey : notnull
     {
         var outLength = opOutputs.Length;
         if (output is Expr expr)

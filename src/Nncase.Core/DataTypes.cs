@@ -111,9 +111,7 @@ public static class DataTypes
     /// <summary>
     /// display the datatype.
     /// </summary>
-    /// <param name="dataType"></param>
     /// <returns> datatype name.</returns>
-    /// <exception cref="ArgumentOutOfRangeException"></exception>
     public static string GetDisplayName(this DataType dataType) => dataType switch
     {
         PointerType pointerType => $"({GetDisplayName(pointerType.ElemType)}*)",

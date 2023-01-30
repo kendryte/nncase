@@ -19,7 +19,7 @@ namespace Nncase.Tests.Rules.NeutralTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestFoldConv2DMulAdd : TestClassBase
 {
-    public static TheoryData<int[], (int, int), (int, int)> FoldConv2DMulAddPositiveData = new()
+    public static readonly TheoryData<int[], (int, int), (int, int)> FoldConv2DMulAddPositiveData = new()
     {
         { new[] { 1, 256, 56, 56 }, (1, 1), (0, 0) },
         { new[] { 1, 32, 64, 64 }, (1, 1), (0, 0) },
@@ -28,7 +28,7 @@ public class UnitTestFoldConv2DMulAdd : TestClassBase
 
     [Theory]
     [MemberData(nameof(FoldConv2DMulAddPositiveData))]
-    public void TestPositive(int[] shape, (int, int) kernel, (int, int) pad)
+    public void TestPositive(int[] shape, (int KernelH, int KernelW) kernel, (int PadH, int PadW) pad)
     {
         // note shape is nchw
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
@@ -39,22 +39,29 @@ public class UnitTestFoldConv2DMulAdd : TestClassBase
             var v2 = v1 + Const.FromValue(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 5, new[] { 1, shape[1], 1, 1 }).Evaluate());
             var v3 = IR.F.NN.Conv2D(
                 v2,
-                IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, shape[1], kernel.Item1, kernel.Item2 }).Evaluate().AsTensor(),
-                IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor(), new[] { 1, 1 },
+                IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, shape[1], kernel.KernelH, kernel.KernelW }).Evaluate().AsTensor(),
+                IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor(),
+                new[] { 1, 1 },
                 new[,]
-                  {
-                    { pad.Item1, pad.Item1 },
-                    { pad.Item2, pad.Item2 },
-                  }, new[] { 1, 1 }, PadMode.Constant, 1,
+                {
+                    { pad.PadH, pad.PadH },
+                    { pad.PadW, pad.PadW },
+                },
+                new[] { 1, 1 },
+                PadMode.Constant,
+                1,
                 new[] { 0.0f, 6.0f });
             rootPre = v3;
         }
 
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-           new FoldConv2DMulAdd(),
-           new FoldConstCall(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+               new FoldConv2DMulAdd(),
+               new FoldConstCall(),
+            },
+            new());
 
 #if DEBUG
         Dumpper.DumpIR(rootPost, "post");
@@ -70,7 +77,7 @@ public class UnitTestFoldConv2DMulAdd : TestClassBase
 
     [Theory]
     [MemberData(nameof(FoldConv2DMulAddPositiveData))]
-    public void TestNegative(int[] shape, (int, int) kernel, (int, int) pad)
+    public void TestNegative(int[] shape, (int KernelH, int KernelW) kernel, (int PadH, int PadW) pad)
     {
         // note shape is nchw
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
@@ -81,22 +88,29 @@ public class UnitTestFoldConv2DMulAdd : TestClassBase
             var v2 = v1 + new Var(new TensorType(DataTypes.Float32, new[] { 1, shape[1], 1, 1 }));
             var v3 = IR.F.NN.Conv2D(
                 v2,
-                IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, shape[1], kernel.Item1, kernel.Item2 }).Evaluate().AsTensor(),
-                IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor(), new[] { 1, 1 },
+                IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, shape[1], kernel.KernelH, kernel.KernelW }).Evaluate().AsTensor(),
+                IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor(),
+                new[] { 1, 1 },
                 new[,]
-                  {
-                    { pad.Item1, pad.Item1 },
-                    { pad.Item2, pad.Item2 },
-                  }, new[] { 1, 1 }, PadMode.Constant, 1,
+                {
+                    { pad.PadH, pad.PadH },
+                    { pad.PadW, pad.PadW },
+                },
+                new[] { 1, 1 },
+                PadMode.Constant,
+                1,
                 new[] { 0.0f, 6.0f });
             rootPre = v3;
         }
 
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-           new FoldConv2DMulAdd(),
-           new FoldConstCall(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+               new FoldConv2DMulAdd(),
+               new FoldConstCall(),
+            },
+            new());
 
         Assert.Equal(rootPre, rootPost);
     }

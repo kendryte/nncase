@@ -21,8 +21,9 @@ public interface IRewriteRule
     /// Get replace expression.
     /// </summary>
     /// <param name="result">Match result.</param>
+    /// <param name="context">Run pass context.</param>
     /// <returns>Replace expression or null if nothing changed.</returns>
-    Expr? GetReplace(IMatchResult result, RunPassContext options);
+    Expr? GetReplace(IMatchResult result, RunPassContext context);
 }
 
 /// <summary>

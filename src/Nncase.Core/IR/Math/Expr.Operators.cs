@@ -19,13 +19,11 @@ public partial record Expr
     /// get the item from the expr.
     /// </summary>
     /// <param name="index"> expr. </param>
-    /// <returns> expr. </returns>
     public Expr this[Expr index] => F.Tensors.GetItem(this, index);
 
     /// <summary>
     /// get the item from the expr.
     /// </summary>
-    /// <param name="index"> expr. </param>
     /// <returns> expr. </returns>
     public Expr this[params Expr[] indices] => F.Tensors.GetItem(this, F.Tensors.Stack(new IR.Tuple(indices), 0));
 
@@ -133,32 +131,20 @@ public partial record Expr
     /// <summary>
     /// GreaterEqual.
     /// </summary>
-    /// <param name="lhs"></param>
-    /// <param name="rhs"></param>
-    /// <returns></returns>
     public static Call operator >=(Expr lhs, Expr rhs) => GreaterEqual(lhs, rhs);
 
     /// <summary>
     /// GreaterThan.
     /// </summary>
-    /// <param name="lhs"></param>
-    /// <param name="rhs"></param>
-    /// <returns></returns>
     public static Call operator >(Expr lhs, Expr rhs) => GreaterThan(lhs, rhs);
 
     /// <summary>
     /// LessEqual.
     /// </summary>
-    /// <param name="lhs"></param>
-    /// <param name="rhs"></param>
-    /// <returns></returns>
     public static Call operator <=(Expr lhs, Expr rhs) => LessEqual(lhs, rhs);
 
     /// <summary>
     /// LessThan.
     /// </summary>
-    /// <param name="lhs"></param>
-    /// <param name="rhs"></param>
-    /// <returns></returns>
     public static Call operator <(Expr lhs, Expr rhs) => LessThan(lhs, rhs);
 }

@@ -45,6 +45,7 @@ public interface IPattern<in TInput> : IPattern
 /// <summary>
 /// mark the record class auto generate the pattern define.
 /// </summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
 public sealed class PatternFunctionalGeneratorAttribute : Attribute
 {
 }

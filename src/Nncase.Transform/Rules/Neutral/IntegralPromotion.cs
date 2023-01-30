@@ -23,10 +23,13 @@ public partial class IntegralPromotion : RewriteRule<OrPattern>
     public override OrPattern Pattern { get; } =
         IsAlt(
             IsBinary(
-                "bn", NeedPromotion,
+                "bn",
+                NeedPromotion,
                 IsWildcard("lhs") with { TypePattern = HasDataType(DataTypes.Int32) },
                 IsWildcard("rhs") with { TypePattern = HasDataType(DataTypes.Int64) }),
-            IsBinary("bn", NeedPromotion,
+            IsBinary(
+                "bn",
+                NeedPromotion,
                 IsWildcard("lhs") with { TypePattern = HasDataType(DataTypes.Int64) },
                 IsWildcard("rhs") with { TypePattern = HasDataType(DataTypes.Int32) }));
 

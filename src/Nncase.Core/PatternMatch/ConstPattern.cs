@@ -50,8 +50,8 @@ public static partial class Utility
     /// <summary>
     /// create const pattern.
     /// </summary>
-    /// <param name="cond">condition.</param>
     /// <param name="name">name.</param>
+    /// <param name="cond">condition.</param>
     /// <returns>ConstPattern.</returns>
     public static ConstPattern IsConst(string? name, Func<Const, bool> cond) => new(cond, name);
 
@@ -60,8 +60,8 @@ public static partial class Utility
     /// <summary>
     /// create const pattern.
     /// </summary>
-    /// <param name="cond">condition.</param>
     /// <param name="name">name.</param>
+    /// <param name="cond">condition.</param>
     /// <returns>ConstPattern.</returns>
     public static TensorConstPattern IsConst(string? name, Func<float, bool> cond) => new(
       x =>
@@ -79,15 +79,16 @@ public static partial class Utility
           }
 
           return false;
-      }, name);
+      },
+      name);
 
     public static TensorConstPattern IsConst(Func<float, bool> cond) => IsConst(null, cond);
 
     /// <summary>
     /// create const pattern.
     /// </summary>
-    /// <param name="cond">condition.</param>
     /// <param name="name">name.</param>
+    /// <param name="cond">condition.</param>
     /// <returns>ConstPattern.</returns>
     public static TensorConstPattern IsConst(string? name, Func<int, bool> cond) => new(
       x =>
@@ -105,15 +106,16 @@ public static partial class Utility
           }
 
           return false;
-      }, name);
+      },
+      name);
 
     public static TensorConstPattern IsConst(Func<int, bool> cond) => IsConst(null, cond);
 
     /// <summary>
     /// create const pattern.
     /// </summary>
-    /// <param name="typePattern">type pattern.</param>
     /// <param name="name">name.</param>
+    /// <param name="typePattern">type pattern.</param>
     /// <returns>ConstPattern.</returns>
     public static ConstPattern IsConst(string? name, TypePattern typePattern) => new(x => typePattern.MatchLeaf(x.ValueType), name);
 
@@ -141,8 +143,8 @@ public static partial class Utility
     /// create const pattern.
     /// </summary>
     /// <typeparam name="T">target value type.</typeparam>
-    /// <param name="value">value.</param>
     /// <param name="name">name.</param>
+    /// <param name="value">value.</param>
     /// <returns>ConstPattern.</returns>
     public static TensorConstPattern IsConst<T>(string? name, T value)
         where T : unmanaged, IEquatable<T>

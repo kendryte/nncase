@@ -140,13 +140,13 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
             var blockSize = blockShapeArr.Aggregate(1, (a, b) => a * b);
             var d0 = batch / blockSize;
             Trace.Assert(blockShape.Shape[0] == crops.Shape[0]);
-            var M = blockShape.Shape[0].FixedValue;
+            var m = blockShape.Shape[0].FixedValue;
             var cropsV = cropsValue.Value.Cast<int>();
-            var cropSection = Enumerable.Range(0, M).Select(
+            var cropSection = Enumerable.Range(0, m).Select(
                 i => (inShape[i + 1] * blockShapeArr[0]) - cropsV[i, 0] - cropsV[i, 1]);
 
-            var remainSize = inShape.Rank - 1 - M;
-            var remainShape = remainSize > 0 ? inShape.Skip(1 + M) : Array.Empty<Dimension>();
+            var remainSize = inShape.Rank - 1 - m;
+            var remainShape = remainSize > 0 ? inShape.Skip(1 + m) : Array.Empty<Dimension>();
             var outShapeList = new[] { d0 }.Concat(cropSection).Concat(remainShape).ToArray();
             var outShape = TypeInference.ApplyPerm(outShapeList, new[] { 0, 3, 1, 2 });
             return input with { Shape = outShape };

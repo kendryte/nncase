@@ -26,7 +26,7 @@ namespace Nncase.Tests.Rules.NeutralTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestCombineTranspose : TestClassBase
 {
-    public static TheoryData<BinaryOp, int[], int[], int[], bool> CombineTransposeConstBinaryPositiveData = new()
+    public static readonly TheoryData<BinaryOp, int[], int[], int[], bool> CombineTransposeConstBinaryPositiveData = new()
     {
         // BinaryOp binaryOp, int[] lShape, int[] rShape, int[] perm, bool leftConst
         { BinaryOp.Add, new[] { 1, 32, 32, 64, }, new[] { 64 }, new[] { 0, 3, 1, 2 }, false },
@@ -183,13 +183,16 @@ public class UnitTestCombineTranspose : TestClassBase
         var input = Enumerable.Range(0, concatNum).Select(i => tpList[i]);
         var rootPre = Tensors.Concat(new IR.Tuple(input), axis);
         CompilerServices.InferenceType(rootPre);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new CombineTransposeConcat(),
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new CombineTransposeConcat(),
 
-            // Should not open constant fold.
-            // new FoldConstCall(),
-        }, new());
+                // Should not open constant fold.
+                // new FoldConstCall(),
+            },
+            new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -222,13 +225,16 @@ public class UnitTestCombineTranspose : TestClassBase
         var input = Enumerable.Range(0, concatNum).Select(i => inputList[i]);
         var rootPre = Tensors.Concat(new IR.Tuple(input), axis);
         CompilerServices.InferenceType(rootPre);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new CombineTransposeConcat(),
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new CombineTransposeConcat(),
 
-            // Should not open constant fold.
-            // new FoldConstCall(),
-        }, new());
+                // Should not open constant fold.
+                // new FoldConstCall(),
+            },
+            new());
 
         Assert.Equal(rootPre, rootPost);
     }
@@ -255,10 +261,13 @@ public class UnitTestCombineTranspose : TestClassBase
 
         var rootPre = Tensors.Transpose(Math.Binary(BinaryOp.Add, lhs, rhs), perm);
         CompilerServices.InferenceType(rootPre);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new CombineTransposeConstBinary(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new CombineTransposeConstBinary(),
+            },
+            new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.True(Comparator.AllEqual(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict)));
@@ -279,10 +288,13 @@ public class UnitTestCombineTranspose : TestClassBase
         Expr permExpr = perm;
         var rootPre = Math.Binary(BinaryOp.Add, Tensors.Transpose(a, permExpr), Tensors.Transpose(b, permExpr));
         CompilerServices.InferenceType(rootPre);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new CombineBinaryTranspose(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new CombineBinaryTranspose(),
+            },
+            new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.True(Comparator.AllEqual(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal)));
@@ -313,10 +325,13 @@ public class UnitTestCombineTranspose : TestClassBase
         Expr permExpr = perm;
         var rootPre = Math.Binary(BinaryOp.Add, Tensors.Transpose(a, permExpr), b);
         CompilerServices.InferenceType(rootPre);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new CombineConstBinaryTranspose(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new CombineConstBinaryTranspose(),
+            },
+            new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.True(Comparator.AllEqual(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost)));
@@ -332,10 +347,13 @@ public class UnitTestCombineTranspose : TestClassBase
         Expr permExpr = perm;
         var rootPre = Math.Binary(BinaryOp.Add, a, Tensors.Transpose(b, permExpr));
         CompilerServices.InferenceType(rootPre);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new CombineConstBinaryTranspose(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new CombineConstBinaryTranspose(),
+            },
+            new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.True(Comparator.AllEqual(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost)));
@@ -349,11 +367,14 @@ public class UnitTestCombineTranspose : TestClassBase
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = Pad(Tensors.Transpose(a, perm), paddings, padM, padValue);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new FoldConstCall(),
-            new CombineTransposePad(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new FoldConstCall(),
+                new CombineTransposePad(),
+            },
+            new());
 
         Assert.NotEqual(rootPre, rootPost);
         var vpre = rootPre.Evaluate(normal);
@@ -369,11 +390,14 @@ public class UnitTestCombineTranspose : TestClassBase
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = Tensors.Transpose(Pad(a, paddings, padM, padValue), perm);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new FoldConstCall(),
-            new CombinePadTranspose(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new FoldConstCall(),
+                new CombinePadTranspose(),
+            },
+            new());
 
         Assert.NotEqual(rootPre, rootPost);
         var vpre = rootPre.Evaluate(normal);
@@ -389,10 +413,13 @@ public class UnitTestCombineTranspose : TestClassBase
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = IR.F.Tensors.Reduce(ReduceOp.Mean, Tensors.Transpose(a, perm), axis, initValue, keepDims);
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new CombineTransposeReduce(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new CombineTransposeReduce(),
+            },
+            new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.True(Comparator.AllEqual(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal)));
@@ -406,10 +433,13 @@ public class UnitTestCombineTranspose : TestClassBase
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = IR.F.Math.Unary(opType, Tensors.Transpose(a, perm));
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new CombineTransposeUnary(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new CombineTransposeUnary(),
+            },
+            new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.True(Comparator.AllEqual(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal)));

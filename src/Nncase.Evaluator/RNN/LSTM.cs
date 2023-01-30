@@ -35,8 +35,7 @@ public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>, ICostEvalu
         var hiddenSize = context.GetArgumentValueAsScalar<long>(target, LSTM.HiddenSize);
         var inputForget = context.GetArgumentValueAsScalar<long>(target, LSTM.InputForget);
         var outputSize = context.GetArgumentValueAsScalar<long>(target, LSTM.OutputSize);
-        var result = OrtKI.LSTM(x, w, r, b, seqLens, initH, initC, p, actAlpha, actBeta, target.Activations, clip,
-                LSTMDirectionToValue(target.Direction), hiddenSize, inputForget, LSTMLayoutToValue(target.Layout), !clip.Equals(float.NaN), outputSize);
+        var result = OrtKI.LSTM(x, w, r, b, seqLens, initH, initC, p, actAlpha, actBeta, target.Activations, clip, LSTMDirectionToValue(target.Direction), hiddenSize, inputForget, LSTMLayoutToValue(target.Layout), !clip.Equals(float.NaN), outputSize);
         return Value.FromTensors(result.Select(t => t.ToTensor()).ToArray());
     }
 

@@ -21,8 +21,6 @@ public sealed class SubstituteVarAndCollectOpaqueBlock : ExprMutator
     /// Initializes a new instance of the <see cref="SubstituteVarAndCollectOpaqueBlock"/> class.
     /// <see cref="SubstituteVarAndCollectOpaqueBlock"/>.
     /// </summary>
-    /// <param name="varMaper"></param>
-    /// <param name="opaque_blocks"></param>
     public SubstituteVarAndCollectOpaqueBlock(
         Func<Var, Expr?> varMaper,
         Dictionary<Block, Block> opaque_blocks)

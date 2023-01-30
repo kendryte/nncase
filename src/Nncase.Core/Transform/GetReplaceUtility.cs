@@ -10,14 +10,12 @@ using ParameterInfo = Nncase.IR.ParameterInfo;
 using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Transform;
+
 public static class Utility
 {
     /// <summary>
     /// apply a func with preprocess input.
     /// </summary>
-    /// <param name="func"></param>
-    /// <param name="inputCtor"></param>
-    /// <returns></returns>
     public static Fx Apply(Func<Fx, Fx> func, Fx inputCtor)
     {
         return input =>
