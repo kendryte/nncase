@@ -201,8 +201,8 @@ public sealed class UnitTestTensorUtilities
         Assert.Equal(0, TensorUtilities.GetIndex(stride1, new int[] { 0 }));
 
         // exception
-        Assert.Throws<IndexOutOfRangeException>(() => TensorUtilities.GetIndex(stride1, new int[] { 0, 1 }));
-        Assert.Throws<IndexOutOfRangeException>(() => TensorUtilities.GetIndex(stride1, new int[] { 1 }));
+        Assert.Throws<ArgumentOutOfRangeException>(() => TensorUtilities.GetIndex(stride1, new int[] { 0, 1 }));
+        Assert.Throws<ArgumentOutOfRangeException>(() => TensorUtilities.GetIndex(stride1, new int[] { 1 }));
     }
 
     [Theory]
@@ -223,7 +223,7 @@ public sealed class UnitTestTensorUtilities
         Assert.Equal(0, actual1.Evaluate().AsTensor().ToScalar<int>());
 
         // exception
-        Assert.Throws<IndexOutOfRangeException>(() => TensorUtilities.GetIndex(stride1, new Expr[] { 0, 1 }));
+        Assert.Throws<ArgumentOutOfRangeException>(() => TensorUtilities.GetIndex(stride1, new Expr[] { 0, 1 }));
     }
 
     [Theory]
