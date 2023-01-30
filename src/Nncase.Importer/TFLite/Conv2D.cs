@@ -1,17 +1,26 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
 using Nncase.IR;
-using F = Nncase.IR.F;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
+using F = Nncase.IR.F;
 
 namespace Nncase.Importer.TFLite
 {
     public partial class TFLiteImporter
     {
+        private static ValueRange<float> ToFloatClampRange(tflite.ActivationFunctionType func) => func switch
+        {
+            tflite.ActivationFunctionType.NONE => ValueRange<float>.Full,
+            tflite.ActivationFunctionType.RELU => (0f, float.PositiveInfinity),
+            tflite.ActivationFunctionType.RELU_N1_TO_1 => (-1f, 1f),
+            tflite.ActivationFunctionType.RELU6 => (0f, 6f),
+            _ => throw new NotSupportedException("Unsupported Activation:" + func),
+        };
+
         private Expr VisitConv2D(in tflite.Operator op)
         {
             var (input, weights) = GetInputExprs(op, 0, 1);
@@ -57,16 +66,34 @@ namespace Nncase.Importer.TFLite
                 if (GetOutputTensor(op, 0).Type == tflite.TensorType.INT8)
                 {
                     return F.Tensors.NCHWToNHWC(Quantize(
-                        F.NN.Conv2D(input, weights, bias, stride, padding, dilation,
-                        PadMode.Constant, 1,
-                        new[] { clamp.Min, clamp.Max }), new QuantParam(outputQuantParams[0].ZeroPoint, outputQuantParams[0].Scale), DataTypes.Int8));
+                        F.NN.Conv2D(
+                            input,
+                            weights,
+                            bias,
+                            stride,
+                            padding,
+                            dilation,
+                            PadMode.Constant,
+                            1,
+                            new[] { clamp.Min, clamp.Max }),
+                        new QuantParam(outputQuantParams[0].ZeroPoint, outputQuantParams[0].Scale),
+                        DataTypes.Int8));
                 }
                 else if (GetOutputTensor(op, 0).Type == tflite.TensorType.UINT8)
                 {
                     return F.Tensors.NCHWToNHWC(Quantize(
-                        F.NN.Conv2D(input, weights, bias, stride, padding, dilation,
-                        PadMode.Constant, 1,
-                        new[] { clamp.Min, clamp.Max }), new QuantParam(outputQuantParams[0].ZeroPoint, outputQuantParams[0].Scale), DataTypes.UInt8));
+                        F.NN.Conv2D(
+                            input,
+                            weights,
+                            bias,
+                            stride,
+                            padding,
+                            dilation,
+                            PadMode.Constant,
+                            1,
+                            new[] { clamp.Min, clamp.Max }),
+                        new QuantParam(outputQuantParams[0].ZeroPoint, outputQuantParams[0].Scale),
+                        DataTypes.UInt8));
                 }
                 else
                 {
@@ -76,9 +103,16 @@ namespace Nncase.Importer.TFLite
             else
             {
                 return F.Tensors.NCHWToNHWC(
-                    F.NN.Conv2D(input, weights, bias, stride, padding, dilation,
-                    PadMode.Constant, 1,
-                    new[] { clamp.Min, clamp.Max }));
+                    F.NN.Conv2D(
+                        input,
+                        weights,
+                        bias,
+                        stride,
+                        padding,
+                        dilation,
+                        PadMode.Constant,
+                        1,
+                        new[] { clamp.Min, clamp.Max }));
             }
         }
 
@@ -88,7 +122,7 @@ namespace Nncase.Importer.TFLite
             var bias = GetInputExprs(op, 2);
             input = F.Tensors.NHWCToNCHW(input);
             weights = F.Tensors.Transpose(weights, new[] { 3, 0, 1, 2 });
-            var s = GetTensorShape(GetInputTensor(op, 1));
+            _ = GetTensorShape(GetInputTensor(op, 1));
             var options = op.BuiltinOptionsAsDepthwiseConv2DOptions();
             var (inH, inW) = Util.GetHW(input);
             var (fH, fW) = Util.GetHW(weights);
@@ -110,17 +144,16 @@ namespace Nncase.Importer.TFLite
 
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
             return F.Tensors.NCHWToNHWC(
-                F.NN.Conv2D(input, weights, bias, stride, padding, dilation,
-                    PadMode.Constant, Util.ShapeIndex(weights, 0), new[] { clamp.Min, clamp.Max }));
+                F.NN.Conv2D(
+                    input,
+                    weights,
+                    bias,
+                    stride,
+                    padding,
+                    dilation,
+                    PadMode.Constant,
+                    Util.ShapeIndex(weights, 0),
+                    new[] { clamp.Min, clamp.Max }));
         }
-
-        private static ValueRange<float> ToFloatClampRange(tflite.ActivationFunctionType func) => func switch
-        {
-            tflite.ActivationFunctionType.NONE => ValueRange<float>.Full,
-            tflite.ActivationFunctionType.RELU => (0f, float.PositiveInfinity),
-            tflite.ActivationFunctionType.RELU_N1_TO_1 => (-1f, 1f),
-            tflite.ActivationFunctionType.RELU6 => (0f, 6f),
-            _ => throw new NotSupportedException("Unsupported Activation:" + func),
-        };
     }
 }

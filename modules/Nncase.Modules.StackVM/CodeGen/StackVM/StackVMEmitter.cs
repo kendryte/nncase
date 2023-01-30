@@ -52,6 +52,22 @@ public sealed partial class StackVMEmitter
     /// </summary>
     public long Position => _writer.Position();
 
+    /// <summary>
+    /// write data type.
+    /// </summary>
+    public void Write(DataType value)
+    {
+        // TODO: Support generic datatype.
+        switch (value)
+        {
+            case PrimType t:
+                _writer.Write(ToTypeCode(t.CLRType));
+                break;
+            default:
+                throw new ArgumentException($"Unsupported datatype: {value}");
+        }
+    }
+
     private void Write(byte value)
     {
         _writer.Write(value);
@@ -130,24 +146,6 @@ public sealed partial class StackVMEmitter
         }
 
         _writer.Write((byte)0);
-    }
-
-    /// <summary>
-    /// write data type.
-    /// </summary>
-    /// <param name="value"></param>
-    /// <exception cref="ArgumentException"></exception>
-    public void Write(DataType value)
-    {
-        // TODO: Support generic datatype.
-        switch (value)
-        {
-            case PrimType t:
-                _writer.Write(ToTypeCode(t.CLRType));
-                break;
-            default:
-                throw new ArgumentException($"Unsupported datatype: {value}");
-        }
     }
 
     private byte ToTypeCode(Type clrType)

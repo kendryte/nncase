@@ -41,6 +41,7 @@ public class LeafExprEqualityComparer : IEqualityComparer<Expr>
         {
             (Var tx, Var ty) => tx.Equals(ty),
             (Const tx, Const ty) => tx.Equals(ty),
+
             // note think of fusion/primfunc/primfunc wrapper as a black box.
             (Fusion tx, Fusion ty) => ReferenceEqualityComparer.Instance.Equals(tx, ty),
             (TIR.PrimFunction tx, TIR.PrimFunction ty) => ReferenceEqualityComparer.Instance.Equals(tx, ty),
@@ -69,7 +70,7 @@ public class LeafExprEqualityComparer : IEqualityComparer<Expr>
             Tuple x => x.Count.GetHashCode(),
             Call x => x.Parameters.Count.GetHashCode(),
             Op x => x.GetHashCode(),
-            Marker x => x.Name.GetHashCode(),
+            Marker x => x.Name.GetHashCode(StringComparison.InvariantCulture),
             None x => x.GetHashCode(),
             _ => throw new InvalidOperationException("Invalid expression type."),
         };

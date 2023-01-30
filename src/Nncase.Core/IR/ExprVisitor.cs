@@ -22,39 +22,13 @@ namespace Nncase.IR
         private readonly Dictionary<string, Action<Expr>> _callbacksAfterCall = new();
         private readonly Dictionary<string, Action<Expr>> _callbacksBeforeCall = new();
 
-        protected void RegisterAfterCallback(string name, Action<Expr> callback)
-        {
-            _callbacksAfterCall[name] = callback;
-        }
-
-        protected void RegisterBeforeCallback(string name, Action<Expr> callback)
-        {
-            _callbacksBeforeCall[name] = callback;
-        }
-
-        private void CallbacksBeforeCall(Expr expr)
-        {
-            foreach (var (name, callback) in _callbacksBeforeCall)
-            {
-                callback(expr);
-            }
-        }
-
-        private void CallbacksAfterCall(Expr expr)
-        {
-            foreach (var (name, callback) in _callbacksAfterCall)
-            {
-                callback(expr);
-            }
-        }
-
         /// <summary>
         /// Gets expression visit result memo.
         /// </summary>
         public Dictionary<Expr, TExprResult> ExpressionMemo => _exprMemo;
 
         /// <summary>
-        /// Gets visitable visit result memo
+        /// Gets visitable visit result memo.
         /// </summary>
         public Dictionary<IVisitable, object> VisitAbleMemo => _visitableMemo;
 
@@ -278,11 +252,26 @@ namespace Nncase.IR
             {
                 Visit(expr.Body);
                 Visit(expr.InitBody);
-                foreach (var iterVar in expr.IterVars) { Visit(iterVar); }
-                foreach (var reads in expr.Reads) { Visit(reads); }
-                foreach (var writes in expr.Writes) { Visit(writes); }
+                foreach (var iterVar in expr.IterVars)
+                {
+                    Visit(iterVar);
+                }
+
+                foreach (var reads in expr.Reads)
+                {
+                    Visit(reads);
+                }
+
+                foreach (var writes in expr.Writes)
+                {
+                    Visit(writes);
+                }
+
                 foreach (var buffer in expr.AllocBuffers)
+                {
                     Visit(buffer);
+                }
+
                 Visit(expr.Predicate);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
@@ -296,7 +285,11 @@ namespace Nncase.IR
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
-                foreach (var index in expr.Indices) { Visit(index); }
+                foreach (var index in expr.Indices)
+                {
+                    Visit(index);
+                }
+
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
@@ -310,7 +303,11 @@ namespace Nncase.IR
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
                 Visit(expr.Buffer);
-                foreach (var index in expr.Indices) { Visit(index); }
+                foreach (var index in expr.Indices)
+                {
+                    Visit(index);
+                }
+
                 Visit(expr.Value);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
@@ -382,8 +379,6 @@ namespace Nncase.IR
         /// <summary>
         /// visit ivisitable.
         /// </summary>
-        /// <param name="visitable"></param>
-        /// <returns></returns>
         public override object Visit(IVisitable visitable)
         {
             if (!_visitableMemo.TryGetValue(visitable, out var result))
@@ -575,16 +570,11 @@ namespace Nncase.IR
         /// <summary>
         /// Visit leaf ifunctable.
         /// </summary>
-        /// <param name="visitable"></param>
-        /// <returns></returns>
         public virtual object VisitLeaf(IVisitable visitable) => DefaultVisitLeaf(visitable);
 
         /// <summary>
         /// Default leaf visit routine.
         /// </summary>
-        /// <param name="visitable"></param>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
         public virtual object DefaultVisitLeaf(IVisitable visitable)
         {
             throw new NotImplementedException($"Unhandled visit leaf routine for {visitable.GetType()}.");
@@ -723,6 +713,32 @@ namespace Nncase.IR
         {
             _exprMemo.Clear();
             _typeMemo.Clear();
+        }
+
+        protected void RegisterAfterCallback(string name, Action<Expr> callback)
+        {
+            _callbacksAfterCall[name] = callback;
+        }
+
+        protected void RegisterBeforeCallback(string name, Action<Expr> callback)
+        {
+            _callbacksBeforeCall[name] = callback;
+        }
+
+        private void CallbacksBeforeCall(Expr expr)
+        {
+            foreach (var (name, callback) in _callbacksBeforeCall)
+            {
+                callback(expr);
+            }
+        }
+
+        private void CallbacksAfterCall(Expr expr)
+        {
+            foreach (var (name, callback) in _callbacksAfterCall)
+            {
+                callback(expr);
+            }
         }
     }
 }

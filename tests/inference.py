@@ -4,6 +4,7 @@ import nncase
 import numpy as np
 import test_utils
 
+
 class Inference:
     def run_inference(self, dict_args, cfg, case_dir, import_options, compile_options, model_content, preprocess_opt):
         infer_output_paths = self.nncase_infer(
@@ -20,15 +21,16 @@ class Inference:
                      ) -> List[Tuple[str, str]]:
         infer_dir = self.kwargs_to_path(
             os.path.join(case_dir, 'infer'), kwargs)
-        compile_options = self.get_infer_compile_options(infer_dir, cfg, compile_options, kwargs, preprocess)
-        self.compiler.set_compile_options(compile_options)
+        compile_options = self.get_infer_compile_options(
+            infer_dir, cfg, compile_options, kwargs, preprocess)
+        self.compiler = nncase.Compiler(compile_options)
         self.import_model(self.compiler, model_content, import_options)
         self.set_quant_opt(cfg, kwargs, preprocess, self.compiler)
         self.compiler.compile()
         kmodel = self.compiler.gencode_tobytes()
+        os.makedirs(infer_dir, exist_ok=True)
         with open(os.path.join(infer_dir, 'test.kmodel'), 'wb') as f:
             f.write(kmodel)
-            # todo:refactor
         sim = nncase.Simulator()
         sim.load_model(kmodel)
         self.set_infer_input(preprocess, case_dir, sim)
@@ -37,8 +39,8 @@ class Inference:
         return infer_output_paths
 
     def get_infer_compile_options(self, infer_dir: str, cfg, compile_options: nncase.CompileOptions,
-                     kwargs: Dict[str, str],
-                     preprocess: Dict[str, str]):
+                                  kwargs: Dict[str, str],
+                                  preprocess: Dict[str, str]):
         compile_options.target = kwargs['target']
         compile_options.dump_dir = infer_dir
         compile_options.dump_asm = cfg.compile_opt.dump_asm
@@ -64,7 +66,8 @@ class Inference:
 
     def set_infer_input(self, preprocess, case_dir, sim):
         for i in range(len(self.inputs)):
-            data = self.transform_input(self.inputs[i]['data'], preprocess['input_type'], "infer")[0]
+            data = self.transform_input(
+                self.inputs[i]['data'], preprocess['input_type'], "infer")[0]
             dtype = preprocess['input_type']
             if preprocess['preprocess'] and dtype != 'float32':
                 if not test_utils.in_ci():

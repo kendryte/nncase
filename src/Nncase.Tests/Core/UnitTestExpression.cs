@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -16,13 +19,13 @@ public class UnitTestExpression
     [Fact]
     public void TestConstEqual()
     {
-        var a = (Const)(1.1f) == (Const)(1.1f);
+        var a = (Const)1.1f == (Const)1.1f;
         Assert.True(a);
-        var b = (Const)(1.1f) == (Const)(1.2f);
+        var b = (Const)1.1f == (Const)1.2f;
         Assert.False(b);
 
-        var va = (Const)(new[] { 1, 2, 3, 4 });
-        var vb = (Const)(new[] { 1, 2, 3, 4 });
+        var va = (Const)new[] { 1, 2, 3, 4 };
+        var vb = (Const)new[] { 1, 2, 3, 4 };
         Assert.Equal(va, vb);
         Assert.Equal(va.GetHashCode(), vb.GetHashCode());
 
@@ -35,13 +38,13 @@ public class UnitTestExpression
     }
 
     /// <summary>
-    /// when check type is different, expression not equal
+    /// when check type is different, expression not equal.
     /// </summary>
     [Fact]
     public void TestConstEqualWithCheckType()
     {
-        var a = (Const)(1.1f);
-        var b = (Const)(1.1f);
+        var a = (Const)1.1f;
+        var b = (Const)1.1f;
         a.CheckedType = a.ValueType;
         Assert.True(a == b);
         Assert.Equal(a, b);
@@ -53,8 +56,8 @@ public class UnitTestExpression
     [Fact]
     public void TestCallEqualWithCheckType()
     {
-        var a = (Const)(1.1f) + (Const)(1.3f);
-        var b = (Const)(1.1f) + (Const)(1.3f);
+        var a = (Const)1.1f + (Const)1.3f;
+        var b = (Const)1.1f + (Const)1.3f;
         CompilerServices.InferenceType(a);
         Assert.True(a == b);
         Assert.Equal(a, b);
@@ -64,8 +67,8 @@ public class UnitTestExpression
     [Fact]
     public void TestCallNotEqualWithCheckType()
     {
-        var a = (Const)(1.1f) + (Const)(1.3f);
-        var b = (Const)(1.1f) + (Const)(1.2f);
+        var a = (Const)1.1f + (Const)1.3f;
+        var b = (Const)1.1f + (Const)1.2f;
         CompilerServices.InferenceType(a);
         Assert.NotEqual(a, b);
     }
@@ -75,7 +78,7 @@ public class UnitTestExpression
     {
         var expr = new IR.Tuple((Const)1 * (Const)2, (Const)1.0f + (Const)2.4f);
         var d = new HashSet<Expr>() { (Const)1.3f };
-        d.TryGetValue(expr, out var result);
+        d.TryGetValue(expr, out _);
     }
 
     [Fact]
@@ -99,14 +102,14 @@ public class UnitTestExpression
         int ahash1 = a.GetHashCode();
         int ahash2 = ((Const)a).GetHashCode();
         Assert.Equal(ahash1, ahash2);
-        var set = new HashSet<Expr>();
+        _ = new HashSet<Expr>();
     }
 
     [Fact]
     public void TestBinaryAddEqualWithCheckType()
     {
-        var a = (Const)(1.1f) + (Const)(1.1f);
-        var b = (Const)(2) + (new Var("c"));
+        var a = (Const)1.1f + (Const)1.1f;
+        var b = (Const)2 + new Var("c");
         var dict = new Dictionary<Expr, int> { };
         Op opa = (Op)a.Target, opb = (Op)b.Target;
 
@@ -136,12 +139,12 @@ public class UnitTestExpression
     [Fact]
     public void TestBinaryOpEqualWithCheckType()
     {
-        var a = (Const)(1.1f) + (Const)(1.1f);
-        var b = (Const)(2) - (new Var("c"));
+        var a = (Const)1.1f + (Const)1.1f;
+        var b = (Const)2 - new Var("c");
 
         Assert.False(a.Target == b.Target);
 
-        var c = (Const)(1.1f) + (Const)(1.1f);
+        var c = (Const)1.1f + (Const)1.1f;
 
         Assert.True(a.Equals(c));
     }
@@ -172,13 +175,13 @@ public class UnitTestExpression
         Assert.Equal(3, t2[2]);
         Assert.Equal(4, t2[3]);
         Assert.Equal(5, t2[4]);
-        var t3 = con.Value.Cast<byte>();
+        _ = con.Value.Cast<byte>();
         Assert.Equal(1, t2[0]);
         Assert.Equal(2, t2[1]);
         Assert.Equal(3, t2[2]);
         Assert.Equal(4, t2[3]);
         Assert.Equal(5, t2[4]);
-        var t4 = con.Value.Cast<float>();
+        _ = con.Value.Cast<float>();
         Assert.Equal(1.0f, t2[0]);
         Assert.Equal(2.0f, t2[1]);
         Assert.Equal(3.0f, t2[2]);
@@ -197,11 +200,11 @@ public class UnitTestExpression
     [Fact]
     public void TestHastSet()
     {
-        var a_lhs = (Const)(1.1f);
-        var a_rhs = (Const)(1.1f);
+        var a_lhs = (Const)1.1f;
+        var a_rhs = (Const)1.1f;
         var a = a_lhs + a_rhs;
-        var b_lhs = (Const)(1.1f);
-        var b_rhs = (new Var("c"));
+        var b_lhs = (Const)1.1f;
+        var b_rhs = new Var("c");
         var b = b_lhs - b_rhs;
         var c = a_lhs + a_rhs;
         var set = new HashSet<Expr>()
@@ -212,7 +215,7 @@ public class UnitTestExpression
             b_lhs, // will fold
             b_rhs,
             b,
-            c // will fold
+            c, // will fold
         };
 
         Assert.Equal(4, set.Count);
@@ -249,112 +252,61 @@ public class UnitTestExpression
         for (int i = 0; i < 1000000; i++)
         {
             // method 1
-            if (!dict1.TryGetValue(a, out var d1_a))
+            if (!dict1.TryGetValue(a, out _))
             {
-                d1_a = new Evaluator.Math.BinaryEvaluator();
+                Evaluator.IEvaluator? d1_a = new Evaluator.Math.BinaryEvaluator();
                 dict1.Add(a, d1_a);
             }
 
-            if (!dict1.TryGetValue(b, out var d1_b))
+            if (!dict1.TryGetValue(b, out _))
             {
-                d1_b = new Evaluator.Math.BinaryEvaluator();
+                Evaluator.IEvaluator? d1_b = new Evaluator.Math.BinaryEvaluator();
                 dict1.Add(b, d1_b);
             }
 
-            if (!dict1.TryGetValue(c, out var d1_c))
+            if (!dict1.TryGetValue(c, out _))
             {
-                d1_c = new Evaluator.Math.UnaryEvaluator();
+                Evaluator.IEvaluator? d1_c = new Evaluator.Math.UnaryEvaluator();
                 dict1.Add(c, d1_c);
             }
 
             // method 2
-            if (!dict2.TryGetValue(a.GetType(), out var d2_a))
+            if (!dict2.TryGetValue(a.GetType(), out _))
             {
-                d2_a = new Evaluator.Math.BinaryEvaluator();
+                Evaluator.IEvaluator? d2_a = new Evaluator.Math.BinaryEvaluator();
                 dict2.Add(a.GetType(), d2_a);
             }
 
-            if (!dict2.TryGetValue(b.GetType(), out var d2_b))
+            if (!dict2.TryGetValue(b.GetType(), out _))
             {
-                d2_b = new Evaluator.Math.BinaryEvaluator();
+                Evaluator.IEvaluator? d2_b = new Evaluator.Math.BinaryEvaluator();
                 dict2.Add(b.GetType(), d2_b);
             }
 
-            if (!dict2.TryGetValue(c.GetType(), out var d2_c))
+            if (!dict2.TryGetValue(c.GetType(), out _))
             {
-                d2_c = new Evaluator.Math.UnaryEvaluator();
+                Evaluator.IEvaluator? d2_c = new Evaluator.Math.UnaryEvaluator();
                 dict2.Add(c.GetType(), d2_c);
             }
 
             // method 3
-            if (!dict3.TryGetValue(a.GetType().TypeHandle, out var d3_a))
+            if (!dict3.TryGetValue(a.GetType().TypeHandle, out _))
             {
-                d3_a = new Evaluator.Math.BinaryEvaluator();
+                Evaluator.IEvaluator? d3_a = new Evaluator.Math.BinaryEvaluator();
                 dict3.Add(a.GetType().TypeHandle, d3_a);
             }
 
-            if (!dict3.TryGetValue(b.GetType().TypeHandle, out var d3_b))
+            if (!dict3.TryGetValue(b.GetType().TypeHandle, out _))
             {
-                d3_b = new Evaluator.Math.BinaryEvaluator();
+                Evaluator.IEvaluator? d3_b = new Evaluator.Math.BinaryEvaluator();
                 dict3.Add(b.GetType().TypeHandle, d3_b);
             }
 
-            if (!dict3.TryGetValue(c.GetType().TypeHandle, out var d3_c))
+            if (!dict3.TryGetValue(c.GetType().TypeHandle, out _))
             {
-                d3_c = new Evaluator.Math.UnaryEvaluator();
+                Evaluator.IEvaluator? d3_c = new Evaluator.Math.UnaryEvaluator();
                 dict3.Add(c.GetType().TypeHandle, d3_c);
             }
-        }
-    }
-
-    private sealed class ExpressionTreeBuilder : ExprVisitor<Expression, Type>
-    {
-        public override Expression VisitLeaf(Const expr)
-        {
-            if (expr is TensorConst tc && tc.Value.Shape.IsScalar)
-            {
-                return Expression.Constant(tc.Value[0], tc.Value.ElementType.CLRType);
-            }
-
-            throw new ArgumentOutOfRangeException();
-        }
-
-        public override Expression VisitLeaf(Var expr)
-        {
-            if (expr.CheckedShape.IsScalar)
-            {
-                return Expression.Parameter(expr.CheckedDataType.CLRType, expr.Name);
-            }
-
-            throw new ArgumentOutOfRangeException();
-        }
-
-        public override Expression VisitLeaf(Call expr)
-        {
-            switch (expr.Target)
-            {
-                case IR.Math.Binary binary:
-
-                    return binary.BinaryOp switch
-                    {
-                        BinaryOp.Add => Expression.Add(Visit(expr.Parameters[0]), Visit(expr.Parameters[1])),
-                        _ => throw new ArgumentOutOfRangeException(),
-                    };
-                default:
-                    break;
-            }
-
-            throw new ArgumentOutOfRangeException();
-        }
-
-        public override Expression VisitLeaf(Function expr)
-        {
-            return Expression.Lambda(Visit(expr.Body), expr.Name, expr.Parameters.Select(v => (ParameterExpression)Visit(v)).ToArray());
-        }
-
-        public override Expression VisitLeaf(Op expr)
-        {
-            return null!;
         }
     }
 
@@ -366,7 +318,7 @@ public class UnitTestExpression
         Assert.Equal("const(i32[4] : {1,2,3,4})", CompilerServices.Print(x));
         Assert.Equal("None", CompilerServices.Print(None.Default));
         Assert.Equal("Add", CompilerServices.Print(new Nncase.IR.Math.Binary(BinaryOp.Add)));
-        Var y = new Var("y");
+        var y = new Var("y");
         CompilerServices.InferenceType(y);
         Assert.Equal("%y: any", CompilerServices.Print(y));
     }
@@ -389,29 +341,6 @@ public class UnitTestExpression
         }
     }
 
-    struct MyRange
-    {
-        public MyRange(int start, int stop)
-        {
-            Start = start;
-            Stop = stop;
-        }
-
-        public int Start;
-        public int Stop;
-    }
-
-    MyRange[] Conv2dBounds(MyRange[] output_range, int kh, int kw)
-    {
-        var new_output_range = new MyRange[output_range.Length];
-        Array.Copy(output_range, new_output_range, output_range.Length);
-        new_output_range[2].Start += kh;
-        new_output_range[2].Stop += kh;
-        new_output_range[3].Start += kw;
-        new_output_range[3].Stop += kw;
-        return new_output_range;
-    }
-
     [Fact]
     public void TestExpressionTreeWithCustomStruct()
     {
@@ -430,5 +359,79 @@ public class UnitTestExpression
         var fn_2_ret = fn_2(new MyRange[] { new(1, 2), new(3, 4), new(5, 6), new(7, 9) });
         Assert.Equal<MyRange>(new(5 + 3 + 5, 6 + 3 + 5), fn_2_ret[2]);
         Assert.Equal<MyRange>(new(7 + 4 + 6, 9 + 4 + 6), fn_2_ret[3]);
+    }
+
+    private MyRange[] Conv2dBounds(MyRange[] output_range, int kh, int kw)
+    {
+        var new_output_range = new MyRange[output_range.Length];
+        Array.Copy(output_range, new_output_range, output_range.Length);
+        new_output_range[2].Start += kh;
+        new_output_range[2].Stop += kh;
+        new_output_range[3].Start += kw;
+        new_output_range[3].Stop += kw;
+        return new_output_range;
+    }
+
+    private struct MyRange
+    {
+        public int Start;
+        public int Stop;
+
+        public MyRange(int start, int stop)
+        {
+            Start = start;
+            Stop = stop;
+        }
+    }
+
+    private sealed class ExpressionTreeBuilder : ExprVisitor<Expression, Type>
+    {
+        public override Expression VisitLeaf(Const expr)
+        {
+            if (expr is TensorConst tc && tc.Value.Shape.IsScalar)
+            {
+                return Expression.Constant(tc.Value[0], tc.Value.ElementType.CLRType);
+            }
+
+            throw new ArgumentOutOfRangeException(nameof(expr));
+        }
+
+        public override Expression VisitLeaf(Var expr)
+        {
+            if (expr.CheckedShape.IsScalar)
+            {
+                return Expression.Parameter(expr.CheckedDataType.CLRType, expr.Name);
+            }
+
+            throw new ArgumentOutOfRangeException(nameof(expr));
+        }
+
+        public override Expression VisitLeaf(Call expr)
+        {
+            switch (expr.Target)
+            {
+                case IR.Math.Binary binary:
+
+                    return binary.BinaryOp switch
+                    {
+                        BinaryOp.Add => Expression.Add(Visit(expr.Parameters[0]), Visit(expr.Parameters[1])),
+                        _ => throw new ArgumentOutOfRangeException(nameof(expr)),
+                    };
+                default:
+                    break;
+            }
+
+            throw new ArgumentOutOfRangeException(nameof(expr));
+        }
+
+        public override Expression VisitLeaf(Function expr)
+        {
+            return Expression.Lambda(Visit(expr.Body), expr.Name, expr.Parameters.Select(v => (ParameterExpression)Visit(v)).ToArray());
+        }
+
+        public override Expression VisitLeaf(Op expr)
+        {
+            return null!;
+        }
     }
 }

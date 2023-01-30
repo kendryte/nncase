@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -28,21 +28,6 @@ internal sealed class EGraphCostEvaluator
         PopulateAllEclasses(_root);
     }
 
-    private void PopulateAllEclasses(EClass eClass)
-    {
-        if (!_allEclasses.Contains(eClass))
-        {
-            _allEclasses.Add(eClass);
-            foreach (var node in eClass.Nodes)
-            {
-                foreach (var child in node.Children)
-                {
-                    PopulateAllEclasses(child);
-                }
-            }
-        }
-    }
-
     public EGraphCostModel Evaluate()
     {
         while (true)
@@ -61,6 +46,21 @@ internal sealed class EGraphCostEvaluator
         }
 
         return new(_costs);
+    }
+
+    private void PopulateAllEclasses(EClass eClass)
+    {
+        if (!_allEclasses.Contains(eClass))
+        {
+            _allEclasses.Add(eClass);
+            foreach (var node in eClass.Nodes)
+            {
+                foreach (var child in node.Children)
+                {
+                    PopulateAllEclasses(child);
+                }
+            }
+        }
     }
 
     private void TryEvaluateAll()
@@ -160,7 +160,7 @@ internal sealed class EGraphCostEvaluator
                 }
                 else
                 {
-                    // Debug.Assert(targetEnode.Expr is Function);
+                    // Trace.Assert(targetEnode.Expr is Function);
                     newCost = Visit(targetEnode, returnType);
                 }
 

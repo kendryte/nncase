@@ -83,11 +83,12 @@ void quick_select(std::vector<std::pair<T, size_t>> &nums, int64_t lo,
 template <typename T>
 result<void>
 topk_impl(const T *input, T *output_values, int64_t *output_indices,
-     const dims_t &in_shape, const dims_t &in_strides,
-     const dims_t &output_values_shape, const dims_t &output_values_strides,
-     const dims_t &output_indices_shape, const dims_t &output_indices_strides,
-     const int64_t k, const int32_t axis, const bool largest,
-     const bool sorted) noexcept {
+          const dims_t &in_shape, const dims_t &in_strides,
+          const dims_t &output_values_shape,
+          const dims_t &output_values_strides,
+          const dims_t &output_indices_shape,
+          const dims_t &output_indices_strides, const int64_t k,
+          const int32_t axis, const bool largest, const bool sorted) noexcept {
     (void)output_values_shape;
     (void)output_indices_shape;
     (void)output_indices_strides;
@@ -180,21 +181,19 @@ topk_impl(const T *input, T *output_values, int64_t *output_indices,
     return ok();
 }
 
-#define TOPK_IMPL(_ty)                                                        \
-    return topk_impl(IN_CAST(_ty, input), OUT_CAST(_ty, output_values),               \
-                output_indices, in_shape,                        \
-                in_strides, output_values_shape,                 \
-                output_values_strides, output_indices_shape,                   \
-                output_indices_strides, k, axis, largest, sorted)
+#define TOPK_IMPL(_ty)                                                         \
+    return topk_impl(IN_CAST(_ty, input), OUT_CAST(_ty, output_values),        \
+                     output_indices, in_shape, in_strides,                     \
+                     output_values_shape, output_values_strides,               \
+                     output_indices_shape, output_indices_strides, k, axis,    \
+                     largest, sorted)
 
-result<void> kernels::stackvm::reference::topk(typecode_t typecode, const gsl::byte *input, gsl::byte *output_values,
-                             int64_t *output_indices, const dims_t &in_shape,
-                             const dims_t &in_strides,
-                             const dims_t &output_values_shape,
-                             const dims_t &output_values_strides,
-                             const dims_t &output_indices_shape,
-                             const dims_t &output_indices_strides,
-                             const int64_t k, const int32_t axis,
-                             const bool largest, const bool sorted) noexcept {
+result<void> kernels::stackvm::reference::topk(
+    typecode_t typecode, const gsl::byte *input, gsl::byte *output_values,
+    int64_t *output_indices, const dims_t &in_shape, const dims_t &in_strides,
+    const dims_t &output_values_shape, const dims_t &output_values_strides,
+    const dims_t &output_indices_shape, const dims_t &output_indices_strides,
+    const int64_t k, const int32_t axis, const bool largest,
+    const bool sorted) noexcept {
     TYPE_SELECT(typecode, TOPK_IMPL);
 }

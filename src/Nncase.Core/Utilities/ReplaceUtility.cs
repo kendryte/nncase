@@ -1,11 +1,13 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Fx = System.Func<Nncase.IR.Expr, Nncase.IR.Expr>;
 using ParameterInfo = Nncase.IR.ParameterInfo;
 using Tuple = Nncase.IR.Tuple;
+
 namespace Nncase.Utilities;
-
-using Fx = Func<Expr, Expr>;
-
 public class ReplaceUtility
 {
     public static Expr ReplaceOp(Call call, Op op)
@@ -42,11 +44,8 @@ public class ReplaceUtility
     /// usage:
     /// Call(FakeXXX, input, otherArg1, ...)
     /// newInput => Call(op, newInput, otherArg1, ...)
-    /// it's always used for Fake to NoFake Rule with IsWildcardCall
+    /// it's always used for Fake to NoFake Pass with IsWildcardCall.
     /// </summary>
-    /// <param name="call"></param>
-    /// <param name="op"></param>
-    /// <returns></returns>
     public static Fx ReplaceOpAndFirst(Call call, Op op) => input =>
     {
         return call with { Target = op, Parameters = ReplaceFirst(call.Parameters, input) };
@@ -62,11 +61,14 @@ public class ReplaceUtility
     {
         return call with
         {
-            Parameters = ReplacePos(call.Parameters.Select(p =>
-            {
-                matchOptions.TryUpdateWithRewrite(ref p);
-                return p;
-            }).ToList(), input, i)
+            Parameters = ReplacePos(
+                call.Parameters.Select(p =>
+                {
+                    matchOptions.TryUpdateWithRewrite(ref p);
+                    return p;
+                }).ToList(),
+                input,
+                i),
         };
     }
 
@@ -102,20 +104,88 @@ public class ReplaceUtility
     ///
     /// posAndValue is not required to be in order
     ///
-    /// warning: call which returned should be type infer, because of with should keep the type infer
+    /// warning: call which returned should be type infer, because of with should keep the type infer.
     /// </summary>
-    /// <param name="call"></param>
-    /// <param name="posAndValue"></pxaram>
-    /// <returns></returns>
     public static Call ReplaceParams(Call call, params (ParameterInfo, Expr)[] posAndValue)
     {
         return call with { Parameters = ReplaceMulti(call.Parameters, posAndValue) };
+    }
+
+    /// <summary>
+    /// find the old input in old args and replace it with new_input.
+    /// </summary>
+    /// <param name="list">matched old args.</param>
+    /// <param name="target">matched old input.</param>
+    /// <param name="value">created new_input.</param>
+    /// <returns>new args list.</returns>
+    public static List<Expr> ReplaceParams(IReadOnlyList<Expr> list, Expr target, Expr value)
+    {
+        return ReplaceParams(list, new List<(Expr, Expr)>() { (target, value) });
+    }
+
+    /// <summary>
+    ///  find the old input in old args and replace it with new_input.
+    /// </summary>
+    /// <param name="list">matched exprsession list.</param>
+    /// <param name="pairs">target value pair.</param>
+    /// <returns>new args list.</returns>
+    public static List<Expr> ReplaceParams(IReadOnlyList<Expr> list, IReadOnlyList<(Expr Target, Expr Value)> pairs)
+    {
+        var new_args = new List<Expr>(list);
+
+        Dictionary<int, Expr> candidates = new();
+        for (int i = 0; i < list.Count; i++)
+        {
+            for (int j = 0; j < pairs.Count; j++)
+            {
+                if (object.ReferenceEquals(new_args[i], pairs[j].Target))
+                {
+                    if (!candidates.TryGetValue(i, out var last_matched))
+                    {
+                        last_matched = pairs[j].Value;
+                        candidates.Add(i, last_matched);
+                    }
+
+                    if (!object.ReferenceEquals(last_matched, pairs[j].Value))
+                    {
+                        throw new InvalidDataException("The same arg can't replace with two new pararmeter!");
+                    }
+                }
+            }
+        }
+
+        if (candidates.Count == 0)
+        {
+            throw new InvalidOperationException("Not find the replace param");
+        }
+
+        foreach (var (i, new_input) in candidates)
+            new_args[i] = new_input;
+        return new_args;
+    }
+
+    /// <summary>
+    /// Make a call with replace param.
+    /// </summary>
+    /// <param name="call">Old Call.</param>
+    /// <param name="pairs">Pair of old param and new param.</param>
+    /// <returns>New Call.</returns>
+    public static Call ReplaceCallParam(Call call, IReadOnlyList<(Expr Target, Expr Value)> pairs)
+    {
+        var newParams = ReplaceParams(call.Parameters, pairs).ToArray();
+        return call with { Parameters = newParams };
     }
 
     public static Call ReplaceOpAndParams(Call call, Op op, params (ParameterInfo, Expr)[] posAndValue)
     {
         return call with { Target = op, Parameters = ReplaceMulti(call.Parameters, posAndValue) };
     }
+
+    public static Expr ReplaceTarget(Expr root, Expr target, Expr expr, PatternMatch.MatchOptions matchOptions) =>
+        ReplaceTargetImpl(root, target, expr, matchOptions)
+            .Match(
+                x => x,
+                () => throw new InvalidOperationException("target not found"));
 
     private static Option<Expr> ReplaceTargetImpl(Expr root, Expr target, Expr expr, PatternMatch.MatchOptions matchOptions)
     {
@@ -143,12 +213,4 @@ public class ReplaceUtility
 
         return Option.None;
     }
-
-    public static Expr ReplaceTarget(Expr root, Expr target, Expr expr, PatternMatch.MatchOptions matchOptions) =>
-        ReplaceTargetImpl(root, target, expr, matchOptions)
-            .Match(
-                x => x,
-                () => throw new InvalidOperationException("target not found")
-            );
-
 }

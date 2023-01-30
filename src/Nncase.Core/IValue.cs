@@ -40,6 +40,11 @@ public interface IValue : IReadOnlyList<IValue>
 public static class Value
 {
     /// <summary>
+    /// Gets get the None Value.
+    /// </summary>
+    public static IValue None => Nncase.NoneValue.Default;
+
+    /// <summary>
     /// Create value form a tensor.
     /// </summary>
     /// <param name="tensor">The single tensor.</param>
@@ -76,12 +81,6 @@ public static class Value
             return new TupleValue(tpc.Fields.Select(x => FromConst(x)).ToArray());
         }
     }
-
-    /// <summary>
-    /// get the None Value.
-    /// </summary>
-    /// <returns></returns>
-    public static IValue None => Nncase.NoneValue.Default;
 }
 
 /// <summary>
@@ -99,13 +98,13 @@ public sealed class NoneValue : IValue
     }
 
     /// <inheritdoc/>
-    public IValue this[int index] => throw new InvalidOperationException("This Is None Value!");
-
-    /// <inheritdoc/>
     public IRType Type => NoneType.Default;
 
     /// <inheritdoc/>
     public int Count => throw new InvalidOperationException("This Is None Value!");
+
+    /// <inheritdoc/>
+    public IValue this[int index] => throw new InvalidOperationException("This Is None Value!");
 
     /// <inheritdoc/>
     public Tensor AsTensor()
@@ -156,7 +155,7 @@ public sealed class TensorValue : IValue, IEquatable<TensorValue?>
     public IRType Type { get; }
 
     /// <inheritdoc/>
-    public IValue this[int index] => index == 0 ? this : throw new IndexOutOfRangeException();
+    public IValue this[int index] => index == 0 ? this : throw new ArgumentOutOfRangeException(nameof(index));
 
     /// <inheritdoc/>
     public IEnumerator<IValue> GetEnumerator()
@@ -204,7 +203,10 @@ public sealed class TensorValue : IValue, IEquatable<TensorValue?>
     public override string ToString()
     {
         if (_value.BytesBuffer.Length <= 64)
+        {
             return _value.Shape.ToString() + " : " + _value.GetArrayString(false);
+        }
+
         return _value.Shape.ToString();
     }
 }

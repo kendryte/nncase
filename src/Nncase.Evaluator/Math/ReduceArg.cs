@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -26,7 +26,7 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
         {
             ReduceArgOp.ArgMax => OrtKI.ArgMax(input, axis, keepDims, selectLastIndex),
             ReduceArgOp.ArgMin => OrtKI.ArgMin(input, axis, keepDims, selectLastIndex),
-            _ => throw new ArgumentOutOfRangeException(nameof(reduceArg.ReduceArgOp)),
+            _ => throw new ArgumentOutOfRangeException(nameof(reduceArg)),
         }).ToValue();
     }
 
@@ -35,6 +35,21 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
     {
         var input = context.CheckArgumentType<TensorType>(target, ReduceArg.Input);
         return Visit(context, target, input);
+    }
+
+    public Cost? Visit(ICostEvaluateContext context, ReduceArg target)
+    {
+        var input = context.GetArgumentType<TensorType>(target, ReduceArg.Input);
+        var ret = context.GetReturnType<TensorType>();
+        var input_elem = input.Shape.Aggregate(1, (acc, d) => acc * (d.IsFixed ? d.FixedValue : 1));
+        var ret_elem = ret.Shape.Aggregate(1, (acc, d) => acc * (d.IsFixed ? d.FixedValue : 1));
+        var macPerElement = input_elem / ret_elem;
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, macPerElement),
+        };
     }
 
     private IRType Visit(ITypeInferenceContext context, ReduceArg target, TensorType input)
@@ -60,20 +75,5 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
         {
             return new InvalidType("ReduceArg axis and keepDims are not const");
         }
-    }
-
-    public Cost? Visit(ICostEvaluateContext context, ReduceArg target)
-    {
-        var input = context.GetArgumentType<TensorType>(target, ReduceArg.Input);
-        var ret = context.GetReturnType<TensorType>();
-        var input_elem = input.Shape.Aggregate(1, (acc, d) => acc * (d.IsFixed ? d.FixedValue : 1));
-        var ret_elem = ret.Shape.Aggregate(1, (acc, d) => acc * (d.IsFixed ? d.FixedValue : 1));
-        var macPerElement = input_elem / ret_elem;
-        return new()
-        {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, macPerElement),
-        };
     }
 }

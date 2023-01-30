@@ -16,16 +16,15 @@
 #include <nncase/runtime/k210/compiler_defs.h>
 #include <nncase/schedule/buffer_allocator.h>
 
-namespace nncase::schedule::k210
-{
-class NNCASE_MODULES_K210_API kpu_buffer_allocator : public first_fit_allocator
-{
-public:
+namespace nncase::schedule::k210 {
+class NNCASE_MODULES_K210_API kpu_buffer_allocator
+    : public first_fit_allocator {
+  public:
     kpu_buffer_allocator();
 
     size_t get_size_in_bytes(const logical_buffer &buffer) override;
 
-protected:
+  protected:
     size_t alignment() const noexcept override;
 };
-}
+} // namespace nncase::schedule::k210

@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 #include <iostream>
-#include <nncase/kernels/stackvm/ref_ops.h>
-#include <nncase/kernels/stackvm/opt_ops.h>
 #include <nncase/kernels/kernel_utils.h>
+#include <nncase/kernels/stackvm/opt_ops.h>
+#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #if __riscv_vector
 #include "utils.h"
@@ -28,12 +28,12 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
 
-namespace
-{
+namespace {
 #if __riscv_vector
 
-result<void> optimized_softmax_impl(const float *input, float *output, const dims_t &in_shape, int32_t axis, float beta) noexcept
-{
+result<void> optimized_softmax_impl(const float *input, float *output,
+                                    const dims_t &in_shape, int32_t axis,
+                                    float beta) noexcept {
     size_t ndim = in_shape.size();
     size_t positive_axis = axis < 0 ? ndim + axis : axis;
     size_t axis_dim = in_shape[positive_axis];
@@ -47,21 +47,18 @@ result<void> optimized_softmax_impl(const float *input, float *output, const dim
         in_side *= in_shape[i];
 
     // axis == -1
-    if (positive_axis == (ndim - 1))
-    {
+    if (positive_axis == (ndim - 1)) {
         const float *ptr_input = input;
         float *ptr_output = output;
 
-        for (size_t i = 0; i < out_side; i++)
-        {
+        for (size_t i = 0; i < out_side; i++) {
             auto n = axis_dim;
             const float *ptr_input_vl = ptr_input;
             float *ptr_output_vl = ptr_output;
 
             // max
             float max = std::numeric_limits<float>::lowest();
-            while (n)
-            {
+            while (n) {
                 auto vl = vsetvl_e32m8(n);
                 auto v = vle32_v_f32m8(ptr_input_vl, vl);
                 auto s = vfmv_s_f_f32m1(vundefined_f32m1(), max, vl);
@@ -76,13 +73,14 @@ result<void> optimized_softmax_impl(const float *input, float *output, const dim
             float sum = 0.f;
             ptr_input_vl = ptr_input;
             n = axis_dim;
-            while (n)
-            {
+            while (n) {
                 auto vl = vsetvl_e32m8(n);
                 auto v_in = vle32_v_f32m8(ptr_input_vl, vl);
                 auto s = vfmv_s_f_f32m1(vundefined_f32m1(), sum, vl);
 
-                auto v_out = exp_ps(vfmul_vf_f32m8(vfsub_vf_f32m8(v_in, max, vl), beta, vl), vl);
+                auto v_out = exp_ps(
+                    vfmul_vf_f32m8(vfsub_vf_f32m8(v_in, max, vl), beta, vl),
+                    vl);
                 s = vfredosum_vs_f32m8_f32m1(s, v_out, s, vl);
 
                 vse32_v_f32m8(ptr_output_vl, v_out, vl);
@@ -96,8 +94,7 @@ result<void> optimized_softmax_impl(const float *input, float *output, const dim
             ptr_input_vl = ptr_input;
             ptr_output_vl = ptr_output;
             n = axis_dim;
-            while (n)
-            {
+            while (n) {
                 auto vl = vsetvl_e32m8(n);
                 auto v_out = vle32_v_f32m8(ptr_output_vl, vl);
                 v_out = vfdiv_vf_f32m8(v_out, sum, vl);
@@ -109,17 +106,16 @@ result<void> optimized_softmax_impl(const float *input, float *output, const dim
             ptr_input += axis_dim;
             ptr_output += axis_dim;
         }
-    }
-    else
-    {
-        dims_t axes { positive_axis };
-        auto reduced_shape = kernels::detail::get_reduced_shape(in_shape, axes, true);
+    } else {
+        dims_t axes{positive_axis};
+        auto reduced_shape =
+            kernels::detail::get_reduced_shape(in_shape, axes, true);
         auto reduced_size = compute_size(reduced_shape);
-        std::vector<float> max(reduced_size, std::numeric_limits<float>::lowest());
+        std::vector<float> max(reduced_size,
+                               std::numeric_limits<float>::lowest());
         std::vector<float> sum(reduced_size, 0.f);
 
-        for (size_t i = 0; i < out_side; i++)
-        {
+        for (size_t i = 0; i < out_side; i++) {
             const float *ptr_input = input + i * axis_dim * in_side;
             const float *ptr_input_vl = ptr_input;
 
@@ -133,12 +129,10 @@ result<void> optimized_softmax_impl(const float *input, float *output, const dim
             float *ptr_sum_vl = ptr_sum;
 
             // max
-            for (size_t j = 0; j < axis_dim; j++)
-            {
+            for (size_t j = 0; j < axis_dim; j++) {
                 ptr_max_vl = ptr_max;
                 auto n = in_side;
-                while (n)
-                {
+                while (n) {
                     auto vl = vsetvl_e32m8(n);
                     auto v_in = vle32_v_f32m8(ptr_input_vl, vl);
                     auto v_max = vle32_v_f32m8(ptr_max_vl, vl);
@@ -155,19 +149,20 @@ result<void> optimized_softmax_impl(const float *input, float *output, const dim
             // exp((x - max) * beta) and sum(exp)
             ptr_input_vl = ptr_input;
             ptr_output_vl = ptr_output;
-            for (size_t j = 0; j < axis_dim; j++)
-            {
+            for (size_t j = 0; j < axis_dim; j++) {
                 ptr_max_vl = ptr_max;
                 ptr_sum_vl = ptr_sum;
                 auto n = in_side;
-                while (n)
-                {
+                while (n) {
                     auto vl = vsetvl_e32m8(n);
                     auto v_in = vle32_v_f32m8(ptr_input_vl, vl);
                     auto v_max = vle32_v_f32m8(ptr_max_vl, vl);
                     auto v_sum = vle32_v_f32m8(ptr_sum_vl, vl);
 
-                    auto v_out = exp_ps(vfmul_vf_f32m8(vfsub_vv_f32m8(v_in, v_max, vl), beta, vl), vl);
+                    auto v_out =
+                        exp_ps(vfmul_vf_f32m8(vfsub_vv_f32m8(v_in, v_max, vl),
+                                              beta, vl),
+                               vl);
                     vse32_v_f32m8(ptr_output_vl, v_out, vl);
 
                     v_sum = vfadd_vv_f32m8(v_sum, v_out, vl);
@@ -183,12 +178,10 @@ result<void> optimized_softmax_impl(const float *input, float *output, const dim
 
             // div
             ptr_output_vl = ptr_output;
-            for (size_t j = 0; j < axis_dim; j++)
-            {
+            for (size_t j = 0; j < axis_dim; j++) {
                 ptr_sum_vl = ptr_sum;
                 auto n = in_side;
-                while (n)
-                {
+                while (n) {
                     auto vl = vsetvl_e32m8(n);
                     auto v_out = vle32_v_f32m8(ptr_output_vl, vl);
                     auto v_sum = vle32_v_f32m8(ptr_sum_vl, vl);
@@ -206,18 +199,23 @@ result<void> optimized_softmax_impl(const float *input, float *output, const dim
     return ok();
 }
 #endif
-}
+} // namespace
 
-template result<void> optimized::softmax<float>(const float *input, float *output, const dims_t &in_shape, const dims_t &in_strides,
-    const dims_t &out_strides, int32_t axis, float beta) noexcept;
+template result<void>
+optimized::softmax<float>(const float *input, float *output,
+                          const dims_t &in_shape, const dims_t &in_strides,
+                          const dims_t &out_strides, int32_t axis,
+                          float beta) noexcept;
 
 template <typename T>
-result<void> optimized::softmax(const T *input, T *output, const dims_t &in_shape, const dims_t &in_strides,
-    const dims_t &out_strides, int32_t axis, float beta) noexcept
-{
+result<void>
+optimized::softmax(const T *input, T *output, const dims_t &in_shape,
+                   const dims_t &in_strides, const dims_t &out_strides,
+                   int32_t axis, float beta) noexcept {
 #if __riscv_vector
     return optimized_softmax_impl(input, output, in_shape, axis, beta);
 #endif
 
-    return stackvm::reference::softmax(input, output, in_shape, in_strides, out_strides, axis, beta);
+    return stackvm::reference::softmax(input, output, in_shape, in_strides,
+                                       out_strides, axis, beta);
 }

@@ -1007,9 +1007,9 @@ result<value_t> nncase::kernels::stackvm::fake_quantize(
 }
 
 // result<value_t> nncase::kernels::stackvm::uninitialized(
-//     NNCASE_UNUSED typecode_t dtype,
-//     NNCASE_UNUSED runtime::stackvm::memory_location_t memory_location,
-//     NNCASE_UNUSED value_t shape, NNCASE_UNUSED value_t output,
-//     NNCASE_UNUSED kernel_context &context) {
-//     return err(std::errc::not_supported);
-// }
+//    NNCASE_UNUSED typecode_t dtype,
+//    NNCASE_UNUSED runtime::stackvm::memory_location_t memory_location,
+//    NNCASE_UNUSED value_t shape, NNCASE_UNUSED value_t output,
+//    NNCASE_UNUSED kernel_context &context) {
+//    return err(std::errc::not_supported);
+//}

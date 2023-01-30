@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Collections.Generic;
 using Nncase.IR;
 using Nncase.Transform;
@@ -6,83 +9,86 @@ using Xunit;
 
 namespace Nncase.Tests.ReWrite.FusionTest;
 
-internal sealed class TestFusionGroupMutator : Transform.Mutators.FusionGroupMutator
+[TestFixture.AutoSetupTestMethod(InitSession = true)]
+public class UnitTestFusionGroup : TestClassBase
 {
-    public TestFusionGroupMutator(IUsedByResult usedByAnalysisReslut, IMergeRewriteRule preOrderfusionRule, RunPassOptions passOptions) : base(usedByAnalysisReslut, preOrderfusionRule, passOptions)
+    public static readonly TheoryData<IDataFlowFusionCase> DataOne = new()
     {
-    }
-
-    public override bool MergedFusionCheckCallBack(Fusion merged_fusion, HashSet<Fusion> candidate_fusions)
-    {
-        if (merged_fusion.Name.IndexOf("False") == -1)
-            return true;
-        return false;
-    }
-}
-
-
-public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
-{
-
-    public static TheoryData<IDataFlowFusionCase> DataOne = new()
-    {
-      new DataFlowType7FusionCaseLeft(),
-      new DataFlowType7FusionCaseRight()
+        new DataFlowType13FusionCaseLeft(),
+        new DataFlowType13FusionCaseRight(),
     };
 
-    public static TheoryData<IDataFlowFusionCase> DataAll = new()
+    public static readonly TheoryData<IDataFlowFusionCase> DataAll = new()
     {
-      new DataFlowType0FusionCase(),
-      new DataFlowType0NotFusionCase(),
+        new DataFlowType0FusionCase(),
+        new DataFlowType0NotFusionCase(),
 
-      new DataFlowType1FusionCaseLeft(),
-      new DataFlowType2FusionCaseLeft(),
-      new DataFlowType3FusionCaseLeft(),
-      new DataFlowType4FusionCaseLeft(),
-      new DataFlowType5FusionCaseLeft(),
-      new DataFlowType6FusionCaseLeft(),
-      new DataFlowType6_1FusionCaseLeft(),
+        new DataFlowType1FusionCaseLeft(),
+        new DataFlowType2FusionCaseLeft(),
+        new DataFlowType3FusionCaseLeft(),
+        new DataFlowType4FusionCaseLeft(),
+        new DataFlowType5FusionCaseLeft(),
+        new DataFlowType6FusionCaseLeft(),
+        new DataFlowType6_1FusionCaseLeft(),
+        new DataFlowType7FusionCaseLeft(),
+        new DataFlowType10FusionCaseLeft(),
+        new DataFlowType11FusionCaseLeft(),
+        new DataFlowType12FusionCaseLeft(),
 
-      new DataFlowType1FusionCaseRight(),
-      new DataFlowType2FusionCaseRight(),
-      new DataFlowType3FusionCaseRight(),
-      new DataFlowType4FusionCaseRight(),
-      new DataFlowType5FusionCaseRight(),
-      new DataFlowType6FusionCaseRight(),
-      new DataFlowType6_1FusionCaseRight(),
+        new DataFlowType1FusionCaseRight(),
+        new DataFlowType2FusionCaseRight(),
+        new DataFlowType3FusionCaseRight(),
+        new DataFlowType4FusionCaseRight(),
+        new DataFlowType5FusionCaseRight(),
+        new DataFlowType6FusionCaseRight(),
+        new DataFlowType6_1FusionCaseRight(),
+        new DataFlowType7FusionCaseRight(),
+        new DataFlowType8FusionCase(),
+        new DataFlowType9FusionCase(),
+        new DataFlowType10FusionCaseRight(),
+        new DataFlowType11FusionCaseRight(),
+        new DataFlowType12FusionCaseRight(),
     };
 
     [Theory]
     [MemberData(nameof(DataOne))]
     public void RunOne(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
 
-    public void RunCore(IDataFlowFusionCase fusionCase)
-    {
-        var passOptions = GetPassOptions(fusionCase.GetType().Name);
-        var compileOptions = passOptions.CompileOptions;
+    [Theory]
+    [MemberData(nameof(DataAll))]
+    public void RunAll(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
 
-        var target = CompilerServices.GetTarget(compileOptions.Target);
+    private void RunCore(IDataFlowFusionCase fusionCase)
+    {
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
         var main = new Function(fusionCase.BuildBody(input), input);
 
         IRModule module = new(main);
         CompilerServices.InferenceType(main);
-        CompilerServices.DumpIR(main, "pre", passOptions.DumpDir);
-        CompilerServices.DumpDotIR(main, "pre", passOptions.DumpDir);
+#if DEBUG
+        Dumpper.DumpDotIR(main, "pre");
+#endif
 
         var rewriter = new DataFlowMergeRewriter();
-        var post = (Function)rewriter.Rewrite(main, new IMergeRewriteRule[]{
-            new SameInputFusionMergeRule(),
-            new MultiInputFusionMergeRule(),
-          }, (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
-          passOptions);
+        var post = (Function)rewriter.Rewrite(
+            main,
+            new IMergeRewriteRule[]
+            {
+                new SameInputFusionMergeRule(),
+                new MultiInputFusionMergeRule(),
+                new ShortCutFusionMergeRuleLeft(),
+                new ShortCutFusionMergeRuleRight(),
+            },
+            (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
+            new());
+#if DEBUG
+        Dumpper.DumpDotIR(post, "post");
+#endif
 
-        CompilerServices.DumpIR(post, "post", passOptions.DumpDir);
-        CompilerServices.DumpDotIR(post, "post", passOptions.DumpDir);
-
-        var input_tensor = TestFixture.Testing.Rand<float>(1, 3, 224, 224);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance){
-          { input, Value.FromTensor(input_tensor) }
+        var input_tensor = Testing.Rand<float>(1, 3, 224, 224);
+        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        {
+          { input, Value.FromTensor(input_tensor) },
         };
 
         var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
@@ -90,18 +96,31 @@ public class UnitTestFusionGroup : TestFixture.UnitTestFixtrue
         visitor.Visit(post.Body);
         Assert.Equal(fusionCase.FinalFusionCount, visitor.Count);
         var post_result = CompilerServices.Evaluate(post.Body, feed_dict);
-        Assert.True(TestFixture.Comparator.AllEqual(pre_result, post_result));
+        Assert.True(Comparator.AllEqual(pre_result, post_result));
+    }
+}
+
+internal sealed class TestFusionGroupMutator : Transform.Mutators.FusionGroupMutator
+{
+    public TestFusionGroupMutator(IUsedByResult usedByAnalysisReslut, IMergeRewriteRule preOrderfusionRule, RunPassContext passOptions)
+        : base(usedByAnalysisReslut, preOrderfusionRule, passOptions)
+    {
     }
 
-    [Theory]
-    [MemberData(nameof(DataAll))]
-    public void RunAll(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
+    public override bool MergedFusionCheckCallBack(Fusion merged_fusion, HashSet<Fusion> candidate_fusions)
+    {
+        if (!merged_fusion.Name.Contains("False", System.StringComparison.CurrentCulture))
+        {
+            return true;
+        }
 
+        return false;
+    }
 }
 
 internal sealed class FusionCounterVisitor : ExprVisitor<int, IRType>
 {
-    public int Count { get; private set; } = 0;
+    public int Count { get; private set; }
 
     public override int DefaultVisitLeaf(Expr expr) => 0;
 

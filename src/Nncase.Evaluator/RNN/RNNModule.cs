@@ -1,19 +1,19 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using Autofac;
+using DryIoc;
 using Nncase.Evaluator.NN;
+using Nncase.Hosting;
 
 namespace Nncase.Evaluator.RNN;
 
 /// <summary>
 /// RNN module.
 /// </summary>
-public class RNNModule : Module
+internal class RNNModule : IApplicationPart
 {
-    /// <inheritdoc/>
-    protected override void Load(ContainerBuilder builder)
+    public void ConfigureServices(IRegistrator registrator)
     {
-        builder.RegisterType<LSTMEvaluator>().AsImplementedInterfaces();
+        registrator.RegisterManyInterface<LSTMEvaluator>(reuse: Reuse.Singleton);
     }
 }

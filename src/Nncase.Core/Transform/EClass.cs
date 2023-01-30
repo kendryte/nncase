@@ -32,15 +32,6 @@ public sealed class EClass
     public IR.IRType CheckedType { get; private set; } = IR.AnyType.Default;
 
     /// <summary>
-    /// Set the new checked type and we need update the all inner enode expr with new type.
-    /// </summary>
-    /// <param name="type"></param>
-    public void SetCheckedType(IR.IRType type)
-    {
-        CheckedType = type;
-    }
-
-    /// <summary>
     /// Gets id.
     /// </summary>
     public int Id { get; }
@@ -60,6 +51,14 @@ public sealed class EClass
     /// Gets nodes.
     /// </summary>
     public IReadOnlyList<ENode> Nodes => _nodes;
+
+    /// <summary>
+    /// Set the new checked type and we need update the all inner enode expr with new type.
+    /// </summary>
+    public void SetCheckedType(IR.IRType type)
+    {
+        CheckedType = type;
+    }
 
     /// <summary>
     /// Find root eclass.
@@ -102,25 +101,6 @@ public sealed class EClass
     {
         _nodes.Remove(enode);
     }
-
-    /// <summary>
-    /// Replace enode.
-    /// </summary>
-    /// <param name="oldNode">Old enode.</param>
-    /// <param name="newNode">New enode.</param>
-    // public void ReplaceNode(ENode oldNode, ENode newNode)
-    // {
-    //     var index = _nodes.IndexOf(oldNode);
-    //     if (index != -1)
-    //     {
-    //         _nodes[index] = newNode;
-    //     }
-    //     else
-    //     {
-    //         // Original class may have been killed.
-    //         _nodes.Add(newNode);
-    //     }
-    // }
 
     /// <summary>
     /// Add used by enode.

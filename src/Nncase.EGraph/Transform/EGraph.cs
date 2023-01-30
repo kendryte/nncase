@@ -22,13 +22,13 @@ public sealed partial class EGraph : IEGraph
     private readonly Dictionary<ENode, ENodeEntry> _nodes = new();
     private readonly List<EClass> _classes = new();
 
-    private int _version = 0;
-    private int _globalEClassId = 0;
-
     /// <summary>
     /// which eclass should be repair.
     /// </summary>
-    private Queue<WorkItem> _worklist = new();
+    private readonly Queue<WorkItem> _worklist = new();
+
+    private int _version;
+    private int _globalEClassId;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EGraph"/> class.
@@ -46,24 +46,16 @@ public sealed partial class EGraph : IEGraph
         Add(expr);
     }
 
-    /// <summary>
-    /// Gets eclasses.
-    /// </summary>
+    /// <inheritdoc/>
     public IEnumerable<EClass> Classes => _classes;
 
     /// <inheritdoc/>
     public IEnumerable<ENode> Nodes => _nodes.Keys;
 
-    /// <summary>
-    /// Gets version.
-    /// </summary>
+    /// <inheritdoc/>
     public int Version => _version;
 
-    /// <summary>
-    /// Add expr, get the eclass id.
-    /// </summary>
-    /// <param name="expr">Expression.</param>
-    /// <returns>Eclass of this node.</returns>
+    /// <inheritdoc/>
     public EClass Add(Expr expr)
     {
         if (expr.CheckedType is null)
@@ -75,22 +67,13 @@ public sealed partial class EGraph : IEGraph
         return converter.Visit(expr);
     }
 
-    /// <summary>
-    /// Find eclass of enode.
-    /// </summary>
-    /// <param name="node">ENode.</param>
-    /// <returns>EClass.</returns>
+    /// <inheritdoc/>
     public EClass Find(ENode node)
     {
         return _nodes[node].Class;
     }
 
-    /// <summary>
-    /// Union two equal Eclass.
-    /// </summary>
-    /// <param name="classA">class a.</param>
-    /// <param name="classB">class b.</param>
-    /// <returns>If version changed.</returns>
+    /// <inheritdoc/>
     public bool Union(EClass classA, EClass classB)
     {
         classA = classA.Find();
@@ -123,9 +106,7 @@ public sealed partial class EGraph : IEGraph
         return true;
     }
 
-    /// <summary>
-    /// After merge, we use rebuild get new dep information.
-    /// </summary>
+    /// <inheritdoc/>
     public void Rebuild()
     {
         while (_worklist.Count > 0)
@@ -176,7 +157,9 @@ public sealed partial class EGraph : IEGraph
     private void Repair(WorkItem workItem)
     {
         if (workItem.OldClass.Id == 29)
-            ;
+        {
+        }
+
         workItem.NewClass = workItem.NewClass.Find();
         foreach (var enode in workItem.OldClass.UsedBy)
         {
@@ -188,7 +171,7 @@ public sealed partial class EGraph : IEGraph
                 _nodes.Remove(enode);
                 originalClass.RemoveNode(enode);
 
-                // 2. Update node's children
+                // 2. Replace node's children
                 var newNode = enode.Canonicalize();
 
                 if (_nodes.TryGetValue(newNode, out var existingEntry))
@@ -275,6 +258,7 @@ public sealed partial class EGraph : IEGraph
                 result = _graph.AddENode(expr, Array.Empty<EClass>());
                 ExpressionMemo.Add(expr, result);
             }
+
             return result;
         }
 

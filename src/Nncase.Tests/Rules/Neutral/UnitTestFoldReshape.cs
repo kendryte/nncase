@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,7 +17,7 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFoldReshape : TestFixture.UnitTestFixtrue
+public class UnitTestFoldReshape : TestClassBase
 {
     public static IEnumerable<object[]> TestFoldNopReshapePositiveData =>
         new[]
@@ -23,38 +26,12 @@ public class UnitTestFoldReshape : TestFixture.UnitTestFixtrue
             new object[] { new[] { 2, 3 }, new[] { 2, 3 } },
         };
 
-    [Theory]
-    [MemberData(nameof(TestFoldNopReshapePositiveData))]
-    public void TestFoldNopReshapePositive(int[] shape, int[] newShape)
-    {
-        var caseOptions = GetPassOptions();
-        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
-        var rootPre = Tensors.Reshape(a, newShape);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopReshape() }, caseOptions);
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
-    }
-
     public static IEnumerable<object[]> TestFoldNopReshapeNegativeData =>
         new[]
         {
             new object[] { new[] { 4 }, new[] { 2, 2 } },
             new object[] { new[] { 2, 3 }, new[] { 3, 2 } },
         };
-
-    [Theory]
-    [MemberData(nameof(TestFoldNopReshapeNegativeData))]
-    public void TestFoldNopReshapeNegative(int[] shape, int[] newShape)
-    {
-        var caseOptions = GetPassOptions();
-        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
-        var rootPre = Tensors.Reshape(a, newShape);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopReshape() }, caseOptions);
-
-        Assert.Equal(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
-    }
 
     public static IEnumerable<object[]> TestFoldTwoReshapesPositiveData =>
         new[]
@@ -64,13 +41,36 @@ public class UnitTestFoldReshape : TestFixture.UnitTestFixtrue
         };
 
     [Theory]
+    [MemberData(nameof(TestFoldNopReshapePositiveData))]
+    public void TestFoldNopReshapePositive(int[] shape, int[] newShape)
+    {
+        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
+        var rootPre = Tensors.Reshape(a, newShape);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopReshape() }, new());
+
+        Assert.NotEqual(rootPre, rootPost);
+        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+    }
+
+    [Theory]
+    [MemberData(nameof(TestFoldNopReshapeNegativeData))]
+    public void TestFoldNopReshapeNegative(int[] shape, int[] newShape)
+    {
+        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
+        var rootPre = Tensors.Reshape(a, newShape);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopReshape() }, new());
+
+        Assert.Equal(rootPre, rootPost);
+        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+    }
+
+    [Theory]
     [MemberData(nameof(TestFoldTwoReshapesPositiveData))]
     public void TestFoldTwoReshapesPositive(int[] shape, int[] newShape1, int[] newShape2)
     {
-        var caseOptions = GetPassOptions();
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Reshape(Tensors.Reshape(a, newShape1), newShape2);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoReshapes() }, caseOptions);
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoReshapes() }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));

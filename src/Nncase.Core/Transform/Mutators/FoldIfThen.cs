@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -11,9 +11,9 @@ using Nncase.TIR;
 namespace Nncase.Transform.Mutators;
 
 /// <summary>
-/// fold if then and select
+/// fold if then and select.
 /// </summary>
-internal sealed class FoldIfThen : ExprMutator
+public sealed class FoldIfThen : ExprMutator
 {
     /// <inheritdoc/>
     public override Expr MutateLeaf(TIR.IfThenElse expr)
@@ -33,6 +33,7 @@ internal sealed class FoldIfThen : ExprMutator
             var c = tc.Value.ToScalar<bool>();
             return c ? expr[IR.Math.Select.TrueValue] : expr[IR.Math.Select.FalseValue];
         }
+
         return expr;
     }
 }

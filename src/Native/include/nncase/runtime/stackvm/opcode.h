@@ -22,8 +22,7 @@ BEGIN_NS_NNCASE_RT_MODULE(stackvm)
 
 // Enums
 
-enum class opcode_t : uint8_t
-{
+enum class opcode_t : uint8_t {
     NOP = 0,
     LDNULL = 1,
     LDC_I4 = 2,
@@ -126,8 +125,7 @@ enum class opcode_t : uint8_t
     TENSOR = 99,
 };
 
-enum class tensor_function_t : uint16_t
-{
+enum class tensor_function_t : uint16_t {
     batch_normalization = 0,
     batch_to_space = 1,
     celu = 6,
@@ -205,8 +203,7 @@ enum class tensor_function_t : uint16_t
     resize_image = 52,
 };
 
-enum class binary_op_t : uint8_t
-{
+enum class binary_op_t : uint8_t {
     add = 0,
     sub = 1,
     mul = 2,
@@ -225,16 +222,14 @@ enum class binary_op_t : uint8_t
     right_shift = 15,
 };
 
-enum class cast_mode_t : int32_t
-{
+enum class cast_mode_t : int32_t {
     kdefault = 0,
     exact = 1,
     check_overflow = 2,
     reinterpret = 3,
 };
 
-enum class compare_op_t : uint8_t
-{
+enum class compare_op_t : uint8_t {
     equal = 0,
     not_equal = 1,
     lower_than = 2,
@@ -243,42 +238,36 @@ enum class compare_op_t : uint8_t
     greater_or_equal = 5,
 };
 
-enum class pad_mode_t : uint8_t
-{
+enum class pad_mode_t : uint8_t {
     constant = 0,
     reflect = 1,
     symmetric = 2,
     edge = 3,
 };
 
-enum class lstmdirection_t : int32_t
-{
+enum class lstmdirection_t : int32_t {
     forward = 0,
     reverse = 1,
     bidirectional = 2,
 };
 
-enum class lstmlayout_t : int32_t
-{
+enum class lstmlayout_t : int32_t {
     zero = 0,
     one = 1,
 };
 
-enum class one_hot_mode_t : uint8_t
-{
+enum class one_hot_mode_t : uint8_t {
     normal = 0,
     process_neg = 1,
 };
 
-enum class quant_mode_t : int32_t
-{
+enum class quant_mode_t : int32_t {
     unsigned_mode = 0,
     signed_symmetric_mode = 1,
     signed_asymmetric_mode = 2,
 };
 
-enum class reduce_op_t : uint8_t
-{
+enum class reduce_op_t : uint8_t {
     mean = 0,
     min = 1,
     max = 2,
@@ -286,20 +275,17 @@ enum class reduce_op_t : uint8_t
     prod = 4,
 };
 
-enum class reduce_arg_op_t : uint8_t
-{
+enum class reduce_arg_op_t : uint8_t {
     arg_min = 0,
     arg_max = 1,
 };
 
-enum class image_resize_mode_t : uint8_t
-{
+enum class image_resize_mode_t : uint8_t {
     bilinear = 0,
     nearest_neighbor = 1,
 };
 
-enum class image_resize_transformation_mode_t : int32_t
-{
+enum class image_resize_transformation_mode_t : int32_t {
     half_pixel = 0,
     pytorch_half_pixel = 1,
     align_corners = 2,
@@ -307,16 +293,14 @@ enum class image_resize_transformation_mode_t : int32_t
     tfcrop_and_resize = 4,
 };
 
-enum class image_resize_nearest_mode_t : int32_t
-{
+enum class image_resize_nearest_mode_t : int32_t {
     round_prefer_floor = 0,
     round_prefer_ceil = 1,
     floor = 2,
     ceil = 3,
 };
 
-enum class unary_op_t : uint8_t
-{
+enum class unary_op_t : uint8_t {
     abs = 0,
     acos = 1,
     acosh = 2,

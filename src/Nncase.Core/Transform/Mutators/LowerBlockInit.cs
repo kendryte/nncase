@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -13,14 +13,14 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// Flatten the multi-dimensional BufferLoad and BufferStore to single dimensional Load/Store. Also remove Block to ensure that the flattened TIR can not be scheduled again.
 /// </summary>
-internal sealed class LowerBlockInit : ExprMutator
+public sealed class LowerBlockInit : ExprMutator
 {
     /// <inheritdoc/>
     public override Expr VisitLeaf(Block expr)
     {
         if (expr.InitBody.Count == 0)
         {
-            return base.Visit(expr);
+            return Visit(expr);
         }
 
         var initbody = Lowering(expr.InitBody, expr.IterVars);
@@ -28,18 +28,18 @@ internal sealed class LowerBlockInit : ExprMutator
         return expr with
         {
             InitBody = new(),
-            Body = new Sequential(new[] { initbody, body })
+            Body = new Sequential(new[] { initbody, body }),
         };
     }
 
-    Expr Lowering(Sequential init, IRArray<IterVar> iterVars)
+    private Expr Lowering(Sequential init, IRArray<IterVar> iterVars)
     {
         List<Expr> conds = new();
         foreach (var iterVar in iterVars)
         {
             if (iterVar.Mode == IterationMode.CommReduce)
             {
-                conds.Append(IR.F.Math.Equal(iterVar, iterVar.Dom.Start));
+                conds.Add(IR.F.Math.Equal(iterVar, iterVar.Dom.Start));
             }
         }
 

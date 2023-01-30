@@ -44,7 +44,7 @@ namespace Nncase.IR
     {
         private readonly ImmutableArray<Dimension> _dimensions;
 
-        private int _hashcode;
+        private readonly int _hashcode;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Shape"/> class.
@@ -62,7 +62,9 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="dimensions">Dimensions.</param>
         public Shape(IEnumerable<long> dimensions)
-            : this(dimensions.Select(i => (int)i)) { }
+            : this(dimensions.Select(i => (int)i))
+        {
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Shape"/> class.
@@ -84,6 +86,7 @@ namespace Nncase.IR
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="Shape"/> class.
         /// init from the dimensions
         /// Initializes a new instance of the <see cref="Shape"/> class.
         /// </summary>
@@ -99,7 +102,8 @@ namespace Nncase.IR
         /// <param name="dimensions">Dimensions.</param>
         public Shape(params Dimension[] dimensions)
             : this((IEnumerable<Dimension>)dimensions)
-        { }
+        {
+        }
 
         private Shape(ShapeKind kind, IEnumerable<Dimension> dimensions)
         {
@@ -117,16 +121,6 @@ namespace Nncase.IR
         /// Gets an unranked shape.
         /// </summary>
         public static Shape Unranked { get; } = new Shape(ShapeKind.Unranked, new List<Dimension>());
-
-        /// <summary>
-        /// Gets a shape with rank unknwon dimension
-        /// </summary>
-        /// <param name="rank"></param>
-        /// <returns></returns>
-        public static Shape Unknown(int rank)
-        {
-            return new Shape(ShapeKind.HasUnknownDimension, Enumerable.Repeat(Dimension.Unknown, rank));
-        }
 
         /// <summary>
         /// Gets a scalar shape.
@@ -179,7 +173,7 @@ namespace Nncase.IR
         public int Rank => _dimensions.Length;
 
         /// <summary>
-        /// Get Total Elements.
+        /// Gets get Total Elements.
         /// </summary>
         public int Size => Enumerable.Range(0, Rank).Aggregate(1, (size, i) => size * _dimensions[i].FixedValue);
 
@@ -192,10 +186,33 @@ namespace Nncase.IR
                 ? ((IReadOnlyList<Dimension>)_dimensions)[index]
                 : ((IReadOnlyList<Dimension>)_dimensions)[Rank + index];
 
+        public static implicit operator ReadOnlySpan<int>(Shape shape) => shape._dimensions.Select(x => (int)(x.Value ?? -1)).ToArray();
+
+        public static implicit operator Shape(Dimension[] dimensions) => new Shape(dimensions);
+
+        public static implicit operator Shape(int[] dimensions) => new Shape(dimensions);
+
+        public static bool operator ==(Shape lhs, Shape rhs)
+        {
+            return lhs.Equals(rhs);
+        }
+
+        public static bool operator !=(Shape lhs, Shape rhs)
+        {
+            return !(lhs == rhs);
+        }
+
         /// <summary>
-        /// Get Pord.
+        /// Gets a shape with rank unknwon dimension.
         /// </summary>
-        /// <returns></returns>
+        public static Shape Unknown(int rank)
+        {
+            return new Shape(ShapeKind.HasUnknownDimension, Enumerable.Repeat(Dimension.Unknown, rank));
+        }
+
+        /// <summary>
+        /// Get Prod.
+        /// </summary>
         public Dimension Prod()
         {
             return _dimensions.Aggregate(new Dimension(1), (x, y) => x * y);
@@ -204,9 +221,6 @@ namespace Nncase.IR
         /// <summary>
         /// return new shape after insert dim.
         /// </summary>
-        /// <param name="index"></param>
-        /// <param name="dim"></param>
-        /// <returns></returns>
         public Shape InsertAndClone(int index, Dimension dim)
         {
             var l = _dimensions.ToList();
@@ -217,9 +231,6 @@ namespace Nncase.IR
         /// <summary>
         /// return new shape after insert dim.
         /// </summary>
-        /// <param name="index"></param>
-        /// <param name="dims"></param>
-        /// <returns></returns>
         public Shape InsertAndClone(int index, IEnumerable<Dimension> dims)
         {
             var l = _dimensions.ToList();
@@ -232,18 +243,16 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// convert to the int list
+        /// convert to the int list.
         /// </summary>
-        /// <returns></returns>
         public List<int> ToValueList()
         {
             return _dimensions.Select(dim => dim.FixedValue).ToList();
         }
 
         /// <summary>
-        /// convert the int array
+        /// convert the int array.
         /// </summary>
-        /// <returns></returns>
         public int[] ToValueArray()
         {
             return _dimensions.Select(dim => dim.FixedValue).ToArray();
@@ -256,11 +265,6 @@ namespace Nncase.IR
             ShapeKind.Unranked => "Unranked",
             _ => $"[{string.Join(',', _dimensions)}]",
         };
-
-        private static ShapeKind KindOf(IEnumerable<Dimension> dimensions)
-        {
-            return dimensions.Any(x => x.IsUnknown) ? ShapeKind.HasUnknownDimension : ShapeKind.Fixed;
-        }
 
         /// <inheritdoc/>
         public int GetHashCode(IEqualityComparer comparer)
@@ -303,19 +307,9 @@ namespace Nncase.IR
             return other is Shape shape && Equals(shape);
         }
 
-        /// <inheritdoc/>
-        public static implicit operator ReadOnlySpan<int>(Shape shape) => shape._dimensions.Select(x => (int)(x.Value ?? -1)).ToArray();
-
-        /// <inheritdoc/>
-        public static bool operator ==(Shape lhs, Shape rhs) { return lhs.Equals(rhs); }
-
-        /// <inheritdoc/>
-        public static bool operator !=(Shape lhs, Shape rhs) { return !(lhs == rhs); }
-
-        /// <inheritdoc/>
-        public static implicit operator Shape(Dimension[] dimensions) => new Shape(dimensions);
-
-        /// <inheritdoc/>
-        public static implicit operator Shape(int[] dimensions) => new Shape(dimensions);
+        private static ShapeKind KindOf(IEnumerable<Dimension> dimensions)
+        {
+            return dimensions.Any(x => x.IsUnknown) ? ShapeKind.HasUnknownDimension : ShapeKind.Fixed;
+        }
     }
 }

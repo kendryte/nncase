@@ -21,15 +21,16 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::vulkan;
 
-result<void> vulkan_runtime_function::visit(const barrier_op_t &op) noexcept
-{
+result<void> vulkan_runtime_function::visit(const barrier_op_t &op) noexcept {
     CHECK_WITH_ERR(op.memory_barriers == 0, std::errc::not_supported);
 
     auto unused_buf_barriers = buffer_barriers_.size() - op.buffer_barriers;
     auto buf_barriers = buffer_barriers_.data() + unused_buf_barriers;
 
-    cmd_buffer_.pipelineBarrier((vk::PipelineStageFlagBits)op.src_stage, (vk::PipelineStageFlagBits)op.dest_stage,
-        (vk::DependencyFlagBits)op.dependency_flags, {}, { op.buffer_barriers, buf_barriers }, {});
+    cmd_buffer_.pipelineBarrier((vk::PipelineStageFlagBits)op.src_stage,
+                                (vk::PipelineStageFlagBits)op.dest_stage,
+                                (vk::DependencyFlagBits)op.dependency_flags, {},
+                                {op.buffer_barriers, buf_barriers}, {});
     buffer_barriers_.resize(unused_buf_barriers);
     return ok();
 }

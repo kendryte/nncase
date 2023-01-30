@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Linq;
@@ -35,11 +35,6 @@ public class UninitializedEvaluator : IEvaluator<Uninitialized>, ITypeInferencer
     /// <inheritdoc/>
     public Cost? Visit(ICostEvaluateContext context, Uninitialized target)
     {
-        var outputType = context.GetReturnType<TensorType>();
-        return new()
-        {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
-        };
+        return Cost.Zero;
     }
-
 }

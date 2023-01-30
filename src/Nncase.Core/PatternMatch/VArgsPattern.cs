@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -46,7 +46,7 @@ public sealed record VArgsPattern(Func<IReadOnlyList<Expr>, IRArray<Pattern>> Fi
     public int Count => _fields.Count;
 
     /// <summary>
-    /// check the fields is empty
+    /// Gets a value indicating whether check the fields is empty.
     /// </summary>
     public bool IsDefaultOrEmpty => _fields.IsDefaultOrEmpty;
 
@@ -119,8 +119,8 @@ public partial class Utility
     /// <summary>
     /// Create repeated Vargs match pattern, it will manual clear the inner container.
     /// </summary>
-    /// <param name="creator">the int mean matched params nums, list[pattern] is inner params contianer. </param>
     /// <param name="name">name.</param>
+    /// <param name="creator">the int mean matched params nums, list[pattern] is inner params contianer. </param>
     /// <returns>VArgsPattern.</returns>
     public static VArgsPattern IsVArgsRepeat(string? name, Func<IReadOnlyList<Expr>, IRArray<Pattern>> creator)
       => new VArgsPattern(creator, name);

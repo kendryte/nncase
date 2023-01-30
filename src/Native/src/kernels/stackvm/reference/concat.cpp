@@ -69,13 +69,11 @@ result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output,
                            out_shape, in_strides, out_strides, axis,           \
                            concat_dims, context)
 
-result<void> nncase::kernels::stackvm::reference::concat(datatype_t type,
-                         gsl::span<const gsl::byte *const> inputs,
-                         gsl::byte *output, const dims_t &out_shape,
-                         gsl::span<const dims_t> in_strides,
-                         const strides_t &out_strides, size_t axis,
-                         const dims_t &concat_dims,
-                         kernel_context &context) noexcept {
+result<void> nncase::kernels::stackvm::reference::concat(
+    datatype_t type, gsl::span<const gsl::byte *const> inputs,
+    gsl::byte *output, const dims_t &out_shape,
+    gsl::span<const dims_t> in_strides, const strides_t &out_strides,
+    size_t axis, const dims_t &concat_dims, kernel_context &context) noexcept {
     switch (runtime::get_bytes(type)) {
         CONCAT_IMPL(1, uint8_t);
         CONCAT_IMPL(2, uint16_t);

@@ -15,16 +15,10 @@ namespace Nncase.Transform;
 /// </summary>
 public sealed record ENode
 {
-
     /// <summary>
-    /// Gets the Enode's Expression
+    /// speedup hashcode calc.
     /// </summary>
-    public Expr Expr { get; init; }
-
-    /// <summary>
-    /// Gets the Enode Children Eclasses
-    /// </summary>
-    public IRArray<EClass> Children { get; init; }
+    private int? _hashcode;
 
     private ENode(Expr expr, IRArray<EClass> children)
     {
@@ -33,18 +27,22 @@ public sealed record ENode
     }
 
     /// <summary>
+    /// Gets the Enode's Expression.
+    /// </summary>
+    public Expr Expr { get; init; }
+
+    /// <summary>
+    /// Gets the Enode Children Eclasses.
+    /// </summary>
+    public IRArray<EClass> Children { get; init; }
+
+    /// <summary>
     /// The create for the enode.
     /// Can add hook in here for debug.
     /// </summary>
     /// <param name="expr">expression.</param>
     /// <param name="children">parameters.</param>
-    /// <returns></returns>
     public static ENode Create(Expr expr, IRArray<EClass> children) => new ENode(expr, children);
-
-    /// <summary>
-    /// speedup hashcode calc.
-    /// </summary>
-    private int? _hashcode;
 
     /// <summary>
     /// Add current enode information to childrens.

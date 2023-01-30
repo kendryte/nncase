@@ -85,8 +85,9 @@ result<void> cumsum_impl(const T *input, T *output, const dims_t &in_shape,
     return ok();
 }
 
-#define CUMSUM_IMPL(_ty) return cumsum_impl(IN_CAST(_ty, input), \
-    OUT_CAST(_ty, output), in_shape, axis, exclusive, reverse);
+#define CUMSUM_IMPL(_ty)                                                       \
+    return cumsum_impl(IN_CAST(_ty, input), OUT_CAST(_ty, output), in_shape,   \
+                       axis, exclusive, reverse);
 
 result<void> cumsum_impl(typecode_t typecode, const gsl::byte *input,
                          gsl::byte *output, const dims_t &in_shape,
@@ -104,7 +105,7 @@ result<value_t> nncase::kernels::stackvm::cum_sum(
     try_to_scalar(exclusive_value, exclusive, bool);
     try_to_scalar(reverse_value, reverse, bool);
     try_typecode(typecode, input_tensor);
-    try_(cumsum_impl(typecode, input_mem, out_mem, input_tensor->shape(), axis_value,
-                     exclusive_value, reverse_value));
+    try_(cumsum_impl(typecode, input_mem, out_mem, input_tensor->shape(),
+                     axis_value, exclusive_value, reverse_value));
     return ok(output);
 }

@@ -1,0 +1,37 @@
+name: code-format
+
+on: [pull_request]
+
+jobs:
+  code-format:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: "6.0"
+
+    - name: Install Formatters
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-format-11
+        sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-11 110
+        dotnet tool update -g dotnet-format
+
+    - name: Format C++ & C#
+      run: |
+        export CLANG_FORMAT_LLVM_INSTALL_DIR=/usr
+        bash tools/clang-format.sh
+        dotnet format -v diag
+
+    - name: Format Python
+      id: autopep8
+      uses: peter-evans/autopep8@v1
+      with:
+        args: --recursive --in-place tests python
+
+    - uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: Apply code-format changes

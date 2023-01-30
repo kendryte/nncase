@@ -78,6 +78,7 @@ gammas = [
     1.5
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('alpha', alphas)
 @pytest.mark.parametrize('gamma', gammas)

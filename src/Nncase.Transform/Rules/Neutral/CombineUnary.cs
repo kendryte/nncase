@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -80,8 +80,7 @@ public sealed partial class CombineSliceUnary : IRewriteRule
     public IPattern Pattern { get; } = IsUnary(
         "unary",
         x => true,
-        IsSlice(IsWildcard("input"), IsWildcard("begins"), IsWildcard("ends"), IsWildcard("axes"),
-            IsWildcard("strides")));
+        IsSlice(IsWildcard("input"), IsWildcard("begins"), IsWildcard("ends"), IsWildcard("axes"), IsWildcard("strides")));
 
     private Expr? GetReplace(Unary unary, Expr input, Expr begins, Expr ends, Expr axes, Expr strides)
     {

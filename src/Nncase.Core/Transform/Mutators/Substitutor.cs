@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -13,22 +13,26 @@ namespace Nncase.Transform.Mutators;
 // internal enum Inst
 
 /// <summary>
-/// substitutor will not substitute the other function
+/// substitutor will not substitute the other function.
 /// </summary>
-internal sealed class Substitutor : ExprMutator
+public sealed class Substitutor : ExprMutator
 {
-    Func<Expr, Expr?> Maper;
+    private readonly Func<Expr, Expr?> _maper;
 
     public Substitutor(Func<Expr, Expr?> maper)
     {
-        Maper = maper;
+        _maper = maper;
     }
 
     /// <inheritdoc/>
     public override Expr DefaultMutateLeaf(Expr expr)
     {
-        var mexpr = Maper(expr);
-        if (mexpr is not null) { return mexpr; }
+        var mexpr = _maper(expr);
+        if (mexpr is not null)
+        {
+            return mexpr;
+        }
+
         return expr;
     }
 }

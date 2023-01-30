@@ -52,45 +52,62 @@ using namespace nncase::ir::transforms::k210;
 using namespace nncase::targets;
 using namespace nncase::runtime;
 
-extern "C"
-{
-    K210_TARGET_API target *create_target()
-    {
-        return new k210_target();
-    }
+extern "C" {
+K210_TARGET_API target *create_target() { return new k210_target(); }
 }
 
-std::unique_ptr<codegen::module_builder> k210_target::create_module_builder(const module_type_t &type, std::string_view module_name, const codegen::module_builder_params &params)
-{
+std::unique_ptr<codegen::module_builder> k210_target::create_module_builder(
+    const module_type_t &type, std::string_view module_name,
+    const codegen::module_builder_params &params) {
     if (type == runtime::k210::k210_module_type)
         return codegen::create_k210_module_builder(module_name, params);
     return neutral_target::create_module_builder(type, module_name, params);
 }
 
-void k210_target::register_allocators(const module_type_t &type, allocator_map_t &allocators, std::vector<std::shared_ptr<buffer_allocator>> &allocator_holders)
-{
-    if (type == runtime::k210::k210_module_type)
-    {
-        allocators.emplace(mem_input, allocator_holders.emplace_back(std::make_shared<linear_buffer_allocator>()).get());
-        allocators.emplace(mem_output, allocator_holders.emplace_back(std::make_shared<linear_buffer_allocator>()).get());
-        allocators.emplace(mem_rdata, allocator_holders.emplace_back(std::make_shared<linear_buffer_allocator>()).get());
-        allocators.emplace(mem_data, allocator_holders.emplace_back(std::make_shared<linear_buffer_allocator>()).get());
-        allocators.emplace(runtime::k210::mem_kpu, allocator_holders.emplace_back(std::make_shared<kpu_buffer_allocator>()).get());
-    }
-    else
-    {
-        neutral_target::register_allocators(type, allocators, allocator_holders);
+void k210_target::register_allocators(
+    const module_type_t &type, allocator_map_t &allocators,
+    std::vector<std::shared_ptr<buffer_allocator>> &allocator_holders) {
+    if (type == runtime::k210::k210_module_type) {
+        allocators.emplace(
+            mem_input,
+            allocator_holders
+                .emplace_back(std::make_shared<linear_buffer_allocator>())
+                .get());
+        allocators.emplace(
+            mem_output,
+            allocator_holders
+                .emplace_back(std::make_shared<linear_buffer_allocator>())
+                .get());
+        allocators.emplace(
+            mem_rdata,
+            allocator_holders
+                .emplace_back(std::make_shared<linear_buffer_allocator>())
+                .get());
+        allocators.emplace(
+            mem_data,
+            allocator_holders
+                .emplace_back(std::make_shared<linear_buffer_allocator>())
+                .get());
+        allocators.emplace(
+            runtime::k210::mem_kpu,
+            allocator_holders
+                .emplace_back(std::make_shared<kpu_buffer_allocator>())
+                .get());
+    } else {
+        neutral_target::register_allocators(type, allocators,
+                                            allocator_holders);
     }
 }
 
-void k210_target::register_evaluator_ops()
-{
+void k210_target::register_evaluator_ops() {
     neutral_target::register_evaluator_ops();
     ir::k210::register_k210_evaluators();
 }
 
-void k210_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] bool use_ptq)
-{
+void k210_target::register_target_dependent_passes(
+    [[maybe_unused]] const module_type_t &type,
+    [[maybe_unused]] ir::transforms::pass_manager &pass_mgr,
+    [[maybe_unused]] bool use_ptq) {
     {
         transform_pass p("sigmoid_lowering");
         p.emplace<split_sigmoid_transform>();
@@ -110,8 +127,8 @@ void k210_target::register_target_dependent_passes([[maybe_unused]] const module
     }
 }
 
-void k210_target::register_quantize_annotation_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr)
-{
+void k210_target::register_quantize_annotation_passes(
+    const module_type_t &type, ir::transforms::pass_manager &pass_mgr) {
     {
         transform_pass p("annotate_kpu1");
         p.emplace<eliminate_dilated_conv2d_transform>();
@@ -144,13 +161,18 @@ void k210_target::register_quantize_annotation_passes(const module_type_t &type,
 
     {
         transform_pass p("annotate_kpu_quantize");
-        p.emplace<add_quant_checkpoints_transform>(std::in_place, ir::op_fused_unary, ir::k210::op_k210_fake_kpu_conv2d);
+        p.emplace<add_quant_checkpoints_transform>(
+            std::in_place, ir::op_fused_unary,
+            ir::k210::op_k210_fake_kpu_conv2d);
         pass_mgr.add_pass(std::move(p));
     }
 }
 
-void k210_target::register_quantize_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type, [[maybe_unused]] std::string_view w_quant_type, [[maybe_unused]] bool use_mse_quant_w)
-{
+void k210_target::register_quantize_passes(
+    const module_type_t &type, ir::transforms::pass_manager &pass_mgr,
+    [[maybe_unused]] datatype_t quant_type,
+    [[maybe_unused]] std::string_view w_quant_type,
+    [[maybe_unused]] bool use_mse_quant_w) {
     {
         transform_pass p("lowering_kpu_conv2d");
         p.emplace<kpu_conv2d_transform>(use_mse_quant_w);
@@ -170,11 +192,12 @@ void k210_target::register_quantize_passes(const module_type_t &type, ir::transf
         pass_mgr.add_pass(std::move(p));
     }
     {
-        neutral_target::register_quantize_passes(type, pass_mgr, quant_type, w_quant_type, use_mse_quant_w);
+        neutral_target::register_quantize_passes(type, pass_mgr, quant_type,
+                                                 w_quant_type, use_mse_quant_w);
 
         transform_pass p("fold_kpu_data_exchg2");
-        //p.emplace<fuse_kpu_download_transform>();
-        //p.emplace<fold_input_kpu_upload_transform>();
+        // p.emplace<fuse_kpu_download_transform>();
+        // p.emplace<fold_input_kpu_upload_transform>();
         add_default_transforms(p);
         p.emplace<fold_quantize_transform>();
         pass_mgr.add_pass(std::move(p));

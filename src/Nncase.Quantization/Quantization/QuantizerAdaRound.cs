@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -20,18 +20,18 @@ internal partial class QuantizerAdaRound
     private readonly EGraph _graph;
     private readonly List<ENode> _rangeOfs = new List<ENode>();
     private readonly List<ENode> _childrenOfRangeOfs = new List<ENode>();
-    private readonly RunPassOptions _passOptions;
+    private readonly CompileSession _compileSession;
 
-    public QuantizerAdaRound(EGraph graph, RunPassOptions passOptions)
+    public QuantizerAdaRound(EGraph graph, CompileSession compileSession)
     {
         _graph = graph;
-        _passOptions = passOptions;
+        _compileSession = compileSession;
         MarkRangeOfs();
     }
 
-    public async Task RunAsync(RunPassOptions options)
+    public async Task RunAsync()
     {
-        var quantOptions = options.CompileOptions.QuantizeOptions!;
+        var quantOptions = _compileSession.CompileOptions.QuantizeOptions;
         if (quantOptions.CalibrationDataset == null)
         {
             throw new ArgumentNullException(nameof(quantOptions.CalibrationDataset));
@@ -39,7 +39,7 @@ internal partial class QuantizerAdaRound
 
         if (quantOptions.UseAdaRound)
         {
-            await options.Target.AdaRoundWeights(quantOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs, _passOptions);
+            await _compileSession.Target.AdaRoundWeights(quantOptions.CalibrationDataset, _rangeOfs, _childrenOfRangeOfs, quantOptions);
         }
 
         _graph.Rebuild();
@@ -55,11 +55,13 @@ internal partial class QuantizerAdaRound
             // there are no rangeOfs and childrenOfRangeOfs actually, rangeOfs has been folded into const, use these names here is because of old habit.
             foreach (var match in matches)
             {
-                var _rangeOfMarker = (ENode)match.Root;
-                //if (!_rangeOfs.Contains(_rangeOfMarker.Children[1].Nodes[0]))
-                _rangeOfs.Add(_rangeOfMarker.Children[1].Nodes[0]);
-                //if (!_childrenOfRangeOfs.Contains(_rangeOfMarker.Children[0].Nodes[0]))
-                _childrenOfRangeOfs.Add(_rangeOfMarker.Children[0].Nodes[0]);
+                var rangeOfMarker = (ENode)match.Root;
+
+                // if (!_rangeOfs.Contains(_rangeOfMarker.Children[1].Nodes[0]))
+                _rangeOfs.Add(rangeOfMarker.Children[1].Nodes[0]);
+
+                // if (!_childrenOfRangeOfs.Contains(_rangeOfMarker.Children[0].Nodes[0]))
+                _childrenOfRangeOfs.Add(rangeOfMarker.Children[0].Nodes[0]);
             }
         }
     }

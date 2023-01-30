@@ -32,7 +32,8 @@ def _make_module(in_shape, blocksize):
     inputs.append('input')
 
     # output
-    output_shape = [in_shape[0], in_shape[1] * (blocksize ** 2), in_shape[2] // blocksize, in_shape[3] // blocksize]
+    output_shape = [in_shape[0], in_shape[1] *
+                    (blocksize ** 2), in_shape[2] // blocksize, in_shape[3] // blocksize]
     output = helper.make_tensor_value_info('output', TensorProto.FLOAT, output_shape)
     outputs.append('output')
 
@@ -67,6 +68,7 @@ blocksizes = [
     2,
     4
 ]
+
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('blocksize', blocksizes)

@@ -1,21 +1,21 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using Autofac;
+using DryIoc;
+using Nncase.Hosting;
 
 namespace Nncase.Evaluator.TIR;
 
 /// <summary>
 /// TIR module.
 /// </summary>
-public class TIRModule : Module
+internal class TIRModule : IApplicationPart
 {
-    /// <inheritdoc/>
-    protected override void Load(ContainerBuilder builder)
+    public void ConfigureServices(IRegistrator registrator)
     {
-        builder.RegisterType<LoadEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<RampEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<StoreEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<NopEvaluator>().AsImplementedInterfaces();
+        registrator.RegisterManyInterface<LoadEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<RampEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<StoreEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NopEvaluator>(reuse: Reuse.Singleton);
     }
 }

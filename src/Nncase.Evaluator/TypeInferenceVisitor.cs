@@ -59,7 +59,11 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     {
         try
         {
-            foreach (var p in expr.Parameters) { VerifySubField(expr, p); }
+            foreach (var p in expr.Parameters)
+            {
+                VerifySubField(expr, p);
+            }
+
             VerifySubField(expr, expr.Body);
         }
         catch (TypeInferenceInterruptException e)
@@ -79,7 +83,11 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     {
         try
         {
-            foreach (var p in expr.Parameters) { VerifySubField(expr, p); }
+            foreach (var p in expr.Parameters)
+            {
+                VerifySubField(expr, p);
+            }
+
             VerifySubField(expr, expr.Body);
         }
         catch (TypeInferenceInterruptException e)
@@ -107,7 +115,11 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     {
         try
         {
-            foreach (var p in expr.Parameters) { VerifySubField(expr, p); }
+            foreach (var p in expr.Parameters)
+            {
+                VerifySubField(expr, p);
+            }
+
             VerifySubField(expr, expr.Body);
         }
         catch (TypeInferenceInterruptException e)
@@ -174,30 +186,6 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         var type = Visit(expr.Target);
         SetCheckedType(expr, type);
         return type;
-    }
-
-    /// <summary>
-    /// Verify the expression sub field type is valid.
-    /// </summary>
-    /// <param name="parent"></param>
-    /// <param name="field"></param>
-    /// <param name="exprMsg"></param>
-    void VerifySubField(Expr parent, Expr field, TypePattern? pattern = null, [CallerArgumentExpression("expr")] string? exprMsg = null)
-    {
-        pattern ??= TypePatternUtility.IsIRType();
-
-        if (field.CheckedType is InvalidType invalidType)
-        {
-            throw new TypeInferenceInterruptException(new InvalidType($"Invalid {exprMsg} <== {invalidType.Reason}"));
-        }
-        else if (field.CheckedType is AnyType any)
-        {
-            return;
-        }
-        else if (!pattern.MatchLeaf(field.CheckedType!))
-        {
-            throw new TypeInferenceInterruptException(new InvalidType($"The {exprMsg} Require {pattern.Reason}"));
-        }
     }
 
     /// <inheritdoc/>
@@ -408,7 +396,10 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         try
         {
             if (expr.Var.CheckedType != expr.Expression.CheckedType)
+            {
                 throw new TypeInferenceInterruptException(new InvalidType("Var Type != Expression Type"));
+            }
+
             VerifySubField(expr, expr.Body, TypePatternUtility.IsUnit());
         }
         catch (TypeInferenceInterruptException e)
@@ -471,14 +462,32 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     /// Note the IVisitable instance have no IRType.
     public override object VisitLeaf(IVisitable visitable)
     {
-        return default(object)!;
+        return default!;
+    }
+
+    /// <summary>
+    /// Verify the expression sub field type is valid.
+    /// </summary>
+    private void VerifySubField(Expr parent, Expr field, TypePattern? pattern = null, [CallerArgumentExpression("field")] string? exprMsg = null)
+    {
+        pattern ??= TypePatternUtility.IsIRType();
+        if (field.CheckedType is InvalidType invalidType)
+        {
+            throw new TypeInferenceInterruptException(new InvalidType($"Invalid {exprMsg} <== {invalidType.Reason}"));
+        }
+        else if (field.CheckedType is AnyType)
+        {
+            return;
+        }
+        else if (!pattern.MatchLeaf(field.CheckedType!))
+        {
+            throw new TypeInferenceInterruptException(new InvalidType($"The {exprMsg} Require {pattern.Reason}"));
+        }
     }
 
     /// <summary>
     /// set expr's current type.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <param name="type"></param>
     private void SetCheckedType(Expr expr, IRType type)
     {
         // note can't determine whether to update checkedtype

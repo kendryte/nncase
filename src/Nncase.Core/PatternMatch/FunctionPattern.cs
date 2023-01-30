@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -44,13 +44,15 @@ public static partial class Utility
     /// <summary>
     /// Create the function pattern.
     /// </summary>
+    /// <param name="name">name.</param>
     /// <param name="body">body.</param>
     /// <param name="parameters">params.</param>
-    /// <param name="name">name.</param>
     /// <returns>FunctionPattern .</returns>
     public static FunctionPattern IsFunction(string? name, Pattern body, VArgsPattern parameters) => new FunctionPattern(body, parameters, name);
 
     public static FunctionPattern IsFunction(Pattern body, VArgsPattern parameters) => IsFunction(null, body, parameters);
+
     public static FunctionPattern IsFunction(string? name, Pattern body, params Pattern[] parameters) => IsFunction(name, body, IsVArgs(parameters));
+
     public static FunctionPattern IsFunction(Pattern body, params Pattern[] parameters) => IsFunction(null, body, IsVArgs(parameters));
 }

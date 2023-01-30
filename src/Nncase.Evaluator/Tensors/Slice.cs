@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -52,13 +52,9 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         };
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="axisConst"></param>
-    /// <param name="input"></param>
-    /// <param name="f">(index in axis, axis, inDim) -> outDim</param>
-    /// <returns></returns>
+    /// <param name="axisConst">Axis.</param>
+    /// <param name="input">Input type.</param>
+    /// <param name="f">(index in axis, axis, inDim) -> outDim.</param>
     private Shape ApplyAxis(TensorConst axisConst, TensorType input, Func<int, int, int, Dimension> f)
     {
         if (input.Shape.IsUnranked)

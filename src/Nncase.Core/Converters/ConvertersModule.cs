@@ -1,31 +1,32 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using Autofac;
+using DryIoc;
+using Nncase.Hosting;
 
 namespace Nncase.Converters;
 
 /// <summary>
 /// Converters module.
 /// </summary>
-public class ConvertersModule : Module
+internal class ConvertersModule : IApplicationPart
 {
     /// <inheritdoc/>
-    protected override void Load(ContainerBuilder builder)
+    public void ConfigureServices(IRegistrator registrator)
     {
-        builder.RegisterType<BFloat16Converters>().AsImplementedInterfaces().SingleInstance();
-        builder.RegisterType<BooleanConverters>().AsImplementedInterfaces().SingleInstance();
-        builder.RegisterType<DoubleConverters>().AsImplementedInterfaces().SingleInstance();
-        builder.RegisterType<HalfConverters>().AsImplementedInterfaces().SingleInstance();
-        builder.RegisterType<Int16Converters>().AsImplementedInterfaces().SingleInstance();
-        builder.RegisterType<Int32Converters>().AsImplementedInterfaces().SingleInstance();
-        builder.RegisterType<Int64Converters>().AsImplementedInterfaces().SingleInstance();
-        builder.RegisterType<Int8Converters>().AsImplementedInterfaces().SingleInstance();
-        builder.RegisterType<SingleConverters>().AsImplementedInterfaces().SingleInstance();
-        builder.RegisterType<UInt16Converters>().AsImplementedInterfaces().SingleInstance();
-        builder.RegisterType<UInt32Converters>().AsImplementedInterfaces().SingleInstance();
-        builder.RegisterType<UInt64Converters>().AsImplementedInterfaces().SingleInstance();
-        builder.RegisterType<UInt8Converters>().AsImplementedInterfaces().SingleInstance();
-        builder.RegisterType<PointerConverters>().AsImplementedInterfaces().SingleInstance();
+        registrator.RegisterManyInterface<BFloat16Converters>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<BooleanConverters>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<DoubleConverters>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<HalfConverters>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<Int16Converters>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<Int32Converters>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<Int64Converters>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<Int8Converters>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<SingleConverters>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<UInt16Converters>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<UInt32Converters>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<UInt64Converters>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<UInt8Converters>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<PointerConverters>(reuse: Reuse.Singleton);
     }
 }

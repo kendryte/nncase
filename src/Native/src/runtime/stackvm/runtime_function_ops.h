@@ -42,7 +42,8 @@ result<void> visit(const tensor_get_item_op_t &op) noexcept override;
 result<void> visit(const tensor_hard_sigmoid_op_t &op) noexcept override;
 result<void> visit(const tensor_hard_swish_op_t &op) noexcept override;
 result<void> visit(const tensor_hardmax_op_t &op) noexcept override;
-result<void> visit(const tensor_instance_normalization_op_t &op) noexcept override;
+result<void>
+visit(const tensor_instance_normalization_op_t &op) noexcept override;
 result<void> visit(const tensor_l2_normalization_op_t &op) noexcept override;
 result<void> visit(const tensor_leaky_relu_op_t &op) noexcept override;
 result<void> visit(const tensor_log_softmax_op_t &op) noexcept override;

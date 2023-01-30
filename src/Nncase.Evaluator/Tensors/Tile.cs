@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -35,6 +35,13 @@ public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>, ICostEvalu
         return Visit(context, target, input, repeat);
     }
 
+    public Cost? Visit(ICostEvaluateContext context, Tile target)
+    {
+        var input = context.GetArgumentType<TensorType>(target, Tile.Input);
+        var ret = context.GetReturnType<TensorType>();
+        return CostUtility.GetBroadcastCost(input, ret);
+    }
+
     private IRType Visit(ITypeInferenceContext context, Tile target, TensorType input, TensorType repeat)
     {
         if (input.Shape.IsUnranked)
@@ -44,18 +51,12 @@ public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>, ICostEvalu
 
         if (context.GetArgument(target, Tile.Repeats) is TensorConst repeats && input.Shape.IsFixed)
         {
-            var shape = input.Shape.ToValueArray().Zip(repeats.Value.ToArray<int>()).Select(p => p.Item1 * p.Item2);
+            var shape = input.Shape.ToValueArray().Zip(repeats.Value.ToArray<int>()).Select(p => p.First * p.Second);
             return input with { Shape = new Shape(shape.ToArray<int>()) };
         }
 
-        return new TensorType(input.DType,
+        return new TensorType(
+            input.DType,
             new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Rank)));
-    }
-
-    public Cost? Visit(ICostEvaluateContext context, Tile target)
-    {
-        var input = context.GetArgumentType<TensorType>(target, Tile.Input);
-        var ret = context.GetReturnType<TensorType>();
-        return CostUtility.GetBroadcastCost(input, ret);
     }
 }

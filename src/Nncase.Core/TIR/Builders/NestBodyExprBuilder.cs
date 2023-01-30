@@ -19,22 +19,20 @@ internal class NestBodyExprBuilder<T> : ISequentialBuilder<T>
     private readonly ISequentialBuilder<T>[] _subBuilders;
 
     /// <summary>
-    /// ctor
+    /// Initializes a new instance of the <see cref="NestBodyExprBuilder{T}"/> class.
+    /// ctor.
     /// <remarks>
     /// NOTE We will auto add exprs to nest list!
     /// </remarks>
     /// </summary>
-    /// <param name="subBuilders"></param>
     public NestBodyExprBuilder(params ISequentialBuilder<T>[] subBuilders)
     {
         _subBuilders = subBuilders;
     }
 
     /// <summary>
-    /// Wrapper Body method
+    /// Wrapper Body method.
     /// </summary>
-    /// <param name="exprs"></param>
-    /// <returns></returns>
     public ISequentialBuilder<T> Body(params object[] exprOrBuilders)
     {
         _subBuilders[_subBuilders.Length - 1].Body(exprOrBuilders);

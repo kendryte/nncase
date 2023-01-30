@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -46,15 +46,15 @@ public static partial class Utility
     public static TupleConstPattern IsTupleConst(string? name = null) => new(x => true, name);
 
     /// <summary>
-    /// 
+    /// create the tupleconst pattern.
     /// </summary>
-    /// <param name="Cond">condition.</param>
+    /// <param name="cond">condition.</param>
     /// <param name="name">name.</param>
     /// <returns>TupleConstPattern.</returns>
-    public static TupleConstPattern IsTupleConst(Func<TupleConst, bool> Cond, string? name = null) => new(Cond, name);
+    public static TupleConstPattern IsTupleConst(Func<TupleConst, bool> cond, string? name = null) => new(cond, name);
 
     /// <summary>
-    /// 
+    /// create the tupleconst pattern.
     /// </summary>
     /// <param name="typePattern">typepattern. </param>
     /// <param name="name">name.</param>

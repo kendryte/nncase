@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -13,7 +13,7 @@ namespace Nncase.Transform.Mutators;
 /// <summary>
 /// Substitute all the block vars with the PrimExprs they are bound to, indicated by the corresponding iter_values in BlockRealize, for opaque blocks by removing all . the iter_values in BlockRealize and iter_vars in Block.
 /// </summary>
-internal sealed class ConvertBlocksToOpaque : ExprMutator
+public sealed class ConvertBlocksToOpaque : ExprMutator
 {
     /// <inheritdoc/>
     public override Expr MutateLeaf(IterVar expr)
@@ -26,7 +26,7 @@ internal sealed class ConvertBlocksToOpaque : ExprMutator
     {
         return expr with
         {
-            // the block realize 
+            // the block realize
             InitBody = (TIR.Sequential)Visit(expr.InitBody),
             Predicate = Visit(expr.Predicate),
             IterVars = new(),

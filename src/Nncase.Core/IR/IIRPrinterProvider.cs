@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,22 +10,22 @@ using System.Threading.Tasks;
 namespace Nncase.IR;
 
 /// <summary>
-/// the symbol for ir printer
+/// the symbol for ir printer.
 /// </summary>
 public interface IPrintSymbol
 {
     /// <summary>
-    /// the full span for this symbol
+    /// Gets the full span for this symbol.
     /// </summary>
     public StringBuilder Span { get; }
 
     /// <summary>
-    /// the symbol name
+    /// Gets the symbol name.
     /// </summary>
     public string Name { get; }
 
     /// <summary>
-    /// if this symbol is ref, implict we can use this symbol name.
+    /// Gets a value indicating whether if this symbol is ref, implict we can use this symbol name.
     /// </summary>
     public bool IsRefSymobl { get; }
 
@@ -43,43 +46,33 @@ public interface IIRPrinterProvider
     /// </summary>
     /// <param name="op">Target operator.</param>
     /// <param name="context">IrPrinter context.</param>
-    /// <param name="ILmode">if is print is il or script.</param>
+    /// <param name="iLmode">if is print is il or script.</param>
     /// <returns>IrPrinter result.</returns>
-    string PrintOp(Op op, IIRPrinterContext context, bool ILmode);
+    string PrintOp(Op op, IIRPrinterContext context, bool iLmode);
 
     /// <summary>
     /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.{ext}`
-    /// else write to {dumpPath}/{prefix}_{expr.Type.name}.il`
+    /// else write to {dumpPath}/{prefix}_{expr.Type.name}.il`.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <param name="prefix"></param>
-    /// <param name="dumpPath"></param>
-    /// <param name="display_callable"></param>
     void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable);
 
     /// <summary>
-    /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.dot`
+    /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.dot`.
     /// <remarks>
     /// not support prim func/prim func wrapper.
     /// </remarks>
     /// </summary>
-    /// <param name="expr"></param>
-    /// <param name="prefix"></param>
-    /// <param name="dumpPath"></param>
-    /// <param name="display_callable"></param>
     void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable);
 
     /// <summary>
     /// print ir type.
     /// </summary>
-    /// <param name="type"></param>
-    /// <returns></returns>
     string Print(IRType type);
 
     /// <summary>
     /// print ir type.
     /// </summary>
-    /// <param name="expr"> the expression</param>
+    /// <param name="expr"> the expression.</param>
     /// <param name="useScript"> tir mode.</param>
     /// <returns>the string.</returns>
     string Print(Expr expr, bool useScript);

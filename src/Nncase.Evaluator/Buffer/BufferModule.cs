@@ -1,23 +1,23 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using Autofac;
+using DryIoc;
 using Nncase.Evaluator.Tensors;
+using Nncase.Hosting;
 
 namespace Nncase.Evaluator.Buffer;
 
 /// <summary>
 /// Buffer module.
 /// </summary>
-public class BufferModule : Module
+internal class BufferModule : IApplicationPart
 {
-    /// <inheritdoc/>
-    protected override void Load(ContainerBuilder builder)
+    public void ConfigureServices(IRegistrator registrator)
     {
-        builder.RegisterType<DDrOfEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<BaseMentOfEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<StrideOfEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<AllocateEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<UninitializedEvaluator>().AsImplementedInterfaces();
+        registrator.RegisterManyInterface<DDrOfEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<BaseMentOfEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<StrideOfEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<AllocateEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<UninitializedEvaluator>(reuse: Reuse.Singleton);
     }
 }

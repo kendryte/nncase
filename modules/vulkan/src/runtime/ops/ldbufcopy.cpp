@@ -20,8 +20,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::vulkan;
 
-result<void> vulkan_runtime_function::visit(const ldbufcopy_op_t &op) noexcept
-{
-    buffer_copies_.emplace_back(vk::BufferCopy((vk::DeviceSize)op.src, (vk::DeviceSize)op.dest, (vk::DeviceSize)op.size));
+result<void> vulkan_runtime_function::visit(const ldbufcopy_op_t &op) noexcept {
+    buffer_copies_.emplace_back(vk::BufferCopy((vk::DeviceSize)op.src,
+                                               (vk::DeviceSize)op.dest,
+                                               (vk::DeviceSize)op.size));
     return ok();
 }

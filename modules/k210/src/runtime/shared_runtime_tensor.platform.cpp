@@ -25,23 +25,19 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::detail;
 
 physical_memory_block::physical_memory_block() noexcept
-    : physical_address(0), owned(false)
-{
-}
+    : physical_address(0), owned(false) {}
 
-physical_memory_block::~physical_memory_block()
-{
-}
+physical_memory_block::~physical_memory_block() {}
 
-physical_memory_block::physical_memory_block(physical_memory_block &&other) noexcept
-    : physical_address(other.physical_address), owned(other.owned)
-{
+physical_memory_block::physical_memory_block(
+    physical_memory_block &&other) noexcept
+    : physical_address(other.physical_address), owned(other.owned) {
     other.physical_address = 0;
     other.owned = false;
 }
 
-physical_memory_block &physical_memory_block::operator=(physical_memory_block &&other) noexcept
-{
+physical_memory_block &
+physical_memory_block::operator=(physical_memory_block &&other) noexcept {
     assert(owned == false);
     physical_address = other.physical_address;
     owned = other.owned;
@@ -50,23 +46,21 @@ physical_memory_block &physical_memory_block::operator=(physical_memory_block &&
     return *this;
 }
 
-void physical_memory_block::free(NNCASE_UNUSED host_memory_block &block) noexcept
-{
+void physical_memory_block::free(
+    NNCASE_UNUSED host_memory_block &block) noexcept {
     if (owned)
         delete[] reinterpret_cast<gsl::byte *>(physical_address + IOMEM);
     physical_address = 0;
     owned = false;
 }
 
-result<void> physical_memory_block::acknowledge(host_memory_block &block) noexcept
-{
-    if (block.virtual_address)
-    {
+result<void>
+physical_memory_block::acknowledge(host_memory_block &block) noexcept {
+    if (block.virtual_address) {
         if (!block.physical_block.physical_address)
-            block.physical_block.physical_address = block.virtual_address - IOMEM;
-    }
-    else
-    {
+            block.physical_block.physical_address =
+                block.virtual_address - IOMEM;
+    } else {
         block.virtual_address = block.physical_block.physical_address + IOMEM;
     }
 
@@ -74,8 +68,8 @@ result<void> physical_memory_block::acknowledge(host_memory_block &block) noexce
     return ok();
 }
 
-result<void> physical_memory_block::allocate(host_memory_block &block) noexcept
-{
+result<void>
+physical_memory_block::allocate(host_memory_block &block) noexcept {
     auto buffer = new (std::nothrow) gsl::byte[block.size_bytes];
     CHECK_WITH_ERR(buffer, std::errc::not_enough_memory);
     block.virtual_address = reinterpret_cast<uintptr_t>(buffer);
@@ -84,11 +78,16 @@ result<void> physical_memory_block::allocate(host_memory_block &block) noexcept
     return ok();
 }
 
-result<void> physical_memory_block::sync(NNCASE_UNUSED host_memory_block &block, NNCASE_UNUSED host_runtime_tensor::sync_op_t op) noexcept
-{
+result<void> physical_memory_block::sync(
+    NNCASE_UNUSED host_memory_block &block,
+    NNCASE_UNUSED host_runtime_tensor::sync_op_t op) noexcept {
     if (op == hrt::sync_invalidate)
-        memcpy(reinterpret_cast<void *>(block.virtual_address), reinterpret_cast<void *>(block.physical_block.physical_address), block.size_bytes);
+        memcpy(reinterpret_cast<void *>(block.virtual_address),
+               reinterpret_cast<void *>(block.physical_block.physical_address),
+               block.size_bytes);
     else if (op == hrt::sync_write_back)
-        memcpy(reinterpret_cast<void *>(block.physical_block.physical_address), reinterpret_cast<void *>(block.virtual_address), block.size_bytes);
+        memcpy(reinterpret_cast<void *>(block.physical_block.physical_address),
+               reinterpret_cast<void *>(block.virtual_address),
+               block.size_bytes);
     return ok();
 }

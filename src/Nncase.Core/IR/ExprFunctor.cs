@@ -51,14 +51,13 @@ namespace Nncase.IR
         /// Visit Basefunction expression.
         /// </summary>
         /// <param name="baseFunction"> base function. </param>
-        /// <returns></returns>
         public virtual TExprResult Visit(BaseFunction baseFunction) => baseFunction switch
         {
             Function func => Visit(func),
             Fusion fusion => Visit(fusion),
             PrimFunctionWrapper wrapper => Visit(wrapper),
             TIR.PrimFunction primfunc => Visit(primfunc),
-            _ => DefaultVisit(baseFunction)
+            _ => DefaultVisit(baseFunction),
         };
 
         /// <summary>
@@ -83,10 +82,9 @@ namespace Nncase.IR
         public virtual TExprResult Visit(Function expr) => DefaultVisit(expr);
 
         /// <summary>
-        /// Visit fusion expression
+        /// Visit fusion expression.
         /// </summary>
-        /// <param name="expr">Fusion Expression</param>
-        /// <returns></returns>
+        /// <param name="expr">Fusion Expression.</param>
         public virtual TExprResult Visit(Fusion expr) => DefaultVisit(expr);
 
         /// <summary>
@@ -125,14 +123,14 @@ namespace Nncase.IR
         public virtual TExprResult Visit(Op expr) => DefaultVisit(expr);
 
         /// <summary>
-        /// Visit None expression
+        /// Visit None expression.
         /// </summary>
         /// <param name="expr">None expr.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult Visit(None expr) => DefaultVisit(expr);
 
         /// <summary>
-        /// Visit marker expression
+        /// Visit marker expression.
         /// </summary>
         /// <param name="expr">Marker expr.</param>
         /// <returns>Result.</returns>
@@ -209,17 +207,13 @@ namespace Nncase.IR
         public virtual TExprResult Visit(TIR.BufferRegion expr) => DefaultVisit(expr);
 
         /// <summary>
-        /// Visit visitable
+        /// Visit visitable.
         /// </summary>
-        /// <param name="visitable"></param>
-        /// <returns></returns>
         public virtual object Visit(IVisitable visitable) => DefaultVisit(visitable);
 
         /// <summary>
         /// Default Visit IVisitable.
         /// </summary>
-        /// <param name="visitable"></param>
-        /// <returns></returns>
         public virtual object DefaultVisit(IVisitable visitable)
         {
             return visitable.Visit<TExprResult, TTypeResult>(this);

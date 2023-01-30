@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -13,17 +13,17 @@ using Nncase.TIR;
 
 namespace Nncase.CodeGen;
 
+public enum FunctionIdComponent
+{
+    ModuleId,
+    FunctionId,
+}
+
 public static class WellknownSectionNames
 {
     public static readonly string Text = ".text";
 
     public static readonly string Rdata = ".rdata";
-}
-
-public enum FunctionIdComponent
-{
-    ModuleId,
-    FunctionId,
 }
 
 public class Symbol

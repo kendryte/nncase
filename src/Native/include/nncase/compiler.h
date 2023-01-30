@@ -43,6 +43,20 @@ typedef enum {
     nncase_calib_kld = 1
 } nncase_calib_method_t;
 
+typedef enum {
+    nncase_dump_flags_none = 0,
+    nncase_dump_flags_import_ops = 1 << 1,
+    nncase_dump_flags_pass_ir = 1 << 2,
+    nncase_dump_flags_egraph_cost = 1 << 3,
+    nncase_dump_flags_rewrite = 1 << 4,
+    nncase_dump_flags_calibration = 1 << 5,
+    nncase_dump_flags_evaluator = 1 << 6,
+    nncase_dump_flags_compile = 1 << 7,
+    nncase_dump_flags_tiling = 1 << 8,
+    nncase_dump_flags_schedule = 1 << 9,
+    nncase_dump_flags_codegen = 1 << 10
+} nncase_dump_flags_t;
+
 typedef struct {
     void (*add_ref)(nncase_stream_handle_t handle);
     void (*release)(nncase_stream_handle_t handle);
@@ -60,100 +74,76 @@ typedef struct {
                   size_t length);
 } nncase_stream_mt_t;
 
+typedef struct {
+    clr_object_handle_t (*array_create)(nncase_array_element_kind_t kind,
+                                        const clr_object_handle_t *elements,
+                                        size_t count);
+    clr_object_handle_t (*array_get_item)(clr_object_handle_t array,
+                                          size_t index);
+    size_t (*array_get_length)(clr_object_handle_t array);
+    clr_object_handle_t (*calibration_dataset_provider_create)(
+        clr_object_handle_t dataset, size_t samplesCount,
+        clr_object_handle_t fn_params);
+    void (*handle_free)(clr_object_handle_t handle);
+    clr_object_handle_t (*compile_options_create)();
+    void (*compile_options_set_input_file)(clr_object_handle_t compile_options,
+                                           const char *input_file,
+                                           size_t input_file_length);
+    void (*compile_options_set_input_format)(
+        clr_object_handle_t compile_options, const char *input_format,
+        size_t input_format_length);
+    void (*compile_options_set_dump_dir)(clr_object_handle_t compile_options,
+                                         const char *dump_dir,
+                                         size_t dump_dir_length);
+    void (*compile_options_set_dump_flags)(clr_object_handle_t compile_options,
+                                           nncase_dump_flags_t dump_flags);
+    void (*compile_options_set_quantize_options)(
+        clr_object_handle_t compile_options,
+        clr_object_handle_t quantize_options);
+    clr_object_handle_t (*compile_session_create)(
+        clr_object_handle_t target, clr_object_handle_t compile_options);
+    clr_object_handle_t (*compile_session_get_compiler)(
+        clr_object_handle_t compile_session);
+    void (*compiler_initialize)();
+    clr_object_handle_t (*compiler_import_module)(clr_object_handle_t compiler,
+                                                  clr_object_handle_t stream);
+    void (*compiler_compile)(clr_object_handle_t compiler);
+    void (*compiler_gencode)(clr_object_handle_t compiler,
+                             clr_object_handle_t stream);
+    clr_object_handle_t (*datatype_from_typecode)(nncase::typecode_t typecode);
+    clr_object_handle_t (*expr_evaluate)(clr_object_handle_t expr,
+                                         clr_object_handle_t parameters,
+                                         clr_object_handle_t inputs);
+    clr_object_handle_t (*function_get_body)(clr_object_handle_t function);
+    clr_object_handle_t (*function_get_parameters)(
+        clr_object_handle_t function);
+    clr_object_handle_t (*ir_module_get_entry)(clr_object_handle_t module);
+    void (*luanch_debugger)();
+    clr_object_handle_t (*quantize_options_create)();
+    void (*quantize_options_set_calibration_dataset)(
+        clr_object_handle_t quantize_options, clr_object_handle_t dataset);
+    void (*quantize_options_set_calibration_method)(
+        clr_object_handle_t quantize_options, nncase_calib_method_t method);
+    void (*quantize_options_set_model_quant_mode)(
+        clr_object_handle_t quantize_options,
+        nncase_model_quant_mode_t model_quant_mode);
+    void (*quantize_options_set_quant_type)(
+        clr_object_handle_t quantize_options, clr_object_handle_t quant_type);
+    clr_object_handle_t (*rtvalue_from_handle)(nncase::value_node *value);
+    nncase::value_node *(*rtvalue_get_handle)(clr_object_handle_t rtvalue);
+    clr_object_handle_t (*stream_create)(const nncase_stream_mt_t *mt,
+                                         void *handle);
+    clr_object_handle_t (*target_create)(const char *target_name,
+                                         size_t target_name_length);
+    bool (*target_exists)(const char *target_name, size_t target_name_length);
+} nncase_api_mt_t;
+
+NNCASE_API nncase_api_mt_t *nncase_clr_api();
 NNCASE_API int nncase_clr_initialize(const char *root_assembly_path);
 NNCASE_API int nncase_clr_uninitialize();
-
-NNCASE_API int nncase_clr_array_create(nncase_array_element_kind_t kind,
-                                       const clr_object_handle_t *elements,
-                                       size_t count,
-                                       clr_object_handle_t *array);
-NNCASE_API int nncase_clr_array_get_item(clr_object_handle_t array,
-                                         size_t index,
-                                         clr_object_handle_t *item);
-NNCASE_API int nncase_clr_array_get_length(clr_object_handle_t array,
-                                           size_t *length);
-
-NNCASE_API int nncase_clr_calibration_dataset_provider_create(
-    clr_object_handle_t dataset, size_t samplesCount,
-    clr_object_handle_t fn_params, clr_object_handle_t *provider);
-
-NNCASE_API int nncase_clr_handle_free(clr_object_handle_t handle);
-
-NNCASE_API int
-nncase_clr_compile_options_create(clr_object_handle_t *compile_options);
-NNCASE_API int
-nncase_clr_compile_options_set_input_file(clr_object_handle_t compile_options,
-                                          const char *input_file,
-                                          size_t input_file_length);
-NNCASE_API int
-nncase_clr_compile_options_set_input_format(clr_object_handle_t compile_options,
-                                            const char *input_format,
-                                            size_t input_format_length);
-NNCASE_API int
-nncase_clr_compile_options_set_target(clr_object_handle_t compile_options,
-                                      const char *target, size_t target_length);
-NNCASE_API int
-nncase_clr_compile_options_set_dump_level(clr_object_handle_t compile_options,
-                                          int32_t dump_level);
-NNCASE_API int
-nncase_clr_compile_options_set_dump_dir(clr_object_handle_t compile_options,
-                                        const char *dump_dir,
-                                        size_t dump_dir_length);
-NNCASE_API int nncase_clr_compile_options_set_quantize_options(
-    clr_object_handle_t compile_options, clr_object_handle_t quantize_options);
-NNCASE_API int
-nncase_clr_compile_options_set_quant_type(clr_object_handle_t compile_options,
-                                          clr_object_handle_t quant_type);
-NNCASE_API int nncase_clr_compile_options_set_model_quant_mode(
-    clr_object_handle_t compile_options,
-    nncase_model_quant_mode_t model_quant_mode);
-
-NNCASE_API int nncase_clr_compiler_create(clr_object_handle_t compile_options,
-                                          clr_object_handle_t *compiler);
-NNCASE_API int nncase_clr_compiler_import_module(clr_object_handle_t compiler,
-                                                 clr_object_handle_t stream,
-                                                 clr_object_handle_t *module);
-NNCASE_API int nncase_clr_compiler_compile(clr_object_handle_t compiler);
-NNCASE_API int nncase_clr_compiler_gencode(clr_object_handle_t compiler,
-                                           clr_object_handle_t stream);
-
-NNCASE_API int nncase_clr_datatype_from_typecode(nncase::typecode_t typecode,
-                                                 clr_object_handle_t *datatype);
-
-NNCASE_API int nncase_clr_expr_evaluate(clr_object_handle_t expr,
-                                        clr_object_handle_t parameters,
-                                        clr_object_handle_t inputs,
-                                        clr_object_handle_t *result);
-
-NNCASE_API int nncase_clr_function_get_body(clr_object_handle_t function,
-                                            clr_object_handle_t *body);
-NNCASE_API int
-nncase_clr_function_get_parameters(clr_object_handle_t function,
-                                   clr_object_handle_t *parameters);
-NNCASE_API int nncase_clr_ir_module_get_entry(clr_object_handle_t module,
-                                              clr_object_handle_t *entry);
-
-NNCASE_API int nncase_clr_launch_debugger();
-
-NNCASE_API int
-nncase_clr_quantize_options_create(clr_object_handle_t *quantize_options);
-NNCASE_API int nncase_clr_quantize_options_set_calibration_dataset(
-    clr_object_handle_t quantize_options, clr_object_handle_t dataset);
-NNCASE_API int nncase_clr_quantize_options_set_calibration_method(
-    clr_object_handle_t quantize_options, nncase_calib_method_t method);
-
-NNCASE_API int nncase_clr_rtvalue_from_handle(nncase::value_node *value,
-                                              clr_object_handle_t *rtvalue);
-NNCASE_API int nncase_clr_rtvalue_get_handle(clr_object_handle_t rtvalue,
-                                             nncase::value_node **value);
-
-NNCASE_API int nncase_clr_stream_create(const nncase_stream_mt_t *mt,
-                                        void *handle,
-                                        clr_object_handle_t *stream);
-
-NNCASE_API bool nncase_clr_target_exists(const char *target_name,
-                                         size_t target_name_length);
 }
+
+DEFINE_ENUM_BITMASK_OPERATORS(nncase_dump_flags_t)
 
 namespace nncase::clr {
 class clr_object_ptr {
@@ -196,7 +186,7 @@ class clr_object_ptr {
     void release() {
         if (auto handle = handle_) {
             handle_ = nullptr;
-            nncase_clr_handle_free(handle);
+            nncase_clr_api()->handle_free(handle);
         }
     }
 
@@ -204,15 +194,15 @@ class clr_object_ptr {
     clr_object_handle_t handle_;
 };
 
-#define CHECK_CLR(x)                                                           \
-    if (x) {                                                                   \
-        throw std::runtime_error(#x);                                          \
-    }
+#define CHECK_CLR(x) x
 
 class clr_object_base {
   public:
     constexpr clr_object_base(std::nullptr_t = nullptr) noexcept
         : obj_(nullptr) {}
+
+    clr_object_base(std::in_place_t, clr_object_ptr ptr) noexcept
+        : obj_(std::move(ptr)) {}
 
     clr_object_base(clr_object_base &&) = default;
     clr_object_base &operator=(clr_object_base &&) = default;
@@ -237,22 +227,15 @@ class array : public clr_object_base {
 
     array(nncase_array_element_kind_t kind, const clr_object_handle_t *elements,
           size_t length) {
-        CHECK_CLR(nncase_clr_array_create(kind, elements, length,
-                                          obj_.release_and_addressof()));
+        obj_ = nncase_clr_api()->array_create(kind, elements, length);
     }
 
     template <class T = clr_object_base> T at(size_t index) {
-        T value(nullptr);
-        CHECK_CLR(nncase_clr_array_get_item(obj_.get(), index,
-                                            value.release_and_addressof()));
-        return value;
+        return {std::in_place,
+                nncase_clr_api()->array_get_item(obj_.get(), index)};
     }
 
-    size_t length() {
-        size_t length;
-        CHECK_CLR(nncase_clr_array_get_length(obj_.get(), &length));
-        return length;
-    }
+    size_t length() { return nncase_clr_api()->array_get_length(obj_.get()); }
 
     template <class T = clr_object_base> std::vector<T> to_vector() {
         std::vector<T> vector(length());
@@ -269,9 +252,8 @@ class calibration_dataset_provider : public clr_object_base {
 
     calibration_dataset_provider(array dataset, size_t samples_count,
                                  array fn_params) {
-        CHECK_CLR(nncase_clr_calibration_dataset_provider_create(
-            dataset.get(), samples_count, fn_params.get(),
-            obj_.release_and_addressof()));
+        obj_ = nncase_clr_api()->calibration_dataset_provider_create(
+            dataset.get(), samples_count, fn_params.get());
     }
 };
 
@@ -279,15 +261,18 @@ class quantize_options : public clr_object_base {
   public:
     using clr_object_base::clr_object_base;
 
-    quantize_options() {
-        CHECK_CLR(
-            nncase_clr_quantize_options_create(obj_.release_and_addressof()));
-    }
+    quantize_options() { obj_ = nncase_clr_api()->quantize_options_create(); }
 
     calibration_dataset_provider calibration_dataset() { return nullptr; }
     void calibration_dataset(const calibration_dataset_provider &value) {
-        CHECK_CLR(nncase_clr_quantize_options_set_calibration_dataset(
-            obj_.get(), value.get()));
+        nncase_clr_api()->quantize_options_set_calibration_dataset(obj_.get(),
+                                                                   value.get());
+    }
+
+    nncase_model_quant_mode_t model_quant_mode() { return nncase_mqm_no_quant; }
+    void model_quant_mode(nncase_model_quant_mode_t value) {
+        nncase_clr_api()->quantize_options_set_model_quant_mode(obj_.get(),
+                                                                value);
     }
 };
 
@@ -296,8 +281,7 @@ class cstream : public clr_object_base {
     using clr_object_base::clr_object_base;
 
     cstream(const nncase_stream_mt_t *mt, void *handle) {
-        CHECK_CLR(
-            nncase_clr_stream_create(mt, handle, obj_.release_and_addressof()));
+        obj_ = nncase_clr_api()->stream_create(mt, handle);
     }
 };
 
@@ -305,44 +289,42 @@ class compile_options : public clr_object_base {
   public:
     using clr_object_base::clr_object_base;
 
-    compile_options() {
-        CHECK_CLR(
-            nncase_clr_compile_options_create(obj_.release_and_addressof()));
-    }
+    compile_options() { obj_ = nncase_clr_api()->compile_options_create(); }
 
     std::string input_format() { return "cpu"; }
     void input_format(std::string_view value) {
-        CHECK_CLR(nncase_clr_compile_options_set_input_format(
-            obj_.get(), value.data(), value.length()));
-    }
-
-    std::string target() { return "cpu"; }
-    void target(std::string_view value) {
-        CHECK_CLR(nncase_clr_compile_options_set_target(
-            obj_.get(), value.data(), value.length()));
-    }
-
-    int32_t dump_level() { return 0; }
-    void dump_level(int32_t value) {
-        CHECK_CLR(nncase_clr_compile_options_set_dump_level(obj_.get(), value));
+        nncase_clr_api()->compile_options_set_input_format(
+            obj_.get(), value.data(), value.length());
     }
 
     std::string dump_dir() { return "cpu"; }
     void dump_dir(std::string_view value) {
-        CHECK_CLR(nncase_clr_compile_options_set_dump_dir(
-            obj_.get(), value.data(), value.length()));
+        nncase_clr_api()->compile_options_set_dump_dir(obj_.get(), value.data(),
+                                                       value.length());
+    }
+
+    nncase_dump_flags_t dump_flags() { return nncase_dump_flags_none; }
+    void dump_flags(nncase_dump_flags_t value) {
+        nncase_clr_api()->compile_options_set_dump_flags(obj_.get(), value);
     }
 
     clr::quantize_options quantize_options() { return nullptr; }
     void quantize_options(const clr::quantize_options &value) {
-        CHECK_CLR(nncase_clr_compile_options_set_quantize_options(obj_.get(),
-                                                                  value.get()));
+        nncase_clr_api()->compile_options_set_quantize_options(obj_.get(),
+                                                               value.get());
+    }
+};
+
+class target : public clr_object_base {
+  public:
+    using clr_object_base::clr_object_base;
+
+    static bool exists(std::string_view name) {
+        return nncase_clr_api()->target_exists(name.data(), name.length());
     }
 
-    nncase_model_quant_mode_t model_quant_mode() { return nncase_mqm_no_quant; }
-    void model_quant_mode(nncase_model_quant_mode_t value) {
-        CHECK_CLR(
-            nncase_clr_compile_options_set_model_quant_mode(obj_.get(), value));
+    target(std::string_view name) {
+        obj_ = nncase_clr_api()->target_create(name.data(), name.length());
     }
 };
 
@@ -351,15 +333,12 @@ class rtvalue : public clr_object_base {
     using clr_object_base::clr_object_base;
 
     rtvalue(nncase::value_t value) {
-        CHECK_CLR(nncase_clr_rtvalue_from_handle(value.detach(),
-                                                 obj_.release_and_addressof()));
+        obj_ = nncase_clr_api()->rtvalue_from_handle(value.get());
     }
 
     value_t to_value() const {
-        value_t value(nullptr);
-        CHECK_CLR(nncase_clr_rtvalue_get_handle(obj_.get(),
-                                                value.release_and_addressof()));
-        return value;
+        auto ptr = nncase_clr_api()->rtvalue_get_handle(obj_.get());
+        return ptr;
     }
 };
 
@@ -368,10 +347,8 @@ class expr : public clr_object_base {
     using clr_object_base::clr_object_base;
 
     rtvalue evaluate(const array &params, const array &inputs) {
-        rtvalue value(nullptr);
-        CHECK_CLR(nncase_clr_expr_evaluate(get(), params.get(), inputs.get(),
-                                           value.release_and_addressof()));
-        return value;
+        return {std::in_place, nncase_clr_api()->expr_evaluate(
+                                   get(), params.get(), inputs.get())};
     }
 };
 
@@ -390,17 +367,12 @@ class function : public base_function {
     using base_function::base_function;
 
     expr body() {
-        expr body(nullptr);
-        CHECK_CLR(
-            nncase_clr_function_get_body(get(), body.release_and_addressof()));
-        return body;
+        return {std::in_place, nncase_clr_api()->function_get_body(get())};
     }
 
     array parameters() {
-        array params(nullptr);
-        CHECK_CLR(nncase_clr_function_get_parameters(
-            get(), params.release_and_addressof()));
-        return params;
+        return {std::in_place,
+                nncase_clr_api()->function_get_parameters(get())};
     }
 };
 
@@ -409,10 +381,7 @@ class ir_module : public clr_object_base {
     using clr_object_base::clr_object_base;
 
     function entry() {
-        function entry(nullptr);
-        CHECK_CLR(nncase_clr_ir_module_get_entry(
-            get(), entry.release_and_addressof()));
-        return entry;
+        return {std::in_place, nncase_clr_api()->ir_module_get_entry(get())};
     }
 };
 
@@ -420,21 +389,29 @@ class compiler : public clr_object_base {
   public:
     using clr_object_base::clr_object_base;
 
-    compiler(const compile_options &options) {
-        CHECK_CLR(nncase_clr_compiler_create(options.get(),
-                                             obj_.release_and_addressof()));
-    }
-
     ir_module import_module(cstream &stream) {
-        ir_module module(nullptr);
-        CHECK_CLR(nncase_clr_compiler_import_module(
-            get(), stream.get(), module.release_and_addressof()));
-        return module;
+        return {std::in_place,
+                nncase_clr_api()->compiler_import_module(get(), stream.get())};
     }
 
-    void compile() { CHECK_CLR(nncase_clr_compiler_compile(obj_.get())); }
+    void compile() { nncase_clr_api()->compiler_compile(obj_.get()); }
     void gencode(cstream &stream) {
-        CHECK_CLR(nncase_clr_compiler_gencode(obj_.get(), stream.get()));
+        nncase_clr_api()->compiler_gencode(obj_.get(), stream.get());
+    }
+};
+
+class compile_session : public clr_object_base {
+  public:
+    using clr_object_base::clr_object_base;
+
+    compile_session(const target &target, const compile_options &options) {
+        obj_ = nncase_clr_api()->compile_session_create(target.get(),
+                                                        options.get());
+    }
+
+    clr::compiler compiler() {
+        return {std::in_place,
+                nncase_clr_api()->compile_session_get_compiler(obj_.get())};
     }
 };
 } // namespace nncase::clr

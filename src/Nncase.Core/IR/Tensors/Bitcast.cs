@@ -17,7 +17,7 @@ namespace Nncase.IR.Tensors;
 /// Broadcast expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Bitcast(PrimType type,PrimType newType) : Op
+public sealed record Bitcast(PrimType Type, PrimType NewType) : Op
 {
     /// <summary>
     /// Gets input.

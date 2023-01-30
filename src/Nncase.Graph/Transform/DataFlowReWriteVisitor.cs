@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
@@ -17,10 +17,10 @@ namespace Nncase.Transform;
 internal sealed class DataFlowRewriteVisitor : ExprMutator
 {
     private readonly IRewriteRule _rule;
-    private readonly RunPassOptions _options;
+    private readonly RunPassContext _options;
     private readonly HashSet<Expr> _dontInheritExprs = new HashSet<Expr>(ReferenceEqualityComparer.Instance);
 
-    public DataFlowRewriteVisitor(IRewriteRule rule, RunPassOptions options)
+    public DataFlowRewriteVisitor(IRewriteRule rule, RunPassContext options)
     {
         _rule = rule;
         _options = options;
@@ -31,8 +31,6 @@ internal sealed class DataFlowRewriteVisitor : ExprMutator
     /// the rule dataflow rewrite can't mutate fusion.
     /// NOTE this only prevent the visit into fusion, can't detect visit like `call { fusion }`, you have to manual SuppressPattern in the rule.
     /// </summary>
-    /// <param name="fusion"></param>
-    /// <returns></returns>
     public override Expr Visit(Fusion fusion)
     {
         if (!ExpressionMemo.TryGetValue(fusion, out var result))

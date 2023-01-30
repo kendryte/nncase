@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -16,19 +16,8 @@ namespace Nncase.Transform;
 /// </summary>
 public class DataflowPass : RulesPass
 {
-    private readonly List<IRewriteRule> _rules = new();
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DataflowPass"/> class.
-    /// </summary>
-    /// <param name="name">Name.</param>
-    public DataflowPass(string name)
-        : base(name)
-    {
-    }
-
     /// <inheritdoc/>
-    protected override Task<BaseFunction> RunCoreAsync(BaseFunction function, RunPassOptions options)
+    protected override Task<BaseFunction> RunCoreAsync(BaseFunction function, RunPassContext options)
     {
         return Task.FromResult((BaseFunction)CompilerServices.Rewrite(function, Rules, options));
     }

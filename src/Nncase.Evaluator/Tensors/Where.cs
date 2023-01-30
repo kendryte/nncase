@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -56,11 +56,6 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         return TypeInference.BroadcastType(x.DType, cond, x, y);
     }
 
-    private bool IsTFWhere(TensorType x, TensorType y)
-    {
-        return x.Shape[0] == 0 && y.Shape[0] == 0 && x.DType == DataTypes.Float32;
-    }
-
     public Cost? Visit(ICostEvaluateContext context, Where target)
     {
         var cond = context.GetArgumentType<TensorType>(target, Where.Cond);
@@ -73,5 +68,10 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(cond, CostUtility.GetCPUCyclesOfCompare()),
         };
+    }
+
+    private bool IsTFWhere(TensorType x, TensorType y)
+    {
+        return x.Shape[0] == 0 && y.Shape[0] == 0 && x.DType == DataTypes.Float32;
     }
 }

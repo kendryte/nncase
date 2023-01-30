@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -69,6 +69,41 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         return transposeResult.ToValue();
     }
 
+    /// <inheritdoc/>
+    public IRType Visit(ITypeInferenceContext context, BatchToSpace target)
+    {
+        var input = context.CheckArgumentType<TensorType>(target, BatchToSpace.Input);
+        var blockShape = context.CheckArgumentType<TensorType>(target, BatchToSpace.BlockShape);
+        var crops = context.CheckArgumentType<TensorType>(target, BatchToSpace.Crops);
+        return Visit(context, target, input, blockShape, crops);
+    }
+
+    public Cost? Visit(ICostEvaluateContext context, BatchToSpace target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, BatchToSpace.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
+        };
+    }
+
+    private static IEnumerable<int> BoostRange(int start, int end, int step = 1)
+    {
+        int x = start;
+        do
+        {
+            yield return x;
+            x += step;
+            if ((step < 0 && x <= end) || (step > 0 && end <= x))
+            {
+                break;
+            }
+        }
+        while (true);
+    }
+
     private T[] ZipExec<T>(T[] a, T[] b, Func<T, T, T> f)
     {
         return a.Zip(b).Select(x => f(x.First, x.Second)).ToArray();
@@ -88,28 +123,6 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         return perm.Select(x => (long)x).ToArray();
     }
 
-    private static IEnumerable<int> BoostRange(int start, int end, int step = 1)
-    {
-        int x = start;
-        do
-        {
-            yield return x;
-            x += step;
-            if (step < 0 && x <= end || 0 < step && end <= x)
-                break;
-        }
-        while (true);
-    }
-
-    /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, BatchToSpace target)
-    {
-        var input = context.CheckArgumentType<TensorType>(target, BatchToSpace.Input);
-        var blockShape = context.CheckArgumentType<TensorType>(target, BatchToSpace.BlockShape);
-        var crops = context.CheckArgumentType<TensorType>(target, BatchToSpace.Crops);
-        return Visit(context, target, input, blockShape, crops);
-    }
-
     private IRType Visit(ITypeInferenceContext context, BatchToSpace target, TensorType input, TensorType blockShape, TensorType crops)
     {
         // todo:
@@ -126,14 +139,14 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
             var blockShapeArr = blockShapeValue.Value.ToArray<int>();
             var blockSize = blockShapeArr.Aggregate(1, (a, b) => a * b);
             var d0 = batch / blockSize;
-            Debug.Assert(blockShape.Shape[0] == crops.Shape[0]);
-            var M = blockShape.Shape[0].FixedValue;
+            Trace.Assert(blockShape.Shape[0] == crops.Shape[0]);
+            var m = blockShape.Shape[0].FixedValue;
             var cropsV = cropsValue.Value.Cast<int>();
-            var cropSection = Enumerable.Range(0, M).Select(
+            var cropSection = Enumerable.Range(0, m).Select(
                 i => (inShape[i + 1] * blockShapeArr[0]) - cropsV[i, 0] - cropsV[i, 1]);
 
-            var remainSize = inShape.Rank - 1 - M;
-            var remainShape = remainSize > 0 ? inShape.Skip(1 + M) : new Dimension[] { };
+            var remainSize = inShape.Rank - 1 - m;
+            var remainShape = remainSize > 0 ? inShape.Skip(1 + m) : Array.Empty<Dimension>();
             var outShapeList = new[] { d0 }.Concat(cropSection).Concat(remainShape).ToArray();
             var outShape = TypeInference.ApplyPerm(outShapeList, new[] { 0, 3, 1, 2 });
             return input with { Shape = outShape };
@@ -142,16 +155,5 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         {
             return new InvalidType("BatchToSpace can't infer shape with dynamic crops");
         }
-    }
-
-    public Cost? Visit(ICostEvaluateContext context, BatchToSpace target)
-    {
-        var inputType = context.GetArgumentType<TensorType>(target, BatchToSpace.Input);
-        var returnType = context.GetReturnType<TensorType>();
-        return new()
-        {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
-        };
     }
 }

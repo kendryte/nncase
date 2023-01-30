@@ -31,9 +31,9 @@ internal partial class Quantizer
 
     private static List<float> Smooth(List<float> p, int boxPts = 512)
     {
-        List<float> ret = new List<float>(new float[p.Count]);
-        List<float> pExpand = new List<float>(new float[boxPts - 1]);
-        List<float> pExpand2 = new List<float>(new float[boxPts - 1]);
+        var ret = new List<float>(new float[p.Count]);
+        var pExpand = new List<float>(new float[boxPts - 1]);
+        var pExpand2 = new List<float>(new float[boxPts - 1]);
         pExpand.AddRange(p);
         pExpand.AddRange(pExpand2);
 
@@ -51,10 +51,10 @@ internal partial class Quantizer
         return ret;
     }
 
-    static List<float> smoothDistribution(List<float> p, float eps = 0.0001f)
+    private static List<float> SmoothDistribution(List<float> p, float eps = 0.0001f)
     {
-        List<int> isZeros = new List<int>(new int[p.Count]);
-        List<int> isNonZeros = new List<int>(new int[p.Count]);
+        var isZeros = new List<int>(new int[p.Count]);
+        var isNonZeros = new List<int>(new int[p.Count]);
         var nZeros = 0;
         var nNonZeros = 0;
         for (int i = 0; i < p.Count; i++)
@@ -94,10 +94,12 @@ internal partial class Quantizer
         return ret;
     }
 
-    private static float computeKld(List<float> p, List<float> q)
+    private static float ComputeKld(List<float> p, List<float> q)
     {
-        if ((p.Count == 0 || q.Count == 0) || p.Count != q.Count)
+        if (p.Count == 0 || q.Count == 0 || p.Count != q.Count)
+        {
             return float.MaxValue;
+        }
 
         var pSum = p.Sum();
         var qSum = q.Sum();
@@ -116,7 +118,9 @@ internal partial class Quantizer
         for (int i = 0; i < p.Count; i++)
         {
             if (p[i] != 0)
+            {
                 d += q[i] == 0f ? 1f : p[i] * (float)Math.Log((float)(p[i] / q[i]));
+            }
         }
 
         return d;
@@ -127,7 +131,7 @@ internal partial class Quantizer
         var srcRange = upperThreshold - lowerThreshold;
         var srcPerBin = srcRange / dstBinSize;
 
-        List<float> rangeDist = new List<float>(new float[upperThreshold - lowerThreshold]);
+        var rangeDist = new List<float>(new float[upperThreshold - lowerThreshold]);
         for (int i = 0; i < upperThreshold - lowerThreshold; i++)
         {
             rangeDist[i] = srcBin[i + lowerThreshold];
@@ -146,7 +150,7 @@ internal partial class Quantizer
         }
 
         // quant dist
-        List<float> qDist = new List<float>(new float[dstBinSize]);
+        var qDist = new List<float>(new float[dstBinSize]);
         for (int i = 0; i < dstBinSize; i++)
         {
             var start = i * srcPerBin;
@@ -162,7 +166,7 @@ internal partial class Quantizer
         }
 
         // upsample quant dist
-        List<float> upsQDist = new List<float>(new float[srcRange]);
+        var upsQDist = new List<float>(new float[srcRange]);
         for (int i = 0; i < dstBinSize; i++)
         {
             var start = i * srcPerBin;
@@ -171,26 +175,36 @@ internal partial class Quantizer
             for (int j = start; j < end; j++)
             {
                 if (refDist[j] != 0)
+                {
                     count1++;
+                }
             }
 
             if (count1 == 0)
+            {
                 continue;
+            }
+
             var upsampleValue = qDist[i] / count1;
             for (int j = start; j < end; j++)
             {
                 if (refDist[j] != 0)
+                {
                     upsQDist[j] += upsampleValue;
+                }
             }
         }
 
-        List<float> ups2QDist = new List<float>(new float[srcBin.Count]);
+        var ups2QDist = new List<float>(new float[srcBin.Count]);
+
         // left outliers
         var count2 = 0;
         for (int i = 0; i < lowerThreshold + srcPerBin; i++)
         {
             if (srcBin[i] != 0)
+            {
                 count2++;
+            }
         }
 
         var value2 = 0f;
@@ -203,7 +217,9 @@ internal partial class Quantizer
         for (int i = 0; i < lowerThreshold + srcPerBin; i++)
         {
             if (srcBin[i] != 0)
+            {
                 ups2QDist[i] += value2;
+            }
         }
 
         // median
@@ -217,7 +233,9 @@ internal partial class Quantizer
         for (int i = upperThreshold - srcPerBin; i < srcBin.Count; i++)
         {
             if (srcBin[i] != 0)
+            {
                 count2++;
+            }
         }
 
         for (int i = upperThreshold - srcPerBin; i < srcBin.Count; i++)
@@ -229,13 +247,15 @@ internal partial class Quantizer
         for (int i = upperThreshold - srcPerBin; i < srcBin.Count; i++)
         {
             if (srcBin[i] != 0)
+            {
                 ups2QDist[i] += value2;
+            }
         }
 
-        srcBin = smoothDistribution(srcBin);
-        ups2QDist = smoothDistribution(ups2QDist);
+        srcBin = SmoothDistribution(srcBin);
+        ups2QDist = SmoothDistribution(ups2QDist);
 
-        float kld = computeKld(srcBin, ups2QDist);
+        float kld = ComputeKld(srcBin, ups2QDist);
         if (kld < minKld)
         {
             minKld = kld;

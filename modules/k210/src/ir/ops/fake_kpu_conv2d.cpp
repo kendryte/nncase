@@ -21,26 +21,31 @@ using namespace nncase::ir;
 using namespace nncase::ir::k210;
 using namespace nncase::runtime::k210;
 
-fake_kpu_conv2d::fake_kpu_conv2d(shape_t input_shape, bool is_depthwise, shape_t weights_shape, runtime::k210::kpu_filter_type_t filter_type,
-    runtime::k210::kpu_pool_type_t pool_type, value_range<float> fused_activation)
-    : is_depthwise_(is_depthwise), filter_type_(filter_type), pool_type_(pool_type), fused_activation_(fused_activation)
-{
+fake_kpu_conv2d::fake_kpu_conv2d(shape_t input_shape, bool is_depthwise,
+                                 shape_t weights_shape,
+                                 runtime::k210::kpu_filter_type_t filter_type,
+                                 runtime::k210::kpu_pool_type_t pool_type,
+                                 value_range<float> fused_activation)
+    : is_depthwise_(is_depthwise),
+      filter_type_(filter_type),
+      pool_type_(pool_type),
+      fused_activation_(fused_activation) {
     module_type(k210_module_type);
     add_input("input", dt_float32, input_shape);
     add_input("weights", dt_float32, weights_shape);
-    add_input("bias", dt_float32, shape_t { (size_t)output_channels() });
+    add_input("bias", dt_float32, shape_t{(size_t)output_channels()});
     add_output("output", dt_float32,
-        shape_t {
-            input_shape[0],
-            (size_t)output_channels(),
-            (size_t)get_kpu_pool_output_size((int32_t)input_shape[2], pool_type_),
-            (size_t)get_kpu_pool_output_size((int32_t)input_shape[3], pool_type_) })
+               shape_t{input_shape[0], (size_t)output_channels(),
+                       (size_t)get_kpu_pool_output_size((int32_t)input_shape[2],
+                                                        pool_type_),
+                       (size_t)get_kpu_pool_output_size((int32_t)input_shape[3],
+                                                        pool_type_)})
         .attributes(cnctr_attr_no_layout_strides);
 }
 
-bool fake_kpu_conv2d::properties_equal(node &other) const
-{
+bool fake_kpu_conv2d::properties_equal(node &other) const {
     auto &r = static_cast<fake_kpu_conv2d &>(other);
-    return is_depthwise() == r.is_depthwise() && filter_type() == r.filter_type() && pool_type() == r.pool_type()
-        && fused_activation() == r.fused_activation();
+    return is_depthwise() == r.is_depthwise() &&
+           filter_type() == r.filter_type() && pool_type() == r.pool_type() &&
+           fused_activation() == r.fused_activation();
 }

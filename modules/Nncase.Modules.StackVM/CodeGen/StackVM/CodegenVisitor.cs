@@ -165,7 +165,9 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
             return snippet;
         }
         else
+        {
             return null!;
+        }
     }
 
     public override TextSnippet VisitLeaf(Op expr)
@@ -203,7 +205,9 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
             Emitter.ExtCall(checked((ushort)func.Parameters.Count), false);
         }
         else
+        {
             throw new NotSupportedException(expr.Target.GetType().Name);
+        }
 
         return snippet;
     }

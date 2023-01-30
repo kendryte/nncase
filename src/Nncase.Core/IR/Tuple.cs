@@ -9,63 +9,68 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nncase.IR
+namespace Nncase.IR;
+
+/// <summary>
+/// Tuple expression.
+/// </summary>
+public sealed record Tuple(IRArray<Expr> Fields) : Expr, ITuple
 {
     /// <summary>
-    /// Tuple expression.
+    /// Void type.
     /// </summary>
-    public sealed record Tuple(IRArray<Expr> Fields) : Expr, ITuple
+    public static readonly TupleConst Void = new(ImmutableArray<Const>.Empty);
+
+    public Tuple(params Expr[] fields)
+        : this(ImmutableArray.Create<Expr>(fields))
     {
-        /// <summary>
-        /// Void type.
-        /// </summary>
-        public static readonly TupleConst Void = new(ImmutableArray<Const>.Empty);
+    }
 
-        public Tuple(params Expr[] Fields) : this(ImmutableArray.Create<Expr>(Fields)) { }
+    public Tuple(IEnumerable<Expr> fields)
+        : this(fields.ToArray())
+    {
+    }
 
-        public Tuple(IEnumerable<Expr> Fields) : this(Fields.ToArray()) { }
+    /// <inheritdoc/>
+    public int Count => Fields.Count;
 
-        /// <inheritdoc/>
-        public int Count => Fields.Count;
+    IReadOnlyList<Expr> ITuple.Fields => Fields;
 
-        IReadOnlyList<Expr> ITuple.Fields => Fields;
+    /// <inheritdoc/>
+    public Expr this[int index] => Fields[index];
 
-        /// <inheritdoc/>
-        public Expr this[int index] => Fields[index];
+    /// <summary>
+    /// cast the value tuple to ir array.
+    /// </summary>
+    public static implicit operator Tuple(ValueTuple<Expr> tuple) =>
+        new Tuple(ImmutableArray.Create(new Expr[] { tuple.Item1 }));
 
-        /// <summary>
-        /// cast the value tuple to ir array.
-        /// </summary>
-        public static implicit operator Tuple(ValueTuple<Expr> tuple) =>
-            new Tuple(ImmutableArray.Create(new Expr[] { tuple.Item1 }));
+    /// <summary>
+    /// cast the value tuple to ir array.
+    /// </summary>
+    public static implicit operator Tuple((Expr Expr1, Expr Expr2) tuple) =>
+        new Tuple(ImmutableArray.Create(new Expr[] { tuple.Expr1, tuple.Expr2 }));
 
-        /// <summary>
-        /// cast the value tuple to ir array.
-        /// </summary>
-        public static implicit operator Tuple(ValueTuple<Expr, Expr> tuple) =>
-            new Tuple(ImmutableArray.Create(new Expr[] { tuple.Item1, tuple.Item2 }));
+    /// <summary>
+    /// cast the value tuple to ir array.
+    /// </summary>
+    public static implicit operator Tuple((Expr Expr1, Expr Expr2, Expr Expr3) tuple) =>
+        new Tuple(ImmutableArray.Create(new Expr[] { tuple.Expr1, tuple.Expr2, tuple.Expr3 }));
 
-        /// <summary>
-        /// cast the value tuple to ir array.
-        /// </summary>
-        public static implicit operator Tuple(ValueTuple<Expr, Expr, Expr> tuple) =>
-            new Tuple(ImmutableArray.Create(new Expr[] { tuple.Item1, tuple.Item2, tuple.Item3 }));
+    /// <summary>
+    /// cast the value tuple to ir array.
+    /// </summary>
+    public static implicit operator Tuple((Expr Expr1, Expr Expr2, Expr Expr3, Expr Expr4) tuple) =>
+        new Tuple(ImmutableArray.Create(new Expr[] { tuple.Expr1, tuple.Expr2, tuple.Expr3, tuple.Expr4 }));
 
-        /// <summary>
-        /// cast the value tuple to ir array.
-        /// </summary>
-        public static implicit operator Tuple(ValueTuple<Expr, Expr, Expr, Expr> tuple) =>
-            new Tuple(ImmutableArray.Create(new Expr[] { tuple.Item1, tuple.Item2, tuple.Item3, tuple.Item4 }));
+    /// <inheritdoc/>
+    public IEnumerator<Expr> GetEnumerator()
+    {
+        return Fields.GetEnumerator();
+    }
 
-        /// <inheritdoc/>
-        public IEnumerator<Expr> GetEnumerator()
-        {
-            return Fields.GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
     }
 }

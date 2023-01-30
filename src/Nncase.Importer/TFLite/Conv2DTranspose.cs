@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -32,9 +32,19 @@ namespace Nncase.Importer.TFLite
             var padding = Util.ConcatPadding(padH, padW);
             var clamp = ValueRange<float>.Full;
             return F.Tensors.NCHWToNHWC(F.Math.Clamp(
-                F.NN.Conv2DTranspose(F.Tensors.NHWCToNCHW(input), F.Tensors.NHWCToNCHW(weights), bias,
-                    F.Tensors.NHWCToNCHW(outShape), stride, padding, Tensor.From<long>(new long[] { 0, 0, 0, 0 }),
-                    dilation, PadMode.Constant, 1), clamp.Min, clamp.Max));
+                F.NN.Conv2DTranspose(
+                    F.Tensors.NHWCToNCHW(input),
+                    F.Tensors.NHWCToNCHW(weights),
+                    bias,
+                    F.Tensors.NHWCToNCHW(outShape),
+                    stride,
+                    padding,
+                    Tensor.From<long>(new long[] { 0, 0, 0, 0 }),
+                    dilation,
+                    PadMode.Constant,
+                    1),
+                clamp.Min,
+                clamp.Max));
         }
     }
 }

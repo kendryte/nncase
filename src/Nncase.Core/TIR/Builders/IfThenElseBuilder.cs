@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,14 +18,14 @@ public interface IIfThenElseBuilder : IExprBuilder<IfThenElse>
     /// <summary>
     /// then block.
     /// </summary>
-    /// <param name="exprs"> statements. </param>
+    /// <param name="exprOrBuilders"> statements. </param>
     /// <returns> IfThenElseBuilder. </returns>
     IIfThenElseBuilder Then(params object[] exprOrBuilders);
 
     /// <summary>
     /// else block.
     /// </summary>
-    /// <param name="exprs"> statements. </param>
+    /// <param name="exprOrBuilders"> statements. </param>
     /// <returns> IfThenElseBuilder. </returns>
     IIfThenElseBuilder Else(params object[] exprOrBuilders);
 }

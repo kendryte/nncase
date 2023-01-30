@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.IR;
@@ -21,10 +21,10 @@ public class StoreEvaluator : ITypeInferencer<Store>, IOpPrinter<Store>
     }
 
     /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Store target, bool ILmode)
+    public string Visit(IIRPrinterContext context, Store target, bool iLmode)
     {
         var handle = context.GetArgument(target, Store.Handle);
-        var value = context.GetArgument(target, Store.Value);
+        _ = context.GetArgument(target, Store.Value);
         var index = context.GetArgument(target, Store.Index);
         return $"{handle}[{index}] = {index}";
 
@@ -33,7 +33,7 @@ public class StoreEvaluator : ITypeInferencer<Store>, IOpPrinter<Store>
 
     private IRType Visit(Store target, TensorType handle, TensorType index, TensorType value)
     {
-        var lanes = index.IsScalar ? 1 : index.Shape[0].FixedValue;
+        _ = index.IsScalar ? 1 : index.Shape[0].FixedValue;
 
         var elemType = ((PointerType)handle.DType).ElemType;
         if (elemType != value.DType)

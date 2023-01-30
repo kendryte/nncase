@@ -68,7 +68,13 @@ result<strides_t> to_strides(const uint32_t *strides, uint32_t length) {
 } // namespace
 
 extern "C" {
-int nncase_object_free(nncase::object_node *node) {
+int nncase_object_add_ref(nncase::object_node *node) {
+    if (node)
+        node->add_ref();
+    return 0;
+}
+
+int nncase_object_release(nncase::object_node *node) {
     if (node)
         node->release();
     return 0;
@@ -178,10 +184,6 @@ int nncase_buffer_as_host(nncase::runtime::buffer_node *buffer,
     return -EINVAL;
 }
 
-int nncase_buffer_free(nncase::runtime::buffer_node *buffer) {
-    return nncase_object_free(buffer);
-}
-
 int nncase_host_buffer_map(nncase::runtime::host_buffer_node *host_buffer,
                            nncase::runtime::map_access_t access, void **data,
                            uint32_t *bytes) {
@@ -205,10 +207,6 @@ int nncase_host_buffer_unmap(nncase::runtime::host_buffer_node *host_buffer) {
     return -EINVAL;
 }
 
-int nncase_host_buffer_free(nncase::runtime::host_buffer_node *host_buffer) {
-    return nncase_object_free(host_buffer);
-}
-
 int nncase_dtype_create_prime(nncase::typecode_t typecode,
                               nncase::datatype_node **dtype) {
     if (dtype) {
@@ -221,10 +219,6 @@ int nncase_dtype_create_prime(nncase::typecode_t typecode,
 
 int nncase_dtype_get_typecode(nncase::datatype_node *dtype) {
     return dtype->typecode();
-}
-
-int nncase_dtype_free(nncase::datatype_node *dtype) {
-    return nncase_object_free(dtype);
 }
 
 int nncase_value_is_tensor(nncase::value_node *value, bool *is_tensor) {

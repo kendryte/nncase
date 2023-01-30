@@ -17,24 +17,28 @@
 #include <nncase/api.h>
 #include <nncase/compiler.h>
 #include <nncase/io_utils.h>
+#include <string_view>
 #include <chrono>
 
 using namespace nncase;
 using namespace nncase::clr;
 using namespace nncase::runtime;
+using namespace std::string_view_literals;
 
 #define TRY(x)                                                                 \
     if (x)                                                                     \
         throw 1;
 
 int main() {
-    //nncase_clr_initialize(
-    //    R"(E:\Work\Repos\nncase\src\Nncase.Compiler\bin\Debug\net6.0\Nncase.Compiler.dll)");
-    //clr_object_ptr compiler, compile_options;
-    //TRY(nncase_clr_compile_options_create(
-    //    compile_options.release_and_addressof()));
-    //TRY(nncase_clr_compiler_create(compile_options.get(),
-    //                               compiler.release_and_addressof()));
+    nncase_clr_initialize(
+        R"(E:\Work\Repos\nncase\src\Nncase.Compiler\bin\Debug\net6.0\Nncase.Compiler.dll)");
+    auto target_name = "cpu"sv;
+    auto nncapi = nncase_clr_api();
+    clr_object_ptr target, compile_session, compiler, compile_options;
+    compile_options = nncapi->compile_options_create();
+    target = nncapi->target_create(target_name.data(), target_name.length());
+    nncapi->compile_session_create(target.get(), compile_options.get());
+    compiler = nncapi->compile_session_get_compiler(compile_session.get());
 
     auto kmodel = read_file(
         R"(E:\Work\Repos\nncase\tests\private\tests_output\test_nmt_enc\infer\cpu\noptq\test.kmodel)");
@@ -63,7 +67,7 @@ int main() {
                                    nullptr));
         memcpy(x_buf_data, x, sizeof(x));
         TRY(nncase_host_buffer_unmap(x_host_buf));
-        TRY(nncase_object_free((object_node *)x_host_buf));
+        TRY(nncase_object_release((object_node *)x_host_buf));
     }
 
     tensor_node *x_tensor;
@@ -104,14 +108,14 @@ int main() {
         std::cout << *ret_float_data << std::endl;
 
         TRY(nncase_host_buffer_unmap(ret_host_buf));
-        TRY(nncase_object_free((object_node *)ret_host_buf));
+        TRY(nncase_object_release((object_node *)ret_host_buf));
     }
 
-    TRY(nncase_object_free((object_node *)out_buffer_slice.buffer));
-    TRY(nncase_object_free((object_node *)ret));
-    TRY(nncase_object_free((object_node *)x_buf));
-    TRY(nncase_object_free((object_node *)x_tensor));
-    TRY(nncase_object_free((object_node *)dtype_int64));
+    TRY(nncase_object_release((object_node *)out_buffer_slice.buffer));
+    TRY(nncase_object_release((object_node *)ret));
+    TRY(nncase_object_release((object_node *)x_buf));
+    TRY(nncase_object_release((object_node *)x_tensor));
+    TRY(nncase_object_release((object_node *)dtype_int64));
     TRY(nncase_interp_free(interp));
     return 0;
 }

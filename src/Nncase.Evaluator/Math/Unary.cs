@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -23,11 +23,11 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         {
             if (input_tensor.ElementType == DataTypes.Int32)
             {
-                return Value.FromTensor(Tensor.FromScalar<int>(compute_int(input_tensor.ToScalar<int>(), unary.UnaryOp)));
+                return Value.FromTensor(Tensor.FromScalar<int>(Compute_int(input_tensor.ToScalar<int>(), unary.UnaryOp)));
             }
             else if (input_tensor.ElementType == DataTypes.Float32)
             {
-                return Value.FromTensor(Tensor.FromScalar<float>(compute_float(input_tensor.ToScalar<float>(), unary.UnaryOp)));
+                return Value.FromTensor(Tensor.FromScalar<float>(Compute_float(input_tensor.ToScalar<float>(), unary.UnaryOp)));
             }
         }
 
@@ -56,43 +56,10 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
             UnaryOp.Tanh => OrtKI.Tanh(input),
             UnaryOp.BitwiseNot => throw new NotSupportedException("NotSupported UnaryOp BitwiseNot"),
             UnaryOp.LogicalNot => OrtKI.Not(input),
-            _ => throw new ArgumentOutOfRangeException(nameof(unary.UnaryOp)),
+            _ => throw new ArgumentOutOfRangeException(nameof(unary)),
         };
         return result.ToValue();
     }
-
-    private int compute_int(int input, UnaryOp op) => op switch
-    {
-        UnaryOp.Ceil => input,
-        UnaryOp.Floor => input,
-        UnaryOp.Neg => -input,
-        _ => throw new ArgumentOutOfRangeException($"NotSupported {nameof(op)} For Int"),
-    };
-
-    private float compute_float(float input, UnaryOp op) => op switch
-    {
-        UnaryOp.Abs => System.MathF.Abs(input),
-        UnaryOp.Acos => System.MathF.Acos(input),
-        UnaryOp.Acosh => System.MathF.Acosh(input),
-        UnaryOp.Asin => System.MathF.Asin(input),
-        UnaryOp.Asinh => System.MathF.Asinh(input),
-        UnaryOp.Ceil => System.MathF.Ceiling(input),
-        UnaryOp.Cos => System.MathF.Cos(input),
-        UnaryOp.Cosh => System.MathF.Cosh(input),
-        UnaryOp.Exp => System.MathF.Exp(input),
-        UnaryOp.Floor => System.MathF.Floor(input),
-        UnaryOp.Log => System.MathF.Log(input),
-        UnaryOp.Neg => -input,
-        UnaryOp.Round => System.MathF.Round(input),
-        UnaryOp.Rsqrt => 1.0f / System.MathF.Sqrt(input),
-        UnaryOp.Sin => System.MathF.Sin(input),
-        UnaryOp.Sinh => System.MathF.Sinh(input),
-        UnaryOp.Sign => System.MathF.Sign(input),
-        UnaryOp.Sqrt => System.MathF.Sqrt(input),
-        UnaryOp.Square => input * input,
-        UnaryOp.Tanh => System.MathF.Tanh(input),
-        _ => throw new ArgumentOutOfRangeException($"NotSupported {nameof(op)} For Float"),
-    };
 
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Unary target)
@@ -115,22 +82,58 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         };
     }
 
-    private IRType Visit(TensorType input)
-    {
-        return input;
-    }
-
     /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Unary target, bool ILmode)
+    public string Visit(IIRPrinterContext context, Unary target, bool iLmode)
     {
         var op_str = target.UnaryOp switch
         {
             UnaryOp.BitwiseNot => "!",
             UnaryOp.LogicalNot => "!",
-            var op => op.ToString()
+            var op => op.ToString(),
         };
-        if (!ILmode)
+        if (!iLmode)
+        {
             return $"{op_str}({string.Join(", ", target.Parameters.Select(p => p.Name + ": " + context.GetArgument(target, p).Serialize()))})";
+        }
+
         throw new NotSupportedException("ILmode = true");
+    }
+
+    private int Compute_int(int input, UnaryOp op) => op switch
+    {
+        UnaryOp.Ceil => input,
+        UnaryOp.Floor => input,
+        UnaryOp.Neg => -input,
+        _ => throw new ArgumentOutOfRangeException(nameof(op), $"NotSupported {nameof(op)} For Int"),
+    };
+
+    private float Compute_float(float input, UnaryOp op) => op switch
+    {
+        UnaryOp.Abs => System.MathF.Abs(input),
+        UnaryOp.Acos => System.MathF.Acos(input),
+        UnaryOp.Acosh => System.MathF.Acosh(input),
+        UnaryOp.Asin => System.MathF.Asin(input),
+        UnaryOp.Asinh => System.MathF.Asinh(input),
+        UnaryOp.Ceil => System.MathF.Ceiling(input),
+        UnaryOp.Cos => System.MathF.Cos(input),
+        UnaryOp.Cosh => System.MathF.Cosh(input),
+        UnaryOp.Exp => System.MathF.Exp(input),
+        UnaryOp.Floor => System.MathF.Floor(input),
+        UnaryOp.Log => System.MathF.Log(input),
+        UnaryOp.Neg => -input,
+        UnaryOp.Round => System.MathF.Round(input),
+        UnaryOp.Rsqrt => 1.0f / System.MathF.Sqrt(input),
+        UnaryOp.Sin => System.MathF.Sin(input),
+        UnaryOp.Sinh => System.MathF.Sinh(input),
+        UnaryOp.Sign => System.MathF.Sign(input),
+        UnaryOp.Sqrt => System.MathF.Sqrt(input),
+        UnaryOp.Square => input * input,
+        UnaryOp.Tanh => System.MathF.Tanh(input),
+        _ => throw new ArgumentOutOfRangeException(nameof(op), $"NotSupported {nameof(op)} For Float"),
+    };
+
+    private IRType Visit(TensorType input)
+    {
+        return input;
     }
 }

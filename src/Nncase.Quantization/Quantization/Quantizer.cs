@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.PatternMatch;
@@ -18,50 +19,49 @@ namespace Nncase.Quantization;
 internal partial class Quantizer
 {
     private readonly EGraph _graph;
+    private readonly QuantizeOptions _quantizeOptions;
     private readonly List<ENode> _rangeOfs = new List<ENode>();
     private readonly List<ENode> _childrenOfRangeOfs = new List<ENode>();
-    private readonly RunPassOptions _passOptions;
 
-    public Quantizer(EGraph graph, RunPassOptions passOptions)
+    public Quantizer(EGraph graph, QuantizeOptions quantizeOptions)
     {
         _graph = graph;
-        _passOptions = passOptions;
+        _quantizeOptions = quantizeOptions;
         MarkRangeOfs();
     }
 
-    public async Task RunAsync(RunPassOptions options)
+    public async Task RunAsync(RunPassContext options)
     {
         int srcBinSize = 8192;
         int dstBinSize = 256;
-        var quantOptions = options.CompileOptions.QuantizeOptions!;
-        if (quantOptions.CalibrationDataset == null)
+        if (_quantizeOptions.CalibrationDataset == null)
         {
-            throw new ArgumentNullException(nameof(quantOptions.CalibrationDataset));
+            throw new InvalidOperationException($"{nameof(_quantizeOptions.CalibrationDataset)} is not set");
         }
 
         // 1.0 Get ranges
-        var ranges = await GetRangesAsync(quantOptions.CalibrationDataset);
+        var ranges = await GetRangesAsync(_quantizeOptions.CalibrationDataset);
 
-        if (quantOptions.CalibrationMethod is CalibMethod.Kld)
+        if (_quantizeOptions.CalibrationMethod is CalibMethod.Kld)
         {
             // 1.1. Get histograms
-            var histograms = await GetHistogramsAsync(quantOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
+            var histograms = await GetHistogramsAsync(_quantizeOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
 
             // 1.2. Select best ranges
-            var optRanges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, quantOptions.CalibrationMethod);
+            var optRanges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, _quantizeOptions.CalibrationMethod);
 
             // 1.3. Assign ranges
             AssignRanges(optRanges);
         }
         else
-        {   // 2. Assign ranges
+        { // 2. Assign ranges
             AssignRanges(ranges);
         }
 
         // // 3. Choose better quant method using cosine, and bind info with ir.
         // if (quantOptions.BindQuantMethod)
         // {
-        //     var info = await options.Target.BindQuantMethodCosine(quantOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs, _passOptions);
+        //     var info = await options.Target.BindQuantMethodCosine(quantOptions.CalibrationDataset, options.Target, _rangeOfs, _childrenOfRangeOfs, _context);
         // }
         _graph.Rebuild();
     }
@@ -70,19 +70,39 @@ internal partial class Quantizer
     {
         await foreach (var sample in calibrationDataset.Samples)
         {
-            var evaluator = new CalibrationEvaluator(sample, _rangeOfs, _passOptions.SetPassName(_passOptions.PassName + "/ep1"));
-            var values = evaluator.Evaluate();
-            var childrenEvaluator = new CalibrationEvaluator(sample, _childrenOfRangeOfs, _passOptions.SetPassName(_passOptions.PassName + "/ep2"));
-            var childrenValues = childrenEvaluator.Evaluate();
+            IReadOnlyDictionary<ENode, Tensor> values, childrenValues;
+            using (var dumpScope = new DumpScope("ep1"))
+            {
+                var evaluator = new CalibrationEvaluator(sample, _rangeOfs);
+                values = evaluator.Evaluate();
+            }
+
+            using (var dumpScope2 = new DumpScope("ep2"))
+            {
+                var childrenEvaluator = new CalibrationEvaluator(sample, _childrenOfRangeOfs);
+                childrenValues = childrenEvaluator.Evaluate();
+            }
+
             // values are children op range values(only two scalars for each value: Min and Max), childrenValues are children op tensor values.
             func(values, childrenValues);
+        }
+    }
+
+    private async Task RunPassAsync(ICalibrationDatasetProvider calibrationDataset, Action<IReadOnlyDictionary<ENode, Tensor>> func)
+    {
+        await foreach (var sample in calibrationDataset.Samples)
+        {
+            using var dumpScope = new DumpScope("ep1");
+            var evaluator = new CalibrationEvaluator(sample, _rangeOfs);
+            var values = evaluator.Evaluate();
+            func(values);
         }
     }
 
     private async Task<IDictionary<ENode, ValueRange<float>>> GetRangesAsync(ICalibrationDatasetProvider calibrationDataset)
     {
         var ranges = new Dictionary<ENode, ValueRange<float>>();
-        await RunPassAsync(calibrationDataset, (values, childrenValues) =>
+        await RunPassAsync(calibrationDataset, (values) =>
         {
             foreach (var value in values)
             {
@@ -114,9 +134,9 @@ internal partial class Quantizer
                 var srcBinInterval = r / srcBinSize;
                 if (!histograms.TryGetValue(valuesList[i].Key, out var oldHistogram))
                 {
-                    List<float> initSrcBin = new List<float>(new float[srcBinSize]);
-                    List<float> initDstBin = new List<float>(new float[dstBinSize]);
-                    QuantizeHistogram<float> histogram = new QuantizeHistogram<float>(initSrcBin, initDstBin);
+                    var initSrcBin = new List<float>(new float[srcBinSize]);
+                    var initDstBin = new List<float>(new float[dstBinSize]);
+                    var histogram = new QuantizeHistogram<float>(initSrcBin, initDstBin);
                     histograms.Add(valuesList[i].Key, histogram);
                 }
 
@@ -126,7 +146,7 @@ internal partial class Quantizer
                 foreach (var buf in childrenBuffer)
                 {
                     var r_index = (buf - ranges[valuesList[i].Key].Min) / srcBinInterval;
-                    var index = (int)Math.Clamp((float)r_index, (float)(0), (float)(srcBinSize) - 1);
+                    var index = (int)Math.Clamp((float)r_index, 0F, (float)srcBinSize - 1);
                     histograms[valuesList[i].Key].SrcBin[index]++;
                 }
             }
@@ -147,12 +167,14 @@ internal partial class Quantizer
                 var srcBinInterval = r / srcBinSize;
                 var betterThreshold = new Tuple<int, int>(0, srcBinSize);
                 var zeroThreshold = (int)Math.Clamp((0 - ranges[histogram.Key].Min) / srcBinInterval, 0, srcBinSize - 1);
+
                 // range max first
                 int lowerThreshold = 0;
                 var srcBin = histogram.Value.SrcBin;
                 for (int upperThreshold = srcBinSize; upperThreshold >= dstBinSize && upperThreshold >= zeroThreshold; upperThreshold -= dstBinSize)
                 {
                     GetKldOptRanges(lowerThreshold, upperThreshold, dstBinSize, ref srcBin, ref minKld, ref betterThreshold);
+
                     // betterThreshold = thresholdWithMinKldWithSmoothSrcBin.Item1;
                     // minKld = thresholdWithMinKldWithSmoothSrcBin.Item2;
                     // srcBin = thresholdWithMinKldWithSmoothSrcBin.Item3;
@@ -164,6 +186,7 @@ internal partial class Quantizer
                 for (int lowerThreshold2 = 0; lowerThreshold2 <= zeroThreshold && lowerThreshold2 <= upperThreshold2 - dstBinSize; lowerThreshold2 += dstBinSize)
                 {
                     GetKldOptRanges(lowerThreshold2, upperThreshold2, dstBinSize, ref srcBin, ref minKld, ref betterThreshold);
+
                     // betterThreshold = thresholdWithMinKldWithSmoothSrcBin.Item1;
                     // minKld = thresholdWithMinKldWithSmoothSrcBin.Item2;
                     // srcBin = thresholdWithMinKldWithSmoothSrcBin.Item3;
@@ -193,7 +216,7 @@ internal partial class Quantizer
             _graph.Union(rangeOfEclass, rangeEclass);
         }
 
-        //_graph.Rebuild();
+        // _graph.Rebuild();
     }
 
     /// <summary>
@@ -205,9 +228,9 @@ internal partial class Quantizer
         {
             foreach (var match in matches)
             {
-                var _rangeOf = (ENode)match.Root;
-                _rangeOfs.Add(_rangeOf);
-                _childrenOfRangeOfs.Add(_rangeOf.Children[1].Nodes[0]);
+                var rangeOf = (ENode)match.Root;
+                _rangeOfs.Add(rangeOf);
+                _childrenOfRangeOfs.Add(rangeOf.Children[1].Nodes[0]);
             }
         }
     }

@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -31,6 +31,18 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
         var inputs = context.CheckArgumentType<TupleType>(target, Concat.Input);
         var axis = context.CheckArgumentType<TensorType>(target, Concat.Axis);
         return Visit(context, target, inputs, axis);
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, Concat target)
+    {
+        var ret = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret),
+        };
     }
 
     private IRType? CheckType(TupleType inputs)
@@ -148,17 +160,5 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
         {
             return Dimension.Unknown;
         }
-    }
-
-    /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Concat target)
-    {
-        var ret = context.GetReturnType<TensorType>();
-        return new()
-        {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret),
-        };
     }
 }

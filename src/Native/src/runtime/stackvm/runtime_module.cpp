@@ -71,7 +71,7 @@ stackvm_runtime_module::custom_call_table() const noexcept {
 }
 
 kernels::kernel_context &stackvm_runtime_module::kernel_context() noexcept {
-    auto& context = kernels::default_kernel_context();
+    auto &context = kernels::default_kernel_context();
 #ifdef NNCASE_DUMP_MANAGER
     context.dump_manager = interp().dump_manager();
 #endif

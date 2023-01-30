@@ -8,9 +8,16 @@
 	<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
+  <ItemGroup>
+    <None Include="TIR\Range.Conversions.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Range.Conversions.tt</DependentUpon>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac" />
+    <PackageReference Include="DryIoc.dll" />
     <PackageReference Include="libtorch-cpu-linux-x64" />
     <PackageReference Include="libtorch-cpu-osx-x64" />
     <PackageReference Include="libtorch-cpu-win-x64" />
@@ -19,6 +26,7 @@
     <!-- <PackageReference Include="libtorch-cuda-11.3-linux-x64" /> -->
     <!-- <PackageReference Include="libtorch-cuda-11.3-win-x64" /> -->
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.Toolkit.HighPerformance" />
     <PackageReference Include="NetFabric.Hyperlinq" />
@@ -28,6 +36,25 @@
 
   <ItemGroup>
       <ProjectReference Include="../../tools/Nncase.SourceGenerator/Nncase.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="TIR\Range.Conversions.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Range.Conversions.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="TIR\Range.Conversions.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Range.Conversions.tt</DependentUpon>
+    </Compile>
   </ItemGroup>
 
 </Project>

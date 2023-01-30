@@ -1,260 +1,301 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using NetFabric.Hyperlinq;
 using Nncase.CodeGen;
 using Nncase.IR;
+using Nncase.IR.Math;
+using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
+using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.Utility;
 using static Nncase.Utilities.ReplaceUtility;
+using ParameterInfo = Nncase.IR.ParameterInfo;
+using Tuple = System.Tuple;
+
 namespace Nncase.Transform.Rules.Neutral;
 
 public abstract class FusionMaker : RewriteRule<Pattern>
 {
+    private int _count;
+
     public virtual string Name { get; } = "FusionMaker";
 
     public virtual string ModuleKind { get; } = "StackVM";
 
-    private int count = 0;
-
-    public string FullName => $"{Name}_{count++}";
+    public string FullName => $"{Name}_{_count++}";
 }
 
+/// <summary>
+/// used for make multi input and multi output fusion.
+/// e.g.
+///       load    load    load
+///         \      |       /
+///              LSTM
+/// body =      /    \
+///        GetItem  GetItem
+///           |        |
+///         store    store
+///
+/// body => Call(Target:Fusion(body))
+///
+/// but something not support
+/// 1. not TensorConst
+/// 2. Swappable Binary
+/// in these cases you should use DoubleInputFusion.
+///
+/// </summary>
+/// <typeparam name="TOp">TOp.</typeparam>
+/// <typeparam name="TBegin">Begin process for input.</typeparam>
+/// <typeparam name="TEnd">End process for output.</typeparam>
+/// <typeparam name="TDataMaker">Used for set detail pattern.
+/// In TDataMaker, you should impl your own member
+/// which signature is same as "public static (ParameterInfo, Pattern)[] InputsPattern". </typeparam>
 [RuleGenerator]
-public partial class SingleInputFusion<T, BeginT, EndT> : FusionMaker
-    where T : Op
-    where BeginT : Op
-    where EndT : Op
+public partial class ComplexFusion<TOp, TBegin, TEnd, TDataMaker> : FusionMaker
+    where TOp : Op
+    where TBegin : Op
+    where TEnd : Op
 {
-    /// <inheritdoc/>
-    public override Pattern Pattern { get; } = IsWildcardCall<EndT>("st", null!,
-        IsWildcardCall<T>(null!, null!, (
-            IsWildcardCall<BeginT>(null!, null!, IsWildcard("input")))));
+    private static readonly string OutputName = "output";
 
-    // replace input with var
-    private Call? GetReplace(Call st, Expr input, RunPassOptions passOptions)
+    public static Pattern ComputePattern { get; } = IsCallWithSpecInput<TOp>("midCall", null, InputsPattern);
+
+    public static (ParameterInfo, Pattern)[] InputsPattern =>
+        ((ParameterInfo, Pattern)[])typeof(TDataMaker).GetField("InputsPattern")!.GetValue(null)!;
+
+    // if multi output, then the name by generated should be set null to avoid name conflict
+    // if single output, then use the OutputName
+    // designed for fusion single output and multi output by only one rule
+    public override Pattern Pattern { get; } = IsAlt(
+        MultiOutPattern(ComputePattern, OutputName),
+        EndPattern(OutputName));
+
+    /// <summary>
+    /// Generate multi output pattern, wrap with GetItem.
+    /// </summary>
+    /// <param name="inputPattern">Target of GetItem.</param>
+    /// <param name="outputName">Output name.</param>
+    /// <returns>TuplePattern.</returns>
+    public static Pattern MultiOutPattern(Pattern inputPattern, string? outputName) => IsTuple(
+        GenerateRepeatParameters(
+            () => IsWildcardCall<TEnd>(
+                null!,
+                null!,
+                IsWildcardCall<GetItem>(null, null, inputPattern))),
+        outputName);
+
+    public static Pattern EndPattern(string? endCallName) => IsWildcardCall<TEnd>(endCallName, null, ComputePattern);
+
+    /// <summary>
+    /// Used for construct wildcard Pattern for inputs from ParameterInfo[].
+    /// </summary>
+    /// <param name="infos">Parameter Infos.</param>
+    public static (ParameterInfo, Pattern)[] GenerateInputsPattern(params ParameterInfo[] infos) =>
+        infos.Select(x => (x, (Pattern)IsWildcardCall<TBegin>(null, null, (string?)null))).ToArray();
+
+    /// <summary>
+    /// Get input Expr from expr of TBegin.
+    /// When you want to modify default behavior, you should override it.
+    /// </summary>
+    public virtual Expr GetInputFromBegin(Expr begin)
     {
-        var arg = new Var("input0", input.CheckedType!);
-        var body = ReplaceTarget(st, input, arg, passOptions.MatchOptions);
-        var fusion = new Call(new Fusion(FullName, ModuleKind, body, new[] { arg }), input);
+        return ((Call)begin).Parameters[0];
+    }
+
+    /// <summary>
+    /// Replace the old expr with new expr for each field.
+    /// </summary>
+    public virtual IR.Tuple ReplaceTupleFields(Expr oldExpr, IR.Tuple tupleOut, Expr newExpr)
+    {
+        var newFields = tupleOut.Fields.Select(end =>
+
+                // end is a GetItem(Call(TOp, params))
+                // then end[0] is Call(TOp, params)
+                ReplaceFirst(
+                    (Call)end,
+                    (Expr)ReplaceCallParam((Call)((Call)end).Parameters[0], new[] { (oldExpr, newExpr) })))
+            .ToArray();
+        return tupleOut with { Fields = newFields };
+    }
+
+    protected virtual Call? GetReplace(Expr output, Call midCall, IReadOnlyList<Expr> midCallParams)
+    {
+        int idx = 0;
+
+        // get inputs for spec
+        var oldInputs = InputsPattern
+            .Select(x => x.Item1.Index)
+            .Select(i => midCallParams[i])
+            .ToArray();
+
+        // update old input and accumulate new begin and new input
+        var (newBegins, newInputs) = oldInputs
+            .Aggregate(
+                (Array.Empty<Expr>(), Array.Empty<Var>()),
+                (tuple, begin) =>
+                {
+                    var input = GetInputFromBegin(begin);
+                    var newInput = new Var($"input_{idx++}", input.CheckedType!);
+                    var newBegin = ReplaceCallParam((Call)begin, new[] { (input, (Expr)newInput) });
+                    return (
+                        tuple.Item1.Append(newBegin).ToArray(),
+                        tuple.Item2.Append(newInput).ToArray());
+                });
+
+        // update compute
+        var newMidCall = ReplaceCallParam(midCall, midCallParams.Zip(newBegins).ToArray());
+
+        // update end
+        Expr newBody = output switch
+        {
+            IR.Tuple tuple => ReplaceTupleFields(midCall, tuple, newMidCall),
+            Call endCall => ReplaceCallParam(endCall, new[] { ((Expr)midCall, (Expr)newMidCall) }),
+            _ => throw new NotSupportedException("not suppoerted output type"),
+        };
+
+        // update parameters
+        var parameters = oldInputs.Select(GetInputFromBegin).ToArray();
+        var fusion = new Call(new Fusion(FullName, ModuleKind, newBody, newInputs), parameters);
         return fusion;
-        // options.SuppressPattern(st, Pattern);
-        // return fusion;
     }
 }
 
 [RuleGenerator]
-public partial class DoubleInputFusion<T, BeginT, EndT> : FusionMaker
+public partial class SingleInputFusion<T, TBegin, TEnd> : FusionMaker
     where T : Op
-    where BeginT : Op
-    where EndT : Op
+    where TBegin : Op
+    where TEnd : Op
 {
     /// <inheritdoc/>
-    public override Pattern Pattern { get; } = IsWildcardCall<EndT>("st", null!,
-        IsWildcardCall<T>(null!, null!,
-            IsWildcardCall<BeginT>(null!, null!, IsWildcard("lhs")),
-            IsWildcardCall<BeginT>(null!, null!, IsWildcard("rhs"))));
+    public override Pattern Pattern { get; } = IsWildcardCall<TEnd>(
+        "endCall",
+        null,
+        IsWildcardCall<T>(
+            "midCall",
+            null,
+            IsWildcardCall<TBegin>("beginCall", null, IsWildcard("input"))));
 
-    // replace input with var
-    private Call GetReplace(Call st, Expr lhs, Expr rhs, RunPassOptions passOptions)
+    protected virtual Call? GetReplace(
+        Call endCall,
+        IReadOnlyList<Expr> endCallParams,
+        Call midCall,
+        IReadOnlyList<Expr> midCallParams,
+        Call beginCall,
+        IReadOnlyList<Expr> beginCallParams,
+        Expr input)
     {
-        var varIndex = 0;
-        Expr tmpBody = st;
-        var args = new List<Var>();
-        var parameters = new List<Expr>();
+        var new_input = new Var(input.CheckedType!);
+        var new_beginCallParams = ReplaceParams(beginCallParams, input, new_input);
+        var new_beginCall = beginCall with { Parameters = new(new_beginCallParams) };
+
+        var new_midCallParams = ReplaceParams(midCallParams, beginCall, new_beginCall);
+        var new_midCall = midCall with { Parameters = new(new_midCallParams) };
+
+        var new_endCallParams = ReplaceParams(endCallParams, midCall, new_midCall);
+        var new_endCall = endCall with { Parameters = new(new_endCallParams) };
+
+        var fusion = new Call(new Fusion(FullName, ModuleKind, new_endCall, new[] { new_input }), input);
+        return fusion;
+    }
+}
+
+[RuleGenerator]
+public partial class DoubleInputFusion<T, TBegin, TEnd> : FusionMaker
+    where T : Op
+    where TBegin : Op
+    where TEnd : Op
+{
+    /// <inheritdoc/>
+    public override Pattern Pattern { get; } = IsWildcardCall<TEnd>(
+        "endCall",
+        null!,
+        IsWildcardCall<T>(
+            "midCall",
+            null,
+            IsWildcardCall<TBegin>("beginLhsCall", null, IsWildcard("lhs")),
+            IsWildcardCall<TBegin>("beginRhsCall", null, IsWildcard("rhs"))));
+
+    private Call GetReplace(
+        Call endCall,
+        IReadOnlyList<Expr> endCallParams,
+        Call midCall,
+        IReadOnlyList<Expr> midCallParams,
+        Call beginLhsCall,
+        IReadOnlyList<Expr> beginLhsCallParams,
+        Call beginRhsCall,
+        IReadOnlyList<Expr> beginRhsCallParams,
+        Expr lhs,
+        Expr rhs)
+    {
+        var new_args = new List<Var>();
+        var newParams = new List<Expr>();
+        var replace_pairs = new List<(Expr, Expr)>();
         if (lhs is not TensorConst)
         {
-            var arg = new Var($"input{varIndex++}", lhs.CheckedType!);
-            tmpBody = ReplaceTarget(tmpBody, lhs, arg, passOptions.MatchOptions);
-            args.Add(arg);
-            parameters.Add(lhs);
+            var arg = new Var(lhs.CheckedType!);
+            var new_beginLhsCallParams = ReplaceParams(beginLhsCallParams, lhs, arg);
+            var new_beginLhsCall = beginLhsCall with { Parameters = new(new_beginLhsCallParams) };
+            new_args.Add(arg);
+            newParams.Add(lhs);
+            replace_pairs.Add((beginLhsCall, new_beginLhsCall));
         }
 
         if (rhs is not TensorConst)
         {
-            var arg = new Var($"input{varIndex++}", rhs.CheckedType!);
-            tmpBody = ReplaceTarget(tmpBody, rhs, arg, passOptions.MatchOptions);
-            args.Add(arg);
-            parameters.Add(rhs);
+            var arg = new Var(rhs.CheckedType!);
+            var new_beginRhsCallParams = ReplaceParams(beginRhsCallParams, rhs, arg);
+            var new_beginRhsCall = beginRhsCall with { Parameters = new(new_beginRhsCallParams) };
+            new_args.Add(arg);
+            newParams.Add(rhs);
+            replace_pairs.Add((beginRhsCall, new_beginRhsCall));
         }
 
-        var body = tmpBody;
-        var fusion = new Call(new Fusion(FullName, ModuleKind, body, args.ToArray()), parameters.ToArray());
+        var new_midCallParams = ReplaceParams(midCallParams, replace_pairs);
+        var new_midCall = midCall with { Parameters = new(new_midCallParams) };
+
+        var new_endCallParams = ReplaceParams(endCallParams, midCall, new_midCall);
+        var new_endCall = endCall with { Parameters = new(new_endCallParams) };
+
+        var fusion = new Call(
+            new Fusion(FullName, ModuleKind, new_endCall, new_args.ToArray()),
+            newParams.ToArray());
         return fusion;
     }
 }
 
 [RuleGenerator]
-public partial class DataTransferFusion<LoadT, StoreT> : FusionMaker
-    where LoadT : Op
-    where StoreT : Op
+public partial class DataTransferFusion<TLoad, TStore> : FusionMaker
+    where TLoad : Op
+    where TStore : Op
 {
     /// <inheritdoc/>
-    public override Pattern Pattern { get; } = IsWildcardCall<StoreT>("st", null!,
-        IsWildcardCall<LoadT>(null!, null!, IsWildcard("input")));
+    public override Pattern Pattern { get; } = IsWildcardCall<TStore>(
+        "stCall",
+        null,
+        IsWildcardCall<TLoad>("ldCall", null, IsWildcard("input")));
 
     // replace input with var
-    private Call? GetReplace(Call st, Expr input, RunPassOptions passOptions)
+    private Call? GetReplace(
+        Call stCall,
+        IReadOnlyList<Expr> stCallParams,
+        Call ldCall,
+        IReadOnlyList<Expr> ldCallParams,
+        Expr input)
     {
-        if ((st.Attribute & CallAttr.Fusion) != 0)
-        {
-            return null;
-        }
+        var new_arg = new Var(input.CheckedType!);
 
-        var arg = new Var("input0", input.CheckedType!);
-        var body = ReplaceTarget(st, input, arg, passOptions.MatchOptions);
-        return new Call(new Fusion(FullName, ModuleKind, body, new[] { arg }), input);
-    }
-}
+        var new_ldCallParams = ReplaceParams(ldCallParams, input, new_arg);
+        var new_ldCall = ldCall with { Parameters = new(new_ldCallParams) };
 
-[RuleGenerator]
-public partial class FuseTwoFusion : FusionMaker
-{
-    /// <summary>
-    /// module kind
-    /// </summary>
-    private Pattern? _calleePattern = null;
+        var new_stCallParams = ReplaceParams(stCallParams, ldCall, new_ldCall);
+        var new_stCall = stCall with { Parameters = new(new_stCallParams) };
 
-    private Pattern? _Pattern = null;
-
-    /// <inheritdoc/>
-    public override Pattern Pattern => _Pattern ??=
-        IsCall(
-            "caller",
-            IsFusion("callerFuse",
-                ModuleKind,
-                IsWildcard(),
-                WildcardVArgsPattern),
-            ParamsWithArg(CalleePattern)
-        );
-
-    /// <inheritdoc/>
-    public Pattern CalleePattern => _calleePattern ??=
-        IsCall(
-            "callee",
-            IsFusion("calleeFuse",
-                ModuleKind,
-                IsWildcard(),
-                WildcardVArgsPattern),
-            WildcardVArgsPattern);
-
-    // caller(callee, args..)
-    private Call GetReplace(Call caller, Call callee, Fusion calleeFuse, Fusion callerFuse, RunPassOptions passOptions)
-    {
-        // find callee pos index in caller
-        // input0  input1
-        //    \      /
-        //     caller
-        // param[1] == callee, then index == 1
-        var index = caller.Parameters.ToList().FindIndex(x =>
-        {
-            passOptions.MatchOptions.TryUpdateWithRewrite(ref x);
-            return x == callee;
-        });
-        // get param var name from args index for rename
-        var beReplacedVar = callerFuse.Parameters[index];
-
-        // replace calleeFuse first param with callerParam which be removed
-        var (calleeFuseBody, calleeFirstVar) = RenameFirstVar(calleeFuse, beReplacedVar.Name, passOptions.MatchOptions);
-        var (newCalleeFuseBody, newCalleeParams) = RenameRestVar(calleeFuse.Parameters, calleeFuseBody, caller.Parameters.Count, passOptions.MatchOptions);
-
-        // merge two body
-        //     input1 input2 input3
-        //        \     |      /
-        // input0    callee  
-        //   \        /         
-        //     caller               
-        var newBodyWithRedundancy = ReplaceTarget(callerFuse.Body, beReplacedVar, newCalleeFuseBody, passOptions.MatchOptions);
-        // eliminate store load
-        // fusion: load -> op1 -> op2 -> ... -> store
-        var newBody = EliminateRedundancy(newBodyWithRedundancy, passOptions);
-
-        var newParams = Merge(callerFuse.Parameters.ToArray(), index, calleeFirstVar, newCalleeParams);
-        var newInputs = Merge(caller.Parameters, index, callee.Parameters[0], callee.Parameters.ToArray()[1..]);
-        return new Call(new Fusion(FullName, ModuleKind, newBody, newParams), newInputs);
-    }
-
-    /// <summary>
-    /// e.g. load -> conv -> [store -> load] -> act -> store =>
-    ///      load -> conv -> act -> store
-    /// </summary>
-    /// <param name="newBodyWithRedundancy"></param>
-    /// <param name="passOptions"></param>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
-    virtual public Expr EliminateRedundancy(Expr newBodyWithRedundancy, RunPassOptions passOptions)
-    {
-        throw new InvalidOperationException("EliminateRedundancy Not Impl");
-    }
-
-    public T[] Merge<T>(IRArray<T> callerExprList, int index, T firstInCallee,
-        IRArray<Expr> newCalleeExprList) where T : Expr =>
-        Merge<T>(callerExprList.ToArray(), index, firstInCallee, newCalleeExprList.ToArray());
-
-    public T[] Merge<T>(T[] callerExprList, int index, T expr, Expr[] newCalleeExprList)
-        where T : Expr
-    {
-        var newCallerExprList = ReplacePos(callerExprList, expr, index);
-        return newCallerExprList.Concat(newCalleeExprList).Select(x => (T)x).ToArray();
-    }
-
-    /// <summary>
-    /// rename first var
-    /// input0 input1  input0 input1 input2
-    ///   \     /         \      |      /
-    ///   caller               callee
-    /// when callee == input0, then not replace and return
-    /// else replace input1 with callee first var
-    /// else result:
-    /// input0 input1  input1 input1 input2
-    ///   \     /         \      |      /
-    ///   caller               callee
-    /// right input will be rename in RenameRestVar 
-    /// </summary>
-    /// <param name="calleeFuse"></param>
-    /// <param name="beReplacedVarName"></param>
-    /// <returns></returns>
-    public (Expr, Var) RenameFirstVar(Fusion calleeFuse, string beReplacedVarName, MatchOptions matchOptions)
-    {
-        // if callee first var name is not same as beReplaceVarName, then replace old var with newVar in calleeFuseBody
-        var newVar = new Var(beReplacedVarName, calleeFuse.Parameters[0].CheckedType);
-        return calleeFuse.Parameters[0].Name == beReplacedVarName
-            ? (calleeFuse.Body, calleeFuse.Parameters[0])
-            : (ReplaceTarget(
-                calleeFuse.Body,
-                calleeFuse.Parameters[0],
-                // create a new var
-                newVar, matchOptions), newVar);
-    }
-
-    /// <summary>
-    /// rename rest var
-    /// if count of calleeParams > 1, then rename
-    /// input0 input1  input1 input2 input3
-    ///   \     /         \      |     |
-    ///   caller              callee
-    /// right input will be rename in RenameRestVar 
-    /// </summary>
-    /// <param name="calleeFuseParams"></param>
-    /// <param name="calleeFuseBody"></param>
-    /// <param name="callerParamCount"></param>
-    /// <param name="matchOptions"></param>
-    /// <returns></returns>
-    public (Expr, Var[]) RenameRestVar(IRArray<Var> calleeFuseParams, Expr calleeFuseBody, int callerParamCount, MatchOptions matchOptions)
-    {
-        var newVarRange = Enumerable.Range(1, calleeFuseParams.Count - 1);
-        var newInputCountBase = callerParamCount;
-        // replace other param
-        var newCalleeParams = newVarRange
-            .Select(i => calleeFuseParams[i] with { Name = "input" + (newInputCountBase - 1 + i) })
-            .ToArray();
-        // rename var in callee
-        var newCalleeFuseBody = newVarRange
-            .Aggregate(calleeFuseBody, (expr, i) =>
-                ReplaceTarget(
-                    expr,
-                    calleeFuseParams[i],
-                    newCalleeParams[i - 1],
-                    matchOptions));
-        return (newCalleeFuseBody, newCalleeParams);
+        var fusion = new Call(new Fusion(FullName, ModuleKind, new_stCall, new[] { new_arg }), input);
+        return fusion;
     }
 }

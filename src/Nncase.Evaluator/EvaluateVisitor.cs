@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -6,11 +6,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Nncase.Diagnostics;
 using Nncase.IR;
 
 namespace Nncase.Evaluator;
 
-internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
+internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>, IDisposable
 {
     private readonly EvaluateContext _context;
     private readonly IReadOnlyDictionary<Var, IValue> _varsValues;
@@ -22,7 +23,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
         _context = new EvaluateContext(ExpressionMemo);
         _evaluator_cache = evaluator_cache;
         _varsValues = varsValues;
-        _dumpManager = new EvaluatorDumpManager(expr => _context.GetValue(expr).AsTensors());
+        _dumpManager = new EvaluatorDumpManager(DumpScope.Current.CreateSubDummper("Evaluate", null), expr => _context.GetValue(expr).AsTensors());
         _dumpManager.RegisterDumpCallbacks(RegisterBeforeCallback, RegisterAfterCallback);
     }
 
@@ -35,7 +36,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
             Op op => CompilerServices.EvaluateOp(op, _context, _evaluator_cache),
             Function func => CompilerServices.Evaluate(func.Body, func.Parameters.Zip(expr.Parameters).ToDictionary(kv => kv.First, kv => Visit(kv.Second), (IEqualityComparer<Var>)ReferenceEqualityComparer.Instance), _evaluator_cache),
             Fusion { ModuleKind: "stackvm" } fusion => CompilerServices.Evaluate(fusion.Body, fusion.Parameters.Zip(expr.Parameters).ToDictionary(kv => kv.First, kv => Visit(kv.Second), (IEqualityComparer<Var>)ReferenceEqualityComparer.Instance), _evaluator_cache),
-            _ => throw new NotImplementedException(expr.Target.ToString())
+            _ => throw new NotImplementedException(expr.Target.ToString()),
         };
     }
 
@@ -114,5 +115,10 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>
         }
 
         return result;
+    }
+
+    public void Dispose()
+    {
+        _dumpManager.Dispose();
     }
 }

@@ -76,10 +76,10 @@ FindRuntimeMethod(collector, COLLECTOR)
             fmt::format("libnncase.simulator.{}" DYNLIB_EXT, kind.data());     \
         auto mod = dlopen(module_name.c_str(), RTLD_LAZY);                     \
         if (!(mod))                                                            \
-            return err(nncase_errc::runtime_not_found);     \
+            return err(nncase_errc::runtime_not_found);                        \
         auto proc = dlsym(mod, STR(RUNTIME_MODULE_##upper_name##_NAME));       \
         if (!(proc))                                                           \
-            return err(nncase_errc::runtime_register_not_found);     \
+            return err(nncase_errc::runtime_register_not_found);               \
         return ok(reinterpret_cast<rt_module_##snake_name##_t>(proc));         \
     }
 // clang-format off

@@ -20,6 +20,7 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
+
 def _make_module(in_shape):
     inputs = []
     outputs = []
@@ -73,6 +74,7 @@ in_shapes = [
     [1, 3, 16, 16],
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_size(in_shape, request):
     model_def = _make_module(in_shape)
@@ -80,6 +82,7 @@ def test_size(in_shape, request):
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_size.py'])

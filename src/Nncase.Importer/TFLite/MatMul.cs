@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -7,8 +7,8 @@ using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using tflite;
-using F = Nncase.IR.F;
 using static Nncase.IR.F.Tensors;
+using F = Nncase.IR.F;
 using TensorType = tflite.TensorType;
 
 namespace Nncase.Importer.TFLite
@@ -66,7 +66,7 @@ namespace Nncase.Importer.TFLite
                 : Expand(Cast(0, GetDataType(GetInputTensor(op, 0).Type)), new[] { otherTensor.Shape(0) }).Evaluate().AsTensor();
             return MatMul(
                 lhs,
-                 rhs) + bias;
+                rhs) + bias;
         }
 
         private int[] GetPerm(tflite.Operator op, int index)

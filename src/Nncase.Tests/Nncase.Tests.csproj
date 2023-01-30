@@ -1,22 +1,27 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <IsPackable>false</IsPackable>
-    <NoWarn>1591</NoWarn>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac.Extensions.DependencyInjection" />
+    <PackageReference Include="Fody">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="MethodBoundaryAspect.Fody" />
     <PackageReference Include="Tomlyn.Extensions.Configuration" />
     <PackageReference Include="System.Linq.Async" />
-    <PackageReference Include="Xunit.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Microsoft.Toolkit.HighPerformance" />
-    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.analyzers" />
+    <PackageReference Include="Xunit.Combinatorial" />
+    <PackageReference Include="xunit.core" />
     <PackageReference Include="Xunit.DependencyInjection" />
     <PackageReference Include="xunit.runner.visualstudio">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -26,11 +31,14 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="xunit.v3.assert" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Nncase.Compiler\Nncase.Compiler.csproj" />
     <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" /> 
-    <ProjectReference Include="..\Nncase.Graph\Nncase.Graph.csproj" />
+    <ProjectReference Include="..\Nncase.Graph\Nncase.Graph.csproj" /> 
+    <ProjectReference Include="..\Nncase.Tests.TestFixture\Nncase.Tests.TestFixture.csproj" />
     <ProjectReference Include="..\Nncase.Transform\Nncase.Transform.csproj" />
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
     <ProjectReference Include="..\Nncase.Evaluator\Nncase.Evaluator.csproj" />
@@ -38,7 +46,6 @@
     <ProjectReference Include="..\Nncase.CodeGen\Nncase.CodeGen.csproj" />
     <ProjectReference Include="..\Nncase.IO\Nncase.IO.csproj" />
     <ProjectReference Include="..\Nncase.Simulator\Nncase.Simulator.csproj" />
-    <ProjectReference Include="..\Nncase.TestFixture\Nncase.TestFixture.csproj" />
     <ProjectReference Include="..\..\modules\Nncase.Modules.StackVM\Nncase.Modules.StackVM.csproj" />
     <ProjectReference Include="..\..\modules\Nncase.Modules.K210\Nncase.Modules.K210.csproj" />
     <!--<ProjectReference Include="..\..\targets\Nncase.Targets.CSource\Nncase.Targets.CSource.csproj" />-->

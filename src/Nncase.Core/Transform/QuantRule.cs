@@ -18,52 +18,49 @@ namespace Nncase.Transform;
 public abstract class QuantRule : RewriteRule<Pattern>
 {
     /// <summary>
+    /// Gets or sets context.
     /// NOTE the option will be set by SourceGenerator when the GetReplace called.
     /// </summary>
-    public RunPassOptions Option = null!;
+    public RunPassContext? Option { get; set; }
 
     /// <summary>
-    /// the match result
+    /// Gets or sets the match result.
     /// NOTE the MatchResult will be set by SourceGenerator when the GetReplace called.
     /// </summary>
-    public IMatchResult MatchResult = null!;
+    public IMatchResult? MatchResult { get; set; }
 
     /// <summary>
-    /// whole expr be matched
+    /// Gets whole expr be matched.
     /// </summary>
-    public Expr Root => (Expr)MatchResult[Pattern];
+    public Expr Root => (Expr)MatchResult![Pattern];
+
+    /// <summary>
+    /// Gets get ModelQuantMode.
+    /// </summary>
+    public ModelQuantMode ModelQuantMode => CompileSession.CompileOptions.QuantizeOptions.ModelQuantMode;
+
+    /// <summary>
+    /// Gets get QuantType.
+    /// </summary>
+    public DataType QuantType => CompileSession.CompileOptions.QuantizeOptions.QuantType;
+
+    /// <summary>
+    /// Gets get WQuantType.
+    /// </summary>
+    public DataType WQuantType => CompileSession.CompileOptions.QuantizeOptions.WQuantType;
+
+    /// <summary>
+    /// Gets a value indicating whether get UseMixQuant flag.
+    /// </summary>
+    public bool UseMixQuant => CompileSession.CompileOptions.QuantizeOptions.BindQuantMethod;
 
     /// <summary>
     /// check the datatype is the quant type.
     /// </summary>
-    /// <param name="dt"></param>
-    /// <returns></returns>
     public bool IsQuantType(DataType dt) => dt == DataTypes.Int8 || dt == DataTypes.UInt8;
-
-    /// <summary>
-    /// Get ModelQuantMode
-    /// </summary>
-
-    public ModelQuantMode ModelQuantMode => Option.CompileOptions.ModelQuantMode;
-
-    /// <summary>
-    /// Get QuantType
-    /// </summary>
-    public DataType QuantType => Option.CompileOptions.QuantType;
-
-    /// <summary>
-    /// Get WQuantType
-    /// </summary>
-    public DataType WQuantType => Option.CompileOptions.WQuantType;
-
-    /// <summary>
-    /// Get UseMixQuant flag
-    /// </summary>
-    public bool UseMixQuant => Option.CompileOptions.QuantizeOptions.BindQuantMethod;
 
     /// <summary>
     /// NOTE the Init will be set by SourceGenerator when the GetReplace called.
     /// </summary>
     public abstract void Init();
-
 }

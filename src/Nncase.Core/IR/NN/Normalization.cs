@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -85,7 +85,7 @@ public sealed record LpNormalization() : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(LpNormalization), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(LpNormalization), 0, "input", IsFloat());
 
     /// <summary>
     /// Gets Axis.
@@ -95,7 +95,7 @@ public sealed record LpNormalization() : Op
     /// <summary>
     /// Gets P.
     /// </summary>
-    public static readonly ParameterInfo P = new(typeof(L2Normalization), 2, "p", IsFloatScalar());
+    public static readonly ParameterInfo P = new(typeof(LpNormalization), 2, "p", IsFloatScalar());
 }
 
 [PatternFunctionalGenerator]

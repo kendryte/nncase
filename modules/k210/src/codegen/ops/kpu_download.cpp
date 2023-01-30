@@ -24,12 +24,11 @@ using namespace nncase::ir::k210;
 using namespace nncase::runtime;
 using namespace nncase::runtime::k210;
 
-void k210_module_builder::emit(kpu_download &node)
-{
+void k210_module_builder::emit(kpu_download &node) {
     auto &input = allocation(node.input());
     auto &output = allocation(node.output());
 
-    kpu_download_options options {};
+    kpu_download_options options{};
     options.input = input.runtime_type();
     options.output = output.runtime_type();
     options.in_shape = to_kpu_shape(input.shape);

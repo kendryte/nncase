@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -10,6 +10,7 @@ using Nncase.IR.Tensors;
 using OrtKISharp;
 using static Nncase.Evaluator.TypeInference;
 using Range = Nncase.IR.Tensors.Range;
+
 namespace Nncase.Evaluator.Tensors;
 
 /// <summary>
@@ -32,10 +33,17 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         return Visit(context, target, input);
     }
 
-    /// <inheritdoc/>
     public Cost? Visit(ICostEvaluateContext context, Reshape target)
     {
         return CostUtility.GetReshapeCost();
+    }
+
+    Cost? ICostEvaluator<Reshape>.Visit(ICostEvaluateContext context, Reshape target)
+    {
+        return new()
+        {
+            [CostFactorNames.CPUCycles] = 1,
+        };
     }
 
     private IRType Visit(ITypeInferenceContext context, Reshape target, TensorType input)
@@ -63,7 +71,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                 if (inputSize != shapeSize)
                 {
                     return new InvalidType("Reshape input shape size and param shape size must be same," +
-                                           $" shape:{shapeValue.ToArray().Aggregate("", (s, i) => s + i + " ")}, input shape${string.Join(",", input.Shape)}");
+                                           $" shape:{shapeValue.ToArray().Aggregate(string.Empty, (s, i) => s + i + " ")}, input shape${string.Join(",", input.Shape)}");
                 }
 
                 return input with { Shape = new Shape(shapeValue) };
@@ -85,13 +93,5 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         var targetType = context.CheckArgumentType<TensorType>(target, Reshape.Shape);
         var outShape = ReshapeTo(targetType);
         return input with { Shape = outShape };
-    }
-
-    Cost? ICostEvaluator<Reshape>.Visit(ICostEvaluateContext context, Reshape target)
-    {
-        return new()
-        {
-            [CostFactorNames.CPUCycles] = 1
-        };
     }
 }

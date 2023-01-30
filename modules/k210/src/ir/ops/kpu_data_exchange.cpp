@@ -21,8 +21,7 @@ using namespace nncase::ir;
 using namespace nncase::ir::k210;
 using namespace nncase::runtime::k210;
 
-kpu_upload::kpu_upload(shape_t input_shape)
-{
+kpu_upload::kpu_upload(shape_t input_shape) {
     module_type(k210_module_type);
     add_input("input", dt_uint8, input_shape)
         .attributes(cnctr_attr_no_layout_strides);
@@ -30,8 +29,7 @@ kpu_upload::kpu_upload(shape_t input_shape)
         .attributes(cnctr_attr_no_layout_strides);
 }
 
-kpu_download::kpu_download(shape_t input_shape)
-{
+kpu_download::kpu_download(shape_t input_shape) {
     module_type(k210_module_type);
     add_input("input", dt_uint8, input_shape)
         .attributes(cnctr_attr_no_layout_strides);

@@ -1,7 +1,8 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
@@ -13,9 +14,9 @@ using Tensorflow.NumPy;
 using static Nncase.Evaluator.EvaluatorUtil;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
+using static Tensorflow.Binding;
 
 namespace Nncase.Evaluator.NN;
-using static Tensorflow.Binding;
 
 /// <summary>
 /// Evaluator for <see cref="Pad"/>.
@@ -39,27 +40,32 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
             PadMode.Constant => "constant",
             PadMode.Reflect => "reflect",
             PadMode.Edge => "edge",
-            _ => throw new ArgumentOutOfRangeException(nameof(pad.PadMode)),
+            _ => throw new ArgumentOutOfRangeException(nameof(pad)),
         };
 
         // when HasBindedMixQuantInfo is true, eval will do simulation of quant/dequant for some inputs, this is used for evaluate accumulated quant error for layers.
         if (context.CurrentCall.EnodeBestQuantConfigWithCosine != null)
         {
             var pattern = IsRangeOfMarker(IsWildcard(), IsWildcard());
-            if (pattern.MatchLeaf(context.CurrentCall.Parameters.ToArray()[0]) && ((Nncase.IR.Marker)(context.CurrentCall.Parameters.ToArray()[0])).mixQuantInfo?.HasBindedMixQuantInfo == true)
+            if (pattern.MatchLeaf(context.CurrentCall.Parameters.ToArray()[0]) && ((Nncase.IR.Marker)context.CurrentCall.Parameters.ToArray()[0]).MixQuantInfo?.HasBindedMixQuantInfo == true)
             {
-                var quantParam = ((Nncase.IR.Marker)(context.CurrentCall.Parameters.ToArray()[0])).mixQuantInfo.QuantParameter;
+                var quantParam = ((Nncase.IR.Marker)context.CurrentCall.Parameters.ToArray()[0]).MixQuantInfo!.QuantParameter;
+
                 // input feature map quantParam count should be 1 since input feature map quant is by tensor.
-                System.Diagnostics.Debug.Assert(quantParam.Count == 1);
+                Trace.Assert(quantParam.Count == 1);
                 var inputFloat = input.ToArray<float>();
                 for (var i = 0; i < inputFloat.Length; i++)
                 {
-                    var inputBufQuant = (double)(inputFloat[i] / (double)(quantParam[0].Scale) + quantParam[0].ZeroPoint);
+                    var inputBufQuant = (double)((inputFloat[i] / (double)quantParam[0].Scale) + quantParam[0].ZeroPoint);
                     if (!(quantParam[0].Scale == 1.0f && quantParam[0].ZeroPoint == 0))
-                        inputBufQuant = System.Math.Round((double)((float)inputBufQuant));
-                    var inputBufDeQuant = (float)((inputBufQuant - quantParam[0].ZeroPoint) * (double)(quantParam[0].Scale));
-                    inputFloat[i] = (float)(inputBufDeQuant);
+                    {
+                        inputBufQuant = System.Math.Round((double)(float)inputBufQuant);
+                    }
+
+                    var inputBufDeQuant = (float)((inputBufQuant - quantParam[0].ZeroPoint) * (double)quantParam[0].Scale);
+                    inputFloat[i] = (float)inputBufDeQuant;
                 }
+
                 input = OrtKISharp.Tensor.MakeTensor(inputFloat, input.Shape);
             }
         }
@@ -77,20 +83,25 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         if (context.CurrentCall.EnodeBestQuantConfigWithCosine != null)
         {
             var pattern = IsRangeOfMarker(IsWildcard(), IsWildcard());
-            if (pattern.MatchLeaf(context.CurrentCall.Parameters.ToArray()[0]) && ((Nncase.IR.Marker)(context.CurrentCall.Parameters.ToArray()[0])).mixQuantInfo?.HasBindedMixQuantInfo == true)
+            if (pattern.MatchLeaf(context.CurrentCall.Parameters.ToArray()[0]) && ((Nncase.IR.Marker)context.CurrentCall.Parameters.ToArray()[0]).MixQuantInfo?.HasBindedMixQuantInfo == true)
             {
-                var quantParam = ((Nncase.IR.Marker)(context.CurrentCall.Parameters.ToArray()[0])).mixQuantInfo.QuantParameter;
+                var quantParam = ((Nncase.IR.Marker)context.CurrentCall.Parameters.ToArray()[0]).MixQuantInfo!.QuantParameter;
+
                 // input feature map quantParam count should be 1 since input feature map quant is by tensor.
-                System.Diagnostics.Debug.Assert(quantParam.Count == 1);
+                Trace.Assert(quantParam.Count == 1);
                 var inputFloat = input.ToArray<float>();
                 for (var i = 0; i < inputFloat.Length; i++)
                 {
-                    var inputBufQuant = (double)(inputFloat[i] / (double)(quantParam[0].Scale) + quantParam[0].ZeroPoint);
+                    var inputBufQuant = (double)((inputFloat[i] / (double)quantParam[0].Scale) + quantParam[0].ZeroPoint);
                     if (!(quantParam[0].Scale == 1.0f && quantParam[0].ZeroPoint == 0))
-                        inputBufQuant = System.Math.Round((double)((float)inputBufQuant));
-                    var inputBufDeQuant = (float)((inputBufQuant - quantParam[0].ZeroPoint) * (double)(quantParam[0].Scale));
-                    inputFloat[i] = (float)(inputBufDeQuant);
+                    {
+                        inputBufQuant = System.Math.Round((double)(float)inputBufQuant);
+                    }
+
+                    var inputBufDeQuant = (float)((inputBufQuant - quantParam[0].ZeroPoint) * (double)quantParam[0].Scale);
+                    inputFloat[i] = (float)inputBufDeQuant;
                 }
+
                 input = tf.constant(inputFloat, TF_DataType.TF_FLOAT, input.shape);
             }
         }

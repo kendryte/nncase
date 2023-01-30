@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 #include <limits>
+#include <nncase/kernels/apply.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/tensor_ops.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
-#include <nncase/kernels/apply.h>
 #include <unordered_map>
 
 using namespace nncase;
@@ -60,8 +60,7 @@ result<void> reduce_arg_impl(TReducer &&reducer, T init_value, const T *input,
             out_map[out_idx].push_back(index[axes[0]]);
             dst = src;
         } else if constexpr (std::is_same_v<T, float>) {
-            if(fabs(src - dst) < epsilon)
-            {
+            if (fabs(src - dst) < epsilon) {
                 out_map[out_idx].push_back(index[axes[0]]);
             }
         }
@@ -85,17 +84,17 @@ result<void> reduce_arg_impl(TReducer &&reducer, T init_value, const T *input,
             kernels::detail::get_reduced_shape(in_shape, axes, keep_dims);     \
         switch (op) {                                                          \
         case reduce_arg_op_t::arg_min:                                         \
-            return reduce_arg_impl([](_ty a, _ty b) { return a < b; },         \
-                                   std::numeric_limits<_ty>::max(), IN_CAST(_ty, input),     \
-                                   OUT_CAST(int64_t, output), in_shape, out_shape, in_strides,    \
-                                   out_strides, axes, keep_dims,               \
-                                   select_last_idx, context);                  \
+            return reduce_arg_impl(                                            \
+                [](_ty a, _ty b) { return a < b; },                            \
+                std::numeric_limits<_ty>::max(), IN_CAST(_ty, input),          \
+                OUT_CAST(int64_t, output), in_shape, out_shape, in_strides,    \
+                out_strides, axes, keep_dims, select_last_idx, context);       \
         case reduce_arg_op_t::arg_max:                                         \
-            return reduce_arg_impl([](_ty a, _ty b) { return a > b; },         \
-                                   std::numeric_limits<_ty>::min(), IN_CAST(_ty, input),     \
-                                   OUT_CAST(int64_t, output), in_shape, out_shape, in_strides,    \
-                                   out_strides, axes, keep_dims,               \
-                                   select_last_idx, context);                  \
+            return reduce_arg_impl(                                            \
+                [](_ty a, _ty b) { return a > b; },                            \
+                std::numeric_limits<_ty>::min(), IN_CAST(_ty, input),          \
+                OUT_CAST(int64_t, output), in_shape, out_shape, in_strides,    \
+                out_strides, axes, keep_dims, select_last_idx, context);       \
         default:                                                               \
             return err(std::errc::not_supported);                              \
         }                                                                      \

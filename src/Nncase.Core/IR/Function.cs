@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Nncase.IR;
 
 /// <summary>
-/// the Callable Expr
+/// the Callable Expr.
 /// </summary>
 public abstract record Callable(string Name, string ModuleKind) : Expr
 {
@@ -27,14 +27,14 @@ public abstract record Callable(string Name, string ModuleKind) : Expr
 public abstract record BaseFunction(string Name, string ModuleKind) : Callable(Name, ModuleKind)
 {
     /// <summary>
+    /// Gets sched result.
+    /// </summary>
+    public Schedule.SchedFunctionResult SchedResult { get; } = new();
+
+    /// <summary>
     /// Gets parameter types.
     /// </summary>
     public abstract IEnumerable<IRType?> ParameterTypes { get; }
-
-    /// <summary>
-    /// Gets sched result
-    /// </summary>
-    public readonly Schedule.SchedFunctionResult SchedResult = new();
 }
 
 /// <summary>
@@ -42,7 +42,7 @@ public abstract record BaseFunction(string Name, string ModuleKind) : Callable(N
 /// </summary>
 public record Function(string Name, Expr Body, IRArray<Var> Parameters) : BaseFunction(Name, StackVMModuleKind)
 {
-    private static int _globalFuncIndex = 0;
+    private static int _globalFuncIndex;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Function"/> class.
@@ -55,17 +55,16 @@ public record Function(string Name, Expr Body, IRArray<Var> Parameters) : BaseFu
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="Function"/> class.
     /// build function.
     /// </summary>
-    /// <param name="body"></param>
-    /// <param name="parameters"></param>
     public Function(Expr body, params Var[] parameters)
         : this($"func_{_globalFuncIndex++}", body, new(parameters))
     {
     }
 
     /// <summary>
-    /// get all parameter checked types.
+    /// Gets get all parameter checked types.
     /// </summary>
     public override IEnumerable<IRType?> ParameterTypes => Parameters.Select(x => x.CheckedType);
 }

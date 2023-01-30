@@ -24,8 +24,6 @@ public sealed record Sequential(IRArray<Expr> Fields = default) : Expr, IReadOnl
     /// <summary>
     /// get the fields.
     /// </summary>
-    /// <param name="index"></param>
-    /// <returns></returns>
     public Expr this[int index] => Fields[index];
 
     public static Sequential Flatten(IEnumerable<object> exprOrBuilders)
@@ -48,7 +46,10 @@ public sealed record Sequential(IRArray<Expr> Fields = default) : Expr, IReadOnl
                 break;
             case Expr expr:
                 if (expr is not Call { Target: TIR.Nop })
+                {
                     exprs.Add(expr);
+                }
+
                 break;
             case IExprBuilder<Expr> builder:
                 Flatten(exprs, builder.Build());

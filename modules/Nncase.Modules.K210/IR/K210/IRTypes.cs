@@ -10,22 +10,6 @@ using System.Threading.Tasks;
 namespace Nncase.IR.K210;
 
 /// <summary>
-/// KPU constants.
-/// </summary>
-public static class KPUConstants
-{
-    /// <summary>
-    /// KPU RAM size.
-    /// </summary>
-    public const int RAMSize = 2 * 1024 * 1024; // 2MB
-
-    /// <summary>
-    /// BN output bits.
-    /// </summary>
-    public const int BNOutBits = 36;
-}
-
-/// <summary>
 /// KPU filter type.
 /// </summary>
 public enum KPUFilterType
@@ -71,6 +55,40 @@ public record struct KPUActivationSegment
     public int Add { get; set; }
 }
 
+public record struct FakeKPUActivationSegment
+{
+    public float StartX { get; set; }
+
+    public float Mul { get; set; }
+
+    public float Add { get; set; }
+}
+
+public record struct Kpu_conv2d_quant_args
+{
+    public int ArgX;
+    public int ShiftX;
+    public int ArgW;
+    public int ShiftW;
+    public int ArgAdd;
+}
+
+/// <summary>
+/// KPU constants.
+/// </summary>
+public static class KPUConstants
+{
+    /// <summary>
+    /// KPU RAM size.
+    /// </summary>
+    public const int RAMSize = 2 * 1024 * 1024; // 2MB
+
+    /// <summary>
+    /// BN output bits.
+    /// </summary>
+    public const int BNOutBits = 36;
+}
+
 public class KPUActivationParameters
 {
     public KPUActivationSegment[] Segments { get; } = new KPUActivationSegment[16];
@@ -79,25 +97,6 @@ public class KPUActivationParameters
 public class KPUBatchNormParameters
 {
     public KPUBatchNormSegment[] Segments { get; } = Array.Empty<KPUBatchNormSegment>();
-}
-
-public class kpu_conv2d_quant_args
-{
-    private int arg_x;
-    private int shift_x;
-    private int arg_w;
-    private int shift_w;
-    private int arg_add;
-
-}
-
-public record struct FakeKPUActivationSegment
-{
-    public float StartX { get; set; }
-
-    public float Mul { get; set; }
-
-    public float Add { get; set; }
 }
 
 public record class FakeKPUActivationParameters

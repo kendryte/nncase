@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -7,13 +10,13 @@ namespace Nncase.Transform.Analyses;
 
 internal sealed class UsedByAnalysisVisitor : ExprVisitor<bool, IRType>
 {
-    private BaseFunction? _entry = null;
+    private readonly Dictionary<Expr, HashSet<Expr>> _useByMap;
 
-    public readonly Dictionary<Expr, HashSet<Expr>> UseByMap;
+    private BaseFunction? _entry;
 
     public UsedByAnalysisVisitor()
     {
-        UseByMap = new(ReferenceEqualityComparer.Instance);
+        _useByMap = new(ReferenceEqualityComparer.Instance);
     }
 
     public static void AddUsedBy(Dictionary<Expr, HashSet<Expr>> map, Expr child, Expr parent)
@@ -23,6 +26,7 @@ internal sealed class UsedByAnalysisVisitor : ExprVisitor<bool, IRType>
             chain = new(ReferenceEqualityComparer.Instance);
             map.Add(child, chain);
         }
+
         chain.Add(parent);
     }
 
@@ -33,9 +37,19 @@ internal sealed class UsedByAnalysisVisitor : ExprVisitor<bool, IRType>
         {
             ret = users.Remove(parent);
             if (users.Count == 0)
+            {
                 map.Remove(child);
+            }
         }
+
         return ret;
+    }
+
+    public static IUsedByResult Analysis(Expr entry)
+    {
+        var vistor = new UsedByAnalysisVisitor();
+        vistor.Visit(entry);
+        return new SimpleDuChain(vistor._useByMap);
     }
 
     public override bool Visit(BaseFunction baseFunction)
@@ -45,7 +59,10 @@ internal sealed class UsedByAnalysisVisitor : ExprVisitor<bool, IRType>
             _entry = baseFunction;
         }
         else
+        {
             return false;
+        }
+
         return base.Visit(baseFunction);
     }
 
@@ -53,59 +70,57 @@ internal sealed class UsedByAnalysisVisitor : ExprVisitor<bool, IRType>
 
     public override bool VisitLeaf(Call expr)
     {
-        AddUsedBy(UseByMap, expr.Target, expr);
+        AddUsedBy(_useByMap, expr.Target, expr);
         foreach (var param in expr.Parameters)
-            AddUsedBy(UseByMap, param, expr);
+        {
+            AddUsedBy(_useByMap, param, expr);
+        }
 
         // create the chain for current call
-        if (!UseByMap.TryGetValue(expr, out var chain))
+        if (!_useByMap.TryGetValue(expr, out _))
         {
-            chain = new(ReferenceEqualityComparer.Instance);
-            UseByMap.Add(expr, chain);
+            HashSet<Expr>? chain = new(ReferenceEqualityComparer.Instance);
+            _useByMap.Add(expr, chain);
         }
-        return false;
-    }
 
-    public static IUsedByResult Analysis(Expr entry)
-    {
-        var vistor = new UsedByAnalysisVisitor();
-        vistor.Visit(entry);
-        return new SimpleDuChain(vistor.UseByMap);
+        return false;
     }
 }
 
 internal sealed class SimpleDuChain : IUsedByResult
 {
-    public Dictionary<Expr, HashSet<Expr>> UseByMap;
-
-    public IReadOnlyDictionary<Expr, HashSet<Expr>> MeMo => UseByMap;
+    private readonly Dictionary<Expr, HashSet<Expr>> _useByMap;
 
     public SimpleDuChain(Dictionary<Expr, HashSet<Expr>> du_chain)
     {
-        UseByMap = du_chain;
+        _useByMap = du_chain;
     }
 
-    public HashSet<Expr> Get(Expr child) => UseByMap[child];
+    public IReadOnlyDictionary<Expr, HashSet<Expr>> MeMo => _useByMap;
+
+    public HashSet<Expr> Get(Expr child) => _useByMap[child];
 
     public void Clear(Expr child, Expr parent)
     {
-        UsedByAnalysisVisitor.ClearUsedBy(UseByMap, child, parent);
+        UsedByAnalysisVisitor.ClearUsedBy(_useByMap, child, parent);
     }
 
     public void Add(Expr child, Expr parent)
     {
-        UsedByAnalysisVisitor.AddUsedBy(UseByMap, child, parent);
+        UsedByAnalysisVisitor.AddUsedBy(_useByMap, child, parent);
     }
 
     public void Transfer(Expr old_expr, Expr new_expr)
     {
-        var old_usedby = UseByMap[old_expr];
-        if (!UseByMap.TryGetValue(new_expr, out var new_usedby))
+        var old_usedby = _useByMap[old_expr];
+        if (!_useByMap.TryGetValue(new_expr, out _))
         {
-            new_usedby = new(old_usedby, ReferenceEqualityComparer.Instance);
-            UseByMap.Add(new_expr, new_usedby);
+            HashSet<Expr>? new_usedby = new(old_usedby, ReferenceEqualityComparer.Instance);
+            _useByMap.Add(new_expr, new_usedby);
         }
         else
-            throw new ArgumentOutOfRangeException("The new_call is not new created call");
+        {
+            throw new ArgumentOutOfRangeException(nameof(new_expr), "The new_call is not new created call");
+        }
     }
 }

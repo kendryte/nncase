@@ -18,7 +18,6 @@
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
 
-
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::kernels;
@@ -86,15 +85,17 @@ gather_nd_impl(const T *input, T *output, const dims_t &in_shape,
         return integer_cast(indices_type, indices, [&](auto &&indices_value) { \
             return gather_nd_impl(reinterpret_cast<const type *>(input),       \
                                   reinterpret_cast<type *>(output), in_shape,  \
-                                  out_shape, in_strides, out_strides, indices_value, \
-                                  indices_shape, batch_dims, context);         \
+                                  out_shape, in_strides, out_strides,          \
+                                  indices_value, indices_shape, batch_dims,    \
+                                  context);                                    \
         });
 
 result<void>
 optimized::gather_nd(datatype_t type, const gsl::byte *input, gsl::byte *output,
                      const dims_t &in_shape, const dims_t &out_shape,
                      const dims_t &in_strides, const dims_t &out_strides,
-                     datatype_t indices_type, const gsl::byte *indices, const dims_t &indices_shape,
-                     size_t batch_dims, kernel_context &context) noexcept {
+                     datatype_t indices_type, const gsl::byte *indices,
+                     const dims_t &indices_shape, size_t batch_dims,
+                     kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, GATHER_ND_IMPL);
 }

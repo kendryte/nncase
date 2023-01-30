@@ -19,18 +19,25 @@ public abstract class RewriteRule<TPattern> : IRewriteRule
     where TPattern : Pattern
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="RewriteRule{TPattern}"/> class.
+    /// </summary>
+    public RewriteRule()
+    {
+        CompileSession = CompileSessionScope.GetCurrentThrowIfNull();
+    }
+
+    /// <summary>
     /// Gets pattern.
     /// </summary>
     public abstract TPattern Pattern { get; }
 
     IPattern IRewriteRule.Pattern => Pattern;
 
-    /// <inheritdoc/>
-    public bool IsMultiBranchSafe { get; init; } = false;
+    /// <summary>
+    /// Gets compile session.
+    /// </summary>
+    protected CompileSession CompileSession { get; }
 
     /// <inheritdoc/>
-    bool IRewriteRule.IsMultiBranchSafe() => IsMultiBranchSafe;
-
-    /// <inheritdoc/>
-    public abstract Expr? GetReplace(IMatchResult result, RunPassOptions options);
+    public abstract Expr? GetReplace(IMatchResult result, RunPassContext options);
 }

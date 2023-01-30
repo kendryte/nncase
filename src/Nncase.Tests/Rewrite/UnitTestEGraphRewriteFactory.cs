@@ -1,6 +1,12 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
+using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.Tests.TestFixture;
 using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Tensors;
@@ -8,52 +14,47 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.ReWriteTest;
 
-public sealed class UnitTestEGraphRewriteFactory : TestFixture.UnitTestFixtrue
+[AutoSetupTestMethod(InitSession = true)]
+public sealed class UnitTestEGraphRewriteFactory : TestClassBase
 {
-    public static TheoryData<IRewriteCase> DataOne => new(){
-      new Conv2DPadsCase(),
+    public static TheoryData<IRewriteCase> DataOne => new()
+    {
+        new FoldConv2DBnCase(),
     };
 
-    public static TheoryData<IRewriteCase> DataAll => new(){
-      new MobileNetV1TransposeCase(),
-      new TransposeLeakyRelu(),
-      new FoldReshapeCase(),
-      new FoldTransposePadCase(),
-      new FoldNopClampCase(),
-      new FoldNopReshapeCase(),
-      new TransposeDemoCase(),
-      new ClassicDemo(),
-      new FoldNopTransposeCase3(),
-      new FoldNopTransposeCase2(),
-      new FoldNopTransposeCase1(),
-      new FoldTransposeCase(),
+    public static TheoryData<IRewriteCase> DataAll => new()
+    {
+        new ActivationsTransposePRelu(),
+        new ActivationsTransposePRelu2(),
+        new ActivationsTransposePRelu3(),
+        new ActivationsTranspose(),
+        new ActivationsTranspose2(),
+        new PadTransposeCase(),
+        new MobileNetV1TransposeCase(),
+        new Conv2DPadsCase(),
+        new ReduceWindow2DPadsCase(),
+        new TransposeLeakyRelu(),
+        new FoldReshapeCase(),
+        new FoldTransposePadCase(),
+        new FoldNopClampCase(),
+        new FoldNopReshapeCase(),
+        new TransposeDemoCase(),
+        new ClassicDemo(),
+        new FoldNopTransposeCase3(),
+        new FoldNopTransposeCase2(),
+        new FoldNopTransposeCase1(),
+        new FoldTransposeCase(),
+        new PadTransposeCaseEgraph(),
+        new RemoveMarkerCaseEgraph(),
     };
 
     [Theory]
     [MemberData(nameof(DataOne))]
-    public void RunOne(IRewriteCase @case) => RunCore(@case);
-
-    async void RunCore(IRewriteCase @case)
-    {
-        var caseOptions = GetPassOptions().IndentDir(@case.Name);
-        var pre = @case.PreExpr;
-        var infered = pre.InferenceType();
-        CompilerServices.DumpIR(pre, "pre", caseOptions.DumpDir);
-        Assert.True(infered);
-        var pass = new EGraphPass("EGraphOptimize");
-        pass.Add(@case.Rules);
-        var post = (Function)await pass.RunAsync(pre, caseOptions);
-        Assert.True(post.InferenceType());
-        long pre_time = CountRunTicks(pre, @case.FeedDict, out var pre_ret);
-        long post_time = CountRunTicks(post, @case.FeedDict, out var post_ret);
-        Assert.True(TestFixture.Comparator.AllEqual(pre_ret, post_ret));
-        // note the parallel test will cause the time count error.
-        // Assert.True(pre_time >= post_time);
-    }
+    public Task RunOneAsync(IRewriteCase @case) => RunCoreAsync(@case);
 
     [Theory]
     [MemberData(nameof(DataAll))]
-    public void RunAll(IRewriteCase @case) => RunCore(@case);
+    public Task RunAllAsync(IRewriteCase @case) => RunCoreAsync(@case);
 
     private static long CountRunTicks(Function pre, IReadOnlyDictionary<Var, IValue> feed_dict, out IValue ret)
     {
@@ -64,5 +65,41 @@ public sealed class UnitTestEGraphRewriteFactory : TestFixture.UnitTestFixtrue
         stopwatch.Stop();
         pre_time = stopwatch.ElapsedTicks;
         return pre_time;
+    }
+
+    private async Task RunCoreAsync(IRewriteCase @case)
+    {
+        DumpFlags dumpFlag = DumpFlags.None;
+#if DEBUG
+        dumpFlag = DumpFlags.EGraphCost;
+#endif
+        using var dumpScope = new DumpScope($"../{@case.Name}", dumpFlag);
+        var pre = @case.PreExpr;
+        var infered = pre.InferenceType();
+        Assert.True(infered);
+
+        var pass = new EGraphPass { Name = "EGraphOptimize" };
+        foreach (var rule in @case.Rules)
+        {
+            pass.Add(rule);
+        }
+
+        Function post;
+        post = (Function)await pass.RunAsync(pre, new());
+        Assert.True(post.InferenceType());
+
+#if DEBUG
+        DumpScope.Current.DumpIR(post, "post");
+#endif
+        Assert.True(@case.ChecksPostCallBack(post));
+
+        IValue pre_ret, post_ret;
+        var feedDict = @case.FeedDict;
+        _ = CountRunTicks(pre, feedDict, out pre_ret);
+        _ = CountRunTicks(post, feedDict, out post_ret);
+        Assert.True(Comparator.Compare(pre_ret, post_ret));
+
+        // note the parallel test will cause the time count error.
+        // Assert.True(pre_time >= post_time);
     }
 }

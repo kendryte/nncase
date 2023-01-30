@@ -59,7 +59,8 @@ class NNCASE_API object_node {
     uint32_t release() const noexcept;
 
     template <class T> friend class object_t;
-    friend int ::nncase_object_free(nncase::object_node *node);
+    friend int ::nncase_object_add_ref(nncase::object_node *node);
+    friend int ::nncase_object_release(nncase::object_node *node);
 
   private:
     mutable std::atomic<uint32_t> ref_count_;

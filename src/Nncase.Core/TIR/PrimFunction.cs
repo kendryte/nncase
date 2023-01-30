@@ -17,7 +17,7 @@ namespace Nncase.TIR;
 /// </summary>
 public sealed record PrimFunction(string Name, string ModuleKind, Sequential Body, IRArray<PhysicalBuffer> Parameters) : BaseFunction(Name, ModuleKind)
 {
-    private static int _globalFuncIndex = 0;
+    private static int _globalFuncIndex;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PrimFunction"/> class.
@@ -31,10 +31,9 @@ public sealed record PrimFunction(string Name, string ModuleKind, Sequential Bod
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="PrimFunction"/> class.
     /// build function.
     /// </summary>
-    /// <param name="body"></param>
-    /// <param name="parameters"></param>
     public PrimFunction(string moduleKind, Sequential body, params PhysicalBuffer[] parameters)
         : this($"primfunc_{_globalFuncIndex++}", moduleKind, body, new(parameters))
     {

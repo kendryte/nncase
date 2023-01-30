@@ -1,12 +1,12 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Onnx;
-using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Math;
+using static Nncase.IR.F.NN;
 
 namespace Nncase.Importer
 {
@@ -18,10 +18,12 @@ namespace Nncase.Importer
             var bias = GetOptionInputExpr(op, 2, 0);
             if (scale is TensorConst scaleConst && bias is TensorConst biasConst)
             {
-                return Quantize(input, new QuantParam(
+                return Quantize(
+                    input,
+                    new QuantParam(
                         biasConst.Value.ToScalar<int>(),
                         scaleConst.Value.ToScalar<float>()),
-                    ((TensorConst)(bias)).ValueType.DType);
+                    ((TensorConst)bias).ValueType.DType);
             }
 
             throw new NotImplementedException("Onnx importer not impl for dynamic scale and bias");
@@ -35,9 +37,9 @@ namespace Nncase.Importer
             {
                 var scaleV = scaleConst.Value.ToScalar<float>();
                 var biasV = biasConst.Value.ToScalar<int>();
-                return Dequantize(input, new QuantParam(
-                        biasV,
-                        scaleV),
+                return Dequantize(
+                    input,
+                    new QuantParam(biasV, scaleV),
                     DataTypes.Float32);
             }
 

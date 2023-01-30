@@ -22,9 +22,8 @@ public interface IRewriteProvider
     /// <param name="rules">Rewrite rules.</param>
     /// <param name="options">Options.</param>
     /// <returns>Rewrited expression.</returns>
-    Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options);
+    Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options);
 }
-
 
 /// <summary>
 /// EGraph Rewrite provider interface.
@@ -38,5 +37,14 @@ public interface IEGraphRewriteProvider
     /// <param name="rules">Rewrite rules.</param>
     /// <param name="options">Options.</param>
     /// <returns>Rewrited expression.</returns>
-    Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options);
+    Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options);
+
+    /// <summary>
+    /// Rewrite egraph.
+    /// </summary>
+    /// <param name="eGraph">EGraph.</param>
+    /// <param name="rules">Rewrite rules.</param>
+    /// <param name="options">Options.</param>
+    /// <returns>Rewrited EGraph.</returns>
+    IEGraph ERewrite(IEGraph eGraph, IEnumerable<IRewriteRule> rules, RunPassContext options);
 }
