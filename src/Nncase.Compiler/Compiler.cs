@@ -104,21 +104,21 @@ internal class Compiler : ICompiler
         await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
         await RunPassAsync(p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions), "TargetDependentPass");
 
-        // if (_compileSession.CompileOptions.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
-        // {
-        //     await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
-        //     await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions), "TargetDependentAfterQuantPass");
-        //     await RunPassAsync(
-        //         pmgr => pmgr.Add<DataflowPass>().Configure(p =>
-        //         {
-        //             p.Name = "ClearMarker";
-        //             p.Add<RemoveMarker>();
-        //         }),
-        //         "RemoveMarker");
-        // }
+        if (_compileSession.CompileOptions.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
+        {
+            await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
+            await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions), "TargetDependentAfterQuantPass");
+            await RunPassAsync(
+                pmgr => pmgr.Add<DataflowPass>().Configure(p =>
+                {
+                    p.Name = "ClearMarker";
+                    p.Add<RemoveMarker>();
+                }),
+                "RemoveMarker");
+        }
 
-        // // fold constant
-        // await RunPassAsync(p => p.Add<ShapeInferPass>(), "ShapeInferAfterCompile");
+        // fold constant
+        await RunPassAsync(p => p.Add<ShapeInferPass>(), "ShapeInferAfterCompile");
     }
 
     public void Gencode(Stream output)
