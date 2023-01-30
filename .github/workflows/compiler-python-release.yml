@@ -12,9 +12,12 @@ jobs:
     strategy:
       matrix:
         config:
-          - {name: x86_64-macos, os: macos-latest}
-          - {name: x86_64-linux, os: ubuntu-latest}
+          - {name: x86_64-macos, os: macos-11}
+          - {name: x86_64-linux, os: ubuntu-20.04}
           - {name: x86_64-windows, os: windows-latest, arch: x64}
+
+    env:
+      VULKANSDK_VER: 1.2.182.0
 
     steps:
     - uses: actions/checkout@v3
@@ -29,6 +32,15 @@ jobs:
     - name: Set up build environment (Macos)
       run: |
         brew install sunnycase/core/libomp@14.0.6
+        aria2c --parameterized-uri=true https://{sdk.lunarg.com/sdk/download/${VULKANSDK_VER}/mac,distfiles.macports.org/MoltenVK}/vulkansdk-macos-${VULKANSDK_VER}.dmg
+        hdiutil attach ./vulkansdk-macos-*.dmg
+        sudo /Volumes/vulkansdk-macos-*/InstallVulkan.app/Contents/MacOS/InstallVulkan --root $HOME/VulkanSDK --accept-licenses --default-answer --confirm-command install
+        hdiutil detach /Volumes/vulkansdk-macos-*
+        echo "VULKAN_SDK=$HOME/VulkanSDK/macOS" >> $GITHUB_ENV
+        wget https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-macos-10.15-x86_64.zip -O swiftshader.zip
+        unzip swiftshader.zip
+        sudo cmake -E make_directory /usr/local/share/vulkan/icd.d
+        sudo cp lib/* /usr/local/share/vulkan/icd.d
       if: runner.os == 'Macos'
 
     - name: Setup Python
