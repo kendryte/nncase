@@ -17,6 +17,15 @@ namespace Nncase.Tests.CoreTest;
 public class UnitTestExpression
 {
     [Fact]
+    public void TestVarEqual()
+    {
+        var a = new Var("a", TensorType.Scalar(DataTypes.Float32));
+        var a1 = a with { };
+        Assert.Equal(a, a1);
+        Assert.Equal(a.GetHashCode(), a1.GetHashCode());
+    }
+
+    [Fact]
     public void TestConstEqual()
     {
         var a = (Const)1.1f == (Const)1.1f;
@@ -103,6 +112,24 @@ public class UnitTestExpression
         int ahash2 = ((Const)a).GetHashCode();
         Assert.Equal(ahash1, ahash2);
         _ = new HashSet<Expr>();
+    }
+
+    [Fact]
+    public void TestFunctionEqual()
+    {
+        var a = new Var("a", TensorType.Scalar(DataTypes.Float32));
+        var b = a - 1;
+        var f = new Function("main", b, new[] { a });
+
+        var a1 = a with { };
+        var b1 = a1 - 1;
+        var f1 = new Function("main", b1, new[] { a1 });
+
+        Assert.Equal(f, f1); // todo structual equal for function.
+        Assert.Equal(f.SchedResult, f1.SchedResult); // todo structual equal for function.
+        Assert.Equal(f.Body, f1.Body);
+        Assert.Equal(f.Parameters, f1.Parameters);
+        Assert.Equal(f.ParameterTypes, f1.ParameterTypes);
     }
 
     [Fact]

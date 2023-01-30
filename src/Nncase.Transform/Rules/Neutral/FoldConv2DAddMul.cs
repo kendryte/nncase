@@ -21,9 +21,9 @@ namespace Nncase.Transform.Rules.Neutral;
 ///
 ///  input     const
 ///    |     /
-///    add()   const
+///    mul()   const
 ///    |     /
-///    mul()
+///    add()
 ///   |
 /// conv2d(,w,bias)
 /// ---------------------
@@ -40,7 +40,7 @@ namespace Nncase.Transform.Rules.Neutral;
 /// </remarks>
 /// </summary>
 [RuleGenerator]
-public sealed partial class FoldConv2DMulAdd : RewriteRule<CallPattern>
+public sealed partial class FoldConv2DAddMul : RewriteRule<CallPattern>
 {
     private static readonly Pattern _mulConst = IsTensorConst("mulConst", c => CheckConstTensor(c.Value));
 
@@ -79,7 +79,9 @@ public sealed partial class FoldConv2DMulAdd : RewriteRule<CallPattern>
             return false;
         }
 
-        if (!(t.Rank == 1 || (t.Rank == 4 && t.Shape[0].FixedValue == 1 && t.Shape[2].FixedValue == 1 && t.Shape[3].FixedValue == 1)))
+        if (!(t.Rank == 1 ||
+             (t.Rank == 4 && t.Shape[0].FixedValue == 1 && t.Shape[2].FixedValue == 1 && t.Shape[3].FixedValue == 1) ||
+             (t.Rank == 3 && t.Shape[1].FixedValue == 1 && t.Shape[2].FixedValue == 1)))
         {
             return false;
         }

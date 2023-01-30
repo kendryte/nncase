@@ -195,7 +195,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
     }
 
     [Fact]
-    public async void TestComplexFusionSingleOutput()
+    public async Task TestComplexFusionSingleOutput()
     {
         var inShape = new[] { 1, 24, 32, 3 };
         var input = new Var("input", new TensorType(DataTypes.Float32, inShape));
@@ -214,7 +214,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
     }
 
     [Fact]
-    public async void TestComplexFusionMultiOutput()
+    public async Task TestComplexFusionMultiOutput()
     {
         // used for find which expr is not expected
         void Compare(Tuple oldBody, Tuple expectBody, int i)
@@ -298,7 +298,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
         var newVar0 = x;
         var newVar1 = w;
         var newVar2 = r;
-        var expectLSTM = ReplaceUtility.ReplaceParams(lstm, (LSTM.X, WrapInput(newVar0)), (LSTM.W, WrapInput(newVar1)), (LSTM.R, WrapInput(newVar2)));
+        var expectLSTM = ReplaceUtility.ReplaceCallParams(lstm.Target, lstm.Parameters.ToList(), (LSTM.X, WrapInput(newVar0)), (LSTM.W, WrapInput(newVar1)), (LSTM.R, WrapInput(newVar2)));
         var expectBody = WrapOutput(expectLSTM);
         var expectCall = new Call(new Fusion("FusionMaker_0", "StackVM", expectBody, new[] { newVar0, newVar1, newVar2 }), x, w, r);
         expectCall.InferenceType();
@@ -315,24 +315,14 @@ public sealed class UnitTestFusionMaker : TestClassBase
         return Dequantize(output, new QuantParam(0, 1), DataTypes.Float32);
     }
 
-    internal sealed class
-        TestTransposeComplexFusionSingleOutput : ComplexFusion<Transpose, Quantize, Dequantize,
-            TestTransposeComplexFusionSingleOutput.TransposeDataMaker>
+    internal sealed class TestTransposeComplexFusionSingleOutput : ComplexFusion<Transpose, Quantize, Dequantize>
     {
-        public class TransposeDataMaker
-        {
-            public static readonly (ParameterInfo, Pattern)[] InputsPattern =
-                GenerateInputsPattern(Transpose.Input);
-        }
+        public override (ParameterInfo, CallPattern)[] InputPatterns { get; } = GenerateInputPatterns(Transpose.Input);
     }
 
-    internal sealed class LSTMFusion : ComplexFusion<LSTM, Quantize, Dequantize, LSTMFusion.FusionCondMaker>
+    internal sealed class LSTMFusion : ComplexFusion<LSTM, Quantize, Dequantize>
     {
-        public class FusionCondMaker
-        {
-            public static readonly (ParameterInfo, Pattern)[] InputsPattern =
-                GenerateInputsPattern(LSTM.X, LSTM.W, LSTM.R);
-        }
+        public override (ParameterInfo, CallPattern)[] InputPatterns { get; } = GenerateInputPatterns(LSTM.X, LSTM.W, LSTM.R);
     }
 }
 

@@ -42,6 +42,11 @@ internal class RewriteProvider : IRewriteProvider
 
             var inferSuccess = CompilerServices.InferenceType(post);
             OnRewriteEnd(post, context, count++);
+            if (!inferSuccess && DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
+            {
+                DumpScope.Current.DumpIR(expr, $"{count}_End_InferFailed", "Rewrite");
+            }
+
             Trace.Assert(inferSuccess);
 
             if (!isMutated || context.RewriteOnce)

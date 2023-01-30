@@ -29,6 +29,7 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.QuantTest;
 
+[AutoSetupTestMethod(InitSession = true)]
 public class UnitTestKLQuant : TestClassBase
 {
     [Fact]
@@ -41,7 +42,6 @@ public class UnitTestKLQuant : TestClassBase
     }
 
     [Fact]
-    [AutoSetupTestMethod(InitSession = true)]
     public async Task TestKLQuant()
     {
         CompileOptions.QuantizeOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
@@ -81,7 +81,7 @@ public class UnitTestKLQuant : TestClassBase
         // 0. TargetIndependentPass
         pmgr.AddWithName<DataflowPass>("TargetInDependent").Configure(p =>
         {
-            p.Add<AddRangeOfAndMarkerToConv2D>();
+            p.Add<AddRangeOfAndMarker>();
         });
 
         // 1. AssignRanges

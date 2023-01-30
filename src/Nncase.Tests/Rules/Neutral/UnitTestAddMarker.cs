@@ -16,6 +16,7 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
+[TestFixture.AutoSetupTestMethod(InitSession = true)]
 public class UnitTestAddMarker : TestClassBase
 {
     [Fact]
@@ -23,7 +24,7 @@ public class UnitTestAddMarker : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Relu(a);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new AddRangeOfAndMarkerToRelu() }, new());
+        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new AddRangeOfAndMarker() }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));

@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+#define PARALLEL_MATCH
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -41,23 +43,27 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
 
     public IEGraph ERewrite(IEGraph eGraph, IEnumerable<IRewriteRule> rules, RunPassContext context)
     {
-        var matches = new List<(IRewriteRule, IReadOnlyList<IMatchResult>)> { };
         var last_version = eGraph.Version;
         int count = 0;
 
         while (true)
         {
-            foreach (var rule in rules)
+            var matches = rules.
+#if PARALLEL_MATCH
+              AsParallel().
+#endif
+              Select(rule =>
             {
-                if (EGraphMatcher.TryMatchRoot(eGraph.Nodes, rule.Pattern, out var results))
-                {
-                    matches.Add((rule, results));
+                EGraphMatcher.TryMatchRoot(eGraph.Nodes, rule.Pattern, out var results);
+                return (rule, results!);
+            }).Where(p => p.Item2 is not null).ToArray();
 
-                    if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite) && results.Count != 0)
-                    {
-                        using var fs = DumpScope.Current.OpenFile(Path.Combine("Matches", $"V{eGraph.Version}_{count++}_{rule.GetType().Name}.dot"));
-                        EGraphPrinter.DumpEgraphAsDot(eGraph, results, fs);
-                    }
+            if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
+            {
+                foreach (var (rule, results) in matches.Where(p => p.Item2.Count != 0))
+                {
+                    using var fs = DumpScope.Current.OpenFile(Path.Combine("Matches", $"V{eGraph.Version}_{count++}_{rule.GetType().Name}.dot"));
+                    EGraphPrinter.DumpEgraphAsDot(eGraph, results, fs);
                 }
             }
 
@@ -83,7 +89,6 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
                 }
             }
 
-            matches.Clear();
             if (last_version == eGraph.Version)
             {
                 break;

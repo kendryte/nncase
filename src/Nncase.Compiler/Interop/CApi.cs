@@ -45,6 +45,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetInputFilePtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetInputFormatPtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetDumpDirPtr;
+    public delegate* unmanaged<IntPtr, DumpFlags> CompileOptionsGetDumpFlagsPtr;
     public delegate* unmanaged<IntPtr, DumpFlags, void> CompileOptionsSetDumpFlagsPtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> CompileOptionsSetQuantizeOptionsPtr;
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr> CompileSessionCreatePtr;
@@ -89,6 +90,7 @@ public static unsafe class CApi
         mt->CompileOptionsSetInputFormatPtr = &CompileOptionsSetInputFormat;
         mt->CompileOptionsSetDumpDirPtr = &CompileOptionsSetDumpDir;
         mt->CompileOptionsSetDumpFlagsPtr = &CompileOptionsSetDumpFlags;
+        mt->CompileOptionsGetDumpFlagsPtr = &CompileOptionsGetDumpFlags;
         mt->CompileOptionsSetQuantizeOptionsPtr = &CompileOptionsSetQuantizeOptions;
         mt->CompileSessionCreatePtr = &CompileSessionCreate;
         mt->CompileSessionGetCompilerPtr = &CompileSessionGetCompiler;
@@ -193,6 +195,12 @@ public static unsafe class CApi
     private static void CompileOptionsSetInputFormat(IntPtr compileOptionsHandle, byte* inputFormatPtr, nuint inputFormatLength)
     {
         Get<CompileOptions>(compileOptionsHandle).InputFormat = ToString(inputFormatPtr, inputFormatLength);
+    }
+
+    [UnmanagedCallersOnly]
+    private static DumpFlags CompileOptionsGetDumpFlags(IntPtr compileOptionsHandle)
+    {
+        return Get<CompileOptions>(compileOptionsHandle).DumpFlags;
     }
 
     [UnmanagedCallersOnly]

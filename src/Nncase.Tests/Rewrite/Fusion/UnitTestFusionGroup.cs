@@ -14,8 +14,8 @@ public class UnitTestFusionGroup : TestClassBase
 {
     public static readonly TheoryData<IDataFlowFusionCase> DataOne = new()
     {
-        new DataFlowType13FusionCaseLeft(),
-        new DataFlowType13FusionCaseRight(),
+        new DataFlowType14FusionCaseLeft(),
+        new DataFlowType14FusionCaseRight(),
     };
 
     public static readonly TheoryData<IDataFlowFusionCase> DataAll = new()
@@ -34,6 +34,7 @@ public class UnitTestFusionGroup : TestClassBase
         new DataFlowType10FusionCaseLeft(),
         new DataFlowType11FusionCaseLeft(),
         new DataFlowType12FusionCaseLeft(),
+        new DataFlowType13FusionCaseLeft(),
 
         new DataFlowType1FusionCaseRight(),
         new DataFlowType2FusionCaseRight(),
@@ -48,6 +49,7 @@ public class UnitTestFusionGroup : TestClassBase
         new DataFlowType10FusionCaseRight(),
         new DataFlowType11FusionCaseRight(),
         new DataFlowType12FusionCaseRight(),
+        new DataFlowType13FusionCaseRight(),
     };
 
     [Theory]

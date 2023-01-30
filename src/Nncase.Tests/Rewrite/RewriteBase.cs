@@ -938,7 +938,7 @@ public sealed class MergeBinaryBeforeConv2DCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = new Type[]
     {
         typeof(Transform.Rules.Neutral.FoldConstCall),
-        typeof(Transform.Rules.Neutral.FoldConv2DMulAdd),
+        typeof(Transform.Rules.Neutral.FoldConv2DAddMul),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
@@ -1089,7 +1089,7 @@ public sealed class FoldConv2DBnCase : IRewriteCase
       typeof(Transform.Rules.Neutral.CombineTransposeActivations),
       typeof(Transform.Rules.Neutral.CombineConstBinaryTranspose),
       typeof(Transform.Rules.Neutral.CombineTransposeConstBinary),
-      typeof(Transform.Rules.Neutral.FoldConv2DMulAdd),
+      typeof(Transform.Rules.Neutral.FoldConv2DAddMul),
       typeof(Transform.Rules.Neutral.FoldConstCall),
     };
 

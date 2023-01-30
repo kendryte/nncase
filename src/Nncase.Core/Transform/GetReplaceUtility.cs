@@ -37,21 +37,6 @@ public static class Utility
         };
     }
 
-    public static Func<Expr, Tuple> ApplyTuple(Fx inputCtor)
-    {
-        return input =>
-        {
-            if (input is Tuple inputs)
-            {
-                return new Tuple(inputs.Fields.Select(inputCtor));
-            }
-            else
-            {
-                throw new InvalidOperationException("Apply Tuple only support tuple input");
-            }
-        };
-    }
-
     /// <summary>
     /// insert Cast before and after call
     /// Cast(inputCtor(Cast(input, BF16)), input.Datatype)
