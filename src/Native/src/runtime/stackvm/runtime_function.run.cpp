@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "runtime_function.h"
 #include "ops/control.inl"
 #include "ops/conversion.inl"
 #include "ops/loadstore.inl"
 #include "ops/scalar.inl"
 #include "ops/stack.inl"
+#include "runtime_function.h"
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>

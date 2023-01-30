@@ -12,13 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <chrono>
 #include <cstring>
 #include <iostream>
 #include <nncase/api.h>
 #include <nncase/compiler.h>
 #include <nncase/io_utils.h>
 #include <string_view>
-#include <chrono>
 
 using namespace nncase;
 using namespace nncase::clr;
@@ -74,8 +74,8 @@ int main() {
     uint32_t dims[] = {1, 1};
     uint32_t strides[] = {1, 1};
     nncase_buffer_slice x_buffer_slice{x_buf, 0, sizeof(x)};
-    TRY(nncase_tensor_create(dtype_int64, dims, 1, strides, 1,
-                             &x_buffer_slice, &x_tensor));
+    TRY(nncase_tensor_create(dtype_int64, dims, 1, strides, 1, &x_buffer_slice,
+                             &x_tensor));
 
     value_node *params[] = {(value_node *)x_tensor};
     tensor_node *ret = nullptr;

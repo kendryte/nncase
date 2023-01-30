@@ -687,9 +687,7 @@ template <typename T, typename... U> struct last {
     using type = typename last<U...>::type;
 };
 
-template <typename T> struct last<T> {
-    using type = T;
-};
+template <typename T> struct last<T> { using type = T; };
 
 template <typename... T> using last_t = typename last<T...>::type;
 

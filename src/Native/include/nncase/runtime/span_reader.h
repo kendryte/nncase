@@ -55,8 +55,7 @@ class span_reader {
     }
 
     template <class T = gsl::byte> gsl::span<const T> read_span(size_t size) {
-        gsl::span<const T> span(reinterpret_cast<const T *>(begin_),
-                                size);
+        gsl::span<const T> span(reinterpret_cast<const T *>(begin_), size);
         advance(sizeof(T) * size);
         return span;
     }
