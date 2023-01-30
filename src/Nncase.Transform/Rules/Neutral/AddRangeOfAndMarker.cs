@@ -75,6 +75,11 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
             return null;
         }
 
+        if (op is Unary u && u.UnaryOp == UnaryOp.LogicalNot)
+        {
+            return null;
+        }
+
         var pairs = new List<(Expr, Expr)>();
         for (int i = 0; i < length; i++)
         {
