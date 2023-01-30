@@ -32,16 +32,16 @@ public static partial class Utility
     /// <summary>
     /// Create tuple pattern.
     /// </summary>
-    /// <param name="fields">fields.</param>
     /// <param name="name">name.</param>
+    /// <param name="fields">fields.</param>
     /// <returns>TuplePattern .</returns>
     public static TuplePattern IsTuple(string? name, Pattern[] fields) => new TuplePattern(new VArgsPattern(fields, null), name);
 
     /// <summary>
     /// Create tuple pattern.
     /// </summary>
-    /// <param name="fields">fields.</param>
     /// <param name="name">name.</param>
+    /// <param name="fields">fields.</param>
     /// <returns>TuplePattern .</returns>
     public static TuplePattern IsTuple(string? name, VArgsPattern fields) => new TuplePattern(fields, name);
 

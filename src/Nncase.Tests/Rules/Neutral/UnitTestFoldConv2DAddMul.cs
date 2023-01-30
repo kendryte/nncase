@@ -58,7 +58,7 @@ public class UnitTestFoldConv2DAddMul : TestClassBase
             rootPre,
             new IRewriteRule[]
             {
-               new FoldConv2DMulAdd(),
+               new FoldConv2DAddMul(),
                new FoldConstCall(),
             },
             new());
@@ -93,14 +93,12 @@ public class UnitTestFoldConv2DAddMul : TestClassBase
                                 { 3, 3 },
                                 { 3, 3 },
                             },
-                          new[] { 1, 1 }, PadMode.Constant, 1,
+                          new[] { 1, 1 },
+                          PadMode.Constant,
+                          1,
                           new[] { 0.0f, 6.0f }); // f32[1,64,112,112]
 
-            var v2 = IR.F.NN.ReduceWindow2D(ReduceOp.Mean, v1, -3.4028235E+38F, new[] { 3, 3 }, new[] { 2, 2 }, new[,]
-            {
-                { 1, 1 },
-                { 1, 1 },
-            }, new[] { 1, 1 }, false, false); // f32[1,64,56,56]
+            var v2 = IR.F.NN.ReduceWindow2D(ReduceOp.Mean, v1, -3.4028235E+38F, new[] { 3, 3 }, new[] { 2, 2 }, new[,] { { 1, 1 }, { 1, 1 }, }, new[] { 1, 1 }, false, false); // f32[1,64,56,56]
             var v3 = IR.F.Math.Mul(v2, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 64, 1, 1 })); // f32[1,64,56,56]
             var v4 = IR.F.Math.Add(v3, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 64, 1, 1 })); // f32[1,64,56,56]
             var v5 = IR.F.NN.Relu(v4); // f32[1,64,56,56]
@@ -114,19 +112,24 @@ public class UnitTestFoldConv2DAddMul : TestClassBase
                                 { 0, 0 },
                                 { 0, 0 },
                             },
-                          new[] { 1, 1 }, PadMode.Constant, 1,
+                          new[] { 1, 1 },
+                          PadMode.Constant,
+                          1,
                           new[] { 0.0f, 6.0f }); // f32[1,256,56,56]
             rootPre = v6;
         }
 
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-           new ReluToClamp(),
-           new CombineClampAdd(),
-           new CombineClampMul(),
-           new FoldConv2DAddMul(),
-           new FoldConstCall(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+          rootPre,
+          new IRewriteRule[]
+          {
+            new ReluToClamp(),
+            new CombineClampAdd(),
+            new CombineClampMul(),
+            new FoldConv2DAddMul(),
+            new FoldConstCall(),
+          },
+          new());
 
 #if DEBUG
         Dumpper.DumpIR(rootPost, "post");
@@ -174,7 +177,7 @@ public class UnitTestFoldConv2DAddMul : TestClassBase
             rootPre,
             new IRewriteRule[]
             {
-               new FoldConv2DMulAdd(),
+               new FoldConv2DAddMul(),
                new FoldConstCall(),
             },
             new());

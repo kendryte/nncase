@@ -257,6 +257,16 @@ public sealed class SchedFunctionResult
         IsScheduled = false;
     }
 
+    /// <summary>
+    /// Gets the buffer allocation.
+    /// </summary>
+    public HashSet<TIR.PhysicalBuffer> Rdatas { get; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the Scheduled status.
+    /// </summary>
+    public bool IsScheduled { get; set; }
+
     /// <inheritdoc/>
     public override bool Equals(object? obj)
     {
@@ -283,13 +293,6 @@ public sealed class SchedFunctionResult
         return EqualityComparer<HashSet<TIR.PhysicalBuffer>>.Default.Equals(Rdatas, result.Rdatas);
     }
 
-    /// <summary>
-    /// Gets the buffer allocation.
-    /// </summary>
-    public HashSet<TIR.PhysicalBuffer> Rdatas { get; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the Scheduled status.
-    /// </summary>
-    public bool IsScheduled { get; set; }
+    /// <inheritdoc/>
+    public override int GetHashCode() => base.GetHashCode();
 }

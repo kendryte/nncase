@@ -52,7 +52,7 @@ public static partial class Utility
     /// <summary>
     /// create op pattern.
     /// </summary>
-    /// <typeparam name="TOp"></typeparam>
+    /// <typeparam name="TOp">op type.</typeparam>
     /// <param name="name">name.</param>
     /// <returns>op pattern.</returns>
     public static OpPattern<TOp> IsOp<TOp>(string? name)
@@ -62,7 +62,7 @@ public static partial class Utility
     /// <summary>
     /// create op pattern.
     /// </summary>
-    /// <typeparam name="TOp"></typeparam>
+    /// <typeparam name="TOp">op type.</typeparam>
     /// <param name="name">name.</param>
     /// <param name="condition">op condition.</param>
     /// <returns>op pattern.</returns>

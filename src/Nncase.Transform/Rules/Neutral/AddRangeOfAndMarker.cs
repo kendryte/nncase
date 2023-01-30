@@ -23,7 +23,6 @@ namespace Nncase.Transform.Rules.Neutral;
 /// <summary>
 /// Add range of marker base class.
 /// </summary>
-/// <typeparam name="T"></typeparam>
 [RuleGenerator]
 public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
 {
@@ -99,7 +98,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
         return op switch
         {
             LSTM => newCall, // note lstm output can't add marker.
-            _ => IR.F.Math.RangeOfMarker(newCall, IR.F.Math.RangeOf(newCall))
+            _ => IR.F.Math.RangeOfMarker(newCall, IR.F.Math.RangeOf(newCall)),
         };
     }
 }
