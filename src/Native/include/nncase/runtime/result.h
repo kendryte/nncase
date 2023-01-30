@@ -68,6 +68,8 @@ namespace nncase {
 template <class T> class NNCASE_NODISCARD result;
 
 namespace detail {
+enum class result_type { ok, err };
+
 struct ok_t {};
 NNCASE_INLINE_VAR ok_t constexpr ok_v = {};
 
@@ -142,9 +144,6 @@ template <class Func> struct and_then_traits<void, Func> {
 } // namespace detail
 
 template <class T> class NNCASE_NODISCARD result {
-  private:
-    enum class result_type { ok, err };
-
   public:
     static_assert(!detail::is_result_v<T>, "Cannot use nested result");
 
@@ -152,20 +151,28 @@ template <class T> class NNCASE_NODISCARD result {
 
     template <class... Args>
     result(detail::ok_t, Args... args)
-        : type_(result_type::ok), ok_(std::forward<Args>(args)...) {}
+        : type_(detail::result_type::ok), ok_(std::forward<Args>(args)...) {}
 
     result(std::error_condition err) noexcept
-        : type_(result_type::err), err_(std::move(err)) {}
+        : type_(detail::result_type::err), err_(std::move(err)) {}
 
     result(const result &other) : type_(other.type_) {
-        if (type_ == result_type::ok)
+        if (type_ == detail::result_type::ok)
             new (&ok_) T(other.ok_);
         else
             new (&err_) std::error_condition(other.err_);
     }
 
     result(result &&other) : type_(other.type_) {
-        if (type_ == result_type::ok)
+        if (type_ == detail::result_type::ok)
+            new (&ok_) T(std::move(other.ok_));
+        else
+            new (&err_) std::error_condition(std::move(other.err_));
+    }
+
+    template <class U, class = std::enable_if_t<std::is_convertible_v<U, T>>>
+    result(result<U> &&other) : type_(other.type_) {
+        if (type_ == detail::result_type::ok)
             new (&ok_) T(std::move(other.ok_));
         else
             new (&err_) std::error_condition(std::move(other.err_));
@@ -176,7 +183,7 @@ template <class T> class NNCASE_NODISCARD result {
     result &operator=(const result &other) noexcept {
         destroy();
         type_ = other.type_;
-        if (type_ == result_type::ok)
+        if (type_ == detail::result_type::ok)
             new (&ok_) T(other.ok_);
         else
             new (&err_) std::error_condition(other.err_);
@@ -186,15 +193,20 @@ template <class T> class NNCASE_NODISCARD result {
     result &operator=(result &&other) noexcept {
         destroy();
         type_ = other.type_;
-        if (type_ == result_type::ok)
+        if (type_ == detail::result_type::ok)
             new (&ok_) T(std::move(other.ok_));
         else
             new (&err_) std::error_condition(std::move(other.err_));
         return *this;
     }
 
-    constexpr bool is_ok() const noexcept { return type_ == result_type::ok; }
-    constexpr bool is_err() const noexcept { return type_ == result_type::err; }
+    constexpr bool is_ok() const noexcept {
+        return type_ == detail::result_type::ok;
+    }
+
+    constexpr bool is_err() const noexcept {
+        return type_ == detail::result_type::err;
+    }
 
     constexpr T &unwrap() &noexcept {
         if (is_ok())
@@ -280,7 +292,9 @@ template <class T> class NNCASE_NODISCARD result {
     }
 
   private:
-    result_type type_;
+    template <class U> friend class result;
+
+    detail::result_type type_;
     union {
         T ok_;
         std::error_condition err_;
