@@ -270,21 +270,19 @@ public class IsaExtractor
                 IsEnum: true,
                 IsOpCode: true));
 
-            fields.Add(new InstructionField
-                (
-                    CppName: "tensor_funct",
-                    CSharpName: "tensorFunction",
-                    CSharpPropName: "TensorFunction",
-                    CppType: "tensor_function_t",
-                    CSharpType: "TensorFunction",
-                    UnderlyingCSharpType: CSharpFieldType(typeof(ushort)),
-                    Length: FieldLength(typeof(ushort)),
-                    Value: (uint)index,
-                    CppValueText: null,
-                    Description: null,
-                    IsEnum: true,
-                    IsOpCode: true
-                ));
+        fields.Add(new InstructionField(
+                CppName: "tensor_funct",
+                CSharpName: "tensorFunction",
+                CSharpPropName: "TensorFunction",
+                CppType: "tensor_function_t",
+                CSharpType: "TensorFunction",
+                UnderlyingCSharpType: CSharpFieldType(typeof(ushort)),
+                Length: FieldLength(typeof(ushort)),
+                Value: (uint)index,
+                CppValueText: null,
+                Description: null,
+                IsEnum: true,
+                IsOpCode: true));
 
         foreach (var (m, f) in props)
         {
