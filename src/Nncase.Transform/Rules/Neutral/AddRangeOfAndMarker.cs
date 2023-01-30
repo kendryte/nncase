@@ -70,7 +70,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
             return null;
         }
 
-        if (op is Binary binary && (binary.BinaryOp == BinaryOp.LogicalAnd || binary.BinaryOp == BinaryOp.LogicalOr || binary.BinaryOp != BinaryOp.LogicalXor))
+        if (op is Binary binary && (binary.BinaryOp == BinaryOp.LogicalAnd || binary.BinaryOp == BinaryOp.LogicalOr || binary.BinaryOp == BinaryOp.LogicalXor))
         {
             return null;
         }
