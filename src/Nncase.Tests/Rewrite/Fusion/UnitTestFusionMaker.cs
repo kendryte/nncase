@@ -195,7 +195,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
         var v1 = WrapperWith(x => Transpose(x[0], new[] { 0, 3, 1, 2 }), input); // f32[1,3,24,32]
         var pre = new Function("main", v1, new Var[] { input });
         var pass = new DataflowPass { Name = "Fusion" };
-        pass.Add<TestTransposeComplexFusionSingleOutput>();
+        pass.Add<TestTransposeComplexFusion>();
         var post = (Function)await pass.RunAsync(pre, new());
         var newFusion = (Fusion)((Call)post.Body).Target;
         Assert.Single(newFusion.Parameters);
@@ -203,6 +203,22 @@ public sealed class UnitTestFusionMaker : TestClassBase
         Assert.Equal("input_0", newVar.Name);
         Assert.Equal(input.TypeAnnotation, newVar.TypeAnnotation);
         var expectBody = WrapperWith(x => Transpose(x[0], new[] { 0, 3, 1, 2 }), newVar);
+        Assert.Equal(newFusion.Body, expectBody);
+    }
+
+    [Fact]
+    public async void TestComplexFusionTensorConstInput()
+    {
+        var inShape = new[] { 1, 24, 32, 3 };
+        var input = DataGenerator.DefaultRandom(inShape);
+        var v1 = WrapperWith(x => Transpose(x[0], new[] { 0, 3, 1, 2 }), input); // f32[1,3,24,32]
+        var pre = new Function("main", v1, new Var[]{});
+        var pass = new DataflowPass { Name = "Fusion" };
+        pass.Add<TestTransposeComplexFusion>();
+        var post = (Function)await pass.RunAsync(pre, new());
+        var newFusion = (Fusion)((Call)post.Body).Target;
+        Assert.Empty(newFusion.Parameters);
+        var expectBody = WrapperWith(x => Transpose(x[0], new[] { 0, 3, 1, 2 }), input);
         Assert.Equal(newFusion.Body, expectBody);
     }
 
@@ -249,6 +265,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
         var outputSize = 2;
         var x = new Var(new TensorType(DataTypes.Float32, new[] { 1, 3, 2 }));
         var init_c = new Var(new TensorType(DataTypes.Float32, new[] { 1, numberOfGates * hiddenSize, inputSize }));
+        // var init_h = new Var(new TensorType(DataTypes.Float32, new[] { 1, numberOfGates * hiddenSize, hiddenSize }));
         var init_h = new Var(new TensorType(DataTypes.Float32, new[] { 1, numberOfGates * hiddenSize, hiddenSize }));
         var b = DataGenerator.DefaultRandom(new[] { 1, 1, 1, 1 });
         var w = DataGenerator.DefaultRandom(new[] { 1, 1, 1, 1 });
@@ -301,8 +318,8 @@ public sealed class UnitTestFusionMaker : TestClassBase
     }
 
     internal sealed class
-        TestTransposeComplexFusionSingleOutput : ComplexFusion<Transpose, Quantize, Dequantize,
-            TestTransposeComplexFusionSingleOutput.TransposeDataMaker>
+        TestTransposeComplexFusion : ComplexFusion<Transpose, Quantize, Dequantize,
+            TestTransposeComplexFusion.TransposeDataMaker>
     {
         public class TransposeDataMaker
         {

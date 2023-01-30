@@ -137,6 +137,10 @@ public class ReplaceUtility
     /// <exception cref="InvalidOperationException"></exception>
     public static List<Expr> ReplaceParams(IReadOnlyList<Expr> list, IReadOnlyList<(Expr target, Expr value)> pairs)
     {
+        if (pairs.Count == 0)
+        {
+            return list.ToList();
+        }
         var new_args = new List<Expr>(list);
 
         Dictionary<int, Expr> candidates = new();
