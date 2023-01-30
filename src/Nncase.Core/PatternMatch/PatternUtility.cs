@@ -113,11 +113,14 @@ public static partial class Utility
         where T : Op
         where TBegin : Op
         where TEnd : Op =>
-      IsCallWildcard(endName,
+      IsCallWildcard(
+        endName,
         IsOp<TEnd>(endName + "Op"),
-        IsCallWildcard(midName,
+        IsCallWildcard(
+          midName,
           IsOp<T>(midName + "Op"),
-          IsCallWildcard(beginName,
+          IsCallWildcard(
+            beginName,
             IsOp<TBegin>(beginName + "Op"),
             IsWildcard(inputName))));
 
@@ -136,11 +139,14 @@ public static partial class Utility
         where T : Op
         where TBegin : Op
         where TEnd : Op =>
-      IsCallWildcard(endName,
+      IsCallWildcard(
+        endName,
         IsOp<TEnd>(endName + "Op"),
-          IsCallWildcard(midName, IsOp<T>(midName + "Op"),
-            IsCallWildcard(beginName + "Lhs", IsOp<TBegin>(beginName + "LhsOp"), IsWildcard(inputName + "Lhs")),
-            IsCallWildcard(beginName + "Rhs", IsOp<TBegin>(beginName + "RhsOp"), IsWildcard(inputName + "Rhs"))));
+        IsCallWildcard(
+          midName,
+          IsOp<T>(midName + "Op"),
+          IsCallWildcard(beginName + "Lhs", IsOp<TBegin>(beginName + "LhsOp"), IsWildcard(inputName + "Lhs")),
+          IsCallWildcard(beginName + "Rhs", IsOp<TBegin>(beginName + "RhsOp"), IsWildcard(inputName + "Rhs"))));
 
     /// <summary>
     /// is double input fusion body.
@@ -148,8 +154,8 @@ public static partial class Utility
     /// <typeparam name="T">mid op type.</typeparam>
     /// <typeparam name="TBegin">begin op type.</typeparam>
     /// <typeparam name="TEnd">end op type.</typeparam>
-    /// <param name="moduleKind">module kind.</param>
     /// <param name="fusionName">fusion name.</param>
+    /// <param name="moduleKind">module kind.</param>
     /// <param name="endName">end prefix.</param>
     /// <param name="midName"> mid prefix.</param>
     /// <param name="beginName">begin prefix.</param>
@@ -162,7 +168,8 @@ public static partial class Utility
       IsFusion(
         fusionName,
         moduleKind,
-        IsAlt(IsSIFusionBody<T, TBegin, TEnd>(endName, midName, beginName, inputName),
+        IsAlt(
+          IsSIFusionBody<T, TBegin, TEnd>(endName, midName, beginName, inputName),
           IsDIFusionBody<T, TBegin, TEnd>(endName, midName, beginName, inputName)),
         IsVArgsRepeat(() => IsVar()));
 
@@ -232,13 +239,18 @@ public static partial class Utility
         where TSecondOp : Op
         where TBegin : Op
         where TEnd : Op =>
-      IsFusion(moduleKind, 
-        IsCallWildcard(endCallName, 
-          IsOp<TEnd>(endCallName + "Op"), 
-          IsAlt(input => IsPairWildcardCall<TFirstOp, TSecondOp>(firstCallName, null!, input),
-            input => IsCallWildcardMaybeSwappable<TFirstOp>(firstCallName, input))(IsCallWildcard(beginCallName, 
-              IsOp<TBegin>(beginCallName + "Op"), 
-              IsWildcard()))));
+      IsFusion(
+        moduleKind,
+        IsCallWildcard(
+          endCallName,
+          IsOp<TEnd>(endCallName + "Op"),
+          IsAlt(
+            input => IsPairWildcardCall<TFirstOp, TSecondOp>(firstCallName, null!, input),
+            input => IsCallWildcardMaybeSwappable<TFirstOp>(firstCallName, input))(
+              IsCallWildcard(
+                beginCallName,
+                IsOp<TBegin>(beginCallName + "Op"),
+                IsWildcard()))));
 
     /// <summary>
     /// get call wildcard maybe swappable.
