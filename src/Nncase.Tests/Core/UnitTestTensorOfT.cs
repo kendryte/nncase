@@ -234,7 +234,7 @@ public sealed class UnitTestTensorOfT
         var memory = new Memory<int>(a);
 
         var t1 = new Tensor<int>(memory, new int[] { 1, 1, 2, 4 });
-        Tensor<int> n = null;
+        Tensor<int>? n = null;
         Assert.NotEqual(t1, n);
 
         var t2 = new Tensor<int>(memory, new int[] { 2, 4 });
