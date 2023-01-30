@@ -211,9 +211,14 @@ public static class TensorUtilities
     public static IR.Expr GetIndex(ReadOnlySpan<IR.Expr> strides, ReadOnlySpan<IR.Expr> indices, int startFromDimension = 0)
     {
         // Scalar
-        if (strides.Length == 0 || indices.Length == 0)
+        if (strides.Length == 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(indices));
+            if (indices.Length != 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(indices));
+            }
+
+            return IR.F.Math.Require(IR.F.Math.Equal(indices[0], 0), 0);
         }
 
         Trace.Assert(strides.Length == indices.Length);
