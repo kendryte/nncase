@@ -212,13 +212,13 @@ public sealed class UnitTestFusionMaker : TestClassBase
         // used for find which expr is not expected
         void Compare(Tuple oldBody, Tuple expectBody, int i)
         {
-            var oldDeq = oldBody[i];
+            var oldDeq = oldBody[0];
             var oldGetItem = ((Call)oldDeq).Parameters[0];
             var oldLSTM = ((Call)oldGetItem).Parameters[0];
             var oldQuant = ((Call)oldLSTM).Parameters[i];
             var oldVar = ((Call)oldQuant).Parameters[0];
 
-            var expectDeq = ((IR.Tuple)expectBody).Fields[i];
+            var expectDeq = ((IR.Tuple)expectBody).Fields[0];
             var expectGetItem = ((Call)expectDeq).Parameters[0];
             var expectLSTM = ((Call)expectGetItem).Parameters[0];
             var expectQuant = ((Call)expectLSTM).Parameters[i];
@@ -248,24 +248,24 @@ public sealed class UnitTestFusionMaker : TestClassBase
         var numberOfGates = 4;
         var outputSize = 2;
         var x = new Var(new TensorType(DataTypes.Float32, new[] { 1, 3, 2 }));
-        var w = new Var(new TensorType(DataTypes.Float32, new[] { 1, numberOfGates * hiddenSize, inputSize }));
-        var r = new Var(new TensorType(DataTypes.Float32, new[] { 1, numberOfGates * hiddenSize, hiddenSize }));
+        var init_c = new Var(new TensorType(DataTypes.Float32, new[] { 1, numberOfGates * hiddenSize, inputSize }));
+        var init_h = new Var(new TensorType(DataTypes.Float32, new[] { 1, numberOfGates * hiddenSize, hiddenSize }));
         var b = DataGenerator.DefaultRandom(new[] { 1, 1, 1, 1 });
-        var init_h = DataGenerator.DefaultRandom(new[] { 1, 1, 1, 1 });
-        var init_c = DataGenerator.DefaultRandom(new[] { 1, 1, 1, 1 });
+        var w = DataGenerator.DefaultRandom(new[] { 1, 1, 1, 1 });
+        var r = DataGenerator.DefaultRandom(new[] { 1, 1, 1, 1 });
         var dt = DataTypes.Int8;
         var lstm = IR.F.RNN.LSTM(LSTMDirection.Bidirectional, LSTMLayout.One, new[] { "act" },
             WrapInput(x),
-            WrapInput(w),
-            WrapInput(r),
+            w,
+            r,
             b,
-            0, init_h,
-            init_c,
+            0, WrapInput(init_h),
+            WrapInput(init_c),
             0, 0, 0, 0, hiddenSize, 0, outputSize);
 
         var oldBody = WrapOutput(lstm);
         Assert.True(oldBody.InferenceType());
-        var f = new Function("main", oldBody, new[] { x, w, r });
+        var f = new Function("main", oldBody, new[] { x, init_c, init_h });
         var pass = new DataflowPass { Name = "TestComplexFusion" };
         pass.Add<LSTMFusion>();
         var afterCall = (Call)((Function)await pass.RunAsync(f, new())).Body;
@@ -279,15 +279,17 @@ public sealed class UnitTestFusionMaker : TestClassBase
         // construct a expect Tuple
         // avoiding the error of comparing var, because comparing var is by ref
         var newVar0 = x;
-        var newVar1 = w;
-        var newVar2 = r;
-        var expectLSTM = ReplaceUtility.ReplaceParams(lstm, (LSTM.X, WrapInput(newVar0)), (LSTM.W, WrapInput(newVar1)), (LSTM.R, WrapInput(newVar2)));
+        var newVar1 = init_c;
+        var newVar2 = init_h;
+        var expectLSTM = ReplaceUtility.ReplaceParams(lstm, (LSTM.X, WrapInput(newVar0)), (LSTM.InitialC, WrapInput(newVar1)), (LSTM.InitialH, WrapInput(newVar2)));
         var expectBody = WrapOutput(expectLSTM);
         var expectCall = new Call(new Fusion("FusionMaker_0", "StackVM", expectBody, new[] { newVar0, newVar1, newVar2 }), x, w, r);
         expectCall.InferenceType();
-        for (int i = 0; i < outputSize; i++)
+        Assert.True(CompilerServices.TryMatch(afterCall.Target, new LSTMFusion().Pattern, out _));
+        var idxList = LSTMFusion.FusionCondMaker.InputsPattern.Select(x => x.Item1.Index).ToArray();
+        foreach (int idx in idxList)
         {
-            Compare(oldBody, expectBody, i);
+            Compare(oldBody, expectBody, idx);
         }
     }
 
@@ -314,7 +316,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
         public class FusionCondMaker
         {
             public static (ParameterInfo, Pattern)[] InputsPattern =
-                GenerateInputsPattern(LSTM.X, LSTM.W, LSTM.R);
+                GenerateInputsPattern(LSTM.X, LSTM.InitialC, LSTM.InitialH);
         }
     }
 }

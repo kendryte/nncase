@@ -44,8 +44,7 @@ public abstract class FusionMaker : RewriteRule<Pattern>
 /// body => Call(Target:Fusion(body))
 ///
 /// but something not support
-/// 1. not TensorConst
-/// 2. Swappable Binary
+/// 1. Swappable Binary
 /// in these cases you should use DoubleInputFusion.
 ///
 /// </summary>
@@ -65,9 +64,6 @@ public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
 
     public static Pattern ComputePattern { get; } = IsCallWithSpecInput<OpT>("midCall", null!,
         InputsPattern);
-
-    public static (ParameterInfo, Pattern)[] InputsPattern =>
-        typeof(DataMaker).GetField("InputsPattern").GetValue(null) as (ParameterInfo, Pattern)[];
 
     public override Pattern Pattern { get; } = IsAlt(
 
@@ -89,6 +85,9 @@ public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
         outputName);
 
     public static Pattern EndPattern(string endCallName) => IsWildcardCall<EndT>(endCallName, null!, ComputePattern);
+
+    public static (ParameterInfo, Pattern)[] InputsPattern =>
+        typeof(DataMaker).GetField("InputsPattern").GetValue(null) as (ParameterInfo, Pattern)[];
 
     /// <summary>
     /// Used for construct wildcard Pattern for inputs from ParameterInfo[].
@@ -147,6 +146,10 @@ public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
                 (tuple, begin) =>
                 {
                     var input = GetInputFromBegin(begin);
+                    if (input is Const)
+                    {
+                        return (tuple.Item1, tuple.Item2);
+                    }
                     var newInput = new Var($"input_{idx++}", input.CheckedType!);
                     var newBegin = ReplaceCallParam((Call)begin, new[] { (input, (Expr)newInput) });
                     return (
@@ -155,7 +158,7 @@ public partial class ComplexFusion<OpT, BeginT, EndT, DataMaker> : FusionMaker
                 });
 
         // update compute
-        var newMidCall = ReplaceCallParam(midCall, midCallParams.Zip(newBegins).ToArray());
+        var newMidCall = ReplaceCallParam(midCall, oldInputs.Zip(newBegins).ToArray());
 
         // update end
         Expr newBody = output switch
