@@ -29,6 +29,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
 {
     private static readonly Dictionary<RuntimeTypeHandle, int> _Dict = new()
     {
+        { typeof(GetItem).TypeHandle, 0 },
         { typeof(Transpose).TypeHandle, 1 },
         { typeof(SpaceToBatch).TypeHandle, 1 },
         { typeof(Sigmoid).TypeHandle, 1 },
@@ -95,6 +96,10 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
         }
 
         var newCall = ReplaceCallParams(op, callParams, pairs.ToArray());
-        return IR.F.Math.RangeOfMarker(newCall, IR.F.Math.RangeOf(newCall));
+        return op switch
+        {
+            LSTM => newCall, // note lstm output can't add marker.
+            _ => IR.F.Math.RangeOfMarker(newCall, IR.F.Math.RangeOf(newCall))
+        };
     }
 }
