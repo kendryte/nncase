@@ -109,7 +109,7 @@ def generate_random(shape: List[int], dtype: np.dtype,
     elif dtype == np.bool:
         data = np.random.rand(*shape) > 0.5
     else:
-        data = np.random.rand(*shape)
+        data = np.random.uniform(0.01, 1, shape)
     data = data.astype(dtype=dtype)
     if abs:
         return np.abs(data)
