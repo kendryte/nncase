@@ -107,20 +107,28 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
 /// add rangeofmarker on the function body.
 /// </summary>
 [RuleGenerator]
-public partial class AddRangeOfAndMarkerOnFunction : RewriteRule<Pattern>
+public partial class AddRangeOfAndMarkerOnFuncBody : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsFunction(
-        "func",
-      IsCallWildcard(
-          "call",
-          IsOp<Op>("op"),
-          IsWildcard("input")), IsVArgsRepeat("parameters", () => IsVar()));
+      "func",
+      IsAlt(
+        IsTuple("input", IsVArgsRepeat("inputParams", () => IsWildcard(null, e => e is not Marker))),
+        IsWildcard("input", e => e is Call)),
+      IsVArgsRepeat("parameters", () => IsVar()));
 
-    private Expr? GetReplace(Call call, Op op, IReadOnlyList<Expr> callParams, Function func, IReadOnlyList<Expr> parameters)
+    private Expr? GetReplace(Expr input, Function func, IReadOnlyList<Expr> parameters, IMatchResult result)
     {
-        var newCall = new Call(op, ImmutableArray.CreateRange(callParams));
-        var marker = IR.F.Math.RangeOfMarker(newCall, IR.F.Math.RangeOf(newCall));
-        return func with { Body = marker, Parameters = ImmutableArray.CreateRange(parameters.Select(e => (Var)e)) };
+        Expr newBody;
+        if (input is Call newCall)
+        {
+            newBody = IR.F.Math.RangeOfMarker(newCall, IR.F.Math.RangeOf(newCall));
+        }
+        else
+        {
+            newBody = new IR.Tuple(((IReadOnlyList<Expr>)result["inputParams"]).Select(e => IR.F.Math.RangeOfMarker(e, IR.F.Math.RangeOf(e))));
+        }
+
+        return func with { Body = newBody, Parameters = ImmutableArray.CreateRange(parameters.Select(e => (Var)e)) };
     }
 }

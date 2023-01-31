@@ -71,19 +71,19 @@ public class UnitTestAddMarker : TestClassBase
     public async Task TestAddMarkerOutput()
     {
 #if DEBUG
-        CompileOptions.DumpFlags = Diagnostics.DumpFlags.Rewrite;
+        CompileOptions.DumpFlags = Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.EGraphCost;
 #endif
         var a = new IR.Var("a", new IR.TensorType(DataTypes.Float32, new[] { 1, 3, 8, 8 }));
-        var main = new IR.Function(Relu(IR.F.Math.RangeOfMarker(a, new[] { -1.0f, 1.0f })), new[] { a });
+        var main = new IR.Function(new IR.Tuple(Relu(IR.F.Math.RangeOfMarker(a, new[] { -1.0f, 1.0f }))), new[] { a });
         var module = new IR.IRModule(main);
         var passManager = CompileSession.CreatePassManager("manager");
         passManager.AddWithName<DataflowPass>("AddRangeOfMarker").Configure(p =>
         {
             p.Add<Transform.Rules.Neutral.AddRangeOfAndMarker>();
-            p.Add<Transform.Rules.Neutral.AddRangeOfAndMarkerOnFunction>();
+            p.Add<Transform.Rules.Neutral.AddRangeOfAndMarkerOnFuncBody>();
         });
         await passManager.RunAsync(module);
 
-        Assert.True(((IR.Function)module.Entry!).Body is IR.Marker);
+        Assert.True(((IR.Function)module.Entry!).Body is IR.Tuple tuple && tuple.Fields[0] is IR.Marker);
     }
 }
