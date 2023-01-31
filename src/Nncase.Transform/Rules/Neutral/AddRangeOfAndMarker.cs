@@ -102,3 +102,24 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
         };
     }
 }
+
+/// <summary>
+/// add rangeofmarker on the function body.
+/// </summary>
+[RuleGenerator]
+public partial class AddRangeOfAndMarkerOnFunction : RewriteRule<Pattern>
+{
+    /// <inheritdoc/>
+    public override Pattern Pattern { get; } = IsFunction("func",
+      IsCallWildcard(
+          "call",
+          IsOp<Op>("op"),
+          IsWildcard("input")), IsVArgsRepeat("parameters", () => IsVar()));
+
+    private Expr? GetReplace(Call call, Op op, IReadOnlyList<Expr> callParams, Function func, IReadOnlyList<Expr> parameters)
+    {
+        var newCall = new Call(op, ImmutableArray.CreateRange(callParams));
+        var marker = IR.F.Math.RangeOfMarker(newCall, IR.F.Math.RangeOf(newCall));
+        return func with { Body = marker, Parameters = ImmutableArray.CreateRange(parameters.Select(e => (Var)e)) };
+    }
+}

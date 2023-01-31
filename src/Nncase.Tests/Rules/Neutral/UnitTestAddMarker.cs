@@ -66,4 +66,24 @@ public class UnitTestAddMarker : TestClassBase
         var pre = IR.F.Math.RangeOfMarker(new[] { 4, 5, 6, 7 }, e);
         CompilerServices.InferenceType(pre);
     }
+
+    [Fact]
+    public async Task TestAddMarkerOutput()
+    {
+#if DEBUG
+        CompileOptions.DumpFlags = Diagnostics.DumpFlags.Rewrite;
+#endif
+        var a = new IR.Var("a", new IR.TensorType(DataTypes.Float32, new[] { 1, 3, 8, 8 }));
+        var main = new IR.Function(Relu(IR.F.Math.RangeOfMarker(a, new[] { -1.0f, 1.0f })), new[] { a });
+        var module = new IR.IRModule(main);
+        var passManager = CompileSession.CreatePassManager("manager");
+        passManager.AddWithName<DataflowPass>("AddRangeOfMarker").Configure(p =>
+        {
+            p.Add<Transform.Rules.Neutral.AddRangeOfAndMarker>();
+            p.Add<Transform.Rules.Neutral.AddRangeOfAndMarkerOnFunction>();
+        });
+        await passManager.RunAsync(module);
+
+        Assert.True(((IR.Function)module.Entry!).Body is IR.Marker);
+    }
 }
