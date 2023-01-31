@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Collections.Generic;
 using Nncase.IR;
 using Nncase.IR.NN;
@@ -9,11 +12,11 @@ using static Nncase.Utilities.ReplaceUtility;
 namespace Nncase.Transform.Rules.Neutral;
 
 /// <summary>
-///     
-///         Conv2d               
+///
+///         Conv2d
 ///           |            =>   Conv2d
-///          clamp         
-/// 
+///          clamp.
+///
 /// </summary>
 [RuleGenerator]
 public sealed partial class FuseClampConv2D : RewriteRule<Pattern>
@@ -23,8 +26,7 @@ public sealed partial class FuseClampConv2D : RewriteRule<Pattern>
       IsClamp(
         IsCallSpecific("call", IsOp<Conv2D>("op"), (Conv2D.FusedClamp, IsTensorConst("fusedClamp"))),
         IsTensorConst("min", t => t.Value.Shape.IsScalar && t.Value.ElementType == DataTypes.Float32),
-        IsTensorConst("max", t => t.Value.Shape.IsScalar && t.Value.ElementType == DataTypes.Float32)
-      );
+        IsTensorConst("max", t => t.Value.Shape.IsScalar && t.Value.ElementType == DataTypes.Float32));
 
     private Expr? GetReplace(Op op, IReadOnlyList<Expr> callParams, float[] fusedClamp, float min, float max)
     {
