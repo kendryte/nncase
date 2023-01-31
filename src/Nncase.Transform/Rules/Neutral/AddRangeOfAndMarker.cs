@@ -110,7 +110,8 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
 public partial class AddRangeOfAndMarkerOnFunction : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
-    public override Pattern Pattern { get; } = IsFunction("func",
+    public override Pattern Pattern { get; } = IsFunction(
+        "func",
       IsCallWildcard(
           "call",
           IsOp<Op>("op"),
