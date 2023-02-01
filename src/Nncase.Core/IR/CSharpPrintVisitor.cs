@@ -102,7 +102,7 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
             string body;
             using (var body_writer = new StringWriter(body_builder))
             {
-                var visitor = new CSharpPrintVisitor(body_writer, _scope.IndentLevel) { _localId = this._localId };
+                var visitor = new CSharpPrintVisitor(body_writer, _scope.IndentLevel) { _localId = _localId };
                 body = visitor.Visit(expr.Body);
                 _scope.Append(body_writer.ToString());
             }
