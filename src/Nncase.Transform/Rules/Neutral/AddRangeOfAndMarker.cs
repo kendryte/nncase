@@ -61,7 +61,8 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
       IsCallWildcard(
           "call",
           IsOp<Op>("op"),
-          IsWildcard("input"));
+          IsWildcard("input")) with
+      { TypePattern = HasDataType(DataTypes.Float32) };
 
     /// <summary>
     /// check op.
