@@ -16,29 +16,6 @@ using Nncase.IR;
 
 namespace Nncase;
 
-internal sealed class TensorOfT
-{
-    /// <summary>
-    /// The array to string prefix map
-    /// </summary>
-    public static Dictionary<System.RuntimeTypeHandle, string> PrefixMap = new()
-    {
-      {typeof(Half).TypeHandle, "(Half)"},
-      {typeof(BFloat16).TypeHandle, "(BFloat16)"}
-    };
-
-    /// <summary>
-    /// The array to string suffix map
-    /// </summary>
-    public static Dictionary<System.RuntimeTypeHandle, string> SuffixMap = new()
-    {
-      {typeof(float).TypeHandle, "f"},
-      {typeof(double).TypeHandle, "d"},
-      {typeof(long).TypeHandle, "L"},
-      {typeof(uint).TypeHandle, "UL"},
-    };
-}
-
 /// <summary>
 /// Represents a multi-dimensional collection of objects of type T that can be accessed
 /// by indices. DenseTensor stores values in a contiguous sequential block of memory
@@ -308,7 +285,6 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
                 {
                     builder.Append(suffix);
                 }
-
             }
 
             builder.Append('}');
@@ -741,4 +717,27 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
         {
         }
     }
+}
+
+internal sealed class TensorOfT
+{
+    /// <summary>
+    /// The array to string prefix map.
+    /// </summary>
+    public static readonly Dictionary<System.RuntimeTypeHandle, string> PrefixMap = new()
+    {
+        { typeof(Half).TypeHandle, "(Half)" },
+        { typeof(BFloat16).TypeHandle, "(BFloat16)" },
+    };
+
+    /// <summary>
+    /// The array to string suffix map.
+    /// </summary>
+    public static readonly Dictionary<System.RuntimeTypeHandle, string> SuffixMap = new()
+    {
+        { typeof(float).TypeHandle, "f" },
+        { typeof(double).TypeHandle, "d" },
+        { typeof(long).TypeHandle, "L" },
+        { typeof(uint).TypeHandle, "UL" },
+    };
 }

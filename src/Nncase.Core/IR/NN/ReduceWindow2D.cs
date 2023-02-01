@@ -52,6 +52,6 @@ public sealed record ReduceWindow2D(ReduceOp ReduceOp) : Op
     /// </summary>
     public static readonly ParameterInfo CountIncludePad = new(typeof(ReduceWindow2D), 7, "countIncludePad", IsBool());
 
-        /// <inheritdoc/>
+    /// <inheritdoc/>
     public override string DisplayProperty() => $"ReduceOp.{ReduceOp}";
 }

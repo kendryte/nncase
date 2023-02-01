@@ -106,6 +106,7 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
                 body = new CSharpPrintVisitor(body_writer, _scope.IndentLevel).Visit(expr.Body);
                 _scope.Append(body_writer.ToString());
             }
+
             _scope.IndWriteLine($"{name} = new Fusion(\"{expr.Name}\", \"{expr.ModuleKind}\", {body}, new Var[] {{{string.Join(", ", expr.Parameters.Select(Visit))}}});");
         }
 
