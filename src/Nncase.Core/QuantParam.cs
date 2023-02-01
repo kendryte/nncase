@@ -45,7 +45,7 @@ public struct QuantParam : IEquatable<QuantParam>
     /// <inheritdoc/>
     public override string ToString()
     {
-        return $"<{ZeroPoint},{Scale}>";
+        return $"new({ZeroPoint},{Scale}f)";
     }
 
     /// <inheritdoc/>

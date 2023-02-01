@@ -180,7 +180,7 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
         var target = Visit(expr.Target);
         var attr = Visit(expr.Attribute);
         name = AllocateTempVar(expr);
-        _scope.IndWrite($"var {name} = new Marker({target},{attr})");
+        _scope.IndWrite($"var {name} = new Marker(\"{expr.Name}\",{target},{attr})");
         AppendCheckedType(expr.CheckedType);
         return name;
     }
@@ -246,6 +246,8 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
         _ => "AnyType.Default",
     };
 
+    private string GetArrayComma(Shape shape) => string.Join(string.Empty, Enumerable.Repeat<char>(',', shape.Rank - 1));
+
     private string GetCSharpConst(Const @const) => @const switch
     {
         TensorConst tc => tc.Value.ElementType switch
@@ -253,10 +255,10 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
             PrimType primType => tc.Value.Shape switch
             {
                 Shape { IsScalar: true } => tc.Value.GetArrayString(false),
-                Shape x when x.Size < 8 => $"new {primType.GetBuiltInName()}[]{tc.Value.GetArrayString(false)}",
+                Shape x when x.Size < 8 => $"new {primType.GetBuiltInName()}[{GetArrayComma(x)}]{tc.Value.GetArrayString(false)}",
                 _ => $"Testing.Rand<{primType.GetBuiltInName()}>({string.Join(",", tc.Value.Shape.ToValueArray())})",
             },
-            ValueType valueType => $"new {valueType.GetBuiltInName()}[]{tc.Value.GetArrayString(false)}",
+            ValueType valueType => $"Tensor.From<QuantParam>(new {valueType.GetBuiltInName()}[{GetArrayComma(tc.Value.Shape)}]{tc.Value.GetArrayString(false)},new[]{{{string.Join(",", tc.Value.Shape)}}})",
             _ => "NotSupport",
         },
         TupleConst tc => $"new TupleConst(new Const[] {{{string.Join(",", tc.Fields.Select(GetCSharpConst))}}})",

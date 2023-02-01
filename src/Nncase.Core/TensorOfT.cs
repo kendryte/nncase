@@ -16,6 +16,23 @@ using Nncase.IR;
 
 namespace Nncase;
 
+internal sealed class TensorOfT
+{
+    public static Dictionary<System.RuntimeTypeHandle, string> PrefixMap = new()
+    {
+      {typeof(Half).TypeHandle, "(Half)"},
+      {typeof(BFloat16).TypeHandle, "(BFloat16)"}
+    };
+
+    public static Dictionary<System.RuntimeTypeHandle, string> SuffixMap = new()
+    {
+      {typeof(float).TypeHandle, "f"},
+      {typeof(double).TypeHandle, "d"},
+      {typeof(long).TypeHandle, "l"},
+      {typeof(uint).TypeHandle, "u"},
+    };
+}
+
 /// <summary>
 /// Represents a multi-dimensional collection of objects of type T that can be accessed
 /// by indices. DenseTensor stores values in a contiguous sequential block of memory
@@ -220,6 +237,9 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
             return Buffer.Span[0].ToString()!;
         }
 
+        string prefix = TensorOfT.PrefixMap.GetValueOrDefault(typeof(T).TypeHandle, string.Empty);
+        string suffix = TensorOfT.SuffixMap.GetValueOrDefault(typeof(T).TypeHandle, string.Empty);
+
         var builder = new StringBuilder();
 
         var indices = new int[Rank];
@@ -272,7 +292,17 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
                     builder.Append(',');
                 }
 
+                if (!string.IsNullOrEmpty(prefix))
+                {
+                    builder.Append(prefix);
+                }
+
                 builder.Append(this[indices]);
+                if (!string.IsNullOrEmpty(suffix))
+                {
+                    builder.Append(suffix);
+                }
+
             }
 
             builder.Append('}');
