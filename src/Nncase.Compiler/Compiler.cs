@@ -76,16 +76,17 @@ internal class Compiler : ICompiler
                 p.Add<Transform.Rules.Neutral.FoldConv2DPads>();
                 p.Add<Transform.Rules.Neutral.FoldReduceWindow2DPads>();
             });
-            passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
-            {
-                p.Add<Transform.Rules.Neutral.FoldConstCall>();
-                p.Add<Transform.Rules.Neutral.FoldConv2DAddMul>();
-                p.Add<Transform.Rules.Neutral.ReluToClamp>();
-                p.Add<Transform.Rules.Neutral.Relu6ToClamp>();
-                p.Add<Transform.Rules.Neutral.CombineClampAdd>();
-                p.Add<Transform.Rules.Neutral.CombineClampMul>();
-                p.Add<Transform.Rules.Neutral.FoldNopClamp>();
-            });
+
+            // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
+            // {
+            //     p.Add<Transform.Rules.Neutral.FoldConstCall>();
+            //     p.Add<Transform.Rules.Neutral.FoldConv2DAddMul>();
+            //     p.Add<Transform.Rules.Neutral.ReluToClamp>();
+            //     p.Add<Transform.Rules.Neutral.Relu6ToClamp>();
+            //     p.Add<Transform.Rules.Neutral.CombineClampAdd>();
+            //     p.Add<Transform.Rules.Neutral.CombineClampMul>();
+            //     p.Add<Transform.Rules.Neutral.FoldNopClamp>();
+            // });
         }
 
         if (quantMode == ModelQuantMode.UsePTQ)
