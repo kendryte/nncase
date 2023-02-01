@@ -18,7 +18,6 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
 {
     private readonly ScopeWriter _scope;
     private readonly Dictionary<Expr, string> _names = new Dictionary<Expr, string>(ReferenceEqualityComparer.Instance);
-
     private int _localId;
 
     public CSharpPrintVisitor(TextWriter textWriter, int indent_level)
@@ -103,7 +102,8 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
             string body;
             using (var body_writer = new StringWriter(body_builder))
             {
-                body = new CSharpPrintVisitor(body_writer, _scope.IndentLevel).Visit(expr.Body);
+                var visitor = new CSharpPrintVisitor(body_writer, _scope.IndentLevel) { _localId = this._localId };
+                body = visitor.Visit(expr.Body);
                 _scope.Append(body_writer.ToString());
             }
 
