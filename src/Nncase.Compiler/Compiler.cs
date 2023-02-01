@@ -97,7 +97,6 @@ internal class Compiler : ICompiler
             passManager.AddWithName<DataflowPass>("AddRangeOfMarker").Configure(p =>
             {
                 p.Add<Transform.Rules.Neutral.AddRangeOfAndMarker>();
-                p.Add<Transform.Rules.Neutral.AddRangeOfAndMarkerOnFuncBody>();
             });
             passManager.AddWithName<EGraphPassWithQuantize>("AssignRanges");
         }
