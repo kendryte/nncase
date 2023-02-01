@@ -26,4 +26,7 @@ public sealed record Compare(CompareOp CompareOp) : Op
     /// Gets rhs.
     /// </summary>
     public static readonly ParameterInfo Rhs = new(typeof(Compare), 1, "rhs");
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"CompareOp.{CompareOp}";
 }

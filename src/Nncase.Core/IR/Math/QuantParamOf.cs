@@ -21,4 +21,7 @@ public sealed record QuantParamOf(QuantMode QuantMode) : Op
     /// Gets bits.
     /// </summary>
     public static readonly ParameterInfo Bits = new(typeof(QuantParamOf), 1, "bits", IsIntegralScalar());
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"QuantMode.{QuantMode}";
 }

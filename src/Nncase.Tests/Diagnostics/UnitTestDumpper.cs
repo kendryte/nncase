@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.Random;
+using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using Nncase.Tests.ReWriteTest;
 using Nncase.Tests.TestFixture;
@@ -182,6 +184,27 @@ public sealed class UnitTestDumpper : TestClassBase
 
         Assert.True(Directory.Exists(Path.Join(Dumpper.Directory, "DisableRewrite", "0_ShapeInfer", "main", "Run_0", "Evaluate")));
         Assert.False(Directory.Exists(Path.Join(Dumpper.Directory, "DisableRewrite", "0_ShapeInfer", "main", "Run_0", "Rewrite")));
+    }
+
+    [Fact]
+    public void TestDumperCSharpIRFunction()
+    {
+        var x = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 });
+        var y = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 });
+        var z = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 });
+        var main = new Function("main", IR.F.Tensors.Concat(new IR.Tuple(new Expr[] { x, y, z }), 1), Array.Empty<Var>());
+        CompilerServices.DumpCSharpIR(main, string.Empty, Dumpper.Directory);
+    }
+
+    [Fact]
+    public void TestDumperCSharpIRFusion()
+    {
+        var x = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 });
+        var y = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 });
+        var z = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 });
+        var fusion = new Fusion("fusion", "stackvm", new IR.Tuple(new Expr[] { x, y, z }), Array.Empty<Var>());
+        var main = new Function("main", IR.F.Tensors.Concat(new Call(fusion, Array.Empty<Expr>()), 1), Array.Empty<Var>());
+        CompilerServices.DumpCSharpIR(main, string.Empty, Dumpper.Directory);
     }
 
     private async Task<Expr> RunShapeInferPass(string name, Expr expr, params Var[] parameters)

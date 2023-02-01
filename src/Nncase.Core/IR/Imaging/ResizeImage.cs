@@ -50,5 +50,8 @@ namespace Nncase.IR.Imaging
         /// Gets ExtrapolationValue.
         /// </summary>
         public static readonly ParameterInfo ExtrapolationValue = new(typeof(ResizeImage), 5, "extrapolation_value", IsNoneType() | IsFloatScalar());
+
+        /// <inheritdoc/>
+        public override string DisplayProperty() => $"ImageResizeMode.{ResizeMode}, ImageResizeTransformationMode.{TransformationMode}, ImageResizeNearestMode. {NearestMode}, {IsTFResize}";
     }
 }

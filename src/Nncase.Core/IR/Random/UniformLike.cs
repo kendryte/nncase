@@ -32,4 +32,7 @@ public sealed record UniformLike(DataType Type) : Op
     /// Gets seed.
     /// </summary>
     public static readonly ParameterInfo Seed = new(typeof(UniformLike), 3, "seed", IsFloatScalar());
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => Type.GetCSharpName();
 }

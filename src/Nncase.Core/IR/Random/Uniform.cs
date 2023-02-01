@@ -32,4 +32,7 @@ public sealed record Uniform(DataType Type) : Op
     /// Gets shape.
     /// </summary>
     public static readonly ParameterInfo Shape = new(typeof(Uniform), 3, "shape", IsIntegral() & HasRank(1));
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => Type.GetCSharpName();
 }

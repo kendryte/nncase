@@ -34,6 +34,9 @@ internal class Compiler : ICompiler
 
     public IRModule Module => _module ?? throw new InvalidOperationException("Module has not been imported");
 
+    /// <inheritdoc/>
+    public void ImportIRModule(IRModule module) => _module = module;
+
     public async Task<IRModule> ImportModuleAsync(Stream content)
     {
         var module = ImportModel(content);
