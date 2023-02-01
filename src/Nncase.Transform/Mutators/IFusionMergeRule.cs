@@ -26,22 +26,21 @@ public interface IMergeRewriteRule
     /// <summary>
     /// Create the pattern.
     /// </summary>
-    /// <param name="target_module_kind"></param>
     /// <returns>the pattern.</returns>
     Pattern CreatePattern(string target_module_kind);
 
     /// <summary>
     /// Get replace expression.
     /// </summary>
-    /// <param name="result">Match result.</param>
-    /// <param name="options">options.</param>
     /// <returns>Replace expression or null if nothing changed.</returns>
     Expr? GetReplace(
       Func<Expr, Expr> mergedFusionRewriteCallBack,
       Func<Fusion, HashSet<Fusion>, bool> mergedFusionCheckCallBack,
       Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack,
       Action<HashSet<Fusion>> candidateFusionRecordCallBack,
-      IUsedByResult usedByReslut, IMatchResult result, RunPassContext options);
+      IUsedByResult usedByReslut,
+      IMatchResult result,
+      RunPassContext options);
 }
 
 /// <summary>
@@ -54,7 +53,7 @@ public interface IMergeRewriteRule
 /// </summary>
 public class MultiInputFusionMergeRule : IMergeRewriteRule
 {
-    private readonly Pattern? _pattern;
+    private Pattern? _pattern;
 
     /// <summary>
     /// Gets the matched fusion module kind.
@@ -62,12 +61,12 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
     public virtual string ModuleKind => Callable.StackVMModuleKind;
 
     /// <inheritdoc/>
-    public IPattern Pattern => _pattern ?? CreatePattern(ModuleKind);
+    public IPattern Pattern => _pattern ??= CreatePattern(ModuleKind);
 
     /// <inheritdoc/>
     public virtual Pattern CreatePattern(string target_module_kind)
     {
-        var CalleePattern = IsCall(
+        var calleePattern = IsCall(
           "callee",
           IsFusion(
               "callee_fusion",
@@ -85,15 +84,15 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
               return new(pats);
           }));
 
-        var CallerPattern = IsCall(
+        var callerPattern = IsCall(
             "caller",
             IsFusion(
                 "caller_fusion",
                 target_module_kind,
                 IsWildcard(),
                 IsVArgs(IsWildcard())),
-            CalleePattern);
-        return CallerPattern;
+            calleePattern);
+        return callerPattern;
     }
 
     /// <inheritdoc/>
@@ -102,7 +101,9 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
       Func<Fusion, HashSet<Fusion>, bool> mergedFusionCheckCallBack,
       Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack,
       Action<HashSet<Fusion>> candidateFusionRecordCallBack,
-      IUsedByResult usedByReslut, IMatchResult result, RunPassContext options)
+      IUsedByResult usedByReslut,
+      IMatchResult result,
+      RunPassContext options)
     {
         var caller = (Call)result["caller"];
         var callee = (Call)result["callee"];
@@ -200,7 +201,7 @@ public class ShortCutFusionMergeRuleRight : ShortCutFusionMergeRuleLeft
 /// </summary>
 public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
 {
-    private readonly Pattern? _pattern;
+    private Pattern? _pattern;
 
     /// <summary>
     /// Gets the matched fusion module kind.
@@ -208,7 +209,7 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
     public virtual string ModuleKind => Callable.StackVMModuleKind;
 
     /// <inheritdoc/>
-    public IPattern Pattern => _pattern ?? CreatePattern(ModuleKind);
+    public IPattern Pattern => _pattern ??= CreatePattern(ModuleKind);
 
     /// <inheritdoc/>
     public virtual Pattern CreatePattern(string targetModuleKind) => CreatePattern(targetModuleKind, true);
@@ -219,7 +220,9 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
       Func<Fusion, HashSet<Fusion>, bool> mergedFusionCheckCallBack,
       Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack,
       Action<HashSet<Fusion>> candidateFusionRecordCallBack,
-      IUsedByResult usedByReslut, IMatchResult result, RunPassContext options)
+      IUsedByResult usedByReslut,
+      IMatchResult result,
+      RunPassContext options)
     {
         var caller = (Call)result["caller"];
         var callee = (Call)result["callee"];
@@ -311,7 +314,6 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
     /// </summary>
     /// <param name="targetModuleKind">module kind.</param>
     /// <param name="left">position.</param>
-    /// <returns></returns>
     protected Pattern CreatePattern(string targetModuleKind, bool left)
     {
         var calleeInput = IsWildcard("calleeInput");
@@ -343,7 +345,7 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
         return left ? IsAlt(callerPatternLeft, callerPatternRight) : IsAlt(callerPatternRight, callerPatternLeft);
     }
 
-    private (Fusion, List<Expr>) ProcessMergeFusion(Func<Expr, Expr> mergedFusionRewriteCallBack, Expr calleeInput, Expr callerOtherInput, Call caller, Call callee, Fusion callerFusion, Fusion calleeFusion, bool calleeInLeft)
+    private (Fusion Fusion, List<Expr> Inputs) ProcessMergeFusion(Func<Expr, Expr> mergedFusionRewriteCallBack, Expr calleeInput, Expr callerOtherInput, Call caller, Call callee, Fusion callerFusion, Fusion calleeFusion, bool calleeInLeft)
     {
         // 1. replace the caller_fusion input_var with the callee_fusion body
         var merged_fusion_body = Transform.Mutator.Substitute(
@@ -396,9 +398,12 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
             }
         }
 
-        return (new Fusion($"{callerFusion.Name}_{calleeFusion.Name}", ModuleKind,
-                           merged_fusion_body, ImmutableArray.CreateRange(fusionParams)),
-                callParams);
+        return (new Fusion(
+            $"{callerFusion.Name}_{calleeFusion.Name}",
+            ModuleKind,
+            merged_fusion_body,
+            ImmutableArray.CreateRange(fusionParams)),
+            callParams);
     }
 }
 
@@ -412,7 +417,7 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
 /// </summary>
 public class SameInputFusionMergeRule : IMergeRewriteRule
 {
-    private readonly Pattern? _pattern;
+    private Pattern? _pattern;
 
     /// <summary>
     /// Gets get ModuleKind.
@@ -420,14 +425,14 @@ public class SameInputFusionMergeRule : IMergeRewriteRule
     public virtual string ModuleKind => Callable.StackVMModuleKind;
 
     /// <inheritdoc/>
-    public IPattern Pattern => _pattern ?? CreatePattern(ModuleKind);
+    public IPattern Pattern => _pattern ??= CreatePattern(ModuleKind);
 
     /// <inheritdoc/>
     public virtual Pattern CreatePattern(string target_module_kind)
     {
         var inputPat = IsWildcard("input");
 
-        var CallerPattern = IsCall(
+        var callerPattern = IsCall(
             "caller",
             IsFusion(
                 "caller_fusion",
@@ -456,7 +461,7 @@ public class SameInputFusionMergeRule : IMergeRewriteRule
 
                 return new(callee_patterns);
             }));
-        return CallerPattern;
+        return callerPattern;
     }
 
     /// <inheritdoc/>
@@ -465,7 +470,9 @@ public class SameInputFusionMergeRule : IMergeRewriteRule
       Func<Fusion, HashSet<Fusion>, bool> mergedFusionCheckCallBack,
       Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack,
       Action<HashSet<Fusion>> candidateFusionRecordCallBack,
-      IUsedByResult usedByReslut, IMatchResult result, RunPassContext options)
+      IUsedByResult usedByReslut,
+      IMatchResult result,
+      RunPassContext options)
     {
         var caller = (Expr)result["caller"];
         var caller_fusion = (Fusion)result["caller_fusion"];
@@ -580,9 +587,16 @@ v2 =f2(v0)      v1 = f1(v0)
             }
         }
 
-        if (!ProcessFusionMerge(mergedFusionRewriteCallBack, candidateFusionCheckCallBack, caller, caller_fusion, caller_inputs,
-           input, result,
-           out var candidate_fusions, out var merged_fusion))
+        if (!ProcessFusionMerge(
+            mergedFusionRewriteCallBack,
+            candidateFusionCheckCallBack,
+            caller,
+            caller_fusion,
+            caller_inputs,
+            input,
+            result,
+            out var candidate_fusions,
+            out var merged_fusion))
         {
             return null;
         }
@@ -623,8 +637,7 @@ v2 =f2(v0)      v1 = f1(v0)
         return null;
     }
 
-    private bool ProcessFusionMerge(Func<Expr, Expr> mergedFusionRewriteCallBack, Func<HashSet<Fusion>, bool> candidate_fusion_checker, Expr caller, Fusion caller_fusion,
-      IReadOnlyList<Expr> caller_inputs, Expr input, IMatchResult result, out HashSet<Fusion> candidate_fusions, out Fusion merged_fusion)
+    private bool ProcessFusionMerge(Func<Expr, Expr> mergedFusionRewriteCallBack, Func<HashSet<Fusion>, bool> candidate_fusion_checker, Expr caller, Fusion caller_fusion, IReadOnlyList<Expr> caller_inputs, Expr input, IMatchResult result, out HashSet<Fusion> candidate_fusions, out Fusion merged_fusion)
     {
         merged_fusion = null!;
         candidate_fusions = new() { caller_fusion };

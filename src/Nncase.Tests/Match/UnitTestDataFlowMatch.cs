@@ -84,7 +84,7 @@ public class UnitTestDataFlowMatch : TestClassBase
         Var x = "x", y = "y";
         var z = x + y;
         var tuple = new IR.Tuple(x, y, z);
-        var tuplepat = PatternMatch.Utility.IsTuple(new Pattern[] { IsVar(), IsWildcard(), IsBinary(BinaryOp.Add, IsWildcard(), IsWildcard()) }, "tp");
+        var tuplepat = PatternMatch.Utility.IsTuple("tp", new Pattern[] { IsVar(), IsWildcard(), IsBinary(BinaryOp.Add, IsWildcard(), IsWildcard()) });
 
         Assert.True(CompilerServices.TryMatchRoot(tuple, tuplepat, out var _));
 
@@ -136,7 +136,7 @@ public class UnitTestDataFlowMatch : TestClassBase
 
         var input = (Expr)new[] { 1, 2, 3, 4 };
         var expr = input * IR.F.NN.Sigmoid(input);
-        CompilerServices.TryMatch(expr, pat, out var res);
+        Assert.True(CompilerServices.TryMatch(expr, pat, out var res));
         Assert.NotNull(res["input"]);
     }
 

@@ -25,7 +25,7 @@ public enum InterfaceKind
 /// </summary>
 public static class InterfaceKindExtensions
 {
-    public static (string return_type_name, string context_type_name) GetKindInfo(this InterfaceKind target_interface) => (target_interface.GetReturnType(), target_interface.GetContextType());
+    public static (string ReturnTypeName, string ContextTypeName) GetKindInfo(this InterfaceKind target_interface) => (target_interface.GetReturnType(), target_interface.GetContextType());
 
     public static string GetReturnType(this InterfaceKind target_interface) => target_interface switch
     {
@@ -51,10 +51,6 @@ public static class InterfaceKindExtensions
     /// <summary>
     /// check the return type , can process the interface type.
     /// </summary>
-    /// <param name="typeSymbol"></param>
-    /// <param name="interfaceKind"></param>
-    /// <returns></returns>
-    /// <exception cref="NotImplementedException"></exception>
     public static bool CheckReturnTypeRange(this ITypeSymbol typeSymbol, InterfaceKind interfaceKind) => interfaceKind switch
     {
         InterfaceKind.IEvaluator => typeSymbol switch
@@ -95,11 +91,6 @@ public static class InterfaceKindExtensions
 /// </summary>
 internal class GenerateCandidate
 {
-    public INamedTypeSymbol Class;
-    public INamedTypeSymbol Op;
-    public IMethodSymbol Method;
-    public InterfaceKind Target;
-
     public GenerateCandidate(INamedTypeSymbol classSymbol, INamedTypeSymbol opSymbol, IMethodSymbol method, InterfaceKind target_kind)
     {
         Class = classSymbol;
@@ -107,17 +98,25 @@ internal class GenerateCandidate
         Method = method;
         Target = target_kind;
     }
+
+    public INamedTypeSymbol Class { get; }
+
+    public INamedTypeSymbol Op { get; }
+
+    public IMethodSymbol Method { get; }
+
+    public InterfaceKind Target { get; }
 }
 
 [Generator]
 internal class EvaluatorGenerator : IIncrementalGenerator
 {
-    public INamedTypeSymbol? ExprSymobl;
-    public INamedTypeSymbol? TensorSymobl;
-    public INamedTypeSymbol? ParameterInfoSymobl;
-    public INamedTypeSymbol? IRTypeSymobl;
-    public INamedTypeSymbol? IEvaluateContextSymobl;
-    public INamedTypeSymbol? ITypeInferenceContext;
+    private INamedTypeSymbol? _exprSymobl;
+    private INamedTypeSymbol? _tensorSymobl;
+    private INamedTypeSymbol? _parameterInfoSymobl;
+    private INamedTypeSymbol? _irTypeSymobl;
+    private INamedTypeSymbol? _iEvaluateContextSymobl;
+    private INamedTypeSymbol? _iTypeInferenceContext;
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -137,10 +136,8 @@ internal class EvaluatorGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    /// check the calss have one more attr && one more base type && have Partial keyword.
+    /// check the calss have one more attr and one more base type and have Partial keyword.
     /// </summary>
-    /// <param name="node"></param>
-    /// <returns></returns>
     private static bool IsSyntaxTargetForGeneration(SyntaxNode node)
     {
         if (node is ClassDeclarationSyntax { BaseList: { } baselist } classDeclaration && classDeclaration.AttributeLists.Count > 0 && baselist.Types.Count > 0)
@@ -153,12 +150,12 @@ internal class EvaluatorGenerator : IIncrementalGenerator
 
     private IEnumerable<GenerateCandidate> GetSemanticTargetForGeneration(GeneratorSyntaxContext ctx)
     {
-        ExprSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Expr");
-        TensorSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Tensor");
-        IRTypeSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.IRType");
-        IEvaluateContextSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Evaluator.IEvaluateContext");
-        ITypeInferenceContext ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Evaluator.ITypeInferenceContext");
-        ParameterInfoSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.ParameterInfo");
+        _exprSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Expr");
+        _tensorSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Tensor");
+        _irTypeSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.IRType");
+        _iEvaluateContextSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Evaluator.IEvaluateContext");
+        _iTypeInferenceContext ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Evaluator.ITypeInferenceContext");
+        _parameterInfoSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.ParameterInfo");
 
         var classSymbol = ctx.SemanticModel.GetDeclaredSymbol((ClassDeclarationSyntax)ctx.Node)!;
         var eval_candidate = ReceiveTargetInterface(classSymbol, InterfaceKind.IEvaluator);
@@ -231,27 +228,23 @@ internal class EvaluatorGenerator : IIncrementalGenerator
         }
     }
 
-    ///
-    /// <returns></returns><summary>
+    /// <summary>
     /// build the value convert expression like:
-    /// var alpha = context.GetArgumentValueAsScalar.<int>(celu, Celu.Alpha);
+    /// var alpha = context.GetArgumentValueAsScalar&lt;int&gt;(celu, Celu.Alpha).
     /// </summary>
-    /// <param name="cand"></param>
-    /// <returns></returns>
-    /// <exception cref="NotSupportedException"></exception>
     private List<StatementSyntax> BuildStatements(GenerateCandidate cand)
     {
         var (return_type_name, context_type_name) = cand.Target.GetKindInfo();
         var statementSyntaxes = new List<StatementSyntax>();
-        var allOpParams = new HashSet<string>(cand.Op.GetMembers().OfType<IFieldSymbol>().Where(f => SymbolEqualityComparer.Default.Equals(f.Type, ParameterInfoSymobl)).Select(f => f.Name));
+        var allOpParams = new HashSet<string>(cand.Op.GetMembers().OfType<IFieldSymbol>().Where(f => SymbolEqualityComparer.Default.Equals(f.Type, _parameterInfoSymobl)).Select(f => f.Name));
 
         foreach (var parameter in cand.Method.Parameters)
         {
             // if (!cand.Op.MemberNames.Any(name => name == Parameter.Name))
             //     Context.Value.ReportDiagnostic(Diagnostic.Create(RecriverUtil.MethodParamError, Location.None, cand.Class.Name, string.Join(", ", cand.Method.Parameters.Select(p => p.Name)), cand.Op.Name));
             var paramType = parameter.Type;
-            if ((cand.Target == InterfaceKind.IEvaluator && SymbolEqualityComparer.Default.Equals(paramType, IEvaluateContextSymobl))
-              || (cand.Target == InterfaceKind.ITypeInferencer && SymbolEqualityComparer.Default.Equals(paramType, ITypeInferenceContext)))
+            if ((cand.Target == InterfaceKind.IEvaluator && SymbolEqualityComparer.Default.Equals(paramType, _iEvaluateContextSymobl))
+              || (cand.Target == InterfaceKind.ITypeInferencer && SymbolEqualityComparer.Default.Equals(paramType, _iTypeInferenceContext)))
             {
                 if (parameter.Name != "context")
                 {
@@ -278,7 +271,7 @@ internal class EvaluatorGenerator : IIncrementalGenerator
                     INamedTypeSymbol { IsReferenceType: true } x when x.ToDisplayString() == "Nncase.IValue" => $"GetArgumentValue",
                     INamedTypeSymbol { IsGenericType: true, IsReferenceType: true } x when x.Name == "Tensor" => $"GetArgumentValueAsTensor<{x.TypeArguments[0].ToDisplayString()}>",
                     IArrayTypeSymbol { ElementType: { IsUnmanagedType: true, IsValueType: true } e } x => $"GetArgumentValueAsArray<{e.ToDisplayString()}>",
-                    { IsReferenceType: true } x when SymbolEqualityComparer.Default.Equals(x, TensorSymobl) => $"GetArgumentValueAsTensor",
+                    { IsReferenceType: true } x when SymbolEqualityComparer.Default.Equals(x, _tensorSymobl) => $"GetArgumentValueAsTensor",
                     { IsReferenceType: true } x when x.ToDisplayString().EndsWith("OrtKISharp.Tensor") => "GetOrtArgumentValue",
                     { IsUnmanagedType: true, IsValueType: true } x => $"GetArgumentValueAsScalar<{paramType.ToDisplayString()}>",
                     _ => throw new NotSupportedException($"Convert {cand.Class.Name} Params {paramType.ToDisplayString()} For IEvaluator Impl!"),
@@ -286,8 +279,8 @@ internal class EvaluatorGenerator : IIncrementalGenerator
 
                 InterfaceKind.ITypeInferencer => paramType switch
                 {
-                    { IsReferenceType: true } x when x.IsInheritFrom(IRTypeSymobl) => $"CheckArgumentType<{x}>",
-                    var x when SymbolEqualityComparer.Default.Equals(x, ExprSymobl) => $"GetArgument",
+                    { IsReferenceType: true } x when x.IsInheritFrom(_irTypeSymobl) => $"CheckArgumentType<{x}>",
+                    var x when SymbolEqualityComparer.Default.Equals(x, _exprSymobl) => $"GetArgument",
                     _ => throw new NotSupportedException($"Convert {cand.Class.Name} Params {paramType.ToDisplayString()} For ITypeInferencer Impl!"),
                 },
 
@@ -316,21 +309,17 @@ internal class EvaluatorGenerator : IIncrementalGenerator
         return statementSyntaxes;
     }
 
-    ///
-    /// <returns></returns><summary>
+    /// <summary>
     /// build the whole call method like:
     /// <code>
     /// public IValue Visit(IEvaluateContext context, Celu celu)
     /// {
     ///     var input = context.GetTorchArgumentValue(celu, Celu.Input);
-    ///     var alpha = context.GetArgumentValueAsScalar<int>(celu, Celu.Alpha);
+    ///     var alpha = context.GetArgumentValueAsScalar&lt;int&gt;(celu, Celu.Alpha);
     ///     return Visit(context, celu, input, alpha);
     /// }
     /// </code>
     /// </summary>
-    /// <param name="cand"></param>
-    /// <param name="statements"></param>
-    /// <returns></returns>
     private MethodDeclarationSyntax BuildMethod(GenerateCandidate cand, IEnumerable<StatementSyntax> statements)
     {
         var (return_type_name, context_type_name) = cand.Target.GetKindInfo();
@@ -348,8 +337,8 @@ internal class EvaluatorGenerator : IIncrementalGenerator
     private CompilationUnitSyntax BuildFile(SourceProductionContext context, IEnumerable<GenerateCandidate> candidates1)
     {
         List<NamespaceDeclarationSyntax> namespaceDeclarations = new();
-        var namespaceCandidates = candidates1.GroupBy(keySelector: can => can.Class.ContainingNamespace, SymbolEqualityComparer.Default).ToDictionary(g => g.Key, g => g.ToList(), SymbolEqualityComparer.Default);
-        foreach (var (Namespace, candidates) in namespaceCandidates.Select(kv => (kv.Key, kv.Value)))
+        var namespaceCandidates = candidates1.GroupBy(keySelector: can => can.Class.ContainingNamespace, (IEqualityComparer<ISymbol>)SymbolEqualityComparer.Default).ToDictionary(g => g.Key, g => g.ToList(), SymbolEqualityComparer.Default);
+        foreach (var (@namespace, candidates) in namespaceCandidates.Select(kv => (kv.Key, kv.Value)))
         {
             List<ClassDeclarationSyntax> classDeclarations = new();
             foreach (var cand in candidates)
@@ -373,15 +362,15 @@ internal class EvaluatorGenerator : IIncrementalGenerator
 
             // 4. generate the namespaces
             namespaceDeclarations.Add(
-                GeneratorUtil.MakeNameSpace(Namespace!.ToDisplayString()).
+                GeneratorUtil.MakeNameSpace(@namespace!.ToDisplayString()).
                     AddMembers(classDeclarations.ToArray()));
         }
 
         // 4. generate the file
-        var compilationUnit = CompilationUnit().
-                WithMembers(new(namespaceDeclarations)).
-                WithLeadingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.DisableKeyword)).
-                WithTrailingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.RestoreKeyword));
+        var compilationUnit = CompilationUnit()
+            .WithMembers(new(namespaceDeclarations))
+            .WithLeadingTrivia(Comment(Constants.GeneratedFileHeader), GeneratorUtil.MakeWarningTrivid(SyntaxKind.DisableKeyword))
+            .WithTrailingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.RestoreKeyword));
         return compilationUnit;
     }
 }

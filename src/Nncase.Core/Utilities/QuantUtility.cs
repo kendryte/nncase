@@ -42,11 +42,6 @@ public static class QuantUtility
     /// <summary>
     /// GetQuantParam.
     /// </summary>
-    /// <param name="range"></param>
-    /// <param name="bits"></param>
-    /// <param name="quantMode"></param>
-    /// <returns></returns>
-    /// <exception cref="ArgumentOutOfRangeException"></exception>
     public static QuantParam GetQuantParam(ValueRange<float> range, int bits, QuantMode quantMode)
     {
         range = FixupRange(range, quantMode == QuantMode.SignedSymmetricMode);
@@ -67,7 +62,7 @@ public static class QuantUtility
                 qMax = (1 << (bits - 1)) - 1;
                 break;
             default:
-                throw new ArgumentOutOfRangeException("Invalid QuantMode");
+                throw new ArgumentOutOfRangeException(nameof(quantMode), "Invalid QuantMode");
         }
 
         var scale = (range.Max - range.Min) / (qMax - qMin);
@@ -78,9 +73,6 @@ public static class QuantUtility
     /// <summary>
     /// fixup range.
     /// </summary>
-    /// <param name="range"></param>
-    /// <param name="symmetric"></param>
-    /// <returns></returns>
     public static ValueRange<float> FixupRange(ValueRange<float> range, bool symmetric = false)
     {
         if (symmetric)
@@ -239,7 +231,7 @@ public static class QuantUtility
             }
             else
             {
-                throw new Exception("By layer weights quant is not supported.");
+                throw new NotSupportedException("By layer weights quant is not supported.");
             }
         }
         else
@@ -263,7 +255,7 @@ public static class QuantUtility
             }
             else
             {
-                throw new Exception("By layer weights quant is not supported.");
+                throw new NotSupportedException("By layer weights quant is not supported.");
             }
         }
 
@@ -476,7 +468,7 @@ public static class QuantUtility
             }
             else
             {
-                throw new Exception("By layer weights quant is not supported.");
+                throw new NotSupportedException("By layer weights quant is not supported.");
             }
         }
         else
@@ -500,7 +492,7 @@ public static class QuantUtility
             }
             else
             {
-                throw new Exception("By layer weights quant is not supported.");
+                throw new NotSupportedException("By layer weights quant is not supported.");
             }
         }
 
@@ -516,7 +508,9 @@ public static class QuantUtility
 
         torch.Tensor qmin_tensor = qmin;
         torch.Tensor qmax_tensor = qmax;
-        for (int i = 0; i < iters; i++) // 训练迭代
+
+        // 训练迭代
+        for (int i = 0; i < iters; i++)
         {
             int idx = i % n; // 原来是随机
 
@@ -561,10 +555,13 @@ public static class QuantUtility
             torch.Tensor out_quant;
             if (adamode == AdaMode.Conv2D)
             {
-                if (padding_h_s != padding_h_e || padding_w_s != padding_w_e) // torch不支持非对称padding conv，需要拆算子
+                // torch不支持非对称padding conv，需要拆算子
+                if (padding_h_s != padding_h_e || padding_w_s != padding_w_e)
                 {
                     var padding_tmp = torch.nn.functional.pad(cur_inp, new long[] { padding_h_s, padding_h_e, padding_w_s, padding_w_e });
-                    out_quant = torch.nn.functional.conv2d(padding_tmp, x_float_q,
+                    out_quant = torch.nn.functional.conv2d(
+                        padding_tmp,
+                        x_float_q,
                         strides: new long[] { stride_h, stride_w },
                         padding: new long[] { 0, 0 },
                         dilation: new long[] { dilation_h, dilation_w },
@@ -572,7 +569,9 @@ public static class QuantUtility
                 }
                 else
                 {
-                    out_quant = torch.nn.functional.conv2d(cur_inp, x_float_q,
+                    out_quant = torch.nn.functional.conv2d(
+                        cur_inp,
+                        x_float_q,
                         strides: new long[] { stride_h, stride_w },
                         padding: new long[] { padding_h_s, padding_w_s },
                         dilation: new long[] { dilation_h, dilation_w },
@@ -581,9 +580,12 @@ public static class QuantUtility
             }
             else if (adamode == AdaMode.Conv2DTranspose)
             {
-                if (padding_h_s != padding_h_e || padding_w_s != padding_w_e) // torch不支持非对称padding conv_transpose2d，需要拆算子
+                // torch不支持非对称padding conv_transpose2d，需要拆算子
+                if (padding_h_s != padding_h_e || padding_w_s != padding_w_e)
                 {
-                    var out_tmp = torch.nn.functional.conv_transpose2d(cur_inp, x_float_q,
+                    var out_tmp = torch.nn.functional.conv_transpose2d(
+                        cur_inp,
+                        x_float_q,
                         strides: new long[] { stride_h, stride_w },
                         padding: new long[] { 0, 0 },
                         dilation: new long[] { dilation_h, dilation_w },
@@ -598,7 +600,9 @@ public static class QuantUtility
                 }
                 else
                 {
-                    out_quant = torch.nn.functional.conv_transpose2d(cur_inp, x_float_q,
+                    out_quant = torch.nn.functional.conv_transpose2d(
+                        cur_inp,
+                        x_float_q,
                         strides: new long[] { stride_h, stride_w },
                         padding: new long[] { padding_h_e, padding_w_e },
                         dilation: new long[] { dilation_h, dilation_w },
@@ -660,8 +664,7 @@ public static class QuantUtility
         // return inputWeights;
     }
 
-    private static void Rounding_forward(float rounding_error_sum, ref torch.Tensor rounding_number_, ref torch.Tensor rounding_error_,
-    torch.Tensor number_, torch.Tensor error_, ref torch.Tensor priority_, torch.Tensor order_, ref torch.Tensor priority_1)
+    private static void Rounding_forward(float rounding_error_sum, ref torch.Tensor rounding_number_, ref torch.Tensor rounding_error_, torch.Tensor number_, torch.Tensor error_, ref torch.Tensor priority_, torch.Tensor order_, ref torch.Tensor priority_1)
     {
         int topk = (int)System.Math.Round(System.Math.Abs(rounding_error_sum));
         bool over_squant = topk >= System.Math.Abs(rounding_error_sum);
@@ -683,9 +686,7 @@ public static class QuantUtility
         }
     }
 
-    private static void SQuant_func(torch.Tensor rounding_error_sum, ref torch.Tensor rounding_number, ref torch.Tensor rounding_error,
-        torch.Tensor up_number, torch.Tensor up_error, ref torch.Tensor up_priority, torch.Tensor up_order,
-        torch.Tensor down_number, torch.Tensor down_error, ref torch.Tensor down_priority, torch.Tensor down_order)
+    private static void SQuant_func(torch.Tensor rounding_error_sum, ref torch.Tensor rounding_number, ref torch.Tensor rounding_error, torch.Tensor up_number, torch.Tensor up_error, ref torch.Tensor up_priority, torch.Tensor up_order, torch.Tensor down_number, torch.Tensor down_error, ref torch.Tensor down_priority, torch.Tensor down_order)
     {
         var rounding_number_shape = rounding_number.shape;
         var batch_size = rounding_number_shape[0];
@@ -700,8 +701,7 @@ public static class QuantUtility
                     var rounding_error_ = rounding_error[n][c];
                     var priority_ = up_priority[n][c];
                     var priority_1 = down_priority[n][c];
-                    Rounding_forward((float)rounding_error_sum[n][c], ref rounding_number_, ref rounding_error_,
-                        up_number[n][c], up_error[n][c], ref priority_, up_order[n][c], ref priority_1);
+                    Rounding_forward((float)rounding_error_sum[n][c], ref rounding_number_, ref rounding_error_, up_number[n][c], up_error[n][c], ref priority_, up_order[n][c], ref priority_1);
                     rounding_number[n][c] = rounding_number_;
                     rounding_error[n][c] = rounding_error_;
                     up_priority[n][c] = priority_;
@@ -713,8 +713,7 @@ public static class QuantUtility
                     var rounding_error_ = rounding_error[n][c];
                     var priority_ = down_priority[n][c];
                     var priority_1 = up_priority[n][c];
-                    Rounding_forward((float)rounding_error_sum[n][c], ref rounding_number_, ref rounding_error_,
-                        down_number[n][c], down_error[n][c], ref priority_, down_order[n][c], ref priority_1);
+                    Rounding_forward((float)rounding_error_sum[n][c], ref rounding_number_, ref rounding_error_, down_number[n][c], down_error[n][c], ref priority_, down_order[n][c], ref priority_1);
                     rounding_number[n][c] = rounding_number_;
                     rounding_error[n][c] = rounding_error_;
                     down_priority[n][c] = priority_;
@@ -776,8 +775,7 @@ public static class QuantUtility
             down_number = down_number.reshape(conver_shape);
             down_error = down_error.reshape(conver_shape);
             down_priority = down_priority.reshape(conver_shape);
-            SQuant_func(rounding_error_sum, ref rounding_number, ref rounding_error, up_number, up_error, ref up_priority, up_order,
-                down_number, down_error, ref down_priority, down_order);
+            SQuant_func(rounding_error_sum, ref rounding_number, ref rounding_error, up_number, up_error, ref up_priority, up_order, down_number, down_error, ref down_priority, down_order);
             rounding_number = rounding_number.reshape(x.shape);
             rounding_error = rounding_error.reshape(x.shape);
             up_priority = up_priority.reshape(x.shape);
@@ -801,8 +799,7 @@ public static class QuantUtility
             down_number = down_number.reshape(conver_shape);
             down_error = down_error.reshape(conver_shape);
             down_priority = down_priority.reshape(conver_shape);
-            SQuant_func(rounding_error_sum, ref rounding_number, ref rounding_error, up_number, up_error, ref up_priority, up_order,
-                down_number, down_error, ref down_priority, down_order);
+            SQuant_func(rounding_error_sum, ref rounding_number, ref rounding_error, up_number, up_error, ref up_priority, up_order, down_number, down_error, ref down_priority, down_order);
         }
 
         rounding_number = rounding_number.reshape(x.shape);

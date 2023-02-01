@@ -9,6 +9,32 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR.K210;
 
+/// <summary>
+/// KPU filter type.
+/// </summary>
+public enum KPUFilterType
+{
+    Filter_1x1 = 0,
+    Filter_3x3 = 1,
+}
+
+/// <summary>
+/// KPU pool type.
+/// </summary>
+public enum KPUPoolType
+{
+    Bypass = 0,
+    Max_2_S2 = 1,
+    Mean_2_S2 = 2,
+    Max_4_S4 = 3,
+    Mean_4_S4 = 4,
+    LeftTop_2_S2 = 5,
+    RightTop_2_S2 = 6,
+    LeftTop_4_S4 = 7,
+    Mean_2_S1 = 8,
+    Max_2_S1 = 9,
+}
+
 public record struct KPUBatchNormSegment
 {
     public int Mul { get; set; }
@@ -38,30 +64,13 @@ public record struct FakeKPUActivationSegment
     public float Add { get; set; }
 }
 
-/// <summary>
-/// KPU filter type.
-/// </summary>
-public enum KPUFilterType
+public record struct Kpu_conv2d_quant_args
 {
-    Filter_1x1 = 0,
-    Filter_3x3 = 1,
-}
-
-/// <summary>
-/// KPU pool type.
-/// </summary>
-public enum KPUPoolType
-{
-    Bypass = 0,
-    Max_2_S2 = 1,
-    Mean_2_S2 = 2,
-    Max_4_S4 = 3,
-    Mean_4_S4 = 4,
-    LeftTop_2_S2 = 5,
-    RightTop_2_S2 = 6,
-    LeftTop_4_S4 = 7,
-    Mean_2_S1 = 8,
-    Max_2_S1 = 9,
+    public int ArgX;
+    public int ShiftX;
+    public int ArgW;
+    public int ShiftW;
+    public int ArgAdd;
 }
 
 /// <summary>
@@ -88,15 +97,6 @@ public class KPUActivationParameters
 public class KPUBatchNormParameters
 {
     public KPUBatchNormSegment[] Segments { get; } = Array.Empty<KPUBatchNormSegment>();
-}
-
-public class Kpu_conv2d_quant_args
-{
-    private readonly int _argX;
-    private readonly int _shiftX;
-    private readonly int _argW;
-    private readonly int _shiftW;
-    private readonly int _argAdd;
 }
 
 public record class FakeKPUActivationParameters

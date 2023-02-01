@@ -18,14 +18,14 @@ public interface IIfThenElseBuilder : IExprBuilder<IfThenElse>
     /// <summary>
     /// then block.
     /// </summary>
-    /// <param name="exprs"> statements. </param>
+    /// <param name="exprOrBuilders"> statements. </param>
     /// <returns> IfThenElseBuilder. </returns>
     IIfThenElseBuilder Then(params object[] exprOrBuilders);
 
     /// <summary>
     /// else block.
     /// </summary>
-    /// <param name="exprs"> statements. </param>
+    /// <param name="exprOrBuilders"> statements. </param>
     /// <returns> IfThenElseBuilder. </returns>
     IIfThenElseBuilder Else(params object[] exprOrBuilders);
 }

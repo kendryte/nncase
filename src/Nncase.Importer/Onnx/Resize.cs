@@ -53,8 +53,16 @@ namespace Nncase.Importer
             var cubicCoeffA = GetFloatAttribute(op, "cubic_coeff_a", -0.75f);
             var excludeOutside = GetBoolAttribute(op, "exclude_outside", false);
             var extrapolationValue = GetFloatAttribute(op, "extrapolation_value", -0.0f);
-            return F.Imaging.ResizeImage(mode, transformationMode, nearestMode, input, roi, newSize, cubicCoeffA,
-                excludeOutside, extrapolationValue);
+            return F.Imaging.ResizeImage(
+                mode,
+                transformationMode,
+                nearestMode,
+                input,
+                roi,
+                newSize,
+                cubicCoeffA,
+                excludeOutside,
+                extrapolationValue);
         }
 
         private ImageResizeMode GetResizeMode(NodeProto op)

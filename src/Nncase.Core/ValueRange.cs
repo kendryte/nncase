@@ -19,7 +19,7 @@ public record struct ValueRange<T>(T Min, T Max)
     /// <summary>
     /// Gets full value range.
     /// </summary>
-    public static ValueRange<T> Full => (Limits.MinValue, Limits.MaxValue);
+    public static ValueRange<T> Full { get; } = (Limits.MinValue, Limits.MaxValue);
 
     public bool IsFull => this == Full;
 

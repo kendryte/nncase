@@ -42,8 +42,6 @@ public sealed class UnRollLoop : ExprMutator
     /// <summary>
     /// convert the loop var to tensor const.
     /// </summary>
-    /// <param name="loop"></param>
-    /// <returns></returns>
     private static IEnumerable<TensorConst> MakeGrid(TIR.For loop)
     {
         int start = ((TensorConst)loop.Domain.Start).Value.ToScalar<int>();

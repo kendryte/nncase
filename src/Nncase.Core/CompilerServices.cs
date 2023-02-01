@@ -54,10 +54,6 @@ public interface ICompilerServicesProvider
     /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.{ext}`
     /// else write to {dumpPath}/{prefix}_{expr.Type.name}.il`.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <param name="prefix"></param>
-    /// <param name="dumpPath"></param>
-    /// <param name="display_callable"></param>
     void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable);
 
     /// <summary>
@@ -66,23 +62,18 @@ public interface ICompilerServicesProvider
     /// not support prim func/prim func wrapper.
     /// </remarks>
     /// </summary>
-    /// <param name="expr"></param>
-    /// <param name="prefix"></param>
-    /// <param name="dumpPath"></param>
-    /// <param name="display_callable"></param>
     void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable);
 
     /// <summary>
     /// print ir type.
     /// </summary>
-    /// <param name="type"></param>
-    /// <returns></returns>
     string Print(IRType type);
 
     /// <summary>
     /// print ir type.
     /// </summary>
     /// <param name="expr"> the expression. </param>
+    /// <param name="useScript">Print script format.</param>
     /// <returns>the string.</returns>
     string Print(Expr expr, bool useScript);
 
@@ -404,7 +395,6 @@ public static class CompilerServices
     /// <returns>Result.</returns>
     public static string PrintOp(Op op, IIRPrinterContext context, bool iLmode) => Provider.PrintOp(op, context, iLmode);
 
-    /// <inheritdoc/>
     public static void DumpIR(Expr expr, string prefix, string dumpPath, bool display_callable = true) =>
       Provider.DumpIR(expr, prefix, dumpPath, display_callable);
 
@@ -414,17 +404,11 @@ public static class CompilerServices
     /// not support prim func/prim func wrapper.
     /// </remarks>
     /// </summary>
-    /// <param name="expr"></param>
-    /// <param name="prefix"></param>
-    /// <param name="dumpPath"></param>
-    /// <param name="display_callable"></param>
     public static void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable = true) =>
       Provider.DumpDotIR(expr, prefix, dumpPath, display_callable);
 
-    /// <inheritdoc/>
     public static string Print(IRType type) => Provider.Print(type);
 
-    /// <inheritdoc/>
     public static string Print(Expr expr, bool useScript = false) => Provider.Print(expr, useScript);
 
     /// <summary>

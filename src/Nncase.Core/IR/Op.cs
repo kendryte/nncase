@@ -68,7 +68,6 @@ public sealed class ParameterInfo
     /// <summary>
     /// Check current type by pattern.
     /// </summary>
-    /// <param name="type"></param>
     /// <returns> check success. </returns>
     public bool CheckType(IRType type) => Pattern.MatchLeaf(type);
 }
@@ -107,7 +106,7 @@ public abstract record Op() : Expr
     /// <inheritdoc/>
     public override int GetHashCode()
     {
-        return _hashcode ??= EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
+        return HashCodeCache ??= EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
     }
 
     /// <summary>
@@ -123,7 +122,6 @@ public abstract record Op() : Expr
 /// <summary>
 /// Custom Op.
 /// </summary>
-/// <param name="RegisteredName"></param>
 public abstract record CustomOp(string RegisteredName) : Op
 {
     /// <summary>
@@ -135,7 +133,6 @@ public abstract record CustomOp(string RegisteredName) : Op
     /// Serialize Fields Value.
     /// will used in stackvm runtime.
     /// </summary>
-    /// <returns></returns>
     public virtual byte[] SerializeFields()
     {
         return Array.Empty<byte>();

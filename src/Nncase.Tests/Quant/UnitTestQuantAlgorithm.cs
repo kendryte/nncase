@@ -29,6 +29,7 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.QuantTest;
 
+[AutoSetupTestMethod(InitSession = true)]
 public class UnitTestKLQuant : TestClassBase
 {
     [Fact]
@@ -41,7 +42,6 @@ public class UnitTestKLQuant : TestClassBase
     }
 
     [Fact]
-    [AutoSetupTestMethod(InitSession = true)]
     public async Task TestKLQuant()
     {
         CompileOptions.QuantizeOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
@@ -81,7 +81,7 @@ public class UnitTestKLQuant : TestClassBase
         // 0. TargetIndependentPass
         pmgr.AddWithName<DataflowPass>("TargetInDependent").Configure(p =>
         {
-            p.Add<AddRangeOfAndMarkerToConv2D>();
+            p.Add<AddRangeOfAndMarker>();
         });
 
         // 1. AssignRanges
@@ -91,11 +91,11 @@ public class UnitTestKLQuant : TestClassBase
         var dumpVisitor = new DumpVisitor();
         dumpVisitor.Visit(module.Functions[0]);
 
-        Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0], -1.0001221f);
+        Assert.Equal(-1.0001221f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0]);
         Assert.Equal(1.0001087f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[1]);
-        Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[0], -1.0001218f);
+        Assert.Equal(-1.0001218f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[0]);
         Assert.Equal(0.9954922f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[1]);
-        Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[0], -8.882528f);
+        Assert.Equal(-8.882528f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[0]);
         Assert.Equal(9.717726f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[1]);
     }
 

@@ -51,6 +51,7 @@ public sealed class UnitTestFixedMul
         var mul = 2.0F;
         var shift = (sbyte)0;
         var a = new FixedMul(mul, shift);
-        Assert.Throws<NotImplementedException>(() => a.GetHashCode());
+        var b = new FixedMul(mul, shift);
+        Assert.Equal(a.GetHashCode(), b.GetHashCode());
     }
 }

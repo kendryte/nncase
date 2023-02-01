@@ -52,8 +52,6 @@ public static partial class Utility
     /// <summary>
     /// build wildcard pattern.
     /// </summary>
-    /// <param name="name"></param>
-    /// <returns></returns>
     public static ExprPattern IsWildcard(string? name) => new ExprPattern(name);
 
     /// <summary>
@@ -61,18 +59,15 @@ public static partial class Utility
     /// </summary>
     /// <param name="name">name.</param>
     /// <param name="condition">conditions.</param>
-    /// <returns></returns>
     public static ExprPattern IsWildcard(string? name, Func<Expr, bool> condition) => new ExprPattern(condition, name);
 
     /// <summary>
     /// <see cref="IsWildcard(string?)"/>.
     /// </summary>
-    /// <returns></returns>
     public static ExprPattern IsWildcard() => IsWildcard(null);
 
     /// <summary>
     /// fast utitlty for build optional none pattern.
     /// </summary>
-    /// <returns></returns>
     public static ExprPattern IsNone() => new ExprPattern(e => e == None.Default, null);
 }

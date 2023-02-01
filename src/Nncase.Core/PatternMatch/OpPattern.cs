@@ -50,12 +50,22 @@ public record OpPattern<TOp>(Func<TOp, bool> Condition, string? Name) : Pattern<
 public static partial class Utility
 {
     /// <summary>
-    /// is op pattern.
+    /// create op pattern.
     /// </summary>
-    /// <typeparam name="TOp"></typeparam>
-    /// <param name="name"></param>
-    /// <param name="condition"></param>
-    /// <returns></returns>
+    /// <typeparam name="TOp">op type.</typeparam>
+    /// <param name="name">name.</param>
+    /// <returns>op pattern.</returns>
+    public static OpPattern<TOp> IsOp<TOp>(string? name)
+     where TOp : Op
+     => new OpPattern<TOp>(op => true, name);
+
+    /// <summary>
+    /// create op pattern.
+    /// </summary>
+    /// <typeparam name="TOp">op type.</typeparam>
+    /// <param name="name">name.</param>
+    /// <param name="condition">op condition.</param>
+    /// <returns>op pattern.</returns>
     public static OpPattern<TOp> IsOp<TOp>(string? name, Func<TOp, bool> condition)
        where TOp : Op
        => new OpPattern<TOp>(condition, name);
@@ -63,9 +73,6 @@ public static partial class Utility
     /// <summary>
     /// is op pattern without name. <see cref="IsOp{TOp}(string?, Func{TOp, bool})"/>.
     /// </summary>
-    /// <typeparam name="TOp"></typeparam>
-    /// <param name="condition"></param>
-    /// <returns></returns>
     public static OpPattern<TOp> IsOp<TOp>(Func<TOp, bool> condition)
        where TOp : Op
         => IsOp<TOp>(null, condition);

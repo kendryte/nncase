@@ -17,8 +17,7 @@ namespace Nncase.SourceGenerator.Pattern;
 [Generator]
 public class PatternGenerator : IIncrementalGenerator
 {
-    // public void Initialize(GeneratorInitializationContext context) => context.RegisterForSyntaxNotifications(() => new PatternReceiver());
-    public INamedTypeSymbol? OpSymobl;
+    private INamedTypeSymbol? _opSymobl;
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -40,7 +39,7 @@ public class PatternGenerator : IIncrementalGenerator
 
     private static void Execute(SourceProductionContext context, ImmutableArray<GenerateCandidate> receiveCandidates)
     {
-        var groupedCandidates = receiveCandidates.GroupBy(cand => cand.Op.ContainingNamespace, SymbolEqualityComparer.Default).Select(g => (g.Key, g.ToArray()));
+        var groupedCandidates = receiveCandidates.GroupBy(cand => cand.Op.ContainingNamespace, (IEqualityComparer<ISymbol>)SymbolEqualityComparer.Default).Select(g => (g.Key, g.ToArray()));
 
         List<NamespaceDeclarationSyntax> namespaces = new();
         foreach (var (old_namespace, candidates) in groupedCandidates)
@@ -169,10 +168,10 @@ new VArgsPattern( new [] {{ {inputs} }}, null ),
             namespaces.Add(namespcae);
         }
 
-        var compilationUnit = CompilationUnit().
-                WithMembers(new SyntaxList<MemberDeclarationSyntax>(namespaces)).
-                WithLeadingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.DisableKeyword)).
-                WithTrailingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.RestoreKeyword));
+        var compilationUnit = CompilationUnit()
+            .WithMembers(new SyntaxList<MemberDeclarationSyntax>(namespaces))
+            .WithLeadingTrivia(Comment(Constants.GeneratedFileHeader), GeneratorUtil.MakeWarningTrivid(SyntaxKind.DisableKeyword))
+            .WithTrailingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.RestoreKeyword));
 
         context.AddSource("Ops.Pattern", SyntaxTree(compilationUnit, encoding: Encoding.UTF8).GetText());
 
@@ -181,12 +180,12 @@ new VArgsPattern( new [] {{ {inputs} }}, null ),
 
     private GenerateCandidate? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
     {
-        OpSymobl ??= context.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Op");
+        _opSymobl ??= context.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Op");
 
         var recordDeclaration = (RecordDeclarationSyntax)context.Node;
         var op = context.SemanticModel.GetDeclaredSymbol(recordDeclaration);
 
-        if (op!.BaseType.IsInheritFrom(OpSymobl) &&
+        if (op!.BaseType.IsInheritFrom(_opSymobl) &&
             op!.GetAttributes().Any(attr => attr!.AttributeClass!.Name == "PatternFunctionalGeneratorAttribute"))
         {
             IParameterSymbol[] attrParams = recordDeclaration.ParameterList is null ?
@@ -222,11 +221,6 @@ internal class UsingComparer : IEqualityComparer<UsingDirectiveSyntax>
 
 internal class GenerateCandidate
 {
-    public INamedTypeSymbol Op;
-    public IParameterSymbol[] AttrParams;
-    public ISymbol[] ExprParams;
-    public UsingDirectiveSyntax[] UsingSyntaxs;
-
     public GenerateCandidate(INamedTypeSymbol syb, IParameterSymbol[] attrParams, ISymbol[] exprParams, UsingDirectiveSyntax[] usings)
     {
         Op = syb;
@@ -234,4 +228,12 @@ internal class GenerateCandidate
         ExprParams = exprParams;
         UsingSyntaxs = usings;
     }
+
+    public INamedTypeSymbol Op { get; }
+
+    public IParameterSymbol[] AttrParams { get; }
+
+    public ISymbol[] ExprParams { get; }
+
+    public UsingDirectiveSyntax[] UsingSyntaxs { get; }
 }

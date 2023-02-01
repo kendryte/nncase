@@ -13,13 +13,13 @@
         </PackageReference>
         <PackageReference Include="LanguageExt.Core" />
         <PackageReference Include="MethodBoundaryAspect.Fody" />
-        <PackageReference Include="xunit.assert" />
         <PackageReference Include="Xunit.Combinatorial" />
         <PackageReference Include="Xunit.DependencyInjection" />
         <PackageReference Include="xunit.runner.visualstudio">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
+        <PackageReference Include="xunit.v3.assert" />
     </ItemGroup>
     
     <ItemGroup>

@@ -24,7 +24,7 @@ using Math = Nncase.IR.F.Math;
 namespace Nncase.Transform.Rules.K210;
 
 /// <summary>
-/// Lower <see cref="IR.K210.FakeQuantize"/> to <see cref="IR.K210.Quantize"/>.
+/// Lower <see cref="FakeQuantize"/> to <see cref="Quantize"/>.
 /// </summary>
 [RuleGenerator]
 public sealed partial class RealizeFakeQuantize : IRewriteRule
@@ -35,10 +35,7 @@ public sealed partial class RealizeFakeQuantize : IRewriteRule
            "quant_call",
            op => true,
            IsWildcard("input"),
-           IsQuantParamOf("quantparam", op => true,
-               IsConst("range"), IsConst("bits"))
-               with
-           { TypePattern = HasFixedShape() });
+           IsQuantParamOf("quantparam", op => true, IsConst("range"), IsConst("bits")) with { TypePattern = HasFixedShape() });
 
     private Expr? GetReplace(Call quant_call, Expr input, Expr quantparam, Tensor<float> range, int bits)
     {

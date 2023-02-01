@@ -43,8 +43,7 @@ public static class DumpPathExtractor
     // used for transformer
     public static bool DynamicMatmulOnlyExtract(string fileName)
     {
-        var lower = fileName.ToLower();
-        return lower.Contains("mat") && lower.EndsWith("mul");
+        return fileName.Contains("mat", StringComparison.OrdinalIgnoreCase) && fileName.EndsWith("mul", StringComparison.OrdinalIgnoreCase);
     }
 }
 
@@ -56,7 +55,7 @@ public class TextDataExtractor
     public int GetDumpFileNum(string filePath)
     {
         var fileName = Path.GetFileName(filePath);
-        if (fileName.Contains("out_shape_list"))
+        if (fileName.Contains("out_shape_list", StringComparison.Ordinal))
         {
             return -1;
         }
@@ -88,11 +87,7 @@ public class TextDataExtractor
         return GetFilesByOrdered(dir).GroupBy(file => string.Join(Separator, file.Split(Separator)[..2]));
     }
 
-    /// <summary>
-    ///
-    /// </summary>
-    /// <param name="dir"></param>
-    /// <returns> dict:num$op_name -> num$op_name$param_name/returns>.
+    /// <returns>dict:num$op_name -> num$op_name$param_name.</returns>.
     public Dictionary<string, IEnumerable<string>> GetFilesByOrderNum(string dir)
     {
         return GetFilesByGroup(dir)

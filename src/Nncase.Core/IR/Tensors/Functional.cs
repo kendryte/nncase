@@ -96,7 +96,7 @@ public static class Tensors
     {
         if (rank < 1)
         {
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(rank));
         }
 
         var axes = Tensor.FromRange(0, rank);

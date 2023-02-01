@@ -137,10 +137,10 @@ internal sealed class EGraphCostEvaluator
 
     private Cost? Visit(ENode enode, Marker marker)
     {
-        return Visit(enode, costs => Cost.Zero);
+        return Visit(enode, costs => costs[0]);
     }
 
-    private Cost? Visit(ENode enode, None marker)
+    private Cost? Visit(ENode enode, None none)
     {
         return Visit(enode, costs => Cost.Zero);
     }

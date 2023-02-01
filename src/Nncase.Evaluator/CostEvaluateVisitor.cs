@@ -29,7 +29,7 @@ internal sealed class CostEvaluateVisitor : ExprVisitor<Cost?, IRType>
         }
 
         var target = (Op)expr.Target;
-        return CompilerServices.EvaluateOpCost(target, _context);
+        return (CompilerServices.EvaluateOpCost(target, _context) ?? Cost.Zero) + expr.Parameters.Aggregate(Cost.Zero, (sum, e) => sum + (ExpressionMemo[e] ?? Cost.Zero));
     }
 
     public override Cost? VisitLeaf(Const expr)

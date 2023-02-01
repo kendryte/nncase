@@ -43,9 +43,6 @@ public static class PatternPrinter
     /// <summary>
     /// dump the pattern to file.
     /// </summary>
-    /// <param name="pattern"></param>
-    /// <param name="name"></param>
-    /// <param name="dumpPath"></param>
     public static void DumpAsIL(this IPattern pattern, string name, string dumpPath)
     {
         Directory.CreateDirectory(dumpPath);
@@ -228,7 +225,7 @@ public static class PatternPrinter
         }
 
         /// <inheritdoc/>
-        public override string VisitType(TypePattern pattern) => pattern.Reason;
+        public override string VisitType(TypePattern? pattern) => pattern?.Reason ?? string.Empty;
 
         private string AllocateTempVar(IPattern pattern)
         {

@@ -14,48 +14,10 @@ namespace Nncase;
 /// <summary>
 /// fixed mul.
 /// </summary>
-public struct FixedMul : IEquatable<FixedMul>
+public record struct FixedMul(float Mul, sbyte Shift)
 {
-    /// <summary>
-    /// mul params.
-    /// </summary>
-    public float Mul;
-
-    /// <summary>
-    /// shift params.
-    /// </summary>
-    public sbyte Shift;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="FixedMul"/> struct.
-    /// ctor.
-    /// </summary>
-    /// <param name="mul"></param>
-    /// <param name="shift"></param>
-    public FixedMul(float mul, sbyte shift)
-    {
-        Mul = mul;
-        Shift = shift;
-    }
-
     /// <summary>
     /// Gets get rounded mul.
     /// </summary>
     public int RoundedMul => (int)Math.Round(Mul);
-
-    /// <inheritdoc/>
-    public bool Equals(FixedMul other)
-    {
-        return Mul == other.Mul && Shift == other.Shift;
-    }
-
-    public override bool Equals(object obj)
-    {
-        return obj is FixedMul && Equals((FixedMul)obj);
-    }
-
-    public override int GetHashCode()
-    {
-        throw new NotImplementedException();
-    }
 }

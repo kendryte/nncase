@@ -11,19 +11,16 @@ namespace Nncase.TIR;
 
 public class Scheduler
 {
-    public Function Entry;
-
     public Scheduler(Function entry)
     {
         Entry = entry;
     }
 
+    public Function Entry { get; set; }
+
     /// <summary>
     /// get the block instance by name.
     /// </summary>
-    /// <param name="blockName"></param>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
     public Block GetBlock(string blockName)
     {
         Block? targetBlock = null;
@@ -55,7 +52,6 @@ public class Scheduler
     /// <summary>
     /// recursive find block direct parent loop!.
     /// </summary>
-    /// <param name="block"></param>
     /// <returns> the loops. </returns>
     public For[] GetLoops(Block block)
     {

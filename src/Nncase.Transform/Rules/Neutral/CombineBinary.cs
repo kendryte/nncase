@@ -65,22 +65,23 @@ public sealed partial class CombineClampMul : IRewriteRule
         }
 
         // avoid div zero.
-        if (mulConst.All(f => f == 0.0f))
-        {
-            return null;
-        }
-
+        // if (mulConst.All(f => f == 0.0f))
+        // {
+        //     return null;
+        // }
         var tmulConst = mulConst.ToOrtTensor();
         var mint = min.ToOrtTensor();
         var maxt = max.ToOrtTensor();
         var cond = OrtKISharp.OrtKI.Greater(tmulConst, OrtKISharp.Tensor.FromScalar<float>(0.0f));
-        var newMin = mint / tmulConst;
-        var newMax = maxt / tmulConst;
+        var tmpMin = mint / tmulConst;
+        var tmpMax = maxt / tmulConst;
+        var newMin = OrtKISharp.OrtKI.Where(cond, tmpMin, tmpMax);
+        var newMax = OrtKISharp.OrtKI.Where(cond, tmpMax, tmpMin);
         return Mul(
           Clamp(
             input,
-            Const.FromValue(OrtKISharp.OrtKI.Where(cond, newMin, newMax).ToValue()),
-            Const.FromValue(OrtKISharp.OrtKI.Where(cond, newMax, newMin).ToValue())),
+            Const.FromValue(newMin.ToValue()),
+            Const.FromValue(newMax.ToValue())),
           mulConst);
     }
 }

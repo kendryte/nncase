@@ -21,20 +21,17 @@ public sealed partial record class KPUConv2D(bool IsDepthwise, KPUFilterType Fil
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(KPUConv2D), 0, "input",
-        HasRank(4) & HasDataType(DataTypes.UInt8));
+    public static readonly ParameterInfo Input = new(typeof(KPUConv2D), 0, "input", HasRank(4) & HasDataType(DataTypes.UInt8));
 
     /// <summary>
     /// Gets Weights.
     /// </summary>
-    public static readonly ParameterInfo Weights = new(typeof(KPUConv2D), 1, "weights",
-        HasRank(4) & HasDataType(DataTypes.UInt8));
+    public static readonly ParameterInfo Weights = new(typeof(KPUConv2D), 1, "weights", HasRank(4) & HasDataType(DataTypes.UInt8));
 
     /// <summary>
     /// Gets batch norms.
     /// </summary>
-    public static readonly ParameterInfo BatchNorms = new(typeof(KPUConv2D), 2, "batchNorms",
-        HasRank(1) & HasDataType(DataTypes.UInt64));
+    public static readonly ParameterInfo BatchNorms = new(typeof(KPUConv2D), 2, "batchNorms", HasRank(1) & HasDataType(DataTypes.UInt64));
 
     /// <summary>
     /// Gets activation.

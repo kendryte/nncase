@@ -55,7 +55,7 @@ public partial class EGraphPrinter
             dotnode.ToPlainHtmlNode(table);
         }
 
-        DotGraph.Edges.Clear();
+        _dotGraph.Edges.Clear();
 
         HashSet<EClass> eclassMemo = new();
         HashSet<EClass> markerEclassMemo = new();
@@ -73,7 +73,9 @@ public partial class EGraphPrinter
                 }
 
                 var minCostEnode = parent.MinByWithMarker(costModel);
-                if (markerEclassMemo.Contains(parent)) // when this marker ecalss has been visited, skip it.
+
+                // when this marker ecalss has been visited, skip it.
+                if (markerEclassMemo.Contains(parent))
                 {
                     minCostEnode = parent.MinByWithOutMarker(costModel);
                 }
@@ -93,7 +95,7 @@ public partial class EGraphPrinter
                         markerEclassMemo.Add(child);
                         var otherminCostENode = child.MinByWithOutMarker(costModel);
                         var (childDotNode, _) = NodesMap[otherminCostENode];
-                        DotGraph.Edges.Add(childDotNode, minCostDotnode, edge =>
+                        _dotGraph.Edges.Add(childDotNode, minCostDotnode, edge =>
                         {
                             edge.Head.Endpoint.Port = new DotEndpointPort($"P{i}");
                             edge.Color = Color.SpringGreen;
@@ -103,7 +105,7 @@ public partial class EGraphPrinter
                     {
                         var childEnode = child.Find().MinByWithMarker(costModel);
                         var (childDotNode, _) = NodesMap[childEnode];
-                        DotGraph.Edges.Add(childDotNode, minCostDotnode, edge =>
+                        _dotGraph.Edges.Add(childDotNode, minCostDotnode, edge =>
                         {
                             edge.Head.Endpoint.Port = new DotEndpointPort($"P{i}");
                             edge.Color = Color.SpringGreen;
@@ -121,6 +123,6 @@ public partial class EGraphPrinter
         }
 
         Dfs(entry.Find());
-        return DotGraph;
+        return _dotGraph;
     }
 }

@@ -266,49 +266,32 @@ namespace Nncase.PatternMatch.F
         /// <summary>
         /// CallPattern equal.
         /// </summary>
-        /// <param name="lhs"></param>
-        /// <param name="rhs"></param>
         /// <returns>result.</returns>
         public static CallPattern Equal(Pattern lhs, Pattern rhs) => IsCompare(CompareOp.Equal, lhs, rhs);
 
         /// <summary>
         /// CallPattern not equal.
         /// </summary>
-        /// <param name="lhs"></param>
-        /// <param name="rhs"></param>
-        /// <returns></returns>
         public static CallPattern NotEqual(Pattern lhs, Pattern rhs) => IsCompare(CompareOp.NotEqual, lhs, rhs);
 
         /// <summary>
         /// CallPattern less than.
         /// </summary>
-        /// <param name="lhs"></param>
-        /// <param name="rhs"></param>
-        /// <returns></returns>
         public static CallPattern LessThan(Pattern lhs, Pattern rhs) => IsCompare(CompareOp.LowerThan, lhs, rhs);
 
         /// <summary>
         /// CallPattern less equal.
         /// </summary>
-        /// <param name="lhs"></param>
-        /// <param name="rhs"></param>
-        /// <returns></returns>
         public static CallPattern LessEqual(Pattern lhs, Pattern rhs) => IsCompare(CompareOp.LowerOrEqual, lhs, rhs);
 
         /// <summary>
         /// CallPattern greater equal.
         /// </summary>
-        /// <param name="lhs"></param>
-        /// <param name="rhs"></param>
-        /// <returns></returns>
         public static CallPattern GreaterEqual(Pattern lhs, Pattern rhs) => IsCompare(CompareOp.GreaterThan, lhs, rhs);
 
         /// <summary>
         /// CallPattern greater than.
         /// </summary>
-        /// <param name="lhs"></param>
-        /// <param name="rhs"></param>
-        /// <returns></returns>
         public static CallPattern GreaterThan(Pattern lhs, Pattern rhs) => IsCompare(CompareOp.GreaterOrEqual, lhs, rhs);
     }
 }

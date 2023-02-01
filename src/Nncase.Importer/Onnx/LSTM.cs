@@ -24,7 +24,7 @@ namespace Nncase.Importer
             var acts = GetOptionStringsAttribute(op, "activations").Or(new[] { "sigmoid", "tanh", "tanh" });
             if (numBirections == 2 && acts.Length == 3)
             {
-                acts.Concat(acts).ToArray();
+                acts = acts.Concat(acts).ToArray();
             }
 
             // if 0
@@ -68,8 +68,24 @@ namespace Nncase.Importer
                 ExpandToType(0, t, numBirections, 3L * hiddenSize));
 
             var outputCount = op.Output.Count;
-            return LSTM(ToLSTMDirection(direction), ToLSTMLayout(layout), acts, x, w, r, b, sequenceLens, initialH,
-                initialC, p, actAlpha, actBeta, clip, hiddenSize, inputForget, outputCount);
+            return LSTM(
+                ToLSTMDirection(direction),
+                ToLSTMLayout(layout),
+                acts,
+                x,
+                w,
+                r,
+                b,
+                sequenceLens,
+                initialH,
+                initialC,
+                p,
+                actAlpha,
+                actBeta,
+                clip,
+                hiddenSize,
+                inputForget,
+                outputCount);
         }
 
         private Expr ExpandToType(Expr input, DataType t, params Expr[] dims)

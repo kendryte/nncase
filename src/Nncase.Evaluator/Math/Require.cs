@@ -25,7 +25,6 @@ public partial class RequireEvaluator : IEvaluator<Require>, ITypeInferencer<Req
         return $"IR.F.Math.Require({condition}, {value})";
     }
 
-    /// <inheritdoc />
     private IValue Visit(bool predicate, IValue value, Require target)
     {
         if (!predicate)
@@ -36,7 +35,6 @@ public partial class RequireEvaluator : IEvaluator<Require>, ITypeInferencer<Req
         return value;
     }
 
-    /// <inheritdoc/>
     private IRType Visit(TensorType predicate, IRType value)
     {
         return value;

@@ -25,7 +25,6 @@ internal class NestBodyExprBuilder<T> : ISequentialBuilder<T>
     /// NOTE We will auto add exprs to nest list!
     /// </remarks>
     /// </summary>
-    /// <param name="subBuilders"></param>
     public NestBodyExprBuilder(params ISequentialBuilder<T>[] subBuilders)
     {
         _subBuilders = subBuilders;
@@ -34,8 +33,6 @@ internal class NestBodyExprBuilder<T> : ISequentialBuilder<T>
     /// <summary>
     /// Wrapper Body method.
     /// </summary>
-    /// <param name="exprs"></param>
-    /// <returns></returns>
     public ISequentialBuilder<T> Body(params object[] exprOrBuilders)
     {
         _subBuilders[_subBuilders.Length - 1].Body(exprOrBuilders);

@@ -30,8 +30,6 @@ public struct QuantParam : IEquatable<QuantParam>
     /// Initializes a new instance of the <see cref="QuantParam"/> struct.
     /// ctor.
     /// </summary>
-    /// <param name="zeroPoint"></param>
-    /// <param name="scale"></param>
     public QuantParam(int zeroPoint, float scale)
     {
         ZeroPoint = zeroPoint;
@@ -50,14 +48,16 @@ public struct QuantParam : IEquatable<QuantParam>
         return $"<{ZeroPoint},{Scale}>";
     }
 
-    public override bool Equals(object obj)
+    /// <inheritdoc/>
+    public override bool Equals(object? obj)
     {
         return obj is QuantParam && Equals((QuantParam)obj);
     }
 
+    /// <inheritdoc/>
     public override int GetHashCode()
     {
-        throw new NotImplementedException();
+        return HashCode.Combine(ZeroPoint, Scale);
     }
 }
 

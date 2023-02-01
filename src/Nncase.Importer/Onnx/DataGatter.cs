@@ -98,7 +98,7 @@ public sealed partial class OnnxImporter
     {
         // todo:is null?
         var id = n.Input[index];
-        if (_outputTensors.TryGetValue(id, out var expr))
+        if (_outputTensors!.TryGetValue(id, out var expr))
         {
             return expr;
         }
@@ -134,7 +134,7 @@ public sealed partial class OnnxImporter
                 () => throw new InvalidOperationException($"Can't find Output for node:{n.Name}"));
     }
 
-    private (Expr, Expr) GetInputExprs(NodeProto n, int index0, int index1)
+    private (Expr Input1, Expr Input2) GetInputExprs(NodeProto n, int index0, int index1)
     {
         return (GetInputExpr(n, index0), GetInputExpr(n, index1));
     }
@@ -152,7 +152,7 @@ public sealed partial class OnnxImporter
             return Option<Expr>.None;
         }
 
-        if (_outputTensors.TryGetValue(id, out var expr))
+        if (_outputTensors!.TryGetValue(id, out var expr))
         {
             return expr;
         }
@@ -169,7 +169,7 @@ public sealed partial class OnnxImporter
         return GetOptionInputExpr(n, index).Or(defaultExpr);
     }
 
-    private (Option<Expr>, Option<Expr>) GetOptionInputExprs(NodeProto n, int index0, int index1)
+    private (Option<Expr> Input1, Option<Expr> Input2) GetOptionInputExprs(NodeProto n, int index0, int index1)
     {
         return (GetOptionInputExpr(n, index0), GetOptionInputExpr(n, index1));
     }

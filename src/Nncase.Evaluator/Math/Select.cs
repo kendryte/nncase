@@ -27,13 +27,11 @@ public partial class SelectEvaluator : IEvaluator<Select>, ITypeInferencer<Selec
         return $"({condition} ? {true_value} : {false_value})";
     }
 
-    /// <inheritdoc />
     private IValue Visit(bool predicate, IValue trueValue, IValue falseValue)
     {
         return predicate ? trueValue : falseValue;
     }
 
-    /// <inheritdoc/>
     private IRType Visit(TensorType predicate, IRType trueValue, IRType falseValue)
     {
         if (trueValue is TensorType true_type && falseValue is TensorType false_type)

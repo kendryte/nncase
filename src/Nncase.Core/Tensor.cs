@@ -214,7 +214,6 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <summary>
     /// Create tensor from a range.
     /// </summary>
-    /// <typeparam name="T">CLR type.</typeparam>
     /// <param name="start">Start value.</param>
     /// <param name="count">Count.</param>
     /// <returns>Created tensor.</returns>
@@ -350,7 +349,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// Create tensor from a ulong address.
     /// </summary>
     /// <param name="value">addr value.</param>
-    /// <param name="elemType">addr value.</param>
+    /// <param name="elemType">Element type.</param>
     /// <returns>Created tensor.</returns>
     public static Tensor FromPointer(ulong value, DataType elemType)
     {
@@ -362,8 +361,6 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// </summary>
     /// <param name="const"> const.</param>
     /// <returns> Tensor. </returns>
-    /// <exception cref="InvalidOperationException"></exception>
-    /// <exception cref="NotSupportedException"></exception>
     public static Tensor FromConst(Const @const) => @const switch
     {
         TensorConst tc => tc.Value,
@@ -420,9 +417,6 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <summary>
     /// <see cref="Cast{T}(CastMode)"/>.
     /// </summary>
-    /// <param name="type"></param>
-    /// <param name="castMode"></param>
-    /// <returns></returns>
     public Tensor CastTo(DataType type, CastMode castMode = CastMode.KDefault)
     {
         var tensor = (Tensor)_tensorCastFunc.MakeGenericMethod(type.CLRType).Invoke(this, new object[] { castMode })!;

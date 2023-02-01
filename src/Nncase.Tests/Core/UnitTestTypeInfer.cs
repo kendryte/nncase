@@ -62,7 +62,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         var c = a + b;
         _ = CompilerServices.InferenceType(c);
 
-        Assert.True(HasShape(new[] { 1, 5, 3 }).MatchLeaf(c.CheckedType));
+        Assert.True(HasShape(new[] { 1, 5, 3 }).MatchLeaf(c.CheckedType!));
     }
 
     [Fact]
@@ -142,31 +142,15 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     public void TestReduceArgTypeInfer()
     {
         var input = new Var("v", new TensorType(DataTypes.Float32, new Shape(4, 5, 6, 7)));
-        CheckInferShape(
-            ReduceArg(ReduceArgOp.ArgMax, input, 0, false, false),
-            5, 6, 7);
-        CheckInferShape(
-            ReduceArg(ReduceArgOp.ArgMax, input, 1, false, false),
-            4, 6, 7);
-        CheckInferShape(
-            ReduceArg(ReduceArgOp.ArgMax, input, 2, false, false),
-            4, 5, 7);
-        CheckInferShape(
-            ReduceArg(ReduceArgOp.ArgMax, input, 3, false, false),
-            4, 5, 6);
+        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, input, 0, false, false), 5, 6, 7);
+        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, input, 1, false, false), 4, 6, 7);
+        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, input, 2, false, false), 4, 5, 7);
+        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, input, 3, false, false), 4, 5, 6);
 
-        CheckInferShape(
-            ReduceArg(ReduceArgOp.ArgMax, input, 0, true, false),
-            1, 5, 6, 7);
-        CheckInferShape(
-            ReduceArg(ReduceArgOp.ArgMax, input, 1, true, false),
-            4, 1, 6, 7);
-        CheckInferShape(
-            ReduceArg(ReduceArgOp.ArgMax, input, 2, true, false),
-            4, 5, 1, 7);
-        CheckInferShape(
-            ReduceArg(ReduceArgOp.ArgMax, input, 3, true, false),
-            4, 5, 6, 1);
+        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, input, 0, true, false), 1, 5, 6, 7);
+        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, input, 1, true, false), 4, 1, 6, 7);
+        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, input, 2, true, false), 4, 5, 1, 7);
+        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, input, 3, true, false), 4, 5, 6, 1);
     }
 
     [Fact]

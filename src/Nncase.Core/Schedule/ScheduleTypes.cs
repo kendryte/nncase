@@ -1,10 +1,12 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.InteropServices;
 using Nncase.Runtime;
+using Nncase.TIR;
 
 namespace Nncase.Schedule;
 
@@ -73,8 +75,6 @@ public interface IScheduler
     /// multi stage schedules.
     /// relay IR -> TIR -> lowered TIR.
     /// </summary>
-    /// <param name="skip_buffer_alias"></param>
-    /// <returns></returns>
     public IR.IRModule Schedule(bool skip_buffer_alias = false);
 }
 
@@ -134,46 +134,6 @@ public struct MemoryRange
 public class BufferAllocation
 {
     /// <summary>
-    /// mem loacte.
-    /// </summary>
-    public MemoryLocation MemoryLocate;
-
-    /// <summary>
-    /// data type.
-    /// </summary>
-    public DataType DType;
-
-    /// <summary>
-    /// shared modeule.
-    /// </summary>
-    public ulong SharedModule;
-
-    /// <summary>
-    /// start.
-    /// </summary>
-    public ulong Start;
-
-    /// <summary>
-    /// total size.
-    /// </summary>
-    public ulong Size;
-
-    /// <summary>
-    /// full shape.
-    /// </summary>
-    public int[] Shape;
-
-    /// <summary>
-    /// full stride.
-    /// </summary>
-    public int[] Strides;
-
-    /// <summary>
-    /// stride shape.
-    /// </summary>
-    public int[] StridesShape;
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="BufferAllocation"/> class.
     /// <see cref="BufferAllocation"/>.
     /// </summary>
@@ -196,6 +156,46 @@ public class BufferAllocation
         Strides = strides;
         StridesShape = strides_shape;
     }
+
+    /// <summary>
+    /// Gets or sets mem loacte.
+    /// </summary>
+    public MemoryLocation MemoryLocate { get; set; }
+
+    /// <summary>
+    /// Gets or sets data type.
+    /// </summary>
+    public DataType DType { get; set; }
+
+    /// <summary>
+    /// Gets or sets shared modeule.
+    /// </summary>
+    public ulong SharedModule { get; set; }
+
+    /// <summary>
+    /// Gets or sets start.
+    /// </summary>
+    public ulong Start { get; set; }
+
+    /// <summary>
+    /// Gets or sets total size.
+    /// </summary>
+    public ulong Size { get; set; }
+
+    /// <summary>
+    /// Gets or sets full shape.
+    /// </summary>
+    public int[] Shape { get; set; }
+
+    /// <summary>
+    /// Gets or sets full stride.
+    /// </summary>
+    public int[] Strides { get; set; }
+
+    /// <summary>
+    /// Gets or sets stride shape.
+    /// </summary>
+    public int[] StridesShape { get; set; }
 
     /// <summary>
     /// Gets get current buffer memory range.
@@ -234,32 +234,19 @@ public class BufferAllocation
     /// <summary>
     /// get then mem span end.
     /// </summary>
-    /// <returns></returns>
     public ulong LinearEnd() => Start + Size;
 
     /// <summary>
     /// calc the overlap with another buffer.
     /// </summary>
-    /// <param name="rhs"></param>
-    /// <returns></returns>
     public bool Overlap(BufferAllocation rhs) => Size != 0 && rhs.Size != 0 && MemoryLocate == rhs.MemoryLocate && Start < rhs.LinearEnd() && LinearEnd() > rhs.Start;
 }
 
 /// <summary>
 /// SchedFunctionResult.
 /// </summary>
-public class SchedFunctionResult
+public sealed class SchedFunctionResult
 {
-    /// <summary>
-    /// the buffer allocation.
-    /// </summary>
-    public readonly HashSet<TIR.PhysicalBuffer> Rdatas;
-
-    /// <summary>
-    /// the Scheduled status.
-    /// </summary>
-    public bool IsScheduled;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SchedFunctionResult"/> class.
     /// create SchedFunctionResult.
@@ -269,4 +256,43 @@ public class SchedFunctionResult
         Rdatas = new(ReferenceEqualityComparer.Instance);
         IsScheduled = false;
     }
+
+    /// <summary>
+    /// Gets the buffer allocation.
+    /// </summary>
+    public HashSet<TIR.PhysicalBuffer> Rdatas { get; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the Scheduled status.
+    /// </summary>
+    public bool IsScheduled { get; set; }
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj)
+    {
+        if (obj is not SchedFunctionResult result)
+        {
+            return false;
+        }
+
+        if (IsScheduled != result.IsScheduled)
+        {
+            return false;
+        }
+
+        if (Rdatas.Count != result.Rdatas.Count)
+        {
+            return false;
+        }
+
+        if (Rdatas.Count == 0)
+        {
+            return true;
+        }
+
+        return EqualityComparer<HashSet<TIR.PhysicalBuffer>>.Default.Equals(Rdatas, result.Rdatas);
+    }
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => base.GetHashCode();
 }

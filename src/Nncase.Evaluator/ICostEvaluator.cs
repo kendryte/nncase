@@ -61,6 +61,7 @@ public interface ICostEvaluator<T> : ICostEvaluator
 /// <summary>
 /// this attribute mark the source generator auto generate ICostEvaluator's interface impl.
 /// </summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
 public sealed class CostEvaluatorGeneratorAttribute : Attribute
 {
 }

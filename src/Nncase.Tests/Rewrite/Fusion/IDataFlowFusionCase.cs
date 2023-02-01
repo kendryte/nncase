@@ -10,6 +10,7 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.PatternMatch;
 using Nncase.Transform;
+using Nncase.Transform.Mutators;
 using Xunit;
 using static Nncase.IR.F.Tensors;
 using static Nncase.PatternMatch.Utility;
@@ -32,11 +33,23 @@ internal static class FusionBuilder
         var fusion_1_input = new Var($"fusion_{_count}_input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
         var weights = IR.F.Random.Normal(DataTypes.Float32, 0, 1, _count, new[] { 3, 3, 1, 1 }).Evaluate().AsTensor();
         var bias = IR.F.Random.Normal(DataTypes.Float32, 0, 1, _count, new[] { 3 }).Evaluate().AsTensor();
-        var fusion_1 = new Fusion($"fusion_{_count}_{mask}", Callable.StackVMModuleKind, IR.F.NN.Conv2D(fusion_1_input, weights, bias, new[] { 1, 1 }, new[,]
-        {
-            { 0, 0 },
-            { 0, 0 },
-        }, new[] { 1, 1 }, PadMode.Constant, 1), new[] { fusion_1_input });
+        var fusion_1 = new Fusion(
+            $"fusion_{_count}_{mask}",
+            Callable.StackVMModuleKind,
+            IR.F.NN.Conv2D(
+                fusion_1_input,
+                weights,
+                bias,
+                new[] { 1, 1 },
+                new[,]
+                {
+                    { 0, 0 },
+                    { 0, 0 },
+                },
+                new[] { 1, 1 },
+                PadMode.Constant,
+                1),
+            new[] { fusion_1_input });
         _count++;
         return fusion_1;
     }
@@ -699,5 +712,50 @@ internal class DataFlowType13FusionCaseRight : IDataFlowFusionCase
     public Expr BuildBody(Var input)
     {
         return DataFlowType13FusionCaseLeft.BuildBodyCore(input, false);
+    }
+}
+
+/// <summary>
+///         x
+///         |
+///       conv2d_f
+///       /  \
+///       |   conv2d_f
+///       |    |
+///       |   conv2d_f
+///       |    |
+///       |   conv2d_t
+///        \ /
+///       add_f.
+/// </summary>
+internal class DataFlowType14FusionCaseLeft : IDataFlowFusionCase
+{
+    public int FinalFusionCount => 4;
+
+    public static Expr BuildBodyCore(Expr input, bool left)
+    {
+        var v0 = new Call(FusionBuilder.MakeConv2DFusion(false), input);
+
+        var v1 = new Call(FusionBuilder.MakeConv2DFusion(false), v0);
+        var v2 = new Call(FusionBuilder.MakeConv2DFusion(false), v1);
+        var v3 = new Call(FusionBuilder.MakeConv2DFusion(true), v2);
+
+        var v4 = new Call(FusionBuilder.MakeBinaryFusion(BinaryOp.Sub, true), left ? new[] { v0, v3 } : new[] { v3, v0 });
+        return v4;
+    }
+
+    public Expr BuildBody(Var input)
+    {
+        return BuildBodyCore(input, true);
+    }
+}
+
+internal class DataFlowType14FusionCaseRight : IDataFlowFusionCase
+{
+    public int FinalFusionCount => 4;
+
+    public Expr BuildBody(Var input)
+    {
+        return DataFlowType14FusionCaseLeft.BuildBodyCore(input, false);
     }
 }

@@ -157,7 +157,7 @@ public sealed partial class CombineTransposeConcat : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsConcat(
-               IsTuple(IsVArgsRepeat("tupleInputs", exprs =>
+               PatternMatch.Utility.IsTuple(null, IsVArgsRepeat("tupleInputs", exprs =>
                {
                    var patterns = new Pattern[exprs.Count];
                    for (var i = 0; i < patterns.Length; i++)
@@ -230,8 +230,13 @@ public sealed partial class CombinePadTranspose : IRewriteRule
     public IPattern Pattern { get; } = IsTranspose(
         "transpose",
         x => true,
-        IsPad("pad", y => true, IsWildcard("input"), IsTensorConst(
-            "pads"), IsTensorConst("padValue")), IsTensorConst("perm"));
+        IsPad(
+            "pad",
+            y => true,
+            IsWildcard("input"),
+            IsTensorConst("pads"),
+            IsTensorConst("padValue")),
+        IsTensorConst("perm"));
 
     private Expr GetReplace(Pad pad, Expr input, int[] perm, Expr pads, Expr padValue)
     {

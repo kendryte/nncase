@@ -24,7 +24,7 @@ public static class TensorUtil
         return Math.Max(0, 1 - (4 - shape.Length));
     }
 
-    public static (int, int) GetShapeInfo(int[] shape, int channelAxis = 1)
+    public static (int Channels, int Size) GetShapeInfo(int[] shape, int channelAxis = 1)
     {
         var i = channelAxis + 1;
         var channels = shape[..i].Aggregate(1, (a, b) => a * b);
@@ -46,7 +46,8 @@ public static class TensorUtil
         var s = tensor.ElementType.SizeInBytes;
         return Tensor.FromBytes(
             tensor.ElementType,
-            tensor.BytesBuffer.Slice(start * s, length * s).ToArray(), tensor.Dimensions[(channelAxis + 1)..]);
+            tensor.BytesBuffer.Slice(start * s, length * s).ToArray(),
+            tensor.Dimensions[(channelAxis + 1)..]);
     }
 }
 
@@ -62,14 +63,14 @@ public static class Comparator
         return a.Zip(b).Select(CosSimilarity).ToArray();
     }
 
-    public static float CosSimilarity((Tensor, Tensor) t)
+    public static float CosSimilarity((Tensor A, Tensor B) t)
     {
-        return CosSimilarity(t.Item1, t.Item2);
+        return CosSimilarity(t.A, t.B);
     }
 
-    public static float CosSimilarity((OriginTensor, OriginTensor) t)
+    public static float CosSimilarity((OriginTensor A, OriginTensor B) t)
     {
-        return CosSimilarity(t.Item1.Tensor, t.Item2.Tensor);
+        return CosSimilarity(t.A.Tensor, t.B.Tensor);
     }
 
     public static float[][] CosSimilarity(IValue[] a, IValue[] b)
@@ -142,14 +143,14 @@ public static class Comparator
     {
         (TensorValue a, TensorValue b) => TensorValueCompare(a, b, thresh),
         (TupleValue a, TupleValue b) => TupleValueCompare(a, b, thresh),
-        (_, _) => throw new ArgumentOutOfRangeException(),
+        (_, _) => throw new ArgumentOutOfRangeException(nameof(pre)),
     };
 
     public static bool AllEqual(IValue pre, IValue post, float thresh = 0.001f) => (pre, post) switch
     {
         (TensorValue a, TensorValue b) => TensorValueAllEqual(a, b, thresh),
         (TupleValue a, TupleValue b) => TupleValueAllEqual(a, b, thresh),
-        (_, _) => throw new ArgumentOutOfRangeException(),
+        (_, _) => throw new ArgumentOutOfRangeException(nameof(pre)),
     };
 
     public static float[][] CompareByChannel(IValue pre, IValue post, int channelAxis = 1, float thresh = 0.99f) =>
@@ -165,8 +166,7 @@ public static class Comparator
         return v1.Zip(v2).Select(data => CosSimilarity(data.Item1, data.Item2)).ToArray();
     }
 
-    public static float[][] TensorsCompareByChannel(Tensor[] pre, Tensor[] post, int channelAxis = 1,
-        float thresh = 0.99f)
+    public static float[][] TensorsCompareByChannel(Tensor[] pre, Tensor[] post, int channelAxis = 1, float thresh = 0.99f)
     {
         return pre.Zip(post).Select(tuple =>
                 TensorCompareByChannel(tuple.Item1, tuple.Item2, channelAxis, thresh))
@@ -239,11 +239,10 @@ public static class DetailComparator
     public static DetailCompareResult CompareDetail(OriginValue a, OriginValue b, int channelAxis = 1)
     {
         var cos = Comparator.CompareByChannel(a.Value, b.Value, channelAxis);
-        var LossInfo = CompareForAccuracyLoss(a, b);
-        _ = a.Value.AsTensors().Length;
+        var lossInfo = CompareForAccuracyLoss(a, b);
 
         // todo: fix this
-        return new DetailCompareResult(new[] { new DetailCompareResultInfo(cos[0], LossInfo[0]) });
+        return new DetailCompareResult(new[] { new DetailCompareResultInfo(cos[0], lossInfo[0]) });
     }
 
     public static AccuracyLossInfo[][] CompareForAccuracyLoss(OriginValue pre, OriginValue post) =>
@@ -278,16 +277,16 @@ public static class DetailComparator
     public static void DumpCompareDetail(DetailCompareResult compareResult, string resultRoot, int count)
     {
         // todo: fix this
-        var (cosByChannel, LossInfo) = compareResult.Infos.Head();
+        var (cosByChannel, lossInfo) = compareResult.Infos.Head();
 
         // todo: insert separator for channel or other
         WriteResult(Path.Join(resultRoot, $"cos_{count}"), cosByChannel);
 
         using (var stream = new StreamWriter(Path.Join(resultRoot, count.ToString())))
         {
-            stream.WriteLine(LossInfo[0].V1Tensor.Path);
-            stream.WriteLine(LossInfo[0].V2Tensor.Path);
-            var tensorShape = LossInfo[0].Shape;
+            stream.WriteLine(lossInfo[0].V1Tensor.Path);
+            stream.WriteLine(lossInfo[0].V2Tensor.Path);
+            var tensorShape = lossInfo[0].Shape;
             var (channels, size) = TensorUtil.GetShapeInfo(tensorShape, TensorUtil.GetChannelAxis(tensorShape));
             stream.WriteLine(SerializeShape(tensorShape));
             for (int i = 0; i < channels; i++)
@@ -295,7 +294,7 @@ public static class DetailComparator
                 stream.WriteLine(cosByChannel[i]);
                 for (int j = 0; j < size; j++)
                 {
-                    stream.WriteLine(LossInfo[(i * size) + j]);
+                    stream.WriteLine(lossInfo[(i * size) + j]);
                 }
             }
         }
@@ -316,7 +315,7 @@ public static class DetailComparator
         GenerateFullCompareInfo(a.Zip(b), resultRoot);
     }
 
-    public static void GenerateFullCompareInfo(IEnumerable<(OriginValue, OriginValue)> data, string resultRoot)
+    public static void GenerateFullCompareInfo(IEnumerable<(OriginValue A, OriginValue B)> data, string resultRoot)
     {
         int id = 0;
         foreach (var (originD, k230D) in data)
@@ -325,8 +324,7 @@ public static class DetailComparator
         }
     }
 
-    private static CompareResultByChannel[] GenerateFullCompareInfo(string resultRoot, OriginValue originD, OriginValue k230D,
-        int count)
+    private static CompareResultByChannel[] GenerateFullCompareInfo(string resultRoot, OriginValue originD, OriginValue k230D, int count)
     {
         var result = DetailComparator.CompareDetail(originD, k230D);
 

@@ -25,9 +25,9 @@ public class UnitTestAddRangeOfMarker : TestClassBase
         var output = leaky;
         var dumpVisitor = await TestAddRangeOfMarkerMainPassesAsync(input, output);
 
-        Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0], -1.0001221f);
+        Assert.Equal(-1.0001221f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0]);
         Assert.Equal(1.0001087f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[1]);
-        Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[6]).Value.ToArray<float>()[0], -0.100067139f);
+        Assert.Equal(-0.100067139f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[6]).Value.ToArray<float>()[0]);
         Assert.Equal(1.00005388f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[6]).Value.ToArray<float>()[1]);
     }
 
@@ -39,10 +39,20 @@ public class UnitTestAddRangeOfMarker : TestClassBase
         var output = relu6;
         var dumpVisitor = await TestAddRangeOfMarkerMainPassesAsync(input, output);
 
-        Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0], -1.0001221f);
+        Assert.Equal(-1.0001221f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0]);
         Assert.Equal(1.0001087f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[1]);
-        Assert.Equal(((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[0], -6.103435E-05f);
+        Assert.Equal(-6.103435E-05f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[0]);
         Assert.Equal(1.0000478f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[1]);
+    }
+
+    [Fact]
+    public async Task TestAddRangeOfMarkerToBinary()
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 2048, 7, 7 }));
+        var v0 = IR.F.Tensors.NCHWToNHWC(input);
+        var v1 = v0 * Testing.Rand<float>(2048);
+        var output = v1;
+        _ = await TestAddRangeOfMarkerMainPassesAsync(input, output);
     }
 
     private async Task<DumpVisitor> TestAddRangeOfMarkerMainPassesAsync(Var input, Expr output)
@@ -61,8 +71,7 @@ public class UnitTestAddRangeOfMarker : TestClassBase
         // 0. TargetIndependentPass
         pmgr.AddWithName<DataflowPass>("TargetInDependent").Configure(p =>
         {
-            p.Add<AddRangeOfAndMarkerToRelu6>();
-            p.Add<AddRangeOfAndMarkerToLeakyRelu>();
+            p.Add<AddRangeOfAndMarker>();
         });
 
         // 1. AssignRanges

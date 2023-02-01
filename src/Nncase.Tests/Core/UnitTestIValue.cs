@@ -71,7 +71,7 @@ public sealed class UnitTestIValue
         var ones = Tensor.Ones<float>(new int[] { 1, 3, 16, 16 });
         var a = new TensorValue(ones);
         Assert.Equal(a, a[0]);
-        Assert.Throws<IndexOutOfRangeException>(() => a[1]);
+        Assert.Throws<ArgumentOutOfRangeException>(() => a[1]);
     }
 
     [Fact]

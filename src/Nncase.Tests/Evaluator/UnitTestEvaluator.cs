@@ -65,8 +65,9 @@ public class UnitTestEvaluator : TestClassBase
 
         var expr = Tensors.Stack(
             new Tuple(
-          Tensors.Concat(new Tuple(padh_before, padh_after), 0),
-          Tensors.Concat(new Tuple(padw_before, padw_after), 0)), 0);
+                Tensors.Concat(new Tuple(padh_before, padh_after), 0),
+                Tensors.Concat(new Tuple(padw_before, padw_after), 0)),
+            0);
         CompilerServices.InferenceType(expr);
         var result = expr.Evaluate().AsTensor().ToOrtTensor();
         Assert.Equal(OrtKISharp.Tensor.MakeTensor(new[] { 1, 2, 3, 4 }, new long[] { 2, 2 }), result);

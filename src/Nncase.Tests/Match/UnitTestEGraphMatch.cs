@@ -144,9 +144,10 @@ public sealed class UnitTestEGraphMatch
         Const perm = 123;
         Expr expr = Concat(
             new IR.Tuple(
-          Transpose(x, perm),
-          Transpose(y, perm),
-          Transpose(z, perm)), 0);
+                Transpose(x, perm),
+                Transpose(y, perm),
+                Transpose(z, perm)),
+            0);
 
         var wc = IsWildcard("wc");
         var wcperm = IsWildcard("perm");

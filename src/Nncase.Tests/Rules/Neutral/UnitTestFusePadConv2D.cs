@@ -114,20 +114,26 @@ public class UnitTestFusePadConv2D : TestClassBase
         var aNormal = new Dictionary<Var, IValue>();
         aNormal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, shape).Evaluate());
         var rootPre = NN.Conv2D(NN.Pad(a, pads1, PadMode.Constant, 0f), w, b, new[] { 1, 1 }, pads2, new[] { 1, 1 }, PadMode.Constant, 1);
-        var rootMid = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new FoldConstCall(),
+        var rootMid = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new FoldConstCall(),
 
-            // new FusePadConv2d(),
-            // new FoldNopPad(),
-        }, new());
-        var rootPost = CompilerServices.Rewrite(rootMid, new IRewriteRule[]
-        {
-            // new FoldConstCall(),
-            new FusePadConv2d(),
-            new FoldConstCall(),
-            new FoldNopPad(),
-        }, new());
+                // new FusePadConv2d(),
+                // new FoldNopPad(),
+            },
+            new());
+        var rootPost = CompilerServices.Rewrite(
+            rootMid,
+            new IRewriteRule[]
+            {
+                // new FoldConstCall(),
+                new FusePadConv2d(),
+                new FoldConstCall(),
+                new FoldNopPad(),
+            },
+            new());
 
         Assert.NotEqual(rootMid, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootMid, aNormal), CompilerServices.Evaluate(rootPost, aNormal));
@@ -145,16 +151,22 @@ public class UnitTestFusePadConv2D : TestClassBase
         aNormal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, shape).Evaluate());
         var rootPre = NN.Conv2D(NN.Pad(a, pads1, PadMode.Constant, 0f), w, b, new[] { 1, 1 }, pads2, new[] { 1, 1 }, PadMode.Constant, 1);
 
-        var rootMid = CompilerServices.Rewrite(rootPre, new IRewriteRule[]
-        {
-            new FoldConstCall(),
-        }, new());
+        var rootMid = CompilerServices.Rewrite(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new FoldConstCall(),
+            },
+            new());
 
-        var rootPost = CompilerServices.Rewrite(rootMid, new IRewriteRule[]
-        {
-            new FusePadConv2d(),
-            new FoldNopPad(),
-        }, new());
+        var rootPost = CompilerServices.Rewrite(
+            rootMid,
+            new IRewriteRule[]
+            {
+                new FusePadConv2d(),
+                new FoldNopPad(),
+            },
+            new());
 
         Assert.Equal(rootMid, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootMid, aNormal), CompilerServices.Evaluate(rootPost, aNormal));
