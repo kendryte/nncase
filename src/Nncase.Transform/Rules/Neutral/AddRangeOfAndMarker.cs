@@ -63,6 +63,26 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
           IsOp<Op>("op"),
           IsWildcard("input"));
 
+    /// <summary>
+    /// check op.
+    /// </summary>
+    /// <param name="op">op.</param>
+    /// <returns>can add the marker.</returns>
+    public static bool CheckOp(Op op)
+    {
+        if (op is Binary binary && (binary.BinaryOp == BinaryOp.LogicalAnd || binary.BinaryOp == BinaryOp.LogicalOr || binary.BinaryOp == BinaryOp.LogicalXor))
+        {
+            return false;
+        }
+
+        if (op is Unary u && u.UnaryOp == UnaryOp.LogicalNot)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     private Expr? GetReplace(Call call, Op op, IReadOnlyList<Expr> callParams, RunPassContext context)
     {
         if (!_Dict.TryGetValue(op.GetType().TypeHandle, out var length))
@@ -70,12 +90,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
             return null;
         }
 
-        if (op is Binary binary && (binary.BinaryOp == BinaryOp.LogicalAnd || binary.BinaryOp == BinaryOp.LogicalOr || binary.BinaryOp == BinaryOp.LogicalXor))
-        {
-            return null;
-        }
-
-        if (op is Unary u && u.UnaryOp == UnaryOp.LogicalNot)
+        if (!CheckOp(op))
         {
             return null;
         }
@@ -89,46 +104,22 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
             }
         }
 
-        if (pairs.Count == 0)
+        Call newCall;
+        if (pairs.Count != 0)
         {
-            return null;
+            newCall = ReplaceCallParams(op, callParams, pairs.ToArray());
+        }
+        else
+        {
+            newCall = new Call(op, ImmutableArray.CreateRange(callParams));
         }
 
-        var newCall = ReplaceCallParams(op, callParams, pairs.ToArray());
+        context.RewriteOnce = true;
+        context.MatchOptions.SuppressPattern(newCall, Pattern);
         return op switch
         {
             LSTM => newCall, // note lstm output can't add marker.
             _ => IR.F.Math.RangeOfMarker(newCall, IR.F.Math.RangeOf(newCall)),
         };
-    }
-}
-
-/// <summary>
-/// add rangeofmarker on the function body.
-/// </summary>
-[RuleGenerator]
-public partial class AddRangeOfAndMarkerOnFuncBody : RewriteRule<Pattern>
-{
-    /// <inheritdoc/>
-    public override Pattern Pattern { get; } = IsFunction(
-      "func",
-      IsAlt(
-        IsTuple("input", IsVArgsRepeat("inputParams", () => IsWildcard(null, e => e is not Marker))),
-        IsWildcard("input", e => e is Call)),
-      IsVArgsRepeat("parameters", () => IsVar()));
-
-    private Expr? GetReplace(Expr input, Function func, IReadOnlyList<Expr> parameters, IMatchResult result)
-    {
-        Expr newBody;
-        if (input is Call newCall)
-        {
-            newBody = IR.F.Math.RangeOfMarker(newCall, IR.F.Math.RangeOf(newCall));
-        }
-        else
-        {
-            newBody = new IR.Tuple(((IReadOnlyList<Expr>)result["inputParams"]).Select(e => IR.F.Math.RangeOfMarker(e, IR.F.Math.RangeOf(e))));
-        }
-
-        return func with { Body = newBody, Parameters = ImmutableArray.CreateRange(parameters.Select(e => (Var)e)) };
     }
 }
