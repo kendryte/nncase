@@ -70,8 +70,7 @@ public interface IIRPrinterProvider
     /// <param name="expr">expression.</param>
     /// <param name="prefix">file prefix.</param>
     /// <param name="dumpDir">file dump ir.</param>
-    /// <param name="displayCallable">the dump csharp ir displayCallable = true.</param>
-    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool displayCallable);
+    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir);
 
     /// <summary>
     /// print ir type.

@@ -70,8 +70,7 @@ public interface ICompilerServicesProvider
     /// <param name="expr">expression.</param>
     /// <param name="prefix">file prefix.</param>
     /// <param name="dumpDir">file dump ir.</param>
-    /// <param name="displayCallable">the dump csharp ir displayCallable = true.</param>
-    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool displayCallable);
+    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir);
 
     /// <summary>
     /// print ir type.
@@ -422,9 +421,8 @@ public static class CompilerServices
     /// <param name="expr">expression.</param>
     /// <param name="prefix">file prefix.</param>
     /// <param name="dumpDir">file dump ir.</param>
-    /// <param name="displayCallable">the dump csharp ir displayCallable = true.</param>
-    public static void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool displayCallable = true) =>
-      Provider.DumpCSharpIR(expr, prefix, dumpDir, displayCallable);
+    public static void DumpCSharpIR(Expr expr, string prefix, string dumpDir) =>
+      Provider.DumpCSharpIR(expr, prefix, dumpDir);
 
     public static string Print(IRType type) => Provider.Print(type);
 
@@ -532,8 +530,8 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     _irprinterProvider.DumpDotIR(expr, prefix, dumpPath, display_callable);
 
     /// <inheritdoc/>
-    public void DumpCSharpIR(Expr expr, string prefix, string dumpPath, bool display_callable) =>
-    _irprinterProvider.DumpCSharpIR(expr, prefix, dumpPath, display_callable);
+    public void DumpCSharpIR(Expr expr, string prefix, string dumpPath) =>
+    _irprinterProvider.DumpCSharpIR(expr, prefix, dumpPath);
 
     /// <inheritdoc/>
     public string Print(IRType type) => _irprinterProvider.Print(type);

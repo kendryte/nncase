@@ -75,7 +75,7 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
         using (_scope.IndentUp())
         {
             var body = Visit(expr.Body);
-            _scope.IndWriteLine($"{name} = new Function(\"{expr.Name}\", new Var[] {{{string.Join(", ", expr.Parameters.Select(Visit))}}});");
+            _scope.IndWriteLine($"{name} = new Function(\"{expr.Name}\", {body}, new Var[] {{{string.Join(", ", expr.Parameters.Select(Visit))}}});");
         }
 
         // 3. Function signature
@@ -100,13 +100,13 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
         using (_scope.IndentUp())
         {
             var body_builder = new StringBuilder();
+            string body;
             using (var body_writer = new StringWriter(body_builder))
             {
-                var visitor = new CSharpPrintVisitor(body_writer, _scope.IndentLevel).Visit(expr.Body);
+                body = new CSharpPrintVisitor(body_writer, _scope.IndentLevel).Visit(expr.Body);
                 _scope.Append(body_writer.ToString());
             }
-
-            _scope.IndWriteLine($"{name} = new Fusion(\"{expr.Name}\", {expr.ModuleKind}, new Var[] {{{string.Join(", ", expr.Parameters.Select(Visit))}}});");
+            _scope.IndWriteLine($"{name} = new Fusion(\"{expr.Name}\", \"{expr.ModuleKind}\", {body}, new Var[] {{{string.Join(", ", expr.Parameters.Select(Visit))}}});");
         }
 
         _scope.IndWriteLine("}");
@@ -239,14 +239,14 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
 
     private string GetCSharpIRType(IRType type) => type switch
     {
-        TensorType ttype => $"new TensorType({ttype.DType.GetCSharpName()}, new int[] {string.Join(",", ttype.Shape)})",
+        TensorType ttype => $"new TensorType({ttype.DType.GetCSharpName()}, new [] {{{string.Join(",", ttype.Shape)}}})",
         TupleType ttype => $"new TupleType({string.Join(",", ttype.Fields)})",
         AnyType => "AnyType.Default",
         NoneType => "NoneType.Default",
         _ => "AnyType.Default",
     };
 
-    private string GetArrayComma(Shape shape) => string.Join(string.Empty, Enumerable.Repeat<char>(',', shape.Rank - 1));
+    private string GetArrayComma(Shape shape) => shape.Rank > 0 ? string.Join(string.Empty, Enumerable.Repeat<char>(',', shape.Rank - 1)) : string.Empty;
 
     private string GetCSharpConst(Const @const) => @const switch
     {

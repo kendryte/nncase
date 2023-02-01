@@ -42,6 +42,11 @@ public sealed class NullDumpper : IDumpper
     }
 
     /// <inheritdoc/>
+    public void DumpCSharpIR(Expr expr, string prefix, string? reletivePath = null)
+    {
+    }
+
+    /// <inheritdoc/>
     public bool IsEnabled(DumpFlags dumpFlags) => false;
 
     /// <inheritdoc/>

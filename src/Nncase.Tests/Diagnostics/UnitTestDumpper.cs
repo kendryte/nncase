@@ -190,9 +190,9 @@ public sealed class UnitTestDumpper : TestClassBase
     public void TestDumperCSharpIRFunction()
     {
         var x = IR.F.Math.Quantize(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), Tensor.From<QuantParam>(new QuantParam[] { new(1, 2.0f), new(2, 3.0f) }, new[] { 2 }), DataTypes.UInt8);
-        var y = IR.F.Random.Normal(DataTypes.UInt8, 0, 1, 0, new[] { 1, 2, 2, 2 });
+        var y = new Var("y", new TensorType(DataTypes.UInt8, new int[] { 1, 2, 2, 2 }));
         var z = IR.F.Random.Normal(DataTypes.UInt8, 0, 1, 0, new[] { 1, 2, 2, 2 });
-        var main = new Function("main", IR.F.Tensors.Concat(new IR.Tuple(new Expr[] { x, y, z }), 1), Array.Empty<Var>());
+        var main = new Function("main", IR.F.Tensors.Concat(new IR.Tuple(new Expr[] { x, y, z }), 1), new[] { y });
         CompilerServices.DumpCSharpIR(main, string.Empty, Dumpper.Directory);
     }
 
@@ -200,9 +200,13 @@ public sealed class UnitTestDumpper : TestClassBase
     public void TestDumperCSharpIRFusion()
     {
         var x = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new Half[] { (Half)1, (Half)3 });
-        var y = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new float[] { 1.0f, 2.0f });
         var z = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new BFloat16[] { (BFloat16)1.0, (BFloat16)2.0 });
-        var fusion = new Fusion("fusion", "stackvm", new IR.Tuple(new Expr[] { x, y, z }), Array.Empty<Var>());
+        var y = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new float[] { 1.0f, 2.0f });
+        var m = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new double[] { 1.0, 2.0 });
+        var n = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new long[] { 1L, 2L });
+        var k = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new uint[] { 1u, 2u });
+        var j = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new ulong[] { 1UL, 2UL });
+        var fusion = new Fusion("fusion", "stackvm", new IR.Tuple(new Expr[] { x, y, z, m, n, k, j }), Array.Empty<Var>());
         var main = new Function("main", IR.F.Tensors.Concat(new Call(fusion, Array.Empty<Expr>()), 1), Array.Empty<Var>());
         CompilerServices.DumpCSharpIR(main, string.Empty, Dumpper.Directory);
     }

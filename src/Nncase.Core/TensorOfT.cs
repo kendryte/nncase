@@ -18,18 +18,24 @@ namespace Nncase;
 
 internal sealed class TensorOfT
 {
+    /// <summary>
+    /// The array to string prefix map
+    /// </summary>
     public static Dictionary<System.RuntimeTypeHandle, string> PrefixMap = new()
     {
       {typeof(Half).TypeHandle, "(Half)"},
       {typeof(BFloat16).TypeHandle, "(BFloat16)"}
     };
 
+    /// <summary>
+    /// The array to string suffix map
+    /// </summary>
     public static Dictionary<System.RuntimeTypeHandle, string> SuffixMap = new()
     {
       {typeof(float).TypeHandle, "f"},
       {typeof(double).TypeHandle, "d"},
-      {typeof(long).TypeHandle, "l"},
-      {typeof(uint).TypeHandle, "u"},
+      {typeof(long).TypeHandle, "L"},
+      {typeof(uint).TypeHandle, "UL"},
     };
 }
 

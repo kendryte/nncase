@@ -75,7 +75,7 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
     }
 
     /// <inheritdoc/>
-    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool displayCallable)
+    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir)
     {
         var nprefix = prefix.Any() ? prefix + "_" : prefix;
         string ext = "cs";
