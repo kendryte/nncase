@@ -127,6 +127,7 @@ public partial class ComplexFusion<TMid, TBegin, TEnd> : FusionMaker
 
         // 1. update all input call (replace first input by var)
         var midPairs = InputPatterns
+
             // remove Constant
             .Where(p => ((Call)midCallParams[p.Item1.Index]).Parameters[0] is not Const)
             .Select((p, i) =>
@@ -152,7 +153,8 @@ public partial class ComplexFusion<TMid, TBegin, TEnd> : FusionMaker
             _ => throw new NotSupportedException("not suppoerted output type"),
         };
 
-        var fusion = new Call(new Fusion(FullName, ModuleKind, newOutput, ImmutableArray.CreateRange(newInputs)),
+        var fusion = new Call(
+            new Fusion(FullName, ModuleKind, newOutput, ImmutableArray.CreateRange(newInputs)),
             ImmutableArray.CreateRange(newParams));
         return fusion;
     }
@@ -164,11 +166,11 @@ public partial class ComplexFusion<TMid, TBegin, TEnd> : FusionMaker
                 ReplaceCallFirstParam(
                     (Call)end,
                     ReplaceCallParams(
+
                         // end is a GetItem(Call(OpT, params))
                         // then end[0] is Call(OpT, params)
                         (Call)((Call)end).Parameters[0],
-                        (midCall, newMidCall)))
-            )));
+                        (midCall, newMidCall))))));
     }
 }
 

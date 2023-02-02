@@ -28,6 +28,7 @@ public static class ReplaceUtility
         {
             return list.ToList();
         }
+
         var new_args = new List<Expr>(list);
 
         Dictionary<int, Expr> candidates = new();

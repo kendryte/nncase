@@ -64,7 +64,8 @@ public sealed class UnitTestFusionMaker : TestClassBase
         pass.Add<TestTransposeFusion>();
 
         var post = await pass.RunAsync(pre, new());
-        var isMatch = CompilerServices.TryMatch(post,
+        var isMatch = CompilerServices.TryMatch(
+            post,
             IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
         Assert.True(isMatch);
     }
@@ -128,7 +129,8 @@ public sealed class UnitTestFusionMaker : TestClassBase
         pass.Add<TestUnaryFusion>();
 
         var post = await pass.RunAsync(pre, new());
-        var isMatch = CompilerServices.TryMatch(post,
+        var isMatch = CompilerServices.TryMatch(
+            post,
             IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
         Assert.True(isMatch);
     }
@@ -218,7 +220,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
         var inShape = new[] { 1, 24, 32, 3 };
         var input = DataGenerator.DefaultRandom(inShape);
         var v1 = WrapperWith(x => Transpose(x[0], new[] { 0, 3, 1, 2 }), input); // f32[1,3,24,32]
-        var pre = new Function("main", v1, new Var[] { });
+        var pre = new Function("main", v1, Array.Empty<Var>());
         var pass = new DataflowPass { Name = "Fusion" };
         pass.Add<TestTransposeComplexFusion>();
         var post = (Function)await pass.RunAsync(pre, new());
@@ -271,6 +273,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
         var outputSize = 2;
         var x = new Var(new TensorType(DataTypes.Float32, new[] { 1, 3, 2 }));
         var init_c = new Var(new TensorType(DataTypes.Float32, new[] { 1, numberOfGates * hiddenSize, inputSize }));
+
         // var init_h = new Var(new TensorType(DataTypes.Float32, new[] { 1, numberOfGates * hiddenSize, hiddenSize }));
         var init_h = new Var(new TensorType(DataTypes.Float32, new[] { 1, numberOfGates * hiddenSize, hiddenSize }));
         var b = DataGenerator.DefaultRandom(new[] { 1, 1, 1, 1 });
