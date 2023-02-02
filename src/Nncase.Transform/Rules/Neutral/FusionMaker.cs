@@ -58,7 +58,7 @@ public partial class ComplexFusion<TMid, TBegin, TEnd> : FusionMaker
     where TBegin : Op
     where TEnd : Op
 {
-    private string _endName = "output";
+    private readonly string _endName = "output";
 
     public ComplexFusion()
     {
