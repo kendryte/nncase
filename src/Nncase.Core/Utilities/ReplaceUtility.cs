@@ -24,7 +24,7 @@ public static class ReplaceUtility
     /// <exception cref="InvalidOperationException">when the same target match two value.</exception>
     public static List<Expr> ReplaceItems(IReadOnlyList<Expr> list, params (Expr Target, Expr Value)[] pairs)
     {
-        if (pairs.Count == 0)
+        if (pairs.Length == 0)
         {
             return list.ToList();
         }
@@ -95,4 +95,22 @@ public static class ReplaceUtility
     {
         return new Call(target, ImmutableArray.CreateRange(ReplaceItems(oldParams, pairs)));
     }
+
+    /// <summary>
+    /// replace the call params with parameter info.
+    /// </summary>
+    /// <param name="call">call.</param>
+    /// <param name="pairs">the param info pair.</param>
+    /// <returns>new call.</returns>
+    public static Call ReplaceCallParams(Call call, params (Expr, Expr)[] pairs) =>
+        ReplaceCallParams(call.Target, call.Parameters, pairs);
+
+    /// <summary>
+    /// replace the first params of call with expr.
+    /// </summary>
+    /// <param name="call"></param>
+    /// <param name="expr"></param>
+    /// <returns></returns>
+    public static Call ReplaceCallFirstParam(Call call, Expr expr) =>
+        ReplaceCallParams(call, new[] { (call.Parameters[0], expr) });
 }

@@ -21,7 +21,6 @@ using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Math;
-using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.Utility;
 using Transpose = Nncase.IR.Tensors.Transpose;
 using Tuple = Nncase.IR.Tuple;
@@ -65,7 +64,8 @@ public sealed class UnitTestFusionMaker : TestClassBase
         pass.Add<TestTransposeFusion>();
 
         var post = await pass.RunAsync(pre, new());
-        var isMatch = CompilerServices.TryMatch(post, IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
+        var isMatch = CompilerServices.TryMatch(post,
+            IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
         Assert.True(isMatch);
     }
 
@@ -97,9 +97,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
             post,
             new IMergeRewriteRule[]
             {
-                new SameInputFusionMergeRule(),
-                new MultiInputFusionMergeRule(),
-                new ShortCutFusionMergeRuleLeft(),
+                new SameInputFusionMergeRule(), new MultiInputFusionMergeRule(), new ShortCutFusionMergeRuleLeft(),
                 new ShortCutFusionMergeRuleRight(),
             },
             (usedby, rule, option) => new FusionGroupMutator(usedby, rule, option),
@@ -130,7 +128,8 @@ public sealed class UnitTestFusionMaker : TestClassBase
         pass.Add<TestUnaryFusion>();
 
         var post = await pass.RunAsync(pre, new());
-        var isMatch = CompilerServices.TryMatch(post, IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
+        var isMatch = CompilerServices.TryMatch(post,
+            IsPairLayerFusion<Unary, Transpose, Quantize, Dequantize>("StackVM", "unary"), out _);
         Assert.True(isMatch);
     }
 
@@ -219,7 +218,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
         var inShape = new[] { 1, 24, 32, 3 };
         var input = DataGenerator.DefaultRandom(inShape);
         var v1 = WrapperWith(x => Transpose(x[0], new[] { 0, 3, 1, 2 }), input); // f32[1,3,24,32]
-        var pre = new Function("main", v1, new Var[]{});
+        var pre = new Function("main", v1, new Var[] { });
         var pass = new DataflowPass { Name = "Fusion" };
         pass.Add<TestTransposeComplexFusion>();
         var post = (Function)await pass.RunAsync(pre, new());
@@ -233,19 +232,19 @@ public sealed class UnitTestFusionMaker : TestClassBase
     public async Task TestComplexFusionMultiOutput()
     {
         // used for find which expr is not expected
-        void Compare(Tuple oldBody, Tuple expectBody, int i)
+        void Compare(Tuple expectBody, Tuple oldBody, int i)
         {
             var oldDeq = oldBody[0];
             var oldGetItem = ((Call)oldDeq).Parameters[0];
             var oldLSTM = ((Call)oldGetItem).Parameters[0];
             var oldQuant = ((Call)oldLSTM).Parameters[i];
-            var oldVar = ((Call)oldQuant).Parameters[0];
+            var oldVar = (Var)((Call)oldQuant).Parameters[0];
 
-            var expectDeq = ((IR.Tuple)expectBody).Fields[0];
+            var expectDeq = expectBody.Fields[0];
             var expectGetItem = ((Call)expectDeq).Parameters[0];
             var expectLSTM = ((Call)expectGetItem).Parameters[0];
             var expectQuant = ((Call)expectLSTM).Parameters[i];
-            var expectVar = ((Call)expectQuant).Parameters[0];
+            var expectVar = (Var)((Call)expectQuant).Parameters[0];
             Assert.Equal(oldVar, expectVar);
             Assert.Equal(oldQuant, expectQuant);
             Assert.Equal(oldLSTM, expectLSTM);
@@ -277,7 +276,6 @@ public sealed class UnitTestFusionMaker : TestClassBase
         var b = DataGenerator.DefaultRandom(new[] { 1, 1, 1, 1 });
         var w = DataGenerator.DefaultRandom(new[] { 1, 1, 1, 1 });
         var r = DataGenerator.DefaultRandom(new[] { 1, 1, 1, 1 });
-        var dt = DataTypes.Int8;
         var lstm = IR.F.RNN.LSTM(LSTMDirection.Bidirectional, LSTMLayout.One, new[] { "act" },
             WrapInput(x),
             w,
@@ -302,36 +300,47 @@ public sealed class UnitTestFusionMaker : TestClassBase
 
         // construct a expect Tuple
         // avoiding the error of comparing var, because comparing var is by ref
-        var newVar0 = x;
-        var newVar1 = init_c;
-        var newVar2 = init_h;
-        var expectLSTM = ReplaceUtility.ReplaceParams(lstm, (LSTM.X, WrapInput(newVar0)), (LSTM.InitialC, WrapInput(newVar1)), (LSTM.InitialH, WrapInput(newVar2)));
+        var newVar0 = newVars[0];
+        var newVar1 = newVars[1];
+        var newVar2 = newVars[2];
+        var pairs = new[]
+        {
+            (LSTM.X, (Expr)WrapInput(newVar0)),
+            (LSTM.InitialC, WrapInput(newVar1)),
+            (LSTM.InitialH, WrapInput(newVar2)),
+        };
+        var expectLSTM = ReplaceUtility.ReplaceCallParams(lstm.Target, lstm.Parameters, pairs);
         var expectBody = WrapOutput(expectLSTM);
-        var expectCall = new Call(new Fusion("FusionMaker_0", "StackVM", expectBody, new[] { newVar0, newVar1, newVar2 }), x, w, r);
+        var expectCall =
+            new Call(new Fusion("FusionMaker_0", "StackVM", expectBody, new[] { newVar0, newVar1, newVar2 }), x, init_c, init_h);
         expectCall.InferenceType();
-        Assert.True(CompilerServices.TryMatch(afterCall.Target, new LSTMFusion().Pattern, out _));
-        var idxList = LSTMFusion.FusionCondMaker.InputsPattern.Select(x => x.Item1.Index).ToArray();
+        CompilerServices.DumpIR(f, "f", "/Users/homura/Code/nncase-fix");
+        CompilerServices.DumpIR(afterCall, "after", "/Users/homura/Code/nncase-fix");
+        Assert.True(CompilerServices.TryMatchRoot(afterCall.Target, IsFusion("StackVM", new LSTMFusion().Pattern), out _));
+        var idxList = new LSTMFusion().InputPatterns.Select(x => x.Item1.Index).ToArray();
+        var actualBody = (Tuple)((Fusion)afterCall.Target).Body;
         foreach (int idx in idxList)
         {
-            Compare(oldBody, expectBody, idx);
+            Compare(expectBody, actualBody, idx);
         }
     }
 
     private Expr WrapperWith(Func<Expr[], Expr> ctor, params Expr[] inputs)
     {
-        var new_inputs = inputs.Select(i => Quantize(i, new QuantParam(0, 1), DataTypes.BFloat16)).ToArray();
-        var output = ctor(new_inputs);
+        var newInputs = inputs.Select(i => Quantize(i, new QuantParam(0, 1), DataTypes.BFloat16)).ToArray();
+        var output = ctor(newInputs);
         return Dequantize(output, new QuantParam(0, 1), DataTypes.Float32);
     }
 
-    internal sealed class TestTransposeComplexFusionSingleOutput : ComplexFusion<Transpose, Quantize, Dequantize>
+    internal sealed class TestTransposeComplexFusion : ComplexFusion<Transpose, Quantize, Dequantize>
     {
         public override (ParameterInfo, CallPattern)[] InputPatterns { get; } = GenerateInputPatterns(Transpose.Input);
     }
 
     internal sealed class LSTMFusion : ComplexFusion<LSTM, Quantize, Dequantize>
     {
-        public override (ParameterInfo, CallPattern)[] InputPatterns { get; } = GenerateInputPatterns(LSTM.X, LSTM.InitialC, LSTM.InitialH);
+        public override (ParameterInfo, CallPattern)[] InputPatterns { get; } =
+            GenerateInputPatterns(LSTM.X, LSTM.InitialC, LSTM.InitialH);
     }
 }
 
