@@ -81,4 +81,7 @@ public sealed record LSTM(LSTMDirection Direction, LSTMLayout Layout, string[] A
     /// Gets output_size.
     /// </summary>
     public static readonly ParameterInfo OutputSize = new(typeof(LSTM), 13, "output_size");
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"LSTMDirection.{Direction}, LSTMLayout.{Layout}, {string.Join(", ", Activations.Select(s => "\"" + s + "\""))}";
 }

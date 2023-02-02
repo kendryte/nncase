@@ -39,4 +39,7 @@ public sealed record ReduceArg(ReduceArgOp ReduceArgOp) : Op
     /// </summary>
     /// <remarks>Only used in onnx.</remarks>
     public static readonly ParameterInfo SelectLastIndex = new(typeof(ReduceArg), 3, "selectLastIndex", IsBoolScalar());
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"ReduceArgOp.{ReduceArgOp}";
 }

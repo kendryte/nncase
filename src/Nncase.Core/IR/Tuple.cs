@@ -27,7 +27,7 @@ public sealed record Tuple(IRArray<Expr> Fields) : Expr, ITuple
     }
 
     public Tuple(IEnumerable<Expr> fields)
-        : this(fields.ToArray())
+        : this(ImmutableArray.CreateRange(fields))
     {
     }
 

@@ -30,6 +30,6 @@ public sealed record Binary(BinaryOp BinaryOp) : Op
     /// <inheritdoc/>
     public override string DisplayProperty()
     {
-        return $"BinaryOp: {BinaryOp}";
+        return $"BinaryOp.{BinaryOp}";
     }
 }

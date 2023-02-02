@@ -21,4 +21,7 @@ public sealed record Cast(DataType NewType, CastMode CastMode) : Op
     /// Gets input.
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(Cast), 0, "input");
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"{NewType.GetCSharpName()}, CastMode.{CastMode}";
 }

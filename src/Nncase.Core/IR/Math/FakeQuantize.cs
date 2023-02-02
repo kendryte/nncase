@@ -20,4 +20,7 @@ public sealed record FakeQuantize(DataType TargetType) : Op
     /// Gets QuantParam.
     /// </summary>
     public static readonly ParameterInfo QuantParam = new(typeof(FakeQuantize), 1, "quantParam");
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"{TargetType.GetCSharpName()}";
 }

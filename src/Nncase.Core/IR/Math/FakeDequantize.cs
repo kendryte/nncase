@@ -20,4 +20,7 @@ public sealed record FakeDequantize(DataType TargetType) : Op
     /// Gets DequantParam.
     /// </summary>
     public static readonly ParameterInfo DequantParam = new(typeof(FakeDequantize), 1, "dequantParam");
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"{TargetType.GetCSharpName()}";
 }

@@ -23,6 +23,12 @@ public interface ICompiler
     Task<IRModule> ImportModuleAsync(Stream content);
 
     /// <summary>
+    /// import ir module into compiler.
+    /// </summary>
+    /// <param name="module">Module.</param>
+    void ImportIRModule(IRModule module);
+
+    /// <summary>
     /// Compile module.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
