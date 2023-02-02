@@ -40,6 +40,8 @@ public interface IDumpper
 
     void DumpDotIR(Expr expr, string prefix, string? reletivePath = null);
 
+    void DumpCSharpIR(Expr expr, string prefix, string? reletivePath = null);
+
     void DumpModule(IRModule module, string? reletivePath = null);
 
     Stream OpenFile(string reletivePath, FileMode fileMode = FileMode.Create);

@@ -76,4 +76,46 @@ public sealed class UnitTestDataTypes
         Assert.Equal(DataTypes.Float64.ShortName, DataTypes.GetDisplayName(DataTypes.Float64));
         Assert.Equal(DataTypes.BFloat16.ShortName, DataTypes.GetDisplayName(DataTypes.BFloat16));
     }
+
+    [Fact]
+    public void TestCSharpName()
+    {
+        Assert.Equal("new QuantParamType()", DataTypes.GetCSharpName(new QuantParamType()));
+        Assert.Equal("new PointerType(DataTypes.Float32)", DataTypes.GetCSharpName(new PointerType(DataTypes.Float32)));
+        Assert.Equal("DataTypes.Boolean", DataTypes.GetCSharpName(DataTypes.Boolean));
+        Assert.Equal("DataTypes.Utf8Char", DataTypes.GetCSharpName(DataTypes.Utf8Char));
+        Assert.Equal("DataTypes.Int8", DataTypes.GetCSharpName(DataTypes.Int8));
+        Assert.Equal("DataTypes.UInt8", DataTypes.GetCSharpName(DataTypes.UInt8));
+        Assert.Equal("DataTypes.Int16", DataTypes.GetCSharpName(DataTypes.Int16));
+        Assert.Equal("DataTypes.UInt16", DataTypes.GetCSharpName(DataTypes.UInt16));
+        Assert.Equal("DataTypes.Int32", DataTypes.GetCSharpName(DataTypes.Int32));
+        Assert.Equal("DataTypes.UInt32", DataTypes.GetCSharpName(DataTypes.UInt32));
+        Assert.Equal("DataTypes.Int64", DataTypes.GetCSharpName(DataTypes.Int64));
+        Assert.Equal("DataTypes.UInt64", DataTypes.GetCSharpName(DataTypes.UInt64));
+        Assert.Equal("DataTypes.Float16", DataTypes.GetCSharpName(DataTypes.Float16));
+        Assert.Equal("DataTypes.Float32", DataTypes.GetCSharpName(DataTypes.Float32));
+        Assert.Equal("DataTypes.Float64", DataTypes.GetCSharpName(DataTypes.Float64));
+        Assert.Equal("DataTypes.BFloat16", DataTypes.GetCSharpName(DataTypes.BFloat16));
+    }
+
+    [Fact]
+    public void TestBuiltInName()
+    {
+        Assert.Equal("QuantParam", DataTypes.GetBuiltInName(new QuantParamType()));
+        Assert.Throws<NotSupportedException>(() => DataTypes.GetBuiltInName(new PointerType(DataTypes.Float32)));
+        Assert.Equal("bool", DataTypes.GetBuiltInName(DataTypes.Boolean));
+        Assert.Equal("Utf8Char", DataTypes.GetBuiltInName(DataTypes.Utf8Char));
+        Assert.Equal("sbyte", DataTypes.GetBuiltInName(DataTypes.Int8));
+        Assert.Equal("byte", DataTypes.GetBuiltInName(DataTypes.UInt8));
+        Assert.Equal("short", DataTypes.GetBuiltInName(DataTypes.Int16));
+        Assert.Equal("ushort", DataTypes.GetBuiltInName(DataTypes.UInt16));
+        Assert.Equal("int", DataTypes.GetBuiltInName(DataTypes.Int32));
+        Assert.Equal("uint", DataTypes.GetBuiltInName(DataTypes.UInt32));
+        Assert.Equal("long", DataTypes.GetBuiltInName(DataTypes.Int64));
+        Assert.Equal("ulong", DataTypes.GetBuiltInName(DataTypes.UInt64));
+        Assert.Equal("Half", DataTypes.GetBuiltInName(DataTypes.Float16));
+        Assert.Equal("float", DataTypes.GetBuiltInName(DataTypes.Float32));
+        Assert.Equal("double", DataTypes.GetBuiltInName(DataTypes.Float64));
+        Assert.Equal("BFloat16", DataTypes.GetBuiltInName(DataTypes.BFloat16));
+    }
 }
