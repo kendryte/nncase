@@ -28,6 +28,7 @@ public static class ReplaceUtility
         {
             return list.ToList();
         }
+
         var new_args = new List<Expr>(list);
 
         Dictionary<int, Expr> candidates = new();
@@ -97,20 +98,12 @@ public static class ReplaceUtility
     }
 
     /// <summary>
-    /// replace the call params with parameter info.
-    /// </summary>
-    /// <param name="call">call.</param>
-    /// <param name="pairs">the param info pair.</param>
-    /// <returns>new call.</returns>
-    public static Call ReplaceCallParams(Call call, params (Expr, Expr)[] pairs) =>
-        ReplaceCallParams(call.Target, call.Parameters, pairs);
-
-    /// <summary>
     /// replace the first params of call with expr.
     /// </summary>
-    /// <param name="call"></param>
-    /// <param name="expr"></param>
-    /// <returns></returns>
-    public static Call ReplaceCallFirstParam(Call call, Expr expr) =>
-        ReplaceCallParams(call, new[] { (call.Parameters[0], expr) });
+    /// <param name="target">target.</param>
+    /// <param name="oldParams">oldParams.</param>
+    /// <param name="expr">expr.</param>
+    /// <returns>new Call.</returns>
+    public static Call ReplaceCallFirstParam(Expr target, IReadOnlyList<Expr> oldParams, Expr expr) =>
+        ReplaceCallParams(target, oldParams, (oldParams[0], expr));
 }
