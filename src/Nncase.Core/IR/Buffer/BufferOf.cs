@@ -15,4 +15,7 @@ public record BufferOf(Schedule.MemoryLocation MemoryLocation) : Op
     /// Get the input parameter.
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(BufferOf), 0, "input", IsTensor());
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"Schedule.MemoryLocation.{MemoryLocation}";
 }

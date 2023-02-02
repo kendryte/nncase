@@ -27,4 +27,7 @@ public sealed record Pad(PadMode PadMode) : Op
     /// float pad value.
     /// </summary>
     public static readonly ParameterInfo Value = new(typeof(Pad), 2, "value", IsScalar());
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"PadMode.{PadMode}";
 }

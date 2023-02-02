@@ -27,4 +27,7 @@ public sealed record Require(string Message) : Op
     /// Gets FalseValue.
     /// </summary>
     public static readonly ParameterInfo Value = new(typeof(Require), 1, "value");
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => "\"\"";
 }

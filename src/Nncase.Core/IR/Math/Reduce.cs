@@ -31,4 +31,7 @@ public sealed record Reduce(ReduceOp ReduceOp) : Op
     /// Gets whether to keep dims.
     /// </summary>
     public static readonly ParameterInfo KeepDims = new(typeof(Reduce), 3, "keepDims", IsScalar() & IsIntegral());
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"ReduceOp.{ReduceOp}";
 }

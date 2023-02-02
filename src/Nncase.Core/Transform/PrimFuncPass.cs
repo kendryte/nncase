@@ -88,7 +88,7 @@ public class PrimFuncPass : Pass<PrimFunction>, IMutatorsAddable
                 if (isMutated)
                 {
                     var typeInferSuccess = CompilerServices.InferenceType(post);
-                    if (DumpScope.Current.IsEnabled(DumpFlags.PassIR))
+                    if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
                     {
                         DumpScope.Current.DumpIR(post, $"{count++}_{mutator.GetType().Name}");
                     }

@@ -21,4 +21,7 @@ public sealed record Quantize(DataType TargetType) : Op
     /// Gets QuantParam.
     /// </summary>
     public static readonly ParameterInfo QuantParam = new(typeof(Quantize), 1, "quantParam", IsQuantParamType());
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"{TargetType.GetCSharpName()}";
 }

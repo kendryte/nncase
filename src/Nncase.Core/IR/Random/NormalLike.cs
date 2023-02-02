@@ -32,4 +32,7 @@ public sealed record NormalLike(DataType Type) : Op
     /// Gets seed.
     /// </summary>
     public static readonly ParameterInfo Seed = new(typeof(NormalLike), 3, "seed", IsFloatScalar());
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => Type.GetCSharpName();
 }

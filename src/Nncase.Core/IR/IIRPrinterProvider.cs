@@ -65,6 +65,14 @@ public interface IIRPrinterProvider
     void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable);
 
     /// <summary>
+    /// dump the expr as csharp code.
+    /// </summary>
+    /// <param name="expr">expression.</param>
+    /// <param name="prefix">file prefix.</param>
+    /// <param name="dumpDir">file dump ir.</param>
+    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir);
+
+    /// <summary>
     /// print ir type.
     /// </summary>
     string Print(IRType type);

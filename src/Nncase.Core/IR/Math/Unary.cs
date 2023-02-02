@@ -25,6 +25,6 @@ public sealed record Unary(UnaryOp UnaryOp) : Op
     /// <inheritdoc/>
     public override string DisplayProperty()
     {
-        return $"UnaryOp: {UnaryOp}";
+        return $"UnaryOp.{UnaryOp}";
     }
 }

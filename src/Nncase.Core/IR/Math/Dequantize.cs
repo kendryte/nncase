@@ -21,4 +21,7 @@ public sealed record Dequantize(DataType TargetType) : Op
     /// Gets DequantParam.
     /// </summary>
     public static readonly ParameterInfo DequantParam = new(typeof(Dequantize), 1, "dequantParam", IsQuantParamType());
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"{TargetType.GetCSharpName()}";
 }

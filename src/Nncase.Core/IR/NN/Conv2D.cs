@@ -59,9 +59,6 @@ namespace Nncase.IR.NN
         public static readonly ParameterInfo FusedClamp = new(typeof(Conv2D), 7, "fused_clamp", HasShape(new Shape(2)) & HasDataType(DataTypes.Float32));
 
         /// <inheritdoc/>
-        public override string DisplayProperty()
-        {
-            return $"PadMode: {PadMode}";
-        }
+        public override string DisplayProperty() => $"PadMode.{PadMode}";
     }
 }

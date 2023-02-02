@@ -19,4 +19,7 @@ public sealed record Uninitialized(DataType DType, Schedule.MemoryLocation Memor
 
     /// <inheritdoc/>
     public override bool CanFoldConstCall => false;
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"{DType.GetCSharpName()}, Schedule.MemoryLocation.{MemoryLocation}";
 }
