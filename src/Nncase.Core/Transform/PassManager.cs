@@ -186,14 +186,14 @@ internal sealed class PassManager : IPassManager
             {
                 if (_dummper.IsEnabled(DumpFlags.PassIR))
                 {
-                    _dummper.DumpModule(module, $"{passIndex}_{pass.Name}/Before");
+                    _dummper.DumpIR(pre, string.Empty, $"{passIndex}_{pass.Name}/Before");
                 }
 
                 module.Replace(i, post);
 
                 if (_dummper.IsEnabled(DumpFlags.PassIR))
                 {
-                    _dummper.DumpModule(module, $"{passIndex}_{pass.Name}/After");
+                    _dummper.DumpIR(post, string.Empty, $"{passIndex}_{pass.Name}/After");
                 }
             }
         }
@@ -214,14 +214,14 @@ internal sealed class PassManager : IPassManager
                 {
                     if (_dummper.IsEnabled(DumpFlags.PassIR))
                     {
-                        _dummper.DumpModule(module, $"{passIndex}_{pass.Name}/Before");
+                        _dummper.DumpIR(pre, string.Empty, $"{passIndex}_{pass.Name}/Before");
                     }
 
                     module.Replace(i, post);
 
                     if (_dummper.IsEnabled(DumpFlags.PassIR))
                     {
-                        _dummper.DumpModule(module, $"{passIndex}_{pass.Name}/After");
+                        _dummper.DumpIR(post, string.Empty, $"{passIndex}_{pass.Name}/After");
                     }
                 }
             }
