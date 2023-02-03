@@ -2307,6 +2307,10 @@ namespace IsaGen
 			[Description("direction register")]
 			public byte Direction { get; set; }
 
+			[DisplayName("LBR")]
+            [Description("LBR register")]
+            public bool LBR { get; set; }
+
 		}
 		[DisplayName("TENSOR.TFLITE_DETECTION_POSTPROCESS")]
 		[Category("Tensor Instructions")]

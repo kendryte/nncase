@@ -37,5 +37,5 @@ result<void> stackvm_runtime_function::visit(const tensor_gru_op_t &op) noexcept
     return kernels::gru(reinterpret_cast<const float *>(input), reinterpret_cast<const float *>(w),
         reinterpret_cast<const float *>(r), reinterpret_cast<const float *>(b),
         reinterpret_cast<float *>(initial_h), reinterpret_cast<float *>(output),
-        reinterpret_cast<float *>(output_h), in_shape, w_shape, op.direction);
+        reinterpret_cast<float *>(output_h), in_shape, w_shape, op.direction, op.LBR);
 }

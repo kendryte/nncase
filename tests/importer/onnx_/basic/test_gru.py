@@ -20,7 +20,11 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
-def _make_module(direction, hidden_size, seq_length, batch_size, input_size, bias, sequence_lens, initial_h, Y, Y_h):
+np.random.seed(10)
+
+
+def _make_module(direction, hidden_size, seq_length, batch_size, input_size, bias, sequence_lens, initial_h, Y, Y_h,
+                 LBR):
     nodes_inputs = []
     nodes_outputs = []
     initializers = []
@@ -33,6 +37,7 @@ def _make_module(direction, hidden_size, seq_length, batch_size, input_size, bia
     if direction is not None:
         attributes_dict['direction'] = direction
     attributes_dict['hidden_size'] = hidden_size
+    attributes_dict['linear_before_reset'] = LBR
 
     # input
     input_shape = [seq_length, batch_size, input_size]
@@ -45,7 +50,7 @@ def _make_module(direction, hidden_size, seq_length, batch_size, input_size, bia
         'W',
         TensorProto.FLOAT,
         dims=w_shape,
-        vals=np.random.rand(*w_shape).astype(np.float32).flatten().tolist()
+        vals=(np.random.rand(*w_shape) * 2 - 1).astype(np.float32).flatten().tolist()
     )
     nodes_inputs.append('W')
     initializers.append(w_tensor)
@@ -55,7 +60,7 @@ def _make_module(direction, hidden_size, seq_length, batch_size, input_size, bia
         'R',
         TensorProto.FLOAT,
         dims=r_shape,
-        vals=np.random.rand(*r_shape).astype(np.float32).flatten().tolist()
+        vals=(np.random.rand(*r_shape) * 2 - 1).astype(np.float32).flatten().tolist()
     )
     nodes_inputs.append('R')
     initializers.append(r_tensor)
@@ -69,7 +74,7 @@ def _make_module(direction, hidden_size, seq_length, batch_size, input_size, bia
             'B',
             TensorProto.FLOAT,
             dims=bias_shape,
-            vals=np.random.rand(*bias_shape).astype(np.float32).flatten().tolist()
+            vals=(np.random.rand(*bias_shape) * 2 - 1).astype(np.float32).flatten().tolist()
         )
         nodes_inputs.append('B')
         initializers.append(bias_tensor)
@@ -99,7 +104,6 @@ def _make_module(direction, hidden_size, seq_length, batch_size, input_size, bia
         )
         nodes_inputs.append('initial_h')
         initializers.append(initial_h_tensor)
-
 
     # output
     if Y is None:
@@ -140,6 +144,7 @@ def _make_module(direction, hidden_size, seq_length, batch_size, input_size, bia
 
     return model_def
 
+
 directions = [
     None,
     'forward',
@@ -148,7 +153,7 @@ directions = [
 ]
 
 hidden_sizes = [
-    3
+    32
 ]
 
 seq_lengths = [
@@ -156,15 +161,15 @@ seq_lengths = [
 ]
 
 batch_sizes = [
-    5,
+    16,
 ]
 
 input_sizes = [
-    6,
+    64,
 ]
 
 biases = [
-    None,
+    # None,
     1
 ]
 
@@ -173,17 +178,22 @@ sequence_lenses = [
 ]
 
 initial_hs = [
-    None,
+    # None,
     1
 ]
 
 Ys = [
+    # None, // At least one output be requested
     1
 ]
 
-
 Y_hs = [
-    None,
+    # None,
+    1
+]
+
+LBRs = [
+    0,
     1
 ]
 
@@ -198,12 +208,16 @@ Y_hs = [
 @pytest.mark.parametrize('initial_h', initial_hs)
 @pytest.mark.parametrize('Y', Ys)
 @pytest.mark.parametrize('Y_h', Y_hs)
-def test_gru(direction, hidden_size, seq_length, batch_size, input_size, bias, sequence_lens, initial_h, Y, Y_h, request):
-    model_def = _make_module(direction, hidden_size, seq_length, batch_size, input_size, bias, sequence_lens, initial_h, Y, Y_h)
+@pytest.mark.parametrize('LBR', LBRs)
+def test_gru(direction, hidden_size, seq_length, batch_size, input_size, bias, sequence_lens, initial_h, Y, Y_h, LBR,
+             request):
+    model_def = _make_module(direction, hidden_size, seq_length, batch_size,
+                             input_size, bias, sequence_lens, initial_h, Y, Y_h, LBR)
 
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_gru.py'])

@@ -39,6 +39,8 @@ void onnx_importer::convert_op_GRU(const NodeProto &node)
         direction = kBidirectional;
     size_t num_directions = direction == kBidirectional ? 2 : 1;
 
+    auto LBR = get_attribute<int64_t>(node, "linear_before_reset").value_or(0);
+
     // input
     auto input_size = node.input_size();
     assert(input_size >= 3 && input_size <= 8);
@@ -83,7 +85,7 @@ void onnx_importer::convert_op_GRU(const NodeProto &node)
         output_h = node.output()[1];
 
     shape_t output_shape { seq_length, num_directions, batch_size, hidden_size };
-    auto lstm_node = graph_.emplace<gru>(input_shape, W_shape, R_shape, B_shape, output_shape, initial_shape, direction, "onnx");
+    auto lstm_node = graph_.emplace<gru>(input_shape, W_shape, R_shape, B_shape, output_shape, initial_shape, direction, "onnx", LBR == 0 ? false : true);
     lstm_node->name(op_name);
 
     input_tensors_.emplace(&lstm_node->input_at(0), input);
