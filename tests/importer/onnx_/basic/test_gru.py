@@ -20,7 +20,6 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
-np.random.seed(10)
 
 
 def _make_module(direction, hidden_size, seq_length, batch_size, input_size, bias, sequence_lens, initial_h, Y, Y_h,
@@ -153,11 +152,11 @@ directions = [
 ]
 
 hidden_sizes = [
-    32
+    32,
 ]
 
 seq_lengths = [
-    4
+    4,
 ]
 
 batch_sizes = [
@@ -169,7 +168,7 @@ input_sizes = [
 ]
 
 biases = [
-    # None,
+    None,
     1
 ]
 
@@ -178,7 +177,7 @@ sequence_lenses = [
 ]
 
 initial_hs = [
-    # None,
+    None,
     1
 ]
 
@@ -188,7 +187,7 @@ Ys = [
 ]
 
 Y_hs = [
-    # None,
+    None,
     1
 ]
 
