@@ -184,18 +184,13 @@ internal sealed class PassManager : IPassManager
             var post = await pass.RunAsync(pre, context);
             if (!object.ReferenceEquals(pre, post))
             {
-                if (_dummper.IsEnabled(DumpFlags.PassIR))
-                {
-                    _dummper.DumpModule(module, $"{passIndex}_{pass.Name}/Before");
-                }
-
                 module.Replace(i, post);
-
-                if (_dummper.IsEnabled(DumpFlags.PassIR))
-                {
-                    _dummper.DumpModule(module, $"{passIndex}_{pass.Name}/After");
-                }
             }
+        }
+
+        if (_dummper.IsEnabled(DumpFlags.PassIR))
+        {
+            _dummper.DumpModule(module, $"{passIndex}_{pass.Name}");
         }
 
         return module;
@@ -212,19 +207,14 @@ internal sealed class PassManager : IPassManager
                 var post = await pass.RunAsync(pf, context);
                 if (!object.ReferenceEquals(pre, post))
                 {
-                    if (_dummper.IsEnabled(DumpFlags.PassIR))
-                    {
-                        _dummper.DumpModule(module, $"{passIndex}_{pass.Name}/Before");
-                    }
-
                     module.Replace(i, post);
-
-                    if (_dummper.IsEnabled(DumpFlags.PassIR))
-                    {
-                        _dummper.DumpModule(module, $"{passIndex}_{pass.Name}/After");
-                    }
                 }
             }
+        }
+
+        if (_dummper.IsEnabled(DumpFlags.PassIR))
+        {
+            _dummper.DumpModule(module, $"{passIndex}_{pass.Name}");
         }
 
         return module;
