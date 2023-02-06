@@ -188,6 +188,11 @@ internal sealed class PassManager : IPassManager
             }
         }
 
+        if (_dummper.IsEnabled(DumpFlags.PassIR))
+        {
+            _dummper.DumpModule(module, $"{passIndex}_{pass.Name}");
+        }
+
         return module;
     }
 
@@ -205,6 +210,11 @@ internal sealed class PassManager : IPassManager
                     module.Replace(i, post);
                 }
             }
+        }
+
+        if (_dummper.IsEnabled(DumpFlags.PassIR))
+        {
+            _dummper.DumpModule(module, $"{passIndex}_{pass.Name}");
         }
 
         return module;
