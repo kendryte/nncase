@@ -34,10 +34,10 @@ public:
 
     lstm_direction direction() const noexcept { return direction_; }
     std::string framework() const noexcept { return framework_; }
-    bool LBR() const noexcept { return LBR_; }
+    bool linear_before_reset() const noexcept { return linear_before_reset_; }
 
     gru(shape_t input_shape, shape_t w_shape, shape_t r_shape, shape_t b_shape, shape_t output_shape,
-        shape_t output_h_shape, lstm_direction direction, std::string framework, bool LBR_);
+        shape_t output_h_shape, lstm_direction direction, std::string framework, bool linear_before_reset);
 
 protected:
     bool properties_equal(node &other) const override;
@@ -45,6 +45,6 @@ protected:
 private:
     lstm_direction direction_;
     std::string framework_;
-    bool LBR_;
+    bool linear_before_reset_;
 };
 }

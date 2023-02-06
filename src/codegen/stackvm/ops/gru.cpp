@@ -39,5 +39,5 @@ void stackvm_module_builder::emit(gru &node, stackvm_op_builder &builder)
     builder.stshape(0, input.shape);
     builder.stshape(1, w.shape);
 
-    builder.tensor_gru_(0, 1, node.direction(), node.LBR());
+    builder.tensor_gru_(0, 1, node.direction(), node.linear_before_reset());
 }

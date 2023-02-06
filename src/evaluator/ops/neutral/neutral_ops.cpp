@@ -843,7 +843,7 @@ void register_neutral_evaluators()
         auto output_h = context.memory_at(rnode.output_h());
         kernels::gru(input.buffer().as_span<float>().data(), W.buffer().as_span<float>().data(), R.buffer().as_span<float>().data(),
             B.buffer().as_span<float>().data(), initial_h.buffer().as_span<float>().data(), output.buffer().as_span<float>().data(), output_h.buffer().as_span<float>().data(),
-            input.shape(), W.shape(), rnode.direction(), rnode.LBR())
+            input.shape(), W.shape(), rnode.direction(), rnode.linear_before_reset())
             .unwrap_or_throw(); });
 
     register_evaluator(op_tflite_detection_postprocess, [](ir::node &node, function_evaluate_context &context) {

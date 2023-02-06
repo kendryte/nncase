@@ -26,12 +26,12 @@ using namespace nncase::kernels::cpu::reference;
 template result<void>
 reference::gru<float>(const float *input, const float *w, const float *r, const float *b, float *initial_h,
     float *output, float *output_h, const runtime_shape_t &input_shape,
-    const runtime_shape_t &w_shape, int mode, bool LBR) noexcept;
+    const runtime_shape_t &w_shape, int mode, bool linear_before_reset) noexcept;
 
 template <typename T>
 result<void> reference::gru(const T *input, const T *w, const T *r, const T *b, T *initial_h, T *output, T *output_h,
     const runtime_shape_t &input_shape, const runtime_shape_t &w_shape, int mode,
-    bool LBR) noexcept
+    bool linear_before_reset) noexcept
 {
     const int seq_length = input_shape[0];
     const int batch_size = input_shape[1];
@@ -149,14 +149,14 @@ result<void> reference::gru(const T *input, const T *w, const T *r, const T *b, 
 
                     for (int rs = 0; rs < hidden_size; rs++)
                     {
-                        if (!LBR)
+                        if (!linear_before_reset)
                             tmp_b[bs * hidden_size + hs] += gate_r[bs * hidden_size + rs] * h_t[bs * hidden_size + rs] * r_i[2 * hidden_size * hidden_size + hs * hidden_size + rs];
                         else
                             tmp_b[bs * hidden_size + hs] += h_t[bs * hidden_size + rs] * r_i[2 * hidden_size * hidden_size + hs * hidden_size + rs];
                     }
                     tmp_b[bs * hidden_size + hs] += b_i[5 * hidden_size + hs];
 
-                    if (!LBR)
+                    if (!linear_before_reset)
                         gate_h[bs * hidden_size + hs] = tmp_a[bs * hidden_size + hs] + tmp_b[bs * hidden_size + hs];
                     else
                         gate_h[bs * hidden_size + hs] = tmp_a[bs * hidden_size + hs] + gate_r[bs * hidden_size + hs] * tmp_b[bs * hidden_size + hs];
