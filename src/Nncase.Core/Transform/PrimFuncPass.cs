@@ -115,6 +115,7 @@ public class PrimFuncPass : Pass<PrimFunction>, IMutatorsAddable
         {
             DumpScope.Current.DumpIR(input, "Start");
         }
+
         return Task.CompletedTask;
     }
 
