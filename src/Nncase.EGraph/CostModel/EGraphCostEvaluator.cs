@@ -251,6 +251,7 @@ internal sealed class EGraphCostEvaluator
                 {
                     sequence.UnionWith(_eclassComputeSequence[child]);
                 }
+
                 _eclassComputeSequence[eclass] = sequence;
             }
         }
@@ -297,6 +298,7 @@ internal sealed class EGraphCostEvaluator
         {
             difference.UnionWith(item.Sequence);
         }
+
         difference.IntersectWith(costs.Select(c => c.Class));
         return difference.Aggregate(Cost.Zero, (acc, e) => acc + _eclassCosts[e]);
     }

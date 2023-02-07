@@ -73,7 +73,6 @@ public interface ICompilerServicesProvider
     /// <param name="randConst">false for save const into bin.</param>
     public void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst);
 
-
     /// <summary>
     /// print ir type.
     /// </summary>

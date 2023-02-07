@@ -14,37 +14,26 @@ using Xunit;
 namespace Nncase.Tests.CostModelTest;
 
 /// <summary>
-/// test egraph costs
+/// test egraph costs.
 /// </summary>
 public sealed class UnitTestEGraphCostModel
 {
-
-    internal sealed class EvaluatorContext : Evaluator.ICostEvaluateContext
-    {
-        private readonly Call CurrentCall;
-        public EvaluatorContext(Call call)
-        {
-            CurrentCall = call;
-        }
-        public T GetArgumentType<T>(Op op, ParameterInfo parameter) where T : IRType => (T)CurrentCall[parameter].CheckedType!;
-        public T GetReturnType<T>() where T : IRType => (T)CurrentCall.CheckedType!;
-    }
-
     /// <summary>
-    /// root = x + conv2d(x) 
-    /// root cost = conv2d(x) cost + binary cost
+    /// root = x + conv2d(x)
+    /// root cost = conv2d(x) cost + binary cost.
     /// </summary>
     [Fact]
     public void TestBinaryShortCutCost()
     {
-        Tensor GetD<T>(System.IO.BinaryReader __reader, long __start, int __size, params int[] __shape)
+        Tensor GetD<T>(System.IO.BinaryReader reader, long start, int size, params int[] shape)
         where T : unmanaged, IEquatable<T>
         {
             // __reader.BaseStream.Seek(__start, System.IO.SeekOrigin.Begin);
-            var bytes = new byte[__size];
+            var bytes = new byte[size];
             Testing.RandGenerator.NextBytes(bytes);
-            return Tensor.FromBytes<T>(bytes, __shape);
+            return Tensor.FromBytes<T>(bytes, shape);
         }
+
         using var vD = new System.IO.BinaryReader(new System.IO.MemoryStream());
         Function v0; // (f32[1,224,224,3]) -> (f32[1,7,7,2048])
         var v30 = new Var("serving_default_input_1:0", new TensorType(DataTypes.Float32, new[] { 1, 256, 56, 56 }));
@@ -73,9 +62,27 @@ public sealed class UnitTestEGraphCostModel
         Assert.Equal(binrayOpCost! + binaryRhsCost!, rootCost);
     }
 
+    internal sealed class EvaluatorContext : Evaluator.ICostEvaluateContext
+    {
+        private readonly Call _currentCall;
+
+        public EvaluatorContext(Call call)
+        {
+            _currentCall = call;
+        }
+
+        public T GetArgumentType<T>(Op op, ParameterInfo parameter)
+            where T : IRType
+            => (T)_currentCall[parameter].CheckedType!;
+
+        public T GetReturnType<T>()
+            where T : IRType
+            => (T)_currentCall.CheckedType!;
+    }
+
     /// <summary>
     /// root = concat(tuple(a,a,b),1)
-    /// root cost = concat op cost + a cost + b cost
+    /// root cost = concat op cost + a cost + b cost.
     /// </summary>
     [Fact]
     public void TestTupleCost()
@@ -88,11 +95,11 @@ public sealed class UnitTestEGraphCostModel
         root.InferenceType();
         var aCost = CompilerServices.EvaluateCost(a); // 2512,1476,369
         var bCost = CompilerServices.EvaluateCost(b); // 2952,1476,738
-        var concatOpCost = CompilerServices.EvaluateOpCost((Op)root.Target, new EvaluatorContext(root)); // 
+        var concatOpCost = CompilerServices.EvaluateOpCost((Op)root.Target, new EvaluatorContext(root));
 
         var eGraph = new EGraph();
-        var aClass = eGraph.Add(a);
-        var bClass = eGraph.Add(b);
+        _ = eGraph.Add(a);
+        _ = eGraph.Add(b);
         var rootEclass = eGraph.Add(root);
 
         var costModel = new EGraphCostEvaluator(rootEclass, null).Evaluate();
@@ -109,7 +116,7 @@ public sealed class UnitTestEGraphCostModel
     ///   |     |
     ///   |   conv2d
     ///    \  /
-    ///    add 
+    ///    add.
     /// </summary>
     [Fact]
     public void TestDuplicteConv2D()

@@ -18,8 +18,8 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
 {
     private readonly ScopeWriter _scope;
     private readonly Dictionary<Expr, string> _names = new Dictionary<Expr, string>(ReferenceEqualityComparer.Instance);
-    private int _localId;
     private readonly BinaryWriter _constWriter;
+    private int _localId;
     private readonly bool _randConst;
 
     public CSharpPrintVisitor(TextWriter textWriter, BinaryWriter constWriter, int indent_level, bool randConst, bool withHeader = true)
@@ -46,6 +46,7 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
                     _scope.IndWriteLine("return Tensor.FromBytes<T>(__reader.ReadBytes(__size), __shape);");
                 }
             }
+
             _scope.IndWriteLine("}");
             if (_randConst)
             {
