@@ -738,6 +738,7 @@ internal sealed class TensorOfT
         { typeof(float).TypeHandle, "f" },
         { typeof(double).TypeHandle, "d" },
         { typeof(long).TypeHandle, "L" },
-        { typeof(uint).TypeHandle, "UL" },
+        { typeof(uint).TypeHandle, "U" },
+        { typeof(ulong).TypeHandle, "UL" },
     };
 }

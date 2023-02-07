@@ -70,7 +70,9 @@ public interface ICompilerServicesProvider
     /// <param name="expr">expression.</param>
     /// <param name="prefix">file prefix.</param>
     /// <param name="dumpDir">file dump ir.</param>
-    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir);
+    /// <param name="randConst">false for save const into bin.</param>
+    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst);
+
 
     /// <summary>
     /// print ir type.
@@ -421,8 +423,9 @@ public static class CompilerServices
     /// <param name="expr">expression.</param>
     /// <param name="prefix">file prefix.</param>
     /// <param name="dumpDir">file dump ir.</param>
-    public static void DumpCSharpIR(Expr expr, string prefix, string dumpDir) =>
-      Provider.DumpCSharpIR(expr, prefix, dumpDir);
+    /// <param name="randConst">randConst = false will save the const into bin.</param>
+    public static void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst = true) =>
+      Provider.DumpCSharpIR(expr, prefix, dumpDir, randConst);
 
     public static string Print(IRType type) => Provider.Print(type);
 
@@ -530,8 +533,8 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     _irprinterProvider.DumpDotIR(expr, prefix, dumpPath, display_callable);
 
     /// <inheritdoc/>
-    public void DumpCSharpIR(Expr expr, string prefix, string dumpPath) =>
-    _irprinterProvider.DumpCSharpIR(expr, prefix, dumpPath);
+    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst) =>
+    _irprinterProvider.DumpCSharpIR(expr, prefix, dumpDir, randConst);
 
     /// <inheritdoc/>
     public string Print(IRType type) => _irprinterProvider.Print(type);

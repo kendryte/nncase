@@ -19,10 +19,43 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
     private readonly ScopeWriter _scope;
     private readonly Dictionary<Expr, string> _names = new Dictionary<Expr, string>(ReferenceEqualityComparer.Instance);
     private int _localId;
+    private readonly BinaryWriter _constWriter;
+    private readonly bool _randConst;
 
-    public CSharpPrintVisitor(TextWriter textWriter, int indent_level)
+    public CSharpPrintVisitor(TextWriter textWriter, BinaryWriter constWriter, int indent_level, bool randConst, bool withHeader = true)
     {
         _scope = new(textWriter, indent_level);
+        _constWriter = constWriter;
+        _randConst = randConst;
+        if (withHeader)
+        {
+            _scope.IndWriteLine("Tensor GetD<T>(System.IO.BinaryReader __reader, long __start, int __size, params int[] __shape)");
+            _scope.IndWriteLine("where T : unmanaged, IEquatable<T>");
+            _scope.IndWriteLine("{");
+            using (_scope.IndentUp())
+            {
+                if (_randConst)
+                {
+                    _scope.IndWriteLine("var buffer = new byte[__size];");
+                    _scope.IndWriteLine("Testing.RandGenerator.NextBytes(buffer);");
+                    _scope.IndWriteLine("return Tensor.FromBytes<T>(buffer, __shape);");
+                }
+                else
+                {
+                    _scope.IndWriteLine("__reader.BaseStream.Seek(__start, System.IO.SeekOrigin.Begin);");
+                    _scope.IndWriteLine("return Tensor.FromBytes<T>(__reader.ReadBytes(__size), __shape);");
+                }
+            }
+            _scope.IndWriteLine("}");
+            if (_randConst)
+            {
+                _scope.IndWriteLine("using var vD = new System.IO.BinaryReader(new System.IO.MemoryStream());");
+            }
+            else
+            {
+                _scope.IndWriteLine("using var vD = new System.IO.BinaryReader(System.IO.File.OpenRead(??));");
+            }
+        }
     }
 
     /// <inheritdoc/>
@@ -102,7 +135,7 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
             string body;
             using (var body_writer = new StringWriter(body_builder))
             {
-                var visitor = new CSharpPrintVisitor(body_writer, _scope.IndentLevel) { _localId = _localId };
+                var visitor = new CSharpPrintVisitor(body_writer, _constWriter, _scope.IndentLevel, _randConst, false) { _localId = _localId };
                 body = visitor.Visit(expr.Body);
                 _scope.Append(body_writer.ToString());
             }
@@ -249,6 +282,16 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
 
     private string GetArrayComma(Shape shape) => shape.Rank > 0 ? string.Join(string.Empty, Enumerable.Repeat<char>(',', shape.Rank - 1)) : string.Empty;
 
+    private string GetCSharpConstFromFile(TensorConst tc)
+    {
+        var start = _constWriter.BaseStream.Position;
+        _constWriter.Write(tc.Value.BytesBuffer);
+        var end = _constWriter.BaseStream.Position;
+        var size = end - start;
+        var shape = tc.Value.Shape.IsScalar ? string.Empty : $", {string.Join(",", tc.Value.Shape.ToValueArray())}";
+        return $"GetD<{tc.Value.ElementType.GetBuiltInName()}>(vD, {start}, {size}{shape})";
+    }
+
     private string GetCSharpConst(Const @const) => @const switch
     {
         TensorConst tc => tc.Value.ElementType switch
@@ -257,9 +300,9 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
             {
                 Shape { IsScalar: true } => tc.Value.GetArrayString(false),
                 Shape x when x.Size < 8 => $"new {primType.GetBuiltInName()}[{GetArrayComma(x)}]{tc.Value.GetArrayString(false)}",
-                _ => $"Testing.Rand<{primType.GetBuiltInName()}>({string.Join(",", tc.Value.Shape.ToValueArray())})",
+                _ => GetCSharpConstFromFile(tc),
             },
-            ValueType valueType => $"Tensor.From<QuantParam>(new {valueType.GetBuiltInName()}[{GetArrayComma(tc.Value.Shape)}]{tc.Value.GetArrayString(false)},new[]{{{string.Join(",", tc.Value.Shape)}}})",
+            ValueType valueType => GetCSharpConstFromFile(tc),
             _ => "NotSupport",
         },
         TupleConst tc => $"new TupleConst(new Const[] {{{string.Join(",", tc.Fields.Select(GetCSharpConst))}}})",

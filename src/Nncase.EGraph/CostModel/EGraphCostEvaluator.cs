@@ -10,6 +10,8 @@ using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.Transform;
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Nncase.Tests")]
+
 namespace Nncase.CostModel;
 
 internal sealed class EGraphCostEvaluator
@@ -17,6 +19,7 @@ internal sealed class EGraphCostEvaluator
     private readonly EClass _root;
     private readonly Dictionary<ENode, Cost> _costs = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<EClass, Cost> _eclassCosts = new();
+    private readonly Dictionary<EClass, HashSet<EClass>> _eclassComputeSequence = new();
     private readonly HashSet<EClass> _allEclasses = new();
     private readonly IBaseFuncCostEvaluator? _baseFuncCostEvaluator;
     private bool _changed;
@@ -74,6 +77,7 @@ internal sealed class EGraphCostEvaluator
     private Cost? Visit(EClass eclass)
     {
         Cost? cost = null;
+        ENode? minCostEnode = null;
         foreach (var enode in eclass.Nodes)
         {
             var newCost = Visit(enode, eclass.CheckedType);
@@ -81,10 +85,11 @@ internal sealed class EGraphCostEvaluator
                 && (cost == null || newCost < cost))
             {
                 cost = newCost;
+                minCostEnode = enode;
             }
         }
 
-        return UpdateCost(eclass, cost);
+        return UpdateCost(eclass, minCostEnode, cost);
     }
 
     private Cost? Visit(ENode enode, IRType returnType)
@@ -127,17 +132,17 @@ internal sealed class EGraphCostEvaluator
 
     private Cost? Visit(ENode enode, TupleConst tc)
     {
-        return Visit(enode, costs => costs.Sum());
+        return Visit(enode, costs => Cost.Zero);
     }
 
     private Cost? Visit(ENode enode, IR.Tuple tuple)
     {
-        return Visit(enode, costs => costs.Sum());
+        return Visit(enode, costs => AccumulateCosts(costs));
     }
 
     private Cost? Visit(ENode enode, Marker marker)
     {
-        return Visit(enode, costs => costs[0]);
+        return Visit(enode, costs => costs[0].Cost);
     }
 
     private Cost? Visit(ENode enode, None none)
@@ -149,28 +154,28 @@ internal sealed class EGraphCostEvaluator
     {
         return Visit(enode, costs =>
         {
-            Cost? cost = null;
+            Cost? targetCost = null;
             foreach (var targetEnode in enode.Children[0].Nodes)
             {
-                Cost? newCost;
+                Cost? newTargetCost;
                 if (targetEnode.Expr is Op op)
                 {
                     var context = new EGraphOpCostEvaluateContext(returnType, enode.Children.Skip(1).Select(x => x.CheckedType).ToArray());
-                    newCost = CompilerServices.EvaluateOpCost(op, context);
+                    newTargetCost = CompilerServices.EvaluateOpCost(op, context);
                 }
                 else
                 {
                     // Trace.Assert(targetEnode.Expr is Function);
-                    newCost = Visit(targetEnode, returnType);
+                    newTargetCost = Visit(targetEnode, returnType);
                 }
 
-                if (cost == null || (newCost != null && newCost < cost))
+                if (targetCost == null || (newTargetCost != null && newTargetCost < targetCost))
                 {
-                    cost = newCost;
+                    targetCost = newTargetCost;
                 }
             }
 
-            return UpdateCost(enode, cost == null ? null : cost + costs.Sum());
+            return UpdateCost(enode, targetCost == null ? null : targetCost + AccumulateCosts(costs));
         });
     }
 
@@ -209,7 +214,7 @@ internal sealed class EGraphCostEvaluator
         return cost;
     }
 
-    private Cost? UpdateCost(EClass eclass, Cost? cost)
+    private Cost? UpdateCost(EClass eclass, ENode? minCostEnode, Cost? cost)
     {
         if (_eclassCosts.TryGetValue(eclass, out var oldCost))
         {
@@ -218,10 +223,18 @@ internal sealed class EGraphCostEvaluator
                 if (cost == null)
                 {
                     _eclassCosts.Remove(eclass);
+                    _eclassComputeSequence[eclass].Clear();
                 }
                 else
                 {
                     _eclassCosts[eclass] = cost;
+                    var sequence = _eclassComputeSequence[eclass];
+                    sequence.Clear();
+                    sequence.Add(eclass);
+                    foreach (var child in minCostEnode!.Children)
+                    {
+                        sequence.UnionWith(_eclassComputeSequence[child]);
+                    }
                 }
 
                 _changed = true;
@@ -233,6 +246,12 @@ internal sealed class EGraphCostEvaluator
             {
                 _eclassCosts.Add(eclass, cost);
                 _changed = true;
+                var sequence = new HashSet<EClass>() { eclass };
+                foreach (var child in minCostEnode!.Children)
+                {
+                    sequence.UnionWith(_eclassComputeSequence[child]);
+                }
+                _eclassComputeSequence[eclass] = sequence;
             }
         }
 
@@ -251,14 +270,15 @@ internal sealed class EGraphCostEvaluator
         return cost;
     }
 
-    private Cost? Visit(ENode enode, Func<Cost[], Cost?> costGetter)
+    private Cost? Visit(ENode enode, Func<EClassCost[], Cost?> costGetter)
     {
-        var costs = new Cost[enode.Children.Count];
+        var costs = new EClassCost[enode.Children.Count];
         for (int i = 0; i < costs.Length; i++)
         {
-            if (_eclassCosts.TryGetValue(enode.Children[i], out var childCost))
+            var child = enode.Children[i];
+            if (_eclassCosts.TryGetValue(child, out var childCost))
             {
-                costs[i] = childCost;
+                costs[i] = new(child, childCost, _eclassComputeSequence[enode.Children[i]]);
             }
             else
             {
@@ -268,6 +288,21 @@ internal sealed class EGraphCostEvaluator
 
         var cost = costGetter(costs);
         return UpdateCost(enode, cost);
+    }
+
+    private Cost AccumulateCosts(EClassCost[] costs)
+    {
+        HashSet<EClass> difference = new();
+        foreach (var item in costs)
+        {
+            difference.UnionWith(item.Sequence);
+        }
+        difference.IntersectWith(costs.Select(c => c.Class));
+        return difference.Aggregate(Cost.Zero, (acc, e) => acc + _eclassCosts[e]);
+    }
+
+    private sealed record EClassCost(EClass Class, Cost Cost, HashSet<EClass> Sequence)
+    {
     }
 
     private sealed class EGraphOpCostEvaluateContext : ICostEvaluateContext
