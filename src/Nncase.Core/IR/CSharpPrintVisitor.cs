@@ -19,7 +19,6 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
     private readonly ScopeWriter _scope;
     private readonly Dictionary<Expr, string> _names = new Dictionary<Expr, string>(ReferenceEqualityComparer.Instance);
     private readonly BinaryWriter _constWriter;
-    private int _localId;
     private readonly bool _randConst;
     private int _localId;
 
