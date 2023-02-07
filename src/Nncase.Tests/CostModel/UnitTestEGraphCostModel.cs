@@ -62,24 +62,6 @@ public sealed class UnitTestEGraphCostModel
         Assert.Equal(binrayOpCost! + binaryRhsCost!, rootCost);
     }
 
-    internal sealed class EvaluatorContext : Evaluator.ICostEvaluateContext
-    {
-        private readonly Call _currentCall;
-
-        public EvaluatorContext(Call call)
-        {
-            _currentCall = call;
-        }
-
-        public T GetArgumentType<T>(Op op, ParameterInfo parameter)
-            where T : IRType
-            => (T)_currentCall[parameter].CheckedType!;
-
-        public T GetReturnType<T>()
-            where T : IRType
-            => (T)_currentCall.CheckedType!;
-    }
-
     /// <summary>
     /// root = concat(tuple(a,a,b),1)
     /// root cost = concat op cost + a cost + b cost.
@@ -145,5 +127,23 @@ public sealed class UnitTestEGraphCostModel
         visitor.Visit(post);
 
         Assert.Equal(2, visitor.CountCallOp<Conv2D>());
+    }
+
+    internal sealed class EvaluatorContext : Evaluator.ICostEvaluateContext
+    {
+        private readonly Call _currentCall;
+
+        public EvaluatorContext(Call call)
+        {
+            _currentCall = call;
+        }
+
+        public T GetArgumentType<T>(Op op, ParameterInfo parameter)
+            where T : IRType
+            => (T)_currentCall[parameter].CheckedType!;
+
+        public T GetReturnType<T>()
+            where T : IRType
+            => (T)_currentCall.CheckedType!;
     }
 }

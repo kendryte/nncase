@@ -17,8 +17,8 @@ public sealed class TestVisitor : ExprVisitor<bool, IRType>
     /// <summary>
     /// check Contains expr with type.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
+    /// <typeparam name="T">the expr type.</typeparam>
+    /// <returns>wether contains.</returns>
     public bool Contains<T>()
       where T : Expr
     {
@@ -28,8 +28,8 @@ public sealed class TestVisitor : ExprVisitor<bool, IRType>
     /// <summary>
     /// count call op numbers.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
+    /// <typeparam name="T">op type.</typeparam>
+    /// <returns>counts.</returns>
     public int CountCallOp<T>()
       where T : Op
     {

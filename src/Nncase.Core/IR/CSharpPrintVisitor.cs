@@ -21,6 +21,7 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
     private readonly BinaryWriter _constWriter;
     private int _localId;
     private readonly bool _randConst;
+    private int _localId;
 
     public CSharpPrintVisitor(TextWriter textWriter, BinaryWriter constWriter, int indent_level, bool randConst, bool withHeader = true)
     {
