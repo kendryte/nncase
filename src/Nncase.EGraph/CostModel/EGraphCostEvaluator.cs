@@ -19,7 +19,7 @@ internal sealed class EGraphCostEvaluator
     private readonly EClass _root;
     private readonly Dictionary<ENode, Cost> _costs = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<EClass, Cost> _eclassCosts = new();
-    private readonly Dictionary<EClass, HashSet<EClass>> _eclassComputeSequence = new();
+    private readonly Dictionary<EClass, AccumulateSequence> _eclassAccumulated = new();
     private readonly HashSet<EClass> _allEclasses = new();
     private readonly IBaseFuncCostEvaluator? _baseFuncCostEvaluator;
     private bool _changed;
@@ -223,17 +223,18 @@ internal sealed class EGraphCostEvaluator
                 if (cost == null)
                 {
                     _eclassCosts.Remove(eclass);
-                    _eclassComputeSequence[eclass].Clear();
+                    _eclassAccumulated.Remove(eclass);
                 }
                 else
                 {
                     _eclassCosts[eclass] = cost;
-                    var sequence = _eclassComputeSequence[eclass];
-                    sequence.Clear();
-                    sequence.Add(eclass);
+                    var acc = _eclassAccumulated[eclass];
+                    acc.Current = eclass;
+                    acc.Accumulated.Clear();
                     foreach (var child in minCostEnode!.Children)
                     {
-                        sequence.UnionWith(_eclassComputeSequence[child]);
+                        acc.Accumulated.Add(_eclassAccumulated[child].Current);
+                        acc.Accumulated.UnionWith(_eclassAccumulated[child].Accumulated);
                     }
                 }
 
@@ -246,13 +247,14 @@ internal sealed class EGraphCostEvaluator
             {
                 _eclassCosts.Add(eclass, cost);
                 _changed = true;
-                var sequence = new HashSet<EClass>() { eclass };
+                var acc = new AccumulateSequence(eclass);
                 foreach (var child in minCostEnode!.Children)
                 {
-                    sequence.UnionWith(_eclassComputeSequence[child]);
+                    acc.Accumulated.Add(_eclassAccumulated[child].Current);
+                    acc.Accumulated.UnionWith(_eclassAccumulated[child].Accumulated);
                 }
 
-                _eclassComputeSequence[eclass] = sequence;
+                _eclassAccumulated[eclass] = acc;
             }
         }
 
@@ -279,7 +281,7 @@ internal sealed class EGraphCostEvaluator
             var child = enode.Children[i];
             if (_eclassCosts.TryGetValue(child, out var childCost))
             {
-                costs[i] = new(child, childCost, _eclassComputeSequence[enode.Children[i]]);
+                costs[i] = new(child, childCost, _eclassAccumulated[enode.Children[i]]);
             }
             else
             {
@@ -293,17 +295,30 @@ internal sealed class EGraphCostEvaluator
 
     private Cost AccumulateCosts(EClassCost[] costs)
     {
-        HashSet<EClass> difference = new();
+        HashSet<EClass> candidates = new(costs.Select(c => c.Sequence.Current));
+
         foreach (var item in costs)
         {
-            difference.UnionWith(item.Sequence);
+            candidates.ExceptWith(item.Sequence.Accumulated);
         }
 
-        difference.IntersectWith(costs.Select(c => c.Class));
-        return difference.Aggregate(Cost.Zero, (acc, e) => acc + _eclassCosts[e]);
+        return candidates.Aggregate(Cost.Zero, (acc, e) => acc + _eclassCosts[e]);
     }
 
-    private sealed record EClassCost(EClass Class, Cost Cost, HashSet<EClass> Sequence)
+    private sealed record AccumulateSequence
+    {
+        public EClass Current;
+
+        public AccumulateSequence(EClass current)
+        {
+            Current = current;
+            Accumulated = new();
+        }
+
+        public readonly HashSet<EClass> Accumulated;
+    }
+
+    private sealed record EClassCost(EClass Class, Cost Cost, AccumulateSequence Sequence)
     {
     }
 
