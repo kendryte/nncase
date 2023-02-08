@@ -307,6 +307,8 @@ internal sealed class EGraphCostEvaluator
 
     private sealed record AccumulateSequence
     {
+        public readonly HashSet<EClass> Accumulated;
+
         public EClass Current;
 
         public AccumulateSequence(EClass current)
@@ -314,8 +316,6 @@ internal sealed class EGraphCostEvaluator
             Current = current;
             Accumulated = new();
         }
-
-        public readonly HashSet<EClass> Accumulated;
     }
 
     private sealed record EClassCost(EClass Class, Cost Cost, AccumulateSequence Sequence)
