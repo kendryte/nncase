@@ -14,6 +14,8 @@ using Nncase.PatternMatch;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Nncase.Tests")]
+
 namespace Nncase.Transform;
 
 /// <summary>
@@ -72,16 +74,23 @@ public static class EGraphExtractExtensions
         return eClass.Nodes.Where(e => e.Expr is not Marker).MinBy(x => costModel[x])!;
     }
 
-    private sealed class ENodeTypeComparer : IComparer<Expr>
+    internal sealed class ENodeTypeComparer : IComparer<Expr>
     {
         public static readonly ENodeTypeComparer Instance = new();
 
         public int Compare(Expr? x, Expr? y) => (x, y) switch
         {
-            (Marker, Marker) => 0,
-            (Marker, _) => -1,
-            (_, Marker) => 1,
-            (_, _) => 0,
+            (null, null) => 0,
+            (Expr, null) => 1,
+            (null, Expr) => -1,
+            (Expr, Expr) => GetPriority(x).CompareTo(GetPriority(y)),
+        };
+
+        private int GetPriority(Expr x) => x switch
+        {
+            Const => 0,
+            Marker => 1,
+            _ => 2,
         };
     }
 }

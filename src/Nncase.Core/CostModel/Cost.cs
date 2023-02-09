@@ -112,7 +112,7 @@ public sealed record Cost : IComparable<Cost>, IEquatable<Cost>
     /// <inheritdoc/>
     public int CompareTo(Cost? other)
     {
-        return (int)(Score - other?.Score ?? 0);
+        return Comparer<double>.Default.Compare(Score, other?.Score ?? 0.0);
     }
 
     /// <inheritdoc/>
