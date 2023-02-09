@@ -31,6 +31,64 @@ public enum ModelQuantMode : int
 }
 
 /// <summary>
+/// Quant Type.
+/// </summary>
+public enum QuantType : int
+{
+    /// <summary>
+    /// uint8.
+    /// </summary>
+    Uint8,
+
+    /// <summary>
+    /// int8.
+    /// </summary>
+    Int8,
+
+    /// <summary>
+    /// int16.
+    /// </summary>
+    Int16,
+}
+
+/// <summary>
+/// Fine Tune Weights Method.
+/// </summary>
+public enum FineTuneWeightsMethod : int
+{
+    /// <summary>
+    /// no fine tune weights.
+    /// </summary>
+    NoFineTuneWeights,
+
+    /// <summary>
+    /// use sqaunt.
+    /// </summary>
+    UseSquant,
+
+    /// <summary>
+    /// use adaround.
+    /// </summary>
+    UseAdaRound,
+}
+
+/// <summary>
+/// Is Use Mix Quant Or Not.
+/// </summary>
+public enum IsUseMixQuant : int
+{
+    /// <summary>
+    /// use mix quant.
+    /// </summary>
+    UseMixQuant,
+
+    /// <summary>
+    /// not use mix quant.
+    /// </summary>
+    NotUseMixQuant
+}
+
+/// <summary>
 /// Calibration Method.
 /// </summary>
 public enum CalibMethod

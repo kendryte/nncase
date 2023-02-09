@@ -39,9 +39,26 @@ typedef enum {
 } nncase_quant_mode_t;
 
 typedef enum {
+    nncase_qt_uint8 = 0,
+    nncase_qt_int8 = 1,
+    nncase_qt_int16 = 2
+} nncase_quant_type_t;
+
+typedef enum {
     nncase_calib_noclip = 0,
     nncase_calib_kld = 1
 } nncase_calib_method_t;
+
+typedef enum {
+    nncase_no_finetune_weights = 0,
+    nncase_finetune_weights_squant = 1,
+    nncase_finetune_weights_adaround = 2
+} nncase_finetune_weights_method_t;
+
+typedef enum {
+    nncase_use_mix_quant = 0,
+    nncase_not_use_mix_quant = 1
+} nncase_use_mix_quant_t;
 
 typedef enum {
     nncase_dump_flags_none = 0,
@@ -130,7 +147,13 @@ typedef struct {
         clr_object_handle_t quantize_options,
         nncase_model_quant_mode_t model_quant_mode);
     void (*quantize_options_set_quant_type)(
-        clr_object_handle_t quantize_options, clr_object_handle_t quant_type);
+        clr_object_handle_t quantize_options, nncase_quant_type_t quant_type);
+    void (*quantize_options_set_w_quant_type)(
+        clr_object_handle_t quantize_options, nncase_quant_type_t w_quant_type);
+    void (*quantize_options_set_finetune_weights_method)(
+        clr_object_handle_t quantize_options, nncase_finetune_weights_method_t method);
+    void (*quantize_options_set_use_mix_quant)(
+        clr_object_handle_t quantize_options, nncase_use_mix_quant_t use_mix_quant);
     clr_object_handle_t (*rtvalue_from_handle)(nncase::value_node *value);
     nncase::value_node *(*rtvalue_get_handle)(clr_object_handle_t rtvalue);
     clr_object_handle_t (*stream_create)(const nncase_stream_mt_t *mt,
@@ -275,6 +298,36 @@ class quantize_options : public clr_object_base {
     void model_quant_mode(nncase_model_quant_mode_t value) {
         nncase_clr_api()->quantize_options_set_model_quant_mode(obj_.get(),
                                                                 value);
+    }
+
+    nncase_calib_method_t calibrate_method() { return nncase_calib_noclip; }
+    void calibrate_method(nncase_calib_method_t value) {
+        nncase_clr_api()->quantize_options_set_calibration_method(obj_.get(),
+                                                                  value);
+    }
+
+    nncase_quant_type_t quant_type() { return nncase_qt_uint8; }
+    void quant_type(nncase_quant_type_t value) {
+        nncase_clr_api()->quantize_options_set_quant_type(obj_.get(),
+                                                          value);
+    }
+
+    nncase_quant_type_t w_quant_type() { return nncase_qt_uint8; }
+    void w_quant_type(nncase_quant_type_t value) {
+        nncase_clr_api()->quantize_options_set_w_quant_type(obj_.get(),
+                                                            value);
+    }
+
+    nncase_finetune_weights_method_t finetune_weights_method() { return nncase_no_finetune_weights; }
+    void finetune_weights_method(nncase_finetune_weights_method_t value) {
+        nncase_clr_api()->quantize_options_set_finetune_weights_method(obj_.get(),
+                                                                       value);
+    }
+
+    nncase_use_mix_quant_t use_mix_quant() { return nncase_not_use_mix_quant; }
+    void use_mix_quant(nncase_use_mix_quant_t value) {
+        nncase_clr_api()->quantize_options_set_use_mix_quant(obj_.get(),
+                                                             value);
     }
 };
 
