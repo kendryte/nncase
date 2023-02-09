@@ -24,22 +24,27 @@ public sealed class UnitTestEGraphCostModel
 
         var cost = new Dictionary<Expr, Cost>(ReferenceEqualityComparer.Instance)
         {
-          { a, new() {
+          { a,
+            new() {
               [CostFactorNames.MemoryLoad] = 76380,
               [CostFactorNames.MemoryLoad] = 42336,
               [CostFactorNames.CPUCycles] = 532529182956,
-          } },
+            }
+          },
           { b, Cost.Zero },
-          { c, new() {
+          { c,
+            new() {
               [CostFactorNames.MemoryLoad] = 37940,
               [CostFactorNames.MemoryLoad] = 20840,
               [CostFactorNames.CPUCycles] = 266073472105,
-          } },
+            }
+          },
           { d, new() {
               [CostFactorNames.MemoryLoad] = 38080,
               [CostFactorNames.MemoryLoad] = 20980,
               [CostFactorNames.CPUCycles] = 266073472105,
-              } },
+            }
+          },
         };
 
         Assert.IsType<TensorConst>(list.OrderBy(e => e, EGraphExtractExtensions.ENodeTypeComparer.Instance).First());
