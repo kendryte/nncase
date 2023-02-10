@@ -182,7 +182,7 @@ void k210_target::register_quantize_annotation_passes(NNCASE_UNUSED const module
 
     {
         transform_pass p("annotate_kpu_quantize");
-        p.emplace<add_quant_checkpoints_transform>(std::in_place, ir::op_fused_unary, ir::k210::op_k210_fake_kpu_conv2d, ir::op_bitcast, ir::op_dequantize, ir::op_binary);
+        p.emplace<add_quant_checkpoints_transform>(std::in_place, ir::op_fused_unary, ir::k210::op_k210_fake_kpu_conv2d, ir::op_bitcast, ir::op_dequantize, ir::op_binary, ir::op_slice);
         pass_mgr.add_pass(std::move(p));
     }
 }

@@ -20,8 +20,8 @@ using namespace nncase;
 using namespace nncase::ir;
 
 gru::gru(shape_t input_shape, shape_t w_shape, shape_t r_shape, shape_t b_shape, shape_t output_shape,
-    shape_t output_h_shape, lstm_direction direction, std::string framework)
-    : direction_(direction), framework_(framework)
+    shape_t output_h_shape, lstm_direction direction, std::string framework, bool linear_before_reset)
+    : direction_(direction), framework_(framework), linear_before_reset_(linear_before_reset)
 {
     add_input("input", dt_float32, input_shape);
     add_input("w", dt_float32, w_shape);
@@ -36,5 +36,5 @@ gru::gru(shape_t input_shape, shape_t w_shape, shape_t r_shape, shape_t b_shape,
 bool gru::properties_equal(node &other) const
 {
     auto &r = static_cast<gru &>(other);
-    return direction() == r.direction() && framework() == r.framework();
+    return direction() == r.direction() && framework() == r.framework() && linear_before_reset() == r.linear_before_reset();
 }

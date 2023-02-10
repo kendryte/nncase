@@ -474,12 +474,12 @@ result<void> kernels::trilu(const T *input, T *output, const runtime_shape_t &in
     return cpu::reference::trilu(input, output, in_shape, upper, k);
 }
 
-template result<void> kernels::gru<float>(const float *input, const float *w, const float *r, const float *b, float *initial_h, float *output, float *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape, int mode) noexcept;
+template result<void> kernels::gru<float>(const float *input, const float *w, const float *r, const float *b, float *initial_h, float *output, float *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape, int mode, bool linear_before_reset) noexcept;
 
 template <typename T>
-result<void> kernels::gru(const T *input, const T *w, const T *r, const T *b, T *initial_h, T *output, T *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape, int mode) noexcept
+result<void> kernels::gru(const T *input, const T *w, const T *r, const T *b, T *initial_h, T *output, T *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape, int mode, bool linear_before_reset) noexcept
 {
-    return cpu::reference::gru(input, w, r, b, initial_h, output, output_h, input_shape, w_shape, mode);
+    return cpu::reference::gru(input, w, r, b, initial_h, output, output_h, input_shape, w_shape, mode, linear_before_reset);
 }
 
 template result<void> kernels::tflite_detection_postprocess<float>(const float *boxes, const float *scores, const float *anchors, float *output_locations, float *output_classes, float *output_scores, float *output_num_detections,
