@@ -364,7 +364,7 @@ public static unsafe class CApi
                 Get<QuantizeOptions>(quantizeOptionsHandle).QuantType = DataTypes.Int16;
                 break;
             default:
-                throw new Exception("Not Supported Quant Type");
+                throw new ArgumentException("Not Supported Quant Type");
         }
     }
 
@@ -383,7 +383,7 @@ public static unsafe class CApi
                 Get<QuantizeOptions>(quantizeOptionsHandle).WQuantType = DataTypes.Int16;
                 break;
             default:
-                throw new Exception("Not Supported Weights Quant Type");
+                throw new ArgumentException("Not Supported Weights Quant Type");
         }
     }
 
@@ -405,7 +405,7 @@ public static unsafe class CApi
                 Get<QuantizeOptions>(quantizeOptionsHandle).UseAdaRound = true;
                 break;
             default:
-                throw new Exception("Not Supported Finetune Weights Method");
+                throw new ArgumentException("Not Supported Finetune Weights Method");
         }
     }
 
@@ -421,7 +421,7 @@ public static unsafe class CApi
                 Get<QuantizeOptions>(quantizeOptionsHandle).BindQuantMethod = false;
                 break;
             default:
-                throw new Exception("Invalid Parameter");
+                throw new ArgumentException("Invalid Parameter");
         }
     }
 
