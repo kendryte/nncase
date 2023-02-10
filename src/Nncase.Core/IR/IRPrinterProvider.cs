@@ -75,12 +75,13 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
     }
 
     /// <inheritdoc/>
-    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir)
+    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst)
     {
         var nprefix = prefix.Any() ? prefix + "_" : prefix;
         string ext = "cs";
         string name = expr is Callable c ? c.Name : expr.GetType().Name;
         string file_path = Path.Combine(dumpDir, $"{nprefix}{name}.{ext}");
+        string rdata_path = Path.Combine(dumpDir, $"{nprefix}{name}.bin");
         if (string.IsNullOrEmpty(dumpDir))
         {
             throw new ArgumentException("The dumpDir Is Empty!");
@@ -90,7 +91,16 @@ public sealed class IRPrinterProvider : IIRPrinterProvider
 
         using var dumpFile = File.Open(file_path, FileMode.Create);
         using var dumpWriter = new StreamWriter(dumpFile);
-        new CSharpPrintVisitor(dumpWriter, 0).Visit(expr);
+        if (!randConst)
+        {
+            using var rdataFile = File.Open(rdata_path, FileMode.Create);
+            using var rdataWriter = new BinaryWriter(rdataFile);
+            new CSharpPrintVisitor(dumpWriter, rdataWriter, 0, randConst, true).Visit(expr);
+        }
+        else
+        {
+            new CSharpPrintVisitor(dumpWriter, BinaryWriter.Null, 0, randConst, true).Visit(expr);
+        }
     }
 
     /// <inheritdoc/>

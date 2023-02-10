@@ -92,6 +92,8 @@ internal class Compiler : ICompiler
             // });
         }
 
+        _compileSession.Target.RegisterTargetInDependentPass(passManager, _compileSession.CompileOptions);
+
         if (quantMode == ModelQuantMode.UsePTQ)
         {
             passManager.AddWithName<DataflowPass>("AddRangeOfMarker").Configure(p =>
