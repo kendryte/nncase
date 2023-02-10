@@ -63,7 +63,7 @@ public static class EGraphExtractExtensions
     /// </summary>
     internal static ENode MinByWithMarker(this EClass eClass, CostModel.EGraphCostModel costModel)
     {
-        return eClass.Nodes.OrderBy(e => e.Expr, ENodeTypeComparer.Instance).MinBy(x => costModel[x])!;
+        return eClass.Nodes.OrderBy(e => e.Expr, ENodeTypeComparer.Instance).MinBy(x => x.Expr is Marker ? Cost.Zero : costModel[x])!;
     }
 
     /// <summary>
@@ -88,8 +88,8 @@ public static class EGraphExtractExtensions
 
         private int GetPriority(Expr x) => x switch
         {
-            Const => 0,
-            Marker => 1,
+            Marker => 0,
+            Const => 1,
             _ => 2,
         };
     }
