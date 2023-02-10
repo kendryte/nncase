@@ -54,7 +54,7 @@ internal sealed class CostEvaluateVisitor : ExprVisitor<Cost?, IRType>
 
     public override Cost VisitLeaf(Marker expr)
     {
-        return Cost.Zero;
+        return ExpressionMemo[expr.Target] ?? Cost.Zero;
     }
 
     public override Cost? VisitLeaf(IR.Tuple expr)

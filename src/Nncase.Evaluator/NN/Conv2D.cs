@@ -57,18 +57,21 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
     {
         var inputType = context.GetArgumentType<TensorType>(target, Conv2D.Input);
         var weightsType = context.GetArgumentType<TensorType>(target, Conv2D.Weights);
-        var biasType = context.GetArgumentType<TensorType>(target, Conv2D.Bias);
-        var weightsShape = context.GetArgumentType<TensorType>(target, Conv2D.Weights).Shape;
         var outputType = context.GetReturnType<TensorType>();
+
+        var weightsShape = weightsType.Shape;
+        var inputShape = inputType.Shape;
+        var outputShape = outputType.Shape;
 
         if (weightsShape.IsFixed)
         {
-            var macPerElement = weightsShape[1] * weightsShape[2] * weightsShape[3];
+            var macPerElement = (((2 * inputShape[1] * weightsShape[2] * weightsShape[3]) - 1) * inputShape[2] * inputShape[3] * outputShape[1]).FixedValue;
+            var puMac = 1;
             return new()
             {
-                [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(weightsType) + CostUtility.GetMemoryAccess(biasType),
+                [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(weightsType),
+                [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement / puMac),
                 [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
-                [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement.FixedValue * 2),
             };
         }
 

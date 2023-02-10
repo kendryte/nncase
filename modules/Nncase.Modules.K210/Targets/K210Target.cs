@@ -32,6 +32,11 @@ public class K210Target : ITarget
     }
 
     /// <inheritdoc/>
+    public void RegisterTargetInDependentPass(IPassManager passManager, CompileOptions options)
+    {
+    }
+
+    /// <inheritdoc/>
     public void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options)
     {
         if (options.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)

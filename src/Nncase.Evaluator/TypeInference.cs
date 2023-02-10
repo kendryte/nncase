@@ -190,6 +190,11 @@ public static class TypeInference
                 return new InvalidType($"The Input Channel / Groups Error ({input.Shape[1].FixedValue}/{groups_v})");
             }
 
+            if ((input.Shape[1] / groups_v) != weights.Shape[1])
+            {
+                return new InvalidType($"The input channel {input.Shape[1]} / {groups_v} != {weights.Shape[1]}");
+            }
+
             outShape[2] = GetWindowedOutputSize(
                 input.Shape[2].FixedValue + ts_padding[0, 0] + ts_padding[0, 1],
                 weights.Shape[2].FixedValue,

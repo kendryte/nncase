@@ -238,6 +238,16 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     }
 
     [Fact]
+    public void TestConv2DInvalidWeights()
+    {
+        var v30 = new Var("serving_default_input_1:0", new TensorType(DataTypes.Float32, new[] { 1, 256, 56, 56 }));
+        var v30_1 = new Marker("RangeOf", Testing.Rand<float>(256, 64, 1, 1), new float[] { -0.3903954f, 0.46443018f }); // f32[256,64,1,1]
+        var v30_2 = new Call(new IR.NN.Conv2D(PadMode.Constant), new Expr[] { v30, v30_1, Testing.Rand<float>(256), new int[] { 1, 1 }, new int[,] { { 0, 0 }, { 0, 0 } }, new int[] { 1, 1 }, 1, new float[] { -float.PositiveInfinity, float.PositiveInfinity } }); // f32[1,256,56,56]
+        CompilerServices.InferenceType(v30_2);
+        Assert.IsType<InvalidType>(v30_2.CheckedType);
+    }
+
+    [Fact]
     public void TestConcat()
     {
         var v1 = Var(new[] { 1, 3, 16 });

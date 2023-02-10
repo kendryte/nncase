@@ -70,7 +70,8 @@ public interface IIRPrinterProvider
     /// <param name="expr">expression.</param>
     /// <param name="prefix">file prefix.</param>
     /// <param name="dumpDir">file dump ir.</param>
-    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir);
+    /// <param name="randConst">randConst = false will save the const into bin.</param>
+    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst);
 
     /// <summary>
     /// print ir type.
