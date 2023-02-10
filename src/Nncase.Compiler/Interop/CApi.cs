@@ -350,9 +350,9 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
-    private static void QuantizeOptionsSetQuantType(IntPtr quantizeOptionsHandle, QuantType quantTypeHandle)
+    private static void QuantizeOptionsSetQuantType(IntPtr quantizeOptionsHandle, QuantType quantType)
     {
-        switch (quantTypeHandle)
+        switch (quantType)
         {
             case QuantType.Uint8:
                 Get<QuantizeOptions>(quantizeOptionsHandle).QuantType = DataTypes.UInt8;
@@ -369,9 +369,9 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
-    private static void QuantizeOptionsSetWQuantType(IntPtr quantizeOptionsHandle, QuantType wQuantTypeHandle)
+    private static void QuantizeOptionsSetWQuantType(IntPtr quantizeOptionsHandle, QuantType wQuantType)
     {
-        switch (wQuantTypeHandle)
+        switch (wQuantType)
         {
             case QuantType.Uint8:
                 Get<QuantizeOptions>(quantizeOptionsHandle).WQuantType = DataTypes.UInt8;
