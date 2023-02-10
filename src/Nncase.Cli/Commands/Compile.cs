@@ -101,7 +101,7 @@ public class Compile : Command
         {
             InputFile = cliOptions.InputFile,
             InputFormat = cliOptions.InputFormat,
-            DumpFlags = cliOptions.DumpLevel > 0 ? DumpFlags.PassIR | DumpFlags.CodeGen : DumpFlags.None,
+            DumpFlags = DumpLevelToFlags(cliOptions.DumpLevel),
             DumpDir = cliOptions.DumpDir,
             QuantizeOptions = new()
             {
