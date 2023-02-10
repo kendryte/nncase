@@ -44,6 +44,9 @@ internal partial class Quantizer
 
         if (_quantizeOptions.CalibrationMethod is CalibMethod.Kld)
         {
+            for (int i = 0; i < ranges.Count; i++)
+                ranges[ranges.ToArray()[i].Key] = FixUpRange(ranges.ToArray()[i].Value);
+
             // 1.1. Get histograms
             var histograms = await GetHistogramsAsync(_quantizeOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
 
@@ -99,6 +102,28 @@ internal partial class Quantizer
         }
     }
 
+    private ValueRange<float> FixUpRange(ValueRange<float> range, bool symmetric = false)
+    {
+        if (symmetric)
+        {
+            var r = Math.Max(0.01f, Math.Max(Math.Abs(range.Min), Math.Abs(range.Max)));
+            return new ValueRange<float>(-r, r);
+        }
+        else
+        {
+            if (range.Max < 0)
+                range.Max = 0;
+            if (range.Min > 0)
+                range.Min = 0;
+
+            var r = range.Max - range.Min;
+            if (r == 0)
+                r = 0.1f;
+            range.Max = range.Min + r;
+        }
+
+        return range;
+    }
     private async Task<IDictionary<ENode, ValueRange<float>>> GetRangesAsync(ICalibrationDatasetProvider calibrationDataset)
     {
         var ranges = new Dictionary<ENode, ValueRange<float>>();
