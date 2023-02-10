@@ -117,6 +117,7 @@ internal partial class Quantizer
             {
                 range.Max = 0;
             }
+
             if (range.Min > 0)
             {
                 range.Min = 0;
@@ -127,8 +128,10 @@ internal partial class Quantizer
             {
                 r = 0.1f;
             }
+
             range.Max = range.Min + r;
         }
+
         return range;
     }
 
