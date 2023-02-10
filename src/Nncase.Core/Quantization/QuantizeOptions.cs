@@ -85,7 +85,7 @@ public enum IsUseMixQuant : int
     /// <summary>
     /// not use mix quant.
     /// </summary>
-    NotUseMixQuant
+    NotUseMixQuant,
 }
 
 /// <summary>
