@@ -75,6 +75,7 @@ internal class Compiler : ICompiler
                 p.Add<Transform.Rules.Neutral.CombineTransposeReduce>();
                 p.Add<Transform.Rules.Neutral.CombineTransposeActivations>();
                 p.Add<Transform.Rules.Neutral.CombineActivationsTranspose>();
+                p.Add<Transform.Rules.Neutral.CombineTransposeConcat>();
                 p.Add<Transform.Rules.Neutral.FoldNopPad>();
                 p.Add<Transform.Rules.Neutral.FoldConv2DPads>();
                 p.Add<Transform.Rules.Neutral.FoldReduceWindow2DPads>();
