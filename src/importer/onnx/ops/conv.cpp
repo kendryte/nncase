@@ -188,8 +188,8 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
     const auto &group_attr = get_attribute<int>(node, "group");
     size_t group = group_attr ? group_attr.value() : 1;
 
-    transpose* tp;
-    bitcast* bc;
+    transpose *tp;
+    bitcast *bc;
     shape_t bc_shape, tp_shape;
     if (model_3d)
     {
@@ -326,7 +326,7 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
             if (paddings[0].before < paddings[0].after)
                 std::swap(paddings[0].before, paddings[0].after);
 
-            if(!model_3d)
+            if (!model_3d)
             {
                 paddings[1] = get_windowed_padding(input_shape[3], tp_shape[3], strides[1], dilations[1], true);
                 if (paddings[1].before < paddings[1].after)
@@ -387,7 +387,7 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
         auto bias = graph_.emplace<constant>(dt_float32, shape, zeros);
         conv_transpose->bias().connect(bias->output());
     }
-    
+
     if (model_3d)
     {
         auto bitc_out = graph_.emplace<bitcast>(output_type, conv_transpose->output().shape(), shape_t { conv_transpose->output().shape()[0], conv_transpose->output().shape()[1], conv_transpose->output().shape()[2] });
@@ -397,6 +397,5 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
     else
     {
         output_tensors_.emplace(output, &conv_transpose->output());
-
     }
 }
