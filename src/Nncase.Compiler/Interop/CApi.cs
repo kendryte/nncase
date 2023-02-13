@@ -64,7 +64,10 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, IntPtr, void> QuantizeOptionsSetCalibrationDatasetPtr;
     public delegate* unmanaged<IntPtr, CalibMethod, void> QuantizeOptionsSetCalibrationMethodPtr;
     public delegate* unmanaged<IntPtr, ModelQuantMode, void> QuantizeOptionsSetModelQuantModePtr;
-    public delegate* unmanaged<IntPtr, IntPtr, void> QuantizeOptionsSetQuantTypePtr;
+    public delegate* unmanaged<IntPtr, QuantType, void> QuantizeOptionsSetQuantTypePtr;
+    public delegate* unmanaged<IntPtr, QuantType, void> QuantizeOptionsSetWQuantTypePtr;
+    public delegate* unmanaged<IntPtr, FineTuneWeightsMethod, void> QuantOptionsSetFineTuneWeightsMethodPtr;
+    public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetUseMixQuantPtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueFromHandlePtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueGetHandlePtr;
     public delegate* unmanaged<CStreamMT*, IntPtr, IntPtr> StreamCreatePtr;
@@ -109,6 +112,9 @@ public static unsafe class CApi
         mt->QuantizeOptionsSetCalibrationMethodPtr = &QuantizeOptionsSetCalibrationMethod;
         mt->QuantizeOptionsSetModelQuantModePtr = &QuantizeOptionsSetModelQuantMode;
         mt->QuantizeOptionsSetQuantTypePtr = &QuantizeOptionsSetQuantType;
+        mt->QuantizeOptionsSetWQuantTypePtr = &QuantizeOptionsSetWQuantType;
+        mt->QuantOptionsSetFineTuneWeightsMethodPtr = &QuantizeOptionsSetFineTuneWeightsMethod;
+        mt->QuantOptionsSetUseMixQuantPtr = &QuantOptionsSetUseMixQuant;
         mt->RTValueFromHandlePtr = &RTValueFromHandle;
         mt->RTValueGetHandlePtr = &RTValueGetHandle;
         mt->StreamCreatePtr = &StreamCreate;
@@ -344,9 +350,79 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
-    private static void QuantizeOptionsSetQuantType(IntPtr quantizeOptionsHandle, IntPtr quantTypeHandle)
+    private static void QuantizeOptionsSetQuantType(IntPtr quantizeOptionsHandle, QuantType quantType)
     {
-        Get<QuantizeOptions>(quantizeOptionsHandle).QuantType = Get<DataType>(quantTypeHandle);
+        switch (quantType)
+        {
+            case QuantType.Uint8:
+                Get<QuantizeOptions>(quantizeOptionsHandle).QuantType = DataTypes.UInt8;
+                break;
+            case QuantType.Int8:
+                Get<QuantizeOptions>(quantizeOptionsHandle).QuantType = DataTypes.Int8;
+                break;
+            case QuantType.Int16:
+                Get<QuantizeOptions>(quantizeOptionsHandle).QuantType = DataTypes.Int16;
+                break;
+            default:
+                throw new ArgumentException("Not Supported Quant Type");
+        }
+    }
+
+    [UnmanagedCallersOnly]
+    private static void QuantizeOptionsSetWQuantType(IntPtr quantizeOptionsHandle, QuantType wQuantType)
+    {
+        switch (wQuantType)
+        {
+            case QuantType.Uint8:
+                Get<QuantizeOptions>(quantizeOptionsHandle).WQuantType = DataTypes.UInt8;
+                break;
+            case QuantType.Int8:
+                Get<QuantizeOptions>(quantizeOptionsHandle).WQuantType = DataTypes.Int8;
+                break;
+            case QuantType.Int16:
+                Get<QuantizeOptions>(quantizeOptionsHandle).WQuantType = DataTypes.Int16;
+                break;
+            default:
+                throw new ArgumentException("Not Supported Weights Quant Type");
+        }
+    }
+
+    [UnmanagedCallersOnly]
+    private static void QuantizeOptionsSetFineTuneWeightsMethod(IntPtr quantizeOptionsHandle, FineTuneWeightsMethod fineTuneWeightsMethod)
+    {
+        switch (fineTuneWeightsMethod)
+        {
+            case FineTuneWeightsMethod.NoFineTuneWeights:
+                Get<QuantizeOptions>(quantizeOptionsHandle).UseSquant = false;
+                Get<QuantizeOptions>(quantizeOptionsHandle).UseAdaRound = false;
+                break;
+            case FineTuneWeightsMethod.UseSquant:
+                Get<QuantizeOptions>(quantizeOptionsHandle).UseSquant = true;
+                Get<QuantizeOptions>(quantizeOptionsHandle).UseAdaRound = false;
+                break;
+            case FineTuneWeightsMethod.UseAdaRound:
+                Get<QuantizeOptions>(quantizeOptionsHandle).UseSquant = false;
+                Get<QuantizeOptions>(quantizeOptionsHandle).UseAdaRound = true;
+                break;
+            default:
+                throw new ArgumentException("Not Supported Finetune Weights Method");
+        }
+    }
+
+    [UnmanagedCallersOnly]
+    private static void QuantOptionsSetUseMixQuant(IntPtr quantizeOptionsHandle, byte useMixQuant)
+    {
+        switch (useMixQuant)
+        {
+            case 0:
+                Get<QuantizeOptions>(quantizeOptionsHandle).BindQuantMethod = false;
+                break;
+            case 1:
+                Get<QuantizeOptions>(quantizeOptionsHandle).BindQuantMethod = true;
+                break;
+            default:
+                throw new ArgumentException("Invalid useMixQuant Flag");
+        }
     }
 
     [UnmanagedCallersOnly]

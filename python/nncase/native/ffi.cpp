@@ -70,6 +70,20 @@ PYBIND11_MODULE(_nncase, m) {
         .value("Schedule", nncase_dump_flags_schedule)
         .value("CodeGen", nncase_dump_flags_codegen);
 
+    py::enum_<nncase_calib_method_t>(m, "CalibMethod")
+        .value("NoClip", nncase_calib_noclip)
+        .value("Kld", nncase_calib_kld);
+
+    py::enum_<nncase_quant_type_t>(m, "QuantType")
+        .value("Uint8", nncase_qt_uint8)
+        .value("Int8", nncase_qt_int8)
+        .value("Int16", nncase_qt_int16);
+
+    py::enum_<nncase_finetune_weights_method_t>(m, "FineTuneWeightsMethod")
+        .value("NoFineTuneWeights", nncase_no_finetune_weights)
+        .value("UseSquant", nncase_finetune_weights_squant)
+        .value("UseAdaRound", nncase_finetune_weights_adaround);
+
     py::class_<compile_options>(m, "CompileOptions")
         .def(py::init())
         .def_property(
@@ -101,7 +115,28 @@ PYBIND11_MODULE(_nncase, m) {
         .def_property("model_quant_mode",
                       py::overload_cast<>(&quantize_options::model_quant_mode),
                       py::overload_cast<nncase_model_quant_mode_t>(
-                          &quantize_options::model_quant_mode));
+                          &quantize_options::model_quant_mode))
+        .def_property("calibrate_method",
+                      py::overload_cast<>(&quantize_options::calibrate_method),
+                      py::overload_cast<nncase_calib_method_t>(
+                          &quantize_options::calibrate_method))
+        .def_property("quant_type",
+                      py::overload_cast<>(&quantize_options::quant_type),
+                      py::overload_cast<nncase_quant_type_t>(
+                          &quantize_options::quant_type))
+        .def_property("w_quant_type",
+                      py::overload_cast<>(&quantize_options::w_quant_type),
+                      py::overload_cast<nncase_quant_type_t>(
+                          &quantize_options::w_quant_type))
+        .def_property(
+            "finetune_weights_method",
+            py::overload_cast<>(&quantize_options::finetune_weights_method),
+            py::overload_cast<nncase_finetune_weights_method_t>(
+                &quantize_options::finetune_weights_method))
+        .def_property(
+            "use_mix_quant",
+            py::overload_cast<>(&quantize_options::use_mix_quant),
+            py::overload_cast<bool>(&quantize_options::use_mix_quant));
 
     py::class_<calibration_dataset_provider>(m, "CalibrationDatasetProvider")
         .def(py::init([](py::list dataset, size_t samples_count,

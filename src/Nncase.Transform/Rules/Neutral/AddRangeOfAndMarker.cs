@@ -48,6 +48,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
         { typeof(BatchToSpace).TypeHandle, 1 },
         { typeof(Broadcast).TypeHandle, 1 },
         { typeof(LSTM).TypeHandle, 1 },
+        { typeof(Unary).TypeHandle, 1 },
         { typeof(MatMul).TypeHandle, 2 },
         { typeof(Conv2D).TypeHandle, 2 },
         { typeof(Conv2DTranspose).TypeHandle, 2 },
