@@ -14,10 +14,11 @@ internal class TextSnippet
 {
     private readonly List<TextSnippet> _inputSnippets = new List<TextSnippet>();
 
-    public TextSnippet(Expr expr, Symbol symbol)
+    public TextSnippet(Expr expr, Symbol beginSymbol, Symbol endSymbol)
     {
         Expr = expr;
-        Symbol = symbol;
+        BeginSymbol = beginSymbol;
+        EndSymbol = endSymbol;
         Writer = new BinaryWriter(Text, Encoding.UTF8, leaveOpen: true);
         Emitter = new StackVMEmitter(Writer);
     }
@@ -36,7 +37,9 @@ internal class TextSnippet
 
     public IReadOnlyList<TextSnippet> InputSnippets => _inputSnippets;
 
-    public Symbol Symbol { get; }
+    public Symbol BeginSymbol { get; }
+
+    public Symbol EndSymbol { get; }
 
     public int UseCount { get; private set; }
 
@@ -186,7 +189,8 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         if (expr.Target is CustomOp custom_op)
         {
             _context.AddCustomCallModule(custom_op.ModuleType);
-            Emitter.CusCall(custom_op.RegisteredName, custom_op.SerializeFields(), checked((ushort)expr.Parameters.Count));
+            Emitter.CusCall(custom_op.RegisteredName, custom_op.SerializeFields(),
+                checked((ushort)expr.Parameters.Count));
         }
         else if (expr.Target is Op op)
         {
@@ -208,6 +212,55 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         }
 
         return snippet;
+    }
+
+    public override TextSnippet Visit(If expr)
+    {
+        if (!ExpressionMemo.TryGetValue(expr, out var result))
+        {
+            result = VisitLeaf(expr);
+            ExpressionMemo.Add(expr, result);
+        }
+
+        return result;
+    }
+
+
+
+    /// <summary>
+    /// Composition of if:
+    /// 1. (Condition)
+    /// 2. BrFalse
+    /// {
+    ///     3. Then
+    ///     4. Br(AfterElse)
+    /// }
+    /// {
+    ///     5. Else
+    /// }
+    /// 6. EndSnippet.
+    /// </summary>
+    /// <param name="if">If expr.</param>
+    /// <returns>TextSnippet.</returns>
+    public override TextSnippet VisitLeaf(If @if)
+    {
+        var condSnippet = Visit(@if.Condition);
+        condSnippet.Emitter.LdScalar((int)Runtime.TypeCode.Boolean);
+        var brFalse = BeginTextSnippet(@if);
+        brFalse.Emitter.BrFalse(0);
+
+        Visit(@if.Then);
+        var br = BeginTextSnippet(@if);
+        br.Emitter.Br(0);
+
+        Visit(@if.Else);
+
+        // because visit param is before VisitLeaf, we can't use ref of elseSnippet.Symbol to jump.
+        // snippet structure: | ... | else param1 | else param2 | ... | elseSnippet |
+        AddSymbolRef(brFalse, br.EndSymbol, -4, 4, true, 1);
+        var endSnippet = BeginTextSnippet(@if);
+        AddSymbolRef(br, endSnippet.BeginSymbol, -4, 4, true, 1);
+        return endSnippet;
     }
 
     private TextSnippet Visit(TensorConst expr, Tensor tensor)
@@ -251,14 +304,20 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return new Symbol(sectionName, position);
     }
 
-    private SymbolRef AddSymbolRef(Symbol symbol, int positionOffset, int length, int offset = 0)
+    private SymbolRef AddSymbolRef(Symbol symbol, int positionOffset, int length, bool relative = false, int offset = 0)
     {
-        var symbolRef = new SymbolRef(Emitter.Position + positionOffset, length, symbol, offset);
-        CurrentTextSnippet.SymbolRefs.Add(symbolRef);
+        return AddSymbolRef(CurrentTextSnippet, symbol, positionOffset, length, relative, offset);
+    }
+
+    private SymbolRef AddSymbolRef(TextSnippet snippet, Symbol symbol, int positionOffset, int length, bool relative = false, int offset = 0)
+    {
+        var symbolRef = new SymbolRef(snippet.Emitter.Position + positionOffset, length, symbol, relative, offset);
+        snippet.SymbolRefs.Add(symbolRef);
         return symbolRef;
     }
 
-    private FunctionRef AddFunctionRef(BaseFunction callable, FunctionIdComponent component, int positionOffset, int length, int offset = 0)
+    private FunctionRef AddFunctionRef(BaseFunction callable, FunctionIdComponent component, int positionOffset,
+        int length, int offset = 0)
     {
         var functionRef = new FunctionRef(Emitter.Position + positionOffset, length, callable, component, offset);
         CurrentTextSnippet.FunctionRefs.Add(functionRef);
@@ -267,7 +326,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private void LeaGp(byte gpid, Symbol symbol, int offset = 0)
     {
-        AddSymbolRef(symbol, 2, 4, offset);
+        AddSymbolRef(symbol, 2, 4, false, offset);
         Emitter.LeaGP(gpid, 0);
     }
 
@@ -310,7 +369,10 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private TextSnippet BeginTextSnippet(Expr expr)
     {
-        var snippet = new TextSnippet(expr, AddSymbol(WellknownSectionNames.Text));
+        var snippet = new TextSnippet(
+            expr,
+            AddSymbol(WellknownSectionNames.Text),
+            AddSymbol(WellknownSectionNames.Text));
         _currentTextSnippet = snippet;
         _context.AddTextSnippet(snippet);
         return snippet;
