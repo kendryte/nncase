@@ -56,11 +56,6 @@ typedef enum {
 } nncase_finetune_weights_method_t;
 
 typedef enum {
-    nncase_use_mix_quant = 0,
-    nncase_not_use_mix_quant = 1
-} nncase_use_mix_quant_t;
-
-typedef enum {
     nncase_dump_flags_none = 0,
     nncase_dump_flags_import_ops = 1 << 1,
     nncase_dump_flags_pass_ir = 1 << 2,
@@ -155,7 +150,7 @@ typedef struct {
         nncase_finetune_weights_method_t method);
     void (*quantize_options_set_use_mix_quant)(
         clr_object_handle_t quantize_options,
-        nncase_use_mix_quant_t use_mix_quant);
+        bool use_mix_quant);
     clr_object_handle_t (*rtvalue_from_handle)(nncase::value_node *value);
     nncase::value_node *(*rtvalue_get_handle)(clr_object_handle_t rtvalue);
     clr_object_handle_t (*stream_create)(const nncase_stream_mt_t *mt,
@@ -326,8 +321,8 @@ class quantize_options : public clr_object_base {
             obj_.get(), value);
     }
 
-    nncase_use_mix_quant_t use_mix_quant() { return nncase_not_use_mix_quant; }
-    void use_mix_quant(nncase_use_mix_quant_t value) {
+    bool use_mix_quant() { return false; }
+    void use_mix_quant(bool value) {
         nncase_clr_api()->quantize_options_set_use_mix_quant(obj_.get(), value);
     }
 };

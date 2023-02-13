@@ -84,10 +84,6 @@ PYBIND11_MODULE(_nncase, m) {
         .value("UseSquant", nncase_finetune_weights_squant)
         .value("UseAdaRound", nncase_finetune_weights_adaround);
 
-    py::enum_<nncase_use_mix_quant_t>(m, "IsUseMixQuant")
-        .value("NotUseMixQuant", nncase_not_use_mix_quant)
-        .value("UseMixQuant", nncase_use_mix_quant);
-
     py::class_<compile_options>(m, "CompileOptions")
         .def(py::init())
         .def_property(
@@ -139,7 +135,7 @@ PYBIND11_MODULE(_nncase, m) {
                 &quantize_options::finetune_weights_method))
         .def_property("use_mix_quant",
                       py::overload_cast<>(&quantize_options::use_mix_quant),
-                      py::overload_cast<nncase_use_mix_quant_t>(
+                      py::overload_cast<bool>(
                           &quantize_options::use_mix_quant));
 
     py::class_<calibration_dataset_provider>(m, "CalibrationDatasetProvider")

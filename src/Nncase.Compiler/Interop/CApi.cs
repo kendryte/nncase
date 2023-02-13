@@ -67,7 +67,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, QuantType, void> QuantizeOptionsSetQuantTypePtr;
     public delegate* unmanaged<IntPtr, QuantType, void> QuantizeOptionsSetWQuantTypePtr;
     public delegate* unmanaged<IntPtr, FineTuneWeightsMethod, void> QuantOptionsSetFineTuneWeightsMethodPtr;
-    public delegate* unmanaged<IntPtr, IsUseMixQuant, void> QuantOptionsSetUseMixQuantPtr;
+    public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetUseMixQuantPtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueFromHandlePtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueGetHandlePtr;
     public delegate* unmanaged<CStreamMT*, IntPtr, IntPtr> StreamCreatePtr;
@@ -113,8 +113,8 @@ public static unsafe class CApi
         mt->QuantizeOptionsSetModelQuantModePtr = &QuantizeOptionsSetModelQuantMode;
         mt->QuantizeOptionsSetQuantTypePtr = &QuantizeOptionsSetQuantType;
         mt->QuantizeOptionsSetWQuantTypePtr = &QuantizeOptionsSetWQuantType;
+        mt->QuantOptionsSetFineTuneWeightsMethodPtr = &QuantizeOptionsSetFineTuneWeightsMethod;
         mt->QuantOptionsSetUseMixQuantPtr = &QuantOptionsSetUseMixQuant;
-        mt->QuantOptionsSetFineTuneWeightsMethodPtr = &QuantizeOptionsSetFineTUneWeightsMethod;
         mt->RTValueFromHandlePtr = &RTValueFromHandle;
         mt->RTValueGetHandlePtr = &RTValueGetHandle;
         mt->StreamCreatePtr = &StreamCreate;
@@ -388,7 +388,7 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
-    private static void QuantizeOptionsSetFineTUneWeightsMethod(IntPtr quantizeOptionsHandle, FineTuneWeightsMethod fineTuneWeightsMethod)
+    private static void QuantizeOptionsSetFineTuneWeightsMethod(IntPtr quantizeOptionsHandle, FineTuneWeightsMethod fineTuneWeightsMethod)
     {
         switch (fineTuneWeightsMethod)
         {
@@ -410,18 +410,18 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
-    private static void QuantOptionsSetUseMixQuant(IntPtr quantizeOptionsHandle, IsUseMixQuant useMixQuant)
+    private static void QuantOptionsSetUseMixQuant(IntPtr quantizeOptionsHandle, byte useMixQuant)
     {
         switch (useMixQuant)
         {
-            case IsUseMixQuant.UseMixQuant:
-                Get<QuantizeOptions>(quantizeOptionsHandle).BindQuantMethod = true;
-                break;
-            case IsUseMixQuant.NotUseMixQuant:
+            case 0:
                 Get<QuantizeOptions>(quantizeOptionsHandle).BindQuantMethod = false;
                 break;
+            case 1:
+                Get<QuantizeOptions>(quantizeOptionsHandle).BindQuantMethod = true;
+                break;
             default:
-                throw new ArgumentException("Invalid Parameter");
+                throw new ArgumentException("Invalid useMixQuant Flag");
         }
     }
 

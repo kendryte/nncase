@@ -73,22 +73,6 @@ public enum FineTuneWeightsMethod : int
 }
 
 /// <summary>
-/// Is Use Mix Quant Or Not.
-/// </summary>
-public enum IsUseMixQuant : int
-{
-    /// <summary>
-    /// use mix quant.
-    /// </summary>
-    UseMixQuant,
-
-    /// <summary>
-    /// not use mix quant.
-    /// </summary>
-    NotUseMixQuant,
-}
-
-/// <summary>
 /// Calibration Method.
 /// </summary>
 public enum CalibMethod

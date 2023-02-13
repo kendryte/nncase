@@ -209,12 +209,7 @@ class Compiler:
         else:
             raise Exception("Unsupported Weights Quant Type")
 
-        if (ptq_dataset_options.use_mix_quant == False):
-            self._quantize_options.use_mix_quant = _nncase.IsUseMixQuant.NotUseMixQuant
-        elif (ptq_dataset_options.use_mix_quant == True):
-            self._quantize_options.use_mix_quant = _nncase.IsUseMixQuant.UseMixQuant
-        else:
-            raise Exception("Invalid Parameter")
+        self._quantize_options.use_mix_quant = ptq_dataset_options.use_mix_quant
 
     def dump_range_options(self) -> DumpRangeTensorOptions:
         raise NotImplementedError("dump_range_options")
