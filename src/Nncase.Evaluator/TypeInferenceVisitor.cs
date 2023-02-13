@@ -47,6 +47,17 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     }
 
     /// <inheritdoc/>
+    public override IRType VisitLeaf(If expr)
+    {
+        Visit(expr.Condition);
+        var thenType = Visit(expr.Then);
+        var elseType = Visit(expr.Else);
+        var type = TypeInference.CommonType(thenType, elseType);
+        SetCheckedType(expr, type);
+        return type;
+    }
+
+    /// <inheritdoc/>
     public override IRType VisitLeaf(Const expr)
     {
         var type = expr.ValueType;
@@ -193,10 +204,14 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     {
         try
         {
-            VerifySubField(expr, expr.Value, TypePatternUtility.IsScalar() & TypePatternUtility.HasDataType(DataTypes.Int32));
-            VerifySubField(expr, expr.Dom.Start, TypePatternUtility.IsScalar() & TypePatternUtility.HasDataType(DataTypes.Int32));
-            VerifySubField(expr, expr.Dom.Stop, TypePatternUtility.IsScalar() & TypePatternUtility.HasDataType(DataTypes.Int32));
-            VerifySubField(expr, expr.Dom.Step, TypePatternUtility.IsScalar() & TypePatternUtility.HasDataType(DataTypes.Int32));
+            VerifySubField(expr, expr.Value,
+                TypePatternUtility.IsScalar() & TypePatternUtility.HasDataType(DataTypes.Int32));
+            VerifySubField(expr, expr.Dom.Start,
+                TypePatternUtility.IsScalar() & TypePatternUtility.HasDataType(DataTypes.Int32));
+            VerifySubField(expr, expr.Dom.Stop,
+                TypePatternUtility.IsScalar() & TypePatternUtility.HasDataType(DataTypes.Int32));
+            VerifySubField(expr, expr.Dom.Step,
+                TypePatternUtility.IsScalar() & TypePatternUtility.HasDataType(DataTypes.Int32));
         }
         catch (TypeInferenceInterruptException e)
         {
@@ -283,7 +298,8 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
             VerifySubField(expr, expr.Buffer, TypePatternUtility.IsPointer());
             foreach (var i in Enumerable.Range(0, expr.Indices.Count))
             {
-                VerifySubField(expr, expr.Indices[i], TypePatternUtility.IsIntegralScalar(), $"BufferLoad.Indices[{i}]");
+                VerifySubField(expr, expr.Indices[i], TypePatternUtility.IsIntegralScalar(),
+                    $"BufferLoad.Indices[{i}]");
             }
         }
         catch (TypeInferenceInterruptException e)
@@ -293,7 +309,10 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         }
 
         IRType type;
-        if (expr.Buffer.CheckedType is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType pointedType } })
+        if (expr.Buffer.CheckedType is TensorType
+            {
+                IsScalar: true, DType: PointerType { ElemType: PrimType pointedType }
+            })
         {
             type = TensorType.Scalar(pointedType);
         }
@@ -313,7 +332,8 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
             VerifySubField(expr, expr.Buffer, TypePatternUtility.IsPointer());
             foreach (var i in Enumerable.Range(0, expr.Indices.Count))
             {
-                VerifySubField(expr, expr.Indices[i], TypePatternUtility.IsIntegralScalar(), $"BufferStore.Indices[{i}]");
+                VerifySubField(expr, expr.Indices[i], TypePatternUtility.IsIntegralScalar(),
+                    $"BufferStore.Indices[{i}]");
             }
 
             VerifySubField(expr, expr.Value, TypePatternUtility.IsScalar());
@@ -326,7 +346,10 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
 
         IRType type;
         if (expr.Value.CheckedType is TensorType { IsScalar: true, DType: PrimType valueType } &&
-            expr.Buffer.CheckedType is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType pointedType } }
+            expr.Buffer.CheckedType is TensorType
+            {
+                IsScalar: true, DType: PointerType { ElemType: PrimType pointedType }
+            }
             && valueType == pointedType)
         {
             type = TupleType.Void;
@@ -468,7 +491,8 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     /// <summary>
     /// Verify the expression sub field type is valid.
     /// </summary>
-    private void VerifySubField(Expr parent, Expr field, TypePattern? pattern = null, [CallerArgumentExpression("field")] string? exprMsg = null)
+    private void VerifySubField(Expr parent, Expr field, TypePattern? pattern = null,
+        [CallerArgumentExpression("field")] string? exprMsg = null)
     {
         pattern ??= TypePatternUtility.IsIRType();
         if (field.CheckedType is InvalidType invalidType)
