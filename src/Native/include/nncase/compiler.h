@@ -149,8 +149,7 @@ typedef struct {
         clr_object_handle_t quantize_options,
         nncase_finetune_weights_method_t method);
     void (*quantize_options_set_use_mix_quant)(
-        clr_object_handle_t quantize_options,
-        bool use_mix_quant);
+        clr_object_handle_t quantize_options, bool use_mix_quant);
     clr_object_handle_t (*rtvalue_from_handle)(nncase::value_node *value);
     nncase::value_node *(*rtvalue_get_handle)(clr_object_handle_t rtvalue);
     clr_object_handle_t (*stream_create)(const nncase_stream_mt_t *mt,

@@ -133,10 +133,10 @@ PYBIND11_MODULE(_nncase, m) {
             py::overload_cast<>(&quantize_options::finetune_weights_method),
             py::overload_cast<nncase_finetune_weights_method_t>(
                 &quantize_options::finetune_weights_method))
-        .def_property("use_mix_quant",
-                      py::overload_cast<>(&quantize_options::use_mix_quant),
-                      py::overload_cast<bool>(
-                          &quantize_options::use_mix_quant));
+        .def_property(
+            "use_mix_quant",
+            py::overload_cast<>(&quantize_options::use_mix_quant),
+            py::overload_cast<bool>(&quantize_options::use_mix_quant));
 
     py::class_<calibration_dataset_provider>(m, "CalibrationDatasetProvider")
         .def(py::init([](py::list dataset, size_t samples_count,
