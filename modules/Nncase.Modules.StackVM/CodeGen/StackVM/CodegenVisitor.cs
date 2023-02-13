@@ -189,8 +189,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         if (expr.Target is CustomOp custom_op)
         {
             _context.AddCustomCallModule(custom_op.ModuleType);
-            Emitter.CusCall(custom_op.RegisteredName, custom_op.SerializeFields(),
-                checked((ushort)expr.Parameters.Count));
+            Emitter.CusCall(custom_op.RegisteredName, custom_op.SerializeFields(), checked((ushort)expr.Parameters.Count));
         }
         else if (expr.Target is Op op)
         {
@@ -224,8 +223,6 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
         return result;
     }
-
-
 
     /// <summary>
     /// Composition of if:
@@ -316,8 +313,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return symbolRef;
     }
 
-    private FunctionRef AddFunctionRef(BaseFunction callable, FunctionIdComponent component, int positionOffset,
-        int length, int offset = 0)
+    private FunctionRef AddFunctionRef(BaseFunction callable, FunctionIdComponent component, int positionOffset, int length, int offset = 0)
     {
         var functionRef = new FunctionRef(Emitter.Position + positionOffset, length, callable, component, offset);
         CurrentTextSnippet.FunctionRefs.Add(functionRef);

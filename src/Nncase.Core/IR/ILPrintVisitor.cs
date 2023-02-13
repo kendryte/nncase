@@ -266,15 +266,17 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     public override string Visit(If expr)
     {
         _scope.IndWriteLine($"if({expr.Condition}) " + "{");
-        using (var _ = _scope.IndentUp())
+        using (_scope.IndentUp())
         {
             Visit(expr.Then);
         }
+
         _scope.IndWriteLine("} else {");
-        using (var _ = _scope.IndentUp())
+        using (_scope.IndentUp())
         {
             Visit(expr.Else);
         }
+
         _scope.IndWriteLine("}");
         return "if";
     }

@@ -38,6 +38,13 @@ public class UnitTestCPUTarget : TestClassBase
             new object[] { new[] { 0, -1 } },
         };
 
+    public static IEnumerable<object[]> TestIfData =>
+        new[]
+        {
+            new object[] { true },
+            new object[] { false },
+        };
+
     [Fact]
     [AutoSetupTestMethod(InitSession = false)]
     public void TestCPUTargetKind()
@@ -151,13 +158,6 @@ public class UnitTestCPUTarget : TestClassBase
         GenerateKModelAndRun(module, new[] { 1.0f }, new[] { 3.0f });
     }
 
-    public static IEnumerable<object[]> TestIfData =>
-        new[]
-        {
-            new object[] { true },
-            new object[] { false }
-        };
-
     [Theory]
     [MemberData(nameof(TestIfData))]
     public void TestIf(bool input)
@@ -166,6 +166,7 @@ public class UnitTestCPUTarget : TestClassBase
         var then = IR.F.Math.Abs(3f);
         var @else = IR.F.NN.Relu(Cast(3, DataTypes.Float32));
         var @if = IR.F.Math.Abs(new If(condVar, then, @else));
+
         // var @if = new If(condVar, then, @else);
         Assert.True(@if.InferenceType());
         var main = new Function("main", @if, new[] { condVar });
@@ -175,15 +176,15 @@ public class UnitTestCPUTarget : TestClassBase
         GenerateKModelAndRunFromFn(main, input, output);
     }
 
-
     [Fact]
     public void TestStackVMNestIf()
     {
         var condVar = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
-        var then = (Expr)3 - 1;
+        _ = (Expr)3 - 1;
         var @else = (Expr)3 + 1;
         var elseThen = (Expr)8 * 8;
         var elsif = new If(condVar, elseThen, @else);
+
         // var @if = new If(false, then, elsif);
         // @if.InferenceType();
         var main = new Function("main", 2 * elsif, new[] { condVar });

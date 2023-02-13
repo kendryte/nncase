@@ -74,6 +74,7 @@ public abstract class FunctionBuilder : IDisposable
 
             long originValue = symbolAddr + refer.Offset;
             long value = refer.Relative ? originValue - refer.Position : originValue;
+
             // todo: neg addr is error
             TextWriter.WriteByLength(value, refer.Length);
         }
