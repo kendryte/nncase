@@ -192,7 +192,8 @@ public sealed class UnitTestDumpper : TestClassBase
         var x = IR.F.Math.Quantize(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), Tensor.From<QuantParam>(new QuantParam[] { new(1, 2.0f), new(2, 3.0f) }, new[] { 2 }), DataTypes.UInt8);
         var y = new Var("y", new TensorType(DataTypes.UInt8, new int[] { 1, 2, 2, 2 }));
         var z = IR.F.Random.Normal(DataTypes.UInt8, 0, 1, 0, new[] { 1, 2, 2, 2 });
-        var main = new Function("main", IR.F.Tensors.Concat(new IR.Tuple(new Expr[] { x, y, z }), 1), new[] { y });
+        var m = IR.F.Random.Normal(DataTypes.UInt8, 0, 1, 0, new[] { 1, 20, 2, 2 });
+        var main = new Function("main", IR.F.Tensors.Concat(new IR.Tuple(new Expr[] { x, y, z, m }), 1), new[] { y });
         CompilerServices.DumpCSharpIR(main, string.Empty, Dumpper.Directory);
     }
 
@@ -206,9 +207,11 @@ public sealed class UnitTestDumpper : TestClassBase
         var n = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new long[] { 1L, 2L });
         var k = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new uint[] { 1u, 2u });
         var j = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new ulong[] { 1UL, 2UL });
-        var fusion = new Fusion("fusion", "stackvm", new IR.Tuple(new Expr[] { x, y, z, m, n, k, j }), Array.Empty<Var>());
+        var xx = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 8, 2, 2 }), new ulong[] { 1UL, 2UL });
+        var xy = IR.F.Math.RangeOfMarker(IR.F.Tensors.Cast(IR.F.Random.Normal(DataTypes.BFloat16, 0, 1, 0, new[] { 1, 9, 2, 2 }), DataTypes.Float32), new ulong[] { 1UL, 2UL });
+        var fusion = new Fusion("fusion", "stackvm", new IR.Tuple(new Expr[] { x, y, z, m, n, k, j, xx, xy }), Array.Empty<Var>());
         var main = new Function("main", IR.F.Tensors.Concat(new Call(fusion, Array.Empty<Expr>()), 1), Array.Empty<Var>());
-        CompilerServices.DumpCSharpIR(main, string.Empty, Dumpper.Directory);
+        CompilerServices.DumpCSharpIR(main, string.Empty, Dumpper.Directory, false);
     }
 
     private async Task<Expr> RunShapeInferPass(string name, Expr expr, params Var[] parameters)

@@ -55,7 +55,7 @@ public static partial class Utility
     /// <typeparam name="TOp">op type.</typeparam>
     /// <param name="name">name.</param>
     /// <returns>op pattern.</returns>
-    public static OpPattern<TOp> IsOp<TOp>(string? name)
+    public static OpPattern<TOp> IsOp<TOp>(string? name = null)
      where TOp : Op
      => new OpPattern<TOp>(op => true, name);
 
