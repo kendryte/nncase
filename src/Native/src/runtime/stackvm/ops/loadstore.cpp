@@ -350,11 +350,11 @@ result<void> stackvm_runtime_function::visit(
 }
 
 #define RETURN_RESULT_SELECT(RETURN_RESULT_IMPL)                               \
-    RETURN_RESULT_IMPL(bool);                                      \
-    RETURN_RESULT_IMPL(int8_t);                                       \
-    RETURN_RESULT_IMPL(uint8_t);                                     \
-    RETURN_RESULT_IMPL(int32_t);                                     \
-    RETURN_RESULT_IMPL(uint32_t);                                   \
+    RETURN_RESULT_IMPL(bool);                                                  \
+    RETURN_RESULT_IMPL(int8_t);                                                \
+    RETURN_RESULT_IMPL(uint8_t);                                               \
+    RETURN_RESULT_IMPL(int32_t);                                               \
+    RETURN_RESULT_IMPL(uint32_t);                                              \
     RETURN_RESULT_IMPL(float);
 
 result<void> stackvm_runtime_function::visit(
@@ -364,10 +364,10 @@ result<void> stackvm_runtime_function::visit(
     try_var(tensor_buffer, tensor_host->buffer().as_host());
     try_var(input_map, tensor_buffer.map(map_read));
     auto input = input_map.buffer().data();
-#define RETURN_RESULT(_in_type)                                     \
-    if (tensor->dtype()->typecode() == op.datatype) {                            \
+#define RETURN_RESULT(_in_type)                                                \
+    if (tensor->dtype()->typecode() == op.datatype) {                          \
         _in_type scalar = *reinterpret_cast<const _in_type *>(input);          \
-        return stack_.push(stack_entry(scalar));                                      \
+        return stack_.push(stack_entry(scalar));                               \
     }
 
     RETURN_RESULT_SELECT(RETURN_RESULT);

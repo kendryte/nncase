@@ -54,9 +54,7 @@ result<value_t> stackvm_runtime_function::invoke_core(
     return ok(ret_val);
 }
 
-uintptr_t stackvm_runtime_function::pc() const noexcept {
-    return last_pc_;
-}
+uintptr_t stackvm_runtime_function::pc() const noexcept { return last_pc_; }
 
 result<void> stackvm_runtime_function::pc(uintptr_t value) noexcept {
     if (value > text_.size_bytes())
