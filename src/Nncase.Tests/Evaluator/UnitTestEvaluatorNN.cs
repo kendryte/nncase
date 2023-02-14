@@ -132,6 +132,16 @@ public class UnitTestEvaluatorNN : TestClassBase
     }
 
     [Fact]
+    public void TestActivationErf()
+    {
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        var expect = OrtKI.Erf(input);
+        var expr = IR.F.NN.Erf(input.ToTensor());
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+    }
+
+    [Fact]
     public void TestBatchToSpace()
     {
         var a = new float[] { 1, 3, 9, 11, 2, 4, 10, 12, 5, 7, 13, 15, 6, 8, 14, 16 };

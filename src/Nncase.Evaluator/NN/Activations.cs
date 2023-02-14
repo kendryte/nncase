@@ -360,3 +360,40 @@ public class PReluEvaluator : IEvaluator<PRelu>, ITypeInferencer<PRelu>, ICostEv
         return input;
     }
 }
+
+/// <summary>
+/// Evaluator for <see cref="Erf"/>.
+/// </summary>
+public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluator<Erf>
+{
+    /// <inheritdoc/>
+    public IValue Visit(IEvaluateContext context, Erf sigmoid)
+    {
+        var input = context.GetOrtArgumentValue(sigmoid, Erf.Input);
+        return OrtKI.Erf(input).ToValue();
+    }
+
+    /// <inheritdoc/>
+    public IRType Visit(ITypeInferenceContext context, Erf target)
+    {
+        var input = context.CheckArgumentType<TensorType>(target, Erf.Input);
+        return Visit(input);
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, Erf target)
+    {
+        var outputType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+        };
+    }
+
+    private IRType Visit(TensorType input)
+    {
+        return input;
+    }
+}
