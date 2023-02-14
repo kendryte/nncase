@@ -141,6 +141,7 @@ public sealed partial class OnnxImporter : BaseImporter
             "Pad" => VisitPad(op),
             "Pow" => VisitBinary(op, BinaryOp.Pow),
             "PRelu" => VisitPRelu(op),
+            "Erf" => VisitErf(op),
 
             "QuantizeLinear" => VisitQuantizeLinear(op),
             "QLinearConv" => VisitQLinearConv(op),
