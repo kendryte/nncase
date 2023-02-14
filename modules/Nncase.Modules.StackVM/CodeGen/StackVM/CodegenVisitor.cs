@@ -242,7 +242,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     public override TextSnippet VisitLeaf(If @if)
     {
         var condSnippet = Visit(@if.Condition);
-        condSnippet.Emitter.LdScalar((int)Runtime.TypeCode.Boolean);
+        condSnippet.Emitter.LdScalar();
         var brFalse = BeginTextSnippet(@if);
         brFalse.Emitter.BrFalse(0);
 

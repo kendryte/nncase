@@ -580,10 +580,6 @@ namespace IsaGen
     public class LdScalarInstruction : Instruction
     {
         public override OpCode OpCode => OpCode.LDSCALAR;
-
-        [DisplayName("datatype")]
-        [Description("Scalar data type")]
-        public byte DataType { get; set; }
     }
 
     [DisplayName("DUP")]

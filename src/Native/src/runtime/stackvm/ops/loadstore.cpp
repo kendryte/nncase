@@ -365,7 +365,8 @@ result<void> stackvm_runtime_function::visit(
     try_var(input_map, tensor_buffer.map(map_read));
     auto input = input_map.buffer().data();
 #define RETURN_RESULT(_in_type)                                                \
-    if (tensor->dtype()->typecode() == op.datatype) {                          \
+    if (tensor->dtype()->typecode() ==                                         \
+        datatype_t::from_type<_in_type>()->typecode()) {                       \
         _in_type scalar = *reinterpret_cast<const _in_type *>(input);          \
         return stack_.push(stack_entry(scalar));                               \
     }
