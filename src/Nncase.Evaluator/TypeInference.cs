@@ -222,6 +222,11 @@ public static class TypeInference
     /// </summary>
     public static IRType PadType(TensorType input, Expr pads, Expr pad)
     {
+        if (input.Shape.IsUnranked)
+        {
+            return input;
+        }
+
         if (pad.CheckedType is TensorType padValueType)
         {
             if (padValueType.DType != input.DType)
