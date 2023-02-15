@@ -114,7 +114,8 @@ public static class TypeInference
             // 1. multi same rank
             // 2. can broadcast rank -> biggest shape
             // 3. invalid rank
-            return inputs.OrderByDescending(x => x.Shape.Rank).First();
+            var rank = inputs.OrderByDescending(x => x.Shape.Rank).First().Shape.Rank;
+            return new TensorType(dataType, Shape.Unknown(rank));
         }
 
         var outputRank = inputs.Select(x => x.Shape.Rank).Max();
