@@ -350,12 +350,12 @@ result<void> stackvm_runtime_function::visit(
 }
 
 #define RETURN_RESULT_SELECT(RETURN_RESULT_IMPL)                               \
-    RETURN_RESULT_IMPL(bool);                                                  \
-    RETURN_RESULT_IMPL(int8_t);                                                \
-    RETURN_RESULT_IMPL(uint8_t);                                               \
-    RETURN_RESULT_IMPL(int32_t);                                               \
-    RETURN_RESULT_IMPL(uint32_t);                                              \
-    RETURN_RESULT_IMPL(float);
+    RETURN_RESULT_IMPL(dt_boolean, bool);                                      \
+    RETURN_RESULT_IMPL(dt_int8, int8_t);                                       \
+    RETURN_RESULT_IMPL(dt_uint8, uint8_t);                                     \
+    RETURN_RESULT_IMPL(dt_int32, int32_t);                                     \
+    RETURN_RESULT_IMPL(dt_uint32, uint32_t);                                   \
+    RETURN_RESULT_IMPL(dt_float32, float);
 
 result<void> stackvm_runtime_function::visit(
     NNCASE_UNUSED const ldscalar_op_t &op) noexcept {
@@ -364,15 +364,18 @@ result<void> stackvm_runtime_function::visit(
     try_var(tensor_buffer, tensor_host->buffer().as_host());
     try_var(input_map, tensor_buffer.map(map_read));
     auto input = input_map.buffer().data();
-#define RETURN_RESULT(_in_type)                                                \
-    if (tensor->dtype()->typecode() ==                                         \
-        datatype_t::from_type<_in_type>()->typecode()) {                       \
+
+#define RETURN_RESULT(_typecode, _in_type)                                     \
+    case _typecode: {                                                          \
         _in_type scalar = *reinterpret_cast<const _in_type *>(input);          \
         return stack_.push(stack_entry(scalar));                               \
     }
 
-    RETURN_RESULT_SELECT(RETURN_RESULT);
-    return err(nncase_errc::datatype_mismatch);
+    switch (tensor->dtype()->typecode()) {
+        RETURN_RESULT_SELECT(RETURN_RESULT)
+    default:
+        return err(nncase_errc::datatype_mismatch);
+    }
 #undef RETURN_RESULT
 }
 
