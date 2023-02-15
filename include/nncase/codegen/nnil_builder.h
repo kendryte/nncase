@@ -65,6 +65,8 @@ public:
     void emit_pow() { emit_opcode(runtime::nnil_pow); }
     void emit_clamp() { emit_opcode(runtime::nnil_clamp); }
 
+    // emit_erf
+    void emit_erf() { emit_opcode(runtime::nnil_erf); }
     void emit_ret() { emit_opcode(runtime::nnil_ret); }
 
 private:

@@ -39,6 +39,10 @@ if (ENABLE_OP_PROFILE)
     add_definitions(-DENABLE_OP_PROFILE)
 endif()
 
+if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)|(x86_64)|(X86_64)")
+    include(toolchains/x86_64.toolchain.cmake)
+endif()
+
 if (BUILDING_RUNTIME)
     option(ENABLE_VULKAN_RUNTIME "Enable Vulkan runtime" ON)
     option(ENABLE_K210_RUNTIME "Enable k210 runtime" OFF)
