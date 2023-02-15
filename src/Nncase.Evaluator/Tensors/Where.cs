@@ -47,9 +47,8 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         var cond = context.CheckArgumentType<TensorType>(target, Where.Cond);
         var x = context.CheckArgumentType<TensorType>(target, Where.X);
         var y = context.CheckArgumentType<TensorType>(target, Where.Y);
-        if (x.Shape.IsScalar || y.Shape.IsScalar || IsTFWhere(x, y))
+        if (target.IsTfWhere)
         {
-            // dim[0] = count_nonzero(cond)
             return new TensorType(DataTypes.Int64, new Shape(Dimension.Unknown, cond.Shape.Rank));
         }
 

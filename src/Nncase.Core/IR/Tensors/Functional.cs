@@ -123,7 +123,7 @@ public static class Tensors
 
     public static Call Tile(Expr input, Expr repeats) => new Call(new Tile(), input, repeats);
 
-    public static Call Where(Expr cond, Expr x, Expr y) => new Call(new Where(), cond, x, y);
+    public static Call Where(Expr cond, Expr x, Expr y, bool isTfWhere = false) => new Call(new Where(isTfWhere), cond, x, y);
 
     /// <summary>
     /// get item from the input.
