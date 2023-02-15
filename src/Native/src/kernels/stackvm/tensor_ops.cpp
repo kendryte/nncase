@@ -992,18 +992,16 @@ result<value_t> nncase::kernels::stackvm::fake_quantize(
 }
 
 result<value_t> nncase::kernels::stackvm::condition(
-    [[maybe_unused]]bool can_fold_const_call, [[maybe_unused]]value_t predicate,
-    [[maybe_unused]] value_t value, [[maybe_unused]] value_t output,
-    [[maybe_unused]] kernel_context &context)
-{
+    [[maybe_unused]] bool can_fold_const_call,
+    [[maybe_unused]] value_t predicate, [[maybe_unused]] value_t value,
+    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
     return err(std::errc::not_supported);
 }
 
 result<value_t> nncase::kernels::stackvm::bitcast(
     [[maybe_unused]] prim_type_t type, [[maybe_unused]] prim_type_t new_type,
     [[maybe_unused]] value_t input, [[maybe_unused]] value_t new_shape,
-    [[maybe_unused]] value_t output, [[maybe_unused]]kernel_context &context)
-{
+    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
     return err(std::errc::not_supported);
 }
 // result<value_t> nncase::kernels::stackvm::uninitialized(
