@@ -32,7 +32,7 @@ result<void> batch_to_space_impl(const T *input, T *output, const runtime_shape_
     const auto spatial_dim_start = in_shape.size() - block_shape.size();
     const auto block_size = compute_size(block_shape);
     runtime_shape_t batch_reshaped_shape = block_shape;
-    batch_reshaped_shape.push_back(in_shape[0] / block_size);
+    batch_reshaped_shape.push_back(std::max(in_shape[0] / block_size, 1UL));
     return apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
         // 1. batch reshaped to block_shape[0], ..., block_shape[M-1], batch / prod(block_shape)
         const auto batch_reshaped_index = kernels::reshape_linear_index(batch_reshaped_shape, index[0]);
