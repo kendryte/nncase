@@ -23,7 +23,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
     {
         var xt = context.GetArgumentValueAsTensor(where, Where.X);
         var yt = context.GetArgumentValueAsTensor(where, Where.Y);
-        if (xt.Dimensions[0] == 0 && yt.Dimensions[0] == 0 && xt.ElementType == DataTypes.Float32)
+        if (where.IsTfWhere)
         {
             var condTensor = context.GetArgumentValueAsTensor<bool>(where, Where.Cond);
             if (condTensor.Rank > 1)
