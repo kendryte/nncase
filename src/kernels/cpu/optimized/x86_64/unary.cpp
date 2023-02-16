@@ -506,7 +506,7 @@ CAN_FORCEINLINE __m256 asinf_core2_ps(__m256 a, __m256 r0, __m256 r1, __m256 r2,
 
 void asinf_core2_vec(const float *a, float *b, int n)
 {
-    const float pi = 3.1415926;
+    const float pi = 3.1415926f;
     const float __init__data[] = { 0x1.a7f260p-5f, 0x1.29a5cep-6f, 0x1.7f0842p-5f, 0x1.329256p-4f, 0x1.555728p-3f, 1.0f, 0.5f, pi / 2 };
     __m256 r0 = _mm256_broadcast_ss(__init__data);
     __m256 r1 = _mm256_broadcast_ss(__init__data + 1);
