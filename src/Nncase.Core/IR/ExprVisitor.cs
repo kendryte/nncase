@@ -52,6 +52,21 @@ namespace Nncase.IR
             return result;
         }
 
+        /// <inheritdoc />
+        public override TExprResult Visit(If expr)
+        {
+            if (!_exprMemo.TryGetValue(expr, out var result))
+            {
+                Visit(expr.Condition);
+                Visit(expr.Then);
+                Visit(expr.Else);
+                result = VisitLeaf(expr);
+                _exprMemo.Add(expr, result);
+            }
+
+            return result;
+        }
+
         /// <inheritdoc/>
         public sealed override TExprResult Visit(Const expr)
         {
@@ -405,6 +420,7 @@ namespace Nncase.IR
                 Function func => VisitLeaf(func),
                 Fusion fusion => VisitLeaf(fusion),
                 Call call => VisitLeaf(call),
+                If @if => VisitLeaf(@if),
                 Tuple tuple => VisitLeaf(tuple),
                 Op op => VisitLeaf(op),
                 None none => VisitLeaf(none),
@@ -468,6 +484,13 @@ namespace Nncase.IR
         /// <param name="expr">Call expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult VisitLeaf(Call expr) => DefaultVisitLeaf(expr);
+
+        /// <summary>
+        /// Visit leaf if expression.
+        /// </summary>
+        /// <param name="expr">If expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult VisitLeaf(If expr) => DefaultVisitLeaf(expr);
 
         /// <summary>
         /// Visit leaf tuple expression.

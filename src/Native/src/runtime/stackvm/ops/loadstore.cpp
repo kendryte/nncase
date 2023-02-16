@@ -349,6 +349,36 @@ result<void> stackvm_runtime_function::visit(
     return stack_.push(tensor(std::in_place, dtype, shape, strides, buffer));
 }
 
+#define RETURN_RESULT_SELECT(RETURN_RESULT_IMPL)                               \
+    RETURN_RESULT_IMPL(dt_boolean, bool);                                      \
+    RETURN_RESULT_IMPL(dt_int8, int8_t);                                       \
+    RETURN_RESULT_IMPL(dt_uint8, uint8_t);                                     \
+    RETURN_RESULT_IMPL(dt_int32, int32_t);                                     \
+    RETURN_RESULT_IMPL(dt_uint32, uint32_t);                                   \
+    RETURN_RESULT_IMPL(dt_float32, float);
+
+result<void> stackvm_runtime_function::visit(
+    NNCASE_UNUSED const ldscalar_op_t &op) noexcept {
+    try_var(tensor, pop_tensor());
+    try_var(tensor_host, tensor->to_host());
+    try_var(tensor_buffer, tensor_host->buffer().as_host());
+    try_var(input_map, tensor_buffer.map(map_read));
+    auto input = input_map.buffer().data();
+
+#define RETURN_RESULT(_typecode, _in_type)                                     \
+    case _typecode: {                                                          \
+        _in_type scalar = *reinterpret_cast<const _in_type *>(input);          \
+        return stack_.push(stack_entry(scalar));                               \
+    }
+
+    switch (tensor->dtype()->typecode()) {
+        RETURN_RESULT_SELECT(RETURN_RESULT)
+    default:
+        return err(nncase_errc::datatype_mismatch);
+    }
+#undef RETURN_RESULT
+}
+
 result<void> stackvm_runtime_function::visit(const ldlocal_op_t &op) noexcept {
     try_var(frame, frames_.top());
     try_var(field, frame->field(op.index));

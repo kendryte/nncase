@@ -47,6 +47,17 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     }
 
     /// <inheritdoc/>
+    public override IRType VisitLeaf(If expr)
+    {
+        Visit(expr.Condition);
+        var thenType = Visit(expr.Then);
+        var elseType = Visit(expr.Else);
+        var type = TypeInference.CommonType(thenType, elseType);
+        SetCheckedType(expr, type);
+        return type;
+    }
+
+    /// <inheritdoc/>
     public override IRType VisitLeaf(Const expr)
     {
         var type = expr.ValueType;
@@ -293,7 +304,10 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         }
 
         IRType type;
-        if (expr.Buffer.CheckedType is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType pointedType } })
+        if (expr.Buffer.CheckedType is TensorType
+            {
+                IsScalar: true, DType: PointerType { ElemType: PrimType pointedType }
+            })
         {
             type = TensorType.Scalar(pointedType);
         }
@@ -326,7 +340,11 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
 
         IRType type;
         if (expr.Value.CheckedType is TensorType { IsScalar: true, DType: PrimType valueType } &&
-            expr.Buffer.CheckedType is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType pointedType } }
+            expr.Buffer.CheckedType is TensorType
+            {
+                IsScalar: true, DType: PointerType { ElemType: PrimType pointedType }
+            }
+
             && valueType == pointedType)
         {
             type = TupleType.Void;
