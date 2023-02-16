@@ -65,7 +65,7 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
 
         if (weightsShape.IsFixed)
         {
-            var macPerElement = (((2 * inputShape[1] * weightsShape[2] * weightsShape[3]) - 1) * inputShape[2] * inputShape[3] * outputShape[1]).FixedValue;
+            var macPerElement = ((long)((2 * inputShape[1] * weightsShape[2] * weightsShape[3]) - 1).FixedValue * (long)(inputShape[2] * inputShape[3] * outputShape[1]).FixedValue);
             var puMac = 1;
             return new()
             {

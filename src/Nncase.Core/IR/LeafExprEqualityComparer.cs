@@ -73,6 +73,7 @@ public class LeafExprEqualityComparer : IEqualityComparer<Expr>
             Op x => x.GetHashCode(),
             Marker x => x.Name.GetHashCode(StringComparison.InvariantCulture),
             None x => x.GetHashCode(),
+            IR.If x => x.GetType().GetHashCode(),
             _ => throw new InvalidOperationException("Invalid expression type."),
         };
     }
