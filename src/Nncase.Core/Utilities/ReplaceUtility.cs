@@ -107,6 +107,23 @@ public static class ReplaceUtility
     public static Call ReplaceCallFirstParam(Expr target, IReadOnlyList<Expr> oldParams, Expr expr) =>
         ReplaceCallParams(target, oldParams, (oldParams[0], expr));
 
+    public static Expr ReplaceTarget(Expr body, Expr target, Expr expr)
+    {
+        while (true)
+        {
+            var newBody = ReplaceTargetImpl(body, target, expr);
+            if (newBody.IsSome)
+            {
+                Console.WriteLine("Some");
+                return newBody.Value;
+            }
+            else
+            {
+                Console.WriteLine("None");
+                return body;
+            }
+        }
+    }
 
     private static Option<Expr> ReplaceTargetImpl(Expr root, Expr target, Expr expr)
     {
@@ -120,6 +137,7 @@ public static class ReplaceUtility
         {
             return call with { Parameters = ReplacePosImpl(call.Parameters, input, i) };
         }
+
         if (root == target)
         {
             return Option.Some(expr);
@@ -154,25 +172,7 @@ public static class ReplaceUtility
                 return Option.Some(ReplacePos(rootCall, e.Value, i));
             }
         }
+
         return Option.None;
     }
-
-    public static Expr ReplaceTarget(Expr body, Expr target, Expr expr)
-    {
-        while (true)
-        {
-            var newBody = ReplaceTargetImpl(body, target, expr);
-            if (newBody.IsSome)
-            {
-                Console.WriteLine("Some");
-                return newBody.Value;
-            }
-            else
-            {
-                Console.WriteLine("None");
-                return body;
-            }
-        }
-    }
-
 }
