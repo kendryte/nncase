@@ -105,10 +105,17 @@ internal class Compiler : ICompiler
         }
     }
 
+    public void Split()
+    {
+        var f = new ShapeSplitSegment().Run((Function)Module.Entry!, new SegmentInfo(0, 2, new[] { 128, 256, 512 }));
+        _module = new IRModule(f);
+    }
+
     public async Task CompileAsync()
     {
         var target = _compileSession.Target;
         await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
+        Split();
         await RunPassAsync(p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions), "TargetDependentPass");
 
         if (_compileSession.CompileOptions.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)

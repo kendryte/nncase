@@ -106,4 +106,73 @@ public static class ReplaceUtility
     /// <returns>new Call.</returns>
     public static Call ReplaceCallFirstParam(Expr target, IReadOnlyList<Expr> oldParams, Expr expr) =>
         ReplaceCallParams(target, oldParams, (oldParams[0], expr));
+
+
+    private static Option<Expr> ReplaceTargetImpl(Expr root, Expr target, Expr expr)
+    {
+        T[] ReplacePosImpl<T>(IReadOnlyList<T> arr, T v, int i)
+        {
+            var array = arr.ToArray();
+            return array[..i].Concat(new[] { v }).Concat(array[(i + 1)..]).ToArray();
+        }
+
+        Expr ReplacePos(Call call, Expr input, int i)
+        {
+            return call with { Parameters = ReplacePosImpl(call.Parameters, input, i) };
+        }
+        if (root == target)
+        {
+            return Option.Some(expr);
+        }
+
+        if (root is IR.Tuple tuple)
+        {
+            foreach (var expr1 in tuple)
+            {
+                var e = ReplaceTargetImpl(expr1, target, expr);
+                if (e.IsSome)
+                {
+                    return e;
+                }
+            }
+
+            return Option.None;
+        }
+
+        if (root is not Call)
+        {
+            return Option.None;
+        }
+
+        var rootCall = (Call)root;
+        for (var i = 0; i < rootCall.Parameters.Count; i++)
+        {
+            // Console.WriteLine("params");
+            var e = ReplaceTargetImpl(rootCall.Parameters[i], target, expr);
+            if (e.IsSome)
+            {
+                return Option.Some(ReplacePos(rootCall, e.Value, i));
+            }
+        }
+        return Option.None;
+    }
+
+    public static Expr ReplaceTarget(Expr body, Expr target, Expr expr)
+    {
+        while (true)
+        {
+            var newBody = ReplaceTargetImpl(body, target, expr);
+            if (newBody.IsSome)
+            {
+                Console.WriteLine("Some");
+                return newBody.Value;
+            }
+            else
+            {
+                Console.WriteLine("None");
+                return body;
+            }
+        }
+    }
+
 }
