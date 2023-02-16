@@ -443,9 +443,8 @@ public static class TypeInference
 
             // if (a.Shape.Rank != b.Shape.Rank)
             // {
-                // return new InvalidType($"Inputs Shape of if should be same Rank, then: {a.Shape.Rank}, else: {b.Shape.Rank}");
+            // return new InvalidType($"Inputs Shape of if should be same Rank, then: {a.Shape.Rank}, else: {b.Shape.Rank}");
             // }
-
             return new TensorType(a.DType, Shape.Unknown(a.Shape.Rank));
         }
 

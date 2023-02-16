@@ -114,9 +114,9 @@ internal class Compiler : ICompiler
     public async Task CompileAsync()
     {
         var target = _compileSession.Target;
+
         // await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
         // Split();
-
         await RunPassAsync(p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions), "TargetDependentPass");
 
         if (_compileSession.CompileOptions.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
