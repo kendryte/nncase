@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "avx_mathfun.h"
+
 #include <nncase/kernels/cpu/optimized/tensor_compute.h>
 #include <nncase/kernels/cpu/reference/tensor_compute.h>
 #include <nncase/kernels/kernel_utils.h>
@@ -25,6 +25,9 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::optimized;
 
+#if (X86_64_SIMD_ON)
+
+#include "avx_mathfun.h"
 static void round_f32_vec(const float *a, float *b, int n)
 {
     int n8 = (n >> 3);
@@ -129,7 +132,7 @@ static void exp_f32_vec(const float *a, float *b, int n)
     }
     for (int j = 0; j < n8_left; ++j)
     {
-        b[j] = 1.0f / expf(a[j]);
+        b[j] =  expf(a[j]);
     }
 }
 
@@ -147,7 +150,7 @@ static void log_f32_vec(const float *a, float *b, int n)
     }
     for (int j = 0; j < n8_left; ++j)
     {
-        b[j] = 1.0f / logf(a[j]);
+        b[j] = logf(a[j]);
     }
 }
 
@@ -222,7 +225,7 @@ static void logical_not_f32_vec(const float *a, float *b, int n)
     }
     for (int j = 0; j < n8_left; ++j)
     {
-        b[j] = -(a[j]);
+        b[j] = !a[j];
     }
 }
 
@@ -504,7 +507,7 @@ CAN_FORCEINLINE __m256 asinf_core2_ps(__m256 a, __m256 r0, __m256 r1, __m256 r2,
     return s;
 }
 
-void asinf_core2_vec(const float *a, float *b, int n)
+void asinf_f32_vec(const float *a, float *b, int n)
 {
     const float pi = 3.1415926f;
     const float __init__data[] = { 0x1.a7f260p-5f, 0x1.29a5cep-6f, 0x1.7f0842p-5f, 0x1.329256p-4f, 0x1.555728p-3f, 1.0f, 0.5f, pi / 2 };
@@ -560,6 +563,146 @@ void asinf_core2_vec(const float *a, float *b, int n)
         b[j] = asinf(a[j]);
     }
 }
+#else  // X86_64_SIMD_ON
+    
+static void round_f32_vec(const float *a, float *b, int n)
+{
+    for (int j = 0; j < n; ++j)
+    {
+        b[j] = roundf(a[j]);
+    }
+}
+
+static void ceil_f32_vec(const float *a, float *b, int n)
+{
+    for (int j = 0; j < n; ++j)
+    {
+        b[j] = ceilf(a[j]);
+    }
+}
+
+static void floor_f32_vec(const float *a, float *b, int n)
+{
+    for (int j = 0; j < n; ++j)
+    {
+        b[j] = floorf(a[j]);
+    }
+}
+
+static void sqrt_f32_vec(const float *a, float *b, int n)
+{
+    for (int j = 0; j < n; ++j)
+    {
+        b[j] = sqrtf(a[j]);
+    }
+}
+
+static void rsqrt_f32_vec(const float *a, float *b, int n)
+{
+    for (int j = 0; j < n; ++j)
+    {
+        b[j] = 1.0f / sqrtf(a[j]);
+    }
+}
+
+static void exp_f32_vec(const float *a, float *b, int n)
+{
+    for (int j = 0; j < n; ++j)
+    {
+        b[j] = expf(a[j]);
+    }
+}
+
+static void log_f32_vec(const float *a, float *b, int n)
+{
+    for (int j = 0; j < n; ++j)
+    {
+        b[j] = logf(a[j]);
+    }
+}
+
+static void cos_f32_vec(const float *a, float *b, int n)
+{
+    for (int j = 0; j < n; ++j)
+    {
+        b[j] = cosf(a[j]);
+    }
+}
+
+static void sin_f32_vec(const float *a, float *b, int n)
+{
+
+    for (int j = 0; j < n; ++j)
+    {
+        b[j] = sinf(a[j]);
+    }
+}
+
+static void negative_f32_vec(const float *a, float *b, int n)
+{
+    for (int j = 0; j < n; ++j)
+    {
+        b[j] = -(a[j]);
+    }
+}
+
+static void logical_not_f32_vec(const float *a, float *b, int n)
+{
+
+    for (int j = 0; j < n; ++j)
+    {
+        b[j] = !a[j];
+    }
+}
+
+static void abs_f32_vec(const float *a, float *b, int n)
+{
+    for (int j = 0; j < n; ++j)
+    {
+        b[j] = fabs(a[j]);
+    }
+}
+
+static void tanh_f32_vec(const float *a, float *b, int n)
+{
+    for (int j = 0; j < n; ++j)
+    {
+        b[j] = tanhf(a[j]);
+    }
+}
+
+static void erf_f32_vec(const float *a, float *b, int n)
+{
+    for (int j = 0; j < n; ++j)
+    {
+        b[j] = erff(a[j]);
+    }
+}
+
+static void sign_f32_vec(const float *a, float *b, int n)
+{
+    for (int j = 0; j < n; ++j)
+    {
+        b[j] = (0.f < a[j]) - (a[j] < 0.f);
+    }
+}
+
+static void acos_f32_vec(const float *a, float *b, int n)
+{
+    for (int j = 0; j < n; ++j)
+    {
+        b[j] = acosf(a[j]);
+    }
+}
+
+static void asinf_f32_vec(const float *a, float *b, int n)
+{
+    for (int j = 0; j < n; ++j)
+    {
+        b[j] = asinf(a[j]);
+    }
+}
+#endif  // X86_64_SIMD_ON
 
 result<void> optimized::unary(unary_op_t op, const float *input, float *output, const runtime_shape_t &shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, kernel_context &context) noexcept
@@ -633,7 +776,7 @@ result<void> optimized::unary(unary_op_t op, const float *input, float *output, 
     }
     else if (op == unary_asin)
     {
-        asinf_core2_vec(input, output, len);
+        asinf_f32_vec(input, output, len);
     }
     else
     {
