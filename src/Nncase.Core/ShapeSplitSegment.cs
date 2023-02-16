@@ -39,8 +39,8 @@ namespace Nncase
                     fixedInputs[info.InputIndex] = input;
                     var then = new Call(fn, fixedInputs);
                     Console.WriteLine("then infer");
-                    CompilerServices.DumpIR(then, "then",
-                        "/Users/lisa/Documents/nncase/tests_output/UnitTestCPUTarget/TestProcess/");
+                    // CompilerServices.DumpIR(then, "then",
+                        // "/Users/lisa/Documents/nncase/tests_output/UnitTestCPUTarget/TestProcess/");
                     then.InferenceType();
                     Console.WriteLine("then infer end");
                     var f = new If(dim < seg, then, sum);
