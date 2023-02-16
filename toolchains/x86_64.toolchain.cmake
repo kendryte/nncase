@@ -1,5 +1,4 @@
 if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX2")
 else()

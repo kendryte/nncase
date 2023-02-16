@@ -282,7 +282,7 @@ static CAN_FORCEINLINE float abs_f32(float x)
 }
 #endif
 
-static CAN_FORCEINLINE __m256 _mm256_acos_ps(__m256 x)
+static CAN_FORCEINLINE __m256 _mm256_can_acos_ps(__m256 x)
 {
     const __m256 zero = _mm256_set1_ps(0.0f);
     const __m256 two = _mm256_set1_ps(2.0f);
@@ -440,7 +440,7 @@ static void acos_f32_vec(const float *a, float *b, int n)
     for (int j = 0; j < n8; ++j)
     {
         __m256 vecotr_a = _mm256_loadu_ps(a);
-        __m256 dst_a = _mm256_acos_ps(vecotr_a);
+        __m256 dst_a = _mm256_can_acos_ps(vecotr_a);
         _mm256_storeu_ps(b, dst_a);
         a += 8;
         b += 8;
