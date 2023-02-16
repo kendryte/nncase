@@ -33,7 +33,6 @@
 #define AVX_MATHFUN_H
 
 #include <math.h>
-#if __SSE2__
 #include <emmintrin.h>
 #if __AVX__
 #include <immintrin.h>
@@ -45,7 +44,6 @@
 #endif
 #endif
 #endif
-#endif // __SSE2__
 
 #ifdef _MSC_VER /* visual c++ */
 #define ALIGN32_BEG __declspec(align(32))
