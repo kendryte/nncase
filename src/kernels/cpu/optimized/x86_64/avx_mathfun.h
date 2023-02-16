@@ -32,8 +32,8 @@
 #ifndef AVX_MATHFUN_H
 #define AVX_MATHFUN_H
 
-#include <math.h>
 #include <emmintrin.h>
+#include <math.h>
 #if __AVX__
 #include <immintrin.h>
 #if __XOP__
