@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-
 #include <nncase/kernels/cpu/optimized/tensor_compute.h>
 #include <nncase/kernels/cpu/reference/tensor_compute.h>
 #include <nncase/kernels/kernel_utils.h>
@@ -132,7 +131,7 @@ static void exp_f32_vec(const float *a, float *b, int n)
     }
     for (int j = 0; j < n8_left; ++j)
     {
-        b[j] =  expf(a[j]);
+        b[j] = expf(a[j]);
     }
 }
 
@@ -563,8 +562,8 @@ void asinf_f32_vec(const float *a, float *b, int n)
         b[j] = asinf(a[j]);
     }
 }
-#else  // X86_64_SIMD_ON
-    
+#else // X86_64_SIMD_ON
+
 static void round_f32_vec(const float *a, float *b, int n)
 {
     for (int j = 0; j < n; ++j)
@@ -702,7 +701,7 @@ static void asinf_f32_vec(const float *a, float *b, int n)
         b[j] = asinf(a[j]);
     }
 }
-#endif  // X86_64_SIMD_ON
+#endif // X86_64_SIMD_ON
 
 result<void> optimized::unary(unary_op_t op, const float *input, float *output, const runtime_shape_t &shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, kernel_context &context) noexcept
