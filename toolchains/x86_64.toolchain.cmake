@@ -1,6 +1,7 @@
 if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX2")
+elseif(APPLE OR CMAKE_HOST_APPLE OR IOS)
 else()
     add_compile_options( -mfma -msse -msse2 -msse3 -mssse3 -msse4 -msse4a -msse4.1 -msse4.2 -mavx -mavx2)
 endif()
