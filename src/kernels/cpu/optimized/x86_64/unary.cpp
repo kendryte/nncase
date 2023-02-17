@@ -24,7 +24,7 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::optimized;
 
-#if (X86_64_SIMD_ON)
+#if defined(X86_64_SIMD_ON)
 
 #include "avx_mathfun.h"
 static void round_f32_vec(const float *a, float *b, int n)

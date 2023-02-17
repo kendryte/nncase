@@ -40,12 +40,6 @@ if (ENABLE_OP_PROFILE)
 endif()
 
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)|(x86_64)|(X86_64)")
-    if(APPLE)
-        add_definitions(-DX86_64_SIMD_ON=0)
-    else()
-        add_definitions(-DX86_64_SIMD_ON=0)
-    endif()
-    # remove_definitions(-DX86_64_SIMD_ON)
     include(toolchains/x86_64.toolchain.cmake)
 endif()
 
