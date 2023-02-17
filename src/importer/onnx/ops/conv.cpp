@@ -336,7 +336,6 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
     }
 
     // fit 3D input
-    [[maybe_unused]] bitcast *bitc_data, *bitc_weights;
     auto data_shape = input_shape;
     if (model_3d)
     {
@@ -344,11 +343,6 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
         strides[1] = 1;
         dilations[1] = 1;
         input_shape.push_back(1);
-        // bitc_data = graph_.emplace<bitcast>(input_type, data_shape, input_shape);
-
-        // auto weights_shape = weight_shape;
-        // weight_shape.push_back(1);
-        // bitc_weights = graph_.emplace<bitcast>(weight_type, weights_shape, weight_shape);
 
         output_shape.push_back(1);
     }
@@ -364,8 +358,6 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
         conv_transpose->input().connect(bitc_data->output());
         input_tensors_.emplace(&bitc_data->input(), input);
 
-        // conv_transpose->weights().connect(bitc_weights->output());
-        // input_tensors_.emplace(&bitc_weights->input(), weight);
         input_tensors_.emplace(&tp->input(), weight);
     }
     else
