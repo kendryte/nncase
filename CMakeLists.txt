@@ -40,7 +40,10 @@ if (ENABLE_OP_PROFILE)
 endif()
 
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)|(x86_64)|(X86_64)")
-    include(toolchains/x86_64.toolchain.cmake)
+    if(NOT TURNOFF_SIMD_OPTIMIZE)
+        include(toolchains/x86_64.toolchain.cmake)
+    else()
+    endif()
 endif()
 
 if (BUILDING_RUNTIME)
