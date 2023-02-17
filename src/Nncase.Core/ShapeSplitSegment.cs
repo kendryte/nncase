@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
+using System.Diagnostics;
 using Nncase.IR;
 using Nncase.Utilities;
 using static Nncase.IR.F.Tensors;
@@ -14,96 +15,78 @@ namespace Nncase
     {
         public Function Run(Function preFunc, SegmentInfo info)
         {
-            // todo: segs < 2??
-            var preFuncParameters = preFunc.Parameters.Select(v => (Expr)v).ToArray();
-            var preVarDtype = preFunc.Parameters[info.InputIndex].CheckedDataType;
-            var preVarShape = preFunc.Parameters[info.InputIndex].CheckedShape.ToArray();
-            preVarShape[info.DimIndex] = Dimension.Unknown;
-            var dynamicVar = new Var("split_dynamic_input", new TensorType(preVarDtype, preVarShape));
-            var dynamicVarShapeOf = ShapeOf(dynamicVar);
-            var dynamicVarDim = Cast(dynamicVarShapeOf, DataTypes.Int32)[info.DimIndex];
+            Debug.Assert(info.Segments.Length >= 2);
+            var inShape = ShapeOf(preFunc.Parameters[info.InputIndex]);
+            var preVar = preFunc.Parameters[info.InputIndex];
 
-            // var bodyList = info.Segments.Select(s => MakeFunByNewVar(f, info, s));
+            var dim = Cast(inShape, DataTypes.Int32)[info.DimIndex];
             var body = info.Segments.Reverse().Aggregate(
-
-                // todo: fix init
-                // todo: should use <=
-                // todo: get item index error
-                // note 这里不能用f.body, 这样就把两个图上不相关的节点连接起来了.
-                // (Expr)new Call(new Function(f.Name + $"_seg_unreachable", GetItem(f.Body, 0), f.Parameters), inputs),
-                // (Expr)IR.Tuple.Void,
-                (Expr)IR.F.Math.Unary(UnaryOp.Abs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 12, new[] { 1, 56, 32, 24 }).Evaluate().AsTensor()),
+                // todo: this will be fold
+                (Expr)IR.F.Math.Require(true, 0, "input dim large than limit"),
                 (sum, seg) =>
                 {
-                    // create new var
-                    Console.WriteLine("replace var");
-                    var preVar = preFunc.Parameters[info.InputIndex];
-                    var fixedShape = preVar.CheckedShape.ToValueArray();
-                    fixedShape[info.DimIndex] = seg;
-
-                    // create funciton
-                    Function wrapperFunc;
-                    {
-                        // create inner function
-                        Function innerFunc;
-                        {
-                            var innferFixedShapeVar = new Var(preFunc.Name + $"_seg_{seg}_inner_var", new TensorType(preVar.CheckedDataType, fixedShape));
-                            var mutator = new Transform.Mutators.Substitutor(e =>
-                            {
-                                if (object.ReferenceEquals(e, preVar))
-                                {
-                                    return innferFixedShapeVar;
-                                }
-
-                                return null;
-                            });
-                            var newBody = mutator.Visit(preFunc.Body);
-                            innerFunc = new Function(preFunc.Name + $"_seg_{seg}_inner", newBody, ImmutableArray.Create(innferFixedShapeVar));
-                        }
-
-                        // create wrapper function
-                        var wrapperVarShape = preVar.CheckedShape.ToArray();
-                        wrapperVarShape[info.DimIndex] = Dimension.Unknown;
-                        var wrapperVar = new Var($"seg_{seg}_wrapperVar", new TensorType(preVar.CheckedDataType, wrapperVarShape));
-                        Expr wrapperBody;
-                        {
-                            var pads = fixedShape - Cast(ShapeOf(wrapperVar), DataTypes.Int32);
-                            var paddings = Transpose(Stack(new IR.Tuple(pads, new[] { 0, 0, 0, 0 }), 0), new[] { 1, 0 });
-                            var input = IR.F.NN.Pad(wrapperVar, paddings, PadMode.Constant, Cast(0f, preVar.CheckedDataType));
-                            wrapperBody = new Call(innerFunc, input);
-                        }
-
-                        wrapperFunc = new Function(preFunc.Name + $"_seg_{seg}", wrapperBody, ImmutableArray.Create(wrapperVar));
-                    }
-
-                    var then = new Call(wrapperFunc, preFunc.Parameters[info.InputIndex]);
-                    Console.WriteLine("then infer");
-
-                    // CompilerServices.DumpIR(then, "then",
-                    // "/Users/lisa/Documents/nncase/tests_output/UnitTestCPUTarget/TestProcess/");
-                    then.InferenceType();
-                    Console.WriteLine("then infer end");
-                    var f = new If(dynamicVarDim < seg, then, sum);
-                    f.InferenceType();
-                    return f;
+                    var inputs = preFunc.Parameters.Select(v => (Expr)v).ToArray();
+                    int[] fixedShape = ComputeFixedShape(preFunc, info, seg);
+                    var innerFunc = SplitFuncImpl(preFunc, seg, fixedShape, preVar);
+                    var fitFixedShape = FitFixedShape(preFunc, info, seg, fixedShape, innerFunc);
+                    var then = new Call(fitFixedShape, inputs);
+                    return new If(dim <= seg, then, sum);
                 });
 
-            return new Function(preFunc.Name + "_splited", body, ImmutableArray.Create(dynamicVar));
+            return new Function(body, preFunc.Parameters);
         }
 
-        // public Var MakeFunByNewVar(Function f, SegmentInfo info, int segment)
-        // {
-        //     Console.WriteLine("replace var");
-        //     var oldVar = f.Parameters[info.InputIndex];
-        //     var newShape = oldVar.CheckedShape.ToArray();
-        //     newShape[info.DimIndex] = segment;
+        private static int[] ComputeFixedShape(Function preFunc, SegmentInfo info, int seg)
+        {
+            var fixedShape = preFunc.Parameters[info.InputIndex].CheckedShape.ToValueArray();
+            fixedShape[info.DimIndex] = seg;
+            return fixedShape;
+        }
 
-        // // todo 这里目前就一个var 没问题, 多个var会有问题
-        //     var newVar = new Var("split_" + oldVar.Name, new TensorType(oldVar.CheckedDataType, newShape));
-        //     CompilerServices.InferenceType(newVar);
-        //     // var newParams = f.Parameters.ToArray();
-        //     // newParams[info.InputIndex] = newVar;
-        //     return newVar;
-        // }
+        private static Function FitFixedShape(Function preFunc, SegmentInfo info, int seg, int[] fixedShape, Function innerFunc)
+        {
+            // rename
+            var wrapParams = preFunc.Parameters.ToArray();
+            wrapParams[info.InputIndex] = wrapParams[info.InputIndex] with { Name = "split_dynamic_input" };
+            var targetInput = wrapParams[info.InputIndex];
+
+            // compute paddings;
+            var pads = fixedShape - Cast(ShapeOf(targetInput), DataTypes.Int32);
+            var paddings = Transpose(Stack(new IR.Tuple(pads, new[] { 0, 0, 0, 0 }), 0), new[] { 1, 0 });
+            var fixedInput = IR.F.NN.Pad(targetInput, paddings, PadMode.Constant, Cast(0f, targetInput.CheckedDataType));
+            var wrapperBody = new Call(innerFunc, fixedInput);
+
+
+            // forward origin input.
+            var wrapperFunc = new Function(preFunc.Name + $"_seg_{seg}", wrapperBody, wrapParams);
+            return wrapperFunc;
+        }
+
+        private Function SplitFuncImpl(Function preFunc, int seg, int[] fixedShape, Var preVar)
+        {
+
+            var innerFixedShapeVar = new Var(preFunc.Name + $"_seg_{seg}_inner_var",
+                new TensorType(preVar.CheckedDataType, fixedShape));
+            var newBody = ReplaceExpr(preFunc.Body, preVar, innerFixedShapeVar);
+
+            // replace Fix var.
+            var innerFunc = new Function(preFunc.Name + $"_seg_{seg}_inner", newBody,
+                ImmutableArray.Create(innerFixedShapeVar));
+            return innerFunc;
+        }
+
+        private Expr ReplaceExpr(Expr body, Expr target, Expr expr)
+        {
+            var mutator = new Transform.Mutators.Substitutor(e =>
+            {
+                if (ReferenceEquals(e, target))
+                {
+                    return expr;
+                }
+
+                return null;
+            });
+            return mutator.Visit(body);
+        }
     }
 }

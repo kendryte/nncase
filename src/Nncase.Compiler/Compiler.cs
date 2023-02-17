@@ -120,9 +120,8 @@ internal class Compiler : ICompiler
 
     public void Split()
     {
-        var splitMain = new ShapeSplitSegment().Run((Function)Module.Entry!, new SegmentInfo(0, 2, new[] { 128, 256 }));
+        var splitMain = new ShapeSplitSegment().Run((Function)Module.Entry!, new SegmentInfo(0, 2, new[] { 128, 224 }));
 
-        // _module = new IRModule(oldMain);
         var c = new FunctionCollector();
         c.Visit(splitMain);
         var module = new IRModule();
