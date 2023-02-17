@@ -207,7 +207,10 @@ public static class Testing
     public static void DumpInterpModel(string kmodel_path, Tensor[] input_tensors, string dumpDir)
     {
         if (!Directory.Exists(dumpDir))
+        {
             Directory.CreateDirectory(dumpDir);
+        }
+
         string input_pool_path = Path.Join(dumpDir, "input_pool.bin");
         string output_pool_path = Path.Join(dumpDir, "output_pool.bin");
         using var args_writer = new StreamWriter(File.OpenWrite(Path.Join(dumpDir, "args.txt")));

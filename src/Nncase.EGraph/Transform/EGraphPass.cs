@@ -54,6 +54,17 @@ public class EGraphPass : RulesPass
         return (BaseFunction)post;
     }
 
+    /// <summary>
+    /// The callback after egraph rewrite.
+    /// </summary>
+    /// <param name="eGraph">EGraph after rewrite.</param>
+    /// <param name="context">Run pass context.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    protected virtual Task OnPostRewriteAsync(EGraph eGraph, RunPassContext context)
+    {
+        return Task.CompletedTask;
+    }
+
     public class FunctionCollector : ExprVisitor<int, IRType>
     {
         public HashSet<Function> Functions = new(ReferenceEqualityComparer.Instance);
@@ -65,17 +76,6 @@ public class EGraphPass : RulesPass
         }
 
         public override int DefaultVisitLeaf(Expr expr) => 1;
-    }
-
-    /// <summary>
-    /// The callback after egraph rewrite.
-    /// </summary>
-    /// <param name="eGraph">EGraph after rewrite.</param>
-    /// <param name="context">Run pass context.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    protected virtual Task OnPostRewriteAsync(EGraph eGraph, RunPassContext context)
-    {
-        return Task.CompletedTask;
     }
 
     /// <summary>

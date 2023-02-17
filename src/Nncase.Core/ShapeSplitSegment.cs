@@ -22,8 +22,10 @@ namespace Nncase
             var dynamicVar = new Var("split_dynamic_input", new TensorType(preVarDtype, preVarShape));
             var dynamicVarShapeOf = ShapeOf(dynamicVar);
             var dynamicVarDim = Cast(dynamicVarShapeOf, DataTypes.Int32)[info.DimIndex];
+
             // var bodyList = info.Segments.Select(s => MakeFunByNewVar(f, info, s));
             var body = info.Segments.Reverse().Aggregate(
+
                 // todo: fix init
                 // todo: should use <=
                 // todo: get item index error
@@ -38,6 +40,7 @@ namespace Nncase
                     var preVar = preFunc.Parameters[info.InputIndex];
                     var fixedShape = preVar.CheckedShape.ToValueArray();
                     fixedShape[info.DimIndex] = seg;
+
                     // create funciton
                     Function wrapperFunc;
                     {
@@ -51,15 +54,17 @@ namespace Nncase
                                 {
                                     return innferFixedShapeVar;
                                 }
+
                                 return null;
                             });
                             var newBody = mutator.Visit(preFunc.Body);
                             innerFunc = new Function(preFunc.Name + $"_seg_{seg}_inner", newBody, ImmutableArray.Create(innferFixedShapeVar));
                         }
+
                         // create wrapper function
                         var wrapperVarShape = preVar.CheckedShape.ToArray();
                         wrapperVarShape[info.DimIndex] = Dimension.Unknown;
-                        Var wrapperVar = new Var($"seg_{seg}_wrapperVar", new TensorType(preVar.CheckedDataType, wrapperVarShape));
+                        var wrapperVar = new Var($"seg_{seg}_wrapperVar", new TensorType(preVar.CheckedDataType, wrapperVarShape));
                         Expr wrapperBody;
                         {
                             var pads = fixedShape - Cast(ShapeOf(wrapperVar), DataTypes.Int32);
@@ -67,6 +72,7 @@ namespace Nncase
                             var input = IR.F.NN.Pad(wrapperVar, paddings, PadMode.Constant, Cast(0f, preVar.CheckedDataType));
                             wrapperBody = new Call(innerFunc, input);
                         }
+
                         wrapperFunc = new Function(preFunc.Name + $"_seg_{seg}", wrapperBody, ImmutableArray.Create(wrapperVar));
                     }
 
@@ -92,7 +98,7 @@ namespace Nncase
         //     var newShape = oldVar.CheckedShape.ToArray();
         //     newShape[info.DimIndex] = segment;
 
-        //     // todo 这里目前就一个var 没问题, 多个var会有问题
+        // // todo 这里目前就一个var 没问题, 多个var会有问题
         //     var newVar = new Var("split_" + oldVar.Name, new TensorType(oldVar.CheckedDataType, newShape));
         //     CompilerServices.InferenceType(newVar);
         //     // var newParams = f.Parameters.ToArray();
