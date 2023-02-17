@@ -125,6 +125,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         {
             throw new InvalidOperationException($"Can't find var {expr.Name} in CodeGen");
         }
+
         Emitter.Ldarg((ushort)varIndex);
         return snippet;
     }

@@ -21,6 +21,7 @@ namespace Nncase
 
             var dim = Cast(inShape, DataTypes.Int32)[info.DimIndex];
             var body = info.Segments.Reverse().Aggregate(
+
                 // todo: this will be fold
                 (Expr)IR.F.Math.Require(true, 0, "input dim large than limit"),
                 (sum, seg) =>
@@ -56,7 +57,6 @@ namespace Nncase
             var fixedInput = IR.F.NN.Pad(targetInput, paddings, PadMode.Constant, Cast(0f, targetInput.CheckedDataType));
             var wrapperBody = new Call(innerFunc, fixedInput);
 
-
             // forward origin input.
             var wrapperFunc = new Function(preFunc.Name + $"_seg_{seg}", wrapperBody, wrapParams);
             return wrapperFunc;
@@ -64,8 +64,8 @@ namespace Nncase
 
         private Function SplitFuncImpl(Function preFunc, int seg, int[] fixedShape, Var preVar)
         {
-
-            var innerFixedShapeVar = new Var(preFunc.Name + $"_seg_{seg}_inner_var",
+            var innerFixedShapeVar = new Var(
+                preFunc.Name + $"_seg_{seg}_inner_var",
                 new TensorType(preVar.CheckedDataType, fixedShape));
             var newBody = ReplaceExpr(preFunc.Body, preVar, innerFixedShapeVar);
 

@@ -65,19 +65,6 @@ public class EGraphPass : RulesPass
         return Task.CompletedTask;
     }
 
-    public class FunctionCollector : ExprVisitor<int, IRType>
-    {
-        public HashSet<Function> Functions = new(ReferenceEqualityComparer.Instance);
-
-        public override int VisitLeaf(Function expr)
-        {
-            Functions.Add(expr);
-            return 0;
-        }
-
-        public override int DefaultVisitLeaf(Expr expr) => 1;
-    }
-
     /// <summary>
     /// The callback function you can custom process func with run pass options.
     /// </summary>
@@ -93,6 +80,19 @@ public class EGraphPass : RulesPass
         }
 
         return Task.CompletedTask;
+    }
+
+    public class FunctionCollector : ExprVisitor<int, IRType>
+    {
+        public HashSet<Function> Functions = new(ReferenceEqualityComparer.Instance);
+
+        public override int VisitLeaf(Function expr)
+        {
+            Functions.Add(expr);
+            return 0;
+        }
+
+        public override int DefaultVisitLeaf(Expr expr) => 1;
     }
 
     /// <summary>
