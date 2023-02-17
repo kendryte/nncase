@@ -31,6 +31,29 @@ public class EGraphPass : RulesPass
         _rewriteProvider = CompileSession.GetRequiredService<IEGraphRewriteProvider>();
         _baseFuncCostEvaluator = baseFuncCostEvaluator;
     }
+
+    /// <inheritdoc/>
+    protected override async Task<BaseFunction> RunCoreAsync(BaseFunction function, RunPassContext context)
+    {
+        // note 这里需要避免egraph处理了多function的导致update失败.
+        var c = new FunctionCollector();
+        c.Visit(function);
+        if (c.Functions.Count > 1)
+        {
+            return function;
+        }
+
+        var graph = new EGraph();
+        var root = graph.Add(function);
+        _rewriteProvider.ERewrite(graph, Rules, context);
+        await OnPostRewriteStartAsync(graph, context);
+        await OnPostRewriteAsync(graph, context);
+        await OnPostRewriteEndAsync(graph, context);
+        var post = graph.Extract(root, _baseFuncCostEvaluator);
+        CompilerServices.InferenceType(post);
+        return (BaseFunction)post;
+    }
+
     public class FunctionCollector : ExprVisitor<int, IRType>
     {
         public HashSet<Function> Functions = new(ReferenceEqualityComparer.Instance);
@@ -42,25 +65,6 @@ public class EGraphPass : RulesPass
         }
 
         public override int DefaultVisitLeaf(Expr expr) => 1;
-    }
-
-    /// <inheritdoc/>
-    protected override async Task<BaseFunction> RunCoreAsync(BaseFunction function, RunPassContext context)
-    {
-      // note 这里需要避免egraph处理了多function的导致update失败.
-        var c = new FunctionCollector();
-        c.Visit(function);
-        if (c.Functions.Count > 1)
-            return function;
-        var graph = new EGraph();
-        var root = graph.Add(function);
-        _rewriteProvider.ERewrite(graph, Rules, context);
-        await OnPostRewriteStartAsync(graph, context);
-        await OnPostRewriteAsync(graph, context);
-        await OnPostRewriteEndAsync(graph, context);
-        var post = graph.Extract(root, _baseFuncCostEvaluator);
-        CompilerServices.InferenceType(post);
-        return (BaseFunction)post;
     }
 
     /// <summary>

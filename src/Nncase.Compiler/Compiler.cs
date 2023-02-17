@@ -31,7 +31,6 @@ public class FunctionCollector : ExprVisitor<int, IRType>
     public override int DefaultVisitLeaf(Expr expr) => 1;
 }
 
-
 internal class Compiler : ICompiler
 {
     private readonly CompileSession _compileSession;
@@ -122,6 +121,7 @@ internal class Compiler : ICompiler
     public void Split()
     {
         var splitMain = new ShapeSplitSegment().Run((Function)Module.Entry!, new SegmentInfo(0, 2, new[] { 128, 256 }));
+
         // _module = new IRModule(oldMain);
         var c = new FunctionCollector();
         c.Visit(splitMain);
@@ -130,6 +130,7 @@ internal class Compiler : ICompiler
         {
             module.Add(fn);
         }
+
         module.Entry = splitMain;
         _module = module;
     }

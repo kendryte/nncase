@@ -430,6 +430,7 @@ public static class TypeInference
     public static IRType CommonType(IRType thenType, IRType elseType)
     {
         return AnyType.Default;
+
         // IRType CommonTypeImpl(TensorType a, TensorType b)
         // {
         //     if (a == b)
@@ -437,12 +438,12 @@ public static class TypeInference
         //         return a;
         //     }
 
-        //     if (a.DType != b.DType)
+        // if (a.DType != b.DType)
         //     {
         //         return new InvalidType($"Inputs DType of if should be same, then: {a.DType}, else: {b.DType}");
         //     }
 
-        //     // if (a.Shape.Rank != b.Shape.Rank)
+        // // if (a.Shape.Rank != b.Shape.Rank)
         //     // {
         //     // return new InvalidType($"Inputs Shape of if should be same Rank, then: {a.Shape.Rank}, else: {b.Shape.Rank}");
         //     // }

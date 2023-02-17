@@ -20,6 +20,7 @@ namespace Nncase
             var dim = Cast(inShape, DataTypes.Int32)[info.DimIndex];
             var bodyList = info.Segments.Select(s => MakeFunByNewVar(f, info, s));
             var body = bodyList.Zip(info.Segments).Reverse().Aggregate(
+
                 // todo: fix init
                 // todo: should use <=
                 // todo: get item index error
@@ -66,7 +67,10 @@ namespace Nncase
             var mutator = new Transform.Mutators.Substitutor(e =>
             {
                 if (object.ReferenceEquals(e, oldVar))
+                {
                     return newVar;
+                }
+
                 return null;
             });
             var newBody = mutator.Visit(f.Body);
