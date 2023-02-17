@@ -31,10 +31,27 @@ public class EGraphPass : RulesPass
         _rewriteProvider = CompileSession.GetRequiredService<IEGraphRewriteProvider>();
         _baseFuncCostEvaluator = baseFuncCostEvaluator;
     }
+    public class FunctionCollector : ExprVisitor<int, IRType>
+    {
+        public HashSet<Function> Functions = new(ReferenceEqualityComparer.Instance);
+
+        public override int VisitLeaf(Function expr)
+        {
+            Functions.Add(expr);
+            return 0;
+        }
+
+        public override int DefaultVisitLeaf(Expr expr) => 1;
+    }
 
     /// <inheritdoc/>
     protected override async Task<BaseFunction> RunCoreAsync(BaseFunction function, RunPassContext context)
     {
+      // note 这里需要避免egraph处理了多function的导致update失败.
+        var c = new FunctionCollector();
+        c.Visit(function);
+        if (c.Functions.Count > 1)
+            return function;
         var graph = new EGraph();
         var root = graph.Add(function);
         _rewriteProvider.ERewrite(graph, Rules, context);

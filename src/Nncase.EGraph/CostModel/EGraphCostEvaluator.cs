@@ -182,7 +182,7 @@ internal sealed class EGraphCostEvaluator
 
     private Cost? Visit(ENode enode, BaseFunction baseFunction)
     {
-        return VisitLeaf(enode, () => _baseFuncCostEvaluator!.VisitLeaf(baseFunction));
+        return VisitLeaf(enode, () => _baseFuncCostEvaluator?.VisitLeaf(baseFunction) ?? Cost.Zero);
     }
 
     private Cost? UpdateCost(ENode enode, Cost? cost)

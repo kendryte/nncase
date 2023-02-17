@@ -20,11 +20,13 @@ namespace Nncase
             var dim = Cast(inShape, DataTypes.Int32)[info.DimIndex];
             var bodyList = info.Segments.Select(s => MakeFunByNewVar(f, info, s));
             var body = bodyList.Zip(info.Segments).Reverse().Aggregate(
-
                 // todo: fix init
                 // todo: should use <=
                 // todo: get item index error
-                (Expr)new Call(f with { Body = GetItem(f.Body, 0) }, inputs),
+                // note 这里不能用f.body, 这样就把两个图上不相关的节点连接起来了.
+                // (Expr)new Call(new Function(f.Name + $"_seg_unreachable", GetItem(f.Body, 0), f.Parameters), inputs),
+                // (Expr)IR.Tuple.Void,
+                (Expr)IR.F.Math.Unary(UnaryOp.Abs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 12, new[] { 1, 56, 32, 24 }).Evaluate().AsTensor()),
                 (sum, now) =>
                 {
                     var (fn, seg) = now;
@@ -49,7 +51,7 @@ namespace Nncase
                     return f;
                 });
 
-            return new Function(body, f.Parameters);
+            return new Function(f.Name + "_splited", body, f.Parameters);
         }
 
         public Function MakeFunByNewVar(Function f, SegmentInfo info, int segment)
@@ -59,8 +61,15 @@ namespace Nncase
             var newShape = oldVar.CheckedShape.ToArray();
             newShape[info.DimIndex] = segment;
 
+            // todo 这里目前就一个var 没问题, 多个var会有问题
             var newVar = new Var("split_" + oldVar.Name, new TensorType(oldVar.CheckedDataType, newShape));
-            var newBody = ReplaceUtility.ReplaceTarget(f.Body, oldVar, newVar);
+            var mutator = new Transform.Mutators.Substitutor(e =>
+            {
+                if (object.ReferenceEquals(e, oldVar))
+                    return newVar;
+                return null;
+            });
+            var newBody = mutator.Visit(f.Body);
 
             var newParams = f.Parameters.ToArray();
             newParams[info.InputIndex] = newVar;
