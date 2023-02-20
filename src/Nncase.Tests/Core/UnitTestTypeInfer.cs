@@ -298,6 +298,17 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
         CheckInferShape(cat, Shape.Unranked);
     }
 
+    [Fact]
+    public void TestBroadcastInfer()
+    {
+        // appear in where
+        var a = new TensorType(DataTypes.Int32, new Shape(new[] { 1, 3, 224, 224 }));
+        var b = new TensorType(DataTypes.Float32, Shape.Unknown(4));
+        var c = new TensorType(DataTypes.Float32, Shape.Unknown(4));
+        var result = (TensorType)TypeInference.BroadcastType(b.DType, a, b, c);
+        Assert.Equal(result.DType, DataTypes.Float32);
+    }
+
     private void CheckInferShape(Expr expr, params Dimension[] shapeDimensions)
     {
         CheckInferShape(expr, new Shape(shapeDimensions));

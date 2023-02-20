@@ -107,77 +107,24 @@ public static class ReplaceUtility
     public static Call ReplaceCallFirstParam(Expr target, IReadOnlyList<Expr> oldParams, Expr expr) =>
         ReplaceCallParams(target, oldParams, (oldParams[0], expr));
 
-    public static Expr ReplaceTarget(Expr body, Expr target, Expr expr)
+    /// <summary>
+    /// Replace target in body with expr.
+    /// </summary>
+    /// <param name="body">Body.</param>
+    /// <param name="target">Target.</param>
+    /// <param name="expr">Expr.</param>
+    /// <returns>New Body.</returns>
+    public static Expr ReplaceExpr(Expr body, Expr target, Expr expr)
     {
-        var result = body;
-        while (true)
+        var mutator = new Transform.Mutators.Substitutor(e =>
         {
-            var newBody = ReplaceTargetImpl(result, target, expr);
-            if (newBody.IsSome)
+            if (ReferenceEquals(e, target))
             {
-                result = newBody.Value;
-                Console.WriteLine("Some");
-
-                // return newBody.Value;
-            }
-            else
-            {
-                Console.WriteLine("None");
-
-                // return body;
-                return result;
-            }
-        }
-    }
-
-    private static Option<Expr> ReplaceTargetImpl(Expr root, Expr target, Expr expr)
-    {
-        T[] ReplacePosImpl<T>(IReadOnlyList<T> arr, T v, int i)
-        {
-            var array = arr.ToArray();
-            return array[..i].Concat(new[] { v }).Concat(array[(i + 1)..]).ToArray();
-        }
-
-        Expr ReplacePos(Call call, Expr input, int i)
-        {
-            return call with { Parameters = ReplacePosImpl(call.Parameters, input, i) };
-        }
-
-        if (root == target)
-        {
-            return Option.Some(expr);
-        }
-
-        if (root is IR.Tuple tuple)
-        {
-            foreach (var expr1 in tuple)
-            {
-                var e = ReplaceTargetImpl(expr1, target, expr);
-                if (e.IsSome)
-                {
-                    return e;
-                }
+                return expr;
             }
 
-            return Option.None;
-        }
-
-        if (root is not Call)
-        {
-            return Option.None;
-        }
-
-        var rootCall = (Call)root;
-        for (var i = 0; i < rootCall.Parameters.Count; i++)
-        {
-            // Console.WriteLine("params");
-            var e = ReplaceTargetImpl(rootCall.Parameters[i], target, expr);
-            if (e.IsSome)
-            {
-                return Option.Some(ReplacePos(rootCall, e.Value, i));
-            }
-        }
-
-        return Option.None;
+            return null;
+        });
+        return mutator.Visit(body);
     }
 }

@@ -608,7 +608,14 @@ result<value_t> nncase::kernels::stackvm::require(
     [[maybe_unused]] std::string message, [[maybe_unused]] value_t predicate,
     [[maybe_unused]] value_t value, [[maybe_unused]] value_t output,
     [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
+    try_to_scalar(cond, predicate, bool);
+    if(!cond)
+    {
+        printf("%s\n", message.data());
+        return err(std::errc::invalid_argument);
+    }
+    output = value;
+    KERNEL_FINISH;
 }
 
 result<value_t>

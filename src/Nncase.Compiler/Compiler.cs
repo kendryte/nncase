@@ -18,19 +18,6 @@ using Nncase.Utilities;
 
 namespace Nncase.Compiler;
 
-public class FunctionCollector : ExprVisitor<int, IRType>
-{
-    public HashSet<Function> Functions = new(ReferenceEqualityComparer.Instance);
-
-    public override int VisitLeaf(Function expr)
-    {
-        Functions.Add(expr);
-        return 0;
-    }
-
-    public override int DefaultVisitLeaf(Expr expr) => 1;
-}
-
 internal class Compiler : ICompiler
 {
     private readonly CompileSession _compileSession;
@@ -120,27 +107,16 @@ internal class Compiler : ICompiler
 
     public void Split()
     {
-        var splitMain = new ShapeSplitSegment().Run((Function)Module.Entry!, new SegmentInfo(0, 2, new[] { 128, 224 }));
-
-        var c = new FunctionCollector();
-        c.Visit(splitMain);
-        var module = new IRModule();
-        foreach (var fn in c.Functions)
-        {
-            module.Add(fn);
-        }
-
-        module.Entry = splitMain;
-        _module = module;
+        _module = new ShapeSplitSegment().Run((Function)Module.Entry!, new SegmentInfo(0, 2, new[] { 128, 224 }));
+        _dumpper.DumpModule(Module, "Splited");
     }
 
     public async Task CompileAsync()
     {
         var target = _compileSession.Target;
 
-        // await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
+        await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
         Split();
-        _dumpper.DumpModule(Module, "Splited");
         await RunPassAsync(p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions), "TargetDependentPass");
 
         if (_compileSession.CompileOptions.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)

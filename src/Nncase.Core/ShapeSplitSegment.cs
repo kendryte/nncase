@@ -13,17 +13,15 @@ namespace Nncase
 
     public class ShapeSplitSegment
     {
-        public Function Run(Function preFunc, SegmentInfo info)
+        public IRModule Run(Function preFunc, SegmentInfo info)
         {
-            Debug.Assert(info.Segments.Length >= 2);
+            Check(preFunc, info);
             var inShape = ShapeOf(preFunc.Parameters[info.InputIndex]);
             var preVar = preFunc.Parameters[info.InputIndex];
 
             var dim = Cast(inShape, DataTypes.Int32)[info.DimIndex];
             var body = info.Segments.Reverse().Aggregate(
-
-                // todo: this will be fold
-                (Expr)IR.F.Math.Require(true, 0, "input dim large than limit"),
+                (Expr)IR.F.Math.Require(false, 0, "input dim large than limit"),
                 (sum, seg) =>
                 {
                     var inputs = preFunc.Parameters.Select(v => (Expr)v).ToArray();
@@ -34,14 +32,38 @@ namespace Nncase
                     return new If(dim <= seg, then, sum);
                 });
 
-            return new Function(body, preFunc.Parameters);
+            var newFn = new Function(body, preFunc.Parameters);
+            return CollectFunctionToNewModule(newFn);
+        }
+
+        private static void Check(Function f, SegmentInfo info)
+        {
+            Debug.Assert(info.Segments.Length >= 2, "Segments.Length >= 2");
+            Debug.Assert(f.Parameters.Count >= info.InputIndex, "f.Parameters.Count <= info.InputIndex");
+        }
+
+        private static IRModule CollectFunctionToNewModule(Function splitMain)
+        {
+            var c = new FunctionCollector();
+            c.Visit(splitMain);
+            var module = new IRModule();
+            foreach (var fn in c.Functions)
+            {
+                module.Add(fn);
+            }
+
+            module.Entry = splitMain;
+            return module;
         }
 
         private static int[] ComputeFixedShape(Function preFunc, SegmentInfo info, int seg)
         {
-            var fixedShape = preFunc.Parameters[info.InputIndex].CheckedShape.ToValueArray();
-            fixedShape[info.DimIndex] = seg;
-            return fixedShape;
+            var originShape = preFunc.Parameters[info.InputIndex].CheckedShape;
+            var dims = originShape.Select(x => x).ToArray();
+
+            // only dims[DimIndex] is unknown
+            dims[info.DimIndex] = seg;
+            return dims.Select(x => x.FixedValue).ToArray();
         }
 
         private static Function FitFixedShape(Function preFunc, SegmentInfo info, int seg, int[] fixedShape, Function innerFunc)
@@ -57,7 +79,7 @@ namespace Nncase
             var fixedInput = IR.F.NN.Pad(targetInput, paddings, PadMode.Constant, Cast(0f, targetInput.CheckedDataType));
             var wrapperBody = new Call(innerFunc, fixedInput);
 
-            // forward origin input.
+            // forward origin inputs.
             var wrapperFunc = new Function(preFunc.Name + $"_seg_{seg}", wrapperBody, wrapParams);
             return wrapperFunc;
         }
@@ -67,26 +89,14 @@ namespace Nncase
             var innerFixedShapeVar = new Var(
                 preFunc.Name + $"_seg_{seg}_inner_var",
                 new TensorType(preVar.CheckedDataType, fixedShape));
-            var newBody = ReplaceExpr(preFunc.Body, preVar, innerFixedShapeVar);
+            var newBody = ReplaceUtility.ReplaceExpr(preFunc.Body, preVar, innerFixedShapeVar);
 
             // replace Fix var.
-            var innerFunc = new Function(preFunc.Name + $"_seg_{seg}_inner", newBody,
+            var innerFunc = new Function(
+                preFunc.Name + $"_seg_{seg}_inner",
+                newBody,
                 ImmutableArray.Create(innerFixedShapeVar));
             return innerFunc;
-        }
-
-        private Expr ReplaceExpr(Expr body, Expr target, Expr expr)
-        {
-            var mutator = new Transform.Mutators.Substitutor(e =>
-            {
-                if (ReferenceEquals(e, target))
-                {
-                    return expr;
-                }
-
-                return null;
-            });
-            return mutator.Visit(body);
         }
     }
 }
