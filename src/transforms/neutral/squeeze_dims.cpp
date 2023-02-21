@@ -42,10 +42,6 @@ shape_t squeeze_shape(shape_t old_shape)
         if(k>0)
             k--;
     }
-    // for (int i = 4; i < old_shape.size(); i++)
-    // {
-    //     new_shape[3] *= old_shape[i];
-    // }
     return new_shape;
 }
 
@@ -53,7 +49,7 @@ auto squeeze_binary_shape(shape_t old_a_shape, shape_t old_b_shape)
 {
     auto a_size = old_a_shape.size();
     auto b_size = old_b_shape.size();
-    auto squeeze_times = std::max(a_size >4 ? a_size - 4 : 0, b_size > 4? b_size - 4 : 0); // fold shape need a base shape
+    auto squeeze_times = std::max(a_size >4 ? a_size - 4 : 0, b_size > 4? b_size - 4 : 0); 
     if (squeeze_times <= 0)
         return std::tuple(false,old_a_shape, old_b_shape);
     shape_t new_a_shape, new_b_shape;
@@ -112,20 +108,18 @@ auto squeeze_binary_shape(shape_t old_a_shape, shape_t old_b_shape)
                 {
                     new_a_shape.erase(std::begin(new_a_shape));
                     new_b_shape.erase(std::begin(new_b_shape));
-                    new_a_shape.shrink_to_fit();
-                    new_b_shape.shrink_to_fit();
                 }
                 else if(new_a_shape.back() == 1 &&new_b_shape.back() == 1 )
                 {
                     new_a_shape.erase(std::end(new_a_shape)-1);
                     new_b_shape.erase(std::end(new_b_shape)-1);
-                    new_a_shape.shrink_to_fit();
-                    new_b_shape.shrink_to_fit();
                 }
-                
-                if(new_a_shape.size()>4)
-                    return std::make_tuple(false, new_a_shape, new_b_shape); 
             }
+            
+            new_a_shape.shrink_to_fit();
+            new_b_shape.shrink_to_fit();
+            if(new_a_shape.size()>4)
+                    return std::make_tuple(false, new_a_shape, new_b_shape); 
         }
     }
     else
