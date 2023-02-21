@@ -16,7 +16,7 @@ namespace Nncase.IR.Math;
 /// ReduceArg expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record ReduceArg(ReduceArgOp ReduceArgOp) : Op
+public sealed record ReduceArg(ReduceArgOp ReduceArgOp, PrimType DestType) : Op
 {
     /// <summary>
     /// Gets input.
