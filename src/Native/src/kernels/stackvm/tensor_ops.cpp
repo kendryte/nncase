@@ -947,9 +947,9 @@ result<value_t> nncase::kernels::stackvm::where(
     try_input(x_mem, x);
     try_input(y_mem, y);
     auto dt = x_tensor->dtype();
-    if ((x_tensor->shape().size()==0 || x_tensor->shape()[0] == 0) 
-        && (y_tensor->shape().size()==0 || y_tensor->shape()[0]) == 0 
-        && cmp_type<float>(x_tensor->dtype())) {
+    if ((x_tensor->shape().size() == 0 || x_tensor->shape()[0] == 0) &&
+        (y_tensor->shape().size() == 0 || y_tensor->shape()[0]) == 0 &&
+        cmp_type<float>(x_tensor->dtype())) {
         // todo: not finish other rank
         assert(cond_tensor->shape().size() == 1);
         dt = dt_int64;
