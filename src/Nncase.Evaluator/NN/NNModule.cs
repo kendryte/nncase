@@ -24,6 +24,7 @@ internal class NNModule : IApplicationPart
         registrator.RegisterManyInterface<SeluEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<SigmoidEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<HardSigmoidEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<ErfEvaluator>(reuse: Reuse.Singleton);
 
         // Convolution
         registrator.RegisterManyInterface<Conv2DEvaluator>(reuse: Reuse.Singleton);
