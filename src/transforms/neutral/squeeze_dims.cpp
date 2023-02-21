@@ -27,19 +27,19 @@ using namespace nncase::ir::transforms;
 
 void print_shape(auto p_shape, std::string name_of_shape)
 {
-    std::cout<<name_of_shape<<"\t"<<std::endl;
-    for(auto i: p_shape)
-        std::cout<<i<<",";
-    std::cout<<std::endl;
+    std::cout << name_of_shape << "\t" << std::endl;
+    for (auto i : p_shape)
+        std::cout << i << ",";
+    std::cout << std::endl;
 }
 
 shape_t squeeze_shape(shape_t old_shape)
 {
     shape_t new_shape { 1, 1, 1, 1 };
-    for(int i = old_shape.size()-1, k=3; i>=0; i--)
+    for (int i = old_shape.size() - 1, k = 3; i >= 0; i--)
     {
-        new_shape[k]*=old_shape[i];
-        if(k>0)
+        new_shape[k] *= old_shape[i];
+        if (k > 0)
             k--;
     }
     return new_shape;
@@ -49,9 +49,9 @@ auto squeeze_binary_shape(shape_t old_a_shape, shape_t old_b_shape)
 {
     auto a_size = old_a_shape.size();
     auto b_size = old_b_shape.size();
-    auto squeeze_times = std::max(a_size >4 ? a_size - 4 : 0, b_size > 4? b_size - 4 : 0); 
+    auto squeeze_times = std::max(a_size > 4 ? a_size - 4 : 0, b_size > 4 ? b_size - 4 : 0);
     if (squeeze_times <= 0)
-        return std::tuple(false,old_a_shape, old_b_shape);
+        return std::tuple(false, old_a_shape, old_b_shape);
     shape_t new_a_shape, new_b_shape;
 
     if (a_size == b_size)
@@ -62,7 +62,7 @@ auto squeeze_binary_shape(shape_t old_a_shape, shape_t old_b_shape)
             b.shape :  [1, 1, s3, 1, 1] ||[1, 1, 1, s4, 1]  ||...
         */
         // 1.   a.shape == b.shape
-        if(old_a_shape == old_b_shape)
+        if (old_a_shape == old_b_shape)
         {
             new_a_shape = squeeze_shape(old_a_shape);
             new_b_shape = squeeze_shape(old_b_shape);
@@ -73,53 +73,53 @@ auto squeeze_binary_shape(shape_t old_a_shape, shape_t old_b_shape)
         {
             new_a_shape = old_a_shape;
             new_b_shape = old_b_shape;
-            
+
             // inquiry which dim can be fold
             std::vector<bool> can_fold_index_list(a_size, true);
             std::vector<std::tuple<size_t, size_t>> fold_index_couple;
-            for(size_t i = 0; i< a_size; i++)
+            for (size_t i = 0; i < a_size; i++)
             {
-                if(old_a_shape[i] == old_b_shape[i])
+                if (old_a_shape[i] == old_b_shape[i])
                     can_fold_index_list[i] = false;
             }
-            for(size_t i =a_size-1; i>0; i--)
+            for (size_t i = a_size - 1; i > 0; i--)
             {
-                if(can_fold_index_list[i] && can_fold_index_list[i-1])
-                    fold_index_couple.emplace_back(std::make_tuple(i-1,i));
+                if (can_fold_index_list[i] && can_fold_index_list[i - 1])
+                    fold_index_couple.emplace_back(std::make_tuple(i - 1, i));
             }
-            
-            while(squeeze_times && !fold_index_couple.empty())
+
+            while (squeeze_times && !fold_index_couple.empty())
             {
                 auto it = fold_index_couple.back();
                 auto front = std::get<0>(it);
                 auto back = std::get<1>(it);
-                new_a_shape[front] *=new_a_shape[back];
-                new_b_shape[front] *=new_b_shape[back];
-                new_a_shape.erase(std::begin(new_a_shape)+back);
-                new_b_shape.erase(std::begin(new_b_shape)+back);
+                new_a_shape[front] *= new_a_shape[back];
+                new_b_shape[front] *= new_b_shape[back];
+                new_a_shape.erase(std::begin(new_a_shape) + back);
+                new_b_shape.erase(std::begin(new_b_shape) + back);
                 fold_index_couple.pop_back();
                 squeeze_times--;
             }
-            
-            if(new_a_shape.size()>4)
+
+            if (new_a_shape.size() > 4)
             {
                 // remove shape.front() == 1 || shape.back() == 1
-                if(new_a_shape.front() == 1 &&new_b_shape.front() == 1 )
+                if (new_a_shape.front() == 1 && new_b_shape.front() == 1)
                 {
                     new_a_shape.erase(std::begin(new_a_shape));
                     new_b_shape.erase(std::begin(new_b_shape));
                 }
-                else if(new_a_shape.back() == 1 &&new_b_shape.back() == 1 )
+                else if (new_a_shape.back() == 1 && new_b_shape.back() == 1)
                 {
-                    new_a_shape.erase(std::end(new_a_shape)-1);
-                    new_b_shape.erase(std::end(new_b_shape)-1);
+                    new_a_shape.erase(std::end(new_a_shape) - 1);
+                    new_b_shape.erase(std::end(new_b_shape) - 1);
                 }
             }
-            
+
             new_a_shape.shrink_to_fit();
             new_b_shape.shrink_to_fit();
-            if(new_a_shape.size()>4)
-                    return std::make_tuple(false, new_a_shape, new_b_shape); 
+            if (new_a_shape.size() > 4)
+                return std::make_tuple(false, new_a_shape, new_b_shape);
         }
     }
     else
@@ -258,8 +258,8 @@ bool squeeze_dims_transform::on_try_match(node &node, transform_context &context
             context.matched_nodes.emplace_back(&node);
             bool can_squeeze;
             NNCASE_UNUSED shape_t a_shape, b_shape;
-            if(node.runtime_opcode() == op_binary)
-                std::tie(can_squeeze, a_shape, b_shape) = squeeze_binary_shape(context.inputs[0]->shape(),context.inputs[1]->shape());
+            if (node.runtime_opcode() == op_binary)
+                std::tie(can_squeeze, a_shape, b_shape) = squeeze_binary_shape(context.inputs[0]->shape(), context.inputs[1]->shape());
 
             return can_squeeze;
         }
