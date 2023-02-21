@@ -56,28 +56,28 @@ def _make_module(op, in_type, in_shape):
 
 
 in_shapes = [
-    # [16],
+    [16],
     [1, 3, 16, 16]
 ]
 
 ops = [
-    # 'Rsqrt', 'Square'  这 2 个目前不支持
-    'Ceil',  # 已更新 1
-    'Floor', # 已更新 2
-    'Round', # 已更新 3
-    'Sqrt',  # 已更新 4
-    'Tanh',  # 已更新 5
-    'Erf',   # 已更新 6
-    'Abs',   # 已更新 7
-    'Acos',  # 已更新 8
-    'Asin',  # 已更新 9
-    'Exp',   # 已更新 10
-    'Log',   # 已更新 11
-    'Neg',   # 已更新 12
-    # 'Not',   # 已更新 13
-    'Sign',  # 已更新 14
-    'Sin',   # 已更新 15
-    'Cos',   # 已更新 16
+    # 'Rsqrt', 'Square'  # 这 2 个算子目前不支持
+    'Ceil',  
+    'Floor',
+    'Round',
+    'Sqrt',
+    'Tanh',
+    'Erf',
+    'Abs',
+    'Acos',
+    'Asin',
+    'Exp',
+    'Log',
+    'Neg',
+    # 'Not',   # 这个算子需要 in_types 为 TensorProto.INT8
+    'Sign',
+    'Sin',
+    'Cos',
 ]
 
 in_types = [
