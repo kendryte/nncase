@@ -25,7 +25,6 @@ using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::ir::transforms;
 
-
 shape_t squeeze_shape(shape_t old_shape)
 {
     shape_t new_shape { 1, 1, 1, 1 };
