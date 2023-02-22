@@ -121,8 +121,8 @@ dims_t infer_shape(const dims_t &in_shape, int32_t axis, bool keep_dims) {
 }
 
 result<value_t> nncase::kernels::stackvm::reduce_arg(
-    reduce_arg_op_t reduce_arg_op, prim_type_t dest_type, value_t input, value_t axis,
-    value_t keep_dims, value_t select_last_index, value_t output,
+    reduce_arg_op_t reduce_arg_op, prim_type_t dest_type, value_t input,
+    value_t axis, value_t keep_dims, value_t select_last_index, value_t output,
     kernel_context &context) {
     try_input(in_mem, input);
     try_typecode(typecode, input_tensor);

@@ -69,7 +69,7 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
                 shape.RemoveAt(axisIndex);
             }
 
-            return input with { Shape = new Shape(shape), DType = target.DestType};
+            return input with { Shape = new Shape(shape), DType = target.DestType };
         }
         else
         {

@@ -926,9 +926,9 @@ nncase::kernels::stackvm::unsqueeze(value_t input, value_t dim, value_t output,
 }
 
 result<value_t> nncase::kernels::stackvm::where(
-    [[maybe_unused]] bool is_tf_where, [[maybe_unused]] value_t cond, [[maybe_unused]] value_t x,
-    [[maybe_unused]] value_t y, [[maybe_unused]] value_t output,
-    [[maybe_unused]] kernel_context &context) {
+    [[maybe_unused]] bool is_tf_where, [[maybe_unused]] value_t cond,
+    [[maybe_unused]] value_t x, [[maybe_unused]] value_t y,
+    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
     try_input_with_ty(cond_mem, cond, bool);
     try_input(x_mem, x);
     try_input(y_mem, y);
