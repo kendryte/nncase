@@ -92,7 +92,7 @@ result<void> reduce_arg_impl(TReducer &&reducer, T init_value, const T *input,
         case reduce_arg_op_t::arg_max:                                         \
             return reduce_arg_impl(                                            \
                 [](_ty a, _ty b) { return a > b; },                            \
-                std::numeric_limits<_ty>::min(), IN_CAST(_ty, input),          \
+                std::numeric_limits<_ty>::lowest(), IN_CAST(_ty, input),       \
                 OUT_CAST(int64_t, output), in_shape, out_shape, in_strides,    \
                 out_strides, axes, keep_dims, select_last_idx, context);       \
         default:                                                               \
