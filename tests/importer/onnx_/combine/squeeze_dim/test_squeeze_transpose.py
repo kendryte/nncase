@@ -33,12 +33,12 @@ def _make_module(in_shape, perm):
 
 in_shapes = [
     [8, 3, 64, 3, 4],
-    [1,3,8,8,4]
+    [1, 3, 8, 8, 4]
 ]
 
 perms = [
-    [2,1,0,4,3], #CPU
-    [0,1,3,4,2]  #target
+    [2, 1, 0, 4, 3], #CPU
+    [0, 1, 3, 4, 2]  #target
 ]
 
 
@@ -48,7 +48,7 @@ def test_squeeze_transpose(in_shape, perm, request):
     if len(perm) == len(in_shape):
         module = _make_module(in_shape, perm)
 
-        runner = TfliteTestRunner(request.node.name)
+        runner = TfliteTestRunner(request.node.name, ['cpu', 'k210', 'k510'])
         model_file = runner.from_tensorflow(module)
         runner.run(model_file)
 
