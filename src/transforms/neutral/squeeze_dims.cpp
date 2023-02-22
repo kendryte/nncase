@@ -115,7 +115,7 @@ auto squeeze_binary_shape(shape_t old_a_shape, shape_t old_b_shape)
                     new_b_shape.erase(std::end(new_b_shape)-1);
                 }
             }
-            
+
             new_a_shape.shrink_to_fit();
             new_b_shape.shrink_to_fit();
             if(new_a_shape.size()>4)
@@ -139,42 +139,42 @@ auto squeeze_binary_shape(shape_t old_a_shape, shape_t old_b_shape)
 auto squeeze_transpose_shape(shape_t old_shape, axis_t old_axis)
 {
     if (old_shape.size() <= 4)
-        return std::make_tuple(old_axis, old_shape);
+        return std::make_tuple(false, old_axis, old_shape);
 
-    axis_t new_axis(4, 0);
-    shape_t new_shape(4, 1);
+    axis_t new_axis = old_axis;
+    shape_t new_shape = old_shape;
     int squeeze_times = old_shape.size() - 4;
-    int squeeze_time = 0;
-    int i = 0;
 
-    std::vector<int> squeeze_size;
-    for (auto j = 0; j < 4; i++, j++)
+    std::vector<std::tuple<size_t, size_t>> fold_index_couple;
+    for(size_t i = old_shape.size()-1; i>0; i--)
     {
-        squeeze_size.push_back(old_shape[i]);
-        for (; i < old_shape.size(); i++)
-        {
-            if (old_axis[i] + 1 == old_axis[i + 1])
-            {
-                squeeze_size.push_back(old_shape[i + 1]);
-                squeeze_times--;
-                squeeze_time++;
-            }
-            else
-            {
-                new_shape[j] = xt::compute_size(squeeze_size);
-                new_axis[j] = old_axis[i] - squeeze_time;
-                break;
-            }
-        }
-        squeeze_size.clear();
+        if(old_axis[i-1]+1 == old_axis[i])
+            fold_index_couple.emplace_back(std::make_tuple(i-1,i));
+    }
+    if(fold_index_couple.size()<squeeze_times)
+        return std::make_tuple(false, new_axis, new_shape);
+
+    while(squeeze_times && !fold_index_couple.empty())
+    {
+        auto it = fold_index_couple.back();
+        auto front = std::get<0>(it);
+        auto back = std::get<1>(it);
+        new_shape[front] *=new_shape[back];
+        new_shape.erase(std::begin(new_shape)+back);
+        new_axis.erase(std::begin(new_axis)+back);
+        fold_index_couple.pop_back();
+        squeeze_times--;
     }
 
-    for (; i < old_shape.size(); i++)
+    // fix axis
+    for(int i = 0, j=0; j<4; i++)
     {
-        new_shape.push_back(old_shape[i]);
+        auto find_index = std::find(new_axis.begin(), new_axis.end(), i);
+        if(find_index != new_axis.end())
+            {*find_index = j;j++;}
     }
-
-    return std::make_tuple(new_axis, new_shape);
+    
+    return std::make_tuple(true, new_axis, new_shape);
 }
 
 auto squeeze_concat_shape(std::vector<shape_t> &old_shape, int concat_axis)
@@ -208,7 +208,7 @@ auto squeeze_concat_shape(std::vector<shape_t> &old_shape, int concat_axis)
 
 bool check_op(node_opcode op)
 {
-    if (op == op_binary || op == op_sigmoid || op == op_transpose)
+    if (op == op_binary || op == op_sigmoid || op == op_transpose || op == op_concat)
         return true;
     return false;
 }
@@ -237,14 +237,6 @@ bool squeeze_dims_transform::on_try_match(node &node, transform_context &context
             }
         }
 
-        // can't squeeze some tp
-        if (auto tp = node_cast<transpose>(node))
-        {
-            auto [_, new_shape] = squeeze_transpose_shape(tp->input().shape(), tp->perm());
-            if (new_shape.size() > 4)
-                return false;
-        }
-
         for (auto &it : node.outputs())
         {
             if (need_squeeze || it->shape().size() > 4)
@@ -258,13 +250,14 @@ bool squeeze_dims_transform::on_try_match(node &node, transform_context &context
             context.matched_nodes.emplace_back(&node);
             bool can_squeeze;
             NNCASE_UNUSED shape_t a_shape, b_shape;
+            NNCASE_UNUSED axis_t new_axis;
             if(node.runtime_opcode() == op_binary)
                 std::tie(can_squeeze, a_shape, b_shape) = squeeze_binary_shape(context.inputs[0]->shape(),context.inputs[1]->shape());
+            else if(node.runtime_opcode() == op_transpose)
+                std::tie(can_squeeze, new_axis, b_shape) = squeeze_transpose_shape(node_cast<transpose>(node)->input().shape(),node_cast<transpose>(node)->perm());
 
             return can_squeeze;
         }
-        else
-            return false;
     }
 
     return false;
@@ -346,9 +339,8 @@ void squeeze_dims_transform::process(transform_context &context)
         auto &output = *context.inputs[0]->connection();
         auto inputs = context.outputs[0]->connections();
         auto &old_transpose = static_cast<transpose &>(*context.matched_nodes[0]);
-        print_shape(output.shape(), "output.shape()");
-        auto [new_axis, new_shape] = squeeze_transpose_shape(output.shape(), old_transpose.perm());
-        print_shape(new_shape, "new_shape");
+
+        auto [_, new_axis, new_shape] = squeeze_transpose_shape(output.shape(), old_transpose.perm());
 
         bitcast *in_bitc, *out_bitc;
         if (output.shape().size() > 4)
