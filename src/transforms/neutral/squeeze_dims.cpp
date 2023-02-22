@@ -25,13 +25,6 @@ using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::ir::transforms;
 
-void print_shape(auto p_shape, std::string name_of_shape)
-{
-    std::cout << name_of_shape << "\t" << std::endl;
-    for (auto i : p_shape)
-        std::cout << i << ",";
-    std::cout << std::endl;
-}
 
 shape_t squeeze_shape(shape_t old_shape)
 {
