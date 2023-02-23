@@ -50,13 +50,13 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
     public bool IsDefaultOrEmpty => _array.IsDefaultOrEmpty;
 
     /// <inheritdoc/>
-    public int Count => ((IReadOnlyCollection<T>)_array).Count;
+    public int Count => _array.Length;
 
     /// <inheritdoc/>
     public bool IsReadOnly => ((ICollection<T>)_array).IsReadOnly;
 
     /// <inheritdoc/>
-    public T this[int index] => ((IReadOnlyList<T>)_array)[index];
+    public T this[int index] => _array[index];
 
     public ReadOnlySpan<T> this[Range range] => _array.AsSpan()[range];
 
