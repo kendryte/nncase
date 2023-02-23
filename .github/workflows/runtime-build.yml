@@ -34,7 +34,7 @@ jobs:
         python-version: 3.7
 
     - name: Install Conan
-      run: pip install conan=1.58
+      run: pip install conan==1.58
 
     - name: Configure Conan (Linux)
       run: |
@@ -101,7 +101,7 @@ jobs:
   #    if: matrix.config.name == 'riscv64-none-k210'
         
   #  - name: Install Conan
-  #    run: pip install conan=1.58
+  #    run: pip install conan==1.58
 
   #  - name: Configure Conan (Linux)
   #    run: |
