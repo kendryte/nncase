@@ -101,7 +101,7 @@ public class EGraphPass : RulesPass
 
     public class FunctionCollector : ExprVisitor<int, IRType>
     {
-        private HashSet<Function> _functions = new(ReferenceEqualityComparer.Instance);
+        private readonly HashSet<Function> _functions = new(ReferenceEqualityComparer.Instance);
 
         public HashSet<Function> Functions => _functions;
 
