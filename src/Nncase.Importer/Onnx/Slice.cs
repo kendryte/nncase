@@ -44,7 +44,7 @@ namespace Nncase.Importer
             // steps.size should eq starts.size
             starts.InferenceType();
             var axes = GetOptionInputExpr(op, 3).Or(ComputeDefaultAxes(input));
-            var steps = GetOptionInputExpr(op, 4).Or(Expand(1, Stack(Rank(starts), 0)));
+            var steps = GetOptionInputExpr(op, 4).Or(Expand(1, Rank(starts)));
             return Slice(input, starts, ends, axes, steps);
         }
 
