@@ -106,25 +106,5 @@ public static class ReplaceUtility
     /// <returns>new Call.</returns>
     public static Call ReplaceCallFirstParam(Expr target, IReadOnlyList<Expr> oldParams, Expr expr) =>
         ReplaceCallParams(target, oldParams, (oldParams[0], expr));
-
-    /// <summary>
-    /// Replace target in body with expr.
-    /// </summary>
-    /// <param name="body">Body.</param>
-    /// <param name="target">Target.</param>
-    /// <param name="expr">Expr.</param>
-    /// <returns>New Body.</returns>
-    public static Expr ReplaceExpr(Expr body, Expr target, Expr expr)
-    {
-        var mutator = new Transform.Mutators.Substitutor(e =>
-        {
-            if (ReferenceEquals(e, target))
-            {
-                return expr;
-            }
-
-            return null;
-        });
-        return mutator.Visit(body);
-    }
 }
+

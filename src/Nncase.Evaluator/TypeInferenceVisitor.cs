@@ -52,7 +52,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         Visit(expr.Condition);
         var thenType = Visit(expr.Then);
         var elseType = Visit(expr.Else);
-        var type = TypeInference.CommonType(thenType, elseType);
+        var type = AnyType.Default;
         SetCheckedType(expr, type);
         return type;
     }
