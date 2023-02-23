@@ -12,9 +12,9 @@ using Nncase.TIR;
 namespace Nncase.Transform.Mutators;
 
 /// <summary>
-/// unroll loop.
+/// unroll loop and Sequential
 /// </summary>
-public sealed class UnRollLoop : ExprMutator
+public sealed class UnRollLoopSequential : ExprMutator
 {
     private readonly Dictionary<Type, Evaluator.IEvaluator> _evaluator_cache = new();
 
@@ -111,6 +111,40 @@ public sealed class UnRollLoop : ExprMutator
                 Select(vmap => new OptimizedSubstitutor(vmap, _evaluator_cache).Visit(nested_loops[^1].Body)));
 
         return Sequential.Flatten(unrolled);
+    }
+
+    /// <inheritdoc/>
+    public override Expr MutateLeaf(TIR.Sequential expr)
+    {
+        var flattened = Flatten(expr);
+        if (flattened.Count != expr.Count)
+        {
+            return new TIR.Sequential() with { Fields = new(flattened) };
+        }
+        else if (!flattened.Zip(expr).All(t => t.First == t.Second))
+        {
+            return new TIR.Sequential() with { Fields = new(flattened) };
+        }
+
+        return expr;
+    }
+
+    public List<Expr> Flatten(IEnumerable<Expr> exprs)
+    {
+        var ret = new List<Expr>();
+        foreach (var item in exprs.Select(Visit))
+        {
+            if (item is Sequential sub)
+            {
+                ret.AddRange(Flatten(sub));
+            }
+            else
+            {
+                ret.Add(item);
+            }
+        }
+
+        return ret;
     }
 
     /// <summary>
