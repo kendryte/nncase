@@ -85,4 +85,9 @@ public static class NN
     /// create custom call.
     /// </summary>
     public static Call CustomCall(CustomOp op, params Expr[] args) => new Call(op, args);
+
+    /// <summary>
+    /// create Erf call.
+    /// </summary>
+    public static Call Erf(Expr expr) => new Call(new Erf(), expr);
 }
