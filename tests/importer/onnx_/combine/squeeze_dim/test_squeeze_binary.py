@@ -91,7 +91,7 @@ in_shapes = [
 def test_squeeze_binary(op, in_type, in_shape, request):
     model_def = _make_module(op, in_type, in_shape[0], in_shape[1])
 
-    runner = OnnxTestRunner(request.node.name)
+    runner = OnnxTestRunner(request.node.name, ['cpu', 'k210', 'k510'])
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
 
