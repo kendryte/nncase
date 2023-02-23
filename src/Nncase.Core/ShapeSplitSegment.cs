@@ -13,15 +13,23 @@ namespace Nncase
 
     public class ShapeSplitSegment
     {
+        private Expr Default => (Expr)IR.F.Math.Require(false, 0, "input dim large than limit");
+
         public IRModule Run(Function preFunc, SegmentInfo info)
         {
             return null;
         }
 
-        private Expr Default => (Expr)IR.F.Math.Require(false, 0, "input dim large than limit");
-
-        record SingleSegment(int InputIndex, int DimIndex, int SegmentLimit)
+        private record SingleSegment(int InputIndex, int DimIndex, int SegmentLimit)
         {
+        }
+
+        public IRModule SplitInfos(Function preFn, SegmentInfo[] infos)
+        {
+            var body = SplitImpl(preFn, infos, MakeSplitEntry(preFn));
+            var newFn = new Function("main", body, preFn.Parameters);
+
+            return CollectFunctionToNewModule(newFn);
         }
 
         private Expr SplitImpl(Function preFunc, SegmentInfo[] infos,
@@ -36,6 +44,7 @@ namespace Nncase
         {
             var info = infos[current];
             Check(preFunc, info);
+
             // todo: segments sort
             var body = info.Segments.OrderBy(x => x).Aggregate(
                 Default,
@@ -56,12 +65,10 @@ namespace Nncase
             return body;
         }
 
-        public IRModule SplitInfos(Function preFn, SegmentInfo[] infos)
+        private static void Check(Function f, SegmentInfo info)
         {
-            var body = SplitImpl(preFn, infos, MakeSplitEntry(preFn));
-            var newFn = new Function("main", body, preFn.Parameters);
-
-            return CollectFunctionToNewModule(newFn);
+            Debug.Assert(info.Segments.Length >= 2, "Segments.Length >= 2");
+            Debug.Assert(f.Parameters.Count >= info.InputIndex, "f.Parameters.Count <= info.InputIndex");
         }
 
         private Func<ImmutableArray<SingleSegment>, Expr> MakeSplitEntry(Function preFunc) => infos =>
@@ -86,12 +93,6 @@ namespace Nncase
             var then = new Call(innerFunc, newInputs);
             return then;
         };
-
-        private static void Check(Function f, SegmentInfo info)
-        {
-            Debug.Assert(info.Segments.Length >= 2, "Segments.Length >= 2");
-            Debug.Assert(f.Parameters.Count >= info.InputIndex, "f.Parameters.Count <= info.InputIndex");
-        }
 
         private static IRModule CollectFunctionToNewModule(Function splitMain)
         {
@@ -130,6 +131,7 @@ namespace Nncase
             var fixedInput = IR.F.NN.Pad(targetInput, paddings, PadMode.Constant,
                 Cast(0f, targetInput.CheckedDataType));
             return fixedInput;
+
             // var wrapperBody = new Call(innerFunc, fixedInput);
             //
             // // forward origin inputs.
@@ -137,6 +139,8 @@ namespace Nncase
             // return new Call(wrapperFunc, preFunc.Parameters.ToArray());
             // return wrapperFunc;
         }
+
+        private static string MakeSegmentsStr(ImmutableArray<SingleSegment> segments) => string.Join("_", segments.Select(x => x.SegmentLimit));
 
         private Function SplitFuncImpl(Function preFunc, int[][] fixedShapeList, ImmutableArray<SingleSegment> segments)
         {
@@ -166,7 +170,7 @@ namespace Nncase
             var newParams = ReplaceUtility.ReplaceItems(
                 preFunc.Parameters,
                 innerFixedShapeVarList
-                    .Select(x=> ((Expr)x.Item1, (Expr)x.Item2))
+                    .Select(x => ((Expr)x.oldVar, (Expr)x.Item2))
                     .ToArray())
                 .Select(x => (Var)x)
                 .ToArray();
@@ -178,7 +182,5 @@ namespace Nncase
                 newParams);
             return innerFunc;
         }
-
-        private static string MakeSegmentsStr(ImmutableArray<SingleSegment> segments) => string.Join("_", segments.Select(x => x.SegmentLimit));
     }
 }
