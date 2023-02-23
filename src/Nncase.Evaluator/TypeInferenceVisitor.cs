@@ -50,8 +50,8 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
     public override IRType VisitLeaf(If expr)
     {
         Visit(expr.Condition);
-        var thenType = Visit(expr.Then);
-        var elseType = Visit(expr.Else);
+        _ = Visit(expr.Then);
+        _ = Visit(expr.Else);
         var type = AnyType.Default;
         SetCheckedType(expr, type);
         return type;

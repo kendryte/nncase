@@ -107,4 +107,3 @@ public static class ReplaceUtility
     public static Call ReplaceCallFirstParam(Expr target, IReadOnlyList<Expr> oldParams, Expr expr) =>
         ReplaceCallParams(target, oldParams, (oldParams[0], expr));
 }
-
