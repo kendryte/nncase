@@ -39,7 +39,7 @@ public class Symbol
     public long Position { get; }
 }
 
-public record SymbolRef(long Position, int Length, Symbol Symbol, int Offset);
+public record SymbolRef(long Position, int Length, Symbol Symbol, bool Relative, int Offset);
 
 public record FunctionRef(long Position, int Length, BaseFunction Callable, FunctionIdComponent Component, int Offset);
 

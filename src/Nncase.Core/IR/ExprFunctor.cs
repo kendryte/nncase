@@ -28,6 +28,7 @@ namespace Nncase.IR
                 Var var => Visit(var),
                 Const con => Visit(con),
                 Call call => Visit(call),
+                If @if => Visit(@if),
                 Tuple tuple => Visit(tuple),
                 Op op => Visit(op),
                 None none => Visit(none),
@@ -107,6 +108,13 @@ namespace Nncase.IR
         /// <param name="expr">Call expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult Visit(Call expr) => DefaultVisit(expr);
+
+        /// <summary>
+        /// Visit if expression.
+        /// </summary>
+        /// <param name="expr">If expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult Visit(If expr) => DefaultVisit(expr);
 
         /// <summary>
         /// Visit tuple expression.
