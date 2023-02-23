@@ -5,7 +5,7 @@
     {
         var hexForamt = $"X{(int)Math.Ceiling(length / 4f)}";
         return $"0x{value.ToString(hexForamt)}";
-    } 
+    }
 
     string SpanReaderMethod(InstructionField field) => field.IsEnum switch {
       true => $"static_cast<{field.CppType}>(reader.read_unaligned<uint{field.Length}_t>())",
@@ -110,6 +110,8 @@ protected:
 protected:
     bool interrupted_;
     span_reader reader_;
+    uint64_t last_pc_ = 0;
+    uint64_t text_size_;
 
 private:
     result<void> next() noexcept;

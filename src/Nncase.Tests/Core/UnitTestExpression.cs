@@ -388,6 +388,20 @@ public class UnitTestExpression
         Assert.Equal<MyRange>(new(7 + 4 + 6, 9 + 4 + 6), fn_2_ret[3]);
     }
 
+    [Fact]
+    public void TestIf()
+    {
+        var a = false;
+        var cond = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
+        var z = new If(cond, 1, 2);
+        z.InferenceType();
+        var result1 = z.Evaluate(new Dictionary<Var, IValue> { { cond, Value.FromTensor(a) } }).AsTensor().ToScalar<int>();
+        Assert.Equal(2, result1);
+        var b = true;
+        var result2 = z.Evaluate(new Dictionary<Var, IValue> { { cond, Value.FromTensor(b) } }).AsTensor().ToScalar<int>();
+        Assert.Equal(1, result2);
+    }
+
     private MyRange[] Conv2dBounds(MyRange[] output_range, int kh, int kw)
     {
         var new_output_range = new MyRange[output_range.Length];

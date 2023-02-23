@@ -36,8 +36,8 @@ jobs:
       - name: Install Conan
         shell: bash
         run: |
-          pip install conan
-          
+          pip install conan==1.58
+
       - name: Configure Conan (Linux)
         run: |
           conan profile new default --detect
@@ -45,24 +45,24 @@ jobs:
           echo "CC=gcc-10" >> $GITHUB_ENV
           echo "CXX=g++-10" >> $GITHUB_ENV
         if: runner.os == 'Linux'
-        
+
       - name: Configure CMake
         shell: bash
         run: |
           cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
-          
+
       - name: Build & Install
         run: |
           cmake --build build --config ${{matrix.config.buildType}}
           cmake --install build --prefix install
-          
+
       - name: Upload nncase Native Build Artifact
         uses: actions/upload-artifact@v3
         with:
           name: nncase-native-${{matrix.config.name}}
           path: ${{github.workspace}}/install
           if-no-files-found: error
-        
+
   build-compiler:
     needs: [build-native]
     name: build-${{matrix.config.name}}
@@ -81,13 +81,13 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: ${{matrix.dotnet-version}}
-      
+
       - name: Install nncase native Artifact
         uses: actions/download-artifact@v2.0.9
         with:
           name: nncase-native-${{matrix.config.name}}
           path: ${{github.workspace}}/install
-        
+
       - name: Set up build environment (Macos)
         run: |
           brew install sunnycase/core/libomp@11.1.0
@@ -107,9 +107,9 @@ jobs:
       - name: Remove useless packages
         shell: bash
         run: |
-          sed -i '/libtorch-cpu-win/d' ./Directory.Packages.props 
-          sed -i '/libtorch-cpu-osx/d' ./Directory.Packages.props 
-          sed -i '/libtorch-cpu-win/d' ./src/Nncase.Core/Nncase.Core.csproj 
+          sed -i '/libtorch-cpu-win/d' ./Directory.Packages.props
+          sed -i '/libtorch-cpu-osx/d' ./Directory.Packages.props
+          sed -i '/libtorch-cpu-win/d' ./src/Nncase.Core/Nncase.Core.csproj
           sed -i '/libtorch-cpu-osx/d' ./src/Nncase.Core/Nncase.Core.csproj
         if: runner.os == 'Linux'
 
@@ -133,7 +133,7 @@ jobs:
                 </EnvironmentVariables>
               </RunConfiguration>
             </RunSettings>
-        
+
       - name: Set up test environment (Windows)
         shell: pwsh
         run: |
@@ -154,14 +154,14 @@ jobs:
           name: nncase-coverage-unit
           path: coverage.unit.xml
           if-no-files-found: error
-          
+
       - name: Upload nncase Build Artifact
         uses: actions/upload-artifact@v3
         with:
           name: nncase-${{matrix.config.name}}
           path: ${{github.workspace}}/src/Nncase.Compiler/bin/${{matrix.config.buildType}}/net${{matrix.dotnet-version}}/${{matrix.config.rid}}/publish
           if-no-files-found: error
-          
+
   test-compiler:
     needs: [build-compiler]
     name: test-${{matrix.config.name}}
@@ -183,19 +183,19 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: ${{matrix.dotnet-version}}
-      
+
       - name: Install nncase native Artifact
         uses: actions/download-artifact@v3
         with:
           name: nncase-native-${{matrix.config.name}}
           path: ${{github.workspace}}/install
-      
+
       - name: Install nncase
         uses: actions/download-artifact@v3
         with:
           name: nncase-${{matrix.config.name}}
           path: ${{github.workspace}}/install
-      
+
       - name: Set up test environment (macOS)
         run: |
           brew install sunnycase/core/libomp@11.1.0
@@ -211,7 +211,7 @@ jobs:
           cp install/lib/*.dylib install/
           echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
         if: runner.os == 'macOS'
-        
+
       - name: Set up test environment (Linux)
         run: |
           wget https://sdk.lunarg.com/sdk/download/${VULKANSDK_VER}/linux/vulkansdk-linux-x86_64-${VULKANSDK_VER}.tar.gz -O vulkansdk.tar.gz
@@ -224,7 +224,7 @@ jobs:
           cp install/lib/*.so install/
           echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
         if: runner.os == 'Linux'
-        
+
       - name: Set up test environment (Windows)
         shell: pwsh
         run: |
@@ -238,15 +238,15 @@ jobs:
           echo "PYTHONPATH=${env:GITHUB_WORKSPACE}/install/lib;${env:GITHUB_WORKSPACE}/install/python;${env:GITHUB_WORKSPACE}/tests" >> $env:GITHUB_ENV
           echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
         if: runner.os == 'Windows'
-      
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.7
-      
+
       - name: Install Python Packages
         run: pip install -r requirements.test.txt
-      
+
       - name: Create Test Environment
         run: mkdir test_results
 
@@ -271,7 +271,7 @@ jobs:
           name: nncase-coverage-integration
           path: coverage.integration.xml
           if-no-files-found: error
-          
+
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always() && matrix.config.name == 'x86_64-linux'
@@ -287,25 +287,25 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: "6.0"
-      
+
       - name: Download Unit Test Coverage
         uses: actions/download-artifact@v3
         with:
           name: nncase-coverage-unit
           path: ${{github.workspace}}/coverage
-      
+
       - name: Download Integration Test Coverage
         uses: actions/download-artifact@v3
         with:
           name: nncase-coverage-integration
           path: ${{github.workspace}}/coverage
-          
+
       - name: Upload Codecov (Unit)
         uses: codecov/codecov-action@v3
         with:
           files: coverage/coverage.unit.xml
           flags: unit
-          
+
       - name: Upload Codecov (Integration)
         uses: codecov/codecov-action@v3
         with:
