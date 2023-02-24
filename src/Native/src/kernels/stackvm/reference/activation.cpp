@@ -14,6 +14,7 @@
  */
 
 #include "kernel_template.h"
+#include <math.h>
 #include <nncase/kernels/apply.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/tensor_ops.h>
@@ -21,7 +22,6 @@
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
-#include <math.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
