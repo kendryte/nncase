@@ -18,7 +18,7 @@ public static class Mutator
     /// <summary>
     /// Unroll Loop.
     /// </summary>
-    public static Func<ExprMutator> UnRollLoop() => () => new Mutators.UnRollLoop();
+    public static Func<ExprMutator> UnRollLoopSequential() => () => new Mutators.UnRollLoopSequential();
 
     /// <summary>
     /// fold let when expression is const.
