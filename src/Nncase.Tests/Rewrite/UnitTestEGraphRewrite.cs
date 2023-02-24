@@ -143,6 +143,43 @@ public class UnitTestEGraphRewrite : TestClassBase
         var post = (Function)module.Entry!;
         Assert.True(post.Body is Call { Target: IR.NN.Conv2D });
     }
+
+    [Fact]
+    public async Task TestTwoBranchQuantizeCSE()
+    {
+#if DEBUG
+        CompileOptions.DumpFlags = Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.EGraphCost;
+#endif
+        var v8 = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 64, 56, 56 }));
+        var v9 = IR.F.NN.Conv2D(v8, Testing.Rand<float>(64, 64, 1, 1), Testing.Rand<float>(64), new[] { 1, 1 }, new[,] { { 0, 0 }, { 0, 0 } }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { float.NegativeInfinity, float.PositiveInfinity });
+        var v10_1 = IR.F.Math.Quantize(v9, Const.FromTensor(Tensor.FromScalar<QuantParam>(new(10, 5.5f))), DataTypes.Int8);
+        var v10_2 = IR.F.Math.Quantize(v9, Const.FromTensor(Tensor.FromScalar<QuantParam>(new(10, 5.5f))), DataTypes.Int8); // int8[1,56,56,64]
+        var v10_11 = IR.F.Math.Dequantize(v10_1 + IR.F.Random.Normal(DataTypes.Int8, 0, 1, 3, new[] { 1, 64, 56, 56 }), Const.FromTensor(Tensor.FromScalar<QuantParam>(new(10, 5.5f))), DataTypes.Float32);
+        v10_11 = v10_11 * IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, new[] { 1, 64, 56, 56 });
+        var v10_22 = IR.F.Math.Dequantize(v10_2, Const.FromTensor(Tensor.FromScalar<QuantParam>(new(10, 5.5f))), DataTypes.Float32);
+        var v11 = IR.F.NN.Conv2D(v10_11 + v10_22, Testing.Rand<float>(64, 64, 1, 1), Testing.Rand<float>(64), new[] { 1, 1 }, new[,] { { 0, 0 }, { 0, 0 } }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { float.NegativeInfinity, float.PositiveInfinity });
+        var v12 = IR.F.Math.RangeOfMarker(v11, new[] { -14.803145, 40.543793 }); // f32[1,64,56,56]
+        var v13 = IR.F.NN.Relu(v12); // f32[1,64,56,56]
+        var func = new Function("main", v13, new[] { v8 });
+        Assert.True(func.InferenceType());
+#if DEBUG
+        CompilerServices.DumpDotIR(func, "pre", Dumpper.Directory);
+#endif
+        var module = new IRModule(func);
+        var passes = CompileSession.CreatePassManager("passes");
+        passes.AddWithName<EGraphPass>("CSE").Configure(p =>
+        {
+        });
+
+        await passes.RunAsync(module);
+        var post = (Function)module.Entry!;
+#if DEBUG
+        CompilerServices.DumpDotIR(post, "post", Dumpper.Directory);
+#endif
+        var v = new TestVisitor();
+        v.Visit(post);
+        Assert.Equal(1, v.CountCallOp<IR.Math.Quantize>());
+    }
 }
 
 public sealed class TestMulToAdd : RewriteRule<Pattern>
