@@ -304,10 +304,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
         }
 
         IRType type;
-        if (expr.Buffer.CheckedType is TensorType
-            {
-                IsScalar: true, DType: PointerType { ElemType: PrimType pointedType }
-            })
+        if (expr.Buffer.CheckedType is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType pointedType } })
         {
             type = TensorType.Scalar(pointedType);
         }
@@ -340,11 +337,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, IRType>
 
         IRType type;
         if (expr.Value.CheckedType is TensorType { IsScalar: true, DType: PrimType valueType } &&
-            expr.Buffer.CheckedType is TensorType
-            {
-                IsScalar: true, DType: PointerType { ElemType: PrimType pointedType }
-            }
-
+            expr.Buffer.CheckedType is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType pointedType } }
             && valueType == pointedType)
         {
             type = TupleType.Void;
