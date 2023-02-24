@@ -61,8 +61,6 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
         var outputType = context.GetReturnType<TensorType>();
 
         var weightsShape = weightsType.Shape;
-        var inputShape = inputType.Shape;
-        var outputShape = outputType.Shape;
 
         if (weightsShape.IsFixed)
         {

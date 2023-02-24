@@ -12,7 +12,7 @@ using Nncase.TIR;
 namespace Nncase.Transform.Mutators;
 
 /// <summary>
-/// unroll loop and Sequential
+/// unroll loop and sequential.
 /// </summary>
 public sealed class UnRollLoopSequential : ExprMutator
 {
@@ -39,6 +39,22 @@ public sealed class UnRollLoopSequential : ExprMutator
         return result;
     }
 
+    /// <inheritdoc/>
+    public override Expr MutateLeaf(TIR.Sequential expr)
+    {
+        var flattened = Flatten(expr);
+        if (flattened.Count != expr.Count)
+        {
+            return new TIR.Sequential() with { Fields = new(flattened) };
+        }
+        else if (!flattened.Zip(expr).All(t => t.First == t.Second))
+        {
+            return new TIR.Sequential() with { Fields = new(flattened) };
+        }
+
+        return expr;
+    }
+
     /// <summary>
     /// convert the loop var to tensor const.
     /// </summary>
@@ -52,6 +68,24 @@ public sealed class UnRollLoopSequential : ExprMutator
         {
             yield return i;
         }
+    }
+
+    private List<Expr> Flatten(IEnumerable<Expr> exprs)
+    {
+        var ret = new List<Expr>();
+        foreach (var item in exprs.Select(Visit))
+        {
+            if (item is Sequential sub)
+            {
+                ret.AddRange(Flatten(sub));
+            }
+            else
+            {
+                ret.Add(item);
+            }
+        }
+
+        return ret;
     }
 
     private bool IsCanUnroll(TIR.For for_loop)
@@ -111,40 +145,6 @@ public sealed class UnRollLoopSequential : ExprMutator
                 Select(vmap => new OptimizedSubstitutor(vmap, _evaluator_cache).Visit(nested_loops[^1].Body)));
 
         return Sequential.Flatten(unrolled);
-    }
-
-    /// <inheritdoc/>
-    public override Expr MutateLeaf(TIR.Sequential expr)
-    {
-        var flattened = Flatten(expr);
-        if (flattened.Count != expr.Count)
-        {
-            return new TIR.Sequential() with { Fields = new(flattened) };
-        }
-        else if (!flattened.Zip(expr).All(t => t.First == t.Second))
-        {
-            return new TIR.Sequential() with { Fields = new(flattened) };
-        }
-
-        return expr;
-    }
-
-    public List<Expr> Flatten(IEnumerable<Expr> exprs)
-    {
-        var ret = new List<Expr>();
-        foreach (var item in exprs.Select(Visit))
-        {
-            if (item is Sequential sub)
-            {
-                ret.AddRange(Flatten(sub));
-            }
-            else
-            {
-                ret.Add(item);
-            }
-        }
-
-        return ret;
     }
 
     /// <summary>
