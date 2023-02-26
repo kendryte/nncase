@@ -33,7 +33,7 @@ public sealed partial class FoldNopReshape : IRewriteRule
     {
         var newShapeArray = newShape.Value.ToArray<int>();
         if (input.CheckedShape.Zip(newShapeArray).Count(t => t.Second != -1 && t.First.FixedValue == t.Second) == newShapeArray.Length - 1
-            && input.CheckedShape.Equals(newShapeArray))
+            || input.CheckedShape.Equals(newShapeArray))
         {
             return input;
         }
