@@ -98,6 +98,12 @@ public sealed record TensorConst(Tensor Value) : Const(new TensorType(Value.Elem
     public static implicit operator TensorConst(bool value) => new(Tensor.FromScalar(value));
 
     /// <summary>
+    /// Create TensorConstant from <see cref="Utf8Char"/>.
+    /// </summary>
+    /// <param name="value">Value.</param>
+    public static implicit operator TensorConst(Utf8Char value) => new(Tensor.FromScalar(value));
+
+    /// <summary>
     /// Create TensorConstant from <see cref="string"/>.
     /// </summary>
     /// <param name="value">Value.</param>

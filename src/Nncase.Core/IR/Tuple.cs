@@ -19,7 +19,7 @@ public sealed record Tuple(IRArray<Expr> Fields) : Expr, ITuple
     /// <summary>
     /// Void type.
     /// </summary>
-    public static readonly TupleConst Void = new(ImmutableArray<Const>.Empty);
+    public static readonly Tuple Void = new(ImmutableArray<Expr>.Empty);
 
     public Tuple(params Expr[] fields)
         : this(ImmutableArray.Create<Expr>(fields))

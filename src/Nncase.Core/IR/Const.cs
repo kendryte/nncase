@@ -93,6 +93,12 @@ public abstract record Const(IRType ValueType) : Expr
     public static implicit operator Const(bool value) => FromTensor(Tensor.FromScalar(value));
 
     /// <summary>
+    /// Create constant from a <see cref="Utf8Char"/>.
+    /// </summary>
+    /// <param name="value">Value.</param>
+    public static implicit operator Const(Utf8Char value) => FromTensor(Tensor.FromScalar(value));
+
+    /// <summary>
     /// Create constant from <see cref="string"/>.
     /// </summary>
     /// <param name="value">Value.</param>
