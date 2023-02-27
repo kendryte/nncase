@@ -181,10 +181,13 @@ public sealed class UnRollLoopSequential : ExprMutator
         public override Expr MutateLeaf(Call expr)
         {
             if (expr.Target is Op op && op.GetType().Namespace is string @namespace
-              && (@namespace.StartsWith("Nncase.IR.Math") || @namespace.StartsWith("Nncase.IR.Tensors"))
-              && expr.Parameters.Select(Visit).All(e => e is Const))
+              && (@namespace.StartsWith("Nncase.IR.Math") || @namespace.StartsWith("Nncase.IR.Tensors")))
             {
-                return StructEqualFolding(Const.FromValue(CompilerServices.Evaluate(expr, _cmap, _evaluator_cache)));
+                var newParameters = ImmutableArray.CreateRange(expr.Parameters.Select(Visit));
+                if (newParameters.All(e => e is Const))
+                {
+                    return StructEqualFolding(Const.FromValue(CompilerServices.Evaluate(expr with { Parameters = newParameters }, _cmap, _evaluator_cache)));
+                }
             }
 
             if (expr.Target is Function fn)
