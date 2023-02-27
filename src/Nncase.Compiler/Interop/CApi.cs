@@ -170,7 +170,7 @@ public static unsafe class CApi
 
         var samples = (dataset.Length == 0 ?
             Array.Empty<Dictionary<Var, IValue>>() :
-            dataset.Chunk(dataset.Length).Select(inputs => inputs.Zip(fnParams).ToDictionary(
+            dataset.Chunk(dataset.Length / (int)samplesCount).Select(inputs => inputs.Zip(fnParams).ToDictionary(
             item => item.Item2,
             item => item.Item1.ToValue()))).ToAsyncEnumerable();
         return GCHandle.ToIntPtr(GCHandle.Alloc(new CCalibrationDatasetProvider(samples, (int)samplesCount)));
