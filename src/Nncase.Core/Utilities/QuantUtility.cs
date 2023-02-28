@@ -415,15 +415,15 @@ public static class QuantUtility
         int start_decay = (int)(warmup * (float)iters);
         if (adamode == AdaMode.Conv2D || adamode == AdaMode.Conv2DTranspose)
         {
-            stride_h = ((Tensor<int>)((TensorConst)strides).Value).ToArray()[0];
-            stride_w = ((Tensor<int>)((TensorConst)strides).Value).ToArray()[1];
-            padding_h_s = ((Tensor<int>)((TensorConst)paddings).Value).ToArray()[0];
-            padding_w_s = ((Tensor<int>)((TensorConst)paddings).Value).ToArray()[1];
-            padding_h_e = ((Tensor<int>)((TensorConst)paddings).Value).ToArray()[2];
-            padding_w_e = ((Tensor<int>)((TensorConst)paddings).Value).ToArray()[3];
-            dilation_h = ((Tensor<int>)((TensorConst)dilations).Value).ToArray()[0];
-            dilation_w = ((Tensor<int>)((TensorConst)dilations).Value).ToArray()[1];
-            group = ((Tensor<int>)((TensorConst)groups).Value).ToArray()[0];
+            stride_h = ((Tensor)((TensorConst)strides).Value).ToArray<int>()[0];
+            stride_w = ((Tensor)((TensorConst)strides).Value).ToArray<int>()[1];
+            padding_h_s = ((Tensor)((TensorConst)paddings).Value).ToArray<int>()[0];
+            padding_h_e = ((Tensor)((TensorConst)paddings).Value).ToArray<int>()[1];
+            padding_w_s = ((Tensor)((TensorConst)paddings).Value).ToArray<int>()[2];
+            padding_w_e = ((Tensor)((TensorConst)paddings).Value).ToArray<int>()[3];
+            dilation_h = ((Tensor)((TensorConst)dilations).Value).ToArray<int>()[0];
+            dilation_w = ((Tensor)((TensorConst)dilations).Value).ToArray<int>()[1];
+            group = ((Tensor)((TensorConst)groups).Value).ToArray<int>()[0];
         }
 
         float qmax, qmin;
@@ -558,7 +558,7 @@ public static class QuantUtility
                 // torch不支持非对称padding conv，需要拆算子
                 if (padding_h_s != padding_h_e || padding_w_s != padding_w_e)
                 {
-                    var padding_tmp = torch.nn.functional.pad(cur_inp, new long[] { padding_h_s, padding_h_e, padding_w_s, padding_w_e });
+                    var padding_tmp = torch.nn.functional.pad(cur_inp, new long[] { padding_w_s, padding_w_e, padding_h_s, padding_h_e });
                     out_quant = torch.nn.functional.conv2d(
                         padding_tmp,
                         x_float_q,
