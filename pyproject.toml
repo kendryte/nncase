@@ -24,7 +24,7 @@ dependencies = ["numpy"]
 homepage = "https://github.com/kendryte/nncase"
 
 [build-system]
-requires = ["setuptools>=42", "wheel", "conan", "ninja"]
+requires = ["setuptools>=42", "wheel", "conan<=1.59", "ninja"]
 
 [tool.cibuildwheel]
 build = ["cp37*", "cp38*", "cp39*", "cp310*"]
@@ -44,7 +44,7 @@ archs = ["AMD64"]
 [tool.cibuildwheel.linux]
 archs = ["x86_64"]
 before-all = [
-  "pip install conan<=1.59",
+  "pip install conan==1.59",
   "conan profile new default --detect",
   "conan profile update settings.compiler.libcxx=libstdc++11 default",
   "wget https://sdk.lunarg.com/sdk/download/1.2.182.0/linux/vulkansdk-linux-x86_64-1.2.182.0.tar.gz -O vulkansdk.tar.gz",
