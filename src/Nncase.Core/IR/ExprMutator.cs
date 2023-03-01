@@ -85,6 +85,28 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
         };
     }
 
+    public override Expr VisitLeaf(If expr)
+    {
+        var nexpr = MutateLeaf(expr);
+        if (!object.ReferenceEquals(expr, nexpr))
+        {
+            IsMutated = true;
+            return nexpr;
+        }
+
+        if (!IsMutated)
+        {
+            return expr;
+        }
+
+        return expr with
+        {
+            Condition = Visit(expr.Condition),
+            Then = Visit(expr.Then),
+            Else = Visit(expr.Else),
+        };
+    }
+
     /// <inheritdoc/>
     public override Expr VisitLeaf(Const expr)
     {
@@ -549,6 +571,11 @@ public abstract class DeepExprMutator : ExprVisitor<Expr, IRType>
     /// mutate the call.
     /// </summary>
     public virtual Expr MutateLeaf(Call expr) => DefaultMutateLeaf(expr);
+
+    /// <summary>
+    /// mutate the if.
+    /// </summary>
+    public virtual Expr MutateLeaf(If expr) => DefaultMutateLeaf(expr);
 
     /// <summary>
     /// mutate the const.

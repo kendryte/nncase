@@ -16,7 +16,7 @@ namespace Nncase.IR.Tensors;
 /// Where expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Where() : Op
+public sealed record Where(bool IsTfWhere = false) : Op
 {
     /// <summary>
     /// Gets condition.

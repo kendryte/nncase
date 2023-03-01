@@ -144,7 +144,7 @@ internal class EGraphExtractor
                 case Var or TensorConst or TupleConst or Op or Fusion or None:
                     expr = minCostEnode.Expr;
                     break;
-                case Function or Call or IR.Tuple or Marker:
+                case Function or Call or IR.Tuple or Marker or IR.If:
                     var childrenExprs = new List<Expr>();
                     foreach (var child in minCostEnode.Children)
                     {
@@ -184,6 +184,7 @@ internal class EGraphExtractor
                         Call call => Visit(minCostEnode, call, new(childrenExprs)),
                         IR.Tuple tuple => Visit(minCostEnode, tuple, new(childrenExprs)),
                         Marker marker => Visit(minCostEnode, marker, new(childrenExprs)),
+                        IR.If @if => Visit(minCostEnode, @if, new(childrenExprs)),
                         _ => throw new ArgumentException("Unsupported expression type."),
                     };
 
@@ -226,6 +227,11 @@ internal class EGraphExtractor
     private IR.Tuple Visit(ENode enode, IR.Tuple tuple, IRArray<Expr> children)
     {
         return tuple with { Fields = children };
+    }
+
+    private IR.If Visit(ENode enode, IR.If @if, IRArray<Expr> children)
+    {
+        return @if with { Condition = children[0], Then = children[1], Else = children[2] };
     }
 
     private Call Visit(ENode enode, Call call, IRArray<Expr> children)

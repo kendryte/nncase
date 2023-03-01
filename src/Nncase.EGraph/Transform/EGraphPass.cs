@@ -35,6 +35,14 @@ public class EGraphPass : RulesPass
     /// <inheritdoc/>
     protected override async Task<BaseFunction> RunCoreAsync(BaseFunction function, RunPassContext context)
     {
+        // note 这里需要避免egraph处理了多function的导致update失败.
+        var c = new FunctionCollector();
+        c.Visit(function);
+        if (c.Functions.Count > 1)
+        {
+            return function;
+        }
+
         var graph = new EGraph();
         var root = graph.Add(function);
         _rewriteProvider.ERewrite(graph, Rules, context);
@@ -89,5 +97,20 @@ public class EGraphPass : RulesPass
         }
 
         return Task.CompletedTask;
+    }
+
+    public class FunctionCollector : ExprVisitor<int, IRType>
+    {
+        private readonly HashSet<Function> _functions = new(ReferenceEqualityComparer.Instance);
+
+        public HashSet<Function> Functions => _functions;
+
+        public override int VisitLeaf(Function expr)
+        {
+            _functions.Add(expr);
+            return 0;
+        }
+
+        public override int DefaultVisitLeaf(Expr expr) => 1;
     }
 }

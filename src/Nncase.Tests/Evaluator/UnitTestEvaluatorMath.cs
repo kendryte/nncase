@@ -684,7 +684,7 @@ public class UnitTestEvaluatorMath : TestClassBase
                     _ => throw new ArgumentOutOfRangeException(nameof(op)),
                 };
 
-                var expr = IR.F.Tensors.ReduceArg(op, expr_a, axis, keepdims, select_last_idx);
+                var expr = IR.F.Tensors.ReduceArg(op, DataTypes.Int64, expr_a, axis, keepdims, select_last_idx);
                 CompilerServices.InferenceType(expr);
                 Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
             }

@@ -622,7 +622,13 @@ result<value_t> nncase::kernels::stackvm::require(
     [[maybe_unused]] std::string message, [[maybe_unused]] value_t predicate,
     [[maybe_unused]] value_t value, [[maybe_unused]] value_t output,
     [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
+    try_to_scalar(cond, predicate, bool);
+    if (!cond) {
+        printf("%s\n", message.data());
+        return err(std::errc::invalid_argument);
+    }
+    output = value;
+    KERNEL_FINISH;
 }
 
 result<value_t>
@@ -940,14 +946,15 @@ nncase::kernels::stackvm::unsqueeze(value_t input, value_t dim, value_t output,
 }
 
 result<value_t> nncase::kernels::stackvm::where(
-    [[maybe_unused]] value_t cond, [[maybe_unused]] value_t x,
-    [[maybe_unused]] value_t y, [[maybe_unused]] value_t output,
-    [[maybe_unused]] kernel_context &context) {
+    [[maybe_unused]] bool is_tf_where, [[maybe_unused]] value_t cond,
+    [[maybe_unused]] value_t x, [[maybe_unused]] value_t y,
+    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
     try_input_with_ty(cond_mem, cond, bool);
     try_input(x_mem, x);
     try_input(y_mem, y);
     auto dt = x_tensor->dtype();
-    if (x_tensor->shape()[0] == 0 && y_tensor->shape()[0] == 0 &&
+    if ((x_tensor->shape().size() == 0 || x_tensor->shape()[0] == 0) &&
+        (y_tensor->shape().size() == 0 || y_tensor->shape()[0]) == 0 &&
         cmp_type<float>(x_tensor->dtype())) {
         // todo: not finish other rank
         assert(cond_tensor->shape().size() == 1);
