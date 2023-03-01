@@ -243,7 +243,7 @@ bool squeeze_dims_transform::on_try_match(node &node, transform_context &context
         if (need_squeeze)
         {
             context.matched_nodes.emplace_back(&node);
-            bool can_squeeze;
+            bool can_squeeze = true;
             NNCASE_UNUSED shape_t a_shape, b_shape;
             NNCASE_UNUSED axis_t new_axis;
             if (node.runtime_opcode() == op_binary)
