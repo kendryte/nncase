@@ -8,9 +8,9 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.Quantization;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
@@ -140,8 +140,9 @@ public partial class TransformTestBase : TestClassBase
             return ex;
         });
 
-    protected virtual Task<T> RunPassAsync<T>(Pass<T> pass, T input, bool rewriteOnce = true)
-        where T : class
+    protected virtual Task<TOutput> RunPassAsync<TInput, TOutput>(Pass<TInput, TOutput> pass, TInput input, bool rewriteOnce = true)
+        where TInput : class
+        where TOutput : class
     {
         var context = new RunPassContext { RewriteOnce = rewriteOnce };
         return pass.RunAsync(input, context);

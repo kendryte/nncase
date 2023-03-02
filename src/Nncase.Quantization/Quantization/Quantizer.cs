@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.Passes;
 using Nncase.PatternMatch;
-using Nncase.Transform;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 
@@ -18,12 +18,12 @@ namespace Nncase.Quantization;
 
 internal partial class Quantizer
 {
-    private readonly EGraph _graph;
+    private readonly IEGraph _graph;
     private readonly QuantizeOptions _quantizeOptions;
     private readonly List<ENode> _rangeOfs = new List<ENode>();
     private readonly List<ENode> _childrenOfRangeOfs = new List<ENode>();
 
-    public Quantizer(EGraph graph, QuantizeOptions quantizeOptions)
+    public Quantizer(IEGraph graph, QuantizeOptions quantizeOptions)
     {
         _graph = graph;
         _quantizeOptions = quantizeOptions;

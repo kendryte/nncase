@@ -21,7 +21,7 @@ using static Nncase.PatternMatch.Utility;
 using static Nncase.Quantization.Utility;
 using Math = Nncase.IR.F.Math;
 
-namespace Nncase.Transform.Rules.K210;
+namespace Nncase.Passes.Rules.K210;
 
 /// <summary>
 /// Lower <see cref="FakeDequantize"/> to <see cref="Dequantize"/>.

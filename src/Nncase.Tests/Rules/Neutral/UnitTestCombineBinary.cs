@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Toolkit.HighPerformance;
 using Nncase.IR;
-using Nncase.Transform;
+using Nncase.Passes;
 using Xunit;
 
 namespace Nncase.Tests.Rules.NeutralTest;
@@ -78,10 +78,10 @@ public class UnitTestCombineBinary
 
         CompilerServices.InferenceType(rootPre);
         var rootPost = CompilerServices.Rewrite(
-            rootPre,
+            rootPre.Clone(),
             new IRewriteRule[]
             {
-                new Transform.Rules.Neutral.CombineClampAdd(),
+                new Passes.Rules.Neutral.CombineClampAdd(),
             },
             new());
 
@@ -103,10 +103,10 @@ public class UnitTestCombineBinary
 
         CompilerServices.InferenceType(rootPre);
         var rootPost = CompilerServices.Rewrite(
-            rootPre,
+            rootPre.Clone(),
             new IRewriteRule[]
             {
-                new Transform.Rules.Neutral.CombineClampMul(),
+                new Passes.Rules.Neutral.CombineClampMul(),
             },
             new());
 
@@ -127,10 +127,10 @@ public class UnitTestCombineBinary
 
         CompilerServices.InferenceType(rootPre);
         var rootPost = CompilerServices.Rewrite(
-            rootPre,
+            rootPre.Clone(),
             new IRewriteRule[]
             {
-                new Transform.Rules.Neutral.CombineClampAdd(),
+                new Passes.Rules.Neutral.CombineClampAdd(),
             },
             new());
 
@@ -150,10 +150,10 @@ public class UnitTestCombineBinary
 
         CompilerServices.InferenceType(rootPre);
         var rootPost = CompilerServices.Rewrite(
-            rootPre,
+            rootPre.Clone(),
             new IRewriteRule[]
             {
-                new Transform.Rules.Neutral.CombineClampMul(),
+                new Passes.Rules.Neutral.CombineClampMul(),
             },
             new());
 

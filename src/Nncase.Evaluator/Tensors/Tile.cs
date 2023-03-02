@@ -35,7 +35,7 @@ public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>, ICostEvalu
         return Visit(context, target, input, repeat);
     }
 
-    public Cost? Visit(ICostEvaluateContext context, Tile target)
+    public Cost Visit(ICostEvaluateContext context, Tile target)
     {
         var input = context.GetArgumentType<TensorType>(target, Tile.Input);
         var ret = context.GetReturnType<TensorType>();

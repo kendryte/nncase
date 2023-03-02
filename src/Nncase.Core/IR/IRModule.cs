@@ -4,9 +4,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using TorchSharp.Modules;
 
 namespace Nncase.IR;
 
@@ -67,47 +70,8 @@ public sealed class IRModule
     /// <param name="function">the entry function defination.</param>
     public void Replace(int index, BaseFunction function)
     {
-        var old = _functions[index];
-
-        var replacer = new FunctionReplacer(old, function);
-        for (int i = 0; i < _functions.Count; i++)
-        {
-            replacer.Visit(_functions[i]);
-        }
-
-        for (int i = 0; i < _functions.Count; i++)
-        {
-            var originFunc = _functions[i];
-            if (replacer.ExpressionMemo.TryGetValue(originFunc, out var replace))
-            {
-                _functions[i] = (BaseFunction)replace;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Replace the function call dependencer.
-    /// </summary>
-    private sealed class FunctionReplacer : DeepExprMutator
-    {
-        private readonly BaseFunction _original;
-        private readonly BaseFunction _replace;
-
-        public FunctionReplacer(BaseFunction original, BaseFunction replace)
-        {
-            _original = original;
-            _replace = replace;
-        }
-
-        public override Expr DefaultMutateLeaf(Expr expr)
-        {
-            if (expr is BaseFunction baseFunction
-                && object.ReferenceEquals(baseFunction, _original))
-            {
-                return _replace;
-            }
-
-            return expr;
-        }
+        ref var old = ref CollectionsMarshal.AsSpan(_functions)[index];
+        old.ReplaceAllUsesWith(function);
+        old = function;
     }
 }

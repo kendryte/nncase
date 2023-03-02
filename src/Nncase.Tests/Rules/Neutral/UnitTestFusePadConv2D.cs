@@ -11,9 +11,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.IR.F;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
 using Xunit;
 using Math = Nncase.IR.F.Math;
 using Random = Nncase.IR.F.Random;
@@ -115,7 +115,7 @@ public class UnitTestFusePadConv2D : TestClassBase
         aNormal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, shape).Evaluate());
         var rootPre = NN.Conv2D(NN.Pad(a, pads1, PadMode.Constant, 0f), w, b, new[] { 1, 1 }, pads2, new[] { 1, 1 }, PadMode.Constant, 1);
         var rootMid = CompilerServices.Rewrite(
-            rootPre,
+            rootPre.Clone(),
             new IRewriteRule[]
             {
                 new FoldConstCall(),
@@ -125,7 +125,7 @@ public class UnitTestFusePadConv2D : TestClassBase
             },
             new());
         var rootPost = CompilerServices.Rewrite(
-            rootMid,
+            rootMid.Clone(),
             new IRewriteRule[]
             {
                 // new FoldConstCall(),
@@ -152,7 +152,7 @@ public class UnitTestFusePadConv2D : TestClassBase
         var rootPre = NN.Conv2D(NN.Pad(a, pads1, PadMode.Constant, 0f), w, b, new[] { 1, 1 }, pads2, new[] { 1, 1 }, PadMode.Constant, 1);
 
         var rootMid = CompilerServices.Rewrite(
-            rootPre,
+            rootPre.Clone(),
             new IRewriteRule[]
             {
                 new FoldConstCall(),
@@ -160,7 +160,7 @@ public class UnitTestFusePadConv2D : TestClassBase
             new());
 
         var rootPost = CompilerServices.Rewrite(
-            rootMid,
+            rootMid.Clone(),
             new IRewriteRule[]
             {
                 new FusePadConv2d(),

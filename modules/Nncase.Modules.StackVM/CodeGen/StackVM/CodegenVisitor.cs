@@ -4,8 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 
 namespace Nncase.CodeGen.StackVM;
@@ -102,7 +104,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private StackVMEmitter Emitter => CurrentTextSnippet.Emitter;
 
-    public override TextSnippet VisitLeaf(Const expr)
+    protected override TextSnippet VisitLeafConst(Const expr)
     {
         if (expr is TensorConst tc)
         {
@@ -110,24 +112,24 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         }
         else
         {
-            return Visit(new IR.Tuple(((TupleConst)expr).Fields));
+            return Visit(new IR.Tuple(((TupleConst)expr).Value.Select(x => Const.FromValue(x)).ToArray()));
         }
     }
 
-    public override TextSnippet VisitLeaf(Var expr)
+    protected override TextSnippet VisitLeafVar(Var expr)
     {
         var snippet = BeginTextSnippet(expr);
         Emitter.Ldarg((ushort)((Function)_function).Parameters.IndexOf(expr));
         return snippet;
     }
 
-    public override TextSnippet VisitLeaf(IR.Tuple expr)
+    protected override TextSnippet VisitLeafTuple(IR.Tuple expr)
     {
         var snippet = BeginTextSnippet(expr);
-        foreach (var field in expr.Fields.Reverse())
+        foreach (var field in expr.Fields.ToArray().Reverse())
         {
             var inputSnippet = Visit(field);
-            inputSnippet.MaxUserParameters = Math.Max(inputSnippet.MaxUserParameters, expr.Fields.Count);
+            inputSnippet.MaxUserParameters = Math.Max(inputSnippet.MaxUserParameters, expr.Fields.Length);
             snippet.AddInput(inputSnippet);
         }
 
@@ -136,7 +138,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return snippet;
     }
 
-    public override TextSnippet Visit(Function expr)
+    protected override TextSnippet VisitFunction(Function expr)
     {
         if (ReferenceEquals(expr, _function))
         {
@@ -148,7 +150,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         }
     }
 
-    public override TextSnippet Visit(PrimFunctionWrapper expr)
+    protected override TextSnippet VisitPrimFunctionWrapper(PrimFunctionWrapper expr)
     {
         if (ReferenceEquals(expr, _function))
         {
@@ -168,25 +170,25 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         }
     }
 
-    public override TextSnippet VisitLeaf(Op expr)
+    protected override TextSnippet VisitLeafOp(Op expr)
     {
         return null!;
     }
 
-    public override TextSnippet VisitLeaf(Call expr)
+    protected override TextSnippet VisitLeafCall(Call expr)
     {
         var snippet = BeginTextSnippet(expr);
-        foreach (var param in expr.Parameters.Reverse())
+        foreach (var param in expr.Arguments.ToArray().Reverse())
         {
             var paramSnippet = Visit(param);
-            paramSnippet.MaxUserParameters = Math.Max(paramSnippet.MaxUserParameters, expr.Parameters.Count);
+            paramSnippet.MaxUserParameters = Math.Max(paramSnippet.MaxUserParameters, expr.Arguments.Length);
             snippet.AddInput(paramSnippet);
         }
 
         if (expr.Target is CustomOp custom_op)
         {
             _context.AddCustomCallModule(custom_op.ModuleType);
-            Emitter.CusCall(custom_op.RegisteredName, custom_op.SerializeFields(), checked((ushort)expr.Parameters.Count));
+            Emitter.CusCall(custom_op.RegisteredName, custom_op.SerializeFields(), checked((ushort)expr.Arguments.Length));
         }
         else if (expr.Target is Op op)
         {
@@ -200,7 +202,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         else if (expr.Target is Function func)
         {
             LdFunctionId(func);
-            Emitter.ExtCall(checked((ushort)func.Parameters.Count), false);
+            Emitter.ExtCall(checked((ushort)func.Parameters.Length), false);
         }
         else
         {

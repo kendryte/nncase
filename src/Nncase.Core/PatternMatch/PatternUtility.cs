@@ -38,7 +38,7 @@ public static partial class Utility
       => IsVArgsRepeat(
           (prefix is not null && prefix != string.Empty) ? prefix + "Params" : null,
           list => patterns.Concat(
-            Enumerable.Range(0, list.Count - patterns.Length).
+            Enumerable.Range(0, list.Length - patterns.Length).
             Select(_ => (Pattern)IsWildcard(null)))
           .ToArray());
 
@@ -53,7 +53,7 @@ public static partial class Utility
           (prefix is not null && prefix != string.Empty) ? prefix + "Params" : null,
           list =>
           {
-              var patterns = Enumerable.Range(0, list.Count).Select(_ => (Pattern)IsWildcard()).ToArray();
+              var patterns = Enumerable.Range(0, list.Length).Select(_ => (Pattern)IsWildcard()).ToArray();
               foreach (var (info, pattern) in inputPatterns)
               {
                   patterns[info.Index] = pattern;

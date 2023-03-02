@@ -16,7 +16,7 @@ namespace Nncase.IR.Math;
 /// ReduceArg expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record ReduceArg(ReduceArgOp ReduceArgOp) : Op
+public sealed partial class ReduceArg : Op
 {
     /// <summary>
     /// Gets input.
@@ -39,4 +39,6 @@ public sealed record ReduceArg(ReduceArgOp ReduceArgOp) : Op
     /// </summary>
     /// <remarks>Only used in onnx.</remarks>
     public static readonly ParameterInfo SelectLastIndex = new(typeof(ReduceArg), 3, "selectLastIndex", IsBoolScalar());
+
+    public ReduceArgOp ReduceArgOp { get; }
 }

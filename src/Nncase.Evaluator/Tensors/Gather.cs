@@ -34,7 +34,7 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Gather target)
+    public Cost Visit(ICostEvaluateContext context, Gather target)
     {
         var ret_type = context.GetReturnType<TensorType>();
         return new()

@@ -9,9 +9,9 @@ using Nncase.Evaluator;
 using Nncase.Importer;
 using Nncase.IR;
 using Nncase.IR.F;
+using Nncase.Passes;
 using Nncase.PatternMatch;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
 using OrtKISharp;
 using Xunit;
 using static Nncase.IR.F.Math;
@@ -268,7 +268,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
     }
 
     [Fact]
-    public async Task TestWithAnalysisInfoRewriteOnce()
+    public void TestWithAnalysisInfoRewriteOnce()
     {
         var x = new Var(TensorType.Scalar(DataTypes.Int32));
         var y = new Var(TensorType.Scalar(DataTypes.Int32));
@@ -280,16 +280,16 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var pass = new DataflowWithUsdByPass() { Name = "DataflowWithUsdByPass" };
         pass.Add<AnalysisReassociateAdd>();
         pass.Add<DivToConst>();
-        var post = (Function)await pass.RunAsync(pre, new());
+        var post = (Function)pass.RunAsync(pre, new()).Result;
 
-        Assert.True(post.Body is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub }, Parameters: var param0 } && // m - (x + (z - (x + (1))))
-                    param0[1] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Add }, Parameters: var param1 } && // x + (z - (x + (1)))
-                    param1[1] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub }, Parameters: var param2 } && // z - (x + (1))
-                    param2[1] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Add }, Parameters: var param3 } && // x + (1)
+        Assert.True(post.Body is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub }, Arguments: var param0 } && // m - (x + (z - (x + (1))))
+                    param0[1] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Add }, Arguments: var param1 } && // x + (z - (x + (1)))
+                    param1[1] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub }, Arguments: var param2 } && // z - (x + (1))
+                    param2[1] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Add }, Arguments: var param3 } && // x + (1)
                     param3[1] is TensorConst);
     }
 
-    private sealed class DivToConst : Transform.IRewriteRule
+    private sealed class DivToConst : IRewriteRule
     {
         private static readonly Pattern SInputPattern = IsWildcard("x");
 
@@ -303,9 +303,9 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         }
     }
 
-    private sealed class AnalysisReassociateAdd : Transform.IRewriteRule, Transform.IRewriteRuleWithUsdBy
+    private sealed class AnalysisReassociateAdd : IRewriteRule, IRewriteRuleWithUsdBy
     {
-        private Transform.IUsedByResult? _usedByResult;
+        private IUsedByResult? _usedByResult;
 
         /// <inheritdoc/>
         public IPattern Pattern { get; } = IsWildcard("x") + IsWildcard("y");

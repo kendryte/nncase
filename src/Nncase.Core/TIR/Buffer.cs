@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Nncase.IR;
+using Nncase.Utilities;
 
 namespace Nncase.TIR;
 
@@ -266,8 +267,22 @@ public record SelectedRange(int Start, int End, Padding Padding)
 /// <summary>
 /// buffer.
 /// </summary>
-public abstract record Buffer(string Name, DataType ElemType, Schedule.MemoryLocation MemLocation) : Expr
+public abstract class Buffer : Expr
 {
+    public Buffer(string name, DataType elemType, Schedule.MemoryLocation memoryLocation, Expr[] operands)
+        : base(operands.AsSpan())
+    {
+        Name = name;
+        ElemType = elemType;
+        MemLocation = memoryLocation;
+    }
+
+    public string Name { get; }
+
+    public DataType ElemType { get; }
+
+    public Schedule.MemoryLocation MemLocation { get; }
+
     /// <summary>
     /// Gets if this buffer from the constant !.
     /// </summary>
@@ -284,18 +299,18 @@ public abstract record Buffer(string Name, DataType ElemType, Schedule.MemoryLoc
     /// This Strides is by elements not by bytes!
     /// </remarks>
     /// </summary>
-    public abstract IRArray<Expr> Strides { get; }
+    public abstract ReadOnlySpan<Expr> Strides { get; }
 
     /// <summary>
     /// Gets the shape.
     /// </summary>
-    public abstract IRArray<Expr> Dimensions { get; }
+    public abstract ReadOnlySpan<Expr> Dimensions { get; }
 }
 
 /// <summary>
 /// the logical buffer.
 /// </summary>
-public sealed record LogicalBuffer(string Name, DataType ElemType, Schedule.MemoryLocation MemLocation) : Buffer(Name, ElemType, MemLocation)
+public sealed class LogicalBuffer : Buffer
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="LogicalBuffer"/> class.
@@ -306,11 +321,10 @@ public sealed record LogicalBuffer(string Name, DataType ElemType, Schedule.Memo
     /// <param name="elemType">prim type.</param>
     /// <param name="dimensions">the shape.</param>
     /// <param name="strides">the strides.</param>
-    public LogicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, IRArray<Expr> dimensions, IRArray<Expr> strides)
-        : this(name, elemType, location)
+    public LogicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, ReadOnlySpan<Expr> dimensions, ReadOnlySpan<Expr> strides)
+        : base(name, elemType, location, ArrayUtility.Concat(dimensions, strides))
     {
-        Dimensions = dimensions;
-        Strides = strides;
+        Rank = dimensions.Length;
     }
 
     /// <summary>
@@ -318,7 +332,7 @@ public sealed record LogicalBuffer(string Name, DataType ElemType, Schedule.Memo
     /// <see cref="LogicalBuffer"/>.
     /// </summary>
     public LogicalBuffer(string name, Schedule.MemoryLocation location, TensorConst tensor)
-        : this(name, tensor.Value.ElementType, location, ImmutableArray.Create<Expr>(tensor.Value.Dimensions.ToArray()), ImmutableArray.Create<Expr>(tensor.Value.Strides.ToArray()))
+        : this(name, tensor.Value.ElementType, location, ArrayUtility.ToExprArray(tensor.Value.Dimensions), ArrayUtility.ToExprArray(tensor.Value.Strides))
     {
         Const = tensor;
     }
@@ -327,8 +341,8 @@ public sealed record LogicalBuffer(string Name, DataType ElemType, Schedule.Memo
     /// Initializes a new instance of the <see cref="LogicalBuffer"/> class.
     /// <seealso cref="LogicalBuffer"/>
     /// </summary>
-    public LogicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, IRArray<Expr> dimensions)
-        : this(name, elemType, location, dimensions, TensorUtilities.GetStrides(dimensions).ToImmutableArray())
+    public LogicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, ReadOnlySpan<Expr> dimensions)
+        : this(name, elemType, location, dimensions, TensorUtilities.GetStrides(dimensions))
     {
     }
 
@@ -338,17 +352,17 @@ public sealed record LogicalBuffer(string Name, DataType ElemType, Schedule.Memo
     public Expr Length => TensorUtilities.GetProduct(Dimensions);
 
     /// <summary>
-    /// Gets the strides.
-    /// </summary>
-    public override IRArray<Expr> Strides { get; }
-
-    /// <summary>
     /// Gets the shape.
     /// </summary>
-    public override IRArray<Expr> Dimensions { get; }
+    public override ReadOnlySpan<Expr> Dimensions => Operands[0..Rank];
+
+    /// <summary>
+    /// Gets the strides.
+    /// </summary>
+    public override ReadOnlySpan<Expr> Strides => Operands[Rank..];
 
     /// <inheritdoc/>
-    public override int Rank => Dimensions.Count;
+    public override int Rank { get; }
 
     /// <inheritdoc/>
     public override string ToString()
@@ -357,37 +371,40 @@ public sealed record LogicalBuffer(string Name, DataType ElemType, Schedule.Memo
     }
 
     /// <inheritdoc/>
-    protected override bool PrintMembers(StringBuilder builder)
-    {
-        builder.Append($"LogicalBuffer({Name}, {ElemType}, {nameof(MemLocation)})");
-        return true;
-    }
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
+        => functor.VisitLogicalBuffer(this, context);
+
+    public LogicalBuffer With(string? name = null, DataType? elemType = null, Schedule.MemoryLocation? location = null, Expr[]? dimensions = null, Expr[]? strides = null)
+        => new LogicalBuffer(name ?? Name, elemType ?? ElemType, location ?? MemLocation, dimensions ?? Dimensions, strides ?? Strides) { Const = Const };
 }
 
 /// <summary>
-/// the physicall buffer.
+/// the physical buffer.
 /// </summary>
-public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.MemoryLocation MemLocation) : Buffer(Name, ElemType, MemLocation)
+public sealed class PhysicalBuffer : Buffer
 {
+    private readonly int[] _fixedDimensions;
+    private readonly int[] _fixedStrides;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="PhysicalBuffer"/> class.
     /// ctor for physical buffer.
     /// </summary>
-    public PhysicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, IEnumerable<int> dimensions, IEnumerable<int> stirdes, int start, int size)
-        : this(name, elemType, location)
+    public PhysicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, ReadOnlySpan<int> dimensions, ReadOnlySpan<int> strides, int start, int size)
+        : base(name, elemType, location, Array.Empty<Expr>())
     {
         Start = start;
         Size = size;
-        FixedDimensions = dimensions.ToArray();
-        FixedStrides = stirdes.ToArray();
+        _fixedDimensions = dimensions.ToArray();
+        _fixedStrides = strides.ToArray();
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PhysicalBuffer"/> class.
     /// <see cref="PhysicalBuffer"/>.
     /// </summary>
-    public PhysicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, IEnumerable<int> dimensions, int start, int size)
-        : this(name, elemType, location, dimensions, TensorUtilities.GetStrides(dimensions.ToArray()), start, size)
+    public PhysicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, ReadOnlySpan<int> dimensions, int start, int size)
+        : this(name, elemType, location, dimensions, TensorUtilities.GetStrides(dimensions), start, size)
     {
     }
 
@@ -396,7 +413,7 @@ public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.Mem
     /// <see cref="PhysicalBuffer"/>.
     /// </summary>
     public PhysicalBuffer(string name, Schedule.MemoryLocation location, TensorConst tensor, int start, int size)
-        : this(name, tensor.Value.ElementType, location, tensor.Value.Dimensions.ToArray(), tensor.Value.Strides.ToArray(), start, size)
+        : this(name, tensor.Value.ElementType, location, tensor.Value.Dimensions, tensor.Value.Strides, start, size)
     {
         Const = tensor;
     }
@@ -404,12 +421,12 @@ public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.Mem
     /// <summary>
     /// Gets fixed dimensions.
     /// </summary>
-    public int[] FixedDimensions { get; init; } = Array.Empty<int>();
+    public ReadOnlySpan<int> FixedDimensions => _fixedDimensions;
 
     /// <summary>
     /// Gets fixed strides.
     /// </summary>
-    public int[] FixedStrides { get; init; } = Array.Empty<int>();
+    public ReadOnlySpan<int> FixedStrides => _fixedStrides;
 
     /// <summary>
     /// Gets or sets start.
@@ -424,16 +441,12 @@ public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.Mem
     /// <summary>
     /// Gets dimensions.
     /// </summary>
-    public override IRArray<Expr> Dimensions => FixedDimensions.Length == 0 ?
-      throw new ArgumentOutOfRangeException() :
-      new(FixedDimensions.Select(i => (Expr)i));
+    public override ReadOnlySpan<Expr> Dimensions => ArrayUtility.ToExprArray(FixedDimensions);
 
     /// <summary>
     /// Gets strides.
     /// </summary>
-    public override IRArray<Expr> Strides => FixedStrides.Length == 0 ?
-      throw new ArgumentOutOfRangeException() :
-      new(FixedStrides.Select(i => (Expr)i));
+    public override ReadOnlySpan<Expr> Strides => ArrayUtility.ToExprArray(FixedStrides);
 
     /// <summary>
     /// Gets shape.
@@ -441,7 +454,7 @@ public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.Mem
     public Shape Shape => new Shape(FixedDimensions);
 
     /// <inheritdoc/>
-    public override int Rank => FixedDimensions.Rank;
+    public override int Rank => FixedDimensions.Length;
 
     /// <inheritdoc/>
     public override string ToString()
@@ -450,9 +463,9 @@ public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.Mem
     }
 
     /// <inheritdoc/>
-    protected override bool PrintMembers(StringBuilder builder)
-    {
-        builder.Append($"PhysicalBuffer({Name}, {ElemType}, {nameof(MemLocation)})");
-        return true;
-    }
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
+        => functor.VisitPhysicalBuffer(this, context);
+
+    public PhysicalBuffer With(string? name = null, DataType? elemType = null, Schedule.MemoryLocation? location = null, int[]? dimensions = null, int[]? strides = null, int? start = null, int? size = null)
+        => new PhysicalBuffer(name ?? Name, elemType ?? ElemType, location ?? MemLocation, dimensions ?? FixedDimensions, strides ?? FixedStrides, start ?? Start, size ?? Size) { Const = Const };
 }

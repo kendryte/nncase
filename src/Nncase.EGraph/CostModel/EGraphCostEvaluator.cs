@@ -8,7 +8,7 @@ using System.Linq;
 using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
-using Nncase.Transform;
+using Nncase.Passes;
 
 namespace Nncase.CostModel;
 

@@ -9,13 +9,12 @@ using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.PatternMatch;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
 using Xunit;
 using static Nncase.IR.F.NN;
-using ITuple = Nncase.IR.ITuple;
 using Math = Nncase.IR.F.Math;
 using Random = Nncase.IR.F.Random;
 using Tensors = Nncase.IR.F.Tensors;
@@ -180,7 +179,7 @@ public class UnitTestCombineTranspose : TestClassBase
             tpList.Add(Tensors.Transpose(b, perm));
         }
 
-        var input = Enumerable.Range(0, concatNum).Select(i => tpList[i]);
+        var input = Enumerable.Range(0, concatNum).Select(i => tpList[i]).ToArray();
         var rootPre = Tensors.Concat(new IR.Tuple(input), axis);
         CompilerServices.InferenceType(rootPre);
         var rootPost = CompilerServices.Rewrite(
@@ -222,7 +221,7 @@ public class UnitTestCombineTranspose : TestClassBase
             inputList.Add(Math.Unary(UnaryOp.Neg, b));
         }
 
-        var input = Enumerable.Range(0, concatNum).Select(i => inputList[i]);
+        var input = Enumerable.Range(0, concatNum).Select(i => inputList[i]).ToArray();
         var rootPre = Tensors.Concat(new IR.Tuple(input), axis);
         CompilerServices.InferenceType(rootPre);
         var rootPost = CompilerServices.Rewrite(

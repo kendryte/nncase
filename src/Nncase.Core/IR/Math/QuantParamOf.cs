@@ -10,7 +10,7 @@ namespace Nncase.IR.Math;
 /// QuantParamOf expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record QuantParamOf(QuantMode QuantMode) : Op
+public sealed partial class QuantParamOf : Op
 {
     /// <summary>
     /// Gets range.
@@ -21,4 +21,6 @@ public sealed record QuantParamOf(QuantMode QuantMode) : Op
     /// Gets bits.
     /// </summary>
     public static readonly ParameterInfo Bits = new(typeof(QuantParamOf), 1, "bits", IsIntegralScalar());
+
+    public QuantMode QuantMode { get; }
 }

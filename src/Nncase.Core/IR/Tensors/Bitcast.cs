@@ -17,7 +17,7 @@ namespace Nncase.IR.Tensors;
 /// Broadcast expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Bitcast(PrimType Type, PrimType NewType) : Op
+public sealed partial class Bitcast : Op
 {
     /// <summary>
     /// Gets input.
@@ -28,4 +28,8 @@ public sealed record Bitcast(PrimType Type, PrimType NewType) : Op
     /// Gets input.
     /// </summary>
     public static readonly ParameterInfo NewShape = new(typeof(Bitcast), 1, "new_shape", HasRank(1) & HasDataType(DataTypes.Int64));
+
+    public PrimType Type { get; }
+
+    public PrimType NewType { get; }
 }

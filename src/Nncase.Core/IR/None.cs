@@ -8,13 +8,14 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Nncase.IR;
 
 /// <summary>
 /// The None Expression is a placeholder for optional paramseter.
 /// </summary>
-public record None : Expr
+public sealed class None : Expr, IEquatable<None?>
 {
     /// <summary>
     /// The default None expression instance.
@@ -22,6 +23,24 @@ public record None : Expr
     public static readonly None Default = new();
 
     private None()
+        : base(ReadOnlySpan<Expr>.Empty)
     {
     }
+
+    public static bool operator ==(None? left, None? right) => true;
+
+    public static bool operator !=(None? left, None? right) => false;
+
+    /// <inheritdoc/>
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
+        => functor.VisitNone(this, context);
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as None);
+
+    /// <inheritdoc/>
+    public bool Equals(None? other) => other is not null;
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => 0;
 }

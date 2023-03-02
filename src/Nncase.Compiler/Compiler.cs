@@ -10,10 +10,10 @@ using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.Hosting;
 using Nncase.IR;
+using Nncase.Passes;
+using Nncase.Passes.Passes;
+using Nncase.Passes.Rules.Lower;
 using Nncase.Quantization;
-using Nncase.Transform;
-using Nncase.Transform.Passes;
-using Nncase.Transform.Rules.Lower;
 using Nncase.Utilities;
 
 namespace Nncase.Compiler;
@@ -58,33 +58,33 @@ internal class Compiler : ICompiler
         var quantMode = _compileSession.CompileOptions.QuantizeOptions.ModelQuantMode;
         if (quantMode == ModelQuantMode.UsePTQ)
         {
-            passManager.AddWithName<EGraphPass>("NeutralOptimizeTranspose").Configure(p =>
+            passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
             {
-                p.Add<Transform.Rules.Neutral.FoldConstCall>();
-                p.Add<Transform.Rules.Neutral.FoldNopTranspose>();
-                p.Add<Transform.Rules.Neutral.FoldTwoTransposes>();
-                p.Add<Transform.Rules.Neutral.CombineTransposeUnary>();
-                p.Add<Transform.Rules.Neutral.CombineTransposePad>();
-                p.Add<Transform.Rules.Neutral.CombinePadTranspose>();
-                p.Add<Transform.Rules.Neutral.CombineBinaryTranspose>();
-                p.Add<Transform.Rules.Neutral.CombineConstBinaryTranspose>();
-                p.Add<Transform.Rules.Neutral.CombineTransposeConstBinary>();
-                p.Add<Transform.Rules.Neutral.CombineTransposeReduce>();
-                p.Add<Transform.Rules.Neutral.CombineTransposeActivations>();
-                p.Add<Transform.Rules.Neutral.CombineActivationsTranspose>();
-                p.Add<Transform.Rules.Neutral.FoldNopPad>();
-                p.Add<Transform.Rules.Neutral.FoldConv2DPads>();
-                p.Add<Transform.Rules.Neutral.FoldReduceWindow2DPads>();
+                p.Add<Passes.Rules.Neutral.FoldConstCall>();
+                p.Add<Passes.Rules.Neutral.FoldNopTranspose>();
+                p.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
+                p.Add<Passes.Rules.Neutral.CombineTransposeUnary>();
+                p.Add<Passes.Rules.Neutral.CombineTransposePad>();
+                p.Add<Passes.Rules.Neutral.CombinePadTranspose>();
+                p.Add<Passes.Rules.Neutral.CombineBinaryTranspose>();
+                p.Add<Passes.Rules.Neutral.CombineConstBinaryTranspose>();
+                p.Add<Passes.Rules.Neutral.CombineTransposeConstBinary>();
+                p.Add<Passes.Rules.Neutral.CombineTransposeReduce>();
+                p.Add<Passes.Rules.Neutral.CombineTransposeActivations>();
+                p.Add<Passes.Rules.Neutral.CombineActivationsTranspose>();
+                p.Add<Passes.Rules.Neutral.FoldNopPad>();
+                p.Add<Passes.Rules.Neutral.FoldConv2DPads>();
+                p.Add<Passes.Rules.Neutral.FoldReduceWindow2DPads>();
             });
-            passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
+            passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeClamp").Configure(p =>
             {
-                p.Add<Transform.Rules.Neutral.FoldConstCall>();
-                p.Add<Transform.Rules.Neutral.FoldConv2DAddMul>();
-                p.Add<Transform.Rules.Neutral.ReluToClamp>();
-                p.Add<Transform.Rules.Neutral.Relu6ToClamp>();
-                p.Add<Transform.Rules.Neutral.CombineClampAdd>();
-                p.Add<Transform.Rules.Neutral.CombineClampMul>();
-                p.Add<Transform.Rules.Neutral.FoldNopClamp>();
+                p.Add<Passes.Rules.Neutral.FoldConstCall>();
+                p.Add<Passes.Rules.Neutral.FoldConv2DAddMul>();
+                p.Add<Passes.Rules.Neutral.ReluToClamp>();
+                p.Add<Passes.Rules.Neutral.Relu6ToClamp>();
+                p.Add<Passes.Rules.Neutral.CombineClampAdd>();
+                p.Add<Passes.Rules.Neutral.CombineClampMul>();
+                p.Add<Passes.Rules.Neutral.FoldNopClamp>();
             });
         }
 
@@ -92,7 +92,7 @@ internal class Compiler : ICompiler
         {
             passManager.AddWithName<DataflowPass>("AddRangeOfMarker").Configure(p =>
             {
-                p.Add<Transform.Rules.Neutral.AddRangeOfAndMarker>();
+                p.Add<Passes.Rules.Neutral.AddRangeOfAndMarker>();
             });
             passManager.AddWithName<EGraphPassWithQuantize>("AssignRanges");
         }

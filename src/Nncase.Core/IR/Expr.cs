@@ -4,27 +4,67 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Toolkit.HighPerformance.Helpers;
 
 namespace Nncase.IR;
 
 /// <summary>
 /// Expression.
 /// </summary>
-public abstract partial record Expr
+public abstract partial class Expr
 {
+    private readonly ConditionalWeakTable<Expr, object?> _users = new();
+    private readonly Expr[] _operands;
+
+    private IRType? _checkedType;
+
+    internal Expr(IEnumerable<Expr> operands)
+    {
+        _operands = operands.ToArray();
+        foreach (var operand in _operands)
+        {
+            operand.AddUser(this);
+        }
+    }
+
+    internal Expr(ReadOnlySpan<Expr> operands)
+    {
+        _operands = operands.ToArray();
+        foreach (var operand in _operands)
+        {
+            operand.AddUser(this);
+        }
+    }
+
     /// <summary>
     /// Gets or sets checked type.
     /// </summary>
-    public IRType? CheckedType { get; set; }
+    public IRType CheckedType
+    {
+        get
+        {
+            return _checkedType ?? AnyType.Default;
+        }
+
+        set
+        {
+            if (_checkedType != value)
+            {
+                _checkedType = value;
+                InvalidateUsersTypeInference();
+            }
+        }
+    }
 
     /// <summary>
     /// Gets checked shape.
     /// </summary>
-    public Shape CheckedShape => (CheckedType ?? ((Const)this).ValueType) switch
+    public Shape CheckedShape => CheckedType switch
     {
         TensorType type => type.Shape,
         _ => throw new InvalidOperationException("Only The Expr Have CheckedType Can Get It's Shape"),
@@ -35,30 +75,138 @@ public abstract partial record Expr
     /// </summary>
     public DataType CheckedDataType => CheckedType switch
     {
-        // todo:more info
         TensorType type => type.DType,
         _ => throw new InvalidOperationException("Expr don't have a valid tensor type"),
     };
 
     /// <summary>
-    /// Gets or sets hash code cache.
+    /// Gets users.
     /// </summary>
-    protected int? HashCodeCache { get; set; }
+    public IEnumerable<Expr> Users => _users.Select(x => x.Key);
+
+    /// <summary>
+    /// Gets operands.
+    /// </summary>
+    public ReadOnlySpan<Expr> Operands => _operands;
+
+    /// <summary>
+    /// Gets or sets raw checked type.
+    /// </summary>
+    internal IRType? RawCheckedType
+    {
+        get => _checkedType;
+        set => _checkedType = value;
+    }
+
+    public static bool operator ==(Expr? left, Expr? right) => EqualityComparer<Expr>.Default.Equals(left, right);
+
+    public static bool operator !=(Expr? left, Expr? right) => !(left == right);
+
+    /// <summary>
+    /// Accept a <see cref="ExprFunctor{TExprResult, TTypeResult, TContext}"/>.
+    /// </summary>
+    /// <typeparam name="TExprResult">Result type of visiting expressions.</typeparam>
+    /// <typeparam name="TTypeResult">Result type of visiting types.</typeparam>
+    /// <typeparam name="TContext">Visit context.</typeparam>
+    /// <param name="functor">Expression functor.</param>
+    /// <param name="context">Context.</param>
+    /// <returns>Visit result.</returns>
+    public abstract TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context);
 
     /// <inheritdoc/>
-    public virtual bool Equals(Expr? other)
+    public override string ToString()
     {
-        return !(other is null) && EqualityContract == other.EqualityContract;
+        return GetType().ToString();
     }
 
     /// <inheritdoc/>
-    public override int GetHashCode()
+    public override bool Equals(object? obj)
+        => obj is Expr other && Operands.SequenceEqual(other.Operands);
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => HashCode.Combine(GetType(), HashCode<Expr>.Combine(Operands));
+
+    internal void ReplaceAllUsesWith(Expr newOperand)
+        => ReplaceScopedUsesWith(newOperand, null);
+
+    internal void ReplaceScopedUsesWith(Expr newOperand, IReadOnlySet<Expr>? scope)
     {
-        return HashCodeCache ??= EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
+        if (!ReferenceEquals(this, newOperand))
+        {
+            foreach (var user in Users.ToArray())
+            {
+                if ((scope is null || scope.Contains(user))
+                    && !newOperand.IsDescendantOf(this))
+                {
+                    newOperand.AddUser(user);
+                    var operands = user._operands;
+                    for (int i = 0; i < operands.Length; i++)
+                    {
+                        ref var operand = ref operands[i];
+                        if (ReferenceEquals(operand, this))
+                        {
+                            operand = newOperand;
+                        }
+                    }
+
+                    user.OnOperandsReplaced();
+                    RemoveUser(user);
+                }
+            }
+        }
     }
 
-    protected virtual bool PrintMembers(StringBuilder builder)
+    private bool IsDescendantOf(Expr other)
     {
+        foreach (var operand in _operands)
+        {
+            if (ReferenceEquals(operand, other))
+            {
+                return true;
+            }
+        }
+
+        foreach (var operand in _operands)
+        {
+            if (operand.IsDescendantOf(other))
+            {
+                return true;
+            }
+        }
+
         return false;
+    }
+
+    private void OnOperandsReplaced()
+    {
+        InvalidateTypeInference();
+    }
+
+    private void InvalidateTypeInference()
+    {
+        if (_checkedType != null)
+        {
+            _checkedType = null;
+            InvalidateUsersTypeInference();
+        }
+    }
+
+    private void InvalidateUsersTypeInference()
+    {
+        foreach (var user in Users)
+        {
+            user.InvalidateTypeInference();
+        }
+    }
+
+    private void AddUser(Expr user)
+    {
+        Trace.Assert(!ReferenceEquals(this, user));
+        _users.AddOrUpdate(user, null);
+    }
+
+    private void RemoveUser(Expr user)
+    {
+        _users.Remove(user);
     }
 }

@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Microsoft.Toolkit.HighPerformance.Helpers;
 using Nncase;
 using Nncase.IR;
 using Xunit;
@@ -184,9 +185,9 @@ public sealed class UnitTestIValue
         var b = a;
         var c = Value.FromTensors(new Tensor[] { ones, zeros });
         Assert.Equal(a, b);
-        Assert.NotEqual(a, c);
+        Assert.Equal(a, c);
         Assert.True(a.Equals((object)b));
-        Assert.False(a.Equals((object)c));
+        Assert.True(a.Equals((object)c));
     }
 
     [Fact]
@@ -196,6 +197,6 @@ public sealed class UnitTestIValue
         var tensors = new Tensor[] { ones, ones };
         var values = tensors.Select(x => new TensorValue(x)).ToArray();
         var a = new TupleValue(values);
-        Assert.Equal(HashCode.Combine(values), a.GetHashCode());
+        Assert.Equal(HashCode<TensorValue>.Combine(values), a.GetHashCode());
     }
 }

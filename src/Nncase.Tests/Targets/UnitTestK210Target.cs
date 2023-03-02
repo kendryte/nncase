@@ -11,10 +11,10 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Nncase.CodeGen;
 using Nncase.IR;
+using Nncase.Passes;
 using Nncase.Quantization;
 using Nncase.Runtime.Interop;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
 using Xunit;
 
 namespace Nncase.Tests.Targets;

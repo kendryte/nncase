@@ -8,7 +8,7 @@ using static Nncase.IR.TypePatternUtility;
 namespace Nncase.IR.NN;
 
 [PatternFunctionalGenerator]
-public sealed record L2Normalization() : Op
+public sealed partial class L2Normalization : Op
 {
     /// <summary>
     /// Gets input.
@@ -17,7 +17,7 @@ public sealed record L2Normalization() : Op
 }
 
 [PatternFunctionalGenerator]
-public sealed record BatchNormalization() : Op
+public sealed partial class BatchNormalization : Op
 {
     /// <summary>
     /// Gets input.
@@ -56,7 +56,7 @@ public sealed record BatchNormalization() : Op
 }
 
 [PatternFunctionalGenerator]
-public sealed record InstanceNormalization() : Op
+public sealed partial class InstanceNormalization : Op
 {
     /// <summary>
     /// Gets input.
@@ -80,7 +80,7 @@ public sealed record InstanceNormalization() : Op
 }
 
 [PatternFunctionalGenerator]
-public sealed record LpNormalization() : Op
+public sealed partial class LpNormalization : Op
 {
     /// <summary>
     /// Gets input.
@@ -99,7 +99,7 @@ public sealed record LpNormalization() : Op
 }
 
 [PatternFunctionalGenerator]
-public sealed record LRN() : Op
+public sealed partial class LRN : Op
 {
     /// <summary>
     /// Gets input.

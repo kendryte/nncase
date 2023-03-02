@@ -9,11 +9,11 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Nncase.Passes;
+using Nncase.Passes.Mutators;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.PatternMatch;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
-using Nncase.Transform.Mutators;
-using Nncase.Transform.Rules.Neutral;
 using Nncase.Utilities;
 using Xunit;
 using Xunit.Abstractions;
@@ -205,7 +205,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
         pass.Add<TestTransposeComplexFusionSingleOutput>();
         var post = (Function)await pass.RunAsync(pre, new());
         var newFusion = (Fusion)((Call)post.Body).Target;
-        Assert.Single(newFusion.Parameters);
+        Assert.True(newFusion.Parameters.Length == 1);
         var newVar = newFusion.Parameters[0];
         Assert.Equal("input_0", newVar.Name);
         Assert.Equal(input.TypeAnnotation, newVar.TypeAnnotation);
@@ -220,16 +220,16 @@ public sealed class UnitTestFusionMaker : TestClassBase
         void Compare(Tuple oldBody, Tuple expectBody, int i)
         {
             var oldDeq = oldBody[i];
-            var oldGetItem = ((Call)oldDeq).Parameters[0];
-            var oldLSTM = ((Call)oldGetItem).Parameters[0];
-            var oldQuant = ((Call)oldLSTM).Parameters[i];
-            var oldVar = ((Call)oldQuant).Parameters[0];
+            var oldGetItem = ((Call)oldDeq).Arguments[0];
+            var oldLSTM = ((Call)oldGetItem).Arguments[0];
+            var oldQuant = ((Call)oldLSTM).Arguments[i];
+            var oldVar = ((Call)oldQuant).Arguments[0];
 
             var expectDeq = ((IR.Tuple)expectBody).Fields[i];
-            var expectGetItem = ((Call)expectDeq).Parameters[0];
-            var expectLSTM = ((Call)expectGetItem).Parameters[0];
-            var expectQuant = ((Call)expectLSTM).Parameters[i];
-            var expectVar = ((Call)expectQuant).Parameters[0];
+            var expectGetItem = ((Call)expectDeq).Arguments[0];
+            var expectLSTM = ((Call)expectGetItem).Arguments[0];
+            var expectQuant = ((Call)expectLSTM).Arguments[i];
+            var expectVar = ((Call)expectQuant).Arguments[0];
             Assert.Equal(oldVar, expectVar);
             Assert.Equal(oldQuant, expectQuant);
             Assert.Equal(oldLSTM, expectLSTM);
@@ -287,7 +287,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
         pass.Add<LSTMFusion>();
         var afterCall = (Call)((Function)await pass.RunAsync(f, new())).Body;
 
-        var newVars = ((Fusion)afterCall.Target).Parameters;
+        var newVars = ((Fusion)afterCall.Target).Parameters.ToArray();
         var newVarNames = newVars.Select(v => v.Name).ToArray();
 
         // check var name
@@ -298,7 +298,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
         var newVar0 = x;
         var newVar1 = w;
         var newVar2 = r;
-        var expectLSTM = ReplaceUtility.ReplaceCallParams(lstm.Target, lstm.Parameters.ToList(), (LSTM.X, WrapInput(newVar0)), (LSTM.W, WrapInput(newVar1)), (LSTM.R, WrapInput(newVar2)));
+        var expectLSTM = ReplaceUtility.ReplaceCallParams(lstm.Target, lstm.Arguments.ToArray(), (LSTM.X, WrapInput(newVar0)), (LSTM.W, WrapInput(newVar1)), (LSTM.R, WrapInput(newVar2)));
         var expectBody = WrapOutput(expectLSTM);
         var expectCall = new Call(new Fusion("FusionMaker_0", "StackVM", expectBody, new[] { newVar0, newVar1, newVar2 }), x, w, r);
         expectCall.InferenceType();

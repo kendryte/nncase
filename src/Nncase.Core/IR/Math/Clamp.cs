@@ -16,7 +16,7 @@ namespace Nncase.IR.Math;
 /// Clamp expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Clamp() : Op
+public sealed partial class Clamp : Op
 {
     /// <summary>
     /// Gets input.

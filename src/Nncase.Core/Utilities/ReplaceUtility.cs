@@ -22,7 +22,7 @@ public static class ReplaceUtility
     /// <param name="pairs">target value pair.</param>
     /// <returns>new args list.</returns>
     /// <exception cref="InvalidOperationException">when the same target match two value.</exception>
-    public static List<Expr> ReplaceItems(IReadOnlyList<Expr> list, params (Expr Target, Expr Value)[] pairs)
+    public static Expr[] ReplaceItems(IReadOnlyList<Expr> list, params (Expr Target, Expr Value)[] pairs)
     {
         var new_args = new List<Expr>(list);
 
@@ -54,7 +54,7 @@ public static class ReplaceUtility
 
         foreach (var (i, new_input) in candidates)
             new_args[i] = new_input;
-        return new_args;
+        return new_args.ToArray();
     }
 
     /// <summary>
@@ -63,7 +63,7 @@ public static class ReplaceUtility
     /// <param name="list">expr list.</param>
     /// <param name="pairs">pairs.</param>
     /// <returns>replaced list.</returns>
-    public static List<Expr> ReplaceItems(IReadOnlyList<Expr> list, params (IR.ParameterInfo Info, Expr Value)[] pairs)
+    public static Expr[] ReplaceItems(IReadOnlyList<Expr> list, params (IR.ParameterInfo Info, Expr Value)[] pairs)
     {
         return ReplaceItems(list, pairs.Select(p => (list[p.Info.Index], p.Value)).ToArray());
     }
@@ -77,7 +77,7 @@ public static class ReplaceUtility
     /// <returns>new call.</returns>
     public static Call ReplaceCallParams(Expr target, IReadOnlyList<Expr> oldParams, params (Expr, Expr)[] pairs)
     {
-        return new Call(target, ImmutableArray.CreateRange(ReplaceItems(oldParams, pairs)));
+        return new Call(target, ReplaceItems(oldParams, pairs));
     }
 
     /// <summary>
@@ -89,6 +89,6 @@ public static class ReplaceUtility
     /// <returns>new call.</returns>
     public static Call ReplaceCallParams(Expr target, IReadOnlyList<Expr> oldParams, params (IR.ParameterInfo, Expr)[] pairs)
     {
-        return new Call(target, ImmutableArray.CreateRange(ReplaceItems(oldParams, pairs)));
+        return new Call(target, ReplaceItems(oldParams, pairs));
     }
 }

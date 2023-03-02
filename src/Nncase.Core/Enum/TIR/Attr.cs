@@ -255,7 +255,7 @@ namespace Nncase.TIR
         IsEntryFunc = 549755813888,
 
         /// <summary>
-        /// Parameters used in the module that should be linked by the codegen.
+        /// Arguments used in the module that should be linked by the codegen.
         /// </summary>
         LinkedParams = 1099511627776,
 

@@ -10,7 +10,7 @@ using Nncase.IR;
 
 namespace Nncase.TIR;
 
-public partial record Range
+public partial class Range
 {
     /// <summary>
     /// Convert <see cref="ValueTuple{T1, T2}"/> to <see cref="Range"/>.

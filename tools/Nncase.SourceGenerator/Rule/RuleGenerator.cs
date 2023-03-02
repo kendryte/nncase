@@ -65,12 +65,12 @@ internal sealed class RuleGenerator : IIncrementalGenerator
 
     private RuleCandidate? GetSemanticTargetForGeneration(GeneratorSyntaxContext ctx)
     {
-        IRewriteRuleSymbol ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Transform.IRewriteRule")!;
-        QuantRuleSymbol ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Transform.QuantRule")!;
+        IRewriteRuleSymbol ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Passes.IRewriteRule")!;
+        QuantRuleSymbol ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Passes.QuantRule")!;
         ExprSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Expr");
         TensorSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Tensor");
         IMatchResultSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.PatternMatch.IMatchResult");
-        RunPassContextSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Transform.RunPassContext");
+        RunPassContextSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Passes.RunPassContext");
 
         var classDeclaration = (ClassDeclarationSyntax)ctx.Node;
         var classSymbol = ctx.SemanticModel.GetDeclaredSymbol(classDeclaration);

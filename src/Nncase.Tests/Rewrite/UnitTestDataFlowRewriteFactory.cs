@@ -4,8 +4,8 @@
 using System.Threading.Tasks;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.Passes;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
 using Xunit;
 
 namespace Nncase.Tests.ReWriteTest;
@@ -55,7 +55,7 @@ public class UnitTestDataFlowRewriteFactory : TestClassBase
             pass.Add(rule);
         }
 
-        var post = (Function)await pass.RunAsync(pre, new());
+        var post = (Function)await pass.RunAsync(pre.Clone(), new());
 #if DEBUG
         DumpScope.Current.DumpIR(post, "post");
 #endif

@@ -114,7 +114,7 @@ public sealed class UnitTestTensor
         Assert.Equal(t, Tensor.FromConst(tensorConst1));
 
         // TupleConst
-        var tupleConst = new TupleConst(new[] { tensorConst1, tensorConst2 });
+        var tupleConst = new TupleConst(Value.FromTensors(tensorConst1.Value, tensorConst2.Value));
         Assert.Throws<InvalidOperationException>(() => Tensor.FromConst(tupleConst));
     }
 

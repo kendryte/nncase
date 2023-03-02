@@ -34,7 +34,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Concat target)
+    public Cost Visit(ICostEvaluateContext context, Concat target)
     {
         var ret = context.GetReturnType<TensorType>();
         return new()

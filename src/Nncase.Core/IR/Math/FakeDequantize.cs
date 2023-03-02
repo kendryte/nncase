@@ -9,7 +9,7 @@ namespace Nncase.IR.Math;
 /// Fake dequantize expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record FakeDequantize(DataType TargetType) : Op
+public sealed partial class FakeDequantize : Op
 {
     /// <summary>
     /// Gets input.
@@ -20,4 +20,6 @@ public sealed record FakeDequantize(DataType TargetType) : Op
     /// Gets DequantParam.
     /// </summary>
     public static readonly ParameterInfo DequantParam = new(typeof(FakeDequantize), 1, "dequantParam");
+
+    public DataType TargetType { get; }
 }

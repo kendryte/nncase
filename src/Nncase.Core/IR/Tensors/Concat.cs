@@ -15,7 +15,7 @@ namespace Nncase.IR.Tensors;
 /// Concat expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Concat() : Op
+public sealed partial class Concat : Op
 {
     /// <summary>
     /// Gets input.

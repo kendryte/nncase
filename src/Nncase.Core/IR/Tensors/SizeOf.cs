@@ -15,7 +15,7 @@ namespace Nncase.IR.Tensors;
 /// Size expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record SizeOf() : Op
+public sealed partial class SizeOf : Op
 {
     /// <summary>
     /// Gets input.

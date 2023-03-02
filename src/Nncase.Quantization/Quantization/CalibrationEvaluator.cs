@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.IR;
-using Nncase.Transform;
+using Nncase.Passes;
 
 namespace Nncase.Quantization;
 

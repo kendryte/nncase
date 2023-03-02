@@ -144,7 +144,7 @@ public static class DataGenerator
         var parameters = op.Parameters
             .Select((param, i) => opdata.Find(dataPath => dataPath.Contains(param.Name, StringComparison.OrdinalIgnoreCase)).ValueUnsafe())
             .Select(path => (Expr)FromTextFile(path).AsTensor()).ToArray();
-        return new Call(op, new IRArray<Expr>(parameters));
+        return new Call(op, parameters);
     }
 
     private static float ParseFloat(string s)

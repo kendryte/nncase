@@ -14,9 +14,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.Passes;
 using Nncase.PatternMatch;
 using Nncase.Targets;
-using Nncase.Transform;
 
 namespace Nncase;
 
@@ -99,9 +99,8 @@ public interface ICompilerServicesProvider
     /// Evaluate cost of the expression tree.
     /// </summary>
     /// <param name="expr">Expression.</param>
-    /// <param name="varsValues">Optional vars' values.</param>
     /// <returns>Evaluate result.</returns>
-    Cost? EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null);
+    Cost EvaluateCost(Expr expr);
 
     /// <summary>
     /// Evaluate cost of operator.
@@ -109,7 +108,7 @@ public interface ICompilerServicesProvider
     /// <param name="op">Target operator.</param>
     /// <param name="context">Evaluate context.</param>
     /// <returns>Evaluate result.</returns>
-    Cost? EvaluateOpCost(Op op, ICostEvaluateContext context);
+    Cost EvaluateOpCost(Op op, ICostEvaluateContext context);
 
     /// <summary>
     /// Match expression.
@@ -258,11 +257,10 @@ public static class CompilerServices
     /// Evaluate cost of the expression tree.
     /// </summary>
     /// <param name="expr">Expression.</param>
-    /// <param name="varsValues">Optional vars' values.</param>
     /// <returns>Evaluate result.</returns>
-    public static Cost? EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null)
+    public static Cost EvaluateCost(Expr expr)
     {
-        return Provider.EvaluateCost(expr, varsValues);
+        return Provider.EvaluateCost(expr);
     }
 
     /// <summary>
@@ -271,7 +269,7 @@ public static class CompilerServices
     /// <param name="op">Target operator.</param>
     /// <param name="context">Evaluate context.</param>
     /// <returns>Evaluate result.</returns>
-    public static Cost? EvaluateOpCost(Op op, ICostEvaluateContext context)
+    public static Cost EvaluateOpCost(Op op, ICostEvaluateContext context)
     {
         return Provider.EvaluateOpCost(op, context);
     }
@@ -537,13 +535,13 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     }
 
     /// <inheritdoc/>
-    public Cost? EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null)
+    public Cost EvaluateCost(Expr expr)
     {
-        return _costEvaluateProvider.EvaluateCost(expr, varsValues);
+        return _costEvaluateProvider.EvaluateCost(expr);
     }
 
     /// <inheritdoc/>
-    public Cost? EvaluateOpCost(Op op, ICostEvaluateContext context)
+    public Cost EvaluateOpCost(Op op, ICostEvaluateContext context)
     {
         return _costEvaluateProvider.EvaluateOpCost(op, context);
     }

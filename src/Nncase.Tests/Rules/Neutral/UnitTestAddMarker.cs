@@ -8,8 +8,9 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
+using Nncase.IR;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Xunit;
 using static Nncase.IR.F.NN;
 using Random = Nncase.IR.F.Random;
@@ -24,7 +25,7 @@ public class UnitTestAddMarker : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Relu(a);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new AddRangeOfAndMarker() }, new());
+        var rootPost = CompilerServices.Rewrite(rootPre.Clone(), new[] { new AddRangeOfAndMarker() }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));

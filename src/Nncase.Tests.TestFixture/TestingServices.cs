@@ -11,7 +11,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Nncase.CodeGen;
 using Nncase.Diagnostics;
-using Nncase.Transform;
+using Nncase.Passes;
 
 namespace Nncase.Tests;
 

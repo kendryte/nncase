@@ -68,7 +68,7 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEv
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Range target)
+    public Cost Visit(ICostEvaluateContext context, Range target)
     {
         var ret = context.GetReturnType<TensorType>();
         return new()

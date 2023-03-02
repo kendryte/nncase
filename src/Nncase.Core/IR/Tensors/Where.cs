@@ -16,7 +16,7 @@ namespace Nncase.IR.Tensors;
 /// Where expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Where() : Op
+public sealed partial class Where : Op
 {
     /// <summary>
     /// Gets condition.

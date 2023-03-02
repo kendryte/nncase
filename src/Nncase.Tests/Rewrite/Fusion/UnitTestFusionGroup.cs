@@ -2,9 +2,10 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
+using System.Reactive;
 using Nncase.IR;
-using Nncase.Transform;
-using Nncase.Transform.Mutators;
+using Nncase.Passes;
+using Nncase.Passes.Mutators;
 using Xunit;
 
 namespace Nncase.Tests.ReWrite.FusionTest;
@@ -102,7 +103,7 @@ public class UnitTestFusionGroup : TestClassBase
     }
 }
 
-internal sealed class TestFusionGroupMutator : Transform.Mutators.FusionGroupMutator
+internal sealed class TestFusionGroupMutator : Passes.Mutators.FusionGroupMutator
 {
     public TestFusionGroupMutator(IUsedByResult usedByAnalysisReslut, IMergeRewriteRule preOrderfusionRule, RunPassContext passOptions)
         : base(usedByAnalysisReslut, preOrderfusionRule, passOptions)
@@ -120,15 +121,13 @@ internal sealed class TestFusionGroupMutator : Transform.Mutators.FusionGroupMut
     }
 }
 
-internal sealed class FusionCounterVisitor : ExprVisitor<int, IRType>
+internal sealed class FusionCounterVisitor : ExprWalker
 {
     public int Count { get; private set; }
 
-    public override int DefaultVisitLeaf(Expr expr) => 0;
-
-    public override int VisitLeaf(Fusion expr)
+    protected override Unit VisitLeafFusion(Fusion expr)
     {
         Count++;
-        return 0;
+        return default;
     }
 }

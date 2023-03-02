@@ -11,7 +11,7 @@ namespace Nncase.IR.Random;
 /// Uniform expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Uniform(DataType Type) : Op
+public sealed partial class Uniform : Op
 {
     /// <summary>
     /// Gets high.
@@ -32,4 +32,6 @@ public sealed record Uniform(DataType Type) : Op
     /// Gets shape.
     /// </summary>
     public static readonly ParameterInfo Shape = new(typeof(Uniform), 3, "shape", IsIntegral() & HasRank(1));
+
+    public DataType Type { get; }
 }

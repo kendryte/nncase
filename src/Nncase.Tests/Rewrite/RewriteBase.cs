@@ -8,8 +8,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Nncase.Evaluator;
 using Nncase.IR;
-using Nncase.Transform;
-using Nncase.Transform.Passes;
+using Nncase.Passes;
+using Nncase.Passes.Passes;
 using OrtKISharp;
 using Xunit;
 using static Nncase.IR.F.Math;
@@ -68,7 +68,7 @@ public class RewriteFixtrue : TestClassBase
     }
 
     public Expr ApplyFoldConstCallRewrite(Expr expr) =>
-        CompilerServices.Rewrite(expr, new[] { new Transform.Rules.Neutral.FoldConstCall() }, new());
+        CompilerServices.Rewrite(expr, new[] { new Passes.Rules.Neutral.FoldConstCall() }, new());
 }
 
 public sealed class FoldReshapeCase : IRewriteCase
@@ -86,7 +86,7 @@ public sealed class FoldReshapeCase : IRewriteCase
 
     public IEnumerable<Type> Rules => new Type[]
     {
-        typeof(Transform.Rules.Neutral.FoldTwoReshapes),
+        typeof(Passes.Rules.Neutral.FoldTwoReshapes),
     };
 
     public Dictionary<Var, IValue> FeedDict => new();
@@ -106,7 +106,7 @@ public sealed class FoldNopReshapeCase : IRewriteCase
 
     public IEnumerable<Type> Rules => new Type[]
     {
-        typeof(Transform.Rules.Neutral.FoldNopReshape),
+        typeof(Passes.Rules.Neutral.FoldNopReshape),
     };
 
     public Dictionary<Var, IValue> FeedDict => new();
@@ -126,7 +126,7 @@ public sealed class FoldNopClampCase : IRewriteCase
 
     public IEnumerable<Type> Rules => new Type[]
     {
-        typeof(Transform.Rules.Neutral.FoldNopClamp),
+        typeof(Passes.Rules.Neutral.FoldNopClamp),
     };
 
     public Dictionary<Var, IValue> FeedDict => new();
@@ -148,7 +148,7 @@ public class FoldTransposeCase : IRewriteCase
 
     public IEnumerable<Type> Rules => new Type[]
     {
-        typeof(Transform.Rules.Neutral.FoldTwoTransposes),
+        typeof(Passes.Rules.Neutral.FoldTwoTransposes),
     };
 
     public Dictionary<Var, IValue> FeedDict => new();
@@ -190,9 +190,9 @@ public class FoldTransposePadCase : IRewriteCase
 
     public IEnumerable<Type> Rules => new Type[]
     {
-        typeof(Transform.Rules.Neutral.FoldTwoTransposes),
-        typeof(Transform.Rules.Neutral.CombineTransposePad),
-        typeof(Transform.Rules.Neutral.FoldConstCall),
+        typeof(Passes.Rules.Neutral.FoldTwoTransposes),
+        typeof(Passes.Rules.Neutral.CombineTransposePad),
+        typeof(Passes.Rules.Neutral.FoldConstCall),
     };
 
     public Dictionary<Var, IValue> FeedDict => new(ReferenceEqualityComparer.Instance)
@@ -217,7 +217,7 @@ public class FoldNopTransposeCase1 : IRewriteCase
 
     public IEnumerable<Type> Rules => new Type[]
     {
-        typeof(Transform.Rules.Neutral.FoldTwoTransposes),
+        typeof(Passes.Rules.Neutral.FoldTwoTransposes),
     };
 
     public Dictionary<Var, IValue> FeedDict => new();
@@ -240,8 +240,8 @@ public class FoldNopTransposeCase2 : IRewriteCase
 
     public IEnumerable<Type> Rules => new Type[]
     {
-        typeof(Transform.Rules.Neutral.FoldTwoTransposes),
-        typeof(Transform.Rules.Neutral.FoldNopTranspose),
+        typeof(Passes.Rules.Neutral.FoldTwoTransposes),
+        typeof(Passes.Rules.Neutral.FoldNopTranspose),
     };
 
     public Dictionary<Var, IValue> FeedDict => new();
@@ -251,9 +251,9 @@ public class FoldNopTransposeCase3 : FoldNopTransposeCase2
 {
     public new IEnumerable<IRewriteRule> Rules => new IRewriteRule[]
     {
-        new Transform.Rules.Neutral.FoldTwoTransposes(),
-        new Transform.Rules.Neutral.FoldNopTranspose(),
-        new Transform.Rules.Neutral.CombineBinaryTranspose(),
+        new Passes.Rules.Neutral.FoldTwoTransposes(),
+        new Passes.Rules.Neutral.FoldNopTranspose(),
+        new Passes.Rules.Neutral.CombineBinaryTranspose(),
     };
 }
 
@@ -270,12 +270,12 @@ public class ClassicDemo : IRewriteCase
 
     public IEnumerable<Type> Rules => new Type[]
     {
-        typeof(Transform.Rules.Neutral.Xmul1),
-        typeof(Transform.Rules.Neutral.ReassociateDiv),
-        typeof(Transform.Rules.Neutral.ReassociateMul),
+        typeof(Passes.Rules.Neutral.Xmul1),
+        typeof(Passes.Rules.Neutral.ReassociateDiv),
+        typeof(Passes.Rules.Neutral.ReassociateMul),
 
-        // new Transform.Rules.Neutral.Reassociate(),
-        typeof(Transform.Rules.Neutral.XDivX),
+        // new Passes.Rules.Neutral.Reassociate(),
+        typeof(Passes.Rules.Neutral.XDivX),
     };
 
     public Dictionary<Var, IValue> FeedDict => new();
@@ -361,10 +361,10 @@ public class MobileNetV1TransposeCase : IRewriteCase
 
     public IEnumerable<Type> Rules { get; } = new Type[]
     {
-        typeof(Transform.Rules.Neutral.FoldConstCall),
-        typeof(Transform.Rules.Neutral.FoldNopTranspose),
-        typeof(Transform.Rules.Neutral.FoldTwoTransposes),
-        typeof(Transform.Rules.Neutral.CombineTransposePad),
+        typeof(Passes.Rules.Neutral.FoldConstCall),
+        typeof(Passes.Rules.Neutral.FoldNopTranspose),
+        typeof(Passes.Rules.Neutral.FoldTwoTransposes),
+        typeof(Passes.Rules.Neutral.CombineTransposePad),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
@@ -432,8 +432,8 @@ public class PadTransposeCase : IRewriteCase
 
     public virtual IEnumerable<Type> Rules { get; } = new Type[]
     {
-        typeof(Transform.Rules.Neutral.FoldConstCall),
-        typeof(Transform.Rules.Neutral.CombinePadTranspose),
+        typeof(Passes.Rules.Neutral.FoldConstCall),
+        typeof(Passes.Rules.Neutral.CombinePadTranspose),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
@@ -449,9 +449,9 @@ public sealed class PadTransposeCaseEgraph : PadTransposeCase
 {
     public override IEnumerable<Type> Rules { get; } = new Type[]
     {
-        typeof(Transform.Rules.Neutral.FoldConstCall),
-        typeof(Transform.Rules.Neutral.CombinePadTranspose),
-        typeof(Transform.Rules.Neutral.CombineTransposePad),
+        typeof(Passes.Rules.Neutral.FoldConstCall),
+        typeof(Passes.Rules.Neutral.CombinePadTranspose),
+        typeof(Passes.Rules.Neutral.CombineTransposePad),
     };
 }
 
@@ -491,10 +491,10 @@ public sealed class TransposeLeakyRelu : IRewriteCase
 
     public IEnumerable<Type> Rules { get; } = new Type[]
     {
-        typeof(Transform.Rules.Neutral.FoldConstCall),
-        typeof(Transform.Rules.Neutral.FoldNopTranspose),
-        typeof(Transform.Rules.Neutral.FoldTwoTransposes),
-        typeof(Transform.Rules.Neutral.CombineTransposeActivations),
+        typeof(Passes.Rules.Neutral.FoldConstCall),
+        typeof(Passes.Rules.Neutral.FoldNopTranspose),
+        typeof(Passes.Rules.Neutral.FoldTwoTransposes),
+        typeof(Passes.Rules.Neutral.CombineTransposeActivations),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
@@ -533,10 +533,10 @@ public class ActivationsTranspose : IRewriteCase
 
     public IEnumerable<Type> Rules { get; } = new Type[]
     {
-        typeof(Transform.Rules.Neutral.FoldConstCall),
-        typeof(Transform.Rules.Neutral.FoldNopTranspose),
-        typeof(Transform.Rules.Neutral.FoldTwoTransposes),
-        typeof(Transform.Rules.Neutral.CombineActivationsTranspose),
+        typeof(Passes.Rules.Neutral.FoldConstCall),
+        typeof(Passes.Rules.Neutral.FoldNopTranspose),
+        typeof(Passes.Rules.Neutral.FoldTwoTransposes),
+        typeof(Passes.Rules.Neutral.CombineActivationsTranspose),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
@@ -703,11 +703,11 @@ public sealed class RemoveMarkerCaseEgraph : IRewriteCase
 
     public IEnumerable<Type> Rules { get; } = new Type[]
     {
-        typeof(Transform.Rules.Lower.RemoveMarker),
-        typeof(Transform.Rules.Neutral.FoldConstCall),
-        typeof(Transform.Rules.Neutral.FoldNopTranspose),
-        typeof(Transform.Rules.Neutral.FoldTwoTransposes),
-        typeof(Transform.Rules.Neutral.CombineTransposeActivations),
+        typeof(Passes.Rules.Lower.RemoveMarker),
+        typeof(Passes.Rules.Neutral.FoldConstCall),
+        typeof(Passes.Rules.Neutral.FoldNopTranspose),
+        typeof(Passes.Rules.Neutral.FoldTwoTransposes),
+        typeof(Passes.Rules.Neutral.CombineTransposeActivations),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
@@ -774,7 +774,7 @@ public sealed class Conv2DPadsCase : IRewriteCase
 
     public IEnumerable<Type> Rules { get; } = new Type[]
     {
-        typeof(Transform.Rules.Neutral.FoldConv2DPads),
+        typeof(Passes.Rules.Neutral.FoldConv2DPads),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
@@ -841,7 +841,7 @@ public sealed class ReduceWindow2DPadsCase : IRewriteCase
 
     public IEnumerable<Type> Rules { get; } = new Type[]
     {
-        typeof(Transform.Rules.Neutral.FoldReduceWindow2DPads),
+        typeof(Passes.Rules.Neutral.FoldReduceWindow2DPads),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
@@ -937,8 +937,8 @@ public sealed class MergeBinaryBeforeConv2DCase : IRewriteCase
 
     public IEnumerable<Type> Rules { get; } = new Type[]
     {
-        typeof(Transform.Rules.Neutral.FoldConstCall),
-        typeof(Transform.Rules.Neutral.FoldConv2DAddMul),
+        typeof(Passes.Rules.Neutral.FoldConstCall),
+        typeof(Passes.Rules.Neutral.FoldConv2DAddMul),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
@@ -975,9 +975,9 @@ public sealed class CombineClampAddMul : IRewriteCase
 
     public IEnumerable<Type> Rules { get; } = new Type[]
     {
-      typeof(Transform.Rules.Neutral.ReluToClamp),
-      typeof(Transform.Rules.Neutral.CombineClampAdd),
-      typeof(Transform.Rules.Neutral.CombineClampMul),
+      typeof(Passes.Rules.Neutral.ReluToClamp),
+      typeof(Passes.Rules.Neutral.CombineClampAdd),
+      typeof(Passes.Rules.Neutral.CombineClampMul),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
@@ -1080,17 +1080,17 @@ public sealed class FoldConv2DBnCase : IRewriteCase
 
     public IEnumerable<Type> Rules { get; } = new Type[]
     {
-      typeof(Transform.Rules.Neutral.ReluToClamp),
-      typeof(Transform.Rules.Neutral.CombineClampAdd),
-      typeof(Transform.Rules.Neutral.CombineClampMul),
-      typeof(Transform.Rules.Neutral.FoldTwoTransposes),
-      typeof(Transform.Rules.Neutral.FoldNopTranspose),
-      typeof(Transform.Rules.Neutral.CombineBinaryTranspose),
-      typeof(Transform.Rules.Neutral.CombineTransposeActivations),
-      typeof(Transform.Rules.Neutral.CombineConstBinaryTranspose),
-      typeof(Transform.Rules.Neutral.CombineTransposeConstBinary),
-      typeof(Transform.Rules.Neutral.FoldConv2DAddMul),
-      typeof(Transform.Rules.Neutral.FoldConstCall),
+      typeof(Passes.Rules.Neutral.ReluToClamp),
+      typeof(Passes.Rules.Neutral.CombineClampAdd),
+      typeof(Passes.Rules.Neutral.CombineClampMul),
+      typeof(Passes.Rules.Neutral.FoldTwoTransposes),
+      typeof(Passes.Rules.Neutral.FoldNopTranspose),
+      typeof(Passes.Rules.Neutral.CombineBinaryTranspose),
+      typeof(Passes.Rules.Neutral.CombineTransposeActivations),
+      typeof(Passes.Rules.Neutral.CombineConstBinaryTranspose),
+      typeof(Passes.Rules.Neutral.CombineTransposeConstBinary),
+      typeof(Passes.Rules.Neutral.FoldConv2DAddMul),
+      typeof(Passes.Rules.Neutral.FoldConstCall),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()

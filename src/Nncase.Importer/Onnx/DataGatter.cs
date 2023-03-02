@@ -40,7 +40,7 @@ public sealed partial class OnnxImporter
 
     public Shape GetShape(TensorProto tensor)
     {
-        return new Shape(tensor.Dims);
+        return new Shape(tensor.Dims.ToArray());
     }
 
     public TensorType GetIRType(ValueInfoProto v)

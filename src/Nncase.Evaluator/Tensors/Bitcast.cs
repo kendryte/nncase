@@ -35,7 +35,7 @@ public class BitcastEvaluator : IEvaluator<Bitcast>, ITypeInferencer<Bitcast>, I
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Bitcast target)
+    public Cost Visit(ICostEvaluateContext context, Bitcast target)
     {
         var input = context.GetArgumentType<TensorType>(target, Bitcast.Input);
         return new()

@@ -58,17 +58,18 @@ public static class TensorUtilities
     /// <summary>
     /// Get the Expr Product.
     /// </summary>
-    public static IR.Expr GetProduct(IEnumerable<IR.Expr> dimensions, int startIndex = 0)
+    public static Expr GetProduct(ReadOnlySpan<Expr> dimensions, int startIndex = 0)
     {
-        if (!dimensions.Any())
+        if (dimensions.Length == 0)
         {
             return 1;
         }
 
-        IR.Expr product = 1;
-        foreach (var dim in dimensions.Skip(startIndex))
+        Expr product = 1;
+        for (int i = startIndex; i < dimensions.Length; i++)
         {
-            product = product * dim;
+            var dimension = dimensions[i];
+            product *= IR.F.Math.Require(dimension >= 0, dimension, "Dimension is out of range.");
         }
 
         return product;
@@ -136,19 +137,31 @@ public static class TensorUtilities
     /// <summary>
     /// get strides.
     /// </summary>
-    public static IEnumerable<IR.Expr> GetStrides(IEnumerable<IR.Expr> dimensions, bool reverseStride = false)
+    public static Expr[] GetStrides(ReadOnlySpan<Expr> dimensions, bool reverseStride = false)
     {
-        List<IR.Expr> strides = new();
-        IR.Expr stride = 1;
-        foreach (var dim in dimensions.Reverse())
+        if (dimensions.IsEmpty)
         {
-            strides.Insert(0, stride);
-            stride *= dim;
+            return Array.Empty<Expr>();
         }
 
+        var strides = new Expr[dimensions.Length];
+
+        Expr stride = 1;
         if (reverseStride)
         {
-            strides.Reverse();
+            for (int i = 0; i < strides.Length; i++)
+            {
+                strides[i] = stride;
+                stride *= dimensions[i];
+            }
+        }
+        else
+        {
+            for (int i = strides.Length - 1; i >= 0; i--)
+            {
+                strides[i] = stride;
+                stride *= dimensions[i];
+            }
         }
 
         return strides;

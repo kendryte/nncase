@@ -9,6 +9,24 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="IR\ExprVisitor - 复制.g.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="IR\ExprFunctor.g.cs">
+      <DependentUpon>ExprFunctor.g.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </None>
+    <None Include="IR\ExprCloner.g.cs">
+      <DependentUpon>ExprCloner.g.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </None>
+    <None Include="IR\ExprVisitor.g.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ExprVisitor.g.tt</DependentUpon>
+    </None>
     <None Include="TIR\Range.Conversions.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -30,15 +48,35 @@
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.Toolkit.HighPerformance" />
     <PackageReference Include="NetFabric.Hyperlinq" />
+    <PackageReference Include="Nncase.SourceGenerator">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="System.Reactive" />
     <PackageReference Include="TorchSharp" />
     <PackageReference Include="GiGraph.Dot" />
   </ItemGroup>
 
   <ItemGroup>
-      <ProjectReference Include="../../tools/Nncase.SourceGenerator/Nncase.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <None Update="IR\ExprRewriter.g.tt">
+      <LastGenOutput>ExprRewriter.g.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="IR\ExprFunctor.g.tt">
+      <LastGenOutput>ExprFunctor.g.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="IR\ExprCloner.g.tt">
+      <LastGenOutput>ExprCloner.g.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="IR\ExprVisitor.g.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>ExprVisitor.g.cs</LastGenOutput>
+    </None>
+    <None Update="IR\IRListParser.tt">
+      <Generator></Generator>
+    </None>
     <None Update="TIR\Range.Conversions.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>Range.Conversions.cs</LastGenOutput>
@@ -50,6 +88,26 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="IR\ExprCloner.g.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ExprCloner.g.tt</DependentUpon>
+    </Compile>
+    <Compile Update="IR\ExprFunctor.g.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ExprFunctor.g.tt</DependentUpon>
+    </Compile>
+    <Compile Update="IR\ExprRewriter.g.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ExprRewriter.g.tt</DependentUpon>
+    </Compile>
+    <Compile Update="IR\ExprVisitor.g.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ExprVisitor.g.tt</DependentUpon>
+    </Compile>
     <Compile Update="TIR\Range.Conversions.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>

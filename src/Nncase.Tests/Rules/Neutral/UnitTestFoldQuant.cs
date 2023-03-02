@@ -4,8 +4,8 @@
 using System.Globalization;
 using Nncase.Diagnostics;
 using Nncase.IR;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Xunit;
 using Random = Nncase.IR.F.Random;
 
