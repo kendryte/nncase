@@ -112,14 +112,12 @@ namespace Nncase
 
         public IRModule SplitInfos(Function preFn, SegmentInfo[] infos)
         {
-            var v0 = new Var("main_var0", preFn.Parameters[0].TypeAnnotation);
-            var v1 = new Var("main_var1", preFn.Parameters[1].TypeAnnotation);
-            var vars = new[] { v0, v1 };
+            var vars = preFn.Parameters.Select((x, i) => new Var($"main_{i}", x.TypeAnnotation)).ToArray();
             var body = SplitImpl(preFn, infos, vars);
             // body = ReplaceUtility.ReplaceExpr(body, preFn.Parameters[0], v0);
             // body = ReplaceUtility.ReplaceExpr(body, preFn.Parameters[1], v1);
 
-            var newFn = new Function("main", body, new[] { v0, v1 });
+            var newFn = new Function("main", body, vars);
 
             return CollectFunctionToNewModule(newFn);
         }
