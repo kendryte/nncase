@@ -26,7 +26,7 @@ namespace Nncase.Transform.Rules.Neutral;
 [RuleGenerator]
 public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
 {
-    private static readonly Dictionary<RuntimeTypeHandle, int> _Dict = new()
+    private static readonly Dictionary<RuntimeTypeHandle, int> _DictRange = new()
     {
         { typeof(GetItem).TypeHandle, 0 },
         { typeof(Transpose).TypeHandle, 1 },
@@ -48,7 +48,6 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
         { typeof(Pad).TypeHandle, 1 },
         { typeof(BatchToSpace).TypeHandle, 1 },
         { typeof(Broadcast).TypeHandle, 1 },
-        { typeof(LSTM).TypeHandle, 1 },
         { typeof(Unary).TypeHandle, 1 },
         { typeof(MatMul).TypeHandle, 2 },
         { typeof(Conv2D).TypeHandle, 2 },
@@ -58,13 +57,17 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
         { typeof(Clamp).TypeHandle, 3 },
     };
 
+    private static readonly Dictionary<RuntimeTypeHandle, int[]> _DictList = new() { { typeof(LSTM).TypeHandle, new[] { 0, 1, 2, 5, 6 } }, };
+
     /// <inheritdoc/>
     public override Pattern Pattern { get; } =
-      IsCallWildcard(
-          "call",
-          IsOp<Op>("op"),
-          IsWildcard("input")) with
-      { TypePattern = HasDataType(DataTypes.Float32) };
+        IsCallWildcard(
+                "call",
+                IsOp<Op>("op"),
+                IsWildcard("input")) with
+        {
+            TypePattern = HasDataType(DataTypes.Float32) | IsTuple(t => t.All(tt => tt is TensorType { DType: DataType dt } && dt == DataTypes.Float32), "AllElementsAreF32")
+        };
 
     /// <summary>
     /// check op.
@@ -88,7 +91,9 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
 
     private Expr? GetReplace(Call call, Op op, IReadOnlyList<Expr> callParams, RunPassContext context)
     {
-        if (!_Dict.TryGetValue(op.GetType().TypeHandle, out var length))
+        int length = 0;
+        int[] list = Array.Empty<int>();
+        if (!_DictList.TryGetValue(op.GetType().TypeHandle, out list) && !_DictRange.TryGetValue(op.GetType().TypeHandle, out length))
         {
             return null;
         }
@@ -99,7 +104,9 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
         }
 
         var pairs = new List<(Expr, Expr)>();
-        for (int i = 0; i < length; i++)
+        if (list is null)
+            list = Enumerable.Range(0, length).ToArray();
+        foreach (var i in list)
         {
             if (callParams[i] is not Marker)
             {
@@ -121,8 +128,15 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
         context.MatchOptions.SuppressPattern(newCall, Pattern);
         return op switch
         {
-            LSTM => newCall, // note lstm output can't add marker.
+            LSTM => WrapLSTMOutput(newCall, ((TensorConst)newCall[LSTM.OutputSize]).Value.ToScalar<int>()), // note lstm output can't add marker.
             _ => IR.F.Math.RangeOfMarker(newCall, IR.F.Math.RangeOf(newCall)),
         };
+    }
+
+    private IR.Tuple WrapLSTMOutput(Call call, int outputSize)
+    {
+        var outputs = Enumerable.Range(0, outputSize).Select(i => IR.F.Tensors.GetItem(call, i)).ToArray();
+        var exprs = outputs.Select(item => IR.F.Math.RangeOfMarker(item, IR.F.Math.RangeOf(item)));
+        return new IR.Tuple(exprs);
     }
 }
