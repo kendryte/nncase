@@ -42,6 +42,17 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>, IDisposable
 
     public override IValue Visit(If @if)
     {
+        if (!ExpressionMemo.TryGetValue(@if, out var result))
+        {
+            result = VisitLeaf(@if);
+            ExpressionMemo.Add(@if, result);
+        }
+
+        return result;
+    }
+
+    public override IValue VisitLeaf(If @if)
+    {
         bool cond = @if.Condition.Evaluate(_varsValues, _evaluator_cache).AsTensor().ToScalar<bool>();
         return (cond ? @if.Then : @if.Else).Evaluate(_varsValues, _evaluator_cache);
     }
