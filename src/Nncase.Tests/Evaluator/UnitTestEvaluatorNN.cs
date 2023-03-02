@@ -268,6 +268,7 @@ public class UnitTestEvaluatorNN : TestClassBase
     }
 
     // [Fact]
+    [Fact]
     public void TestLayerNorm()
     {
         var a = new float[] { 0F, 2F, 3F, 2F, 2F, 2F };
