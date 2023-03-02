@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -40,63 +41,99 @@ internal class StackVMFunctionBuilder : FunctionBuilder
 
     protected override void WriteText()
     {
-        // 1. Assign ref counts
-        foreach (var snippet in _context.TextSnippets)
+        foreach (var basicBlock in _context.BasicBlocks)
         {
-            snippet.RefCount = snippet.UseCount;
-        }
-
-        // 2. Gen code
-        foreach (var snippet in _context.TextSnippets)
-        {
-            SymbolAddrs.Add(snippet.BeginSymbol, _textEmitter.Position);
-
-            // 2.1 Load inputs
-            foreach (var inputSnippet in snippet.InputSnippets)
+            foreach (var snippet in basicBlock.TextSnippets)
             {
-                // in locals
-                if (inputSnippet.OutputInLocal)
-                {
-                    var localId = _snippetLocals[inputSnippet];
-                    _textEmitter.Ldlocal(localId);
+                SymbolAddrs.Add(snippet.BeginSymbol, _textEmitter.Position);
 
-                    // last usage, set the local to null
-                    if (--inputSnippet.RefCount == 0)
+                // end of if
+                if (_context.AllocInfo.TryGetValue(snippet, out var uses))
+                {
+                    foreach (var inputSnippet in uses)
                     {
-                        _textEmitter.LdNull();
-                        _textEmitter.Stlocal(localId);
-                        _localsAllocator.Free(localId);
+                        var localId = _snippetLocals[inputSnippet];
+                        RefCountReduce(inputSnippet, localId);
+                    }
+
+                    Debug.Assert(snippet.InputSnippets.Count == 0, "snippet end of if is should be 0 input");
+                }
+
+                // 2.1 Load inputs
+                foreach (var inputSnippet in snippet.InputSnippets)
+                {
+                    // in locals
+                    if (inputSnippet.OutputInLocal)
+                    {
+                        var localId = _snippetLocals[inputSnippet];
+                        _textEmitter.Ldlocal(localId);
+
+                        if (!InputInThenElse(inputSnippet, snippet))
+                        {
+                            RefCountReduce(inputSnippet, localId);
+                        }
                     }
                 }
+
+                // 2.2 Write body
+                var bodyPosition = _textEmitter.Position;
+                foreach (var refer in snippet.SymbolRefs)
+                {
+                    SymbolRefs.Add(refer with { Position = refer.Position + bodyPosition });
+                }
+
+                foreach (var refer in snippet.FunctionRefs)
+                {
+                    FunctionRefs.Add(refer with { Position = refer.Position + bodyPosition });
+                }
+
+                snippet.Writer.Flush();
+                TextWriter.Write(snippet.Text.ToArray());
+
+                // 2.3 Store output
+                // in locals
+                if (snippet.OutputInLocal)
+                {
+                    var localId = _localsAllocator.Allocate();
+                    _snippetLocals.Add(snippet, localId);
+                    _textEmitter.Stlocal(localId);
+                }
+
+                SymbolAddrs.Add(snippet.EndSymbol, _textEmitter.Position);
             }
-
-            // 2.2 Write body
-            var bodyPosition = _textEmitter.Position;
-            foreach (var refer in snippet.SymbolRefs)
-            {
-                SymbolRefs.Add(refer with { Position = refer.Position + bodyPosition });
-            }
-
-            foreach (var refer in snippet.FunctionRefs)
-            {
-                FunctionRefs.Add(refer with { Position = refer.Position + bodyPosition });
-            }
-
-            snippet.Writer.Flush();
-            TextWriter.Write(snippet.Text.ToArray());
-
-            // 2.3 Store output
-            // in locals
-            if (snippet.OutputInLocal)
-            {
-                var localId = _localsAllocator.Allocate();
-                _snippetLocals.Add(snippet, localId);
-                _textEmitter.Stlocal(localId);
-            }
-
-            SymbolAddrs.Add(snippet.EndSymbol, _textEmitter.Position);
         }
     }
+
+    private bool InputInThenElse(TextSnippet snippet, TextSnippet input)
+    {
+        // todo: but maybe error when expr is too complex and be not wrapped by function
+        var prevBasicBlock = snippet.BasicBlock.Prev;
+        if (prevBasicBlock != null)
+        {
+            // if has two next, then and else has only one prev
+            var snippetInIf = prevBasicBlock.Nexts.Count > 1;
+            if (snippetInIf)
+            {
+                if (snippet.BasicBlock == input.BasicBlock)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private void RefCountReduce(TextSnippet inputSnippet, ushort localId)
+    {
+        // last usage, set the local to null
+        if (--inputSnippet.RefCount == 0)
+        {
+            _textEmitter.LdNull();
+            _textEmitter.Stlocal(localId);
+            _localsAllocator.Free(localId);
+        }
+    }
+
 
     private class LocalsAllocator
     {
