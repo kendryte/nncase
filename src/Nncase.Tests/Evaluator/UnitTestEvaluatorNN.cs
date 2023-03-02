@@ -16,6 +16,7 @@ using Xunit;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
 using static Nncase.Utilities.DumpUtility;
+using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.EvaluatorTest;
 
@@ -264,6 +265,18 @@ public class UnitTestEvaluatorNN : TestClassBase
         var nncaseTensor = ortTensor.ToTensor();
         DoHardmax(ortTensor, nncaseTensor, -1L);
         DoHardmax(ortTensor, nncaseTensor, 1L);
+    }
+
+    // [Fact]
+    public void TestLayerNorm()
+    {
+        var a = new float[] { 0F, 2F, 3F, 2F, 2F, 2F };
+        var b = new float[] { 0F, 0.4F, 0.6F, 0.4F, 0.4F, 0.4F };
+        {
+            var expect = Tensor.From(b, new[] { 6 });
+            var input = Tensor.From(a, new[] { 6 });
+            DoLayerNorm(expect, 0, 0f, input, 0, 0);
+        }
     }
 
     [Fact]
@@ -596,6 +609,16 @@ public class UnitTestEvaluatorNN : TestClassBase
         var expr = IR.F.NN.Hardmax(nncaseTensor, axis);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+    }
+
+    private void DoLayerNorm(Tensor expect, int axis, float epsilon, Tensor input, Tensor scale, Tensor bias)
+    {
+        var expr = IR.F.NN.LayerNorm(axis, epsilon, input, scale, bias);
+        CompilerServices.InferenceType(expr);
+
+        // fix precision issue on Macos
+        var cos = Comparator.CosSimilarity(expect, expr.Evaluate().AsTensor());
+        Assert.True(cos > 0.999F);
     }
 
     private void DoLogSoftmax(OrtKISharp.Tensor ortTensor, Tensor nncaseTensor, long axis)

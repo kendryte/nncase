@@ -1,0 +1,110 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using Nncase.CostModel;
+using Nncase.IR;
+using Nncase.IR.NN;
+
+namespace Nncase.Evaluator.NN;
+
+/// <summary>
+/// Evaluator for <see cref="LayerNorm"/>.
+/// </summary>
+public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNorm>, ICostEvaluator<LayerNorm>
+{
+    /// <inheritdoc/>
+    public IValue Visit(IEvaluateContext context, LayerNorm layerNorm)
+    {
+        var input = context.GetOrtArgumentValue(layerNorm, IR.NN.LayerNorm.Input).ToTensor();
+        var scale = context.GetOrtArgumentValue(layerNorm, IR.NN.LayerNorm.Scale).ToTensor();
+        var bias = context.GetOrtArgumentValue(layerNorm, IR.NN.LayerNorm.Bias).ToTensor();
+        var output = new Tensor<float>(context.CurrentCall.CheckedShape.ToValueArray());
+        var result = LayerNorm(input, scale, bias, layerNorm.Axis, layerNorm.Epsilon, output);
+        return Value.FromTensor(result);
+    }
+
+    /// <inheritdoc/>
+    public IRType Visit(ITypeInferenceContext context, LayerNorm target)
+    {
+        var input = context.CheckArgumentType<TensorType>(target, IR.NN.LayerNorm.Input);
+        return Visit(input);
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, LayerNorm target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, IR.NN.LayerNorm.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
+        };
+    }
+
+    private IRType Visit(TensorType input)
+    {
+        return input;
+    }
+
+    private Tensor LayerNorm(Tensor input, Tensor scale, Tensor bias, int axis, float epsilon, Tensor output)
+    {
+        int outputSize = 1;
+        int innerSize = 1;
+        float[] inputArray = input.ToArray<float>();
+        float[] outputArray = output.ToArray<float>();
+        int[] inShape = input.Shape.ToValueArray();
+        for (int i = 0; i < axis; i++)
+        {
+            outputSize *= inShape[i];
+        }
+
+        for (int i = axis; i < inShape.Length; i++)
+        {
+            innerSize *= inShape[i];
+        }
+
+        for (int batch = 0; batch < outputSize; batch++)
+        {
+            float mean1 = 0f;
+            for (int i = 0; i < innerSize; i++)
+            {
+                mean1 += inputArray[i + (batch * innerSize)] / innerSize;
+            }
+
+            float[] sub = new float[innerSize];
+            for (int i = 0; i < innerSize; i++)
+            {
+                sub[i] = inputArray[i + (batch * innerSize)] - mean1;
+            }
+
+            float[] pow = new float[innerSize];
+            for (int i = 0; i < innerSize; i++)
+            {
+                pow[i] = (float)System.Math.Pow(sub[i], 2);
+            }
+
+            float mean2 = 0f;
+            for (int i = 0; i < innerSize; i++)
+            {
+                mean2 += pow[i] / innerSize;
+            }
+
+            float add = mean2 + epsilon;
+            float sqrt = (float)System.Math.Sqrt(add);
+
+            float[] div = new float[innerSize];
+            for (int i = 0; i < innerSize; i++)
+            {
+                div[i] = sub[i] / sqrt;
+            }
+
+            for (int i = 0; i < innerSize; i++)
+            {
+                outputArray[i + (batch * innerSize)] = (div[i] * scale.ToArray<float>()[i]) + bias.ToArray<float>()[i];
+            }
+        }
+
+        return new Tensor<float>(outputArray, output.Shape);
+    }
+}

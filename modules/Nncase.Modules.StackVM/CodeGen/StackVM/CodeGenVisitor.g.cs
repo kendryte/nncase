@@ -55,6 +55,9 @@ internal partial class CodeGenVisitor
             case IR.NN.L2Normalization top:
                 Emitter.T.L2Normalization();
                 break;
+            case IR.NN.LayerNorm top:
+                Emitter.T.LayerNorm();
+                break;
             case IR.NN.LeakyRelu top:
                 Emitter.T.LeakyRelu();
                 break;

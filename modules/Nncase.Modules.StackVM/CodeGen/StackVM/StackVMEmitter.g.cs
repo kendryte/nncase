@@ -874,38 +874,45 @@ public partial class StackVMEmitter
         }
 
         ///<summary>.</summary>
-        public void LeakyRelu()
+        public void LayerNorm()
         {
             _emitter.Write((byte)102);
             _emitter.Write((ushort)30);
         }
 
         ///<summary>.</summary>
-        public void LogSoftmax()
+        public void LeakyRelu()
         {
             _emitter.Write((byte)102);
             _emitter.Write((ushort)31);
         }
 
         ///<summary>.</summary>
-        public void LpNormalization()
+        public void LogSoftmax()
         {
             _emitter.Write((byte)102);
             _emitter.Write((ushort)32);
         }
 
         ///<summary>.</summary>
-        public void LRN()
+        public void LpNormalization()
         {
             _emitter.Write((byte)102);
             _emitter.Write((ushort)33);
         }
 
         ///<summary>.</summary>
-        public void LSTM(LSTMDirection direction, LSTMLayout layout, string[] activations)
+        public void LRN()
         {
             _emitter.Write((byte)102);
             _emitter.Write((ushort)34);
+        }
+
+        ///<summary>.</summary>
+        public void LSTM(LSTMDirection direction, LSTMLayout layout, string[] activations)
+        {
+            _emitter.Write((byte)102);
+            _emitter.Write((ushort)35);
             _emitter.Write((int)direction);
             _emitter.Write((int)layout);
             _emitter.Write(activations);
@@ -915,19 +922,11 @@ public partial class StackVMEmitter
         public void MatMul()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)35);
+            _emitter.Write((ushort)36);
         }
 
         ///<summary>.</summary>
         public void Normal(DataType type)
-        {
-            _emitter.Write((byte)102);
-            _emitter.Write((ushort)36);
-            _emitter.Write(type);
-        }
-
-        ///<summary>.</summary>
-        public void NormalLike(DataType type)
         {
             _emitter.Write((byte)102);
             _emitter.Write((ushort)37);
@@ -935,10 +934,18 @@ public partial class StackVMEmitter
         }
 
         ///<summary>.</summary>
-        public void OneHot(OneHotMode oneHotMode)
+        public void NormalLike(DataType type)
         {
             _emitter.Write((byte)102);
             _emitter.Write((ushort)38);
+            _emitter.Write(type);
+        }
+
+        ///<summary>.</summary>
+        public void OneHot(OneHotMode oneHotMode)
+        {
+            _emitter.Write((byte)102);
+            _emitter.Write((ushort)39);
             _emitter.Write((byte)oneHotMode);
         }
 
@@ -946,7 +953,7 @@ public partial class StackVMEmitter
         public void Pad(PadMode padMode)
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)39);
+            _emitter.Write((ushort)40);
             _emitter.Write((byte)padMode);
         }
 
@@ -954,21 +961,21 @@ public partial class StackVMEmitter
         public void PRelu()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)40);
+            _emitter.Write((ushort)41);
         }
 
         ///<summary>.</summary>
         public void Prod()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)41);
+            _emitter.Write((ushort)42);
         }
 
         ///<summary>.</summary>
         public void Quantize(DataType targetType)
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)42);
+            _emitter.Write((ushort)43);
             _emitter.Write(targetType);
         }
 
@@ -976,7 +983,7 @@ public partial class StackVMEmitter
         public void QuantParamOf(QuantMode quantMode)
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)43);
+            _emitter.Write((ushort)44);
             _emitter.Write((int)quantMode);
         }
 
@@ -984,21 +991,21 @@ public partial class StackVMEmitter
         public void Range()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)44);
+            _emitter.Write((ushort)45);
         }
 
         ///<summary>.</summary>
         public void RangeOf()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)45);
+            _emitter.Write((ushort)46);
         }
 
         ///<summary>.</summary>
         public void Reduce(ReduceOp reduceOp)
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)46);
+            _emitter.Write((ushort)47);
             _emitter.Write((byte)reduceOp);
         }
 
@@ -1006,7 +1013,7 @@ public partial class StackVMEmitter
         public void ReduceArg(ReduceArgOp reduceArgOp, DataType destType)
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)47);
+            _emitter.Write((ushort)48);
             _emitter.Write((byte)reduceArgOp);
             _emitter.Write(destType);
         }
@@ -1015,7 +1022,7 @@ public partial class StackVMEmitter
         public void ReduceWindow2D(ReduceOp reduceOp)
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)48);
+            _emitter.Write((ushort)49);
             _emitter.Write((byte)reduceOp);
         }
 
@@ -1023,21 +1030,21 @@ public partial class StackVMEmitter
         public void Relu()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)49);
+            _emitter.Write((ushort)50);
         }
 
         ///<summary>.</summary>
         public void Relu6()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)50);
+            _emitter.Write((ushort)51);
         }
 
         ///<summary>.</summary>
         public void Require(string message)
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)51);
+            _emitter.Write((ushort)52);
             _emitter.Write(message);
         }
 
@@ -1045,14 +1052,14 @@ public partial class StackVMEmitter
         public void Reshape()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)52);
+            _emitter.Write((ushort)53);
         }
 
         ///<summary>.</summary>
         public void ResizeImage(ImageResizeMode resizeMode, ImageResizeTransformationMode transformationMode, ImageResizeNearestMode nearestMode, bool isTFResize)
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)53);
+            _emitter.Write((ushort)54);
             _emitter.Write((byte)resizeMode);
             _emitter.Write((int)transformationMode);
             _emitter.Write((int)nearestMode);
@@ -1063,126 +1070,126 @@ public partial class StackVMEmitter
         public void ReverseSequence()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)54);
+            _emitter.Write((ushort)55);
         }
 
         ///<summary>.</summary>
         public void Select()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)55);
+            _emitter.Write((ushort)56);
         }
 
         ///<summary>.</summary>
         public void Selu()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)56);
+            _emitter.Write((ushort)57);
         }
 
         ///<summary>.</summary>
         public void ShapeOf()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)57);
+            _emitter.Write((ushort)58);
         }
 
         ///<summary>.</summary>
         public void Sigmoid()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)58);
+            _emitter.Write((ushort)59);
         }
 
         ///<summary>.</summary>
         public void SizeOf()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)59);
+            _emitter.Write((ushort)60);
         }
 
         ///<summary>.</summary>
         public void Slice()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)60);
+            _emitter.Write((ushort)61);
         }
 
         ///<summary>.</summary>
         public void Softmax()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)61);
+            _emitter.Write((ushort)62);
         }
 
         ///<summary>.</summary>
         public void Softplus()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)62);
+            _emitter.Write((ushort)63);
         }
 
         ///<summary>.</summary>
         public void Softsign()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)63);
+            _emitter.Write((ushort)64);
         }
 
         ///<summary>.</summary>
         public void SpaceToBatch()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)64);
+            _emitter.Write((ushort)65);
         }
 
         ///<summary>.</summary>
         public void Split()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)65);
+            _emitter.Write((ushort)66);
         }
 
         ///<summary>.</summary>
         public void Squeeze()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)66);
+            _emitter.Write((ushort)67);
         }
 
         ///<summary>.</summary>
         public void Stack()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)67);
+            _emitter.Write((ushort)68);
         }
 
         ///<summary>.</summary>
         public void Tile()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)68);
+            _emitter.Write((ushort)69);
         }
 
         ///<summary>.</summary>
         public void TopK()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)69);
+            _emitter.Write((ushort)70);
         }
 
         ///<summary>.</summary>
         public void Transpose()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)70);
+            _emitter.Write((ushort)71);
         }
 
         ///<summary>.</summary>
         public void Unary(UnaryOp unaryOp)
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)71);
+            _emitter.Write((ushort)72);
             _emitter.Write((byte)unaryOp);
         }
 
@@ -1190,7 +1197,7 @@ public partial class StackVMEmitter
         public void Uniform(DataType type)
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)72);
+            _emitter.Write((ushort)73);
             _emitter.Write(type);
         }
 
@@ -1198,7 +1205,7 @@ public partial class StackVMEmitter
         public void UniformLike(DataType type)
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)73);
+            _emitter.Write((ushort)74);
             _emitter.Write(type);
         }
 
@@ -1206,14 +1213,14 @@ public partial class StackVMEmitter
         public void Unsqueeze()
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)74);
+            _emitter.Write((ushort)75);
         }
 
         ///<summary>.</summary>
         public void Where(bool isTfWhere)
         {
             _emitter.Write((byte)102);
-            _emitter.Write((ushort)75);
+            _emitter.Write((ushort)76);
             _emitter.Write(isTfWhere);
         }
     }
