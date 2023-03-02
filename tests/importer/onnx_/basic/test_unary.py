@@ -178,4 +178,4 @@ def test_unary(in_shape, request):
 '''
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_unary.py'])
+    pytest.main(['-v', 'test_unary.py'])
