@@ -60,6 +60,7 @@ in_shapes = [
     [1, 3, 16, 16]
 ]
 
+# calc operators
 ops = [
     # 'Rsqrt', 'Square'  # 这 2 个算子目前不支持
     'Ceil',  
@@ -74,28 +75,69 @@ ops = [
     'Exp',
     'Log',
     'Neg',
-    # 'Not',   # 这个算子需要 in_types 为 TensorProto.INT8
     'Sign',
     'Sin',
     'Cos',
 ]
 
+# calc operators data type
 in_types = [
     TensorProto.FLOAT,
-    # TensorProto.INT32,
-    # TensorProto.INT8,
-    # TensorProto.BOOL,
-    # TensorProto.INT64,
+    # TensorProto.INT32,  // Not supported at present
+    # TensorProto.INT8,   // Not supported at present
+    # TensorProto.INT64,  // Not supported at present
 ]
 
-@pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('in_type', in_types)
-@pytest.mark.parametrize('op', ops)
-def test_unary(op, in_type, in_shape, request):
-    model_def = _make_module(op, in_type, in_shape)
-    runner = OnnxTestRunner(request.node.name)
-    model_file = runner.from_onnx_helper(model_def)
-    runner.run(model_file)
+# logical operators
+logical_ops = [
+    'Not'
+]
+
+# logical operators data type
+logical_types = [
+    TensorProto.BOOL
+]
+
+# operators and types group
+op_type_pairs = [
+    [logical_ops, logical_types], 
+    [ops, in_types]
+]
+
+def get_case_data(in_datas):
+    case_data = []
+    for op_types in in_datas:
+        _ops = op_types[0]
+        _types = op_types[1]
+        for _op in _ops:
+            for _type in _types:
+                tmp_pair = []
+                tmp_pair.append(_op)
+                tmp_pair.append(_type)
+                case_data.append(tmp_pair)
+    return case_data        
+    pass
+
+class TestUnaryModule(object):
+ 
+    def setup_class(self):
+        pass
+ 
+    def teardown_class(self):
+        pass
+ 
+    # get the test case
+    case_data=get_case_data(op_type_pairs)
+    print(case_data)
+    
+    @pytest.mark.parametrize('in_shape', in_shapes)
+    @pytest.mark.parametrize('op, in_type', case_data)
+    def test_unary(self, op, in_type, in_shape, request):
+        model_def = _make_module(op, in_type, in_shape)
+        runner = OnnxTestRunner(request.node.name)
+        model_file = runner.from_onnx_helper(model_def)
+        runner.run(model_file)
+        pass
     
 '''
 import pytest
