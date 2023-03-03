@@ -40,9 +40,13 @@ public sealed partial class UnSqueezeToReshape : IRewriteRule
         for (var i = 0; i < outputRank; i++)
         {
             if (axesArray.Contains(i))
+            {
                 newShape.Add(1);
+            }
             else
+            {
                 newShape.Add(oldShape[count++]);
+            }
         }
 
         return Reshape(input, new Shape(newShape));

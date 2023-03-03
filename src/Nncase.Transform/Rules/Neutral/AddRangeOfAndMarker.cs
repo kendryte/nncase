@@ -92,7 +92,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
     private Expr? GetReplace(Call call, Op op, IReadOnlyList<Expr> callParams, RunPassContext context)
     {
         int length = 0;
-        int[] list = Array.Empty<int>();
+        int[]? list = Array.Empty<int>();
         if (!_DictList.TryGetValue(op.GetType().TypeHandle, out list) && !_DictRange.TryGetValue(op.GetType().TypeHandle, out length))
         {
             return null;
