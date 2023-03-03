@@ -25,6 +25,7 @@ public static class PassesApplicationPart
     /// <returns>Configured service registrator.</returns>
     public static IRegistrator AddPasses(this IRegistrator registrator)
     {
-        return registrator.RegisterModule<PassesModule>();
+        return registrator.RegisterModule<PassesModule>()
+            .RegisterModule<AnalysisModule>();
     }
 }

@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Reactive;
 using Nncase.IR;
+using Nncase.Passes.Analysis;
 using Nncase.PatternMatch;
 using static Nncase.PatternMatch.Utility;
 
@@ -19,7 +20,7 @@ namespace Nncase.Passes.Mutators;
 /// </summary>
 public class FusionGroupMutator : ExprRewriter
 {
-    private readonly IUsedByResult _usedByReslut;
+    private readonly IExprUserAnalysisResult _userAnalysis;
 
     /// <summary>
     /// cache the check result.
@@ -30,12 +31,11 @@ public class FusionGroupMutator : ExprRewriter
     /// Initializes a new instance of the <see cref="FusionGroupMutator"/> class.
     /// ctor.
     /// </summary>
-    /// <param name="usedByAnalysisReslut">the usedby analysis.</param>
     /// <param name="fusionRule">pre order rule. </param>
     /// <param name="passOptions">pass options. </param>
-    public FusionGroupMutator(IUsedByResult usedByAnalysisReslut, IMergeRewriteRule fusionRule, RunPassContext passOptions)
+    public FusionGroupMutator(IMergeRewriteRule fusionRule, RunPassContext passOptions)
     {
-        _usedByReslut = usedByAnalysisReslut;
+        passOptions.GetAnalysis(out _userAnalysis);
         Rule = fusionRule;
         PassOptions = passOptions;
         _candidateFusionCache = new(new FusionMergeCandidateComparer());
@@ -95,7 +95,7 @@ public class FusionGroupMutator : ExprRewriter
             MergedFusionCheckCallBack,
             CandidateFusionCheckCallBack,
             CandidateFusionRecordCallBack,
-            _usedByReslut,
+            _userAnalysis,
             result,
             PassOptions) is Call replaced_call)
         {
@@ -147,27 +147,6 @@ public class FusionGroupMutator : ExprRewriter
         }
 
         _candidateFusionCache.Add(candidateFusions, false);
-    }
-
-    private void UpdateCallUsedBy(Call old_call, Call new_call)
-    {
-        /* update the usedy info */
-        // 1. transfer the caller usedby info to new_call
-        _usedByReslut.Transfer(old_call, new_call);
-
-        // 2. clear all caller's and callee's usedy info
-        _usedByReslut.Clear(old_call.Target, old_call);
-        foreach (var param in old_call.Arguments)
-        {
-            _usedByReslut.Clear(param, old_call);
-        }
-
-        // 3. reset the input usedby
-        _usedByReslut.Add(new_call.Target, new_call);
-        foreach (var param in new_call.Arguments)
-        {
-            _usedByReslut.Add(param, new_call);
-        }
     }
 
     private sealed class FusionMergeCandidateComparer : IEqualityComparer<HashSet<Fusion>>

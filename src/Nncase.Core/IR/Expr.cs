@@ -48,7 +48,13 @@ public abstract partial class Expr
     {
         get
         {
-            return _checkedType ?? AnyType.Default;
+            if (_checkedType == null)
+            {
+                CompilerServices.InferenceType(this);
+            }
+
+            Trace.Assert(_checkedType is not null);
+            return _checkedType!;
         }
 
         set

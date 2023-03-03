@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.Passes;
-using Nncase.Passes.Passes;
+using Nncase.Passes.Transforms;
 using OrtKISharp;
 using Xunit;
 using static Nncase.IR.F.Math;

@@ -24,7 +24,7 @@ public sealed class DataFlowMergeRewriter
     /// <summary>
     /// Rewrite the merge rule.
     /// </summary>
-    public Expr Rewrite(Expr expr, IEnumerable<Mutators.IMergeRewriteRule> rules, Func<IUsedByResult, Mutators.IMergeRewriteRule, RunPassContext, Mutators.FusionGroupMutator> mutator_creator, RunPassContext options)
+    public Expr Rewrite(Expr expr, IEnumerable<Mutators.IMergeRewriteRule> rules, Func<Mutators.IMergeRewriteRule, RunPassContext, Mutators.FusionGroupMutator> mutator_creator, RunPassContext options)
     {
         var post = expr;
         int count = 0;
@@ -37,7 +37,7 @@ public sealed class DataFlowMergeRewriter
                 var last = post;
 
                 // todo reduce the mutator and rules dependence.
-                var visitor = mutator_creator(Analyser.AnalysisUsedBy(last), rule, options);
+                var visitor = mutator_creator(rule, options);
                 post = visitor.ScopedRewrite(last);
                 if (visitor.IsMutated)
                 {

@@ -43,7 +43,7 @@ public abstract class Pass<TInput, TOutput> : IPassIntern
     }
 
     /// <inheritdoc/>
-    public virtual IReadOnlyCollection<Type> RequiredAnalysisResultTypes => Array.Empty<Type>();
+    public virtual IReadOnlyCollection<Type> AnalysisTypes => Array.Empty<Type>();
 
     CompileSession IPassIntern.CompileSession => CompileSession;
 

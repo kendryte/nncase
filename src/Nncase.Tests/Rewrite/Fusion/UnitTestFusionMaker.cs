@@ -5,11 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.Passes;
+using Nncase.Passes.Analysis;
 using Nncase.Passes.Mutators;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.PatternMatch;
@@ -37,6 +39,8 @@ public sealed class UnitTestFusionMaker : TestClassBase
     {
         _testOutputHelper = testOutputHelper;
     }
+
+    public IAnalyzerManager AnalyzerMananger => CompileSession.GetRequiredService<IAnalyzerManager>();
 
     [Fact]
     public async Task TestMultiFusion()
@@ -90,6 +94,11 @@ public sealed class UnitTestFusionMaker : TestClassBase
         pass.Add<TestUnaryFusion>();
         pass.Add<TestTransposeFusion>();
 
+        var analysis = new Dictionary<Type, IAnalysisResult>
+        {
+            [typeof(IExprUserAnalysisResult)] = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(pre),
+        };
+
         var post = await pass.RunAsync(pre, new());
 
         var rewriter = new DataFlowMergeRewriter();
@@ -102,8 +111,8 @@ public sealed class UnitTestFusionMaker : TestClassBase
                 new ShortCutFusionMergeRuleLeft(),
                 new ShortCutFusionMergeRuleRight(),
             },
-            (usedby, rule, option) => new FusionGroupMutator(usedby, rule, option),
-            new());
+            (rule, option) => new FusionGroupMutator(rule, option),
+            new() { AnalysisResults = analysis });
 
         var isMatch = CompilerServices.TryMatch(
             post2,

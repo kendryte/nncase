@@ -51,4 +51,18 @@ public record RunPassContext
     /// Gets or sets analysis results.
     /// </summary>
     public IReadOnlyDictionary<Type, IAnalysisResult> AnalysisResults { get; set; } = ImmutableDictionary<Type, IAnalysisResult>.Empty;
+
+    /// <summary>
+    /// Gets analysis results.
+    /// </summary>
+    public T GetAnalysis<T>()
+        where T : IAnalysisResult
+        => (T)AnalysisResults[typeof(T)];
+
+    /// <summary>
+    /// Gets analysis results.
+    /// </summary>
+    public void GetAnalysis<T>(out T analysis)
+        where T : IAnalysisResult
+        => analysis = GetAnalysis<T>();
 }

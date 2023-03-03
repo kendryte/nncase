@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Nncase.Passes;
 
-internal sealed class AnalyzerManager
+internal sealed class AnalyzerManager : IAnalyzerManager
 {
     private readonly Dictionary<Type, IAnalyzerFactory> _analyzerFactories;
 

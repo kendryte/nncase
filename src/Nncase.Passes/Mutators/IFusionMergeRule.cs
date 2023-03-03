@@ -8,6 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using Nncase.IR;
+using Nncase.Passes.Analysis;
 using Nncase.PatternMatch;
 using static Nncase.PatternMatch.Utility;
 
@@ -38,7 +39,7 @@ public interface IMergeRewriteRule
       Func<Fusion, HashSet<Fusion>, bool> mergedFusionCheckCallBack,
       Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack,
       Action<HashSet<Fusion>> candidateFusionRecordCallBack,
-      IUsedByResult usedByReslut,
+      IExprUserAnalysisResult usedByReslut,
       IMatchResult result,
       RunPassContext options);
 }
@@ -101,7 +102,7 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
       Func<Fusion, HashSet<Fusion>, bool> mergedFusionCheckCallBack,
       Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack,
       Action<HashSet<Fusion>> candidateFusionRecordCallBack,
-      IUsedByResult usedByReslut,
+      IExprUserAnalysisResult usedByReslut,
       IMatchResult result,
       RunPassContext options)
     {
@@ -111,7 +112,7 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
         var callee_fusion = (Fusion)result["callee_fusion"];
         var callee_inputs = (IReadOnlyList<Expr>)result["callee_inputs"];
 
-        if (usedByReslut.Get(callee).Count > 1)
+        if (usedByReslut[callee].Any())
         {
             return null;
         }
@@ -129,26 +130,6 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
         if (mergedFusionCheckCallBack(merged_fusion, candidate_fusions))
         {
             var new_call = new Call(merged_fusion, callee_inputs.ToArray());
-
-            // 1. transfer the caller usedby info to new_call
-            usedByReslut.Transfer(caller, new_call);
-
-            // 2. clear all caller's and callee's usedy info
-            usedByReslut.Clear(caller_fusion, caller);
-            usedByReslut.Clear(callee, caller);
-            usedByReslut.Clear(callee_fusion, callee);
-            foreach (var callee_input in callee_inputs)
-            {
-                usedByReslut.Clear(callee_input, callee);
-            }
-
-            // 3. reset the input usedby
-            foreach (var callee_input in callee_inputs)
-            {
-                usedByReslut.Add(callee_input, new_call);
-            }
-
-            usedByReslut.Add(merged_fusion, new_call);
             return new_call;
         }
 
@@ -220,7 +201,7 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
       Func<Fusion, HashSet<Fusion>, bool> mergedFusionCheckCallBack,
       Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack,
       Action<HashSet<Fusion>> candidateFusionRecordCallBack,
-      IUsedByResult usedByReslut,
+      IExprUserAnalysisResult usedByReslut,
       IMatchResult result,
       RunPassContext options)
     {
@@ -238,7 +219,7 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
         var calleeInput = (Expr)result["calleeInput"];
         var callerOtherInput = (Expr)result["callerOtherInput"];
 
-        var calleeInputUsers = new HashSet<Expr>(usedByReslut.Get(calleeInput), ReferenceEqualityComparer.Instance);
+        var calleeInputUsers = new HashSet<Expr>(usedByReslut[calleeInput], ReferenceEqualityComparer.Instance);
         if (object.ReferenceEquals(calleeInput, callerOtherInput))
         {
             // case : caller(callee(x),x)
@@ -264,7 +245,7 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
         }
 
         // 2. callee only usedby caller
-        var calleeUsers = new HashSet<Expr>(usedByReslut.Get(callee), ReferenceEqualityComparer.Instance);
+        var calleeUsers = new HashSet<Expr>(usedByReslut[callee], ReferenceEqualityComparer.Instance);
         if (calleeUsers.Count != 1)
         {
             return null;
@@ -283,25 +264,6 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
         if (mergedFusionCheckCallBack(mergedFusion, candidateFusions))
         {
             var newCall = new Call(mergedFusion, callParams.ToArray());
-
-            // 1. transfer the caller usedby info to new_call
-            usedByReslut.Transfer(caller, newCall);
-
-            // 2. clear all caller's and callee's usedy info
-            usedByReslut.Clear(callerFusion, caller);
-            usedByReslut.Clear(callee, caller);
-            usedByReslut.Clear(callerOtherInput, caller);
-            usedByReslut.Clear(calleeFusion, callee);
-            usedByReslut.Clear(calleeInput, callee);
-
-            // 3. reset the input usedby
-            usedByReslut.Add(calleeInput, newCall);
-            if (!object.ReferenceEquals(calleeInput, callerOtherInput))
-            {
-                usedByReslut.Add(callerOtherInput, newCall);
-            }
-
-            usedByReslut.Add(mergedFusion, newCall);
             return newCall;
         }
 
@@ -470,7 +432,7 @@ public class SameInputFusionMergeRule : IMergeRewriteRule
       Func<Fusion, HashSet<Fusion>, bool> mergedFusionCheckCallBack,
       Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack,
       Action<HashSet<Fusion>> candidateFusionRecordCallBack,
-      IUsedByResult usedByReslut,
+      IExprUserAnalysisResult usedByReslut,
       IMatchResult result,
       RunPassContext options)
     {
@@ -512,7 +474,7 @@ v2 =f2(v0)      v1 = f1(v0)
 */
 
             // todo. now can't find the mini case.
-            if (usedByReslut.Get(caller_inputs[0]).Count > 1)
+            if (usedByReslut[caller_inputs[0]].Any())
             {
                 return false;
             }
@@ -535,7 +497,7 @@ v2 =f2(v0)      v1 = f1(v0)
         */
         if (caller_inputs.Count > 1)
         {
-            var input_users = new HashSet<Expr>(usedByReslut.Get(input), ReferenceEqualityComparer.Instance);
+            var input_users = new HashSet<Expr>(usedByReslut[input], ReferenceEqualityComparer.Instance);
 
             // 1. remove the all mid fusion users.
             foreach (var caller_input in caller_inputs)
@@ -573,7 +535,7 @@ v2 =f2(v0)      v1 = f1(v0)
             {
                 if (!object.ReferenceEquals(caller_input, input))
                 {
-                    var caller_input_users = new HashSet<Expr>(usedByReslut.Get(caller_input), ReferenceEqualityComparer.Instance);
+                    var caller_input_users = new HashSet<Expr>(usedByReslut[caller_input], ReferenceEqualityComparer.Instance);
                     if (!caller_input_users.Remove(caller))
                     {
                         return false;
@@ -604,29 +566,6 @@ v2 =f2(v0)      v1 = f1(v0)
         if (mergedFusionCheckCallBack(merged_fusion, candidate_fusions))
         {
             var new_call = new Call(merged_fusion, input);
-
-            // 1. transfer the caller usedby info to new_call
-            usedByReslut.Transfer(caller, new_call);
-
-            // 2. clear all caller's and callee's usedy info
-            usedByReslut.Clear(caller_fusion, caller);
-            for (int i = 0; i < caller_inputs.Count; i++)
-            {
-                usedByReslut.Clear(caller_inputs[i], caller);
-                if (caller_inputs[i] is Call { Target: Fusion callee_fusion })
-                {
-                    usedByReslut.Clear(callee_fusion, caller_inputs[i]);
-                }
-
-                if (!object.ReferenceEquals(caller_inputs[i], input))
-                {
-                    usedByReslut.Clear(input, caller_inputs[i]);
-                }
-            }
-
-            // 3. reset the input usedby
-            usedByReslut.Add(input, new_call);
-            usedByReslut.Add(merged_fusion, new_call);
             return new_call;
         }
         else

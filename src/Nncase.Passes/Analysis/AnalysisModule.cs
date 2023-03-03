@@ -3,17 +3,17 @@
 
 using DryIoc;
 using Nncase.Hosting;
+using Nncase.Passes.Analysis;
 
 namespace Nncase.Passes;
 
 /// <summary>
-/// Passes module.
+/// Analysis module.
 /// </summary>
-internal class PassesModule : IApplicationPart
+internal class AnalysisModule : IApplicationPart
 {
     public void ConfigureServices(IRegistrator registrator)
     {
-        registrator.Register<IPassManagerFactory, PassManagerFactory>(reuse: Reuse.Singleton);
-        registrator.Register<IAnalyzerManager, AnalyzerManager>(reuse: Reuse.Singleton);
+        registrator.Register<IAnalyzerFactory, ExprUserAnalyzerFactory>(reuse: Reuse.Singleton);
     }
 }

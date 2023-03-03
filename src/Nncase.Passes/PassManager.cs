@@ -207,7 +207,7 @@ internal sealed class PassManager : IPassManager
         private class Runner
         {
             private readonly CompileSession _compileSession;
-            private readonly AnalyzerManager _analyzerManager;
+            private readonly IAnalyzerManager _analyzerManager;
             private readonly IReadOnlyList<IPass> _passes;
             private readonly int _startPassIndex;
 
@@ -216,7 +216,7 @@ internal sealed class PassManager : IPassManager
 
             public Runner(CompileSession compileSession, BaseFunction function, IReadOnlyList<IPass> passes, int startPassIndex)
             {
-                _analyzerManager = compileSession.GetRequiredService<AnalyzerManager>();
+                _analyzerManager = compileSession.GetRequiredService<IAnalyzerManager>();
                 _compileSession = compileSession;
                 _function = function;
                 _passes = passes;
@@ -275,20 +275,20 @@ internal sealed class PassManager : IPassManager
             {
                 private readonly IReadOnlyList<IAnalyzer> _analyzers;
 
-                public RunPassContextWithAnalysis(AnalyzerManager analyzerManager, Either<BaseFunction, IEGraph> functionOrEGraph, IPass pass)
+                public RunPassContextWithAnalysis(IAnalyzerManager analyzerManager, Either<BaseFunction, IEGraph> functionOrEGraph, IPass pass)
                 {
                     var populater = new AnalyzerPopulater(analyzerManager, functionOrEGraph);
-                    populater.Populate(pass.RequiredAnalysisResultTypes);
+                    populater.Populate(pass.AnalysisTypes);
                     _analyzers = populater.Analyzers;
                     AnalysisResults = populater.AnalysisResults;
                 }
 
                 private struct AnalyzerPopulater
                 {
-                    private readonly AnalyzerManager _analyzerManager;
+                    private readonly IAnalyzerManager _analyzerManager;
                     private readonly Either<BaseFunction, IEGraph> _functionOrEGraph;
 
-                    public AnalyzerPopulater(AnalyzerManager analyzerManager, Either<BaseFunction, IEGraph> functionOrEGraph)
+                    public AnalyzerPopulater(IAnalyzerManager analyzerManager, Either<BaseFunction, IEGraph> functionOrEGraph)
                     {
                         _analyzerManager = analyzerManager;
                         _functionOrEGraph = functionOrEGraph;

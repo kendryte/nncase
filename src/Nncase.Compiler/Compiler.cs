@@ -11,8 +11,8 @@ using Nncase.Evaluator;
 using Nncase.Hosting;
 using Nncase.IR;
 using Nncase.Passes;
-using Nncase.Passes.Passes;
 using Nncase.Passes.Rules.Lower;
+using Nncase.Passes.Transforms;
 using Nncase.Quantization;
 using Nncase.Utilities;
 

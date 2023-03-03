@@ -11,27 +11,9 @@ using Nncase.IR;
 
 namespace Nncase.Passes;
 
-public interface IAnalysisResult
-{
-}
-
 /// <summary>
 /// Result of the analysis pass.
 /// </summary>
-public interface IAnalysisResult<T>
+public interface IAnalysisResult
 {
-    public T this[Expr expr]
-    {
-        get
-        {
-            if (TryGet(expr, out var value))
-            {
-                return value;
-            }
-
-            throw new InvalidOperationException($"Analysis not found for {expr}.");
-        }
-    }
-
-    bool TryGet(Expr expr, [MaybeNullWhen(false)] out T value);
 }

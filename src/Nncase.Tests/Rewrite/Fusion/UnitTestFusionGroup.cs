@@ -1,10 +1,13 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Collections.Generic;
 using System.Reactive;
+using Microsoft.Extensions.DependencyInjection;
 using Nncase.IR;
 using Nncase.Passes;
+using Nncase.Passes.Analysis;
 using Nncase.Passes.Mutators;
 using Xunit;
 
@@ -53,6 +56,8 @@ public class UnitTestFusionGroup : TestClassBase
         new DataFlowType13FusionCaseRight(),
     };
 
+    public IAnalyzerManager AnalyzerMananger => CompileSession.GetRequiredService<IAnalyzerManager>();
+
     [Theory]
     [MemberData(nameof(DataOne))]
     public void RunOne(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
@@ -72,6 +77,11 @@ public class UnitTestFusionGroup : TestClassBase
         Dumpper.DumpDotIR(main, "pre");
 #endif
 
+        var analysis = new Dictionary<Type, IAnalysisResult>
+        {
+            [typeof(IExprUserAnalysisResult)] = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(main),
+        };
+
         var rewriter = new DataFlowMergeRewriter();
         var post = (Function)rewriter.Rewrite(
             main,
@@ -82,8 +92,8 @@ public class UnitTestFusionGroup : TestClassBase
                 new ShortCutFusionMergeRuleLeft(),
                 new ShortCutFusionMergeRuleRight(),
             },
-            (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
-            new());
+            (rule, option) => new TestFusionGroupMutator(rule, option),
+            new() { AnalysisResults = analysis });
 #if DEBUG
         Dumpper.DumpDotIR(post, "post");
 #endif
@@ -105,8 +115,8 @@ public class UnitTestFusionGroup : TestClassBase
 
 internal sealed class TestFusionGroupMutator : Passes.Mutators.FusionGroupMutator
 {
-    public TestFusionGroupMutator(IUsedByResult usedByAnalysisReslut, IMergeRewriteRule preOrderfusionRule, RunPassContext passOptions)
-        : base(usedByAnalysisReslut, preOrderfusionRule, passOptions)
+    public TestFusionGroupMutator(IMergeRewriteRule preOrderfusionRule, RunPassContext passOptions)
+        : base(preOrderfusionRule, passOptions)
     {
     }
 

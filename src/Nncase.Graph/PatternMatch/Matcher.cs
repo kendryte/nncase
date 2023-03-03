@@ -166,8 +166,8 @@ internal sealed partial class Matcher : ExprFunctor<bool, Unit, IPattern>
     private bool VisitVArgsPattern<T>(ReadOnlySpan<T> exprs, VArgsPattern vArgsPattern)
         where T : Expr
     {
-        bool isMatch = true;
-        if (vArgsPattern.MatchLeaf(SpanUtility.UnsafeCast<T, Expr>(exprs)))
+        bool isMatch = vArgsPattern.MatchLeaf(SpanUtility.UnsafeCast<T, Expr>(exprs));
+        if (isMatch)
         {
             for (int i = 0; i < exprs.Length; i++)
             {

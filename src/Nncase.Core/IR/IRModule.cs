@@ -60,6 +60,7 @@ public sealed class IRModule
     /// <param name="function">Callable to add.</param>
     public void Add(BaseFunction function)
     {
+        CompilerServices.InferenceType(function);
         _functions.Add(function);
     }
 
@@ -70,6 +71,7 @@ public sealed class IRModule
     /// <param name="function">the entry function defination.</param>
     public void Replace(int index, BaseFunction function)
     {
+        CompilerServices.InferenceType(function);
         ref var old = ref CollectionsMarshal.AsSpan(_functions)[index];
         old.ReplaceAllUsesWith(function);
         old = function;

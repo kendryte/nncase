@@ -18,9 +18,13 @@ namespace Nncase.Passes;
 public class DataflowPass : FunctionPass, IRulesPass
 {
     private readonly List<IRewriteRule> _rules = new();
+    private readonly List<Type> _analysisTypes = new();
 
     /// <inheritdoc/>
     public IReadOnlyList<IRewriteRule> Rules => _rules;
+
+    /// <inheritdoc/>
+    public override IReadOnlyCollection<Type> AnalysisTypes => _analysisTypes;
 
     /// <inheritdoc/>
     public IRulesAddable.AddResult<T> Add<T>(params object[] parameters)
@@ -41,6 +45,12 @@ public class DataflowPass : FunctionPass, IRulesPass
         var rule = (IRewriteRule)ActivatorUtilities.CreateInstance(compileSession, ruleType, parameters);
         _rules.Add(rule);
         return new(this, rule);
+    }
+
+    public void AddAnalysis<T>()
+        where T : IAnalysisResult
+    {
+        _analysisTypes.Add(typeof(T));
     }
 
     /// <inheritdoc/>

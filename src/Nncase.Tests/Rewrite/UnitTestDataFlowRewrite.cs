@@ -1,15 +1,18 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.Evaluator;
 using Nncase.Importer;
 using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.Passes;
+using Nncase.Passes.Analysis;
 using Nncase.PatternMatch;
 using Nncase.Tests.TestFixture;
 using OrtKISharp;
@@ -54,8 +57,8 @@ public class UnitTestDataFlowRewrite : RewriteFixtrue
         var a = (Const)1;
         var b = (Const)2;
         var expr = (a * b) + 3;
-        Assert.True(CompilerServices.InferenceType(expr));
         var post = ApplyFoldConstCallRewrite(expr);
+        Assert.True(CompilerServices.InferenceType(expr));
         Assert.True(CompilerServices.InferenceType(post));
         Assert.Equal(expr.CheckedType, post.CheckedType);
         var res = (1 * 2) + 3;
@@ -122,6 +125,8 @@ public class UnitTestDataFlowRewrite : RewriteFixtrue
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
 {
+    public IAnalyzerManager AnalyzerMananger => CompileSession.GetRequiredService<IAnalyzerManager>();
+
     public T Dim1ExprToScalar<T>(Expr expr)
         where T : unmanaged, System.IEquatable<T>
         => ((TensorConst)expr).Value.Cast<T>()[0];
@@ -277,10 +282,15 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var pre = new Function(m + (x + (z + (x + (y / y)))), new[] { x, y, z, m });
         CompilerServices.InferenceType(pre);
 
-        var pass = new DataflowWithUsdByPass() { Name = "DataflowWithUsdByPass" };
+        var analysis = new Dictionary<Type, IAnalysisResult>
+        {
+            [typeof(IExprUserAnalysisResult)] = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(pre),
+        };
+
+        var pass = new DataflowPass() { Name = "DataflowWithUsdByPass" };
         pass.Add<AnalysisReassociateAdd>();
         pass.Add<DivToConst>();
-        var post = (Function)pass.RunAsync(pre, new()).Result;
+        var post = (Function)pass.RunAsync(pre, new() { AnalysisResults = analysis }).Result;
 
         Assert.True(post.Body is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub }, Arguments: var param0 } && // m - (x + (z - (x + (1))))
                     param0[1] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Add }, Arguments: var param1 } && // x + (z - (x + (1)))
@@ -303,21 +313,17 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         }
     }
 
-    private sealed class AnalysisReassociateAdd : IRewriteRule, IRewriteRuleWithUsdBy
+    private sealed class AnalysisReassociateAdd : IRewriteRule
     {
-        private IUsedByResult? _usedByResult;
-
         /// <inheritdoc/>
         public IPattern Pattern { get; } = IsWildcard("x") + IsWildcard("y");
 
-        /// <inheritdoc/>
-        public IUsedByResult UsedByResult { get => _usedByResult!; set => _usedByResult = value; }
-
         public Expr? GetReplace(IMatchResult result, RunPassContext options)
         {
+            var userAnalysis = options.GetAnalysis<IExprUserAnalysisResult>();
             var x = (Expr)result["x"];
             var y = (Expr)result["y"];
-            if (UsedByResult.Get(x).Count == 1 && UsedByResult.Get(y).Count == 1)
+            if (userAnalysis[x].Count() == 1 && userAnalysis[y].Count() == 1)
             {
                 return x - y;
             }

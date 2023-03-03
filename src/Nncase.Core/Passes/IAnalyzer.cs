@@ -20,13 +20,11 @@ public interface IAnalyzer
     /// <summary>
     /// Gets required collection of <see cref="IAnalysisResult"/>.
     /// </summary>
-    IReadOnlyCollection<Type> RequiredAnalysisResultTypes { get; }
+    IReadOnlyCollection<Type> RequiredAnalysisResultTypes => Array.Empty<Type>();
 
     void Invalidate(Expr key);
 
     void InvalidateAll();
-
-    void OnBeginIRMutate(IReadOnlyDictionary<Expr, Expr> mutateMemo);
 }
 
 /// <summary>
@@ -45,4 +43,23 @@ public interface IAnalyzerFactory
     Type ResultType { get; }
 
     IAnalyzer Activate(Either<BaseFunction, IEGraph> functionOrEGraph);
+}
+
+public interface IAnalyzerFactory<TResult> : IAnalyzerFactory
+    where TResult : IAnalysisResult
+{
+    Type IAnalyzerFactory.ResultType => typeof(TResult);
+
+    new IAnalyzer<TResult> Activate(Either<BaseFunction, IEGraph> functionOrEGraph);
+
+    IAnalyzer IAnalyzerFactory.Activate(Either<BaseFunction, IEGraph> functionOrEGraph) => Activate(functionOrEGraph);
+}
+
+public interface IAnalyzerManager
+{
+    IAnalyzerFactory GetFactory(Type resultType);
+
+    T GetAnaylsis<T>(Either<BaseFunction, IEGraph> functionOrEGraph)
+        where T : IAnalysisResult
+        => (T)GetFactory(typeof(T)).Activate(functionOrEGraph).Result;
 }

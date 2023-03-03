@@ -23,5 +23,5 @@ public interface IPass
     /// <summary>
     /// Gets required collection of <see cref="IAnalysisResult"/>.
     /// </summary>
-    IReadOnlyCollection<Type> RequiredAnalysisResultTypes { get; }
+    IReadOnlyCollection<Type> AnalysisTypes { get; }
 }
