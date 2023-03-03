@@ -66,7 +66,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
                 IsOp<Op>("op"),
                 IsWildcard("input")) with
         {
-            TypePattern = HasDataType(DataTypes.Float32) | IsTuple(t => t.All(tt => tt is TensorType { DType: DataType dt } && dt == DataTypes.Float32), "AllElementsAreF32")
+            TypePattern = HasDataType(DataTypes.Float32) | IsTuple(t => t.All(tt => tt is TensorType { DType: DataType dt } && dt == DataTypes.Float32), "AllElementsAreF32"),
         };
 
     /// <summary>
@@ -105,7 +105,10 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
 
         var pairs = new List<(Expr, Expr)>();
         if (list is null)
+        {
             list = Enumerable.Range(0, length).ToArray();
+        }
+
         foreach (var i in list)
         {
             if (callParams[i] is not Marker)
