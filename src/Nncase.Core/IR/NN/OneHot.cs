@@ -38,4 +38,7 @@ public sealed partial class OneHot : Op
     public static readonly ParameterInfo Axis = new(typeof(OneHot), 3, "axis");
 
     public OneHotMode OneHotMode { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"OneHotMode.{OneHotMode}";
 }

@@ -88,4 +88,7 @@ public sealed partial class LSTM : Op
     public LSTMLayout Layout { get; }
 
     public ImmutableArray<string> Activations { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"LSTMDirection.{Direction}, LSTMLayout.{Layout}, {string.Join(", ", Activations.Select(s => "\"" + s + "\""))}";
 }

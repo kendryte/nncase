@@ -77,6 +77,7 @@ namespace IsaGen
 
         LDDATATYPE,
         LDTENSOR,
+        LDSCALAR,
 
         NEG,
         ADD,
@@ -571,6 +572,14 @@ namespace IsaGen
     public class LdTensorInstruction : Instruction
     {
         public override OpCode OpCode => OpCode.LDTENSOR;
+    }
+
+    [DisplayName("LDSCALAR")]
+    [Category("Load scalar Instructions")]
+    [Description("Load a local object to scalar from stack")]
+    public class LdScalarInstruction : Instruction
+    {
+        public override OpCode OpCode => OpCode.LDSCALAR;
     }
 
     [DisplayName("DUP")]

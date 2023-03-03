@@ -55,4 +55,8 @@ public sealed partial class ResizeImage : Op
     public ImageResizeNearestMode NearestMode { get; }
 
     public bool IsTFResize { get; }
+
+        /// <inheritdoc/>
+        public override string DisplayProperty() => $"ImageResizeMode.{ResizeMode}, ImageResizeTransformationMode.{TransformationMode}, ImageResizeNearestMode. {NearestMode}, {IsTFResize}";
+    }
 }

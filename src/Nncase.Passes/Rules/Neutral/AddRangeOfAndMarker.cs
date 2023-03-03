@@ -41,6 +41,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
         { typeof(Elu).TypeHandle, 1 },
         { typeof(HardSwish).TypeHandle, 1 },
         { typeof(HardSigmoid).TypeHandle, 1 },
+        { typeof(Erf).TypeHandle, 1 },
         { typeof(ResizeImage).TypeHandle, 1 },
         { typeof(ReduceWindow2D).TypeHandle, 1 },
         { typeof(Reduce).TypeHandle, 1 },
@@ -48,6 +49,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
         { typeof(BatchToSpace).TypeHandle, 1 },
         { typeof(Broadcast).TypeHandle, 1 },
         { typeof(LSTM).TypeHandle, 1 },
+        { typeof(Unary).TypeHandle, 1 },
         { typeof(MatMul).TypeHandle, 2 },
         { typeof(Conv2D).TypeHandle, 2 },
         { typeof(Conv2DTranspose).TypeHandle, 2 },
@@ -61,7 +63,28 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
       IsCallWildcard(
           "call",
           IsOp<Op>("op"),
-          IsWildcard("input"));
+          IsWildcard("input")) with
+      { TypePattern = HasDataType(DataTypes.Float32) };
+
+    /// <summary>
+    /// check op.
+    /// </summary>
+    /// <param name="op">op.</param>
+    /// <returns>can add the marker.</returns>
+    public static bool CheckOp(Op op)
+    {
+        if (op is Binary binary && (binary.BinaryOp == BinaryOp.LogicalAnd || binary.BinaryOp == BinaryOp.LogicalOr || binary.BinaryOp == BinaryOp.LogicalXor))
+        {
+            return false;
+        }
+
+        if (op is Unary u && u.UnaryOp == UnaryOp.LogicalNot)
+        {
+            return false;
+        }
+
+        return true;
+    }
 
     private Expr? GetReplace(Call call, Op op, IReadOnlyList<Expr> callParams, RunPassContext context)
     {
@@ -70,12 +93,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
             return null;
         }
 
-        if (op is Binary binary && (binary.BinaryOp == BinaryOp.LogicalAnd || binary.BinaryOp == BinaryOp.LogicalOr || binary.BinaryOp == BinaryOp.LogicalXor))
-        {
-            return null;
-        }
-
-        if (op is Unary u && u.UnaryOp == UnaryOp.LogicalNot)
+        if (!CheckOp(op))
         {
             return null;
         }
@@ -89,12 +107,18 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
             }
         }
 
-        if (pairs.Count == 0)
+        Call newCall;
+        if (pairs.Count != 0)
         {
-            return null;
+            newCall = ReplaceCallParams(op, callParams, pairs.ToArray());
+        }
+        else
+        {
+            newCall = new Call(op, ImmutableArray.CreateRange(callParams));
         }
 
-        var newCall = ReplaceCallParams(op, callParams, pairs.ToArray());
+        context.RewriteOnce = true;
+        context.MatchOptions.SuppressPattern(newCall, Pattern);
         return op switch
         {
             LSTM => newCall, // note lstm output can't add marker.

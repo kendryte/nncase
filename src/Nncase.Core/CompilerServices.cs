@@ -65,6 +65,15 @@ public interface ICompilerServicesProvider
     void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable);
 
     /// <summary>
+    /// dump the expr as csharp code.
+    /// </summary>
+    /// <param name="expr">expression.</param>
+    /// <param name="prefix">file prefix.</param>
+    /// <param name="dumpDir">file dump ir.</param>
+    /// <param name="randConst">false for save const into bin.</param>
+    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst);
+
+    /// <summary>
     /// print ir type.
     /// </summary>
     string Print(IRType type);
@@ -405,6 +414,16 @@ public static class CompilerServices
     public static void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable = true) =>
       Provider.DumpDotIR(expr, prefix, dumpPath, display_callable);
 
+    /// <summary>
+    /// dump the expr as csharp code.
+    /// </summary>
+    /// <param name="expr">expression.</param>
+    /// <param name="prefix">file prefix.</param>
+    /// <param name="dumpDir">file dump ir.</param>
+    /// <param name="randConst">randConst = false will save the const into bin.</param>
+    public static void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst = true) =>
+      Provider.DumpCSharpIR(expr, prefix, dumpDir, randConst);
+
     public static string Print(IRType type) => Provider.Print(type);
 
     public static string Print(Expr expr, bool useScript = false) => Provider.Print(expr, useScript);
@@ -509,6 +528,10 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     /// <inheritdoc/>
     public void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable) =>
     _irprinterProvider.DumpDotIR(expr, prefix, dumpPath, display_callable);
+
+    /// <inheritdoc/>
+    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst) =>
+    _irprinterProvider.DumpCSharpIR(expr, prefix, dumpDir, randConst);
 
     /// <inheritdoc/>
     public string Print(IRType type) => _irprinterProvider.Print(type);

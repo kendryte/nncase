@@ -23,4 +23,7 @@ public sealed partial class Dequantize : Op
     public static readonly ParameterInfo DequantParam = new(typeof(Dequantize), 1, "dequantParam", IsQuantParamType());
 
     public DataType TargetType { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"{TargetType.GetCSharpName()}";
 }

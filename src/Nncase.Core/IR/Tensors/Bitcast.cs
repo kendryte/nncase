@@ -32,4 +32,7 @@ public sealed partial class Bitcast : Op
     public PrimType Type { get; }
 
     public PrimType NewType { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"{Type.GetCSharpName()}, {NewType.GetCSharpName()}";
 }

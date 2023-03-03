@@ -29,4 +29,7 @@ public sealed partial class Require : Op
     public static readonly ParameterInfo Value = new(typeof(Require), 1, "value");
 
     public string Message { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => "\"\"";
 }

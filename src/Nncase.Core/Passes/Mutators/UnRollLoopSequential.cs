@@ -14,9 +14,13 @@ using Nncase.TIR;
 namespace Nncase.Passes.Mutators;
 
 /// <summary>
-/// unroll loop.
+/// unroll loop and sequential.
 /// </summary>
+<<<<<<<< HEAD:src/Nncase.Core/Passes/Mutators/UnrollLoop.cs
 public sealed class UnRollLoop : ExprRewriter
+========
+public sealed class UnRollLoopSequential : ExprMutator
+>>>>>>>> feature/rebuild-ir:src/Nncase.Core/Passes/Mutators/UnRollLoopSequential.cs
 {
     private readonly Dictionary<Type, Evaluator.IEvaluator> _evaluator_cache = new();
 
@@ -38,6 +42,22 @@ public sealed class UnRollLoop : ExprRewriter
         }
     }
 
+    /// <inheritdoc/>
+    public override Expr MutateLeaf(TIR.Sequential expr)
+    {
+        var flattened = Flatten(expr);
+        if (flattened.Count != expr.Count)
+        {
+            return new TIR.Sequential() with { Fields = new(flattened) };
+        }
+        else if (!flattened.Zip(expr).All(t => t.First == t.Second))
+        {
+            return new TIR.Sequential() with { Fields = new(flattened) };
+        }
+
+        return expr;
+    }
+
     /// <summary>
     /// convert the loop var to tensor const.
     /// </summary>
@@ -51,6 +71,24 @@ public sealed class UnRollLoop : ExprRewriter
         {
             yield return i;
         }
+    }
+
+    private List<Expr> Flatten(IEnumerable<Expr> exprs)
+    {
+        var ret = new List<Expr>();
+        foreach (var item in exprs.Select(Visit))
+        {
+            if (item is Sequential sub)
+            {
+                ret.AddRange(Flatten(sub));
+            }
+            else
+            {
+                ret.Add(item);
+            }
+        }
+
+        return ret;
     }
 
     private bool IsCanUnroll(TIR.For for_loop)
@@ -145,10 +183,20 @@ public sealed class UnRollLoop : ExprRewriter
         protected override Expr RewriteLeafCall(Call expr)
         {
             if (expr.Target is Op op && op.GetType().Namespace is string @namespace
+<<<<<<<< HEAD:src/Nncase.Core/Passes/Mutators/UnrollLoop.cs
               && (@namespace.StartsWith("Nncase.IR.Math") || @namespace.StartsWith("Nncase.IR.Tensors"))
               && expr.Arguments.AsValueEnumerable().All(e => e is Const))
             {
                 return Const.FromValue(CompilerServices.Evaluate(expr, _cmap, _evaluator_cache));
+========
+              && (@namespace.StartsWith("Nncase.IR.Math") || @namespace.StartsWith("Nncase.IR.Tensors")))
+            {
+                var newParameters = ImmutableArray.CreateRange(expr.Parameters.Select(Visit));
+                if (newParameters.All(e => e is Const))
+                {
+                    return StructEqualFolding(Const.FromValue(CompilerServices.Evaluate(expr with { Parameters = newParameters }, _cmap, _evaluator_cache)));
+                }
+>>>>>>>> feature/rebuild-ir:src/Nncase.Core/Passes/Mutators/UnRollLoopSequential.cs
             }
 
             if (expr.Target is Function fn)

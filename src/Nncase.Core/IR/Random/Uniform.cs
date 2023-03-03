@@ -34,4 +34,7 @@ public sealed partial class Uniform : Op
     public static readonly ParameterInfo Shape = new(typeof(Uniform), 3, "shape", IsIntegral() & HasRank(1));
 
     public DataType Type { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => Type.GetCSharpName();
 }

@@ -37,7 +37,7 @@ public partial class EGraphPrinter
         // 1. display each enode costs.
         foreach (var (enode, (dotnode, table)) in NodesMap)
         {
-            if (enode.Expr is IR.Var or IR.Op or IR.Marker or IR.None)
+            if (enode.Expr is IR.Var or IR.Op or IR.None)
             {
                 continue;
             }

@@ -66,6 +66,13 @@ result<value_t> kernels::stackvm::binary(binary_op_t binary_op, value_t lhs,
     return ok(output);
 }
 
+result<value_t> nncase::kernels::stackvm::bitcast(
+    [[maybe_unused]] prim_type_t type, [[maybe_unused]] prim_type_t new_type,
+    [[maybe_unused]] value_t input, [[maybe_unused]] value_t new_shape,
+    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
+    return err(std::errc::not_supported);
+}
+
 result<value_t> kernels::stackvm::broadcast(value_t input, value_t shape,
                                             value_t output,
                                             kernel_context &context) {
@@ -124,6 +131,13 @@ result<value_t> nncase::kernels::stackvm::concat(value_t input, value_t axis,
     return ok(output);
 }
 
+result<value_t> nncase::kernels::stackvm::condition(
+    [[maybe_unused]] bool can_fold_const_call,
+    [[maybe_unused]] value_t predicate, [[maybe_unused]] value_t value,
+    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
+    return err(std::errc::not_supported);
+}
+
 result<value_t> nncase::kernels::stackvm::constant_of_shape(
     value_t shape, value_t value, value_t output,
     [[maybe_unused]] kernel_context &context) {
@@ -160,10 +174,10 @@ result<value_t> nncase::kernels::stackvm::conv2d(
     //     conv2d, input_tensor, input_mem, weights_mem, bias_mem, out_mem,
     //     input_tensor->shape(), input_tensor->strides(),
     //     weights_tensor->shape(), weights_tensor->strides(),
-    //     bias_tensor->strides(), output_tensor->strides(), pads[0], pads[1],
-    //     groups_value, strides[0], strides[1], dilations[0], dilations[1],
-    //     value_range<float>{fused_clamp_value[0], fused_clamp_value[1]},
-    //     context);
+    //     bias_tensor->strides(), output_tensor->strides(), pads[0],
+    //     pads[1], groups_value, strides[0], strides[1], dilations[0],
+    //     dilations[1], value_range<float>{fused_clamp_value[0],
+    //     fused_clamp_value[1]}, context);
     try_(reference::conv2d(
         input_mem, weights_mem, bias_mem, out_mem, input_tensor->shape(),
         input_tensor->strides(), weights_tensor->shape(),
@@ -608,7 +622,13 @@ result<value_t> nncase::kernels::stackvm::require(
     [[maybe_unused]] std::string message, [[maybe_unused]] value_t predicate,
     [[maybe_unused]] value_t value, [[maybe_unused]] value_t output,
     [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
+    try_to_scalar(cond, predicate, bool);
+    if (!cond) {
+        printf("%s\n", message.data());
+        return err(std::errc::invalid_argument);
+    }
+    output = value;
+    KERNEL_FINISH;
 }
 
 result<value_t>
@@ -926,14 +946,15 @@ nncase::kernels::stackvm::unsqueeze(value_t input, value_t dim, value_t output,
 }
 
 result<value_t> nncase::kernels::stackvm::where(
-    [[maybe_unused]] value_t cond, [[maybe_unused]] value_t x,
-    [[maybe_unused]] value_t y, [[maybe_unused]] value_t output,
-    [[maybe_unused]] kernel_context &context) {
+    [[maybe_unused]] bool is_tf_where, [[maybe_unused]] value_t cond,
+    [[maybe_unused]] value_t x, [[maybe_unused]] value_t y,
+    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
     try_input_with_ty(cond_mem, cond, bool);
     try_input(x_mem, x);
     try_input(y_mem, y);
     auto dt = x_tensor->dtype();
-    if (x_tensor->shape()[0] == 0 && y_tensor->shape()[0] == 0 &&
+    if ((x_tensor->shape().size() == 0 || x_tensor->shape()[0] == 0) &&
+        (y_tensor->shape().size() == 0 || y_tensor->shape()[0]) == 0 &&
         cmp_type<float>(x_tensor->dtype())) {
         // todo: not finish other rank
         assert(cond_tensor->shape().size() == 1);

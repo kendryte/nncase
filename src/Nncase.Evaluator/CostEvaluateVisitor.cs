@@ -47,6 +47,11 @@ internal sealed class CostEvaluateVisitor : ExprVisitor<Cost, Unit>
         return argumentsCost + targetCost;
     }
 
+    public override Cost VisitLeaf(Marker expr)
+    {
+        return ExpressionMemo[expr.Target] ?? Cost.Zero;
+    }
+
     /// <inheritdoc/>
     protected override Cost VisitLeafOp(Op expr) => Cost.Zero;
 

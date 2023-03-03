@@ -49,6 +49,13 @@ public interface ITarget
     void ParseTargetDependentOptions(IConfigurationSection configure);
 
     /// <summary>
+    /// Register Target InDependent Pass.
+    /// </summary>
+    /// <param name="passManager">pass manager.</param>
+    /// <param name="options">compile options.</param>
+    void RegisterTargetInDependentPass(IPassManager passManager, CompileOptions options);
+
+    /// <summary>
     /// Register Target Dependent Pass.
     /// </summary>
     /// <param name="passManager">pass manager.</param>

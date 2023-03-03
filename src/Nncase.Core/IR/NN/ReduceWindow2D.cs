@@ -53,4 +53,7 @@ public sealed partial class ReduceWindow2D : Op
     public static readonly ParameterInfo CountIncludePad = new(typeof(ReduceWindow2D), 7, "countIncludePad", IsBool());
 
     public ReduceOp ReduceOp { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"ReduceOp.{ReduceOp}";
 }

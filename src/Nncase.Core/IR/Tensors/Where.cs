@@ -32,4 +32,6 @@ public sealed partial class Where : Op
     /// Gets y.
     /// </summary>
     public static readonly ParameterInfo Y = new(typeof(Where), 2, "y");
+
+    public bool IsTfWhere { get; } = false
 }

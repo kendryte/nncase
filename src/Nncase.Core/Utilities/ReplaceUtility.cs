@@ -24,6 +24,11 @@ public static class ReplaceUtility
     /// <exception cref="InvalidOperationException">when the same target match two value.</exception>
     public static Expr[] ReplaceItems(IReadOnlyList<Expr> list, params (Expr Target, Expr Value)[] pairs)
     {
+        if (pairs.Length == 0)
+        {
+            return list.ToList();
+        }
+
         var new_args = new List<Expr>(list);
 
         Dictionary<int, Expr> candidates = new();
@@ -91,4 +96,14 @@ public static class ReplaceUtility
     {
         return new Call(target, ReplaceItems(oldParams, pairs));
     }
+
+    /// <summary>
+    /// replace the first params of call with expr.
+    /// </summary>
+    /// <param name="target">target.</param>
+    /// <param name="oldParams">oldParams.</param>
+    /// <param name="expr">expr.</param>
+    /// <returns>new Call.</returns>
+    public static Call ReplaceCallFirstParam(Expr target, IReadOnlyList<Expr> oldParams, Expr expr) =>
+        ReplaceCallParams(target, oldParams, (oldParams[0], expr));
 }

@@ -23,4 +23,7 @@ public sealed partial class QuantParamOf : Op
     public static readonly ParameterInfo Bits = new(typeof(QuantParamOf), 1, "bits", IsIntegralScalar());
 
     public QuantMode QuantMode { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"QuantMode.{QuantMode}";
 }

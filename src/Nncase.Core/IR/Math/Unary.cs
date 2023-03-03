@@ -27,6 +27,6 @@ public sealed partial class Unary : Op
     /// <inheritdoc/>
     public override string DisplayProperty()
     {
-        return $"UnaryOp: {UnaryOp}";
+        return $"UnaryOp.{UnaryOp}";
     }
 }

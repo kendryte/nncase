@@ -23,4 +23,7 @@ public sealed partial class Quantize : Op
     public static readonly ParameterInfo QuantParam = new(typeof(Quantize), 1, "quantParam", IsQuantParamType());
 
     public DataType TargetType { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"{TargetType.GetCSharpName()}";
 }

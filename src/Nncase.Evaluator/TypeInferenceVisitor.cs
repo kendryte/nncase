@@ -38,7 +38,18 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     }
 
     /// <inheritdoc/>
-    protected override IRType VisitLeafBlock(Block expr)
+    public override IRType VisitLeaf(If expr)
+    {
+        Visit(expr.Condition);
+        _ = Visit(expr.Then);
+        _ = Visit(expr.Else);
+        var type = AnyType.Default;
+        SetCheckedType(expr, type);
+        return type;
+    }
+
+    /// <inheritdoc/>
+    public override IRType VisitLeaf(Const expr)
     {
         for (int i = 0; i < expr.IterVars.Length; i++)
         {

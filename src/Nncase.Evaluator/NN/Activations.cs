@@ -22,6 +22,8 @@ public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>, IC
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
         };
     }
 
@@ -57,6 +59,8 @@ public partial class EluEvaluator : IEvaluator<Elu>, ITypeInferencer<Elu>, ICost
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
         };
     }
 
@@ -98,6 +102,8 @@ public class HardSwishEvaluator : IEvaluator<HardSwish>, ITypeInferencer<HardSwi
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
         };
     }
 
@@ -133,6 +139,8 @@ public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRe
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
         };
     }
 
@@ -232,6 +240,8 @@ public class SeluEvaluator : IEvaluator<Selu>, ITypeInferencer<Selu>, ICostEvalu
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
         };
     }
 
@@ -302,6 +312,8 @@ public class HardSigmoidEvaluator : IEvaluator<HardSigmoid>, ITypeInferencer<Har
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
         };
     }
 
@@ -338,6 +350,45 @@ public class PReluEvaluator : IEvaluator<PRelu>, ITypeInferencer<PRelu>, ICostEv
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+        };
+    }
+
+    private IRType Visit(TensorType input)
+    {
+        return input;
+    }
+}
+
+/// <summary>
+/// Evaluator for <see cref="Erf"/>.
+/// </summary>
+public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluator<Erf>
+{
+    /// <inheritdoc/>
+    public IValue Visit(IEvaluateContext context, Erf sigmoid)
+    {
+        var input = context.GetOrtArgumentValue(sigmoid, Erf.Input);
+        return OrtKI.Erf(input).ToValue();
+    }
+
+    /// <inheritdoc/>
+    public IRType Visit(ITypeInferenceContext context, Erf target)
+    {
+        var input = context.CheckArgumentType<TensorType>(target, Erf.Input);
+        return Visit(input);
+    }
+
+    /// <inheritdoc/>
+    public Cost? Visit(ICostEvaluateContext context, Erf target)
+    {
+        var outputType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
         };
     }
 

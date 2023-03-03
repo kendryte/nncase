@@ -22,4 +22,7 @@ public sealed partial class FakeQuantize : Op
     public static readonly ParameterInfo QuantParam = new(typeof(FakeQuantize), 1, "quantParam");
 
     public DataType TargetType { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"{TargetType.GetCSharpName()}";
 }

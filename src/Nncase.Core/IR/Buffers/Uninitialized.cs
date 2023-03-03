@@ -23,4 +23,7 @@ public sealed partial class Uninitialized : Op
 
     /// <inheritdoc/>
     public override bool CanFoldConstCall => false;
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"{DType.GetCSharpName()}, Schedule.MemoryLocation.{MemoryLocation}";
 }

@@ -400,8 +400,9 @@ inline result<T> value_to_scalar([[maybe_unused]] value_t value) {
 template <typename T>
 inline result<itlib::small_vector<T, 4>> value_as_Ts(value_t value) {
     try_input(input, value);
-    assert(value_tensor->shape().size() == 1);
-    auto size = value_tensor->shape()[0];
+    assert(value_tensor->shape().size() <= 1);
+    auto size =
+        value_tensor->shape().size() == 0 ? 1 : value_tensor->shape()[0];
 #define RETURN_RESULT(_in_type)                                                \
     if (cmp_type<_in_type>(value_tensor->dtype())) {                           \
         return ok(to_vec<_in_type, T>(input, size));                           \

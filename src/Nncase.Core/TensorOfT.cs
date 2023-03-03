@@ -221,6 +221,9 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
             return Buffer.Span[0].ToString()!;
         }
 
+        string prefix = TensorOfT.PrefixMap.GetValueOrDefault(typeof(T).TypeHandle, string.Empty);
+        string suffix = TensorOfT.SuffixMap.GetValueOrDefault(typeof(T).TypeHandle, string.Empty);
+
         var builder = new StringBuilder();
 
         var indices = new int[Rank];
@@ -273,7 +276,16 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
                     builder.Append(',');
                 }
 
+                if (!string.IsNullOrEmpty(prefix))
+                {
+                    builder.Append(prefix);
+                }
+
                 builder.Append(this[indices]);
+                if (!string.IsNullOrEmpty(suffix))
+                {
+                    builder.Append(suffix);
+                }
             }
 
             builder.Append('}');
@@ -704,4 +716,28 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
         {
         }
     }
+}
+
+internal sealed class TensorOfT
+{
+    /// <summary>
+    /// The array to string prefix map.
+    /// </summary>
+    public static readonly Dictionary<System.RuntimeTypeHandle, string> PrefixMap = new()
+    {
+        { typeof(Half).TypeHandle, "(Half)" },
+        { typeof(BFloat16).TypeHandle, "(BFloat16)" },
+    };
+
+    /// <summary>
+    /// The array to string suffix map.
+    /// </summary>
+    public static readonly Dictionary<System.RuntimeTypeHandle, string> SuffixMap = new()
+    {
+        { typeof(float).TypeHandle, "f" },
+        { typeof(double).TypeHandle, "d" },
+        { typeof(long).TypeHandle, "L" },
+        { typeof(uint).TypeHandle, "U" },
+        { typeof(ulong).TypeHandle, "UL" },
+    };
 }

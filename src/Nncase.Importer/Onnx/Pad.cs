@@ -38,7 +38,7 @@ namespace Nncase.Importer
             // GetInputExpr will get a Tensor with shape [1], but padValue is a scalar
             var padValue = GetOptionInputExpr(op, 2)
                 .Match(
-                    x => SliceIndex(x, 0),
+                    x => SliceIndex(Stack(new IR.Tuple(x), 0), 0),
                     () => 0f);
             return Pad(input, ToNncasePadFormat(pads), padMode, padValue);
         }

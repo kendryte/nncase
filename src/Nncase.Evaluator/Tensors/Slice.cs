@@ -97,11 +97,30 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
 
                     outShape = ApplyAxis(axes_con, input, (i, axis, inDim) =>
                     {
-                        var begin = ts_begins[i];
-                        var end = System.Math.Min(ts_ends[i], inDim);
                         var stride = ts_strides[i];
-                        return (int)System.Math.Ceiling((float)System.Math.Abs(end - begin) /
-                                                         System.Math.Abs(stride));
+
+                        // reverse stride
+                        if (stride < 0)
+                        {
+                            // document in onnx operators:
+                            // for positive stepping and [0, dims[axes[i]]-1] for negative stepping.
+                            var begin = System.Math.Clamp(ts_begins[i], 0L, inDim - 1);
+
+                            // while for negative stepping it is clamped to [-1, dims[axes[i]]-1].
+                            var end = System.Math.Clamp(ts_ends[i], -1L, inDim);
+                            return (int)System.Math.Ceiling((float)System.Math.Abs(end - begin) /
+                                                            System.Math.Abs(stride));
+                        }
+                        else
+                        {
+                            // starts[i] is clamped into the range [0, dims[axes[i]]]
+                            var begin = System.Math.Clamp(ts_begins[i], 0L, inDim);
+
+                            // end[i] is clamped into the range [0, dims[axes[i]]]
+                            var end = System.Math.Clamp(ts_ends[i], 0L, inDim);
+                            return (int)System.Math.Ceiling((float)System.Math.Abs(end - begin) /
+                                                            System.Math.Abs(stride));
+                        }
                     });
                     return input with { Shape = outShape };
                 }

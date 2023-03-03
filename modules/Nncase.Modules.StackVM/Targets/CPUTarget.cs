@@ -34,6 +34,11 @@ public class CPUTarget : ITarget
     }
 
     /// <inheritdoc/>
+    public void RegisterTargetInDependentPass(IPassManager passManager, CompileOptions options)
+    {
+    }
+
+    /// <inheritdoc/>
     public void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options)
     {
     }

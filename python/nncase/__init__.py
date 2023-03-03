@@ -63,13 +63,19 @@ class PTQTensorOptions:
     input_mean: float
     input_std: float
     samples_count: int
+    quant_type: str
+    w_quant_type: str
+    finetune_weights_method: str
+    use_mix_quant: bool
     cali_data: List[RuntimeTensor]
 
     def __init__(self) -> None:
         pass
 
     def set_tensor_data(self, data: List[List[np.ndarray]]) -> None:
-        self.cali_data = [RuntimeTensor.from_numpy(d) for d in itertools.chain.from_iterable(data)]
+        reshape_data = list(map(list, zip(*data)))
+        self.cali_data = [RuntimeTensor.from_numpy(
+            d) for d in itertools.chain.from_iterable(reshape_data)]
 
 
 class GraphEvaluator:
@@ -170,6 +176,42 @@ class Compiler:
             self._compile_options.quantize_options = self._quantize_options
         self._quantize_options.calibration_dataset = provider
         self._quantize_options.model_quant_mode = _nncase.ModelQuantMode.UsePTQ
+
+        if (ptq_dataset_options.calibrate_method == "NoClip"):
+            self._quantize_options.calibrate_method = _nncase.CalibMethod.NoClip
+        elif (ptq_dataset_options.calibrate_method == "Kld"):
+            self._quantize_options.calibrate_method = _nncase.CalibMethod.Kld
+        else:
+            raise Exception("Unsupported Calibrate Method")
+
+        if (ptq_dataset_options.finetune_weights_method == "NoFineTuneWeights"):
+            self._quantize_options.finetune_weights_method = _nncase.FineTuneWeightsMethod.NoFineTuneWeights
+        elif (ptq_dataset_options.finetune_weights_method == "UseSquant"):
+            self._quantize_options.finetune_weights_method = _nncase.FineTuneWeightsMethod.UseSquant
+        elif (ptq_dataset_options.finetune_weights_method == "UseAdaRound"):
+            self._quantize_options.finetune_weights_method = _nncase.FineTuneWeightsMethod.UseAdaRound
+        else:
+            raise Exception("Unsupported Finetune Weights Method")
+
+        if (ptq_dataset_options.quant_type == "uint8"):
+            self._quantize_options.quant_type = _nncase.QuantType.Uint8
+        elif (ptq_dataset_options.quant_type == "int8"):
+            self._quantize_options.quant_type = _nncase.QuantType.Int8
+        elif (ptq_dataset_options.quant_type == "int16"):
+            self._quantize_options.quant_type = _nncase.QuantType.Int16
+        else:
+            raise Exception("Unsupported Quant Type")
+
+        if (ptq_dataset_options.w_quant_type == "uint8"):
+            self._quantize_options.w_quant_type = _nncase.QuantType.Uint8
+        elif (ptq_dataset_options.w_quant_type == "int8"):
+            self._quantize_options.w_quant_type = _nncase.QuantType.Int8
+        elif (ptq_dataset_options.w_quant_type == "int16"):
+            self._quantize_options.w_quant_type = _nncase.QuantType.Int16
+        else:
+            raise Exception("Unsupported Weights Quant Type")
+
+        self._quantize_options.use_mix_quant = ptq_dataset_options.use_mix_quant
 
     def dump_range_options(self) -> DumpRangeTensorOptions:
         raise NotImplementedError("dump_range_options")

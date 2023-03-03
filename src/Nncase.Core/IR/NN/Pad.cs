@@ -31,4 +31,7 @@ public sealed partial class Pad : Op
     /// Gets pad mode.
     /// </summary>
     public PadMode PadMode { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"PadMode.{PadMode}";
 }

@@ -28,4 +28,7 @@ public sealed partial class Compare : Op
     public static readonly ParameterInfo Rhs = new(typeof(Compare), 1, "rhs");
 
     public CompareOp CompareOp { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"CompareOp.{CompareOp}";
 }

@@ -70,5 +70,11 @@ namespace Nncase.Importer
             var input = GetInputExpr(op, 0);
             return HardSwish(input);
         }
+
+        private Expr VisitErf(NodeProto op)
+        {
+            var input = GetInputExpr(op, 0);
+            return Erf(input);
+        }
     }
 }

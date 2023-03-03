@@ -25,4 +25,7 @@ public sealed partial class Cast : Op
     public DataType NewType { get; }
 
     public CastMode CastMode { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"{NewType.GetCSharpName()}, CastMode.{CastMode}";
 }

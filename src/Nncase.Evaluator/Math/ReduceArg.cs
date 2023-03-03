@@ -22,12 +22,19 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
         var axis = context.GetArgumentValueAsScalar<long>(reduceArg, ReduceArg.Axis);
         var keepDims = context.GetArgumentValueAsScalar<long>(reduceArg, ReduceArg.KeepDims);
         var selectLastIndex = context.GetArgumentValueAsScalar<long>(reduceArg, ReduceArg.SelectLastIndex);
-        return (reduceArg.ReduceArgOp switch
+        var result = reduceArg.ReduceArgOp switch
         {
             ReduceArgOp.ArgMax => OrtKI.ArgMax(input, axis, keepDims, selectLastIndex),
             ReduceArgOp.ArgMin => OrtKI.ArgMin(input, axis, keepDims, selectLastIndex),
             _ => throw new ArgumentOutOfRangeException(nameof(reduceArg)),
-        }).ToValue();
+        };
+
+        if (reduceArg.DestType == DataTypes.Int32)
+        {
+            return result.Cast(OrtDataType.Int32).ToValue();
+        }
+
+        return result.ToValue();
     }
 
     /// <inheritdoc/>
@@ -44,12 +51,7 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
         var input_elem = input.Shape.Aggregate(1, (acc, d) => acc * (d.IsFixed ? d.FixedValue : 1));
         var ret_elem = ret.Shape.Aggregate(1, (acc, d) => acc * (d.IsFixed ? d.FixedValue : 1));
         var macPerElement = input_elem / ret_elem;
-        return new()
-        {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, macPerElement),
-        };
+        return new() { [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input), [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret), [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, macPerElement), };
     }
 
     private IRType Visit(ITypeInferenceContext context, ReduceArg target, TensorType input)
@@ -69,7 +71,7 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
                 shape.RemoveAt(axisIndex);
             }
 
-            return input with { Shape = new Shape(shape) };
+            return input with { Shape = new Shape(shape), DType = target.DestType };
         }
         else
         {

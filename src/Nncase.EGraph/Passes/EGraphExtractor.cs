@@ -61,7 +61,7 @@ public static class EGraphExtractExtensions
     /// </summary>
     internal static ENode MinByWithMarker(this EClass eClass, CostModel.EGraphCostModel costModel)
     {
-        return eClass.Nodes.OrderBy(e => e.Expr, ENodeTypeComparer.Instance).MinBy(x => costModel[x])!;
+        return eClass.Nodes.OrderBy(e => e.Expr, ENodeTypeComparer.Instance).MinBy(x => x.Expr is Marker ? Cost.Zero : costModel[x])!;
     }
 
     /// <summary>
@@ -72,16 +72,23 @@ public static class EGraphExtractExtensions
         return eClass.Nodes.Where(e => e.Expr is not Marker).MinBy(x => costModel[x])!;
     }
 
-    private sealed class ENodeTypeComparer : IComparer<Expr>
+    internal sealed class ENodeTypeComparer : IComparer<Expr>
     {
         public static readonly ENodeTypeComparer Instance = new();
 
         public int Compare(Expr? x, Expr? y) => (x, y) switch
         {
-            (Marker, Marker) => 0,
-            (Marker, _) => -1,
-            (_, Marker) => 1,
-            (_, _) => 0,
+            (null, null) => 0,
+            (Expr, null) => 1,
+            (null, Expr) => -1,
+            (Expr, Expr) => GetPriority(x).CompareTo(GetPriority(y)),
+        };
+
+        private int GetPriority(Expr x) => x switch
+        {
+            Marker => 0,
+            Const => 1,
+            _ => 2,
         };
     }
 }
@@ -135,7 +142,7 @@ internal class EGraphExtractor
                 case Var or TensorConst or TupleConst or Op or Fusion or None:
                     expr = minCostEnode.Expr;
                     break;
-                case Function or Call or IR.Tuple or Marker:
+                case Function or Call or IR.Tuple or Marker or IR.If:
                     var childrenExprs = new List<Expr>();
                     foreach (var child in minCostEnode.Children)
                     {
@@ -175,6 +182,7 @@ internal class EGraphExtractor
                         Call call => Visit(minCostEnode, call, new(childrenExprs)),
                         IR.Tuple tuple => Visit(minCostEnode, tuple, new(childrenExprs)),
                         Marker marker => Visit(minCostEnode, marker, new(childrenExprs)),
+                        IR.If @if => Visit(minCostEnode, @if, new(childrenExprs)),
                         _ => throw new ArgumentException("Unsupported expression type."),
                     };
 
@@ -217,6 +225,11 @@ internal class EGraphExtractor
     private IR.Tuple Visit(ENode enode, IR.Tuple tuple, IRArray<Expr> children)
     {
         return tuple.With(fields: children.ToArray());
+    }
+
+    private IR.If Visit(ENode enode, IR.If @if, IRArray<Expr> children)
+    {
+        return @if with { Condition = children[0], Then = children[1], Else = children[2] };
     }
 
     private Call Visit(ENode enode, Call call, IRArray<Expr> children)

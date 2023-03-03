@@ -34,4 +34,7 @@ public sealed partial class UniformLike : Op
     public static readonly ParameterInfo Seed = new(typeof(UniformLike), 3, "seed", IsFloatScalar());
 
     public DataType Type { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => Type.GetCSharpName();
 }

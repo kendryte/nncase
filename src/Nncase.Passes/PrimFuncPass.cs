@@ -89,7 +89,7 @@ public class PrimFuncPass : Pass<PrimFunction, PrimFunction>, IMutatorsAddable
                 if (isMutated)
                 {
                     var typeInferSuccess = CompilerServices.InferenceType(post);
-                    if (DumpScope.Current.IsEnabled(DumpFlags.PassIR))
+                    if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
                     {
                         DumpScope.Current.DumpIR(post, $"{count++}_{mutator.GetType().Name}");
                     }
@@ -110,10 +110,26 @@ public class PrimFuncPass : Pass<PrimFunction, PrimFunction>, IMutatorsAddable
     }
 
     /// <inheritdoc/>
-    protected override Task OnPassStartAsync(PrimFunction input, RunPassContext context) => Task.CompletedTask;
+    protected override Task OnPassStartAsync(PrimFunction input, RunPassContext context)
+    {
+        if (DumpScope.Current.IsEnabled(DumpFlags.PassIR))
+        {
+            DumpScope.Current.DumpIR(input, "Start");
+        }
+
+        return Task.CompletedTask;
+    }
 
     /// <inheritdoc/>
-    protected override Task OnPassEndAsync(PrimFunction post, RunPassContext context) => Task.CompletedTask;
+    protected override Task OnPassEndAsync(PrimFunction post, RunPassContext context)
+    {
+        if (DumpScope.Current.IsEnabled(DumpFlags.PassIR))
+        {
+            DumpScope.Current.DumpIR(post, "End");
+        }
+
+        return Task.CompletedTask;
+    }
 
     private protected override string? GetDumpRelativePath(PrimFunction input) => input.Name;
 

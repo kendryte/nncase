@@ -34,4 +34,7 @@ public sealed partial class NormalLike : Op
     public static readonly ParameterInfo Seed = new(typeof(NormalLike), 3, "seed", IsFloatScalar());
 
     public DataType Type { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => Type.GetCSharpName();
 }

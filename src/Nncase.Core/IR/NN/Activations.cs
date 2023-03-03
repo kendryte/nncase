@@ -178,3 +178,15 @@ public sealed partial class HardSigmoid : ActivationOp
     /// </summary>
     public static readonly ParameterInfo Beta = new(typeof(HardSigmoid), 2, "beta", IsFloatScalar());
 }
+
+/// <summary>
+/// Erf expression.
+/// </summary>
+[PatternFunctionalGenerator]
+public sealed record Erf() : ActivationOp
+{
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(Erf), 0, "input");
+}

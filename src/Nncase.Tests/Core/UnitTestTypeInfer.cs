@@ -142,15 +142,15 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     public void TestReduceArgTypeInfer()
     {
         var input = new Var("v", new TensorType(DataTypes.Float32, new Shape(4, 5, 6, 7)));
-        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, input, 0, false, false), 5, 6, 7);
-        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, input, 1, false, false), 4, 6, 7);
-        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, input, 2, false, false), 4, 5, 7);
-        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, input, 3, false, false), 4, 5, 6);
+        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64, input, 0, false, false), 5, 6, 7);
+        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64, input, 1, false, false), 4, 6, 7);
+        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64, input, 2, false, false), 4, 5, 7);
+        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64, input, 3, false, false), 4, 5, 6);
 
-        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, input, 0, true, false), 1, 5, 6, 7);
-        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, input, 1, true, false), 4, 1, 6, 7);
-        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, input, 2, true, false), 4, 5, 1, 7);
-        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, input, 3, true, false), 4, 5, 6, 1);
+        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64, input, 0, true, false), 1, 5, 6, 7);
+        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64, input, 1, true, false), 4, 1, 6, 7);
+        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64, input, 2, true, false), 4, 5, 1, 7);
+        CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64, input, 3, true, false), 4, 5, 6, 1);
     }
 
     [Fact]
@@ -238,6 +238,16 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     }
 
     [Fact]
+    public void TestConv2DInvalidWeights()
+    {
+        var v30 = new Var("serving_default_input_1:0", new TensorType(DataTypes.Float32, new[] { 1, 256, 56, 56 }));
+        var v30_1 = new Marker("RangeOf", Testing.Rand<float>(256, 64, 1, 1), new float[] { -0.3903954f, 0.46443018f }); // f32[256,64,1,1]
+        var v30_2 = new Call(new IR.NN.Conv2D(PadMode.Constant), new Expr[] { v30, v30_1, Testing.Rand<float>(256), new int[] { 1, 1 }, new int[,] { { 0, 0 }, { 0, 0 } }, new int[] { 1, 1 }, 1, new float[] { -float.PositiveInfinity, float.PositiveInfinity } }); // f32[1,256,56,56]
+        CompilerServices.InferenceType(v30_2);
+        Assert.IsType<InvalidType>(v30_2.CheckedType);
+    }
+
+    [Fact]
     public void TestConcat()
     {
         var v1 = Var(new[] { 1, 3, 16 });
@@ -286,6 +296,17 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
         var in1 = Var(Shape.Unranked);
         var cat = Concat(new IR.Tuple(in0, in1), 0);
         CheckInferShape(cat, Shape.Unranked);
+    }
+
+    [Fact]
+    public void TestBroadcastInfer()
+    {
+        // appear in where
+        var a = new TensorType(DataTypes.Int32, new Shape(new[] { 1, 3, 224, 224 }));
+        var b = new TensorType(DataTypes.Float32, Shape.Unknown(4));
+        var c = new TensorType(DataTypes.Float32, Shape.Unknown(4));
+        var result = (TensorType)TypeInference.BroadcastType(b.DType, a, b, c);
+        Assert.Equal(result.DType, DataTypes.Float32);
     }
 
     private void CheckInferShape(Expr expr, params Dimension[] shapeDimensions)

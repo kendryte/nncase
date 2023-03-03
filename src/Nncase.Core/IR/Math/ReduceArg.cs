@@ -41,4 +41,9 @@ public sealed partial class ReduceArg : Op
     public static readonly ParameterInfo SelectLastIndex = new(typeof(ReduceArg), 3, "selectLastIndex", IsBoolScalar());
 
     public ReduceArgOp ReduceArgOp { get; }
+
+    public DataType DestType { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"ReduceArgOp.{ReduceArgOp}";
 }

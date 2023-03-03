@@ -54,12 +54,10 @@ result<value_t> stackvm_runtime_function::invoke_core(
     return ok(ret_val);
 }
 
-uintptr_t stackvm_runtime_function::pc() const noexcept {
-    return (uintptr_t)(text_.size_bytes() - reader_.avail());
-}
+uintptr_t stackvm_runtime_function::pc() const noexcept { return last_pc_; }
 
 result<void> stackvm_runtime_function::pc(uintptr_t value) noexcept {
-    if (value >= text_.size_bytes())
+    if (value > text_.size_bytes())
         return err(nncase_errc::stackvm_illegal_target);
     reader_ = span_reader(text_.subspan(value));
     return ok();

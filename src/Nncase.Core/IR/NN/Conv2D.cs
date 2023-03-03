@@ -60,9 +60,7 @@ public sealed partial class Conv2D : Op
 
     public PadMode PadMode { get; }
 
-    /// <inheritdoc/>
-    public override string DisplayProperty()
-    {
-        return $"PadMode: {PadMode}";
+        /// <inheritdoc/>
+        public override string DisplayProperty() => $"PadMode.{PadMode}";
     }
 }

@@ -33,4 +33,7 @@ public sealed partial class Reduce : Op
     public static readonly ParameterInfo KeepDims = new(typeof(Reduce), 3, "keepDims", IsScalar() & IsIntegral());
 
     public ReduceOp ReduceOp { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"ReduceOp.{ReduceOp}";
 }

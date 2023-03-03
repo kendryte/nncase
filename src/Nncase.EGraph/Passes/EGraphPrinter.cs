@@ -283,6 +283,8 @@ public partial class EGraphPrinter
 
         protected override string VisitMarker(Marker expr) => expr.GetType().Name + " " + expr.Name;
 
+        protected override string Visit(IR.If expr) => "If";
+
         protected override string VisitTuple(IR.Tuple expr) => "Tuple";
 
         protected override string VisitNone(None expr) => "None";

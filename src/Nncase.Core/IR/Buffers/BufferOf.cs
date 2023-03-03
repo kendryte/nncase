@@ -17,4 +17,7 @@ public sealed partial class BufferOf : Op
     public static readonly ParameterInfo Input = new(typeof(BufferOf), 0, "input", IsTensor());
 
     public Schedule.MemoryLocation MemoryLocation { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"Schedule.MemoryLocation.{MemoryLocation}";
 }
