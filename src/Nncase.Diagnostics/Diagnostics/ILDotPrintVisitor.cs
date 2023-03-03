@@ -204,6 +204,7 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
             }
 
             result = new(dotNode);
+            _exprMemo.Add(expr, result);
         }
 
         return result;
@@ -214,6 +215,7 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
         if (!_exprMemo.TryGetValue(expr, out var result))
         {
             result = new(expr.GetType().Name + $"({expr.DisplayProperty()})");
+            _exprMemo.Add(expr, result);
         }
 
         return result;
@@ -224,6 +226,7 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
         if (!_exprMemo.TryGetValue(expr, out var result))
         {
             result = new(CompilerServices.Print(expr));
+            _exprMemo.Add(expr, result);
         }
 
         return result;
@@ -234,6 +237,7 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
         if (!_exprMemo.TryGetValue(expr, out var result))
         {
             result = new("None");
+            _exprMemo.Add(expr, result);
         }
 
         return result;
@@ -304,6 +308,7 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
             }
 
             result = new(dotNode);
+            _exprMemo.Add(expr, result);
         }
 
         return result;
@@ -315,9 +320,10 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
         {
             var id = _idCounter++;
             string exprId = "\"" + id.ToString() + "\"";
-            var dotNode = new DotNode(exprId) { Label = expr.Name, Shape = DotNodeShape.Rectangle };
+            var dotNode = new DotNode(exprId) { Label = expr.Name + "_" + expr.GlobalVarIndex, Shape = DotNodeShape.Rectangle };
             _dotGraph.Nodes.Add(dotNode);
             result = new(dotNode);
+            _exprMemo.Add(expr, result);
         }
 
         return result;
@@ -383,6 +389,7 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
             }
 
             result = new(dotNode);
+            _exprMemo.Add(expr, result);
         }
 
         return result;
