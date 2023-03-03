@@ -81,8 +81,8 @@ public class UnitTestAddMarker : TestClassBase
 #endif
         var inputSize = 2;
         var hiddenSize = 1;
-        var LSTM_direction = LSTMDirection.Forward;
-        var numberDirections = LSTM_direction == LSTMDirection.Forward ? 1 : 2;
+        var lSTM_direction = LSTMDirection.Forward;
+        var numberDirections = lSTM_direction == LSTMDirection.Forward ? 1 : 2;
         var batchSize = 1;
         var seqLength = 3;
         var x = Random.Normal(DataTypes.Float32, new[] { seqLength, batchSize, inputSize });
