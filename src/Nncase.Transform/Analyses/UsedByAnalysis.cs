@@ -68,6 +68,23 @@ internal sealed class UsedByAnalysisVisitor : ExprVisitor<bool, IRType>
 
     public override bool DefaultVisitLeaf(Expr expr) => false;
 
+    public override bool VisitLeaf(IR.Tuple expr)
+    {
+        foreach (var param in expr.Fields)
+        {
+            AddUsedBy(_useByMap, param, expr);
+        }
+
+        // create the chain for current call
+        if (!_useByMap.TryGetValue(expr, out _))
+        {
+            HashSet<Expr>? chain = new(ReferenceEqualityComparer.Instance);
+            _useByMap.Add(expr, chain);
+        }
+
+        return false;
+    }
+
     public override bool VisitLeaf(Call expr)
     {
         AddUsedBy(_useByMap, expr.Target, expr);
