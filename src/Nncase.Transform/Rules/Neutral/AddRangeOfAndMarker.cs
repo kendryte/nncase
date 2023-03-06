@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -65,9 +66,9 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
                 "call",
                 IsOp<Op>("op"),
                 IsWildcard("input")) with
-        {
-            TypePattern = HasDataType(DataTypes.Float32) | IsTuple(t => t.All(tt => tt is TensorType { DType: DataType dt } && dt == DataTypes.Float32), "AllElementsAreF32"),
-        };
+            {
+                TypePattern = HasDataType(DataTypes.Float32) | IsTuple(t => t.All(tt => tt is TensorType { DType: DataType dt } && dt == DataTypes.Float32), "AllElementsAreF32"),
+            };
 
     /// <summary>
     /// check op.
@@ -122,7 +123,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
         Call newCall;
         if (pairs.Count != 0)
         {
-            newCall = ReplaceCallParams(op, callParams, list.Select(i => (call: callParams[i], pairs[callParams[i]])).ToArray());
+            newCall = ReplaceCallParams(op, callParams, list.Where(i => callParams[i] is not Marker).Select(i => (call: callParams[i], pairs[callParams[i]])).ToArray());
         }
         else
         {
